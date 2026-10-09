@@ -14,17 +14,6 @@ from .contracts import (
 )
 from .runtime import EuclidRuntime
 from .memory_database import MemoryDatabase, MemoryScope
-from .training_pipeline import (
-    TrainingCase,
-    TrainingPipeline,
-    validate_partitions,
-)
-from .checkpoint_manifest import (
-    load_manifest,
-    verify_manifest,
-    write_manifest,
-)
-from .adapter import EuclidEngineAdapter, ProgramSearchEngine
 from .subsystem_registry import (
     HealthLevel,
     HealthStatus,
@@ -34,10 +23,39 @@ from .subsystem_registry import (
     build_default_registry,
     salamander_descriptor,
 )
-from .startup_orchestrator import (
-    StartupOrchestrator,
-    StartupVerdict,
-)
+
+# These subsystems sit behind optional internal substrates (hyba_substrate,
+# toe, kellogg) that are not part of the standalone wheel surface. They are
+# resolved lazily so `import euclid` stays fail-closed-free on minimal
+# installs; accessing them without the substrates raises the honest
+# ModuleNotFoundError for the missing package.
+_LAZY = {
+    "EuclidEngineAdapter": "euclid.adapter",
+    "ProgramSearchEngine": "euclid.adapter",
+    "TrainingCase": "euclid.training_pipeline",
+    "TrainingPipeline": "euclid.training_pipeline",
+    "validate_partitions": "euclid.training_pipeline",
+    "load_manifest": "euclid.checkpoint_manifest",
+    "verify_manifest": "euclid.checkpoint_manifest",
+    "write_manifest": "euclid.checkpoint_manifest",
+    "StartupOrchestrator": "euclid.startup_orchestrator",
+    "StartupVerdict": "euclid.startup_orchestrator",
+}
+
+
+def __getattr__(name):
+    module = _LAZY.get(name)
+    if module is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    import importlib
+
+    value = getattr(importlib.import_module(module), name)
+    globals()[name] = value
+    return value
+
+
+def __dir__():
+    return sorted(__all__)
 
 __version__ = "17.0.0"
 

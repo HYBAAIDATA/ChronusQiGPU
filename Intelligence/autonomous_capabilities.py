@@ -58,6 +58,14 @@ try:
 except ImportError:
     from toe.hardened_unified_substrate import CassiniVerifier
 
+from kellogg.quantum_tensor import QuantumState
+
+from Intelligence._born import (
+    QUARTER_TURN,
+    encode_state,
+    rotate_state_in_plane,
+)
+
 logger = logging.getLogger("Intelligence.autonomous_capabilities")
 
 THEOREM_PROVEN = False
@@ -719,22 +727,51 @@ class ValidityLearner:
     """Learns which precomputed candidates deserve earlier probes.
 
     Training pairs are ``(features, accepted)`` where ``accepted`` is the
-    outcome of the *local SHA256d check* for that candidate. The learner is
-    a logistic scorer: ``score = sigmoid(w . x)``. Phase 4 uses
-    :meth:`order_candidates` to bias probe order — every candidate stays in
-    the probe set, so no valid candidate can ever be suppressed.
+    outcome of the *local SHA256d check* for that candidate.
+
+    The learned model is a ``QuantumState`` over the feature Hilbert
+    space: ``predict_priority`` is the Born overlap
+    ``|<model|x>|^2`` between the model state and the candidate's
+    feature-encoded state — a genuine Born probability, not a logistic
+    squash of a dot product. Each measured outcome rotates the model
+    state by a real unitary inside the two-dimensional plane spanned by
+    |model> and |x>: the rotation angle is the *measured* prediction
+    error scaled by the declared gain ``lr`` — a full-strength error is
+    a quarter-turn. Positive error rotates toward the evidence state,
+    negative error rotates away from it. There is no sigmoid and no
+    invented weight matrix anywhere.
+
+    With zero training the model is the uniform superposition, so every
+    candidate reports the flat prior 0.5 (insertion order preserved) —
+    an untrained learner claims no preference.
+
+    Phase 4 uses :meth:`order_candidates` to bias probe order — every
+    candidate stays in the probe set, so no valid candidate can ever be
+    suppressed.
 
     ``drift_error()`` reports the mean absolute prediction error over the
     most recent probes; Salamander uses it to trigger retraining.
     """
 
     def __init__(self, lr: float = 0.4, n_features: int = 13) -> None:
-        self.lr = float(lr)
-        self.weights = np.zeros(n_features, dtype=np.float64)
-        self.bias = 0.0
+        self.lr = float(lr)  # declared gain: fraction of a quarter-turn per unit error
+        self.n_features = int(n_features)
+        self._model = QuantumState.uniform_superposition(self.n_features)
         self.pairs: List[Tuple[np.ndarray, bool]] = []
         self.recent_errors: List[float] = []
         self.trained_samples = 0
+
+    # Read-only mirror of the model ray's real amplitudes — kept so
+    # external inspection code written against the old weight vector does
+    # not break. These are state amplitudes, not logits.
+    @property
+    def weights(self) -> np.ndarray:
+        return np.array([a.re for a in self._model.amplitudes], dtype=np.float64)
+
+    @property
+    def bias(self) -> float:
+        # The quantum model has no bias term; retained for API compat.
+        return 0.0
 
     @staticmethod
     def features(candidate: Any) -> np.ndarray:
@@ -756,29 +793,37 @@ class ValidityLearner:
         )
         return np.concatenate([base, sector_onehot])
 
-    def _sigmoid(self, x: np.ndarray) -> float:
-        z = float(np.dot(self.weights, x) + self.bias)
-        if z >= 0:
-            return 1.0 / (1.0 + float(np.exp(-z)))
-        ez = float(np.exp(z))
-        return ez / (1.0 + ez)
+    def _priority_from_features(self, x: np.ndarray) -> float:
+        """Born probability |<model|x>|^2 of the candidate under the model state.
+
+        With no measured evidence (untrained uniform superposition) the
+        flat prior 0.5 is reported for every candidate — the honest
+        "nothing learned yet" readout, which also preserves insertion
+        order in :meth:`order_candidates`.
+        """
+        if self.trained_samples == 0:
+            return 0.5
+        return self._model.fidelity(encode_state(x))
 
     def predict_priority(self, candidate: Any) -> float:
         """Priority score in (0, 1); higher means probe earlier."""
-        return self._sigmoid(self.features(candidate))
+        return self._priority_from_features(self.features(candidate))
 
     def learn(self, features: Any, accepted: bool) -> float:
-        """One logistic SGD step on an (features, validity) pair.
+        """One unitary evidence step on an (features, validity) pair.
 
-        Returns the prediction error observed before the update — the
-        measured signal the drift detector consumes.
+        The measured prediction error (target minus current Born readout)
+        sets the rotation angle; the model state is rotated toward the
+        evidence state when it under-predicted and away when it
+        over-predicted. Returns the error observed before the update —
+        the measured signal the drift detector consumes.
         """
         x = np.asarray(features, dtype=np.float64).reshape(-1)
         y = 1.0 if accepted else 0.0
-        p = self._sigmoid(x)
+        p = self._priority_from_features(x)
         error = y - p
-        self.weights += self.lr * error * x
-        self.bias += self.lr * error
+        angle = self.lr * QUARTER_TURN * error
+        self._model = rotate_state_in_plane(self._model, encode_state(x), angle)
         self.pairs.append((x, bool(accepted)))
         self.recent_errors.append(abs(error))
         self.trained_samples += 1
@@ -809,12 +854,20 @@ class ValidityLearner:
         if not self.pairs:
             return {"retrained": False, "reason": "no_pairs", "theorem_proven": False}
         before = self.drift_error(window=len(self.recent_errors))
+        # Refit: reset to the uniform superposition and replay every
+        # measured pair through the unitary update.
+        self._model = QuantumState.uniform_superposition(self.n_features)
+        saved_trained = self.trained_samples
+        self.trained_samples = 0
         for _ in range(max(1, epochs)):
             for x, accepted in self.pairs:
                 y = 1.0 if accepted else 0.0
-                p = self._sigmoid(x)
-                self.weights += self.lr * (y - p) * x
-                self.bias += self.lr * (y - p)
+                p = self._priority_from_features(x)
+                self._model = rotate_state_in_plane(
+                    self._model, encode_state(x), self.lr * QUARTER_TURN * (y - p)
+                )
+                self.trained_samples += 1
+        self.trained_samples = saved_trained + self.trained_samples
         self.recent_errors.clear()
         return {
             "retrained": True,

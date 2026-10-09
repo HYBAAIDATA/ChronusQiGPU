@@ -17,9 +17,12 @@ learning flows only through the existing LearningService.
 
 from __future__ import annotations
 
+import math
 import time
 from pathlib import Path
 from typing import Any, Callable, Mapping
+
+from kellogg.quantum_tensor import QuantumState
 
 from ..contracts import Experience, RewardAuthority
 from ..evidence import atomic_write, load_json
@@ -66,6 +69,9 @@ def strip_non_deterministic(value: Any) -> Any:
     return value
 
 
+# Declared objective vector for the strategy portfolio scalarisation — a
+# policy statement (how the composer weighs measured/declared features), not
+# an estimated quantity.
 OBJECTIVE_WEIGHTS = {
     "correctness_estimate": 0.5,
     "cost": -0.2,
@@ -73,6 +79,23 @@ OBJECTIVE_WEIGHTS = {
     "novelty": 0.05,
     "transfer_value": 0.1,
 }
+
+# Declared relative-cost prior per strategy (relative sandbox evaluation
+# breadth). UNMEASURED: no per-strategy cost telemetry is recorded yet; this
+# prior is policy, not a measured quantity.
+STRATEGY_COST_PRIOR = {
+    "deep-mcts": 0.6,
+    "evolutionary-search": 0.4,
+    "greedy-surrogate": 0.2,
+}
+
+# Declared ignorant prior for the correctness estimate when a strategy has no
+# measured trials in this problem class.
+IGNORANT_CORRECTNESS_PRIOR = 0.5
+
+# Declared symmetric pseudo-count mass for the outcome state used to measure
+# exploration uncertainty.
+OUTCOME_PRIOR_MASS = 1.0
 
 
 class _StrategyComposer:
@@ -87,7 +110,30 @@ class _StrategyComposer:
         stats = self._learner._stats  # read-only introspection for scoring
         for strategy in STRATEGIES:
             successes, trials = stats.get((self._class, strategy), [0, 0])
-            estimate = successes / trials if trials else 0.5  # ignorant prior
+            estimate = (
+                successes / trials if trials else IGNORANT_CORRECTNESS_PRIOR
+            )
+            # Born-rule uncertainty: measurement entropy (bits) of the outcome
+            # state |psi> ~ (sqrt(successes+prior), sqrt(failures+prior))
+            # prepared from the strategy's measured outcomes.
+            outcome_state = QuantumState.from_real_vector(
+                [
+                    math.sqrt(successes + OUTCOME_PRIOR_MASS),
+                    math.sqrt(trials - successes + OUTCOME_PRIOR_MASS),
+                ]
+            )
+            uncertainty = outcome_state.measurement_entropy()
+            # Measured transfer evidence: fraction of problem classes in which
+            # this strategy has at least one measured success.
+            classes_for_strategy = {
+                cls for (cls, s) in stats.keys() if s == strategy
+            }
+            transfer_value = (
+                sum(1 for cls in classes_for_strategy if stats[(cls, strategy)][0] > 0)
+                / len(classes_for_strategy)
+                if classes_for_strategy
+                else 0.0
+            )
             candidates.append(
                 CandidateAction(
                     f"strategy:{strategy}",
@@ -95,14 +141,10 @@ class _StrategyComposer:
                     origin=f"strategy-portfolio:{strategy}",
                     features={
                         "correctness_estimate": estimate,
-                        "cost": {
-                            "deep-mcts": 0.6,
-                            "evolutionary-search": 0.4,
-                            "greedy-surrogate": 0.2,
-                        }[strategy],
-                        "uncertainty": 1.0 / (1.0 + trials),
-                        "novelty": 0.0,
-                        "transfer_value": 0.3 if trials else 0.0,
+                        "cost": STRATEGY_COST_PRIOR[strategy],
+                        "uncertainty": uncertainty,
+                        "novelty": 1.0 if not trials else 0.0,
+                        "transfer_value": transfer_value,
                     },
                 )
             )
@@ -234,7 +276,10 @@ class CognitiveService:
                 },
                 provenance=f"cognitive-episode:{episode.episode_id}",
                 structural_features=frozenset(episode.representation.get("structure", ())),
-                transfer_value=0.5 if episode.outcome == "solved" else 0.1,
+                # transfer_value records the measured outcome bit (solved=1.0);
+                # whether the memory genuinely transfers is established by
+                # later reuse, never assumed at write time.
+                transfer_value=1.0 if episode.outcome == "solved" else 0.0,
             )
         )
 
@@ -303,12 +348,22 @@ class CognitiveService:
             candidate, None, test_code
         )
         if not (parse_v and compile_v and test_v):
-            delta = -0.5
-        else:
-            fitness = calculator.compute_multi_objective_fitness(
-                candidate, initial_node_count=node_count, tests_passed=True
-            )
-            delta = round(fitness - base_fitness, 6)
+            # Invalid candidate: the measured outcome IS the sandbox failure.
+            # Record the honest "invalid" bucket rather than a fabricated
+            # negative delta poisoning the world model.
+            signature = program_signature(code)
+            self.world_model.update(signature, operator, "invalid")
+            return {
+                "observation": "invalid",
+                "delta": None,
+                "evidence_class": "sandbox-invalid",
+                "goal_met": False,
+                "diagnostic": msg,
+            }
+        fitness = calculator.compute_multi_objective_fitness(
+            candidate, initial_node_count=node_count, tests_passed=True
+        )
+        delta = round(fitness - base_fitness, 6)
         bucket = ProgramWorldModel._bucket(delta)
         signature = program_signature(code)
         self.world_model.observe_gain(signature, operator, delta)

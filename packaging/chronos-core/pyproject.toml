@@ -1,9 +1,11 @@
+# Public naming is approved; first-public version target is 1.0.0.
+# Existing development/research version retained pending publication reconciliation.
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "chronos-core"
+name = "hyba-chronos-mathematics"
 version = "3.3.0"
 description = "Chronos GPU -- mathematical quantum graphics engine (Chronos v3.3 maths: manifold, QSDL, Hamiltonian, evolution, ray-traced reconstruction, theory domains)."
 readme = "README.md"
@@ -22,7 +24,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
+
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -47,12 +49,13 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/QuantumPhi2/PhiMiner"
+Homepage = "https://github.com/QuantumPhiRedux/PhiMiner"
 
 [tool.setuptools]
-# chronus is an implicit namespace package (no __init__ at its root in the
-# published wheel is intentional: the monorepo's chronus/__init__.py is empty);
-# chronos-core ships the v33 Chronos maths subtree only.
+# The wheel ships chronus/__init__.py (PEP 562 lazy exports) plus the v33
+# Chronos maths subtree only; every product-plane attribute the __init__
+# re-exports resolves to a module outside this boundary and fails honestly
+# with ModuleNotFoundError on access.
 include-package-data = false
 
 [tool.setuptools.packages.find]

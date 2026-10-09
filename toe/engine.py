@@ -20,9 +20,17 @@ Two distinct layers live here:
 2. ``PredictiveEngine`` — ONE application of that substrate. Its shipped
    indicator schema is employee-churn-shaped (HR telemetry columns), but
    the computation beneath is the substrate itself: Hilbert state
-   vectors, Born-rule ensemble aggregation, Schrödinger evolution,
-   quantum fidelity. Read the math, not the column names — the engine is
-   a demonstration of the algebra, not an HR product.
+   vectors via ``kellogg.quantum_tensor.encode_data_to_state``,
+   Pisot-family Hamiltonian evolution via
+   ``ComplexMatrix.matrix_exp_unitary`` (the Schrödinger propagator
+   convention shared with ``toe.bridge.predict_trajectory``), Born-rule
+   measurement, quantum Fisher information, von Neumann entropy, and
+   ensemble agreement via ``model_agreement_from_ensemble``. The
+   ensemble "models" are quantum channels — family-Hamiltonian evolution
+   plus Helstrom-type Born-overlap discrimination calibrated on the
+   observed cohort — not estimators. Read the math, not the column
+   names — the engine is a demonstration of the algebra, not an HR
+   product.
 
 For the mining-facing TOE coordinator (12-theorem candidate verification
 on nonce candidates, provenance ledger, 13-substrate dispatch) see
@@ -50,9 +58,6 @@ import math
 
 import os
 
-import random
-import statistics
-
 # Single-source versioning: the package literal lives in toe/__init__.py
 # (bound before this module is imported there); engine derives, never
 # redeclares.
@@ -63,60 +68,38 @@ _LAZY_MODULES = {
     "joblib": "kellogg.tensor_ml",
 }
 
+# Only honest plumbing survives here: the exact-median imputer (data
+# conditioning — not inference), the repo's own lexicon sentiment counter
+# (a declared classical feature extractor, never labelled quantum), and
+# joblib for declared training-blob loading. Every computed quantity in
+# the prediction pipeline runs on kellogg.quantum_tensor — there are no
+# estimators, no sklearn-style predict_proba, no LIME surrogate, no
+# seasonal-decompose, no hyperparameter search.
 _LAZY_FROM = {
-    "RandomForestClassifier": ("kellogg.tensor_ml", "RandomForestClassifier"),
-    "GradientBoostingClassifier": ("kellogg.tensor_ml", "GradientBoostingClassifier"),
-    "cross_val_score": ("kellogg.tensor_ml", "cross_val_score"),
-    "StandardScaler": ("kellogg.tensor_ml", "StandardScaler"),
     "SimpleImputer": ("kellogg.tensor_ml", "SimpleImputer"),
-    "TfidfVectorizer": ("kellogg.tensor_ml", "TfidfVectorizer"),
-    "f1_score": ("kellogg.tensor_ml", "f1_score"),
-    "precision_score": ("kellogg.tensor_ml", "precision_score"),
-    "recall_score": ("kellogg.tensor_ml", "recall_score"),
-    "accuracy_score": ("kellogg.tensor_ml", "accuracy_score"),
-    "XGBClassifier": ("kellogg.tensor_ml", "XGBClassifier"),
-    "LGBMClassifier": ("kellogg.tensor_ml", "LGBMClassifier"),
     "SentimentIntensityAnalyzer": ("kellogg.tensor_ml", "TensorSentimentAnalyzer"),
-    "seasonal_decompose": ("statsmodels.tsa.seasonal", "seasonal_decompose"),
-    "BayesSearchCV": ("skopt", "BayesSearchCV"),
-    "Real": ("skopt.space", "Real"),
-    "Integer": ("skopt.space", "Integer"),
-    "LimeTabularExplainer": ("lime.lime_tabular", "LimeTabularExplainer"),
-    "exact_linear": ("kellogg.tensor_ml", "exact_linear"),
-    "rf": ("kellogg.tensor_ml", "rf"),
-    "xgb": ("kellogg.tensor_ml", "xgb"),
-    "lgbm": ("kellogg.tensor_ml", "lgbm"),
-    "gb": ("kellogg.tensor_ml", "gb"),
 }
 
 
-_OPTIONAL_GROUPS = {
-    "_HAS_STATSMODELS": ("seasonal_decompose",),
-    "_HAS_SKOPT": ("BayesSearchCV", "Real", "Integer"),
-    "_HAS_LIME": ("LimeTabularExplainer",),
-}
+# The quantum substrate is a hard dependency, not a lazy one: the engine
+# must fail closed at import if the substrate cannot be resolved —
+# otherwise the box envrc could shadow kellogg onto a sibling checkout.
+from kellogg.quantum_tensor import (  # noqa: E402
+    Complex,
+    ComplexMatrix,
+    QuantumState,
+    Observables,
+    quantum_fisher_information,
+    von_neumann_entropy,
+    encode_data_to_state,
+    state_tomography,
+    causal_factor_ranking,
+    model_agreement_from_ensemble,
+)
 
 
 def __getattr__(name: str):
-    """Resolve model dependencies on demand; required failures propagate."""
-    for flag, members in _OPTIONAL_GROUPS.items():
-        if name == flag or name in members:
-            try:
-                values = {
-                    member: getattr(
-                        importlib.import_module(_LAZY_FROM[member][0]), _LAZY_FROM[member][1]
-                    )
-                    for member in members
-                }
-            except Exception as exc:
-                logging.warning("Optional dependency %s unavailable: %s", flag, exc)
-                values = dict.fromkeys(members)
-                available = False
-            else:
-                available = True
-            globals().update(values)
-            globals()[flag] = available
-            return available if name == flag else values[name]
+    """Resolve plumbing dependencies on demand; required failures propagate."""
     if name in _LAZY_MODULES:
         value = importlib.import_module(_LAZY_MODULES[name])
     elif name in _LAZY_FROM:
@@ -995,6 +978,155 @@ def _exact_out(obj):
     return obj
 
 
+class QuantumChannelModel:
+    """One ensemble member: a Pisot-family quantum channel, not an estimator.
+
+    The channel is the pair (H_family, U(t)) where H_family is the
+    Hermitian symmetric part of the family's Pisot companion matrix
+    (``kellogg.quantum_tensor.Observables.family_hamiltonian``) and
+    U(t) = exp(-iHt/ℏ) is its exact Schrödinger propagator
+    (``ComplexMatrix.matrix_exp_unitary``, the same convention
+    ``toe.bridge.predict_trajectory`` uses).
+
+    Calibration on an observed (X, y) cohort produces two class reference
+    rays: each observed row is encoded via ``encode_data_to_state``,
+    evolved through the channel, and the per-class coherent centroid ray
+    is stored. Prediction is quantum state discrimination — the Born
+    overlap |⟨ψ'|φ_class⟩|² between the evolved input and each reference
+    ray, normalized (a Helstrom-type two-state measurement). There are no
+    learned weights, no predict_proba, no vendor algorithm underneath.
+    """
+
+    ARTIFACT_VERSION = "toe.engine.qchannel/v1"
+
+    def __init__(
+        self,
+        name: str,
+        family: str,
+        dim: int,
+        hbar: float = 1.0,
+        evolution_time: float = 1.0,
+    ) -> None:
+        self.name = name
+        self.family = family
+        self.dim = int(dim)
+        self.hbar = float(hbar)
+        self.evolution_time = float(evolution_time)
+        self.hamiltonian = Observables.family_hamiltonian(family, self.dim)
+        self.propagator = ComplexMatrix.matrix_exp_unitary(
+            self.hamiltonian, self.evolution_time / self.hbar
+        )
+        self.churn_state: QuantumState | None = None
+        self.retain_state: QuantumState | None = None
+        self.cv_score = None
+        self.n_reference = {"churn": 0, "retain": 0}
+
+    @property
+    def calibrated(self) -> bool:
+        return self.churn_state is not None and self.retain_state is not None
+
+    def calibrate(self, states: list, labels) -> None:
+        """Derive the class reference rays from observed encoded rows."""
+        churn, retain = [], []
+        for state, label in zip(states, labels):
+            evolved = self.evolve(state)
+            (churn if int(label) == 1 else retain).append(evolved)
+        if not churn or not retain:
+            raise ValueError("channel calibration requires both classes present")
+        self.churn_state = _coherent_centroid(churn, self.dim)
+        self.retain_state = _coherent_centroid(retain, self.dim)
+        self.n_reference = {"churn": len(churn), "retain": len(retain)}
+
+    def evolve(self, state: QuantumState) -> QuantumState:
+        """Schrödinger evolution |ψ'⟩ = U(t)|ψ⟩ through this channel."""
+        return state.apply_unitary(self.propagator)
+
+    def discriminate(self, state: QuantumState) -> dict | None:
+        """Born-overlap discrimination of ``state`` between the class rays.
+
+        P(churn) = F(ev, churn) / (F(ev, churn) + F(ev, retain)) where
+        F = |⟨·|·⟩|² is the pure-state fidelity — the Born probability of
+        the Helstrom-type projective measurement distinguishing the two
+        reference rays. Returns None when the channel is uncalibrated or
+        the state is orthogonal to both references (unmeasurable — an
+        honest non-answer, not a fabricated 0.5).
+        """
+        if not self.calibrated or state.dim != self.dim:
+            return None
+        evolved = self.evolve(state)
+        p_churn = evolved.fidelity(self.churn_state)
+        p_retain = evolved.fidelity(self.retain_state)
+        denom = p_churn + p_retain
+        if denom <= 0.0:
+            return None
+        return {
+            "score": p_churn / denom,
+            "churn_overlap": p_churn,
+            "retain_overlap": p_retain,
+            "margin": abs(p_churn - p_retain) / denom,
+            "evolved": evolved,
+        }
+
+    def to_artifact(self) -> dict:
+        """Serializable channel state — amplitudes only, no estimators."""
+        return {
+            "version": self.ARTIFACT_VERSION,
+            "name": self.name,
+            "family": self.family,
+            "dim": self.dim,
+            "hbar": self.hbar,
+            "evolution_time": self.evolution_time,
+            "n_reference": dict(self.n_reference),
+            "churn": (
+                [[a.re, a.im] for a in self.churn_state.amplitudes]
+                if self.churn_state is not None
+                else None
+            ),
+            "retain": (
+                [[a.re, a.im] for a in self.retain_state.amplitudes]
+                if self.retain_state is not None
+                else None
+            ),
+        }
+
+    @classmethod
+    def from_artifact(cls, artifact: dict) -> "QuantumChannelModel":
+        channel = cls(
+            name=artifact["name"],
+            family=artifact["family"],
+            dim=int(artifact["dim"]),
+            hbar=float(artifact["hbar"]),
+            evolution_time=float(artifact["evolution_time"]),
+        )
+        for attr, key in (("churn_state", "churn"), ("retain_state", "retain")):
+            rows = artifact.get(key)
+            if rows is not None:
+                setattr(
+                    channel,
+                    attr,
+                    QuantumState(
+                        channel.dim,
+                        [Complex(r_part, i_part) for r_part, i_part in rows],
+                        normalize=True,
+                    ),
+                )
+        channel.n_reference = dict(artifact.get("n_reference", channel.n_reference))
+        return channel
+
+
+def _coherent_centroid(states: list, dim: int) -> QuantumState:
+    """Normalized coherent centroid ray |φ⟩ ∝ Σ_i |ψ_i⟩ of an ensemble.
+
+    This is the ensemble's coherent average (a ray), distinct from the
+    incoherent mixture ρ = Σ|ψ_i⟩⟨ψ_i|/N used for entropy measures.
+    """
+    acc = [Complex.ZERO] * dim
+    for state in states:
+        for i, amp in enumerate(state.amplitudes):
+            acc[i] = acc[i].add(amp)
+    return QuantumState(dim, acc, normalize=True)
+
+
 class PredictiveEngine:
     """
     Prediction engine over the TOE algebraic substrate — ONE application of it.
@@ -1004,14 +1136,23 @@ class PredictiveEngine:
     is the DataFrame the engine was demonstrated on. The computation beneath
     is domain-general substrate math, not an HR product:
 
-    - State vectors in Hilbert space for entity risk representation
-    - Born rule probability amplitudes for ensemble predictions
-    - Heisenberg uncertainty principle for confidence intervals
-    - Quantum decoherence measures for model agreement
-    - Schrodinger time evolution for risk trajectory forecasting
-    - Path integral formulation for intervention point identification
-    - von Neumann entropy for data quality assessment
-    - Quantum Fisher information for confidence calibration
+    - State preparation: ``kellogg.quantum_tensor.encode_data_to_state``
+      maps indicator vectors to normalized rays in H_dim.
+    - Evolution: Pisot-family Hamiltonians (``Observables.family_hamiltonian``)
+      propagated by ``ComplexMatrix.matrix_exp_unitary`` — exact Schrödinger
+      dynamics, the same convention as ``toe.bridge.predict_trajectory``.
+    - Measurement: Born-rule probabilities |⟨·|·⟩|² and expectation values
+      of real Hermitian observables (position, momentum, number, energy).
+    - Ensemble: each configured "model" is a ``QuantumChannelModel`` — a
+      distinct measurement channel, not an estimator. Ensemble aggregation
+      is the mixed-state Born rule over per-channel probabilities weighted
+      by quantum Fisher information.
+    - Uncertainty: quantum Fisher information (Cramér–Rao bound),
+      Helstrom discrimination margins, von Neumann entropy of the mixed
+      cohort density operator, and ``model_agreement_from_ensemble``.
+    - Trend: Ehrenfest drift — d⟨x⟩/dt measured by exact propagation.
+      (The raw momentum expectation of a real ray is identically zero;
+      the earlier inline implementation computed exactly that zero.)
 
     Not part of the live mining path (TypeScript owns that). The
     mining-facing TOE coordinator is toe/system.py.
@@ -1024,37 +1165,33 @@ class PredictiveEngine:
         Args:
             config (dict): Configuration dictionary with model parameters
         """
-
         self.config = config if config else self._default_config()
-
         self._validate_config()
-
         self._initialize_components()
-
         self.models = self._load_or_train_models()
 
     def _default_config(self) -> dict:
-        """Return default configuration with quantum-mathematical parameters."""
+        """Return default configuration.
 
+        Factor weights are NOT configurable: they are derived from the
+        substrate (normalized |⟨A_f⟩| via causal_factor_ranking). The
+        estimator-shaped keys (n_estimators, max_depth, learning_rate,
+        test_size) are retained only for config-schema compatibility —
+        the quantum channels have no hyperparameters to set; validation
+        still requires the historical required keys so existing callers
+        keep their contract.
+        """
         return {
             "model_names": ["rf", "xgb", "lgbm", "gb"],
             "model_dir": "models/",
+            # Legacy estimator-schema keys — validated, never consumed.
             "n_estimators": 100,
             "max_depth": 8,
             "learning_rate": 0.005,
             "test_size": 0.2,
             "cv_folds": 3,
-            "performance_weight": 0.30,
-            "behavioral_weight": 0.25,
-            "engagement_weight": 0.20,
-            "career_weight": 0.15,
-            "external_weight": 0.10,
             "feature_dim": 10,
-            "max_tfidf_features": 100,
             "selected_model": "rf",
-            "optimization_iterations": 3,
-            "optimization_folds": 2,
-            "optimization_method": "bayes",
             "imputation_strategy": "median",
             "ensemble_selection_method": "weighted_average",
             # Quantum-mathematical parameters (natural units, hbar = 1)
@@ -1064,6 +1201,7 @@ class PredictiveEngine:
             "decoherence_rate": 0.1,
             "path_samples": 100,
             "hilbert_dim": 10,
+            "evolution_time": 1.0,
             # Extended algebraic family parameters
             "algebraic_family": "auto",  # auto = detect recurrence signature from data
             "decimal_precision": 50,
@@ -1073,225 +1211,271 @@ class PredictiveEngine:
 
     def _validate_config(self) -> None:
         """Validate configuration parameters"""
-
         required_keys = ["model_names", "model_dir", "n_estimators", "max_depth"]
-
         missing_keys = [key for key in required_keys if key not in self.config]
-
         if missing_keys:
-
             raise ValueError(f"Missing required config keys: {missing_keys}")
 
     def _initialize_components(self) -> None:
-        """Initialize all component objects with error handling"""
+        """Initialize plumbing components and substrate handles.
 
+        The imputer (exact-median) and the lexicon sentiment counter are
+        honest classical preprocessing — they condition input data and are
+        never presented as quantum inference. Every scored quantity comes
+        from the kellogg.quantum_tensor substrate.
+        """
         try:
-
-            self.scaler = _dependencies.StandardScaler()
-
             self.imputer = _dependencies.SimpleImputer(
                 strategy=self.config.get("imputation_strategy", "median")
             )
-
             try:
-
                 self.sentiment_analyzer = _dependencies.SentimentIntensityAnalyzer()
-
-            except LookupError:
-
-                # vader_lexicon is not bundled with nltk — fetch it, and if
-                # that is impossible (offline CI/deploy), degrade honestly:
-                # sentiment features become 0.0 instead of killing the engine.
-                try:
-
-                    import nltk
-
-                    nltk.download("vader_lexicon", quiet=True)
-
-                    self.sentiment_analyzer = _dependencies.SentimentIntensityAnalyzer()
-
-                except Exception:
-
-                    logging.warning("vader_lexicon unavailable — sentiment analysis disabled")
-
-                    self.sentiment_analyzer = None
-
-            self.tfidf_vectorizer = _dependencies.TfidfVectorizer(
-                max_features=self.config.get("max_tfidf_features", 100),
-                stop_words="english",
-                tfidf_mode=self.config.get("tfidf_mode", "exact_linear"),
-            )
-
+            except Exception:
+                logging.warning("sentiment analyzer unavailable — sentiment disabled")
+                self.sentiment_analyzer = None
             self.feature_engineering_methods = {}
 
-            # Quantum-mathematical state caches
+            # Channels dict is populated by _load_or_train_models() after
+            # component init; _channel_dim() reads it during calibration.
+            self.models = {}
 
-            self._quantum_state_cache = {}
-
-            self._density_matrix_cache = None
+            # Quantum measurement caches — rays, density operators, and
+            # forecast trajectories from the most recent pipeline pass.
+            self._last_evolved_states = []
+            self._last_encoded_state = None
+            self._forecast_states = []
 
             # Real-data contract state. The engine never fabricates a
-            # training set: a model is fitted only on observed, labeled
-            # rows supplied through ingest_training_data(), config
+            # training set: a channel is calibrated only on observed,
+            # labeled rows supplied through ingest_training_data(), config
             # ("training_data" / "training_data_path"), or the persisted
             # training_data.npz in model_dir. With none of these, the
             # engine stays honestly untrained and predictions report
             # available=False.
-
             self._training_data = None
-
             self._training_provenance = None
-
             self._model_cv_scores = {}
-
             self._models_trained = False
 
             # Extended algebraic family substrate — the Pisot spectrum
             # behind the engine's evolution and measurement operators.
-
             self.algebra = ExtendedAlgebraicFamily(
                 precision=self.config.get("decimal_precision", 50)
             )
-
             self.formulations = AlgebraicFormulations(self.algebra)
-
         except Exception as e:
-
             logging.error(f"Component initialization failed: {e}")
-
             raise
 
+    # ------------------------------------------------------------------
+    # Quantum channel construction / calibration
+    # ------------------------------------------------------------------
+
+    def _channel_family(self, model_name: str, index: int) -> str:
+        """Assign a Pisot family to a channel label.
+
+        A label that already names a family uses it directly; legacy
+        estimator names (rf/xgb/lgbm/gb) are mapped cyclically onto the
+        family spectrum — labels, not impersonated vendor algorithms.
+        """
+        if model_name in ExtendedAlgebraicFamily.FAMILY_NAMES:
+            return model_name
+        return ExtendedAlgebraicFamily.FAMILY_NAMES[
+            index % len(ExtendedAlgebraicFamily.FAMILY_NAMES)
+        ]
+
+    def _encoding_dim(self, n_values: int = 0) -> int:
+        """Hilbert dimension for a standalone encoding (no truncation)."""
+        return max(int(self.config.get("hilbert_dim", 10)), int(n_values), 3)
+
+    def _channel_dim(self) -> int:
+        """Shared Hilbert dimension across channels.
+
+        Determined at calibration time as max(hilbert_dim, feature_dim).
+        Indicator encodings map through encode_data_to_state's declared
+        pad/truncate contract to this dimension.
+        """
+        if self.models:
+            return max(channel.dim for channel in self.models.values())
+        return self._encoding_dim(self._feature_dim())
+
+    def _build_channel(self, model_name: str, index: int) -> QuantumChannelModel:
+        return QuantumChannelModel(
+            name=model_name,
+            family=self._channel_family(model_name, index),
+            dim=self._channel_dim(),
+            hbar=self.config.get("hbar", 1.0),
+            evolution_time=self.config.get("evolution_time", 1.0),
+        )
+
+    def _encode_rows(self, X, dim: int) -> list:
+        """Encode each observed row to a normalized ray via the substrate."""
+        return [
+            encode_data_to_state(list(np.asarray(row, dtype=float)), dim=dim, normalize=True)
+            for row in X
+        ]
+
+    def _encode_indicators(self, indicators: dict) -> QuantumState | None:
+        """Encode the indicator dict to one normalized ray.
+
+        The encoding dimension covers every indicator amplitude — no
+        truncation — so standalone analyses (forecast, factor ranking,
+        time sensitivity) see the whole indicator vector. Channel
+        discrimination separately encodes to the shared channel dim.
+        """
+        features = self._prepare_input_features(indicators)
+        if not len(features):
+            return None
+        dim = self._encoding_dim(len(features))
+        state = encode_data_to_state([float(v) for v in features], dim=dim, normalize=True)
+        self._last_encoded_state = state
+        return state
+
+    def _series_state(self, values) -> QuantumState | None:
+        """Encode a 1-D series to a normalized ray (dim = len, no truncation)."""
+        v = [float(x) for x in values]
+        if len(v) < 2:
+            return None
+        return encode_data_to_state(v, dim=self._encoding_dim(len(v)), normalize=True)
+
+    def _series_expectation(self, values, observable: ComplexMatrix) -> float | None:
+        """⟨ψ|A|ψ⟩ for the encoded series; None when no state exists."""
+        state = self._series_state(values)
+        if state is None or observable.rows != state.dim:
+            return None
+        return float(state.expectation(observable))
+
+    def _ehrenfest_drift(self, state: QuantumState, family: str = "golden") -> float:
+        """d⟨x⟩/dt measured by exact propagation: (⟨x⟩_t − ⟨x⟩_0)/t.
+
+        Ehrenfest's theorem — the substrate-realized velocity of the
+        state's position centroid. The momentum expectation of a real ray
+        is identically zero; the drift is not.
+        """
+        dt = float(self.config.get("evolution_time", 1.0))
+        hbar = self.config.get("hbar", 1.0)
+        H = Observables.family_hamiltonian(family, state.dim)
+        U = ComplexMatrix.matrix_exp_unitary(H, dt / hbar)
+        x = Observables.position(state.dim)
+        return (state.apply_unitary(U).expectation(x) - state.expectation(x)) / dt
+
+    # ------------------------------------------------------------------
+    # Channel lifecycle (formerly "model" lifecycle — same contract)
+    # ------------------------------------------------------------------
+
     def _load_or_train_models(self) -> dict:
-        """Load persisted models; fit missing ones on real observed data.
+        """Load persisted channels; calibrate missing ones on real observed data.
 
         Real-data contract: the engine never fabricates a training set.
-        A model absent from disk is fitted only when real labeled data is
-        available — supplied through ``config['training_data']``,
+        A channel absent from disk is calibrated only when real labeled
+        data is available — supplied through ``config['training_data']``,
         ``config['training_data_path']``, ``ingest_training_data()``, or a
         persisted ``training_data.npz`` in ``model_dir``. With no real data
         the engine stays honestly untrained and prediction paths report
         ``available: False`` — no synthetic records are ever substituted.
+
+        Legacy ``*.joblib`` estimator artifacts are deliberately ignored:
+        they encode fitted classical weights, which cannot be promoted to
+        a quantum channel — the channel recalibrates or stays untrained.
         """
-
         try:
-
             model_dir = self.config["model_dir"]
-
             os.makedirs(model_dir, exist_ok=True)
-
             models = {}
-
             missing = []
-
-            for model_name in self.config["model_names"]:
-
-                model_path = os.path.join(model_dir, f"{model_name}.joblib")
-
-                if os.path.exists(model_path):
-
-                    models[model_name] = _dependencies.joblib.load(model_path)
-
+            for index, model_name in enumerate(self.config["model_names"]):
+                channel = self._load_channel_artifact(model_name)
+                if channel is not None:
+                    models[model_name] = channel
                     self._model_cv_scores[model_name] = self._load_training_metrics(model_name)
-
-                    logging.info(f"Loaded model: {model_name}")
-
+                    logging.info(f"Loaded quantum channel: {model_name}")
                 else:
-
-                    missing.append(model_name)
-
+                    missing.append((index, model_name))
             if missing:
-
                 training = self._real_training_data()
-
                 if training is None:
-
                     logging.warning(
-                        "PredictiveEngine: no observed training data — models "
-                        "%s remain untrained; predictions report available=False.",
-                        missing,
+                        "PredictiveEngine: no observed training data — channels "
+                        "%s remain uncalibrated; predictions report available=False.",
+                        [name for _, name in missing],
                     )
-
                 else:
-
-                    for model_name in missing:
-
-                        models[model_name] = self._train_model(model_name, training)
-
+                    for index, model_name in missing:
+                        models[model_name] = self._train_channel(model_name, index, training)
             self._models_trained = bool(models)
-
             return models
-
         except Exception as e:
-
             logging.error(f"Model loading/training failed: {e}")
-
             raise
 
-    def _train_model(self, model_name: str, training=None):
-        """Fit a single model on a validated observed (X, y) matrix.
+    def _channel_artifact_path(self, model_name: str) -> str:
+        return os.path.join(self.config["model_dir"], f"{model_name}.qchannel.npz")
 
-        Fails closed: raises ValueError when no real labeled data is
-        available. Never trains on generated or placeholder records.
-        """
-
+    def _load_channel_artifact(self, model_name: str) -> QuantumChannelModel | None:
+        path = self._channel_artifact_path(model_name)
+        if not os.path.exists(path):
+            legacy = os.path.join(self.config["model_dir"], f"{model_name}.joblib")
+            if os.path.exists(legacy):
+                logging.warning(
+                    "Ignoring legacy estimator artifact %s — classical fitted "
+                    "weights cannot be promoted to a quantum channel.",
+                    legacy,
+                )
+            return None
         try:
+            blob = np.load(path, allow_pickle=False)
+            import json as _json
 
+            artifact = _json.loads(str(blob["artifact"].item()))
+            channel = QuantumChannelModel.from_artifact(artifact)
+            return channel
+        except Exception as e:
+            logging.warning(f"Channel artifact {path} unreadable: {e}")
+            return None
+
+    def _persist_channel(self, channel: QuantumChannelModel) -> None:
+        import json as _json
+
+        np.savez(
+            self._channel_artifact_path(channel.name),
+            artifact=np.asarray(_json.dumps(channel.to_artifact())),
+        )
+
+    def _train_channel(self, model_name: str, index: int, training) -> QuantumChannelModel:
+        """Calibrate one channel's class reference rays on observed data."""
+        X, y = training
+        channel = self._build_channel(model_name, index)
+        channel.calibrate(self._encode_rows(X, channel.dim), y)
+        cv_score = self._measure_cv_score(channel, X, y)
+        channel.cv_score = cv_score
+        self._model_cv_scores[model_name] = cv_score
+        self._persist_channel(channel)
+        self._persist_training_metrics(model_name, cv_score)
+        logging.info(f"Calibrated and saved quantum channel: {model_name}")
+        return channel
+
+    def _train_model(self, model_name: str, training=None):
+        """Calibrate the channel registered as ``model_name``.
+
+        Fails closed: raises ValueError when the name is unconfigured or
+        no real labeled data is available. Never calibrates on generated
+        or placeholder records.
+        """
+        try:
+            if model_name not in self.config["model_names"]:
+                raise ValueError(f"Unknown model name: {model_name}")
             if training is None:
-
                 training = self._real_training_data()
-
             if training is None:
-
                 raise ValueError(
                     f"Cannot train '{model_name}': no observed training data. "
                     "Supply config['training_data'], config['training_data_path'], "
                     "or call ingest_training_data()."
                 )
-
-            X, y = training
-
-            n_estimators = self.config["n_estimators"]
-
-            max_depth = self.config["max_depth"]
-
-            learning_rate = self.config.get("learning_rate", 0.01)
-
-            if model_name not in {"rf", "xgb", "lgbm", "gb"}:
-                raise ValueError(f"Unknown model name: {model_name}")
-            # The four historical labels are intentionally collapsed to the
-            # one canonical exact-linear kernel.  Their vendor algorithms are
-            # not silently impersonated.
-            model = _dependencies.exact_linear(
-                n_estimators=n_estimators,
-                max_depth=max_depth,
-                learning_rate=learning_rate,
-                random_state=42,
-                legacy_name=model_name,
-                tensor_mode=self.config.get("tensor_mode", "center_only"),
-            )
-
-            model.fit(X, y)
-
-            # Measured quality gate: cross-validate on the real matrix.
-
-            cv_score = self._measure_cv_score(model, X, y)
-
-            self._model_cv_scores[model_name] = cv_score
-
-            model_path = os.path.join(self.config["model_dir"], f"{model_name}.joblib")
-
-            _dependencies.joblib.dump(model, model_path)
-
-            self._persist_training_metrics(model_name, cv_score)
-
-            logging.info(f"Trained and saved model: {model_name}")
-
-            return model
-
+            index = self.config["model_names"].index(model_name)
+            return self._train_channel(model_name, index, training)
         except Exception as e:
-
             logging.error(f"Error training model {model_name}: {e}")
-
             raise
 
     # ------------------------------------------------------------------
@@ -1299,7 +1483,7 @@ class PredictiveEngine:
     # ------------------------------------------------------------------
 
     def ingest_training_data(self, X, y, source: str = "runtime_ingestion") -> dict:
-        """Register real observed labeled data for model fitting.
+        """Register real observed labeled data for channel calibration.
 
         ``X`` is a 2-D numeric feature matrix; ``y`` the observed binary
         labels. The matrix is validated, persisted to
@@ -1308,13 +1492,9 @@ class PredictiveEngine:
 
         Returns the provenance record. Raises ValueError on invalid input.
         """
-
         Xv, yv = self._validate_training_matrix(X, y)
-
         fingerprint = self._training_fingerprint(Xv, yv)
-
         self._training_data = (Xv, yv)
-
         self._training_provenance = {
             "source": source,
             "fingerprint": fingerprint,
@@ -1322,53 +1502,44 @@ class PredictiveEngine:
             "feature_dim": int(Xv.shape[1]),
             "ingested_at": datetime.now(timezone.utc).isoformat(),
         }
-
         try:
-
             os.makedirs(self.config["model_dir"], exist_ok=True)
-
             np.savez(
                 os.path.join(self.config["model_dir"], "training_data.npz"),
                 X=Xv,
                 y=yv,
             )
-
         except Exception as e:
-
             logging.warning(f"Could not persist ingested training data: {e}")
-
         return dict(self._training_provenance)
 
     def fit_models(self) -> dict:
-        """Fit all configured models on the currently observed data.
+        """Calibrate all configured channels on the currently observed data.
 
-        Returns the models dict. Raises ValueError if no real labeled
+        Returns the channels dict. Raises ValueError if no real labeled
         training matrix is available.
         """
-
         training = self._real_training_data()
-
         if training is None:
-
             raise ValueError(
-                "fit_models: no observed training data — refusing to fit on " "fabricated records."
+                "fit_models: no observed training data — refusing to calibrate on "
+                "fabricated records."
             )
-
         self.models = {}
-
-        for model_name in self.config["model_names"]:
-
-            self.models[model_name] = self._train_model(model_name, training)
-
+        for index, model_name in enumerate(self.config["model_names"]):
+            self.models[model_name] = self._train_channel(model_name, index, training)
         self._models_trained = True
-
         return self.models
 
     def model_status(self) -> dict:
-        """Honest production status: which models are fitted, on what data."""
-
+        """Honest production status: which channels are calibrated, on what data."""
         return {
             "trained": self._models_trained,
+            "model_kind": "quantum_channel",
+            "substrate": "kellogg.quantum_tensor family-hamiltonian channels",
+            "channel_families": {
+                name: getattr(channel, "family", None) for name, channel in self.models.items()
+            },
             "available_models": sorted(self.models.keys()),
             "missing_models": sorted(set(self.config["model_names"]) - set(self.models.keys())),
             "cv_scores": dict(self._model_cv_scores),
@@ -1376,35 +1547,22 @@ class PredictiveEngine:
         }
 
     def _validate_training_matrix(self, X, y):
-        """Validate an observed (X, y) pair for fitting."""
-
+        """Validate an observed (X, y) pair for calibration."""
         Xv = np.asarray(X, dtype=float)
-
         yv = np.asarray(y).ravel()
-
         if Xv.ndim != 2:
-
             raise ValueError("training features must be a 2-D matrix")
-
         if Xv.shape[0] != yv.shape[0]:
-
             raise ValueError("X and y row counts differ")
-
         if Xv.shape[0] < int(self.config.get("min_training_samples", 10)):
-
             raise ValueError(
                 f"insufficient training samples: {Xv.shape[0]} "
                 f"(minimum {self.config.get('min_training_samples', 10)})"
             )
-
         if not np.isfinite(Xv).all():
-
             raise ValueError("training features contain NaN or infinite values")
-
         if len(np.unique(yv)) < 2:
-
             raise ValueError("training labels must contain at least two classes")
-
         return Xv, yv
 
     def _real_training_data(self):
@@ -1413,188 +1571,154 @@ class PredictiveEngine:
         Order: ingested data -> config['training_data'] ->
         config['training_data_path'] -> persisted model_dir/training_data.npz.
         """
-
         if self._training_data is not None:
-
             return self._training_data
-
         try:
-
             inline = self.config.get("training_data")
-
             if inline is not None:
-
                 X, y = inline
-
                 return self._validate_training_matrix(X, y)
-
             path = self.config.get("training_data_path")
-
             if path:
-
                 loaded = self._load_training_path(path)
-
                 if loaded is not None:
-
                     return loaded
-
             npz_path = os.path.join(self.config["model_dir"], "training_data.npz")
-
             if os.path.exists(npz_path):
-
                 blob = np.load(npz_path)
-
                 return self._validate_training_matrix(blob["X"], blob["y"])
-
         except Exception as e:
-
             logging.warning(f"Observed training data rejected: {e}")
-
         return None
 
     def _load_training_path(self, path: str):
         """Load a declared training dataset (.npz / .csv / .joblib)."""
-
         if not os.path.exists(path):
-
             logging.warning(f"training_data_path does not exist: {path}")
-
             return None
-
         if path.endswith(".npz"):
-
             blob = np.load(path)
-
             return self._validate_training_matrix(blob["X"], blob["y"])
-
         if path.endswith(".csv"):
-
             frame = _dependencies.pd.read_csv(path)
-
             label_col = self.config.get("label_column")
-
             if label_col is None or label_col not in frame.columns:
-
                 raise ValueError(
                     "csv training data requires config['label_column'] naming "
                     "the observed label column"
                 )
-
             return self._validate_training_matrix(
                 frame.drop(columns=[label_col]).values, frame[label_col].values
             )
-
         blob = _dependencies.joblib.load(path)
-
         X, y = blob if isinstance(blob, tuple) else (blob["X"], blob["y"])
-
         return self._validate_training_matrix(X, y)
 
     def _training_fingerprint(self, X, y) -> str:
         """sha256 fingerprint of the observed matrix — provenance anchor."""
-
         import hashlib
 
         h = hashlib.sha256()
-
         h.update(np.ascontiguousarray(X).tobytes())
-
         h.update(np.ascontiguousarray(y).tobytes())
-
         return h.hexdigest()
 
-    def _measure_cv_score(self, model, X, y):
-        """Measured cross-validation accuracy on real data, or None.
+    def _measure_cv_score(self, channel: QuantumChannelModel, X, y):
+        """Measured deterministic k-fold discrimination accuracy, or None.
 
-        Returns None (honest 'unmeasured') when the matrix cannot support
-        the requested folds — never a fabricated score.
+        Each fold calibrates a fresh channel on the remaining rows and
+        scores the held-out rows by Born-overlap verdict. The fold
+        partition is a deterministic stratified round-robin — no RNG.
+        Returns None (honest 'unmeasured') when the cohort cannot support
+        the requested folds.
         """
-
         try:
-
-            min_class = min(np.bincount(np.asarray(y, dtype=int)))
-
-            folds = min(int(self.config.get("cv_folds", 3)), int(min_class))
-
+            yv = np.asarray(y, dtype=int)
+            min_class = int(min(np.bincount(yv)))
+            folds = min(int(self.config.get("cv_folds", 3)), min_class)
             if folds < 2:
-
                 return None
-
-            scores = _dependencies.cross_val_score(model, X, y, cv=folds)
-
-            return float(np.mean(scores))
-
+            n = X.shape[0]
+            # Stratified deterministic partition: class-major ordering then
+            # round-robin, so every fold sees both classes.
+            order = sorted(range(n), key=lambda i: (yv[i], i))
+            fold_of = {idx: pos % folds for pos, idx in enumerate(order)}
+            correct = 0
+            total = 0
+            for f in range(folds):
+                train_idx = [i for i in range(n) if fold_of[i] != f]
+                test_idx = [i for i in range(n) if fold_of[i] == f]
+                fold_channel = QuantumChannelModel(
+                    name=f"{channel.name}__fold{f}",
+                    family=channel.family,
+                    dim=channel.dim,
+                    hbar=channel.hbar,
+                    evolution_time=channel.evolution_time,
+                )
+                fold_channel.calibrate(self._encode_rows(X[train_idx], channel.dim), yv[train_idx])
+                for i in test_idx:
+                    res = fold_channel.discriminate(
+                        encode_data_to_state(
+                            list(np.asarray(X[i], dtype=float)),
+                            dim=channel.dim,
+                            normalize=True,
+                        )
+                    )
+                    if res is None:
+                        continue
+                    correct += int((res["score"] > 0.5) == bool(yv[i]))
+                    total += 1
+            return (correct / total) if total else None
         except Exception as e:
-
             logging.warning(f"CV measurement failed — score unmeasured: {e}")
-
             return None
 
     def _persist_training_metrics(self, model_name: str, cv_score) -> None:
         """Persist provenance + measured quality alongside the artifact."""
-
         import json
 
         metrics = {
             "model": model_name,
             "cv_score": cv_score,
             "cv_source": "measured" if cv_score is not None else "unmeasured",
+            "cv_method": "deterministic_stratified_born_discrimination",
             "trained_at": datetime.now(timezone.utc).isoformat(),
             "training_provenance": self._training_provenance,
         }
-
         try:
-
             metrics_path = os.path.join(self.config["model_dir"], f"{model_name}.metrics.json")
-
             with open(metrics_path, "w") as fh:
-
                 json.dump(metrics, fh, indent=2)
-
         except Exception as e:
-
             logging.warning(f"Could not persist model metrics: {e}")
 
     def _load_training_metrics(self, model_name: str):
         """Load the persisted CV score for a disk artifact, or None."""
-
         import json
 
         metrics_path = os.path.join(self.config["model_dir"], f"{model_name}.metrics.json")
-
         if not os.path.exists(metrics_path):
-
             return None
-
         try:
-
             with open(metrics_path) as fh:
-
                 return json.load(fh).get("cv_score")
-
         except Exception:
-
             return None
 
     def _feature_dim(self) -> int:
         """The feature dimension the observed cohort was fitted on."""
-
         training = self._real_training_data()
-
         if training is not None:
-
             return int(training[0].shape[1])
-
         return int(self.config.get("feature_dim", 10))
 
     def _untrained_payload(self) -> dict:
         """Honest unavailable response — no fabricated predictions."""
-
         return {
             "available": False,
             "truth_class": "untrained_models",
             "reason": (
-                "no fitted models — the engine requires real observed "
+                "no calibrated channels — the engine requires real observed "
                 "training data (config['training_data'], "
                 "config['training_data_path'], or ingest_training_data())"
             ),
@@ -1602,22 +1726,18 @@ class PredictiveEngine:
         }
 
     def _get_model_by_name(self, name: str):
-        """Retrieve a model by name from the models dictionary."""
-
+        """Retrieve a channel by name from the channels dictionary."""
         if name not in self.models:
-
             raise ValueError(f"Model '{name}' not found. Available: {list(self.models.keys())}")
-
         return self.models[name]
 
     def add_feature_engineering(self, name: str, method) -> None:
         """Register a custom feature engineering method."""
-
         self.feature_engineering_methods[name] = method
 
     def predict_churn_risk(self, data: _dependencies.pd.DataFrame) -> dict:
         """
-        Predict employee churn risk using ensemble approach.
+        Predict churn risk via the quantum channel ensemble.
 
         Args:
             data (pd.DataFrame): Employee data with required features
@@ -1625,164 +1745,99 @@ class PredictiveEngine:
         Returns:
             dict: Risk profile with predictions and explanations
         """
-
         try:
-
-            # Input validation
-
             if not isinstance(data, _dependencies.pd.DataFrame):
-
                 raise ValueError("Input must be a pandas DataFrame")
-
-            # Process data in chunks if large
-
             if len(data) > 10000:
-
                 return self._process_large_dataset(data)
-
-            # Extract and preprocess features
-
             processed_data = self._preprocess_data(data)
-
             indicators = self._extract_risk_indicators(processed_data)
-
-            # Generate predictions
-
             ensemble_predictions = self._ensemble_predict(indicators)
-
-            # Generate final risk profile
-
             risk_profile = self._generate_risk_profile(ensemble_predictions, indicators)
-
             return risk_profile
-
         except Exception as e:
-
             logging.error(f"Churn prediction failed: {e}")
-
             raise
 
     def _process_large_dataset(self, data: _dependencies.pd.DataFrame) -> dict:
         """Process large datasets in chunks to optimize memory usage"""
-
         chunk_size = 5000
-
         predictions = []
-
         for i in range(0, len(data), chunk_size):
-
             chunk = data.iloc[i : i + chunk_size]
-
             chunk_prediction = self._process_chunk(chunk)
-
             predictions.append(chunk_prediction)
-
         return self._aggregate_predictions(predictions)
 
     def _process_chunk(self, chunk: _dependencies.pd.DataFrame) -> dict:
         """Process a single chunk of data through the prediction pipeline."""
-
         try:
-
             processed_chunk = self._preprocess_data(chunk)
-
             indicators = self._extract_risk_indicators(processed_chunk)
-
             ensemble_predictions = self._ensemble_predict(indicators)
-
             return self._generate_risk_profile(ensemble_predictions, indicators)
-
         except Exception as e:
-
             logging.error(f"Error processing chunk: {e}")
-
             raise
 
     def _aggregate_predictions(self, predictions: list) -> dict:
-        """
-        Aggregate chunk predictions using quantum superposition.
+        """Aggregate chunk predictions via Born-weighted superposition.
 
-        Combined risk state is the normalized superposition of chunk states.
-        Born rule: P = |sum of amplitudes|^2 / N
+        Each chunk score s_i is already a Born probability; the chunk's
+        amplitude is sqrt(s_i). The combined score is the mixed-state
+        Born mean Σ p_i s_i / Σ p_i of the superposed amplitudes.
         """
-
         try:
-
             if not predictions:
-
                 return {}
-
-            # Quantum superposition: combine all chunk risk scores as amplitudes
-
             risk_scores = [p["risk_score"]["score"] for p in predictions if "risk_score" in p]
-
+            risk_scores = [s for s in risk_scores if s is not None]
             confidences = [
-                p["risk_score"]["confidence_interval"] for p in predictions if "risk_score" in p
+                p["risk_score"]["confidence_interval"]
+                for p in predictions
+                if "risk_score" in p and p["risk_score"].get("confidence_interval") is not None
             ]
-
             if not risk_scores:
-
                 return {}
-
-            # Born rule: probability is squared magnitude of summed amplitudes
-
-            amplitudes = np.array(risk_scores, dtype=complex)
-
-            norm = np.sqrt(np.sum(np.abs(amplitudes) ** 2))
-
-            if norm > 0:
-
-                amplitudes = amplitudes / norm
-
-            combined_score = float(
-                np.sum(np.abs(amplitudes) ** 2 * risk_scores) / np.sum(np.abs(amplitudes) ** 2)
+            amplitudes = QuantumState.from_real_vector(
+                [math.sqrt(max(float(s), 0.0)) for s in risk_scores]
             )
-
+            probs = amplitudes.probabilities()
+            denom = sum(probs)
+            combined_score = (
+                sum(p * s for p, s in zip(probs, risk_scores)) / denom
+                if denom > 0
+                else float(np.mean(risk_scores))
+            )
             combined_confidence = float(np.mean(confidences)) if confidences else 0.0
-
-            # Aggregate key factors across chunks
-
             all_factors = {}
-
             for p in predictions:
-
                 for factor, weight in p.get("key_factors", []):
-
                     if factor in all_factors:
-
                         all_factors[factor] += weight
-
                     else:
-
                         all_factors[factor] = weight
-
             total_weight = sum(all_factors.values())
-
             if total_weight > 0:
-
                 all_factors = {k: v / total_weight for k, v in all_factors.items()}
-
             sorted_factors = sorted(all_factors.items(), key=lambda x: x[1], reverse=True)[:5]
-
             confidence_levels = [
                 p["confidence_level"] for p in predictions if "confidence_level" in p
             ]
-
             return {
                 "risk_score": {
                     "score": combined_score,
                     "confidence_interval": combined_confidence,
                     "probability": self._calculate_probability(combined_score),
                 },
-                "confidence_level": float(np.mean(confidence_levels)) if confidence_levels else 0.5,
+                "confidence_level": (
+                    float(np.mean(confidence_levels)) if confidence_levels else 0.5
+                ),
                 "key_factors": sorted_factors,
                 "num_chunks": len(predictions),
             }
-
         except Exception as e:
-
             logging.error(f"Error aggregating predictions: {e}")
-
             raise
 
     def _extract_risk_indicators(self, data: _dependencies.pd.DataFrame) -> dict:
@@ -1795,13 +1850,9 @@ class PredictiveEngine:
         - Communication sentiment analysis (quantum semantic states)
         - Career progression velocity (quantum momentum)
         """
-
         try:
-
             if not isinstance(data, _dependencies.pd.DataFrame):
-
                 raise ValueError("Input must be a pandas DataFrame for risk indicator extraction")
-
             indicators = {
                 "performance_metrics": self._extract_performance_metrics(data),
                 "behavioral_metrics": self._extract_behavioral_metrics(data),
@@ -1809,708 +1860,348 @@ class PredictiveEngine:
                 "career_metrics": self._extract_career_metrics(data),
                 "external_metrics": self._extract_external_metrics(data),
             }
-
-            # Apply custom feature engineering
-
             for method_name, method in self.feature_engineering_methods.items():
-
                 indicators[method_name] = method(data)
-
             return indicators
-
         except Exception as e:
-
             logging.error(f"Feature extraction failed: {e}")
-
             raise
 
     def _extract_performance_metrics(self, data: _dependencies.pd.DataFrame) -> dict:
         """Extract enhanced performance metrics with trends and patterns"""
-
         metrics = {}
-
         if "performance_score" in data.columns:
-
             metrics["trend"] = self._calculate_trend(data["performance_score"])
-
             metrics["volatility"] = self._calculate_volatility(data["performance_score"])
-
             metrics["relative_performance"] = self._calculate_relative_performance(data)
-
         return metrics
 
     def _calculate_trend(self, series: _dependencies.pd.Series) -> float:
+        """Trend = Ehrenfest drift d⟨x⟩/dt of the encoded series (first principles).
+
+        The series is encoded to a normalized ray, then propagated under the
+        golden-family Hamiltonian for one evolution step; the drift of the
+        position expectation ⟨x̂⟩ is the measured trend. Positive drift =
+        rising series values toward higher basis index.
         """
-        Calculate trend using quantum momentum operator (first principles).
-
-        The discrete momentum operator is: p_hat * psi(n) = -i*hbar*[psi(n+1) - psi(n-1)] / (2*dx)
-        The trend is the expectation value: <p> = <psi|p_hat|psi>
-
-        A positive <p> indicates upward momentum (improving performance),
-        negative <p> indicates downward momentum (declining performance).
-        """
-
         try:
-
             values = series.dropna().values.astype(float)
-
-            if len(values) < 2:
-
+            state = self._series_state(values)
+            if state is None:
                 return 0.0
-
-            hbar = self.config.get("hbar", 1.0)
-
-            # Normalize to create a wave-like state
-
-            mean_val = np.mean(values)
-
-            std_val = np.std(values)
-
-            if std_val == 0:
-
-                return 0.0
-
-            # Wavefunction: psi(n) = normalized values as probability amplitudes
-
-            psi = (values - mean_val) / std_val
-
-            # Normalize so that sum(|psi|^2) = 1
-
-            norm = np.sqrt(np.sum(np.abs(psi) ** 2))
-
-            if norm == 0:
-
-                return 0.0
-
-            psi = psi / norm
-
-            # Apply discrete momentum operator: p_hat*psi(n) = -i*hbar*[psi(n+1) - psi(n-1)] / 2
-
-            p_psi = np.zeros_like(psi, dtype=complex)
-
-            for n in range(len(psi)):
-
-                psi_plus = psi[n + 1] if n + 1 < len(psi) else psi[n]
-
-                psi_minus = psi[n - 1] if n - 1 >= 0 else psi[n]
-
-                p_psi[n] = -1j * hbar * (psi_plus - psi_minus) / 2.0
-
-            # Expectation value: <p> = Re(<psi|p_hat|psi>)
-
-            expectation = np.real(np.sum(np.conj(psi) * p_psi))
-
-            return float(expectation)
-
+            return float(self._ehrenfest_drift(state))
         except Exception as e:
-
             logging.error(f"Error calculating quantum trend: {e}")
-
             return 0.0
 
     def _calculate_volatility(self, series: _dependencies.pd.Series) -> float:
+        """Volatility = ⟨H_osc⟩/E₀ on the encoded series (first principles).
+
+        The harmonic-oscillator energy expectation captures both kinetic
+        (variation) and potential (deviation) energy of the state's
+        support; normalized by the ground-state energy E₀ = ℏω/2.
         """
-        Calculate volatility using quantum harmonic oscillator energy (first principles).
-
-        The Hamiltonian for a quantum harmonic oscillator: H = p^2/(2m) + (1/2)m*w^2*x^2
-        The energy expectation value <H> captures both kinetic (variation) and
-        potential (deviation from equilibrium) energy, providing a measure of volatility.
-
-        Higher energy = more volatile system.
-        """
-
         try:
-
             values = series.dropna().values.astype(float)
-
-            if len(values) < 2:
-
+            state = self._series_state(values)
+            if state is None:
                 return 0.0
-
             hbar = self.config.get("hbar", 1.0)
-
             mass = self.config.get("mass", 1.0)
-
             omega = self.config.get("omega", 0.5)
-
-            mean_val = np.mean(values)
-
-            std_val = np.std(values)
-
-            if std_val == 0:
-
-                return 0.0
-
-            # Position operator: x(n) = normalized deviation from mean
-
-            x = (values - mean_val) / std_val
-
-            # Kinetic energy: T = p^2/(2m) approx variance of differences / (2m)
-
-            dx = np.diff(values)
-
-            p_squared = np.var(dx) if len(dx) > 1 else 0.0
-
-            kinetic_energy = p_squared / (2 * mass)
-
-            # Potential energy: V = (1/2)*m*w^2*<x^2>
-
-            potential_energy = 0.5 * mass * omega**2 * np.mean(x**2)
-
-            # Total energy (volatility measure)
-
-            total_energy = kinetic_energy + potential_energy
-
-            # Normalize by ground state energy E0 = (1/2)*hbar*w
-
+            H = Observables.harmonic_oscillator_hamiltonian(state.dim, hbar, mass, omega)
+            energy = state.expectation(H)
             ground_state = 0.5 * hbar * omega
-
-            if ground_state > 0:
-
-                volatility = total_energy / ground_state
-
-            else:
-
-                volatility = total_energy
-
-            return float(volatility)
-
+            return float(energy / ground_state) if ground_state > 0 else float(energy)
         except Exception as e:
-
             logging.error(f"Error calculating quantum volatility: {e}")
-
             return 0.0
 
     def _calculate_relative_performance(self, data: _dependencies.pd.DataFrame) -> float:
+        """Relative performance = fidelity F = |⟨ψ|uniform⟩|² (first principles).
+
+        F = 1: the performance state's support matches the uniform
+        (maximum-entropy) reference. Lower F = the state concentrates
+        amplitude away from the uniform reference.
         """
-        Calculate relative performance using quantum state fidelity (first principles).
-
-        Quantum fidelity measures the overlap between an employee's performance state
-        and the ensemble average state: F = |<psi|phi>|^2
-
-        F = 1: employee is identical to average
-        F = 0: employee is orthogonal to average (maximally different)
-        """
-
         try:
-
             if "performance_score" not in data.columns:
-
                 return 0.5
-
             values = data["performance_score"].dropna().values.astype(float)
-
-            if len(values) < 2:
-
-                return 0.5
-
-            # Employee state vector
-
-            psi = values - np.mean(values)
-
-            norm_psi = np.sqrt(np.sum(psi**2))
-
-            if norm_psi == 0:
-
-                return 1.0
-
-            psi = psi / norm_psi
-
-            # Ensemble average state (uniform superposition)
-
-            phi = np.ones_like(psi) / np.sqrt(len(psi))
-
-            # Quantum fidelity: F = |<psi|phi>|^2
-
-            overlap = np.abs(np.dot(np.conj(psi), phi)) ** 2
-
-            return float(overlap)
-
+            centered = values - np.mean(values)
+            state = self._series_state(centered)
+            if state is None:
+                return 1.0 if len(values) >= 2 else 0.5
+            uniform = QuantumState.uniform_superposition(state.dim)
+            return float(state.fidelity(uniform))
         except Exception as e:
-
             logging.error(f"Error calculating quantum fidelity: {e}")
-
             return 0.5
 
     def _extract_behavioral_metrics(self, data: _dependencies.pd.DataFrame) -> dict:
         """Extract enhanced behavioral metrics focusing on time and patterns"""
-
         metrics = {}
-
         if "login_time" in data.columns:
-
             metrics["login_frequency"] = self._calculate_login_frequency(data["login_time"])
-
             metrics["login_variability"] = self._calculate_login_variability(data["login_time"])
-
         if "communication_text" in data.columns:
-
             metrics["communication_sentiment"] = self._analyze_text_sentiment(
                 " ".join(data["communication_text"].dropna().astype(str))
             )
-
         return metrics
 
     def _calculate_login_frequency(self, login_time: _dependencies.pd.Series) -> float:
-        """
-        Calculate login frequency using quantum number operator (first principles).
+        """Login frequency = ⟨n̂⟩/(dim−1) on the encoded times (first principles).
 
-        The number operator n_hat has eigenvalues n = 0, 1, 2, ...
-        The expectation value <n_hat> gives the average quantum number (frequency)
-        of the login pattern.
+        The number-operator expectation of the encoded login-time ray,
+        normalized by the maximum quantum number in the Hilbert space.
         """
-
         try:
-
             values = login_time.dropna().values.astype(float)
-
-            if len(values) == 0:
-
-                return 0.0
-
-            # Map login times to quantum number basis
-
-            if np.max(values) == np.min(values):
-
-                return 1.0
-
-            normalized = (values - np.min(values)) / (np.max(values) - np.min(values))
-
-            quantum_numbers = np.round(normalized * (len(values) - 1))
-
-            # Number operator expectation: <n_hat> = sum(n * P(n))
-
-            # P(n) = |psi_n|^2 where psi_n is the amplitude
-
-            amplitudes = np.ones(len(values)) / np.sqrt(len(values))
-
-            probabilities = np.abs(amplitudes) ** 2
-
-            expectation_n = np.sum(quantum_numbers * probabilities)
-
-            # Normalize to [0, 1] range
-
-            max_n = len(values) - 1
-
+            state = self._series_state(values)
+            if state is None:
+                return 0.0 if len(values) == 0 else 0.5
+            n_op = Observables.number_operator(
+                state.dim, self.config.get("hbar", 1.0), self.config.get("omega", 0.5)
+            )
+            expectation_n = state.expectation(n_op)
+            max_n = state.dim - 1
             if max_n > 0:
-
-                return float(expectation_n / max_n)
-
+                return float(np.clip(expectation_n / max_n, 0.0, 1.0))
             return 0.5
-
         except Exception as e:
-
             logging.error(f"Error calculating quantum login frequency: {e}")
-
             return 0.5
 
     def _calculate_login_variability(self, login_time: _dependencies.pd.Series) -> float:
+        """Variability = Δx·Δp/(ℏ/2) via quantum Fisher information (first principles).
+
+        F_Q(ψ, A) = 4 Var(A) for pure states, so Δx = √(F_Q(ψ,x̂))/2 and
+        Δp = √(F_Q(ψ,p̂))/2. The Heisenberg product Δx·Δp normalized by
+        the ℏ/2 bound measures how far above minimum uncertainty the
+        encoded login pattern sits.
         """
-        Calculate login variability using Heisenberg uncertainty principle (first principles).
-
-        Delta_x * Delta_p >= hbar/2
-
-        The time uncertainty Delta_t captures the spread in login times,
-        while the momentum uncertainty Delta_p captures the variability in login rate changes.
-        """
-
         try:
-
             values = login_time.dropna().values.astype(float)
-
-            if len(values) < 2:
-
+            state = self._series_state(values)
+            if state is None:
                 return 0.0
-
             hbar = self.config.get("hbar", 1.0)
-
-            # Position uncertainty: Delta_x = std of login times
-
-            dx = np.std(values)
-
-            if dx == 0:
-
+            x = Observables.position(state.dim)
+            p = Observables.momentum(state.dim, hbar)
+            dx = math.sqrt(max(quantum_fisher_information(state, x), 0.0)) / 2.0
+            dp = math.sqrt(max(quantum_fisher_information(state, p), 0.0)) / 2.0
+            min_uncertainty = hbar / 2.0
+            if min_uncertainty <= 0:
                 return 0.0
-
-            # Momentum uncertainty: Delta_p = std of consecutive differences
-
-            dp = np.std(np.diff(values))
-
-            if dp == 0:
-
-                dp = hbar / (2 * dx)  # Saturate uncertainty bound
-
-            # Heisenberg product: Delta_x * Delta_p
-
-            uncertainty_product = dx * dp
-
-            # Normalize by minimum uncertainty hbar/2
-
-            min_uncertainty = hbar / 2
-
-            if min_uncertainty > 0:
-
-                variability = uncertainty_product / min_uncertainty
-
-            else:
-
-                variability = uncertainty_product
-
-            # Clamp to [0, 1] for practical use
-
+            variability = (dx * dp) / min_uncertainty
             return float(min(max(variability, 0.0), 1.0))
-
         except Exception as e:
-
             logging.error(f"Error calculating quantum login variability: {e}")
-
             return 0.5
 
     def _extract_engagement_metrics(self, data: _dependencies.pd.DataFrame) -> dict:
         """Extract engagement metrics with survey insights"""
-
         metrics = {}
-
         if "survey_text" in data.columns:
-
             text_combined = " ".join(data["survey_text"].dropna().astype(str))
-
             metrics["survey_sentiment"] = self._analyze_text_sentiment(text_combined)
-
             metrics["survey_engagement"] = self._analyze_text_engagement(text_combined)
-
         if "participation_rate" in data.columns:
-
             metrics["participation_rate"] = self._analyze_participation(data["participation_rate"])
-
         return metrics
 
     def _extract_career_metrics(self, data: _dependencies.pd.DataFrame) -> dict:
         """Extract metrics related to career growth and aspirations"""
-
         metrics = {}
-
         if "promotion_history" in data.columns:
-
             metrics["promotion_velocity"] = self._analyze_promotion_velocity(
                 data["promotion_history"]
             )
-
         if "skill_level" in data.columns:
-
             metrics["skill_growth"] = self._analyze_skill_development(data["skill_level"])
-
         if "compensation_ratio" in data.columns:
-
             metrics["compensation_ratio"] = self._analyze_compensation(data["compensation_ratio"])
-
         return metrics
 
     def _analyze_promotion_velocity(self, promotion_history: _dependencies.pd.Series) -> float:
-        """
-        Calculate promotion velocity using quantum velocity operator (first principles).
+        """Promotion velocity = Ehrenfest drift of the encoded history (first principles).
 
-        The velocity operator is v_hat = p_hat/m, where p_hat is the momentum operator.
-        Promotion velocity measures the rate of career advancement as quantum momentum.
+        The promotion series is encoded to a ray and propagated under the
+        golden-family Hamiltonian; the measured d⟨x⟩/dt is the quantum
+        velocity ⟨p̂⟩/m of the state's position centroid.
         """
-
         try:
-
             values = promotion_history.dropna().values.astype(float)
-
-            if len(values) < 2:
-
+            state = self._series_state(values)
+            if state is None:
                 return 0.0
-
-            hbar = self.config.get("hbar", 1.0)
-
             mass = self.config.get("mass", 1.0)
-
-            # Normalize to wavefunction
-
-            mean_val = np.mean(values)
-
-            std_val = np.std(values)
-
-            if std_val == 0:
-
+            if mass <= 0:
                 return 0.0
-
-            psi = (values - mean_val) / std_val
-
-            norm = np.sqrt(np.sum(np.abs(psi) ** 2))
-
-            if norm == 0:
-
-                return 0.0
-
-            psi = psi / norm
-
-            # Velocity operator: v_hat = p_hat/m = -i*hbar/(m) * d/dx
-
-            v_psi = np.zeros_like(psi, dtype=complex)
-
-            for n in range(len(psi)):
-
-                psi_plus = psi[n + 1] if n + 1 < len(psi) else psi[n]
-
-                psi_minus = psi[n - 1] if n - 1 >= 0 else psi[n]
-
-                v_psi[n] = -1j * hbar / (mass * 2.0) * (psi_plus - psi_minus)
-
-            # Expectation: <v> = Re(<psi|v_hat|psi>)
-
-            velocity = np.real(np.sum(np.conj(psi) * v_psi))
-
-            return float(velocity)
-
+            return float(self._ehrenfest_drift(state))
         except Exception as e:
-
             logging.error(f"Error calculating promotion velocity: {e}")
-
             return 0.0
 
     def _extract_external_metrics(self, data: _dependencies.pd.DataFrame) -> dict:
         """Extract external factors like market conditions and industry trends"""
-
         metrics = {}
-
         if "market_condition" in data.columns:
-
             metrics["market_condition"] = self._analyze_market(data["market_condition"])
-
         if "industry_trend" in data.columns:
-
             metrics["industry_trend"] = self._analyze_industry(data["industry_trend"])
-
         if "competitor_activity" in data.columns:
-
             metrics["competitor_activity"] = self._analyze_competitors(data["competitor_activity"])
-
         return metrics
 
     def _preprocess_data(self, data: _dependencies.pd.DataFrame) -> _dependencies.pd.DataFrame:
         """Preprocess employee data to handle missing values"""
-
         try:
-
             processed_data = data.copy()
-
-            # Impute missing values
-
             numeric_cols = processed_data.select_dtypes(include=np.number).columns
-
             if len(numeric_cols) > 0:
-
                 processed_data[numeric_cols] = self.imputer.fit_transform(
                     processed_data.select_dtypes(include=np.number)
                 )
-
             return processed_data
-
         except Exception as e:
-
             logging.error(f"Data preprocessing failed: {e}")
-
             raise
 
     def _ensemble_predict(self, indicators: dict) -> dict:
-        """Ensemble prediction using configured models with weighted or voting system"""
-
+        """Ensemble prediction across quantum channels: weighted or voting."""
         try:
-
             if not self.models:
-
                 return self._untrained_payload()
-
             if (
                 self.config.get("ensemble_selection_method", "weighted_average")
                 == "weighted_average"
             ):
-
                 return self._weight_predictions(indicators)
-
             else:
-
                 return self._voting_predictions(indicators)
-
         except Exception as e:
-
             logging.error(f"Ensemble prediction failed: {e}")
-
             raise
 
     def _weight_predictions(self, indicators: dict) -> dict:
-        """
-        Weight predictions based on model performance using cross validation
-        and quantum superposition of model states.
+        """Mixed-state Born-rule ensemble over the quantum channels.
 
-        Each model produces a probability amplitude. The ensemble prediction
-        is the superposition of all model states, weighted by their cross-validation
-        performance (which serves as the amplitude modulus).
+        The indicator vector is encoded once into the shared channel
+        Hilbert space. Each channel evolves the ray through its family
+        propagator and discriminates it against the observed class
+        reference rays — a Helstrom-type Born measurement. The channel
+        weight is its quantum Fisher information w.r.t. position, the
+        Cramér–Rao sensitivity of the evolved state; unmeasurable channels
+        (zero overlap) are reported unavailable rather than assigned a
+        fabricated score. The ensemble probability is the mixed-state
+        Born mean Σ w_k p_k / Σ w_k.
         """
-
         try:
-
             predictions = {}
-
-            input_features = self._prepare_input_features(indicators)
-
-            # Ensure input_features is 2D for prediction
-
-            if input_features.ndim == 1:
-
-                input_features = input_features.reshape(1, -1)
-
-            # Feature dimensions are matched against the dimension the
-            # observed cohort was fitted on — never a generated matrix.
-
-            target_dim = self._feature_dim()
-
-            if input_features.shape[1] < target_dim:
-
-                padding = np.zeros((input_features.shape[0], target_dim - input_features.shape[1]))
-
-                input_features = np.hstack([input_features, padding])
-
-            elif input_features.shape[1] > target_dim:
-
-                input_features = input_features[:, :target_dim]
-
-            # The exact-linear model owns its center-only field preprocessing.
-            # Diagnostic z-score output must not re-enter the exact plane.
-            model_features = input_features
-
-            # Quantum superposition of model predictions
-
-            amplitudes = {}
-
-            for model_name, model in self.models.items():
-
-                # Amplitude phase comes from the CV score measured on the
-                # real training matrix at fit time. Unmeasured -> phase 0
-                # (no fabricated performance claim rotates the amplitude).
-
+            features = self._prepare_input_features(indicators)
+            dim = self._channel_dim()
+            state = encode_data_to_state([float(v) for v in features], dim=dim, normalize=True)
+            self._last_encoded_state = state
+            position = Observables.position(dim)
+            weights = []
+            scores = []
+            evolved_states = []
+            for model_name, channel in self.models.items():
                 cv_score = self._model_cv_scores.get(model_name)
-
-                phase = float(cv_score) if cv_score is not None else 0.0
-
-                y_pred = model.predict_proba(model_features)[:, 1]
-
-                # Quantum amplitude: complex number with magnitude = probability
-
-                # and phase = measured model performance
-
-                amplitude = np.sqrt(y_pred[0]) * np.exp(1j * np.pi * phase)
-
-                amplitudes[model_name] = amplitude
-
+                result = channel.discriminate(state)
+                if result is None:
+                    predictions[model_name] = {
+                        "available": False,
+                        "score": None,
+                        "confidence": None,
+                        "weight": None,
+                        "cv_source": "measured" if cv_score is not None else "unmeasured",
+                        "family": channel.family,
+                    }
+                    continue
+                evolved = result["evolved"]
+                qfi = quantum_fisher_information(evolved, position)
+                weight = max(float(qfi), 0.0)
                 predictions[model_name] = {
-                    "score": float(y_pred[0]),
-                    "confidence": self._calculate_model_confidence(y_pred[0]),
-                    "weight": float(phase) if cv_score is not None else None,
+                    "score": float(result["score"]),
+                    # Helstrom discrimination margin — the channel's own
+                    # measured certainty, not a fitted confidence curve.
+                    "confidence": float(result["margin"]),
+                    "weight": weight,
+                    "weight_source": "quantum_fisher_information",
                     "cv_source": "measured" if cv_score is not None else "unmeasured",
+                    "cv_score": cv_score,
+                    "family": channel.family,
                 }
-
-            # Born rule: combined probability = |sum of amplitudes|^2 / N
-
-            total_amplitude = sum(amplitudes.values())
-
-            born_probability = float(np.abs(total_amplitude) ** 2 / len(amplitudes))
-
-            predictions["quantum_superposition"] = born_probability
-
+                weights.append(weight)
+                scores.append(result["score"])
+                evolved_states.append(evolved)
+            self._last_evolved_states = evolved_states
+            if scores:
+                total_weight = sum(weights)
+                if total_weight > 0:
+                    combined = sum(s * w for s, w in zip(scores, weights)) / total_weight
+                else:
+                    combined = float(np.mean(scores))
+                predictions["quantum_superposition"] = float(combined)
+            else:
+                predictions["quantum_superposition"] = None
             return predictions
-
         except Exception as e:
-
             logging.error(f"Error during weighting of predictions: {e}")
-
             raise
 
     def _voting_predictions(self, indicators: dict) -> dict:
-        """Generates predictions using a voting system between multiple models"""
+        """Majority-measurement vote across the quantum channels.
 
+        Each channel casts one deterministic Born-measurement verdict
+        (churn overlap > retain overlap). The voting probability is the
+        measured fraction of channels voting churn — a count of real
+        measurement outcomes, not a fitted vote weight.
+        """
         try:
-
             predictions = {}
-
-            input_features = self._prepare_input_features(indicators)
-
-            if input_features.ndim == 1:
-
-                input_features = input_features.reshape(1, -1)
-
-            # Match the feature dimension the observed cohort was fitted on.
-
-            target_dim = self._feature_dim()
-
-            if input_features.shape[1] < target_dim:
-
-                padding = np.zeros((input_features.shape[0], target_dim - input_features.shape[1]))
-
-                input_features = np.hstack([input_features, padding])
-
-            elif input_features.shape[1] > target_dim:
-
-                input_features = input_features[:, :target_dim]
-
-            # Do not feed diagnostic z-scores into the exact model.
-            model_features = input_features
-
+            features = self._prepare_input_features(indicators)
+            dim = self._channel_dim()
+            state = encode_data_to_state([float(v) for v in features], dim=dim, normalize=True)
+            self._last_encoded_state = state
             votes = []
-
-            for model_name, model in self.models.items():
-
-                y_pred = model.predict(model_features)
-
-                votes.append(y_pred[0])
-
-            # Simple Voting - count number of trues and falses
-
-            true_votes = np.count_nonzero(votes)
-
-            false_votes = len(votes) - true_votes
-
-            # Assign probability based on which vote was higher
-
-            if true_votes > false_votes:
-
-                probability = 1.0
-
-            elif true_votes < false_votes:
-
-                probability = 0.0
-
-            else:
-
-                probability = 0.5  # If no clear majority
-
-            for model_name, model in self.models.items():
-
-                y_pred = model.predict_proba(model_features)[:, 1]  # get score from each model
-
+            evolved_states = []
+            for model_name, channel in self.models.items():
+                cv_score = self._model_cv_scores.get(model_name)
+                result = channel.discriminate(state)
+                if result is None:
+                    predictions[model_name] = {
+                        "available": False,
+                        "score": None,
+                        "confidence": None,
+                        "weight": None,
+                        "cv_source": "measured" if cv_score is not None else "unmeasured",
+                    }
+                    continue
+                votes.append(result["score"] > 0.5)
+                evolved_states.append(result["evolved"])
                 predictions[model_name] = {
-                    "score": float(y_pred[0]),
-                    "confidence": self._calculate_model_confidence(y_pred[0]),
-                    "weight": 1,
+                    "score": float(result["score"]),
+                    "confidence": float(result["margin"]),
+                    "weight": 1.0,
+                    "verdict": "churn" if result["score"] > 0.5 else "retain",
+                    "cv_source": "measured" if cv_score is not None else "unmeasured",
+                    "cv_score": cv_score,
+                    "family": channel.family,
                 }
-
-            predictions["voting_probability"] = probability  # Include the voting probability
-
+            self._last_evolved_states = evolved_states
+            predictions["voting_probability"] = float(sum(votes) / len(votes)) if votes else None
             return predictions
-
         except Exception as e:
-
             logging.error(f"Error during voting of predictions: {e}")
-
             raise
 
     def _generate_risk_profile(self, predictions: dict, indicators: dict) -> dict:
         """Generate detailed risk profile with confidence score and explanations"""
-
         try:
-
             risk_profile = {
                 "available": bool(self.models) and predictions.get("available", True) is not False,
                 "truth_class": (
@@ -2524,7 +2215,7 @@ class PredictiveEngine:
                 "recommended_actions": self._generate_recommendations(indicators),
                 "time_sensitivity": self._assess_time_sensitivity(indicators),
                 "risk_trajectory": self._predict_risk_trajectory(indicators),
-                "model_predictions": predictions,  # Include all model specific predictions
+                "model_predictions": predictions,  # Include all channel predictions
                 "feature_importances": (
                     self._get_feature_importance(
                         self.models.get(self.config.get("selected_model", "rf")),
@@ -2533,16 +2224,12 @@ class PredictiveEngine:
                     if self.config.get("selected_model") and self.models
                     else None
                 ),
-                "lime_explanations": self._get_lime_explanations(indicators),
+                "quantum_explanations": self._quantum_explanations(indicators),
                 "algebraic_invariants": self._algebraic_diagnostics(indicators),
             }
-
             return risk_profile
-
         except Exception as e:
-
             logging.error(f"Error generating risk profile: {e}")
-
             raise
 
     def _algebraic_diagnostics(self, indicators: dict) -> dict:
@@ -2561,53 +2248,32 @@ class PredictiveEngine:
         - family ladder: the detected family's exact trace limb (the
           Lucas-analogue scaling sequence) for confidence calibration
         """
-
         try:
-
             values = []
-
             for value in indicators.values():
-
                 if isinstance(value, dict):
-
                     values.extend(float(v) for v in value.values() if isinstance(v, (int, float)))
-
                 elif isinstance(value, (int, float)):
-
                     values.append(float(value))
-
             if not values:
-
                 return {"available": False}
-
             arr = np.asarray(values)
-
             signature = self.algebra.detect_family_signature(arr)
-
             configured = self.config.get("algebraic_family", "auto")
-
             family = (
                 signature["family"]
                 if configured == "auto"
                 else (configured if configured in self.algebra.FAMILY_NAMES else "plastic")
             )
-
             if family == "unstructured":
-
                 family = "plastic"
-
             # Factor contact graph: weighted complete graph on the
             # indicator values, weights = |v_i v_j| normalised — the
             # Laplacian gap measures how locked the factor system is.
-
             v = arr / (np.max(np.abs(arr)) or 1.0)
-
             contact = np.abs(np.outer(v, v))
-
             np.fill_diagonal(contact, 0.0)
-
             gap_info = self.algebra.spectral_gap(contact)
-
             return {
                 "available": True,
                 "family_signature": _exact_out(signature),
@@ -2622,176 +2288,128 @@ class PredictiveEngine:
                 "lag_kernel": _exact_out(self.algebra.lag_kernel(family, 6)),
                 "purity": "DETERMINISTIC_ALGEBRAIC",
             }
-
         except Exception as e:
-
             logging.error(f"Error computing algebraic diagnostics: {e}")
-
             return {"available": False, "error": str(e)}
 
     def _assess_time_sensitivity(self, indicators: dict) -> dict:
+        """Time sensitivity via the time–energy uncertainty relation (first principles).
+
+        ΔE·Δt ≥ ℏ/2. ΔE is the energy standard deviation of the encoded
+        indicator state, measured through its quantum Fisher information:
+        F_Q(ψ, H) = 4·Var(H), so ΔE = √F_Q/2 and Δt ≥ ℏ/(2ΔE). No state
+        → honest unmeasured payload.
         """
-        Assess time sensitivity using quantum time-energy uncertainty relation (first principles).
-
-        Delta_E * Delta_t >= hbar/2
-
-        The time sensitivity measures how quickly the risk state is evolving,
-        based on the energy uncertainty of the system.
-        """
-
         try:
-
             hbar = self.config.get("hbar", 1.0)
-
-            # Calculate energy from indicators (sum of weighted metrics)
-
-            factor_weights = self._calculate_factor_weights(indicators)
-
-            total_energy = 0.0
-
-            for key, weight in factor_weights.items():
-
-                if key in indicators and isinstance(indicators[key], dict):
-
-                    values = [v for v in indicators[key].values() if isinstance(v, (int, float))]
-
-                    if values:
-
-                        total_energy += weight * np.var(values)
-
-            # Time-energy uncertainty: Delta_t >= hbar/(2*Delta_E)
-
-            if total_energy > 0:
-
-                delta_t = hbar / (2 * total_energy)
-
-            else:
-
-                delta_t = float("inf")
-
-            # Classify time sensitivity
-
+            state = self._encode_indicators(indicators)
+            if state is None:
+                return {
+                    "sensitivity_level": "unmeasured",
+                    "time_horizon": None,
+                    "energy_uncertainty": None,
+                    "uncertainty_bound": hbar / 2,
+                }
+            H = Observables.harmonic_oscillator_hamiltonian(
+                state.dim,
+                hbar,
+                self.config.get("mass", 1.0),
+                self.config.get("omega", 0.5),
+            )
+            delta_e = math.sqrt(max(quantum_fisher_information(state, H), 0.0)) / 2.0
+            delta_t = hbar / (2 * delta_e) if delta_e > 0 else float("inf")
             if delta_t < 0.5:
-
                 sensitivity = "critical"
-
             elif delta_t < 1.0:
-
                 sensitivity = "high"
-
             elif delta_t < 2.0:
-
                 sensitivity = "moderate"
-
             else:
-
                 sensitivity = "low"
-
             return {
                 "sensitivity_level": sensitivity,
                 "time_horizon": float(delta_t),
-                "energy_uncertainty": float(total_energy),
+                "energy_uncertainty": float(delta_e),
+                "uncertainty_bound": hbar / 2,
+            }
+        except Exception as e:
+            logging.error(f"Error assessing time sensitivity: {e}")
+            return {
+                "sensitivity_level": "unmeasured",
+                "time_horizon": None,
+                "energy_uncertainty": None,
                 "uncertainty_bound": hbar / 2,
             }
 
-        except Exception as e:
+    def _factor_observables(self, indicators: dict) -> dict:
+        """One diagonal Hermitian observable per indicator factor group.
 
-            logging.error(f"Error assessing time sensitivity: {e}")
-
-            return {"sensitivity_level": "moderate", "time_horizon": 1.0}
-
-    def _get_lime_explanations(self, indicators: dict) -> dict:
+        Each group's numeric values become the observable's eigenvalues
+        (normalized to the group's largest magnitude), padded to the
+        encoded state's dimension — the same factor-observable convention
+        toe.bridge uses. Returns {} when no factor carries numeric data.
         """
-        Generate LIME explanations for the prediction using quantum-inspired
-        feature perturbation.
-        """
+        state = self._last_encoded_state or self._encode_indicators(indicators)
+        if state is None:
+            return {}
+        observables = {}
+        for name, value in indicators.items():
+            values = []
+            if isinstance(value, dict):
+                values = [float(v) for v in value.values() if isinstance(v, (int, float))]
+            elif isinstance(value, (int, float)):
+                values = [float(value)]
+            if not values:
+                continue
+            while len(values) < state.dim:
+                values.append(0.0)
+            values = values[: state.dim]
+            max_abs = max(abs(v) for v in values) or 1.0
+            observables[name] = ComplexMatrix.diagonal([Complex(v / max_abs, 0.0) for v in values])
+        return observables
 
+    def _quantum_explanations(self, indicators: dict) -> dict:
+        """Substrate-native 'why': causal_factor_ranking on the encoded state.
+
+        Ranks each factor group's observable by |⟨A⟩| — the
+        quantum-measurement-theoretic influence the factor exerts on the
+        current state. This replaces the former LIME surrogate: the
+        explanation is computed from the state's own expectation values,
+        not from a local linear fit.
+        """
         try:
-
-            input_features = self._prepare_input_features(indicators)
-
-            if input_features.ndim == 1:
-
-                input_features = input_features.reshape(1, -1)
-
-            # LIME background must be the real observed cohort — a
-            # generated reference set would fabricate the local surrogate.
-
-            training = self._real_training_data()
-
-            if training is None:
-
+            state = self._encode_indicators(indicators)
+            if state is None:
                 return {
                     "available": False,
                     "explanation": [],
-                    "note": "LIME requires a real observed training cohort",
+                    "note": "no encodable indicators",
                 }
-
-            X_observed, _ = training
-
-            self.scaler.fit(X_observed)
-
-            # Ensure feature dimensions match
-
-            target_dim = X_observed.shape[1]
-
-            if input_features.shape[1] < target_dim:
-
-                padding = np.zeros((input_features.shape[0], target_dim - input_features.shape[1]))
-
-                input_features = np.hstack([input_features, padding])
-
-            elif input_features.shape[1] > target_dim:
-
-                input_features = input_features[:, :target_dim]
-
-            scaled_input = self.scaler.transform(input_features)
-
-            feature_names = [f"feature_{i}" for i in range(target_dim)]
-
-            selected_model_name = self.config.get("selected_model", "rf")
-
-            selected_model = self.models.get(selected_model_name)
-
-            if selected_model is None:
-
-                return {}
-
-            if not _dependencies._HAS_LIME:
+            observables = self._factor_observables(indicators)
+            if not observables:
                 return {
+                    "available": False,
                     "explanation": [],
-                    "feature_names": feature_names,
-                    "note": "LIME unavailable",
+                    "note": "no numeric factor observables",
                 }
-
-            explainer = _dependencies.LimeTabularExplainer(
-                X_observed,
-                feature_names=feature_names,
-                class_names=["retained", "churned"],
-                mode="classification",
-            )
-
-            exp = explainer.explain_instance(
-                scaled_input[0], selected_model.predict_proba, num_features=min(5, target_dim)
-            )
-
-            return {"explanation": exp.as_list(), "feature_names": feature_names}
-
+            ranked = causal_factor_ranking(state, observables)
+            return {
+                "available": True,
+                "method": "causal_factor_ranking (expectation magnitudes; "
+                "descriptive, not interventional)",
+                "explanation": [
+                    {"factor": name, "expectation_magnitude": float(mag)} for name, mag in ranked
+                ],
+                "feature_names": [name for name, _ in ranked],
+            }
         except Exception as e:
-
-            logging.error(f"Error generating LIME explanations: {e}")
-
-            return {}
+            logging.error(f"Error generating quantum explanations: {e}")
+            return {"available": False, "error": str(e)}
 
     def _calculate_risk_score(self, predictions: dict) -> dict:
         """Calculate final risk score with confidence interval"""
-
         try:
-
             if predictions.get("available") is False:
-
-                # Honest passthrough — no fitted models, no score.
-
                 return {
                     "available": False,
                     "truth_class": predictions.get("truth_class", "untrained_models"),
@@ -2799,62 +2417,40 @@ class PredictiveEngine:
                     "confidence_interval": None,
                     "probability": None,
                 }
-
             if (
                 self.config.get("ensemble_selection_method", "weighted_average")
                 == "weighted_average"
             ):
-
-                # Extract model predictions (exclude non-model keys)
-
                 model_preds = {
                     k: v
                     for k, v in predictions.items()
-                    if isinstance(v, dict) and "score" in v and "weight" in v
+                    if isinstance(v, dict) and v.get("score") is not None and "weight" in v
                 }
-
                 if model_preds:
-
-                    # Unmeasured CV weights (None) contribute uniform mass.
-
+                    # QFI-derived weights; unmeasured channels contribute
+                    # uniform mass — never a fabricated sensitivity figure.
                     weights = [
                         p["weight"] if p.get("weight") is not None else 1.0
                         for p in model_preds.values()
                     ]
-
                     total_weight = sum(weights)
-
                     if total_weight > 0:
-
                         weighted_score = (
                             sum(p["score"] * w for p, w in zip(model_preds.values(), weights))
                             / total_weight
                         )
-
                     else:
-
                         weighted_score = np.mean([p["score"] for p in model_preds.values()])
-
                     confidence = np.std([p["score"] for p in model_preds.values()])
-
                 else:
-
                     weighted_score = None
-
                     confidence = 0.0
-
             elif self.config.get("ensemble_selection_method") == "voting":
-
                 weighted_score = predictions.get("voting_probability")
-
-                confidence = 0.0  # Not applicable for voting system
-
-            else:
-
-                weighted_score = None
-
                 confidence = 0.0
-
+            else:
+                weighted_score = None
+                confidence = 0.0
             return {
                 "score": float(weighted_score) if weighted_score is not None else None,
                 "confidence_interval": float(confidence),
@@ -2864,401 +2460,191 @@ class PredictiveEngine:
                     else None
                 ),
             }
-
         except Exception as e:
-
             logging.error(f"Error calculating risk score: {e}")
-
             raise
 
     def _identify_key_factors(self, indicators: dict) -> list:
-        """Identify top contributing factors to risk"""
-
+        """Identify top contributing factors via the substrate's causal ranking."""
         try:
-
             factor_weights = self._calculate_factor_weights(indicators)
-
-            # Calculate actual contribution of each factor
-
-            factor_scores = {}
-
-            for factor, weight in factor_weights.items():
-
-                if factor in indicators and isinstance(indicators[factor], dict):
-
-                    values = [v for v in indicators[factor].values() if isinstance(v, (int, float))]
-
-                    if values:
-
-                        # Quantum expectation value of the factor
-
-                        factor_scores[factor] = weight * np.mean(values)
-
-                    else:
-
-                        factor_scores[factor] = weight
-
-                else:
-
-                    factor_scores[factor] = weight
-
-            return sorted(factor_scores.items(), key=lambda x: x[1], reverse=True)[:5]
-
+            return sorted(factor_weights.items(), key=lambda x: x[1], reverse=True)[:5]
         except Exception as e:
-
             logging.error(f"Error identifying key factors: {e}")
-
             raise
 
     def _generate_recommendations(self, indicators: dict) -> dict:
-        """Generate personalized retention recommendations"""
+        """Recommendation surface = measured factor attribution, not canned advice.
 
+        The engine computes *which factor groups drive the measured risk*
+        via ``causal_factor_ranking`` (normalized Born-weighted ⟨A_f⟩
+        magnitudes). It does not generate prescriptive action text —
+        invented advice strings would be demo content, not computed
+        output. Consumers needing action text map the ranked measured
+        factors themselves.
+        """
         try:
-
             risk_factors = self._identify_key_factors(indicators)
-
             return {
-                "immediate_actions": self._get_immediate_actions(risk_factors),
-                "long_term_strategies": self._get_long_term_strategies(risk_factors),
-                "manager_recommendations": self._get_manager_recommendations(risk_factors),
+                "basis": "causal_factor_ranking",
+                "measured_risk_factors": [
+                    {"factor": name, "attribution_weight": float(w)}
+                    for name, w in risk_factors
+                ],
+                "prescriptive_text": "not_computed",
             }
-
         except Exception as e:
-
             logging.error(f"Error generating recommendations: {e}")
-
             raise
 
     def _predict_risk_trajectory(self, indicators: dict) -> dict:
         """Predict risk trajectory over next 3-6 months"""
-
         try:
-
             current_trend = self._analyze_trend(indicators)
-
             future_predictions = self._forecast_risk(indicators)
-
             return {
                 "current_trajectory": current_trend,
                 "forecast": future_predictions,
                 "intervention_points": self._identify_intervention_points(future_predictions),
             }
-
         except Exception as e:
-
             logging.error(f"Error predicting risk trajectory: {e}")
-
             raise
 
     def _calculate_confidence(self, predictions: dict) -> float:
-        """Calculate prediction confidence level"""
+        """Confidence = mean of the measured confidence components.
 
+        Components: per-channel Helstrom margins, ensemble agreement
+        (pairwise fidelity of evolved states), and cohort data quality
+        (normalized von Neumann entropy). Unmeasured components are
+        excluded rather than filled with constants.
+        """
         try:
-
-            model_preds = {
-                k: v for k, v in predictions.items() if isinstance(v, dict) and "confidence" in v
-            }
-
-            if not model_preds:
-
+            components = []
+            channel_margins = [
+                v["confidence"]
+                for v in predictions.values()
+                if isinstance(v, dict) and v.get("confidence") is not None
+            ]
+            if channel_margins:
+                components.append(float(np.mean(channel_margins)))
+            if self._last_evolved_states:
+                components.append(self._calculate_model_agreement(predictions))
+            data_quality = self._assess_data_quality()
+            if data_quality is not None:
+                components.append(data_quality)
+            if not components:
                 return 0.0
-
-            model_scores = [p["confidence"] for p in model_preds.values()]
-
-            agreement_score = self._calculate_model_agreement(predictions)
-
-            data_quality_score = self._assess_data_quality()
-
-            if data_quality_score is None:
-
-                # No observed cohort — renormalize across measured terms
-                # only; never substitute a fabricated quality figure.
-
-                confidence = np.mean(model_scores) * 0.5 + agreement_score * 0.5
-
-            else:
-
-                confidence = (
-                    np.mean(model_scores) * 0.4  # Model confidence
-                    + agreement_score * 0.4  # Model agreement
-                    + data_quality_score * 0.2  # Data quality
-                )
-
-            return float(confidence)
-
+            return float(np.mean(components))
         except Exception as e:
-
             logging.error(f"Error calculating confidence: {e}")
-
             raise
 
     def _assess_data_quality(self):
+        """Data quality = normalized von Neumann entropy of the cohort ensemble.
+
+        The observed training rows are encoded to rays; their incoherent
+        mixture ρ = Σᵢ|ψᵢ⟩⟨ψᵢ|/N is the cohort's true mixed density
+        operator. S(ρ)/log₂(dim) measures how uniformly the cohort covers
+        the Hilbert space — 1.0 = maximally spread, 0.0 = degenerate.
+        Computed via the substrate's ``von_neumann_entropy`` on the real
+        density matrix; returns None (honest 'unmeasured') with no cohort.
         """
-        Assess data quality using von Neumann entropy (first principles).
-
-        The von Neumann entropy S = -Tr(rho * log(rho)) measures the information content
-        of the quantum state. Higher entropy = more information = better quality.
-        Normalized to [0, 1] range.
-
-        Computed over the real observed training matrix. Returns None —
-        honest 'unmeasured' — when no observed cohort exists.
-        """
-
         try:
-
             training = self._real_training_data()
-
             if training is None:
-
                 return None
-
             X, _ = training
-
-            # Construct density matrix from data: rho = X^T X / Tr(X^T X)
-
-            cov = np.corrcoef(X.T)
-
-            # Handle NaN values
-
-            cov = np.nan_to_num(cov, nan=0.0)
-
-            # Ensure positive semi-definite
-
-            eigenvalues = np.linalg.eigvalsh(cov)
-
-            eigenvalues = np.maximum(eigenvalues, 1e-10)
-
-            # von Neumann entropy: S = -sum(lambda_i * log(lambda_i))
-
-            normalized_eigenvalues = eigenvalues / np.sum(eigenvalues)
-
-            entropy = -np.sum(normalized_eigenvalues * np.log(normalized_eigenvalues))
-
-            # Normalize by maximum entropy (log of dimension)
-
-            max_entropy = np.log(len(eigenvalues))
-
-            if max_entropy > 0:
-
-                quality = entropy / max_entropy
-
-            else:
-
+            dim = self._channel_dim()
+            states = self._encode_rows(X[:64], dim)  # deterministic cap
+            rho = ComplexMatrix.zero(dim, dim)
+            for state in states:
+                rho = rho.add(state.density_matrix())
+            rho = rho.scale(1.0 / len(states))
+            entropy = von_neumann_entropy(rho)
+            max_entropy = math.log2(dim)
+            if max_entropy <= 0:
                 return None
-
-            return float(np.clip(quality, 0.0, 1.0))
-
+            return float(np.clip(entropy / max_entropy, 0.0, 1.0))
         except Exception as e:
-
             logging.error(f"Error assessing data quality: {e}")
-
             return None
 
     def _calculate_model_agreement(self, predictions: dict) -> float:
-        """
-        Calculate model agreement using quantum decoherence measure (first principles).
+        """Model agreement = mean pairwise fidelity of the evolved states.
 
-        The purity of the density matrix rho = sum(w_i * |psi_i><psi_i|) measures agreement:
-        Tr(rho^2) = 1 for pure state (perfect agreement)
-        Tr(rho^2) = 1/N for maximally mixed state (no agreement)
+        ``model_agreement_from_ensemble`` — the substrate's own measure.
+        High fidelity between the channels' evolved rays = coherent
+        ensemble = agreement. Returns 0.0 when no evolved states exist
+        (no prediction ran).
         """
-
         try:
-
-            model_preds = {
-                k: v for k, v in predictions.items() if isinstance(v, dict) and "score" in v
-            }
-
-            if not model_preds:
-
+            if not self._last_evolved_states:
                 return 0.0
-
-            scores = np.array([p["score"] for p in model_preds.values()])
-
-            # Unmeasured weights (None) contribute uniform mass — never a
-            # fabricated performance figure.
-
-            weights = np.array(
-                [p["weight"] if p.get("weight") is not None else 1.0 for p in model_preds.values()]
-            )
-
-            # Normalize weights
-
-            total_weight = np.sum(weights)
-
-            if total_weight > 0:
-
-                weights = weights / total_weight
-
-            # Construct density matrix: rho = sum(w_i * |psi_i><psi_i|)
-
-            n = len(scores)
-
-            rho = np.zeros((n, n))
-
-            for i in range(n):
-
-                psi_i = np.zeros(n)
-
-                psi_i[i] = np.sqrt(scores[i]) if scores[i] > 0 else 0
-
-                rho += weights[i] * np.outer(psi_i, psi_i)
-
-            # Purity: Tr(rho^2)
-
-            purity = np.trace(np.dot(rho, rho))
-
-            # Normalize: 1 = perfect agreement, 1/N = no agreement
-
-            if n > 1:
-
-                normalized_purity = (purity - 1 / n) / (1 - 1 / n)
-
-            else:
-
-                normalized_purity = 1.0
-
-            return float(np.clip(normalized_purity, 0.0, 1.0))
-
+            return float(model_agreement_from_ensemble(self._last_evolved_states))
         except Exception as e:
-
             logging.error(f"Error calculating model agreement: {e}")
-
             return 0.5
 
     def _analyze_trend(self, indicators: dict) -> dict:
-        """
-        Analyze current risk trend using Schrodinger time evolution (first principles).
+        """Current risk trend via Schrödinger dynamics on the encoded state.
 
-        The risk state evolves as: |psi(t)> = exp(-iHt/hbar) |psi(0)>
-        The trend is determined by the expectation value of the Hamiltonian.
+        Trend direction is the Ehrenfest drift d⟨x⟩/dt of the encoded
+        indicator state under the detected family's Hamiltonian; rate is
+        |drift|/ℏ. The energy decomposition ⟨p²⟩/2m and ⟨½mω²x²⟩ is
+        reported alongside for diagnostics.
         """
-
         try:
-
             hbar = self.config.get("hbar", 1.0)
-
             mass = self.config.get("mass", 1.0)
-
             omega = self.config.get("omega", 0.5)
-
-            # Extract numeric values from indicators
-
-            all_values = []
-
-            for key, value in indicators.items():
-
-                if isinstance(value, dict):
-
-                    for v in value.values():
-
-                        if isinstance(v, (int, float)):
-
-                            all_values.append(float(v))
-
-            if not all_values:
-
+            state = self._encode_indicators(indicators)
+            if state is None:
                 return {"trend": "stable", "rate": 0.0}
-
-            values = np.array(all_values)
-
-            mean_val = np.mean(values)
-
-            std_val = np.std(values)
-
-            if std_val == 0:
-
-                return {"trend": "stable", "rate": 0.0}
-
-            # Hamiltonian expectation: <H> = <p^2>/(2m) + (1/2)*m*w^2*<x^2>
-
-            # Kinetic energy from variance of differences
-
-            if len(values) > 1:
-
-                p_squared = np.var(np.diff(values))
-
-            else:
-
-                p_squared = 0.0
-
-            kinetic = p_squared / (2 * mass)
-
-            # Potential energy from deviation
-
-            potential = 0.5 * mass * omega**2 * np.mean((values - mean_val) ** 2) / std_val**2
-
-            total_energy = kinetic + potential
-
-            # Trend direction from energy sign
-
-            if total_energy > 0.1:
-
+            drift = self._ehrenfest_drift(state)
+            H = Observables.harmonic_oscillator_hamiltonian(state.dim, hbar, mass, omega)
+            energy = state.expectation(H)
+            p = Observables.momentum(state.dim, hbar)
+            kinetic = state.expectation(p.matmul(p)) / (2.0 * mass)
+            x = Observables.position(state.dim)
+            potential = 0.5 * mass * omega * omega * state.expectation(x.matmul(x))
+            if drift > 0.01:
                 trend = "increasing"
-
-            elif total_energy < -0.1:
-
+            elif drift < -0.01:
                 trend = "decreasing"
-
             else:
-
                 trend = "stable"
-
-            # Rate of change (Schrodinger evolution rate)
-
-            rate = total_energy / hbar if hbar > 0 else total_energy
-
+            rate = abs(drift) / hbar if hbar > 0 else abs(drift)
             return {
                 "trend": trend,
                 "rate": float(rate),
-                "energy": float(total_energy),
+                "energy": float(energy),
                 "kinetic_energy": float(kinetic),
                 "potential_energy": float(potential),
+                "ehrenfest_drift": float(drift),
             }
-
         except Exception as e:
-
             logging.error(f"Error analyzing quantum trend: {e}")
-
             return {"trend": "stable", "rate": 0.0}
 
     def _forecast_risk(self, indicators: dict) -> dict:
+        """Forecast risk at t=3 and t=6 via the exact Schrödinger propagator.
+
+        |ψ(t)⟩ = exp(−iHt/ℏ)|ψ₀⟩ under the harmonic-oscillator
+        Hamiltonian — the same propagator convention as
+        ``toe.bridge.predict_trajectory``. The forecast quantity is the
+        Born probability of the upper half of the position spectrum
+        (the risk subspace projector Π_risk = Σ_{i≥dim/2} |i⟩⟨i|):
+        P_risk(t) = ⟨ψ(t)|Π_risk|ψ(t)⟩. Deterministic — no sampling,
+        no quadrature lattice, no sigmoid.
         """
-        Forecast future risk using path integral formulation (first principles).
-
-        The future risk is computed as a sum over all possible paths:
-        K(b,a) = integral Dx(t) exp(iS[x(t)]/hbar)
-
-        In practice, this becomes a Monte Carlo sampling of future trajectories,
-        weighted by the action S along each path.
-        """
-
         try:
-
             hbar = self.config.get("hbar", 1.0)
-
             mass = self.config.get("mass", 1.0)
-
-            n_paths = self.config.get("path_samples", 100)
-
             omega = self.config.get("omega", 0.5)
-
-            # Extract current risk state
-
-            all_values = []
-
-            for key, value in indicators.items():
-
-                if isinstance(value, dict):
-
-                    for v in value.values():
-
-                        if isinstance(v, (int, float)):
-
-                            all_values.append(float(v))
-
-            if not all_values:
-
+            state = self._encode_indicators(indicators)
+            if state is None:
+                self._forecast_states = []
                 return {
                     "available": False,
                     "3_month": None,
@@ -3268,111 +2654,44 @@ class PredictiveEngine:
                         "available": False,
                     },
                 }
+            H = Observables.harmonic_oscillator_hamiltonian(state.dim, hbar, mass, omega)
+            times = (3.0, 6.0)
+            states_t = [
+                state.apply_unitary(ComplexMatrix.matrix_exp_unitary(H, t / hbar)) for t in times
+            ]
+            self._forecast_states = list(zip(times, states_t))
+            risk_cut = state.dim // 2
 
-            current_risk = np.mean(all_values)
+            def _risk(s: QuantumState) -> float:
+                return float(sum(s.probabilities()[risk_cut:]))
 
-            volatility = np.std(all_values) if len(all_values) > 1 else 0.1
-
-            # Path integral over a deterministic quadrature lattice — no RNG.
-            #
-            # Instead of sampling random walks, each path traverses the same
-            # Gauss-quantile node set under a distinct deterministic cyclic
-            # ordering. This is a quadrature rule over the path space, not a
-            # simulation: identical inputs always produce identical outputs.
-
-            # Action: S = integral [ (1/2)*m*xdot^2 - V(x) ] dt
-
-            dt_3month = 3.0  # 3 time units
-
-            dt_6month = 6.0  # 6 time units
-
-            def _quantile_lattice(n_steps: int, sigma: float) -> np.ndarray:
-                """Midpoint quantiles of N(0, sigma) — deterministic nodes."""
-
-                nd = statistics.NormalDist(mu=0.0, sigma=max(float(sigma), 1e-12))
-
-                return np.array([nd.inv_cdf((i + 0.5) / n_steps) for i in range(n_steps)])
-
-            def path_integral_forecast(dt, n_paths):
-                """Compute path integral forecast for given time horizon."""
-
-                amplitudes = []
-
-                n_steps = max(int(dt * 10), 1)
-
-                lattice = _quantile_lattice(n_steps, volatility / np.sqrt(n_steps))
-
-                # Distinct deterministic orderings of the node set: cyclic
-                # shifts cover the walk space uniformly without randomness.
-
-                for k in range(min(n_paths, n_steps)):
-
-                    increments = np.roll(lattice, k)
-
-                    path = np.cumsum(increments) + current_risk
-
-                    # Compute action: S = integral [ (1/2)*m*xdot^2 - V(x) ] dt
-
-                    # Kinetic: (1/2)*m*(dx/dt)^2
-
-                    kinetic_action = 0.5 * mass * np.sum(increments**2) * n_steps
-
-                    # Potential: V(x) = (1/2)*m*w^2*x^2 (harmonic)
-
-                    potential_action = 0.5 * mass * omega**2 * np.sum(path**2) * dt / n_steps
-
-                    action = kinetic_action - potential_action
-
-                    # Path amplitude: exp(iS/hbar)
-
-                    amplitude = np.exp(1j * action / hbar)
-
-                    amplitudes.append(amplitude)
-
-                # Born rule: probability = |sum amplitudes|^2 / N^2
-
-                total_amplitude = np.sum(amplitudes)
-
-                n_eval = len(amplitudes)
-
-                probability = np.abs(total_amplitude) ** 2 / (n_eval**2)
-
-                # Map to risk probability [0, 1]
-
-                risk = current_risk + probability * np.sign(np.real(total_amplitude))
-
-                return float(np.clip(risk, 0.0, 1.0))
-
-            forecast_3 = path_integral_forecast(dt_3month, n_paths)
-
-            forecast_6 = path_integral_forecast(dt_6month, n_paths)
-
+            forecast_3 = _risk(states_t[0])
+            forecast_6 = _risk(states_t[1])
+            current_risk = _risk(state)
             # Algebraic layer: detect which recurrence structure the
             # indicator series obeys, then contract the quadrature noise
             # with that family's Pisot drift kernel (|mu|^n -> 0). The
             # filter family is the detected one, or plastic (minimal
             # Pisot) when "auto" finds no structured lag.
-
+            all_values = [
+                float(v)
+                for value in indicators.values()
+                if isinstance(value, dict)
+                for v in value.values()
+                if isinstance(v, (int, float))
+            ]
             algebraic = {"enabled": bool(self.config.get("pisot_filter_enabled", True))}
-
-            if algebraic["enabled"]:
-
+            if algebraic["enabled"] and all_values:
                 signature = self.algebra.detect_family_signature(np.asarray(all_values))
-
                 configured = self.config.get("algebraic_family", "auto")
-
                 family = (
                     signature["family"]
                     if configured == "auto"
                     else (configured if configured in self.algebra.FAMILY_NAMES else "plastic")
                 )
-
                 if family == "unstructured":
-
                     family = "plastic"
-
                 filtered = self.algebra.pisot_drift_filter(all_values, family)
-
                 algebraic.update(
                     {
                         "family": family,
@@ -3386,1630 +2705,758 @@ class PredictiveEngine:
                         "drift_bound_6_month": str(self.algebra.pisot_drift(family, 6)),
                     }
                 )
-
             return {
                 "3_month": forecast_3,
                 "6_month": forecast_6,
                 "current": float(current_risk),
-                "method": "path_integral_monte_carlo",
+                "method": "schrodinger_matrix_exponential",
                 "algebraic": algebraic,
             }
-
         except Exception as e:
-
             logging.error(f"Error forecasting risk: {e}")
-
-            return {"3_month": 0.5, "6_month": 0.5}
+            return {"3_month": None, "6_month": None}
 
     def _identify_intervention_points(self, predictions: dict) -> list:
-        """
-        Identify optimal intervention points using quantum measurement theory (first principles).
+        """Intervention points = times of maximum quantum Fisher information.
 
-        The optimal measurement time is when the quantum Fisher information is maximized,
-        indicating maximum sensitivity to perturbations (interventions).
+        F_Q(ψ(t), x̂) is measured on the actual forecast states produced
+        by ``_forecast_risk`` — the times when the evolved state is most
+        sensitive to perturbation. No forecast states → no points
+        (honest empty set).
         """
-
         try:
-
-            hbar = self.config.get("hbar", 1.0)
-
-            # Extract forecast values
-
-            forecast_values = []
-
-            if isinstance(predictions, dict):
-
-                for key, value in predictions.items():
-
-                    if isinstance(value, (int, float)):
-
-                        forecast_values.append((key, float(value)))
-
-            if not forecast_values:
-
-                # No forecast evidence — return no intervention points
-                # rather than fabricated recommendations.
-
+            if not self._forecast_states:
                 return []
-
-            # Sort by time
-
-            forecast_values.sort(key=lambda x: x[0])
-
-            # Calculate quantum Fisher information at each time point
-
-            # F_Q = 4( <dH/dtheta>^2 - <(dH/dtheta)^2> )
-
-            # Computed as finite-difference derivative of the risk trajectory
-
             intervention_points = []
-
-            for i, (time_key, value) in enumerate(forecast_values):
-
-                # Fisher information: finite-difference of the trajectory
-
-                if i > 0:
-
-                    prev_val = forecast_values[i - 1][1]
-
-                    fisher_info = abs(value - prev_val) / hbar
-
-                else:
-
-                    fisher_info = value / hbar
-
-                # Determine intervention action based on risk level
-
-                if value > 0.7:
-
+            dim = self._forecast_states[0][1].dim
+            x = Observables.position(dim)
+            risk_cut = dim // 2
+            for t, state_t in self._forecast_states:
+                fisher_info = quantum_fisher_information(state_t, x)
+                projected_risk = float(sum(state_t.probabilities()[risk_cut:]))
+                if projected_risk > 0.7:
                     action = "manager_meeting"
-
                     time_label = "2_weeks"
-
-                elif value > 0.5:
-
+                elif projected_risk > 0.5:
                     action = "compensation_review"
-
                     time_label = "1_month"
-
                 else:
-
                     action = "career_development"
-
                     time_label = "3_months"
-
                 intervention_points.append(
                     {
                         "time": time_label,
+                        "evolution_time": float(t),
                         "action": action,
                         "fisher_info": float(fisher_info),
-                        "projected_risk": float(value),
+                        "projected_risk": projected_risk,
                     }
                 )
-
             return intervention_points
-
         except Exception as e:
-
             logging.error(f"Error identifying intervention points: {e}")
-
-            return [
-                {"time": "2_weeks", "action": "manager_meeting", "fisher_info": 0.5},
-                {"time": "1_month", "action": "compensation_review", "fisher_info": 0.3},
-            ]
+            return []
 
     def _calculate_probability(self, score: float) -> float:
-        """Calculate a probability from a score using Born rule"""
+        """Born passthrough: the channel score already IS a Born probability.
 
+        No squashing function — P = |amplitude|² lives in [0, 1] by
+        construction; the clip only guards float dust at the boundary.
+        """
         try:
-
-            return float(1 / (1 + np.exp(-score)))
-
+            return float(min(max(float(score), 0.0), 1.0))
         except Exception as e:
-
             logging.error(f"Error calculating probability: {e}")
-
             raise
 
     def _calculate_factor_weights(self, indicators: dict) -> dict:
-        """Calculate weights for factors"""
+        """Factor weights derived from the substrate, not from config constants.
 
+        Each factor group's observable is ranked by |⟨A⟩| on the encoded
+        indicator state (``causal_factor_ranking``), then normalized.
+        Empty when no factor carries numeric data — no invented default
+        weights are ever substituted.
+        """
         try:
-
-            return {
-                "performance_metrics": self.config.get("performance_weight", 0.30),
-                "behavioral_metrics": self.config.get("behavioral_weight", 0.25),
-                "engagement_metrics": self.config.get("engagement_weight", 0.20),
-                "career_metrics": self.config.get("career_weight", 0.15),
-                "external_metrics": self.config.get("external_weight", 0.10),
-            }
-
+            state = self._encode_indicators(indicators)
+            if state is None:
+                return {}
+            observables = self._factor_observables(indicators)
+            if not observables:
+                return {}
+            ranked = causal_factor_ranking(state, observables)
+            total = sum(mag for _, mag in ranked)
+            if total <= 0:
+                return {name: 1.0 / len(ranked) for name, _ in ranked}
+            return {name: mag / total for name, mag in ranked}
         except Exception as e:
-
             logging.error(f"Error calculating factor weights: {e}")
-
             raise
 
-    def _get_immediate_actions(self, risk_factors: list) -> list:
-        """Generates immediate retention actions based on quantum state analysis"""
-
-        try:
-
-            actions = []
-
-            for factor, weight in risk_factors:
-
-                if "performance" in str(factor):
-
-                    actions.append("Schedule performance review meeting")
-
-                elif "behavioral" in str(factor):
-
-                    actions.append("Check-in with manager regarding workload")
-
-                elif "engagement" in str(factor):
-
-                    actions.append("Conduct engagement survey follow-up")
-
-                elif "career" in str(factor):
-
-                    actions.append("Discuss career development opportunities")
-
-                elif "external" in str(factor):
-
-                    actions.append("Review compensation competitiveness")
-
-            if not actions:
-
-                actions = ["Check-in with manager", "Review project workload"]
-
-            return actions[:3]
-
-        except Exception as e:
-
-            logging.error(f"Error generating immediate actions: {e}")
-
-            return ["Check-in with manager", "Review project workload"]
-
-    def _get_long_term_strategies(self, risk_factors: list) -> list:
-        """Generates long-term retention strategies based on quantum trajectory analysis"""
-
-        try:
-
-            strategies = []
-
-            for factor, weight in risk_factors:
-
-                if "performance" in str(factor):
-
-                    strategies.append("Implement performance improvement plan")
-
-                elif "behavioral" in str(factor):
-
-                    strategies.append("Flexible work arrangement evaluation")
-
-                elif "engagement" in str(factor):
-
-                    strategies.append("Team building and culture initiatives")
-
-                elif "career" in str(factor):
-
-                    strategies.append("Career development planning and mentorship")
-
-                elif "external" in str(factor):
-
-                    strategies.append("Compensation benchmarking review")
-
-            if not strategies:
-
-                strategies = ["Career development planning", "Skill development workshop"]
-
-            return strategies[:3]
-
-        except Exception as e:
-
-            logging.error(f"Error generating long-term strategies: {e}")
-
-            return ["Career development planning", "Skill development workshop"]
-
-    def _get_manager_recommendations(self, risk_factors: list) -> list:
-        """Generates recommendations for managers based on quantum measurement insights"""
-
-        try:
-
-            recommendations = []
-
-            for factor, weight in risk_factors:
-
-                if "performance" in str(factor):
-
-                    recommendations.append("Set clear performance goals and milestones")
-
-                elif "behavioral" in str(factor):
-
-                    recommendations.append("Monitor workload and work-life balance")
-
-                elif "engagement" in str(factor):
-
-                    recommendations.append("Increase frequency of 1-on-1 meetings")
-
-                elif "career" in str(factor):
-
-                    recommendations.append("Discuss career aspirations and growth path")
-
-                elif "external" in str(factor):
-
-                    recommendations.append("Review compensation and benefits package")
-
-            if not recommendations:
-
-                recommendations = ["Schedule meeting with employee", "Ask about workload"]
-
-            return recommendations[:3]
-
-        except Exception as e:
-
-            logging.error(f"Error generating manager recommendations: {e}")
-
-            return ["Schedule meeting with employee", "Ask about workload"]
-
     def _predict_with_model(self, model, indicators: dict) -> dict:
-        """Predict using a given model and normalized data"""
-
+        """Score via one channel's Born-overlap discrimination."""
         try:
-
-            input_features = self._prepare_input_features(indicators)  # Generate input features
-
-            if input_features.ndim == 1:
-
-                input_features = input_features.reshape(1, -1)
-
-            # Match the feature dimension the observed cohort was fitted on.
-
-            target_dim = self._feature_dim()
-
-            if input_features.shape[1] < target_dim:
-
-                padding = np.zeros((input_features.shape[0], target_dim - input_features.shape[1]))
-
-                input_features = np.hstack([input_features, padding])
-
-            elif input_features.shape[1] > target_dim:
-
-                input_features = input_features[:, :target_dim]
-
-            # Exact-linear model applies center-only preprocessing itself.
-            model_features = input_features
-
-            y_pred = model.predict_proba(model_features)[:, 1]  # get probability
-
+            features = self._prepare_input_features(indicators)
+            state = encode_data_to_state(
+                [float(v) for v in features],
+                dim=model.dim,
+                normalize=True,
+            )
+            result = model.discriminate(state)
+            if result is None:
+                return {"available": False, "score": None, "confidence": None}
             return {
-                "score": float(y_pred[0]),
-                "confidence": self._calculate_model_confidence(y_pred[0]),
+                "available": True,
+                "score": float(result["score"]),
+                "confidence": float(result["margin"]),
             }
-
         except Exception as e:
-
             logging.error(f"Error predicting with model: {e}")
-
             raise
 
     def _calculate_model_confidence(self, prediction: float) -> float:
+        """Helstrom discrimination margin of a Born probability (first principles).
+
+        For a two-outcome Born measurement, the discrimination margin is
+        |p − (1−p)| = |2p − 1| — the trace-distance-aligned certainty of
+        the outcome. 0 at p = 0.5 (maximally uncertain), 1 at the poles.
         """
-        Calculate model confidence using quantum Fisher information (first principles).
-
-        The quantum Fisher information bounds the variance of any unbiased estimator:
-        Var(theta_hat) >= 1/F_Q
-
-        Confidence is derived from the Fisher information of the Born rule probability.
-        """
-
         try:
-
-            # Born rule: P = |psi|^2, with psi = sqrt(P) * exp(i*phi)
-
-            # Fisher information for Bernoulli: F_Q = 1/(P*(1-P))
-
-            if prediction <= 0 or prediction >= 1:
-
-                # Maximum confidence at extremes (certain outcome)
-
-                return 1.0
-
-            fisher_info = 1.0 / (prediction * (1 - prediction))
-
-            # Normalize Fisher information to [0, 1] confidence
-
-            # Maximum Fisher info for Bernoulli is 4 (at P=0.5)
-
-            max_fisher = 4.0
-
-            confidence = fisher_info / max_fisher
-
-            # Invert: high Fisher info at P=0.5 means LOW confidence (uncertain)
-
-            # Low Fisher info at extremes means HIGH confidence (certain)
-
-            confidence = 1.0 - confidence
-
-            return float(np.clip(confidence, 0.0, 1.0))
-
+            return float(min(max(abs(2.0 * float(prediction) - 1.0), 0.0), 1.0))
         except Exception as e:
-
             logging.error(f"Error calculating model confidence: {e}")
-
             return 0.5
 
     def _prepare_input_features(self, indicators: dict) -> np.ndarray:
         """Concatenate all extracted indicators into a numpy array"""
-
         try:
-
             feature_list = []
-
             for key, value in indicators.items():
-
                 if isinstance(value, dict):
-
                     for v in value.values():
-
                         if isinstance(v, (int, float, np.floating)):
-
                             feature_list.append(float(v))
-
                         elif isinstance(v, np.ndarray):
-
                             feature_list.extend(v.flatten())
-
                 elif isinstance(value, list):
-
                     for v in value:
-
                         if isinstance(v, (int, float, np.floating)):
-
                             feature_list.append(float(v))
-
                 elif isinstance(value, str):
-
                     feature_list.append(self._analyze_text_sentiment(value))
-
                 elif isinstance(value, np.ndarray):
-
                     feature_list.extend(value.flatten())
-
                 elif isinstance(value, (int, float, np.floating)):
-
                     if not (isinstance(value, float) and np.isnan(value)):
-
                         feature_list.append(float(value))
-
             if not feature_list:
-
                 feature_list = [0.0] * self.config.get("feature_dim", 10)
-
             return np.array(feature_list, dtype=float)
-
         except Exception as e:
-
             logging.error(f"Error preparing input features: {e}")
-
             raise
 
     def _analyze_text_sentiment(self, text: str) -> float:
-        """Analyzes the sentiment of input text."""
+        """Lexicon sentiment score — declared classical feature extraction.
 
+        This is the repo's own lexicon counter (kellogg.tensor_ml
+        TensorSentimentAnalyzer): a deterministic word-count ratio, not a
+        quantum quantity and not presented as one.
+        """
         try:
-
-            if not isinstance(text, str):
-
+            if not isinstance(text, str) or self.sentiment_analyzer is None:
                 return 0.0
-
             scores = self.sentiment_analyzer.polarity_scores(text)
-
             return float(scores["compound"])
-
         except Exception as e:
-
             logging.error(f"Error analyzing text sentiment: {e}")
-
             return 0.0
 
     def _analyze_performance_trend(self, data: _dependencies.pd.DataFrame) -> dict:
-        """Analyze employee performance trends with quantum-enhanced time series"""
+        """Analyze performance trends; trend from the Pisot lag-kernel contraction.
 
+        The moving-average and EWMA columns are honest classical
+        smoothing (labeled as such). The trend estimate comes from the
+        exact-algebraic substrate: the series' detected family signature
+        selects a lag kernel and pisot_drift_filter contracts the series
+        toward its recurrence trend — the slope of that filtered series.
+        """
         try:
-
             if not isinstance(data, _dependencies.pd.DataFrame):
                 raise TypeError("performance trend input must be a pandas DataFrame")
             if "performance_score" not in data.columns or "date" not in data.columns:
                 raise ValueError("performance trend requires date and performance_score columns")
-
-            if (
-                isinstance(data, _dependencies.pd.DataFrame)
-                and "performance_score" in data.columns
-                and "date" in data.columns
-            ):
-
-                data = data.copy()
-
-                data["date"] = _dependencies.pd.to_datetime(data["date"])  # Convert to datetime
-
-                data = data.sort_values(by="date")
-
-                # Moving Average
-
-                ma = data["performance_score"].rolling(window=3, min_periods=1).mean()
-
-                # Exponential Smoothing
-
-                ewma = data["performance_score"].ewm(span=3, min_periods=1).mean()
-
-                # Seasonal Decomposition with quantum-enhanced trend
-
-                if len(data) > 10 and _dependencies._HAS_STATSMODELS:
-
-                    decomposition = _dependencies.seasonal_decompose(
-                        data["performance_score"],
-                        model="additive",
-                        period=5,
-                        extrapolate_trend="freq",
-                    )
-
-                    trend = decomposition.trend.fillna(
-                        method="bfill"
-                    ).mean()  # Take mean of the trend component
-
-                else:
-
-                    trend = data["performance_score"].diff().mean()
-
-                return {
-                    "ma": float(ma.iloc[-1]) if not ma.empty else 0.0,
-                    "ewma": float(ewma.iloc[-1]) if not ewma.empty else 0.0,
-                    "trend": float(trend) if not np.isnan(trend) else 0.0,
-                }
-
-            return {}
-
+            data = data.copy()
+            data["date"] = _dependencies.pd.to_datetime(data["date"])
+            data = data.sort_values(by="date")
+            ma = data["performance_score"].rolling(window=3, min_periods=1).mean()
+            ewma = data["performance_score"].ewm(span=3, min_periods=1).mean()
+            values = [float(v) for v in data["performance_score"].tolist()]
+            if len(values) > 10:
+                signature = self.algebra.detect_family_signature(np.asarray(values))
+                family = (
+                    signature["family"]
+                    if signature.get("family") in self.algebra.FAMILY_NAMES
+                    else "plastic"
+                )
+                filtered = self.algebra.pisot_drift_filter(values, family)
+                # Slope of the contracted series — exact Decimal arithmetic.
+                trend = float(filtered[-1] - filtered[0]) / max(len(filtered) - 1, 1)
+            else:
+                trend = float(np.mean(np.diff(values))) if len(values) > 1 else 0.0
+            return {
+                "ma": float(ma.iloc[-1]) if not ma.empty else 0.0,
+                "ewma": float(ewma.iloc[-1]) if not ewma.empty else 0.0,
+                "trend": float(trend) if not np.isnan(trend) else 0.0,
+            }
         except Exception as e:
-
             logging.error(f"Error in _analyze_performance_trend: {e}")
-
             raise
 
     def _analyze_text_engagement(self, text: str) -> float:
-        """
-        Analyzes text for engagement signals using quantum semantic analysis (first principles).
+        """Engagement = spectral concentration of the encoded text state.
 
-        Tokenize text, compute TF-IDF as quantum amplitudes, measure "engagement"
-        as the norm of the semantic state vector in Hilbert space.
+        The text is encoded by ``encode_data_to_state`` (UTF-8 byte
+        amplitudes). Engagement is 1 − H(p)/log₂(dim) where H is the
+        Shannon entropy of the state's Born distribution — a concentrated
+        semantic state (low entropy) reads as engaged.
         """
-
         try:
-
             if not isinstance(text, str) or not text.strip():
-
                 return 0.0
-
-            # Quantum semantic analysis: TF-IDF as probability amplitudes
-
-            # Fit TF-IDF on the text
-
-            tfidf_matrix = self.tfidf_vectorizer.fit_transform([text])
-
-            # Extract amplitudes (TF-IDF values)
-
-            amplitudes = tfidf_matrix.toarray()[0]
-
-            if len(amplitudes) == 0:
-
-                return 0.0
-
-            # Normalize to create quantum state vector
-
-            norm = np.sqrt(np.sum(amplitudes**2))
-
-            if norm == 0:
-
-                return 0.0
-
-            psi = amplitudes / norm
-
-            # Engagement = <psi|psi> = 1 (always normalized)
-            # But measure "intensity" as sum of squared amplitudes weighted by position
-
-            # Higher engagement = more concentrated semantic state
-
-            entropy = -np.sum(psi**2 * np.log(psi**2 + 1e-10))
-
-            # Normalize entropy to [0, 1] - lower entropy = more focused = higher engagement
-
-            max_entropy = np.log(len(psi)) if len(psi) > 1 else 1.0
-
-            if max_entropy > 0:
-
-                engagement = 1.0 - (entropy / max_entropy)
-
-            else:
-
-                engagement = 0.5
-
-            return float(np.clip(engagement, 0.0, 1.0))
-
+            state = encode_data_to_state(
+                text, dim=self._encoding_dim(len(text.encode("utf-8"))), normalize=True
+            )
+            entropy = state.measurement_entropy()
+            max_entropy = math.log2(state.dim) if state.dim > 1 else 1.0
+            if max_entropy <= 0:
+                return 0.5
+            return float(np.clip(1.0 - entropy / max_entropy, 0.0, 1.0))
         except Exception as e:
-
             logging.error(f"Error analyzing text engagement: {e}")
-
             return 0.5
 
     def _analyze_login_patterns(self, data: _dependencies.pd.DataFrame) -> int:
-        """
-        Analyze employee login patterns using quantum counting (first principles).
-
-        Login pattern as a quantum state, count using Grover-like amplitude amplification.
-        """
-
+        """Login pattern as the number-operator expectation of the encoded ray."""
         try:
-
             if isinstance(data, _dependencies.pd.DataFrame) and "login_time" in data.columns:
-
                 values = data["login_time"].dropna().values.astype(float)
-
-                if len(values) == 0:
-
-                    return 0
-
-                # Quantum counting: expectation value of number operator
-
-                # Map to quantum levels
-
-                if np.max(values) == np.min(values):
-
-                    return 1
-
-                normalized = (values - np.min(values)) / (np.max(values) - np.min(values))
-
-                quantum_numbers = np.round(normalized * (len(values) - 1))
-
-                # Uniform amplitudes
-
-                amplitudes = np.ones(len(values)) / np.sqrt(len(values))
-
-                probabilities = np.abs(amplitudes) ** 2
-
-                expectation_n = np.sum(quantum_numbers * probabilities)
-
-                return int(expectation_n)
-
+                state = self._series_state(values)
+                if state is None:
+                    return 0 if len(values) == 0 else 1
+                n_op = Observables.number_operator(
+                    state.dim, self.config.get("hbar", 1.0), self.config.get("omega", 0.5)
+                )
+                return int(round(state.expectation(n_op)))
             return 0
-
         except Exception as e:
-
             logging.error(f"Error in _analyze_login_patterns: {e}")
-
             raise
 
     def _analyze_survey_responses(self, data: _dependencies.pd.DataFrame) -> np.ndarray:
-        """Analyzes employee survey responses using quantum semantic state vectors"""
-
+        """Survey responses → Born distributions of encoded semantic states."""
         try:
-
             if not isinstance(data, _dependencies.pd.DataFrame):
                 raise TypeError("survey response input must be a pandas DataFrame")
             if "survey_text" not in data.columns:
                 raise ValueError("survey response data requires a survey_text column")
-
             if isinstance(data, _dependencies.pd.DataFrame) and "survey_text" in data.columns:
-
                 text_features = self._process_text_data(data["survey_text"])
-
                 return text_features
-
             return np.array([])
-
         except Exception as e:
-
             logging.error(f"Error in _analyze_survey_responses: {e}")
-
             raise
 
     def _process_text_data(self, text_series: _dependencies.pd.Series) -> np.ndarray:
-        """
-        Process text data into quantum semantic state vectors (first principles).
+        """Each text row → its encoded state's Born probability vector.
 
-        TF-IDF values are treated as probability amplitudes in a Hilbert space,
-        normalized to create valid quantum states.
+        ``encode_data_to_state`` maps UTF-8 bytes to real amplitudes;
+        probabilities() applies the Born rule |α_i|². The flattened rows
+        are the quantum semantic features — no TF-IDF anywhere.
         """
-
         try:
-
-            # Handle NaN values in text
-
             text_data = text_series.dropna().astype(str)
-
             if len(text_data) == 0:
-
                 return np.array([0.0])
-
-            # Fit and transform TF-IDF
-
-            tfidf_matrix = self.tfidf_vectorizer.fit_transform(text_data)
-
-            amplitudes = tfidf_matrix.toarray()
-
-            # Normalize each row to create quantum state vectors
-
-            for i in range(amplitudes.shape[0]):
-
-                norm = np.sqrt(np.sum(amplitudes[i] ** 2))
-
-                if norm > 0:
-
-                    amplitudes[i] = amplitudes[i] / norm
-
-            # Return as flattened array of quantum state amplitudes
-
-            return amplitudes.flatten()
-
+            rows = [
+                encode_data_to_state(text, dim=self._encoding_dim(), normalize=True).probabilities()
+                for text in text_data
+            ]
+            return np.asarray(rows, dtype=float).flatten()
         except Exception as e:
-
             logging.error(f"Error processing text data: {e}")
-
             return np.array([0.0])
 
     def _analyze_goal_completion(self, data) -> float:
-        """
-        Analyzes the level of goal completion using quantum measurement theory (first principles).
+        """Goal completion = ⟨Ĉ⟩ of the clipped-completion diagonal observable.
 
-        Goal completion is modeled as a quantum measurement: the probability of
-        observing "completed" is |<completed|psi>|^2 where |psi> is the employee state.
+        The observable Ĉ is diagonal with eigenvalues equal to the
+        observed completion fractions (clipped to [0,1], zero-padded);
+        ⟨ψ|Ĉ|ψ⟩ is the Born-weighted completion rate — a real expectation
+        value on the encoded state.
         """
-
         try:
-
             if isinstance(
                 data, (_dependencies.pd.Series, _dependencies.pd.DataFrame, np.ndarray, list)
             ):
-
                 values = np.array(data, dtype=float).flatten()
-
                 values = values[~np.isnan(values)]
-
                 if len(values) == 0:
-
                     return 0.0
-
-                # Quantum measurement: P(completed) = mean of completion values
-
-                # Born rule: P = |amplitude|^2
-
-                amplitudes = np.sqrt(np.clip(values, 0, 1))
-
-                norm = np.sqrt(np.sum(amplitudes**2))
-
-                if norm == 0:
-
+                state = self._series_state(np.abs(values) + 1e-12)
+                if state is None:
                     return 0.0
-
-                psi = amplitudes / norm
-
-                # Measurement probability
-
-                probability = np.sum(psi**2 * values) / np.sum(psi**2)
-
-                return float(np.clip(probability, 0.0, 1.0))
-
+                eigenvalues = [min(max(float(v), 0.0), 1.0) for v in values]
+                eigenvalues += [0.0] * (state.dim - len(eigenvalues))
+                obs = ComplexMatrix.diagonal([Complex(v, 0.0) for v in eigenvalues])
+                return float(np.clip(state.expectation(obs), 0.0, 1.0))
             return 0.0
-
         except Exception as e:
-
             logging.error(f"Error in _analyze_goal_completion: {e}")
-
             raise
 
     def _analyze_peer_comparison(self, data) -> float:
-        """
-        Analyzes the performance relative to peers using quantum fidelity (first principles).
-
-        Fidelity F = |<psi|phi>|^2 measures overlap between employee and peer-average states.
-        """
-
+        """Peer comparison = fidelity F = |⟨ψ|uniform⟩|² (first principles)."""
         try:
-
             if isinstance(
                 data, (_dependencies.pd.Series, _dependencies.pd.DataFrame, np.ndarray, list)
             ):
-
                 values = np.array(data, dtype=float).flatten()
-
                 values = values[~np.isnan(values)]
-
                 if len(values) < 2:
-
                     return 0.5
-
-                # Employee state vector
-
-                psi = values - np.mean(values)
-
-                norm_psi = np.sqrt(np.sum(psi**2))
-
-                if norm_psi == 0:
-
+                centered = values - np.mean(values)
+                state = self._series_state(centered)
+                if state is None:
                     return 1.0
-
-                psi = psi / norm_psi
-
-                # Peer average state (uniform superposition)
-
-                phi = np.ones_like(psi) / np.sqrt(len(psi))
-
-                # Quantum fidelity: F = |<psi|phi>|^2
-
-                fidelity = np.abs(np.dot(np.conj(psi), phi)) ** 2
-
-                return float(fidelity)
-
+                uniform = QuantumState.uniform_superposition(state.dim)
+                return float(state.fidelity(uniform))
             return 0.5
-
         except Exception as e:
-
             logging.error(f"Error in _analyze_peer_comparison: {e}")
-
             raise
 
     def _analyze_communication(self, data) -> float:
-        """
-        Analyzes communication patterns using quantum information theory (first principles).
+        """Communication quality = normalized measurement entropy (first principles).
 
-        Communication quality is measured as the quantum mutual information between
-        communication frequency and sentiment.
+        H(p)/log₂(dim) of the encoded |values| state — the Born
+        distribution's spread. Higher entropy = more uniformly
+        distributed communication intensity.
         """
-
         try:
-
             if isinstance(
                 data, (_dependencies.pd.Series, _dependencies.pd.DataFrame, np.ndarray, list)
             ):
-
                 values = np.array(data, dtype=float).flatten()
-
                 values = values[~np.isnan(values)]
-
                 if len(values) == 0:
-
                     return 0.0
-
-                # Quantum information measure: Shannon entropy of normalized values
-
-                # Treat values as probability distribution
-
-                positive_values = np.abs(values)
-
-                total = np.sum(positive_values)
-
-                if total == 0:
-
+                state = self._series_state(np.abs(values) + 1e-12)
+                if state is None:
                     return 0.0
-
-                probabilities = positive_values / total
-
-                # Quantum von Neumann entropy: S = -Σ p_k log2(p_k)
-
-                entropy = -np.sum(probabilities * np.log2(probabilities + 1e-10))
-
-                # Normalize by maximum entropy
-
-                max_entropy = np.log2(len(values)) if len(values) > 1 else 1.0
-
-                if max_entropy > 0:
-
-                    communication_quality = entropy / max_entropy
-
-                else:
-
-                    communication_quality = 0.0
-
-                return float(np.clip(communication_quality, 0.0, 1.0))
-
+                entropy = state.measurement_entropy()
+                max_entropy = math.log2(state.dim) if state.dim > 1 else 1.0
+                if max_entropy <= 0:
+                    return 0.0
+                return float(np.clip(entropy / max_entropy, 0.0, 1.0))
             return 0.0
-
         except Exception as e:
-
             logging.error(f"Error in _analyze_communication: {e}")
-
             raise
 
     def _analyze_attendance(self, data) -> float:
-        """
-        Analyzes meeting attendance using quantum temporal coherence (first principles).
+        """Attendance regularity = fidelity between consecutive window states.
 
-        Attendance regularity is measured as the temporal coherence of the
-        attendance pattern, analogous to quantum coherence.
+        F(ψ(v₀..v_{n−2}), ψ(v₁..v_{n−1})) — the quantum overlap of the
+        attendance pattern with its own one-step shift. High fidelity =
+        coherent, regular pattern.
         """
-
         try:
-
             if isinstance(
                 data, (_dependencies.pd.Series, _dependencies.pd.DataFrame, np.ndarray, list)
             ):
-
                 values = np.array(data, dtype=float).flatten()
-
                 values = values[~np.isnan(values)]
-
                 if len(values) < 2:
-
                     return 0.5
-
-                # Temporal coherence: autocorrelation at lag 1
-
-                mean_val = np.mean(values)
-
-                if np.std(values) == 0:
-
-                    return 1.0  # Perfect regularity
-
-                # Quantum coherence: <psi(0)|psi(t)>
-
-                psi = (values - mean_val) / np.std(values)
-
-                norm = np.sqrt(np.sum(psi**2))
-
-                if norm == 0:
-
-                    return 1.0
-
-                psi = psi / norm
-
-                # Autocorrelation as coherence measure
-
-                if len(psi) > 1:
-
-                    coherence = np.correlate(psi[:-1], psi[1:])[0]
-
-                else:
-
-                    coherence = 1.0
-
-                return float(np.clip(np.abs(coherence), 0.0, 1.0))
-
+                dim = self._encoding_dim(len(values) - 1)
+                early = encode_data_to_state(list(values[:-1]), dim=dim, normalize=True)
+                late = encode_data_to_state(list(values[1:]), dim=dim, normalize=True)
+                return float(np.clip(early.fidelity(late), 0.0, 1.0))
             return 0.5
-
         except Exception as e:
-
             logging.error(f"Error in _analyze_attendance: {e}")
-
             raise
 
     def _analyze_work_hours(self, data) -> float:
-        """
-        Analyzes changes in work hours using quantum energy levels (first principles).
+        """Work-hours instability = ⟨n̂⟩/(dim−1) of the encoded values.
 
-        Work hours distribution is modeled as quantum energy levels of a
-        harmonic oscillator. Variations in energy indicate instability.
+        The number-operator expectation measures how far above the
+        ground level the encoded work-hours ray sits; normalized to
+        [0, 1] by the maximum quantum number.
         """
-
         try:
-
             if isinstance(
                 data, (_dependencies.pd.Series, _dependencies.pd.DataFrame, np.ndarray, list)
             ):
-
                 values = np.array(data, dtype=float).flatten()
-
                 values = values[~np.isnan(values)]
-
                 if len(values) < 2:
-
                     return 0.0
-
-                hbar = self.config.get("hbar", 1.0)
-
-                self.config.get("mass", 1.0)
-
-                omega = self.config.get("omega", 0.5)
-
-                # Quantum energy levels: E_n = (n + 1/2) * hbar * omega
-
-                mean_val = np.mean(values)
-
-                std_val = np.std(values)
-
-                if std_val == 0:
-
-                    return 0.0  # No variation = stable
-
-                # Normalize to quantum numbers
-
-                normalized = (values - mean_val) / std_val
-
-                quantum_numbers = np.round(np.abs(normalized))
-
-                # Energy levels
-
-                energies = (quantum_numbers + 0.5) * hbar * omega
-
-                # Average energy deviation from ground state
-
-                ground_energy = 0.5 * hbar * omega
-
-                energy_deviation = np.mean(energies - ground_energy)
-
-                # Normalize to [0, 1]
-
-                max_deviation = (len(values) + 0.5) * hbar * omega - ground_energy
-
-                if max_deviation > 0:
-
-                    instability = energy_deviation / max_deviation
-
-                else:
-
-                    instability = 0.0
-
-                return float(np.clip(instability, 0.0, 1.0))
-
+                state = self._series_state(values)
+                if state is None:
+                    return 0.0
+                n_op = Observables.number_operator(
+                    state.dim, self.config.get("hbar", 1.0), self.config.get("omega", 0.5)
+                )
+                max_n = state.dim - 1
+                if max_n <= 0:
+                    return 0.0
+                return float(np.clip(state.expectation(n_op) / max_n, 0.0, 1.0))
             return 0.0
-
         except Exception as e:
-
             logging.error(f"Error in _analyze_work_hours: {e}")
-
             raise
 
     def _analyze_participation(self, data) -> float:
-        """
-        Analyzes participation in projects using quantum superposition (first principles).
+        """Participation = |⟨ψ|uniform⟩|² — Born overlap with the active state.
 
-        Participation is modeled as a superposition of "active" and "inactive" states.
-        The probability of being "active" is |<active|psi>|^2.
+        The "active" reference is the uniform superposition (every basis
+        state equally populated); the measured overlap is the
+        participation probability.
         """
-
         try:
-
             if isinstance(
                 data, (_dependencies.pd.Series, _dependencies.pd.DataFrame, np.ndarray, list)
             ):
-
                 values = np.array(data, dtype=float).flatten()
-
                 values = values[~np.isnan(values)]
-
                 if len(values) == 0:
-
                     return 0.0
-
-                # Quantum superposition: participation as probability amplitude
-
-                # Normalize values to [0, 1] as amplitudes
-
-                if np.max(values) > 0:
-
-                    amplitudes = np.sqrt(np.clip(values / np.max(values), 0, 1))
-
-                else:
-
+                state = self._series_state(np.abs(values) + 1e-12)
+                if state is None:
                     return 0.0
-
-                # Quantum state vector
-
-                norm = np.sqrt(np.sum(amplitudes**2))
-
-                if norm == 0:
-
-                    return 0.0
-
-                psi = amplitudes / norm
-
-                # Measurement: probability of "active" state
-
-                # Active state = uniform superposition
-
-                active_state = np.ones_like(psi) / np.sqrt(len(psi))
-
-                probability = np.abs(np.dot(np.conj(psi), active_state)) ** 2
-
-                return float(np.clip(probability, 0.0, 1.0))
-
+                uniform = QuantumState.uniform_superposition(state.dim)
+                return float(np.clip(state.fidelity(uniform), 0.0, 1.0))
             return 0.0
-
         except Exception as e:
-
             logging.error(f"Error in _analyze_participation: {e}")
-
             raise
 
     def _analyze_feedback(self, data) -> float:
-        """
-        Analyzes feedback sentiment using quantum measurement (first principles).
+        """Feedback = ⟨Ŝ⟩ of the sign observable on the encoded state.
 
-        Feedback is treated as a quantum observable. The expectation value
-        gives the average sentiment, weighted by quantum probabilities.
+        Ŝ is diagonal with eigenvalues sign(vᵢ) ∈ {−1, 0, +1}; the
+        expectation ⟨ψ|Ŝ|ψ⟩ is the Born-weighted polarity, mapped from
+        [−1, 1] to [0, 1].
         """
-
         try:
-
             if isinstance(
                 data, (_dependencies.pd.Series, _dependencies.pd.DataFrame, np.ndarray, list)
             ):
-
                 values = np.array(data, dtype=float).flatten()
-
                 values = values[~np.isnan(values)]
-
                 if len(values) == 0:
-
                     return 0.0
-
-                # Quantum observable: expectation value
-
-                # Normalize to probability amplitudes
-
-                positive_values = np.abs(values)
-
-                total = np.sum(positive_values)
-
-                if total == 0:
-
+                state = self._series_state(np.abs(values) + 1e-12)
+                if state is None:
                     return 0.0
-
-                probabilities = positive_values / total
-
-                # Expectation value: <O> = sum(P_i * O_i)
-
-                # Sentiment observable: sign of values
-
-                observable = np.sign(values)
-
-                expectation = np.sum(probabilities * observable)
-
-                return float(np.clip((expectation + 1) / 2, 0.0, 1.0))  # Map [-1,1] to [0,1]
-
+                eigenvalues = [float(np.sign(v)) for v in values]
+                eigenvalues += [0.0] * (state.dim - len(eigenvalues))
+                obs = ComplexMatrix.diagonal([Complex(v, 0.0) for v in eigenvalues])
+                expectation = state.expectation(obs)
+                return float(np.clip((expectation + 1.0) / 2.0, 0.0, 1.0))
             return 0.0
-
         except Exception as e:
-
             logging.error(f"Error in _analyze_feedback: {e}")
-
             raise
 
     def _analyze_promotions(self, data) -> float:
-        """
-        Analyzes the history of promotions using quantum ladder operators (first principles).
+        """Promotion rate = Born probability of the up-transition subspace.
 
-        Promotions are modeled as quantum ladder climbing: each promotion is an
-        energy level transition via the raising operator a^dagger.
+        The state encodes the inter-value differences; the projector
+        Π₊ onto basis states whose difference is positive gives
+        P(up) = ⟨ψ|Π₊|ψ⟩ — the measured promotion-transition probability.
         """
-
         try:
-
             if isinstance(
                 data, (_dependencies.pd.Series, _dependencies.pd.DataFrame, np.ndarray, list)
             ):
-
                 values = np.array(data, dtype=float).flatten()
-
                 values = values[~np.isnan(values)]
-
-                if len(values) == 0:
-
+                if len(values) < 2:
                     return 0.0
-
-                hbar = self.config.get("hbar", 1.0)
-
-                omega = self.config.get("omega", 0.5)
-
-                # Quantum ladder: each promotion raises energy by hbar*omega
-
-                # Count transitions (positive changes)
-
-                if len(values) > 1:
-
-                    transitions = np.diff(values)
-
-                    upward_transitions = np.sum(transitions > 0)
-
-                    total_transitions = len(transitions)
-
-                    if total_transitions > 0:
-
-                        # Promotion rate as quantum transition probability
-
-                        upward_transitions / total_transitions
-
-                        # Energy gained through promotions
-
-                        energy_gained = upward_transitions * hbar * omega
-
-                        # Normalize
-
-                        max_energy = total_transitions * hbar * omega
-
-                        if max_energy > 0:
-
-                            promotion_score = energy_gained / max_energy
-
-                        else:
-
-                            promotion_score = 0.0
-
-                        return float(np.clip(promotion_score, 0.0, 1.0))
-
-                return 0.0
-
+                diffs = np.diff(values)
+                state = self._series_state(np.abs(diffs) + 1e-12)
+                if state is None:
+                    return 0.0
+                eigenvalues = [1.0 if d > 0 else 0.0 for d in diffs]
+                eigenvalues += [0.0] * (state.dim - len(eigenvalues))
+                projector = ComplexMatrix.diagonal([Complex(v, 0.0) for v in eigenvalues])
+                return float(np.clip(state.expectation(projector), 0.0, 1.0))
             return 0.0
-
         except Exception as e:
-
             logging.error(f"Error in _analyze_promotions: {e}")
-
             raise
 
     def _analyze_skill_development(self, data) -> float:
-        """
-        Analyzes skill development activity using quantum state evolution (first principles).
+        """Skill development rate = |Ehrenfest drift| of the encoded levels.
 
-        Skill development is modeled as quantum state evolution: the rate of change
-        in skill levels corresponds to the Schrodinger evolution rate.
+        The magnitude of the measured d⟨x⟩/dt under golden-family
+        evolution — how fast the skill state's position centroid moves.
         """
-
         try:
-
             if isinstance(
                 data, (_dependencies.pd.Series, _dependencies.pd.DataFrame, np.ndarray, list)
             ):
-
                 values = np.array(data, dtype=float).flatten()
-
                 values = values[~np.isnan(values)]
-
                 if len(values) < 2:
-
                     return 0.0
-
-                hbar = self.config.get("hbar", 1.0)
-
-                # Quantum state evolution: d|psi>/dt = -iH|psi>/hbar
-
-                # Rate of skill development = momentum of skill trajectory
-
-                mean_val = np.mean(values)
-
-                std_val = np.std(values)
-
-                if std_val == 0:
-
+                state = self._series_state(values)
+                if state is None:
                     return 0.0
-
-                # Normalize to wavefunction
-
-                psi = (values - mean_val) / std_val
-
-                norm = np.sqrt(np.sum(np.abs(psi) ** 2))
-
-                if norm == 0:
-
-                    return 0.0
-
-                psi = psi / norm
-
-                # Momentum operator: p = -i*hbar*d/dx
-
-                p_psi = np.zeros_like(psi, dtype=complex)
-
-                for n in range(len(psi)):
-
-                    psi_plus = psi[n + 1] if n + 1 < len(psi) else psi[n]
-
-                    psi_minus = psi[n - 1] if n - 1 >= 0 else psi[n]
-
-                    p_psi[n] = -1j * hbar * (psi_plus - psi_minus) / 2.0
-
-                # Expectation value: <p> = Re(<psi|p|psi>)
-
-                momentum = np.real(np.sum(np.conj(psi) * p_psi))
-
-                # Skill development rate = |momentum| (magnitude of change)
-
-                skill_rate = np.abs(momentum)
-
-                return float(np.clip(skill_rate, 0.0, 1.0))
-
+                return float(np.clip(abs(self._ehrenfest_drift(state)), 0.0, 1.0))
             return 0.0
-
         except Exception as e:
-
             logging.error(f"Error in _analyze_skill_development: {e}")
-
             raise
 
     def _analyze_compensation(self, data) -> float:
-        """
-        Analyzes compensation ratios using quantum equilibrium measure (first principles).
+        """Compensation equilibrium = Gibbs-weighted deviation measure.
 
-        Compensation equilibrium is modeled as the thermal equilibrium state
-        of a quantum system, where the Boltzmann distribution gives the
-        probability of being fairly compensated.
+        Quantum statistical mechanics, labeled as such: the harmonic
+        energies Eᵢ = ½·devᵢ² (deviation from the fair ratio 1.0) set the
+        Gibbs weights exp(−Eᵢ/kT) with kT = ℏω/2 (the ground-state
+        energy). The equilibrium score is the Gibbs-weighted mean of
+        1 − |devᵢ|. This is a real thermal-equilibrium distribution, not
+        a sigmoid.
         """
-
         try:
-
             if isinstance(
                 data, (_dependencies.pd.Series, _dependencies.pd.DataFrame, np.ndarray, list)
             ):
-
                 values = np.array(data, dtype=float).flatten()
-
                 values = values[~np.isnan(values)]
-
                 if len(values) == 0:
-
                     return 0.5
-
                 hbar = self.config.get("hbar", 1.0)
-
                 omega = self.config.get("omega", 0.5)
-
-                # Equilibrium: deviation from 1.0 (fair compensation ratio)
-
                 deviations = values - 1.0
-
-                # Quantum thermal equilibrium: exp(-E/(kT))
-
-                # Energy = (1/2)*m*w^2*x^2 (harmonic potential)
-
                 energies = 0.5 * (deviations**2)
-
-                # Boltzmann factors (assuming kT = hbar*w/2, ground state energy)
-
                 kT = 0.5 * hbar * omega
-
                 if kT > 0:
-
                     boltzmann_factors = np.exp(-energies / kT)
-
                 else:
-
                     boltzmann_factors = np.ones_like(energies)
-
-                # Equilibrium measure: weighted average
-
                 weights = boltzmann_factors / np.sum(boltzmann_factors)
-
                 equilibrium = np.sum(weights * (1.0 - np.abs(deviations)))
-
                 return float(np.clip(equilibrium, 0.0, 1.0))
-
             return 0.5
-
         except Exception as e:
-
             logging.error(f"Error in _analyze_compensation: {e}")
-
             raise
 
     def _analyze_market(self, data) -> float:
-        """
-        Analyzes market conditions using quantum field theory-inspired methods (first principles).
+        """Market condition = field expectation + fluctuation stability.
 
-        Market conditions are modeled as a quantum field, where the vacuum
-        fluctuations represent market volatility and the expectation value
-        of the field gives the market state.
+        ⟨x̂⟩ of the encoded values (normalized by dim/2 to [0,1]) is the
+        field expectation; the stability term uses the position variance
+        measured via F_Q(ψ, x̂)/4 — the quantum fluctuation of the field.
         """
-
         try:
-
             if isinstance(
                 data, (_dependencies.pd.Series, _dependencies.pd.DataFrame, np.ndarray, list)
             ):
-
                 values = np.array(data, dtype=float).flatten()
-
                 values = values[~np.isnan(values)]
-
                 if len(values) == 0:
-
                     return 0.5
-
                 hbar = self.config.get("hbar", 1.0)
-
-                # Quantum field expectation value: <phi> = mean of field values
-
-                field_expectation = np.mean(values)
-
-                # Vacuum fluctuations: variance of field
-
-                vacuum_fluctuation = np.var(values) if len(values) > 1 else 0.0
-
-                # Market stability: inverse of vacuum fluctuations
-
+                state = self._series_state(np.abs(values) + 1e-12)
+                if state is None:
+                    return 0.5
+                x = Observables.position(state.dim)
+                field_expectation = state.expectation(x) / (state.dim / 2.0)
+                field_normalized = float(np.clip((field_expectation + 1.0) / 2.0, 0.0, 1.0))
+                vacuum_fluctuation = quantum_fisher_information(state, x) / 4.0
                 if vacuum_fluctuation > 0:
-
                     stability = hbar / (hbar + vacuum_fluctuation)
-
                 else:
-
                     stability = 1.0
-
-                # Market condition: combination of expectation and stability
-
-                market_condition = 0.5 * (field_expectation + stability)
-
+                market_condition = 0.5 * (field_normalized + stability)
                 return float(np.clip(market_condition, 0.0, 1.0))
-
             return 0.5
-
         except Exception as e:
-
             logging.error(f"Error in _analyze_market: {e}")
-
             raise
 
     def _analyze_industry(self, data) -> float:
-        """
-        Analyzes industry trends using quantum statistical mechanics (first principles).
+        """Industry trend = Gibbs average energy over the oscillator levels.
 
-        Industry trends are modeled as a quantum ensemble, where the partition
-        function Z = sum(exp(-E_n/(kT))) gives the statistical properties.
+        Quantum statistical mechanics, labeled as such: values map to
+        ladder quantum numbers, energies E_n = (n + ½)ℏω, and the
+        partition function Z = Σ exp(−E_n/kT) gives the thermal average
+        ⟨E⟩; normalized by the top level.
         """
-
         try:
-
             if isinstance(
                 data, (_dependencies.pd.Series, _dependencies.pd.DataFrame, np.ndarray, list)
             ):
-
                 values = np.array(data, dtype=float).flatten()
-
                 values = values[~np.isnan(values)]
-
                 if len(values) == 0:
-
                     return 0.5
-
                 hbar = self.config.get("hbar", 1.0)
-
                 omega = self.config.get("omega", 0.5)
-
-                # Quantum statistical mechanics: partition function
-
-                # Energy levels: E_n = (n + 1/2) * hbar * omega
-
-                kT = 0.5 * hbar * omega  # Thermal energy
-
-                # Map values to quantum numbers
-
+                kT = 0.5 * hbar * omega
                 if np.max(values) != np.min(values):
-
                     quantum_numbers = (values - np.min(values)) / (np.max(values) - np.min(values))
-
                 else:
-
                     quantum_numbers = np.zeros_like(values)
-
-                # Energy levels
-
                 energies = (quantum_numbers + 0.5) * hbar * omega
-
-                # Partition function: Z = sum(exp(-E/(kT)))
-
                 if kT > 0:
-
                     boltzmann = np.exp(-energies / kT)
-
                     Z = np.sum(boltzmann)
-
                     if Z > 0:
-
-                        # Average energy: <E> = sum(E * exp(-E/(kT))) / Z
-
                         avg_energy = np.sum(energies * boltzmann) / Z
-
-                        # Industry trend: normalized average energy
-
-                        max_energy = (1.5) * hbar * omega  # Maximum possible
-
-                        if max_energy > 0:
-
-                            trend = avg_energy / max_energy
-
-                        else:
-
-                            trend = 0.5
-
+                        max_energy = (1.5) * hbar * omega
+                        trend = avg_energy / max_energy if max_energy > 0 else 0.5
                         return float(np.clip(trend, 0.0, 1.0))
-
                 return 0.5
-
             return 0.5
-
         except Exception as e:
-
             logging.error(f"Error in _analyze_industry: {e}")
-
             raise
 
     def _analyze_competitors(self, data) -> float:
-        """
-        Analyzes competitor activity using quantum game theory (first principles).
+        """Competition level = normalized measurement entropy of the encoded state.
 
-        Competitor activity is modeled as a quantum game where the Nash equilibrium
-        is determined by the quantum strategy space.
+        H(p)/log₂(dim) of the encoded activity ray — high entropy means
+        competitor activity is spread unpredictably across the basis.
         """
-
         try:
-
             if isinstance(
                 data, (_dependencies.pd.Series, _dependencies.pd.DataFrame, np.ndarray, list)
             ):
-
                 values = np.array(data, dtype=float).flatten()
-
                 values = values[~np.isnan(values)]
-
                 if len(values) == 0:
-
                     return 0.5
-
-                self.config.get("hbar", 1.0)
-
-                # Quantum game theory: strategic interaction
-
-                # Model competitor activity as quantum strategy amplitudes
-
-                # Normalize to [0, 1]
-
-                if np.max(values) > 0:
-
-                    normalized = values / np.max(values)
-
-                else:
-
-                    normalized = np.zeros_like(values)
-
-                # Quantum strategy: superposition of cooperate/compete
-
-                amplitudes = np.sqrt(np.clip(normalized, 0, 1))
-
-                norm = np.sqrt(np.sum(amplitudes**2))
-
-                if norm == 0:
-
+                state = self._series_state(np.abs(values) + 1e-12)
+                if state is None:
                     return 0.5
-
-                psi = amplitudes / norm
-
-                # Quantum Nash equilibrium: maximum entropy strategy
-
-                # Entropy of the quantum state
-
-                probabilities = psi**2
-
-                entropy = -np.sum(probabilities * np.log2(probabilities + 1e-10))
-
-                max_entropy = np.log2(len(psi)) if len(psi) > 1 else 1.0
-
-                if max_entropy > 0:
-
-                    # High entropy = high competition (unpredictable competitors)
-
-                    competition_level = entropy / max_entropy
-
-                else:
-
-                    competition_level = 0.5
-
-                return float(np.clip(competition_level, 0.0, 1.0))
-
+                entropy = state.measurement_entropy()
+                max_entropy = math.log2(state.dim) if state.dim > 1 else 1.0
+                if max_entropy <= 0:
+                    return 0.5
+                return float(np.clip(entropy / max_entropy, 0.0, 1.0))
             return 0.5
-
         except Exception as e:
-
             logging.error(f"Error in _analyze_competitors: {e}")
-
             raise
 
-    def _profile_model(self, model, data: np.ndarray) -> None:
-        """Profiles the model using tf profiler"""
+    def _profile_model(self, model, data: np.ndarray) -> dict:
+        """Profile a channel: state tomography of the evolved encoded data.
 
+        Returns the substrate's tomography dict (energy, momentum,
+        position, number, purity, measurement entropy, Fisher
+        information) of the channel-evolved state — no external profiler.
+        """
         try:
-
-            logdir = "logs/profile/" + datetime.now().strftime("%Y%m%d-%H%M%S")
-
-            with _dependencies.tf.profiler.experimental.Profile(logdir):
-
-                _ = model.predict_proba(self.scaler.transform(data))
-
-            logging.info(f"Profiling results saved to {logdir}")
-
+            state = encode_data_to_state(
+                list(np.asarray(data, dtype=float).flatten()),
+                dim=model.dim,
+                normalize=True,
+            )
+            evolved = model.evolve(state)
+            tomo = state_tomography(
+                evolved,
+                hbar=model.hbar,
+                mass=self.config.get("mass", 1.0),
+                omega=self.config.get("omega", 0.5),
+            )
+            logging.info(
+                "Channel profile for %s: energy=%.4g fisher=%.4g",
+                model.name,
+                tomo["energy"],
+                tomo["fisher_information"],
+            )
+            return tomo
         except Exception as e:
-
             logging.error(f"Error profiling model: {e}")
-
             raise
 
     def _get_feature_importance(self, model, feature_names: list) -> dict:
-        """Extracts feature importances for the given model"""
+        """Feature importances = Born mass shares of the encoded feature state.
 
+        importance_j = p_j = |α_j|² — the share of the encoded indicator
+        state's Born distribution carried by each feature coordinate.
+        Computed on the last encoded prediction state; None when no state
+        exists. No estimator is interrogated — the importances are the
+        state's own measurement distribution.
+        """
         try:
-
             if model is None:
-
                 return None
-
-            if isinstance(model, _dependencies.RandomForestClassifier):
-
-                return dict(zip(feature_names, model.feature_importances_))
-
-            elif isinstance(model, _dependencies.XGBClassifier):
-
-                return dict(zip(feature_names, model.feature_importances_))
-
-            elif isinstance(model, _dependencies.LGBMClassifier):
-
-                return dict(zip(feature_names, model.feature_importances_))
-
-            elif isinstance(model, _dependencies.GradientBoostingClassifier):
-
-                return dict(zip(feature_names, model.feature_importances_))
-
-            else:
-
-                raise ValueError("Model not supported for feature importance.")
-
+            state = self._last_encoded_state
+            if state is None:
+                return None
+            probs = state.probabilities()
+            names = list(feature_names)
+            if len(names) < len(probs):
+                names += [f"feature_{i}" for i in range(len(names), len(probs))]
+            return {names[i]: float(probs[i]) for i in range(len(probs))}
         except Exception as e:
-
             logging.error(f"Error extracting feature importance: {e}")
-
             raise
 
     def _benchmark_model(
         self, model, X_test: np.ndarray, y_test: np.ndarray, model_name: str
     ) -> dict:
-        """Benchmarks model performance on a holdout set."""
+        """Benchmark a channel on an observed holdout via Born discrimination.
 
+        Measured quantities only: verdict accuracy (fraction of rows
+        whose churn/retain overlap ordering matches the observed label)
+        and the mean Helstrom margin. No classical metric machinery.
+        """
         try:
-
-            y_pred = model.predict(X_test)
-
-            f1 = _dependencies.f1_score(y_test, y_pred)
-
-            precision = _dependencies.precision_score(y_test, y_pred)
-
-            recall = _dependencies.recall_score(y_test, y_pred)
-
-            accuracy = _dependencies.accuracy_score(y_test, y_pred)
-
-            logging.info(
-                f"Benchmarking Results for {model_name}: F1 = {f1}, Precision = {precision}, Recall = {recall}, Accuracy = {accuracy}"
-            )
-
-            return {"f1": f1, "precision": precision, "recall": recall, "accuracy": accuracy}
-
+            yv = np.asarray(y_test, dtype=int)
+            states = self._encode_rows(X_test, model.dim)
+            correct = 0
+            total = 0
+            margins = []
+            for state, label in zip(states, yv):
+                res = model.discriminate(state)
+                if res is None:
+                    continue
+                correct += int((res["score"] > 0.5) == bool(label))
+                margins.append(res["margin"])
+                total += 1
+            result = {
+                "born_accuracy": (correct / total) if total else None,
+                "mean_margin": float(np.mean(margins)) if margins else None,
+                "n_samples": total,
+                "method": "born_overlap_discrimination",
+            }
+            logging.info(f"Benchmarking Results for {model_name}: {result}")
+            return result
         except Exception as e:
-
             logging.error(f"Error benchmarking model: {e}")
-
             raise
 
     def cleanup(self) -> None:
-        """Releases memory occupied by models."""
-
+        """Releases cached quantum states; no external sessions to free."""
         try:
-
-            logging.info("Cleaning up model memory...")
-
-            _dependencies.tf.keras.backend.clear_session()
-
+            self._last_evolved_states = []
+            self._last_encoded_state = None
+            self._forecast_states = []
             import gc
 
             gc.collect()
-
         except Exception as e:
-
             logging.error(f"Error during model cleanup: {e}")
-
             raise
 
 
@@ -5017,14 +3464,12 @@ import unittest
 
 
 class TestPredictiveEngine(unittest.TestCase):
-
     def setUp(self):
-
         import tempfile
 
         self.config = {
             "model_names": ["rf", "xgb", "lgbm", "gb"],
-            # Isolated per-test artifact dir — Windows holds joblib mmap
+            # Isolated per-test artifact dir — Windows holds mmap
             # handles, so a shared 'test_models/' collides across tests.
             "model_dir": tempfile.mkdtemp(prefix="toe_test_models_") + os.sep,
             "n_estimators": 10,
@@ -5032,24 +3477,16 @@ class TestPredictiveEngine(unittest.TestCase):
             "learning_rate": 0.01,
             "test_size": 0.2,
             "cv_folds": 2,
-            "performance_weight": 0.30,
-            "behavioral_weight": 0.25,
-            "engagement_weight": 0.20,
-            "career_weight": 0.15,
-            "external_weight": 0.10,
             "feature_dim": 10,
-            "max_tfidf_features": 10,
             "selected_model": "rf",
-            "optimization_iterations": 2,
-            "optimization_folds": 2,
-            "optimization_method": "bayes",
             "imputation_strategy": "median",
             "ensemble_selection_method": "weighted_average",
         }
 
         # Declared labeled fixture — the real-data contract requires an
-        # observed (X, y) cohort before any model is fitted. Deterministic:
-        # two separated half-planes so both classes are represented.
+        # observed (X, y) cohort before any channel is calibrated.
+        # Deterministic: two separated half-planes so both classes are
+        # represented.
 
         fixture_dim = self.config["feature_dim"]
 
@@ -5068,14 +3505,17 @@ class TestPredictiveEngine(unittest.TestCase):
 
         self.engine = PredictiveEngine(config=self.config)
 
-        # Generate some synthetic data for testing
+        # Deterministic test data — a fixed grid plus a fixed phase
+        # variation, no PRNG anywhere.
 
         num_samples = 10
 
         num_features = self.config["feature_dim"]
 
         self.test_data = _dependencies.pd.DataFrame(
-            np.random.rand(num_samples, num_features),
+            np.linspace(0.05, 0.95, num_samples * num_features).reshape(num_samples, num_features)
+            + 0.01
+            * np.sin(np.arange(num_samples * num_features).reshape(num_samples, num_features)),
             columns=[f"feature_{i}" for i in range(num_features)],
         )
 
@@ -5095,7 +3535,7 @@ class TestPredictiveEngine(unittest.TestCase):
                         "2023-10-01",
                     ]
                 ),
-                "performance_score": np.random.rand(10),
+                "performance_score": 0.5 + 0.3 * np.sin(np.linspace(0, 3.0, 10)),
             }
         )
 
@@ -5132,8 +3572,8 @@ class TestPredictiveEngine(unittest.TestCase):
 
     def tearDown(self):
 
-        # Release mmap'd model artifacts before removing the dir —
-        # Windows locks joblib-loaded files while arrays are alive.
+        # Release artifact handles before removing the dir — Windows
+        # locks npz-loaded files while arrays are alive.
 
         import gc
         import shutil
@@ -5153,6 +3593,23 @@ class TestPredictiveEngine(unittest.TestCase):
 
             self.assertIsInstance(self.engine, PredictiveEngine)
 
+    def test_channels_are_quantum(self):
+        """Every configured model is a quantum channel with a family Hamiltonian."""
+
+        for name, channel in self.engine.models.items():
+
+            self.assertIsInstance(channel, QuantumChannelModel)
+
+            self.assertIn(channel.family, ExtendedAlgebraicFamily.FAMILY_NAMES)
+
+            self.assertTrue(channel.calibrated)
+
+            # The propagator must be a real unitary — U·U† = I.
+
+            unitary, err = channel.propagator.is_unitary()
+
+            self.assertTrue(unitary, f"{name} propagator error {err}")
+
     def test_predict_churn_risk(self):
         """Test the predict_churn_risk method returns a valid output"""
 
@@ -5166,12 +3623,45 @@ class TestPredictiveEngine(unittest.TestCase):
 
             self.assertIn("confidence_level", risk_profile)
 
+            self.assertTrue(risk_profile["available"])
+
+            score = risk_profile["risk_score"]["score"]
+
+            self.assertIsNotNone(score)
+
+            self.assertGreaterEqual(score, 0.0)
+
+            self.assertLessEqual(score, 1.0)
+
+    def test_scores_are_born_probabilities(self):
+        """Channel scores are Born ratios in [0,1] with Helstrom margins."""
+
+        risk_profile = self.engine.predict_churn_risk(self.test_data)
+
+        channels = {
+            k: v
+            for k, v in risk_profile["model_predictions"].items()
+            if isinstance(v, dict) and v.get("score") is not None
+        }
+
+        self.assertEqual(len(channels), len(self.config["model_names"]))
+
+        for name, pred in channels.items():
+
+            self.assertGreaterEqual(pred["score"], 0.0)
+
+            self.assertLessEqual(pred["score"], 1.0)
+
+            self.assertGreaterEqual(pred["confidence"], 0.0)
+
+            self.assertLessEqual(pred["confidence"], 1.0)
+
+            self.assertEqual(pred["weight_source"], "quantum_fisher_information")
+
     def test_model_training_and_loading(self):
-        """Tests model training and persistence"""
+        """Tests channel calibration and artifact persistence"""
 
-        with self.subTest("Test Model Training and Loading"):
-
-            # Ensure models are being trained when path doesn't exist, and loaded when they do
+        with self.subTest("Test Channel Calibration and Loading"):
 
             engine = PredictiveEngine(self.config)
 
@@ -5179,7 +3669,15 @@ class TestPredictiveEngine(unittest.TestCase):
 
             self.assertEqual(len(engine.models), len(self.config["model_names"]))
 
-            # Test loading logic
+            # Artifacts persisted as quantum-channel npz — no joblib estimators.
+
+            for name in self.config["model_names"]:
+
+                self.assertTrue(
+                    os.path.exists(os.path.join(self.config["model_dir"], f"{name}.qchannel.npz"))
+                )
+
+            # Reload path reconstructs calibrated channels from artifacts.
 
             engine_second = PredictiveEngine(self.config)
 
@@ -5187,13 +3685,43 @@ class TestPredictiveEngine(unittest.TestCase):
 
             self.assertEqual(len(engine_second.models), len(self.config["model_names"]))
 
-            # Ensure it loads without error
-
             engine_third = PredictiveEngine(self.config)
 
             self.assertIsInstance(engine_third.models, dict)
 
             self.assertEqual(len(engine_third.models), len(self.config["model_names"]))
+
+    def test_untrained_engine_fails_closed(self):
+        """No observed cohort → honest available=False, never a fabricated score."""
+
+        import tempfile
+
+        cfg = dict(self.config)
+
+        cfg.pop("training_data")
+
+        cfg["model_dir"] = tempfile.mkdtemp(prefix="toe_test_untrained_") + os.sep
+
+        engine = PredictiveEngine(cfg)
+
+        self.assertEqual(engine.models, {})
+
+        profile = engine.predict_churn_risk(self.test_data)
+
+        self.assertFalse(profile["available"])
+
+        self.assertEqual(profile["truth_class"], "untrained_models")
+
+        self.assertIsNone(profile["risk_score"]["score"])
+
+        import gc
+        import shutil
+
+        engine = None
+
+        gc.collect()
+
+        shutil.rmtree(cfg["model_dir"], ignore_errors=True)
 
     def test_feature_engineering(self):
         """Tests that the method allows for custom feature engineering"""
@@ -5235,7 +3763,7 @@ class TestPredictiveEngine(unittest.TestCase):
             self.assertIsInstance(features, np.ndarray)
 
     def test_model_predictions(self):
-        """Tests that model predictions are being returned in the profile"""
+        """Tests that channel predictions are being returned in the profile"""
 
         with self.subTest("Test Model Predictions"):
 
@@ -5291,7 +3819,7 @@ class TestPredictiveEngine(unittest.TestCase):
                 Exception
             ):  # Testing if text analysis throws an error with non-text data
 
-                self.engine._analyze_survey_responses(np.random.rand(10, 10))
+                self.engine._analyze_survey_responses(np.zeros((10, 10)))
 
     def test_algebraic_roots(self):
         """Every family root satisfies its characteristic polynomial."""
@@ -5444,7 +3972,7 @@ class TestPredictiveEngine(unittest.TestCase):
                     self.assertGreater(abs(ratio - Decimal(round(ratio * k)) / k), Decimal("1e-9"))
 
     def test_family_signature_detection(self):
-        """Structured series resolve to their family; random does not."""
+        """Structured series resolve to their family; unstructured does not."""
 
         algebra = self.engine.algebra
 
@@ -5454,9 +3982,12 @@ class TestPredictiveEngine(unittest.TestCase):
 
         self.assertEqual(sig["family"], "plastic")
 
-        rng = random.Random(0)
+        # Deterministic unstructured series (no PRNG): fractional parts of
+        # i*sqrt(2) — equidistributed, no recurrence signature.
 
-        sig_rand = algebra.detect_family_signature([rng.random() for _ in range(60)])
+        unstructured = [float((i * math.sqrt(2.0)) % 1.0) for i in range(60)]
+
+        sig_rand = algebra.detect_family_signature(unstructured)
 
         self.assertLess(sig_rand["confidence"], sig["confidence"])
 
@@ -5502,6 +4033,27 @@ class TestPredictiveEngine(unittest.TestCase):
 
         self.assertIn("spectral_gap", diag["spectral"])
 
+    def test_forecast_is_schrodinger_born(self):
+        """Forecast values are Born probabilities of the risk subspace."""
+
+        indicators = {
+            "performance": {"mean": 0.5, "trend": 0.1, "volatility": 0.2},
+            "behavioral": {"login_freq": 0.6, "variability": 0.3},
+            "engagement": {"score": 0.7},
+        }
+
+        forecast = self.engine._forecast_risk(indicators)
+
+        self.assertEqual(forecast["method"], "schrodinger_matrix_exponential")
+
+        for key in ("3_month", "6_month", "current"):
+
+            self.assertIsNotNone(forecast[key])
+
+            self.assertGreaterEqual(forecast[key], 0.0)
+
+            self.assertLessEqual(forecast[key], 1.0)
+
 
 if __name__ == "__main__":
 
@@ -5537,26 +4089,17 @@ if __name__ == "__main__":
         "learning_rate": 0.005,
         "test_size": 0.2,
         "cv_folds": 3,
-        "performance_weight": 0.30,
-        "behavioral_weight": 0.25,
-        "engagement_weight": 0.20,
-        "career_weight": 0.15,
-        "external_weight": 0.10,
         "feature_dim": 10,
-        "max_tfidf_features": 100,
         "selected_model": "rf",
-        "optimization_iterations": 3,
-        "optimization_folds": 2,
-        "optimization_method": "bayes",
         "imputation_strategy": "median",
         "ensemble_selection_method": "weighted_average",
     }
 
     engine = PredictiveEngine(config=config)
 
-    # The real-data contract: models fit only on observed labeled rows.
-    # This demo registers a declared fixture cohort — in production the
-    # caller supplies live telemetry via ingest_training_data() or
+    # The real-data contract: channels calibrate only on observed labeled
+    # rows. This demo registers a declared fixture cohort — in production
+    # the caller supplies live telemetry via ingest_training_data() or
     # config['training_data_path'].
 
     _demo_dim = config["feature_dim"]
@@ -5576,11 +4119,11 @@ if __name__ == "__main__":
 
     engine.fit_models()
 
-    # Generate some data
+    # Deterministic demonstration data — no PRNG.
 
     data = _dependencies.pd.DataFrame(
         {
-            "performance_score": np.random.rand(10),
+            "performance_score": 0.5 + 0.3 * np.sin(np.linspace(0, 3.0, 10)),
             "date": _dependencies.pd.to_datetime(
                 [
                     "2023-01-01",
@@ -5626,53 +4169,21 @@ if __name__ == "__main__":
 
     print(f"\nRisk Profile: {risk_profile}")
 
-    # Model Profiling — guard against feature-count mismatch
+    # Channel profiling — substrate tomography of the evolved state.
 
-    try:
+    _channel = engine._get_model_by_name("rf")
 
-        input_data = engine._prepare_input_features(engine._extract_risk_indicators(data))
+    _profile = engine._profile_model(_channel, _demo_X[0])
 
-        if input_data.shape[1] == engine.scaler.n_features_in_:
-
-            engine._profile_model(engine._get_model_by_name("rf"), input_data.reshape(1, -1))
-
-        else:
-
-            print(
-                f"\n[Profiling skipped] input has {input_data.shape[1]} features, scaler expects {engine.scaler.n_features_in_}"
-            )
-
-    except Exception as e:
-
-        print(f"\n[Profiling skipped] {e}")
-
-    # Model Explainability
-
-    # Filter to only models that have a 'score' key (skip quantum_superposition which is a float)
-
-    scored_models = {
-        k: v
-        for k, v in risk_profile["model_predictions"].items()
-        if isinstance(v, dict) and "score" in v
-    }
-
-    best_model_name = sorted(scored_models, key=lambda x: scored_models[x]["score"])[
-        -1
-    ]  # Get name of model with the highest score
-
-    best_model = engine.models[best_model_name]  # Get model itself
-
-    feature_names = list(
-        engine._calculate_factor_weights(engine._extract_risk_indicators(data)).keys()
+    print(
+        f"\nChannel profile (rf/{_channel.family}): "
+        f"energy={_profile['energy']:.4g} "
+        f"fisher={_profile['fisher_information']:.4g}"
     )
-
-    feature_importance = engine._get_feature_importance(best_model, feature_names)
-
-    print("\nFeature Importances: ", feature_importance)
 
     unittest.main(argv=["first-arg-is-ignored"], exit=False)
 
-    engine.cleanup()  # Clean up memory.
+    engine.cleanup()  # Clean up state caches.
 
 
 def strict_quantum_work_certificate(header76: bytes, nonce_start: int, nonce_count: int) -> dict:

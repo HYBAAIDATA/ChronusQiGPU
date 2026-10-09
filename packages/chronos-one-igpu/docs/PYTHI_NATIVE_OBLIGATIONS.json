@@ -1,0 +1,79 @@
+{
+  "schema": "pythi_native_obligations_v1",
+  "deployment_allowed": false,
+  "formal_compiler_receipts": [
+    "validation/v3.10.0-lean.json"
+  ],
+  "obligations": [
+    {
+      "id": "T1",
+      "status": "ALGEBRA_DERIVATION_AND_EXECUTABLE_TESTS",
+      "correction": "Full two-coordinate modular Fibonacci matrix fold is bijective; bounded rung projection is not. This is an algebraic permutation, not an established cryptographic PRP."
+    },
+    {
+      "id": "T2",
+      "status": "CORRECTED_IDENTITY_TESTED",
+      "identity": "L_(n-1)*L_(n+1)-L_n^2 = 5*(-1)^(n+1)",
+      "correction": "User proposal has the opposite sign; n=1 gives +5."
+    },
+    {
+      "id": "T3",
+      "status": "ORIGINAL_CORE_ROUNDTRIP_TESTED",
+      "formal_proof": "compiler receipt pending"
+    },
+    {
+      "id": "T4",
+      "status": "BOUNDED_ORIGINAL_PRIME_ROM",
+      "correction": "Prime index injectivity follows from strictly ordered distinct primes; it is not a hash or consensus security theorem."
+    },
+    {
+      "id": "T5",
+      "status": "ORIGINAL_RATIONAL_PISOT_BOUND_RETAINED",
+      "correction": "Conjugate magnitude is 1/phi<1; scaling is not generally a machine bit shift."
+    },
+    {
+      "id": "T6",
+      "status": "BOUNDED_CONTROLLER_IMPLEMENTED_TESTED",
+      "correction": "Bound follows from explicit clamp, not an assumed bounded log ratio. It controls coordinate budget, not proven consensus difficulty."
+    },
+    {
+      "id": "T7",
+      "status": "CONDITIONAL_DISTRIBUTION_ARGUMENT",
+      "correction": "Uniform full input plus bijection preserves uniformity; projection to 2^b rungs has 2^(256-b) preimages each. Random headers do not supply a proved uniform digest theorem."
+    },
+    {
+      "id": "T8",
+      "status": "CONSENSUS_SECURITY_NOT_ESTABLISHED",
+      "correction": "Deterministic valid computation and monotone rung value do not establish Sybil economics, fork choice or Bitcoin-equivalent reorg resistance."
+    },
+    {
+      "id": "T9",
+      "status": "MODEL_ONLY_TARGET_MEASUREMENT_REQUIRED",
+      "correction": "Pipeline depth is distinct from initiation interval. Use cores*clock/II*occupancy*admissibility with explicit assumptions; no clock/EU/share equivalence is assumed."
+    },
+    {
+      "id": "T10",
+      "status": "CONDITIONAL_MODEL_ONLY",
+      "correction": "Landauer bound uses erased bits, not arithmetic-operation counts. Actual erasures, physically reversible implementation and measured energy are unavailable."
+    }
+  ],
+  "progression": {
+    "specification": "IMPLEMENTED_REFERENCE_SPEC",
+    "reference_compute_verifier": "IMPLEMENTED_AND_TESTED",
+    "security_analysis": "OPEN",
+    "testnet": "NOT_DEPLOYED",
+    "mainnet": "NOT_DEPLOYED",
+    "exchange_migration": "NOT_PERFORMED"
+  },
+  "all_obligations_formally_proven": false,
+  "projection_review": {
+    "T1_prime": "modular coordinate fold inverse compiled in Lean; fast-doubling implementation equivalence tested, not compiled",
+    "T1_double_prime": "bounded low-coordinate projection has constructive surjection",
+    "T1_triple_prime": "K=2^(256-b) digest preimages, exact constructive fiber enumeration; full Lean cardinality theorem remains open",
+    "T7_prime": "balanced on uniformly sampled digest domain; SHA256 output uniformity for arbitrary headers assumed, not proven",
+    "T9_prime": "rung alone cannot supply cryptographic collision resistance or consensus security; full receipt verification rejects cross-header substitution",
+    "domain_correction": "Actual protocol coordinates are two 128-bit integers, not Vector11D floating geometry",
+    "header_bound_correction": "Finite digest-fiber K is not a bound on arbitrary-length header preimages",
+    "historical_measurement_correction": "v3.8.1 compared v3.8\u2192v3.8.1; v3.9 compared v3.8.1\u2192v3.9. The latter negative warm result does not alone invalidate the earlier distinct comparison."
+  }
+}

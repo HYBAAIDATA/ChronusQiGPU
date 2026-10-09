@@ -142,7 +142,7 @@ CassiniValidator = Callable[[StratumJob, str, str], bool]
 
 
 class StratumProofAdapter:
-    """Stateful, proof-checking adapter for a negotiated Stratum V1 session."""
+    """Stateful proof adapter shared by normalized V1 and V2 mining sessions."""
 
     def __init__(
         self,
@@ -220,10 +220,49 @@ class StratumProofAdapter:
             target=target,
         )
 
-    def handle_subscribe_result(self, result: Any) -> SubscriptionState:
-        self.subscription = self.parse_subscribe_result(result)
+    def replace_subscription(
+        self,
+        subscription: SubscriptionState,
+        *,
+        invalidate_jobs: bool = True,
+    ) -> SubscriptionState:
+        """Bind an exact negotiated extranonce namespace.
+
+        Protocol transports may share this proof adapter only by supplying the
+        pool-negotiated prefix and mutable extranonce width. Rebinding the
+        namespace invalidates existing header templates by default.
+        """
+        parsed = self.parse_subscribe_result(
+            [[], subscription.extranonce1, subscription.extranonce2_size]
+        )
+        self.subscription = parsed
         self._extranonce2_counter = 0
-        return self.subscription
+        if invalidate_jobs:
+            self.current_job = None
+            self.jobs.clear()
+        return parsed
+
+    def handle_subscribe_result(self, result: Any) -> SubscriptionState:
+        return self.replace_subscription(
+            self.parse_subscribe_result(result),
+            invalidate_jobs=False,
+        )
+
+    def set_exact_target(
+        self,
+        target: int,
+        *,
+        retarget_existing: bool = True,
+    ) -> int:
+        """Bind a protocol-negotiated uint256 share target exactly."""
+        if isinstance(target, bool) or not isinstance(target, int):
+            raise TargetError("target must be an integer")
+        if not 0 < target <= MAX_UINT256:
+            raise TargetError("target must be in the uint256 range and non-zero")
+        self.target = target
+        if retarget_existing:
+            self._retarget_jobs()
+        return target
 
     def handle_message(self, message: Mapping[str, Any]) -> StratumJob | int | None:
         if not isinstance(message, Mapping):
@@ -247,9 +286,7 @@ class StratumProofAdapter:
         if method == "mining.set_target":
             if not isinstance(params, Sequence) or len(params) != 1:
                 raise StratumAdapterError("mining.set_target requires one parameter")
-            self.target = _target_from_hex(params[0])
-            self._retarget_jobs()
-            return self.target
+            return self.set_exact_target(_target_from_hex(params[0]))
         if method == "mining.set_extranonce":
             if self.subscription is None:
                 raise StratumAdapterError("mining.set_extranonce before subscribe")
@@ -259,14 +296,10 @@ class StratumProofAdapter:
                 or len(params) != 2
             ):
                 raise StratumAdapterError("mining.set_extranonce requires extranonce1 and size")
-            self.subscription = self.parse_subscribe_result([[], params[0], params[1]])
-            self._extranonce2_counter = 0
-            # Every existing header template was built against the previous
-            # extranonce1/size contract. Refuse it until a fresh notify binds
-            # the replacement subscription.
-            self.current_job = None
-            self.jobs.clear()
-            return self.subscription
+            return self.replace_subscription(
+                self.parse_subscribe_result([[], params[0], params[1]]),
+                invalidate_jobs=True,
+            )
         return None
 
     def on_job_received(

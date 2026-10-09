@@ -1,7 +1,36 @@
-"""TOE — the PYTHIA Theory-of-Everything engine package.
+"""TOE — a domain-general mathematical intelligence engine.
+
+TOE was discovered inside PYTHIA, expressed through an HR-shaped
+application (``toe.engine.PredictiveEngine``: employees, churn, promotion).
+That vocabulary is lineage, not the domain: one backend reasons over any
+problem reduced to the domain-neutral :class:`toe.problem.Problem`, and
+domain adapters (``toe.adapters``) are the only per-domain code. PYTHIA's
+mining path, EUCLID and the enterprise analytics surface are consumers.
+
+Public surface (observe → understand → explore futures → decide → explain
+→ learn)::
+
+    machine = toe.TOEMachine(custody=theseus_custody)   # optional THESEUS
+    episode = machine.run(problem)                       # one full cycle
+    machine.learn(episode, observed_outcomes)            # revise + persist
+
+``toe.runtime.TOEIntelligenceRuntime`` is the production composition root
+(tenancy, receipts, evidence chain, consensus boundary) and serves the
+machine through ``solve`` / ``learn``.
 
 Canonical package layout (consolidated from Intelligence/toe_*.py, the
 original toe.py monolith, and the substrate modules it runs on):
+
+    toe.machine                     TOEMachine — the reasoning core
+    toe.problem                     the domain-neutral problem contract
+    toe.relationships               association ≠ structure ≠ causal
+                                    structure ≠ identified effect
+    toe.geometry                    Poincaré-ball geometry, tree embedding,
+                                    greedy routing, spectral geometry
+    toe.custody                     durable learning state via THESEUS
+    toe.voyage                      power-on self-test (canonical and
+                                    cross-domain voyages)
+    toe.adapters/                   domain / semantic adapters
 
     toe.engine                      the original PredictiveEngine + extended
                                     algebraic-family substrate (Pisot spectrum)
@@ -103,7 +132,7 @@ consensus and never decides share validity.
 # Canonical version declaration for the toe package — the only literal in
 # the package; toe/engine.py derives from this (see
 # reports/version_consolidation.md).
-__version__ = "3.5.0"
+__version__ = "1.0.0"
 
 from .bridge import (
     CausalLadderResult,
@@ -193,7 +222,8 @@ from .expansion import (
     TOEExpansionResult,
 )
 from .operator_compilers import OperatorSpec, compile_operator
-from .system import TOEProvenanceRecord, TOESystem
+from .problem import Problem, ProblemError, Structure
+from .machine import TOEMachine
 from .foundation import UNIFIED_THEORY, UnifiedTheoryFoundation
 from .golden_unified import (
     CollapseResult,
@@ -211,6 +241,10 @@ from .engine import (
 
 __all__ = [
     "__version__",
+    "TOEMachine",
+    "Problem",
+    "ProblemError",
+    "Structure",
     "TOEBridge",
     "TOEStateTomography",
     "TOETrajectoryPrediction",
@@ -292,9 +326,33 @@ __all__ = [
 ]
 
 
-def __getattr__(name: str):
-    if name == "UnifiedAnalyticsPlatform":
-        from .unified import UnifiedAnalyticsPlatform
+# Consumer surfaces resolved on first use. ``toe.system`` is the PYTHIA
+# mining-facing coordinator (the five candidate intelligences + the aethel
+# Cassini/Zeckendorf substrate); it is a monorepo integration, not part of
+# the domain-general core, so ``import toe`` must not require it.
+_LAZY_SURFACES = {
+    "UnifiedAnalyticsPlatform": ("toe.unified", "UnifiedAnalyticsPlatform"),
+    "TOESystem": ("toe.system", "TOESystem"),
+    "TOEProvenanceRecord": ("toe.system", "TOEProvenanceRecord"),
+}
 
-        return UnifiedAnalyticsPlatform
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+# The standalone TOE distribution does not carry the monorepo's mining-facing
+# coordinator; its names are then not part of the public surface at all.
+import importlib.util as _ilu  # noqa: E402
+
+if _ilu.find_spec(__name__ + ".system") is None:  # pragma: no cover - standalone wheel
+    for _name in ("TOESystem", "TOEProvenanceRecord"):
+        _LAZY_SURFACES.pop(_name)
+        __all__.remove(_name)
+del _ilu
+
+
+def __getattr__(name: str):
+    target = _LAZY_SURFACES.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    import importlib
+
+    value = getattr(importlib.import_module(target[0]), target[1])
+    globals()[name] = value
+    return value

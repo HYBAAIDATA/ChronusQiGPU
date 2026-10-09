@@ -25,7 +25,7 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
 SOURCE = REPO / "turing_universal_quantum_computer"
 DIST = HERE / "dist"
-PRODUCT = "turing-universal-quantum-computer"
+PRODUCT = "hyba-turing-vqc"
 VERSION = "1.0.0"
 REPOSITORY = "QuantumPhiRedux/PhiMiner"
 
@@ -153,7 +153,7 @@ def inspect_wheel(wheel: Path) -> dict:
         "author": metadata.get("Author") == "HYBA Software Limited",
         "license": license_value == "MIT",
         "requires_python": metadata.get("Requires-Python") == ">=3.11",
-        "kellogg_dependency": any(r.lower().startswith("kellogg-tensor") for r in requires),
+        "kellogg_dependency": any(r.lower().startswith("hyba-kellogg-tensor") for r in requires),
         "canonical_repository": any(
             "https://github.com/QuantumPhiRedux/PhiMiner" in url for url in project_urls
         ),
@@ -188,8 +188,8 @@ def main() -> int:
             check=True,
         )
 
-    wheels = sorted(DIST.glob(f"turing_universal_quantum_computer-{VERSION}-*.whl"))
-    sdists = sorted(DIST.glob(f"turing_universal_quantum_computer-{VERSION}.tar.gz"))
+    wheels = sorted(DIST.glob(f"hyba_turing_vqc-{VERSION}-*.whl"))
+    sdists = sorted(DIST.glob(f"hyba_turing_vqc-{VERSION}.tar.gz"))
     if len(wheels) != 1 or len(sdists) != 1:
         raise RuntimeError(f"expected one wheel and one sdist; got {wheels}, {sdists}")
     wheel, sdist = wheels[0], sdists[0]

@@ -3,6 +3,8 @@ name: TURING 1.0.0 release
 on:
   pull_request:
     paths:
+      - "packaging/verify_registry_release.py"
+      - "tests/test_registry_release_protocol.py"
       - "turing_universal_quantum_computer/**"
       - "packaging/turing/**"
       - "packaging/verify_release_candidates.py"
@@ -12,6 +14,14 @@ on:
       - ".github/workflows/turing-release.yml"
   workflow_dispatch:
     inputs:
+      rc_sha:
+        description: Full frozen release-candidate commit; must equal dispatch head
+        required: true
+        type: string
+      kellogg_release_run_id:
+        description: Completed same-RC Kellogg PyPI publication run (required for upload)
+        type: string
+        required: false
       publish:
         description: Registry action after every verification gate passes
         required: true
@@ -24,27 +34,57 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 env:
-  TURING_DISTRIBUTION: turing-universal-quantum-computer
+  RC_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  CI_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  TURING_DISTRIBUTION: hyba-turing-vqc
   TURING_VERSION: "1.0.0"
   KELLOGG_VERSION: "1.0.0"
 
 jobs:
+  preflight:
+    name: Freeze and verify source identity
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ env.RC_SHA }}
+    - name: Require exact requested RC
+      run: "test \"$(git rev-parse HEAD)\" = \"$RC_SHA\"\nif [ \"${{ github.event_name }}\" = workflow_dispatch ]; then\n  test\
+        \ \"${{ inputs.rc_sha }}\" = \"${{ github.sha }}\"\nfi\npython -m unittest discover -s tests -p test_registry_release_protocol.py\
+        \ -v"
+
   kellogg-prerequisite:
     name: Verify exact Kellogg 1.0.0 prerequisite
+    needs: preflight
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
       - name: Build and verify Kellogg release artefacts
+        if: github.event_name != 'workflow_dispatch' || inputs.publish == 'none'
         run: |
           python -m pip install --upgrade pip
           python -m pip install build twine
           python packaging/kellogg-tensor/build_and_verify.py
+      - name: Require completed KELLOGG publication run
+        if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
+        run: test -n "${{ inputs.kellogg_release_run_id }}"
+      - name: Consume exact KELLOGG archives, never rebuild the published dependency
+        if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
+        uses: actions/download-artifact@v4
+        with:
+          name: kellogg-tensor-verified-release
+          run-id: ${{ inputs.kellogg_release_run_id }}
+          github-token: ${{ github.token }}
+          path: packaging/kellogg-tensor/dist/
       - uses: actions/upload-artifact@v4
         with:
           name: kellogg-1.0.0-release
@@ -57,6 +97,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -82,6 +124,8 @@ jobs:
         python: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
@@ -97,8 +141,8 @@ jobs:
       - name: Verify exact wheels outside the repository
         shell: bash
         run: |
-          KELLOGG_WHEEL="$(find release/kellogg -maxdepth 1 -name 'kellogg_tensor-1.0.0-*.whl' -print -quit)"
-          TURING_WHEEL="$(find release/turing -maxdepth 1 -name 'turing_universal_quantum_computer-1.0.0-*.whl' -print -quit)"
+          KELLOGG_WHEEL="$(find release/kellogg -maxdepth 1 -name 'hyba_kellogg_tensor-1.0.0-*.whl' -print -quit)"
+          TURING_WHEEL="$(find release/turing -maxdepth 1 -name 'hyba_turing_vqc-1.0.0-*.whl' -print -quit)"
           test -n "$KELLOGG_WHEEL"
           test -n "$TURING_WHEEL"
           python packaging/verify_release_candidates.py             --kellogg "$KELLOGG_WHEEL"             --turing "$TURING_WHEEL"             --python python             --out "release/verify-${{ matrix.python }}"
@@ -110,10 +154,12 @@ jobs:
 
   source-gate:
     name: Full TURING source, production and benchmark gate
-    needs: kellogg-prerequisite
+    needs: [kellogg-prerequisite, preflight]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -125,7 +171,7 @@ jobs:
       - name: Install exact release dependency and final source
         shell: bash
         run: |
-          KELLOGG_WHEEL="$(find release/kellogg -maxdepth 1 -name 'kellogg_tensor-1.0.0-*.whl' -print -quit)"
+          KELLOGG_WHEEL="$(find release/kellogg -maxdepth 1 -name 'hyba_kellogg_tensor-1.0.0-*.whl' -print -quit)"
           test -n "$KELLOGG_WHEEL"
           python -m pip install --upgrade pip
           python -m pip install "numpy>=1.26,<3" "sympy>=1.12,<2" "scipy>=1.11" "networkx>=3.0" "pytest>=7.4,<10"
@@ -141,8 +187,8 @@ jobs:
       - name: Checkout-bound discovery and acceptance gate
         run: |
           mkdir -p release/source-gate
-          COMMIT_TIME="$(git show -s --format=%cI "$GITHUB_SHA")"
-          python -m turing_universal_quantum_computer.turing_core.inventory             . --commit "$GITHUB_SHA" --timestamp "$COMMIT_TIME"             --output release/source-gate/turing-discovery.json
+          COMMIT_TIME="$(git show -s --format=%cI "$RC_SHA")"
+          python -m turing_universal_quantum_computer.turing_core.inventory             . --commit "$RC_SHA" --timestamp "$COMMIT_TIME"             --output release/source-gate/turing-discovery.json
           python scripts/turing_acceptance_gate.py             --report release/source-gate/turing-discovery.json             --output release/source-gate/turing-acceptance.json
       - name: Full TURING benchmark suite including 10,000-qubit voyage
         run: |
@@ -157,9 +203,9 @@ jobs:
           bench = json.loads((root / "benchmark/latest.json").read_text())
           acceptance = json.loads((root / "turing-acceptance.json").read_text())
           record = {
-              "product": "turing-universal-quantum-computer",
+              "product": "hyba-turing-vqc",
               "version": "1.0.0",
-              "git_sha": os.environ["GITHUB_SHA"],
+              "git_sha": os.environ["RC_SHA"],
               "python": platform.python_version(),
               "platform": platform.platform(),
               "tests_passed": True,
@@ -193,9 +239,12 @@ jobs:
 
   formal:
     name: TURING-owned Lean verification
+    needs: preflight
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
       - uses: leanprover/lean-action@v1
         with:
           lake-package-directory: turing_universal_quantum_computer/formal
@@ -212,6 +261,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
       - uses: actions/download-artifact@v4
         with:
           name: kellogg-1.0.0-release
@@ -244,7 +295,7 @@ jobs:
           runs = []
           for path in sorted(Path("evidence/installed").rglob("turing-*.json")):
               row = load(path)
-              if row.get("product") == "turing-universal-quantum-computer":
+              if row.get("product") == "hyba-turing-vqc":
                   runs.append(row)
           if {r.get("python", "").split(".")[:2][0] + "." + r.get("python", "").split(".")[:2][1] for r in runs} != {"3.11", "3.12", "3.13"}:
               raise SystemExit(f"missing supported Python evidence: {[r.get('python') for r in runs]}")
@@ -255,30 +306,22 @@ jobs:
           if not (len(fixtures) == len(small_certs) == len(wide_certs) == len(wide_roots) == 1):
               raise SystemExit("cross-version deterministic TURING fixtures differ")
 
-          def pypi_version(project, version, host="https://pypi.org"):
-              try:
-                  with urllib.request.urlopen(f"{host}/pypi/{project}/{version}/json", timeout=20) as response:
-                      return response.status == 200
-              except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
-                  return False
-
-          kellogg_registry = pypi_version("kellogg-tensor", "1.0.0")
-          turing_testpypi = pypi_version(
-              "turing-universal-quantum-computer", "1.0.0", "https://test.pypi.org"
-          )
-          publish_mode = os.environ["PUBLISH_MODE"]
-          if publish_mode == "pypi" and not kellogg_registry:
-              raise SystemExit("production PyPI publication requires kellogg-tensor==1.0.0 on PyPI")
-          if publish_mode == "pypi" and not turing_testpypi:
-              raise SystemExit("production PyPI publication requires TURING 1.0.0 TestPyPI verification first")
+          # Registry metadata is availability information, never an execution gate.
+          # TestPyPI verification is emitted only after clean registry execution below.
+          if source["git_sha"] != os.environ["RC_SHA"]:
+              raise SystemExit("stale TURING source gate")
+          for key in ("wheel", "sdist"):
+              item = artifact[key]
+              path = Path("evidence/turing") / item["file"]
+              if hashlib.sha256(path.read_bytes()).hexdigest() != item["sha256"]:
+                  raise SystemExit("TURING artifact changed after build")
 
           verdict = {
-              "product": "turing-universal-quantum-computer",
+              "product": "hyba-turing-vqc",
               "version": "1.0.0",
               "repository": "QuantumPhiRedux/PhiMiner",
-              "git_sha": os.environ["GITHUB_SHA"],
+              "git_sha": os.environ["RC_SHA"],
               "kellogg_dependency_verified": True,
-              "kellogg_registry_1_0_0_available": kellogg_registry,
               "package_boundary_verified": True,
               "metadata_valid": True,
               "product_registry_verified": all(r["registry_ok"] for r in runs),
@@ -302,7 +345,7 @@ jobs:
               "artifact_secret_scan_passed": artifact["artifact_secret_scan_passed"],
               "pypi_metadata_valid": artifact["metadata_valid"],
               "trusted_publishing_workflow_valid": True,
-              "testpypi_verified": turing_testpypi,
+              "testpypi_verified": False,
               "publishable": True,
               "published": False,
               "wheel": artifact["wheel"],
@@ -318,81 +361,336 @@ jobs:
           name: turing-release-verdict
           path: turing-release-verdict.json
 
-  publish:
-    name: Publish exact verified artefact
+  kellogg-publication-prerequisite:
+    name: Require executed same-RC KELLOGG publication evidence
     needs: release-verdict
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish != 'none' }}
+    if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
     runs-on: ubuntu-latest
-    environment:
-      name: ${{ inputs.publish }}
+    permissions:
+      contents: read
+      actions: read
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ env.RC_SHA }}
+    - run: test -n "${{ inputs.kellogg_release_run_id }}"
+    - uses: actions/download-artifact@v4
+      with:
+        name: kellogg-final-publication
+        path: kellogg-final
+        run-id: ${{ inputs.kellogg_release_run_id }}
+        github-token: ${{ github.token }}
+    - uses: actions/download-artifact@v4
+      with:
+        name: kellogg-1.0.0-release
+        path: release/kellogg
+    - run: |-
+        python - <<'PYCODE'
+        import json, os, sys
+        sys.path.insert(0,"packaging")
+        from verify_registry_release import require, digest
+        published = json.load(open("kellogg-final/publication.json"))
+        built = json.load(open("release/kellogg/artifact-verdict.json"))
+        require(published["git_sha"] == built["git_sha"] == os.environ["RC_SHA"], "Kellogg prerequisite is stale")
+        require(published["product"] == "hyba-kellogg-tensor" and published["published"] is True, "Kellogg has no executed PyPI publication")
+        require(published["testpypi_verified"] is True, "Kellogg TestPyPI smoke missing")
+        require(published["wheel"] == built["wheel"], "dependency wheel is not the published same-RC archive")
+        rows = published["registry_receipts"]
+        expected_run = "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ inputs.kellogg_release_run_id }}"
+        require(published["ci_run_url"] == expected_run, "wrong prerequisite execution identity")
+        for row in rows:
+            signed = dict(row)
+            bound = signed.pop("receipt_digest")
+            require(digest(signed) == bound and row["ci_run_url"] == expected_run, "tampered prerequisite receipt")
+        require(len(rows) == 4 and {".".join(r["python"].split(".")[:2]) for r in rows} == {"3.11","3.12","3.13","3.14"}, "missing Kellogg supported Python")
+        require(all(r["status"] == "PASS" and r["registry"] == "pypi" and r["source_commit"] == os.environ["RC_SHA"] and all(r["checks"].values()) for r in rows), "Kellogg execution evidence incomplete")
+        PYCODE
+  publish-testpypi:
+    name: OIDC upload exact archives to TestPyPI
+    needs:
+    - release-verdict
+    - kellogg-publication-prerequisite
+    if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
+    runs-on: ubuntu-latest
+    environment: testpypi
     permissions:
       contents: read
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: turing-1.0.0-release
-          path: verified
-      - name: Stage only the exact verified wheel and sdist
-        shell: bash
-        run: |
-          mkdir -p dist
-          python - <<'PY'
-          import hashlib, json, shutil
-          from pathlib import Path
-          record = json.loads(Path("verified/artifact-build.json").read_text())
-          for key in ("wheel", "sdist"):
-              item = record[key]
-              src = Path("verified") / item["file"]
-              got = hashlib.sha256(src.read_bytes()).hexdigest()
-              if got != item["sha256"]:
-                  raise SystemExit(f"{key} digest changed: {got} != {item['sha256']}")
-              shutil.copy2(src, Path("dist") / src.name)
-          PY
-          test "$(find dist -maxdepth 1 -type f | wc -l)" -eq 2
-      - name: Publish with OIDC trusted publishing
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: ${{ inputs.publish == 'testpypi' && 'https://test.pypi.org/legacy/' || 'https://upload.pypi.org/legacy/' }}
-
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ env.RC_SHA }}
+    - uses: actions/download-artifact@v4
+      with:
+        name: turing-1.0.0-release
+        path: release
+    - uses: actions/download-artifact@v4
+      with:
+        name: turing-release-verdict
+        path: release
+    - name: Stage exact RC-bound qualified archives
+      run: |-
+        python - <<'PYCODE'
+        import sys, shutil
+        from pathlib import Path
+        sys.path.insert(0, "packaging")
+        from verify_registry_release import qualification, file_digest, require
+        row = qualification("release/turing-release-verdict.json", "${{ env.RC_SHA }}", "hyba-turing-vqc")
+        Path("upload").mkdir()
+        for key in ("wheel", "sdist"):
+            item = row[key]
+            src = Path("release") / item["file"]
+            require(file_digest(src) == item["sha256"], "archive digest mismatch")
+            shutil.copy2(src, Path("upload") / src.name)
+        PYCODE
+    - uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        packages-dir: upload/
+        repository-url: https://test.pypi.org/legacy/
   testpypi-smoke:
-    name: Verify TestPyPI publication
-    needs: [publish, kellogg-prerequisite]
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == 'testpypi' }}
+    name: Clean testpypi execution / Python ${{ matrix.python }}
+    needs: publish-testpypi
+    if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python:
+        - '3.11'
+        - '3.12'
+        - '3.13'
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ env.RC_SHA }}
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python }}
+    - uses: actions/download-artifact@v4
+      with:
+        name: turing-1.0.0-release
+        path: release
+    - uses: actions/download-artifact@v4
+      with:
+        name: turing-release-verdict
+        path: release
+    - uses: actions/download-artifact@v4
+      with:
+        name: kellogg-1.0.0-release
+        path: release/kellogg
+    - name: Execute fresh registry install, import, CLI and replay
+      run: python packaging/verify_registry_release.py --product hyba-turing-vqc --registry testpypi
+        --sha "$RC_SHA" --verdict release/turing-release-verdict.json --out receipts --dependency-manifest release/kellogg/artifact-verdict.json
+    - uses: actions/upload-artifact@v4
+      with:
+        name: turing-testpypi-smoke-${{ matrix.python }}
+        path: receipts/
+        if-no-files-found: error
+  testpypi-verified:
+    name: Seal executed testpypi matrix
+    needs: testpypi-smoke
+    if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - uses: actions/download-artifact@v4
-        with:
-          name: kellogg-1.0.0-release
-          path: release/kellogg
-      - name: Install published TURING beside the exact Kellogg dependency and smoke
-        shell: bash
-        run: |
-          python -m venv /tmp/turing-testpypi
-          . /tmp/turing-testpypi/bin/activate
-          python -m pip install --upgrade pip
-          python -m pip install "numpy>=1.26,<3" "sympy>=1.12,<2"
-          KELLOGG_WHEEL="$(find release/kellogg -maxdepth 1 -name 'kellogg_tensor-1.0.0-*.whl' -print -quit)"
-          python -m pip install --no-deps "$KELLOGG_WHEEL"
-          for attempt in 1 2 3 4 5 6; do
-            if python -m pip install --no-deps --index-url https://test.pypi.org/simple/               turing-universal-quantum-computer==1.0.0; then
-              break
-            fi
-            test "$attempt" -lt 6
-            sleep 10
-          done
-          cd /tmp
-          python -I - <<'PY'
-          import importlib.metadata
-          from turing_universal_quantum_computer import Program
-          from turing_universal_quantum_computer.backends import execute_certified
-          assert importlib.metadata.version("turing-universal-quantum-computer") == "1.0.0"
-          program = Program(2).then("h", 0).then("cx", 0, 1).then("t", 0)
-          run = execute_certified(program)
-          assert run.certificate.certificate_digest
-          assert run.witness.witness_digest
-          print("TESTPYPI_SMOKE_PASS")
-          PY
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ env.RC_SHA }}
+    - uses: actions/download-artifact@v4
+      with:
+        name: turing-1.0.0-release
+        path: release
+    - uses: actions/download-artifact@v4
+      with:
+        name: turing-release-verdict
+        path: release
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: turing-testpypi-smoke-*
+        path: receipts
+    - run: python packaging/verify_registry_release.py --product hyba-turing-vqc --registry testpypi
+        --sha "$RC_SHA" --verdict release/turing-release-verdict.json --receipts receipts --out publication.json
+    - uses: actions/upload-artifact@v4
+      with:
+        name: turing-testpypi-verified
+        path: publication.json
+        if-no-files-found: error
+  pypi-smoke:
+    name: Clean pypi execution / Python ${{ matrix.python }}
+    needs: publish-pypi
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python:
+        - '3.11'
+        - '3.12'
+        - '3.13'
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ env.RC_SHA }}
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python }}
+    - uses: actions/download-artifact@v4
+      with:
+        name: turing-1.0.0-release
+        path: release
+    - uses: actions/download-artifact@v4
+      with:
+        name: turing-release-verdict
+        path: release
+    - uses: actions/download-artifact@v4
+      with:
+        name: kellogg-1.0.0-release
+        path: release/kellogg
+    - name: Execute fresh registry install, import, CLI and replay
+      run: python packaging/verify_registry_release.py --product hyba-turing-vqc --registry pypi
+        --sha "$RC_SHA" --verdict release/turing-release-verdict.json --out receipts --dependency-manifest release/kellogg/artifact-verdict.json
+    - uses: actions/upload-artifact@v4
+      with:
+        name: turing-pypi-smoke-${{ matrix.python }}
+        path: receipts/
+        if-no-files-found: error
+  pypi-verified:
+    name: Seal executed pypi matrix
+    needs: pypi-smoke
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ env.RC_SHA }}
+    - uses: actions/download-artifact@v4
+      with:
+        name: turing-1.0.0-release
+        path: release
+    - uses: actions/download-artifact@v4
+      with:
+        name: turing-release-verdict
+        path: release
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: turing-pypi-smoke-*
+        path: receipts
+    - run: python packaging/verify_registry_release.py --product hyba-turing-vqc --registry pypi
+        --sha "$RC_SHA" --verdict release/turing-release-verdict.json --receipts receipts --out publication.json
+    - uses: actions/upload-artifact@v4
+      with:
+        name: turing-pypi-verified
+        path: publication.json
+        if-no-files-found: error
+  publish-pypi:
+    name: OIDC promote the same TestPyPI-verified bytes
+    needs: testpypi-verified
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ env.RC_SHA }}
+    - uses: actions/download-artifact@v4
+      with:
+        name: turing-1.0.0-release
+        path: release
+    - uses: actions/download-artifact@v4
+      with:
+        name: turing-release-verdict
+        path: release
+    - uses: actions/download-artifact@v4
+      with:
+        name: turing-testpypi-verified
+        path: promotion
+    - name: Require executed TestPyPI gate for this RC and archive pair
+      run: |-
+        python - <<'PYCODE'
+        import sys, os
+        sys.path.insert(0,"packaging")
+        from verify_registry_release import load, qualification, require
+        base = qualification("release/turing-release-verdict.json", os.environ["RC_SHA"], "hyba-turing-vqc")
+        promotion = load("promotion/publication.json")
+        require(promotion["git_sha"] == os.environ["RC_SHA"] and promotion["testpypi_verified"] is True, "missing executed TestPyPI gate")
+        require(promotion["wheel"] == base["wheel"] and promotion["sdist"] == base["sdist"], "promotion rebuilt/substituted archives")
+        PYCODE
+    - name: Stage exact RC-bound qualified archives
+      run: |-
+        python - <<'PYCODE'
+        import sys, shutil
+        from pathlib import Path
+        sys.path.insert(0, "packaging")
+        from verify_registry_release import qualification, file_digest, require
+        row = qualification("release/turing-release-verdict.json", "${{ env.RC_SHA }}", "hyba-turing-vqc")
+        Path("upload").mkdir()
+        for key in ("wheel", "sdist"):
+            item = row[key]
+            src = Path("release") / item["file"]
+            require(file_digest(src) == item["sha256"], "archive digest mismatch")
+            shutil.copy2(src, Path("upload") / src.name)
+        PYCODE
+    - uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        packages-dir: upload/
+  github-release:
+    name: Publish evidence-linked standalone GitHub release
+    needs: pypi-verified
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ env.RC_SHA }}
+    - uses: actions/download-artifact@v4
+      with:
+        name: turing-1.0.0-release
+        path: release
+    - uses: actions/download-artifact@v4
+      with:
+        name: turing-release-verdict
+        path: release
+    - uses: actions/download-artifact@v4
+      with:
+        name: turing-pypi-verified
+        path: final
+    - uses: actions/download-artifact@v4
+      with:
+        name: turing-testpypi-verified
+        path: test
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: turing-*-smoke-*
+        path: execution-logs
+    - name: Retain complete publication evidence and create release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |-
+        python - <<'PYCODE'
+        import json, os
+        from pathlib import Path
+        row = json.load(open("final/publication.json"))
+        test = json.load(open("test/publication.json"))
+        if not row["published"] or not test["testpypi_verified"]:
+            raise SystemExit("missing executed registry evidence")
+        row["testpypi_verified"] = True
+        row["testpypi_receipts"] = test["registry_receipts"]
+        Path("publication.json").write_text(json.dumps(row, indent=2, sort_keys=True))
+        Path("release-notes.md").write_text(
+            "Standalone hyba-turing-vqc 1.0.0\n\nRC: " + os.environ["RC_SHA"] +
+            "\nCI: " + os.environ["CI_RUN_URL"] +
+            "\n\nBoth registries used the same wheel/sdist SHA-256 archives; attached publication.json contains executed receipts. "
+            "Full command/install/custody logs are attached. This release does not certify CHRONUS/iGPU or the whole HYBA platform.\n")
+        PYCODE
+        tar -czf registry-execution-logs.tar.gz execution-logs
+        gh release create turing-universal-quantum-computer-v1.0.0 --target "$RC_SHA" --title "hyba-turing-vqc 1.0.0" --notes-file release-notes.md release/*.whl release/*.tar.gz publication.json registry-execution-logs.tar.gz
+    - uses: actions/upload-artifact@v4
+      with:
+        name: turing-final-publication
+        path: publication.json
+        if-no-files-found: error

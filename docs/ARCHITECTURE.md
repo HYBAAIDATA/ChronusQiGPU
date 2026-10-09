@@ -13,7 +13,9 @@ main.py → chronus/mla1517_platform/python/control_api.py
         ⇅
 chronus/mla1517_platform/python
   ├── mining_runtime.py            hardware loop, bounded reconnect
-  ├── manifold_pool_coordinator.py Stratum V1 client + failover + TLS
+  ├── manifold_pool_coordinator.py canonical pool/session contract + endpoint parsing
+  ├── chronus/mla1517/mining/production_transport.py bounded V1/V2 failover + submit I/O
+  ├── chronus/mla1517/mining/stratum_v2_transport.py authenticated V2 normalization
   ├── startup_contract.py          env identity resolution (fail-closed)
   ├── chronus/mla1517/mining/*             M32 work allocation, exact reference
   └── chronus/mla1517/{accelerator,connect,identity,...}.py

@@ -16,6 +16,8 @@ from typing import Dict, List, Set, Tuple
 
 import numpy as np
 
+from Intelligence._born import QUARTER_TURN, adjust_probability
+
 
 @dataclass
 class PlasticSynapse:
@@ -116,12 +118,18 @@ class NeuralPlasticity:
         syn.last_active = self._tick
 
     def deliver_reward(self, reward: float):
+        """Three-factor rule as a unitary rotation: the measured product
+        η·level·|reward|·trace sets the rotation angle of the weight
+        qubit; reward's sign picks potentiation (|0>) or depression
+        (|1>). The rotation self-bounds — no (1-w) damping needed."""
         self.reward_history.append(reward)
         for syn in self.synapses.values():
             if syn.trace > 0 and not syn.crystallized:
-                delta = self.learning_rate * self.plasticity_level * reward * syn.trace
+                drive = self.learning_rate * self.plasticity_level * abs(reward) * syn.trace
                 w_before = syn.weight
-                syn.weight = min(1.0, max(0.0, syn.weight + delta * (1.0 - syn.weight)))
+                syn.weight = adjust_probability(
+                    syn.weight, reward >= 0, min(1.0, drive) * QUARTER_TURN
+                )
                 syn.reward_accumulated += reward * syn.trace
                 if abs(syn.weight - w_before) > 1e-6:
                     self.event_log.append(
@@ -140,10 +148,12 @@ class NeuralPlasticity:
         self._homeostatic_scale()
 
     def decay(self):
+        """Idle synapses rotate toward the |1> pole by the declared decay
+        fraction of a quarter-turn; crystallised ones resist."""
         self._tick += 1
         for syn in self.synapses.values():
             if not syn.crystallized:
-                syn.weight *= 1.0 - self.weight_decay
+                syn.weight = adjust_probability(syn.weight, False, self.weight_decay * QUARTER_TURN)
 
     def _homeostatic_scale(self):
         total = sum(s.weight for s in self.synapses.values())

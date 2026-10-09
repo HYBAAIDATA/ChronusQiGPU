@@ -145,7 +145,7 @@ def main() -> int:
         print(f"RELEASE_BLOCKED={evidence}")
         return 1
     wheel_dir = ROOT / "packaging" / "euclid-engine" / "dist"
-    wheel = next(wheel_dir.glob("euclid_engine-*.whl"))
+    wheel = next(wheel_dir.glob("hyba_euclid_intelligence-*.whl"))
     verification = json.loads((wheel_dir / "euclid-engine-verification.json").read_text(
         encoding="utf-8"))
     archive = args.output / f"euclid-intelligence-{RELEASE_VERSION}.zip"

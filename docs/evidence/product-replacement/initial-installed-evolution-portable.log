@@ -1,0 +1,95 @@
+.......................FF                                                [100%]
+=================================== FAILURES ===================================
+________________ test_exact_tree_input_reaches_exact_evolution _________________
+
+    def test_exact_tree_input_reaches_exact_evolution():
+        runtime = VirtualRuntime(OneIGPU())
+        workload = Workload(
+            "exact-pi",
+            "tenant",
+            "evolve",
+            {
+                "amplitudes": [1, 0],
+                "hamiltonian": [[0, 1], [1, 0]],
+                "time": encode_expression(s.pi / 2),
+            },
+            quota=2,
+        )
+>       receipt = runtime.execute(workload)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_exact_evolution_replacement.py:132: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../venv-portable/lib64/python3.13/site-packages/chronos_one_igpu/igpu/virtual_abi.py:75: in execute
+    evolved=self.gpu.evolve(p['amplitudes'],p['hamiltonian'],p.get('time',1));a=evolved.amplitudes
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../venv-portable/lib64/python3.13/site-packages/chronos_one_igpu/igpu/facade.py:58: in evolve
+    return self.golden.evolve(amplitudes, hamiltonian, time_value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../venv-portable/lib64/python3.13/site-packages/chronos_one_igpu/igpu/golden_runtime.py:214: in evolve
+    result = exact_hamiltonian_evolution(amplitudes,hamiltonian,time_value,legacy_encoding=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../venv-portable/lib64/python3.13/site-packages/chronos_one_igpu/igpu/exact_quantum.py:238: in exact_hamiltonian_evolution
+    t = scalar(time_value, legacy_encoding=legacy_encoding)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = {'operator': 'mul', 'args': [{'rational': [1, 2]}, {'atom': 'pi'}]}
+legacy_encoding = True
+
+    def scalar(value, *, legacy_encoding=False):
+        """Legacy floats are exact binary input values, never ideal constants."""
+        if isinstance(value, PhiElement):
+            return (
+                sp.Rational(value.a.numerator, value.a.denominator)
+                + sp.Rational(value.b.numerator, value.b.denominator) * PHI
+            )
+        if isinstance(value, Fraction):
+            return sp.Rational(value.numerator, value.denominator)
+        if type(value) is bool:
+            raise ValueError("boolean is not a quantum amplitude")
+        if isinstance(value, numbers.Integral):
+            return sp.Integer(int(value))
+        if isinstance(value, sp.Basic):
+            if value.free_symbols or value.has(sp.Float) or value.is_finite is not True:
+                raise ValueError("closed finite exact expression required")
+            return value
+        if legacy_encoding and isinstance(value, numbers.Real):
+            try:
+                a, b = value.as_integer_ratio()
+            except (AttributeError, OverflowError, ValueError) as exc:
+                raise ValueError("finite lossless binary input required") from exc
+            return sp.Rational(a, b)
+        if legacy_encoding and isinstance(value, numbers.Complex):
+            return scalar(value.real, legacy_encoding=True) + sp.I * scalar(
+                value.imag, legacy_encoding=True
+            )
+>       raise ValueError("exact scalar required; no implicit numerical fallback")
+E       ValueError: exact scalar required; no implicit numerical fallback
+
+../venv-portable/lib64/python3.13/site-packages/chronos_one_igpu/igpu/exact_quantum.py:52: ValueError
+____________________ test_abi_rejects_relabelled_substrate _____________________
+
+    def test_abi_rejects_relabelled_substrate():
+        runtime = VirtualRuntime(OneIGPU())
+        workload = Workload(
+            "substrate",
+            "tenant",
+            "evolve",
+            {"amplitudes": [1], "hamiltonian": [[0]]},
+            quota=1,
+        )
+        receipt = runtime.execute(workload)
+        receipt["backend"] = "physical_qpu"
+        receipt["receipt_digest"] = hashlib.sha256(
+            canonical({k: v for k, v in receipt.items() if k != "receipt_digest"})
+        ).hexdigest()
+>       with pytest.raises(ValueError, match="substrate"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test_exact_evolution_replacement.py:151: Failed
+=========================== short test summary info ============================
+FAILED test_exact_evolution_replacement.py::test_exact_tree_input_reaches_exact_evolution
+FAILED test_exact_evolution_replacement.py::test_abi_rejects_relabelled_substrate
+2 failed, 23 passed in 1.00s

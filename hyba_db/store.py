@@ -287,6 +287,7 @@ class OntologyStore:
             self.knowledge = KnowledgeProjection(self, custody=custody)
             self.ovid = OvidDataIndex(self)
             self._ensure_tenant_manifests()
+            self._ensure_core_rebuild_manifests()
             self._db.execute(
                 "INSERT OR REPLACE INTO metadata VALUES('schema_version',?)",
                 (str(self.SCHEMA_VERSION),),
@@ -397,6 +398,127 @@ class OntologyStore:
         for tenant_id in tenant_ids:
             self.seal_tenant_manifest(tenant_id)
 
+    def _put_projection_manifest(
+        self,
+        tenant_id: str,
+        *,
+        record_id: str,
+        kind: str,
+        body: Mapping[str, Any],
+        lineage: Sequence[str] = (),
+        correlation_ids: Mapping[str, str] | None = None,
+    ) -> str:
+        """Seal a rebuild-only projection manifest into THESEUS custody."""
+        custody = self.files.custody
+        if custody is None:
+            raise InvalidRecord("THESEUS custody required for durable projection recovery")
+        from aethel.enterprise.records import OperationalRecord
+
+        payload = _json(dict(body)).encode("utf-8")
+        if custody.verify(tenant_id, record_id):
+            existing = custody.open_tenant(tenant_id).get_record(record_id)
+            if (
+                existing.kind != kind
+                or existing.producer != "theseus"
+                or bytes(existing.payload) != payload
+            ):
+                raise IntegrityFailure(
+                    f"custody manifest conflicts with projection: {record_id}"
+                )
+            return record_id
+        record = OperationalRecord(
+            record_id=record_id,
+            producer="theseus",
+            producer_version="hyba-db-projection/1",
+            schema_version=1,
+            kind=kind,
+            payload=payload,
+            evidence_state="MEASURED",
+            lineage=tuple(str(item) for item in lineage),
+            correlation_ids={
+                "tenant_id": tenant_id,
+                **{str(k): str(v) for k, v in dict(correlation_ids or {}).items()},
+            },
+        )
+        cid = str(custody.put_record(tenant_id, record))
+        if cid != record_id or not custody.verify(tenant_id, cid):
+            raise IntegrityFailure(f"THESEUS failed manifest readback: {record_id}")
+        return cid
+
+    def _seal_fold_manifest(self, tenant_id: str, fold_id: str) -> str:
+        row = self._db.execute(
+            "SELECT f.*,c.masks_json,c.digest AS certificate_digest,"
+            "c.vector_digest,c.lucas_json,c.depth,c.scale "
+            "FROM folds f JOIN certificates c ON c.tenant_id=f.tenant_id "
+            "AND c.id=f.certificate_id WHERE f.tenant_id=? AND f.id=?",
+            (tenant_id, fold_id),
+        ).fetchone()
+        if row is None:
+            raise AccessDenied("fold not found in tenant")
+        vector = list(struct.unpack(">11d", bytes(row["vector"])))
+        body = {
+            "schema": "hyba.fold-projection-manifest/v1",
+            "fold_id": str(row["id"]),
+            "parent_id": row["parent_id"],
+            "created_at": str(row["created_at"]),
+            "vector": vector,
+            "certificate": {
+                "id": str(row["certificate_id"]),
+                "masks": _load(str(row["masks_json"])),
+                "digest": str(row["certificate_digest"]),
+                "vector_digest": str(row["vector_digest"]),
+                "lucas": _load(str(row["lucas_json"])),
+                "depth": int(row["depth"]),
+                "scale": int(row["scale"]),
+            },
+        }
+        return self._put_projection_manifest(
+            tenant_id,
+            record_id=f"fold_projection.{fold_id}",
+            kind="fold_projection_manifest",
+            body=body,
+            lineage=tuple(
+                item for item in (str(row["parent_id"]) if row["parent_id"] else "",) if item
+            ),
+            correlation_ids={"fold_id": fold_id, "certificate_id": str(row["certificate_id"])},
+        )
+
+    def _seal_ontology_manifest(self, tenant_id: str, term_id: str) -> str:
+        row = self._db.execute(
+            "SELECT * FROM ontology WHERE tenant_id=? AND id=?",
+            (tenant_id, term_id),
+        ).fetchone()
+        if row is None:
+            raise AccessDenied("ontology term not found in tenant")
+        body = {
+            "schema": "hyba.ontology-projection-manifest/v1",
+            "id": str(row["id"]),
+            "term": str(row["term"]),
+            "definition": str(row["definition"]),
+            "relations": _load(str(row["relations_json"])),
+            "created_at": str(row["created_at"]),
+        }
+        return self._put_projection_manifest(
+            tenant_id,
+            record_id=f"ontology_projection.{term_id}",
+            kind="ontology_projection_manifest",
+            body=body,
+            correlation_ids={"ontology_id": term_id},
+        )
+
+    def _ensure_core_rebuild_manifests(self) -> None:
+        """Backfill custody manifests for existing core ontology state."""
+        if self.files.custody is None:
+            return
+        for tenant_id, fold_id in self._db.execute(
+            "SELECT tenant_id,id FROM folds ORDER BY tenant_id,created_at,id"
+        ).fetchall():
+            self._seal_fold_manifest(str(tenant_id), str(fold_id))
+        for tenant_id, term_id in self._db.execute(
+            "SELECT tenant_id,id FROM ontology ORDER BY tenant_id,created_at,id"
+        ).fetchall():
+            self._seal_ontology_manifest(str(tenant_id), str(term_id))
+
     def _reserve(self, db: sqlite3.Connection, tenant_id: str, records: int, blob_bytes: int, subject: str) -> None:
         row = db.execute("SELECT * FROM tenants WHERE tenant_id=?", (tenant_id,)).fetchone()
         if not row: raise AccessDenied("unknown or inaccessible tenant")
@@ -497,7 +619,7 @@ class OntologyStore:
         if not all(math.isfinite(x) for x in values): raise InvalidRecord("fold vector must be finite")
         return values, struct.pack(">11d",*values)
 
-    def write_fold(self, tenant_id: str, vector: Sequence[float], *, parent_id: str|None=None, issuer: str="hyba", evidence: Sequence[str]=()) -> FoldRecord:
+    def write_fold(self, tenant_id: str, vector: Sequence[float], *, parent_id: str|None=None, issuer: str="hyba", evidence: Sequence[str]=(), seal_manifest: bool=True) -> FoldRecord:
         self._tenant(tenant_id); values, blob = self._pack_vector(vector)
         masks = tuple(_zeckendorf(round(x*self.SCALE)) for x in values)
         depth = max((abs(m).bit_length()-1 for m in masks if m), default=0)
@@ -514,6 +636,8 @@ class OntologyStore:
             db.execute("INSERT INTO certificates VALUES(?,?,?,?,?,?,?,?,?)",(tenant_id,cert_id,_json(masks),cert_digest,vector_digest,_json(lucas),depth,self.SCALE,ca.id))
             fa=self._attest(db,tenant_id,f"fold:{fold_id}",issuer,{"certificate":cert_id,"parent":parent_id},(ca.id,*evidence))
             db.execute("INSERT INTO folds VALUES(?,?,?,?,?,?,?)",(tenant_id,fold_id,blob,cert_id,parent_id,created,fa.id))
+        if seal_manifest:
+            self._seal_fold_manifest(tenant_id, fold_id)
         return self.read_fold(tenant_id,fold_id)
 
     def _certificate(self, tenant_id: str, cert_id: str) -> Certificate:
@@ -699,12 +823,14 @@ class OntologyStore:
             db.execute("INSERT INTO contracts VALUES(?,?,?,?,?,?,?)",(tenant_id,cid,name,payload,_json(tuple(invariant_ids)),a.id,created))
         return cid
 
-    def register_term(self, tenant_id: str, term: str, definition: str, relations: dict[str,Any]|None=None, *, issuer: str="hyba") -> str:
+    def register_term(self, tenant_id: str, term: str, definition: str, relations: dict[str,Any]|None=None, *, issuer: str="hyba", seal_manifest: bool=True) -> str:
         oid=_ident("term",f"{tenant_id}:{term}".encode()); rel=_json(relations or {}); created=_now()
         with self._tx() as db:
             self._reserve(db,tenant_id,1,len(definition.encode())+len(rel.encode()),oid)
             a=self._attest(db,tenant_id,f"ontology:{term}",issuer,{"term":term,"definition_digest":_sha(definition.encode()),"relations_digest":_sha(rel.encode())},())
             db.execute("INSERT INTO ontology VALUES(?,?,?,?,?,?,?)",(tenant_id,oid,term,definition,rel,a.id,created))
+        if seal_manifest:
+            self._seal_ontology_manifest(tenant_id, oid)
         return oid
 
     def materialize(self, tenant_id: str, operation: str, input_ids: Sequence[str], result: Any, *, issuer: str="hyba") -> str:

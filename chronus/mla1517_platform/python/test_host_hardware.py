@@ -213,6 +213,12 @@ class PureProtocolTests(unittest.TestCase):
         self.assertTrue(parse_endpoint("stratum+ssl://pool.example:3333", "x", tls=False).tls)
         self.assertFalse(parse_endpoint("stratum+tcp://pool.example:3333", "x").tls)
         self.assertFalse(parse_endpoint("stratum+tcp://pool.example:3333", "x", tls=True).tls)
+        sv2 = parse_endpoint("stratum2+noise://pool.example:34254", "sv2")
+        self.assertEqual(sv2.protocol, "v2")
+        self.assertFalse(sv2.tls)
+        self.assertEqual(sv2.host, "pool.example")
+        self.assertEqual(sv2.port, 34254)
+        self.assertEqual(parse_endpoint("sv2://pool.example:34254", "sv2").protocol, "v2")
         self.assertEqual(
             parse_endpoint("stratum+ssl://pool.example:3333", "x").host, "pool.example"
         )

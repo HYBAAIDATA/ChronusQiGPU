@@ -1,0 +1,358 @@
+{
+  "schema": "toe.capability_manifest/v1",
+  "product": "TOE",
+  "import_name": "toe",
+  "version": "1.0.0",
+  "owner": "TOE",
+  "hard_dependencies": [
+    "numpy",
+    "hyba-kellogg-tensor"
+  ],
+  "optional_integrations": {
+    "THESEUS custody (aethel.enterprise.custody)": "durable learning state; absent -> persistence UNAVAILABLE",
+    "millennium.hyba_poincare_yangmills": "finite 2I spectrum surface; absent -> UNAVAILABLE",
+    "turing_core": "shared algebraic-family substrate; absent -> TOE's embedded exact detector",
+    "chronus.mla1517.scale + lucas.ladder": "expansion envelope scale program; absent -> collapse fails closed",
+    "pandas": "legacy HR engine (extra 'legacy-hr')"
+  },
+  "authority": {
+    "TOE": "domain-general world modelling, causal inference, futures, planning, VOI, precision, explanation, revision",
+    "EUCLID": "orchestration: decides when TOE is invoked",
+    "PYTHIA": "mining authority; SHA256d + target comparison decide validity",
+    "KELLOGG": "tensor and exact-field mathematics (consumed, not copied)",
+    "TURING": "VQC execution",
+    "THESEUS": "durable custody",
+    "OVID": "authorised representation transformation",
+    "AL HARAS": "security/governance"
+  },
+  "capabilities": [
+    {
+      "name": "reasoning_cycle",
+      "entry_point": "toe.machine:TOEMachine.run",
+      "input_contract": "toe.problem.Problem",
+      "output_contract": "toe.episode/v1 dict with receipts",
+      "evidence_class": "MEASURED",
+      "exactness": "mixed: exact Q(phi) where decisive, float64 with bounds elsewhere",
+      "dependencies": [
+        "numpy",
+        "kellogg"
+      ],
+      "limitations": "linear structural models; stages unsupported by a problem's structure are skipped and reported",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "composition_root",
+      "entry_point": "toe.runtime:TOEIntelligenceRuntime",
+      "input_contract": "payload or Problem + TenantContext",
+      "output_contract": "RuntimeResponse with RuntimeReceipt",
+      "evidence_class": "MEASURED",
+      "exactness": "n/a",
+      "dependencies": [],
+      "limitations": "production_ready=false until acceptance gates A-H pass",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "problem_contract",
+      "entry_point": "toe.problem:Problem",
+      "input_contract": "domain-neutral fields",
+      "output_contract": "validate() issues; content digest",
+      "evidence_class": "MEASURED",
+      "exactness": "exact digests",
+      "dependencies": [],
+      "limitations": "",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "multi_representation_state",
+      "entry_point": "toe.intelligence_state:IntelligenceState.observe",
+      "input_contract": "any payload",
+      "output_contract": "lens views bound to one observation digest",
+      "evidence_class": "MEASURED",
+      "exactness": "digest-exact identity",
+      "dependencies": [
+        "numpy",
+        "kellogg"
+      ],
+      "limitations": "Vietoris-Rips lens refuses clouds above MAX_VR_POINTS (no approximation)",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "representation_selection",
+      "entry_point": "toe.representation:choose",
+      "input_contract": "payload",
+      "output_contract": "selected/rejected lenses with reasons",
+      "evidence_class": "MEASURED",
+      "exactness": "n/a",
+      "dependencies": [],
+      "limitations": "signature rules plus measured utility (lens_policy='measured')",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "relationship_ladder",
+      "entry_point": "toe.relationships:relationship_ladder",
+      "input_contract": "samples, optional supplied graph, query",
+      "output_contract": "ASSOCIATION / STRUCTURE_* / EFFECT_* levels",
+      "evidence_class": "MEASURED",
+      "exactness": "float64",
+      "dependencies": [],
+      "limitations": "Gaussian partial-correlation tests; Markov-equivalent wrong graphs undetectable",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "identifiability",
+      "entry_point": "toe.causal_stack:identifiability",
+      "input_contract": "graph, treatment, outcome, observed",
+      "output_contract": "IDENTIFIED / PARTIALLY / NOT_IDENTIFIED / UNAVAILABLE",
+      "evidence_class": "MEASURED",
+      "exactness": "graph-exact",
+      "dependencies": [],
+      "limitations": "backdoor, frontdoor, instruments",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "interventions_and_counterfactuals",
+      "entry_point": "toe.causal_ladder:intervene / counterfactual_state",
+      "input_contract": "SCM, interventions, factual unit",
+      "output_contract": "values (+ exact Q(phi) values)",
+      "evidence_class": "MEASURED",
+      "exactness": "exact Q(phi) path available",
+      "dependencies": [
+        "kellogg"
+      ],
+      "limitations": "linear SCMs",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "futures",
+      "entry_point": "toe.causal_stack:evaluate_futures / futures_env",
+      "input_contract": "SCM, actions, noise",
+      "output_contract": "per-action Gaussian distributions, horizon degradation",
+      "evidence_class": "MEASURED",
+      "exactness": "exact moment propagation (float64)",
+      "dependencies": [],
+      "limitations": "Gaussian linear models; futures are predictions, never observations",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "planning",
+      "entry_point": "toe.planning:compare_plan_vs_greedy (over futures_env)",
+      "input_contract": "operators, objective, constraints, budget, depth",
+      "output_contract": "plan vs greedy with objective gap",
+      "evidence_class": "MEASURED",
+      "exactness": "float64",
+      "dependencies": [],
+      "limitations": "bounded beam search",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "value_of_information",
+      "entry_point": "toe.meta_reasoning:value_of_information",
+      "input_contract": "uncertain parameter range, decision function",
+      "output_contract": "decision invariance verdict + evidence plan",
+      "evidence_class": "MEASURED",
+      "exactness": "n/a",
+      "dependencies": [],
+      "limitations": "worst-case over declared/evidence-narrowed range",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "adaptive_precision",
+      "entry_point": "toe.precision:select_precision",
+      "input_contract": "SCM, two candidates, target",
+      "output_contract": "float64 with bound, or exact Q(phi) ordering",
+      "evidence_class": "MEASURED (3.11: 60/60 vs 28/60 float-only; 3.12: no difference)",
+      "exactness": "exact when required",
+      "dependencies": [
+        "kellogg"
+      ],
+      "limitations": "error bound for the linear structural evaluation path",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "arbitration",
+      "entry_point": "toe.arbitration:arbitrate",
+      "input_contract": "claims from surfaces",
+      "output_contract": "AGREEMENT / DISAGREEMENT (+ resolution by declared authority) / UNRESOLVED",
+      "evidence_class": "MEASURED",
+      "exactness": "n/a",
+      "dependencies": [],
+      "limitations": "never averages",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "explanation",
+      "entry_point": "toe.decision_explanation:explain_decision / explain_contrastive / falsify_decision",
+      "input_contract": "PolicyDecision, SCM",
+      "output_contract": "computational, contrastive, falsification",
+      "evidence_class": "MEASURED",
+      "exactness": "n/a",
+      "dependencies": [],
+      "limitations": "explains the model in use, not the world",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "world_model_revision",
+      "entry_point": "toe.machine:TOEMachine.learn (toe.world_model.fit_structural_weights / assess_structural)",
+      "input_contract": "episode + observed outcomes",
+      "output_contract": "assessment, revision, standard errors, contradictions",
+      "evidence_class": "MEASURED",
+      "exactness": "float64 OLS",
+      "dependencies": [
+        "numpy"
+      ],
+      "limitations": "needs non-singular post-intervention design",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "memory",
+      "entry_point": "toe.memory:MemoryStore",
+      "input_contract": "namespaced records with causal tags",
+      "output_contract": "content-addressed recall; regime invalidation",
+      "evidence_class": "MEASURED",
+      "exactness": "n/a",
+      "dependencies": [],
+      "limitations": "in-process unless persisted via THESEUS",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "durable_learning_state",
+      "entry_point": "toe.custody:SnapshotStore",
+      "input_contract": "THESEUS EnterpriseCustody-shaped object",
+      "output_contract": "hash-chained snapshots; verified recovery",
+      "evidence_class": "MEASURED",
+      "exactness": "digest-exact",
+      "dependencies": [
+        "THESEUS (optional integration)"
+      ],
+      "limitations": "UNAVAILABLE without THESEUS",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "topology_navigation",
+      "entry_point": "toe.topology:StateTopology",
+      "input_contract": "transition relation",
+      "output_contract": "reachability, shortest path, components, articulation points",
+      "evidence_class": "MEASURED",
+      "exactness": "graph-exact",
+      "dependencies": [],
+      "limitations": "",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "geometric_reasoning",
+      "entry_point": "toe.geometry:PoincareBall / embed_tree / greedy_route / SpectralGeometry",
+      "input_contract": "points / graphs",
+      "output_contract": "distances, geodesics, embeddings, delivery",
+      "evidence_class": "MEASURED",
+      "exactness": "float64 within MAX_EMBED_RADIUS",
+      "dependencies": [
+        "numpy"
+      ],
+      "limitations": "embedding depth bounded by float64; no learned embeddings",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "self_governance",
+      "entry_point": "toe.self_governance:machine_battery / self_check",
+      "input_contract": "n/a",
+      "output_contract": "refused/detected/degraded/vulnerable per attack",
+      "evidence_class": "MEASURED",
+      "exactness": "n/a",
+      "dependencies": [],
+      "limitations": "finite attack list",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "domain_adapters",
+      "entry_point": "toe.adapters",
+      "input_contract": "domain-shaped raw input",
+      "output_contract": "toe.problem.Problem",
+      "evidence_class": "MEASURED",
+      "exactness": "n/a",
+      "dependencies": [],
+      "limitations": "translation only; legacy HR engine needs pandas",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "power_on_self_test",
+      "entry_point": "toe.voyage:canonical_voyage / cross_domain_voyage",
+      "input_contract": "optional THESEUS custody factory",
+      "output_contract": "machine-readable voyage report",
+      "evidence_class": "MEASURED",
+      "exactness": "n/a",
+      "dependencies": [],
+      "limitations": "simulated worlds are declared test environments",
+      "production_status": "IMPLEMENTED"
+    },
+    {
+      "name": "legacy_predictive_engine",
+      "entry_point": "toe.engine:PredictiveEngine",
+      "input_contract": "HR-shaped DataFrame",
+      "output_contract": "risk profile",
+      "evidence_class": "DECLARED (historical discovery surface)",
+      "exactness": "float64",
+      "dependencies": [
+        "pandas (extra)"
+      ],
+      "limitations": "kept as lineage; reachable via toe.adapters.legacy_hr",
+      "production_status": "LEGACY"
+    },
+    {
+      "name": "enterprise_analytics",
+      "entry_point": "toe.unified:UnifiedAnalyticsPlatform",
+      "input_contract": "connector credentials, data",
+      "output_contract": "analytics surfaces",
+      "evidence_class": "MEASURED/DECLARED/MODELED per toe/unified/claims.py",
+      "exactness": "n/a",
+      "dependencies": [
+        "kellogg"
+      ],
+      "limitations": "connectors inert until credentials bound",
+      "production_status": "IMPLEMENTED"
+    }
+  ],
+  "universal_principle_surfaces": [
+    {
+      "name": "exact_golden_field",
+      "entry_point": "kellogg.substrate:QPhi (consumed)",
+      "evidence_class": "PROVED + COMPUTATIONALLY_VERIFIED",
+      "owner": "KELLOGG"
+    },
+    {
+      "name": "lucas_binet_cassini_zeckendorf_pisot",
+      "entry_point": "kellogg.scales (consumed)",
+      "evidence_class": "PROVED + COMPUTATIONALLY_VERIFIED",
+      "owner": "KELLOGG"
+    },
+    {
+      "name": "poincare_golden_11d",
+      "entry_point": "toe.poincare_golden_11d / toe.geometry:PoincareBall.golden_11d",
+      "evidence_class": "PROVED (isometry) + COMPUTATIONALLY_VERIFIED",
+      "owner": "TOE"
+    },
+    {
+      "name": "algebraic_family_detection",
+      "entry_point": "toe.engine:ExtendedAlgebraicFamily.detect_family_signature",
+      "evidence_class": "MEASURED",
+      "owner": "TOE"
+    },
+    {
+      "name": "exact_recurrence_extrapolation",
+      "entry_point": "toe.machine:TOEMachine (forecast stage, kellogg companion powers)",
+      "evidence_class": "COMPUTATIONALLY_VERIFIED (given the recurrence holds)",
+      "owner": "TOE"
+    },
+    {
+      "name": "finite_2I_spectrum",
+      "entry_point": "toe.poincare_yangmills (reads millennium)",
+      "evidence_class": "COMPUTATIONALLY_VERIFIED (finite volume); continuum OPEN",
+      "owner": "millennium (research)"
+    },
+    {
+      "name": "golden_ordering",
+      "entry_point": "evidence only (scripts/toe_universal_principle_evidence.py)",
+      "evidence_class": "MEASURED coverage; NEGATIVE for SHA256d",
+      "owner": "TOE evidence"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+name: HYBA publication identity checks (not release qualification)
+on:
+  pull_request:
+    paths:
+      - '**/pyproject.toml'
+      - '**/package.json'
+      - 'packaging/**'
+      - 'tests/test_publication_catalog.py'
+      - 'tests/test_registry_release_protocol.py'
+      - 'tests/test_storage_publication_preparation.py'
+      - '.github/workflows/publication-naming.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  naming-and-guards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Derive count and check naming and preserved interface fingerprints
+        run: python packaging/check_publication_catalog.py
+      - name: Hermetic identity mutations and release guard tests
+        run: |
+          python -m unittest discover -s tests -p test_publication_catalog.py
+          python -m unittest discover -s tests -p test_registry_release_protocol.py
+          python -m unittest discover -s tests -p test_storage_publication_preparation.py
+# No package publisher, production verdict or runtime qualification is attached
+# to this workflow. Green naming checks cannot certify a package or platform.

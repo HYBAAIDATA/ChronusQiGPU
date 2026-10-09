@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hyba-theseus-storage"
+version = "1.0.0"
+description = "HYBA THESEUS canonical custody substrate — publication candidate"
+requires-python = ">=3.11"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [{name = "HYBA Software Limited"}]
+dependencies = ["numpy>=1.26,<3"]
+
+[project.urls]
+Repository = "https://github.com/QuantumPhiRedux/PhiMiner"
+
+[project.scripts]
+hyba-theseus = "aethel.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["aethel", "aethel.*"]
+
+[tool.setuptools.package-data]
+"*" = ["*", "**/*"]

@@ -1,6 +1,5 @@
 # pythagoras/asi/universal_intelligence.py — NEW
 
-import math
 from dataclasses import dataclass
 from typing import Callable
 
@@ -53,7 +52,9 @@ class UniversalIntelligenceEvaluator:
             if goal_fn(env):
                 achieved = True
                 break
-        efficiency = 1.0 / (1.0 + steps / 100.0) if achieved else 0.0
+        # Efficiency = measured fraction of the 1000-step budget that
+        # remained when the goal was reached — not an invented scale.
+        efficiency = max(0.0, 1.0 - steps / 1000.0) if achieved else 0.0
         return EnvironmentResult(
             env.id if hasattr(env, "id") else str(id(env)), achieved, efficiency, steps, surprise
         )
@@ -71,22 +72,18 @@ class UniversalIntelligenceEvaluator:
         return achieved / len(self.results)
 
     def _compression_ratio(self) -> float:
-        """Compression = total steps taken vs minimum possible.
-        Lower steps = better compression of the solution."""
-        if not self.results:
+        """Compression = empirical-best steps vs total steps taken.
+        The minimum is measured (the best achieved run), not invented."""
+        achieved = [r.steps_to_goal for r in self.results if r.goal_achieved]
+        if not achieved:
             return 0.0
-        total_steps = sum(r.steps_to_goal for r in self.results if r.goal_achieved)
-        min_possible = len(self.results) * 10  # heuristic minimum
-        return min_possible / max(total_steps, 1)
+        return min(achieved) / max(sum(achieved), 1)
 
     def _intelligence_score(self) -> float:
-        """Legg-Hutter inspired: weighted sum of efficiencies across environments.
-        Simpler environments (lower complexity) weighted higher (Solomonoff prior)."""
+        """Legg-Hutter inspired: mean measured efficiency across
+        environments. A true Solomonoff weighting needs program lengths
+        that are not measurable here, so environments weight uniformly —
+        no invented 1/log2(i+2) pseudo-prior."""
         if not self.results:
             return 0.0
-        total = 0.0
-        for i, r in enumerate(self.results):
-            complexity = math.log2(i + 2)  # approximate Solomonoff prior
-            weight = 1.0 / complexity
-            total += weight * r.efficiency
-        return total / len(self.results)
+        return sum(r.efficiency for r in self.results) / len(self.results)

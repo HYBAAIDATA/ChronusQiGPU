@@ -110,6 +110,7 @@ _EXECUTION_DEVICES = (
     "asic",
     "super_asic",
     "chronus",
+    "one_igpu",
 )
 _LOCK_HELD = False
 _LOCK_GUARD = threading.Lock()
@@ -155,8 +156,7 @@ class _RequestStats:
             if key.startswith("failure_class."):
                 cls = key.split(".", 1)[1]
                 lines.append(
-                    f'pythia_control_failure_class_total{{failure_class="{cls}"}} '
-                    f"{counts[key]}"
+                    f'pythia_control_failure_class_total{{failure_class="{cls}"}} ' f"{counts[key]}"
                 )
         return "\n".join(lines)
 
@@ -190,7 +190,9 @@ def _idempotency_lookup(key: str) -> tuple[int, dict] | None:
 def _idempotency_store(key: str, status: int, payload: dict) -> None:
     now = time.monotonic()
     with _IDEMPOTENCY_GUARD:
-        stale = [k for k, (at, _s, _p) in _IDEMPOTENCY_RECORDS.items() if now - at > _IDEMPOTENCY_TTL_S]
+        stale = [
+            k for k, (at, _s, _p) in _IDEMPOTENCY_RECORDS.items() if now - at > _IDEMPOTENCY_TTL_S
+        ]
         for k in stale:
             del _IDEMPOTENCY_RECORDS[k]
         while len(_IDEMPOTENCY_RECORDS) >= _IDEMPOTENCY_MAX:
@@ -203,6 +205,7 @@ def _idempotency_key(headers: Any) -> str:
     ignored rather than trusted."""
     key = (headers.get("Idempotency-Key") or "").strip()
     return key if _REQUEST_ID_RE.fullmatch(key) else ""
+
 
 _PY_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _PY_DIR.parent.parent.parent
@@ -277,8 +280,7 @@ def gpu_payload() -> dict[str, Any]:
         ):
             bound_name = detected_backend.split(":", 1)[1].strip()
             backend_active = bool(bound_name) and any(
-                bound_name == str(device.get("name") or "").strip()
-                for device in gpu_devices
+                bound_name == str(device.get("name") or "").strip() for device in gpu_devices
             )
         # The Chronus contract device is the system's declared GPU identity —
         # enumerated from the loaded spec, not probed silicon. It is reported
@@ -2126,11 +2128,15 @@ def _euclid_cognition_solve(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str,
     goal = body.get("goal")
     if not isinstance(problem_id, str) or not problem_id.strip():
         return HTTPStatus.BAD_REQUEST, {
-            "ok": False, "error": "problem_id_required", "available": False,
+            "ok": False,
+            "error": "problem_id_required",
+            "available": False,
         }
     if not isinstance(goal, str) or not goal.strip():
         return HTTPStatus.BAD_REQUEST, {
-            "ok": False, "error": "goal_required", "available": False,
+            "ok": False,
+            "error": "goal_required",
+            "available": False,
         }
 
     def _str_tuple(key: str, limit: int = 64) -> tuple[str, ...]:
@@ -2346,8 +2352,7 @@ def _tensor_execute(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
         raise ValueError("inputs must be a non-empty list")
 
     operand_values = [
-        np.asarray(o, dtype=dtype) if isinstance(o, (list, tuple)) else str(o)
-        for o in inputs
+        np.asarray(o, dtype=dtype) if isinstance(o, (list, tuple)) else str(o) for o in inputs
     ]
     record = rt.execute(
         operation,
@@ -2643,6 +2648,9 @@ class _Handler(BaseHTTPRequestHandler):
                     "subscription_url": security["subscription_url"],
                 },
             )
+            return
+        if path == "/api/v1/control/session":
+            self._control_session()
             return
         self._static_or_404(path)
 
@@ -2952,9 +2960,7 @@ class _Handler(BaseHTTPRequestHandler):
         for _tick in range(120):
             try:
                 payload = ops_telemetry_payload()
-                new_events = _seq_gated_events(
-                    payload["events"].get("events") or [], last_seq
-                )
+                new_events = _seq_gated_events(payload["events"].get("events") or [], last_seq)
                 if new_events:
                     last_seq = int(payload["events"].get("last_seq") or last_seq)
                 frame = {
@@ -2986,9 +2992,7 @@ class _Handler(BaseHTTPRequestHandler):
         correlatable in the audit log and client telemetry.
         """
         candidate = (
-            self.headers.get("X-Request-Id")
-            or self.headers.get("X-Correlation-Id")
-            or ""
+            self.headers.get("X-Request-Id") or self.headers.get("X-Correlation-Id") or ""
         ).strip()
         if candidate and _REQUEST_ID_RE.fullmatch(candidate):
             return candidate
@@ -3008,9 +3012,7 @@ class _Handler(BaseHTTPRequestHandler):
         causation = (self.headers.get("X-Causation-Id") or "").strip()
         return {
             "request_id": request_id,
-            "correlation_id": correlation
-            if _REQUEST_ID_RE.fullmatch(correlation)
-            else request_id,
+            "correlation_id": correlation if _REQUEST_ID_RE.fullmatch(correlation) else request_id,
             "causation_id": causation if _REQUEST_ID_RE.fullmatch(causation) else "",
         }
 
@@ -3084,6 +3086,45 @@ class _Handler(BaseHTTPRequestHandler):
         self._discard_request_body()
         self._json(status, {"ok": False, "error": reason})
         return True
+
+    def _control_session(self) -> None:
+        """Report the server-authenticated principal for this connection.
+
+        The frontend never infers identity locally: a refusal returns the
+        same 401/403/503 semantics every state-changing control sees, and a
+        success echoes only the fields the server itself authenticated. The
+        presented bearer token is never echoed. The legacy shared admin key
+        resolves to its mapped ``operator`` role — it is never elevated to
+        ``ceo``; only a server-side principal map can map ``ceo``.
+        """
+        principal, refusal = authenticate_control_principal(self.headers)
+        if refusal is not None:
+            status, reason = refusal
+            _audit().append(
+                "control_session_refused",
+                path=urlparse(self.path).path,
+                reason=reason,
+            )
+            self._json(status, {"ok": False, "error": reason})
+            return
+        assert principal is not None
+        _audit().append(
+            "control_session",
+            principal_id=principal.principal_id,
+            role=principal.role,
+            source=principal.source,
+        )
+        self._json(
+            HTTPStatus.OK,
+            {
+                "schema_version": _SCHEMA_VERSION,
+                "ok": True,
+                "principal_id": principal.principal_id,
+                "role": principal.role,
+                "source": principal.source,
+                "generated_at": now_iso(),
+            },
+        )
 
     def _method_not_allowed(self) -> None:
         self._json(HTTPStatus.METHOD_NOT_ALLOWED, {"error": "method_not_allowed"})
@@ -3168,9 +3209,7 @@ def _write_active_ports(update: Any) -> None:
             # Unique temp name per write: same-process writers must not
             # clobber each other's temp file (Windows os.replace fails on
             # an in-use tmp).
-            temporary = path.with_name(
-                f"{path.name}.{os.getpid()}.{uuid.uuid4().hex[:8]}.tmp"
-            )
+            temporary = path.with_name(f"{path.name}.{os.getpid()}.{uuid.uuid4().hex[:8]}.tmp")
             temporary.write_text(json.dumps(current, indent=2, sort_keys=True), encoding="utf-8")
             os.replace(temporary, path)
         except OSError as exc:

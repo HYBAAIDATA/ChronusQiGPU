@@ -1,0 +1,10 @@
+{
+  "variant": "portable",
+  "independent_fresh_process_replay": true,
+  "custody": "local_PRIME_DB_NOT_THESEUS",
+  "plan_digest": "7571135dcda741aaadb699c8b638388603915ad2d6daacd62eab3139ddb50593",
+  "receipt_digest": "d4bb80ecc45a18d40ee4d047dad0028dbbaa43605ea98fd5af71ac39f161f2dc",
+  "sha256d_evaluations": 1,
+  "candidate_nonce": 2083236893,
+  "physical_device_executed": false
+}

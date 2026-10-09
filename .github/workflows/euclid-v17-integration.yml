@@ -9,6 +9,7 @@ on:
       - "tests/test_euclid_v17_*.py"
       - "config/euclid-v17-integration-gates.json"
       - "scripts/euclid_v17_integration_gate.py"
+      - "scripts/test_euclid_integrity_mutations.py"
       - "docs/EUCLID_V17_*.md"
       - ".github/workflows/euclid-v17-integration.yml"
   push:
@@ -20,6 +21,7 @@ on:
       - "tests/test_euclid_v17_*.py"
       - "config/euclid-v17-integration-gates.json"
       - "scripts/euclid_v17_integration_gate.py"
+      - "scripts/test_euclid_integrity_mutations.py"
       - "docs/EUCLID_V17_*.md"
       - ".github/workflows/euclid-v17-integration.yml"
   workflow_dispatch:
@@ -36,13 +38,26 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
-      - name: Install canonical runtime
+      - name: Install canonical test/runtime dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ./turing_universal_quantum_computer
           python -m pip install -e ".[dev]"
+      - name: Local integrity component regressions
+        run: |
+          mkdir -p euclid-integrity-evidence
+          git rev-parse HEAD > euclid-integrity-evidence/source-head.txt
+          python -m pytest -q euclid/tests/test_runtime_integrity.py --junitxml=euclid-integrity-evidence/components.xml
+      - name: Kill planted local integrity defects
+        run: python scripts/test_euclid_integrity_mutations.py --output euclid-integrity-evidence/mutations.json
       - name: Source and claim-boundary gate
         run: python scripts/euclid_v17_integration_gate.py
       - name: Production integration tests
         run: python -m pytest -q tests/test_euclid_v17_production_integration.py
+      - name: Retain integrity evidence without declaring production readiness
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: euclid-integrity-evidence
+          if-no-files-found: error
+          path: euclid-integrity-evidence/**

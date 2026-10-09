@@ -1,0 +1,9 @@
+Processing /vercel/sandbox/data/igpu-elevated/chronos-completed
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: chronos-gpu
+  Building wheel for chronos-gpu (pyproject.toml): started
+  Building wheel for chronos-gpu (pyproject.toml): finished with status 'done'
+  Created wheel for chronos-gpu: filename=chronos_gpu-3.6.0-py3-none-any.whl size=167288 sha256=d1438b93e8e5585249140124b1e6770dc0f2bdbfd5a8e9c177d30fcbf9fef3ba
+  Stored in directory: /home/vercel-sandbox/.cache/pip/wheels/64/15/e7/ddd6f073215420f88c029bd794fd62166f720abd4ca298e280
+Successfully built chronos-gpu

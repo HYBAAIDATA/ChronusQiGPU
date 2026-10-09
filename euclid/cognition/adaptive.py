@@ -14,6 +14,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
+from kellogg.quantum_tensor import QuantumState
+
 from ..contracts import domain_hash
 from ..evidence import atomic_write
 from .interfaces import StrategyChoice
@@ -139,7 +141,24 @@ class IntermediateObjective:
 
 
 class ObjectiveController:
-    """Construct intermediate objectives and detect proxy detachment."""
+    """Construct intermediate objectives and detect proxy detachment.
+
+    ``objective_weights`` is a declared control-policy vector (how strongly
+    each measured deficit channel seeds an intermediate objective); it is not
+    an estimated/measured quantity.
+    """
+
+    DEFAULT_OBJECTIVE_WEIGHTS = {
+        "uncertainty": 0.30,
+        "contradictions": 0.30,
+        "evidence_gap": 0.20,
+        "prediction_error": 0.20,
+    }
+
+    def __init__(self, objective_weights: Mapping[str, float] | None = None) -> None:
+        self.objective_weights = dict(
+            objective_weights or self.DEFAULT_OBJECTIVE_WEIGHTS
+        )
 
     def derive(
         self,
@@ -150,15 +169,16 @@ class ObjectiveController:
         missing_evidence: int,
         prediction_error: float,
     ) -> list[IntermediateObjective]:
+        w = self.objective_weights
         specs: list[tuple[str, str, float, float]] = []
         if uncertainty > 0:
-            specs.append(("reduce uncertainty", "uncertainty", 0.0, 0.30))
+            specs.append(("reduce uncertainty", "uncertainty", 0.0, w["uncertainty"]))
         if contradictions:
-            specs.append(("resolve contradictions", "contradictions", 0.0, 0.30))
+            specs.append(("resolve contradictions", "contradictions", 0.0, w["contradictions"]))
         if missing_evidence:
-            specs.append(("acquire missing evidence", "evidence_gap", 0.0, 0.20))
+            specs.append(("acquire missing evidence", "evidence_gap", 0.0, w["evidence_gap"]))
         if prediction_error > 0:
-            specs.append(("repair predictive model", "prediction_error", 0.0, 0.20))
+            specs.append(("repair predictive model", "prediction_error", 0.0, w["prediction_error"]))
         if not specs:
             specs.append(("verify terminal goal", "goal_verified", 1.0, 1.0))
         total = sum(weight for _, _, _, weight in specs)
@@ -192,7 +212,19 @@ class PersistentStrategyLearner:
 
     SCHEMA = "euclid.strategy-learning/1"
 
-    def __init__(self, path: str | Path) -> None:
+    def __init__(
+        self,
+        path: str | Path,
+        *,
+        exploration_scale: float = 0.1,
+        prior_mass: float = 1.0,
+    ) -> None:
+        # Declared exploration policy: the UCB-form bonus is
+        # exploration_scale * born_uncertainty where born_uncertainty is the
+        # normalised measurement entropy of the strategy's outcome state
+        # |psi> ~ (sqrt(successes+prior_mass), sqrt(failures+prior_mass)).
+        self.exploration_scale = float(exploration_scale)
+        self.prior_mass = float(prior_mass)
         self.path = Path(path)
         self.stats: dict[str, dict[str, dict[str, float]]] = {}
         self.negative_transfer: list[dict[str, Any]] = []
@@ -234,8 +266,21 @@ class PersistentStrategyLearner:
                     + float(record.get("long_horizon_utility", 0.0))
                 )
                 mean = total_utility / total_trials
-                uncertainty = 1.0 / math.sqrt(total_trials)
-                scored.append((mean + 0.1 * uncertainty, strategy, record))
+                # Born-rule uncertainty: measurement entropy (bits) of the
+                # outcome state prepared from the measured success/failure
+                # counts under the declared symmetric prior mass.
+                successes = float(record.get("successes", 0.0))
+                failures = max(0.0, trials - successes)
+                outcome_state = QuantumState.from_real_vector(
+                    [
+                        math.sqrt(successes + self.prior_mass),
+                        math.sqrt(failures + self.prior_mass),
+                    ]
+                )
+                uncertainty = outcome_state.measurement_entropy()
+                scored.append(
+                    (mean + self.exploration_scale * uncertainty, strategy, record)
+                )
         if not scored:
             return StrategyChoice(
                 available[0],

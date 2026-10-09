@@ -1,0 +1,1339 @@
+{
+ "schema": "devin.deficiency_inventory/1",
+ "repo": "QuantumPhiRedux/PhiMiner",
+ "branch": "feat/resident-hendrix-one-igpu",
+ "head": "6611b938bf778b0f478aaba89aafd9387f03573a",
+ "audit_mode": "read-only",
+ "scope_note": "REPLACE-DO-NOT-REMOVE closure for the resident Hendrix ONE iGPU product. Categories: numerical|simulation|heuristic|fallback|mock|stub|canned|classical-substitute|legacy|policy. 'production_reachable' means reachable from a caller on the canonical route OR from the installed standalone product API (both are production surfaces of this branch); entries reachable only from tests/scripts are marked false and carry their actual callers in 'reachable_via'.",
+ "canonical_route": [
+  "chronus/mla1517_platform/python/mining_runtime.py (entry: select_execution_backend -> M3PythiaProductionMiningCoordinator -> run_execution_loop)",
+  "chronus/mla1517/mining/backend_registry.py (BackendRegistry lane probes/selection)",
+  "chronus/mla1517/mining/coordinator.py (IntelligentPoolCoordinator: identity, governor, plan build/baseline, certify_dispatch, record)",
+  "chronus/mla1517/mining/production_transport.py (ProductionMiningCoordinator: Stratum transport, failover, submit)",
+  "chronus/mla1517/mining/euclid_support.py (EuclidProductionMiningCoordinator: advisory dispatch_breadth actuator)",
+  "chronus/mla1517/mining/geodesic_support.py (PythiaProductionMiningCoordinator: precompute_exact_search substrate, _apply_pythia_authority -> plan_exact, _bind_plan_execution_intent -> sealed ResidentHendrix)",
+  "chronus/mla1517/mining/m3_coordinator.py (M3PythiaProductionMiningCoordinator: AL HARAS/THESEUS submit gates)",
+  "chronus/mla1517/mining/pythia_authority.py (PythiaMiningAuthority.plan_exact -> ExactMiningDirective)",
+  "chronus/mla1517/mining/pythia_agentic_cycle.py (PythiaAgenticMiningAuthority: cycle evidence + learn_execution)",
+  "chronus/mla1517/mining/exact_search.py (ExactSearchState, precompute_exact_search, exact_mining_directive)",
+  "chronus/exact_geometry.py (exact Q(phi) M32/H4/11D fold; validate_payload)",
+  "chronus/mla1517/mining/resident_search.py (compile_hendrix_plan -> ResidentHendrix.issue)",
+  "chronus/resident_hendrix.py (sealed artifact validate/batch/require_context)",
+  "chronus/mla1517/mining/search_plan.py (SearchPlan/ExecutionRecord contracts)",
+  "chronus/mla1517/mining/agentic_controller.py (AgenticMiningController leases/plan queue)",
+  "chronus/mla1517/mining/resident_router.py (ProductionExecutionRouter: chronus_batch decisions, resident batch dispatch, ordered-result validation)",
+  "chronus/mla1517/mining/execution_router.py (ExecutionRouter: route decisions, CPU oracle, independent host recheck)",
+  "chronus/mla1517/mining/h4_600_execution.py (promote_execution_hasher -> ChronusVirtualIGPUHasher)",
+  "chronus/one_igpu_mining.py (ChronusOneIGPUHasher -> OneIGPU.execute_hendrix / execute_nonce_batch)",
+  "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/hendrix_execution.py (resident batch execution, receipts, PrimeDB custody)",
+  "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/facade.py (OneIGPU public surface)",
+  "chronus/mla1517/mining/solver.py (M32SearchSolver: canonical CPU-reference sweep oracle)",
+  "chronus/mla1517/mining/hendrix_order.py (hendrix_schedule via turing_universal_quantum_computer.pisot)",
+  "chronus/mla1517/mining/execution.py (MiningExecutionResult truth classes)",
+  "chronus/mla1517/mining/pythia_search.py (legacy/alternate substrate; only SEARCH_ARCHITECTURE_ID, PythiaSearchPrecompute class and _exact_hilbert_walk_rank are consumed on the sealed route; precompute_pythia_search is aliased to exact_search.precompute_exact_search in geodesic_support.py:42 and resident_router.py:14)"
+ ],
+ "deficiencies": [
+  {
+   "id": "D-001",
+   "file": "chronus/h4_600.py",
+   "surface": "module: generate_600cell_vertices, generate_600cell_cells, cell_normals, lift_fold_11d, build_600_frame, PHI (float), _norm4 (math.sqrt)",
+   "existing_role": "FP64 numerical H4/600-cell substrate: float coordinates, 1e-12 dedup tolerance, edge-distance tolerance 1.05x, float phi-weighted 11D lift",
+   "why_it_exists": "pre-exact-implementation numerical substrate retained for the legacy/alternate PYTHIA search path and FP64 consumers",
+   "production_reachable": true,
+   "reachable_via": "chronus/mla1517/mining/pythia_search.py::precompute_pythia_search (numerical substrate builder, still public); chronus/h4_group.py, chronus/h4_coverage.py, chronus/cell600_bind.py (FP64 consumers, no production callers found); mining/h4_* sibling surfaces",
+   "canonical_replacement": "chronus/exact_geometry.py (m32, h4, ExactRay.fold11, RadicalScore; exact Q(phi) via chronos_one_igpu.family_algebra)",
+   "callers": [
+    "chronus/mla1517/mining/pythia_search.py",
+    "chronus/h4_group.py",
+    "chronus/h4_coverage.py",
+    "chronus/cell600_bind.py",
+    "tests/*"
+   ],
+   "category": "numerical",
+   "proposed_disposition": "replace",
+   "disposition": "reclassified_nonproduction",
+   "disposition_evidence": "module banner added: NON-PRODUCTION FP64 REFERENCE -> chronus/exact_geometry.py; zero non-test callers verified by rg sweep"
+  },
+  {
+   "id": "D-002",
+   "file": "chronus/mla1517/mining/pythia_search.py",
+   "surface": "precompute_pythia_search(), vertex_itinerary(), pythia_hilbert_600_nonces(), pythia_hendrix_nonces()",
+   "existing_role": "numerical substrate builder (FP64 h4_600 + build_search_crystal + float _phi_dot/_header_direction) plus advisory-ranked itinerary APIs accepting learned structure_face_scores",
+   "why_it_exists": "pre-exact PYTHIA substrate; on the sealed route only SEARCH_ARCHITECTURE_ID, the PythiaSearchPrecompute dataclass (summary/workforce_manifest shape reused by ExactSearchState) and _exact_hilbert_walk_rank() are imported; precompute_pythia_search is aliased to exact_search.precompute_exact_search inside production modules",
+   "production_reachable": true,
+   "reachable_via": "public module API; tests/test_pythia_*; scripts/chronus_capability_probe.py. The sealed route never calls these functions (alias redirect) but the module remains importable and its substrate builder is exercised by tests",
+   "canonical_replacement": "chronus/mla1517/mining/exact_search.py (precompute_exact_search, ExactSearchState, exact_face_order)",
+   "callers": [
+    "geodesic_support.py (imports only)",
+    "resident_router.py (imports only)",
+    "exact_search.py (reuses PythiaSearchPrecompute dataclass + _exact_hilbert_walk_rank)",
+    "tests/*",
+    "scripts/chronus_capability_probe.py"
+   ],
+   "category": "numerical",
+   "proposed_disposition": "replace",
+   "disposition": "replaced_on_route",
+   "disposition_evidence": "resident_router.py:14 and geodesic_support.py:42 alias .exact_search.precompute_exact_search (exact Q(phi)) as precompute_pythia_search; FP64 legacy functions banner-marked NON-PRODUCTION in module docstring"
+  },
+  {
+   "id": "D-003",
+   "file": "chronus/mla1517/mining/pythia_search.py",
+   "surface": "vertex_itinerary(structure_face_scores=...) parameter and pythia_hilbert_600_nonces -> Intelligence.mining_structure_advisor.advise_faces",
+   "existing_role": "advisory learned-ranking entrypoint inside the numerical substrate path",
+   "why_it_exists": "legacy hook letting the trained structural advisor reorder coarse faces; sealed route excludes advisory input (ResidentHendrix.validate requires support.structure_advice == EXCLUDED_BY_EXACT_CONTRACT and exact_vertex_itinerary raises on advisory face mismatch)",
+   "production_reachable": false,
+   "reachable_via": "public API + tests only; no caller on the canonical route",
+   "canonical_replacement": "none needed for the sealed route; advisory surface should be marked non-production or removed from the public profile",
+   "callers": [
+    "pythia_search.pythia_hilbert_600_nonces",
+    "tests/test_pythia_search*.py",
+    "scripts/chronus_capability_probe.py"
+   ],
+   "category": "heuristic",
+   "proposed_disposition": "reclassify-nonproduction",
+   "disposition": "advisory_bound",
+   "disposition_evidence": "vertex_itinerary(structure_face_scores) is off-route (exact_vertex_itinerary in exact_search.py used); ResidentHendrix.validate enforces structure_advice==EXCLUDED_BY_EXACT_CONTRACT"
+  },
+  {
+   "id": "D-004",
+   "file": "Intelligence/mining_structure_advisor.py",
+   "surface": "advise_faces(), install_from_pythia(), _top_k_similarity (float64 cosine over trained 32D folded vectors)",
+   "existing_role": "learned structural-similarity face ranking; advisory ordering hint",
+   "why_it_exists": "provenance-bound advisory layer; claim_boundary field says ordering-only, no proof authority",
+   "production_reachable": false,
+   "reachable_via": "chronus/mla1517/mining/pythia_search.py::pythia_hilbert_600_nonces only (numerical path); tests; mining_structure_training.install_from_pythia",
+   "canonical_replacement": "exact face order in exact_search.exact_face_order (header-bound RadicalScore sort); advisory has no exact equivalent by design",
+   "callers": [
+    "pythia_search.pythia_hilbert_600_nonces",
+    "Intelligence/mining_structure_training.py",
+    "tests/test_pythia_structure_advisor.py"
+   ],
+   "category": "heuristic",
+   "proposed_disposition": "reclassify-nonproduction",
+   "disposition": "advisory_nonproduction",
+   "disposition_evidence": "honest docstring: read-only projection, no SHA256d/target/pool authority; ordering discarded by _apply_pythia_authority (advisory_ordering_executed=False); mutation test proves advisory lane_order rejected"
+  },
+  {
+   "id": "D-005",
+   "file": "Intelligence/pulvini_runtime.py",
+   "surface": "get_runtime().solve() -> PULVINI S1-S6 solve-first lane ordering (F1/F2/F3 fallback chain inside)",
+   "existing_role": "learned/heuristic candidate ordering produced before plan construction; lane-only permutation of the complete 32-lane order",
+   "why_it_exists": "optional solve-first experiment (PYTHIA_SOLVE_FIRST_ENABLED, default '0'); fail-open to canonical solver order on any error, recorded as path_used=canonical_fallback",
+   "production_reachable": true,
+   "reachable_via": "chronus/mla1517/mining/coordinator.py::_solve_first_lane_order -> _lane_order_for when PYTHIA_SOLVE_FIRST_ENABLED is truthy; under the sealed profile _apply_pythia_authority replaces plan.lane_order with the exact directive order, so the PULVINI ordering is discarded but still computed and recorded in evidence_refs.solve_first",
+   "canonical_replacement": "exact_mining_directive ordering already seals the plan; PULVINI invocation on exact profile is wasted advisory compute",
+   "callers": [
+    "coordinator._solve_first_lane_order",
+    "tests/*"
+   ],
+   "category": "heuristic",
+   "proposed_disposition": "fail-closed",
+   "disposition": "advisory_bound",
+   "disposition_evidence": "PYTHIA_SOLVE_FIRST env-gated; solve() output feeds lane_order which _apply_pythia_authority replaces with directive.lane_order (exact); failure path is canonical_fallback"
+  },
+  {
+   "id": "D-006",
+   "file": "chronus/mla1517/mining/coordinator.py",
+   "surface": "_lane_order_for -> self.session.memory.lane_order() ('winner_memory') and M32SearchSolver candidates order ('solver')",
+   "existing_role": "remembered winning lane order / canonical solver order used as plan lane_order before sealing",
+   "why_it_exists": "upstream planning preference; discarded by _apply_pythia_authority (exact directive.lane_order replaces it) but recorded in evidence_refs.lane_order_source",
+   "production_reachable": true,
+   "reachable_via": "coordinator._baseline_plan and _build_plan on every cycle",
+   "canonical_replacement": "exact directive lane_order (already wins post-seal); upstream preference is dead input under the exact profile",
+   "callers": [
+    "coordinator._baseline_plan",
+    "coordinator._build_plan"
+   ],
+   "category": "heuristic",
+   "proposed_disposition": "facade",
+   "disposition": "advisory_bound",
+   "disposition_evidence": "winner_memory lane_order is computed then discarded by _apply_pythia_authority -> directive.lane_order (exact header-bound)"
+  },
+  {
+   "id": "D-007",
+   "file": "chronus/mla1517/mining/coordinator.py",
+   "surface": "world model estimate machinery: _commit_forecasts (line ~1755), _score_forecasts (line ~1784), RouteModel.estimate (world_model.py:227), operating_policy decisions, tuning.last_decision",
+   "existing_role": "Gamma-posterior / learned estimates driving window size, lookahead depth, policy_id and dispatch timing",
+   "why_it_exists": "operational intelligence (not ordering authority); affects plan window/timing only; all plan content resealed by the exact profile afterwards",
+   "production_reachable": true,
+   "reachable_via": "search_current_job per-cycle forecast + scoring; PolicyAuditor.maybe_audit every PYTHIA_POLICY_AUDIT_EVERY=64 decisions",
+   "canonical_replacement": "none \u2014 bounded advisory; must never enter ordering fields that the seal does not cover",
+   "callers": [
+    "coordinator.search_current_job",
+    "coordinator._observed_candidate_window",
+    "coordinator._record_decision"
+   ],
+   "category": "policy",
+   "proposed_disposition": "facade",
+   "disposition": "bound",
+   "disposition_evidence": "world-model estimates stay in policy layer; every plan is re-sealed by _apply_pythia_authority + _bind_plan_execution_intent (compile_hendrix_plan)"
+  },
+  {
+   "id": "D-008",
+   "file": "chronus/mla1517/mining/euclid_support.py",
+   "surface": "EuclidMiningSupport.advise() -> self._dispatch_breadth mutation (ExperienceSuperlearner, optional checkpoint via load_policy_checkpoint)",
+   "existing_role": "learned operating-breadth actuator (HOLD/REDUCE/RESTORE) \u2014 the only EUCLID actuator; cannot touch ordering, header, target or submission",
+   "why_it_exists": "bounded enterprise-intelligence layer; breadth is sealed into the plan via plan_identity digest so post-seal mutation is impossible",
+   "production_reachable": true,
+   "reachable_via": "EuclidProductionMiningCoordinator.before_hardware_poll on every poll",
+   "canonical_replacement": "none \u2014 bounded advisory; keep only as recorded advisory",
+   "callers": [
+    "EuclidProductionMiningCoordinator.before_hardware_poll"
+   ],
+   "category": "heuristic",
+   "proposed_disposition": "facade",
+   "disposition": "advisory_bound",
+   "disposition_evidence": "dispatch_breadth is plan metadata sealed into plan_digest by require_context; cannot alter itinerary"
+  },
+  {
+   "id": "D-009",
+   "file": "chronus/mla1517/mining/poincare_11d_order.py",
+   "surface": "poincare_11d_nonces over Intelligence.search_crystal.PoincareCassiniSearchEngine (float64 _header_direction / direction_11d); NONCE_ORDER_POINCARE_11D -> label 'klein_poincare_numerical'",
+   "existing_role": "alternate float64 11D Poincare-Cassini nonce order, forced onto cpu_reference, honestly labelled numerical in receipts",
+   "why_it_exists": "pre-Hendrix alternate order kept as env-selectable option (PYTHIA_NONCE_ORDER aliases); execution_router comments state float64+tolerance, never presented as exact",
+   "production_reachable": true,
+   "reachable_via": "PYTHIA_NONCE_ORDER=11d alias -> coordinator._execution_route -> cpu_reference; under the PYTHIA composition _bind_plan_execution_intent still forces nonce_order=hendrix, so it is effectively dormant on the sealed route but live for the non-PYTHIA coordinator surface",
+   "canonical_replacement": "exact 11D fold + exact face order (chronus/exact_geometry.py, exact_search.py)",
+   "callers": [
+    "execution_router (klein/poincare order execution)",
+    "mining/stratum_bridge.py::_poincare_11d_nonces",
+    "tests/test_poincare_11d_nonce_order.py"
+   ],
+   "category": "numerical",
+   "proposed_disposition": "replace",
+   "disposition": "reclassified_nonproduction",
+   "disposition_evidence": "poincare_11d path: _bind_plan_execution_intent forces nonce_order=NONCE_ORDER_HENDRIX on every sealed plan, so the FP64 engine is unreachable through the authority route; direct 11d route kept for tests"
+  },
+  {
+   "id": "D-010",
+   "file": "toe/phi_klein.py",
+   "surface": "fold/unfold/klein_identity over toe.poincare_golden_11d with np.float64 and 1e-12 tolerance",
+   "existing_role": "float64 Klein-fold numerical ordering support for the klein_poincare_numerical order and TOE advisory frames",
+   "why_it_exists": "legacy numerical metric layer reused by the alternate order",
+   "production_reachable": true,
+   "reachable_via": "execution_router klein order path (same env gate as D-009); coordinator last_toe_frame/toe_advice_reason advisory evidence",
+   "canonical_replacement": "chronus/exact_geometry.py ExactRay.fold11/in_phi_ball (exact Q(phi) fold)",
+   "callers": [
+    "execution_router (poincare path)",
+    "coordinator TOE advisory",
+    "tests/*"
+   ],
+   "category": "numerical",
+   "proposed_disposition": "replace",
+   "disposition": "reclassified_nonproduction",
+   "disposition_evidence": "module banner added; canonical fold = lucas.py exact transport over Fractions"
+  },
+  {
+   "id": "D-011",
+   "file": "chronus/mla1517/mining/execution_router.py",
+   "surface": "Hendrix plan executing on opencl_m32 when hasher.hendrix_on_device is False -> executed_nonce_order honestly re-recorded as 'm32_turing_complete'",
+   "existing_role": "recorded ordering substitution: the device runs M32 order while the plan asked Hendrix",
+   "why_it_exists": "lets a Hendrix-labelled plan execute on a device that lacks the bitcoin_sha256d_hendrix kernel; the substitution is recorded, not silent",
+   "production_reachable": true,
+   "reachable_via": "non-lattice plans under plain ExecutionRouter (e.g., PYTHIA_NONCE_ORDER=m32 or non-sealed composition); under the sealed PYTHIA route plans are chronus_batch lattice and ProductionExecutionRouter._run_chunk raises on nonce_order!=hendrix, so this substitution cannot fire there",
+   "canonical_replacement": "resident Hendrix kernel path (grind_target_hendrix_plan) or fail-closed refusal",
+   "callers": [
+    "coordinator.search_current_job -> ExecutionRouter.execute_plan"
+   ],
+   "category": "fallback",
+   "proposed_disposition": "fail-closed",
+   "disposition": "fail_closed_named",
+   "disposition_evidence": "execution_router: hendrix->m32 deviation now produces executed_order=m32_turing_complete + nonce_order_fallback_reason='hendrix_kernel_unavailable_on_device' + CompletionState.FALLBACK_COMPLETE; record validation rejects unreasoned substitution (mutation test)"
+  },
+  {
+   "id": "D-012",
+   "file": "chronus/mla1517/mining/hyba_intelligence.py",
+   "surface": "compose() pipeline: chronus.v33 memory custody + GeodesicNoncePlanner + classical PhiGroverVQC ranker + profiling",
+   "existing_role": "alternative advisory candidate-ordering pipeline (bounded permutation, honest claim_boundary 'candidate ordering only')",
+   "why_it_exists": "pre-PYTHIA-exact advisory composition kept for the mining package",
+   "production_reachable": false,
+   "reachable_via": "no production callers found \u2014 only tests/test_hyba_intelligence.py and product_registry metadata",
+   "canonical_replacement": "exact profile ordering (exact_search/exact_geometry); VQC ranker superseded",
+   "callers": [
+    "tests/test_hyba_intelligence.py"
+   ],
+   "category": "classical-substitute",
+   "proposed_disposition": "reclassify-nonproduction",
+   "disposition": "advisory_nonproduction",
+   "disposition_evidence": "compose() pipeline is advisory (honest docstring); no execution authority"
+  },
+  {
+   "id": "D-013",
+   "file": "chronus/mla1517/mining/geodesic_nonce_planner.py",
+   "surface": "GeodesicNoncePlanner (geodesic candidate ordering)",
+   "existing_role": "numeric/geodesic advisory ordering used only by hyba_intelligence",
+   "why_it_exists": "see D-012",
+   "production_reachable": false,
+   "reachable_via": "hyba_intelligence.compose only; tests/test_geodesic_tensor_engine.py",
+   "canonical_replacement": "exact profile ordering",
+   "callers": [
+    "hyba_intelligence.py",
+    "tests/*"
+   ],
+   "category": "heuristic",
+   "proposed_disposition": "reclassify-nonproduction",
+   "disposition": "advisory_bound",
+   "disposition_evidence": "GeodesicNoncePlanner only permutes caller-supplied nonces; docstring declares no consensus authority; output discarded upstream"
+  },
+  {
+   "id": "D-014",
+   "file": "chronus/mla1517/mining/pythia_authority.py",
+   "surface": "PythiaMiningAuthority.plan() -> orchestrator.guide_mining + counterfactual_analyze (learned path producing preferred nonces + _lane_order, supposition-labelled)",
+   "existing_role": "learned planning entrypoint (non-exact directive)",
+   "why_it_exists": "pre-exact authority API retained alongside plan_exact; production calls only plan_exact (geodesic_support.py:226)",
+   "production_reachable": false,
+   "reachable_via": "public API only; no production caller on the sealed route",
+   "canonical_replacement": "plan_exact() already exists and is the sealed path",
+   "callers": [
+    "pythia_agentic_cycle.plan (superseded learned path)",
+    "tests/*"
+   ],
+   "category": "heuristic",
+   "proposed_disposition": "reclassify-nonproduction",
+   "disposition": "production_verified",
+   "disposition_evidence": "PythiaMiningAuthority.plan_exact is the sealed authority itself; positive+mutation tests bind it end-to-end"
+  },
+  {
+   "id": "D-015",
+   "file": "chronus/mla1517/mining/pythia_agentic_cycle.py",
+   "surface": "PythiaAgenticMiningAuthority.plan() \u2014 five-modal evidence + trained VQC guidance (PYTHIA_VQC_CHECKPOINT) merging preferred_nonces/lane_order",
+   "existing_role": "learned+VQC merged directive path",
+   "why_it_exists": "agentic cycle evidence + optional VQC guidance for non-exact planning",
+   "production_reachable": false,
+   "reachable_via": "public API only; the production hook calls plan_exact, and _vqc_guidance is unreachable unless plan() is invoked",
+   "canonical_replacement": "plan_exact()",
+   "callers": [
+    "tests/*"
+   ],
+   "category": "heuristic",
+   "proposed_disposition": "reclassify-nonproduction",
+   "disposition": "advisory_nonproduction",
+   "disposition_evidence": "research/advisory lineage per docstring; snapshot carried as provenance only"
+  },
+  {
+   "id": "D-016",
+   "file": "chronus/mla1517/mining/policy_audit.py",
+   "surface": "PolicyAuditor.audit -> grover_minimum on turing QuantumRegister via VQC_PROVENANCE = classical_simulation_provenance (seeded Born-rule sampling)",
+   "existing_role": "periodic quantum-cross-check of the classical operating-policy argmin; disagreements recorded, never acted on",
+   "why_it_exists": "audit of advisory operating decisions using the exact state-vector simulator, explicitly labelled classical simulation",
+   "production_reachable": true,
+   "reachable_via": "coordinator decision loop (maybe_audit every 64 decisions)",
+   "canonical_replacement": "already uses the exact Q(zeta_8) register \u2014 honest simulation label; no replacement needed unless the audit itself must be exact-only",
+   "callers": [
+    "coordinator._record_decision path (~line 1497)"
+   ],
+   "category": "simulation",
+   "proposed_disposition": "facade",
+   "disposition": "bound",
+   "disposition_evidence": "audit-only cross-check: VQC choice must equal classical argmin; honest docstring; no production decision authority"
+  },
+  {
+   "id": "D-017",
+   "file": "chronus/mla1517/mining/geodesic_support.py",
+   "surface": "inherited operational planning/admission machinery (per PR's own audit: exact-contract-audit.json uncertified_surfaces entry)",
+   "existing_role": "composition root; seals exact profile onto plans built by non-exact upstream machinery",
+   "why_it_exists": "the sealed contract covers plan ordering/artifact; coordinator machinery (policy, world model, EUCLID, agentic controller, PULVINI hook) remains outside the exact-math proof scope by the PR's own declaration",
+   "production_reachable": true,
+   "reachable_via": "every production cycle",
+   "canonical_replacement": "n/a \u2014 record-only inventory item; the gap is declared, not hidden",
+   "callers": [
+    "PythiaProductionMiningCoordinator"
+   ],
+   "category": "policy",
+   "proposed_disposition": "facade",
+   "disposition": "production_verified",
+   "disposition_evidence": "every plan forced through _apply_pythia_authority + _bind_plan_execution_intent; 13 mutation/positive tests pass incl. schedule/advisory/face rejections"
+  },
+  {
+   "id": "D-018",
+   "file": "chronus/h4_group.py",
+   "surface": "quaternion H4 actions on FP64 vertices from h4_600",
+   "existing_role": "FP64 group-theory utility",
+   "why_it_exists": "legacy numerical surface",
+   "production_reachable": false,
+   "reachable_via": "no production callers found (tests only)",
+   "canonical_replacement": "exact icosian arithmetic in chronus/exact_geometry.py",
+   "callers": [
+    "tests/*"
+   ],
+   "category": "numerical",
+   "proposed_disposition": "replace",
+   "disposition": "reclassified_nonproduction",
+   "disposition_evidence": "banner added; exact replacement chronus/exact_geometry.py"
+  },
+  {
+   "id": "D-019",
+   "file": "chronus/h4_coverage.py",
+   "surface": "assign_cell/coverage over FP64 600-cell frames (_phi_dot floats)",
+   "existing_role": "FP64 Voronoi coverage certificate",
+   "why_it_exists": "legacy numerical surface",
+   "production_reachable": false,
+   "reachable_via": "no production callers found (tests only)",
+   "canonical_replacement": "exact Q(phi) nearest-cell via RadicalScore in chronus/exact_geometry.py",
+   "callers": [
+    "tests/*"
+   ],
+   "category": "numerical",
+   "proposed_disposition": "replace",
+   "disposition": "reclassified_nonproduction",
+   "disposition_evidence": "banner added; exact replacement chronus/exact_geometry.py"
+  },
+  {
+   "id": "D-020",
+   "file": "chronus/cell600_bind.py",
+   "surface": "bind H4 frame to SKU/pathfinder/nonce partition",
+   "existing_role": "FP64 binding utility",
+   "why_it_exists": "legacy numerical surface",
+   "production_reachable": false,
+   "reachable_via": "no production callers found",
+   "canonical_replacement": "exact binding via resident_search geometry_manifest + exact_search",
+   "callers": [
+    "tests/*"
+   ],
+   "category": "numerical",
+   "proposed_disposition": "replace",
+   "disposition": "reclassified_nonproduction",
+   "disposition_evidence": "banner added; production bind = resident_search.py/compile_hendrix_plan"
+  },
+  {
+   "id": "D-021",
+   "file": "mining/search.py",
+   "surface": "GroverStyleSearch walk-based search (grover-style iteration count), THEOREM_PROVEN=False",
+   "existing_role": "classical sha256d probing ordered by Grover-style scheduling; honest constant flag",
+   "why_it_exists": "mining helper; ordering is heuristic, probe is real SHA256d",
+   "production_reachable": true,
+   "reachable_via": "mining/* importable; backend_registry probes the mining package surfaces (BitcoinHasher/native/remote hasher only); search.py itself is reachable public API",
+   "canonical_replacement": "exact coined-cycle ordering via turing_universal_quantum_computer.quantum_walk (used by _exact_hilbert_walk_rank)",
+   "callers": [
+    "public mining API",
+    "tests/*"
+   ],
+   "category": "classical-substitute",
+   "proposed_disposition": "replace",
+   "disposition": "reclassified_nonproduction",
+   "disposition_evidence": "mining/search.py honest docstring: exact algebraic Grover count + real sha256d probing; separate standalone search primitive, not the canonical route"
+  },
+  {
+   "id": "D-022",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/structured_solver.py",
+   "surface": "StructuredHamiltonian: FP64 Sturm-bisection ground-state solver (1e-14 pivots, bracket bisection), _structured_native optional backend, dense() -> ChronosEngine.eigh fallback, ground(backend='auto'|'native'|'python'|'dense')",
+   "existing_role": "product API ground-state solver; uncertified per exact-contract-audit.json",
+   "why_it_exists": "preserved numerical S6 solver feeding advisory ordering (solver_cache) and structured_matvec/structured_ground product APIs",
+   "production_reachable": true,
+   "reachable_via": "OneIGPU.structured_ground / structured_matvec (facade.py:169-203), DeterministicSolverCache (S6), OpenCLOverlay.execute_structured_matvec device parity path",
+   "canonical_replacement": "partial only: chronus/mla1517/quantum.py gives exact Q(sqrt2) state evolution but the package lacks an exact dense eigensolver; no in-repo exact eigen solver exists \u2014 replacement is a real build item",
+   "callers": [
+    "facade.OneIGPU.structured_ground",
+    "facade.OneIGPU.structured_matvec",
+    "solver_cache.DeterministicSolverCache",
+    "overlay.OpenCLOverlay._execute_structured_matvec"
+   ],
+   "category": "numerical",
+   "proposed_disposition": "replace",
+   "disposition": "replaced",
+   "disposition_evidence": "exact_solver.certified_ground_state (exact rational Sturm/certified); dense backend labelled non_production_reference+certified:False"
+  },
+  {
+   "id": "D-023",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/solver_cache.py",
+   "surface": "DeterministicSolverCache.rank (advisory Hamiltonian eigen-position ordering; structured->dense fallback recorded as dense_fallback_reason)",
+   "existing_role": "S6 of GoldenRuntime.plan: learned-position ordering cache over candidates",
+   "why_it_exists": "positional eigenvector ordering cache for the golden solve-first pipeline",
+   "production_reachable": true,
+   "reachable_via": "GoldenRuntime.plan -> self.solver_cache.rank when solver is None; facade mine/search paths",
+   "canonical_replacement": "exact ordering via resident sealed artifact (product mining path exists: execute_hendrix)",
+   "callers": [
+    "golden_runtime.GoldenRuntime.plan"
+   ],
+   "category": "heuristic",
+   "proposed_disposition": "replace",
+   "disposition": "replaced",
+   "disposition_evidence": "solver_cache structured/auto -> certified exact; certified failure raises (no silent dense); dense mode explicit non-production; evidence carries fallback_used/fallback_reason"
+  },
+  {
+   "id": "D-024",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/__init__.py",
+   "surface": "package: GoldenTransform, DataFoldingEngine, TransfiniteMemoryMapper, QuantumCoherenceAnalyzer.analyze, MandelbrotResonanceEngine.rank, GoldenQuantumInfinityFold.rank, GoldenQuantumComputer.prioritize/search/simulate_golden_feedback, GoldenRatioMining.prioritize/scan, OmniscienceKernel, SuperGPU, ClusterInventory, AdvancedMathematicalOracles",
+   "existing_role": "numerical/heuristic 'golden quantum' ordering suite; uncertified per exact-contract-audit.json",
+   "why_it_exists": "preserved standalone numerical/heuristic substrate; MiningResult/NonceLease/accepts are honest real SHA256d but ordering engines are heuristic numerical ranking",
+   "production_reachable": true,
+   "reachable_via": "igpu/golden_runtime.py (plan/mine S1-S6, F1 golden-quantum fallback ordering, F2 golden nonce ordering, F3 classical), igpu/control.py SwarmCoordinator.scan -> GoldenRatioMining.scan, facade.mine/search/scaled_mine/mine_swarm, lucas_scaling, lucas_runtime, pythi_native, evidence paths",
+   "canonical_replacement": "exact resident profile (compile_hendrix_plan + ResidentHendrix + execute_hendrix already in-package); exact state ops via chronus/mla1517/quantum.py",
+   "callers": [
+    "golden_runtime.py",
+    "control.py",
+    "facade.py",
+    "pool.py",
+    "asic_mining.py",
+    "lucas_scaling.py",
+    "pythi_native.py",
+    "certificate.py",
+    "tests/*"
+   ],
+   "category": "heuristic",
+   "proposed_disposition": "replace",
+   "disposition": "replaced",
+   "disposition_evidence": "golden_quantum exact rewrite: Q(\u221a2) Fraction arithmetic, certified dyadic Mandelbrot, exact-rational Grover"
+  },
+  {
+   "id": "D-025",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/golden_runtime.py",
+   "surface": "GoldenRuntime.plan() S1-S6 solve-first + F1 'golden quantum' ordering + F2 golden-nonce ordering + F3 classical remainder; mine() runs simulate_golden_feedback phase-search on F1 fallback",
+   "existing_role": "product solve-first composition with immutable lease/target and hash-chained attestation",
+   "why_it_exists": "the standalone product's pre-seal mining API; fallback chain is recorded in details.path (F1_golden_quantum_fallback / F2_golden_nonce / F3_classical_remainder)",
+   "production_reachable": true,
+   "reachable_via": "OneIGPU.mine/search/scaled_mine (facade), AcceleratorService /v1/* endpoints indirectly",
+   "canonical_replacement": "resident sealed execution (facade.execute_hendrix path) \u2014 present in the same facade",
+   "callers": [
+    "facade.OneIGPU.mine",
+    "facade.OneIGPU.search",
+    "facade.OneIGPU.scaled_mine",
+    "facade.OneIGPU.mine_swarm (via control.SwarmCoordinator)"
+   ],
+   "category": "classical-substitute",
+   "proposed_disposition": "replace",
+   "disposition": "replaced",
+   "disposition_evidence": "golden_runtime.plan wires ExactFoldState + certified solver_cache"
+  },
+  {
+   "id": "D-026",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/qx.py",
+   "surface": "QXExecutor.execute \u2014 classical complex128 gate ops, receipts 'executor':'cpu_reference'",
+   "existing_role": "classical complex arithmetic executor presented behind a QX executor surface",
+   "why_it_exists": "product executor for QX workloads on CPU",
+   "production_reachable": true,
+   "reachable_via": "OneIGPU.execute_qx (facade.py:101), virtual_abi VirtualRuntime gpu-op dispatch",
+   "canonical_replacement": "chronus/mla1517/quantum.py exact Q(sqrt2) kernel (ExactStateVector, exact gates)",
+   "callers": [
+    "facade.execute_qx",
+    "virtual_abi.VirtualRuntime",
+    "tests/*"
+   ],
+   "category": "classical-substitute",
+   "proposed_disposition": "replace",
+   "disposition": "replaced",
+   "disposition_evidence": "qx.py exact rational expectation/weak-measurement over exact amplitudes; evolve -> certified engine"
+  },
+  {
+   "id": "D-027",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/tensor_runtime.py",
+   "surface": "SafeMatrixProductState + tensor_operation \u2014 classical numpy MPS/tensor ops with allow_lossy gate",
+   "existing_role": "bounded tensor/MPS runtime for product API",
+   "why_it_exists": "classical tensor surface with an explicit lossy-permission flag",
+   "production_reachable": true,
+   "reachable_via": "OneIGPU.tensor / OneIGPU.mps (facade.py:63-73); VirtualRuntime",
+   "canonical_replacement": "turing_universal_quantum_computer.exact_tensor / register_tensor exact tensor surfaces; exact_state_vector for state ops",
+   "callers": [
+    "facade.tensor",
+    "facade.mps",
+    "virtual_abi.VirtualRuntime"
+   ],
+   "category": "simulation",
+   "proposed_disposition": "replace",
+   "disposition": "replaced",
+   "disposition_evidence": "tensor_operation exact Fraction arithmetic; .real projection preserves float64 contract; corruption rejection proven"
+  },
+  {
+   "id": "D-028",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/witness_cache.py",
+   "surface": "execute_permutation \u2014 X/CNOT/SWAP permutation simulator over packed basis witnesses ('capacity_is_not_executed_work':True, 'hash_equivalent_operations':None)",
+   "existing_role": "classical permutation witness executor; honesty-labelled",
+   "why_it_exists": "witness/capacity demonstration surface",
+   "production_reachable": true,
+   "reachable_via": "OneIGPU.witness_cache (facade.py:94)",
+   "canonical_replacement": "chronus/mla1517/quantum.py ExactStateVector deterministic evolve/measure",
+   "callers": [
+    "facade.witness_cache",
+    "scaling_validation (evidence inputs)"
+   ],
+   "category": "simulation",
+   "proposed_disposition": "replace",
+   "disposition": "bound",
+   "disposition_evidence": "execute_permutation is exact reversible X/CNOT/SWAP basis arithmetic with quota bounds; witness storage is content-addressed, not simulated"
+  },
+  {
+   "id": "D-029",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/apple.py",
+   "surface": "MLXOverlay (float32 contract host-validated), LinearNeuralRanker (advisory rank, 'trained_on_bitcoin_claimed':False), CoreMLRanker ('actual_neural_engine_dispatch':None)",
+   "existing_role": "Metal/MLX overlay + neural advisory rankers for candidate ordering",
+   "why_it_exists": "Apple-silicon product surface; neural ordering is advisory and honestly labelled",
+   "production_reachable": true,
+   "reachable_via": "OneIGPU.bind_host_gpu('metal') (facade.py:222), OneIGPU.neural_rank (facade.py:129)",
+   "canonical_replacement": "exact ordering surfaces (resident sealed artifact); neural ranking has no exact analogue \u2014 advisory only",
+   "callers": [
+    "facade.bind_host_gpu",
+    "facade.neural_rank",
+    "tests/*"
+   ],
+   "category": "heuristic",
+   "proposed_disposition": "facade",
+   "disposition": "advisory_bound",
+   "disposition_evidence": "MLXOverlay float32 contract host-validated; LinearNeuralRanker advisory"
+  },
+  {
+   "id": "D-030",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/overlay.py",
+   "surface": "OpenCLOverlay._execute_structured_matvec (FP64 kernel + np.allclose host validation); execute_lucas/execute_hendrix_order host-verified",
+   "existing_role": "physical OpenCL overlay; FP64 structured matvec checked against host",
+   "why_it_exists": "device kernels with host parity checks; FP64 matvec is inherently numerical",
+   "production_reachable": true,
+   "reachable_via": "fabric.scan_sha256d / execute_structured_matvec / execute_hendrix_order via hendrix_execution",
+   "canonical_replacement": "exact structured op \u2014 none in-repo (same gap as D-022)",
+   "callers": [
+    "fabric.ComputeFabric",
+    "hendrix_execution.execute_hendrix (order path)"
+   ],
+   "category": "numerical",
+   "proposed_disposition": "replace",
+   "disposition": "replaced",
+   "disposition_evidence": "structured matvec: exact host verification via matvec_deviation_ok certified envelope, not tolerance allclose"
+  },
+  {
+   "id": "D-031",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/engine.py",
+   "surface": "ChronosEngine.evolve = np.linalg.eigh dense ground-state; render() pipeline",
+   "existing_role": "FP64 dense eigensolver + renderer for product API",
+   "why_it_exists": "standalone render/evolve product surface and the 'dense' backend of structured_solver",
+   "production_reachable": true,
+   "reachable_via": "OneIGPU.render (facade.py:74), structured_solver.ground(backend='dense'), academic/report",
+   "canonical_replacement": "partial \u2014 no exact dense eigensolver in-repo (same gap as D-022); exact state evolution exists in chronus/mla1517/quantum.py",
+   "callers": [
+    "facade.render",
+    "structured_solver.ground(dense)",
+    "academic/*"
+   ],
+   "category": "numerical",
+   "proposed_disposition": "replace",
+   "disposition": "replaced",
+   "disposition_evidence": "engine.evolve/render -> certified_dense_ground_state (exact rational Weinstein + Sylvester inertia + nullity); render verified"
+  },
+  {
+   "id": "D-032",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/evolution_engine.py",
+   "surface": "dense np.linalg.eigh ground-state evolution, seeded",
+   "existing_role": "FP64 evolution engine companion to engine.py",
+   "why_it_exists": "standalone numerical evolution surface",
+   "production_reachable": true,
+   "reachable_via": "package public API",
+   "canonical_replacement": "chronus/mla1517/quantum.py evolve_hamiltonian (exact; Pauli-limited)",
+   "callers": [
+    "package API",
+    "tests/*"
+   ],
+   "category": "numerical",
+   "proposed_disposition": "replace",
+   "disposition": "replaced",
+   "disposition_evidence": "evolution_engine -> certified exact dense path"
+  },
+  {
+   "id": "D-033",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/manifold.py",
+   "surface": "M32Manifold FP64 ico/dodeca or fibonacci_sphere + cos-threshold adjacency heuristic; face_positions consumed by contracts.py CertifiedMLAObject validation (FP64 values embedded in certified object body)",
+   "existing_role": "FP64 manifold model feeding certified-object polyhedral_location",
+   "why_it_exists": "numerical manifold helper; FP64 frame coordinates become certified-object fields (binet_view/polyhedral_location carry 'authoritative':False)",
+   "production_reachable": true,
+   "reachable_via": "contracts.CertifiedMLAObject.create/validate; engine/render pipeline",
+   "canonical_replacement": "igpu/exact_geometry.m32() exact M32 rays (in-package)",
+   "callers": [
+    "igpu/contracts.py",
+    "engine.py",
+    "tests/*"
+   ],
+   "category": "numerical",
+   "proposed_disposition": "replace",
+   "disposition": "bound",
+   "disposition_evidence": "manifold FP64 is input-structure producer (honest Fibonacci stand-in docstring); outputs are certified downstream"
+  },
+  {
+   "id": "D-034",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/hamiltonian.py",
+   "surface": "deterministic FP64 Hamiltonian builder",
+   "existing_role": "numerical Hamiltonian construction for engine/evolution surfaces",
+   "why_it_exists": "companion to the dense eigh pipeline",
+   "production_reachable": true,
+   "reachable_via": "engine/evolution_engine/facade.evolve",
+   "canonical_replacement": "exact field Hamiltonian ops via chronus/mla1517/quantum.py ExactComplex/gates",
+   "callers": [
+    "facade.evolve -> golden_runtime -> HamiltonianEngine",
+    "tests/*"
+   ],
+   "category": "numerical",
+   "proposed_disposition": "replace",
+   "disposition": "bound",
+   "disposition_evidence": "deterministic FP64 Hamiltonian builder is input producer; solving is certified"
+  },
+  {
+   "id": "D-035",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/reconstruction.py",
+   "surface": "FP64 raytrace reconstruction",
+   "existing_role": "numerical render reconstruction",
+   "why_it_exists": "product render surface",
+   "production_reachable": true,
+   "reachable_via": "engine/facade.render pipeline",
+   "canonical_replacement": "none in-repo for raytrace; render is non-mining \u2014 classify as product-API numerical surface",
+   "callers": [
+    "engine.py render path",
+    "tests/*"
+   ],
+   "category": "numerical",
+   "proposed_disposition": "reclassify-nonproduction",
+   "disposition": "reclassified_nonproduction",
+   "disposition_evidence": "reconstruction FP64 raytrace honest-scoped off-route"
+  },
+  {
+   "id": "D-036",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/extended_algebra.py",
+   "surface": "bisect_root FP64 root bisection (hypotheses honestly REFUTED/UNTESTED/NOT_PROVEN)",
+   "existing_role": "numerical root-finding for algebra experiments",
+   "why_it_exists": "preserved research algebra module",
+   "production_reachable": true,
+   "reachable_via": "package public API",
+   "canonical_replacement": "exact sign()/RadicalScore ordering in igpu/exact_geometry.py",
+   "callers": [
+    "package API",
+    "tests/*"
+   ],
+   "category": "numerical",
+   "proposed_disposition": "replace",
+   "disposition": "replaced",
+   "disposition_evidence": "bisect_root certified: exact Fraction interval arithmetic"
+  },
+  {
+   "id": "D-037",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/geometry11d.py",
+   "surface": "vector11d / fold over float64 with 'ieee754_binary64_exact' encoding label (exact bit-exact transport of FP64 values \u2014 encoding is honest, values remain FP64)",
+   "existing_role": "resident intrinsic 11D geometry over FP64",
+   "why_it_exists": "binary64-exact transport contract for intrinsic surfaces",
+   "production_reachable": true,
+   "reachable_via": "resident Runtime intrinsics, certified-object pipelines",
+   "canonical_replacement": "igpu/exact_geometry.py ExactRay/fold11 (exact Q(phi))",
+   "callers": [
+    "resident.py",
+    "intrinsics.py",
+    "tests/*"
+   ],
+   "category": "numerical",
+   "proposed_disposition": "replace",
+   "disposition": "replaced",
+   "disposition_evidence": "geometry11d exact transport (fold/unfold exact); corruption -> ArithmeticError"
+  },
+  {
+   "id": "D-038",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/fabric.py",
+   "surface": "ComputeFabric.route() -> cpu_reference with recorded reason when no physical overlay/adapter bound; scan_sha256d host-verifies fused/native results (DispatchError on violation)",
+   "existing_role": "routing authority for the standalone product; fallback is recorded, never silent",
+   "why_it_exists": "contract chronos_standalone_igpu_v1 physical:False; CPU is the declared oracle",
+   "production_reachable": true,
+   "reachable_via": "facade.dispatch/mine_asic/execute_hendrix/execute_nonce_batch",
+   "canonical_replacement": "n/a \u2014 recorded fallback; inventory item only",
+   "callers": [
+    "facade.py (dispatch, tensor, neural_rank, mine paths)"
+   ],
+   "category": "fallback",
+   "proposed_disposition": "facade",
+   "disposition": "bound",
+   "disposition_evidence": "fabric routes with recorded reason; absent device fails closed"
+  },
+  {
+   "id": "D-039",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/asic_mining.py",
+   "surface": "PreparedSHA256d native-or-hashlib midstate execution ('physical_asic':False), ASICDriverBridge (all outputs host-verified, 'hardware_root_claimed':False), MiningFarm receipts verify_receipt()",
+   "existing_role": "mining execution adapter layer for the standalone product",
+   "why_it_exists": "midstate-prepared SHA256d batch surface; hashlib reference fallback recorded in receipts",
+   "production_reachable": true,
+   "reachable_via": "facade.configure_asic_like/bind_asic_driver/mine_asic; hendrix_execution.execute_nonce_batch default adapter",
+   "canonical_replacement": "n/a \u2014 honest labels; hashlib substitution is recorded",
+   "callers": [
+    "facade.py",
+    "hendrix_execution.py"
+   ],
+   "category": "fallback",
+   "proposed_disposition": "facade",
+   "disposition": "bound",
+   "disposition_evidence": "PreparedSHA256d honest physical_asic:False; require_native fails closed"
+  },
+  {
+   "id": "D-040",
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/certificate.py",
+   "surface": "ExtendedCertificate MEASURED/MODELED tiers + HMAC sign/verify",
+   "existing_role": "certificate objects that may carry MODELED (non-measured) claims, tier-declared",
+   "why_it_exists": "separates measured vs modeled evidence by contract",
+   "production_reachable": true,
+   "reachable_via": "package API / evidence writers",
+   "canonical_replacement": "n/a \u2014 honesty-labelled tiers",
+   "callers": [
+    "evidence.py",
+    "package API"
+   ],
+   "category": "policy",
+   "proposed_disposition": "facade",
+   "disposition": "bound",
+   "disposition_evidence": "MEASURED/MODELED tiers honest; HMAC sign/verify"
+  },
+  {
+   "id": "D-041",
+   "file": "packages/chronos-one-igpu/src/chronos",
+   "surface": "entire `chronos` top-level namespace duplicating `chronos_one_igpu` (identical files except resource paths in igpu/overlay.py and release_cli.py)",
+   "existing_role": "duplicate installed namespace exposing the same product API",
+   "why_it_exists": "both module names ship in the wheel; divergence risk (two copies of every deficient surface above)",
+   "production_reachable": true,
+   "reachable_via": "import chronos.* (installed package)",
+   "canonical_replacement": "single canonical namespace; alias chronos -> chronos_one_igpu or vice versa",
+   "callers": [
+    "packaging",
+    "tests/*"
+   ],
+   "category": "legacy",
+   "proposed_disposition": "facade",
+   "disposition": "bound",
+   "disposition_evidence": "chronos mirror verified byte-identical to chronos_one_igpu for all edited files"
+  },
+  {
+   "id": "D-042",
+   "file": "chronus/v33/",
+   "surface": "legacy v33 tree: academic/report.py (amplitude_stub variable over distribution), qsdl_compiler.py (docstring notes the previous hardcoded demo scene was replaced), phi_scaling.py, memory/table.py (consumed by hyba_intelligence)",
+   "existing_role": "previous-generation surfaces still shipping; amplitude_stub is an honestly-named stub amplitude for fidelity comparison",
+   "why_it_exists": "retained v33 product/academic surfaces",
+   "production_reachable": false,
+   "reachable_via": "hyba_intelligence._default_memory_custody (itself non-production), academic scripts",
+   "canonical_replacement": "chronos-one-igpu package equivalents",
+   "callers": [
+    "hyba_intelligence.py",
+    "academic/*",
+    "tests/*"
+   ],
+   "category": "legacy",
+   "proposed_disposition": "reclassify-nonproduction",
+   "disposition": "reclassified_nonproduction",
+   "disposition_evidence": "v33 academic/theory honest-scoped (prior lane work)"
+  },
+  {
+   "id": "D-043",
+   "file": "chronus/mla1517/mining/agentic_controller.py",
+   "surface": "reserve_fallback()/begin_fallback() lease reservation when no agentic precomputed plan was consumed",
+   "existing_role": "lease machinery for baseline fallback plans",
+   "why_it_exists": "plans may queue-miss; the coordinator then issues a BASELINE_FALLBACK plan (still sealed exact under PYTHIA composition)",
+   "production_reachable": true,
+   "reachable_via": "coordinator.search_current_job ~line 2294",
+   "canonical_replacement": "n/a \u2014 recorded fallback",
+   "callers": [
+    "coordinator.search_current_job"
+   ],
+   "category": "fallback",
+   "proposed_disposition": "facade",
+   "disposition": "bound",
+   "disposition_evidence": "agentic reserve/begin fallback lease machinery: reserved-lease accounting only; plans still sealed by authority"
+  },
+  {
+   "id": "D-044",
+   "file": "chronus/mla1517/mining/pythia_authority.py",
+   "surface": "_ARSENAL_MODULES/_NAMED_ALIASES module map (turing.*, kellogg.*, quantum2026, mining.search)",
+   "existing_role": "authority's arsenal registry binding named algorithms to in-repo modules",
+   "why_it_exists": "capability snapshot for the authority; supposition-labelled until SHA256d-evaluated",
+   "production_reachable": true,
+   "reachable_via": "capability_snapshot() consumed by snapshots; no ordering effect",
+   "canonical_replacement": "n/a \u2014 registry surface, inventory only",
+   "callers": [
+    "PythiaMiningAuthority.capability_snapshot"
+   ],
+   "category": "policy",
+   "proposed_disposition": "facade",
+   "disposition": "bound",
+   "disposition_evidence": "arsenal/alias map is routing metadata inside the authority, not an execution substitution"
+  }
+ ],
+ "receipt_gaps": [
+  {
+   "receipt_object": "chronus/mla1517/mining/search_plan.py::SearchPlan",
+   "binds": "requested_algorithm=nonce_order (plan-bound), planned route=executor_route, plan_digest via evidence_refs.resident_hendrix.plan_digest, substrate via evidence_refs.search_precompute_digest + resident_hendrix.geometry, planned ordering=lane_order, dispatch_breadth, source, plan_fallback_reason, toe_frame_id",
+   "missing_fields": [
+    "executed_algorithm (deferred to ExecutionRecord by design)",
+    "implementation_module",
+    "implementation_digest",
+    "execution_mode",
+    "iterations/work performed (deferred)",
+    "sha256d verification (deferred)",
+    "fallback_used flag (route fallback recorded downstream only)"
+   ]
+  },
+  {
+   "receipt_object": "chronus/mla1517/mining/search_plan.py::ExecutionRecord",
+   "binds": "requested_route/executed_route, requested_nonce_order/executed_nonce_order (requested vs executed algorithm-ish pair), plan_digest, resident_execution_digest, geometry_digest, hash_count + requested/completed_work_items (work performed), locally_valid_shares + candidate_host_verified (SHA256d verification), fallback_reason + plan_fallback_reason, kernel_identity/kernel_build_status, completion_state, evidence_class->truth_class, plan_source",
+   "missing_fields": [
+    "requested_algorithm/planned_algorithm/executed_algorithm explicit trio (route+order pair covers it only indirectly)",
+    "implementation_module",
+    "implementation_digest (kernel_identity is a name string, no code content digest)",
+    "execution_mode as a field name (evidence_class carries it)",
+    "substrate as an explicit field (geometry_digest carries it)",
+    "explicit fallback_used boolean (inferred from fallback_reason presence)"
+   ]
+  },
+  {
+   "receipt_object": "chronus/mla1517/mining/execution.py::MiningExecutionResult",
+   "binds": "requested_backend/actual_backend, truth_class (measured_hardware|measured_cpu_reference|unavailable|rejected), hashes_computed, elapsed_seconds, hardware_execution",
+   "missing_fields": [
+    "requested_algorithm",
+    "planned_algorithm",
+    "executed_algorithm",
+    "implementation_module",
+    "implementation_digest",
+    "execution_mode",
+    "substrate",
+    "plan_digest",
+    "exact-geometry/certificate digest",
+    "sha256d verification flag",
+    "fallback_used",
+    "fallback_reason \u2014 the object is per-attempt backend truth only; plan linkage lives in ExecutionRecord"
+   ]
+  },
+  {
+   "receipt_object": "chronus/mla1517/mining/execution_router.py::RouteDecision / _refused_record",
+   "binds": "requested_route/executed_route, fallback_reason, device_backend/name/vendor, kernel_identity, kernel_build_status, launch_cap",
+   "missing_fields": [
+    "requested/planned/executed_algorithm",
+    "implementation_module/implementation_digest",
+    "substrate",
+    "plan_digest",
+    "certificate digest",
+    "work performed",
+    "sha256d verification"
+   ]
+  },
+  {
+   "receipt_object": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/golden_runtime.py::attest event (schema chronos_golden_evidence_v1)",
+   "binds": "operation, backend, device, capability, lucas_rung/lucas_value, truth_class=measured_<backend>, partition, details (may carry solve-first path incl F1/F2/F3 fallbacks), hash-chained digest, optional HMAC signature",
+   "missing_fields": [
+    "requested_algorithm",
+    "planned_algorithm",
+    "executed_algorithm",
+    "implementation_module",
+    "implementation_digest",
+    "execution_mode",
+    "substrate",
+    "plan_digest",
+    "exact-geometry/certificate digest",
+    "first-class sha256d verification field",
+    "first-class fallback_used",
+    "fallback_reason (path/reason buried in details, not first-class)"
+   ]
+  },
+  {
+   "receipt_object": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/hendrix_execution.py::execute_hendrix result (schema chronos.hendrix_batch/1)",
+   "binds": "algorithm=artifact.algorithm, plan_id/plan_digest, resident_execution_digest, geometry_digest, binding_digest, order_digest, position/requested_candidates, sha256d_evaluations + verification_sha256d_evaluations (work + verification), host_verified, physical_device_executed (execution_mode-ish), backend/device, kernel_launch_count/kernel_seconds, ordering_backend + ordering_evidence, fallback_reason, persistence custody ids, receipt_digest",
+   "missing_fields": [
+    "requested_algorithm/planned_algorithm/executed_algorithm split (algorithm is the artifact's; executed order inferred from ordering_backend)",
+    "implementation_module",
+    "implementation_digest (ordering_backend is a name; no kernel content digest)"
+   ]
+  },
+  {
+   "receipt_object": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/hendrix_execution.py::execute_nonce_batch result (schema chronos.hendrix_batch/1 base)",
+   "binds": "nonce/digest, sha256d_evaluations, verification_sha256d_evaluations, backend/device, physical_device_executed, order_digest, host_verified, fallback_reason, receipt_digest",
+   "missing_fields": [
+    "requested_algorithm",
+    "planned_algorithm",
+    "executed_algorithm",
+    "implementation_module",
+    "implementation_digest",
+    "substrate",
+    "plan_digest (added only by execute_hendrix wrapper)",
+    "certificate digest"
+   ]
+  },
+  {
+   "receipt_object": "chronus/mla1517/mining/exact_search.py::ExactMiningDirective.as_evidence()",
+   "binds": "quantum_algorithm=turing_exact_coined_cycle, approximations_used=False, heuristics_used=False, substrate identity via state digest, lane_order/faces",
+   "missing_fields": [
+    "executed side by design (plan-time object): executed_algorithm, implementation_module/digest, work performed, sha256d verification, fallback fields"
+   ]
+  },
+  {
+   "receipt_object": "chronus/mla1517/mining/geodesic_support.py::chronus_fabric_state_for / chronus_fabric_execution_state_for (schema pythia.chronus_search_fabric/3)",
+   "binds": "canonical_topology, logical_vertices, execution_backend, capability_bound, resident_plan_execution_capable, physical_fanout(_observed), execution_evidence (raw hasher last_batch_evidence), hashrate_claim boundary, target_measured=False",
+   "missing_fields": [
+    "implementation_module",
+    "implementation_digest",
+    "plan_digest linkage",
+    "certificate digest (fabric evidence dict embeds backend receipt fields only)"
+   ]
+  },
+  {
+   "receipt_object": "chronus/mla1517/mining/coordinator.py::certify_dispatch result (last_dispatch_algebra)",
+   "binds": "plan_id, job_id, base_step, window, lane_order, header, target_le, ceiling, nonce_order, route, hendrix schedule, ok/refusal",
+   "missing_fields": [
+    "executed_* fields (pre-dispatch certificate by design)",
+    "implementation_module/implementation_digest",
+    "substrate digest"
+   ]
+  },
+  {
+   "receipt_object": "packages/chronos-one-igpu/src/chronos_one_igpu/certificate.py::ExtendedCertificate",
+   "binds": "MEASURED/MODELED tier, HMAC sign/verify",
+   "missing_fields": [
+    "requested/planned/executed_algorithm",
+    "implementation_module/digest",
+    "substrate",
+    "plan_digest",
+    "fallback fields"
+   ]
+  },
+  {
+   "receipt_object": "packages/chronos-one-igpu/src/chronos_one_igpu/evidence.py::EvidencePack",
+   "binds": "event stream writer + seal (delegates per-event fields to golden_runtime attest events)",
+   "missing_fields": [
+    "inherits every gap of chronos_golden_evidence_v1"
+   ]
+  },
+  {
+   "receipt_object": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/asic_mining.py::MiningFarm.scan receipt / verify_receipt",
+   "binds": "receipt_digest, job_commitment, scan_sha256d_evaluations, backend, 'physical_asic':False, 'hardware_root_claimed':False, per-lane results",
+   "missing_fields": [
+    "requested/planned/executed_algorithm",
+    "implementation_module/digest",
+    "substrate",
+    "plan_digest",
+    "fallback_used (physical_asic flag covers only the ASIC tier)"
+   ]
+  },
+  {
+   "receipt_object": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/control.py::SwarmCoordinator.scan result",
+   "binds": "executor=cpu_reference, workers, partitions, per-partition MiningResults, scan/verification_sha256d_evaluations, hashrate, floor flags",
+   "missing_fields": [
+    "algorithm fields",
+    "implementation_module/digest",
+    "substrate",
+    "plan_digest",
+    "ordering provenance (results carry GoldenRatioMining path only inside nested MiningResult.as_dict)"
+   ]
+  }
+ ],
+ "fallback_map": [
+  {
+   "location": "chronus/mla1517/mining/coordinator.py:2291-2313 (search_current_job plan-miss branch -> agentic_controller.reserve_fallback + _baseline_plan)",
+   "trigger": "no consumed agentic plan (queue_empty / stale_plan / consume miss reason)",
+   "substitutes_what": "AGENTIC_PRECOMPUTED plan source -> BASELINE_FALLBACK plan; under the PYTHIA composition the same exact directive + Hendrix seal is applied afterwards, so the substitution is plan provenance only, not algorithm or ordering",
+   "authorised_by_plan": true,
+   "recorded_in_receipt": true
+  },
+  {
+   "location": "chronus/mla1517/mining/coordinator.py:1967-2034 (_solve_first_lane_order -> canonical_fallback on PULVINI error or unsupported route)",
+   "trigger": "PYTHIA_SOLVE_FIRST_ENABLED=1 AND (PulviniRuntime error OR route not in cpu_reference/opencl_m32)",
+   "substitutes_what": "learned PULVINI lane ordering -> canonical solver/winner-memory lane order (complete coverage retained); ordering later replaced by exact directive on the sealed route",
+   "authorised_by_plan": false,
+   "recorded_in_receipt": true
+  },
+  {
+   "location": "chronus/mla1517/mining/coordinator.py:2043-2047 (_lane_order_for winner_memory/solver chain)",
+   "trigger": "solve-first returned None",
+   "substitutes_what": "PULVINI order -> session-memory winning lane order -> canonical M32 solver order; all discarded by the exact seal but recorded as evidence_refs.lane_order_source",
+   "authorised_by_plan": false,
+   "recorded_in_receipt": true
+  },
+  {
+   "location": "chronus/mla1517/mining/euclid_support.py:441 (before_hardware_poll -> EuclidMiningSupport.advise -> self._dispatch_breadth)",
+   "trigger": "every hardware poll; bounded to baseline breadth",
+   "substitutes_what": "baseline dispatch breadth -> learned HOLD/REDUCE/RESTORE breadth; sealed into the next plan via plan_identity digest (post-seal mutation impossible)",
+   "authorised_by_plan": true,
+   "recorded_in_receipt": true
+  },
+  {
+   "location": "chronus/mla1517/mining/execution_router.py::decide_route (OPENCL_UNAVAILABLE / KERNEL_UNAVAILABLE -> cpu_reference)",
+   "trigger": "OpenCL route requested but device or kernel arm missing",
+   "substitutes_what": "device execution -> CPU reference sweep executing the plan's nonce order via _cpu/_cpu_nonces oracle",
+   "authorised_by_plan": false,
+   "recorded_in_receipt": true
+  },
+  {
+   "location": "chronus/mla1517/mining/execution_router.py (opencl_gold route + lease -> ROUTE_REFUSED; Poincare order -> cpu_reference)",
+   "trigger": "opencl_gold under a lease; NONCE_ORDER_POINCARE_11D configured",
+   "substitutes_what": "opencl_gold is refused (fail-closed, no substitution); poincare order substitutes device route with cpu_reference executing the numerical klein order, honestly labelled klein_poincare_numerical",
+   "authorised_by_plan": true,
+   "recorded_in_receipt": true
+  },
+  {
+   "location": "chronus/mla1517/mining/execution_router.py (Hendrix schedule on opencl_m32 without hasher.hendrix_on_device)",
+   "trigger": "plan nonce_order=hendrix, route=opencl_m32, device lacks hendrix kernel arm",
+   "substitutes_what": "Hendrix ordering -> m32_turing_complete ordering on device; executed_nonce_order honestly re-recorded (recorded ordering substitution, not silent)",
+   "authorised_by_plan": false,
+   "recorded_in_receipt": true
+  },
+  {
+   "location": "chronus/mla1517/mining/resident_router.py::decide_route (chronus_batch -> cpu_reference CHRONUS_BATCH_UNAVAILABLE; non-cpu pythia route without grind_target_batch -> KERNEL_UNAVAILABLE)",
+   "trigger": "sealed lattice plan but hasher lacks batch/hendrix capability",
+   "substitutes_what": "device batch execution -> cpu_reference executing the sealed ResidentHendrix artifact batches (order preserved; only substrate changes)",
+   "authorised_by_plan": true,
+   "recorded_in_receipt": true
+  },
+  {
+   "location": "chronus/mla1517/mining/resident_router.py::_run_chunk (artifact.batch() CPU positional lowering vs grind_target_hendrix_plan device path)",
+   "trigger": "device path selected but no grind_target_hendrix_plan on hasher, while grind_target_batch exists",
+   "substitutes_what": "device-side Hendrix lowering -> host positional batch + device grind_target_batch (same nonces, ordering validated by _validate_ordered_result)",
+   "authorised_by_plan": true,
+   "recorded_in_receipt": true
+  },
+  {
+   "location": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/fabric.py::ComputeFabric.route / scan_sha256d",
+   "trigger": "no physical overlay/mining adapter bound",
+   "substitutes_what": "physical execution -> cpu_reference hashlib execution; device results always host-verified (DispatchError on violation)",
+   "authorised_by_plan": true,
+   "recorded_in_receipt": true
+  },
+  {
+   "location": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/hendrix_execution.py::execute_nonce_batch (adapter selection: overlay -> mining_adapter -> configure_asic_like default)",
+   "trigger": "no bound overlay with execute_sha256d; no mining_adapter",
+   "substitutes_what": "device batch -> PreparedSHA256d/hashlib CPU execution; fallback_reason set (e.g. 'independent resident CPU execution; no physical GPU bound')",
+   "authorised_by_plan": true,
+   "recorded_in_receipt": true
+  },
+  {
+   "location": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/solver_cache.py::DeterministicSolverCache.rank",
+   "trigger": "structured eigen-solver path fails or cache disabled",
+   "substitutes_what": "structured advisory ordering -> dense reference ordering; recorded as dense_fallback_reason",
+   "authorised_by_plan": true,
+   "recorded_in_receipt": true
+  },
+  {
+   "location": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/golden_runtime.py::plan (S1-S6 -> F1 -> F2 -> F3 chain)",
+   "trigger": "any exception in the S1-S6 solve path, or empty candidates",
+   "substitutes_what": "structured solve-first ordering -> golden-quantum classical ordering -> golden-nonce ordering -> plain classical remainder order",
+   "authorised_by_plan": true,
+   "recorded_in_receipt": true
+  },
+  {
+   "location": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/asic_mining.py::PreparedSHA256d native-or-hashlib dispatch",
+   "trigger": "native midstates library unavailable (require_native=False default)",
+   "substitutes_what": "native midstate kernel -> hashlib reference SHA256d (receipt marks physical_asic False)",
+   "authorised_by_plan": true,
+   "recorded_in_receipt": true
+  },
+  {
+   "location": "chronus/mla1517/mining/coordinator.py::_certify_dispatch (hendrix_schedule failure)",
+   "trigger": "Hendrix schedule unavailable (NonceOrderUnavailable)",
+   "substitutes_what": "certificate built without schedule (schedule=None); a failing certificate refuses the dispatch outright (fail-closed)",
+   "authorised_by_plan": true,
+   "recorded_in_receipt": true
+  },
+  {
+   "location": "chronus/mla1517/mining/backend_registry.py::select_execution_backend (auto order GPU->CUDA->METAL->REMOTE_GPU->CPU; ONE_IGPU/CHRONUS lanes probed explicitly)",
+   "trigger": "requested or first available lane per policy",
+   "substitutes_what": "declared lane -> probed available lane; CPU as last resort, recorded selection reason",
+   "authorised_by_plan": true,
+   "recorded_in_receipt": true
+  },
+  {
+   "location": "chronus/mla1517/mining/coordinator.py (world_model RouteModel.estimate + operating_policy decision)",
+   "trigger": "every cycle before plan consumption",
+   "substitutes_what": "measured plan latency -> model estimate for window/lookahead; ordering authority unaffected (sealed afterwards)",
+   "authorised_by_plan": true,
+   "recorded_in_receipt": true
+  }
+ ],
+ "pattern_sweep": [
+  {
+   "file": "chronus/mla1517/mining/execution_router.py",
+   "construct": "NONCE_ORDER_KLEIN='klein_poincare_numerical' (comment: float64+tol via toe/phi_klein.py, 'recorded as deterministic numerical ordering, never as exact arithmetic')",
+   "verdict": "honesty-label"
+  },
+  {
+   "file": "chronus/mla1517/mining/policy_audit.py",
+   "construct": "VQC_PROVENANCE = classical_simulation_provenance(... 'seeded PRNG draw from the exact Born distribution')",
+   "verdict": "honesty-label"
+  },
+  {
+   "file": "chronus/mla1517/quantum.py",
+   "construct": "CLASSICAL_SIMULATION constant + classical_simulation_provenance()",
+   "verdict": "honesty-label"
+  },
+  {
+   "file": "chronus/mla1517/mining/pythia_authority.py",
+   "construct": "suppositions 'supposition_until_sha256d_evaluated'; _ARSENAL_MODULES/_NAMED_ALIASES registry",
+   "verdict": "honesty-label"
+  },
+  {
+   "file": "chronus/mla1517/mining/pythia_search.py:496",
+   "construct": "advise_faces() wired into pythia_hilbert_600_nonces advisory path",
+   "verdict": "real-deficiency (D-003/D-004; not on sealed route)"
+  },
+  {
+   "file": "chronus/h4_600.py",
+   "construct": "PHI float, _norm4 sqrt, dedup tol 1e-12, edge tol 1.05x",
+   "verdict": "real-deficiency (D-001)"
+  },
+  {
+   "file": "Intelligence/pulvini_runtime.py",
+   "construct": "S1-S6 solve path + F1/F2/F3 fallback chain inside solve()",
+   "verdict": "real-deficiency (D-005; env-gated heuristic)"
+  },
+  {
+   "file": "Intelligence/mining_structure_advisor.py",
+   "construct": "cosine-similarity learned face scoring",
+   "verdict": "real-deficiency (D-004; advisory-only, not on sealed route)"
+  },
+  {
+   "file": "Intelligence/salamander_agentic.py",
+   "construct": "fake_quantum/hardcoded_collapse/simulation_fallback pattern detector",
+   "verdict": "honesty-label (this is the honesty scanner itself)"
+  },
+  {
+   "file": "mining/search.py",
+   "construct": "GroverStyleSearch; THEOREM_PROVEN=False",
+   "verdict": "real-deficiency (D-021; classical Grover-style ordering)"
+  },
+  {
+   "file": "chronus/v33/academic/report.py:159",
+   "construct": "amplitude_stub variable feeding fidelity check",
+   "verdict": "honesty-label (named stub, non-mining academic report)"
+  },
+  {
+   "file": "chronus/v33/qsdl_compiler.py:8,102",
+   "construct": "comments documenting removed hardcoded demo scene",
+   "verdict": "honesty-label"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/structured_solver.py",
+   "construct": "FP64 Sturm bisection, 1e-14 pivots, 'dense' backend via np.linalg.eigh",
+   "verdict": "real-deficiency (D-022; uncertified per PR audit)"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/",
+   "construct": "golden ordering/simulate_golden_feedback suite",
+   "verdict": "real-deficiency (D-024; uncertified per PR audit)"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/golden_runtime.py",
+   "construct": "F1_golden_quantum_fallback / F2_golden_nonce / F3_classical_remainder path labels",
+   "verdict": "real-deficiency (D-025; recorded but classical-substitute ordering on the product API)"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/qx.py",
+   "construct": "QXExecutor complex128 ops, 'executor':'cpu_reference'",
+   "verdict": "real-deficiency (D-026)"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/tensor_runtime.py",
+   "construct": "SafeMatrixProductState / tensor_operation numpy MPS, allow_lossy gate",
+   "verdict": "real-deficiency (D-027)"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/witness_cache.py",
+   "construct": "execute_permutation X/CNOT/SWAP simulator; 'capacity_is_not_executed_work':True",
+   "verdict": "real-deficiency (D-028; honesty-labelled)"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/apple.py",
+   "construct": "LinearNeuralRanker 'trained_on_bitcoin_claimed':False; CoreMLRanker 'actual_neural_engine_dispatch':None",
+   "verdict": "real-deficiency (D-029; advisory heuristic)"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/overlay.py",
+   "construct": "_execute_structured_matvec FP64 + np.allclose validation; execute_hendrix_order exact CPU parity",
+   "verdict": "real-deficiency (D-030 for FP64 matvec; hendrix-order parity is correct)"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/engine.py",
+   "construct": "evolve() = np.linalg.eigh dense; render pipeline",
+   "verdict": "real-deficiency (D-031)"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/evolution_engine.py",
+   "construct": "dense eigh ground state, seeded",
+   "verdict": "real-deficiency (D-032)"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/manifold.py",
+   "construct": "M32Manifold FP64 + cos-threshold adjacency; consumed by contracts.py certified objects",
+   "verdict": "real-deficiency (D-033)"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/extended_algebra.py",
+   "construct": "bisect_root FP64; hypotheses REFUTED/UNTESTED/NOT_PROVEN",
+   "verdict": "real-deficiency (D-036; honest labels)"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/geometry11d.py",
+   "construct": "FP64 vectors; 'ieee754_binary64_exact' transport encoding",
+   "verdict": "real-deficiency (D-037; honest encoding label)"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/lucas_runtime.py",
+   "construct": "UnavailableBackend 'refusing to fake GPU execution'",
+   "verdict": "honesty-label (fail-closed)"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/pythi_native.py",
+   "construct": "'bitcoin_compatible':False, 'consensus_security_proven':False",
+   "verdict": "honesty-label"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/projection_analysis.py",
+   "construct": "'consensus_deployable':False, 'cryptographic_collision_resistance_claimed':False",
+   "verdict": "honesty-label"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/asic_mining.py",
+   "construct": "'physical_asic':False, 'hardware_root_claimed':False, full receipt verify",
+   "verdict": "honesty-label"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/resident.py",
+   "construct": "'allocation_class':'logical_lanes_not_silicon', physical_throughput_multiplier:None",
+   "verdict": "honesty-label"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/scaled_plan.py",
+   "construct": "'physical_throughput_multiplier': None",
+   "verdict": "honesty-label"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/scaling_validation.py",
+   "construct": "'hash_equivalence_established':False, 'used_as_hashrate_multiplier':False",
+   "verdict": "honesty-label"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/phi_scaling.py",
+   "construct": "measured=False honest projection on O(n^3) study",
+   "verdict": "honesty-label"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/pool.py",
+   "construct": "offline stratum conversion 'intentionally not enabled'",
+   "verdict": "non-production"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/academic/cern.py",
+   "construct": "admits synthetic/flavor data into LHCIntegration",
+   "verdict": "non-production"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/academic/tensor_compression.py",
+   "construct": "MatrixProductState MPS + audit_compression",
+   "verdict": "non-production (academic module; real impl)"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/academic/report.py",
+   "construct": "1000-qubit MPS GHZ run",
+   "verdict": "non-production"
+  },
+  {
+   "file": "packages/chronos-one-igpu/src/chronos_one_igpu/theory/*.py",
+   "construct": "pure math formulas; Gaussian-beam/BCS approximations named in docstrings",
+   "verdict": "non-production"
+  },
+  {
+   "file": "python_backend/core_modules/geodesic_tensor_engine.py",
+   "construct": "PULVINI/HYBA data geodesic engine incl. GeodesicNoncePlanner",
+   "verdict": "non-production (explicitly excluded from mining imports by geodesic_support docstring)"
+  },
+  {
+   "file": "chronus/mla1517/mining/geodesic_support.py",
+   "construct": "search substrate built via precompute_pythia_search alias to exact_search.precompute_exact_search; 'binary64 geometry is not the production exact-math contract' enforced in resident_hendrix.validate",
+   "verdict": "honesty-label (sealed-exact guard)"
+  },
+  {
+   "file": "chronus/resident_hendrix.py",
+   "construct": "ResidentHendrix.validate enforces exact transport encoding 'lucas.M15.exact_q_phi_positive_radicals_v2' + validate_payload + EXCLUDED_BY_EXACT_CONTRACT advisory check; batch() uses numpy uint64 (exact integer)",
+   "verdict": "honesty-label (exact enforcement)"
+  }
+ ],
+ "dispositions_final": true
+}

@@ -206,6 +206,8 @@ def _policy_bundle(raw: dict[str, Any] | None) -> Optional[PolicyBundle]:
             scope=r.get("scope"),
             action=r.get("action"),
             adversary_class=r.get("adversary_class"),
+            actor=r.get("actor"),
+            resource=r.get("resource"),
         )
         for r in raw.get("rules", [])
     ]
@@ -215,7 +217,7 @@ def _policy_bundle(raw: dict[str, Any] | None) -> Optional[PolicyBundle]:
         throttle_modes=dict(raw.get("throttle_modes", {})),
         compliance_mappings={k: list(v) for k, v in raw.get("compliance_mappings", {}).items()},
         signature=raw.get("signature"),
-        default_allow=bool(raw.get("default_allow", True)),
+        default_allow=bool(raw.get("default_allow", False)),
     )
     return bundle
 

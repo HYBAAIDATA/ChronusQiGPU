@@ -11,7 +11,9 @@ from __future__ import annotations
 import ast
 import json
 import re
+import sys
 from pathlib import Path
+
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "config" / "euclid-v17-integration-gates.json"
@@ -43,9 +45,13 @@ def main() -> int:
     version = _version()
     checks["version"] = version
     if version != config["version"]:
-        failures.append(f"euclid.__version__={version!r}; expected {config['version']!r}")
+        failures.append(
+            f"euclid.__version__={version!r}; expected {config['version']!r}"
+        )
 
-    missing = [path for path in config["required_paths"] if not (ROOT / path).exists()]
+    missing = [
+        path for path in config["required_paths"] if not (ROOT / path).exists()
+    ]
     checks["missing_required_paths"] = missing
     if missing:
         failures.append("missing exact v17 source paths: " + ", ".join(missing))
@@ -55,7 +61,9 @@ def main() -> int:
     missing_methods = sorted(set(config["required_runtime_methods"]) - methods)
     checks["missing_runtime_methods"] = missing_methods
     if missing_methods:
-        failures.append("canonical EuclidRuntime lacks v17 methods: " + ", ".join(missing_methods))
+        failures.append(
+            "canonical EuclidRuntime lacks v17 methods: " + ", ".join(missing_methods)
+        )
 
     runtime_text = runtime.read_text(encoding="utf-8")
     private_adaptive_json = "adaptive_knowledge.json" in runtime_text

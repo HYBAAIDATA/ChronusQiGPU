@@ -56,7 +56,7 @@ from typing import Any, Callable, Dict, List, Optional
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from lucas.algebra import ZPhi  # noqa: E402
+from kellogg.substrate import QPhi as ZPhi  # noqa: E402
 from toe.agreement import evaluator_agreement  # noqa: E402
 from toe.bridge import CAPABILITY_EVIDENCE, TOEBridge  # noqa: E402
 from toe.causal_ladder import (  # noqa: E402
@@ -828,7 +828,7 @@ def section_exact(h: Harness) -> Dict[str, Any]:
     )
     return {
         "float_phi": "(1 + math.sqrt(5)) / 2 -> NUMERICALLY VERIFIED",
-        "exact_phi": "lucas.algebra.ZPhi with Fraction coefficients -> EXACT",
+        "exact_phi": "kellogg.substrate.QPhi (Q(phi), Fraction coefficients) -> EXACT",
         "exact_Y": {"a": str(y.a), "b": str(y.b)},
         "float_vs_exact_max_abs_diff": worst,
         "tolerance": 1e-12,

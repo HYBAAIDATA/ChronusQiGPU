@@ -51,7 +51,7 @@ from pool_catalog import POOL_CATALOG, pool_names, pool_settings  # noqa: E402
 # operator policy, not an inferred benchmark ranking: capability probes prove
 # a lane can execute, but they do not prove it is faster than every other lane.
 _BACKEND_ORDER_TOKENS = frozenset(
-    {"cpu", "gpu", "opencl", "cuda", "metal", "remote", "remote_gpu", "asic", "super_asic", "chronus"}
+    {"cpu", "gpu", "opencl", "cuda", "metal", "remote", "remote_gpu", "asic", "super_asic", "chronus", "one_igpu"}
 )
 
 
@@ -79,6 +79,7 @@ def _endpoint(name: str, address: str, user: str, password: str, tls: bool) -> P
         username=user,
         password=password,
         extranonce_subscribe=bool(POOL_CATALOG.get(pool or "", {}).get("extranonce_subscribe")),
+        protocol=parsed.protocol,
     )
 
 
@@ -326,6 +327,7 @@ EXECUTION_DEVICES = (
     "asic",
     "super_asic",
     "chronus",
+    "one_igpu",
 )
 
 
@@ -544,6 +546,11 @@ async def _main_async(args) -> None:
                 causal_log_path=os.getenv("PYTHIA_CAUSAL_LOG_PATH", "data/causal_ledger.jsonl"),
                 m3_required=strict_m3,
                 m3_gate=m3_gate,
+                # Production compute and network submission are independent:
+                # locally verified candidates enter the coordinator's bounded,
+                # freshness-checked single-writer queue instead of parking the
+                # hashing loop on pool acknowledgement latency.
+                asynchronous_submission=True,
             )
             if coordinator.chain_observer is None:
                 coordinator.chain_observer = PoolChainObserver(lambda: coordinator.client)

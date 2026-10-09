@@ -256,7 +256,11 @@ from .layered_intelligence_substrate import (
     IntelligenceLayer,
     IntelligenceState,
 )
-from .nobel_fields_intelligence import (
+
+# Nobel/Fields intelligence is canonical in millennium/ (deterministic
+# probes, evidence-classed results). The older divergent copy here was
+# retired; the names are re-exported for API compatibility.
+from millennium.nobel_fields_intelligence import (
     MathematicalDomain,
     MathematicalInsight,
     NobelFieldsIntelligence,

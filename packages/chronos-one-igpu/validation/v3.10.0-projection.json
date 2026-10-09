@@ -1,0 +1,63 @@
+{
+  "full_contract": {
+    "schema": "pythi_projection_analysis_v1",
+    "domain": "finite_digest_coordinates",
+    "fold": "Q^index mod 2^half_bits",
+    "half_bits": 128,
+    "fold_index": 31,
+    "rung_bits": 8,
+    "projection": "1 + (folded_left mod 2^rung_bits)",
+    "domain_size": 115792089237316195423570985008687907853269984665640564039457584007913129639936,
+    "rung_count": 256,
+    "preimages_per_rung": 452312848583266388373324160190187140051835877600158453279131187530910662656,
+    "entropy_bits_retained": 8,
+    "entropy_bits_discarded": 248,
+    "surjective": true,
+    "balanced_for_uniform_digest": true,
+    "header_preimage_bound": null,
+    "uniform_headers_proven": false,
+    "cryptographic_collision_resistance_claimed": false,
+    "ideal_uniform_target_rung_expected_queries": 256,
+    "acceptance_identity": "full domain-separated header digest, policy and both folded coordinates; never rung alone",
+    "consensus_deployable": false
+  },
+  "exhaustive_reduced_domain": {
+    "classification": "EXHAUSTIVELY_TESTED_REDUCED_DOMAIN",
+    "contract": {
+      "schema": "pythi_projection_analysis_v1",
+      "domain": "finite_digest_coordinates",
+      "fold": "Q^index mod 2^half_bits",
+      "half_bits": 6,
+      "fold_index": 31,
+      "rung_bits": 3,
+      "projection": "1 + (folded_left mod 2^rung_bits)",
+      "domain_size": 4096,
+      "rung_count": 8,
+      "preimages_per_rung": 512,
+      "entropy_bits_retained": 3,
+      "entropy_bits_discarded": 9,
+      "surjective": true,
+      "balanced_for_uniform_digest": true,
+      "header_preimage_bound": null,
+      "uniform_headers_proven": false,
+      "cryptographic_collision_resistance_claimed": false,
+      "ideal_uniform_target_rung_expected_queries": 8,
+      "acceptance_identity": "full domain-separated header digest, policy and both folded coordinates; never rung alone",
+      "consensus_deployable": false
+    },
+    "digests_checked": 4096,
+    "per_rung_counts": {
+      "1": 512,
+      "2": 512,
+      "3": 512,
+      "4": 512,
+      "5": 512,
+      "6": 512,
+      "7": 512,
+      "8": 512
+    },
+    "fiber_roundtrip": true
+  },
+  "classification": "exact count plus constructive exhaustive reduced-domain execution",
+  "header_uniformity_assumption_proven": false
+}

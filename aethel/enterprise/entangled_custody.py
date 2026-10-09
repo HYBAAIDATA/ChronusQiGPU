@@ -177,6 +177,31 @@ class SystemDataPort:
     def record(self, binding_id: str) -> OperationalRecord:
         return self.fabric.record(binding_id, consumer=self.system)
 
+    def latest(self, kind: str) -> EntanglementBinding | None:
+        """Return the newest verified binding of ``kind`` owned by this system."""
+        name = str(kind).strip()
+        if not name:
+            raise ValueError("kind must be non-empty")
+        candidates = [
+            binding
+            for binding in self.fabric._bindings.values()
+            if binding.source_system == self.system
+            and binding.kind == name
+            and self.system in binding.participants
+        ]
+        if not candidates:
+            return None
+        latest = max(
+            candidates,
+            key=lambda binding: (binding.created_at, binding.binding_id),
+        )
+        verdict = self.fabric.verify(latest.binding_id)
+        if not verdict.get("passed"):
+            raise EntangledCustodyError(
+                f"latest binding {latest.binding_id} failed custody verification"
+            )
+        return latest
+
     def sink(
         self,
         kind: str,

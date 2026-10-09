@@ -3,6 +3,10 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from Intelligence._born import QUARTER_TURN, adjust_probability
+
+INV_PHI = 0.5 * (5**0.5 - 1.0)
+
 
 @dataclass
 class SelfModificationProposal:
@@ -48,12 +52,14 @@ class SelfReferentialImprover:
         trend = sum(recent) / len(recent)
 
         if trend < 0.001:
-            # Performance plateau — propose meta-controller adjustment
+            # Performance plateau — propose meta-controller adjustment.
+            # expected_improvement is honestly unmeasured (the proof
+            # search supplies the evidence, not a canned number).
             proposal = SelfModificationProposal(
                 target_component="meta_controller",
                 modification_type="parameter",
-                expected_improvement=0.02,
-                risk_assessment="low",
+                expected_improvement=0.0,
+                risk_assessment="unmeasured",
             )
             # Search for proof of benefit
             proof = self.proof_searcher.search(
@@ -75,7 +81,13 @@ class SelfReferentialImprover:
                 5, self.current_parameters["meta_controller_window"] - 5
             )
         elif proposal.target_component == "mutation_rate":
-            self.current_parameters["mutation_rate"] *= 1.5
+            # Rotate the rate qubit one declared golden step toward
+            # explore — a measured unitary step, not an invented 1.5x.
+            self.current_parameters["mutation_rate"] = adjust_probability(
+                self.current_parameters["mutation_rate"],
+                True,
+                QUARTER_TURN * INV_PHI,
+            )
 
         self.modification_history.append(proposal)
         return True

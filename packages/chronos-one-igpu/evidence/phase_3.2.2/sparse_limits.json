@@ -1,0 +1,4 @@
+{
+  "reason": "No dense allocation; explicit sparse batches require bounded address/prime policy.",
+  "tier_31_50_76": "PLANNER_ONLY"
+}

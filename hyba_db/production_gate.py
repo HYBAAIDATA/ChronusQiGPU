@@ -9,9 +9,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Mapping
 
+from .rebuild import projection_fingerprint, restore_projection_from_custody
 from .store import OntologyStore
 from .theseus_custody import TheseusFileCustody
 
@@ -24,6 +26,7 @@ def evaluate(
     integrity_key: bytes,
     custody_root: str | Path,
     custody_key: bytes,
+    producer_revalidators: Mapping[str, Callable[[Any], str | bool]] | None = None,
 ) -> dict[str, Any]:
     custody = TheseusFileCustody(custody_root, hmac_key=custody_key)
     with OntologyStore(db_path, integrity_key, custody=custody) as store:
@@ -42,11 +45,41 @@ def evaluate(
         ovid_index = store.ovid.verify(tenant_id)
         file_plane = store.files.verify_database(tenant_id)
         stats = store.files.stats(tenant_id)
-        custody_health = custody.open_tenant(tenant_id).health()
-        custody_replay = custody.open_tenant(tenant_id).verify_replay()
+        tenant_custody = custody.open_tenant(tenant_id)
+        custody_health = tenant_custody.health()
+        custody_replay = tenant_custody.verify_replay()
+        pending_revalidation = tenant_custody.pending_revalidation()
+        revalidation_errors: list[str] = []
+        if pending_revalidation and producer_revalidators:
+            for producer, record_ids in sorted(pending_revalidation.items()):
+                validator = producer_revalidators.get(producer)
+                if validator is None:
+                    continue
+                for record_id in list(record_ids):
+                    try:
+                        verdict = validator(tenant_custody.get_record(record_id))
+                        normalized = (
+                            "PASS" if verdict is True else str(verdict).strip().upper()
+                        )
+                        if normalized not in {"PASS", "OK", "VERIFIED"}:
+                            revalidation_errors.append(
+                                f"{producer}:{record_id}: verdict={normalized or 'EMPTY'}"
+                            )
+                            continue
+                        tenant_custody.semantic_revalidated(
+                            record_id,
+                            verdict=normalized,
+                            producer=producer,
+                        )
+                    except Exception as exc:
+                        revalidation_errors.append(
+                            f"{producer}:{record_id}: {type(exc).__name__}: {exc}"
+                        )
+            pending_revalidation = tenant_custody.pending_revalidation()
         tenant_manifest_id = f"tenant_projection.{tenant_id}"
         tenant_manifest_verified = custody.verify(tenant_id, tenant_manifest_id)
-        checks = {
+        baseline_fingerprint = projection_fingerprint(store, tenant_id)
+        base_checks = {
             "schema_v3": metadata.get("schema_version") == str(store.SCHEMA_VERSION),
             "sqlite_integrity": sqlite_integrity == "ok",
             "wal_enabled": journal_mode == "wal",
@@ -62,27 +95,87 @@ def evaluate(
             "custody_ready": bool(custody_health.get("ready")),
             "custody_not_degraded": not bool(custody_health.get("degraded")),
             "custody_replay_verified": bool(custody_replay.get("match")),
+            "producer_revalidation_complete": (
+                not bool(pending_revalidation) and not revalidation_errors
+            ),
         }
-        return {
-            "schema": "hyba.storage-database-production-gate/v1",
-            "tenant_id": tenant_id,
-            "passed": all(checks.values()),
-            "checks": checks,
+        base_report = {
             "database_errors": list(verification.errors),
             "knowledge_errors": list(knowledge.get("errors", ())),
             "ovid_index": ovid_index,
             "file_errors": list(file_plane.get("errors", ())),
             "custody_health": custody_health,
             "custody_replay": custody_replay,
+            "pending_producer_revalidation": pending_revalidation,
+            "producer_revalidation_errors": revalidation_errors,
             "stats": stats["tenants"].get(tenant_id, {}),
-            "claim_boundary": {
-                "live_pool": "UNAVAILABLE",
-                "physical_hardware": "UNAVAILABLE",
-                "fleet": "UNAVAILABLE",
-                "performance": "UNAVAILABLE",
-                "accepted_share": "UNAVAILABLE",
-            },
         }
+
+    rebuild_report: dict[str, Any]
+    rebuild_errors: list[str] = []
+    rebuilt_fingerprint: dict[str, Any] | None = None
+    try:
+        with tempfile.TemporaryDirectory(prefix="hyba-db-rebuild-gate-") as directory:
+            rebuilt_custody = TheseusFileCustody(custody_root, hmac_key=custody_key)
+            with OntologyStore(
+                Path(directory) / "ontology.db",
+                integrity_key,
+                custody=rebuilt_custody,
+            ) as rebuilt:
+                rebuild_report = restore_projection_from_custody(
+                    rebuilt,
+                    tenant_id,
+                    storage_root,
+                )
+                rebuilt_verification = rebuilt.verify_database(
+                    tenant_id,
+                    storage_roots={tenant_id: str(storage_root)},
+                )
+                rebuilt_fingerprint = projection_fingerprint(rebuilt, tenant_id)
+                if not rebuilt_verification.passed:
+                    rebuild_errors.extend(rebuilt_verification.errors)
+    except Exception as exc:
+        rebuild_report = {
+            "schema": "hyba.database-rebuild/v1",
+            "passed": False,
+            "error": f"{type(exc).__name__}: {exc}",
+        }
+        rebuild_errors.append(rebuild_report["error"])
+
+    destructive_match = (
+        bool(rebuild_report.get("passed"))
+        and rebuilt_fingerprint is not None
+        and rebuilt_fingerprint == baseline_fingerprint
+        and not rebuild_errors
+    )
+    checks = {
+        **base_checks,
+        "destructive_projection_rebuild": destructive_match,
+    }
+    return {
+        "schema": "hyba.storage-database-production-gate/v2",
+        "tenant_id": tenant_id,
+        "passed": all(checks.values()),
+        "checks": checks,
+        **base_report,
+        "destructive_rebuild": {
+            "passed": destructive_match,
+            "report": rebuild_report,
+            "errors": rebuild_errors,
+            "fingerprint_match": (
+                rebuilt_fingerprint == baseline_fingerprint
+                if rebuilt_fingerprint is not None
+                else False
+            ),
+        },
+        "claim_boundary": {
+            "live_pool": "UNAVAILABLE",
+            "physical_hardware": "UNAVAILABLE",
+            "fleet": "UNAVAILABLE",
+            "performance": "UNAVAILABLE",
+            "accepted_share": "UNAVAILABLE",
+        },
+    }
 
 
 def main(argv: list[str] | None = None) -> int:

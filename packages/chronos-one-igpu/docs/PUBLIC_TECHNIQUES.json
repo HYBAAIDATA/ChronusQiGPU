@@ -1,0 +1,45 @@
+{
+  "schema": "chronos_public_techniques_v1",
+  "sources": [
+    {
+      "organization": "NIST",
+      "url": "https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.180-4.pdf",
+      "technique": "SHA256 compression, padding and chaining state",
+      "code": "igpu/native/sha256d_native.c"
+    },
+    {
+      "organization": "NVIDIA",
+      "url": "https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html",
+      "technique": "Asynchronous scheduling with bounded completion boundaries",
+      "code": "igpu/asic_mining.py MiningFarm",
+      "scope": "Portable CPU queue implementation, not CUDA execution"
+    },
+    {
+      "organization": "OpenXLA",
+      "url": "https://openxla.org/xla/tf2xla",
+      "technique": "Fused stages avoiding intermediate materialisation",
+      "code": "igpu/native/sha256d_native.c scan_batch",
+      "scope": "Original SHA/target fusion implementation, not an XLA backend"
+    },
+    {
+      "organization": "AWS",
+      "url": "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs",
+      "technique": "Stable request identity and duplicate coalescing",
+      "code": "igpu/virtual_abi.py execute_once"
+    },
+    {
+      "organization": "Microsoft",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/retry",
+      "technique": "Retry safety after uncertain execution",
+      "code": "igpu/virtual_abi.py execute_once"
+    },
+    {
+      "organization": "Apple",
+      "url": "https://developer.apple.com/videos/play/wwdc2025/315/",
+      "technique": "Explicit materialisation and unified-memory framework binding",
+      "code": "igpu/apple.py",
+      "scope": "Existing optional v3.7 binding retained"
+    }
+  ],
+  "policy": "No partnership, endorsement, comprehensive research coverage or competitor dominance is inferred."
+}

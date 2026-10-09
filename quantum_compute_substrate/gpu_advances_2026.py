@@ -311,8 +311,12 @@ class FP4Precision:
 
     @staticmethod
     def throughput_multiplier() -> float:
-        """FP4 provides 2x throughput vs FP8, 4x vs FP16."""
-        return 200.0  # relative to FP64
+        """FP4-vs-FP64 throughput ratio from the architecture specification.
+
+        This is the 500 EFLOPS (FP4) / 2.5 EFLOPS (FP64) target ratio — a
+        specification projection, not a measured speedup on this hardware.
+        """
+        return 200.0  # architecture target ratio relative to FP64
 
 
 class SparseTensorCore:

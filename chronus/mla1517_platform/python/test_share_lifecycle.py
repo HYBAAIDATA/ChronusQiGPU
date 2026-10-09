@@ -51,6 +51,24 @@ def test_every_share_outcome_returns_to_searching(tmp_path, outcome):
     session.close()
 
 
+def test_unwritten_share_intent_rolls_back_without_poisoning_duplicate_guard(tmp_path):
+    session = MiningSession(tmp_path / "s.json")
+    header = _submit(session, 22)
+    digest_hex = digest(header)[::-1].hex()
+    session.submission_not_written()
+    assert session.state == "SEARCHING"
+    assert session.pending is None
+    assert session.share_log == []
+    assert not session.already_submitted(digest_hex)
+
+    # A transport-proven zero-write may be retried under a fresh identity
+    # check; the lifecycle itself does not mislabel it UNKNOWN.
+    _submit(session, 22)
+    session.submission_finished(False)
+    assert session.already_submitted(digest_hex)
+    session.close()
+
+
 def test_crash_mid_share_resolves_as_unknown_and_keeps_mining(tmp_path):
     path = tmp_path / "s.json"
     session = MiningSession(path)

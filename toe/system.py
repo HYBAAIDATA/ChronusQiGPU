@@ -41,14 +41,12 @@ try:
     from .hardened_unified_substrate import (
         CassiniVerifier,
         MODULUS_Q,
-        PHI,
         PSI,
     )
 except ImportError:
     from .hardened_unified_substrate import (
         CassiniVerifier,
         MODULUS_Q,
-        PHI,
         PSI,
     )
 
@@ -172,9 +170,7 @@ class TOESystem:
         self.provenance_ledger.append(record)
         return record
 
-    def unify_observation(
-        self, data: Any, *, graph: Any = None, goal: str | None = None
-    ):
+    def unify_observation(self, data: Any, *, graph: Any = None, goal: str | None = None):
         """Compile an observation through the Golden Unified Theory provider."""
         observation = self.golden_unified.compile(data, graph=graph, goal=goal)
         self.record_decision(
@@ -192,9 +188,7 @@ class TOESystem:
         )
         return observation
 
-    def collapse_claims(
-        self, claims, *, problem_type: str = "interventional"
-    ):
+    def collapse_claims(self, claims, *, problem_type: str = "interventional"):
         """Collapse only claims that agreement or declared authority justifies."""
         result = self.golden_unified.collapse(claims, problem_type=problem_type)
         self.record_decision(
@@ -257,19 +251,47 @@ class TOESystem:
         mask = candidate.zeckendorf_mask
         results["T5_zeckendorf_spacing"] = bool((mask & (mask << 1)) == 0)
 
-        # 6. Soliton Commutator: [H, Phi] == 0 (stationary state)
-        results["T6_soliton_commutator"] = True
+        # 6. Soliton Commutator: [H, N] == 0 (stationary state).
+        #    This used to be a hardcoded True. It is now a real
+        #    commutator check on the quantum substrate: the oscillator
+        #    Hamiltonian H = diag(n + 1/2) and the number operator
+        #    N = diag(n) must commute under the substrate's own
+        #    ComplexMatrix product. Failure to build or multiply the
+        #    operators fails the check rather than inventing a pass.
+        try:
+            from kellogg.quantum_tensor import Complex, ComplexMatrix
 
-        # 7. Holographic Entropy: S = Area / 4G > 0
-        entropy = float(bin(mask).count("1")) + 1.0
-        results["T7_holographic_entropy"] = bool(entropy > 0.0)
+            _d = 8
+            H = ComplexMatrix.diagonal([Complex(n + 0.5) for n in range(_d)])
+            N = ComplexMatrix.diagonal([Complex(n) for n in range(_d)])
+            comm = H.matmul(N).sub(N.matmul(H))
+            results["T6_soliton_commutator"] = bool(comm.frobenius_norm() < 1e-10)
+        except Exception:
+            results["T6_soliton_commutator"] = False
+
+        # 7. Representation consistency: the stored Zeckendorf mask must
+        #    equal a fresh encoding of the stored nonce. The previous
+        #    "entropy > 0" predicate could not fail; a mask that no
+        #    longer encodes its nonce (corruption, or a healed write
+        #    that went wrong) now does.
+        try:
+            from .hardened_unified_substrate import HardenedZeckendorfCodec
+
+            results["T7_holographic_entropy"] = bool(
+                mask == HardenedZeckendorfCodec.encode(candidate.nonce)
+            )
+        except Exception:
+            results["T7_holographic_entropy"] = False
 
         # 8. Structure Existence: Non-zero positive partition
         results["T8_structure_existence"] = bool(candidate.nonce > 0 or mask == 0)
 
-        # 9. P-vs-NP Gap: 2*phi^n > 0
-        gap = 2.0 * (PHI**n_anchor)
-        results["T9_p_vs_np_gap"] = bool(gap > 0.0)
+        # 9. Fibonacci-Lucas duality: F_{2n} = F_n * L_n, exact integers.
+        #    The previous "2*phi^n > 0" predicate could not fail; this
+        #    identity fails if either generator drifts from the golden
+        #    recursion.
+        f_2n = CassiniVerifier.fibonacci(2 * n_anchor)
+        results["T9_p_vs_np_gap"] = bool(f_2n == f_n * l_n)
 
         # 10. Yang-Mills mass gap on the finite gauge group 2I.
         # This used to be the predicate sqrt(5) > 0, which cannot fail.

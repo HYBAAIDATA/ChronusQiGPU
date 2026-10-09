@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/data/pr140-bounded/canonical-snapshot/scripts/import_audit.py", line 453, in <module>
+    from gate_impl import main as _gate_main
+ModuleNotFoundError: No module named 'gate_impl'

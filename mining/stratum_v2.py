@@ -625,7 +625,7 @@ class SubmitSharesSuccess:
     @classmethod
     def decode(cls, frame: Sv2Frame) -> "SubmitSharesSuccess":
         channel_id, data = _split_channel(frame)
-        if frame.message_type != MessageType.SUBMIT_SHARES_SUCCESS or len(data) != 20:
+        if frame.message_type != MessageType.SUBMIT_SHARES_SUCCESS or len(data) != 16:
             raise Sv2ProtocolError("invalid SubmitShares.Success")
         last, count, total = struct.unpack("<IIQ", data)
         return cls(channel_id, last, count, total)

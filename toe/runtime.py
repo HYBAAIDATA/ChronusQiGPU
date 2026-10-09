@@ -13,6 +13,15 @@ Every ``predict()`` / ``explain()`` / ``forecast()`` / ``causal()`` call flows
 through the same path: validate → encode → measure → evolve → compare →
 intervene → record → receipt → return.  Fail-closed on every boundary.
 
+``solve()`` / ``learn()`` route a domain-neutral :class:`toe.problem.Problem`
+through the reasoning core, :class:`toe.machine.TOEMachine` (represent →
+understand → futures → decide/plan → explain → govern, then outcome →
+revision → THESEUS persistence). The runtime remains the single composition
+root: it owns tenancy, receipts, the evidence chain and the mining boundary;
+the machine owns the reasoning cycle. Each tenant gets its own machine (and,
+when a ``custody_factory`` is supplied, its own THESEUS snapshot stream), so
+learning never crosses tenants.
+
 This module is deliberately framework-neutral: it has no HTTP, no async
 event loops, and no external ML dependencies.  It composes only components
 that already exist in this repository.  The CIaaS API layer
@@ -27,10 +36,12 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import math
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, Mapping, Optional
+from pathlib import Path
+from typing import Any, Mapping, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +51,7 @@ __all__ = [
     "RuntimeReceipt",
     "RuntimeResponse",
     "TOEIntelligenceRuntime",
+    "operation_tag",
     "DEFAULT_CONFIG",
 ]
 
@@ -109,6 +121,7 @@ class TOEIntelligenceRuntimeConfig:
     enable_asi: bool = True
     enable_platform: bool = False  # requires connector credentials
     production_ready: bool = False  # always false until gates A–H pass
+    feedback_state_path: Optional[str] = None  # durable learned-state handoff
 
     def __post_init__(self) -> None:
         if self.hilbert_dim < 2:
@@ -159,7 +172,12 @@ class RuntimeResponse:
     result: Optional[dict[str, Any]] = None
     error: Optional[RuntimeErrorInfo] = None
     degraded: bool = False  # true when optional wiring is absent
+    decision_id: Optional[str] = None  # correlates an outcome back to the decision
     timestamp: float = field(default_factory=time.time)
+    # Id under which this decision was recorded (feedback core for
+    # predict-style calls, episode digest for ``solve``); pass it back to
+    # ``record_outcome`` / ``learn`` to close the loop.
+    decision_id: Optional[str] = None
 
     def as_dict(self) -> dict[str, Any]:
         d = {
@@ -169,12 +187,16 @@ class RuntimeResponse:
             "timestamp": self.timestamp,
             "degraded": self.degraded,
         }
+        if self.decision_id:
+            d["decision_id"] = self.decision_id
         if self.receipt:
             d["receipt"] = self.receipt.as_dict()
         if self.result:
             d["result"] = self.result
         if self.error:
             d["error"] = self.error.as_dict()
+        if self.decision_id:
+            d["decision_id"] = self.decision_id
         return d
 
 
@@ -228,9 +250,13 @@ class TOEIntelligenceRuntime:
         evidence_chain: Any = None,
         asi: Any = None,
         platform: Any = None,
+        custody_factory: Any = None,
     ) -> None:
         self.config = config or TOEIntelligenceRuntimeConfig()
         self._degraded: list[str] = []
+        # tenant_id -> THESEUS custody for that tenant's reasoning state.
+        self._custody_factory = custody_factory
+        self._machines: dict[str, Any] = {}
 
         # --- inner loop ----------------------------------------------------
         if bridge is not None:
@@ -262,6 +288,31 @@ class TOEIntelligenceRuntime:
                 self._degraded.append(f"feedback_core: {exc}")
         else:
             self.feedback_core = None
+            self._degraded.append("feedback_core: disabled by configuration")
+
+        # --- learned-state handoff (persistence → restart → replay) -------
+        self._feedback_state_path = (
+            Path(self.config.feedback_state_path)
+            if self.config.feedback_state_path
+            else None
+        )
+        self._durability_failed = False
+        if self.feedback_core is not None and self._feedback_state_path is not None:
+            if self._feedback_state_path.is_file():
+                try:
+                    state = json.loads(
+                        self._feedback_state_path.read_text(encoding="utf-8")
+                    )
+                    report = self.feedback_core.restore(state)
+                    self._feedback_restored = report
+                except Exception as exc:
+                    self._feedback_restored = None
+                    self._degraded.append(f"feedback_state_restore: {exc}")
+                    self._durability_failed = True
+            else:
+                self._feedback_restored = None
+        else:
+            self._feedback_restored = None
 
         # --- governance loop ----------------------------------------------
         if evidence_chain is not None:
@@ -276,6 +327,7 @@ class TOEIntelligenceRuntime:
                 self._degraded.append(f"evidence_chain: {exc}")
         else:
             self.evidence_chain = None
+            self._degraded.append("evidence_chain: disabled by configuration")
 
         # --- outer loop (observe-only) ------------------------------------
         if asi is not None:
@@ -290,6 +342,7 @@ class TOEIntelligenceRuntime:
                 self._degraded.append(f"asi_core: {exc}")
         else:
             self.asi = None
+            self._degraded.append("asi_core: disabled by configuration")
 
         # --- delivery loop (optional) --------------------------------------
         if platform is not None:
@@ -304,8 +357,24 @@ class TOEIntelligenceRuntime:
                 self._degraded.append(f"platform: {exc}")
         else:
             self.platform = None
+            self._degraded.append("platform: disabled by configuration")
 
         self._tenant_decisions: dict[str, list[str]] = {}
+
+        # Any absent component of the claimed loop marks the runtime
+        # degraded — disabled optional wiring is still reduced capability,
+        # not a full-voyage posture. Reasons already recorded with exception
+        # detail are not duplicated.
+        for _name, _component in (
+            ("feedback_core", self.feedback_core),
+            ("evidence_chain", self.evidence_chain),
+            ("asi_core", self.asi),
+            ("platform", self.platform),
+        ):
+            if _component is None and not any(
+                r.startswith(f"{_name}:") for r in self._degraded
+            ):
+                self._degraded.append(f"{_name}: unavailable")
 
         mode = "full" if not self._degraded else "degraded"
         logger.info(
@@ -421,26 +490,113 @@ class TOEIntelligenceRuntime:
             production_ready=self.config.production_ready,
         )
 
+    def _apply_learned_policy(
+        self, result: dict[str, Any], operation: str
+    ) -> dict[str, Any]:
+        """Apply the middle loop's learned attribution to the decision surface.
+
+        ``model_parameters`` maps engine-module names to attribution-derived
+        weights updated by ``record_outcome``.  A module whose learned weight
+        is negative is excluded from the delivered decision payload — this is
+        the bounded, explicit link that makes later decisions differ because
+        of retained learning (the voyage's final leg).  Excluded payloads are
+        preserved verbatim under ``learned_exclusions``; the recorded decision
+        (and therefore future attribution) sees the post-policy surface, so
+        excluded modules stop accumulating attribution.
+        """
+        if self.feedback_core is None or not isinstance(result, dict):
+            return result
+        if not hasattr(self.feedback_core, "identify_underperforming_modules"):
+            # Injected cores implementing the minimal (record_decision,
+            # process) contract have no learning surface — the policy is
+            # declared unsupported, not silently skipped.
+            result.setdefault(
+                "learned_policy",
+                {"applied": False, "reason": "feedback core lacks learning surface"},
+            )
+            return result
+        underperforming = set(self.feedback_core.identify_underperforming_modules())
+        if not underperforming:
+            return result
+        excluded = {
+            key: result.pop(key)
+            for key in list(result)
+            if key in underperforming
+        }
+        if excluded:
+            result["learned_exclusions"] = excluded
+            remaining = [
+                key
+                for key, value in result.items()
+                if isinstance(value, dict)
+                and key not in ("learned_exclusions", "learned_policy")
+            ]
+            result["learned_policy"] = {
+                "applied": True,
+                "excluded_modules": sorted(excluded),
+                "basis": "attribution model_parameters < 0",
+                # Every engine module was excluded — the delivered surface
+                # carries no module output; callers see this as degraded.
+                "empty_surface": not remaining,
+            }
+        return result
+
     def _record_decision(
         self,
         tenant: TenantContext,
-        decision_id: str,
+        operation: str,
         result: dict[str, Any],
-        confidence: float,
-    ) -> None:
-        """Record decision in the feedback core and evidence chain."""
+        confidence: Optional[float],
+    ) -> Optional[str]:
+        """Record decision in the feedback core and evidence chain.
+
+        Returns the decision id the feedback core assigned, or ``None`` when
+        the record could not be stored — the caller may then surface a
+        decision_id only when it genuinely correlates to a stored decision.
+
+        ``confidence`` is ``None`` when the engine reported none — recorded as
+        such, never replaced by an invented value.  ``module_outputs`` carries
+        the operation's own engine output so causal attribution sees the real
+        contributors (state tomography, factor ranking, trajectory, ladder),
+        not a predict-only slice that silently empties for other operations.
+        """
+        # Policy metadata keys are not engine modules — attribution must see
+        # only the real contributors the engine produced.
+        module_outputs = {
+            key: value
+            for key, value in result.items()
+            if isinstance(value, dict)
+            and key not in ("learned_exclusions", "learned_policy")
+        }
+        # Learned exclusion gates the DELIVERED surface, not the learning
+        # signal: excluded modules still enter attribution so a measured good
+        # outcome can lift their weight back across the exclusion boundary —
+        # exclusion is a policy decision, not a permanent exile.
+        exclusions = result.get("learned_exclusions")
+        if isinstance(exclusions, dict):
+            module_outputs.update(exclusions)
+        if not module_outputs:
+            module_outputs = {"result": result}
+        decision_id: Optional[str] = None
         if self.feedback_core is not None:
             try:
-                self.feedback_core.record_decision(
-                    decision=operation_tag(result),
-                    confidence=float(confidence),
-                    module_outputs=result.get("state_tomography", {}),
-                    context={"tenant": tenant.tenant_id, "mode": tenant.mode},
+                # Value-bearing decision when the engine reported a numeric
+                # confidence — a string tag gives attribution a zero baseline
+                # utility and perversely credits low-scoring modules on failed
+                # outcomes. Fall back to the tag only when no score exists.
+                decision_id = self.feedback_core.record_decision(
+                    decision=confidence if isinstance(confidence, (int, float)) else operation_tag(result),
+                    confidence=confidence,
+                    module_outputs=module_outputs,
+                    context={
+                        "tenant": tenant.tenant_id,
+                        "mode": tenant.mode,
+                        "operation": operation,
+                        "confidence_reported": confidence is not None,
+                    },
                     source_id=tenant.tenant_id,
                 )
-                self._tenant_decisions.setdefault(tenant.tenant_id, []).append(
-                    decision_id
-                )
+                self._tenant_decisions.setdefault(tenant.tenant_id, []).append(decision_id)
             except Exception as exc:
                 logger.warning("[TOE-RUNTIME] feedback record failed: %s", exc)
 
@@ -450,13 +606,16 @@ class TOEIntelligenceRuntime:
                     "toe-prediction",
                     {
                         "tenant": tenant.tenant_id,
-                        "operation": "predict",
+                        "operation": operation,
+                        "decision_id": decision_id,
                         "confidence": confidence,
+                        "confidence_reported": confidence is not None,
                         "timestamp": time.time(),
                     },
                 )
             except Exception as exc:
                 logger.warning("[TOE-RUNTIME] evidence append failed: %s", exc)
+        return decision_id
 
     # -- public API -------------------------------------------------------
 
@@ -545,12 +704,95 @@ class TOEIntelligenceRuntime:
                 ),
                 degraded=True,
             )
+        # A configured durable handoff requires a snapshot-capable core;
+        # an injected minimal-contract core cannot honour it — fail closed
+        # rather than crash on AttributeError mid-transaction.
+        if self._feedback_state_path is not None and not hasattr(
+            self.feedback_core, "snapshot"
+        ):
+            return RuntimeResponse(
+                ok=False,
+                tenant_id=tenant.tenant_id,
+                operation="record_outcome",
+                error=RuntimeErrorInfo(
+                    code="persistence_unsupported",
+                    message=(
+                        "feedback_state_path is configured but the injected "
+                        "feedback core has no snapshot(); the durable handoff "
+                        "cannot be honoured"
+                    ),
+                ),
+                degraded=True,
+            )
+        # Transactional durability: snapshot before processing so a failed
+        # durable write can roll the in-memory aggregate back to the last
+        # persisted state — memory never diverges from disk, and the decision
+        # is left unprocessed so the caller can retry after remediation.
+        pre_state = (
+            self.feedback_core.snapshot()
+            if self._feedback_state_path is not None
+            else None
+        )
         try:
             report = self.feedback_core.process(
                 decision_id=decision_id,
                 outcome=outcome,
                 source_id=tenant.tenant_id,
             )
+            persist_error = self._persist_feedback_state()
+            if persist_error is not None:
+                # Configured durability failed: fail closed — the voyage's
+                # persistence handoff did not happen, so reporting ok=True
+                # with a MEASURED receipt would be a false-green.
+                if pre_state is not None:
+                    try:
+                        self.feedback_core.rollback_outcome(
+                            decision_id, pre_state
+                        )
+                    except Exception as rollback_exc:
+                        logger.error(
+                            "[TOE-RUNTIME] outcome rollback failed: %s",
+                            rollback_exc,
+                        )
+                self._durability_failed = True
+                reason = f"feedback_state_persist: {persist_error}"
+                if reason not in self._degraded:
+                    self._degraded.append(reason)
+                if self.evidence_chain is not None:
+                    self.evidence_chain.append(
+                        "feedback-outcome-durability-failed",
+                        {
+                            "tenant": tenant.tenant_id,
+                            "decision_id": decision_id,
+                            "error": persist_error,
+                            "timestamp": time.time(),
+                        },
+                    )
+                return RuntimeResponse(
+                    ok=False,
+                    tenant_id=tenant.tenant_id,
+                    operation="record_outcome",
+                    error=RuntimeErrorInfo(
+                        code="persistence_failed",
+                        message=(
+                            "Outcome was not durably recorded; the learned "
+                            "update was rolled back and the decision remains "
+                            f"unclosed (retry after remediation): {persist_error}"
+                        ),
+                    ),
+                    degraded=True,
+                )
+            if self._feedback_state_path is not None:
+                # A successful write repairs the durability leg: clear the
+                # fault flag and stale persist/restore degradation reasons.
+                self._durability_failed = False
+                self._degraded = [
+                    r
+                    for r in self._degraded
+                    if not r.startswith(
+                        ("feedback_state_persist:", "feedback_state_restore:")
+                    )
+                ]
             if self.evidence_chain is not None:
                 self.evidence_chain.append(
                     "feedback-outcome",
@@ -597,6 +839,27 @@ class TOEIntelligenceRuntime:
                 ),
             )
 
+    def _persist_feedback_state(self) -> Optional[str]:
+        """Atomic durable write of learned state after each closed outcome.
+
+        Returns ``None`` on success (or when durability is unconfigured),
+        otherwise the failure reason — callers fail closed on it.
+        """
+        if self._feedback_state_path is None or self.feedback_core is None:
+            return None
+        try:
+            self._feedback_state_path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self._feedback_state_path.with_suffix(".tmp")
+            tmp.write_text(
+                json.dumps(self.feedback_core.snapshot(), sort_keys=True),
+                encoding="utf-8",
+            )
+            tmp.replace(self._feedback_state_path)
+            return None
+        except Exception as exc:
+            logger.warning("[TOE-RUNTIME] feedback state persist failed: %s", exc)
+            return str(exc)
+
     # -- health / readiness -----------------------------------------------
 
     def health(self) -> dict[str, Any]:
@@ -618,25 +881,74 @@ class TOEIntelligenceRuntime:
         else:
             asi_report = {"available": False, "reason": "ASI disabled"}
 
+        # Learned state is a decision input, not decoration: modules the
+        # outcome loop learned were negative contributors surface as
+        # underperforming on the health report, and mark the runtime degraded
+        # so downstream consumers can see learned evidence changed posture.
+        # Learning surface is optional on injected feedback cores: the
+        # documented contract is (record_decision, process); cores with no
+        # attribution methods report an unsupported surface, not an error.
+        learned_surface_supported = self.feedback_core is not None and hasattr(
+            self.feedback_core, "identify_underperforming_modules"
+        )
+        learned_performance: dict[str, float] = {}
+        underperforming: list[str] = []
+        if learned_surface_supported:
+            get_perf = getattr(self.feedback_core, "get_module_performance", None)
+            if callable(get_perf):
+                learned_performance = get_perf()
+            underperforming = self.feedback_core.identify_underperforming_modules()
+        learned_degraded = bool(underperforming)
+        # Learned underperformance is transient — reasons are computed fresh
+        # per health call and never enter the permanent _degraded list, so a
+        # recovered module clears both the flag and its reason.
+        learned_reasons = [
+            f"learned: module {name} underperforming" for name in underperforming
+        ]
+
         return {
             "engine_available": engine_ok,
             "engine_status": engine_status,
             "feedback_available": self.feedback_core is not None,
+            "learned_surface_supported": learned_surface_supported,
             "evidence_available": self.evidence_chain is not None,
             "asi_report": asi_report,
             "platform_available": self.platform is not None,
-            "degraded": self.degraded,
-            "degradation_reasons": self.degradation_reasons,
+            "degraded": self.degraded or learned_degraded,
+            "degradation_reasons": self.degradation_reasons + learned_reasons,
+            "learned_module_performance": learned_performance,
+            "underperforming_modules": underperforming,
+            "feedback_state": {
+                "path": str(self._feedback_state_path)
+                if self._feedback_state_path
+                else None,
+                "restored": self._feedback_restored,
+            },
             "production_ready": self.config.production_ready,
             "timestamp": time.time(),
         }
 
     def ready(self) -> bool:
-        """True when the engine is available and no critical degradation."""
+        """True when every loop this composition root requires is up.
+
+        Required for the claimed production voyage: the TOE bridge (inner
+        loop), the feedback core when ``enable_feedback`` is configured
+        (middle loop — the outcome leg is part of the voyage), the evidence
+        chain when ``enable_evidence`` is configured (governance loop), and
+        a healthy durability leg when ``feedback_state_path`` is configured
+        (persistence → restart → replay).  Observe-only planes (ASI hooks,
+        delivery platform) degrade ``health()`` but do not gate readiness.
+        """
         try:
             if not self.bridge.available():
                 return False
         except Exception:
+            return False
+        if self.config.enable_feedback and self.feedback_core is None:
+            return False
+        if self.config.enable_evidence and self.evidence_chain is None:
+            return False
+        if self._feedback_state_path is not None and self._durability_failed:
             return False
         return True
 
@@ -691,7 +1003,11 @@ class TOEIntelligenceRuntime:
                 result = result.as_dict() if hasattr(result, "as_dict") else result
             elif operation == "causal":
                 causal_result = self.bridge.explain_causality(payload)
-                result = causal_result.as_dict() if hasattr(result, "as_dict") else causal_result
+                result = (
+                    causal_result.as_dict()
+                    if hasattr(causal_result, "as_dict")
+                    else causal_result
+                )
                 # Add the causal ladder if available
                 try:
                     ladder = self.bridge.causal_ladder(payload)
@@ -724,38 +1040,230 @@ class TOEIntelligenceRuntime:
                 str(exc),
             )
 
-        # 7. Extract confidence
-        confidence = 0.5
+        # 6.5 Learned policy — bounded explicit influence of retained
+        # learning on the decision surface.  The middle loop's attribution
+        # weights (model_parameters) mark modules whose contribution
+        # historically tracked bad outcomes; a module with a negative learned
+        # weight is excluded from the delivered payload (and preserved under
+        # learned_exclusions for audit).  Identical input therefore changes
+        # only when retained learning identifies a net-negative contributor.
+        result = self._apply_learned_policy(result, operation)
+
+        # 7. Extract confidence — None when the engine did not report one.
+        # An absent confidence is recorded as absent; it is not replaced by a
+        # fabricated midpoint (which would poison calibration as if the engine
+        # had actually claimed 50% certainty).
+        confidence: Optional[float] = None
         if isinstance(result, dict):
             conf = result.get("confidence")
-            if isinstance(conf, (int, float)):
-                confidence = float(conf)
+            if isinstance(conf, (int, float)) and math.isfinite(float(conf)):
+                conf_f = float(conf)
+                if 0.0 <= conf_f <= 1.0:
+                    confidence = conf_f
+                else:
+                    # An out-of-range claim is not a usable confidence: record
+                    # it as absent rather than clamping a fabricated 0/1
+                    # certainty into the calibration series.
+                    logger.warning(
+                        "[TOE-RUNTIME] engine reported out-of-range confidence %r; "
+                        "recording confidence as absent",
+                        conf_f,
+                    )
 
         # 8. Build receipt
         receipt = self._build_receipt(tenant, operation, payload, result)
 
-        # 9. Record in feedback + evidence
-        decision_id = str(uuid.uuid4())
-        self._record_decision(tenant, decision_id, result, confidence)
+        # 9. Record in feedback + evidence — the surfaced decision_id is the
+        # one the feedback core stored, so record_outcome can find it.
+        decision_id = self._record_decision(tenant, operation, result, confidence)
 
-        # 10. ASI observe-only health hint (never acts)
-        asi_hint: dict[str, Any] = {}
-        if self.asi is not None:
+        # 10. ASI observe-only health hint (never acts) — surfaced on the
+        # result payload rather than probed-and-dropped.
+        if self.asi is not None and isinstance(result, dict):
             try:
-                asi_hint = {"capability_report": self.asi.capability_report()}
+                report = self.asi.capability_report()
+                # The hint rides the response envelope — it must stay
+                # JSON-serialisable or the whole result fails to encode.
+                json.dumps(report)
+                result["asi_health_hint"] = {"capability_report": report}
             except Exception as exc:
-                asi_hint = {"error": str(exc)}
+                result["asi_health_hint"] = {"error": str(exc)}
                 logger.warning("[TOE-RUNTIME] ASI probe failed: %s", exc)
 
-        # 11. Return response
+        # 11. Return response — the caller needs decision_id to correlate a
+        # later record_outcome back to this decision (the voyage's feedback
+        # step is unreachable otherwise).
+        learned_policy = (
+            result.get("learned_policy")
+            if isinstance(result, dict)
+            else None
+        )
+        surface_degraded = bool(
+            isinstance(learned_policy, dict)
+            and learned_policy.get("empty_surface")
+        )
         return RuntimeResponse(
             ok=True,
             tenant_id=tenant.tenant_id,
             operation=operation,
             receipt=receipt,
             result=result,
-            degraded=self.degraded,
+            degraded=self.degraded or surface_degraded,
+            decision_id=decision_id,
             timestamp=time.time(),
+        )
+
+    # -- reasoning core (TOEMachine) ---------------------------------------
+
+    def machine_for(self, tenant: TenantContext) -> Any:
+        """The tenant's reasoning core; created (and recovered) on first use."""
+        machine = self._machines.get(tenant.tenant_id)
+        if machine is None:
+            from toe.machine import TOEMachine
+
+            custody = self._custody_factory(tenant.tenant_id) if self._custody_factory else None
+            machine = TOEMachine(
+                custody=custody,
+                stream=f"tenant-{tenant.tenant_id}",
+                bridge=self.bridge,
+            )
+            self._machines[tenant.tenant_id] = machine
+        return machine
+
+    def _mining_problem_violation(self, problem: Any, tenant: TenantContext) -> Optional[str]:
+        """In mining mode no decision variable may be a consensus field."""
+        if tenant.mode != "mining":
+            return None
+        names = set(problem.state)
+        if problem.structure is not None:
+            names |= set(problem.structure.all_nodes())
+        names |= {op.node for op in problem.operators}
+        bad = sorted(n for n in names if str(n).lower() in _MINING_CONSENSUS_VOCABULARY)
+        if bad:
+            return f"consensus field(s) {bad} used as TOE decision variables in mining mode"
+        return None
+
+    def solve(
+        self,
+        problem: Any,
+        tenant: TenantContext,
+        *,
+        domain: Optional[str] = None,
+    ) -> RuntimeResponse:
+        """Run one domain-neutral problem through the reasoning core.
+
+        ``problem`` is a :class:`toe.problem.Problem`, or its JSON content
+        (``Problem.content()``) together with ``domain``. The response
+        carries the evidence-bearing episode; ``learn`` closes its loop.
+        """
+        operation = "solve"
+        try:
+            self._validate_tenant(tenant)
+        except (TypeError, ValueError) as exc:
+            return self._error(tenant, operation, "invalid_tenant", str(exc))
+        from toe.machine import problem_from_content
+        from toe.problem import Problem
+
+        try:
+            if not isinstance(problem, Problem):
+                if not isinstance(problem, Mapping) or not domain:
+                    raise ValueError("solve needs a Problem, or problem content plus a domain")
+                self._validate_payload_size(problem)
+                problem = problem_from_content(str(domain), problem)
+        except (KeyError, TypeError, ValueError) as exc:
+            return self._error(tenant, operation, "payload_invalid", str(exc))
+        violation = self._mining_problem_violation(problem, tenant)
+        if violation:
+            return self._error(tenant, operation, "consensus_boundary_violation", violation)
+        try:
+            episode = self.machine_for(tenant).run(problem)
+        except Exception as exc:
+            logger.error("[TOE-RUNTIME] solve failed: %s", exc)
+            return self._error(tenant, operation, "execution_error", str(exc))
+        try:
+            self._check_mining_boundary({"recommendation": episode.get("recommendation")}, tenant)
+        except _MiningConsensusBoundaryError as exc:
+            return self._error(tenant, operation, "consensus_boundary_violation", str(exc))
+        if self.evidence_chain is not None:
+            try:
+                self.evidence_chain.append(
+                    "toe-solve",
+                    {
+                        "tenant": tenant.tenant_id,
+                        "episode_sha256": episode.get("episode_sha256"),
+                        "status": episode.get("status"),
+                        "namespace": episode["identity"]["namespace"],
+                        "timestamp": time.time(),
+                    },
+                )
+            except Exception as exc:
+                logger.warning("[TOE-RUNTIME] evidence append failed: %s", exc)
+        receipt = RuntimeReceipt(
+            receipt_id=str(uuid.uuid4()),
+            tenant_id=tenant.tenant_id,
+            operation=operation,
+            payload_digest=problem.digest(),
+            result_digest=str(episode.get("episode_sha256")),
+            timestamp=time.time(),
+            evidence_source="toe.machine.TOEMachine",
+            evidence_status="MEASURED",
+            observe_only=True,
+            production_ready=self.config.production_ready,
+        )
+        return RuntimeResponse(
+            ok=True,
+            tenant_id=tenant.tenant_id,
+            operation=operation,
+            receipt=receipt,
+            result=episode,
+            degraded=self.degraded,
+            decision_id=episode.get("episode_sha256"),
+        )
+
+    def learn(
+        self,
+        episode_sha256: str,
+        observed: Any,
+        tenant: TenantContext,
+    ) -> RuntimeResponse:
+        """Bind an observed outcome to one of this tenant's episodes and learn."""
+        operation = "learn"
+        try:
+            self._validate_tenant(tenant)
+        except (TypeError, ValueError) as exc:
+            return self._error(tenant, operation, "invalid_tenant", str(exc))
+        machine = self.machine_for(tenant)
+        episode = machine.episode_record(episode_sha256)
+        if episode is None:
+            return self._error(
+                tenant, operation, "unknown_episode", "episode was not solved for this tenant"
+            )
+        try:
+            report = machine.learn(episode, observed)
+        except Exception as exc:
+            logger.error("[TOE-RUNTIME] learn failed: %s", exc)
+            return self._error(tenant, operation, "learning_error", str(exc))
+        if self.evidence_chain is not None:
+            try:
+                self.evidence_chain.append(
+                    "toe-learn",
+                    {
+                        "tenant": tenant.tenant_id,
+                        "episode_sha256": episode_sha256,
+                        "status": (report.get("assessment") or {}).get("status"),
+                        "revised": report.get("revision") is not None,
+                        "timestamp": time.time(),
+                    },
+                )
+            except Exception as exc:
+                logger.warning("[TOE-RUNTIME] evidence append failed: %s", exc)
+        return RuntimeResponse(
+            ok=bool(report.get("learned")),
+            tenant_id=tenant.tenant_id,
+            operation=operation,
+            result=report,
+            degraded=self.degraded,
+            decision_id=episode_sha256,
         )
 
     def _error(

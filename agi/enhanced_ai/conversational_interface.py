@@ -513,16 +513,11 @@ class EnhancedConversationalInterface:
     ) -> Dict[str, float]:
         """Calculate response quality metrics"""
         try:
-            # Calculate confidence based on multiple factors
-            base_confidence = utterance.confidence
-            knowledge_confidence = 0.8  # Default if no knowledge used
-            computational_confidence = 0.9  # Default if computation used
-
-            # Adjust based on strategy
-            if strategy["requires_computation"]:
-                confidence = (base_confidence + computational_confidence) / 2
-            else:
-                confidence = (base_confidence + knowledge_confidence) / 2
+            # Confidence is the measured NLP-parse confidence only; there is
+            # no validated model for "knowledge" or "computation" quality on
+            # this substrate, so those were removed rather than averaged in
+            # as invented constants.
+            confidence = utterance.confidence
 
             # Calculate phi resonance score
             phi_score = self.phi_scorer.score(
@@ -549,7 +544,12 @@ class EnhancedConversationalInterface:
 
         except Exception as e:
             logger.error(f"Response metrics calculation failed: {e}")
-            return {"confidence": 0.5, "phi_resonance": 0.5, "knowledge_used": []}
+            return {
+                "confidence": None,
+                "phi_resonance": None,
+                "knowledge_used": [],
+                "confidence_basis": "unassessable_metrics_error",
+            }
 
     async def _enhance_mathematical_response(self, response: str, utterance: NLPUtterance) -> str:
         """Enhance response for mathematical queries"""

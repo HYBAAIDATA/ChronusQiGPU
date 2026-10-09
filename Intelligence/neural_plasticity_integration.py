@@ -14,6 +14,7 @@ from __future__ import annotations
 from typing import Any, Dict
 
 from .neural_plasticity import NeuralPlasticity
+from Intelligence._born import born_evidence
 
 try:
     from .unified_punch import UnifiedPhiRuntime, MTheoryManifold
@@ -106,15 +107,16 @@ class PlasticUnifiedRuntime:
         return result
 
     def _compute_reward(self, result: Dict[str, Any]) -> float:
+        """Reward = Born evidence over measured provenance checks —
+        the invented +1.0/+0.5/+0.3 additive weights are gone."""
         prov = result.get("provenance", {})
-        reward = 0.0
-        if prov.get("is_real_qpu"):
-            reward += 1.0
-        if prov.get("quantum_claim") == "REAL_QUANTUM":
-            reward += 0.5
-        if result.get("classical"):
-            reward += 0.3
-        return reward
+        checks = [
+            bool(prov.get("is_real_qpu")),
+            prov.get("quantum_claim") == "REAL_QUANTUM",
+            bool(result.get("classical")),
+        ]
+        passed = sum(1 for c in checks if c)
+        return born_evidence(passed, len(checks) - passed)
 
     def mature_cycle(self):
         self.plasticity.mature(factor=0.95)

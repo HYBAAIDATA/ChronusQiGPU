@@ -12,6 +12,7 @@ Substrate route: mining
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 import time
@@ -327,14 +328,11 @@ class UnifiedPunchHost:
                 ]
                 if not matched:
                     raise RuntimeError(
-                        f"pinned OpenCL device {pin!r} did not match any "
-                        "enumerated device"
+                        f"pinned OpenCL device {pin!r} did not match any " "enumerated device"
                     )
                 return matched[0]
             if pin not in devices:
-                raise RuntimeError(
-                    "pinned OpenCL device handle is not enumerated on this host"
-                )
+                raise RuntimeError("pinned OpenCL device handle is not enumerated on this host")
             return pin
         if require_hyba:
             for dev in devices:
@@ -393,9 +391,7 @@ class UnifiedPunchHost:
         try:
             self._zero_copy_attested = bool(
                 device.get_info(cl.device_info.HOST_UNIFIED_MEMORY)
-            ) or bool(
-                int(device.get_info(cl.device_info.SVM_CAPABILITIES) or 0) & 0x3
-            )
+            ) or bool(int(device.get_info(cl.device_info.SVM_CAPABILITIES) or 0) & 0x3)
         except Exception:
             self._zero_copy_attested = False
         self.device_info["zero_copy_attested"] = self._zero_copy_attested
@@ -528,18 +524,47 @@ class UnifiedPunchHost:
         used by the GPU/CPU parity test).
         """
         total = N * len(self.PUNCH_IDS)
-        rng = np.random.default_rng(seed)
-
+        # Deterministic SHA-256 work-item stream — identical on CPU and
+        # GPU for a given seed, so the backend parity test compares the
+        # kernels, not the draw.
+        key = "unified-punch" if seed is None else f"unified-punch:{seed}"
+        need = total * 8 * max(DIM, 1) * 2 + total * 20
+        raw = bytearray()
+        counter = 0
+        while len(raw) < need:
+            raw += hashlib.sha256(f"{key}:{counter}".encode()).digest()
+            counter += 1
+        raw = bytes(raw)
+        u64 = np.frombuffer(raw, dtype=np.dtype("<u8")).astype(np.float64) / float(1 << 64)
+        u1 = u64[: total * DIM]
+        u2 = u64[total * DIM : 2 * total * DIM]
         punch_ids = np.zeros(total, dtype=np.uint32)
         idx = 0
         for pid in self.PUNCH_IDS.values():
             punch_ids[idx : idx + N] = pid
             idx += N
 
-        in_float = rng.standard_normal(total * DIM).astype(np.float32)
-        in_ulong = rng.integers(1, 1000, total).astype(np.uint64)
-        in_int = rng.integers(0, 1024, total).astype(np.uint32)
-        in_double = rng.random(total).astype(np.float64)
+        # Box-Muller on the hashed unit stream gives standard-normal
+        # work items — deterministic, same distribution class as before.
+        in_float = (
+            np.sqrt(-2.0 * np.log(np.clip(u1, 1e-12, 1.0))) * np.cos(2.0 * np.pi * u2)
+        ).astype(np.float32)
+        in_ulong = (
+            np.frombuffer(
+                raw[16 * total * DIM : 16 * total * DIM + 8 * total],
+                dtype=np.dtype("<u8"),
+            )
+            % 999
+            + 1
+        ).astype(np.uint64)
+        in_int = (
+            np.frombuffer(
+                raw[16 * total * DIM + 16 * total : 16 * total * DIM + 20 * total],
+                dtype=np.dtype("<u4"),
+            )
+            % 1024
+        ).astype(np.uint32)
+        in_double = u64[2 * total * DIM + total : 2 * total * DIM + 2 * total].astype(np.float64)
 
         out_float = np.zeros(total * DIM, dtype=np.float32)
         out_ulong = np.zeros(total * DIM * DIM, dtype=np.uint64)
@@ -800,7 +825,13 @@ class UnifiedPunchHost:
         if total <= 0:
             self._emit_telemetry(punch_ids, 0, n_per_punch)
             return dict(outs)
-        unsupported = sorted({int(pid) for pid in np.unique(np.asarray(punch_ids)[:total]) if int(pid) not in self.SUPPORTED_PUNCH_IDS})
+        unsupported = sorted(
+            {
+                int(pid)
+                for pid in np.unique(np.asarray(punch_ids)[:total])
+                if int(pid) not in self.SUPPORTED_PUNCH_IDS
+            }
+        )
         if unsupported:
             bad = ", ".join(f"0x{pid:02X}" for pid in unsupported)
             raise ValueError(f"unsupported punch ids: {bad}")
@@ -838,9 +869,7 @@ class UnifiedPunchHost:
             "degraded_from": degraded_from,
             "opencl_error": str(last_exc),
         }
-        logger.error(
-            "OpenCL dispatch failed twice; falling back to CPU: %s", last_exc
-        )
+        logger.error("OpenCL dispatch failed twice; falling back to CPU: %s", last_exc)
         return self._execute_cpu(
             punch_ids,
             in_float,
@@ -889,11 +918,7 @@ class UnifiedPunchHost:
             cl.enqueue_copy(self.queue, buf.get_sub_region(0, arr.nbytes), arr)
             in_bufs[name] = buf
         out_bufs = {
-            name: (
-                self._pooled_buffer("out_" + name, arr.nbytes)
-                if name in writes
-                else scratch
-            )
+            name: (self._pooled_buffer("out_" + name, arr.nbytes) if name in writes else scratch)
             for name, arr in outs.items()
         }
 
@@ -919,15 +944,11 @@ class UnifiedPunchHost:
         self.last_dispatch_backend = self.backend
         self.dispatch_count = getattr(self, "dispatch_count", 0) + 1
         self.kernel_ms_total = getattr(self, "kernel_ms_total", 0.0) + self.last_kernel_ms
-        self.nonces_evaluated_total = getattr(self, "nonces_evaluated_total", 0) + int(
-            total
-        )
+        self.nonces_evaluated_total = getattr(self, "nonces_evaluated_total", 0) + int(total)
 
         for name in writes:
             arr = outs[name]
-            cl.enqueue_copy(
-                self.queue, arr, out_bufs[name].get_sub_region(0, arr.nbytes)
-            )
+            cl.enqueue_copy(self.queue, arr, out_bufs[name].get_sub_region(0, arr.nbytes))
         self.queue.finish()
         self._emit_telemetry(punch_ids, total, n_per_punch)
         return dict(outs)
@@ -962,9 +983,7 @@ class UnifiedPunchHost:
         )
         self.last_dispatch_backend = "cpu"
         self.dispatch_count = getattr(self, "dispatch_count", 0) + 1
-        self.nonces_evaluated_total = getattr(self, "nonces_evaluated_total", 0) + int(
-            total
-        )
+        self.nonces_evaluated_total = getattr(self, "nonces_evaluated_total", 0) + int(total)
         # float32 weights to mirror the kernel's pown((float)PHI, -(j+1)).
         w32 = np.array(
             [np.float32(PHI) ** np.float32(-(j + 1)) for j in range(DIM)],

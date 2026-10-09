@@ -1,5 +1,7 @@
+# Public naming is approved; first-public version target is 1.0.0.
+# Existing development/research version retained pending publication reconciliation.
 [project]
-name = "pythia-mla1517"
+name = "hyba-pythia-mining"
 version = "0.1.0"
 description = "PYTHIA operational mining backend with the canonical MLA1517 execution path."
 readme = "README.md"
@@ -23,7 +25,7 @@ dependencies = [
     # The virtual quantum computer (in-tree: turing_universal_quantum_computer/)
     # is part of the miner: the Hendrix nonce order and the VQC policy audit.
     # Install it beside this package: pip install ./turing_universal_quantum_computer .
-    "turing-universal-quantum-computer>=1.0",
+    "hyba-turing-vqc>=1.0",
 ]
 
 [project.scripts]
@@ -32,6 +34,7 @@ pythia-api = "control_api:main"
 pythia-mine = "mining_runtime:main"
 pythia-gpu-readiness = "gpu.readiness:main"
 chronus-readiness = "chronus.readiness:main"
+pythia-storage-db-gate = "hyba_db.production_gate:main"
 pythagoras-v12 = "pythagoras.run_pythagoras:main"
 
 [project.optional-dependencies]
@@ -121,7 +124,7 @@ kellogg = ["py.typed", "CAPABILITY_MANIFEST.json"]
 hyba_db = ["CAPABILITY_MANIFEST.json"]
 tensor = ["py.typed", "README.md", "CAPABILITY_MANIFEST.md"]
 l_hras = ["py.typed", "README.md", "config.example.toml"]
-toe = ["py.typed", "default_propagators.json"]
+toe = ["py.typed", "default_propagators.json", "CAPABILITY_MANIFEST.json", "CLAIM_REGISTER.json"]
 millennium = ["*.ts", "rtl/*.sv", "docs/*.md"]
 python_backend = ["*.csv"]
 pythagoras = ["README.md"]

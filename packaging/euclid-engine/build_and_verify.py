@@ -1,4 +1,4 @@
-"""Build and verify the euclid-engine 17.0.0 wheel (artefact-first, nothing published).
+"""Build and verify the hyba-euclid-intelligence 1.0.0 wheel (research generation 17.0.0) (artefact-first, nothing published).
 
 Stages only the product (``euclid`` without its in-package tests or runtime
 state, plus the two bundled runtime dependencies), builds the wheel in an
@@ -24,7 +24,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
 DIST = HERE / "dist"
-VERSION = "17.0.0"
+VERSION = "1.0.0"
+RESEARCH_VERSION = "17.0.0"
 PACKAGES = ("euclid", "hyba_substrate", "resonance_intelligence")
 FORBIDDEN_TOP_LEVEL = {"toe", "Intelligence", "kellogg", "mining", "chronus", "aethel",
                        "lucas", "turing_universal_quantum_computer", "millennium"}
@@ -49,7 +50,7 @@ V17_MODULES = (
     "euclid.cognition.research.cli",
 )
 SMOKE = r"""
-import json, sys
+import json, sys, importlib.metadata
 import euclid
 from euclid.cognition.worlds import generate_suite, WorldExecutor
 from euclid.cognition.integrated import IntegratedAgent, SYSTEMS
@@ -58,6 +59,7 @@ for name in mods:
     __import__(name)
 assert all("site-packages" in (sys.modules[m].__file__ or "") for m in mods), "not the installed copy"
 assert euclid.__version__ == "%s", euclid.__version__
+assert importlib.metadata.version("hyba-euclid-intelligence") == "%s"
 suite = generate_suite(9100, train_per_family=1, development_per_family=0,
                        evaluation_per_family=1, held_out_per_family=1,
                        adversarial_per_tag=0, analogy_pairs=1)
@@ -113,11 +115,20 @@ def inspect(wheel: Path) -> dict:
             "passed": not (forbidden or secrets or bad or missing)}
 
 
+def _sibling_wheel(pattern: str, dist: Path) -> Path:
+    wheels = sorted(dist.glob(pattern))
+    if not wheels:
+        raise RuntimeError(
+            f"sibling wheel {pattern} not found in {dist}; build that product first"
+        )
+    return wheels[0]
+
+
 def main() -> int:
     DIST.mkdir(exist_ok=True)
-    for stale in DIST.glob("euclid_engine-*.whl"):
+    for stale in DIST.glob("hyba_euclid_intelligence-*.whl"):
         stale.unlink()
-    record: dict = {"product": "euclid-engine", "version": VERSION}
+    record: dict = {"product": "hyba-euclid-intelligence", "version": VERSION, "research_version": RESEARCH_VERSION, "classification": "RESEARCH_RELEASE"}
     with tempfile.TemporaryDirectory(prefix="euclid-engine-") as tmp:
         tmp_path = Path(tmp)
         src = stage(tmp_path)
@@ -125,15 +136,24 @@ def main() -> int:
         # environment; the interpreter running this script is not modified.
         sh([sys.executable, "-m", "pip", "wheel", "--no-deps", "--wheel-dir", DIST, src],
            cwd=tmp_path)
-        wheel = next(DIST.glob("euclid_engine-*.whl"))
+        wheel = next(DIST.glob("hyba_euclid_intelligence-*.whl"))
         record["wheel"] = wheel.name
         record["wheel_sha256"] = sha256(wheel)
         record["inspection"] = inspect(wheel)
         env_dir = tmp_path / "venv"
         venv.EnvBuilder(with_pip=True).create(env_dir)
         python = env_dir / ("Scripts" if sys.platform == "win32" else "bin") / "python"
-        sh([python, "-m", "pip", "install", "--no-deps", "--no-index", wheel], cwd=tmp_path)
-        smoke = SMOKE % (repr(V17_MODULES), VERSION)
+        kellogg_wheel = _sibling_wheel(
+            "hyba_kellogg_tensor-*.whl", REPO / "packaging" / "kellogg-tensor" / "dist"
+        )
+        toe_wheel = _sibling_wheel(
+            "hyba_toe_intelligence-*.whl", REPO / "packaging" / "toe" / "dist"
+        )
+        # Full dependency resolution is exercised: the sibling product wheels
+        # satisfy the declared kellogg-toe/hyba-toe-intelligence requirements and numpy is
+        # fetched from the index, exactly as a real install would resolve.
+        sh([python, "-m", "pip", "install", "-q", str(kellogg_wheel), str(toe_wheel), str(wheel)], cwd=tmp_path)
+        smoke = SMOKE % (repr(V17_MODULES), RESEARCH_VERSION, VERSION)
         completed = sh([python, "-I", "-c", smoke], cwd=tmp_path, capture_output=True)
         record["installed_smoke"] = json.loads(completed.stdout.strip().splitlines()[-1])
         record["installed_outside_repository"] = str(REPO) not in str(env_dir)

@@ -22,223 +22,40 @@ selection. When the canonical PYTHIA lattice is active the kernel provenance
 explicitly states that ``grind_target_batch`` executed the 600-vertex itinerary;
 it is never relabelled as an M32 traversal.
 """
+
 from __future__ import annotations
 
 from dataclasses import replace
+from .resident_search import compile_hendrix_plan
 from typing import Any, Mapping
 
 from .euclid_support import EuclidProductionMiningCoordinator
 from .execution_router import (
-    ExecutionRouter,
-    FallbackReason,
     NONCE_ORDER_HENDRIX,
     NONCE_ORDER_POINCARE_11D,
-    RouteDecision,
 )
 from .h4_600_execution import promote_execution_hasher
 from .pythia_agentic_cycle import PythiaAgenticMiningAuthority
 from .pythia_search import (
     SEARCH_ARCHITECTURE_ID,
-    PythiaSearchPrecompute,
-    precompute_pythia_search,
-    pythia_hendrix_nonces,
 )
+from .exact_search import precompute_exact_search as precompute_pythia_search
 from .search_plan import ExecutionRoute, PoolOutcome
 
-_PYTHIA_HENDRIX_COMPOSED = "pythia_hendrix_structured_composed"
-_NATIVE_BACKENDS = frozenset({"cuda", "metal"})
-_NATIVE_ROUTE_METHODS = {
-    "k_gold": "grind_target_gold",
-    "k_m32": "grind_target_m32",
-    "k_range": "grind_target_range",
-}
-
-
-def _backend_name(hasher: Any) -> str:
-    return str(getattr(hasher, "backend", "") or "").split(":", 1)[0].lower()
-
-
-def _bind_native_route_markers(hasher: Any) -> None:
-    """Expose only route arms the capability-proven native hasher can run."""
-    if _backend_name(hasher) not in _NATIVE_BACKENDS:
-        return
-    for marker, method_name in _NATIVE_ROUTE_METHODS.items():
-        if getattr(hasher, marker, None) is not None:
-            continue
-        method = getattr(hasher, method_name, None)
-        if callable(method):
-            setattr(hasher, marker, method)
-
-
-class ProductionExecutionRouter(ExecutionRouter):
-    """Canonical router with exact PYTHIA itinerary and native GPU compatibility."""
-
-    def __init__(
-        self,
-        hasher: Any,
-        *args: Any,
-        pythia_precompute: PythiaSearchPrecompute | None = None,
-        **kwargs: Any,
-    ) -> None:
-        _bind_native_route_markers(hasher)
-        self._pythia_precompute = pythia_precompute or precompute_pythia_search()
-        self._pythia_order_cache: dict[str, list[int]] = {}
-        # The base router has a built-in pure-Hendrix branch. PYTHIA's
-        # production route executes Hendrix over the complete structured
-        # itinerary instead, so use an internal composite marker to reach
-        # _run_chunk while the immutable SearchPlan remains Hendrix.
-        kwargs["nonce_order"] = lambda plan: (
-            _PYTHIA_HENDRIX_COMPOSED
-            if self._is_pythia_lattice(plan)
-            else plan.nonce_order
-        )
-        super().__init__(hasher, *args, **kwargs)
-
-    @staticmethod
-    def _is_pythia_lattice(plan) -> bool:
-        return plan.evidence_refs.get("search_architecture") == SEARCH_ARCHITECTURE_ID
-
-    def execute_plan(self, plan, header, target, **kwargs):
-        """Clear prior fabric evidence before any freshness or lease gate can refuse work."""
-        if self._is_pythia_lattice(plan) and hasattr(self._hasher, "last_batch_evidence"):
-            self._hasher.last_batch_evidence = None
-        return super().execute_plan(plan, header, target, **kwargs)
-
-    def _opencl_bound(self) -> bool:
-        if _backend_name(self._hasher) in _NATIVE_BACKENDS:
-            return True
-        return super()._opencl_bound()
-
-    def decide_route(self, plan):
-        """Select physical execution while preserving Chronus as route authority."""
-        backend = _backend_name(self._hasher)
-
-        if (
-            self._is_pythia_lattice(plan)
-            and plan.executor_route == ExecutionRoute.chronus_batch.value
-        ):
-            prov = self._device_provenance()
-            batch = getattr(self._hasher, "grind_target_batch", None)
-            cap = max(1, int(getattr(self._hasher, "grind_batch", 1) or 1))
-            requested = ExecutionRoute.chronus_batch
-            if backend in ("", "cpu", "cpu_reference") or not callable(batch):
-                return RouteDecision(
-                    requested_route=requested,
-                    executed_route=ExecutionRoute.cpu_reference,
-                    fallback_reason=FallbackReason.CHRONUS_BATCH_UNAVAILABLE,
-                    device_backend="cpu_reference",
-                    device_name=prov["device_name"],
-                    device_vendor=prov["device_vendor"],
-                    kernel_identity="hashlib_sha256d",
-                    kernel_build_status="chronus_batch_unbound",
-                    launch_cap=cap,
-                )
-            return RouteDecision(
-                requested_route=requested,
-                executed_route=requested,
-                device_backend=prov["device_backend"],
-                device_name=prov["device_name"],
-                device_vendor=prov["device_vendor"],
-                kernel_identity=f"chronus_ordered_batch_v1:{SEARCH_ARCHITECTURE_ID}",
-                kernel_build_status="bound_contract_after_backend_self_check",
-                launch_cap=cap,
-            )
-
-        decision = super().decide_route(plan)
-
-        if (
-            self._is_pythia_lattice(plan)
-            and decision.executed_route is not ExecutionRoute.cpu_reference
-        ):
-            batch = getattr(self._hasher, "grind_target_batch", None)
-            if callable(batch):
-                return replace(
-                    decision,
-                    kernel_identity=(
-                        f"pythia_explicit_nonce_batch:{backend or decision.device_backend}:"
-                        f"{SEARCH_ARCHITECTURE_ID}"
-                    ),
-                    kernel_build_status="explicit_nonce_batch_bound_after_backend_self_check",
-                    launch_cap=max(
-                        1,
-                        int(getattr(self._hasher, "grind_batch", 1) or 1),
-                    ),
-                )
-            return RouteDecision(
-                requested_route=decision.requested_route,
-                executed_route=ExecutionRoute.cpu_reference,
-                fallback_reason=FallbackReason.KERNEL_UNAVAILABLE,
-                device_backend="cpu_reference",
-                device_name=decision.device_name,
-                device_vendor=decision.device_vendor,
-                kernel_identity="hashlib_sha256d",
-                kernel_build_status="explicit_nonce_batch_unavailable",
-                launch_cap=max(
-                    1,
-                    int(getattr(self._hasher, "grind_batch", 1) or 1),
-                ),
-            )
-
-        if (
-            backend not in _NATIVE_BACKENDS
-            or decision.executed_route is ExecutionRoute.cpu_reference
-        ):
-            return decision
-        return replace(
-            decision,
-            kernel_identity=f"chronus_native_sha256d:{backend}:{decision.executed_route.value}",
-            kernel_build_status="native_method_bound_after_backend_self_check",
-        )
-
-    def _run_chunk(self, plan, header, target, chunk, decision):
-        """Execute PYTHIA's canonical Hendrix traversal on CPU or hardware."""
-        if not self._is_pythia_lattice(plan):
-            return super()._run_chunk(plan, header, target, chunk, decision)
-
-        if plan.nonce_order != NONCE_ORDER_HENDRIX:
-            raise RuntimeError(
-                "PYTHIA canonical search requires the Hendrix plan-bound order"
-            )
-        order = self._pythia_order_cache.get(plan.plan_id)
-        if order is None:
-            order = pythia_hendrix_nonces(
-                header,
-                plan.base_step,
-                plan.window,
-                precompute=self._pythia_precompute,
-                preferred_face=plan.preferred_face,
-            )
-            self._pythia_order_cache[plan.plan_id] = order
-        position = (chunk.start - plan.base_step) & 0xFFFFFFFF
-        nonces = order[position : position + chunk.count]
-        if len(nonces) != chunk.count:
-            raise RuntimeError("PYTHIA Hendrix chunk does not match the leased window")
-
-        if decision.executed_route is ExecutionRoute.cpu_reference:
-            return self._cpu_nonces(header, target, nonces)
-        batch = getattr(self._hasher, "grind_target_batch", None)
-        if not callable(batch):
-            raise RuntimeError("selected hardware route cannot execute explicit nonce batches")
-        return batch(header, bytes(target)[::-1], nonces)
-
-    def _build_record(self, plan, decision, requested_order, **kwargs):
-        """Record Hendrix literally while retaining structure in plan evidence."""
-        record = super()._build_record(plan, decision, requested_order, **kwargs)
-        if not self._is_pythia_lattice(plan):
-            return record
-        executed = None if record.executed_nonce_order is None else plan.nonce_order
-        return replace(
-            record,
-            requested_nonce_order=plan.nonce_order,
-            executed_nonce_order=executed,
-        )
+from .resident_router import (
+    ProductionExecutionRouter,
+    _backend_name,
+    _bind_native_route_markers,
+    _NATIVE_BACKENDS,
+)
 
 
 def chronus_fabric_state_for(execution_hasher: Any) -> dict[str, Any]:
     """Derive capability state without promoting capability into execution evidence."""
     backend_raw = str(getattr(execution_hasher, "backend", "") or "")
     topology_id = getattr(execution_hasher, "topology_id", None)
-    bound = topology_id == "chronus_h4_600_11d"
+    resident = callable(getattr(execution_hasher, "grind_target_hendrix_plan", None))
+    bound = topology_id == "chronus_h4_600_11d" or resident
     return {
         "schema": "pythia.chronus_search_fabric/3",
         "canonical_topology": "chronus_h4_600_11d",
@@ -246,14 +63,19 @@ def chronus_fabric_state_for(execution_hasher: Any) -> dict[str, Any]:
         "execution_backend": backend_raw or "Unavailable",
         "state": "ACTIVE" if bound else "NOT_BOUND",
         "capability_bound": bound,
-        "physical_fanout_capable": bound,
+        "physical_fanout_capable": bound and not resident,
+        "resident_plan_execution_capable": resident,
         "physical_fanout": False,
         "physical_fanout_observed": False,
         "execution_evidence": "Unavailable",
         "reason": (
-            "H4/600 capability is bound; physical fan-out remains unobserved until execution"
-            if bound
-            else "physical H4/600 fan-out requires the joined super_asic Chronus lane"
+            "Resident H4/600 logical execution is bound; no physical 600-device fan-out is claimed"
+            if resident
+            else (
+                "H4/600 capability is bound; physical fan-out remains unobserved until execution"
+                if bound
+                else "physical H4/600 fan-out requires the joined super_asic Chronus lane"
+            )
         ),
         "hashrate_claim": "measured completed physical SHA256d work / elapsed time only",
         "target_hashrate_hs": 10_000_000_000_000_000_000,
@@ -396,29 +218,24 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         adapter = getattr(client, "proof_adapter", None) if client is not None else None
         job = getattr(adapter, "current_job", None) if adapter is not None else None
         if job is None or job.job_id != identity.job_id:
-            raise RuntimeError("PYTHIA planning requires the current authoritative Stratum job")
+            raise RuntimeError(
+                "PYTHIA planning requires the current authoritative Stratum job"
+            )
         header = adapter.build_header(job.job_id, plan.extranonce2, job.ntime, 0)
         upstream_agentic = self._upstream_agentic_plan(plan)
-        directive = self.pythia_authority.plan(
+        directive = self.pythia_authority.plan_exact(
             header=header,
             target_be=int(job.target).to_bytes(32, "big"),
             base_step=plan.base_step,
             window=plan.window,
-            block_context={
-                "job_id": identity.job_id,
-                "pool_session_id": identity.pool_session_id,
-                "generation": identity.generation,
-                "target_generation": identity.target_generation,
-                "clean_jobs": identity.clean_jobs,
-                "upstream_agentic_plan": upstream_agentic,
-                "chronus_search_fabric": dict(self._chronus_fabric_state),
-                "geometric_topological_planning": dict(self._geodesic_state),
-            },
+            state=self.pythia_search_precompute,
         )
         refs = dict(plan.evidence_refs)
         refs["upstream_agentic_plan"] = upstream_agentic
         refs["pythia_authority"] = directive.as_evidence()
         refs["pythia_planning_authority"] = True
+        refs["mathematical_profile"] = "exact_q_phi_positive_radicals"
+        refs["advisory_ordering_executed"] = False
         refs["chronus_search_fabric"] = dict(self._chronus_fabric_state)
         refs["pulvini_data_boundary"] = {
             "mining_imports_pulvini": False,
@@ -427,13 +244,17 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         agentic_cycle = self.pythia_authority.snapshot().get("agentic_mining")
         if agentic_cycle is not None:
             refs["pythia_agentic_cycle"] = agentic_cycle
-        # PYTHIA's coarse lane intelligence biases the existing exact-Hilbert
-        # 600-vertex itinerary; it does not replace, prune or expand the lease.
-        preferred_face = directive.lane_order[0] if directive.lane_order else plan.preferred_face
+        # Only exact header-bound geometry decides ordering in this profile.
+        # Upstream policy is retained as operational provenance, not used as
+        # a learned/advisory bias in the mathematical search contract.
+        preferred_face = (
+            directive.lane_order[0] if directive.lane_order else plan.preferred_face
+        )
         return replace(
             plan,
             lane_order=directive.lane_order,
             preferred_face=preferred_face,
+            schedule=(),
             evidence_refs=refs,
         )
 
@@ -480,11 +301,34 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         # Hendrix is the canonical production search algorithm. PYTHIA's
         # 32 -> 11D -> 600/Turing structure supplies the complete itinerary
         # that Hendrix traverses; it does not replace Hendrix.
-        return replace(
+        bound = replace(
             plan,
             nonce_order=NONCE_ORDER_HENDRIX,
             executor_route=ExecutionRoute.chronus_batch.value,
             evidence_refs=refs,
+        )
+        adapter = getattr(self.client, "proof_adapter", None)
+        job = getattr(adapter, "current_job", None)
+        if job is None:
+            raise RuntimeError(
+                "resident Hendrix issuance requires authoritative current job"
+            )
+        header = adapter.build_header(job.job_id, bound.extranonce2, job.ntime, 0)
+        resident=getattr(self.execution_hasher,"igpu",None)
+        overlay=getattr(getattr(resident,"fabric",None),"overlay",None)
+        if overlay is not None:
+            refs["execution_mode"]="resident_opencl"
+            refs["authorised_execution_device"]=dict(overlay.capability())
+            bound=replace(bound,evidence_refs=refs)
+        artifact = compile_hendrix_plan(
+            bound,
+            header,
+            int(job.target).to_bytes(32, "big"),
+            self.pythia_search_precompute,
+            use_hilbert=bool(refs.get("turing_hilbert_selected", True)),
+        )
+        return replace(
+            bound, evidence_refs={**refs, "resident_hendrix": artifact.as_dict()}
         )
 
     def _baseline_plan(self, identity, lease, window, reason):
@@ -515,9 +359,9 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             pythia_precompute=self.pythia_search_precompute,
         )
 
-    def _record_execution(self, identity, plan, lease, record, outcome, coordinate):
+    def _record_execution(self, identity, plan, lease, record, outcome, coordinate, defer_pool_outcome=False):
         """Persist canonical execution first, then feed only measured outcome back to PYTHIA."""
-        super()._record_execution(identity, plan, lease, record, outcome, coordinate)
+        super()._record_execution(identity, plan, lease, record, outcome, coordinate, defer_pool_outcome=defer_pool_outcome)
         self._chronus_fabric_state = chronus_fabric_execution_state_for(
             self.execution_hasher
         )
@@ -528,7 +372,9 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             }
         try:
             client = self.client
-            adapter = getattr(client, "proof_adapter", None) if client is not None else None
+            adapter = (
+                getattr(client, "proof_adapter", None) if client is not None else None
+            )
             job = getattr(adapter, "current_job", None) if adapter is not None else None
             if job is None or job.job_id != identity.job_id:
                 return
@@ -562,8 +408,14 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         if not isinstance(cycle, dict):
             return
         stages = dict(cycle.get("stages") or {})
-        classification = autonomy.get("classification") if isinstance(autonomy, Mapping) else None
-        wired = bool(classification.get("WIRED")) if isinstance(classification, Mapping) else False
+        classification = (
+            autonomy.get("classification") if isinstance(autonomy, Mapping) else None
+        )
+        wired = (
+            bool(classification.get("WIRED"))
+            if isinstance(classification, Mapping)
+            else False
+        )
         stages["HEAL_OPTIMISE"] = {
             "state": "COMPLETE" if wired else "UNAVAILABLE",
             "authority": "Salamander",

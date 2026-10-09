@@ -1,0 +1,128 @@
+{
+  "schema": "chronos_release_doctor_v1",
+  "python": "3.13.14",
+  "version": "3.11.0",
+  "checks": {
+    "exact_core": true,
+    "family_composition": true,
+    "paradigm": true,
+    "asic_like_sha256d": true,
+    "native_protocol": true,
+    "structured_operator": true,
+    "lucas256.cl": true,
+    "sha256d.cl": true,
+    "structured_matvec.cl": true,
+    "hendrix600.cl": true
+  },
+  "inventory": {
+    "contract_device": {
+      "schema": "chronos_standalone_igpu_v1",
+      "device_id": "chronos_igpu",
+      "name": "Chronos MLA1517 iGPU",
+      "is_gpu": true,
+      "physical": false,
+      "independent_of_physical_gpu": true,
+      "memory_model": "host_unified",
+      "lucas_ladder": [
+        10,
+        12,
+        15,
+        18,
+        20,
+        31,
+        50,
+        76,
+        110
+      ],
+      "operations": [
+        "lucas",
+        "search",
+        "fold",
+        "unfold",
+        "partial_unfold",
+        "tensor",
+        "evolve",
+        "witness",
+        "qx",
+        "sha256d",
+        "structured_ground",
+        "structured_matvec",
+        "pythi_native",
+        "intrinsic",
+        "resident"
+      ]
+    },
+    "executors": [
+      {
+        "device_id": "host_cpu",
+        "backend": "cpu_reference",
+        "physical": true,
+        "operations": [
+          "lucas",
+          "search",
+          "fold",
+          "unfold",
+          "partial_unfold",
+          "tensor",
+          "evolve",
+          "witness",
+          "qx",
+          "sha256d",
+          "structured_ground",
+          "structured_matvec",
+          "pythi_native",
+          "intrinsic",
+          "resident"
+        ]
+      }
+    ],
+    "overlay_available": false,
+    "overlay_unavailable_reason": null,
+    "unbound_adapters": [
+      {
+        "backend": "cuda",
+        "operations": [],
+        "reason": "not configured in this standalone host"
+      },
+      {
+        "backend": "rocm",
+        "operations": [],
+        "reason": "not configured in this standalone host"
+      },
+      {
+        "backend": "metal",
+        "operations": [],
+        "reason": "not configured in this standalone host"
+      },
+      {
+        "backend": "asic_mmio",
+        "operations": [],
+        "reason": "not configured in this standalone host"
+      },
+      {
+        "backend": "rtl",
+        "operations": [],
+        "reason": "not configured in this standalone host"
+      },
+      {
+        "backend": "remote_gpu",
+        "operations": [],
+        "reason": "not configured in this standalone host"
+      }
+    ]
+  },
+  "mining_backend": {
+    "device_id": "host_native_sha256d",
+    "backend": "native_c_midstate",
+    "physical": false,
+    "physical_asic": false,
+    "operations": [
+      "sha256d"
+    ],
+    "asic_like": true,
+    "compression_model": "one prepared first block + two compression blocks per nonce",
+    "compact_candidates": true,
+    "native_gil_released": true
+  },
+  "passed": true
+}

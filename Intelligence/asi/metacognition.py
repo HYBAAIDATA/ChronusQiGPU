@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass
 
+from Intelligence._born import born_evidence
+
 
 @dataclass
 class MetacognitiveState:
@@ -49,15 +51,14 @@ class MetacognitiveMonitor:
         # Self-evaluation: is strategy working?
         strategy_working = trend > 0.001
 
-        # Confidence estimation
+        # Confidence estimation: the Born evidence of measured outcomes —
+        # fraction of recent steps with positive gain, under a flat
+        # prior. Replaces the invented 1/(1+std) transform.
         if len(recent) >= 5:
-            import math
-
-            mean = sum(recent) / len(recent)
-            std = math.sqrt(sum((r - mean) ** 2 for r in recent) / len(recent))
-            confidence = 1.0 / (1.0 + std)  # low variance = high confidence
+            pos = sum(1 for r in recent if r > 0.0)
+            confidence = born_evidence(pos, len(recent) - pos)
         else:
-            confidence = 0.5
+            confidence = 0.5  # flat prior — no evidence yet
         self.confidence_history.append(confidence)
 
         # Calibration: compare confidence to actual performance
