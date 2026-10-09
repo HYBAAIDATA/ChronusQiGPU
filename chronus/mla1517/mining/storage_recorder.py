@@ -388,7 +388,7 @@ class MiningStorageRecorder:
                 if kind == "learning" and "pool_outcome" not in emitted:
                     continue
                 payload = self._payload(kind, coordinate, detail, event)
-                self._emit(kind, payload, producer=producer)
+                self._emit(kind, payload, producer=producer, event_key=key)
                 emitted.append(kind)
             # Every causal event — boundary or not — leaves a durable,
             # content-addressed receipt. Boundary receipts link to their mining
@@ -499,7 +499,9 @@ class MiningStorageRecorder:
         self.records[record_id] = kind
         return record_id
 
-    def _emit(self, kind: str, payload: dict[str, Any], *, producer: str) -> str:
+    def _emit(
+        self, kind: str, payload: dict[str, Any], *, producer: str, event_key: str
+    ) -> str:
         parents = self._ensure_parent(kind)
         evidence = "MEASURED"
         if kind == "pool_outcome" and str(payload.get("pool_outcome", "")).upper() == "ACCEPTED":
@@ -511,6 +513,7 @@ class MiningStorageRecorder:
             parent_ids=parents,
             evidence_state=evidence,
             producer=producer,
+            idempotency_key=f"{event_key}:{kind}",
         )
         self._heads[kind] = record_id
         self.records[record_id] = kind
