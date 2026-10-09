@@ -11,6 +11,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Optional
 
+from ..filesystem_paths import filesystem_root
 from .errors import (
     AuthenticityError,
     AuthorityBoundaryError,
@@ -115,7 +116,7 @@ class EnterpriseCustody:
         require_access_contract: bool = False,
         retention: Optional[RetentionPolicy] = None,
     ) -> None:
-        self.root = Path(root)
+        self.root = filesystem_root(root)
         self.tenant = tenant
         self.key_id = str(key_id)
         self.require_authenticity = bool(require_authenticity)
