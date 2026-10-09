@@ -16,7 +16,7 @@ def qualify_target(selector=None,runs=3,nonce_budget=4096):
    result['known_vector_probe']='PASS';result['probe_receipt']=adapter.last_receipt
    if 'structured_matvec'in capability.get('operations',[]):
     import numpy as np
-    from .structured_solver import StructuredHamiltonian
+    from .igpu.structured_solver import StructuredHamiltonian
     a=np.ones(64,dtype=np.complex128)/8;op=StructuredHamiltonian(a,g.golden.constants.phi);out=adapter.execute_structured_matvec(op,np.linspace(0,1,64));result['structured_matvec']={'status':'MEASURED_TARGET','receipt':adapter.last_receipt}
    else:result['structured_matvec']={'status':'UNAVAILABLE','reason':'fp64 capability absent'}
    for rung in(18,31):

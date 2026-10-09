@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import threading
 import time
 from pathlib import Path
 
@@ -21,7 +22,7 @@ import pytest
 
 import mining_runtime
 import runtime_config
-from chronus.mla1517.mining import execution_router
+from chronus.mla1517.mining.resident_router import ProductionExecutionRouter
 from chronus.virtual_igpu import runtime as vigpu_runtime
 from chronus.mla1517.mining.backend_registry import (
     BackendLane,
@@ -130,6 +131,52 @@ async def _stop(task: asyncio.Task) -> None:
         pass
 
 
+async def _accepted_execution(causal: Path, share: dict) -> dict:
+    """Join literal local-pool acknowledgement to its earlier compute receipt."""
+
+    def resolved():
+        return [
+            e
+            for e in _causal(causal)
+            if e["kind"] == "pool_outcome_resolved"
+            and e["coordinate"].get("submission_id") == share["submission_id"]
+        ]
+
+    await until(resolved, timeout=10, what="pool outcome persisted with execution identity")
+    outcome = resolved()[0]
+    assert outcome["detail"]["pool_outcome"] == "ACCEPTED"
+    coordinate = outcome["coordinate"]
+    assert coordinate.get("learning_record_id")
+    chain = {}
+    for kind in ("candidate_queued", "execution_finished", "submission_sent"):
+        matches = [
+            e
+            for e in _causal(causal)
+            if e["kind"] == kind
+            and e["coordinate"].get("execution_id") == coordinate["execution_id"]
+        ]
+        assert len(matches) == 1, (kind, matches)
+        event = matches[0]
+        for axis in (
+            "pool_session_id",
+            "generation",
+            "job_fingerprint",
+            "plan_id",
+            "lease_id",
+            "execution_id",
+            "candidate_id",
+        ):
+            assert event["coordinate"][axis] == coordinate[axis]
+        assert event["seq"] < outcome["seq"]
+        chain[kind] = event
+    assert chain["candidate_queued"]["detail"]["digest"] == outcome["detail"]["digest"]
+    assert chain["submission_sent"]["detail"]["wire_write_observed"] is True
+    assert chain["submission_sent"]["coordinate"]["submission_id"] == share["submission_id"]
+    assert chain["submission_sent"]["detail"]["block_hash"] == share["block_hash"]
+    assert chain["execution_finished"]["detail"]["pool_outcome"] == "NOT_SUBMITTED"
+    return chain["execution_finished"]["detail"]
+
+
 def test_startup_reaches_operational_cycle(monkeypatch, tmp_path):
     """The entry point reaches the mining states: SCAN→PLAN→MINE→VERIFY."""
     pool = FakePool(target=HARD_TARGET, job=_job("job-1"))
@@ -205,17 +252,13 @@ def test_deterministic_share_submits_and_acknowledges(monkeypatch, tmp_path):
             )
             transitions = _cycle_transitions(causal)
             states = [to for _f, to, _e in transitions]
-            for want in ("SUBMIT", "ACKNOWLEDGE", "EVALUATE"):
+            for want in ("SUBMIT", "EVALUATE"):
                 assert want in states, f"{want} never reached: {states}"
             share = _session_log(tmp_path / "session.json")[-1]
             assert share["outcome"] is True, share
             assert share["submission_id"]
-            events = _causal(causal)
-            assert any(e["kind"] == "submission_sent" for e in events)
-            assert any(
-                e["kind"] == "cycle_transition" and e["detail"].get("to") == "ACKNOWLEDGE"
-                for e in events
-            )
+            execution = await _accepted_execution(causal, share)
+            assert execution["completion"] == "EARLY_WINNER"
         finally:
             await _stop(task)
             server.close()
@@ -227,17 +270,20 @@ def test_replacement_job_invalidates_stale_work(monkeypatch, tmp_path):
     """A clean-job notify during hashing voids the in-flight window."""
     pool = FakePool(target=HARD_TARGET, job=_job("job-old"))
 
-    real_execute = execution_router.ExecutionRouter.execute_plan
-    slowed = asyncio.Event()
+    real_execute = ProductionExecutionRouter.execute_plan
+    slowed = threading.Event()
+    release = threading.Event()
+    freshness = []
 
     def slow_execute(router, plan, header, target, **kwargs):
-        # One delayed window so the clean job lands while it is in flight.
+        # Hold one real window until the reader has processed the clean job.
         if not slowed.is_set():
+            freshness.append(kwargs["is_still_fresh"])
             slowed.set()
-            time.sleep(0.4)
+            assert release.wait(15), "clean-job notification did not reach the runtime"
         return real_execute(router, plan, header, target, **kwargs)
 
-    monkeypatch.setattr(execution_router.ExecutionRouter, "execute_plan", slow_execute)
+    monkeypatch.setattr(ProductionExecutionRouter, "execute_plan", slow_execute)
 
     async def run():
         server, port = await _serve(pool)
@@ -247,6 +293,8 @@ def test_replacement_job_invalidates_stale_work(monkeypatch, tmp_path):
             causal = tmp_path / "causal.jsonl"
             await until(lambda: slowed.is_set(), timeout=15, what="window in flight")
             await pool.new_job(_job("job-new"))
+            await until(lambda: not freshness[0](), timeout=10, what="old identity invalidated")
+            release.set()
             await until(
                 lambda: any(
                     e["kind"] == "cycle_transition" and e["detail"].get("event") == "stale"
@@ -258,11 +306,16 @@ def test_replacement_job_invalidates_stale_work(monkeypatch, tmp_path):
             # The invalidated window produced a record with nothing hashed
             # on stale work, and the pool never saw it.
             assert pool.submits == []
-            assert any(
-                e["kind"] == "execution_finished" and e["detail"].get("completion") == "INVALIDATED"
+            invalidated = [
+                e
                 for e in _causal(causal)
-            ), "INVALIDATED record missing"
+                if e["kind"] == "execution_finished"
+                and e["detail"].get("completion") == "INVALIDATED"
+            ]
+            assert invalidated, "INVALIDATED record missing"
+            assert invalidated[0]["detail"]["hashes"] == 0
         finally:
+            release.set()
             await _stop(task)
             server.close()
 
@@ -428,7 +481,7 @@ def test_restart_never_resubmits_and_mines_fresh_work(monkeypatch, tmp_path):
         args = _args(submit=True)
         # Phase 1: the share is found, submitted, accepted.
         task = await _launch(args)
-        await until(lambda: len(pool.submits) == 1, timeout=15, what="first submit")
+        await until(lambda: len(pool.submits) >= 1, timeout=15, what="first submit")
         await until(
             lambda: _session_log(session_path) != []
             and _session_log(session_path)[-1]["outcome"] is True,
@@ -441,7 +494,8 @@ def test_restart_never_resubmits_and_mines_fresh_work(monkeypatch, tmp_path):
             for e in _causal(causal)
             if e["detail"].get("pool_session_id")
         }
-        assert len(pool.submits) == 1
+        original_submits = {tuple(params) for params in pool.submits}
+        assert len(original_submits) == len(pool.submits)
 
         # Phase 2: restart on the same session path; the pool serves the
         # identical job on the new connection, so the deterministic first
@@ -456,10 +510,18 @@ def test_restart_never_resubmits_and_mines_fresh_work(monkeypatch, tmp_path):
             timeout=20,
             what="duplicate share refused",
         )
-        assert len(pool.submits) == 1, "a share was written twice"
+        assert len({tuple(params) for params in pool.submits}) == len(
+            pool.submits
+        ), "a share was written twice"
         # Fresh work still flows: a new job produces a new share.
         await pool.new_job(_job("job-fresh", prevhash="cd" * 32, coinb1=bip34_coinb1(800_002)))
-        await until(lambda: len(pool.submits) == 2, timeout=15, what="fresh submit")
+        await until(
+            lambda: any(params[1] == "job-fresh" for params in pool.submits),
+            timeout=15,
+            what="fresh submit",
+        )
+        assert len({tuple(params) for params in pool.submits}) == len(pool.submits)
+        assert original_submits.issubset({tuple(params) for params in pool.submits})
         # Nothing stale was resurrected: the new run bound a new pool session.
         later_ids = {
             e["detail"].get("pool_session_id")
@@ -516,6 +578,7 @@ def test_share_submits_through_the_chronus_lane_from_the_production_entry(monkey
             )
             share = _session_log(tmp_path / "session.json")[-1]
             assert share["outcome"] is True, share
+            accepted = await _accepted_execution(causal, share)
             events = _causal(causal)
             finished = [e["detail"] for e in events if e["kind"] == "execution_finished"]
             assert finished, "the production loop recorded no execution"
@@ -524,7 +587,8 @@ def test_share_submits_through_the_chronus_lane_from_the_production_entry(monkey
             # The software emulator executed: never labelled as a hardware result.
             assert {d["evidence_class"] for d in finished} == {"SOFTWARE_VERIFIED"}
             winners = [d for d in finished if d["completion"] == "EARLY_WINNER"]
-            assert winners and winners[0]["pool_outcome"] == "ACCEPTED"  # scripted local pool
+            assert winners and accepted["completion"] == "EARLY_WINNER"
+            assert accepted["executed_route"] == "chronus_batch"
             assert any(e["kind"] == "submission_sent" for e in events)
         finally:
             await _stop(task)

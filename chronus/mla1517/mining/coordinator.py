@@ -2730,6 +2730,17 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 )
             raise
         else:
+            if callable(wire_counter) and wire_before is not None:
+                wire_write_observed = wire_counter("mining.submit") > wire_before
+            if wire_write_observed:
+                self.causal.record(
+                    "submission_sent",
+                    submission_coordinate,
+                    job_id=job_id,
+                    block_hash=proof.digest[::-1].hex(),
+                    wire_write_observed=True,
+                    pool_outcome="ACCEPTED" if result is True else "REJECTED",
+                )
             self.session.submission_finished(result)
         finally:
             if pause_bridge and self.session.state == "SEARCHING":
@@ -2740,7 +2751,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 MiningCycleState.ACKNOWLEDGE,
                 event="success",
                 reason=self._last_pool_outcome.value,
-                evidence={"result": result, "wire_write_observed": wrote},
+                evidence={"result": result, "wire_write_observed": wire_write_observed},
             )
         return result
 
