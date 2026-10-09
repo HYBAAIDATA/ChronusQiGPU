@@ -26,7 +26,7 @@ from typing import Any, Dict, List, Optional
 from aethel.device import ChronusSku
 from aethel.hyperscaler import HyperscalerSku
 from aethel.storage import FibonacciAddress
-from chronus.seam.scale import scale_job
+from chronus.seam.scale import scale_job, snap_work_items
 from chronus.seam.genetic_mining import evolve_mining_config
 from chronus.virtual_igpu.evidence import EvidenceLedger
 from mining.stratum_bridge import (
@@ -402,6 +402,9 @@ async def run_workflow(
     attest_key=None,
     custody_dir=None,
 ):
+    # LUCAS_SCALED (lemma_lucas_universal): the requested batch window is a
+    # ladder-stop work envelope under the seam ceiling.
+    window = snap_work_items(window)
     bridge = StratumBridge(host, port, worker=worker, password=password)
     try:
         return await _run_workflow(
