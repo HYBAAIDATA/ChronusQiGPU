@@ -1963,11 +1963,25 @@ def _config_merge_sections(body: dict[str, Any]) -> dict[str, Any]:
     if "campaign" in body:
         cfg["campaign"] = body["campaign"]
     if "live_submit" in body:
-        req = body["live_submit"] if isinstance(body["live_submit"], dict) else {}
-        enabled = bool(req.get("enabled", False))
+        req = body["live_submit"]
+        if not isinstance(req, dict) or not isinstance(req.get("enabled"), bool):
+            raise ValueError("live_submit.enabled must be an explicit JSON boolean")
+        enabled = req["enabled"]
+        if enabled and not _is_truthy(os.getenv("PYTHIA_M3_REQUIRED")):
+            raise ValueError(
+                "live submission requires PYTHIA_M3_REQUIRED=1 "
+                "(AL HARAS + THESEUS fail-closed admission)"
+            )
+        if enabled:
+            m3_ready, m3_reason = _m3_dependency_reason()
+            if not m3_ready:
+                raise ValueError(
+                    "live submission refused: M3 worker evidence not ready: "
+                    + str(m3_reason)
+                )
         approval = req.get("approval_id", "")
         if not isinstance(approval, str):
-            approval = ""
+            raise ValueError("live_submit.approval_id must be a string")
         if enabled and not approval:
             enabled_pool = next((p for p in cfg.get("pools", []) if p.get("enabled")), None)
             if enabled_pool is not None:

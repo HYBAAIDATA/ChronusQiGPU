@@ -403,7 +403,13 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             }
 
     def record_salamander_autonomy(self, autonomy: Mapping[str, Any]) -> None:
-        """Correlate already-produced Salamander evidence with the current PYTHIA cycle."""
+        """Close observed SALAMANDER feedback into EUCLID and PYTHIA.
+
+        An observer heartbeat is not a successful heal or a THESEUS-custodied
+        outcome. EUCLID may advise within bounds; SALAMANDER alone acts, while
+        PYTHIA retains final mining decision authority.
+        """
+        self.euclid_support.observe_salamander(autonomy)
         cycle = getattr(self.pythia_authority, "last_agentic_cycle", None)
         if not isinstance(cycle, dict):
             return
@@ -417,7 +423,16 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
             else False
         )
         stages["HEAL_OPTIMISE"] = {
-            "state": "COMPLETE" if wired else "UNAVAILABLE",
+            "state": "OBSERVED" if wired else "UNAVAILABLE",
+            "healing_proved": (
+                classification.get("SELF_HEALING") is True
+                if isinstance(classification, Mapping) else False
+            ),
+            "optimisation_proved": (
+                classification.get("SELF_OPTIMISING") is True
+                if isinstance(classification, Mapping) else False
+            ),
+            "custody": autonomy.get("evidence_custody", "UNAVAILABLE"),
             "authority": "Salamander",
             "evidence": dict(autonomy),
         }

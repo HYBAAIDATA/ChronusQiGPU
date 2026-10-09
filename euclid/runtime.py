@@ -92,6 +92,7 @@ class EuclidRuntime:
         memory: Any | None = None,
         store: Any | None = None,
         experience_learner: Any | None = None,
+        adaptive_data_port: Any | None = None,
         specialists: Mapping[str, Any] | None = None,
         organism: bool = True,
         guardian: Any | None = None,
@@ -124,7 +125,8 @@ class EuclidRuntime:
             experience_learner=experience_learner,
             memory_database=database,
         )
-        runtime.adaptive_custody = custody
+        if adaptive_data_port is not None:
+            runtime.bind_adaptive_data_port(adaptive_data_port)
         runtime._compose_cognition()
         if organism:
             runtime.compose_organism(

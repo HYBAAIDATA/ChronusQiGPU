@@ -335,3 +335,324 @@ def test_from_env_rejects_empty_sanitized_tenant(tmp_path, monkeypatch):
     monkeypatch.setenv("PYTHIA_STORAGE_TENANT", "!!!")
     with pytest.raises(RuntimeError, match="sanitizes to empty"):
         MiningStorageRecorder.from_env()
+
+
+def test_restart_recovers_event_identity_and_requires_fresh_stratum(tmp_path):
+    """No duplicate replay; old proof parents cannot authorise a new pool write."""
+    from types import SimpleNamespace
+    from chronus.mla1517.mining.storage_recorder import M3StorageError
+
+    store, custody, tenant_id = _plane(tmp_path)
+    root = _short_root()
+    ledger = CausalLedger()
+    recorder = MiningStorageRecorder(store.files, tenant_id, root, strict=True)
+    ledger.set_observer(recorder.observe, fail_closed=True)
+    coord = CausalCoordinate(
+        pool_session_id="real-session-1",
+        generation=1,
+        job_fingerprint="fingerprint-1",
+        job_id="job-1",
+        plan_id="plan-1",
+        lease_id="lease-1",
+        execution_id="exec-1",
+    )
+    job_event = ledger.record("identity_bound", coord, job_id="job-1", clean_jobs=True)
+    ledger.record("plan_created", coord, window=32)
+    ledger.record("execution_started", coord, extranonce2="00")
+    ledger.record("candidate_found", coord, nonce=42)
+    rows_before = store._db.execute(
+        "SELECT COUNT(*) FROM mining_lifecycle WHERE tenant_id=?", (tenant_id,),
+    ).fetchone()[0]
+    store.close()
+    custody.close()
+
+    custody2 = TheseusFileCustody(tmp_path / "custody", hmac_key=CUSTODY_KEY)
+    store2 = OntologyStore(tmp_path / "store.db", INTEGRITY_KEY, custody=custody2)
+    try:
+        recovered = MiningStorageRecorder(store2.files, tenant_id, root, strict=True)
+        report = recovered.recover()
+        assert report["records"] == rows_before
+        assert report["replayable_events"] >= 4
+        # Reprocessing the *exact* mirrored event must not add a new row.
+        recovered.observe(job_event)
+        assert store2._db.execute(
+            "SELECT COUNT(*) FROM mining_lifecycle WHERE tenant_id=?", (tenant_id,),
+        ).fetchone()[0] == rows_before
+        with pytest.raises(M3StorageError, match="fresh Stratum identity"):
+            recovered.persist_verified_proof(
+                context={"job_id": "job-1", "generation": 1},
+                proof=SimpleNamespace(
+                    nonce=42, digest=b"\x11" * 32, target=(1 << 256) - 1,
+                ),
+                authorization_evidence_id="old-authorisation",
+                authorization_version_id="fv-old",
+                policy_version="old-policy",
+            )
+        # A new session never inherits the previous session's candidate/proof.
+        fresh = CausalCoordinate(pool_session_id="real-session-2", generation=2, job_id="job-2")
+        recovered.observe(
+            CausalEvent(1, 1000.0, "identity_bound", fresh, {"job_id": "job-2"}),
+        )
+        assert set(recovered.snapshot()["heads"]) == {"job"}
+        assert recovered.health(reconcile=True)["healthy"] is True
+    finally:
+        store2.close()
+        custody2.close()
+
+
+def test_from_env_exact_ovid_wires_transform_and_provenance(tmp_path, monkeypatch):
+    """OVID may be explicitly composed; every raw source remains in THESEUS."""
+    monkeypatch.setenv("PYTHIA_STORAGE_DB", str(tmp_path / "store.db"))
+    monkeypatch.setenv("PYTHIA_STORAGE_ROOT", str(tmp_path / "objects"))
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_ROOT", str(tmp_path / "custody"))
+    monkeypatch.setenv("PYTHIA_STORAGE_INTEGRITY_KEY_HEX", "ab" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_KEY_HEX", "cd" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_TENANT", "ovid-recovery-test")
+    monkeypatch.setenv("PYTHIA_STORAGE_OVID_EXACT", "true")
+    rec = MiningStorageRecorder.from_env(worker="ovid-worker")
+    assert rec is not None and rec.transform_plane is not None
+    try:
+        rec.observe(
+            CausalEvent(
+                1, 1.0, "identity_bound",
+                CausalCoordinate(pool_session_id="session", generation=1, job_id="job"),
+                {"job_id": "job"},
+                software_revision="test-revision",
+            ),
+        )
+        transform_rows = rec._store._db.execute(
+            "SELECT fv.exactness,fv.transform_contract FROM file_versions fv "
+            "JOIN file_objects fo ON fo.tenant_id=fv.tenant_id "
+            "AND fo.file_object_id=fv.file_object_id "
+            "WHERE fv.tenant_id=? AND fo.file_class='transform'",
+            (rec.tenant_id,),
+        ).fetchall()
+        assert transform_rows and all(row["exactness"] == "EXACT" for row in transform_rows)
+        receipt_row = rec._store._db.execute(
+            "SELECT fv.producer_version,fp.provenance_json FROM file_versions fv "
+            "JOIN file_objects fo ON fo.tenant_id=fv.tenant_id "
+            "AND fo.file_object_id=fv.file_object_id "
+            "JOIN file_provenance fp ON fp.tenant_id=fv.tenant_id "
+            "AND fp.file_version_id=fv.file_version_id "
+            "WHERE fv.tenant_id=? AND fo.logical_name LIKE 'receipt-%'",
+            (rec.tenant_id,),
+        ).fetchone()
+        assert receipt_row["producer_version"] == "test-revision"
+        provenance = json.loads(receipt_row["provenance_json"])
+        assert provenance["correlation_ids"]["pool_session_id"] == "session"
+        assert provenance["source_ids"]
+        assert rec.health(reconcile=True)["healthy"] is True
+    finally:
+        rec._store.close()
+
+
+def test_strict_from_env_rejects_unknown_tenant(tmp_path, monkeypatch):
+    """Strict mode must not silently register a new tenant with huge quotas."""
+    from chronus.mla1517.mining.storage_recorder import M3StorageError
+
+    monkeypatch.setenv("PYTHIA_STORAGE_DB", str(tmp_path / "store.db"))
+    monkeypatch.setenv("PYTHIA_STORAGE_ROOT", str(tmp_path / "objects"))
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_ROOT", str(tmp_path / "custody"))
+    monkeypatch.setenv("PYTHIA_STORAGE_INTEGRITY_KEY_HEX", "ab" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_KEY_HEX", "cd" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_TENANT", "unapproved")
+    with pytest.raises(M3StorageError, match="unknown tenant"):
+        MiningStorageRecorder.from_env(strict=True)
+
+
+def test_retry_after_partial_custody_write_is_idempotent(tmp_path, monkeypatch):
+    """A crash after chain commit but before receipt must not duplicate a job."""
+    from chronus.mla1517.mining.storage_recorder import M3StorageError
+
+    store, custody, tenant_id = _plane(tmp_path)
+    recorder = MiningStorageRecorder(store.files, tenant_id, _short_root(), strict=True)
+    event = CausalEvent(
+        1, 100.0, "identity_bound",
+        CausalCoordinate(pool_session_id="pool", generation=1, job_id="job"),
+        {"job_id": "job"},
+    )
+    original = recorder._receipt
+
+    def failed_receipt(*args, **kwargs):
+        raise RuntimeError("injected after mining custody commit")
+
+    monkeypatch.setattr(recorder, "_receipt", failed_receipt)
+    with pytest.raises(M3StorageError, match="injected"):
+        recorder.observe(event)
+    count = store._db.execute(
+        "SELECT COUNT(*) FROM mining_lifecycle WHERE tenant_id=?", (tenant_id,),
+    ).fetchone()[0]
+    assert count == 1
+    monkeypatch.setattr(recorder, "_receipt", original)
+    recorder.observe(event)
+    assert store._db.execute(
+        "SELECT COUNT(*) FROM mining_lifecycle WHERE tenant_id=?", (tenant_id,),
+    ).fetchone()[0] == count
+    assert recorder.receipts
+    store.close()
+    custody.close()
+
+
+def test_mining_idempotency_conflict_refuses_divergent_payload(tmp_path):
+    """One causal identity must not be used to rewrite different mining truth."""
+    from hyba_db.models import IntegrityFailure
+
+    store, custody, tenant_id = _plane(tmp_path)
+    try:
+        first = store.files.record_mining(
+            tenant_id, "job", {"job_id": "job-a"}, idempotency_key="causal-key"
+        )
+        assert store.files.record_mining(
+            tenant_id, "job", {"job_id": "job-a"}, idempotency_key="causal-key"
+        ) == first
+        with pytest.raises(IntegrityFailure, match="idempotency"):
+            store.files.record_mining(
+                tenant_id, "job", {"job_id": "job-b"}, idempotency_key="causal-key"
+            )
+    finally:
+        store.close()
+        custody.close()
+
+
+def test_exact_ovid_restart_recovers_original_receipts(tmp_path, monkeypatch):
+    """OVID child bytes are not misparsed as source causal JSON on restart."""
+    monkeypatch.setenv("PYTHIA_STORAGE_DB", str(tmp_path / "db.sqlite"))
+    monkeypatch.setenv("PYTHIA_STORAGE_ROOT", str(tmp_path / "cas"))
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_ROOT", str(tmp_path / "theseus"))
+    monkeypatch.setenv("PYTHIA_STORAGE_INTEGRITY_KEY_HEX", "ab" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_KEY_HEX", "cd" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_TENANT", "m5-ovid-exact-replay")
+    monkeypatch.setenv("PYTHIA_STORAGE_OVID_EXACT", "1")
+    first = MiningStorageRecorder.from_env(worker="worker")
+    assert first is not None
+    original = CausalEvent(
+        1, 321.0, "identity_bound",
+        CausalCoordinate(pool_session_id="s1", generation=1, job_id="j1"),
+        {"job_id": "j1"}, software_revision="test-commit",
+    )
+    try:
+        first.observe(original)
+        expected_id = first.snapshot()["heads"]["job"]
+        assert first.health(reconcile=True)["healthy"]
+    finally:
+        first._store.close()
+        first.files.custody.close()
+
+    second = MiningStorageRecorder.from_env(worker="worker")
+    assert second is not None
+    try:
+        assert second.snapshot()["heads"]["job"] == expected_id
+        assert second.snapshot()["records"] == 1
+        second.observe(original)
+        assert second.snapshot()["records"] == 1
+        assert second.health(reconcile=True)["healthy"]
+    finally:
+        second._store.close()
+        second.files.custody.close()
+
+
+def test_explicit_m3_tenant_admission_and_no_implicit_quota_changes(
+    tmp_path, monkeypatch,
+):
+    """A new live tenant is provisioned once, never self-registered on miner boot."""
+    from scripts.provision_m3_tenant import provision
+    from chronus.mla1517.mining.storage_recorder import MiningStorageRecorder
+
+    monkeypatch.setenv("PYTHIA_STORAGE_DB", str(tmp_path / "live.db"))
+    monkeypatch.setenv("PYTHIA_STORAGE_ROOT", str(tmp_path / "cas"))
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_ROOT", str(tmp_path / "custody"))
+    monkeypatch.setenv("PYTHIA_STORAGE_INTEGRITY_KEY_HEX", "ab" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_KEY_HEX", "cd" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_TENANT", "real-mining-tenant")
+    monkeypatch.setenv("PYTHIA_M3_REQUIRED", "1")
+    monkeypatch.setenv("PYTHIA_M3_ACTOR", "operational-actor")
+    monkeypatch.setenv("PYTHIA_M3_AL_HARAS_TOKEN", "fixture-token-not-live")
+
+    with pytest.raises(ValueError, match="approve-tenant"):
+        provision(tenant="real-mining-tenant", max_records=10000, max_bytes=100000)
+    tenant_id = provision(
+        tenant="real-mining-tenant", max_records=10000, max_bytes=100000,
+        approved=True,
+    )
+    assert tenant_id == provision(
+        tenant="real-mining-tenant", max_records=10000, max_bytes=100000,
+        approved=True,
+    )
+    with pytest.raises(ValueError, match="quota"):
+        provision(
+            tenant="real-mining-tenant", max_records=10001, max_bytes=100000,
+            approved=True,
+        )
+    rec = MiningStorageRecorder.from_env(worker="real-worker", strict=True)
+    try:
+        assert rec.tenant_id == tenant_id
+        assert rec.health(reconcile=True)["healthy"] is True
+    finally:
+        rec._store.close()
+        rec.files.custody.close()
+
+
+def test_euclid_pythia_salamander_feedback_is_theseus_custodied(tmp_path):
+    """The real Salamander observer produces evidence, not invented healing.
+
+    The canonical mining causal recorder persists the changed observation in
+    THESEUS and a repeated feedback snapshot creates no duplicate receipt.
+    """
+    from types import SimpleNamespace
+    from mining_runtime import record_salamander_feedback
+    from salamander.runtime import MiningAutonomyBridge
+
+    store, custody, tenant_id = _plane(tmp_path)
+    recorder = MiningStorageRecorder(store.files, tenant_id, _short_root(), strict=True)
+    ledger = CausalLedger(observer=recorder.observe)
+    coordinator = SimpleNamespace(causal=ledger, _pending_correlation={})
+    try:
+        salamander = MiningAutonomyBridge(tmp_path / "salamander-local.jsonl")
+        report = salamander.observe_mining_snapshot({
+            "schema": "pythia.mining_evidence/1",
+            "lifecycle": {
+                "transport_connected": True,
+                "subscribed": True,
+                "authorized": True,
+                "job_available": True,
+                "target_available": True,
+            },
+            "recovery": {"faulted": False},
+            "optimization": {},
+            "last_execution": {},
+        })
+        assert report["classification"]["WIRED"] is True
+        assert report["evidence_custody"] == "LOCAL_MIRROR_NOT_CANONICAL_THESEUS"
+        digest, recorded = record_salamander_feedback(
+            coordinator, recorder, report, None,
+        )
+        assert recorded and digest
+        rows = store._db.execute(
+            "SELECT fo.logical_name, fv.content_sha256 FROM file_objects fo "
+            "JOIN file_versions fv ON fv.tenant_id=fo.tenant_id "
+            "AND fv.file_object_id=fo.file_object_id "
+            "WHERE fo.tenant_id=? AND fo.logical_name LIKE 'receipt-salamander_runtime_observed-%'",
+            (tenant_id,),
+        ).fetchall()
+        assert len(rows) == 1
+        assert recorder.health(reconcile=True)["healthy"] is True
+        again, recorded = record_salamander_feedback(
+            coordinator, recorder, report, digest,
+        )
+        assert again == digest and recorded is False
+        rows_after = store._db.execute(
+            "SELECT COUNT(*) FROM file_versions fv "
+            "JOIN file_objects fo ON fo.tenant_id=fv.tenant_id "
+            "AND fo.file_object_id=fv.file_object_id "
+            "WHERE fo.tenant_id=? AND fo.logical_name LIKE 'receipt-salamander_runtime_observed-%'",
+            (tenant_id,),
+        ).fetchone()[0]
+        assert rows_after == 1
+        # A bare 'HEALTHY' claim without the real observer schema is ignored.
+        failed, recorded = record_salamander_feedback(
+            coordinator, recorder, {"health": "HEALTHY"}, digest,
+        )
+        assert failed == digest and recorded is False
+    finally:
+        store.close()
+        custody.close()

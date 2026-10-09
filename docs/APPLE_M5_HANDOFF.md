@@ -1,5 +1,8 @@
 # Apple M5 Max — Pickup Note
 
+> **HISTORICAL CHECKPOINT (7 October), NOT THE CURRENT EXECUTION INSTRUCTIONS.**
+> For today's M5 transfer use [APPLE_M5_TRANSFER_20261009.md](production/APPLE_M5_TRANSFER_20261009.md), including the actual 8 October failure log findings, fresh venv, intelligence/custody qualification and controlled startup. Keep this older record for provenance; do not check out its stale branch/HEAD as today's canonical source.
+
 Date (UTC): 2026-10-07
 Checkpoint host: Windows (`andre` desktop)
 Repo: https://github.com/QuantumPhiRedux/PhiMiner

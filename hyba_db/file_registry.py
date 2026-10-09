@@ -1057,6 +1057,7 @@ class FileRegistry:
         evidence_state: str = "MEASURED",
         producer: str = "pythia",
         custody_record_id: str | None = None,
+        idempotency_key: str | None = None,
     ) -> str:
         self._tenant(tenant_id)
         kind = str(kind)
@@ -1069,10 +1070,39 @@ class FileRegistry:
         body = dict(payload)
         parent_ids = tuple(str(x) for x in parent_ids)
         digest = _sha(_json(body).encode())
+        if idempotency_key is not None and not str(idempotency_key).strip():
+            raise InvalidRecord("mining idempotency_key must be nonempty")
         record_id = _id(
-            f"mining_{kind}", f"{tenant_id}:{kind}:{digest}:{uuid.uuid4().hex}".encode()
+            f"mining_{kind}",
+            (
+                f"{tenant_id}:{kind}:event:{idempotency_key}"
+                if idempotency_key is not None
+                else f"{tenant_id}:{kind}:{digest}:{uuid.uuid4().hex}"
+            ).encode(),
         )
         with self.store._tx() as db:
+            if idempotency_key is not None:
+                existing = db.execute(
+                    "SELECT * FROM mining_lifecycle WHERE tenant_id=? AND record_id=?",
+                    (tenant_id, record_id),
+                ).fetchone()
+                if existing is not None:
+                    if (
+                        existing["kind"] != kind
+                        or existing["payload_json"] != _json(body)
+                        or existing["parent_ids_json"] != _json(parent_ids)
+                        or existing["evidence_state"] != evidence_state
+                        or existing["producer"] != producer
+                        or existing["content_sha256"] != digest
+                        or self.custody is None
+                        or not self.custody.verify(
+                            tenant_id, existing["custody_record_id"]
+                        )
+                    ):
+                        raise IntegrityFailure(
+                            "mining idempotency replay disagrees with durable custody"
+                        )
+                    return record_id
             rows = []
             for parent in parent_ids:
                 row = db.execute(

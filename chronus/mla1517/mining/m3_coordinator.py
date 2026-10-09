@@ -52,6 +52,21 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
                 kwargs.setdefault("recovery_target", "pythia.mining.runtime")
         super().__init__(*args, **kwargs)
 
+    def submission_permitted(self) -> bool:
+        """The canonical production miner never wires a live pool without M3.
+
+        A dashboard approval or --submit alone is not sufficient to bypass
+        AL HARAS + THESEUS. Non-strict M3 remains usable for shadow hashing;
+        the lower-level coordinator's isolated protocol fixtures are unchanged.
+        """
+        if not super().submission_permitted():
+            return False
+        return bool(
+            self._m3_required
+            and self._m3_gate is not None
+            and self._m3_blocked_reason is None
+        )
+
     def m3_status(self) -> dict[str, Any]:
         fabric = dict(getattr(self, "_chronus_fabric_state", {}) or {})
         return {

@@ -254,3 +254,33 @@ def test_stale_job_is_refused_without_killing_m3_coordinator():
     assert result is False
     assert coord._last_pool_outcome is PoolOutcome.STALE
     assert coord._cleared == "STALE_JOB"
+
+
+def test_canonical_live_submit_refuses_all_unsafe_m3_bypasses(monkeypatch):
+    """Operator CLI and dashboard approval cannot bypass AL HARAS/THESEUS."""
+    from unittest.mock import patch
+    from chronus.mla1517.mining.geodesic_support import (
+        PythiaProductionMiningCoordinator,
+    )
+
+    coord = M3PythiaProductionMiningCoordinator.__new__(
+        M3PythiaProductionMiningCoordinator
+    )
+    coord._m3_required = False
+    coord._m3_gate = None
+    coord._m3_blocked_reason = None
+
+    with patch.object(PythiaProductionMiningCoordinator, "submission_permitted",
+                      return_value=True):
+        assert coord.submission_permitted() is False  # CLI --submit or dashboard
+        coord._m3_required = True
+        assert coord.submission_permitted() is False  # no AL HARAS gate
+        coord._m3_gate = object()
+        assert coord.submission_permitted() is True   # actual authorization still runs
+        coord._m3_blocked_reason = "STORAGE_UNHEALTHY"
+        assert coord.submission_permitted() is False
+        coord._m3_blocked_reason = None
+
+    with patch.object(PythiaProductionMiningCoordinator, "submission_permitted",
+                      return_value=False):
+        assert coord.submission_permitted() is False  # no operator approval
