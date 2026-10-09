@@ -111,6 +111,12 @@ class GeneralIntelligenceCore:
         analogy_adopt_threshold: float = 0.5,
         strategy_first: bool = False,
         max_probes_per_cycle: int = 1,
+        hypothesis_evidence_strength: float = 4.0,  # declared Born-mass prior strength
+        memory_bias_base: float = 0.1,
+        memory_bias_overlap: float = 0.3,
+        memory_bias_transfer: float = 0.2,
+        memory_bias_cap: float = 0.4,
+        payload_cost_coefficient: float = 0.05,
     ) -> None:
         if max_cycles < 1:
             raise ValueError("max_cycles must be >= 1")
@@ -141,6 +147,14 @@ class GeneralIntelligenceCore:
         #: choose how to think before gathering evidence (strategy governs probing)
         self.strategy_first = bool(strategy_first)
         self.max_probes_per_cycle = int(max_probes_per_cycle)
+        # declared evidence/policy constants (constructor-visible, never
+        # presented as measured quantities)
+        self.hypothesis_evidence_strength = float(hypothesis_evidence_strength)
+        self.memory_bias_base = float(memory_bias_base)
+        self.memory_bias_overlap = float(memory_bias_overlap)
+        self.memory_bias_transfer = float(memory_bias_transfer)
+        self.memory_bias_cap = float(memory_bias_cap)
+        self.payload_cost_coefficient = float(payload_cost_coefficient)
         self._executed = False
         self._probe_index = 0
 
