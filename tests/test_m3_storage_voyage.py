@@ -434,7 +434,8 @@ def test_from_env_exact_ovid_wires_transform_and_provenance(tmp_path, monkeypatc
             "AND fo.file_object_id=fv.file_object_id "
             "JOIN file_provenance fp ON fp.tenant_id=fv.tenant_id "
             "AND fp.file_version_id=fv.file_version_id "
-            "WHERE fv.tenant_id=? AND fo.logical_name LIKE 'receipt-%'",
+            "WHERE fv.tenant_id=? AND fo.logical_name LIKE 'receipt-%' "
+            "AND fo.file_class != 'transform'",
             (rec.tenant_id,),
         ).fetchone()
         assert receipt_row["producer_version"] == "test-revision"
