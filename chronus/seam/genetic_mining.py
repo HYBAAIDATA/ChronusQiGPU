@@ -12,7 +12,7 @@ import random
 from dataclasses import asdict, dataclass
 from typing import Any, Callable
 
-from Intelligence.lucas_scales import nearest_ladder_index
+from lucas.ladder import nearest_ladder_index
 
 
 @dataclass(frozen=True)
