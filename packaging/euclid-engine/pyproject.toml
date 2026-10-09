@@ -27,6 +27,7 @@ dependencies = [
     "numpy>=1.26,<3",
     "hyba-kellogg-tensor>=1.0,<2",
     "hyba-toe-intelligence>=1.0,<2",
+    "hyba-theseus-storage>=1.0,<2",
 ]
 
 [project.scripts]
