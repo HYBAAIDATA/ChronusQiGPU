@@ -12,6 +12,8 @@ import random
 from dataclasses import asdict, dataclass
 from typing import Any, Callable
 
+from Intelligence.lucas_scales import nearest_ladder_index
+
 
 @dataclass(frozen=True)
 class MiningGenome:
@@ -72,6 +74,10 @@ def evolve_mining_config(
         raise ValueError("generations must be in [1,100]")
     if not 4 <= int(population_size) <= 128:
         raise ValueError("population_size must be in [4,128]")
+    # LUCAS_SCALED (lemma_lucas_universal): the search-effort envelopes are
+    # ladder stops inside the validated bounds.
+    generations = nearest_ladder_index(int(generations), 1, 100)
+    population_size = nearest_ladder_index(int(population_size), 4, 128)
     if seed is None:
         seed = int.from_bytes(
             hashlib.sha256(
