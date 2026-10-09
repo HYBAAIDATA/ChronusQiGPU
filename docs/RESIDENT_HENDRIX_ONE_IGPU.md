@@ -184,5 +184,5 @@ Implemented and software-validated resident execution increment, with installabl
 artifacts. Not yet a fully production-qualified deployment of the entire route.
 Actual physical-GPU compilation/execution, full repository CI, configured durable
 custody/restart integration and literal pool acknowledgement are separate evidence
-gates. No ASIC, Apple M5, competitor, 10 EH/s or physical multiplication claim is
+gates. ASIC, Apple M5, competitor, 10 EH/s and physical-multiplication claims remain unclaimed; none is
 made by this delivery. No formal consensus-security theorem is manufactured.

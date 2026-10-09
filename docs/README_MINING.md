@@ -24,7 +24,7 @@ and entanglement — around that search. The 32-face, 11D, H4/600 and Turing
 Hilbert structures support the complete itinerary Hendrix traverses; they do
 not replace Hendrix as the search identity.
 
-The production objective is to improve useful search/execution efficiency while preserving complete truth and evidence boundaries. The engineering target of 10 EH/s aggregate remains a capacity target until measured on the actual fleet.
+The production objective is to improve useful search/execution efficiency while preserving complete truth and evidence boundaries. The engineering target of 10 EH/s aggregate remains an unclaimed capacity target until measured on the actual fleet.
 
 ## Canonical authority
 
