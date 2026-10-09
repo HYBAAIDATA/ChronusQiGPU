@@ -240,7 +240,7 @@ class EuclidMiningSupport:
                 "reason": "unverified SALAMANDER observation",
             }
             return False
-        self._last_salamander = {
+        verified = {
             "available": True,
             "health": str(report.get("health") or "UNAVAILABLE"),
             "evidence_head": report["evidence_head"],
@@ -248,6 +248,17 @@ class EuclidMiningSupport:
             "self_healing_evidenced": classification.get("SELF_HEALING") is True,
             "self_optimising_evidenced": classification.get("SELF_OPTIMISING") is True,
         }
+        if self._last_salamander is None or (
+            self._last_salamander.get("health") != verified["health"]
+            or self._last_salamander.get("self_healing_evidenced")
+            != verified["self_healing_evidenced"]
+            or self._last_salamander.get("self_optimising_evidenced")
+            != verified["self_optimising_evidenced"]
+        ):
+            # Meaningful new recovery/health information triggers a fresh
+            # bounded decision without waiting for the previous cache interval.
+            self._last_decision_at = float("-inf")
+        self._last_salamander = verified
         return True
 
     @staticmethod
