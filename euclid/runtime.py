@@ -66,6 +66,10 @@ class EuclidRuntime:
         self.cognition = cognition
         #: v17 integrated adaptive intelligence (see compose_adaptive_intelligence)
         self.adaptive: Any | None = None
+        #: Canonical THESEUS/OVID custody for adaptive knowledge (F5).  When no
+        #: custody is attached the runtime fails closed: knowledge is kept
+        #: in-memory for the process and never written to a private JSON file.
+        self.adaptive_custody: Any | None = None
         self._adaptive_organs = 0
         from .cognition.reachability import ReachabilityMatrix
 
@@ -120,6 +124,7 @@ class EuclidRuntime:
             experience_learner=experience_learner,
             memory_database=database,
         )
+        runtime.adaptive_custody = custody
         runtime._compose_cognition()
         if organism:
             runtime.compose_organism(
@@ -935,6 +940,7 @@ class EuclidRuntime:
         *,
         config: Any | None = None,
         ablations: Any | None = None,
+        custody: Any | None = None,
     ) -> Any:
         """Compose from canonical custody, or retain only in-memory knowledge."""
         with self._adaptive_lock:
@@ -996,6 +1002,11 @@ class EuclidRuntime:
         ``world_executor`` is registered as a dedicated PROPOSE-authority organ
         with a creator-granted dispatch right, so execution passes the same
         capable/healthy/permitted/confident/safe gates as every other organ.
+        The per-episode right is revoked in a ``finally`` path, so normal
+        return, solver exception and cancellation all end the episode revoked
+        (F1).  Knowledge is persisted only through canonical custody, and the
+        PERSISTED reachability stage advances only when that durable write
+        verifiably happened (F2/F5).
         """
         with self._adaptive_lock:
             return self._solve_task(spec, world_executor, seed=seed)
@@ -1005,6 +1016,8 @@ class EuclidRuntime:
             raise RuntimeError("runtime is closed")
         if getattr(self, "adaptive", None) is None:
             raise RuntimeError("adaptive intelligence is not composed")
+        import json
+
         from .cognition.baselines import DelegatorExecutor
         from .cognition.reachability import ReachabilityStage
 
@@ -1067,6 +1080,13 @@ class EuclidRuntime:
                                                  "claim": "episode-use-only"})
         self.reachability.save(self.state_dir / "cognition_reachability.json")
         return result
+
+    def _adaptive_record_id(self) -> str:
+        """Creator-bound custody record id for this runtime's adaptive knowledge."""
+        import re
+
+        safe_creator = re.sub(r"[^A-Za-z0-9_.-]", "-", self.creator_id)
+        return f"euclid-adaptive-knowledge-{safe_creator}"
 
     def solve_repository_problem(
         self, problem: Mapping[str, Any], *, goal: str | None = None
