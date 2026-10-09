@@ -94,6 +94,11 @@ def test_control_api_refuses_non_strict_and_malformed_live_approvals(tmp_path, m
         assert status == HTTPStatus.BAD_REQUEST
     monkeypatch.setenv("PYTHIA_M3_REQUIRED", "1")
     status, response = control_api._config_put({"live_submit": {"enabled": True}})
+    assert status == HTTPStatus.BAD_REQUEST
+    assert "worker evidence not ready" in response["error"]
+    from unittest.mock import patch
+    with patch.object(control_api, "_m3_dependency_reason", return_value=(True, "ready")):
+        status, response = control_api._config_put({"live_submit": {"enabled": True}})
     assert status == HTTPStatus.OK, response
     approved = runtime_config.load()
     assert approved["live_submit"]["enabled"] is True
