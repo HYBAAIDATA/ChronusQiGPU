@@ -50,7 +50,7 @@ jobs:
         env: {MEDIATION_MANIFEST_KEY: '${{ secrets.MEDIATION_MANIFEST_KEY }}'}
       - uses: actions/upload-artifact@v4
         if: always()
-        with: {name: promotion-gate-results, path: results/}
+        with: {name: promotion-gate-results, path: results/, if-no-files-found: error}
       - name: Require complete gate evidence
         if: always()
         run: make gate-rollup
