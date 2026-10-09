@@ -29,7 +29,7 @@ jobs:
         # Tests import chronus.mla1517.* which needs the declared project
         # dependencies (numpy, pyyaml, sympy, in-tree VQC); installing only
         # numpy+pytest left the training-readiness suite erroring on import.
-        run: >-
+        run: |
           bash scripts/ci_install.sh ""
           python -m pip install pytest
       - name: Compile

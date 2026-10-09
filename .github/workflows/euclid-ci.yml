@@ -32,7 +32,7 @@ jobs:
         # pyproject dependencies (numpy, pyyaml, sympy, the in-tree VQC
         # package); the job previously ran tests with no install step, so
         # the two production-path tests always errored.
-        run: >-
+        run: |
           bash scripts/ci_install.sh ""
       - name: Compile
         run: python -m compileall -q euclid tests/test_euclid_runtime.py
