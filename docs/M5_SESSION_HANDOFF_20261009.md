@@ -79,8 +79,16 @@ Then the umbrella surgery: drop `chronus` packages except
 
 ## Still red / blocked
 
-- `physical_gpu`: M5 Max detected (metal backend, `physical_gpu_count: 1`) —
-  device-bound execution evidence still required. QC_HOLD.
+- `physical_gpu` — **the iGPU IS the device.** The MLA1517 iGPU is
+  software-defined; the physical substrate is the M5 Max's integrated GPU
+  (metal backend, `physical_gpu_count: 1` detected). The gate needs a
+  device-bound execution receipt — proof the kernel ran on the M5 GPU
+  silicon — not CPU fallback. Blocker found in the API boot log:
+  `OpenCL init failed, using CPU fallback: 'unified_punch_kernel' was not
+  found as a program info attribute or as a kernel name` — the OpenCL lane
+  kernel fails to build on macOS, so the live run executes on
+  `cpu/native_c_midstate`. Fix the kernel compile (or the Metal path) to
+  produce the substrate receipt. QC_HOLD until then.
 - External-pool share acceptance: needs a candidate nonce; hashing now.
 - AL HARAS formal authorization: env set on the live process; formal gate
   is an operator assertion in preflight.
@@ -93,6 +101,7 @@ Then the umbrella surgery: drop `chronus` packages except
 ## Do not
 
 - Do not claim pool share acceptance — only `Authorized: true` is proven.
-- Do not claim physical GPU execution — detection only.
+- Do not claim GPU-silicon execution — the live lane is `cpu/native_c_midstate`;
+  the M5 Max integrated GPU is detected but the OpenCL kernel fails to build.
 - Do not publish wheels — `publishable: false` until CI verdict.
 - Do not kill PID holding the canonical boot lock without inspection.
