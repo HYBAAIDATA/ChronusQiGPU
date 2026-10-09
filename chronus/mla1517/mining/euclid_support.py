@@ -229,6 +229,7 @@ class EuclidMiningSupport:
         classification = report.get("classification")
         accepted = (
             report.get("schema") == "salamander.runtime-autonomy.v1"
+            and report.get("pythia_theseus_observation") != "FAILED"
             and isinstance(classification, Mapping)
             and classification.get("WIRED") is True
             and isinstance(report.get("evidence_head"), str)
