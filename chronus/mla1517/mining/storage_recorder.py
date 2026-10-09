@@ -290,6 +290,7 @@ class MiningStorageRecorder:
             "JOIN file_objects fo ON fo.tenant_id=fv.tenant_id "
             "AND fo.file_object_id=fv.file_object_id "
             "WHERE fv.tenant_id=? AND fo.logical_name LIKE 'receipt-%' "
+            "AND fo.file_class!='transform' "
             "ORDER BY fv.rowid",
             (self.tenant_id,),
         ).fetchall()
