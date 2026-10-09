@@ -17,9 +17,7 @@ import pytest
 
 from Intelligence.lucas_scales import (
     CHRONUS_SCALE_RUNGS,
-    is_ladder_index,
     ladder_capacity,
-    ladder_multiples_of,
     nearest_ladder_index,
 )
 

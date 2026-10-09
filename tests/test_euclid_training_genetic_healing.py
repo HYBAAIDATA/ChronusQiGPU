@@ -1,6 +1,5 @@
 import tempfile
 import unittest
-from dataclasses import asdict
 from pathlib import Path
 
 from chronus.seam.genetic_mining import evolve_mining_config
