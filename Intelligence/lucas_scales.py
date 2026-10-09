@@ -56,13 +56,17 @@ logger = logging.getLogger("Intelligence.lucas_scales")
 # They are written as literals (not computed) so the ladder is stable and
 # auditable; ``validate_against_substrate`` confirms they match
 # ``turing_core.lucas`` at runtime.
-from lucas.core import lucas as _lucas_value
 from lucas.ladder import CURRICULUM_RUNGS as _CURRICULUM_RUNGS
-from lucas.ladder import FULL_LADDER as _FULL_LADDER
 from lucas.ladder import PISOT_EXACT_N as _PISOT_EXACT_N
-from lucas.ladder import SCALE_RUNGS as _SCALE_RUNGS
-
-LUCAS_SCALE_LADDER: Dict[int, int] = {i: _lucas_value(i) for i in _FULL_LADDER}
+from lucas.ladder import (
+    CHRONUS_SCALE_RUNGS,
+    LUCAS_SCALE_LADDER,
+    is_ladder_index,
+    ladder_capacity,
+    ladder_multiples_of,
+    nearest_ladder_index,
+    next_ladder_index,
+)
 
 # Ordered scale indices (ascending) — the five intelligence curriculum
 # rungs. Mining rungs (31/50/76) live on CHRONUS_SCALE_RUNGS, not this profile.
@@ -80,60 +84,10 @@ SCALE_NAMES: Dict[int, str] = {
     76: "L_76 · Pisot collapse",
 }
 
-# Extended iGPU/mining scale rungs — sourced once from
-# lucas.ladder.SCALE_RUNGS.
-CHRONUS_SCALE_RUNGS: Tuple[int, ...] = tuple(_SCALE_RUNGS)
+# Extended iGPU/mining scale rungs and ladder helpers — implemented once in
+# lucas.ladder and re-exported here so the Intelligence profile surface is
+# unchanged for existing consumers.
 PISOT_EXACT_N: int = _PISOT_EXACT_N
-
-
-def is_ladder_index(n: int) -> bool:
-    """True iff n is a rung or a multiple of a rung (n = k·r)."""
-    return n > 0 and any(n % r == 0 for r in CHRONUS_SCALE_RUNGS)
-
-
-def ladder_multiples_of(n: int) -> List[int]:
-    """Which rungs divide n (empty when n is off-ladder)."""
-    return [r for r in CHRONUS_SCALE_RUNGS if n % r == 0]
-
-
-def nearest_ladder_index(n: int, lo: int, hi: int) -> int:
-    """Snap n to the nearest valid ladder index inside [lo, hi].
-
-    Prefers the upward stop on ties (scale bias). Returns the clamped n
-    unchanged when no ladder stop exists in range.
-    """
-    c = max(lo, min(hi, int(round(n))))
-    if is_ladder_index(c):
-        return c
-    for d in range(1, max(hi - c, c - lo) + 1):
-        if c + d <= hi and is_ladder_index(c + d):
-            return c + d
-        if c - d >= lo and is_ladder_index(c - d):
-            return c - d
-    return c
-
-
-def next_ladder_index(n: int, direction: int, lo: int, hi: int) -> int:
-    """Next ladder stop strictly beyond n in ``direction``, clamped to [lo,hi]."""
-    step = 1 if direction >= 0 else -1
-    m = n + step
-    while lo <= m <= hi:
-        if is_ladder_index(m):
-            return m
-        m += step
-    return n
-
-
-def ladder_capacity(bound: int) -> int:
-    """Snap a Chronus-owned capacity/retention bound to a ladder stop.
-
-    Returns the largest ladder stop not exceeding ``bound``; bounds below
-    the minimum stop (10) promote to 10. The bound is a scale-contract
-    envelope (lemma_lucas_universal, LUCAS_SCALED) — never a measured
-    quantity.
-    """
-    b = max(1, int(bound))
-    return nearest_ladder_index(b, 1, max(10, b))
 
 
 PHI = (1 + math.sqrt(5)) / 2

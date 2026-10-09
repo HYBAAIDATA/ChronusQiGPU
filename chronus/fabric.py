@@ -16,7 +16,7 @@ import math
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from Intelligence.lucas_scales import (
+from lucas.ladder import (
     CHRONUS_SCALE_RUNGS,
     LUCAS_SCALE_LADDER,
     is_ladder_index,

@@ -106,6 +106,7 @@ AGENT_PREFIXES = {
         "docs/",
         "legacy/",
         "make/",
+        "unused/",
     ),
 }
 

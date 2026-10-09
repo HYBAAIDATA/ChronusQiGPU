@@ -71,9 +71,10 @@ def artifact_digest(root: Path, name: str) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _clean_tracked_tree(root: Path) -> None:
+def _clean_tracked_tree(root: Path, exclude: tuple[str, ...] = ()) -> None:
+    pathspec = ["."] + [f":(exclude){p}" for p in exclude]
     subprocess.run(
-        ["git", "-C", str(root), "diff", "--quiet", "HEAD", "--"],
+        ["git", "-C", str(root), "diff", "--quiet", "HEAD", "--", *pathspec],
         check=True, capture_output=True,
     )
 
@@ -101,7 +102,11 @@ def run(name: str, fn: Callable[[Path], Outcome], repo_root: Path) -> GateResult
         digests = {p: artifact_digest(root, p) for p in artifacts}
         if current_commit(root) != sha:
             raise ValueError("checkout changed during gate")
-        _clean_tracked_tree(root)
+        # The gate's declared artifacts are evidence it produced this run —
+        # they are digested above, not tampering. A gate whose artifact is a
+        # tracked manifest (e.g. reports/REPO_FILE_OWNERSHIP.json) would
+        # otherwise fail-closed on its own output every run.
+        _clean_tracked_tree(root, exclude=artifacts)
         status, reason = outcome.status, outcome.reason
     except Exception as exc:
         # Do not persist exception messages: dependencies may include credentials.

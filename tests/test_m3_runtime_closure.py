@@ -256,6 +256,112 @@ def test_stale_job_is_refused_without_killing_m3_coordinator():
     assert coord._cleared == "STALE_JOB"
 
 
+def test_baseline_fallback_custodies_plan_before_execution(tmp_path):
+    """Queue-empty fallback is still a plan: strict M3 must see search_plan
+    before the execution boundary, or the whole route latches blocked."""
+    store, custody, recorder = _plane(tmp_path)
+    ledger = CausalLedger()
+    ledger.set_observer(recorder.observe, fail_closed=True)
+    coord = PythiaProductionMiningCoordinator.__new__(PythiaProductionMiningCoordinator)
+    bind = CausalCoordinate(
+        pool_session_id="session-1",
+        generation=8,
+        job_fingerprint="fp-8",
+        job_id="job-8",
+    )
+    ledger.record("identity_bound", bind, job_id="job-8", clean_jobs=True)
+
+    identity = SimpleNamespace(
+        pool_session_id="session-1",
+        generation=8,
+        job_fingerprint="fp-8",
+        job_id="job-8",
+        target_generation=3,
+    )
+    job = SimpleNamespace(job_id="job-8", nbits=0x1D00FFFF, ntime=1700000000, target=1 << 232)
+    lease = SimpleNamespace(lease_id="fallback-lease-1", extranonce2="00", start=0)
+    reserved = SimpleNamespace(lease_id="fallback-lease-1")
+    adapter = SimpleNamespace(
+        current_job=job,
+        next_extranonce2="00",
+        build_header=lambda *a, **k: b"\x00" * 80,
+    )
+    coord._search_lock = asyncio.Lock()
+    coord.cycle = SimpleNamespace(
+        ensure=lambda *a, **k: True, transition=lambda *a, **k: True
+    )
+    coord.mining_enabled = True
+    coord.work_throttled = False
+    coord.client = SimpleNamespace(proof_adapter=adapter)
+    coord._search_lifecycle_open = lambda: True
+    coord._refresh_work_identity = lambda: identity
+    coord._refresh_governor = lambda: None
+    coord.governor = SimpleNamespace(
+        observe_network=lambda n: None, admit=lambda: True, cap_hs=0
+    )
+    coord._forecast_plan_ready = lambda: None
+    coord._score_plan_ready = lambda *a, **k: None
+    coord._next_window = lambda: 64
+    coord._precompute_wake = asyncio.Event()
+    coord._work_wake = asyncio.Event()
+    coord.agentic = SimpleNamespace(
+        consume_plan=lambda timeout_ms=0: None,
+        telemetry=SimpleNamespace(last_consume_miss_reason="queue_empty"),
+        reserve_fallback=lambda window, extranonce2: reserved,
+        begin_reserved=lambda lease_id: lease,
+        finish_execution=lambda lease_id, scanned=False: None,
+        note_fallback=lambda reason: None,
+        _queue=SimpleNamespace(qsize=lambda: 0),
+        admission_block_reason=lambda: "none",
+    )
+    coord.causal = ledger
+    coord._record_decision = lambda **kw: None
+    coord.decisions = SimpleNamespace(resolve=lambda *a, **k: None)
+    coord._certify_dispatch = lambda *a, **k: {"ok": False, "refusal": "test-stop"}
+    coord._publish_evidence = lambda **kw: None
+    coord.recovery = SimpleNamespace(active_recovery_id=lambda: None)
+    coord.last_execution = None
+
+    from chronus.mla1517.mining.search_plan import PlanSource
+
+    fallback_plan = SimpleNamespace(
+        pool_session_id="session-1",
+        generation=8,
+        job_fingerprint="fp-8",
+        plan_id="fallback-lease-1",
+        toe_frame_id=None,
+        base_step=0,
+        window=64,
+        executor_route="cpu_reference",
+        policy_id="baseline_fallback",
+        evidence_refs={"resident_hendrix": {}},
+        source=PlanSource.BASELINE_FALLBACK,
+    )
+    coord._baseline_plan = lambda identity, reserved, window, reason: fallback_plan
+
+    kinds = []
+    original_record = ledger.record
+    ledger.record = lambda kind, coordinate, **detail: (
+        kinds.append(kind), original_record(kind, coordinate, **detail)
+    )[1]
+    coord.causal = ledger
+
+    assert asyncio.run(coord.search_current_job()) is False
+    assert coord.last_execution["reason"] == "dispatch_algebra: test-stop"
+    assert "execution_started" in kinds
+    assert kinds.index("plan_created") < kinds.index("execution_started")
+    rows = store._db.execute(
+        "SELECT kind FROM mining_lifecycle WHERE tenant_id=? ORDER BY rowid",
+        (recorder.tenant_id,),
+    ).fetchall()
+    recorded_kinds = [row["kind"] for row in rows]
+    assert "search_plan" in recorded_kinds
+    assert "lease" in recorded_kinds
+    assert recorded_kinds.index("search_plan") < recorded_kinds.index("lease")
+    store.close()
+    custody.close()
+
+
 def test_canonical_live_submit_refuses_all_unsafe_m3_bypasses(monkeypatch):
     """Operator CLI and dashboard approval cannot bypass AL HARAS/THESEUS."""
     from unittest.mock import patch

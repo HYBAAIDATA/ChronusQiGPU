@@ -2845,6 +2845,24 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     self.last_execution = {"executed": False, "reason": f"lease: {exc}"}
                     return False
                 self.agentic.note_fallback(fallback_reason)
+                # Baseline plans never passed through the precompute queue, so
+                # their plan_created boundary is recorded here, before the
+                # execution boundary, keeping strict M3 job->search_plan->lease.
+                self.causal.record(
+                    "plan_created",
+                    CausalCoordinate(
+                        pool_session_id=plan.pool_session_id,
+                        generation=plan.generation,
+                        job_fingerprint=plan.job_fingerprint,
+                        plan_id=plan.plan_id,
+                        lease_id=plan.plan_id,
+                    ),
+                    resident_hendrix=dict(plan.evidence_refs.get("resident_hendrix") or {}),
+                    route=plan.executor_route,
+                    nonce_start=plan.base_step,
+                    window=plan.window,
+                    policy=plan.policy_id,
+                )
 
             coordinate = CausalCoordinate(
                 pool_session_id=identity.pool_session_id,

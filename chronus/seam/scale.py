@@ -14,7 +14,7 @@ import hashlib
 import math
 from typing import Any, Dict, List, Tuple
 
-from Intelligence.lucas_scales import (
+from lucas.ladder import (
     CHRONUS_SCALE_RUNGS,
     PISOT_EXACT_N,
     ladder_multiples_of,
