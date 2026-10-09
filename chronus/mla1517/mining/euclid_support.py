@@ -139,6 +139,7 @@ class EuclidMiningSupport:
         self._last_cognition_problem: MiningCognitionProblem | None = None
         self._last_decision_at = float("-inf")
         self._last_outcome_key: tuple[int, int, int, int, int] | None = None
+        self._last_salamander: dict[str, Any] | None = None
         self._load_runtime()
 
     def _load_runtime(self) -> None:
@@ -218,6 +219,37 @@ class EuclidMiningSupport:
         except Exception as exc:
             self.unavailable_reason = f"{type(exc).__name__}: {exc}"
 
+    def observe_salamander(self, report: Mapping[str, Any]) -> bool:
+        """Consume SALAMANDER observation as *evidence*, never healing authority.
+
+        The mining policy may factor observed health into its bounded breadth
+        decision. A missing/invalid report is never claimed as a successful
+        remediation; all actual actuation still belongs to SALAMANDER.
+        """
+        classification = report.get("classification")
+        accepted = (
+            report.get("schema") == "salamander.runtime-autonomy.v1"
+            and isinstance(classification, Mapping)
+            and classification.get("WIRED") is True
+            and isinstance(report.get("evidence_head"), str)
+            and bool(report["evidence_head"])
+        )
+        if not accepted:
+            self._last_salamander = {
+                "available": False,
+                "reason": "unverified SALAMANDER observation",
+            }
+            return False
+        self._last_salamander = {
+            "available": True,
+            "health": str(report.get("health") or "UNAVAILABLE"),
+            "evidence_head": report["evidence_head"],
+            "custody": str(report.get("evidence_custody") or "UNAVAILABLE"),
+            "self_healing_evidenced": classification.get("SELF_HEALING") is True,
+            "self_optimising_evidenced": classification.get("SELF_OPTIMISING") is True,
+        }
+        return True
+
     @staticmethod
     def _band(value: float | None, edges: tuple[float, ...]) -> int | None:
         if value is None or not math.isfinite(float(value)):
@@ -245,6 +277,16 @@ class EuclidMiningSupport:
         return {
             "ready": bool(snap.get("ready", False)),
             "recovery": str(recovery_mode or "unknown"),
+            "salamander_health": (
+                self._last_salamander.get("health")
+                if self._last_salamander and self._last_salamander.get("available")
+                else "UNAVAILABLE"
+            ),
+            "salamander_evidence_head": (
+                self._last_salamander.get("evidence_head")
+                if self._last_salamander and self._last_salamander.get("available")
+                else None
+            ),
             "accepted_band": self._band(outcomes.get("accepted_ratio"), (0.5, 0.9, 0.99)),
             "rejected_band": self._band(outcomes.get("rejected_ratio"), (0.001, 0.01, 0.05)),
             "unknown_band": self._band(outcomes.get("unknown_ratio"), (0.001, 0.01, 0.05)),
@@ -398,6 +440,7 @@ class EuclidMiningSupport:
             "decision_interval_s": self.decision_interval_s,
             "last_outcome_key": self._last_outcome_key,
             "last_advice": asdict(advice) if advice is not None else None,
+            "salamander_observation": dict(self._last_salamander or {}),
             "policy_identity": self.policy_identity,
             "cognition_problem": (
                 self._last_cognition_problem.problem.to_mapping()
