@@ -41,7 +41,7 @@ TEST_SUITES = {
 # A historically named test that has been renamed must be resolved, never skipped.
 
 
-def run(argv, cwd=ROOT, timeout=600):
+def run(argv, cwd=ROOT, timeout=600, include_text=False):
     try:
         cp = subprocess.run(
             list(map(str, argv)), cwd=cwd, text=True,
@@ -49,8 +49,11 @@ def run(argv, cwd=ROOT, timeout=600):
             timeout=timeout, check=False,
             env={k: v for k, v in os.environ.items() if k != "PYTHONPATH"},
         )
-        return {"passed": cp.returncode == 0, "exit_code": cp.returncode,
-                "output_tail": cp.stdout[-3500:]}
+        result = {"passed": cp.returncode == 0, "exit_code": cp.returncode,
+                  "output_sha256": hashlib.sha256(cp.stdout.encode()).hexdigest()}
+        if include_text:
+            result["output_tail"] = cp.stdout[-3500:]
+        return result
     except (OSError, subprocess.TimeoutExpired) as exc:
         return {"passed": False, "error": type(exc).__name__}
 
@@ -69,8 +72,8 @@ def main():
         "passed": platform.system() == "Darwin" and platform.machine() == "arm64",
     }
     checks["venv"] = {"passed": sys.prefix != sys.base_prefix}
-    checks["source_revision"] = run(["git", "rev-parse", "HEAD"])
-    checks["clean_checkout"] = run(["git", "status", "--porcelain"])
+    checks["source_revision"] = run(["git", "rev-parse", "HEAD"], include_text=True)
+    checks["clean_checkout"] = run(["git", "status", "--porcelain"], include_text=True)
     if checks["clean_checkout"]["passed"]:
         checks["clean_checkout"]["passed"] = (
             checks["clean_checkout"].get("output_tail", "").strip() == ""
