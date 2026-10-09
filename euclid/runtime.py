@@ -827,8 +827,11 @@ class EuclidRuntime:
         if payload.get("seal") != domain_hash("euclid.adaptive-custody.seal.v1", body):
             raise ValueError("adaptive custody seal mismatch")
         origin = payload.get("producer_process", {})
-        if not isinstance(origin.get("pid"), int) or not origin.get("token"):
+        if type(origin.get("pid")) is not int or origin["pid"] <= 0 or not origin.get("token"):
             raise ValueError("adaptive custody lacks process origin")
+        writer_pid = port.record(binding.binding_id).meta.get("custody_writer_process_id")
+        if writer_pid is not None and writer_pid != origin["pid"]:
+            raise ValueError("adaptive custody process origin differs from fabric observation")
         return payload
 
     def _persist_adaptive_knowledge(self, episode: str) -> None:
@@ -887,6 +890,9 @@ class EuclidRuntime:
             if binding is None or binding.binding_id != self._adaptive_last_binding_id:
                 raise ValueError("adaptive artifact is stale")
             payload = self._read_adaptive_binding(binding)
+            writer_pid = self._adaptive_data_port.record(binding.binding_id).meta.get("custody_writer_process_id")
+            if writer_pid != payload["producer_process"]["pid"]:
+                raise ValueError("adaptive artifact lacks verified custody process origin")
             knowledge = payload["knowledge"]
             if self.adaptive is None or self.adaptive.knowledge.to_payload()["seal"] != knowledge["seal"]:
                 raise ValueError("in-memory knowledge differs from durable artifact")
@@ -1470,17 +1476,14 @@ class EuclidRuntime:
         identity for a later cross-process restore."""
         import hashlib
         import json
-        import re
 
         payload = json.dumps(
             self.snapshot(), sort_keys=True, separators=(",", ":")
         ).encode("utf-8")
-        # Custody record ids become filenames: keep to portable characters.
-        safe_creator = re.sub(r"[^A-Za-z0-9_.-]", "-", self.creator_id)
-        record_id = (
-            f"euclid-runtime-{safe_creator}-"
-            f"{(self.evidence.head or 'genesis')[:16]}"
-        )
+        # Bind identity to the exact artifact, including creator and origin.
+        # Equal evidence heads in separate runtimes must not alias checkpoints.
+        payload_digest = hashlib.sha256(payload).hexdigest()
+        record_id = f"euclid-runtime-{payload_digest}"
         envelope = custody.put(
             payload,
             record_id=record_id,
@@ -1494,7 +1497,7 @@ class EuclidRuntime:
         return {
             "record_id": record_id,
             "content_digest": envelope.content_digest,
-            "payload_sha256": hashlib.sha256(payload).hexdigest(),
+            "payload_sha256": payload_digest,
         }
 
     @classmethod

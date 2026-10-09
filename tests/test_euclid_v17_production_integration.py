@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import asyncio
 import os
 import subprocess
@@ -423,6 +424,23 @@ class EuclidV17ProductionIntegration(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "differs"):
             runtime.verify_adaptive_restart_receipt(receipt)
 
+    def test_f3_forged_artifact_process_origin_is_rejected(self) -> None:
+        port = self._custody()
+        runtime = self._runtime()
+        runtime.bind_adaptive_data_port(port)
+        runtime.compose_adaptive_intelligence()
+        spec, truth = self._spec()
+        runtime.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)))
+        binding = port.latest(runtime.ADAPTIVE_KNOWLEDGE_KIND)
+        payload = json.loads(port.read(binding.binding_id))
+        payload["producer_process"]["pid"] += 1
+        payload["seal"] = domain_hash("euclid.adaptive-custody.seal.v1",
+                                      {k: v for k, v in payload.items() if k != "seal"})
+        port.put(runtime.ADAPTIVE_KNOWLEDGE_KIND, payload,
+                 meta={"custody_writer_process_id": payload["producer_process"]["pid"]})
+        with self.assertRaisesRegex(ValueError, "process origin"):
+            runtime.compose_adaptive_intelligence()
+
     def test_f3_same_process_runtime_checkpoint_is_not_restart_verified(self) -> None:
         port = self._custody()
         runtime = self._runtime()
@@ -438,6 +456,17 @@ class EuclidV17ProductionIntegration(unittest.TestCase):
         self.addCleanup(restored.close)
         self.assertEqual(restored.creator_id, runtime.creator_id)
         self.assertIsNone(restored.reachability.stage("euclid.runtime"))
+
+    def test_f3_checkpoint_identity_binds_exact_artifact(self) -> None:
+        custody = self._custody().fabric.custody
+        first = self._runtime()
+        second = EuclidRuntime(creator_id=first.creator_id, state_dir=self.root / "second")
+        self.addCleanup(second.close)
+        receipts = [runtime.save_to_custody(custody) for runtime in (first, second)]
+        self.assertNotEqual(receipts[0]["record_id"], receipts[1]["record_id"])
+        for receipt in receipts:
+            self.assertEqual(hashlib.sha256(custody.get(receipt["record_id"])).hexdigest(),
+                             receipt["payload_sha256"])
 
     def test_f4_concurrent_tasks_and_recomposition_preserve_identity(self) -> None:
         runtime = self._runtime()

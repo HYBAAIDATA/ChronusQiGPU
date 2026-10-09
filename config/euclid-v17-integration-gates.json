@@ -80,7 +80,9 @@
     "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f5_creators_are_isolated_and_forged_binding_is_rejected",
     "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f5_failed_custody_write_emits_no_persistence_credit",
     "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f3_forged_process_receipt_cannot_certify_restart",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f3_forged_artifact_process_origin_is_rejected",
     "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f3_same_process_runtime_checkpoint_is_not_restart_verified",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f3_checkpoint_identity_binds_exact_artifact",
     "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f4_concurrent_tasks_and_recomposition_preserve_identity",
     "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f6_harmful_imported_strategy_is_detected_and_abandoned",
     "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f4_recomposition_preserves_unique_task_organ_identity"

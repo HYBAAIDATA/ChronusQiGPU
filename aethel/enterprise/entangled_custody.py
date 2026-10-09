@@ -25,6 +25,7 @@ from __future__ import annotations
 import hashlib
 import itertools
 import json
+import os
 import threading
 import time
 import uuid
@@ -333,6 +334,8 @@ class EntangledCustodyFabric:
                     "relation": "shared-theseus-record-via-ovid-lineage",
                     "ovid_lineage_id": form.lineage.lineage_id,
                     "ovid_output_digest": form.lineage.output_digest,
+                    # The fabric observes this; caller metadata cannot override it.
+                    "custody_writer_process_id": os.getpid(),
                 }
             )
             correlations = {str(k): str(v) for k, v in dict(correlation_ids or {}).items()}
