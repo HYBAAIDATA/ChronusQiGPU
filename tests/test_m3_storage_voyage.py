@@ -549,3 +549,44 @@ def test_exact_ovid_restart_recovers_original_receipts(tmp_path, monkeypatch):
     finally:
         second._store.close()
         second.files.custody.close()
+
+
+def test_explicit_m3_tenant_admission_and_no_implicit_quota_changes(
+    tmp_path, monkeypatch,
+):
+    """A new live tenant is provisioned once, never self-registered on miner boot."""
+    from scripts.provision_m3_tenant import provision
+    from chronus.mla1517.mining.storage_recorder import MiningStorageRecorder
+
+    monkeypatch.setenv("PYTHIA_STORAGE_DB", str(tmp_path / "live.db"))
+    monkeypatch.setenv("PYTHIA_STORAGE_ROOT", str(tmp_path / "cas"))
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_ROOT", str(tmp_path / "custody"))
+    monkeypatch.setenv("PYTHIA_STORAGE_INTEGRITY_KEY_HEX", "ab" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_KEY_HEX", "cd" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_TENANT", "real-mining-tenant")
+    monkeypatch.setenv("PYTHIA_M3_REQUIRED", "1")
+    monkeypatch.setenv("PYTHIA_M3_ACTOR", "operational-actor")
+    monkeypatch.setenv("PYTHIA_M3_AL_HARAS_TOKEN", "fixture-token-not-live")
+
+    with pytest.raises(ValueError, match="approve-tenant"):
+        provision(tenant="real-mining-tenant", max_records=10000, max_bytes=100000)
+    tenant_id = provision(
+        tenant="real-mining-tenant", max_records=10000, max_bytes=100000,
+        approved=True,
+    )
+    assert tenant_id == provision(
+        tenant="real-mining-tenant", max_records=10000, max_bytes=100000,
+        approved=True,
+    )
+    with pytest.raises(ValueError, match="quota"):
+        provision(
+            tenant="real-mining-tenant", max_records=10001, max_bytes=100000,
+            approved=True,
+        )
+    rec = MiningStorageRecorder.from_env(worker="real-worker", strict=True)
+    try:
+        assert rec.tenant_id == tenant_id
+        assert rec.health(reconcile=True)["healthy"] is True
+    finally:
+        rec._store.close()
+        rec.files.custody.close()
