@@ -35,7 +35,7 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install integrated development dependencies
-        run: python -m pip install -e ./turing_universal_quantum_computer -e ".[ml,dev,graph]"
+        run: bash scripts/ci_install.sh "ml,dev,graph"
       - name: Record exact qualification head
         run: |
           git rev-parse HEAD
@@ -126,7 +126,7 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install full integrated test dependencies
-        run: python -m pip install -e ./turing_universal_quantum_computer -e ".[ml,dev,graph]"
+        run: bash scripts/ci_install.sh "ml,dev,graph"
       - name: Run full repository suite without failure suppression
         run: python -m pytest -q --junitxml=north-star-full-suite.xml
       - name: Upload full-suite result

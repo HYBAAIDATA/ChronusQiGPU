@@ -23,4 +23,9 @@ paths = [
   # development-only HMAC key for the reference platform manifest; production
   # deploys re-sign via DEPLOYMENT_MANIFEST_KEY (dev-signing.key.README).
   '''manifests/dev-signing\.key''',
+  # These files embed SHA-256 content-addressed digests (release-gate evidence
+  # and a distribution README's custody prose); gitleaks' generic-api-key rule
+  # flags the high-entropy hex, but these are hashes, not credentials.
+  '''packaging/theseus/README\.md''',
+  '''reports/API_GATE_PROTOCOL_LOCAL_VALIDATION\.json''',
 ]

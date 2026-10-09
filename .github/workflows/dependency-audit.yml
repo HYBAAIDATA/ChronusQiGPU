@@ -25,7 +25,7 @@ jobs:
         run: python -m pip install --upgrade pip pip-audit
       - name: Audit Python dependencies
         run: |
-          pip-audit -r <(pip install --dry-run -e "./turing_universal_quantum_computer" -e ".[dev,ml]" 2>&1 | grep "^Would install" | sed 's/Would install //;s/ /==/g') --strict || \
+          pip-audit -r <(bash scripts/ci_install.sh "dev,ml" --dry-run 2>&1 | grep "^Would install" | sed 's/Would install //;s/ /==/g') --strict || \
           pip-audit --strict --skip-editable
   npm-audit:
     name: Node dependency advisory audit

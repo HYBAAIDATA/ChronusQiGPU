@@ -16,7 +16,7 @@ jobs:
           python-version: '3.12'
       - name: Install canonical and isolated standalone products
         run: |
-          python -m pip install -e ./turing_universal_quantum_computer -e '.[ml,dev]'
+          bash scripts/ci_install.sh "ml,dev"
           python -m pip install ./packages/chronos-one-igpu
       - name: Canonical resident geometry and real hash tests
         run: python -m pytest tests/test_exact_geometry.py tests/test_resident_hendrix.py tests/test_production_replacement_attacks.py -q --junitxml=resident-results.xml

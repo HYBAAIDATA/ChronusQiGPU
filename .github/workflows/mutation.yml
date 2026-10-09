@@ -121,7 +121,7 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install project test dependencies
-        run: python -m pip install -e ./turing_universal_quantum_computer -e ".[dev]"
+        run: bash scripts/ci_install.sh "dev"
       - name: Prove planted defect turns focused gate red
         run: >-
           python scripts/critical_mutation_gate.py

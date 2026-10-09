@@ -42,7 +42,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install -e ./turing_universal_quantum_computer -e ".[ml,dev,graph]"
+      - run: bash scripts/ci_install.sh "ml,dev,graph"
       - name: Lint (flake8)
         run: |
           BASE="${{ github.base_ref || 'main' }}"
@@ -160,7 +160,7 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install Python dependencies with ML extras
-        run: pip install -e ./turing_universal_quantum_computer -e ".[ml]"
+        run: bash scripts/ci_install.sh "ml"
       - name: Fetch NLTK resources (vader_lexicon for toe.PredictiveEngine)
         run: python -c "import nltk; nltk.download('vader_lexicon', quiet=True)"
       - name: Run Intelligence self-test
