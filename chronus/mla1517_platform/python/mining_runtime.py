@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
 import json
 import logging
 import os
@@ -17,6 +18,7 @@ from chronus.mla1517.mining.backend_registry import (
     BackendUnavailable,
 )
 from chronus.mla1517.mining.m3_coordinator import M3PythiaProductionMiningCoordinator
+from chronus.mla1517.mining.causal import CausalCoordinate
 from chronus.mla1517.mining.retarget_telemetry import RetargetWindowTracker
 from manifold_pool_coordinator import _build_parser, parse_endpoint
 from worker_lifecycle import HeartbeatEmitter
@@ -32,6 +34,50 @@ from manifold_pool_coordinator import PoolEndpoint
 from salamander.runtime import MiningAutonomyBridge
 
 LOG = logging.getLogger("pythia.mining_runtime")
+
+
+def record_salamander_feedback(
+    coordinator, storage_recorder, report: dict, previous_digest: str | None,
+) -> tuple[str | None, bool]:
+    """Custody changed SALAMANDER observations before EUCLID policy consumes them.
+
+    Recording an observed diagnosis is not proof of completed healing.
+    """
+    classification = report.get("classification")
+    if (
+        storage_recorder is None
+        or report.get("schema") != "salamander.runtime-autonomy.v1"
+        or not isinstance(classification, dict)
+        or classification.get("WIRED") is not True
+        or not isinstance(report.get("evidence_head"), str)
+        or not report["evidence_head"]
+    ):
+        return previous_digest, False
+    summary = {
+        "health": report.get("health"),
+        "detected_issue": report.get("detected_issue"),
+        "last_successful_healing_event": report.get("last_successful_healing_event"),
+        "last_successful_optimisation": report.get("last_successful_optimisation"),
+        "self_healing_evidenced": classification.get("SELF_HEALING") is True,
+        "self_optimising_evidenced": classification.get("SELF_OPTIMISING") is True,
+    }
+    digest = hashlib.sha256(
+        json.dumps(summary, sort_keys=True, separators=(",", ":"), default=str).encode()
+    ).hexdigest()
+    if digest == previous_digest:
+        return previous_digest, False
+    coordinate = CausalCoordinate(
+        **dict(getattr(coordinator, "_pending_correlation", None) or {})
+    )
+    coordinator.causal.record(
+        "salamander_runtime_observed", coordinate,
+        salamander_evidence_head=report["evidence_head"],
+        source_evidence_custody=report.get("evidence_custody") or "UNAVAILABLE",
+        observation_digest=digest,
+        **summary,
+    )
+    # In strict mode CausalLedger's synchronous fail-closed observer is THESEUS.
+    return digest, True
 
 
 def _truthy(value: str | None) -> bool:
@@ -404,6 +450,7 @@ async def _main_async(args) -> None:
                 os.getenv("PYTHIA_RETARGET_TELEMETRY_PATH", "data/retarget_windows.json")
             )
             autonomy = MiningAutonomyBridge.from_environment()
+            last_salamander_feedback_digest: str | None = None
 
             def publish_stratum_status(snapshot: dict) -> None:
                 enriched = dict(snapshot)
@@ -426,6 +473,7 @@ async def _main_async(args) -> None:
                 )
 
             def publish_mining_evidence(snapshot: dict) -> None:
+                nonlocal last_salamander_feedback_digest
                 try:
                     autonomy_snapshot = autonomy.observe_mining_snapshot(snapshot)
                 except Exception as exc:
@@ -437,15 +485,41 @@ async def _main_async(args) -> None:
                         "reason": type(exc).__name__,
                     }
 
-                # Close the same PYTHIA agentic cycle with the real Salamander
-                # observation/result. Salamander remains the actuator; this is
-                # correlation only, so no second healing path is introduced.
+                # Strict M3 custodies meaningful SALAMANDER observations
+                # before they influence EUCLID's next bounded mining decision.
+                try:
+                    digest, recorded = record_salamander_feedback(
+                        coordinator, storage_recorder, autonomy_snapshot,
+                        last_salamander_feedback_digest,
+                    )
+                    last_salamander_feedback_digest = digest
+                    autonomy_snapshot = {
+                        **autonomy_snapshot,
+                        "pythia_theseus_observation": (
+                            "RECORDED" if recorded else
+                            ("UNCHANGED" if digest else "UNAVAILABLE")
+                        ),
+                    }
+                except Exception as exc:
+                    LOG.exception("SALAMANDER -> THESEUS mining observation failed")
+                    if strict_m3:
+                        coordinator._block_m3(
+                            f"SALAMANDER_OBSERVATION_CUSTODY_FAILURE:{type(exc).__name__}"
+                        )
+                    autonomy_snapshot = {
+                        **autonomy_snapshot,
+                        "pythia_theseus_observation": "FAILED",
+                    }
+
+                # SALAMANDER owns remediation; PYTHIA correlates its evidence,
+                # EUCLID advises only within PYTHIA's dispatch breadth.
                 try:
                     coordinator.record_salamander_autonomy(autonomy_snapshot)
                 except Exception:
                     LOG.exception("Could not correlate Salamander evidence with PYTHIA cycle")
 
                 enriched = dict(snapshot)
+                enriched["euclid_support"] = coordinator.euclid_support.snapshot()
                 try:
                     current_cycle = coordinator.pythia_authority.snapshot().get("agentic_mining")
                     if current_cycle is not None:
