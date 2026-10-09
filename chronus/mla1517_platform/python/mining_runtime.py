@@ -382,6 +382,11 @@ async def _main_async(args) -> None:
     os.environ.setdefault("PYTHIA_IDENTITY_HMAC_SECRET", os.urandom(32).hex())
     backend = device if not args.device else os.getenv("PYTHIA_EXECUTION_BACKEND", "auto")
     strict_m3 = m3_required()
+    if args.submit and not strict_m3:
+        raise SystemExit(
+            "live --submit refused: PYTHIA_M3_REQUIRED=1 is mandatory "
+            "for AL HARAS authorisation and THESEUS proof custody"
+        )
     endpoints = pool_endpoints(args)
     observer = BitcoinChainObserver.from_environment()
     assert_declared_chain(observer)
