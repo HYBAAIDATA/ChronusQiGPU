@@ -20,7 +20,7 @@ from .pool import StratumJob, StratumSubmission, ShareResponse, lucas_to_stratum
 from .lucas_datapath import (DatapathConfig, DatapathFailure, JsonShareAdapter, LucasShare, MiningTarget, NonceWindow, SpatialLucasPipeline, disjoint_segments, nonce_window)
 from .lucas_engine import (InvariantViolation, LucasRecord, PrimeIndexedStore, binet_exact, binet_fold, binet_unfold, fibonacci_pair, lucas, make_record, process_batch, zeckendorf_decode, zeckendorf_encode)
 
-__version__ = "3.11.3rc1"
+__version__ = "3.11.3rc2"
 __all__ = [
     "academic", "igpu", "OneIGPU", "OneIGPUResult", "MLAObject", "PrimeDB", "HostGPUPlan",
     "theory",

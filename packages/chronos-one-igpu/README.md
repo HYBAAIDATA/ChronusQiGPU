@@ -1,7 +1,7 @@
 # Chronos ONE iGPU — M5-integrated release candidate
 
 **Distribution:** `chronos-one-igpu` · **Import:** `chronos_one_igpu` ·
-**Candidate:** `3.11.3rc1` · **Owner:** HYBA Software Limited · **License:** MIT.
+**Candidate:** `3.11.3rc2` · **Owner:** HYBA Software Limited · **License:** MIT.
 
 **Status: release candidate; not yet authorised for production publication.**
 PR #140 has merged, but merging does not close its QC hold. No current-head
@@ -189,7 +189,7 @@ CPU kernel-control measurement—not M5 hardware, trained AI, mining, whole-prod
 or competitor performance. Native/portable package validation preserves the raw
 samples and artifact/source digests. No historical ratios are compounded.
 
-## M5_ULTRA bounded contract increment (3.11.3rc1)
+## M5_ULTRA bounded contract continuation (3.11.3rc2)
 
 This is a separate, deeper contract over the original bounded pad-state API.
 It does not expand its span or remove the broader RC3 feature runtime. The
@@ -211,13 +211,18 @@ that a pre-existing declared constant was unchanged.
   unitarity apply to larger admitted chains; no claim of an executed 10-pad
   exhaustive matrix proof or Lean certification is made.
 - Receipts bind revision, algorithm, implementation, topology, pad permutation,
-  operator chain, device contract, result and exact work counts. Receipts contain
+  operator chain, device contract, result and exact work counts. Host
+  differential-verifier counts are separate from source-level device integer
+  helper-call/write/dispatch counts; neither is an ISA-cycle or rate claim. Receipts contain
   no timing/rate/speedup/hardware figures. Raw coefficient buffer shapes and
   canonical byte counts are stated; they are not a whole-process RAM model.
 - CPU_REFERENCE and IGPU here are two **host-CPU exact software paths**, not
-  evidence of two physical devices. GPU is unavailable for this algebra. A GPU
-  request fails unless CPU_REFERENCE fallback is explicitly authorised; the
-  receipt never reports that fallback as GPU parity.
+  evidence of two physical devices. The new OpenCL integer executor consumes
+  immutable chains using resident device buffers and cached plan tables. Its
+  exact GPU domain is dyadic Q(sqrt(2),i), common denominator exponent <=60;
+  unsupported rational inputs are never approximated. A GPU request fails if
+  its device/domain is unavailable unless CPU_REFERENCE fallback is explicitly
+  authorised. Such a fallback never satisfies GPU parity.
 - PRIME-DB restart/replay and caller-owned Ed25519 signed custody are exposed.
   Hashes alone are content identity, not authentication; replay pins a device
   contract and signed custody additionally pins the trusted public-key digest.
@@ -256,12 +261,59 @@ must be in the authorised internal manifest. Existing generic verification may
 still run its historical benchmark outside this contract, but this increment
 and its workflow skip it. Registry policy is **INTERNAL_INDEX only**.
 
+The continuation branch is based on post-PR151-merge main `8dd57e49` and recovers
+the bounded commits that had been pushed to the old branch after its merge.
 Required gates remain fail-closed. Without an actual internal-index endpoint,
-trusted production signing key, exact GPU parity, complete-checkout CI results
-and the requested post-merge main baseline, the record must not return
+trusted production signing key, actual exact GPU parity and complete-checkout CI
+results, the record must not return
 `ELEVATION_COMPLETE`. The implementation is **INCREMENTAL_EVIDENCE_ONLY**;
 whole-product composition, full-register semantics, iGPU-qualified VQC beyond
 these bounded operators and any public-publication decision remain unresolved.
+
+### Executable closure machinery
+
+- `ExactOpenCLExecutor` compiles the actual integer kernel; there are no float
+  coefficients, approximate reductions or fast-math options. Device detection,
+  allocation, cached buffers, cached immutable plans and kernel dispatch are
+  real PyOpenCL calls, not a supplied mock adapter. All outputs are independently
+  checked against host field arithmetic and symbolic Born probabilities. Missing
+  hardware/compiler capability is UNAVAILABLE. CPU compilation/execution of the
+  kernel body tests integer logic only; it is not OpenCL driver qualification.
+- `replay_m5_ultra_evidence.py` checks a pinned source-report hash, exact model
+  identity and revision, then independently replays without hardware redispatch.
+  It can additionally require caller-owned signed custody. A cross-runner CI job
+  consumes the producer's actual installed-artifact evidence. Runner fingerprint
+  differences are recorded, not promoted into proof of physical machine identity.
+- `m5_release_gates.evaluate_contract_gates` keeps unavailable GPU cases, skips,
+  zero executed CI steps, missing trusted signatures, public indexes, survivors
+  and wrong-revision evidence from closing required gates. Its inputs must first
+  be acquired/authenticated through the evidence tools: JSON flags alone are not
+  authentication. It can only qualify the bounded contract; it never authorises
+  whole-product certification, public publication or physical quantum claims.
+- The internal-install tool downloads only same-origin, hash-pinned wheel files,
+  enforces a total download quota, installs with `--no-index --no-deps`, checks
+  installed dependencies offline, and runs the installed bounded entry point.
+  This does not supply a missing registry endpoint, signing key or upload consent.
+
+The previously unimplemented public `OpenCLAdapter.compile/dispatch` now has
+an explicit exact hybrid implementation: actual OpenCL Lucas execution plus
+the complete exact host six-stage datapath and independent value checks. The
+existing interface is preserved; five host stages are never labelled GPU stages.
+All-device placement requests still fail closed. Rate fields may be `None` for
+executed-but-performance-unqualified receipts; existing CPU rate behaviour is
+unchanged. This replacement does not claim a six-stage physical GPU pipeline.
+
+Public M32 exact transport now preserves the historical 20-face +12-dual
+ordering through Q(phi) collinearity/orientation, not cosine argmax/tolerances.
+Its same 7/10 adjacency contract is evaluated with exact radical scores, and
+immutable geometry is cached by content. Legacy float display interfaces remain
+projections, with exact uniform-state access added. Prime-ROM sieve bounds now
+use integer isqrt; caller/output contracts remain intact.
+
+The current environment has no qualified exact OpenCL GPU, so GPU execution
+evidence remains UNAVAILABLE. No new throughput or speedup measurement is run.
+The progress ledger is `docs/M5-ELEVATION-FEEDBACK-LEDGER.json`; unresolved feedback
+is recorded as open, never inferred closed from scoped installed tests.
 
 ## Mining ownership and reference boundaries
 

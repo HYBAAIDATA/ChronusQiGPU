@@ -1,7 +1,7 @@
 {
   "schema": "chronos.m5_elevation_feedback_ledger/1",
   "version": "3.11.3rc2",
-  "main_baseline": "8dd57e49998967899a88aaf53cf89e53386946ff",
+  "main_baseline": "53c5cfa246b4b1c99d016a1562fff47d3006d5c7",
   "scope": "Current M5 operator/contract feedback plus explicitly carried broader product work, not an exhaustive whole-repository audit",
   "feedback": [
     {
@@ -118,6 +118,11 @@
       "requirement": "public_uniform_state",
       "status": "EXACT_CAPABILITY_ADDED_COMPATIBILITY_PRESERVED",
       "implementation_or_evidence": "get_state_exact supplies exact symbolic uniform amplitudes; get_state retains explicit legacy float projection"
+    },
+    {
+      "requirement": "post_PR157_merge_regression",
+      "status": "REPLACED_WITH_TESTED_IMPLEMENTATION",
+      "implementation_or_evidence": "Restore facade selector, real exact executor and offline replay, expanded installed test/campaign harness, metadata-consistent CLI and pinned offline internal installer; two new public regression guards. No unrelated main code overwritten."
     }
   ],
   "project_complete": false,
