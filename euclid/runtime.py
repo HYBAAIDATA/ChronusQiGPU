@@ -30,6 +30,8 @@ class EuclidRuntime:
         cognition: Any | None = None,
     ) -> None:
         self.creator_id = creator_id
+        self._closed = False
+        self._shutdown_report: dict[str, Any] | None = None
         self.state_dir = Path(state_dir)
         self.state_dir.mkdir(parents=True, exist_ok=True)
         self.evidence = EvidenceChain()
@@ -332,6 +334,19 @@ class EuclidRuntime:
 
         A denial or veto is returned as data so the caller can replan; it is
         never converted into a fabricated result."""
+        if self._closed:
+            raise RuntimeError("runtime is closed")
+        if getattr(self, "guardian", None) is None:
+            # Creator-scoped grants are necessary but are not a substitute
+            # for the security owner's authorisation of specialist effects.
+            governance = {"guardian": "not-configured", "allowed": False,
+                          "reason": "GOVERNANCE_UNAVAILABLE"}
+            self.evidence.append("governance-unavailable", {
+                "organ": organ_id, "reason": "GOVERNANCE_UNAVAILABLE",
+            })
+            return {"allowed": False, "organ": organ_id,
+                    "operation": f"{organ_id}.{request.get('operation', 'default')}",
+                    "governance": governance}
         from .cognition.reachability import ReachabilityStage
 
         known = {item["organ_id"] for item in self.registry.report()}
@@ -783,7 +798,7 @@ class EuclidRuntime:
         self.adaptive = IntegratedAgent(
             knowledge=knowledge, config=config, ablations=ablations, evidence=self.evidence
         )
-        self._adaptive_organs = 0
+        # Organ sequence is runtime-scoped, not composition-scoped.
         restored = path.is_file()
         for component in self.ADAPTIVE_COMPONENTS:
             current = self.reachability.stage(component)
@@ -792,8 +807,6 @@ class EuclidRuntime:
                 ReachabilityStage.ADAPTED, ReachabilityStage.REGISTERED,
                 ReachabilityStage.REACHABLE,
             ]
-            if restored and current is not None and current >= ReachabilityStage.PERSISTED:
-                stages.append(ReachabilityStage.RESTART_VERIFIED)
             for stage in stages:
                 if current is None or stage > current:
                     self.reachability.record(
@@ -811,6 +824,8 @@ class EuclidRuntime:
         with a creator-granted dispatch right, so execution passes the same
         capable/healthy/permitted/confident/safe gates as every other organ.
         """
+        if self._closed:
+            raise RuntimeError("runtime is closed")
         if getattr(self, "adaptive", None) is None:
             raise RuntimeError("adaptive intelligence is not composed")
         from .cognition.baselines import DelegatorExecutor
@@ -831,30 +846,53 @@ class EuclidRuntime:
         )
         self.rights.grant(self.creator_id, organ_id, capability, "dispatch")
         executor = DelegatorExecutor(self.delegator, organ_id, capability)
-        result = self.adaptive.solve(spec, executor, seed=seed)
-        self.rights.revoke(self.creator_id, organ_id, capability, "dispatch")
+        try:
+            result = self.adaptive.solve(spec, executor, seed=seed)
+        finally:
+            # Covers failed execution, cancellation and BaseException paths.
+            # Failed episodes never retain dispatch rights or advance the
+            # persistence/reachability success path below.
+            self.rights.revoke(self.creator_id, organ_id, capability, "dispatch")
         atomic_write(
             self.state_dir / "adaptive_knowledge.json", self.adaptive.knowledge.to_payload()
         )
         episode = str(spec.task_id)
         head = self.evidence.head or "genesis"
+        # An episode return/file write is not evidence that every specialist
+        # executed, received feedback or was restored in an independent process.
+        state = getattr(result, "state", None)
+        phases = {t.phase for t in state.transitions} if state is not None else set()
+        ablations = getattr(self.adaptive, "ablations", None)
+        used = {
+            "world_model": ("world_model", {"deduce", "imagine", "compare"}),
+            "causal_discrimination": ("causal_reasoning", {"discriminate"}),
+            "metacognition": (None, {"metacontrol", "evidence-decision"}),
+            "strategy_meta_learning": ("meta_learning", {"strategy"}),
+            "planning": (None, {"plan", "replan", "counterfactual-plan"}),
+            "representation": ("representation_restructuring", {"represent", "restructure"}),
+            "analogy": ("analogy", {"analogy", "analogy-refresh"}),
+            "skills": ("learned_primitives", {"compose"}),
+            "consolidation": (None, {"consolidate"}),
+        }
         for component in self.ADAPTIVE_COMPONENTS:
+            flag, qualifying_phases = used[component.rsplit(".", 1)[1]]
+            if flag is not None and not getattr(ablations, flag, True):
+                continue
+            observed_phases = sorted(phases.intersection(qualifying_phases))
             current = self.reachability.stage(component)
-            for stage in (
-                ReachabilityStage.USED_IN_EPISODE, ReachabilityStage.EXECUTED,
-                ReachabilityStage.OUTCOME_OBSERVED, ReachabilityStage.FEEDBACK_CLOSED,
-                ReachabilityStage.PERSISTED,
-            ):
-                if current is None or stage > current:
-                    self.reachability.record(component, stage, episode_id=episode,
-                                             evidence_ref=head)
-                    current = stage
+            if observed_phases and (current is None or current < ReachabilityStage.USED_IN_EPISODE):
+                self.reachability.record(component, ReachabilityStage.USED_IN_EPISODE,
+                                         episode_id=episode, evidence_ref=head,
+                                         detail={"phases": observed_phases,
+                                                 "claim": "episode-use-only"})
         self.reachability.save(self.state_dir / "cognition_reachability.json")
         return result
 
     def solve_repository_problem(
         self, problem: Mapping[str, Any], *, goal: str | None = None
     ) -> Any:
+        if self._closed:
+            raise RuntimeError("runtime is closed")
         if self.cognition is None:
             raise RuntimeError("cognition is not composed; use EuclidRuntime.production")
         state = self.cognition.solve(problem, goal=goal)
@@ -1047,24 +1085,50 @@ class EuclidRuntime:
         if getattr(self, "_closed", False):
             return
         self._closed = True
+        report: dict[str, Any] = {
+            "schema": "euclid.shutdown/1", "closed": True,
+            "store_save": "not-applicable", "database_close": "not-applicable",
+            "failures": [], "durability_verified": False,
+        }
+        self._shutdown_report = report
         try:
+            # Shutdown ends the grant lifetime, including direct Delegator use.
+            # Keep revocation evidence and the registry; no capability is removed.
+            for creator, subject, asset, action in self.rights.snapshot()["grants"]:
+                self.rights.revoke(creator, subject, asset, action)
             store = self.learning.store
             if store is not None and hasattr(store, "save"):
                 try:
                     store.save()
+                    report["store_save"] = "completed"
                 except Exception as exc:  # noqa: BLE001 - shutdown is fail-soft
+                    report["store_save"] = "failed"
+                    report["failures"].append({"operation": "store-save", "error_type": type(exc).__name__})
                     self.evidence.append("shutdown-store-save-failed", {
-                        "error": f"{type(exc).__name__}: {exc}",
+                        "error": type(exc).__name__,
                     })
         finally:
             database = self.learning.memory_database
             if database is not None:
                 try:
                     database.close()
+                    report["database_close"] = "completed"
                 except Exception as exc:  # noqa: BLE001 - shutdown is fail-soft
+                    report["database_close"] = "failed"
+                    report["failures"].append({"operation": "database-close", "error_type": type(exc).__name__})
                     self.evidence.append("shutdown-database-close-failed", {
-                        "error": f"{type(exc).__name__}: {exc}",
+                        "error": type(exc).__name__,
                     })
+
+    def shutdown_report(self) -> dict[str, Any]:
+        """Shutdown observations, not proof of durable restart or readiness."""
+        import copy
+
+        if self._shutdown_report is None:
+            return {"schema": "euclid.shutdown/1", "closed": False,
+                    "store_save": "not-executed", "database_close": "not-executed",
+                    "failures": [], "durability_verified": False}
+        return copy.deepcopy(self._shutdown_report)
 
     def enable_intelligence(self, **kwargs: Any) -> Any:
         """Wire the merged v16 engine and the cognition loop into this runtime.

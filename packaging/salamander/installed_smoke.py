@@ -34,7 +34,7 @@ def main():
     from salamander.models import ActionKind, ActionRequest
     from salamander.outcome_evidence import EvidenceClass, RuntimeObservation, unqualified_readiness
     from al_haras import ALHaras, GuardianPolicy, HashChainAudit, SubscriptionAuthority, SubscriptionClaims
-    require(salamander.__version__ == args.expected_version == importlib.metadata.version('hyba-salamander'),
+    require(salamander.__version__ == args.expected_version == importlib.metadata.version('hyba-salamander-self-healing'),
             'distribution/import version mismatch')
     provenance = json.loads((Path(salamander.__file__).parent/'_build_provenance.json').read_text())
     require(provenance['source_commit'] == args.expected_commit, 'wrong source provenance')

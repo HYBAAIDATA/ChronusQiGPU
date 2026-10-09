@@ -37,7 +37,7 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: pip
       - name: Install TURING with Kellogg from the checkout
-        # kellogg-tensor is not on PyPI yet: install TURING without dependency
+        # hyba-kellogg-tensor is not on PyPI yet: install TURING without dependency
         # resolution and resolve Kellogg (and the repo packages) from the checkout.
         run: |
           pip install "numpy>=1.26,<3" "sympy>=1.12,<2" "pytest>=7.4,<10"

@@ -13,4 +13,4 @@
 numpy>=1.26,<3
 pyyaml>=6.0,<7
 sympy>=1.12,<2
-turing-universal-quantum-computer>=1.0
+hyba-turing-vqc>=1.0

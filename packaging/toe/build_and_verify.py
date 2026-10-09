@@ -152,7 +152,7 @@ def build_kellogg_wheel(py: Path, root: Path) -> Path:
     staged = mod.stage(root / "kellogg-stage")
     out = root / "kellogg-dist"
     sh([py, "-m", "build", "--wheel", "--outdir", out, staged])
-    wheels = sorted(out.glob(f"kellogg_tensor-{KELLOGG_VERSION}-*.whl"))
+    wheels = sorted(out.glob(f"hyba_kellogg_tensor-{KELLOGG_VERSION}-*.whl"))
     if len(wheels) != 1:
         raise RuntimeError(f"expected one KELLOGG {KELLOGG_VERSION} wheel, got {wheels}")
     return wheels[0]
@@ -259,7 +259,7 @@ md = importlib.metadata.metadata(DIST)
 assert md["Name"] == DIST and md["Version"] == EXPECTED_VERSION, (md["Name"], md["Version"])
 assert md["Requires-Python"] == ">=3.11"
 reqs = [r for r in (importlib.metadata.requires(DIST) or []) if "extra ==" not in r]
-assert sorted(r.split(">")[0].split("<")[0].strip().lower() for r in reqs) == ["kellogg-tensor", "numpy"], reqs
+assert sorted(r.split(">")[0].split("<")[0].strip().lower() for r in reqs) == ["hyba-kellogg-tensor", "numpy"], reqs
 urls = md.get_all("Project-URL") or []
 assert any("QuantumPhiRedux/PhiMiner" in u for u in urls) and not any("QuantumPhi2" in u for u in urls), urls
 

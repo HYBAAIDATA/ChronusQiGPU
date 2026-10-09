@@ -50,7 +50,7 @@ def test_fuzz_exact_chain_differential_adjoint_composition(seed):
         assert out==[m.encode(m.ONE),*[m.encode(m.ZERO)for _ in range(3)]]
     finally:gpu.close()
 
-@pytest.mark.parametrize('field',['algorithm','implementation_id','topology_id','result','device_contract_identity','rc_sha','pad_map','depth','operator_chain_digest','result_digest','cost_model_counts','certified','physical_claims','normalisation','requested_algorithm','planned_algorithm','executed_algorithm','initial_digest','reference_verification','execution_work'])
+@pytest.mark.parametrize('field',['algorithm','implementation_id','topology_id','result','device_contract_identity','rc_sha','pad_map','depth','operator_chain_digest','result_digest','cost_model_counts','certified','physical_claims','normalisation','requested_algorithm','planned_algorithm','executed_algorithm','initial_digest','reference_verification'])
 def test_resealed_mutants_rejected(field):
     gpu,r=session()
     try:
@@ -121,9 +121,7 @@ def test_igpu_unavailability_has_identical_authorised_fallback(monkeypatch):
         monkeypatch.setattr(m,'device_contract',absent)
         with pytest.raises(BackendAbsent):r.execute(chain(2,[]))
         fallback=r.execute(chain(2,[]),authorised_fallback='CPU_REFERENCE')
-        assert fallback['fallback_used']
-        monkeypatch.setattr(m,'device_contract',original)
-        assert r.replay(fallback,original('CPU_REFERENCE'))
+        assert fallback['fallback_used'] and r.replay(fallback,original('CPU_REFERENCE'))
     finally:gpu.close()
 
 

@@ -1,9 +1,10 @@
 {
   "product": "OVID",
-  "proposed_distribution_name": "hyba-ovid",
-  "approved_distribution_name": null,
+  "proposed_distribution_name": "hyba-ovid-data-organisation",
+  "approved_distribution_name": "hyba-ovid-data-organisation",
   "first_public_version": "1.0.0",
-  "identity_status": "PENDING_OWNER_APPROVAL",
+  "identity_status": "APPROVED_BY_OWNER_NAMING_INSTRUCTION",
   "upload_authorised": false,
-  "trusted_publisher_verified": false
+  "trusted_publisher_verified": false,
+  "approval_scope": "publication naming only; no release or upload qualification"
 }

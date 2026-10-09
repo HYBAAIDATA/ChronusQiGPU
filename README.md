@@ -1,12 +1,10 @@
 # PYTHIA
 
-> **PRODUCT RELEASES — PICK UP HERE:** Kellogg (`kellogg-tensor` 1.0.0) and
-> TURING (`turing-universal-quantum-computer` 1.0.0) are release candidates on
-> branch `feat/kellogg-turing-products`. What is done, what is evidenced and
-> what remains (full test and benchmark runs, per-version wheel verification,
-> PyPI and GitHub-billing owner actions) is in
-> [`packaging/RELEASE_STATUS.md`](packaging/RELEASE_STATUS.md). CHRONUS is
-> next and is being pushed by the owner.
+> **PUBLICATION IDENTITIES:** HYBA uses `hyba-<system>-<capability>`.
+> The current catalog contains **11 distinct existing Python distribution
+> candidates**, plus **2 planned CHRONUS splits** (13-package roadmap).
+> See [the publication catalog](packaging/HYBA_PUBLICATION_CATALOG.md).
+> Naming is not release qualification or evidence of registry publication.
 
 > **CANONICAL MINING-SEARCH CONTRACT**
 >

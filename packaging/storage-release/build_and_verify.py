@@ -21,7 +21,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
-PRODUCTS = {"theseus": ("hyba-theseus", "aethel"), "ovid": ("hyba-ovid", "hyba_db")}
+PRODUCTS = {"theseus": ("hyba-theseus-storage", "aethel"), "ovid": ("hyba-ovid-data-organisation", "hyba_db")}
 SECRET_PATTERNS = [re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
                    re.compile(rb"github_pat_[A-Za-z0-9_]{40,}"),
                    re.compile(rb"ghp_[A-Za-z0-9]{30,}"),

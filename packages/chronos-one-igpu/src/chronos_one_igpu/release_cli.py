@@ -19,7 +19,7 @@ def doctor():
     native_receipt=compute_receipt(b'chronos-doctor');checks['native_protocol']=verify_receipt(native_receipt,b'chronos-doctor')
     operator=StructuredHamiltonian([.5]*4,1.618);checks['structured_operator_exact']=operator.matvec_exact([1]*4)==[(sum(row),0)for row in operator.dense_exact()]
     for name in('lucas256.cl','sha256d.cl','structured_matvec.cl','hendrix600.cl'):checks[name]=bool(files('chronos_one_igpu').joinpath('igpu/kernels/'+name).read_bytes())
-    return {'schema':'chronos_release_doctor_v1','python':platform.python_version(),'version':metadata.version('chronos-one-igpu'),'checks':checks,'inventory':inventory,'mining_backend':mining.capability(),'passed':all(checks.values()),'scope':'installed-package diagnostics, not production certification'}
+    return {'schema':'chronos_release_doctor_v1','python':platform.python_version(),'version':metadata.version('hyba-chronos-one-igpu'),'checks':checks,'inventory':inventory,'mining_backend':mining.capability(),'passed':all(checks.values()),'scope':'installed-package diagnostics, not production certification'}
 
 def main():
     parser=argparse.ArgumentParser(prog='chronos-igpu',description='Chronos standalone core and mathematical extensions')
@@ -29,7 +29,7 @@ def main():
     target=sub.add_parser('qualify-target');target.add_argument('--device-selector');target.add_argument('--runs',type=int,default=3);target.add_argument('--nonce-budget',type=int,default=4096);target.add_argument('--output',default='target-qualification.json')
     native=sub.add_parser('native-compute');native.add_argument('header_hex');native.add_argument('--chain-id',default='local-pythi-v1');native.add_argument('--epoch',type=int,default=1)
     q=sub.add_parser('m5-quantum');q.add_argument('--state',choices=['ghz','cluster'],required=True);q.add_argument('--pads',choices=[4,10],type=int,default=4);q.add_argument('--topology',choices=['chain','ring','full_mesh','mesh'],default='chain')
-    ultra=sub.add_parser('m5-ultra-run');ultra.add_argument('chain_file');ultra.add_argument('--rc-sha',required=True);ultra.add_argument('--gpu-selector');ultra.add_argument('--backend',choices=['CPU_REFERENCE','IGPU','GPU'],default='IGPU');ultra.add_argument('--authorised-fallback',choices=['CPU_REFERENCE']);ultra.add_argument('--topology',choices=['chain','ring','full_mesh','mesh'],default='chain')
+    ultra=sub.add_parser('m5-ultra-run');ultra.add_argument('chain_file');ultra.add_argument('--rc-sha',required=True);ultra.add_argument('--backend',choices=['CPU_REFERENCE','IGPU','GPU'],default='IGPU');ultra.add_argument('--authorised-fallback',choices=['CPU_REFERENCE']);ultra.add_argument('--topology',choices=['chain','ring','full_mesh','mesh'],default='chain')
     sub.add_parser('feature-info')
     feature=sub.add_parser('feature-run');feature.add_argument('task_file');feature.add_argument('--profile-file');feature.add_argument('--db-path');feature.add_argument('--checkpoint',action='store_true')
     sub.add_parser('native-security-gate')
@@ -44,7 +44,7 @@ def main():
         from . import OneIGPU
         from .igpu.resident import ResidentConfig
         with OneIGPU()as gpu:result=gpu.m5_resident(ResidentConfig(host_binding=args.bind,virtual_units=args.virtual_units)).manifest()
-    elif args.command=='version':result={'version':metadata.version('chronos-one-igpu')}
+    elif args.command=='version':result={'version':metadata.version('hyba-chronos-one-igpu')}
     elif args.command=='qualify-target':
         from .qualification import qualify_target
         result=qualify_target(args.device_selector,args.runs,args.nonce_budget);Path(args.output).write_text(json.dumps(result,indent=2)+'\n')
@@ -76,7 +76,7 @@ def main():
         if not isinstance(task,dict)or set(task)not in({'chain'},{'chain','initial'}):parser.error('sealed chain fields')
         chain=OperatorChain.from_dict(task['chain'])
         with OneIGPU()as gpu:
-            runtime=gpu.m5_resident(model=elevate_pads(chain.pads,topology=args.topology)).ultra_contract(args.rc_sha,gpu_selector=args.gpu_selector)
+            runtime=gpu.m5_resident(model=elevate_pads(chain.pads,topology=args.topology)).ultra_contract(args.rc_sha)
             result=runtime.execute(chain,task.get('initial'),args.backend,args.authorised_fallback)
     elif args.command in('feature-info','feature-run'):
         from . import OneIGPU

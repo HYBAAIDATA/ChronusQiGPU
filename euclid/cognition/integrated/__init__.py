@@ -1,32 +1,33 @@
-"""EUCLID integrated adaptive intelligence (v17).
+"""EUCLID integrated adaptive intelligence; canonical specialists resolved on demand."""
+from importlib import import_module
 
-Specialists that make :class:`~euclid.cognition.core.GeneralIntelligenceCore`
-operate as one adaptive system over interactive task worlds: a Bayesian
-mechanism world model, information-gain discrimination, value-of-information
-metacognition, contextual strategy meta-learning, structural analogy,
-hierarchical model-based planning with measured representation restructuring,
-autonomous primitive discovery, adaptive multi-objective decisions, dynamic
-objectives with proxy auditing, and episode consolidation with transfer
-bookkeeping.  φ/Fibonacci machinery is used operationally and ablatable.
-"""
-from .agent import SYSTEMS, AccountingExecutor, EpisodeResult, IntegratedAgent, build_problem
-from .context import AgentConfig, EpisodeContext, structural_class, structure_tokens
-from .memory import AgentKnowledge, StructuralMemory
-from .skills import SkillLibrary
-from .world_model import MechanismPosterior
+_EXPORTS = {
+    "AccountingExecutor": ("agent", "AccountingExecutor"),
+    "AgentConfig": ("context", "AgentConfig"),
+    "AgentKnowledge": ("memory", "AgentKnowledge"),
+    "EpisodeContext": ("context", "EpisodeContext"),
+    "EpisodeResult": ("agent", "EpisodeResult"),
+    "IntegratedAgent": ("agent", "IntegratedAgent"),
+    "MechanismPosterior": ("world_model", "MechanismPosterior"),
+    "SYSTEMS": ("agent", "SYSTEMS"),
+    "SkillLibrary": ("skills", "SkillLibrary"),
+    "StructuralMemory": ("memory", "StructuralMemory"),
+    "build_problem": ("agent", "build_problem"),
+    "structural_class": ("context", "structural_class"),
+    "structure_tokens": ("context", "structure_tokens"),
+}
+__all__ = list(_EXPORTS)
 
-__all__ = [
-    "AccountingExecutor",
-    "AgentConfig",
-    "AgentKnowledge",
-    "EpisodeContext",
-    "EpisodeResult",
-    "IntegratedAgent",
-    "MechanismPosterior",
-    "SYSTEMS",
-    "SkillLibrary",
-    "StructuralMemory",
-    "build_problem",
-    "structural_class",
-    "structure_tokens",
-]
+
+def __getattr__(name):
+    target = _EXPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module, attribute = target
+    value = getattr(import_module(f"{__name__}.{module}"), attribute)
+    globals()[name] = value
+    return value
+
+
+def __dir__():
+    return sorted(set(globals()) | set(__all__))

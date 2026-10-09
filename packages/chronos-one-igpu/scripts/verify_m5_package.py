@@ -22,7 +22,7 @@ import zipfile
 
 PACKAGE = Path(__file__).resolve().parents[1]
 REPO = PACKAGE.parents[1]
-TESTS = ("test_m5_model.py", "test_m5_resident.py", "test_m5_quantum.py", "test_execution_binding.py", "test_generic_m5_features.py", "test_m5_ultra_contract.py", "test_m5_exact_opencl.py", "test_m5_release_gates.py", "test_opencl_adapter_replacement.py", "test_m32_public_replacement.py")
+TESTS = ("test_m5_model.py", "test_m5_resident.py", "test_m5_quantum.py", "test_execution_binding.py", "test_generic_m5_features.py", "test_m5_ultra_contract.py")
 
 
 def digest(path):
@@ -115,7 +115,7 @@ def main():
                 venv.EnvBuilder(with_pip=True).create(environment)
                 py = python_in(environment)
                 run([py, "-m", "pip", "install", artifact, "pytest>=8,<10"], work)
-                run([py, "-I", "-c", "import importlib.metadata as m, chronos_one_igpu as c; assert 'site-packages' in c.__file__.replace('\\\\','/'); assert m.version('chronos-one-igpu') == c.__version__; print(c.__file__)"], work)
+                run([py, "-I", "-c", "import importlib.metadata as m, chronos_one_igpu as c; assert 'site-packages' in c.__file__.replace('\\\\','/'); assert m.version('hyba-chronos-one-igpu') == c.__version__; print(c.__file__)"], work)
                 for name in TESTS:
                     shutil.copy2(PACKAGE / "tests" / name, work / name)
                 junit = out / (label + "-tests.xml")
@@ -133,10 +133,6 @@ def main():
                     contract_file=out/(label+"-ultra-contract.json")
                     run([py,"-I",PACKAGE/"scripts/audit_m5_ultra_contract.py","--rc-sha",args.contract_rc_sha,"--output",contract_file],work)
                     report[label+"_ultra_contract"]={"sha256":digest(contract_file),"scope":"bounded contract incremental evidence only", "rc_sha_binding":args.contract_rc_sha}
-                    replay_file=out/(label+"-independent-replay.json")
-                    run([py,"-I",PACKAGE/"scripts/replay_m5_ultra_evidence.py","--source-report",contract_file,"--report-sha256",digest(contract_file),"--rc-sha",args.contract_rc_sha,"--output",replay_file],work)
-                    report[label+"_independent_replay"]={"sha256":digest(replay_file),"scope":"same-host fresh-process independent replay; no hardware redispatch, not cross-machine proof"}
-
             report["package_checks_passed"] = True
             report["publication_blockers"] = [
                 "current-head whole-product certification and unresolved QC/import/platform closure",

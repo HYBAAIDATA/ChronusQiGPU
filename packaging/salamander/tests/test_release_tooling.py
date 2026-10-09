@@ -17,7 +17,7 @@ spec.loader.exec_module(builder)
 
 
 def make_wheel(tmp, *, stable=False, corrupt=False, missing_typed=False, secret=False):
-    project = {'name':'hyba-salamander','version':'1.0.0','requires-python':'>=3.11'}
+    project = {'name':'hyba-salamander-self-healing','version':'1.0.0','requires-python':'>=3.11'}
     sources = {name.replace('.','/')+'.py': b'# unit archive fixture\n' for name in builder.REQUIRED_MODULES
                if name not in ('salamander','al_haras')}
     sources.update({p+'/__init__.py':b'# unit archive fixture\n' for p in builder.PACKAGES})
@@ -28,8 +28,8 @@ def make_wheel(tmp, *, stable=False, corrupt=False, missing_typed=False, secret=
     for key,value in {'Metadata-Version':'2.4','Name':project['name'],'Version':project['version'],
                       'Requires-Python':'>=3.11','License-Expression':'MIT'}.items():message[key]=value
     if stable:message['Classifier']='Development Status :: 5 - Production/Stable'
-    sources['hyba_salamander-1.0.0.dist-info/METADATA'] = message.as_bytes()
-    sources['hyba_salamander-1.0.0.dist-info/licenses/LICENSE'] = b'MIT fixture'
+    sources['hyba_salamander_self_healing-1.0.0.dist-info/METADATA'] = message.as_bytes()
+    sources['hyba_salamander_self_healing-1.0.0.dist-info/licenses/LICENSE'] = b'MIT fixture'
     if missing_typed:sources.pop('salamander/py.typed')
     if corrupt:sources['salamander/models.py'] += b'changed\n'
     if secret:sources['salamander/unit_fixture.txt']=b'ghp_'+b'x'*32
