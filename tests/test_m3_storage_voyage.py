@@ -512,3 +512,40 @@ def test_mining_idempotency_conflict_refuses_divergent_payload(tmp_path):
     finally:
         store.close()
         custody.close()
+
+
+def test_exact_ovid_restart_recovers_original_receipts(tmp_path, monkeypatch):
+    """OVID child bytes are not misparsed as source causal JSON on restart."""
+    monkeypatch.setenv("PYTHIA_STORAGE_DB", str(tmp_path / "db.sqlite"))
+    monkeypatch.setenv("PYTHIA_STORAGE_ROOT", str(tmp_path / "cas"))
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_ROOT", str(tmp_path / "theseus"))
+    monkeypatch.setenv("PYTHIA_STORAGE_INTEGRITY_KEY_HEX", "ab" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_KEY_HEX", "cd" * 32)
+    monkeypatch.setenv("PYTHIA_STORAGE_TENANT", "m5-ovid-exact-replay")
+    monkeypatch.setenv("PYTHIA_STORAGE_OVID_EXACT", "1")
+    first = MiningStorageRecorder.from_env(worker="worker")
+    assert first is not None
+    original = CausalEvent(
+        1, 321.0, "identity_bound",
+        CausalCoordinate(pool_session_id="s1", generation=1, job_id="j1"),
+        {"job_id": "j1"}, software_revision="test-commit",
+    )
+    try:
+        first.observe(original)
+        expected_id = first.snapshot()["heads"]["job"]
+        assert first.health(reconcile=True)["healthy"]
+    finally:
+        first._store.close()
+        first.files.custody.close()
+
+    second = MiningStorageRecorder.from_env(worker="worker")
+    assert second is not None
+    try:
+        assert second.snapshot()["heads"]["job"] == expected_id
+        assert second.snapshot()["records"] == 1
+        second.observe(original)
+        assert second.snapshot()["records"] == 1
+        assert second.health(reconcile=True)["healthy"]
+    finally:
+        second._store.close()
+        second.files.custody.close()
