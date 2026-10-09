@@ -196,7 +196,7 @@ class RetargetWindowTracker:
                     entry[name] = int(entry.get(name, 0)) + deltas[name]
                 entry["stale"] = int(entry.get("stale", 0)) + stale_delta
                 accepted_delta = deltas["accepted"]
-                share_work = snapshot.get("share_work", {})
+                share_work = snapshot.get("share_work")
                 work_bound = False
                 if isinstance(share_work, Mapping):
                     try:
