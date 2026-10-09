@@ -80,7 +80,7 @@ def test_attestation_replay_binds_computation_and_boundary_metadata():
         verify_attestation(payload, corrupt_digest)
 
     corrupt_zeckendorf = deepcopy(evidence)
-    corrupt_zeckendorf["zeckendorf"] = list(corrupt_zeckendorf["zeckendorf"]) + [1]
+    corrupt_zeckendorf["zeckendorf"] ^= 1
     with pytest.raises(AttestationError, match="zeckendorf"):
         verify_attestation(payload, corrupt_zeckendorf)
 

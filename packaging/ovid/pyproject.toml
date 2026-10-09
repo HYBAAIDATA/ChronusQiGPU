@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hyba-ovid-data-organisation"
+version = "1.0.0"
+description = "HYBA OVID canonical data organisation and rebuildable projection — publication candidate"
+requires-python = ">=3.11"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [{name = "HYBA Software Limited"}]
+dependencies = ["numpy>=1.26,<3", "hyba-theseus-storage==1.0.0"]
+
+[project.urls]
+Repository = "https://github.com/QuantumPhiRedux/PhiMiner"
+
+[project.scripts]
+pythia-storage-db-gate = "hyba_db.production_gate:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["hyba_db", "hyba_db.*"]
+
+[tool.setuptools.package-data]
+"*" = ["*", "**/*"]

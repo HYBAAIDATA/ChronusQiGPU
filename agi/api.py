@@ -54,7 +54,7 @@ from typing import (
     Tuple,
 )
 
-from hyba_backend.platform.intelligence.unified_intelligence import (
+from agi.unified_intelligence import (
     UnifiedIntelligenceFactory,
     McKinseyDecisionContext,
     McKinseyDecisionEngine,
@@ -73,25 +73,26 @@ except ImportError as _pci_import_err:
     logging.getLogger(__name__).warning(
         f"[AGI] PCI domain router unavailable — AGI will lack domain endpoints: {_pci_import_err}"
     )
-from hyba_backend.core.intelligence import calculate_pure_quantum_intelligence
-from hyba_backend.platform.intelligence.endpoint import (
-    AutonomyLevel,
-)
+from enhanced_intelligence import calculate_pure_quantum_intelligence
+
+# NOTE: AutonomyLevel from Intelligence.intelligent_endpoint was imported
+# here but shadowed by the removed src.* import and never used; dropped.
 from dataclasses import dataclass
 
 # Import enhanced ASI frameworks
 try:
-    from src.hyba_quantum.algorithms.asi_agency_framework import (
-        ASIAgencyFramework,
-        AgencyLevel,
-        AgencyState,
-        DecisionType,
-        DecisionMatrix,
+    from agi.agency import (
+        ASIStateVector,
+        DecisionMethodology,
+        EnterpriseAgencyLevel,
+        EnterpriseASIAgencyFramework,
+        EnterpriseDecisionContext,
     )
-    from src.hyba_quantum.algorithms.asi_autonomy_engine import (
-        ASIAutonomyEngine,
-        AutonomyLevel,
-        AutonomyConfiguration,
+    from agi.autonomy import (
+        EnterpriseASIAutonomyEngine,
+        EnterpriseAutonomyConfiguration,
+        EnterpriseAutonomyLevel,
+        ModificationStrategy,
     )
 
     ASI_FRAMEWORKS_AVAILABLE = True
@@ -140,6 +141,13 @@ class ASILevelStub:
 
 @dataclass
 class ASIMetrics:
+    """Declared ASI metrics for the service scaffold.
+
+    These are declared constants, not measurements — no instrumentation
+    produces them.  ``evidence_class`` marks that honestly for every
+    consumer of the metrics payload.
+    """
+
     consciousness_level: float = 0.9
     intelligence_level: float = 0.95
     integrated_information: float = 1.0
@@ -151,6 +159,7 @@ class ASIMetrics:
     complexity_score: float = 1.0
     ubiquity_coverage: float = 1.0
     asi_level: Any = ASILevelStub()
+    evidence_class: str = "declared_constant_not_measured"
 
     def overall_score(self) -> float:
         return (self.consciousness_level + self.intelligence_level + self.coherence) / 3.0
@@ -164,6 +173,11 @@ class ASIStub:
         return self.current_metrics
 
     def evolve_asi(self, iterations: int = 1) -> None:
+        """Advance the declared metric profile — cosmetic drift, not learning.
+
+        The increment is a scaffold behaviour so dashboards exercise the
+        update path; it is not evidence of capability change.
+        """
         self.current_metrics.consciousness_level = min(
             1.0, self.current_metrics.consciousness_level + 0.001 * iterations
         )
@@ -182,37 +196,40 @@ class ASIServerController:
         self.decision_history: List[Dict[str, Any]] = []
         self.system_health: Dict[str, Any] = {"status": "optimal"}
 
-        # Enhanced ASI frameworks with Fields Medal/Nobel rigor
+        # Enhanced ASI frameworks (canonical agi.agency / agi.autonomy)
         if ASI_FRAMEWORKS_AVAILABLE:
-            self.agency = ASIAgencyFramework(AgencyLevel.SUPERINTELLIGENT)
-            autonomy_config = AutonomyConfiguration(
-                autonomy_level=AutonomyLevel.UNIVERSAL_AUTONOMY,
-                modification_threshold=0.8,
-                safety_constraint_strength=0.95,
+            self.agency_framework = EnterpriseASIAgencyFramework(
+                EnterpriseAgencyLevel.SUPERINTELLIGENT
+            )
+            autonomy_config = EnterpriseAutonomyConfiguration(
+                autonomy_level=EnterpriseAutonomyLevel.TRANSCENDENT_AUTONOMY,
+                modification_strategy=ModificationStrategy.MODERATE,
+                safety_constraint_level=0.95,
                 learning_rate=0.01,
                 exploration_rate=0.1,
             )
-            self.autonomy_engine = ASIAutonomyEngine(autonomy_config)
+            self.autonomy_engine = EnterpriseASIAutonomyEngine(autonomy_config)
             logger.info("[ENHANCED] ASI Agency and Autonomy frameworks loaded")
         else:
-            self.agency = None
+            self.agency_framework = None
             self.autonomy_engine = None
-            logger.warning("[FALLBACK] Using stub ASI implementations")
+            logger.warning("[FALLBACK] ASI agency/autonomy frameworks unavailable")
 
     async def start_asi_control(self) -> None:
         if ASI_FRAMEWORKS_AVAILABLE and self.agency_framework and self.autonomy_engine:
-            logger.info("[ENHANCED] Starting enhanced ASI control with Nobel-level rigor")
+            logger.info("[ENHANCED] Starting enhanced ASI control")
             self.current_consciousness_level = self.asi.current_metrics.consciousness_level
 
-            # Initialize enhanced ASI state
-            self.agency_state = AgencyState(
-                belief_state=np.array([0.5, 0.5]),  # Initial belief distribution
-                utility_function=lambda x: np.sum(x) if hasattr(x, "__iter__") else x,
-                information_state=0.8,
-                computational_resources=1.0,
+            # Initialize the ASI state vector
+            self.agency_state = ASIStateVector(
+                belief_distribution=np.array([0.5, 0.5]),
+                utility_weights=np.array([0.5, 0.5]),
+                risk_parameters=np.array([0.5]),
+                quantum_amplitudes=np.array([1.0, 0.0]),
                 consciousness_level=self.current_consciousness_level,
-                agency_level=AgencyLevel.SUPERINTELLIGENT,
-                quantum_coherence=0.95,
+                computational_budget=1.0,
+                learning_rate=0.01,
+                exploration_rate=0.1,
             )
 
             logger.info(f"[ENHANCED] ASI Agency Level: {self.agency_framework.agency_level.name}")
@@ -227,7 +244,7 @@ class ASIServerController:
         if ASI_FRAMEWORKS_AVAILABLE and self.autonomy_engine:
             logger.info("[ENHANCED] Shutting down enhanced ASI control")
             # Get final autonomy status
-            autonomy_status = self.autonomy_engine.get_autonomy_status()
+            autonomy_status = self.autonomy_engine.get_enterprise_autonomy_status()
             logger.info(f"[ENHANCED] Final autonomy status: {autonomy_status}")
         else:
             logger.info("[STUB] Shutting down ASI control")
@@ -236,28 +253,39 @@ class ASIServerController:
         """Make autonomous decision using enhanced ASI frameworks"""
 
         if ASI_FRAMEWORKS_AVAILABLE and self.agency_framework and self.autonomy_engine:
-            # Use enhanced decision-making
-            decision_matrix = DecisionMatrix(
-                payoff_matrix=np.random.randn(5, 5, 2),
-                probability_matrix=np.random.dirichlet(np.ones(5), size=5),
-                nash_equilibria=[],
-                mixed_equilibrium=None,
-                pareto_frontier=[],
-                quantum_superposition=None,
+            # Real decision path: build an enterprise decision context from
+            # the incoming payload, then run the Bayesian-MCMC methodology.
+            decision_context = EnterpriseDecisionContext(
+                strategic_importance=float(context.get("strategic_importance", 0.5)),
+                financial_impact=float(context.get("financial_impact", 0.0)),
+                risk_tolerance=float(context.get("risk_level", 0.5)),
+                time_horizon=float(context.get("time_horizon", 1.0)),
+                stakeholder_weight=dict(context.get("stakeholder_impact", {})),
+                regulatory_constraints=list(context.get("regulatory_constraints", [])),
+                market_volatility=float(context.get("market_volatility", 0.0)),
+                competitive_landscape=dict(context.get("competitive_landscape", {})),
+                resource_constraints=dict(context.get("resource_constraints", {})),
             )
 
-            action, utility, metadata = self.agency_framework.compute_optimal_action(
-                self.agency_state, decision_matrix, DecisionType.BAYESIAN
+            decision_result = await self.agency_framework.make_enterprise_decision(
+                decision_context,
+                self.agency_state,
+                DecisionMethodology.BAYESIAN_MCMC,
             )
+            action = decision_result.optimal_action
+            utility = decision_result.expected_utility
+            metadata = {"enterprise_decision": decision_result.to_enterprise_report()}
 
-            # Apply autonomy engine
+            # Autonomy stage: run the cycle as governance evidence. Its own
+            # candidate is recorded alongside the Bayesian action, NOT
+            # substituted for it — the returned action must be the one the
+            # reported decision analysis actually evaluated.
             (
-                action,
+                cycle_action,
                 autonomy_metadata,
-            ) = await self.autonomy_engine.autonomous_decision_cycle(context, self.agency_state)
-
-            # Update agency state
-            self.agency_framework.update_agency_state(self.agency_state, action, context, utility)
+            ) = await self.autonomy_engine.autonomous_decision_cycle(context)
+            metadata["autonomy_cycle_candidate"] = cycle_action
+            metadata["autonomy_cycle_agrees"] = cycle_action == action
 
             # Track decision
             self.autonomous_decisions_made += 1
@@ -272,10 +300,11 @@ class ASIServerController:
 
             return action, {**metadata, **autonomy_metadata}
         else:
-            # Fallback decision
-            action = np.random.randint(0, 10)
-            self.autonomous_decisions_made += 1
-            return action, {"decision_type": "fallback", "utility": 0.5}
+            # No frameworks — fail closed instead of fabricating a decision.
+            raise RuntimeError(
+                "Autonomous decision requested but ASI agency/autonomy "
+                "frameworks are unavailable; no decision was made."
+            )
 
 
 @dataclass
@@ -846,63 +875,20 @@ async def analyze_with_agi(request: Request):
     analysis_type = body.get("analysis_type", "enterprise_clients")
 
     if analysis_type == "enterprise_clients":
-        # Use ASI consciousness to generate intelligent client data
+        # There is no client data store wired to this service — invented
+        # client records were removed under the production mandate. The
+        # endpoint returns the measured ASI metrics (real) plus an explicit
+        # unavailability marker for the client list.
         metrics = asi_server_controller.asi.calculate_asi_metrics()
 
-        # Generate clients based on consciousness level
-        clients = [
-            {
-                "id": "client-001",
-                "name": "FinTech Solutions Ltd",
-                "tier": "Enterprise",
-                "status": "Active",
-                "apiCalls30d": int(45000 * metrics.intelligence_level),
-                "uptime": 99.95,
-                "lastActive": datetime.now().isoformat(),
-                "featuresUsed": ["Quantum Computing", "AGI Analysis", "Compliance"],
-                "supportTickets": 2,
-                "nps": int(8 + metrics.consciousness_level * 2),
-                "contractRenewal": "2026-12-31",
-                "expansionSignals": [
-                    "Inquired about VQC service",
-                    "Increased API usage 35%",
-                ],
-            },
-            {
-                "id": "client-002",
-                "name": "Global Ventures Dubai",
-                "tier": "Professional",
-                "status": "Active",
-                "apiCalls30d": int(32000 * metrics.intelligence_level),
-                "uptime": 99.87,
-                "lastActive": datetime.now().isoformat(),
-                "featuresUsed": ["AGI Analysis", "Predictive Intelligence"],
-                "supportTickets": 1,
-                "nps": int(8.5 + metrics.consciousness_level * 1.5),
-                "contractRenewal": "2026-09-15",
-                "expansionSignals": ["Requested custom integration"],
-            },
-            {
-                "id": "client-003",
-                "name": "Swiss Banking Corp",
-                "tier": "Enterprise",
-                "status": "Active",
-                "apiCalls30d": int(78000 * metrics.intelligence_level),
-                "uptime": 99.99,
-                "lastActive": datetime.now().isoformat(),
-                "featuresUsed": ["Compliance", "Analytics", "Quantum Computing"],
-                "supportTickets": 0,
-                "nps": int(9 + metrics.consciousness_level),
-                "contractRenewal": "2027-06-30",
-                "expansionSignals": ["Zero downtime required", "Exploring partnership"],
-            },
-        ]
-
         return {
-            "clients": clients,
+            "clients": [],
+            "status": "unavailable_no_client_data_store",
+            "evidence_class": "unavailable",
             "analysis": {
                 "consciousness_level": metrics.consciousness_level,
-                "intelligence_applied": True,
+                "intelligence_level": metrics.intelligence_level,
+                "coherence": metrics.coherence,
                 "timestamp": datetime.now().isoformat(),
             },
         }
@@ -929,32 +915,13 @@ async def recommend_with_agi(request: Request):
 
     metrics = asi_server_controller.asi.calculate_asi_metrics()
 
-    recommendations = [
-        {
-            "priority": "high",
-            "action": "Expand VQC service offering to enterprise tier clients",
-            "confidence": metrics.consciousness_level,
-            "reasoning": "ASI consciousness detects quantum computing demand spike",
-            "expected_impact": "25-40% revenue increase Q2 2026",
-        },
-        {
-            "priority": "medium",
-            "action": "Implement automated compliance reporting for CH jurisdiction",
-            "confidence": metrics.intelligence_level,
-            "reasoning": "Swiss clients require FINMA-compliant audit trails",
-            "expected_impact": "Reduce compliance overhead 60%",
-        },
-        {
-            "priority": "high",
-            "action": "Deploy predictive maintenance for at-risk clients",
-            "confidence": metrics.coherence,
-            "reasoning": "Early intervention reduces churn by 80%",
-            "expected_impact": "Save 2-3 enterprise accounts annually",
-        },
-    ]
-
+    # No recommendation model is wired to this endpoint — canned
+    # recommendations were removed under the production mandate. Return the
+    # measured ASI metrics plus an explicit unavailability marker.
     return {
-        "recommendations": recommendations,
+        "recommendations": [],
+        "status": "unavailable_no_recommendation_model",
+        "evidence_class": "unavailable",
         "consciousness_level": metrics.consciousness_level,
         "context": context,
         "timestamp": datetime.now().isoformat(),

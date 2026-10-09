@@ -44,6 +44,7 @@ class RetargetWindowTracker:
         self.windows: OrderedDict[str, dict[str, Any]] = OrderedDict()
         self._last_counters: dict[str, dict[str, int]] = {}
         self._last_stale: dict[str, int] = {}
+        self._last_share_work: dict[str, tuple[float, int]] = {}
         self._load()
 
     def _load(self) -> None:
@@ -195,7 +196,40 @@ class RetargetWindowTracker:
                     entry[name] = int(entry.get(name, 0)) + deltas[name]
                 entry["stale"] = int(entry.get("stale", 0)) + stale_delta
                 accepted_delta = deltas["accepted"]
-                if accepted_delta:
+                share_work = snapshot.get("share_work", {})
+                work_bound = False
+                if isinstance(share_work, Mapping):
+                    try:
+                        work_now = float(
+                            share_work.get("accepted_difficulty_work", 0.0) or 0.0
+                        )
+                        missing_now = max(
+                            0,
+                            int(share_work.get("accepted_without_difficulty", 0) or 0),
+                        )
+                    except (TypeError, ValueError, OverflowError):
+                        work_now = -1.0
+                        missing_now = -1
+                    if math.isfinite(work_now) and work_now >= 0 and missing_now >= 0:
+                        previous_work, previous_missing = self._last_share_work.get(
+                            session_key, (0.0, 0)
+                        )
+                        work_delta = (
+                            work_now - previous_work
+                            if work_now >= previous_work
+                            else work_now
+                        )
+                        missing_delta = self._delta(missing_now, previous_missing)
+                        self._last_share_work[session_key] = (work_now, missing_now)
+                        entry["accepted_difficulty_work"] = float(
+                            entry.get("accepted_difficulty_work", 0.0)
+                        ) + work_delta
+                        entry["accepted_without_difficulty"] = int(
+                            entry.get("accepted_without_difficulty", 0)
+                        ) + missing_delta
+                        work_bound = True
+                if accepted_delta and not work_bound:
+                    # Compatibility fallback for older status producers.
                     if difficulty is None:
                         entry["accepted_without_difficulty"] = int(
                             entry.get("accepted_without_difficulty", 0)

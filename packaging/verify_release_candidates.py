@@ -4,16 +4,16 @@ For each interpreter given, this creates a clean virtual environment, installs
 only the built wheels (plus their public dependencies from PyPI), and runs,
 from a directory outside the repository:
 
-* kellogg-tensor: import of every module, capability-manifest version, the
+* hyba-kellogg-tensor: import of every module, capability-manifest version, the
   specification registry, and every correctness and meta benchmark;
-* turing-universal-quantum-computer (installed beside the local Kellogg
+* hyba-turing-vqc (installed beside the local Kellogg
   wheel): the product registry, the product-boundary checks and every
   correctness and meta benchmark.
 
 Usage:
     python packaging/verify_release_candidates.py \\
-        --kellogg packaging/kellogg-tensor/dist/kellogg_tensor-1.0.0-py3-none-any.whl \\
-        --turing packaging/turing/dist/turing_universal_quantum_computer-1.0.0-py3-none-any.whl \\
+        --kellogg packaging/kellogg-tensor/dist/hyba_kellogg_tensor-1.0.0-py3-none-any.whl \\
+        --turing packaging/turing/dist/hyba_turing_vqc-1.0.0-py3-none-any.whl \\
         --python C:/path/python3.11.exe --python C:/path/python3.12.exe ...
 
 Writes one JSON evidence record per interpreter and product to --out.
@@ -46,7 +46,7 @@ from kellogg.spec import verify_registry
 from kellogg.benchmark import BENCHMARKS, run
 reg = verify_registry()
 bench = {b: run(b, quick=True)["passed"] for b, (axis, _) in BENCHMARKS.items() if axis in ("correctness", "meta")}
-print(json.dumps({"product": "kellogg-tensor", "python": platform.python_version(),
+print(json.dumps({"product": "hyba-kellogg-tensor", "python": platform.python_version(),
                   "implementation": platform.python_implementation(), "version": kellogg.__version__,
                   "manifest_version": manifest["version"], "modules": len(mods), "failed_imports": failed,
                   "siblings_loaded": [s for s in ("aethel", "chronus", "turing_core", "lucas", "toe", "mining")
@@ -69,21 +69,21 @@ assert "site-packages" in str(kellogg.__file__).replace("\\", "/"), kellogg.__fi
 assert T.__version__ == "1.0.0"
 assert kellogg.__version__ == "1.0.0"
 
-metadata = importlib.metadata.metadata("turing-universal-quantum-computer")
-assert metadata["Name"] == "turing-universal-quantum-computer"
+metadata = importlib.metadata.metadata("hyba-turing-vqc")
+assert metadata["Name"] == "hyba-turing-vqc"
 assert metadata["Version"] == "1.0.0"
 assert metadata["Requires-Python"] == ">=3.11"
 assert metadata["Author"] == "HYBA Software Limited"
 license_value = metadata.get("License-Expression") or metadata.get("License")
 assert license_value == "MIT", license_value
-requires = importlib.metadata.requires("turing-universal-quantum-computer") or []
+requires = importlib.metadata.requires("hyba-turing-vqc") or []
 hard_requires = [r for r in requires if "extra ==" not in r]
-assert any(r.lower().startswith("kellogg-tensor") for r in hard_requires), hard_requires
+assert any(r.lower().startswith("hyba-kellogg-tensor") for r in hard_requires), hard_requires
 project_urls = metadata.get_all("Project-URL") or []
 assert any("https://github.com/QuantumPhiRedux/PhiMiner" in u for u in project_urls), project_urls
 assert not any("QuantumPhi2/PhiMiner" in u for u in project_urls), project_urls
 
-dist = importlib.metadata.distribution("turing-universal-quantum-computer")
+dist = importlib.metadata.distribution("hyba-turing-vqc")
 entry = [e for e in dist.entry_points if e.group == "console_scripts" and e.name == "turing-vqc"]
 assert len(entry) == 1
 assert entry[0].value == "turing_universal_quantum_computer.console:main"
@@ -132,7 +132,7 @@ siblings = [
 assert not siblings, siblings
 
 print(json.dumps({
-    "product": "turing-universal-quantum-computer",
+    "product": "hyba-turing-vqc",
     "python": platform.python_version(),
     "implementation": platform.python_implementation(),
     "version": T.__version__,

@@ -21,10 +21,25 @@ pool acknowledgement remain the sole mining truth authorities.
 No search-advantage claim is made here. This module proves composition,
 coverage, deterministic exact-Hilbert traversal and provenance so measured
 production outcomes can test whether the architecture is useful.
+
+ROLES ON THE CANONICAL ROUTE (post exact-geometry migration):
+
+* Production: SEARCH_ARCHITECTURE_ID, PythiaSearchPrecompute (the dataclass
+  contract exact_search reuses), and _exact_hilbert_walk_rank (exact integer
+  rank arithmetic). The canonical precompute is
+  .exact_search.precompute_exact_search() (exact Q(phi) via
+  chronus.exact_geometry) -- it is aliased as ``precompute_pythia_search``
+  by resident_router.py and geodesic_support.py.
+* NON-PRODUCTION FP64 LEGACY: precompute_pythia_search(), vertex_itinerary(),
+  pythia_hilbert_600_nonces(), pythia_hendrix_nonces() and the FP64 helpers
+  below are retained for tests and FP64 research consumers only. They are
+  not called by the canonical route; nothing they return can produce
+  certificates, receipts, or mining decisions.
 """
 
 from __future__ import annotations
 
+from chronos_one_igpu.reference_contract import require_reference, reference_only, require_production_context
 import hashlib
 import heapq
 import importlib
@@ -88,10 +103,7 @@ def _load_coined_cycle_walk():
 
 def _phi_dot(a: Sequence[float], b: Sequence[float]) -> float:
     n = min(len(a), len(b), DIM)
-    return sum(
-        (PHI ** (-(i + 1))) * float(a[i]) * float(b[i])
-        for i in range(n)
-    )
+    return sum((PHI ** (-(i + 1))) * float(a[i]) * float(b[i]) for i in range(n))
 
 
 def _header_direction(header_prefix: bytes) -> tuple[float, ...]:
@@ -99,10 +111,7 @@ def _header_direction(header_prefix: bytes) -> tuple[float, ...]:
         raise ValueError("header_prefix must be exactly 76 bytes")
     digest = hashlib.sha256(header_prefix).digest()
     raw = tuple((digest[index] - 127.5) / 127.5 for index in range(DIM))
-    norm_sq = sum(
-        (PHI ** (-(i + 1))) * value * value
-        for i, value in enumerate(raw)
-    )
+    norm_sq = sum((PHI ** (-(i + 1))) * value * value for i, value in enumerate(raw))
     scale = 1.0 / math.sqrt(1.0 + norm_sq)
     return tuple(value * scale for value in raw)
 
@@ -148,14 +157,14 @@ def _exact_hilbert_walk_rank() -> tuple[tuple[int, ...], str]:
     CoinedCycleWalk = _load_coined_cycle_walk()
     walk = CoinedCycleWalk(DUAL_VERTEX_COUNT, start=0)
     if walk.n_qubits != HILBERT_QUBITS or walk.register.dim != HILBERT_DIM:
-        raise ArithmeticError(
-            "600-position Turing walk must occupy exactly 11 qubits"
-        )
+        raise ArithmeticError("600-position Turing walk must occupy exactly 11 qubits")
 
     cumulative: dict[int, Any] = {}
     reached: set[int] = set()
     for step in range(HILBERT_WALK_HORIZON + 1):
         distribution = walk.position_distribution()
+        if sum(distribution.values(), 0) != 1:
+            raise ArithmeticError("exact quantum walk lost unit Born mass")
         for position, probability in distribution.items():
             cumulative[position] = cumulative.get(position, 0) + probability
             if probability != 0:
@@ -301,9 +310,11 @@ class PythiaSearchPrecompute:
         }
 
 
+@reference_only('pythia_search.fp64')
 @lru_cache(maxsize=1)
 def precompute_pythia_search() -> PythiaSearchPrecompute:
     """Build and validate the job-independent search substrate once per process."""
+    require_reference('pythia_search.fp64')
     coarse_faces = build_search_crystal()
     if len(coarse_faces) != COARSE_FACE_COUNT:
         raise ArithmeticError(
@@ -324,9 +335,7 @@ def precompute_pythia_search() -> PythiaSearchPrecompute:
     dual_vertices = tuple(cell_normals(h4_vertices, h4_cells))
     if len(dual_vertices) != DUAL_VERTEX_COUNT:
         raise ArithmeticError("dual 120-cell must contain exactly 600 vertices")
-    frames_11d = tuple(
-        tuple(lift_fold_11d(vertex)[0]) for vertex in dual_vertices
-    )
+    frames_11d = tuple(tuple(lift_fold_11d(vertex)[0]) for vertex in dual_vertices)
 
     coarse_anchor = tuple(
         max(
@@ -401,12 +410,10 @@ def vertex_itinerary(
     complete manifold traversal. Position zero remains first, preserving
     PYTHIA's selected search basin; all 600 vertices remain present exactly once.
     """
+    require_reference('pythia_search.fp64')
     if len(header) != 80:
         raise ValueError("header must be exactly 80 bytes")
-    if (
-        preferred_face is not None
-        and not 0 <= int(preferred_face) < COARSE_FACE_COUNT
-    ):
+    if preferred_face is not None and not 0 <= int(preferred_face) < COARSE_FACE_COUNT:
         raise ValueError("preferred_face must be in [0, 31]")
     if structure_face_scores is not None:
         if len(structure_face_scores) != COARSE_FACE_COUNT:
@@ -466,13 +473,9 @@ def vertex_itinerary(
         len(geometric_order) != DUAL_VERTEX_COUNT
         or len(set(geometric_order)) != DUAL_VERTEX_COUNT
     ):
-        raise ArithmeticError(
-            "600-vertex geometric itinerary lost manifold coverage"
-        )
+        raise ArithmeticError("600-vertex geometric itinerary lost manifold coverage")
 
-    order = tuple(
-        geometric_order[position] for position in state.hilbert_walk_rank
-    )
+    order = tuple(geometric_order[position] for position in state.hilbert_walk_rank)
     if len(order) != DUAL_VERTEX_COUNT or len(set(order)) != DUAL_VERTEX_COUNT:
         raise ArithmeticError(
             "exact Hilbert traversal lost 600-vertex manifold coverage"
@@ -491,6 +494,7 @@ def pythia_hilbert_600_nonces(
     preferred_face: int | None = None,
 ) -> list[int]:
     """Coverage-complete nonce permutation driven by the 600-vertex itinerary."""
+    require_reference('pythia_search.fp64')
     if len(header) != 80:
         raise ValueError("header must be exactly 80 bytes")
     if type(base) is not int or not 0 <= base <= 0xFFFFFFFF:
@@ -557,25 +561,20 @@ def pythia_hilbert_600_nonces(
     shortest = int(widths.min())
     positions = np.arange(shortest, dtype=np.int64)
     block = starts[:, None] + (
-        (origins[:, None] + positions[None, :] * strides[:, None])
-        % widths[:, None]
+        (origins[:, None] + positions[None, :] * strides[:, None]) % widths[:, None]
     )
     order = block.T.ravel().tolist()
     for p in range(shortest, int(widths.max())):
         mask = widths > p
         if mask.any():
-            order.extend(
-                (starts + (origins + p * strides) % widths)[mask].tolist()
-            )
+            order.extend((starts + (origins + p * strides) % widths)[mask].tolist())
 
     if len(order) != window or len(set(order)) != window:
         raise ArithmeticError(
             "PYTHIA 600-vertex schedule failed unique full-window coverage"
         )
     if order and (min(order) < base or max(order) >= base + window):
-        raise ArithmeticError(
-            "PYTHIA 600-vertex schedule escaped its nonce lease"
-        )
+        raise ArithmeticError("PYTHIA 600-vertex schedule escaped its nonce lease")
     return [int(value) for value in order[position : position + take]]
 
 
@@ -597,6 +596,7 @@ def pythia_hendrix_nonces(
     itinerary positions. The composition changes order only: every nonce in
     the authorised lease remains present exactly once.
     """
+    require_reference('pythia_search.fp64')
     if type(window) is not int or window < 0:
         raise ValueError("window must be a non-negative integer")
     if type(position) is not int or not 0 <= position <= window:

@@ -85,6 +85,53 @@ class StratumRuntimeStateTests(unittest.TestCase):
         self.assertNotEqual(updated.fingerprint, first.fingerprint)
         self.assertEqual(state.snapshot()["job"]["difficulty_source"], "mining.set_difficulty")
 
+    def test_exact_target_exposes_protocol_neutral_share_difficulty(self) -> None:
+        from chronus.mla1517.mining.stratum_adapter import DIFF1_TARGET
+
+        state = _authorized_state()
+        target = DIFF1_TARGET // 8
+        state.target_updated(
+            target=target,
+            source="sv2.SetTarget",
+            value=f"{target:064x}",
+        )
+        snapshot = state.snapshot()
+        self.assertEqual(snapshot["job"]["difficulty_source"], "sv2.SetTarget")
+        self.assertAlmostEqual(snapshot["job"]["difficulty"], 8.0)
+
+    def test_declared_v1_difficulty_remains_the_telemetry_value(self) -> None:
+        state = _authorized_state()
+        state.target_updated(
+            target=(1 << 255),
+            source="mining.set_difficulty",
+            value="4.25",
+        )
+        self.assertEqual(state.snapshot()["job"]["difficulty"], 4.25)
+
+    def test_accepted_work_uses_submission_time_difficulty(self) -> None:
+        state = _authorized_state()
+        state.target_updated(
+            target=(1 << 255),
+            source="mining.set_difficulty",
+            value="4",
+        )
+        state.job_received(replace(JOB, target=state.target), SUBSCRIPTION)
+        state.submission_started("job-1")
+
+        # A new pool difficulty may arrive before the literal submit result.
+        # The accepted share still belongs to the generation submitted at 4.
+        state.target_updated(
+            target=(1 << 254),
+            source="mining.set_difficulty",
+            value="8",
+        )
+        state.submission_finished(True)
+        snapshot = state.snapshot()
+
+        self.assertEqual(snapshot["submission"]["difficulty"], 4.0)
+        self.assertEqual(snapshot["share_work"]["accepted_difficulty_work"], 4.0)
+        self.assertEqual(snapshot["share_work"]["accepted_without_difficulty"], 0)
+
     def test_submission_results_remain_literal(self) -> None:
         state = _authorized_state()
         state.target_updated(target=(1 << 255), source="mining.set_target", value="80" + "00" * 31)
@@ -99,6 +146,26 @@ class StratumRuntimeStateTests(unittest.TestCase):
         self.assertEqual(state.snapshot()["submission"]["state"], "REJECTED")
         self.assertEqual(state.snapshot()["counters"]["accepted"], 1)
         self.assertEqual(state.snapshot()["counters"]["rejected"], 1)
+
+    def test_zero_write_submit_rolls_back_all_submission_accounting(self) -> None:
+        state = _authorized_state()
+        state.target_updated(
+            target=(1 << 255),
+            source="mining.set_target",
+            value="80" + "00" * 31,
+        )
+        state.job_received(replace(JOB, target=state.target), SUBSCRIPTION)
+
+        state.submission_started("job-1")
+        state.submission_not_written("outbound queue full")
+        snapshot = state.snapshot()
+
+        self.assertEqual(snapshot["submission"]["state"], "IDLE")
+        self.assertEqual(snapshot["submission"]["last_result"], "NOT_SUBMITTED")
+        self.assertIsNone(snapshot["submission"]["job_id"])
+        self.assertEqual(snapshot["counters"]["submitted"], 0)
+        self.assertEqual(snapshot["counters"]["unknown"], 0)
+        self.assertTrue(snapshot["ready"])
 
     def test_disconnect_during_submit_is_unknown(self) -> None:
         state = _authorized_state()

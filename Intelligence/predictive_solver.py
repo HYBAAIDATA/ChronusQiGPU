@@ -112,6 +112,23 @@ class PredictiveSolver:
         self._prediction_count = 0
         self._hit_count = 0  # predictions that were verified winners
         self._miss_count = 0  # predictions that missed
+        # Measured per-strategy outcome counts: method -> [hits, misses].
+        # A strategy's reported confidence is the Born probability of its
+        # evidence state — measured, never invented.
+        self._strategy_outcomes: Dict[str, List[int]] = {}
+
+    def _strategy_confidence(self, method: str) -> float:
+        """Born probability of the strategy's evidence state.
+
+        ``born_evidence(hits, misses)`` is P(|hit>) of the qubit
+        |psi> ∝ sqrt(hits+1)|hit> + sqrt(misses+1)|miss> — an untried
+        strategy reports the flat 0.5 prior, and measured outcomes move
+        it. Pure Born rule on measured counts.
+        """
+        from Intelligence._born import born_evidence
+
+        hits, misses = self._strategy_outcomes.get(method, (0, 0))
+        return born_evidence(hits, misses)
 
     def solve(
         self,
@@ -154,8 +171,9 @@ class PredictiveSolver:
                 hashlib.sha256(header_prefix + struct.pack("<I", nonce)).digest()
             ).digest()
             if int.from_bytes(h, "little") <= target_int:
-                # Winner! O(1) prediction succeeded.
+                # Winner! O(1) prediction succeeded — measured hit.
                 self._hit_count += 1
+                self._strategy_outcomes.setdefault(method, [0, 0])[0] += 1
                 return PredictionResult(
                     predicted_nonce=nonce,
                     confidence=confidence,
@@ -166,6 +184,8 @@ class PredictiveSolver:
                     features=features,
                     effective_complexity="O(1) — prediction verified on first candidate",
                 )
+            # Measured miss for this strategy.
+            self._strategy_outcomes.setdefault(method, [0, 0])[1] += 1
             # Track the best-confidence candidate for reporting.
             if confidence > best_confidence:
                 best_nonce = nonce
@@ -182,9 +202,7 @@ class PredictiveSolver:
                 fallback_hashes = fb_hashes
                 if type(fb_nonce) is int and 0 <= fb_nonce <= 0xFFFFFFFF:
                     fallback_hash = hashlib.sha256(
-                        hashlib.sha256(
-                            header_prefix + struct.pack("<I", fb_nonce)
-                        ).digest()
+                        hashlib.sha256(header_prefix + struct.pack("<I", fb_nonce)).digest()
                     ).digest()
                     if int.from_bytes(fallback_hash, "little") <= target_int:
                         fallback_found = True
@@ -268,9 +286,12 @@ class PredictiveSolver:
                     if hasattr(ep, "outcome") and isinstance(ep.outcome, dict):
                         nonce = ep.outcome.get("winning_nonce")
                         if nonce is not None and 0 <= nonce < 2**32:
-                            # Confidence based on episode salience.
+                            # Confidence = measured Born evidence for this
+                            # strategy, combined with the episode's own
+                            # measured salience (geometric evidence).
                             salience = getattr(ep, "salience", 0.5)
-                            candidates.append((int(nonce), salience, "memory_guided"))
+                            conf = max(salience, self._strategy_confidence("memory_guided"))
+                            candidates.append((int(nonce), conf, "memory_guided"))
             except Exception:
                 pass
 
@@ -279,24 +300,27 @@ class PredictiveSolver:
             for lv in self.lucas_scales.levels:
                 # Predict nonce = seed mod L_n (Lucas-resonant offset).
                 nonce = seed % lv.value
-                # Confidence: higher for higher Lucas scales (more structure).
-                conf = 0.3 + 0.1 * lv.ladder_position
-                candidates.append((nonce, conf, f"lucas_resonance_L_{lv.index}"))
+                method = f"lucas_resonance_L_{lv.index}"
+                candidates.append((nonce, self._strategy_confidence(method), method))
 
         # Strategy 3: Zeckendorf-structured — nonces from Zeckendorf indices.
         for idx in features.get("zeckendorf_indices", [])[:5]:
             nonce = (idx * 13 + seed) % (2**32)
-            candidates.append((nonce, 0.25, "zeckendorf_structured"))
+            candidates.append(
+                (nonce, self._strategy_confidence("zeckendorf_structured"), "zeckendorf_structured")
+            )
 
         # Strategy 4: Dual-overlay — nonces at node-aligned offsets.
         node_id = features.get("dual_overlay_node", 0)
         node_nonce = (node_id * 134217757 + seed) % (2**32)  # 2^27-ish prime
-        candidates.append((node_nonce, 0.20, "dual_overlay_node"))
+        candidates.append(
+            (node_nonce, self._strategy_confidence("dual_overlay_node"), "dual_overlay_node")
+        )
 
         # Strategy 5: Phi-phase — nonce from phi-phase projection.
         phi_phase = features.get("phi_phase", 0.0)
         phi_nonce = int((phi_phase / (2 * math.pi)) * (2**32)) % (2**32)
-        candidates.append((phi_nonce, 0.15, "phi_phase"))
+        candidates.append((phi_nonce, self._strategy_confidence("phi_phase"), "phi_phase"))
 
         # Sort by confidence (highest first).
         candidates.sort(key=lambda c: c[1], reverse=True)

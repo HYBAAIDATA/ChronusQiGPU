@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
+from Intelligence._born import born_evidence
 from Intelligence.agentic_mining import AgenticMiningWorkflow
 
 GENESIS_HEADER = bytes.fromhex(
@@ -109,7 +110,9 @@ def run_crawl_case(case: CrawlCase) -> dict[str, Any]:
     candidate = workflow.manifold_bridge.store_candidate(
         nonce=case.nonce,
         header_template=case.header_template,
-        born_prob=0.95,
+        # Flat sector prior: the eval replays a cold workflow with no
+        # measured sector outcomes yet (was invented 0.95).
+        born_prob=born_evidence(0, 0),
         n_anchor=7,
     )
     workflow.current_target = case.target
@@ -127,7 +130,8 @@ def run_crawl_case(case: CrawlCase) -> dict[str, Any]:
         "target_decision_matches_case": result.accepted == case.expected_local_valid,
         "zeckendorf_certificate_valid": (
             candidate.zeckendorf_mask & (candidate.zeckendorf_mask << 1)
-        ) == 0,
+        )
+        == 0,
         "provenance_chain_valid": workflow.toe.verify_provenance(),
     }
     return {

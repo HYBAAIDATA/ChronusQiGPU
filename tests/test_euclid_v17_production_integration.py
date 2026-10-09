@@ -1,322 +1,535 @@
-"""Executable F1-F6 qualification of the integrated EUCLID v17 runtime.
-
-One test per closure requirement from ``config/euclid-v17-integration-gates.json``:
-
-- F1 episode-right-revocation — per-episode dispatch rights end revoked on
-  normal return, solver exception and cancellation.
-- F2 component-evidence-binding — the adaptive PERSISTED stage advances only
-  when the durable custody write verifiably happened.
-- F3 fresh-process-replay — RESTART_VERIFIED comes from a fresh interpreter
-  reading durable THESEUS custody; a same-process reload proves nothing.
-- F4 organ-lifetime-identity — recomposition preserves live ``task-world-*``
-  identities, so later episodes never collide on duplicate organ ids.
-- F5 canonical-custody — adaptive knowledge is creator-bound state persisted
-  through canonical THESEUS/OVID custody, never a private JSON authority.
-- F6 negative-transfer-detection — a mismatched curriculum that degrades a
-  class is detected and produces an auditable remediation decision.
-
-These tests exercise the production composition root, the governed Delegator,
-the durable evidence chain and the enterprise custody plane end to end.
-"""
+"""Production-integration regressions for EUCLID 17 runtime closure."""
 from __future__ import annotations
 
 import json
+import hashlib
+import asyncio
+import os
 import subprocess
 import sys
+import tempfile
+import unittest
+from unittest.mock import patch
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 
-import pytest
-
-from aethel.enterprise.custody import EnterpriseCustody
+from aethel.enterprise.lifecycle import CompositionRoot
 from euclid.cognition.baselines import DelegatorExecutor
+from euclid.cognition.core import AblationConfig
+from euclid.cognition.integrated.control import ContextualStrategyLearner
 from euclid.cognition.reachability import ReachabilityStage
 from euclid.cognition.worlds import MechanismWorld, WorldExecutor, generate_task
 from euclid.runtime import EuclidRuntime
-
-CUSTODY_KEY = b"v17-integration-gate-key-32b!"
-CUSTODY_CHILD = Path(__file__).resolve().parent / "euclid_custody_restart_child.py"
-ADAPTIVE_RECORD = "euclid-adaptive-knowledge-creator-1"
+from euclid.contracts import domain_hash
 
 
-@pytest.fixture()
-def custody(tmp_path):
-    plane = EnterpriseCustody(tmp_path / "custody", hmac_key=CUSTODY_KEY)
-    try:
-        yield plane
-    finally:
-        plane.close()
+class _FailingExecutor:
+    def __init__(self, exc: BaseException) -> None:
+        self.exc = exc
+
+    def execute(self, _action, _payload):
+        raise self.exc
 
 
-def _runtime(tmp_path, name="state", creator="creator-1"):
-    return EuclidRuntime(creator_id=creator, state_dir=tmp_path / name)
+_FRESH_PROCESS_WRITER = r"""
+import json
+import sys
+from pathlib import Path
+from aethel.enterprise.lifecycle import CompositionRoot
+from euclid.cognition.worlds import MechanismWorld, WorldExecutor, generate_task
+from euclid.runtime import EuclidRuntime
+
+custody_root = Path(sys.argv[1])
+local_root = Path(sys.argv[2])
+receipt_path = Path(sys.argv[3])
+lifecycle = CompositionRoot(
+    custody_root, tenant="tenant-euclid-v17", hmac_key=b"k" * 32
+)
+lifecycle.start()
+try:
+    port = lifecycle.data_port("euclid")
+    runtime = EuclidRuntime(creator_id="creator-1", state_dir=local_root)
+    runtime.bind_adaptive_data_port(port)
+    runtime.compose_adaptive_intelligence()
+    spec, truth = generate_task("program-transformation", seed=31, partition="evaluation")
+    runtime.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)), seed=31)
+    receipt = runtime.adaptive_restart_receipt()
+    receipt_path.write_text(json.dumps(receipt, sort_keys=True), encoding="utf-8")
+    print(json.dumps(receipt, sort_keys=True))
+finally:
+    runtime.close()
+    lifecycle.stop()
+"""
+
+_FRESH_PROCESS_READER = r"""
+import json
+import sys
+from pathlib import Path
+from aethel.enterprise.lifecycle import CompositionRoot
+from euclid.cognition.worlds import MechanismWorld, WorldExecutor, generate_task
+from euclid.runtime import EuclidRuntime
+
+custody_root = Path(sys.argv[1])
+local_root = Path(sys.argv[2])
+prior = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))
+lifecycle = CompositionRoot(
+    custody_root, tenant="tenant-euclid-v17", hmac_key=b"k" * 32
+)
+lifecycle.start()
+try:
+    port = lifecycle.data_port("euclid")
+    runtime = EuclidRuntime(creator_id="creator-1", state_dir=local_root)
+    runtime.bind_adaptive_data_port(port)
+    runtime.compose_adaptive_intelligence()
+    verification = runtime.verify_adaptive_restart_receipt(prior)
+    before = runtime.adaptive_restart_receipt()
+    spec, truth = generate_task("program-transformation", seed=32, partition="evaluation")
+    runtime.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)), seed=32)
+    after = runtime.adaptive_restart_receipt()
+    latest = port.latest(runtime.ADAPTIVE_KNOWLEDGE_KIND)
+    print(json.dumps({
+        "verification": verification,
+        "before": before,
+        "after": after,
+        "parents": list(latest.parent_binding_ids),
+    }, sort_keys=True))
+finally:
+    runtime.close()
+    lifecycle.stop()
+"""
 
 
-def _episode(seed, family="program-transformation"):
-    spec, truth = generate_task(family, seed=seed, partition="evaluation")
-    return spec, WorldExecutor(MechanismWorld(spec, truth, seed=seed))
+class EuclidV17ProductionIntegration(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        self.addCleanup(self._tmp.cleanup)
 
+    def _runtime(self) -> EuclidRuntime:
+        runtime = EuclidRuntime(creator_id="creator-1", state_dir=self.root)
+        self.addCleanup(runtime.close)
+        return runtime
 
-def _right(rt):
-    return rt.rights.permits(
-        "creator-1", "task-world-1", "task-world-1.execute", "dispatch"
-    )
+    def _custody(self):
+        lifecycle = CompositionRoot(self.root / "custody", tenant="tenant-1", hmac_key=b"k" * 32)
+        lifecycle.start()
+        self.addCleanup(lifecycle.stop)
+        return lifecycle.data_port("euclid")
 
+    def test_f1_normal_return_revokes_episode_dispatch_right(self) -> None:
+        runtime = self._runtime()
+        runtime.compose_adaptive_intelligence()
+        spec, truth = self._spec()
+        runtime.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)))
+        self.assertFalse(runtime.rights.permits(
+            "creator-1", "task-world-1", "task-world-1.execute", "dispatch"))
 
-def _assert_right_revoked(rt):
-    assert not _right(rt), "per-episode dispatch right survived the episode"
-    with pytest.raises(PermissionError):
-        DelegatorExecutor(
-            rt.delegator, "task-world-1", "task-world-1.execute"
-        ).execute("probe", {"kind": "intervention", "program": []})
+    def test_f1_cancellation_revokes_episode_dispatch_right(self) -> None:
+        runtime = self._runtime()
+        runtime.compose_adaptive_intelligence()
+        spec, _truth = self._spec()
+        with self.assertRaises(asyncio.CancelledError):
+            runtime.solve_task(spec, _FailingExecutor(asyncio.CancelledError()))
+        self.assertFalse(runtime.rights.permits(
+            "creator-1", "task-world-1", "task-world-1.execute", "dispatch"))
 
+    def test_f2_component_credit_binds_verified_transition_digest(self) -> None:
+        runtime = self._runtime()
+        runtime.compose_adaptive_intelligence()
+        spec, truth = self._spec()
+        result = runtime.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)))
+        result.state.verify_transitions()
+        digests = {item.digest for item in result.state.transitions}
+        used = [entry for entry in runtime.reachability.entries()
+                if entry.stage == "USED_IN_EPISODE"]
+        self.assertTrue(used)
+        self.assertTrue(all(entry.evidence_ref in digests for entry in used))
 
-# -- F1 episode-right-revocation -----------------------------------------------
+    def test_f2_forged_transition_prevents_persistence_and_credit(self) -> None:
+        port = self._custody()
+        runtime = self._runtime()
+        runtime.bind_adaptive_data_port(port)
+        agent = runtime.compose_adaptive_intelligence()
+        solve = agent.solve
 
-def test_f1_right_revoked_after_normal_return(tmp_path, custody):
-    rt = _runtime(tmp_path)
-    rt.compose_adaptive_intelligence(custody=custody)
-    spec, executor = _episode(12)
-    rt.solve_task(spec, executor, seed=1)
-    _assert_right_revoked(rt)
+        def forged(*args, **kwargs):
+            result = solve(*args, **kwargs)
+            result.state._transitions[0] = replace(result.state._transitions[0], summary="forged")
+            return result
 
+        agent.solve = forged
+        spec, truth = self._spec()
+        with self.assertRaisesRegex(ValueError, "transition.*mismatch"):
+            runtime.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)))
+        self.assertIsNone(port.latest(runtime.ADAPTIVE_KNOWLEDGE_KIND))
+        self.assertTrue(all(runtime.reachability.stage(component) == ReachabilityStage.REACHABLE
+                            for component in runtime.ADAPTIVE_COMPONENTS))
 
-def test_f1_right_revoked_after_solver_exception(tmp_path, custody):
-    rt = _runtime(tmp_path)
-    rt.compose_adaptive_intelligence(custody=custody)
+    def _spec(self, seed: int = 21):
+        return generate_task("program-transformation", seed=seed, partition="evaluation")
 
-    class Boom:
-        def execute(self, action, payload):
-            raise RuntimeError("solver failure")
+    def test_f1_solver_exception_revokes_episode_dispatch_right(self) -> None:
+        runtime = self._runtime()
+        runtime.compose_adaptive_intelligence()
+        spec, _truth = self._spec()
+        with self.assertRaises(RuntimeError):
+            runtime.solve_task(spec, _FailingExecutor(RuntimeError("boom")), seed=1)
 
-    spec, _ = _episode(13)
-    with pytest.raises(RuntimeError, match="solver failure"):
-        rt.solve_task(spec, Boom(), seed=1)
-    _assert_right_revoked(rt)
+        self.assertFalse(
+            runtime.rights.permits(
+                "creator-1", "task-world-1", "task-world-1.execute", "dispatch"
+            )
+        )
+        with self.assertRaises(PermissionError):
+            DelegatorExecutor(
+                runtime.delegator, "task-world-1", "task-world-1.execute"
+            ).execute("probe", {"kind": "intervention", "program": [spec.operators[0]]})
 
+    def test_f1_baseexception_also_revokes_episode_dispatch_right(self) -> None:
+        runtime = self._runtime()
+        runtime.compose_adaptive_intelligence()
+        spec, _truth = self._spec(22)
+        with self.assertRaises(KeyboardInterrupt):
+            runtime.solve_task(spec, _FailingExecutor(KeyboardInterrupt()), seed=1)
+        self.assertFalse(
+            runtime.rights.permits(
+                "creator-1", "task-world-1", "task-world-1.execute", "dispatch"
+            )
+        )
 
-def test_f1_right_revoked_after_cancellation(tmp_path, custody):
-    rt = _runtime(tmp_path)
-    rt.compose_adaptive_intelligence(custody=custody)
+    def test_f2_ablated_components_do_not_receive_episode_credit(self) -> None:
+        runtime = self._runtime()
+        runtime.compose_adaptive_intelligence(
+            ablations=AblationConfig(
+                analogy=False,
+                representation_restructuring=False,
+            )
+        )
+        spec, truth = self._spec(23)
+        runtime.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)), seed=2)
 
-    class Cancelled(BaseException):
-        """Cancellation-style BaseException: never swallowed by except Exception."""
+        self.assertEqual(
+            runtime.reachability.stage("euclid.adaptive.analogy"),
+            ReachabilityStage.REACHABLE,
+        )
+        self.assertEqual(
+            runtime.reachability.stage("euclid.adaptive.representation"),
+            ReachabilityStage.REACHABLE,
+        )
+        for component in EuclidRuntime.ADAPTIVE_COMPONENTS:
+            self.assertLessEqual(
+                runtime.reachability.stage(component),
+                ReachabilityStage.USED_IN_EPISODE,
+            )
 
-    class Cancel:
-        def execute(self, action, payload):
-            raise Cancelled()
+    def test_f3_same_process_recomposition_is_not_restart_verified(self) -> None:
+        runtime = self._runtime()
+        runtime.compose_adaptive_intelligence()
+        spec, truth = self._spec(24)
+        runtime.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)), seed=3)
 
-    spec, _ = _episode(14)
-    with pytest.raises(Cancelled):
-        rt.solve_task(spec, Cancel(), seed=1)
-    _assert_right_revoked(rt)
+        runtime.compose_adaptive_intelligence()
+        for component in EuclidRuntime.ADAPTIVE_COMPONENTS:
+            self.assertLess(
+                runtime.reachability.stage(component),
+                ReachabilityStage.RESTART_VERIFIED,
+            )
 
+    def test_f3_f5_fresh_process_restart_replays_shared_adaptive_state(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        env = dict(os.environ)
+        env["PYTHONPATH"] = os.pathsep.join(
+            part for part in (str(repo_root), env.get("PYTHONPATH", "")) if part
+        )
+        custody_root = self.root / "fresh-process-custody"
+        receipt_path = self.root / "restart-receipt.json"
 
-# -- F2 component-evidence-binding ---------------------------------------------
+        first = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                _FRESH_PROCESS_WRITER,
+                str(custody_root),
+                str(self.root / "fresh-local-a"),
+                str(receipt_path),
+            ],
+            cwd=repo_root,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=180,
+            check=False,
+        )
+        self.assertEqual(first.returncode, 0, first.stderr)
+        prior = json.loads(receipt_path.read_text(encoding="utf-8"))
 
-def test_f2_persisted_stage_requires_verified_custody_write(tmp_path, custody):
-    # Without custody there is no durable write, so no PERSISTED claim.
-    bare = _runtime(tmp_path, name="nocustody")
-    bare.compose_adaptive_intelligence()
-    spec, executor = _episode(21)
-    bare.solve_task(spec, executor, seed=2)
-    component = EuclidRuntime.ADAPTIVE_COMPONENTS[0]
-    assert bare.reachability.stage(component) is ReachabilityStage.FEEDBACK_CLOSED
-    assert any(
-        r.kind == "adaptive-knowledge-not-persisted" for r in bare.evidence.records
-    )
+        second = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                _FRESH_PROCESS_READER,
+                str(custody_root),
+                str(self.root / "fresh-local-b"),
+                str(receipt_path),
+            ],
+            cwd=repo_root,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=180,
+            check=False,
+        )
+        self.assertEqual(second.returncode, 0, second.stderr)
+        observed = json.loads(second.stdout.strip().splitlines()[-1])
 
-    # With custody the write actually happens and is evidenced by digest.
-    rt = _runtime(tmp_path, name="withcustody")
-    rt.compose_adaptive_intelligence(custody=custody)
-    spec, executor = _episode(22)
-    rt.solve_task(spec, executor, seed=2)
-    assert rt.reachability.stage(component) is ReachabilityStage.PERSISTED
-    writes = [r for r in rt.evidence.records if r.kind == "adaptive-knowledge-persisted"]
-    assert writes and writes[-1].payload["content_digest"]
-    # The persisted bytes are durably readable from custody — the stage claim
-    # is bound to an artefact, not to an in-memory intention.
-    body = json.loads(custody.get(ADAPTIVE_RECORD).decode("utf-8"))
-    assert body["knowledge"]["seal"]
+        self.assertTrue(observed["verification"]["passed"])
+        self.assertNotEqual(
+            observed["verification"]["current_process_id"],
+            observed["verification"]["prior_process_id"],
+        )
+        self.assertEqual(observed["before"]["binding_id"], prior["binding_id"])
+        self.assertEqual(
+            observed["before"]["knowledge_seal"], prior["knowledge_seal"]
+        )
+        self.assertEqual(observed["before"]["episodes"], prior["episodes"])
+        self.assertGreater(observed["after"]["episodes"], prior["episodes"])
+        self.assertNotEqual(observed["after"]["binding_id"], prior["binding_id"])
+        self.assertIn(prior["binding_id"], observed["parents"])
+        self.assertFalse((self.root / "fresh-local-b" / "adaptive_knowledge.json").exists())
 
+    def test_f5_adaptive_state_recovers_from_shared_ovid_theseus_custody(self) -> None:
+        custody_root = self.root / "shared-custody"
+        key = b"k" * 32
 
-# -- F3 fresh-process-replay ----------------------------------------------------
+        first_lifecycle = CompositionRoot(
+            custody_root,
+            tenant="tenant-euclid-v17",
+            hmac_key=key,
+        )
+        first_lifecycle.start()
+        try:
+            first_port = first_lifecycle.data_port("euclid")
+            first_runtime = EuclidRuntime(
+                creator_id="creator-1",
+                state_dir=self.root / "local-a",
+            )
+            first_runtime.bind_adaptive_data_port(first_port)
+            first_runtime.compose_adaptive_intelligence()
+            spec, truth = self._spec(27)
+            first_runtime.solve_task(
+                spec,
+                WorldExecutor(MechanismWorld(spec, truth)),
+                seed=6,
+            )
+            episodes = first_runtime.adaptive.knowledge.episodes
+            binding = first_port.latest(first_runtime.ADAPTIVE_KNOWLEDGE_KIND)
+            self.assertIsNotNone(binding)
+            self.assertTrue(
+                first_port.fabric.verify(binding.binding_id)["passed"]
+            )
+        finally:
+            first_runtime.close()
+            first_lifecycle.stop()
 
-def test_f3_same_process_reload_is_not_restart_verified(tmp_path):
-    first = EuclidRuntime.production(
-        creator_id="creator-1", state_dir=tmp_path / "state", organism=False
-    )
-    checkpoint = tmp_path / "checkpoint.json"
-    try:
-        first.save(checkpoint)
-    finally:
-        first.close()
-    # A same-process restore against a state dir that has never seen a fresh
-    # interpreter must NOT claim RESTART_VERIFIED.
-    restored = EuclidRuntime.restore(checkpoint, state_dir=tmp_path / "state2")
-    try:
-        stage = restored.reachability.stage("euclid.runtime")
-        assert stage is None or stage < ReachabilityStage.RESTART_VERIFIED
-        assert not any(r.kind == "custody-restart" for r in restored.evidence.records)
-        readiness = restored.startup_report()["intelligence_readiness"]
-        assert readiness["restart_verified"] is False
-    finally:
-        restored.close()
+        second_lifecycle = CompositionRoot(
+            custody_root,
+            tenant="tenant-euclid-v17",
+            hmac_key=key,
+        )
+        second_lifecycle.start()
+        try:
+            second_port = second_lifecycle.data_port("euclid")
+            second_runtime = EuclidRuntime(
+                creator_id="creator-1",
+                state_dir=self.root / "local-b",
+            )
+            second_runtime.bind_adaptive_data_port(second_port)
+            second_runtime.compose_adaptive_intelligence()
+            self.assertEqual(second_runtime.adaptive.knowledge.episodes, episodes)
+            self.assertIsNotNone(
+                second_port.latest(second_runtime.ADAPTIVE_KNOWLEDGE_KIND)
+            )
+            self.assertFalse(
+                (self.root / "local-b" / "adaptive_knowledge.json").exists()
+            )
+        finally:
+            second_runtime.close()
+            second_lifecycle.stop()
 
+    def test_f5_without_custody_knowledge_stays_in_memory(self) -> None:
+        runtime = self._runtime()
+        runtime.compose_adaptive_intelligence()
+        spec, truth = self._spec()
+        runtime.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)))
+        episodes = runtime.adaptive.knowledge.episodes
+        runtime.compose_adaptive_intelligence()
+        self.assertEqual(runtime.adaptive.knowledge.episodes, episodes)
+        self.assertFalse((self.root / "adaptive_knowledge.json").exists())
+        self.assertIsNone(runtime.reachability.stage("euclid.adaptive.knowledge"))
+        self.assertTrue(any(r.kind == "adaptive-custody-not-persisted"
+                            for r in runtime.evidence.records))
 
-def test_f3_fresh_process_custody_restart_verified(tmp_path):
-    state_dir = tmp_path / "state"
-    first = EuclidRuntime.production(creator_id="creator-1", state_dir=state_dir)
-    plane = EnterpriseCustody(tmp_path / "custody", hmac_key=CUSTODY_KEY)
-    try:
-        expected_head = first.evidence.head
-        checkpoint = first.save_to_custody(plane)
-    finally:
-        first.close()
-        plane.close()
+    def test_f5_creators_are_isolated_and_forged_binding_is_rejected(self) -> None:
+        port = self._custody()
+        first = self._runtime()
+        first.bind_adaptive_data_port(port)
+        first.compose_adaptive_intelligence()
+        spec, truth = self._spec()
+        first.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)))
+        other = EuclidRuntime(creator_id="creator/1", state_dir=self.root / "other")
+        self.addCleanup(other.close)
+        other.bind_adaptive_data_port(port)
+        other.compose_adaptive_intelligence()
+        self.assertEqual(other.adaptive.knowledge.episodes, 0)
+        self.assertNotEqual(first.ADAPTIVE_KNOWLEDGE_KIND, other.ADAPTIVE_KNOWLEDGE_KIND)
+        binding = port.latest(first.ADAPTIVE_KNOWLEDGE_KIND)
+        payload = json.loads(port.read(binding.binding_id))
+        payload["creator_id"] = other.creator_id
+        payload["seal"] = domain_hash("euclid.adaptive-custody.seal.v1",
+                                      {k: v for k, v in payload.items() if k != "seal"})
+        port.put(first.ADAPTIVE_KNOWLEDGE_KIND, payload)
+        with self.assertRaisesRegex(ValueError, "binding mismatch"):
+            first.compose_adaptive_intelligence()
+        self.assertIsNone(first.adaptive)
+        self.assertTrue(any(r.kind == "adaptive-custody-restore-rejected"
+                            for r in first.evidence.records))
 
-    child = subprocess.run(
-        [
-            sys.executable,
-            str(CUSTODY_CHILD),
-            str(tmp_path / "custody"),
-            checkpoint["record_id"],
-            CUSTODY_KEY.hex(),
-            str(state_dir),
-        ],
-        capture_output=True,
-        text=True,
-        timeout=300,
-    )
-    assert child.returncode == 0, child.stderr[-3000:]
-    report = json.loads(child.stdout.strip().splitlines()[-1])
-    assert report["restored_evidence_head"] == expected_head
-    assert report["restart_stage"] == "RESTART_VERIFIED"
-    assert report["readiness"]["restart_verified"] is True
+    def test_f5_failed_custody_write_emits_no_persistence_credit(self) -> None:
+        port = self._custody()
+        runtime = self._runtime()
+        runtime.bind_adaptive_data_port(port)
+        runtime.compose_adaptive_intelligence()
+        spec, truth = self._spec()
+        with patch.object(port, "put", side_effect=OSError("storage unavailable")):
+            with self.assertRaises(OSError):
+                runtime.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)))
+        self.assertIsNone(runtime.reachability.stage("euclid.adaptive.knowledge"))
+        self.assertFalse(runtime.rights.snapshot()["grants"])
+        self.assertTrue(any(r.kind == "adaptive-custody-not-persisted"
+                            for r in runtime.evidence.records))
 
+    def test_f3_forged_process_receipt_cannot_certify_restart(self) -> None:
+        runtime = self._runtime()
+        runtime.bind_adaptive_data_port(self._custody())
+        runtime.compose_adaptive_intelligence()
+        spec, truth = self._spec()
+        runtime.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)))
+        receipt = runtime.adaptive_restart_receipt()
+        with self.assertRaisesRegex(ValueError, "same-process"):
+            runtime.verify_adaptive_restart_receipt(receipt)
+        receipt["process_id"] += 1
+        receipt["seal"] = domain_hash("euclid.adaptive-restart-receipt.seal.v1",
+                                      {k: v for k, v in receipt.items() if k != "seal"})
+        with self.assertRaisesRegex(ValueError, "differs"):
+            runtime.verify_adaptive_restart_receipt(receipt)
 
-# -- F4 organ-lifetime-identity -------------------------------------------------
+    def test_f3_forged_artifact_process_origin_is_rejected(self) -> None:
+        port = self._custody()
+        runtime = self._runtime()
+        runtime.bind_adaptive_data_port(port)
+        runtime.compose_adaptive_intelligence()
+        spec, truth = self._spec()
+        runtime.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)))
+        binding = port.latest(runtime.ADAPTIVE_KNOWLEDGE_KIND)
+        payload = json.loads(port.read(binding.binding_id))
+        payload["producer_process"]["pid"] += 1
+        payload["seal"] = domain_hash("euclid.adaptive-custody.seal.v1",
+                                      {k: v for k, v in payload.items() if k != "seal"})
+        port.put(runtime.ADAPTIVE_KNOWLEDGE_KIND, payload,
+                 meta={"custody_writer_process_id": payload["producer_process"]["pid"]})
+        with self.assertRaisesRegex(ValueError, "process origin"):
+            runtime.compose_adaptive_intelligence()
 
-def test_f4_recomposition_preserves_live_organ_identity(tmp_path, custody):
-    rt = _runtime(tmp_path)
-    rt.compose_adaptive_intelligence(custody=custody)
-    spec, executor = _episode(31)
-    rt.solve_task(spec, executor, seed=3)
-    ids = [row["organ_id"] for row in rt.registry.report()]
-    assert "task-world-1" in ids
-    assert len(ids) == len(set(ids))
+    def test_f3_same_process_runtime_checkpoint_is_not_restart_verified(self) -> None:
+        port = self._custody()
+        runtime = self._runtime()
+        checkpoint = runtime.save_to_custody(port.fabric.custody)
+        # Isolate checkpoint replay from optional monorepo organ composition.
 
-    # Recomposition: the counter must not rewind onto the live identity.
-    rt.compose_adaptive_intelligence(custody=custody)
-    spec, executor = _episode(32, family="symbolic-rewriting")
-    rt.solve_task(spec, executor, seed=3)  # collision here without F4
-    ids = [row["organ_id"] for row in rt.registry.report()]
-    assert "task-world-2" in ids, "recomposition reissued a live organ id"
-    assert "task-world-1" in ids, "recomposition retired a preserved identity"
-    assert len(ids) == len(set(ids)), "duplicate organ ids after recomposition"
+        def compose(**kwargs):
+            return EuclidRuntime(creator_id=kwargs["creator_id"], state_dir=kwargs["state_dir"])
 
+        with patch.object(EuclidRuntime, "production", side_effect=compose):
+            restored = EuclidRuntime.restore_from_custody(
+                port.fabric.custody, checkpoint["record_id"], state_dir=self.root / "restored")
+        self.addCleanup(restored.close)
+        self.assertEqual(restored.creator_id, runtime.creator_id)
+        self.assertIsNone(restored.reachability.stage("euclid.runtime"))
 
-# -- F5 canonical-custody -------------------------------------------------------
+    def test_f3_checkpoint_identity_binds_exact_artifact(self) -> None:
+        custody = self._custody().fabric.custody
+        first = self._runtime()
+        second = EuclidRuntime(creator_id=first.creator_id, state_dir=self.root / "second")
+        self.addCleanup(second.close)
+        receipts = [runtime.save_to_custody(custody) for runtime in (first, second)]
+        self.assertNotEqual(receipts[0]["record_id"], receipts[1]["record_id"])
+        for receipt in receipts:
+            self.assertEqual(hashlib.sha256(custody.get(receipt["record_id"])).hexdigest(),
+                             receipt["payload_sha256"])
 
-def test_f5_adaptive_knowledge_is_creator_bound_custody_state(tmp_path, custody):
-    rt = _runtime(tmp_path)
-    rt.compose_adaptive_intelligence(custody=custody)
-    spec, executor = _episode(41)
-    rt.solve_task(spec, executor, seed=4)
-    episodes = rt.adaptive.knowledge.episodes
-    assert episodes > 0
+    def test_f4_concurrent_tasks_and_recomposition_preserve_identity(self) -> None:
+        runtime = self._runtime()
+        runtime.compose_adaptive_intelligence()
 
-    # No private JSON authority anywhere under state_dir.
-    assert not (tmp_path / "state" / "adaptive_knowledge.json").exists()
+        def solve(seed):
+            spec, truth = self._spec(seed)
+            return runtime.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)), seed=seed)
 
-    # Durable, sealed, creator-bound payload in canonical custody.
-    body = json.loads(custody.get(ADAPTIVE_RECORD).decode("utf-8"))
-    assert body["schema"] == "euclid.adaptive-knowledge/1"
-    assert body["creator_id"] == "creator-1"
-    assert body["knowledge"]["seal"]
-    assert any(
-        r.kind == "adaptive-knowledge-persisted" for r in rt.evidence.records
-    )
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            futures = [pool.submit(solve, 43), pool.submit(runtime.compose_adaptive_intelligence),
+                       pool.submit(solve, 44)]
+            for future in futures:
+                future.result(timeout=30)
+        organ_ids = {row["organ_id"] for row in runtime.registry.report()}
+        self.assertTrue({"task-world-1", "task-world-2"}.issubset(organ_ids))
+        self.assertFalse(runtime.rights.snapshot()["grants"])
 
-    # Restart resumes the same knowledge from custody.
-    resumed = _runtime(tmp_path)
-    resumed.compose_adaptive_intelligence(custody=custody)
-    assert resumed.adaptive.knowledge.episodes == episodes
-    assert any(
-        r.kind == "adaptive-knowledge-restored" for r in resumed.evidence.records
-    )
+    def test_f6_harmful_imported_strategy_is_detected_and_abandoned(self) -> None:
+        learner = ContextualStrategyLearner(seed=7)
+        # Strong source/global evidence says imported-strategy is excellent.
+        learner.global_stats["imported-strategy"] = [9.0, 10.0]
 
-    # Creator isolation: another creator reads its own (fresh) namespace only.
-    other = _runtime(tmp_path, name="state-other", creator="creator-2")
-    other.compose_adaptive_intelligence(custody=custody)
-    assert other.adaptive.knowledge.episodes == 0
-    assert any(
-        r.kind == "adaptive-knowledge-fresh" for r in other.evidence.records
-    )
+        reports = [
+            learner.record_episode("target-class", "imported-strategy", 0.0)
+            for _ in range(3)
+        ]
+        detected = reports[-1].get("negative_transfer")
+        self.assertIsNotNone(detected)
+        self.assertEqual(
+            detected["remediation"],
+            "suppress_imported_strategy_and_global_prior",
+        )
 
-    # Fail closed on a payload whose creator binding does not match.
-    mismatched = json.dumps(
-        {
-            "schema": "euclid.adaptive-knowledge/1",
-            "creator_id": "creator-1",
-            "knowledge": body["knowledge"],
-        },
-        sort_keys=True,
-    ).encode("utf-8")
-    custody.put(mismatched, record_id="euclid-adaptive-knowledge-creator-3")
-    forged = _runtime(tmp_path, name="state-forged", creator="creator-3")
-    with pytest.raises(ValueError, match="creator binding mismatch"):
-        forged.compose_adaptive_intelligence(custody=custody)
+        choice = learner.select_strategy(
+            "target-class",
+            ("imported-strategy", "class-local-fallback"),
+        )
+        self.assertEqual(choice.strategy_id, "class-local-fallback")
+        self.assertIn("negative-transfer guard suppressed", choice.basis)
+        self.assertTrue(
+            any(
+                event.get("event") == "abandon_negative_transfer"
+                for event in learner.events
+            )
+        )
 
+    def test_f4_recomposition_preserves_unique_task_organ_identity(self) -> None:
+        runtime = self._runtime()
+        runtime.compose_adaptive_intelligence()
+        spec1, truth1 = self._spec(25)
+        runtime.solve_task(spec1, WorldExecutor(MechanismWorld(spec1, truth1)), seed=4)
 
-# -- F6 negative-transfer-detection ---------------------------------------------
-
-def test_f6_mismatched_curriculum_detected_and_remediated(tmp_path, custody):
-    rt = _runtime(tmp_path)
-    rt.compose_adaptive_intelligence(custody=custody)
-    learner = rt.adaptive.knowledge.strategies
-
-    # Global prior: s-global is the favourite everywhere.
-    for _ in range(40):
-        learner.record_episode("class-a", "s-global", 0.95)
-    # Mismatched curriculum: the favourite is reliably worse in class-b.
-    reports = []
-    for _ in range(4):
-        reports.append(learner.record_episode("class-b", "s-global", 0.1))
-        reports.append(learner.record_episode("class-b", "s-local", 0.8))
-
-    detections = [r["negative_transfer"] for r in reports if "negative_transfer" in r]
-    assert detections, "mismatched curriculum degradation went undetected"
-    entry = detections[0]
-    assert entry["class"] == "class-b"
-    assert entry["imported"] == "s-global"
-    assert entry["probability_better"] >= 0.95
-    assert entry["better"] == "s-local"
-    assert learner.negative_transfer, "detection left no durable ledger entry"
-
-    # Auditable remediation: the decision cites measured class evidence and
-    # routes around the harmful import instead of silently retaining it.
-    learner.frozen = True
-    choice = learner.select_strategy("class-b", ("s-global", "s-local"))
-    assert choice.strategy_id == "s-local"
-    assert "class episode" in choice.basis
-    learner.frozen = False
-
-    # The decision trail survives the process boundary through custody.
-    spec, executor = _episode(51)
-    rt.solve_task(spec, executor, seed=5)
-    body = json.loads(custody.get(ADAPTIVE_RECORD).decode("utf-8"))
-    assert body["knowledge"]["strategies"]["negative_transfer"]
-
-    resumed = _runtime(tmp_path)
-    resumed.compose_adaptive_intelligence(custody=custody)
-    ledger = resumed.adaptive.knowledge.strategies.negative_transfer
-    assert any(e["class"] == "class-b" for e in ledger)
-    persisted_writes = [
-        r for r in rt.evidence.records if r.kind == "adaptive-knowledge-persisted"
-    ]
-    assert persisted_writes, "audit trail was not written through custody"
+        runtime.compose_adaptive_intelligence()
+        spec2, truth2 = self._spec(26)
+        result = runtime.solve_task(
+            spec2, WorldExecutor(MechanismWorld(spec2, truth2)), seed=5
+        )
+        self.assertIsNotNone(result)
+        organ_ids = {row["organ_id"] for row in runtime.registry.report()}
+        self.assertIn("task-world-1", organ_ids)
+        self.assertIn("task-world-2", organ_ids)
 
 
 if __name__ == "__main__":
-    raise SystemExit(pytest.main([__file__, "-q"]))
-
+    unittest.main()

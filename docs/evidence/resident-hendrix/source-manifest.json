@@ -1,0 +1,2504 @@
+{
+  "schema": "resident_hendrix_source_manifest/1",
+  "inspected_base": "ae026e0ff972ef7ef09b998e3e59c4a53c444a33",
+  "branch_base": "306001b0e75862585a3338e9d549726e52773b52",
+  "files": [
+    {
+      "path": ".github/workflows/resident-hendrix.yml",
+      "sha256": "ad315dfe7303b228a43c37f624ec6948539da3c37524b76e0c9a6caf410a5e3b",
+      "bytes": 1450
+    },
+    {
+      "path": "chronus/mla1517/mining/backend_registry.py",
+      "sha256": "c650eb9ef8386e39e51fd6929629a480c42af62a9be0b39f7d7a56bdd24d0cf6",
+      "bytes": 24421
+    },
+    {
+      "path": "chronus/mla1517/mining/coordinator.py",
+      "sha256": "5532c7317e9baf1ec183cd28890f92db16378d7cbddc9cb7e1129310609bcfa5",
+      "bytes": 136170
+    },
+    {
+      "path": "chronus/mla1517/mining/geodesic_support.py",
+      "sha256": "a5d10644b8ca0221e91344ff8af934ecd1c5fa4e48582321cb499ff9f398da8e",
+      "bytes": 27042
+    },
+    {
+      "path": "chronus/mla1517/mining/resident_router.py",
+      "sha256": "2883ab280b615a30b906fde30808527d848f90b0a14df57872ce63a17de4d105",
+      "bytes": 10845
+    },
+    {
+      "path": "chronus/mla1517/mining/resident_search.py",
+      "sha256": "fdfaf73ae2f625be5c3087052573d3d938fcc2c575d06c6174241157f552362c",
+      "bytes": 6168
+    },
+    {
+      "path": "chronus/mla1517/mining/search_plan.py",
+      "sha256": "8aebbb4c913ec6ec071d7c5db6913152a2b060d2f4ebe798edaab14474429a91",
+      "bytes": 22339
+    },
+    {
+      "path": "chronus/mla1517_platform/python/pythia_turing_math.py",
+      "sha256": "82b3740c3541b530de3d6b1e5a45e1e612ebd023b6780724b39b594e039684d0",
+      "bytes": 24990
+    },
+    {
+      "path": "chronus/one_igpu_mining.py",
+      "sha256": "333e239a178d22a29dddaf9fffe513f570e32caf79db9b82271114a1290c608b",
+      "bytes": 2549
+    },
+    {
+      "path": "chronus/resident_hendrix.py",
+      "sha256": "8aad568aba63f4b0fd188bdb2eff0d82d0ebb40565d0fd02b24967fdbd2c7f87",
+      "bytes": 8993
+    },
+    {
+      "path": "docs/RESIDENT_HENDRIX_ONE_IGPU.md",
+      "sha256": "08a71aa00cf70ee96ace6483499d29a3289ae3ff89c5dfeef6305937169684c8",
+      "bytes": 8186
+    },
+    {
+      "path": "packages/chronos-one-igpu/.dockerignore",
+      "sha256": "3097d86b88795a8e389301867fb6f013c2af83a9e509737520fdc747b962efce",
+      "bytes": 64
+    },
+    {
+      "path": "packages/chronos-one-igpu/.github/workflows/ci.yml",
+      "sha256": "9b4225f3e470247f248401af1e257455f28c7ec3043db5324fc9120d0407aa7a",
+      "bytes": 727
+    },
+    {
+      "path": "packages/chronos-one-igpu/.github/workflows/formal.yml",
+      "sha256": "a0eb795d57717e86a3908dd4ecc06793602fbb5ae23929df99a39b66a57beffc",
+      "bytes": 936
+    },
+    {
+      "path": "packages/chronos-one-igpu/.github/workflows/package.yml",
+      "sha256": "746489e8523e747d2dcc2d1ebd3c3a0155052230ea0c446824574e8a51287d0b",
+      "bytes": 978
+    },
+    {
+      "path": "packages/chronos-one-igpu/.gitignore",
+      "sha256": "2b933c6b0dc79a9aaf0a8e68a0112129fc4cf2db178935c667925f60f11454c1",
+      "bytes": 51
+    },
+    {
+      "path": "packages/chronos-one-igpu/ACADEMIC_AUDIT.md",
+      "sha256": "7ea2bea3e8045a4ff612d04763a0afe89fbeb8071fdb4dd9ec7130d7e70e1bf8",
+      "bytes": 22066
+    },
+    {
+      "path": "packages/chronos-one-igpu/ARCHIVE_MANIFEST.json",
+      "sha256": "13ad500c7263d8678d2642ea8318a4184e960eb594491b615ce1e960d354ec8d",
+      "bytes": 55192
+    },
+    {
+      "path": "packages/chronos-one-igpu/AUDIT_NOTES.md",
+      "sha256": "236eb855bd7d27b5da30744981df9a4546970ca22bea308898390692020686e5",
+      "bytes": 9298
+    },
+    {
+      "path": "packages/chronos-one-igpu/BENCHMARKS.md",
+      "sha256": "8dd33440676ce6cc9b9d70479accc40902ee6f427309b4706023493e7530b161",
+      "bytes": 6443
+    },
+    {
+      "path": "packages/chronos-one-igpu/CHANGELOG-v3.10.md",
+      "sha256": "f9dc27464fa49e0691fee2ee1988b7eb395cfd4ab31550501c8bece3b51e0263",
+      "bytes": 681
+    },
+    {
+      "path": "packages/chronos-one-igpu/CHANGELOG-v3.11.md",
+      "sha256": "898c1bd6c2646e4c537995bd2d62ab034ec5d0a0519be59a4da7b1cb124da8cb",
+      "bytes": 1434
+    },
+    {
+      "path": "packages/chronos-one-igpu/CHANGELOG-v3.5.1.md",
+      "sha256": "cc5655e44fedf4c2b3d32d2bd039d042d0a1836bea2f5e44b66e48213ee334d9",
+      "bytes": 486
+    },
+    {
+      "path": "packages/chronos-one-igpu/CHANGELOG-v3.5.md",
+      "sha256": "5e8d8d29849093f343e72c530f49e1e0ddd9c87115a4dd9554007e5173b8ac1f",
+      "bytes": 1183
+    },
+    {
+      "path": "packages/chronos-one-igpu/CHANGELOG-v3.6.md",
+      "sha256": "6d1b656f5542d973629236e6742bb39ba1dd2858389395edbd720a0365d22a5d",
+      "bytes": 851
+    },
+    {
+      "path": "packages/chronos-one-igpu/CHANGELOG-v3.7.md",
+      "sha256": "aca456eacf25a16de8c89130fa959d1de97efefe377de5529b4bcf8f64944dfd",
+      "bytes": 715
+    },
+    {
+      "path": "packages/chronos-one-igpu/CHANGELOG-v3.8.1.md",
+      "sha256": "f2e8397cd0f163849741bef3023ffb8b74f5961ec79ae876792927fc5d917116",
+      "bytes": 501
+    },
+    {
+      "path": "packages/chronos-one-igpu/CHANGELOG-v3.8.md",
+      "sha256": "5f447ee48d0264e852fe1f4696cc62b09da9f1a0efad6ce2de3bb4278aaa18ac",
+      "bytes": 781
+    },
+    {
+      "path": "packages/chronos-one-igpu/CHANGELOG-v3.9.md",
+      "sha256": "05edcbc3d8780cd5d0020c605e6b0d04a3ff96204caae84c77b1246ec8b2b5ed",
+      "bytes": 929
+    },
+    {
+      "path": "packages/chronos-one-igpu/Dockerfile",
+      "sha256": "41fac297d87d997bf8973f02bbb8b2d0d9824e347b0bcdfa7e624b7b062ad06a",
+      "bytes": 1221
+    },
+    {
+      "path": "packages/chronos-one-igpu/LICENSE",
+      "sha256": "c9d135ae181e49ccbbf0a988fec925c765dff845622bbaaf7cae19d9e55000b9",
+      "bytes": 1076
+    },
+    {
+      "path": "packages/chronos-one-igpu/MANIFEST.in",
+      "sha256": "aa126166ce8b1039c13552b777b757b5b44086632718d80cf5b6a84cfee3fd0d",
+      "bytes": 856
+    },
+    {
+      "path": "packages/chronos-one-igpu/README.md",
+      "sha256": "79437261fdfcec5f446a1f975c27a6d47c80f126f2fc7b51fac4a4eb018c840f",
+      "bytes": 6407
+    },
+    {
+      "path": "packages/chronos-one-igpu/architecture/golden_igpu.puml",
+      "sha256": "64aca1ca49b828d1484a00c89fe5d6fe227cd01366fae129693ebb58da2f3c06",
+      "bytes": 623
+    },
+    {
+      "path": "packages/chronos-one-igpu/architecture/one_igpu.puml",
+      "sha256": "099bff72362feb12c4e88843e961403751c437943bcb23160f88fcf7ebc5c1e8",
+      "bytes": 2009
+    },
+    {
+      "path": "packages/chronos-one-igpu/architecture/source_igpu_architecture.puml",
+      "sha256": "bd48ab0481b48df24808470bb7409b48d8762652c691b9cd0c255653cf8fe85f",
+      "bytes": 8842
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/asic-adjacency-portable-c.json",
+      "sha256": "823614d916e94170f65324d81f35e916a19a6515c85c67ff0ffb7c64d76d8993",
+      "bytes": 13934
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/asic-adjacency-results.json",
+      "sha256": "a3c1fe22d08786ec7c8fcca447a4ae919960ef75aafc1e3ede0007f6856191f5",
+      "bytes": 81396
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/asic-end-to-end-observations.csv",
+      "sha256": "ab18a058d31e7e44db394319cbacd08b9403c5ec5da2c4c700b5a1799db82d23",
+      "bytes": 4244
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/asic-mining-throughput.html",
+      "sha256": "c8fec0ec665aee64901f321aa65266c4a5c481c35a1e8187aa9e4256ed039898",
+      "bytes": 37670
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/deterministic-reuse-observations.csv",
+      "sha256": "9f37729960fe9eded3f050151d02a36220f64787295b286fd4482ee6d7beeb8c",
+      "bytes": 36986
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/deterministic-reuse-results.json",
+      "sha256": "9d9a20f561542af43a2a58ea472bb028f4f1e6fb9185ee9d45a6523a77d690c1",
+      "bytes": 97710
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/deterministic-reuse-throughput.html",
+      "sha256": "52c338e951259b7521c53247c7907453ae157e0047bfff5a851556f344be5db3",
+      "bytes": 37765
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/elevation-results.json",
+      "sha256": "4dd19dfa564df3aa2326c8be4b924cf21b627136dcaa95e5863312cfb14e658a",
+      "bytes": 20059
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/lucas_engine_benchmark.py",
+      "sha256": "ea4b8db54a95d199e9b4e2929c1ed11b0e4b1c33ba5a6c9197fadb4aa60c01a5",
+      "bytes": 1989
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/lucas_results.json",
+      "sha256": "f89f6430325bfc4711d3da8f311a408bce807ed4e85f90cb69cbcd0eaa97ea4b",
+      "bytes": 1021
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/reference_v3_8_1_solver_cache.py",
+      "sha256": "cbb71ee66ffbf7a91d26ac6d87196de7e4ffb58d2f1b9901f7e26cbc7109ce43",
+      "bytes": 2687
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/reference_v3_8_golden_runtime.py",
+      "sha256": "4acb29d785e375f0c8bd8241026c7659a695b2c0702d9c258a44e1370407f532",
+      "bytes": 14793
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/results.json",
+      "sha256": "49b858944e913d669be339b577cfd4391365eba54bdd12405fdd7c7fbe6c471a",
+      "bytes": 4601
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/run_asic_adjacency.py",
+      "sha256": "d165cb3a495740b55cebe603ba00b63e0e038f5bf09acb1cd26e3b8bfc315ebf",
+      "bytes": 8208
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/run_benchmarks.py",
+      "sha256": "31bded8b4c5f19ae456ebe3fe986912f5edfabef3fcf69a5e658c461bbd0b1d0",
+      "bytes": 5543
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/run_deterministic_reuse.py",
+      "sha256": "89d078a0475ef08cf2395f1f1c412d78d2da469f4097adede55872b4a60f7464",
+      "bytes": 4279
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/run_standalone_elevation.py",
+      "sha256": "49107780c475c9725f882aafd3e3ac767467f37fb208cb6954263f8ebdc7f840",
+      "bytes": 7076
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/run_structured_elevation.py",
+      "sha256": "12460876ee631e319374cbed515f4815cf32ff56935e4e9ddd18db6102810c42",
+      "bytes": 4823
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/structured-elevation-observations.csv",
+      "sha256": "b34e8ac439d94162d0bc9ca279667b260474a0fe9f38c4e0653365b98dfd230e",
+      "bytes": 67406
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/structured-elevation-results.json",
+      "sha256": "08f966d32e3984d011c7f92c59dfffb561fb3481f9147d31beea0cb417ba2fdd",
+      "bytes": 208896
+    },
+    {
+      "path": "packages/chronos-one-igpu/benchmarks/structured-elevation-throughput.html",
+      "sha256": "ff03ae64ad7ca640c426da62dca302eda80baea81efb8ff6c2095faa7517af9a",
+      "bytes": 38276
+    },
+    {
+      "path": "packages/chronos-one-igpu/chronos_gpu_demo.py",
+      "sha256": "2009d5b57d54bf673ef178d59c8f6ff09ec09fba9930e5df095ad9c37de014f6",
+      "bytes": 2733
+    },
+    {
+      "path": "packages/chronos-one-igpu/compose.yaml",
+      "sha256": "a222eafc74b29a8743974571d0969fef45bff0dea8b34c5b4e37daa3896a5128",
+      "bytes": 1023
+    },
+    {
+      "path": "packages/chronos-one-igpu/config.example.toml",
+      "sha256": "a1a358f9987028777f975e6a08ef194bb9a7b3b5210bf64abe039e497391e76d",
+      "bytes": 464
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/APPLE_NEURAL_INTEGRATION.md",
+      "sha256": "8212114467aeadba723df2a79709821e938365c7c41dbed7256a539ca3fb4ffa",
+      "bytes": 2515
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/ASIC_MINING.md",
+      "sha256": "6f2f2b4f9e3a0f04f983203fa64795f50a494d54f90776b115535f4df5f0d69f",
+      "bytes": 8981
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/ATTACHED_SURFACE_INVENTORY.json",
+      "sha256": "4d39f78ec4b675d23a3112ba6052b311e42c0d6b69b988c6a227cbbde5c9f2a7",
+      "bytes": 74778
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/COMPLETION_CONTRACT.json",
+      "sha256": "4b589c4e26fe3731a127adc9d999c057df8fb449764f5a0248181b0f6bd7732b",
+      "bytes": 15068
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/DETERMINISTIC_ELEVATION.md",
+      "sha256": "f86b311dd587cdf0be77300aa8334198167fce7b31d32b08693db63f9a6635de",
+      "bytes": 5015
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/FAMILY_COMPOSITION.md",
+      "sha256": "8413b791211b97c0b8fcc591b1e562d7951e15e8615133cda2772a0eb986a597",
+      "bytes": 2253
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/FEEDBACK_AUDIT-v3.10.json",
+      "sha256": "46098c41e2218f5fc7d868557d3e70ded705441df03f5300ee856ba92000ebc9",
+      "bytes": 25936
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/GOLDEN_IGPU_INTEGRATION.md",
+      "sha256": "901d0b8ae223d3b8f88543b1829a7de94974e3dbaa3655ddfb8b88be77ef61fd",
+      "bytes": 12464
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/IMPLEMENTATION_STATUS.json",
+      "sha256": "4b589c4e26fe3731a127adc9d999c057df8fb449764f5a0248181b0f6bd7732b",
+      "bytes": 15068
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/PUBLICATION.md",
+      "sha256": "04c668c9c0b78bc399057bb0e86200011929aa75c7d0f11c2e6c7fc647bf0814",
+      "bytes": 2204
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/PUBLIC_TECHNIQUES.json",
+      "sha256": "47523b9499df3dc426a03f6594f8b6208384f71349d964314a597991cb221578",
+      "bytes": 1829
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/PYTHI_NATIVE_OBLIGATIONS.json",
+      "sha256": "42d99d95881bd5bfe5daa18c4c0822fcc1fa00302ce8997f55ef0e1b28209801",
+      "bytes": 3912
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/RESIDENT_ELEVATION.md",
+      "sha256": "ad3944a0bb7b494704fa9531da121149dd51eac655c6c8fb68fa49637a15b71b",
+      "bytes": 3828
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/REVIEWED_NOTION-v3.10.json",
+      "sha256": "851d4c3fb5fe15000a22bef28d763edad0848291a028d3cf8cbc127274e9ad50",
+      "bytes": 4486
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/SOURCE_MANIFEST.json",
+      "sha256": "e9f8e383a2fea048529bd553d864170e271f34b8a1d0c7066d7df97efb82a85c",
+      "bytes": 16019
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/STANDALONE-v3.4-to-v3.6.patch",
+      "sha256": "a9a7b21e0b515fad310b437bfe0703f4a290e69388e7ae449bf5d291b17b22e1",
+      "bytes": 184014
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/STANDALONE-v3.4-to-v3.7.patch",
+      "sha256": "77653b27b0e014571e62f1f5698e7416ea83badbac2c3486301eaed3a01cbc64",
+      "bytes": 209955
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/STANDALONE-v3.4-to-v3.8.1.patch",
+      "sha256": "73696ee9a6e8528d55c20dd88f28174e31585349989a37387b713a1e0a224cc4",
+      "bytes": 301300
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/STANDALONE-v3.4-to-v3.8.patch",
+      "sha256": "5055d1f24722548f2d438d2ae231aa891918ac6a82c83df9c0428ca49942e451",
+      "bytes": 260043
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/STANDALONE-v3.4-to-v3.9.patch",
+      "sha256": "df234478f419b667dcc7a936b7d678deab29b88b598703f011bd6e9dac633c32",
+      "bytes": 489182
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/STRUCTURED_PYTHI_ELEVATION.md",
+      "sha256": "da4e75ccc83fc279a1c8c0a34810b4f989a62e315b03b21d87fa75033b259c32",
+      "bytes": 6475
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/USER_SCALING_REVIEW_VERBATIM.txt",
+      "sha256": "ce1f112c5bd430b62b1263954d917f68ea9e9a7692087200c98cc25a34b01e32",
+      "bytes": 15345
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/2270cdba87ec4cbab7ea2ecb23f65507.json",
+      "sha256": "447832248ba5f5885107a31b2fff07f86f848d5fceda3d295942b7056d019387",
+      "bytes": 5277
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/387ee3624e6b4b788bf1f720fae65d8e.json",
+      "sha256": "64e53fbf12c8e0accd360607e2770bb2025a11c778a515991c7804999a961759",
+      "bytes": 3889
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/3f3411d7e25c449db0087d32ba47f3f0.json",
+      "sha256": "ceaeddee27ca0f88970dff4b4169edf54e59702a47ef1131675001ce2c532836",
+      "bytes": 5482
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/449671c29bc14fd1a3c1509696f6a0dc.json",
+      "sha256": "f5923ad7f7d552424cc07675c33fd25ed449074bc0d3d470769ab0180519566e",
+      "bytes": 4960
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/4c570b8df65342089342464e2d12f11e.json",
+      "sha256": "18e2d84c365647ac9b0486a897299aa38992b9f621333b3e1e723c244521450c",
+      "bytes": 8652
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/87ae041517d34a39b5ed0021cc8651af.json",
+      "sha256": "e6c7e92077e8845041febb1bd7c9a4ca25efda5a923a8dd14a48e8ab412f4b48",
+      "bytes": 4631
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/94d69172a55b4b4896a6d3f8e4ad100a.json",
+      "sha256": "2175c0bd0409c858aee7b3782b785e4cdb2586896c3ba30d21baa2b7308458cd",
+      "bytes": 5851
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/ab93abfb6e9b4a2b9a122f8dad51bfc9.json",
+      "sha256": "75971727ff0aacce50331c4ecd4cd5f6e804c5ff082b4d402011950f7d4d1f55",
+      "bytes": 3803
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/cbf3cbd3cb764b66a8798ba45da76dc6.json",
+      "sha256": "18bc8c476b7bcda9dc2bee0c8ef61a9c1eafb1164ed97404c6fb04c3c833b35d",
+      "bytes": 9545
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/e3a44a55614e4cdca77ef8e2db200571.json",
+      "sha256": "929b45c7cf3ea89030da80529fe3c44337041248f7ab09f3ad4c53909353fa51",
+      "bytes": 3107
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/source_notes/MANIFEST-v3.10.json",
+      "sha256": "c850d72dd0d40c9ab0f385726a5404045a7026450050ab5f0c476b75cf4da0e9",
+      "bytes": 1075
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/source_notes/MANIFEST.json",
+      "sha256": "3c65ef752cdad2049dc1e3f866bd2945f32865bcbe607b1b01299993972b5ff6",
+      "bytes": 616
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/source_notes/architecture.txt",
+      "sha256": "eb512d1465477fd07b4148cb0749720fe84a4af55da034116558e1929be7bfde",
+      "bytes": 5336
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/source_notes/elevation-module-inventory.txt",
+      "sha256": "cc2f74654ab4e6034f7a9517099f974305c42ac3d6ef3d2169127637ee14b5bc",
+      "bytes": 36857
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/source_notes/paradigm_spine.txt",
+      "sha256": "a3d856348e4aca31779e29e3a1f610357897e902f40a3acb95e3679706587ad9",
+      "bytes": 2089
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/source_notes/phase4_core_directive.txt",
+      "sha256": "ad21e7c8ceb5876c0f16d532f3bffafac2d4812ce079f230e9b7706cbf0f4d8f",
+      "bytes": 4025
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/source_notes/pythi-native-user-proposal.txt",
+      "sha256": "49d670f5bc45619f308dcabd4da49e09aa9d275f85d15dac9fabfc49c6d591d6",
+      "bytes": 20934
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/source_notes/resident-projection-user-review.txt",
+      "sha256": "0d455ba64a9bd006e9482eff3b24cd74040fca9baa7d7f4a57901b12c077d02e",
+      "bytes": 10146
+    },
+    {
+      "path": "packages/chronos-one-igpu/docs/source_notes/scaling_review.txt",
+      "sha256": "ce1f112c5bd430b62b1263954d917f68ea9e9a7692087200c98cc25a34b01e32",
+      "bytes": 15345
+    },
+    {
+      "path": "packages/chronos-one-igpu/evidence/phase_3.2.1/adapter_spec.json",
+      "sha256": "8ac56e6950d7c5bbad2977a598f9478a9d1f00461506c864abc7023fa668f907",
+      "bytes": 1393
+    },
+    {
+      "path": "packages/chronos-one-igpu/evidence/phase_3.2.1/execution_receipt.json",
+      "sha256": "20b4ca7ef672efc39a6da8dc223b7d3114c735c27bdda17e1fb63b70115659da",
+      "bytes": 501
+    },
+    {
+      "path": "packages/chronos-one-igpu/evidence/phase_3.2.1/manifest.sha256",
+      "sha256": "2173103e081bcb5c0c0a42d44e66350b61e65b0a7c49004a7717f82d65e02cc3",
+      "bytes": 257
+    },
+    {
+      "path": "packages/chronos-one-igpu/evidence/phase_3.2.1/opencl_probe.json",
+      "sha256": "cd5cd9cb38ce161a72b1b49e463acc3880fba672001876cccb88781c8b0e40bd",
+      "bytes": 92
+    },
+    {
+      "path": "packages/chronos-one-igpu/evidence/phase_3.2.2/manifest.sha256",
+      "sha256": "5252658004d257c1de3e5e189bb007231892604d4ec08c20e10c5e95631143af",
+      "bytes": 252
+    },
+    {
+      "path": "packages/chronos-one-igpu/evidence/phase_3.2.2/sparse_limits.json",
+      "sha256": "340e75a5b83fe4971559068f7554cf7f76dfe38b20b469c47a9c52dba0e27ed3",
+      "bytes": 136
+    },
+    {
+      "path": "packages/chronos-one-igpu/evidence/phase_3.2.2/tier_18_sample.json",
+      "sha256": "39cd30f5fce423e76b4c4ab16c4f30cbf07ef2f9efea55d556104cdafe5c1b64",
+      "bytes": 12191
+    },
+    {
+      "path": "packages/chronos-one-igpu/evidence/phase_3.2.2/tier_plan.json",
+      "sha256": "fbb2e51b35d006e82ee4c5ded1816cf590b679940be03e05ee99c91f55ff3f71",
+      "bytes": 1062
+    },
+    {
+      "path": "packages/chronos-one-igpu/evidence/phase_3.2.3/manifest.sha256",
+      "sha256": "26845e797e34414e816095407a62821b66d39d8c853d8ce379201ccfb0d50537",
+      "bytes": 88
+    },
+    {
+      "path": "packages/chronos-one-igpu/evidence/phase_3.2.3/share_submission.json",
+      "sha256": "c7e740b2d0f5c142e30018f7c696dc35bcde57cc79aeecddd9db22c2077e1fe6",
+      "bytes": 506
+    },
+    {
+      "path": "packages/chronos-one-igpu/evidence/phase_3.2.4/manifest.sha256",
+      "sha256": "58c35217e1019e00a32d0b936742e2a5707537207feb0dab937a9d332d976a02",
+      "bytes": 84
+    },
+    {
+      "path": "packages/chronos-one-igpu/evidence/phase_3.2.4/proof_report.json",
+      "sha256": "f25a9b297a30020441b296981e08dc5c855e54d9786ce6ceaf5684fcd0c7120f",
+      "bytes": 144
+    },
+    {
+      "path": "packages/chronos-one-igpu/evidence/phase_3.2.5/integration.json",
+      "sha256": "eda2618c8eb58c9efde0d86a3651c8aa351c92a1568948ac004b46b734eec8b0",
+      "bytes": 174
+    },
+    {
+      "path": "packages/chronos-one-igpu/evidence/phase_3.2.5/manifest.sha256",
+      "sha256": "9214385393ca2753ff300fe6026a03063ac40008ea37471db0692c413847e59d",
+      "bytes": 83
+    },
+    {
+      "path": "packages/chronos-one-igpu/evidence/phase_4.0.0/golden_ontology_validation.json",
+      "sha256": "5c1d8fd80da1d61c08d77e89425f36061f1baf888b60580182a38ddd41e61f09",
+      "bytes": 2068
+    },
+    {
+      "path": "packages/chronos-one-igpu/evidence/phase_4.0.0/manifest.sha256",
+      "sha256": "6c1ad9e6c36a5a40f19cf0d793160619a555769ecad314a0e4002f102b6f4f7d",
+      "bytes": 98
+    },
+    {
+      "path": "packages/chronos-one-igpu/evolution_engine.py",
+      "sha256": "2135987bb5e503d0e179d768ce2f33b6a78f8428d9488596ad717254909227d5",
+      "bytes": 258
+    },
+    {
+      "path": "packages/chronos-one-igpu/examples/demo.py",
+      "sha256": "0e9fea7f4bdd123685ff276ab4be3b23f60aa51ffbf79f4433bd00333b7a6cf0",
+      "bytes": 328
+    },
+    {
+      "path": "packages/chronos-one-igpu/examples/golden_igpu_demo.py",
+      "sha256": "a5eb2e2f38822e39254728acb80fab305e72784e8056ace76736b61da261ac96",
+      "bytes": 1666
+    },
+    {
+      "path": "packages/chronos-one-igpu/hamiltonian_library.py",
+      "sha256": "10b4669724223225d6ebaa54387e61c1ac19479d518b9c1da4c0947a6a443994",
+      "bytes": 351
+    },
+    {
+      "path": "packages/chronos-one-igpu/native/mla1517/contracts/mla1517.h",
+      "sha256": "0eea62793e7a978f6d203873cbcdb19ab9bd4b1e7dd342668edc7e9dacdc792a",
+      "bytes": 268
+    },
+    {
+      "path": "packages/chronos-one-igpu/native/mla1517/cpp/mla1517_cpu.cpp",
+      "sha256": "50715a7b5803f48e4e3e5439318eb864f633b33c9d9714d566f69cc97bf55908",
+      "bytes": 2024
+    },
+    {
+      "path": "packages/chronos-one-igpu/native/mla1517/rust/Cargo.toml",
+      "sha256": "e09fa6b2eb55bae02288e58a2fedd630c1b6eb4dae6027808a9aa100607119ed",
+      "bytes": 97
+    },
+    {
+      "path": "packages/chronos-one-igpu/native/mla1517/rust/src/lib.rs",
+      "sha256": "aebbba92ad4d8f821ff166b9af59dba34bade1d7290590867cbb2a76d6b2ff68",
+      "bytes": 689
+    },
+    {
+      "path": "packages/chronos-one-igpu/proofs/README.md",
+      "sha256": "40d7687f7bb79248b23c48933aebcae0bb5e6f188f12c9ea4d1b704304106335",
+      "bytes": 829
+    },
+    {
+      "path": "packages/chronos-one-igpu/proofs/lean/Projection.lean",
+      "sha256": "b3eba8b134ba12447f68957169eb26d0f07f5da5ae305d7bf621b4e06f9d6073",
+      "bytes": 4486
+    },
+    {
+      "path": "packages/chronos-one-igpu/pyproject.toml",
+      "sha256": "8aaaa3deacbbc92da878c304d18f49106c46439314f86f17bb702bd06481146f",
+      "bytes": 1287
+    },
+    {
+      "path": "packages/chronos-one-igpu/qsdl_compiler.py",
+      "sha256": "c783d78715f953b5675fe40e143225c9c7bdf0d74a8824749ecf49752a094967",
+      "bytes": 383
+    },
+    {
+      "path": "packages/chronos-one-igpu/reconstruction_prisma.py",
+      "sha256": "0d9a04c9c5210002ea494f8d5290a9b718fda00814019984384583b3903f0b66",
+      "bytes": 259
+    },
+    {
+      "path": "packages/chronos-one-igpu/requirements-tested.lock",
+      "sha256": "e913113a25a03b37edcdd8909c573d566f23e58d49e340f7ea56d9ecf50405d3",
+      "bytes": 114
+    },
+    {
+      "path": "packages/chronos-one-igpu/requirements.txt",
+      "sha256": "a10919efd0f9ffa7720fb175e492eadb8cec8d1374126e56b0f413615e7fa592",
+      "bytes": 24
+    },
+    {
+      "path": "packages/chronos-one-igpu/scripts/build_evidence_pack.py",
+      "sha256": "06ed0c7eafc7349ec7a8eb220e382ecc1ae14c5d3b4ac8a1139ff36d4a95b433",
+      "bytes": 3625
+    },
+    {
+      "path": "packages/chronos-one-igpu/scripts/check_formal_proofs.py",
+      "sha256": "da15e354db8619d5284cf61b3fb150776cfaf93575b22d2aa4ec9676b03ea2b6",
+      "bytes": 1907
+    },
+    {
+      "path": "packages/chronos-one-igpu/scripts/check_structured_kernel_syntax.py",
+      "sha256": "86a145ff5d80b80920f5c7669bac12d5fcfeb6709cf2bc84585ce39bde93ad5c",
+      "bytes": 1306
+    },
+    {
+      "path": "packages/chronos-one-igpu/scripts/golden_ontology_validation.py",
+      "sha256": "a46e08b835b10a88c4df3f24e6c93cd5df86af9c3689ecd9012201b998882f6c",
+      "bytes": 2312
+    },
+    {
+      "path": "packages/chronos-one-igpu/scripts/seal_ci_evidence.py",
+      "sha256": "658584b27a9efb099808d4efa210f2b30e2973ffdfd64ce7fda9bef4f185f077",
+      "bytes": 1436
+    },
+    {
+      "path": "packages/chronos-one-igpu/setup.py",
+      "sha256": "083b64a8e5f2d7b94c04742fa4550871e061aa74e01aae0dbce7091e0f2f0760",
+      "bytes": 733
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/__init__.py",
+      "sha256": "2bb4c8ddba4126bcf448bca87b62c7035ad9b3982162665ea6de22ad82710f2b",
+      "bytes": 3703
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/academic/__init__.py",
+      "sha256": "eac2dfcfa8ae580e5b5b849160d4a42f8f0cfb69d2843f6867bf3c4a4ecaffb3",
+      "bytes": 1480
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/academic/caltech.py",
+      "sha256": "38ed3f68f563808bf6706bc015cc7542521b413a6925301fcd1477c7924b8ae7",
+      "bytes": 5095
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/academic/cambridge.py",
+      "sha256": "7ef9ab0fe35724a01d85fec7c0fb19d1fe1e584a1a9570b9d5646aa07613f5b0",
+      "bytes": 6993
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/academic/cern.py",
+      "sha256": "b0f1d93f203ad592ff49bd5f5784c3297ecd43e05968e0da5a049edc7e566a5e",
+      "bytes": 7996
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/academic/mit.py",
+      "sha256": "098a9d0cebb15d58babd078f5f798de2dd23dccb43020112386936b81464eb33",
+      "bytes": 2319
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/academic/nist.py",
+      "sha256": "dac1e15dc0d0d229f63ba56d87ffa645c08523c9e89f81662d793abca13c6912",
+      "bytes": 4880
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/academic/report.py",
+      "sha256": "df564b0ac0d9d025a251c7cab45b9a02eb0b947c937404ab249e5a11ded223c9",
+      "bytes": 8154
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/academic/tensor_compression.py",
+      "sha256": "7ffe4e55f7046d6e43e307645b09acb02193bcfcd482defb9ff438098c5e7ba6",
+      "bytes": 7615
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/academic/tokyotech.py",
+      "sha256": "bc4a627714c6bde14df271493b1a3bc9f7b4113302b8dbac35c3d272ed00541b",
+      "bytes": 1080
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/adapters/__init__.py",
+      "sha256": "9765ada895dd28dbf0cf5b3a43470f487c06501bbfb39e030589f37361e8d825",
+      "bytes": 120
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/adapters/base.py",
+      "sha256": "27e4cc30bb807b004538f57ebdb44bbb8f4a6fc1ea87ad5eac45ae88268d295e",
+      "bytes": 2268
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/adapters/cpu.py",
+      "sha256": "19cf69871234653732b5aeef05b314328f28b94512d7719572b6a874d5095291",
+      "bytes": 1686
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/adapters/opencl.py",
+      "sha256": "f9d70f77c481493ff07142c7c8d5b9580bd7d913539162580ea14dbd3c2c2311",
+      "bytes": 1657
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/adapters/registry.py",
+      "sha256": "4bb51ad3987231034a44b1837ad01e330b588544005fa2e36b02b22c2345512f",
+      "bytes": 1118
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/certificate.py",
+      "sha256": "02267668acda124d51361f26098a1efe724a321ab3a64ef6d4b4b1698b92b7f7",
+      "bytes": 2258
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/core_hash.py",
+      "sha256": "7d4230ba4ac5250fcc226278187dc359d31c6f40b40fe41fae22553c4d9f75f2",
+      "bytes": 184
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/engine.py",
+      "sha256": "2216a08236bed3d49c0618152cb951fc547b6d125bfb50fbb7fa58a0886766d0",
+      "bytes": 3706
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/evidence.py",
+      "sha256": "cd76b51aa5baf983050b0fbae01c5d2dc6580fa338002448d242333e570a2a36",
+      "bytes": 1085
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/evolution_engine.py",
+      "sha256": "18d15d6771f7f28de2de1b9f9f8b55e72fa9d71a8db5d13d42387bdb5cc62a70",
+      "bytes": 4196
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/family_algebra.py",
+      "sha256": "1fa7b2c986b484477ad80d6cd7af914c4530670bc53a09da69cc21e6f14efe62",
+      "bytes": 5294
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/golden_quantum/__init__.py",
+      "sha256": "d203d67c245df6be0a908c01d9a0ff9c7479b13c3b9412742a2d5ed7dd6eb295",
+      "bytes": 817
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/golden_quantum/coherence.py",
+      "sha256": "54195f0be85e3ff0b1014e993e935876121e4cb10310ff742e4079b5abfe1669",
+      "bytes": 806
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/golden_quantum/constants.py",
+      "sha256": "efdf650ea795ba559db91b038a32e7d362e6304a6f79710e88bb5650e2520072",
+      "bytes": 501
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/golden_quantum/data_folding.py",
+      "sha256": "10aacfdb69c7644e411d52558fcb95f0453d059d9f7044bac9dcaa38372fdacd",
+      "bytes": 1513
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/golden_quantum/infinity_fold.py",
+      "sha256": "d0bfb70bdf000a7a5fbd3d2263465aa4f7f5339e3e8bf84c808dc37d8e3f2c25",
+      "bytes": 416
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/golden_quantum/infinity_gpu.py",
+      "sha256": "f2d174a6f7d63e9d007a9f1fa4b8379da37045f19a235c145472d1e263b80a2d",
+      "bytes": 1097
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/golden_quantum/mandelbrot.py",
+      "sha256": "ec3e77c5b1f8180ee6fb165d78d880c39af61be6a85950485c0dbfc30ba42ab6",
+      "bytes": 1668
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/golden_quantum/memory.py",
+      "sha256": "7eee03a72921f3425889d559901a9885f34a57f9f78e12ace774106c7a0aec9a",
+      "bytes": 1871
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/golden_quantum/mining.py",
+      "sha256": "5300099a451e6636af4d0a1664cb6093b5209265c339573340b84dc91ef16d7d",
+      "bytes": 3658
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/golden_quantum/oracles.py",
+      "sha256": "6f2a0bd77537a64530bc25fdad15580967971207b51aff6911f6e6d2e8dc5322",
+      "bytes": 1018
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/golden_quantum/quantum_state.py",
+      "sha256": "980cea51c2f8a4be5d497158ce9dd5bcbb3460cefe475f21db69dddd31ef6150",
+      "bytes": 1785
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/golden_quantum/search.py",
+      "sha256": "a50825808f4fee2b4c9f8c49d4c5cf46b5556240f0d6b6af70ddb90badfec265",
+      "bytes": 3140
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/golden_quantum/uci.py",
+      "sha256": "93b74d10cbe8baf29875b1acb5595d75e458224d7e8b596a17b1008b792a7052",
+      "bytes": 1396
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/hamiltonian.py",
+      "sha256": "46b9b5b4b21b3382ff0d0256405ac556effc3d2f481dad41256f209e2f59a376",
+      "bytes": 4364
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/__init__.py",
+      "sha256": "a24055b0b16c5ba9374885c82bef35328a5ceeb1643699e5127af35e7488b38e",
+      "bytes": 1675
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/apple.py",
+      "sha256": "8eb722890bbc831f0cc6e6ab40cbd88bf7d86ae1a784e31e1ddd0a68808b1438",
+      "bytes": 6151
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/asic_mining.py",
+      "sha256": "73ec54826793452087c918c635fe3be256abce34718e2bddc8645f9b2989e1bd",
+      "bytes": 16683
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/contracts.py",
+      "sha256": "5836eed4e85169494066fc158a865a3bd8bcb1887c5110e6a7d45224cb5246eb",
+      "bytes": 6704
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/control.py",
+      "sha256": "137fc3c63d9e8a6449acf84610034f109dd69548f7b878b91fa7747993f6257e",
+      "bytes": 7178
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/core.py",
+      "sha256": "3b85c7e5decafb298f9f854c00d012d965ba75833e261e9796516401f346718d",
+      "bytes": 671
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/exact_fold.py",
+      "sha256": "ca844544122b1a7c6c45fb34bbb31920b50afa730679674c5b76875ca7142bc1",
+      "bytes": 3887
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/extended_algebra.py",
+      "sha256": "3eccf81bde8e21fc5aad0696adda77f49faa3ea6218aef446f223bc6540e9981",
+      "bytes": 6844
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/fabric.py",
+      "sha256": "8a6ebe1dd6b77fec4a842bbd55701e0f62258761bfbc41acd353315c031d46b5",
+      "bytes": 7632
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/facade.py",
+      "sha256": "214551f43cc5deb5b940facfd607a51d70bd37bb1ad7d95cf0249260d4e534d5",
+      "bytes": 16810
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/geometry11d.py",
+      "sha256": "2741b7006f8cdb9577247a5f482520c0437a16c9af84ad5128a5ff7b85136cad",
+      "bytes": 2078
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/golden_runtime.py",
+      "sha256": "bd57aeebc8dc2022c687359dfcefcd523350fbc94b75c05aca7d4f0da019b1cf",
+      "bytes": 14883
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/hendrix_execution.py",
+      "sha256": "fa0134f560348b4e17aae6e51e1e2b21afcf7818a8b02031bd61e33bbda16bed",
+      "bytes": 7949
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/host.py",
+      "sha256": "9e7106cf2504a851d67e0491ce477380fc8f60a423d60e2936fee233a179899e",
+      "bytes": 1688
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/intrinsics.py",
+      "sha256": "f98cd209a779a8960423d6a604c1299c2d1cda8706eef79c3ede1bc02b443e0a",
+      "bytes": 3315
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/kernels/hendrix600.cl",
+      "sha256": "23c3c3dfbbf4fe173ce6fe95e45b556d9ad24558205100d286c6c51a849c4068",
+      "bytes": 1033
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/kernels/lucas256.cl",
+      "sha256": "ff8c6e47036cb91bd0ac2ec93ae65e5c47e1198510d1678bc89c91f18a696d1b",
+      "bytes": 1165
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/kernels/sha256d.cl",
+      "sha256": "eb097bb4270381c28a56a5723856dec52cef12d191293412884faf718ef183ff",
+      "bytes": 2583
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/kernels/structured_matvec.cl",
+      "sha256": "d149b33bb44145b951d4e22ecfe73539ac20fb04b3be5ced2020d0c51fddae9f",
+      "bytes": 1016
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/native/sha256d_native.c",
+      "sha256": "3863e43fb9f4e7bad388123f2d66bdafcfca4df86028b513fffbfe6d4699c93e",
+      "bytes": 11386
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/native/structured_native.c",
+      "sha256": "52bf5beb9e1d2c6fb88a22acd4ffc98b23a217e23920e3254646d463d32c678e",
+      "bytes": 5009
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/objects.py",
+      "sha256": "4c148ecac571823e5ae906c8deb15ace02b2ac3ac66690b70311aeae706dcce7",
+      "bytes": 2018
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/overlay.py",
+      "sha256": "a169616ddde84835da487165c5666331afdbf3d07bfc6e2d448e2e3f02edce19",
+      "bytes": 13311
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/qx.py",
+      "sha256": "a7ece8ddeec946f155707a20714e2fad488003f6cb370a274166e8305fe5c77c",
+      "bytes": 4477
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/remote.py",
+      "sha256": "fc6f5e69f33a3759dcccfb3dc5ffec494293e94d89f283411589253e6c3777a8",
+      "bytes": 3508
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/resident.py",
+      "sha256": "77e41f162bbbcd2af99e2185ee2a3ef57a2e2bd6a9b82827d3b65fa9ec0c41f2",
+      "bytes": 10717
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/resident_hendrix.py",
+      "sha256": "8aad568aba63f4b0fd188bdb2eff0d82d0ebb40565d0fd02b24967fdbd2c7f87",
+      "bytes": 8993
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/scaled_plan.py",
+      "sha256": "adec9c4943885d4a49292d2be5ab1cdd461d43343743e0f16e603f0ca86e12ab",
+      "bytes": 1737
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/scaling_validation.py",
+      "sha256": "028c17d72434b8a2b0cb368d4baec07d18c6455c22874da07ea7e5987ab4a396",
+      "bytes": 2206
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/service.py",
+      "sha256": "28f480116e14064aa94fcdd3db744c43d840daa647ddac9dfe6bc99633247069",
+      "bytes": 5891
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/solver_cache.py",
+      "sha256": "a5d81815ace5cfd8e6444cffbeb074779e0bd7f2229d5930f22c63ab7e7bd894",
+      "bytes": 3527
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/APPLE_NEURAL_INTEGRATION.md",
+      "sha256": "8212114467aeadba723df2a79709821e938365c7c41dbed7256a539ca3fb4ffa",
+      "bytes": 2515
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/ASIC_MINING.md",
+      "sha256": "6f2f2b4f9e3a0f04f983203fa64795f50a494d54f90776b115535f4df5f0d69f",
+      "bytes": 8981
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/FAMILY_COMPOSITION.md",
+      "sha256": "8413b791211b97c0b8fcc591b1e562d7951e15e8615133cda2772a0eb986a597",
+      "bytes": 2253
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/PUBLICATION.md",
+      "sha256": "04c668c9c0b78bc399057bb0e86200011929aa75c7d0f11c2e6c7fc647bf0814",
+      "bytes": 2204
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/PUBLIC_TECHNIQUES.json",
+      "sha256": "47523b9499df3dc426a03f6594f8b6208384f71349d964314a597991cb221578",
+      "bytes": 1829
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/attached_surface_inventory.json",
+      "sha256": "4d39f78ec4b675d23a3112ba6052b311e42c0d6b69b988c6a227cbbde5c9f2a7",
+      "bytes": 74778
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/completion-v3.10.json",
+      "sha256": "4b589c4e26fe3731a127adc9d999c057df8fb449764f5a0248181b0f6bd7732b",
+      "bytes": 15068
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/completion_contract.json",
+      "sha256": "b2b9652d695a6b1f38aa1a43f1b78801a8e613c93f10869a2fb277f52f946255",
+      "bytes": 13675
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/completion_contract_v1.json",
+      "sha256": "bde3a54900779292ef9ec2b50c138fdd98a3f321b9b1daff7dec0f64fa44fa8a",
+      "bytes": 10768
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/deterministic_elevation.md",
+      "sha256": "f86b311dd587cdf0be77300aa8334198167fce7b31d32b08693db63f9a6635de",
+      "bytes": 5015
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/feedback-v3.10.json",
+      "sha256": "46098c41e2218f5fc7d868557d3e70ded705441df03f5300ee856ba92000ebc9",
+      "bytes": 25936
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/implementation_status.json",
+      "sha256": "b2b9652d695a6b1f38aa1a43f1b78801a8e613c93f10869a2fb277f52f946255",
+      "bytes": 13675
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/integration_plan_v1.md",
+      "sha256": "901d0b8ae223d3b8f88543b1829a7de94974e3dbaa3655ddfb8b88be77ef61fd",
+      "bytes": 12464
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/notion_sources_v1.json",
+      "sha256": "6ef43cfb2337c80332c32ba51b8985da9f8e4e94fb9ef24599af4d6641fb188d",
+      "bytes": 10217
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/pythi_native_obligations.json",
+      "sha256": "0d99b0cc24bfcd0c6ffda6b87091c10f7cf0b1029558275962fa1d17cd32e174",
+      "bytes": 2361
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/source_manifest.json",
+      "sha256": "0332ebf3779bb7d6486fb9a65c6b76d63030fa03653e56dd516aebbb59c36768",
+      "bytes": 11078
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/MANIFEST-v3.10.json",
+      "sha256": "c850d72dd0d40c9ab0f385726a5404045a7026450050ab5f0c476b75cf4da0e9",
+      "bytes": 1075
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/MANIFEST.json",
+      "sha256": "3c65ef752cdad2049dc1e3f866bd2945f32865bcbe607b1b01299993972b5ff6",
+      "bytes": 616
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/architecture.txt",
+      "sha256": "eb512d1465477fd07b4148cb0749720fe84a4af55da034116558e1929be7bfde",
+      "bytes": 5336
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/elevation-module-inventory.txt",
+      "sha256": "cc2f74654ab4e6034f7a9517099f974305c42ac3d6ef3d2169127637ee14b5bc",
+      "bytes": 36857
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/paradigm_spine.txt",
+      "sha256": "a3d856348e4aca31779e29e3a1f610357897e902f40a3acb95e3679706587ad9",
+      "bytes": 2089
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/phase4_core_directive.txt",
+      "sha256": "ad21e7c8ceb5876c0f16d532f3bffafac2d4812ce079f230e9b7706cbf0f4d8f",
+      "bytes": 4025
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/pythi-native-user-proposal.txt",
+      "sha256": "49d670f5bc45619f308dcabd4da49e09aa9d275f85d15dac9fabfc49c6d591d6",
+      "bytes": 20934
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/resident-projection-user-review.txt",
+      "sha256": "0d455ba64a9bd006e9482eff3b24cd74040fca9baa7d7f4a57901b12c077d02e",
+      "bytes": 10146
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/scaling_review.txt",
+      "sha256": "ce1f112c5bd430b62b1263954d917f68ea9e9a7692087200c98cc25a34b01e32",
+      "bytes": 15345
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/spec/structured_pythi_elevation.md",
+      "sha256": "da4e75ccc83fc279a1c8c0a34810b4f989a62e315b03b21d87fa75033b259c32",
+      "bytes": 6475
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/store.py",
+      "sha256": "0bf4790d9579aaf5741f174336246dffd0a3c99750027dcf4a9409523aa307a7",
+      "bytes": 2126
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/structured_solver.py",
+      "sha256": "beecb2d4d48af1f2349632993730ddbf76c5f9d72d217e9cf19b6af334fd9cb2",
+      "bytes": 5495
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/tensor_runtime.py",
+      "sha256": "768d9cef438af868929163216a18a35518535790afb44d3109387dffcc38a92a",
+      "bytes": 3365
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/virtual_abi.py",
+      "sha256": "35fad057eecc49eaeb81bc0a975446c674f66b7a36e17e6b0b51e5c8fc353d21",
+      "bytes": 9877
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/igpu/witness_cache.py",
+      "sha256": "e9ed1c0a7b09d5a3f2d5033cbff424ead1bad4f4f37e0df435a16da935bb1eaa",
+      "bytes": 8938
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/lucas_datapath.py",
+      "sha256": "46e79da9ef5f0455f4a6d947f9e137e54f4fdb79ddf70e86544154fa4eb2b15f",
+      "bytes": 13664
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/lucas_engine.py",
+      "sha256": "120c91784b6e32c25b2255576d8d9e4044d538d051df070ba79ed745067b9ae6",
+      "bytes": 6813
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/lucas_runtime.py",
+      "sha256": "e3b91f33c4136cdb75897ee1e2b65343e62e6da33affdfdfce1216a3a6999c19",
+      "bytes": 2586
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/lucas_scaling.py",
+      "sha256": "184f456bc74956ba4b329584e3614c29d3eae6fba6891637caf2562c8ac9114e",
+      "bytes": 1400
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/manifold.py",
+      "sha256": "01a4e417cac7e2b9958bb3794223520c67400d3fc413dd33dc7628acf231e18b",
+      "bytes": 10350
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/paradigm/__init__.py",
+      "sha256": "1fbaf8e3fba911a38726fd06fc394983c7d52f7c41d17c420fbee0f1cd5ae625",
+      "bytes": 5412
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/paradigm/__main__.py",
+      "sha256": "5ca51869816c685ae82504df9256fdfe0388ae65d09534e14d3ecea46463d147",
+      "bytes": 144
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/phi_scaling.py",
+      "sha256": "99add7e0b1457f56579f506898f4f62df1d6928dd45de0a722a6d3701f7412e4",
+      "bytes": 10389
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/pool.py",
+      "sha256": "758bdb505ed4f3a25923b27a2093edb2c06f1c5c7e3f873d6ae7d1b4ac9985c7",
+      "bytes": 1317
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/projection_analysis.py",
+      "sha256": "0c1088d132dbbbf010a44524404932f95b2e13f1462d7b5f82cf05500e7101ae",
+      "bytes": 3526
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/pythi_native.py",
+      "sha256": "58eb886a233403301fd80229d9c9041144099dc3194c841850802178f9565e0c",
+      "bytes": 8390
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/qsdl_compiler.py",
+      "sha256": "3afc1cdc74da288385b905bd0d45079996a51037bb7d0371fa82c5a89d7c839a",
+      "bytes": 24669
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/qsdl_parser.py",
+      "sha256": "86dd6f29da513e23d0ce32ba0b8a122b05adae5cdd45ded0cad20f09e8bba585",
+      "bytes": 26239
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/qualification.py",
+      "sha256": "b6260f950879c523e3a365188fd4c41f87d1cc0546d7940428b65ac5e6311169",
+      "bytes": 3262
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/reconstruction.py",
+      "sha256": "0541516766dbd2cf51e56684d01ff853c713b77616fdffaf13d4ad197a978003",
+      "bytes": 7002
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/release_cli.py",
+      "sha256": "e89b70706a6c05fbeb904f2bede2afb89cdbd6a69786f933a2856a964a2a2dd6",
+      "bytes": 5361
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/sparse.py",
+      "sha256": "49b130363d9931a98b773ed2c9e77ece2848be00605486cdbb5fa73054ee48c6",
+      "bytes": 1456
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/test_harness.py",
+      "sha256": "448fea227cf3b3df674cc691c3bd8341a908b849437ddda328afa2d2dc8b8e47",
+      "bytes": 2608
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/theory/__init__.py",
+      "sha256": "92f1f43b05512cc72319e368fe0ef9b8d11d20b9dae3b29cdc8d780996f2dea8",
+      "bytes": 914
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/theory/anyons.py",
+      "sha256": "6f04ff8d82e1f958fcbe5282b882343d4143f6ce895a3d2e5569212457fa6220",
+      "bytes": 6113
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/theory/chemistry.py",
+      "sha256": "e44835b93ce8c75f5ae34db6fbe6c905675cbe0359a208cf43275c77407ddec4",
+      "bytes": 4646
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/theory/control.py",
+      "sha256": "a27ed5e31c38b929a96763c1125d7b62b66cd57a05f10b03112ce8ef66f0c19e",
+      "bytes": 4396
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/theory/cryogenics.py",
+      "sha256": "2652c008021fcad8948ca4052616a186e7cc7fd3d596f57957d043d4b555dc08",
+      "bytes": 2742
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/theory/error_correction.py",
+      "sha256": "5c1bc69e833eeba21641b9763b0ebe83c1ecb5030582bc4c9aa720ca6626205f",
+      "bytes": 3906
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/theory/metrology.py",
+      "sha256": "4dc6dcd75bcfc128ff8b551a34ca8d62cd104669c9843eee621450447782a947",
+      "bytes": 1895
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/theory/oscillator_array.py",
+      "sha256": "1f2dc08ba1e461324927a9c7cec7dcd38c97e3b48cf7ef895f62974cdcfd6993",
+      "bytes": 4900
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/theory/photonics.py",
+      "sha256": "cfe6898b5ebcaf6e9ab68b4b65ab53c491a913d92bf813eca901cf3672fc2942",
+      "bytes": 2962
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/theory/qcd.py",
+      "sha256": "11f0578796ae5e33a0e5cde0a7f82d6dc979fd4373bcb06e7d7971e2c83b131d",
+      "bytes": 1727
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/theory/report.py",
+      "sha256": "871616a6e3b5103e9ad765cba5440348cbbf8cc467e12ba7e809df26914a9573",
+      "bytes": 4809
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos/theory/superconductivity.py",
+      "sha256": "3f67b94e424d5851365c253bbfbd3228f3682468094dafdf71a7de9190723bc7",
+      "bytes": 6879
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/__init__.py",
+      "sha256": "2bb4c8ddba4126bcf448bca87b62c7035ad9b3982162665ea6de22ad82710f2b",
+      "bytes": 3703
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/academic/__init__.py",
+      "sha256": "eac2dfcfa8ae580e5b5b849160d4a42f8f0cfb69d2843f6867bf3c4a4ecaffb3",
+      "bytes": 1480
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/academic/caltech.py",
+      "sha256": "38ed3f68f563808bf6706bc015cc7542521b413a6925301fcd1477c7924b8ae7",
+      "bytes": 5095
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/academic/cambridge.py",
+      "sha256": "7ef9ab0fe35724a01d85fec7c0fb19d1fe1e584a1a9570b9d5646aa07613f5b0",
+      "bytes": 6993
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/academic/cern.py",
+      "sha256": "b0f1d93f203ad592ff49bd5f5784c3297ecd43e05968e0da5a049edc7e566a5e",
+      "bytes": 7996
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/academic/mit.py",
+      "sha256": "098a9d0cebb15d58babd078f5f798de2dd23dccb43020112386936b81464eb33",
+      "bytes": 2319
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/academic/nist.py",
+      "sha256": "dac1e15dc0d0d229f63ba56d87ffa645c08523c9e89f81662d793abca13c6912",
+      "bytes": 4880
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/academic/report.py",
+      "sha256": "df564b0ac0d9d025a251c7cab45b9a02eb0b947c937404ab249e5a11ded223c9",
+      "bytes": 8154
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/academic/tensor_compression.py",
+      "sha256": "7ffe4e55f7046d6e43e307645b09acb02193bcfcd482defb9ff438098c5e7ba6",
+      "bytes": 7615
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/academic/tokyotech.py",
+      "sha256": "bc4a627714c6bde14df271493b1a3bc9f7b4113302b8dbac35c3d272ed00541b",
+      "bytes": 1080
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/adapters/__init__.py",
+      "sha256": "9765ada895dd28dbf0cf5b3a43470f487c06501bbfb39e030589f37361e8d825",
+      "bytes": 120
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/adapters/base.py",
+      "sha256": "27e4cc30bb807b004538f57ebdb44bbb8f4a6fc1ea87ad5eac45ae88268d295e",
+      "bytes": 2268
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/adapters/cpu.py",
+      "sha256": "19cf69871234653732b5aeef05b314328f28b94512d7719572b6a874d5095291",
+      "bytes": 1686
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/adapters/opencl.py",
+      "sha256": "f9d70f77c481493ff07142c7c8d5b9580bd7d913539162580ea14dbd3c2c2311",
+      "bytes": 1657
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/adapters/registry.py",
+      "sha256": "4bb51ad3987231034a44b1837ad01e330b588544005fa2e36b02b22c2345512f",
+      "bytes": 1118
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/certificate.py",
+      "sha256": "02267668acda124d51361f26098a1efe724a321ab3a64ef6d4b4b1698b92b7f7",
+      "bytes": 2258
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/core_hash.py",
+      "sha256": "7d4230ba4ac5250fcc226278187dc359d31c6f40b40fe41fae22553c4d9f75f2",
+      "bytes": 184
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/engine.py",
+      "sha256": "2216a08236bed3d49c0618152cb951fc547b6d125bfb50fbb7fa58a0886766d0",
+      "bytes": 3706
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/evidence.py",
+      "sha256": "cd76b51aa5baf983050b0fbae01c5d2dc6580fa338002448d242333e570a2a36",
+      "bytes": 1085
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/evolution_engine.py",
+      "sha256": "18d15d6771f7f28de2de1b9f9f8b55e72fa9d71a8db5d13d42387bdb5cc62a70",
+      "bytes": 4196
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/family_algebra.py",
+      "sha256": "1fa7b2c986b484477ad80d6cd7af914c4530670bc53a09da69cc21e6f14efe62",
+      "bytes": 5294
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/__init__.py",
+      "sha256": "d203d67c245df6be0a908c01d9a0ff9c7479b13c3b9412742a2d5ed7dd6eb295",
+      "bytes": 817
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/coherence.py",
+      "sha256": "54195f0be85e3ff0b1014e993e935876121e4cb10310ff742e4079b5abfe1669",
+      "bytes": 806
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/constants.py",
+      "sha256": "efdf650ea795ba559db91b038a32e7d362e6304a6f79710e88bb5650e2520072",
+      "bytes": 501
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/data_folding.py",
+      "sha256": "10aacfdb69c7644e411d52558fcb95f0453d059d9f7044bac9dcaa38372fdacd",
+      "bytes": 1513
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/infinity_fold.py",
+      "sha256": "d0bfb70bdf000a7a5fbd3d2263465aa4f7f5339e3e8bf84c808dc37d8e3f2c25",
+      "bytes": 416
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/infinity_gpu.py",
+      "sha256": "f2d174a6f7d63e9d007a9f1fa4b8379da37045f19a235c145472d1e263b80a2d",
+      "bytes": 1097
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/mandelbrot.py",
+      "sha256": "ec3e77c5b1f8180ee6fb165d78d880c39af61be6a85950485c0dbfc30ba42ab6",
+      "bytes": 1668
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/memory.py",
+      "sha256": "7eee03a72921f3425889d559901a9885f34a57f9f78e12ace774106c7a0aec9a",
+      "bytes": 1871
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/mining.py",
+      "sha256": "5300099a451e6636af4d0a1664cb6093b5209265c339573340b84dc91ef16d7d",
+      "bytes": 3658
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/oracles.py",
+      "sha256": "6f2a0bd77537a64530bc25fdad15580967971207b51aff6911f6e6d2e8dc5322",
+      "bytes": 1018
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/quantum_state.py",
+      "sha256": "980cea51c2f8a4be5d497158ce9dd5bcbb3460cefe475f21db69dddd31ef6150",
+      "bytes": 1785
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/search.py",
+      "sha256": "a50825808f4fee2b4c9f8c49d4c5cf46b5556240f0d6b6af70ddb90badfec265",
+      "bytes": 3140
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/uci.py",
+      "sha256": "93b74d10cbe8baf29875b1acb5595d75e458224d7e8b596a17b1008b792a7052",
+      "bytes": 1396
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/hamiltonian.py",
+      "sha256": "46b9b5b4b21b3382ff0d0256405ac556effc3d2f481dad41256f209e2f59a376",
+      "bytes": 4364
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/__init__.py",
+      "sha256": "a24055b0b16c5ba9374885c82bef35328a5ceeb1643699e5127af35e7488b38e",
+      "bytes": 1675
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/apple.py",
+      "sha256": "8eb722890bbc831f0cc6e6ab40cbd88bf7d86ae1a784e31e1ddd0a68808b1438",
+      "bytes": 6151
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/asic_mining.py",
+      "sha256": "73ec54826793452087c918c635fe3be256abce34718e2bddc8645f9b2989e1bd",
+      "bytes": 16683
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/contracts.py",
+      "sha256": "5836eed4e85169494066fc158a865a3bd8bcb1887c5110e6a7d45224cb5246eb",
+      "bytes": 6704
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/control.py",
+      "sha256": "137fc3c63d9e8a6449acf84610034f109dd69548f7b878b91fa7747993f6257e",
+      "bytes": 7178
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/core.py",
+      "sha256": "3b85c7e5decafb298f9f854c00d012d965ba75833e261e9796516401f346718d",
+      "bytes": 671
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/exact_fold.py",
+      "sha256": "ca844544122b1a7c6c45fb34bbb31920b50afa730679674c5b76875ca7142bc1",
+      "bytes": 3887
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/extended_algebra.py",
+      "sha256": "3eccf81bde8e21fc5aad0696adda77f49faa3ea6218aef446f223bc6540e9981",
+      "bytes": 6844
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/fabric.py",
+      "sha256": "8a6ebe1dd6b77fec4a842bbd55701e0f62258761bfbc41acd353315c031d46b5",
+      "bytes": 7632
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/facade.py",
+      "sha256": "214551f43cc5deb5b940facfd607a51d70bd37bb1ad7d95cf0249260d4e534d5",
+      "bytes": 16810
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/geometry11d.py",
+      "sha256": "2741b7006f8cdb9577247a5f482520c0437a16c9af84ad5128a5ff7b85136cad",
+      "bytes": 2078
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/golden_runtime.py",
+      "sha256": "bd57aeebc8dc2022c687359dfcefcd523350fbc94b75c05aca7d4f0da019b1cf",
+      "bytes": 14883
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/hendrix_execution.py",
+      "sha256": "fa0134f560348b4e17aae6e51e1e2b21afcf7818a8b02031bd61e33bbda16bed",
+      "bytes": 7949
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/host.py",
+      "sha256": "9e7106cf2504a851d67e0491ce477380fc8f60a423d60e2936fee233a179899e",
+      "bytes": 1688
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/intrinsics.py",
+      "sha256": "f98cd209a779a8960423d6a604c1299c2d1cda8706eef79c3ede1bc02b443e0a",
+      "bytes": 3315
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/kernels/hendrix600.cl",
+      "sha256": "23c3c3dfbbf4fe173ce6fe95e45b556d9ad24558205100d286c6c51a849c4068",
+      "bytes": 1033
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/kernels/lucas256.cl",
+      "sha256": "ff8c6e47036cb91bd0ac2ec93ae65e5c47e1198510d1678bc89c91f18a696d1b",
+      "bytes": 1165
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/kernels/sha256d.cl",
+      "sha256": "eb097bb4270381c28a56a5723856dec52cef12d191293412884faf718ef183ff",
+      "bytes": 2583
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/kernels/structured_matvec.cl",
+      "sha256": "d149b33bb44145b951d4e22ecfe73539ac20fb04b3be5ced2020d0c51fddae9f",
+      "bytes": 1016
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/native/sha256d_native.c",
+      "sha256": "3863e43fb9f4e7bad388123f2d66bdafcfca4df86028b513fffbfe6d4699c93e",
+      "bytes": 11386
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/native/structured_native.c",
+      "sha256": "52bf5beb9e1d2c6fb88a22acd4ffc98b23a217e23920e3254646d463d32c678e",
+      "bytes": 5009
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/objects.py",
+      "sha256": "4c148ecac571823e5ae906c8deb15ace02b2ac3ac66690b70311aeae706dcce7",
+      "bytes": 2018
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/overlay.py",
+      "sha256": "e32ccf2ea1b28fb000afe904a88729a23f2f4892e39dc8c1c6c374540fc59443",
+      "bytes": 13356
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/qx.py",
+      "sha256": "a7ece8ddeec946f155707a20714e2fad488003f6cb370a274166e8305fe5c77c",
+      "bytes": 4477
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/remote.py",
+      "sha256": "fc6f5e69f33a3759dcccfb3dc5ffec494293e94d89f283411589253e6c3777a8",
+      "bytes": 3508
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/resident.py",
+      "sha256": "77e41f162bbbcd2af99e2185ee2a3ef57a2e2bd6a9b82827d3b65fa9ec0c41f2",
+      "bytes": 10717
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/resident_hendrix.py",
+      "sha256": "8aad568aba63f4b0fd188bdb2eff0d82d0ebb40565d0fd02b24967fdbd2c7f87",
+      "bytes": 8993
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/scaled_plan.py",
+      "sha256": "adec9c4943885d4a49292d2be5ab1cdd461d43343743e0f16e603f0ca86e12ab",
+      "bytes": 1737
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/scaling_validation.py",
+      "sha256": "028c17d72434b8a2b0cb368d4baec07d18c6455c22874da07ea7e5987ab4a396",
+      "bytes": 2206
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/service.py",
+      "sha256": "28f480116e14064aa94fcdd3db744c43d840daa647ddac9dfe6bc99633247069",
+      "bytes": 5891
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/solver_cache.py",
+      "sha256": "a5d81815ace5cfd8e6444cffbeb074779e0bd7f2229d5930f22c63ab7e7bd894",
+      "bytes": 3527
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/APPLE_NEURAL_INTEGRATION.md",
+      "sha256": "8212114467aeadba723df2a79709821e938365c7c41dbed7256a539ca3fb4ffa",
+      "bytes": 2515
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/ASIC_MINING.md",
+      "sha256": "6f2f2b4f9e3a0f04f983203fa64795f50a494d54f90776b115535f4df5f0d69f",
+      "bytes": 8981
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/FAMILY_COMPOSITION.md",
+      "sha256": "8413b791211b97c0b8fcc591b1e562d7951e15e8615133cda2772a0eb986a597",
+      "bytes": 2253
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/PUBLICATION.md",
+      "sha256": "04c668c9c0b78bc399057bb0e86200011929aa75c7d0f11c2e6c7fc647bf0814",
+      "bytes": 2204
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/PUBLIC_TECHNIQUES.json",
+      "sha256": "47523b9499df3dc426a03f6594f8b6208384f71349d964314a597991cb221578",
+      "bytes": 1829
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/attached_surface_inventory.json",
+      "sha256": "4d39f78ec4b675d23a3112ba6052b311e42c0d6b69b988c6a227cbbde5c9f2a7",
+      "bytes": 74778
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/completion-v3.10.json",
+      "sha256": "4b589c4e26fe3731a127adc9d999c057df8fb449764f5a0248181b0f6bd7732b",
+      "bytes": 15068
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/completion_contract.json",
+      "sha256": "b2b9652d695a6b1f38aa1a43f1b78801a8e613c93f10869a2fb277f52f946255",
+      "bytes": 13675
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/completion_contract_v1.json",
+      "sha256": "bde3a54900779292ef9ec2b50c138fdd98a3f321b9b1daff7dec0f64fa44fa8a",
+      "bytes": 10768
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/deterministic_elevation.md",
+      "sha256": "f86b311dd587cdf0be77300aa8334198167fce7b31d32b08693db63f9a6635de",
+      "bytes": 5015
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/feedback-v3.10.json",
+      "sha256": "46098c41e2218f5fc7d868557d3e70ded705441df03f5300ee856ba92000ebc9",
+      "bytes": 25936
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/implementation_status.json",
+      "sha256": "b2b9652d695a6b1f38aa1a43f1b78801a8e613c93f10869a2fb277f52f946255",
+      "bytes": 13675
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/integration_plan_v1.md",
+      "sha256": "901d0b8ae223d3b8f88543b1829a7de94974e3dbaa3655ddfb8b88be77ef61fd",
+      "bytes": 12464
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/notion_sources_v1.json",
+      "sha256": "6ef43cfb2337c80332c32ba51b8985da9f8e4e94fb9ef24599af4d6641fb188d",
+      "bytes": 10217
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/pythi_native_obligations.json",
+      "sha256": "0d99b0cc24bfcd0c6ffda6b87091c10f7cf0b1029558275962fa1d17cd32e174",
+      "bytes": 2361
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_manifest.json",
+      "sha256": "0332ebf3779bb7d6486fb9a65c6b76d63030fa03653e56dd516aebbb59c36768",
+      "bytes": 11078
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/MANIFEST-v3.10.json",
+      "sha256": "c850d72dd0d40c9ab0f385726a5404045a7026450050ab5f0c476b75cf4da0e9",
+      "bytes": 1075
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/MANIFEST.json",
+      "sha256": "3c65ef752cdad2049dc1e3f866bd2945f32865bcbe607b1b01299993972b5ff6",
+      "bytes": 616
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/architecture.txt",
+      "sha256": "eb512d1465477fd07b4148cb0749720fe84a4af55da034116558e1929be7bfde",
+      "bytes": 5336
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/elevation-module-inventory.txt",
+      "sha256": "cc2f74654ab4e6034f7a9517099f974305c42ac3d6ef3d2169127637ee14b5bc",
+      "bytes": 36857
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/paradigm_spine.txt",
+      "sha256": "a3d856348e4aca31779e29e3a1f610357897e902f40a3acb95e3679706587ad9",
+      "bytes": 2089
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/phase4_core_directive.txt",
+      "sha256": "ad21e7c8ceb5876c0f16d532f3bffafac2d4812ce079f230e9b7706cbf0f4d8f",
+      "bytes": 4025
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/pythi-native-user-proposal.txt",
+      "sha256": "49d670f5bc45619f308dcabd4da49e09aa9d275f85d15dac9fabfc49c6d591d6",
+      "bytes": 20934
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/resident-projection-user-review.txt",
+      "sha256": "0d455ba64a9bd006e9482eff3b24cd74040fca9baa7d7f4a57901b12c077d02e",
+      "bytes": 10146
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/scaling_review.txt",
+      "sha256": "ce1f112c5bd430b62b1263954d917f68ea9e9a7692087200c98cc25a34b01e32",
+      "bytes": 15345
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/structured_pythi_elevation.md",
+      "sha256": "da4e75ccc83fc279a1c8c0a34810b4f989a62e315b03b21d87fa75033b259c32",
+      "bytes": 6475
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/store.py",
+      "sha256": "0bf4790d9579aaf5741f174336246dffd0a3c99750027dcf4a9409523aa307a7",
+      "bytes": 2126
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/structured_solver.py",
+      "sha256": "beecb2d4d48af1f2349632993730ddbf76c5f9d72d217e9cf19b6af334fd9cb2",
+      "bytes": 5495
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/tensor_runtime.py",
+      "sha256": "768d9cef438af868929163216a18a35518535790afb44d3109387dffcc38a92a",
+      "bytes": 3365
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/virtual_abi.py",
+      "sha256": "35fad057eecc49eaeb81bc0a975446c674f66b7a36e17e6b0b51e5c8fc353d21",
+      "bytes": 9877
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/witness_cache.py",
+      "sha256": "e9ed1c0a7b09d5a3f2d5033cbff424ead1bad4f4f37e0df435a16da935bb1eaa",
+      "bytes": 8938
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/lucas_datapath.py",
+      "sha256": "46e79da9ef5f0455f4a6d947f9e137e54f4fdb79ddf70e86544154fa4eb2b15f",
+      "bytes": 13664
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/lucas_engine.py",
+      "sha256": "120c91784b6e32c25b2255576d8d9e4044d538d051df070ba79ed745067b9ae6",
+      "bytes": 6813
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/lucas_runtime.py",
+      "sha256": "e3b91f33c4136cdb75897ee1e2b65343e62e6da33affdfdfce1216a3a6999c19",
+      "bytes": 2586
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/lucas_scaling.py",
+      "sha256": "184f456bc74956ba4b329584e3614c29d3eae6fba6891637caf2562c8ac9114e",
+      "bytes": 1400
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/manifold.py",
+      "sha256": "01a4e417cac7e2b9958bb3794223520c67400d3fc413dd33dc7628acf231e18b",
+      "bytes": 10350
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/paradigm/__init__.py",
+      "sha256": "1fbaf8e3fba911a38726fd06fc394983c7d52f7c41d17c420fbee0f1cd5ae625",
+      "bytes": 5412
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/paradigm/__main__.py",
+      "sha256": "5ca51869816c685ae82504df9256fdfe0388ae65d09534e14d3ecea46463d147",
+      "bytes": 144
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/phi_scaling.py",
+      "sha256": "99add7e0b1457f56579f506898f4f62df1d6928dd45de0a722a6d3701f7412e4",
+      "bytes": 10389
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/pool.py",
+      "sha256": "758bdb505ed4f3a25923b27a2093edb2c06f1c5c7e3f873d6ae7d1b4ac9985c7",
+      "bytes": 1317
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/projection_analysis.py",
+      "sha256": "0c1088d132dbbbf010a44524404932f95b2e13f1462d7b5f82cf05500e7101ae",
+      "bytes": 3526
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/pythi_native.py",
+      "sha256": "58eb886a233403301fd80229d9c9041144099dc3194c841850802178f9565e0c",
+      "bytes": 8390
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/qsdl_compiler.py",
+      "sha256": "3afc1cdc74da288385b905bd0d45079996a51037bb7d0371fa82c5a89d7c839a",
+      "bytes": 24669
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/qsdl_parser.py",
+      "sha256": "86dd6f29da513e23d0ce32ba0b8a122b05adae5cdd45ded0cad20f09e8bba585",
+      "bytes": 26239
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/qualification.py",
+      "sha256": "b6260f950879c523e3a365188fd4c41f87d1cc0546d7940428b65ac5e6311169",
+      "bytes": 3262
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/reconstruction.py",
+      "sha256": "0541516766dbd2cf51e56684d01ff853c713b77616fdffaf13d4ad197a978003",
+      "bytes": 7002
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/release_cli.py",
+      "sha256": "a52223f3f90d1ee201c7db4097f24a8fd208fa2dfb50c67a45a2e1962f35ffc3",
+      "bytes": 5370
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/sparse.py",
+      "sha256": "49b130363d9931a98b773ed2c9e77ece2848be00605486cdbb5fa73054ee48c6",
+      "bytes": 1456
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/test_harness.py",
+      "sha256": "448fea227cf3b3df674cc691c3bd8341a908b849437ddda328afa2d2dc8b8e47",
+      "bytes": 2608
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/theory/__init__.py",
+      "sha256": "92f1f43b05512cc72319e368fe0ef9b8d11d20b9dae3b29cdc8d780996f2dea8",
+      "bytes": 914
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/theory/anyons.py",
+      "sha256": "6f04ff8d82e1f958fcbe5282b882343d4143f6ce895a3d2e5569212457fa6220",
+      "bytes": 6113
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/theory/chemistry.py",
+      "sha256": "e44835b93ce8c75f5ae34db6fbe6c905675cbe0359a208cf43275c77407ddec4",
+      "bytes": 4646
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/theory/control.py",
+      "sha256": "a27ed5e31c38b929a96763c1125d7b62b66cd57a05f10b03112ce8ef66f0c19e",
+      "bytes": 4396
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/theory/cryogenics.py",
+      "sha256": "2652c008021fcad8948ca4052616a186e7cc7fd3d596f57957d043d4b555dc08",
+      "bytes": 2742
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/theory/error_correction.py",
+      "sha256": "5c1bc69e833eeba21641b9763b0ebe83c1ecb5030582bc4c9aa720ca6626205f",
+      "bytes": 3906
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/theory/metrology.py",
+      "sha256": "4dc6dcd75bcfc128ff8b551a34ca8d62cd104669c9843eee621450447782a947",
+      "bytes": 1895
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/theory/oscillator_array.py",
+      "sha256": "1f2dc08ba1e461324927a9c7cec7dcd38c97e3b48cf7ef895f62974cdcfd6993",
+      "bytes": 4900
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/theory/photonics.py",
+      "sha256": "cfe6898b5ebcaf6e9ab68b4b65ab53c491a913d92bf813eca901cf3672fc2942",
+      "bytes": 2962
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/theory/qcd.py",
+      "sha256": "11f0578796ae5e33a0e5cde0a7f82d6dc979fd4373bcb06e7d7971e2c83b131d",
+      "bytes": 1727
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/theory/report.py",
+      "sha256": "871616a6e3b5103e9ad765cba5440348cbbf8cc467e12ba7e809df26914a9573",
+      "bytes": 4809
+    },
+    {
+      "path": "packages/chronos-one-igpu/src/chronos_one_igpu/theory/superconductivity.py",
+      "sha256": "3f67b94e424d5851365c253bbfbd3228f3682468094dafdf71a7de9190723bc7",
+      "bytes": 6879
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/README.md",
+      "sha256": "51003de1de457b13e85e71ba905cd057efa51de8c272fc67f49627f94f0ae555",
+      "bytes": 656
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/fixtures/resident_hendrix_genesis.json",
+      "sha256": "e1af5d8b7975788c93e4f10c8d79fa7de518055bba67ffebbc5d7c2ec932b238",
+      "bytes": 183198
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_apple_extensions.py",
+      "sha256": "08f93003a619da52c73e9a881da32b4eee788df2d000358a7befd62a83505db4",
+      "bytes": 2438
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_asic_mining.py",
+      "sha256": "39a7cf974c4591356c83a596985e2e2d1e2885d115b2a0bb9c1c10fd7aa8b97b",
+      "bytes": 14819
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_elevation.py",
+      "sha256": "6b5eff5408e72af29053a941647ab33d9c24e156c4eab999d8503b9766991846",
+      "bytes": 20447
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_elevation_intake.py",
+      "sha256": "8e05b79fde9f2415986bfdb6a97f0180720272fcf22ad073c39613c9cc0f27bd",
+      "bytes": 1694
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_family_algebra.py",
+      "sha256": "e98820904a16486cd24a3ba60050d55de327119f89237932f7c2bdd37b86740e",
+      "bytes": 3129
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_golden_integration.py",
+      "sha256": "b24ba5ddbfe67cfc4d24edf2d4ab81d092f3eda977a9911b41be79bfa0eb1f98",
+      "bytes": 16244
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_lucas_datapath.py",
+      "sha256": "776a2ec0d3ec382dc44854a8b3d706e5e831ced62e37682127486f9fdae8d4cb",
+      "bytes": 1968
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_lucas_engine.py",
+      "sha256": "16b203b870045f4325eb77d0f6232548d21b90aee5b347a41a82a82bdbefdb79",
+      "bytes": 1679
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_lucas_runtime.py",
+      "sha256": "8afa1d1e6dfe921fe151be9b0ac59eba56ac2cb82ed33bf3a6ef5ae0edea35af",
+      "bytes": 1004
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_lucas_scaling.py",
+      "sha256": "1d6e3850016063a52b01c4e6fdf14974e067d27dc457094ef2b10da85d31f2d2",
+      "bytes": 882
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_next_round.py",
+      "sha256": "41ea6db0b62e6e25e3da533414918fa82a216baa1aae2ee89160f73a7f1d2cc3",
+      "bytes": 3064
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_one_igpu.py",
+      "sha256": "f2f35fca1a35666426246a0cd57ab808f78aecc51691ec9922b7d91b6a308402",
+      "bytes": 1861
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_pythi_native.py",
+      "sha256": "6bd699ac8a82189837f67ea89021840bc70ae4dca31462c97e50d3e0ac1c52ff",
+      "bytes": 5361
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_resident_projection.py",
+      "sha256": "b0f812341a5fbdd54ed443808280c664462dab33c54d7e05924eef177869701e",
+      "bytes": 10680
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_self_tests.py",
+      "sha256": "4b28d0f027dd9634a83ef3a672f900ab935ff7d30f2bae8568f17239a9b8e193",
+      "bytes": 1815
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_solver_cache.py",
+      "sha256": "c7713ef118c01da079a78aeda3dbf219b5204ca70912bad5e13f4278dcbbae4d",
+      "bytes": 3461
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_structured_solver.py",
+      "sha256": "1f70f9fbac580b5624c62404912b1339a56c913ce9b602ec0327da0fdef63092",
+      "bytes": 5146
+    },
+    {
+      "path": "packages/chronos-one-igpu/tests/test_substrate_agnostic.py",
+      "sha256": "e390f0f24932df5feb383eda117f7166ae9d0ed020be68d1f4dfccc65d11c414",
+      "bytes": 2547
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/CORE_PRESERVATION.json",
+      "sha256": "445ba7140290cc24242a918d30359831ad25056c1a0366c1ec3b5797996c0cbd",
+      "bytes": 13561
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/EVIDENCE_INDEX-v3.10.0.json",
+      "sha256": "5c55d7aa938b13f7e6265b49e442b2aaae4d33cf41ad1ca2e6aad32496788251",
+      "bytes": 16538
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/EVIDENCE_INDEX-v3.8.1.json",
+      "sha256": "beb77b00ca87006d2c2f53f64ec51ad4256f98a9754b4e1aed3d0e11915fe3ae",
+      "bytes": 13874
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/EVIDENCE_INDEX-v3.9.0.json",
+      "sha256": "1e19752e10d0e33a69695547871918351a279bfd99f2d64e36f3c167155eafa7",
+      "bytes": 15646
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/RELEASE_REPORT-v3.8.1.json",
+      "sha256": "c2fd905b45abd843c6e72d560448d423d344916f0a82800e7710e0013705c7ff",
+      "bytes": 1258
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/RELEASE_REPORT-v3.8.json",
+      "sha256": "5d5fd9ccc74cbd519995dd2d71c925978c7bbbcc7fb2409c835d63cba7f12788",
+      "bytes": 1998
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/RELEASE_REPORT.json",
+      "sha256": "8ffe70a5453f4d6d56e00943b789758f331020484ed1ced160291d2791c5702a",
+      "bytes": 2594
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/asic-benchmark-reconciliation.json",
+      "sha256": "a1d678d154b3160aec8b2ce4f9476d4060607313ccde92ace8ddd04fc2a4a750",
+      "bytes": 2139
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/asic-openssl-build.txt",
+      "sha256": "5f664c6d706200c1e9ee082dd469d9ed7b05ae89d70d7e35ee42e783cb1b2ddc",
+      "bytes": 1602
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/asic-portable-build.txt",
+      "sha256": "ddc8d21d03e5e5a5a1ffa92285171de062f80ce6bddea90b44ad252399a5c6e6",
+      "bytes": 1573
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/asic-portable-tests.txt",
+      "sha256": "90c0783481fc1df8ffdce41e63ca266d1594fe07e3d787970f893212912f75c8",
+      "bytes": 99
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/asic_v38_mining_notion_agent_chart.html",
+      "sha256": "c8fec0ec665aee64901f321aa65266c4a5c481c35a1e8187aa9e4256ed039898",
+      "bytes": 37670
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/distribution-build.txt",
+      "sha256": "9c1a374b47ab514e9d061578eb8c93a157306625250198ddf012eb510f3b4e01",
+      "bytes": 41132
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/distribution-metadata-check.txt",
+      "sha256": "022585a4fe57ffff18d4a7bbb15568fc16dbdfb14a013b684df385a3306f13e7",
+      "bytes": 122
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/family-10-12-15.json",
+      "sha256": "9ad9c5766788f6cdc9754c73586e18033168a57f74b6e29f2fcffc3a924b5d0c",
+      "bytes": 613
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/family-verify.json",
+      "sha256": "5bde941e80617baf8bc61be5a479bb561b8467ae5e4a7ef6fe7bd2ef6140e13b",
+      "bytes": 23
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/full-junit.xml",
+      "sha256": "1e3727caa4d53cde4e1dfa5cb6ff3a2f5a5b9b846f224c2d84c8d73d1f4f47e4",
+      "bytes": 20807
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/full-tests.txt",
+      "sha256": "74b83ae66907ad0859f1d13ee6cb745933113469e7aaf527e27777ce878bc64c",
+      "bytes": 261
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/historical-v3.5/README.md",
+      "sha256": "5ddc0e388bc7f4d78096cdb62797bf1cc900ac00e3a3a19dfc94c1cfe3805f0a",
+      "bytes": 1151
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/historical-v3.5/demo_result.json",
+      "sha256": "4817f0843e40f7977d3ecc2e246392fe3272a4c480080c379599628c6e2eacfb",
+      "bytes": 539
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/historical-v3.5/environment.json",
+      "sha256": "62947391cecf8902d54a49f4190b717e87190360ff8877c078871dd12bb8b4d5",
+      "bytes": 527
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/historical-v3.5/full-junit.xml",
+      "sha256": "15fa30390ad4ea6f934223d53277e8c550d7eaa95f01f3fbe289d259187bd99c",
+      "bytes": 14063
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/historical-v3.5/full-tests.txt",
+      "sha256": "f14836ef86da0ea9fc64a92ff9be1e8112cf37c3910592a26a6fb1acf161a83a",
+      "bytes": 181
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/historical-v3.5/golden-junit.xml",
+      "sha256": "8d68cf6b0c9ff5d5198595247789361f4c7de119d786d7d0b22da6e3e9b8e653",
+      "bytes": 9412
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/historical-v3.5/golden-tests.txt",
+      "sha256": "0b22530cc411174e1d88f492df8861e0aa943e0e8b06ebd0cf6881c3b0f7da8f",
+      "bytes": 179
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/historical-v3.5/original-junit.xml",
+      "sha256": "653beac5fdeca62ffe061e48ce1dc65da816dc70c86c9dd678f4b55ddbea2683",
+      "bytes": 4903
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/historical-v3.5/original-tests.txt",
+      "sha256": "8e4a7d02016220e937cb52ae81b96e26c71d620167b41c32e44fff2308619f43",
+      "bytes": 111
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/historical-v3.5/requirements-tested.lock",
+      "sha256": "151cf5981b34b94dbdba14ecc9c2df0803ca04a0482e4f058368bc24074f27b6",
+      "bytes": 210
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/historical-v3.5/source_changes.patch",
+      "sha256": "4933832b33d7ccbc5694958063c0609cd813ec59312001125fa805c5e696e1b0",
+      "bytes": 107646
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/historical-v3.5/summary.json",
+      "sha256": "d11aee5fcd2e0aad82723b85f7a361477a702034d298ea641c858e057c3bc517",
+      "bytes": 1392
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/historical-v3.5/wheel_smoke.json",
+      "sha256": "adb814ac0e60a753f07a1db53a23634df5ad41cb90e1ac246da1d5d607fec90d",
+      "bytes": 123
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/installed-native-wheel.json",
+      "sha256": "958547a899173904024db25697f7516e622d86e1a4c7889a4e1439d59ec4b26d",
+      "bytes": 1935
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/installed-pure-wheel.json",
+      "sha256": "b248f21b8854f21bb969d76a127dbb7ffef3ed8c3751dcd6312a634eff118cd6",
+      "bytes": 1933
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/sdist-rebuild.txt",
+      "sha256": "7bfafb1c8cbcb29f85aac9c1f04552a4d0a175ec125b7ba7dcdf0c198454bd64",
+      "bytes": 661
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.10.0-installed-smoke.py",
+      "sha256": "2bc6cba3f9214b1470eb638675465d1507f6cb7c7059c3ea7d63fe39b1de05a5",
+      "bytes": 2721
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.10.0-junit.xml",
+      "sha256": "5aed2c8817a382b102ccf927ef81471c33ab3470a39808a6b3feca4eee483d97",
+      "bytes": 41636
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.10.0-lean.json",
+      "sha256": "3356cc7b57882eaa19412a0bffc0cf348aecd421431517f1197891b912527f97",
+      "bytes": 1526
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.10.0-lean.txt",
+      "sha256": "b62b450b804b9a590a9f287eef60c472dec49944fe854d794cd6b557dfbc31eb",
+      "bytes": 693
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.10.0-metadata.txt",
+      "sha256": "02a7be6654200ad2259f1bc766ea4dc21f3c063d561492d141a74977b619dd70",
+      "bytes": 203
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.10.0-native-build.txt",
+      "sha256": "4d671266b6ade3f8f464ef1a5156cfb4b91762fd2ab17e32c67fa19d26d56166",
+      "bytes": 41331
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.10.0-native-smoke.json",
+      "sha256": "24a4214dbd08faad6d956ee352c02f2449faa11241cb236939f4a3a32434a09a",
+      "bytes": 593
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.10.0-projection.json",
+      "sha256": "52d296f2385062aca28e47a8290062ad2179b1e9ca79476f1dc42cf7559718dd",
+      "bytes": 2275
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.10.0-pure-sdist-build.txt",
+      "sha256": "86312f1530dfc6020c04a4f1d5523a42fdff5e01286e21c7178f7ed911865415",
+      "bytes": 59693
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.10.0-pure-smoke.json",
+      "sha256": "22c93aa25b5010b8b0a0971d67decedd6fa69114cfb4248279c1a18636919d68",
+      "bytes": 587
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.10.0-sdist-rebuild.txt",
+      "sha256": "9c44cb38015cc3957b668e77de08846ae97f4bc85eb6418b015586477276f375",
+      "bytes": 796
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.10.0-tests.txt",
+      "sha256": "c06462d71729e923c07dc1f1c66aeab3c9a9356a01edb983c921948d0889b2c5",
+      "bytes": 511
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.7-doctor.json",
+      "sha256": "e439a20f2f635b9c77fb69128f1a274eb2a5b8a790acbe8d09ac9379fd9adeff",
+      "bytes": 2167
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.7-junit.xml",
+      "sha256": "71ccc01837aba95686d8cb8a633b5ef3df87fef765caa50c7913a9b50839d850",
+      "bytes": 23975
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.7-tests.txt",
+      "sha256": "8c84cd1237381a8d4fbca1e61bf4d50354851739a5df242d7d73bd1c0648e2ba",
+      "bytes": 341
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8-distribution-metadata.txt",
+      "sha256": "7b636ff87602bdb96905698ebc8651093a873c75a3b4079f0646037f6ee6936e",
+      "bytes": 200
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8-junit.xml",
+      "sha256": "d329c7419535b2d67fdab66a092fc805954c297cd2a8b19087973e21e5faaeac",
+      "bytes": 29213
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8-native-distribution-build.txt",
+      "sha256": "9929069cf58288fee9d16de4372f58549af52e896c387f6c46ece7312ecb0880",
+      "bytes": 50944
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8-pure-distribution-build.txt",
+      "sha256": "309f932a32894640254fb0b6b35b98b0d9557e0e2f7cc35d9cb7f30c6caa9c83",
+      "bytes": 24323
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8-sdist-rebuild.txt",
+      "sha256": "0a005526916d4fc659f01d923609f005ba18c5d9d20670be1c98dd7465408a37",
+      "bytes": 711
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8-tests.txt",
+      "sha256": "80aa8435db5b3ec71588ba5ca1d68b6ed9ac22c1f98f97f3641112bc56ede44f",
+      "bytes": 341
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8.1-benchmark-reconciliation.json",
+      "sha256": "ba0b50a2c6cef44fb70ff41c660c5e8379430cfc33ebf07371b9e4ec919cd6a0",
+      "bytes": 1825
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8.1-build.txt",
+      "sha256": "b9b4e24bf4be7a36ad64e22815674ca3be6758a19b89e8035ba5e2d8eff5b680",
+      "bytes": 53941
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8.1-final-metadata.txt",
+      "sha256": "0f38c301190789a61638c269646cf7683aa5498f869b5fda1e035681ed3cc9ca",
+      "bytes": 200
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8.1-final-sdist-build.txt",
+      "sha256": "659a173a7966b4f8a0083a1778e7b59f4ca1e058f976053cd4ea1907fafb7720",
+      "bytes": 20798
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8.1-final-sdist-rebuild.txt",
+      "sha256": "37302641c3e00fe9c03a9282ad44b12b195fee97bbf40e2ff81e9e4634007b8c",
+      "bytes": 673
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8.1-installed-native.json",
+      "sha256": "31ddc28967857d59df6af67895e80fadad56ad65e23559b65f4ce218eacd9f75",
+      "bytes": 1935
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8.1-installed-pure.json",
+      "sha256": "e903e66055d692869bac3a93d7984c10d996a403d9b3fe7e2f4484fbb58b7aeb",
+      "bytes": 1933
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8.1-junit.xml",
+      "sha256": "bb8075e45478178c386fa791f7373a77db593f81dcd5cf7510dff6d7a68e6a19",
+      "bytes": 30243
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8.1-metadata.txt",
+      "sha256": "0f38c301190789a61638c269646cf7683aa5498f869b5fda1e035681ed3cc9ca",
+      "bytes": 200
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8.1-pure-build.txt",
+      "sha256": "b08ea948a851d672a1e30d74f1433f47ad5cf2fc55c3aee919aab035376a7543",
+      "bytes": 28735
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8.1-sdist-rebuild.txt",
+      "sha256": "cfd4eef9b7df3fb6e6ecfdb096dd68ea00e1b2c2d03adf1620691b116dcba7e1",
+      "bytes": 673
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.8.1-tests.txt",
+      "sha256": "206c8a9b38b11f24871809291d70bcdd5887f7a31c66cd59c7217ce53281d76a",
+      "bytes": 351
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.9.0-benchmark-reconciliation.json",
+      "sha256": "ec49015b92de5a5919cb17122fc98e340302bd1b445ad895540d952b7c5abdca",
+      "bytes": 2924
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.9.0-build.txt",
+      "sha256": "608083514fa2d0e5d16b66a78268d6dc25359d3d114df843b7731b8ce3721ba4",
+      "bytes": 62767
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.9.0-final-metadata.txt",
+      "sha256": "49ccc54fef14c96f14ffed09dd3b11634c93ead3884e224883695b5a14a8206d",
+      "bytes": 200
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.9.0-final-sdist-build.txt",
+      "sha256": "cf7655c428b1041948c8891989ca853bfc18f56a57c5ff90fd602ffd3c7c659a",
+      "bytes": 24261
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.9.0-final-sdist-rebuild.txt",
+      "sha256": "10155b5459d2bdf7b33ea871df2741a9046d6abd168af888988329993a6678ba",
+      "bytes": 673
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.9.0-historical-release-report.json",
+      "sha256": "1d54de5a82068390a571f44a1633316b848e9d86ce6719d0453bfd4ccf38e0e6",
+      "bytes": 1527
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.9.0-installed-native.json",
+      "sha256": "eeff5be43108c07b985f75600012bee0fae39a0a729b2ac9614329fa4c65e057",
+      "bytes": 2135
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.9.0-installed-pure.json",
+      "sha256": "a7a7a9071ef1a23d808164d6904d50367ac4c14579490a5a8f1a4f262b508fc3",
+      "bytes": 2133
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.9.0-junit.xml",
+      "sha256": "d43a3535eeba00fa44827cfbdf89b3624f335ffb50c962d51bb481b65d860bce",
+      "bytes": 35301
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.9.0-kernel-syntax.json",
+      "sha256": "ea48f13df8ccbcdcc228fcb4869262a864dbf42927b2ad1d945c8062f507fb48",
+      "bytes": 277
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.9.0-metadata.txt",
+      "sha256": "49ccc54fef14c96f14ffed09dd3b11634c93ead3884e224883695b5a14a8206d",
+      "bytes": 200
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.9.0-pure-build.txt",
+      "sha256": "91146d9fc0e08923f0beee3a1634b643eadf58cfecdf30bd7398e1f6e406938b",
+      "bytes": 31795
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.9.0-sdist-rebuild.txt",
+      "sha256": "2eb08fbc423ed2ba54535b9bdd1ec8e8f307e3e0730e125c3a7828cd16a0ae22",
+      "bytes": 673
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.9.0-structured-kernel-syntax.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.9.0-target-qualification.json",
+      "sha256": "b0339fdc56ac53ae5e25fcaf5c7812357da005840bcfd8d53b9e7cbdeb997c39",
+      "bytes": 458
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/v3.9.0-tests.txt",
+      "sha256": "0236606811d7814623a489ecc03c49dfbabcbca1abf43d27572829d851bc997e",
+      "bytes": 421
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/wheel-build.txt",
+      "sha256": "fc24f471a8e4bbd90426e6e7ceae8c78187be956866489aee8d7ab4e91cca46c",
+      "bytes": 682
+    },
+    {
+      "path": "packages/chronos-one-igpu/validation/wheel-smoke.json",
+      "sha256": "44a31084ee3cd3d89e1e87bda794cb21a2845651b3f1e4dd608225a1484b8935",
+      "bytes": 160
+    },
+    {
+      "path": "tests/test_resident_hendrix.py",
+      "sha256": "02aba1f0bd4d3ee96e73698e852961f7d851bec6e1c7ff00bd644c13fc20f889",
+      "bytes": 12551
+    },
+    {
+      "path": "turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py",
+      "sha256": "8b0127b1e85bee3d74b82364d921e007643887fd4a2b20fa4579ba9ab66e72fe",
+      "bytes": 11549
+    }
+  ],
+  "nontext_exclusions": [],
+  "qualification": "software_validated_not_full_production_qualified"
+}

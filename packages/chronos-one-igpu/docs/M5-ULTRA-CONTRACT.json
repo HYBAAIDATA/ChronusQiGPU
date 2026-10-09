@@ -1,0 +1,55 @@
+{
+  "schema": "chronos.m5_ultra_scope_contract/1",
+  "version": "3.11.3rc2",
+  "increment_base": "8dd57e49998967899a88aaf53cf89e53386946ff",
+  "scope": "CONTRACT_LAYER_INCREMENTAL_EVIDENCE_ONLY",
+  "registry": "INTERNAL_INDEX",
+  "certified": false,
+  "elevation_complete": false,
+  "baseline_status": "Post-PR151 merge main confirmed; bounded after-merge branch commits recovered into continuation",
+  "inflation_ledger": {
+    "allowed": [
+      "operator_depth",
+      "composition_closure",
+      "backend_parity",
+      "differential_verification",
+      "mutation_campaigns",
+      "determinism_proofs",
+      "replay_strictness",
+      "cost_model_exactness"
+    ],
+    "forbidden": [
+      "register_span_growth",
+      "physical_entanglement_claims",
+      "throughput_claims",
+      "hardware_claims",
+      "whole_product_certification",
+      "production_qualification"
+    ]
+  },
+  "pad_max": 10,
+  "register_span": "one logical qubit per pad; bounded statevector; independent of RC3 full-register Clifford feature",
+  "depth_max": 55,
+  "depth_limit_origin": "10 H + 45 CZ prior ten-pad full-mesh maximum preparation; newly explicit chain limit, no previous named D_max falsely asserted",
+  "canonical_form": "q_sqrt2_i_four_reduced_rationals/1; canonical JSON byte equality",
+  "available_backends": {
+    "CPU_REFERENCE": "independent symbolic basis-column host execution",
+    "IGPU": "resident exact field host execution",
+    "GPU": "actual OpenCL integer executor implemented; dyadic field + common denominator <=60. Real GPU qualification unavailable on current host; never report CPU kernel conformance as GPU execution."
+  },
+  "replacement_policy": "additive; original bounded M5 APIs and broader RC3 feature runtime retained",
+  "external_required": [
+    "post-merge main baseline",
+    "executed distinct-runner replay evidence"
+  ],
+  "unresolved": [
+    "whole_product_composition",
+    "full_register_semantics",
+    "iGPU_qualified_VQC_beyond_M5_ULTRA",
+    "public_publication_decision"
+  ],
+  "recovered_bounded_implementation": "b4f34751559da2868fb5c4ef85c22adf00025b78",
+  "recovered_evidence_commit": "38c1456fce9adf4fe38d09645799a32ddca64d20",
+  "current_reconciliation_baseline": "53c5cfa246b4b1c99d016a1562fff47d3006d5c7",
+  "merge_reconciliation": "PR157 merged new modules but retained older facade/campaign/version/metadata surfaces; reconciled rather than capability removal"
+}

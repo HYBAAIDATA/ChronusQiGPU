@@ -1,0 +1,468 @@
+{
+  "schema": "pr140.bounded_final_verification/1",
+  "status": "NOT_CERTIFIED",
+  "scoped_code_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+  "tested_whole_product_head": null,
+  "exact_head_qualification": "UNAVAILABLE_NOT_A_COMPLETE_CHECKOUT",
+  "scope": "Changed files recovered at75b91ffd plus bounded guards committed at scoped_code_commit; retained dependency snapshot, not complete current canonical checkout.",
+  "old_results_rebound": false,
+  "mandatory_gates": {
+    "focused-installed-native": "PASS",
+    "focused-installed-portable": "PASS",
+    "restart-execute-native": "PASS",
+    "restart-replay-native": "PASS",
+    "restart-execute-portable": "PASS",
+    "restart-replay-portable": "PASS",
+    "packaging": "PASS",
+    "exact_head_full_checkout": "UNAVAILABLE",
+    "platform_product_gate": "UNAVAILABLE",
+    "import_audit_product_gate": "UNAVAILABLE",
+    "known_platform_defect": "OPEN_UNFIXED",
+    "known_import_defects": "OPEN_UNFIXED",
+    "ci": "UNAVAILABLE",
+    "exhaustive_public_api_and_caller_audit": "UNVERIFIED"
+  },
+  "test_counts": {
+    "native": {
+      "tests": 113,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "portable": {
+      "tests": 113,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "repeated_cases_across_wheels": true,
+  "commands": [
+    {
+      "gate": "build-native",
+      "source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+      "command": [
+        "/data/v310-build-venv/bin/python",
+        "-m",
+        "build",
+        "--wheel",
+        "--no-isolation",
+        "--outdir",
+        "/data/pr140-bounded/wheels/native"
+      ],
+      "cwd": "/data/pr140-bounded/build-tree",
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 1.5678664319999598,
+      "log": "build-native.log",
+      "log_sha256": "84eb0a14d2b22b41145eadcb98ae00a8dfe3cc349f6923c0dd3c8a745a87dd77",
+      "qualification_scope": "RETAINED_DEPENDENCY_SNAPSHOT_NOT_COMPLETE_EXACT_HEAD_CHECKOUT"
+    },
+    {
+      "gate": "venv-native",
+      "source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "venv",
+        "/data/pr140-bounded/venv-native"
+      ],
+      "cwd": null,
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 1.9681308329999183,
+      "log": "venv-native.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "qualification_scope": "RETAINED_DEPENDENCY_SNAPSHOT_NOT_COMPLETE_EXACT_HEAD_CHECKOUT"
+    },
+    {
+      "gate": "install-native",
+      "source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+      "command": [
+        "/data/pr140-bounded/venv-native/bin/python",
+        "-m",
+        "pip",
+        "install",
+        "/data/pr140-bounded/wheels/native/chronos_gpu-3.11.1-cp313-cp313-linux_x86_64.whl",
+        "pytest>=8,<10"
+      ],
+      "cwd": null,
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 9.436651576000031,
+      "log": "install-native.log",
+      "log_sha256": "1c711f92a48a598729088b7cb30a97ca87a8a939d9fc2d2f407407172175c1a2",
+      "qualification_scope": "RETAINED_DEPENDENCY_SNAPSHOT_NOT_COMPLETE_EXACT_HEAD_CHECKOUT"
+    },
+    {
+      "gate": "focused-installed-native",
+      "source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+      "command": [
+        "/data/pr140-bounded/venv-native/bin/python",
+        "-m",
+        "pytest",
+        "/data/pr140-bounded/installed-checks",
+        "/data/pr140-bounded/canonical-snapshot/tests/test_exact_geometry.py",
+        "/data/pr140-bounded/canonical-snapshot/tests/test_resident_hendrix.py",
+        "/data/pr140-bounded/canonical-snapshot/tests/test_production_replacement_attacks.py",
+        "-q",
+        "--junitxml=/data/pr140-bounded/final-native.xml"
+      ],
+      "cwd": "/data/pr140-bounded/installed-checks",
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 121.84368747600001,
+      "log": "focused-installed-native.log",
+      "log_sha256": "4c69554f798119df6e40f4ca5b6ef288d862d60b4286215a15ba4a59513ed706",
+      "qualification_scope": "RETAINED_DEPENDENCY_SNAPSHOT_NOT_COMPLETE_EXACT_HEAD_CHECKOUT"
+    },
+    {
+      "gate": "restart-execute-native",
+      "source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+      "command": [
+        "/data/pr140-bounded/venv-native/bin/python",
+        "/data/pr140-bounded/capture_voyage.py",
+        "native",
+        "execute"
+      ],
+      "cwd": null,
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 25.083355425000036,
+      "log": "restart-execute-native.log",
+      "log_sha256": "cab0b99512289a4b8b802e6c214dc8eb73f510c9946a3c042fa14fb5dfe3f579",
+      "qualification_scope": "RETAINED_DEPENDENCY_SNAPSHOT_NOT_COMPLETE_EXACT_HEAD_CHECKOUT"
+    },
+    {
+      "gate": "restart-replay-native",
+      "source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+      "command": [
+        "/data/pr140-bounded/venv-native/bin/python",
+        "/data/pr140-bounded/capture_voyage.py",
+        "native",
+        "replay"
+      ],
+      "cwd": null,
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 6.634279640000045,
+      "log": "restart-replay-native.log",
+      "log_sha256": "b652140be3b7fa3b4169339996af232789d2a53a8648c9281e25399f44077640",
+      "qualification_scope": "RETAINED_DEPENDENCY_SNAPSHOT_NOT_COMPLETE_EXACT_HEAD_CHECKOUT"
+    },
+    {
+      "gate": "installed-provenance-native",
+      "source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+      "command": [
+        "/data/pr140-bounded/venv-native/bin/python",
+        "-c",
+        "import json,hashlib,chronos_one_igpu,chronos_one_igpu.igpu.facade as f;from pathlib import Path;print(json.dumps({'package':chronos_one_igpu.__file__,'facade_sha256':hashlib.sha256(Path(f.__file__).read_bytes()).hexdigest()}));assert 'site-packages' in f.__file__"
+      ],
+      "cwd": "/data/pr140-bounded/installed-checks",
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 0.21438098299995545,
+      "log": "installed-provenance-native.log",
+      "log_sha256": "8327b2a63c381a8d4153da22f3fb71342c21813f1ae7aa24bed2659a454397c7",
+      "qualification_scope": "RETAINED_DEPENDENCY_SNAPSHOT_NOT_COMPLETE_EXACT_HEAD_CHECKOUT"
+    },
+    {
+      "gate": "build-portable",
+      "source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+      "command": [
+        "/data/v310-build-venv/bin/python",
+        "-m",
+        "build",
+        "--wheel",
+        "--no-isolation",
+        "--outdir",
+        "/data/pr140-bounded/wheels/portable"
+      ],
+      "cwd": "/data/pr140-bounded/build-tree",
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 0.815614901999993,
+      "log": "build-portable.log",
+      "log_sha256": "c0e25f47835312a71a1b7368a8846d179d80ab54ff3307fe37f6e14ef3632088",
+      "qualification_scope": "RETAINED_DEPENDENCY_SNAPSHOT_NOT_COMPLETE_EXACT_HEAD_CHECKOUT"
+    },
+    {
+      "gate": "venv-portable",
+      "source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "venv",
+        "/data/pr140-bounded/venv-portable"
+      ],
+      "cwd": null,
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 1.9681614969999828,
+      "log": "venv-portable.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "qualification_scope": "RETAINED_DEPENDENCY_SNAPSHOT_NOT_COMPLETE_EXACT_HEAD_CHECKOUT"
+    },
+    {
+      "gate": "install-portable",
+      "source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+      "command": [
+        "/data/pr140-bounded/venv-portable/bin/python",
+        "-m",
+        "pip",
+        "install",
+        "/data/pr140-bounded/wheels/portable/chronos_gpu-3.11.1-py3-none-any.whl",
+        "pytest>=8,<10"
+      ],
+      "cwd": null,
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 9.33484081000006,
+      "log": "install-portable.log",
+      "log_sha256": "508bd9316f5bd28fc71deb33f523edcbea03961746530102f1ce8fdc21dd8c2e",
+      "qualification_scope": "RETAINED_DEPENDENCY_SNAPSHOT_NOT_COMPLETE_EXACT_HEAD_CHECKOUT"
+    },
+    {
+      "gate": "focused-installed-portable",
+      "source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+      "command": [
+        "/data/pr140-bounded/venv-portable/bin/python",
+        "-m",
+        "pytest",
+        "/data/pr140-bounded/installed-checks",
+        "/data/pr140-bounded/canonical-snapshot/tests/test_exact_geometry.py",
+        "/data/pr140-bounded/canonical-snapshot/tests/test_resident_hendrix.py",
+        "/data/pr140-bounded/canonical-snapshot/tests/test_production_replacement_attacks.py",
+        "-q",
+        "--junitxml=/data/pr140-bounded/final-portable.xml"
+      ],
+      "cwd": "/data/pr140-bounded/installed-checks",
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 122.9461558380001,
+      "log": "focused-installed-portable.log",
+      "log_sha256": "a11b779d933176a2b427a07fb8ce06d445b476407f2be67ff60c9f780749f9a4",
+      "qualification_scope": "RETAINED_DEPENDENCY_SNAPSHOT_NOT_COMPLETE_EXACT_HEAD_CHECKOUT"
+    },
+    {
+      "gate": "restart-execute-portable",
+      "source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+      "command": [
+        "/data/pr140-bounded/venv-portable/bin/python",
+        "/data/pr140-bounded/capture_voyage.py",
+        "portable",
+        "execute"
+      ],
+      "cwd": null,
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 24.383271506999904,
+      "log": "restart-execute-portable.log",
+      "log_sha256": "cab0b99512289a4b8b802e6c214dc8eb73f510c9946a3c042fa14fb5dfe3f579",
+      "qualification_scope": "RETAINED_DEPENDENCY_SNAPSHOT_NOT_COMPLETE_EXACT_HEAD_CHECKOUT"
+    },
+    {
+      "gate": "restart-replay-portable",
+      "source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+      "command": [
+        "/data/pr140-bounded/venv-portable/bin/python",
+        "/data/pr140-bounded/capture_voyage.py",
+        "portable",
+        "replay"
+      ],
+      "cwd": null,
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 6.632433710999976,
+      "log": "restart-replay-portable.log",
+      "log_sha256": "b652140be3b7fa3b4169339996af232789d2a53a8648c9281e25399f44077640",
+      "qualification_scope": "RETAINED_DEPENDENCY_SNAPSHOT_NOT_COMPLETE_EXACT_HEAD_CHECKOUT"
+    },
+    {
+      "gate": "installed-provenance-portable",
+      "source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+      "command": [
+        "/data/pr140-bounded/venv-portable/bin/python",
+        "-c",
+        "import json,hashlib,chronos_one_igpu,chronos_one_igpu.igpu.facade as f;from pathlib import Path;print(json.dumps({'package':chronos_one_igpu.__file__,'facade_sha256':hashlib.sha256(Path(f.__file__).read_bytes()).hexdigest()}));assert 'site-packages' in f.__file__"
+      ],
+      "cwd": "/data/pr140-bounded/installed-checks",
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 0.21459115999994083,
+      "log": "installed-provenance-portable.log",
+      "log_sha256": "d29f61029d704bf69fbbd8d4ee14595654288660db46704741582e23ad3cdc7d",
+      "qualification_scope": "RETAINED_DEPENDENCY_SNAPSHOT_NOT_COMPLETE_EXACT_HEAD_CHECKOUT"
+    },
+    {
+      "gate": "platform",
+      "source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+      "command": [
+        "/data/pr140-bounded/venv-native/bin/python",
+        "-m",
+        "pytest",
+        "/data/pr140-bounded/canonical-snapshot/chronus/mla1517_platform/python/test_production_loop_e2e.py",
+        "-q",
+        "--junitxml=/data/pr140-bounded/final-platform.xml"
+      ],
+      "cwd": "/data/pr140-bounded/canonical-snapshot",
+      "exit_code": 2,
+      "status": "FAIL",
+      "elapsed_seconds": 0.36495183099998485,
+      "log": "platform.log",
+      "log_sha256": "dc8699444bf965158c26eaaea0304a5f2b2c26f8af634533a4df8258ea911054",
+      "qualification_scope": "RETAINED_DEPENDENCY_SNAPSHOT_NOT_COMPLETE_EXACT_HEAD_CHECKOUT"
+    },
+    {
+      "gate": "import-audit",
+      "source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+      "command": [
+        "/data/pr140-bounded/venv-native/bin/python",
+        "/data/pr140-bounded/canonical-snapshot/scripts/import_audit.py",
+        "--json",
+        "/data/pr140-bounded/final-import-audit.json"
+      ],
+      "cwd": "/data/pr140-bounded/canonical-snapshot",
+      "exit_code": 1,
+      "status": "FAIL",
+      "elapsed_seconds": 0.06433550500003093,
+      "log": "import-audit.log",
+      "log_sha256": "fd28305f8df69118e4c20e456960f6551b13f16542e0da97b3839d2b1952259e",
+      "qualification_scope": "RETAINED_DEPENDENCY_SNAPSHOT_NOT_COMPLETE_EXACT_HEAD_CHECKOUT"
+    },
+    {
+      "gate": "packaging",
+      "source_commit": "3795d1be98ba7496384acca821e839ac3e5fcd7c",
+      "command": [
+        "/data/v310-build-venv/bin/python",
+        "-m",
+        "twine",
+        "check",
+        "/data/pr140-bounded/wheels/native/chronos_gpu-3.11.1-cp313-cp313-linux_x86_64.whl",
+        "/data/pr140-bounded/wheels/portable/chronos_gpu-3.11.1-py3-none-any.whl"
+      ],
+      "cwd": null,
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 0.3145698659999425,
+      "log": "packaging.log",
+      "log_sha256": "d6b50a73a98c4f0fd942b984776d514e3ab1eb20f4eac0178fcc850f5465df5a",
+      "qualification_scope": "RETAINED_DEPENDENCY_SNAPSHOT_NOT_COMPLETE_EXACT_HEAD_CHECKOUT"
+    }
+  ],
+  "artifacts": [
+    {
+      "variant": "native",
+      "filename": "chronos_gpu-3.11.1-cp313-cp313-linux_x86_64.whl",
+      "sha256": "f6fffcdf9a55f3445819827184212f7eb119a34a1b0ce318f8f6b79bbc6c35c9",
+      "purpose": "INTERNAL_SCOPED_VERIFICATION_NOT_RELEASE",
+      "published": false
+    },
+    {
+      "variant": "portable",
+      "filename": "chronos_gpu-3.11.1-py3-none-any.whl",
+      "sha256": "3c0ca6774a2cc01785d43c492ec5fe2a5c807a873df40de3d42457f5002c6f20",
+      "purpose": "INTERNAL_SCOPED_VERIFICATION_NOT_RELEASE",
+      "published": false
+    }
+  ],
+  "ci_observation": "Check-runs access returned403; CI remains UNAVAILABLE. Earlier0-step jobs are user-reported historical observations, not a pass/fail of this source.",
+  "baseline_defects": "Reported platform stale-work failure and import findings remain OPEN inside product contract. No baseline exemption.",
+  "external_evidence": {
+    "live_pool_acceptance": "UNAVAILABLE",
+    "physical_gpu_execution": "UNAVAILABLE",
+    "deployed_THESEUS_OVID": "UNAVAILABLE"
+  },
+  "local_evidence": {
+    "genesis_sha256d": "EXECUTED_AND_INDEPENDENTLY_VERIFIED_BOTH_VARIANTS",
+    "restart_replay": "LOCAL_PRIME_DB_BOTH_VARIANTS_NOT_THESEUS",
+    "scripted_pool": "HISTORICAL_LOCAL_PROTOCOL_INTEGRATION_ONLY_NO_NEW_POOL_RUN"
+  },
+  "files": [
+    {
+      "path": "final-commands.json",
+      "sha256": "38e0c12fe2a0f529f939c30d392b1a4ac92eede6bbe2ec9e8259bc63976fc9de"
+    },
+    {
+      "path": "final_verify.py",
+      "sha256": "0a2a2e1810993a8619e39458ff67cf794aa54a4556abad3aace601ce70bac08b"
+    },
+    {
+      "path": "capture_voyage.py",
+      "sha256": "9ee7146b86d5bc4e0de8e7499f6581b0519355c7f25fa3317860b0c8e72c9c78"
+    },
+    {
+      "path": "final-native.xml",
+      "sha256": "339e31ebdd0e76419625de5f3e153958659a89202b58f5b83ca90eaabe3bed06"
+    },
+    {
+      "path": "final-portable.xml",
+      "sha256": "6aebbd5124053cb8467a58c44e4d1c9eeba0e15082ff902b8abe0e3dfd497c91"
+    },
+    {
+      "path": "final-platform.xml",
+      "sha256": "39b092cb373002e552c5019068129aca0e0dc487e501d968d9f7eabdc0d02c6a"
+    },
+    {
+      "path": "platform.log",
+      "sha256": "dc8699444bf965158c26eaaea0304a5f2b2c26f8af634533a4df8258ea911054"
+    },
+    {
+      "path": "import-audit.log",
+      "sha256": "fd28305f8df69118e4c20e456960f6551b13f16542e0da97b3839d2b1952259e"
+    },
+    {
+      "path": "packaging.log",
+      "sha256": "d6b50a73a98c4f0fd942b984776d514e3ab1eb20f4eac0178fcc850f5465df5a"
+    },
+    {
+      "path": "focused-installed-native.log",
+      "sha256": "4c69554f798119df6e40f4ca5b6ef288d862d60b4286215a15ba4a59513ed706"
+    },
+    {
+      "path": "focused-installed-portable.log",
+      "sha256": "a11b779d933176a2b427a07fb8ce06d445b476407f2be67ff60c9f780749f9a4"
+    },
+    {
+      "path": "restart-execute-native.log",
+      "sha256": "cab0b99512289a4b8b802e6c214dc8eb73f510c9946a3c042fa14fb5dfe3f579"
+    },
+    {
+      "path": "restart-replay-native.log",
+      "sha256": "b652140be3b7fa3b4169339996af232789d2a53a8648c9281e25399f44077640"
+    },
+    {
+      "path": "restart-execute-portable.log",
+      "sha256": "cab0b99512289a4b8b802e6c214dc8eb73f510c9946a3c042fa14fb5dfe3f579"
+    },
+    {
+      "path": "restart-replay-portable.log",
+      "sha256": "b652140be3b7fa3b4169339996af232789d2a53a8648c9281e25399f44077640"
+    },
+    {
+      "path": "installed-provenance-native.log",
+      "sha256": "8327b2a63c381a8d4153da22f3fb71342c21813f1ae7aa24bed2659a454397c7"
+    },
+    {
+      "path": "installed-provenance-portable.log",
+      "sha256": "d29f61029d704bf69fbbd8d4ee14595654288660db46704741582e23ad3cdc7d"
+    },
+    {
+      "path": "replay-native.json",
+      "sha256": "4afec94e8c8c7a84d11979032a2806f591175ef28b4d6492c6672eca4dce4c9b"
+    },
+    {
+      "path": "replay-portable.json",
+      "sha256": "97e1897f4c3fb0459d4e3f094450bff9378b299802817e3a211ff94b983f6d9a"
+    },
+    {
+      "path": "preflight-boundary.log",
+      "sha256": "43b18c201491c0dd39ea3d7f36593ba52d4edbd77761ba38d7ec500e500d41ab"
+    },
+    {
+      "path": "boundary.log",
+      "sha256": "4767e4a5bcff317e7e0b2092c6222f867ca7c1e273c325ff0091d51019b5d966"
+    }
+  ],
+  "next_action": "STOP_AND_HANDOFF"
+}

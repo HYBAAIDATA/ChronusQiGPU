@@ -19,9 +19,15 @@ import hashlib
 import importlib
 import os
 import time
-from typing import Any, Callable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Sequence
 
-from Intelligence.bitcoin_corpus import PythiaBitcoinCorpus, SCHEMA as BITCOIN_CORPUS_SCHEMA
+if TYPE_CHECKING:
+    from .exact_search import ExactMiningDirective, ExactSearchState
+
+from Intelligence.bitcoin_corpus import (
+    PythiaBitcoinCorpus,
+    SCHEMA as BITCOIN_CORPUS_SCHEMA,
+)
 
 SCHEMA = "pythia.mining_authority/2"
 
@@ -202,14 +208,20 @@ class PythiaQuantumArsenal:
             except Exception as exc:
                 errors.append(f"{module_name}: {type(exc).__name__}: {exc}")
         self._modules[surface] = None
-        self._status[surface] = ModuleCapability(surface, False, None, (), "; ".join(errors))
+        self._status[surface] = ModuleCapability(
+            surface, False, None, (), "; ".join(errors)
+        )
         return None
 
     def resolve(self, name: str) -> Callable[..., Any] | type | Any:
         if name in _NAMED_ALIASES:
             surface, symbol = _NAMED_ALIASES[name]
         else:
-            matches = [surface for surface in _ARSENAL_MODULES if name.startswith(surface + ".")]
+            matches = [
+                surface
+                for surface in _ARSENAL_MODULES
+                if name.startswith(surface + ".")
+            ]
             if not matches:
                 raise KeyError(f"unknown PYTHIA arsenal path: {name}")
             surface = max(matches, key=len)
@@ -240,15 +252,21 @@ class PythiaQuantumArsenal:
             aliases[name] = {
                 "surface": surface,
                 "symbol": symbol,
-                "available": bool(status and status.available and symbol in status.exports),
+                "available": bool(
+                    status and status.available and symbol in status.exports
+                ),
             }
         return {
             "schema": "pythia.quantum_arsenal/2",
             "module_complete": True,
             "modules": modules,
             "named_aliases": aliases,
-            "available_modules": [item["name"] for item in modules if item["available"]],
-            "unavailable_modules": [item["name"] for item in modules if not item["available"]],
+            "available_modules": [
+                item["name"] for item in modules if item["available"]
+            ],
+            "unavailable_modules": [
+                item["name"] for item in modules if not item["available"]
+            ],
         }
 
 
@@ -264,13 +282,18 @@ class PythiaMiningAuthority:
     ) -> None:
         if orchestrator is None:
             from Intelligence import get_intelligence
+
             orchestrator = get_intelligence()
         self.orchestrator = orchestrator
         self.quantum = quantum or PythiaQuantumArsenal()
         path = corpus_path or os.getenv("PYTHIA_BITCOIN_CORPUS_DB")
-        self.corpus = corpus if corpus is not None else (PythiaBitcoinCorpus(path) if path else None)
+        self.corpus = (
+            corpus
+            if corpus is not None
+            else (PythiaBitcoinCorpus(path) if path else None)
+        )
         self.backend_registry = backend_registry
-        self.last_directive: PythiaMiningDirective | None = None
+        self.last_directive: PythiaMiningDirective | ExactMiningDirective | None = None
         self.last_outcome: dict[str, Any] | None = None
 
     def bind_backend_registry(self, registry: Any) -> None:
@@ -280,7 +303,10 @@ class PythiaMiningAuthority:
         if self.backend_registry is None:
             return {"available": False, "reason": "backend registry not wired"}
         census = self.backend_registry.census()
-        return {"available": True, "lanes": {name: probe.as_dict() for name, probe in census.items()}}
+        return {
+            "available": True,
+            "lanes": {name: probe.as_dict() for name, probe in census.items()},
+        }
 
     def select_backend(self, requested: str, **kwargs: Any) -> Any:
         if self.backend_registry is None:
@@ -295,15 +321,29 @@ class PythiaMiningAuthority:
     def _availability(import_name: str) -> dict[str, Any]:
         try:
             module = importlib.import_module(import_name)
-            return {"available": True, "module": import_name, "version": getattr(module, "__version__", None)}
+            return {
+                "available": True,
+                "module": import_name,
+                "version": getattr(module, "__version__", None),
+            }
         except Exception as exc:
-            return {"available": False, "module": import_name, "reason": f"{type(exc).__name__}: {exc}"}
+            return {
+                "available": False,
+                "module": import_name,
+                "reason": f"{type(exc).__name__}: {exc}",
+            }
 
     def capability_snapshot(self) -> dict[str, Any]:
         registry = self.orchestrator.registry.summary()
         return {
             "schema": SCHEMA,
-            "five_intelligences": ["predictive", "causal", "counterfactual", "topological", "geometric"],
+            "five_intelligences": [
+                "predictive",
+                "causal",
+                "counterfactual",
+                "topological",
+                "geometric",
+            ],
             "supposition": {
                 "available": True,
                 "role": "hypothesis/search-order proposals remain suppositions until SHA256d evaluation",
@@ -328,11 +368,15 @@ class PythiaMiningAuthority:
             "execution_backends": self.backend_inventory(),
             "registry": registry,
             "quantum_arsenal": self.quantum.inventory(),
-            "corpus_database": self.corpus.status() if self.corpus is not None else {
-                "schema": BITCOIN_CORPUS_SCHEMA,
-                "available": False,
-                "reason": "PYTHIA_BITCOIN_CORPUS_DB not configured",
-            },
+            "corpus_database": (
+                self.corpus.status()
+                if self.corpus is not None
+                else {
+                    "schema": BITCOIN_CORPUS_SCHEMA,
+                    "available": False,
+                    "reason": "PYTHIA_BITCOIN_CORPUS_DB not configured",
+                }
+            ),
         }
 
     @staticmethod
@@ -360,6 +404,32 @@ class PythiaMiningAuthority:
             "raw_block_count": status.get("raw_block_count", 0),
             "current_header_seed": hashlib.sha256(header).hexdigest(),
         }
+
+    def plan_exact(
+        self,
+        *,
+        header: bytes,
+        target_be: bytes,
+        base_step: int,
+        window: int,
+        state: ExactSearchState,
+    ) -> ExactMiningDirective:
+        """Exact profile: no learned predictor, VQC checkpoint or supposition.
+
+        Operational observations remain available to PYTHIA; they cannot change
+        the exact header-bound mathematical search order in this profile.
+        """
+        from .exact_search import exact_mining_directive
+
+        directive = exact_mining_directive(
+            header=header,
+            target_be=target_be,
+            base_step=base_step,
+            window=window,
+            state=state,
+        )
+        self.last_directive = directive
+        return directive
 
     def plan(
         self,
@@ -474,10 +544,16 @@ class PythiaMiningAuthority:
         pool_accepted: bool | None,
         execution: Mapping[str, Any],
     ) -> None:
-        reward = 1.0 if pool_accepted is True else (-0.25 if pool_accepted is False else 0.0)
+        reward = (
+            1.0 if pool_accepted is True else (-0.25 if pool_accepted is False else 0.0)
+        )
         self.orchestrator.consolidate_memory_task(
             trigger="production mining execution",
-            plan=["PYTHIA planned search", "Chronus executed", "SHA256d truth boundary evaluated"],
+            plan=[
+                "PYTHIA planned search",
+                "Chronus executed",
+                "SHA256d truth boundary evaluated",
+            ],
             tool_calls=[{"tool": "production_miner", "execution": dict(execution)}],
             outcome={"candidate_nonce": nonce, "pool_accepted": pool_accepted},
             reward=reward,
@@ -490,7 +566,11 @@ class PythiaMiningAuthority:
         if store is not None:
             store.journal.append(
                 "production_mining",
-                {"nonce": nonce, "pool_accepted": pool_accepted, "execution": dict(execution)},
+                {
+                    "nonce": nonce,
+                    "pool_accepted": pool_accepted,
+                    "execution": dict(execution),
+                },
             )
             store.save()
         self.last_outcome = {
@@ -503,7 +583,9 @@ class PythiaMiningAuthority:
     def snapshot(self) -> dict[str, Any]:
         return {
             **self.capability_snapshot(),
-            "last_directive": self.last_directive.as_evidence() if self.last_directive else None,
+            "last_directive": (
+                self.last_directive.as_evidence() if self.last_directive else None
+            ),
             "last_outcome": self.last_outcome,
         }
 

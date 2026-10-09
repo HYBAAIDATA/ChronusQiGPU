@@ -1,5 +1,5 @@
 [project]
-name = "turing-universal-quantum-computer"
+name = "hyba-turing-vqc"
 version = "1.0.0"
 description = "Turing Virtual Quantum Computer — exact-math VQC with bounded exact Clifford+T state vectors, arbitrary-width exact Clifford tableaux, admitted sparse/closed-form quantum mathematics, fail-closed representation and QPU boundaries, verifiable run witnesses, and an operator console."
 readme = "README.md"
@@ -27,7 +27,7 @@ dependencies = [
     # Kellogg owns the tensor mathematics TURING executes on: exact fields,
     # state vectors, the exact MPS behind the mps_exact backend, surface-code
     # algebra. TURING consumes it instead of carrying a fork.
-    "kellogg-tensor>=1.0",
+    "hyba-kellogg-tensor>=1.0",
 ]
 
 [project.optional-dependencies]

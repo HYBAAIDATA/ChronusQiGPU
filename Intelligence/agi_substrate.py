@@ -31,6 +31,8 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 
+from Intelligence._born import QUARTER_TURN, adjust_probability
+
 logger = logging.getLogger("Intelligence.agi_substrate")
 
 PHI = (1 + math.sqrt(5)) / 2
@@ -161,11 +163,13 @@ class CanonicalAGISubstrate:
         except Exception:  # pragma: no cover - defensive
             return self._baseline_response(request)
 
-        # In reduced/minimal modes, discount confidence honestly.
+        # In degraded modes, confidence rotates one declared golden
+        # step toward the low-confidence pole per degradation level —
+        # the invented ×0.5/×0.25 discounts are gone.
         if self.degradation_mode == AGIDegradationMode.REDUCED:
-            confidence *= 0.5
+            confidence = adjust_probability(confidence, False, QUARTER_TURN * (1.0 - 1.0 / PHI))
         elif self.degradation_mode == AGIDegradationMode.MINIMAL:
-            confidence *= 0.25
+            confidence = adjust_probability(confidence, False, QUARTER_TURN)
 
         telemetry = AGITelemetry(
             confidence=confidence,

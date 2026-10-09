@@ -19,6 +19,14 @@ on:
       - "chronus/mla1517_platform/python/test_hashrate_governor.py"
       - "chronus/mla1517_platform/python/test_mining_intelligence.py"
       - "scripts/mutation_check.py"
+      - "scripts/critical_mutation_gate.py"
+      - "tests/test_critical_mutation_gate.py"
+      - "tests/test_mining_consensus_recheck.py"
+      - "tests/test_toe_runtime.py"
+      - "chronus/mla1517_platform/python/test_hendrix_nonce_order.py"
+      - "toe/runtime.py"
+      - "chronus/mla1517/mining/hendrix_order.py"
+      - "mining/hash_pipeline.py"
       - "turing_universal_quantum_computer/**"
       - ".github/workflows/mutation.yml"
   schedule:
@@ -88,3 +96,40 @@ jobs:
           name: mutation-${{ matrix.module }}
           path: mutation-${{ matrix.module }}.json
           if-no-files-found: warn
+
+  critical-sentinels:
+    name: Critical mutation — ${{ matrix.mutation }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        mutation:
+          - toe-engine-fail-closed
+          - toe-feedback-connected
+          - toe-evidence-connected
+          - hendrix-order-preserved
+          - turing-measurement-collapse
+          - sha256d-independent-recheck
+          - sha256d-m32-independent-recheck
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install project test dependencies
+        run: python -m pip install -e ./turing_universal_quantum_computer -e ".[dev]"
+      - name: Prove planted defect turns focused gate red
+        run: >-
+          python scripts/critical_mutation_gate.py
+          --mutation ${{ matrix.mutation }}
+          --json critical-mutation-${{ matrix.mutation }}.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: critical-mutation-${{ matrix.mutation }}
+          path: critical-mutation-${{ matrix.mutation }}.json
+          if-no-files-found: error

@@ -8,6 +8,7 @@ import pytest
 
 from hyba_db import AccessDenied, IntegrityFailure, ModuleEvidenceAdapter, OntologyStore, Quota, TheseusFileCustody
 from hyba_db.production_gate import evaluate
+from hyba_db.rebuild import projection_fingerprint, restore_projection_from_custody
 
 INTEGRITY_KEY = b"i" * 32
 CUSTODY_KEY = b"c" * 32
@@ -342,6 +343,61 @@ def test_missing_or_corrupt_cas_blob_recovers_from_theseus(tmp_path):
     finally:
         store.close()
 
+def test_destructive_rebuild_restores_folds_certificates_and_ontology(tmp_path):
+    store, _custody, client = _opened(tmp_path)
+    tenant_id = client.tenant_id
+    try:
+        first = store.write_fold(
+            tenant_id,
+            [float(i) / 10.0 for i in range(11)],
+        )
+        second = store.write_fold(
+            tenant_id,
+            [float(i + 11) / 10.0 for i in range(11)],
+            parent_id=first.id,
+        )
+        term_id = store.register_term(
+            tenant_id,
+            "mining.work.identity",
+            "A versioned identity binding pool session, job, target and nonce space.",
+            {"owner": "PYTHIA", "custody": "THESEUS", "transform": "OVID"},
+        )
+        before = projection_fingerprint(store, tenant_id)
+        assert before["folds"]
+        assert before["certificates"]
+        assert before["ontology"]
+    finally:
+        store.close()
+
+    rebuilt_custody = TheseusFileCustody(
+        tmp_path / "custody",
+        hmac_key=CUSTODY_KEY,
+    )
+    rebuilt = OntologyStore(
+        tmp_path / "rebuilt-ontology.db",
+        INTEGRITY_KEY,
+        custody=rebuilt_custody,
+    )
+    try:
+        report = restore_projection_from_custody(
+            rebuilt,
+            tenant_id,
+            tmp_path / "files",
+        )
+        after = projection_fingerprint(rebuilt, tenant_id)
+
+        assert report["passed"] is True
+        assert set(report["folds"]) == {first.id, second.id}
+        assert report["ontology_terms"] == (term_id,)
+        assert after["folds"] == before["folds"]
+        assert after["certificates"] == before["certificates"]
+        assert after["ontology"] == before["ontology"]
+        assert rebuilt.read_fold(tenant_id, second.id).parent_id == first.id
+        assert rebuilt.verify_database(tenant_id).passed is True
+    finally:
+        rebuilt.close()
+
+
 def test_database_verification_refuses_unavailable_custody_adapter(tmp_path):
     store, _custody, client = _opened(tmp_path)
     root = tmp_path / "files"
@@ -405,7 +461,7 @@ def test_production_gate_closes_database_storage_and_custody_together(tmp_path):
     )
     store.close()
 
-    report = evaluate(
+    blocked = evaluate(
         db_path=tmp_path / "ontology.db",
         storage_root=root,
         tenant_id=tenant_id,
@@ -413,8 +469,27 @@ def test_production_gate_closes_database_storage_and_custody_together(tmp_path):
         custody_root=tmp_path / "custody",
         custody_key=CUSTODY_KEY,
     )
+    assert blocked["passed"] is False
+    assert blocked["checks"]["producer_revalidation_complete"] is False
+    assert blocked["pending_producer_revalidation"]
+
+    report = evaluate(
+        db_path=tmp_path / "ontology.db",
+        storage_root=root,
+        tenant_id=tenant_id,
+        integrity_key=INTEGRITY_KEY,
+        custody_root=tmp_path / "custody",
+        custody_key=CUSTODY_KEY,
+        producer_revalidators={
+            "pythia": lambda _record: "PASS",
+            "theseus": lambda _record: "PASS",
+        },
+    )
     assert report["passed"] is True
     assert all(report["checks"].values())
+    assert report["pending_producer_revalidation"] == {}
+    assert report["producer_revalidation_errors"] == []
+    assert report["destructive_rebuild"]["passed"] is True
     assert report["claim_boundary"]["live_pool"] == "UNAVAILABLE"
     assert report["claim_boundary"]["accepted_share"] == "UNAVAILABLE"
 

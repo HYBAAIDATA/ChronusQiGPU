@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import json
+import os
+import threading
+import uuid
 from pathlib import Path
 from typing import Any, ClassVar, Mapping
 
@@ -28,17 +32,33 @@ class EuclidRuntime:
         cognition: Any | None = None,
     ) -> None:
         self.creator_id = creator_id
+        self._closed = False
+        self._shutdown_report: dict[str, Any] | None = None
         self.state_dir = Path(state_dir)
+        self.state_dir.mkdir(parents=True, exist_ok=True)
         self.evidence = EvidenceChain()
         self.registry = OrganRegistry()
         self.rights = RightsLedger(creator_id, self.evidence)
         self.delegator = Delegator(self.registry, self.evidence, self.rights)
+        database = memory_database or MemoryDatabase(
+            self.state_dir / "euclid_memory.sqlite3"
+        )
+        self._adaptive_data_port: Any | None = None
+        self._adaptive_tenant_id = str(creator_id)
+        self._adaptive_last_binding_id: str | None = None
+        self._adaptive_last_seal: str | None = None
+        self._adaptive_lock = threading.RLock()
+        self._adaptive_process_token = uuid.uuid4().hex
+        # The kind is a creator-specific namespace, not a lossy filename slug.
+        self.ADAPTIVE_KNOWLEDGE_KIND = "euclid.adaptive-knowledge." + domain_hash(
+            "euclid.adaptive-owner.v1", {"creator_id": creator_id}
+        )
         self.learning = LearningService(
             pythia=pythia,
             memory=memory,
             store=store,
             experience_learner=experience_learner,
-            memory_database=memory_database,
+            memory_database=database,
             evidence=self.evidence,
             replay_journal_path=self.state_dir / "replay_journal.json",
         )
@@ -60,6 +80,7 @@ class EuclidRuntime:
         # operation name -> set at register_specialist; the router only ever
         # selects organs that declared the requested operation.
         self._organ_operations: dict[str, frozenset[str]] = {}
+        self._toe: Any | None = None
 
     @classmethod
     def production(
@@ -74,7 +95,7 @@ class EuclidRuntime:
         specialists: Mapping[str, Any] | None = None,
         organism: bool = True,
         guardian: Any | None = None,
-        custody: Any | None = None,
+        subscription_token_provider: Any | None = None,
     ) -> "EuclidRuntime":
         root = Path(state_dir)
         root.mkdir(parents=True, exist_ok=True)
@@ -106,7 +127,10 @@ class EuclidRuntime:
         runtime.adaptive_custody = custody
         runtime._compose_cognition()
         if organism:
-            runtime.compose_organism(guardian=guardian)
+            runtime.compose_organism(
+                guardian=guardian,
+                subscription_token_provider=subscription_token_provider,
+            )
         for organ_id, implementation in dict(specialists or {}).items():
             runtime.register_specialist(organ_id, implementation)
         return runtime
@@ -132,6 +156,7 @@ class EuclidRuntime:
         *,
         guardian: Any | None = None,
         implementations: Mapping[str, Any] | None = None,
+        subscription_token_provider: Any | None = None,
     ) -> None:
         """Register TURING/CHRONUS/Triad specialists, the AL HARAS boundary and
         the Salamander bounded-recovery plane on this composition root.
@@ -139,11 +164,7 @@ class EuclidRuntime:
         Authority stays with each owner; EUCLID only gains governed dispatch.
         An organ whose owner cannot be constructed is recorded unavailable
         with its reason instead of being registered."""
-        from salamander.control_plane import (
-            ActionRegistry,
-            AutonomicControlPlane,
-        )
-        from salamander.control_plane import EvidenceLedger as AutonomicLedger
+        from salamander.control_plane import ActionRegistry
         from salamander.models import ActionKind
 
         from .cognition.reachability import ReachabilityStage
@@ -179,10 +200,10 @@ class EuclidRuntime:
             verifier_id="euclid.delegator-redispatch",
             verifier=self._verify_requalified,
         )
-        self.autonomic = AutonomicControlPlane(
-            registry=actions,
-            ledger=AutonomicLedger(
-                sink=lambda record: self.evidence.append("salamander-action", dict(record))
+        self.autonomic = self._compose_actuation_plane(
+            actions, guardian, subscription_token_provider,
+            ledger_sink=lambda record: self.evidence.append(
+                "salamander-action", dict(record)
             ),
         )
         self._advance("salamander.control_plane", ReachabilityStage.REACHABLE, "organism-startup")
@@ -196,6 +217,78 @@ class EuclidRuntime:
         self.discovery_optimisation = DiscoveryOptimisationBridge(self.autonomic)
         self._advance("euclid.discovery", ReachabilityStage.REACHABLE, "organism-startup")
         self.reachability.save(self.state_dir / "cognition_reachability.json")
+
+    def _compose_actuation_plane(
+        self,
+        actions: Any,
+        guardian: Any | None,
+        token_provider: Any | None,
+        *,
+        ledger_sink: Any,
+    ) -> Any:
+        """Compose the Salamander plane; actuation only via the authorized path.
+
+        Bounded recovery is a privileged transition: per the F-side contract
+        the production plane is built through
+        ``salamander.authority.build_authorized_control_plane`` which binds
+        actuation to an evidence-bearing AL HARAS verdict.  When no Guardian
+        or no subscription-token provider is configured — or the authorized
+        constructor is unavailable/refuses — the base plane is still composed
+        for observe/discovery duties, but ``_actuation_ready`` stays False and
+        ``heal_organ`` refuses before any handler runs.  No dev bypass: an
+        unauthorized organism reports exactly why actuation is closed.
+        """
+        from salamander.control_plane import (
+            AutonomicControlPlane,
+            EvidenceLedger as AutonomicLedger,
+        )
+
+        ledger = AutonomicLedger(sink=ledger_sink)
+        self._actuation_ready = False
+        self._subscription_token_provider = token_provider
+        if guardian is None:
+            self._actuation_reason = "no AL HARAS guardian configured"
+        elif token_provider is None:
+            self._actuation_reason = "no subscription-token provider configured"
+        else:
+            try:
+                import inspect
+
+                from salamander.authority import build_authorized_control_plane
+
+                # F owns the constructor signature; bind only what it declares.
+                # A **kwargs parameter accepts the full candidate set.
+                candidates = {
+                    "registry": actions,
+                    "ledger": ledger,
+                    "guardian": guardian,
+                    "authorizer": guardian,
+                    "subscription_token_provider": token_provider,
+                    "token_provider": token_provider,
+                }
+                signature = inspect.signature(build_authorized_control_plane)
+                if any(
+                    p.kind is inspect.Parameter.VAR_KEYWORD
+                    for p in signature.parameters.values()
+                ):
+                    kwargs = dict(candidates)
+                else:
+                    declared = set(signature.parameters)
+                    kwargs = {k: v for k, v in candidates.items() if k in declared}
+                plane = build_authorized_control_plane(**kwargs)
+                self._actuation_ready = True
+                self._actuation_reason = None
+                return plane
+            except Exception as exc:  # noqa: BLE001 - refusal is evidence
+                self._actuation_reason = (
+                    f"authorized control plane unavailable: "
+                    f"{type(exc).__name__}: {exc}"
+                )
+        self.evidence.append(
+            "salamander-actuation-unavailable",
+            {"reason": self._actuation_reason},
+        )
+        return AutonomicControlPlane(registry=actions, ledger=ledger)
 
     def record_held_out_generalisation(self, trials: Any) -> Mapping[str, Any]:
         """Seal multi-family held-out transfer evidence for status/readiness."""
@@ -254,6 +347,19 @@ class EuclidRuntime:
 
         A denial or veto is returned as data so the caller can replan; it is
         never converted into a fabricated result."""
+        if self._closed:
+            raise RuntimeError("runtime is closed")
+        if getattr(self, "guardian", None) is None:
+            # Creator-scoped grants are necessary but are not a substitute
+            # for the security owner's authorisation of specialist effects.
+            governance = {"guardian": "not-configured", "allowed": False,
+                          "reason": "GOVERNANCE_UNAVAILABLE"}
+            self.evidence.append("governance-unavailable", {
+                "organ": organ_id, "reason": "GOVERNANCE_UNAVAILABLE",
+            })
+            return {"allowed": False, "organ": organ_id,
+                    "operation": f"{organ_id}.{request.get('operation', 'default')}",
+                    "governance": governance}
         from .cognition.reachability import ReachabilityStage
 
         known = {item["organ_id"] for item in self.registry.report()}
@@ -441,15 +547,33 @@ class EuclidRuntime:
         result["routing"] = selection
         return result
 
-    def heal_organ(self, organ_id: str, *, reason: str) -> Any:
-        """Salamander-bounded requalification of one degraded specialist."""
+    def heal_organ(
+        self, organ_id: str, *, reason: str, actor: str | None = None
+    ) -> Any:
+        """Salamander-bounded requalification of one degraded specialist.
+
+        Privileged transition: requires a non-empty actor identity and a
+        previously authorized actuation plane (Guardian verdict + subscription
+        token provider at composition time).  Refuses before any handler is
+        invoked; the subscription token is fetched out-of-band and never
+        enters the request payload or evidence chain."""
+        import dataclasses
+        import inspect
         import uuid
 
+        from salamander.control_plane import FailClosed
         from salamander.models import ActionKind, ActionRequest
 
         from .cognition.reachability import ReachabilityStage
 
-        request = ActionRequest(
+        if not actor or not str(actor).strip():
+            raise FailClosed("heal_organ requires a non-empty actor identity")
+        if not getattr(self, "_actuation_ready", False):
+            raise FailClosed(
+                "Salamander actuation unavailable: "
+                + (self._actuation_reason or "organism not composed")
+            )
+        request_kwargs: dict[str, Any] = dict(
             action_id=f"requalify:{organ_id}:{uuid.uuid4().hex[:12]}",
             kind=ActionKind.REQUALIFY,
             handler="requalify-organ",
@@ -459,7 +583,23 @@ class EuclidRuntime:
             bounds={"max_attempts": 1},
             idempotency_key=f"requalify:{organ_id}:{self.evidence.head}",
         )
-        result = self.autonomic.execute(request)
+        request_fields = {f.name for f in dataclasses.fields(ActionRequest)}
+        if "actor_id" in request_fields:
+            request_kwargs["actor_id"] = actor
+        request = ActionRequest(**request_kwargs)
+        self.evidence.append(
+            "heal-attempt",
+            {"actor": actor, "organ": organ_id, "action_id": request.action_id},
+        )
+        token = (
+            self._subscription_token_provider(self.creator_id, actor)
+            if self._subscription_token_provider is not None
+            else None
+        )
+        if "subscription_token" in inspect.signature(self.autonomic.execute).parameters:
+            result = self.autonomic.execute(request, subscription_token=token or "")
+        else:
+            result = self.autonomic.execute(request)
         if result.verified:
             self._advance("salamander.control_plane", ReachabilityStage.FEEDBACK_CLOSED,
                           f"heal:{organ_id}", {"action_id": result.action_id})
@@ -492,6 +632,19 @@ class EuclidRuntime:
         return {"verified": probe.get("verified", True) is not False,
                 "evidence_ref": self.evidence.head,
                 "observations": {"health": response.get("health")}}
+
+    @property
+    def toe(self) -> Any:
+        """EUCLID's handle on the full TOE capability surface.
+
+        Built on first use; every TOE answer EUCLID consumes is recorded on
+        EUCLID's evidence chain. EUCLID decides when to ask; TOE only answers.
+        """
+        if self._toe is None:
+            from .cognition.toe_capabilities import TOECapabilityAdapter
+
+            self._toe = TOECapabilityAdapter(evidence=self.evidence)
+        return self._toe
 
     def _compose_cognition(self) -> None:
         """Wire canonical implementations once; no parallel state histories."""
@@ -636,6 +789,152 @@ class EuclidRuntime:
         "euclid.adaptive.consolidation",
     )
 
+    def bind_adaptive_data_port(self, port: Any) -> None:
+        """Attach the lifecycle-owned, durable OVID/THESEUS EUCLID port."""
+        from aethel.enterprise.entangled_custody import SystemDataPort
+        from aethel.enterprise.persistent_entangled_custody import (
+            PersistentEntangledCustodyFabric,
+        )
+
+        with self._adaptive_lock:
+            if self._closed:
+                raise RuntimeError("runtime is closed")
+            if not isinstance(port, SystemDataPort) or port.system != "euclid":
+                raise TypeError("adaptive state requires the canonical EUCLID data port")
+            if not isinstance(port.fabric, PersistentEntangledCustodyFabric):
+                raise TypeError("adaptive state requires a persistent custody fabric")
+            if self.adaptive is not None and port is not self._adaptive_data_port:
+                raise RuntimeError("bind adaptive custody before composing intelligence")
+            self._adaptive_data_port = port
+            self._adaptive_tenant_id = str(port.fabric.custody.tenant)
+
+    def _read_adaptive_binding(self, binding: Any) -> dict[str, Any]:
+        import hashlib
+
+        port = self._adaptive_data_port
+        if port is None:
+            raise RuntimeError("adaptive custody is not attached")
+        if binding.source_system != "euclid" or binding.kind != self.ADAPTIVE_KNOWLEDGE_KIND:
+            raise ValueError("adaptive custody owner mismatch")
+        if not port.fabric.verify(binding.binding_id).get("passed"):
+            raise ValueError("adaptive custody verification failed")
+        data = port.read(binding.binding_id)
+        if hashlib.sha256(data).hexdigest() != binding.content_sha256:
+            raise ValueError("adaptive custody content digest mismatch")
+        payload = json.loads(data)
+        if (
+            payload.get("schema") != "euclid.adaptive-custody/1"
+            or payload.get("creator_id") != self.creator_id
+            or payload.get("tenant_id") != self._adaptive_tenant_id
+        ):
+            raise ValueError("adaptive custody schema or creator/tenant binding mismatch")
+        body = {key: value for key, value in payload.items() if key != "seal"}
+        if payload.get("seal") != domain_hash("euclid.adaptive-custody.seal.v1", body):
+            raise ValueError("adaptive custody seal mismatch")
+        origin = payload.get("producer_process", {})
+        if type(origin.get("pid")) is not int or origin["pid"] <= 0 or not origin.get("token"):
+            raise ValueError("adaptive custody lacks process origin")
+        writer_pid = port.record(binding.binding_id).meta.get("custody_writer_process_id")
+        if writer_pid is not None and writer_pid != origin["pid"]:
+            raise ValueError("adaptive custody process origin differs from fabric observation")
+        return payload
+
+    def _persist_adaptive_knowledge(self, episode: str) -> None:
+        from .cognition.reachability import ReachabilityStage
+
+        port = self._adaptive_data_port
+        if port is None:
+            self.evidence.append("adaptive-custody-not-persisted", {
+                "episode_id": episode, "reason": "custody-not-attached",
+                "creator_id": self.creator_id,
+            })
+            return
+        knowledge = self.adaptive.knowledge.to_payload()
+        body = {
+            "schema": "euclid.adaptive-custody/1",
+            "creator_id": self.creator_id,
+            "tenant_id": self._adaptive_tenant_id,
+            "producer_process": {"pid": os.getpid(), "token": self._adaptive_process_token},
+            "knowledge": knowledge,
+        }
+        payload = {**body, "seal": domain_hash("euclid.adaptive-custody.seal.v1", body)}
+        try:
+            binding = port.put(
+                self.ADAPTIVE_KNOWLEDGE_KIND, payload,
+                parents=(self._adaptive_last_binding_id,) if self._adaptive_last_binding_id else (),
+                correlation_ids={"creator_id": self.creator_id, "tenant_id": self._adaptive_tenant_id},
+            )
+            if self._read_adaptive_binding(binding) != payload:
+                raise ValueError("adaptive custody readback differs from submitted state")
+        except Exception as exc:
+            self.evidence.append("adaptive-custody-not-persisted", {
+                "episode_id": episode, "reason": "custody-write-or-verification-failed",
+                "error_type": type(exc).__name__,
+            })
+            raise
+        self._adaptive_last_binding_id = binding.binding_id
+        self._adaptive_last_seal = knowledge["seal"]
+        event = self.evidence.append("adaptive-custody-persisted", {
+            "episode_id": episode, "binding_id": binding.binding_id,
+            "content_sha256": binding.content_sha256, "knowledge_seal": knowledge["seal"],
+        })
+        current = self.reachability.stage("euclid.adaptive.knowledge")
+        if current is None or current <= ReachabilityStage.PERSISTED:
+            self.reachability.record(
+                "euclid.adaptive.knowledge", ReachabilityStage.PERSISTED,
+                episode_id=episode, evidence_ref=event.record_hash,
+                detail={"binding_id": binding.binding_id, "claim": "knowledge-durability"},
+            )
+
+    def adaptive_restart_receipt(self) -> dict[str, Any]:
+        """Describe the verified durable artifact and its sealed process origin."""
+        with self._adaptive_lock:
+            if self._adaptive_data_port is None or self._adaptive_last_binding_id is None:
+                raise RuntimeError("no persisted adaptive artifact")
+            binding = self._adaptive_data_port.latest(self.ADAPTIVE_KNOWLEDGE_KIND)
+            if binding is None or binding.binding_id != self._adaptive_last_binding_id:
+                raise ValueError("adaptive artifact is stale")
+            payload = self._read_adaptive_binding(binding)
+            writer_pid = self._adaptive_data_port.record(binding.binding_id).meta.get("custody_writer_process_id")
+            if writer_pid != payload["producer_process"]["pid"]:
+                raise ValueError("adaptive artifact lacks verified custody process origin")
+            knowledge = payload["knowledge"]
+            if self.adaptive is None or self.adaptive.knowledge.to_payload()["seal"] != knowledge["seal"]:
+                raise ValueError("in-memory knowledge differs from durable artifact")
+            body = {
+                "schema": "euclid.adaptive-restart-receipt/1",
+                "creator_id": self.creator_id, "tenant_id": self._adaptive_tenant_id,
+                "binding_id": binding.binding_id, "content_sha256": binding.content_sha256,
+                "knowledge_seal": knowledge["seal"], "episodes": knowledge["episodes"],
+                "process_id": payload["producer_process"]["pid"],
+                "process_token": payload["producer_process"]["token"],
+            }
+            return {**body, "seal": domain_hash("euclid.adaptive-restart-receipt.seal.v1", body)}
+
+    def verify_adaptive_restart_receipt(self, prior: Mapping[str, Any]) -> dict[str, Any]:
+        """Certify only an unchanged artifact produced in a different process."""
+        from .cognition.reachability import ReachabilityStage
+
+        with self._adaptive_lock:
+            actual = self.adaptive_restart_receipt()
+            if dict(prior) != actual:
+                raise ValueError("restart receipt differs from verified custody artifact")
+            if actual["process_id"] == os.getpid():
+                raise ValueError("same-process restoration is not restart verification")
+            result = {
+                "passed": True, "binding_id": actual["binding_id"],
+                "knowledge_seal": actual["knowledge_seal"],
+                "prior_process_id": actual["process_id"], "current_process_id": os.getpid(),
+            }
+            event = self.evidence.append("adaptive-custody-restart-verified", result)
+            self.reachability.record(
+                "euclid.adaptive.knowledge", ReachabilityStage.RESTART_VERIFIED,
+                episode_id="adaptive-restart", evidence_ref=event.record_hash,
+                detail=result,
+            )
+            self.reachability.save(self.state_dir / "cognition_reachability.json")
+            return result
+
     def compose_adaptive_intelligence(
         self,
         *,
@@ -643,69 +942,43 @@ class EuclidRuntime:
         ablations: Any | None = None,
         custody: Any | None = None,
     ) -> Any:
-        """Compose the v17 integrated agent inside this runtime.
+        """Compose from canonical custody, or retain only in-memory knowledge."""
+        with self._adaptive_lock:
+            if self._closed:
+                raise RuntimeError("runtime is closed")
+            return self._compose_adaptive_intelligence(config=config, ablations=ablations)
 
-        The agent shares this runtime's evidence chain and executes only
-        through the governed Delegator (see :meth:`solve_task`).  Long-term
-        knowledge is creator-bound state read from canonical THESEUS/OVID
-        custody (F5); with no custody attached the runtime fails closed to
-        in-memory knowledge and never falls back to a private JSON authority.
-        Recomposition preserves the per-episode organ-id counter so a live
-        ``task-world-*`` identity is never reissued (F4).
-        """
-        import json
-
+    def _compose_adaptive_intelligence(self, *, config: Any, ablations: Any) -> Any:
         from .cognition.integrated import AgentKnowledge, IntegratedAgent
         from .cognition.reachability import ReachabilityStage
 
-        if custody is not None:
-            self.adaptive_custody = custody
-        record_id = self._adaptive_record_id()
-        knowledge = AgentKnowledge()
-        restored = False
-        if self.adaptive_custody is None:
-            self.evidence.append(
-                "adaptive-knowledge-custody-unavailable",
-                {"record_id": record_id, "creator_id": self.creator_id},
-            )
+        port = self._adaptive_data_port
+        try:
+            binding = port.latest(self.ADAPTIVE_KNOWLEDGE_KIND) if port else None
+            payload = self._read_adaptive_binding(binding) if binding is not None else None
+            restored = AgentKnowledge.from_payload(payload["knowledge"]) if payload is not None else None
+        except Exception as exc:
+            self.adaptive = None
+            self.evidence.append("adaptive-custody-restore-rejected", {"error_type": type(exc).__name__})
+            raise
+        if binding is not None:
+            knowledge = restored
+            self._adaptive_last_binding_id = binding.binding_id
+            self._adaptive_last_seal = payload["knowledge"]["seal"]
+            self.evidence.append("adaptive-custody-restored", {
+                "binding_id": binding.binding_id, "knowledge_seal": self._adaptive_last_seal,
+                "creator_id": self.creator_id, "tenant_id": self._adaptive_tenant_id,
+            })
         else:
-            try:
-                raw = self.adaptive_custody.get(record_id)
-            except KeyError:
-                self.evidence.append(
-                    "adaptive-knowledge-fresh",
-                    {"record_id": record_id, "creator_id": self.creator_id},
-                )
-            else:
-                body = json.loads(raw.decode("utf-8"))
-                if (
-                    body.get("schema") != "euclid.adaptive-knowledge/1"
-                    or body.get("creator_id") != self.creator_id
-                ):
-                    raise ValueError("adaptive knowledge creator binding mismatch")
-                knowledge = AgentKnowledge.from_payload(dict(body["knowledge"]))
-                restored = True
-                self.evidence.append(
-                    "adaptive-knowledge-restored",
-                    {
-                        "record_id": record_id,
-                        "creator_id": self.creator_id,
-                        "restored_evidence_head": self.evidence.head or "genesis",
-                    },
-                )
+            knowledge = self.adaptive.knowledge if self.adaptive is not None else AgentKnowledge()
+            self.evidence.append("adaptive-custody-fresh", {
+                "creator_id": self.creator_id, "tenant_id": self._adaptive_tenant_id,
+                "custody_attached": port is not None,
+            })
         self.adaptive = IntegratedAgent(
             knowledge=knowledge, config=config, ablations=ablations, evidence=self.evidence
         )
-        live_ids = [
-            row["organ_id"]
-            for row in self.registry.report()
-            if row["organ_id"].startswith("task-world-")
-        ]
-        highest = max(
-            (int(oid.rsplit("-", 1)[-1]) for oid in live_ids if oid.rsplit("-", 1)[-1].isdigit()),
-            default=0,
-        )
-        self._adaptive_organs = max(self._adaptive_organs, highest)
+        # Organ sequence is runtime-scoped, not composition-scoped.
         for component in self.ADAPTIVE_COMPONENTS:
             current = self.reachability.stage(component)
             stages = [
@@ -713,8 +986,6 @@ class EuclidRuntime:
                 ReachabilityStage.ADAPTED, ReachabilityStage.REGISTERED,
                 ReachabilityStage.REACHABLE,
             ]
-            if restored and current is not None and current >= ReachabilityStage.PERSISTED:
-                stages.append(ReachabilityStage.RESTART_VERIFIED)
             for stage in stages:
                 if current is None or stage > current:
                     self.reachability.record(
@@ -737,6 +1008,12 @@ class EuclidRuntime:
         PERSISTED reachability stage advances only when that durable write
         verifiably happened (F2/F5).
         """
+        with self._adaptive_lock:
+            return self._solve_task(spec, world_executor, seed=seed)
+
+    def _solve_task(self, spec: Any, world_executor: Any, *, seed: int) -> Any:
+        if self._closed:
+            raise RuntimeError("runtime is closed")
         if getattr(self, "adaptive", None) is None:
             raise RuntimeError("adaptive intelligence is not composed")
         import json
@@ -762,55 +1039,45 @@ class EuclidRuntime:
         try:
             result = self.adaptive.solve(spec, executor, seed=seed)
         finally:
+            # Covers failed execution, cancellation and BaseException paths.
+            # Failed episodes never retain dispatch rights or advance the
+            # persistence/reachability success path below.
             self.rights.revoke(self.creator_id, organ_id, capability, "dispatch")
-        record_id = self._adaptive_record_id()
-        persisted = False
-        if self.adaptive_custody is None:
-            self.evidence.append(
-                "adaptive-knowledge-not-persisted",
-                {"record_id": record_id, "creator_id": self.creator_id,
-                 "reason": "custody not attached"},
-            )
-        else:
-            payload = json.dumps(
-                {
-                    "schema": "euclid.adaptive-knowledge/1",
-                    "creator_id": self.creator_id,
-                    "knowledge": self.adaptive.knowledge.to_payload(),
-                },
-                sort_keys=True,
-                separators=(",", ":"),
-            ).encode("utf-8")
-            envelope = self.adaptive_custody.put(
-                payload,
-                record_id=record_id,
-                meta={
-                    "kind": "euclid.adaptive-knowledge",
-                    "creator_id": self.creator_id,
-                    "tenant": getattr(self.adaptive_custody, "tenant", None),
-                },
-            )
-            self.evidence.append(
-                "adaptive-knowledge-persisted",
-                {"record_id": record_id, "creator_id": self.creator_id,
-                 "content_digest": envelope.content_digest},
-            )
-            persisted = True
         episode = str(spec.task_id)
-        head = self.evidence.head or "genesis"
-        stages = [
-            ReachabilityStage.USED_IN_EPISODE, ReachabilityStage.EXECUTED,
-            ReachabilityStage.OUTCOME_OBSERVED, ReachabilityStage.FEEDBACK_CLOSED,
-        ]
-        if persisted:
-            stages.append(ReachabilityStage.PERSISTED)
+        # An episode return/file write is not evidence that every specialist
+        # executed, received feedback or was restored in an independent process.
+        state = getattr(result, "state", None)
+        if state is None:
+            raise ValueError("adaptive episode returned no verifiable cognitive state")
+        state.verify_transitions()
+        transitions = list(state.transitions)
+        phases = {t.phase for t in transitions}
+        self._persist_adaptive_knowledge(episode)
+        ablations = getattr(self.adaptive, "ablations", None)
+        used = {
+            "world_model": ("world_model", {"deduce", "imagine", "compare"}),
+            "causal_discrimination": ("causal_reasoning", {"discriminate"}),
+            "metacognition": (None, {"metacontrol", "evidence-decision"}),
+            "strategy_meta_learning": ("meta_learning", {"strategy"}),
+            "planning": (None, {"plan", "replan", "counterfactual-plan"}),
+            "representation": ("representation_restructuring", {"represent", "restructure"}),
+            "analogy": ("analogy", {"analogy", "analogy-refresh"}),
+            "skills": ("learned_primitives", {"compose"}),
+            "consolidation": (None, {"consolidate"}),
+        }
         for component in self.ADAPTIVE_COMPONENTS:
+            flag, qualifying_phases = used[component.rsplit(".", 1)[1]]
+            if flag is not None and not getattr(ablations, flag, True):
+                continue
+            observed_phases = sorted(phases.intersection(qualifying_phases))
             current = self.reachability.stage(component)
-            for stage in stages:
-                if current is None or stage > current:
-                    self.reachability.record(component, stage, episode_id=episode,
-                                             evidence_ref=head)
-                    current = stage
+            if observed_phases and (current is None or current < ReachabilityStage.USED_IN_EPISODE):
+                self.reachability.record(component, ReachabilityStage.USED_IN_EPISODE,
+                                         episode_id=episode,
+                                         evidence_ref=next(t.digest for t in reversed(transitions)
+                                                           if t.phase in qualifying_phases),
+                                         detail={"phases": observed_phases,
+                                                 "claim": "episode-use-only"})
         self.reachability.save(self.state_dir / "cognition_reachability.json")
         return result
 
@@ -824,6 +1091,8 @@ class EuclidRuntime:
     def solve_repository_problem(
         self, problem: Mapping[str, Any], *, goal: str | None = None
     ) -> Any:
+        if self._closed:
+            raise RuntimeError("runtime is closed")
         if self.cognition is None:
             raise RuntimeError("cognition is not composed; use EuclidRuntime.production")
         state = self.cognition.solve(problem, goal=goal)
@@ -1016,24 +1285,50 @@ class EuclidRuntime:
         if getattr(self, "_closed", False):
             return
         self._closed = True
+        report: dict[str, Any] = {
+            "schema": "euclid.shutdown/1", "closed": True,
+            "store_save": "not-applicable", "database_close": "not-applicable",
+            "failures": [], "durability_verified": False,
+        }
+        self._shutdown_report = report
         try:
+            # Shutdown ends the grant lifetime, including direct Delegator use.
+            # Keep revocation evidence and the registry; no capability is removed.
+            for creator, subject, asset, action in self.rights.snapshot()["grants"]:
+                self.rights.revoke(creator, subject, asset, action)
             store = self.learning.store
             if store is not None and hasattr(store, "save"):
                 try:
                     store.save()
+                    report["store_save"] = "completed"
                 except Exception as exc:  # noqa: BLE001 - shutdown is fail-soft
+                    report["store_save"] = "failed"
+                    report["failures"].append({"operation": "store-save", "error_type": type(exc).__name__})
                     self.evidence.append("shutdown-store-save-failed", {
-                        "error": f"{type(exc).__name__}: {exc}",
+                        "error": type(exc).__name__,
                     })
         finally:
             database = self.learning.memory_database
             if database is not None:
                 try:
                     database.close()
+                    report["database_close"] = "completed"
                 except Exception as exc:  # noqa: BLE001 - shutdown is fail-soft
+                    report["database_close"] = "failed"
+                    report["failures"].append({"operation": "database-close", "error_type": type(exc).__name__})
                     self.evidence.append("shutdown-database-close-failed", {
-                        "error": f"{type(exc).__name__}: {exc}",
+                        "error": type(exc).__name__,
                     })
+
+    def shutdown_report(self) -> dict[str, Any]:
+        """Shutdown observations, not proof of durable restart or readiness."""
+        import copy
+
+        if self._shutdown_report is None:
+            return {"schema": "euclid.shutdown/1", "closed": False,
+                    "store_save": "not-executed", "database_close": "not-executed",
+                    "failures": [], "durability_verified": False}
+        return copy.deepcopy(self._shutdown_report)
 
     def enable_intelligence(self, **kwargs: Any) -> Any:
         """Wire the merged v16 engine and the cognition loop into this runtime.
@@ -1131,6 +1426,7 @@ class EuclidRuntime:
         body = {
             "schema": "euclid.runtime-checkpoint/1",
             "creator_id": self.creator_id,
+            "producer_process": {"pid": os.getpid(), "token": self._adaptive_process_token},
             "worlds": {
                 key: {
                     "world_id": world.world_id,
@@ -1159,6 +1455,9 @@ class EuclidRuntime:
             "rights": payload.get("rights"),
             "evidence": payload.get("evidence"),
         }
+        # Older checkpoints still restore, but carry no process-bound proof.
+        if "producer_process" in payload:
+            body["producer_process"] = payload["producer_process"]
         if body["schema"] != "euclid.runtime-checkpoint/1":
             raise ValueError("unsupported EUCLID runtime checkpoint schema")
         if payload.get("seal") != domain_hash("euclid.runtime-checkpoint.seal.v1", body):
@@ -1197,17 +1496,14 @@ class EuclidRuntime:
         identity for a later cross-process restore."""
         import hashlib
         import json
-        import re
 
         payload = json.dumps(
             self.snapshot(), sort_keys=True, separators=(",", ":")
         ).encode("utf-8")
-        # Custody record ids become filenames: keep to portable characters.
-        safe_creator = re.sub(r"[^A-Za-z0-9_.-]", "-", self.creator_id)
-        record_id = (
-            f"euclid-runtime-{safe_creator}-"
-            f"{(self.evidence.head or 'genesis')[:16]}"
-        )
+        # Bind identity to the exact artifact, including creator and origin.
+        # Equal evidence heads in separate runtimes must not alias checkpoints.
+        payload_digest = hashlib.sha256(payload).hexdigest()
+        record_id = f"euclid-runtime-{payload_digest}"
         envelope = custody.put(
             payload,
             record_id=record_id,
@@ -1221,7 +1517,7 @@ class EuclidRuntime:
         return {
             "record_id": record_id,
             "content_digest": envelope.content_digest,
-            "payload_sha256": hashlib.sha256(payload).hexdigest(),
+            "payload_sha256": payload_digest,
         }
 
     @classmethod
@@ -1232,24 +1528,26 @@ class EuclidRuntime:
 
         Reading through custody exercises the durable path (authorization,
         envelope integrity, OVID unfold); the checkpoint's own seal then
-        verifies content. A successful restore records RESTART_VERIFIED —
-        restart evidence that survives a process boundary only counts when
-        the restoring side is a fresh runtime reading durable custody."""
+        verifies content. Only a sealed origin from a different process can
+        advance restart verification; same-process restoration remains a restore."""
         from .cognition.reachability import ReachabilityStage
 
         payload = custody.get(record_id)
         checkpoint_path = Path(state_dir) / "custody_checkpoint.json"
+        checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
         checkpoint_path.write_bytes(payload)
         runtime = cls.restore(checkpoint_path, state_dir=state_dir)
         runtime.evidence.append(
             "custody-restart",
             {"record_id": record_id, "restored_evidence_head": runtime.evidence.head},
         )
-        runtime._advance(
-            "euclid.runtime",
-            ReachabilityStage.RESTART_VERIFIED,
-            "custody-restart",
-            {"record_id": record_id},
-        )
+        origin = json.loads(payload).get("producer_process", {})
+        if isinstance(origin.get("pid"), int) and origin["pid"] != os.getpid() and origin.get("token"):
+            runtime.reachability.record(
+                "euclid.runtime", ReachabilityStage.RESTART_VERIFIED,
+                episode_id="custody-restart", evidence_ref=runtime.evidence.head,
+                detail={"record_id": record_id, "prior_process_id": origin["pid"],
+                        "current_process_id": os.getpid()},
+            )
         runtime.reachability.save(runtime.state_dir / "cognition_reachability.json")
         return runtime

@@ -10,7 +10,7 @@ Every system that talks to silicon lies about what the silicon can do. The seam 
 
 ## 2–4. Axioms, layers, invariants
 
-See `chronus/seam/axioms.py` and `seam_standard.toml`.
+See `chronus/seam/axioms.py` and `standard/seam_standard.toml`.
 
 ## 5. Proofs
 

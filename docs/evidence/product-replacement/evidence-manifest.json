@@ -1,0 +1,219 @@
+{
+  "schema": "chronos.replacement_evidence/1",
+  "source_commit": "27e2b07f1304edb7b2e00fd5052ec61a2151a021",
+  "status": "INCOMPLETE_WHOLE_PRODUCT_REPLACEMENT",
+  "tests": [
+    {
+      "file": "standalone-regression.xml",
+      "tests": 396,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "file": "installed-evolution-native.xml",
+      "tests": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "file": "installed-evolution-portable.xml",
+      "tests": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "file": "installed-route-native.xml",
+      "tests": 64,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "file": "installed-route-portable.xml",
+      "tests": 64,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "same_test_cases_repeated_across_wheels": true,
+  "install_scope": "Fresh standalone environments; canonical integration uses retained source snapshot. Not full canonical installed-product certification.",
+  "real_hash_and_fresh_process_replay": [
+    "replay-native.json",
+    "replay-portable.json"
+  ],
+  "artifacts": [
+    {
+      "variant": "native",
+      "filename": "chronos_gpu-3.11.1-cp313-cp313-linux_x86_64.whl",
+      "sha256": "830a2e11f406fd288626c52e6df7d0b4a5548af6d9b0278c024a795e82d75908",
+      "bytes": 348643,
+      "published": false,
+      "purpose": "INTERNAL_INSTALLATION_VERIFICATION_NOT_A_NEW_RELEASE"
+    },
+    {
+      "variant": "portable",
+      "filename": "chronos_gpu-3.11.1-py3-none-any.whl",
+      "sha256": "58a42f08802a977465a36987accceed1525d903e44578ae5b249ce481d9ba375",
+      "bytes": 302137,
+      "published": false,
+      "purpose": "INTERNAL_INSTALLATION_VERIFICATION_NOT_A_NEW_RELEASE"
+    }
+  ],
+  "environment": {
+    "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+    "machine": "x86_64",
+    "installations": {
+      "native": {
+        "python": "Python 3.13.14",
+        "dependencies": "[{\"name\": \"chronos-gpu\", \"version\": \"3.11.1\"}, {\"name\": \"iniconfig\", \"version\": \"2.3.1\"}, {\"name\": \"mpmath\", \"version\": \"1.3.0\"}, {\"name\": \"numpy\", \"version\": \"2.5.3\"}, {\"name\": \"packaging\", \"version\": \"26.3\"}, {\"name\": \"pip\", \"version\": \"24.2\"}, {\"name\": \"pluggy\", \"version\": \"1.6.0\"}, {\"name\": \"Pygments\", \"version\": \"2.21.0\"}, {\"name\": \"pytest\", \"version\": \"9.1.1\"}, {\"name\": \"sympy\", \"version\": \"1.14.0\"}]\n"
+      },
+      "portable": {
+        "python": "Python 3.13.14",
+        "dependencies": "[{\"name\": \"chronos-gpu\", \"version\": \"3.11.1\"}, {\"name\": \"iniconfig\", \"version\": \"2.3.1\"}, {\"name\": \"mpmath\", \"version\": \"1.3.0\"}, {\"name\": \"numpy\", \"version\": \"2.5.3\"}, {\"name\": \"packaging\", \"version\": \"26.3\"}, {\"name\": \"pip\", \"version\": \"24.2\"}, {\"name\": \"pluggy\", \"version\": \"1.6.0\"}, {\"name\": \"Pygments\", \"version\": \"2.21.0\"}, {\"name\": \"pytest\", \"version\": \"9.1.1\"}, {\"name\": \"sympy\", \"version\": \"1.14.0\"}]\n"
+      }
+    }
+  },
+  "retained_failed_attempts": {
+    "initial-installed-evolution-portable.log": "Initial install test used pre-fix wheel with new tests; two failures. Matching rebuild/reinstall passes25.",
+    "initial-voyage-capture-failure.log": "Evidence capture used wrong receipt field name; corrected capture succeeds. No product execution success inferred from failed script.",
+    "canonical-available-suite.log": "Broad retained canonical suite collection fails because source snapshot lacks euclid_support and dependencies. Full suite success not claimed."
+  },
+  "external_evidence_not_obtained": [
+    "physical accelerator execution",
+    "full repository CI",
+    "deployed THESEUS/OVID",
+    "pool acknowledgement",
+    "registry publication"
+  ],
+  "files": [
+    {
+      "path": "standalone-regression.log",
+      "sha256": "9fa1a05bffe26f19c5faf30712adf0c2e369bff6c9211bc2ee622951b08b26aa",
+      "bytes": 511
+    },
+    {
+      "path": "standalone-regression.xml",
+      "sha256": "462c128c4392d42c5d4872fe63c048bc455c478c7dc47d86d349e2323d56c556",
+      "bytes": 44749
+    },
+    {
+      "path": "installed-evolution-native.log",
+      "sha256": "90711671557f9acc7139e07febb2339ca959b0ed2c2efafa27af54f6a88327be",
+      "bytes": 99
+    },
+    {
+      "path": "installed-evolution-native.xml",
+      "sha256": "0bfa6b38fe0e3435929f86c567e9fe741a92b219f2544f4b0971b27887bda17a",
+      "bytes": 3212
+    },
+    {
+      "path": "installed-evolution-portable.log",
+      "sha256": "19dfedf62967a0a2934a710948f532ce6075272f74924d2523806f7125daa691",
+      "bytes": 99
+    },
+    {
+      "path": "installed-evolution-portable.xml",
+      "sha256": "69f9e394efcce020e19d0dbcedf014a655ca780093e74f2030456c8d50a26dda",
+      "bytes": 3212
+    },
+    {
+      "path": "installed-route-native.log",
+      "sha256": "ea8d2fa8c025dffbfa017c5028167d8a5748738a47ea4be3c07cecc4d8b0eeb3",
+      "bytes": 111
+    },
+    {
+      "path": "installed-route-native.xml",
+      "sha256": "36caec16d770d4f4458d081e475b402033bdae1b41519a33a68598a144630fa3",
+      "bytes": 10313
+    },
+    {
+      "path": "installed-route-portable.log",
+      "sha256": "f99194b3b9e4349c4c99e4c4d9d447f0414be0e0a7bc57ab408e56e85bfad75f",
+      "bytes": 111
+    },
+    {
+      "path": "installed-route-portable.xml",
+      "sha256": "2ea8ec6a9df658317547842eaeae2ef3bea77d3da454dcacd86c9dab8a63d93d",
+      "bytes": 10313
+    },
+    {
+      "path": "canonical-available-suite.log",
+      "sha256": "97ec78135f118d5073f2bad4f0e576696ba89397fb51f122994f02ba3ae2fe6a",
+      "bytes": 1110
+    },
+    {
+      "path": "canonical-available-suite.exitcode",
+      "sha256": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
+      "bytes": 2
+    },
+    {
+      "path": "initial-installed-evolution-portable.log",
+      "sha256": "09b4ee3380a26658eeacfb880059752e4165ba2a5dd7648eba6558a2bbdac281",
+      "bytes": 4837
+    },
+    {
+      "path": "initial-voyage-capture-failure.log",
+      "sha256": "3101461c35924e4f32ae7eb47e9477ada5e3e5b1eabfb23023c80c91743c8b7e",
+      "bytes": 222
+    },
+    {
+      "path": "capture_voyage.py",
+      "sha256": "e29a8922d3034db2f840a56cd4976bc6da49caa89d1a3d82d9ad8ede703a3387",
+      "bytes": 1806
+    },
+    {
+      "path": "install_test.sh",
+      "sha256": "bad2745a77d3bab6c794646776f9d81a164f824a77d2e647b1303fb58abe8c47",
+      "bytes": 1526
+    },
+    {
+      "path": "retest_installed.sh",
+      "sha256": "23040dbe872c291d4c9c5ff008a6a9bd37f83b62587bdede5766cb47efa0b635",
+      "bytes": 2169
+    },
+    {
+      "path": "import-final-native.json",
+      "sha256": "0fa70fd673a84813a5dfba4281d4b2da45294a72db71a211faabc678842ad6cf",
+      "bytes": 334
+    },
+    {
+      "path": "import-final-portable.json",
+      "sha256": "684f4c39bcf227a44aed069d50ddc311f7e78c32663ce9484469e1fc256c11fb",
+      "bytes": 336
+    },
+    {
+      "path": "voyage-native.json",
+      "sha256": "817d446d7b8227e5d4b0ac97de3131590c5a06b7ae5c046ef107b2dc4fd0978b",
+      "bytes": 548828
+    },
+    {
+      "path": "voyage-portable.json",
+      "sha256": "65eee5ee72f251aa472b3f1d73819899c867e1cb6597d72a7dc4d3da421e6aea",
+      "bytes": 548782
+    },
+    {
+      "path": "replay-native.json",
+      "sha256": "7a5b12b78826539466634bc42a3caf4ca5af4551ced0bc03277b0c8eb01b746d",
+      "bytes": 383
+    },
+    {
+      "path": "replay-portable.json",
+      "sha256": "e3d3d13ea02d0aa8626822920232e4c9b9c7056bde494a5111bfba4711414445",
+      "bytes": 385
+    },
+    {
+      "path": "voyage-native.log",
+      "sha256": "bc44ea359bcb48481ce1ceda52b73a827498c2462afcf7bc901430ac7840b611",
+      "bytes": 169
+    },
+    {
+      "path": "voyage-portable.log",
+      "sha256": "bc44ea359bcb48481ce1ceda52b73a827498c2462afcf7bc901430ac7840b611",
+      "bytes": 169
+    }
+  ]
+}

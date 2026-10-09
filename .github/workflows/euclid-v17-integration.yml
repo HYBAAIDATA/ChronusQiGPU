@@ -6,9 +6,18 @@ on:
       - "euclid/**"
       - "Intelligence/**"
       - "aethel/**"
+      - "hyba_db/**"
+      - "packaging/euclid-engine/**"
+      - "packaging/theseus/**"
+      - "packaging/toe/**"
+      - "packaging/kellogg-tensor/**"
+      - "tests/test_theseus_long_paths.py"
+      - "tests/test_m3_adversarial.py"
+      - "tests/test_storage_database_ontology_v3.py"
       - "tests/test_euclid_v17_*.py"
       - "config/euclid-v17-integration-gates.json"
       - "scripts/euclid_v17_integration_gate.py"
+      - "scripts/test_euclid_integrity_mutations.py"
       - "docs/EUCLID_V17_*.md"
       - ".github/workflows/euclid-v17-integration.yml"
   push:
@@ -17,9 +26,18 @@ on:
       - "euclid/**"
       - "Intelligence/**"
       - "aethel/**"
+      - "hyba_db/**"
+      - "packaging/euclid-engine/**"
+      - "packaging/theseus/**"
+      - "packaging/toe/**"
+      - "packaging/kellogg-tensor/**"
+      - "tests/test_theseus_long_paths.py"
+      - "tests/test_m3_adversarial.py"
+      - "tests/test_storage_database_ontology_v3.py"
       - "tests/test_euclid_v17_*.py"
       - "config/euclid-v17-integration-gates.json"
       - "scripts/euclid_v17_integration_gate.py"
+      - "scripts/test_euclid_integrity_mutations.py"
       - "docs/EUCLID_V17_*.md"
       - ".github/workflows/euclid-v17-integration.yml"
   workflow_dispatch:
@@ -29,20 +47,42 @@ permissions:
 
 jobs:
   integration-gate:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
-      - name: Install canonical runtime
+      - name: Install canonical test/runtime dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ./turing_universal_quantum_computer
-          python -m pip install -e ".[dev]"
-      - name: Source and claim-boundary gate
-        run: python scripts/euclid_v17_integration_gate.py
-      - name: Production integration tests
-        run: python -m pytest -q tests/test_euclid_v17_production_integration.py
+          python -m pip install setuptools wheel build pytest pytest-asyncio hypothesis numpy pyyaml sympy
+          python -m pip install --no-deps -e ./turing_universal_quantum_computer -e .
+      - name: Local integrity component regressions
+        run: |
+          python -c "from pathlib import Path; Path('euclid-integrity-evidence').mkdir(exist_ok=True)"
+          git rev-parse HEAD > euclid-integrity-evidence/source-head.txt
+          python -m pytest -q euclid/tests/test_runtime_integrity.py --junitxml=euclid-integrity-evidence/components.xml
+      - name: Kill planted local integrity defects
+        run: python scripts/test_euclid_integrity_mutations.py --output euclid-integrity-evidence/mutations.json
+      - name: Execute source-bound F1-F6 qualification
+        run: python scripts/euclid_v17_integration_gate.py --output euclid-integrity-evidence/integration-gate.json
+      - name: Gate rejection and storage recovery regressions
+        run: python -m pytest -q tests/test_euclid_v17_integration_gate.py tests/test_euclid_v17_runtime.py tests/test_theseus_long_paths.py tests/test_m3_adversarial.py tests/test_storage_database_ontology_v3.py --junitxml=euclid-integrity-evidence/storage-gate.xml
+      - name: Qualify installed sdist and wheel from this source
+        run: python packaging/euclid-engine/build_and_verify.py
+      - name: Retain integrity evidence without declaring production readiness
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: euclid-integrity-evidence-${{ matrix.os }}
+          if-no-files-found: error
+          path: |
+            euclid-integrity-evidence/**
+            packaging/euclid-engine/dist/euclid-engine-verification.json
+            packaging/euclid-engine/dist/hyba_euclid_intelligence-*

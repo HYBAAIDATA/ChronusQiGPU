@@ -1,9 +1,11 @@
+# Public naming is approved; first-public version target is 1.0.0.
+# Existing development/research version retained pending publication reconciliation.
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "euclid-engine"
+name = "hyba-euclid-intelligence"
 version = "17.0.0"
 description = "EUCLID Meta-Evolutionary Code Intelligence Engine Payload"
 readme = "README.md"

@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# Owner-approved publication convention: hyba-<system>-<capability>.
+# The Python import remains toe; naming approval is not upload approval.
+name = "hyba-toe-intelligence"
+dynamic = ["version"]
+description = "TOE — a domain-general mathematical intelligence engine: one backend for representation, causal inference, futures, planning, value of information, exact precision and learning across problem domains."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [{ name = "HYBA Software Limited" }]
+keywords = [
+    "causal-inference",
+    "counterfactuals",
+    "planning",
+    "value-of-information",
+    "world-models",
+    "exact-arithmetic",
+    "hyperbolic-geometry",
+    "decision-making",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Typing :: Typed",
+]
+dependencies = [
+    "numpy>=1.26,<3",
+    # Exact tensor / golden-field mathematics is KELLOGG's; TOE consumes it.
+    "hyba-kellogg-tensor>=1.0,<2",
+]
+
+[project.optional-dependencies]
+# The original discovery surface (toe.engine.PredictiveEngine) reads DataFrames.
+legacy-hr = ["pandas>=2.0"]
+dev = ["pytest>=7.4,<10"]
+
+[project.urls]
+Homepage = "https://github.com/QuantumPhiRedux/PhiMiner"
+Repository = "https://github.com/QuantumPhiRedux/PhiMiner"
+Issues = "https://github.com/QuantumPhiRedux/PhiMiner/issues"
+
+[tool.setuptools]
+include-package-data = false
+packages = ["toe", "toe.adapters", "toe.unified"]
+
+[tool.setuptools.dynamic]
+version = { attr = "toe.__version__" }
+
+[tool.setuptools.package-data]
+toe = ["py.typed", "default_propagators.json", "CAPABILITY_MANIFEST.json", "CLAIM_REGISTER.json"]

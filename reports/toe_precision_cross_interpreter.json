@@ -1,0 +1,20 @@
+{
+  "artefacts": "installed hyba_toe-3.5.0 + kellogg_tensor-1.0.0 wheels (3.11); repository checkout (3.12)",
+  "evidence_class": "MEASURED (benefit on 3.11; none on 3.12)",
+  "family": "cancellation near-ties (same generator and held-out seeds 1000..1059 as scripts/toe_ablation_study.py family_precision)",
+  "finding": "CPython 3.12 made float sum() compensated, so the futures engine's float path already resolves these near-ties; on 3.11 it does not and float-only decisions are wrong in 32/60 tasks. Exact escalation decides all 60 correctly on both, i.e. it makes the decision interpreter-invariant.",
+  "results": {
+    "CPython 3.11.17": {
+      "exact_escalation_correct": 60,
+      "float_only_correct": 28,
+      "tasks": 60
+    },
+    "CPython 3.12.10": {
+      "exact_escalation_correct": 60,
+      "float_only_correct": 60,
+      "tasks": 60
+    }
+  },
+  "schema": "toe.precision_cross_interpreter/v1",
+  "source_sha": "955fce1c9ade221e79cd2893c45ba7cd60198c0a"
+}

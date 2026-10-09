@@ -31,6 +31,8 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
+from Intelligence._born import born_evidence
+
 logger = logging.getLogger("Intelligence.skill_loader")
 
 SKILLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "skills")
@@ -203,7 +205,9 @@ def seed_skill_knowledge(memory_system) -> Dict[str, Any]:
                     f"skill_{skill.name}",
                     f"tool_{tool_name}",
                     relation="uses_tool",
-                    weight=0.8,
+                    # Measured: the skill manifest literally names the
+                    # tool — one positive evidence bit (was invented 0.8).
+                    weight=born_evidence(1, 0),
                 )
         except Exception as e:
             logger.warning("Failed to seed skill %s: %s", skill.name, e)

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from aethel.enterprise.records import OperationalRecord
+from aethel.filesystem_paths import filesystem_root
 from aethel.storage_topology import (
     TheseusPhysicalStore,
     derive_storage_address,
@@ -128,7 +129,7 @@ class TheseusFileRegistry(FileRegistry):
 
     def reconcile_files(self, tenant_id: str, root: str | Path) -> ReconciliationReport:
         self._tenant(tenant_id)
-        root = Path(root)
+        root = filesystem_root(root)
         root.mkdir(parents=True, exist_ok=True)
         resolved_root = root.resolve()
         physical = TheseusPhysicalStore(root)
@@ -151,6 +152,21 @@ class TheseusFileRegistry(FileRegistry):
 
         for row in self._file_rows(tenant_id):
             vid = str(row["file_version_id"])
+            # These independent semantic failures must remain visible even
+            # when physical/custody checks also fail during partial recovery.
+            attestation_ok = False
+            try:
+                attestation_ok = self.store.verify_attestation(tenant_id, str(row["attestation_id"]))
+            except Exception:
+                pass
+            if not attestation_ok:
+                attestation_invalid.append(vid)
+            linked = self.store._db.execute(
+                "SELECT 1 FROM file_links WHERE tenant_id=? AND file_version_id=?",
+                (tenant_id, vid),
+            ).fetchone() is not None
+            if not linked:
+                link_missing.append(vid)
             uri = str(row["storage_uri"])
             if not uri.startswith("file://"):
                 orphans.append(vid)
@@ -196,17 +212,7 @@ class TheseusFileRegistry(FileRegistry):
             if not cid or self.custody is None or not self.custody.verify(tenant_id, cid):
                 custody_missing.append(vid)
                 continue
-            try:
-                if not self.store.verify_attestation(tenant_id, str(row["attestation_id"])):
-                    raise IntegrityFailure("invalid attestation")
-            except Exception:
-                attestation_invalid.append(vid)
-                continue
-            if not self.store._db.execute(
-                "SELECT 1 FROM file_links WHERE tenant_id=? AND file_version_id=?",
-                (tenant_id, vid),
-            ).fetchone():
-                link_missing.append(vid)
+            if not attestation_ok or not linked:
                 continue
             if (row["ovid_lineage_id"] is None) != (row["transform_contract"] is None):
                 transform_mismatches.append(vid)
@@ -519,7 +525,6 @@ class TheseusFileRegistry(FileRegistry):
             "address_custody_record_id": row["address_custody_id"],
             "placement_verified": physical.verify(address, data),
         }
-
 
     def _seal_mining_manifest(self, tenant_id: str, record_id: str) -> str:
         if self.custody is None:

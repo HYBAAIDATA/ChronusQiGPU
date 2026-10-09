@@ -1,0 +1,873 @@
+{
+  "schema": "chronos.m5_ultra_audit/1",
+  "rc_sha": "b4f34751559da2868fb5c4ef85c22adf00025b78",
+  "scope": "CONTRACT_LAYER_INCREMENTAL_EVIDENCE_ONLY",
+  "certified": false,
+  "registry": "INTERNAL_INDEX",
+  "registry_published": false,
+  "register_span": "one logical qubit per pad; bounded amplitudes",
+  "pad_max": 10,
+  "depth_max": 55,
+  "depth_limit_origin": "10 H + 45 CZ: maximum gate count of prior ten-pad full-mesh cluster preparation; prior API had no separately named D_max",
+  "physical_entanglement": false,
+  "hardware_claims": false,
+  "throughput_claims": false,
+  "python": "3.13.14",
+  "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+  "parity": [
+    {
+      "chain_digest": "21808876c830f671d59707d61961f535f84dc791520be934a43bb2b9c10cb2f0",
+      "CPU_REFERENCE": "PASS",
+      "IGPU": "PASS_HOST_CPU_EXACT_RESIDENT",
+      "GPU": "UNAVAILABLE",
+      "canonical_byte_equal": true,
+      "symbolic_basis_proof": {
+        "basis_pairs_checked": 16,
+        "normalisation_exact": true,
+        "unitarity_exact": true,
+        "proof_digest": "7f84148ab7c07b41929b320d00d04137fa0a88c2fa27cadfe94d1a195a8a8efe"
+      }
+    },
+    {
+      "chain_digest": "79b47fc43e2c48bc2c3a2990f89359f97e6c717cdc45f1d77dd5ec9332477dbd",
+      "CPU_REFERENCE": "PASS",
+      "IGPU": "PASS_HOST_CPU_EXACT_RESIDENT",
+      "GPU": "UNAVAILABLE",
+      "canonical_byte_equal": true,
+      "symbolic_basis_proof": {
+        "basis_pairs_checked": 16,
+        "normalisation_exact": true,
+        "unitarity_exact": true,
+        "proof_digest": "2eb577ec89d2e08523c92e71045f9136eba4a223c3862c76f3600b1593e465dc"
+      }
+    },
+    {
+      "chain_digest": "97659eb8e5213c5aa1ecf301f3fb61a5721447c56644a1423dc1e6d0c3360782",
+      "CPU_REFERENCE": "PASS",
+      "IGPU": "PASS_HOST_CPU_EXACT_RESIDENT",
+      "GPU": "UNAVAILABLE",
+      "canonical_byte_equal": true,
+      "symbolic_basis_proof": {
+        "basis_pairs_checked": 16,
+        "normalisation_exact": true,
+        "unitarity_exact": true,
+        "proof_digest": "010e2097424dd40c91582c32620d481c1c739ad21d3940d9c776076fedb13f61"
+      }
+    },
+    {
+      "chain_digest": "496405efe6492b151fe45f5f48fb9cebf84173bbc5d942aff418bcebc02387fd",
+      "CPU_REFERENCE": "PASS",
+      "IGPU": "PASS_HOST_CPU_EXACT_RESIDENT",
+      "GPU": "UNAVAILABLE",
+      "canonical_byte_equal": true,
+      "symbolic_basis_proof": {
+        "basis_pairs_checked": 16,
+        "normalisation_exact": true,
+        "unitarity_exact": true,
+        "proof_digest": "ad0e80652f9de85e0644d287a4e2b6d55b152d90e8c184cd8711b1835aebfe9f"
+      }
+    },
+    {
+      "chain_digest": "dedfe4263d485e3f3db4bfdbb2935156cd52dfa0c45e21e702d82c040f40d4bd",
+      "CPU_REFERENCE": "PASS",
+      "IGPU": "PASS_HOST_CPU_EXACT_RESIDENT",
+      "GPU": "UNAVAILABLE",
+      "canonical_byte_equal": true,
+      "symbolic_basis_proof": {
+        "basis_pairs_checked": 16,
+        "normalisation_exact": true,
+        "unitarity_exact": true,
+        "proof_digest": "3b16ba4dd79463d6ef0d1491271c234f9a2138ec7a476bbd3b75fc89afdaae2b"
+      }
+    },
+    {
+      "chain_digest": "447823cc38f4bb6d9ac0c44441fc34a2366b9c7a38e9e0dc0e20a104852247dd",
+      "CPU_REFERENCE": "PASS",
+      "IGPU": "PASS_HOST_CPU_EXACT_RESIDENT",
+      "GPU": "UNAVAILABLE",
+      "canonical_byte_equal": true,
+      "symbolic_basis_proof": {
+        "basis_pairs_checked": 16,
+        "normalisation_exact": true,
+        "unitarity_exact": true,
+        "proof_digest": "9a748e598dabcc6f3dc0c2b6244084aa45636bc6643ee02aef82be582565a782"
+      }
+    },
+    {
+      "chain_digest": "c820478261b2b966a4cbc8162ddf96ec5fbf6d7197cb360a41cf3057a95fb969",
+      "CPU_REFERENCE": "PASS",
+      "IGPU": "PASS_HOST_CPU_EXACT_RESIDENT",
+      "GPU": "UNAVAILABLE",
+      "canonical_byte_equal": true,
+      "symbolic_basis_proof": {
+        "basis_pairs_checked": 16,
+        "normalisation_exact": true,
+        "unitarity_exact": true,
+        "proof_digest": "add42c09524dfb363f7e85054ce81731b7ef0766fc9f55c119fafcfeceaf5453"
+      }
+    },
+    {
+      "chain_digest": "b5fcd713360e50b1698b7740d84a866a9907b43b3e3d26b39d91c0ec92bd7d94",
+      "CPU_REFERENCE": "PASS",
+      "IGPU": "PASS_HOST_CPU_EXACT_RESIDENT",
+      "GPU": "UNAVAILABLE",
+      "canonical_byte_equal": true,
+      "symbolic_basis_proof": {
+        "basis_pairs_checked": 16,
+        "normalisation_exact": true,
+        "unitarity_exact": true,
+        "proof_digest": "07f4420c37ec3a30007aebf6b8463fa4fafbec3e0ad220a30a727502883ed48d"
+      }
+    },
+    {
+      "chain_digest": "aa2df4fd62b66c06bc642b0b7913f8b870b8eca46a3af13459273d98ce78d6d7",
+      "CPU_REFERENCE": "PASS",
+      "IGPU": "PASS_HOST_CPU_EXACT_RESIDENT",
+      "GPU": "UNAVAILABLE",
+      "canonical_byte_equal": true,
+      "symbolic_basis_proof": {
+        "basis_pairs_checked": 16,
+        "normalisation_exact": true,
+        "unitarity_exact": true,
+        "proof_digest": "232b1153bb88a9b48820101881e1bef8760bd2ab2234ca9fefaae38032041bf0"
+      }
+    },
+    {
+      "chain_digest": "cef4115bcf85d4ceb3ea919a0ffb21e414f9e9a71ef0461c04e3560552de654f",
+      "CPU_REFERENCE": "PASS",
+      "IGPU": "PASS_HOST_CPU_EXACT_RESIDENT",
+      "GPU": "UNAVAILABLE",
+      "canonical_byte_equal": true,
+      "symbolic_basis_proof": {
+        "basis_pairs_checked": 16,
+        "normalisation_exact": true,
+        "unitarity_exact": true,
+        "proof_digest": "14878387334853b556e30fb00981e048f092a3493aa5a7cf7bf74f13bc291ff0"
+      }
+    },
+    {
+      "chain_digest": "b4ed0cb9c174ed0d719de89d5e425ba233ab815cc7aeef0f0d04254cce6fd76d",
+      "CPU_REFERENCE": "PASS",
+      "IGPU": "PASS_HOST_CPU_EXACT_RESIDENT",
+      "GPU": "UNAVAILABLE",
+      "canonical_byte_equal": true,
+      "symbolic_basis_proof": {
+        "basis_pairs_checked": 16,
+        "normalisation_exact": true,
+        "unitarity_exact": true,
+        "proof_digest": "cf782763ab7bc33382722d7b90dacfeaaf438852e9e131561ec6a0ddfb1528ba"
+      }
+    },
+    {
+      "chain_digest": "9a23db56c16fe9204630125ab085fcd38b1c32b09ac98523f859a6497d1eae46",
+      "CPU_REFERENCE": "PASS",
+      "IGPU": "PASS_HOST_CPU_EXACT_RESIDENT",
+      "GPU": "UNAVAILABLE",
+      "canonical_byte_equal": true,
+      "symbolic_basis_proof": {
+        "basis_pairs_checked": 16,
+        "normalisation_exact": true,
+        "unitarity_exact": true,
+        "proof_digest": "2aa951a8b9858ed0c782e35964184622b338ba19280feed4411469844be98de6"
+      }
+    },
+    {
+      "chain_digest": "8df57bfe8636f430eeb26ca02795b205f515c6a4c0ed1c9a23130ec7fd825ea7",
+      "CPU_REFERENCE": "PASS",
+      "IGPU": "PASS_HOST_CPU_EXACT_RESIDENT",
+      "GPU": "UNAVAILABLE",
+      "canonical_byte_equal": true,
+      "symbolic_basis_proof": {
+        "basis_pairs_checked": 16,
+        "normalisation_exact": true,
+        "unitarity_exact": true,
+        "proof_digest": "1dc66aaabe75864e6890b135ec98ce6cb6b7adcd5626d4f1de0b30c4945ca509"
+      }
+    }
+  ],
+  "mutations": [
+    {
+      "target": "algorithm",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "strict replay/identity/result/cost rejection"
+    },
+    {
+      "target": "implementation_id",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "strict replay/identity/result/cost rejection"
+    },
+    {
+      "target": "topology_id",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "strict replay/identity/result/cost rejection"
+    },
+    {
+      "target": "result",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "strict replay/identity/result/cost rejection"
+    },
+    {
+      "target": "device_contract_identity",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "device contract swap"
+    },
+    {
+      "target": "rc_sha",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "strict replay/identity/result/cost rejection"
+    },
+    {
+      "target": "pad_map",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "strict replay/identity/result/cost rejection"
+    },
+    {
+      "target": "depth",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "strict replay/identity/result/cost rejection"
+    },
+    {
+      "target": "operator_chain_digest",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "strict replay/identity/result/cost rejection"
+    },
+    {
+      "target": "result_digest",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "strict replay/identity/result/cost rejection"
+    },
+    {
+      "target": "cost_model_counts",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "strict replay/identity/result/cost rejection"
+    },
+    {
+      "target": "certified",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "strict replay/identity/result/cost rejection"
+    },
+    {
+      "target": "physical_claims",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "strict replay/identity/result/cost rejection"
+    },
+    {
+      "target": "requested_algorithm",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "strict replay/identity/result/cost rejection"
+    },
+    {
+      "target": "planned_algorithm",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "strict replay/identity/result/cost rejection"
+    },
+    {
+      "target": "executed_algorithm",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "strict replay/identity/result/cost rejection"
+    },
+    {
+      "target": "initial_digest",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "strict replay/identity/result/cost rejection"
+    },
+    {
+      "target": "normalisation",
+      "survived": false,
+      "detection_layer": "strict_independent_replay",
+      "rejection_reason": "strict replay/identity/result/cost rejection"
+    }
+  ],
+  "determinism": [
+    {
+      "chain_digest": "21808876c830f671d59707d61961f535f84dc791520be934a43bb2b9c10cb2f0",
+      "repeats": 5,
+      "same_backend_binding": "5678048ef8aa29fda12a48dc4d12548949bed34b09ca84cc8995dc99f52b6979"
+    },
+    {
+      "chain_digest": "79b47fc43e2c48bc2c3a2990f89359f97e6c717cdc45f1d77dd5ec9332477dbd",
+      "repeats": 5,
+      "same_backend_binding": "cc7d2bfd640bd276669fd63e7188e23895c6d54bd1916efcecf4a4551ad636af"
+    },
+    {
+      "chain_digest": "97659eb8e5213c5aa1ecf301f3fb61a5721447c56644a1423dc1e6d0c3360782",
+      "repeats": 5,
+      "same_backend_binding": "61432e4aeff0b37c2e10805824a5999e12cae84f41c97911ef178ca35402a32c"
+    },
+    {
+      "chain_digest": "496405efe6492b151fe45f5f48fb9cebf84173bbc5d942aff418bcebc02387fd",
+      "repeats": 5,
+      "same_backend_binding": "4e5f1d739093cb164573125ae24c3d8e6d8de36b98271d11a4940738b7b9601d"
+    },
+    {
+      "chain_digest": "dedfe4263d485e3f3db4bfdbb2935156cd52dfa0c45e21e702d82c040f40d4bd",
+      "repeats": 5,
+      "same_backend_binding": "03b28e8a09a119f7a2a82f2d942cd5e8f4285e5c467762640f7f6e0944625423"
+    },
+    {
+      "chain_digest": "447823cc38f4bb6d9ac0c44441fc34a2366b9c7a38e9e0dc0e20a104852247dd",
+      "repeats": 5,
+      "same_backend_binding": "b5d7163e0677f803e0fd1a4dbcb7728132f5caaf138bbd4189b38e27645e1336"
+    },
+    {
+      "chain_digest": "c820478261b2b966a4cbc8162ddf96ec5fbf6d7197cb360a41cf3057a95fb969",
+      "repeats": 5,
+      "same_backend_binding": "1eb6e291dd14c50a1c905e227579d2637c7a7071f5dc5f6f3d9944fa30863782"
+    },
+    {
+      "chain_digest": "b5fcd713360e50b1698b7740d84a866a9907b43b3e3d26b39d91c0ec92bd7d94",
+      "repeats": 5,
+      "same_backend_binding": "3b156b7d102404ea7e903da45296d87d158a10c4bfd3468b78849e0f6a65dfa4"
+    },
+    {
+      "chain_digest": "aa2df4fd62b66c06bc642b0b7913f8b870b8eca46a3af13459273d98ce78d6d7",
+      "repeats": 5,
+      "same_backend_binding": "ce6cbee7b5677d8e9369fd454bb009810e6b166239368f555e9c98a00219e731"
+    },
+    {
+      "chain_digest": "cef4115bcf85d4ceb3ea919a0ffb21e414f9e9a71ef0461c04e3560552de654f",
+      "repeats": 5,
+      "same_backend_binding": "e0902b8c4dded6fd4bfbf09f5f568446fdf5621c1d0d146d188e4020ad57da92"
+    },
+    {
+      "chain_digest": "b4ed0cb9c174ed0d719de89d5e425ba233ab815cc7aeef0f0d04254cce6fd76d",
+      "repeats": 5,
+      "same_backend_binding": "bc8aa3ce6f0627224f0a0a071d875d2624569638fe0414e083a772d8bb43c262"
+    },
+    {
+      "chain_digest": "9a23db56c16fe9204630125ab085fcd38b1c32b09ac98523f859a6497d1eae46",
+      "repeats": 5,
+      "same_backend_binding": "877314e708c92f324f742098e33980f872e7e0e665c97428ea9087d59644bb0d"
+    },
+    {
+      "chain_digest": "8df57bfe8636f430eeb26ca02795b205f515c6a4c0ed1c9a23130ec7fd825ea7",
+      "repeats": 5,
+      "same_backend_binding": "3fff4d047fc5ace2107f6550e5d37ebe4aac1c136b5e2524ecce7972a17a3367"
+    }
+  ],
+  "cost_model_counts": [
+    {
+      "chain_digest": "21808876c830f671d59707d61961f535f84dc791520be934a43bb2b9c10cb2f0",
+      "counts": {
+        "gate_applications": 2,
+        "amplitude_add_calls": 4,
+        "amplitude_multiply_calls": 4,
+        "amplitude_negations": 2,
+        "permutation_writes": 4,
+        "normalisation_checks": 3,
+        "norm_amplitude_products": 12,
+        "state_dimension": 4,
+        "depth": 2,
+        "pad_occupancy": 2,
+        "state_buffer_shape": [
+          2,
+          4,
+          4
+        ],
+        "coefficient_encoding": "unbounded_rational_with_input_bit_quota4096",
+        "field_rational_products": 256,
+        "stored_output_rational_pairs": 16,
+        "initial_canonical_bytes": 105,
+        "result_canonical_bytes": 105,
+        "result_max_coefficient_bits": 2,
+        "op_count": 26,
+        "production_born_field_products": 4,
+        "independent_reference_counts": {
+          "basis_column_contributions": 4,
+          "output_coefficients_canonicalised": 16,
+          "normalisation_amplitudes_checked": 4
+        },
+        "count_scope": "named mathematical operations, not CPU instructions or elapsed rates"
+      }
+    },
+    {
+      "chain_digest": "79b47fc43e2c48bc2c3a2990f89359f97e6c717cdc45f1d77dd5ec9332477dbd",
+      "counts": {
+        "gate_applications": 3,
+        "amplitude_add_calls": 8,
+        "amplitude_multiply_calls": 8,
+        "amplitude_negations": 5,
+        "permutation_writes": 0,
+        "normalisation_checks": 4,
+        "norm_amplitude_products": 16,
+        "state_dimension": 4,
+        "depth": 3,
+        "pad_occupancy": 2,
+        "state_buffer_shape": [
+          2,
+          4,
+          4
+        ],
+        "coefficient_encoding": "unbounded_rational_with_input_bit_quota4096",
+        "field_rational_products": 384,
+        "stored_output_rational_pairs": 16,
+        "initial_canonical_bytes": 105,
+        "result_canonical_bytes": 106,
+        "result_max_coefficient_bits": 2,
+        "op_count": 37,
+        "production_born_field_products": 4,
+        "independent_reference_counts": {
+          "basis_column_contributions": 10,
+          "output_coefficients_canonicalised": 16,
+          "normalisation_amplitudes_checked": 4
+        },
+        "count_scope": "named mathematical operations, not CPU instructions or elapsed rates"
+      }
+    },
+    {
+      "chain_digest": "97659eb8e5213c5aa1ecf301f3fb61a5721447c56644a1423dc1e6d0c3360782",
+      "counts": {
+        "gate_applications": 1,
+        "amplitude_add_calls": 4,
+        "amplitude_multiply_calls": 4,
+        "amplitude_negations": 2,
+        "permutation_writes": 0,
+        "normalisation_checks": 2,
+        "norm_amplitude_products": 8,
+        "state_dimension": 4,
+        "depth": 1,
+        "pad_occupancy": 2,
+        "state_buffer_shape": [
+          2,
+          4,
+          4
+        ],
+        "coefficient_encoding": "unbounded_rational_with_input_bit_quota4096",
+        "field_rational_products": 192,
+        "stored_output_rational_pairs": 16,
+        "initial_canonical_bytes": 105,
+        "result_canonical_bytes": 105,
+        "result_max_coefficient_bits": 2,
+        "op_count": 18,
+        "production_born_field_products": 4,
+        "independent_reference_counts": {
+          "basis_column_contributions": 2,
+          "output_coefficients_canonicalised": 16,
+          "normalisation_amplitudes_checked": 4
+        },
+        "count_scope": "named mathematical operations, not CPU instructions or elapsed rates"
+      }
+    },
+    {
+      "chain_digest": "496405efe6492b151fe45f5f48fb9cebf84173bbc5d942aff418bcebc02387fd",
+      "counts": {
+        "gate_applications": 1,
+        "amplitude_add_calls": 0,
+        "amplitude_multiply_calls": 0,
+        "amplitude_negations": 0,
+        "permutation_writes": 4,
+        "normalisation_checks": 2,
+        "norm_amplitude_products": 8,
+        "state_dimension": 4,
+        "depth": 1,
+        "pad_occupancy": 2,
+        "state_buffer_shape": [
+          2,
+          4,
+          4
+        ],
+        "coefficient_encoding": "unbounded_rational_with_input_bit_quota4096",
+        "field_rational_products": 128,
+        "stored_output_rational_pairs": 16,
+        "initial_canonical_bytes": 105,
+        "result_canonical_bytes": 105,
+        "result_max_coefficient_bits": 1,
+        "op_count": 12,
+        "production_born_field_products": 4,
+        "independent_reference_counts": {
+          "basis_column_contributions": 1,
+          "output_coefficients_canonicalised": 16,
+          "normalisation_amplitudes_checked": 4
+        },
+        "count_scope": "named mathematical operations, not CPU instructions or elapsed rates"
+      }
+    },
+    {
+      "chain_digest": "dedfe4263d485e3f3db4bfdbb2935156cd52dfa0c45e21e702d82c040f40d4bd",
+      "counts": {
+        "gate_applications": 1,
+        "amplitude_add_calls": 0,
+        "amplitude_multiply_calls": 0,
+        "amplitude_negations": 2,
+        "permutation_writes": 0,
+        "normalisation_checks": 2,
+        "norm_amplitude_products": 8,
+        "state_dimension": 4,
+        "depth": 1,
+        "pad_occupancy": 2,
+        "state_buffer_shape": [
+          2,
+          4,
+          4
+        ],
+        "coefficient_encoding": "unbounded_rational_with_input_bit_quota4096",
+        "field_rational_products": 128,
+        "stored_output_rational_pairs": 16,
+        "initial_canonical_bytes": 105,
+        "result_canonical_bytes": 105,
+        "result_max_coefficient_bits": 1,
+        "op_count": 10,
+        "production_born_field_products": 4,
+        "independent_reference_counts": {
+          "basis_column_contributions": 1,
+          "output_coefficients_canonicalised": 16,
+          "normalisation_amplitudes_checked": 4
+        },
+        "count_scope": "named mathematical operations, not CPU instructions or elapsed rates"
+      }
+    },
+    {
+      "chain_digest": "447823cc38f4bb6d9ac0c44441fc34a2366b9c7a38e9e0dc0e20a104852247dd",
+      "counts": {
+        "gate_applications": 1,
+        "amplitude_add_calls": 0,
+        "amplitude_multiply_calls": 2,
+        "amplitude_negations": 0,
+        "permutation_writes": 0,
+        "normalisation_checks": 2,
+        "norm_amplitude_products": 8,
+        "state_dimension": 4,
+        "depth": 1,
+        "pad_occupancy": 2,
+        "state_buffer_shape": [
+          2,
+          4,
+          4
+        ],
+        "coefficient_encoding": "unbounded_rational_with_input_bit_quota4096",
+        "field_rational_products": 160,
+        "stored_output_rational_pairs": 16,
+        "initial_canonical_bytes": 105,
+        "result_canonical_bytes": 105,
+        "result_max_coefficient_bits": 1,
+        "op_count": 10,
+        "production_born_field_products": 4,
+        "independent_reference_counts": {
+          "basis_column_contributions": 1,
+          "output_coefficients_canonicalised": 16,
+          "normalisation_amplitudes_checked": 4
+        },
+        "count_scope": "named mathematical operations, not CPU instructions or elapsed rates"
+      }
+    },
+    {
+      "chain_digest": "c820478261b2b966a4cbc8162ddf96ec5fbf6d7197cb360a41cf3057a95fb969",
+      "counts": {
+        "gate_applications": 1,
+        "amplitude_add_calls": 0,
+        "amplitude_multiply_calls": 2,
+        "amplitude_negations": 0,
+        "permutation_writes": 0,
+        "normalisation_checks": 2,
+        "norm_amplitude_products": 8,
+        "state_dimension": 4,
+        "depth": 1,
+        "pad_occupancy": 2,
+        "state_buffer_shape": [
+          2,
+          4,
+          4
+        ],
+        "coefficient_encoding": "unbounded_rational_with_input_bit_quota4096",
+        "field_rational_products": 160,
+        "stored_output_rational_pairs": 16,
+        "initial_canonical_bytes": 105,
+        "result_canonical_bytes": 105,
+        "result_max_coefficient_bits": 1,
+        "op_count": 10,
+        "production_born_field_products": 4,
+        "independent_reference_counts": {
+          "basis_column_contributions": 1,
+          "output_coefficients_canonicalised": 16,
+          "normalisation_amplitudes_checked": 4
+        },
+        "count_scope": "named mathematical operations, not CPU instructions or elapsed rates"
+      }
+    },
+    {
+      "chain_digest": "b5fcd713360e50b1698b7740d84a866a9907b43b3e3d26b39d91c0ec92bd7d94",
+      "counts": {
+        "gate_applications": 1,
+        "amplitude_add_calls": 0,
+        "amplitude_multiply_calls": 2,
+        "amplitude_negations": 0,
+        "permutation_writes": 0,
+        "normalisation_checks": 2,
+        "norm_amplitude_products": 8,
+        "state_dimension": 4,
+        "depth": 1,
+        "pad_occupancy": 2,
+        "state_buffer_shape": [
+          2,
+          4,
+          4
+        ],
+        "coefficient_encoding": "unbounded_rational_with_input_bit_quota4096",
+        "field_rational_products": 160,
+        "stored_output_rational_pairs": 16,
+        "initial_canonical_bytes": 105,
+        "result_canonical_bytes": 105,
+        "result_max_coefficient_bits": 1,
+        "op_count": 10,
+        "production_born_field_products": 4,
+        "independent_reference_counts": {
+          "basis_column_contributions": 1,
+          "output_coefficients_canonicalised": 16,
+          "normalisation_amplitudes_checked": 4
+        },
+        "count_scope": "named mathematical operations, not CPU instructions or elapsed rates"
+      }
+    },
+    {
+      "chain_digest": "aa2df4fd62b66c06bc642b0b7913f8b870b8eca46a3af13459273d98ce78d6d7",
+      "counts": {
+        "gate_applications": 1,
+        "amplitude_add_calls": 0,
+        "amplitude_multiply_calls": 2,
+        "amplitude_negations": 0,
+        "permutation_writes": 0,
+        "normalisation_checks": 2,
+        "norm_amplitude_products": 8,
+        "state_dimension": 4,
+        "depth": 1,
+        "pad_occupancy": 2,
+        "state_buffer_shape": [
+          2,
+          4,
+          4
+        ],
+        "coefficient_encoding": "unbounded_rational_with_input_bit_quota4096",
+        "field_rational_products": 160,
+        "stored_output_rational_pairs": 16,
+        "initial_canonical_bytes": 105,
+        "result_canonical_bytes": 105,
+        "result_max_coefficient_bits": 1,
+        "op_count": 10,
+        "production_born_field_products": 4,
+        "independent_reference_counts": {
+          "basis_column_contributions": 1,
+          "output_coefficients_canonicalised": 16,
+          "normalisation_amplitudes_checked": 4
+        },
+        "count_scope": "named mathematical operations, not CPU instructions or elapsed rates"
+      }
+    },
+    {
+      "chain_digest": "cef4115bcf85d4ceb3ea919a0ffb21e414f9e9a71ef0461c04e3560552de654f",
+      "counts": {
+        "gate_applications": 1,
+        "amplitude_add_calls": 0,
+        "amplitude_multiply_calls": 0,
+        "amplitude_negations": 0,
+        "permutation_writes": 4,
+        "normalisation_checks": 2,
+        "norm_amplitude_products": 8,
+        "state_dimension": 4,
+        "depth": 1,
+        "pad_occupancy": 2,
+        "state_buffer_shape": [
+          2,
+          4,
+          4
+        ],
+        "coefficient_encoding": "unbounded_rational_with_input_bit_quota4096",
+        "field_rational_products": 128,
+        "stored_output_rational_pairs": 16,
+        "initial_canonical_bytes": 105,
+        "result_canonical_bytes": 105,
+        "result_max_coefficient_bits": 1,
+        "op_count": 12,
+        "production_born_field_products": 4,
+        "independent_reference_counts": {
+          "basis_column_contributions": 1,
+          "output_coefficients_canonicalised": 16,
+          "normalisation_amplitudes_checked": 4
+        },
+        "count_scope": "named mathematical operations, not CPU instructions or elapsed rates"
+      }
+    },
+    {
+      "chain_digest": "b4ed0cb9c174ed0d719de89d5e425ba233ab815cc7aeef0f0d04254cce6fd76d",
+      "counts": {
+        "gate_applications": 1,
+        "amplitude_add_calls": 0,
+        "amplitude_multiply_calls": 0,
+        "amplitude_negations": 1,
+        "permutation_writes": 0,
+        "normalisation_checks": 2,
+        "norm_amplitude_products": 8,
+        "state_dimension": 4,
+        "depth": 1,
+        "pad_occupancy": 2,
+        "state_buffer_shape": [
+          2,
+          4,
+          4
+        ],
+        "coefficient_encoding": "unbounded_rational_with_input_bit_quota4096",
+        "field_rational_products": 128,
+        "stored_output_rational_pairs": 16,
+        "initial_canonical_bytes": 105,
+        "result_canonical_bytes": 105,
+        "result_max_coefficient_bits": 1,
+        "op_count": 9,
+        "production_born_field_products": 4,
+        "independent_reference_counts": {
+          "basis_column_contributions": 1,
+          "output_coefficients_canonicalised": 16,
+          "normalisation_amplitudes_checked": 4
+        },
+        "count_scope": "named mathematical operations, not CPU instructions or elapsed rates"
+      }
+    },
+    {
+      "chain_digest": "9a23db56c16fe9204630125ab085fcd38b1c32b09ac98523f859a6497d1eae46",
+      "counts": {
+        "gate_applications": 1,
+        "amplitude_add_calls": 0,
+        "amplitude_multiply_calls": 0,
+        "amplitude_negations": 0,
+        "permutation_writes": 4,
+        "normalisation_checks": 2,
+        "norm_amplitude_products": 8,
+        "state_dimension": 4,
+        "depth": 1,
+        "pad_occupancy": 2,
+        "state_buffer_shape": [
+          2,
+          4,
+          4
+        ],
+        "coefficient_encoding": "unbounded_rational_with_input_bit_quota4096",
+        "field_rational_products": 128,
+        "stored_output_rational_pairs": 16,
+        "initial_canonical_bytes": 105,
+        "result_canonical_bytes": 105,
+        "result_max_coefficient_bits": 1,
+        "op_count": 12,
+        "production_born_field_products": 4,
+        "independent_reference_counts": {
+          "basis_column_contributions": 1,
+          "output_coefficients_canonicalised": 16,
+          "normalisation_amplitudes_checked": 4
+        },
+        "count_scope": "named mathematical operations, not CPU instructions or elapsed rates"
+      }
+    },
+    {
+      "chain_digest": "8df57bfe8636f430eeb26ca02795b205f515c6a4c0ed1c9a23130ec7fd825ea7",
+      "counts": {
+        "gate_applications": 5,
+        "amplitude_add_calls": 4,
+        "amplitude_multiply_calls": 8,
+        "amplitude_negations": 2,
+        "permutation_writes": 8,
+        "normalisation_checks": 6,
+        "norm_amplitude_products": 24,
+        "state_dimension": 4,
+        "depth": 5,
+        "pad_occupancy": 2,
+        "state_buffer_shape": [
+          2,
+          4,
+          4
+        ],
+        "coefficient_encoding": "unbounded_rational_with_input_bit_quota4096",
+        "field_rational_products": 512,
+        "stored_output_rational_pairs": 16,
+        "initial_canonical_bytes": 105,
+        "result_canonical_bytes": 106,
+        "result_max_coefficient_bits": 2,
+        "op_count": 46,
+        "production_born_field_products": 4,
+        "independent_reference_counts": {
+          "basis_column_contributions": 10,
+          "output_coefficients_canonicalised": 16,
+          "normalisation_amplitudes_checked": 4
+        },
+        "count_scope": "named mathematical operations, not CPU instructions or elapsed rates"
+      }
+    }
+  ],
+  "symbolic_gate_proof": {
+    "gates": [
+      "H",
+      "X",
+      "Z",
+      "S",
+      "SDG",
+      "T",
+      "TDG",
+      "CX",
+      "CZ",
+      "SWAP"
+    ],
+    "exact_unitarity": true,
+    "tensor_embedding_preserves_inner_product": true,
+    "composition_adjoint_rule": "(UV).H=V.H*U.H",
+    "proof_digest": "e68a28da55aab3ec7528464676d29c381d64502ff72c1f8c2cd19f294d2ba1c6"
+  },
+  "unresolved": [
+    "PR151 post-merge-main baseline (PR still open at integration)",
+    "internal index endpoint and installed-from-index evidence",
+    "caller-owned production signing key/custody seal",
+    "actual exact GPU parity",
+    "current-head CI execution evidence",
+    "whole_product_composition",
+    "full_register_semantics",
+    "iGPU_qualified_VQC_beyond_M5_ULTRA",
+    "public_publication_decision"
+  ],
+  "operators_added_vs_M5": [
+    "composition",
+    "inverse",
+    "adjoint",
+    "X",
+    "Z",
+    "S",
+    "SDG",
+    "T",
+    "TDG",
+    "SWAP",
+    "exact custom normalised Q(sqrt2,i) inputs",
+    "chain replay and exact cost counts"
+  ],
+  "fallback": {
+    "unavailable_GPU_without_authorisation": "REJECT",
+    "named_CPU_REFERENCE_fallback": "PASS",
+    "fallback_gpu_execution_claimed": false
+  },
+  "mutation_survivors": 0,
+  "mutation_campaign_scope": "18 named top-level re-sealed substitutions; nested mutations additionally covered by installed tests, not an exhaustive universe",
+  "determinism_proof_digest": "5d630b7302291b0291a03d7056b2e8a8bc753df3de69e117d5ba5ab1336ceb60",
+  "gates": {
+    "A": "UNAVAILABLE_INTERNAL_ENDPOINT",
+    "B": "SEE_INSTALLED_JUNIT_PER_VARIANT",
+    "C": "PASS_DIFFERENTIAL_AND_SYMBOLIC",
+    "D": "PARTIAL_CPU_IGPU_PASS_GPU_UNAVAILABLE",
+    "E": "PASS_ZERO_SURVIVORS_IN_DECLARED_CAMPAIGN",
+    "F": "PASS_REPLAY_AND_DETERMINISM_SCOPED_HOST",
+    "G": "PASS_NAMED_FALLBACK_AND_BOUNDS_IN_TESTS",
+    "H": "IMPLEMENTED_AND_TESTED_WITH_TEST_KEYS_PRODUCTION_SEAL_UNAVAILABLE"
+  },
+  "elevation_complete": false,
+  "reason": "required all-backend/internal-install/custody gates are not all evidenced",
+  "report_digest": "b10daf246e2c76386a5ecf2813b34838eb8bcf661622e19c1f831c35364b0ff2"
+}

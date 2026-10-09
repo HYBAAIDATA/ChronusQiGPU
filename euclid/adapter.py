@@ -100,7 +100,9 @@ class ProgramSearchEngine:
         p_v, c_v, r_v, msg = self.engine.evaluator.evaluate_validity(
             code_content, external_test_runner, external_test_code
         )
-        phi_score = self.engine.calculator.compute_phi(code_content) if (p_v and r_v) else 0.1000
+        # phi is a computable structural metric: report it unconditionally
+        # rather than substituting a placeholder when sandbox validity fails.
+        phi_score = self.engine.calculator.compute_phi(code_content)
         return {
             "parse_valid": p_v,
             "compile_valid": c_v,

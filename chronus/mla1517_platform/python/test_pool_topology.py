@@ -38,6 +38,8 @@ class PoolTopologyTests(unittest.TestCase):
         self.assertEqual(pool["schema"], "pythia.pool_topology/1")
         self.assertEqual(len(pool["endpoints"]), 2)
         self.assertEqual(pool["endpoints"][0]["endpoint"], "stratum.braiins.test:3333")
+        self.assertEqual(pool["endpoints"][0]["protocol"], "v1")
+        self.assertEqual(pool["endpoints"][1]["protocol"], "v1")
         self.assertTrue(pool["endpoints"][1]["tls"])
         self.assertIsNone(pool["active"])
         self.assertEqual(pool["connect_attempts"], 0)

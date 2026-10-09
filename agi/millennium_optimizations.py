@@ -31,7 +31,13 @@ class OptimizationDomain(Enum):
 
 @dataclass
 class OptimizationResult:
-    """Result from Millennium Problem optimization"""
+    """Result from Millennium Problem optimization.
+
+    ``improvement`` is the *measured* relative change the transform
+    produced in the quantity it is defined to act on (energy, divergence,
+    weighted mean) — not a declared constant. ``evidence_class`` marks
+    every result as ``measured_transform_delta``.
+    """
 
     domain: str
     score: float
@@ -39,6 +45,7 @@ class OptimizationResult:
     metrics: Dict[str, Any]
     algorithm: str
     iterations: int
+    evidence_class: str = "measured_transform_delta"
 
 
 class RiemannOptimization:
@@ -46,7 +53,8 @@ class RiemannOptimization:
     Riemann Hypothesis-based Optimization
 
     Uses properties of zeta function zeros for prime signal processing
-    and number-theoretic optimization. Provides +9.6% improvement.
+    and number-theoretic optimization.  Reports the measured
+    weighted-band energy change, not a declared constant.
     """
 
     def __init__(self, dimension: int = 256):
@@ -74,7 +82,8 @@ class RiemannOptimization:
         """
         Optimize signal using Riemann zeta properties
 
-        Enhancement: +9.6%
+        Applies a fixed critical-line weighting and returns the measured
+        change in weighted-band energy.
         """
         # FFT of signal
         fft_signal = np.fft.fft(signal)
@@ -89,7 +98,12 @@ class RiemannOptimization:
         # IFFT back to time domain
         result = np.fft.ifft(optimized).real
 
-        improvement = 0.096  # +9.6%
+        # Measured gain: relative change in energy concentrated in the
+        # critical-line-weighted band — a real before/after measurement,
+        # not the declared design constant.
+        before = float(np.sum(np.abs(fft_signal) ** 2 * weights))
+        after = float(np.sum(np.abs(optimized) ** 2 * weights))
+        improvement = (after - before) / before if before > 0 else 0.0
 
         return result, improvement
 
@@ -121,7 +135,8 @@ class NavierStokesOptimization:
     Navier-Stokes Equations-based Optimization
 
     Uses fluid dynamics principles for computational flow optimization
-    and reasoning pathway enhancement. Provides +7.0% improvement.
+    and reasoning pathway enhancement.  Reports the measured
+    divergence reduction.
     """
 
     def __init__(self, dimensions: int = 3):
@@ -155,9 +170,15 @@ class NavierStokesOptimization:
         """
         Optimize computational flow using Navier-Stokes principles
 
-        Enhancement: +7.0%
+        Applies pressure-correction iterations and returns the measured
+        divergence reduction.
         """
         optimized = flow_data.copy()
+
+        # Measured gain: the transform's stated purpose is divergence
+        # reduction (incompressibility), so improvement is the real
+        # before/after reduction in |div u|.
+        div_before = float(np.sum(np.abs(self._velocity_divergence(optimized))))
 
         for _ in range(iterations):
             # Apply pressure correction (incompressibility)
@@ -166,7 +187,8 @@ class NavierStokesOptimization:
             # Viscous damping
             optimized = optimized * (1.0 - self.viscosity)
 
-        improvement = 0.07  # +7.0%
+        div_after = float(np.sum(np.abs(self._velocity_divergence(optimized))))
+        improvement = (div_before - div_after) / div_before if div_before > 0 else 0.0
         return optimized, improvement
 
     def optimize_reasoning_flow(self, reasoning_chain: List[float]) -> OptimizationResult:
@@ -212,7 +234,8 @@ class BirchSwinnertonDyerOptimization:
     Birch Swinnerton-Dyer Conjecture-based Optimization
 
     Uses elliptic curve properties for solution pathway ranking
-    and curve-fitting optimization. Provides +5.5% improvement.
+    and curve-fitting optimization.  Reports the measured
+    weighted-mean change.
     """
 
     def __init__(self, prime_field: int = 1000000007):
@@ -253,7 +276,7 @@ class BirchSwinnertonDyerOptimization:
         Solutions with curves having higher rank are weighted more heavily
         """
         if len(solutions) < 2:
-            return solutions, 0.055
+            return solutions, 0.0
 
         # Fit elliptic-curve-like properties to solutions
         ranked = []
@@ -270,11 +293,14 @@ class BirchSwinnertonDyerOptimization:
         else:
             weights = np.ones(len(solutions)) / len(solutions)
 
-        # Apply weights (+5.5% improvement)
+        # Apply rank-based weighting and measure the actual change
         weighted_solutions = np.array(solutions) * (1.0 + 0.055 * weights)
         ranked = weighted_solutions.tolist()
 
-        improvement = 0.055  # +5.5%
+        # Measured gain: relative change of the weighted mean of |solution|.
+        mean_before = float(np.mean(np.abs(solutions)))
+        mean_after = float(np.mean(np.abs(weighted_solutions)))
+        improvement = (mean_after - mean_before) / mean_before if mean_before > 0 else 0.0
         return ranked, improvement
 
     def optimize_pathways(self, pathways: List[List[float]]) -> OptimizationResult:
@@ -288,7 +314,7 @@ class BirchSwinnertonDyerOptimization:
             return OptimizationResult(
                 domain=OptimizationDomain.ELLIPTIC_CURVES.value,
                 score=0.0,
-                improvement=0.055,
+                improvement=0.0,
                 metrics={},
                 algorithm="BirchSwinnertonDyerOptimization",
                 iterations=1,
@@ -321,7 +347,7 @@ class PvsNPOptimization:
     P vs NP Complexity-based Optimization
 
     Uses complexity theory bounds for problem-solving strategy selection
-    and verification acceleration. Provides +8.5% improvement.
+    and verification acceleration.  Reports the measured transform delta.
     """
 
     def __init__(self):
@@ -358,9 +384,9 @@ class PvsNPOptimization:
 
         Uses P vs NP bounds to select:
         - Polynomial-time algorithms for P problems
-        - Heuristics/approximation for NP problems
+        - Deterministic content-keyed scaling for NP problems
 
-        Enhancement: +8.5%
+        Returns the measured transform delta.
         """
         problem_array = np.array(problem)
         problem_size = len(problem)
@@ -374,11 +400,19 @@ class PvsNPOptimization:
             solution = problem_array * (1.0 + 0.085)
             strategy = "PolynomialAlgorithm"
         else:
-            # Use heuristic for NP
-            solution = problem_array * (1.0 + 0.085 * np.random.random(len(problem_array)))
-            strategy = "HeuristicApproximation"
+            # Deterministic content-keyed scaling for NP-class inputs — a
+            # golden-ratio Weyl sequence derived from the problem itself,
+            # never a pseudo-random draw.
+            from agi.quantum_decision import weyl_unit_sequence
 
-        improvement = 0.085  # +8.5%
+            seed = int(abs(hash(tuple(problem_array.tolist()))) % (2**31))
+            solution = problem_array * (1.0 + 0.085 * weyl_unit_sequence(seed, len(problem_array)))
+            strategy = "DeterministicApproximation"
+
+        # Measured gain: relative change in mean of the transformed array.
+        mean_before = float(np.mean(np.abs(problem_array)))
+        mean_after = float(np.mean(np.abs(solution)))
+        improvement = (mean_after - mean_before) / mean_before if mean_before > 0 else 0.0
         score = float(np.mean(solution))
 
         return OptimizationResult(
@@ -402,13 +436,9 @@ class MillenniumProblemsIntegration:
     """
     Unified integration of all Millennium Prize Problem optimizations
 
-    Orchestrates the four optimizers and combines their improvements:
-    - Riemann: +9.6%
-    - Navier-Stokes: +7.0%
-    - Birch-Swinnerton-Dyer: +5.5%
-    - P vs NP: +8.5%
-
-    Combined effect: ~30% optimization gain (multiplicative)
+    Orchestrates the four optimizers and composes their measured
+    transform deltas multiplicatively. No declared constants are reported
+    as improvements.
     """
 
     def __init__(self):
@@ -424,12 +454,19 @@ class MillenniumProblemsIntegration:
         Full optimization pipeline applying all Millennium optimizers
 
         Input: Query data with parameters
-        Output: Optimized parameters with combined 30% improvement
+        Output: Optimized parameters with the measured composite change
+        composed from each optimizer's measured transform delta.
         """
         results = {
             "original_query": query_data,
             "optimizations": [],
             "combined_improvement": 1.0,
+            "evidence_class": "measured_transform_delta",
+            "improvement_basis": (
+                "each optimizer's improvement is measured as the relative "
+                "change it produced in its own transform objective; the "
+                "composite is their product"
+            ),
         }
 
         # Convert query data to usable format
@@ -505,14 +542,18 @@ class MillenniumProblemsIntegration:
             )
             results["combined_improvement"] *= 1.0 + pvsnp_result.improvement
 
-        # Calculate final combined improvement
+        # Compose the measured transform deltas
         final_improvement = (results["combined_improvement"] - 1.0) * 100
         results["final_improvement_percent"] = final_improvement
-        results["optimization_status"] = "complete"
+        results["optimization_status"] = "measured_transform_delta"
 
         self.last_results = results
 
-        logger.info(f"Millennium optimization complete: +{final_improvement:.1f}% improvement")
+        logger.info(
+            "Millennium optimization complete: %+.1f%% measured transform delta "
+            "(composed from per-optimizer measured changes)",
+            final_improvement,
+        )
 
         return results
 
@@ -520,15 +561,19 @@ class MillenniumProblemsIntegration:
         """
         Return the combined intelligence multiplier from all optimizations
 
-        Individual multipliers:
-        - Riemann: 1.096x
-        - Navier-Stokes: 1.07x
-        - Birch-Swinnerton-Dyer: 1.055x
-        - P vs NP: 1.085x
-
-        Combined: 1.096 × 1.07 × 1.055 × 1.085 ≈ 1.337x (≈33.7% gain)
+        The composite is the product of the *measured* improvements from
+        the most recent :meth:`optimize_query` run. Fails closed when no
+        measured run exists — an unmeasured multiplier is never reported.
         """
-        multiplier = 1.096 * 1.07 * 1.055 * 1.085
+        measured = [
+            1.0 + float(opt.get("improvement", 0.0))
+            for opt in self.last_results.get("optimizations", [])
+        ]
+        if not measured:
+            raise RuntimeError("no measured optimization run; call optimize_query first")
+        multiplier = 1.0
+        for factor in measured:
+            multiplier *= factor
         return multiplier
 
 

@@ -3,7 +3,7 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "kellogg-tensor"
+name = "hyba-kellogg-tensor"
 dynamic = ["version"]
 description = "Kellogg — exact tensor networks over Q(zeta_8): MPS/MPO/TT in custody, certified operations, exact channels, Fisher information, surface codes and the golden substrate."
 readme = "README.md"
@@ -33,7 +33,6 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Mathematics",
     "Topic :: Scientific/Engineering :: Physics",
-    "License :: OSI Approved :: MIT License",
     "Typing :: Typed",
 ]
 dependencies = [

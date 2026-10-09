@@ -1,4 +1,7 @@
-"""Concrete invariant, action-space, and value constraints with fail-closed validation."""
+"""Concrete invariant, action-space, and value constraints with fail-closed validation.
+
+BOUNDARY: this module is not wired into the production intelligence path (verified: no importer outside this package and tests). Its algorithms are named classical machinery (e.g. epsilon-greedy/Bayesian statistics) — they are not presented as quantum computation and produce no production intelligence output.
+"""
 from __future__ import annotations
 import copy, math, time, uuid
 from dataclasses import dataclass, field

@@ -118,13 +118,20 @@ class ProgramWorldModel:
         )
 
     def expected_gain(self, signature: frozenset[str], action: str) -> Optional[float]:
-        """Signed prior estimate for search guidance, or None if unknown."""
+        """Signed prior estimate for search guidance, or None if unknown.
+
+        Returns the measured transition-balance fraction
+        (improve - regress) / total for this (signature, action) pair — a real
+        quantity over recorded buckets on the same scale as the surrogate's
+        Born expectation.  No rescaling is applied: the old ``score * 0.05``
+        shrinkage was an invented constant, not a measurement.
+        """
         counts = self._table.get(self._key(signature, action))
         if not counts:
             return None
         total = sum(counts.values())
         score = (counts.get("improve", 0) - counts.get("regress", 0)) / total
-        return round(score * 0.05, 6)  # prior scale comparable to surrogate
+        return round(score, 6)
 
     def rollout(self, context: frozenset[str], actions: Sequence[str]) -> list[PredictionRecord]:
         predictions = []
@@ -303,26 +310,61 @@ class ProgramSkillComposer:
     """Composes candidate actions from the base operator vocabulary and the
     persistent repository (promoted primitives carry their measured record)."""
 
-    def __init__(self, repository: PersistentPrimitiveRepository | None = None) -> None:
+    def __init__(
+        self,
+        repository: PersistentPrimitiveRepository | None = None,
+        *,
+        correctness_prior: float = 0.5,
+        base_op_cost: float = 1.0,
+        prior_uncertainty: float = 0.5,
+        reuse_uncertainty_decay: float = 0.1,
+        reuse_uncertainty_floor: float = 0.1,
+        reuse_transfer_scale: float = 0.2,
+        correctness_cap: float = 0.9,
+    ) -> None:
+        """All coefficients are a DECLARED feature-mapping policy applied to
+        measured repository statistics (cumulative_delta_phi, reuse count);
+        none are presented as measured quantities."""
         self.repository = repository
+        self.correctness_prior = float(correctness_prior)
+        self.base_op_cost = float(base_op_cost)
+        self.prior_uncertainty = float(prior_uncertainty)
+        self.reuse_uncertainty_decay = float(reuse_uncertainty_decay)
+        self.reuse_uncertainty_floor = float(reuse_uncertainty_floor)
+        self.reuse_transfer_scale = float(reuse_transfer_scale)
+        self.correctness_cap = float(correctness_cap)
 
     def compose(self, goal: str, state: CognitiveState) -> list[CandidateAction]:
         candidates = []
         for name, _ in ASTPrimitives.get_all_operators():
             candidates.append(CandidateAction(
                 f"op:{name}", f"apply {name}", origin="primitive:base",
-                features={"correctness_estimate": 0.5, "cost": 1.0,
-                          "uncertainty": 0.5, "novelty": 0.0, "transfer_value": 0.0},
+                features={"correctness_estimate": self.correctness_prior,
+                          "cost": self.base_op_cost,
+                          "uncertainty": self.prior_uncertainty,
+                          "novelty": 0.0, "transfer_value": 0.0},
             ))
         if self.repository is not None:
             for name, meta in self.repository.repository.items():
+                # measured repository statistics mapped through the declared
+                # policy coefficients above
                 gain = float(meta.get("cumulative_delta_phi", 0.0))
                 reuse = len(meta.get("targets_reused_on", []))
                 candidates.append(CandidateAction(
                     f"op:{name}", f"apply promoted {name}", origin="primitive:repository",
-                    features={"correctness_estimate": min(0.9, 0.5 + gain),
-                              "cost": 1.0, "uncertainty": max(0.1, 0.5 - 0.1 * reuse),
-                              "novelty": 0.0, "transfer_value": min(1.0, 0.2 * reuse)},
+                    features={
+                        "correctness_estimate": min(
+                            self.correctness_cap, self.correctness_prior + gain
+                        ),
+                        "cost": self.base_op_cost,
+                        "uncertainty": max(
+                            self.reuse_uncertainty_floor,
+                            self.prior_uncertainty
+                            - self.reuse_uncertainty_decay * reuse,
+                        ),
+                        "novelty": 0.0,
+                        "transfer_value": min(1.0, self.reuse_transfer_scale * reuse),
+                    },
                 ))
         return candidates
 

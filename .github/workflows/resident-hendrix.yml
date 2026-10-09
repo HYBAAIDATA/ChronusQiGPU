@@ -1,0 +1,90 @@
+name: Resident Hendrix ONE iGPU integration
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  resident-route:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install canonical and isolated standalone products
+        run: |
+          python -m pip install -e ./turing_universal_quantum_computer -e '.[ml,dev]'
+          python -m pip install ./packages/chronos-one-igpu
+      - name: Canonical resident geometry and real hash tests
+        run: python -m pytest tests/test_exact_geometry.py tests/test_resident_hendrix.py tests/test_production_replacement_attacks.py -q --junitxml=resident-results.xml
+      - name: Preserved standalone source regression suite
+        working-directory: packages/chronos-one-igpu
+        env:
+          PYTHONPATH: src
+        run: python -m pytest tests -q --junitxml=standalone-results.xml
+      - name: Broad canonical repository suite
+        env:
+          PYTHONPATH: chronus/mla1517_platform/python
+        run: python -m pytest tests/ -x -q --junitxml=canonical-results.xml
+      - name: Retain actual test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resident-hendrix-test-evidence
+          path: |
+            resident-results.xml
+            canonical-results.xml
+            packages/chronos-one-igpu/standalone-results.xml
+  installed-boundaries:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [native, portable]
+    env:
+      CHRONOS_USE_OPENSSL: ${{ matrix.variant == 'native' && '1' || '0' }}
+      CHRONOS_DISABLE_NATIVE: ${{ matrix.variant == 'portable' && '1' || '0' }}
+      CC: gcc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build wheel from canonical source distribution
+        run: |
+          python -m pip install 'build>=1.2' 'setuptools>=77' wheel 'twine>=6,<7'
+          python -m build --sdist packages/chronos-one-igpu --outdir /tmp/igpu-sdist
+          mkdir /tmp/igpu-rebuild
+          tar -xzf /tmp/igpu-sdist/*.tar.gz -C /tmp/igpu-rebuild --strip-components=1
+          python -m build --wheel --no-isolation /tmp/igpu-rebuild --outdir /tmp/igpu-wheel
+          python -m twine check /tmp/igpu-sdist/* /tmp/igpu-wheel/*
+      - name: Install canonical runtime and standalone artifact
+        run: |
+          python -m pip install ./turing_universal_quantum_computer . /tmp/igpu-wheel/*.whl 'pytest>=8,<10'
+      - name: Installed artifact boundary and substitution attacks
+        run: |
+          python -m pytest packages/chronos-one-igpu/tests/test_reference_boundary.py packages/chronos-one-igpu/tests/test_exact_evolution_replacement.py tests/test_exact_geometry.py tests/test_resident_hendrix.py tests/test_production_replacement_attacks.py -q --junitxml=installed-focused.xml
+      - name: Genesis execution and separate-process custody replay
+        run: |
+          python scripts/pr140_restart_replay.py execute --variant ${{ matrix.variant }} --state-dir /tmp/pr140-voyage
+          python scripts/pr140_restart_replay.py replay --variant ${{ matrix.variant }} --state-dir /tmp/pr140-voyage
+      - name: Canonical product platform checks
+        env:
+          PYTHONPATH: chronus/mla1517_platform/python
+        run: python -m pytest chronus/mla1517_platform/python/test_production_loop_e2e.py chronus/mla1517_platform/python/test_production_replacements.py -q --junitxml=installed-platform.xml
+      - name: Preserve local-scope artifacts without certification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr140-installed-${{ matrix.variant }}-${{ github.sha }}
+          path: |
+            installed-focused.xml
+            installed-platform.xml
+            /tmp/igpu-sdist/*
+            /tmp/igpu-wheel/*
+            /tmp/pr140-voyage/voyage.json
+            /tmp/pr140-voyage/replay.json

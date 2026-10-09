@@ -25,6 +25,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Callable, Optional
 
+from Intelligence._born import born_evidence
+
 from .bayesian_reasoning import BayesianReasoningEngine
 from .compositional_generalization import CompositionalGeneralizationEngine, CompositionalRule
 from .curiosity import CuriosityDrivenExplorer
@@ -440,7 +442,9 @@ class ActiveDiscoveryEngine:
                         "effect": discovery.observed_effect,
                         "surprise": discovery.surprise,
                     },
-                    priority=min(0.5 + discovery.surprise, 1.0),
+                    # Flat prior baseline plus the measured surprise —
+                    # the invented 0.5 constant is now the declared prior.
+                    priority=min(born_evidence(0, 0) + discovery.surprise, 1.0),
                 )
                 self.workspace.broadcast_cycle()
 

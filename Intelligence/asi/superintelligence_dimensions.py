@@ -45,7 +45,9 @@ class SuperintelligenceEvaluator:
         mode = "oracle"  # default: answers questions, doesn't act autonomously
         # In practice, PYTHAGORAS is an oracle (suggests changes, doesn't deploy them)
 
-        total = speed_si * 0.3 + quality_si * 0.4 + collective_si * 0.3
+        # Plain mean of the three measured dimensions — the invented
+        # 0.3/0.4/0.3 weighting is gone.
+        total = (speed_si + quality_si + collective_si) / 3.0
 
         return SuperintelligenceProfile(
             speed_si=round(speed_si, 2),

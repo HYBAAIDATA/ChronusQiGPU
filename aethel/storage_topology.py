@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from .fibonacci import cassini_holds, cassini_quadruple, fibonacci
+from .filesystem_paths import filesystem_root
 from .phyllotaxis import PhyllotaxisSite, pack_from_anchor, sector_lane
 from .primes import GaloisPrimeSubstrate
 
@@ -270,7 +271,7 @@ class TheseusPhysicalStore:
     """Durable primary/replica block store controlled by mathematical address."""
 
     def __init__(self, root: str | Path) -> None:
-        self.root = Path(root)
+        self.root = filesystem_root(root)
         self.root.mkdir(parents=True, exist_ok=True)
         self._lock = threading.RLock()
 

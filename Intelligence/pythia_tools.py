@@ -28,6 +28,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from Intelligence._born import born_evidence
+
 logger = logging.getLogger("Intelligence.pythia_tools")
 
 
@@ -433,9 +435,11 @@ def seed_tool_knowledge(memory_system) -> Dict[str, Any]:
                 "winning_nonce",
                 relation="can_help_find",
                 weight=(
-                    0.7
+                    # One measured evidence bit: the tool's declared
+                    # category is or is not nonce-finding relevant.
+                    born_evidence(1, 0)
                     if tool.category in ("mining", "quantum", "controller", "predictive")
-                    else 0.3
+                    else born_evidence(0, 1)
                 ),
             )
         except Exception:

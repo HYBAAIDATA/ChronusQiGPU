@@ -1,0 +1,160 @@
+name: North Star exact-head qualification
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_full_suite:
+        description: Run the unsuppressed full repository pytest suite
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: north-star-qualification-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  PYTHONUNBUFFERED: "1"
+  PYTHONIOENCODING: "utf-8"
+  PYTHONPATH: ${{ github.workspace }}/chronus/mla1517_platform/python
+
+jobs:
+  focused:
+    name: Canonical focused production gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install integrated development dependencies
+        run: python -m pip install -e ./turing_universal_quantum_computer -e ".[ml,dev,graph]"
+      - name: Record exact qualification head
+        run: |
+          git rev-parse HEAD
+          git status --short
+      - name: Fatal syntax and import gate
+        run: |
+          python -m compileall -q euclid Intelligence chronus/mla1517/mining chronus/mla1517_platform/python hyba_db aethel mining tests
+          python scripts/import_audit.py
+          python scripts/euclid_v17_integration_gate.py
+      - name: EUCLID 17 production integration
+        run: >-
+          python -m pytest -q
+          tests/test_euclid_v17_production_integration.py
+          tests/test_euclid_v17_runtime.py
+          tests/test_euclid_v17_integrated_loop.py
+          tests/test_euclid_v17_world_model.py
+          tests/test_euclid_v17_worlds.py
+          tests/test_euclid_v17_phi_and_skills.py
+      - name: OVID THESEUS storage destructive recovery
+        run: >-
+          python -m pytest -q
+          tests/test_storage_database_ontology_v3.py
+          tests/test_theseus_recovery_replay.py
+          tests/test_shared_system_relations_production.py
+          tests/test_production_organism_shared_triad.py
+      - name: Canonical Stratum V1 V2 and exactly-once submission
+        run: >-
+          python -m pytest -q
+          tests/test_stratum_v2.py
+          chronus/mla1517_platform/python/test_stratum_state.py
+          chronus/mla1517_platform/python/test_retarget_telemetry.py
+          chronus/mla1517_platform/python/test_production_transport.py
+          chronus/mla1517_platform/python/test_share_lifecycle.py
+          chronus/mla1517_platform/python/test_agentic_voyages.py
+          chronus/mla1517_platform/python/test_execution_loop.py
+          chronus/mla1517_platform/python/test_production_loop_e2e.py
+      - name: CHRONUS readiness and durable vIGPU evidence
+        run: >-
+          python -m pytest -q
+          tests/test_chronus_vigpu_fail_closed_contract.py
+          tests/test_c_chain_verification.py
+          tests/test_native_production_routing.py
+      - name: AL HARAS and M3 governance
+        run: >-
+          python -m pytest -q
+          tests/test_al_haras_pythia_wiring.py
+          tests/test_m3_mining_guard.py
+          tests/test_governance_causality.py
+
+  packages:
+    name: Clean package and installed-copy gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: focused
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Build and verify EUCLID 17 installed wheel
+        run: python packaging/euclid-engine/build_and_verify.py
+      - name: Build root wheel without publishing
+        run: |
+          mkdir -p dist/root
+          python -m pip wheel . --no-deps --wheel-dir dist/root
+      - name: Upload qualification artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: north-star-package-evidence-${{ github.sha }}
+          path: |
+            packaging/euclid-engine/dist/
+            dist/root/
+          retention-days: 30
+
+  full-suite:
+    name: Unsuppressed full repository suite
+    if: ${{ inputs.run_full_suite }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    needs: [focused, packages]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install full integrated test dependencies
+        run: python -m pip install -e ./turing_universal_quantum_computer -e ".[ml,dev,graph]"
+      - name: Run full repository suite without failure suppression
+        run: python -m pytest -q --junitxml=north-star-full-suite.xml
+      - name: Upload full-suite result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: north-star-full-suite-${{ github.sha }}
+          path: north-star-full-suite.xml
+          retention-days: 30
+
+  qualification:
+    name: Exact-head qualification verdict
+    runs-on: ubuntu-latest
+    needs: [focused, packages, full-suite]
+    if: ${{ always() }}
+    steps:
+      - name: Require every requested gate
+        env:
+          FOCUSED: ${{ needs.focused.result }}
+          PACKAGES: ${{ needs.packages.result }}
+          FULL: ${{ needs.full-suite.result }}
+          RUN_FULL: ${{ inputs.run_full_suite }}
+        run: |
+          set -euo pipefail
+          test "$FOCUSED" = "success"
+          test "$PACKAGES" = "success"
+          if [ "$RUN_FULL" = "true" ]; then
+            test "$FULL" = "success"
+          fi
+          echo "QUALIFIED_SHA=${{ github.sha }}"
+          echo "North Star exact-head qualification passed."

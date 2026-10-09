@@ -84,6 +84,8 @@ def restore_projection_from_custody(
     manifests: list[tuple[Any, dict[str, Any]]] = []
     links: list[dict[str, Any]] = []
     mining_manifests: list[dict[str, Any]] = []
+    fold_manifests: list[dict[str, Any]] = []
+    ontology_manifests: list[dict[str, Any]] = []
     addresses: dict[str, tuple[Any, TheseusStorageAddress]] = {}
 
     for item in custody.list_records():
@@ -115,6 +117,16 @@ def restore_projection_from_custody(
             if body.get("schema") != "hyba.mining-projection-manifest/v1":
                 raise IntegrityFailure("unsupported mining manifest")
             mining_manifests.append(body)
+        elif op.kind == "fold_projection_manifest":
+            body = json.loads(op.payload.decode("utf-8"))
+            if body.get("schema") != "hyba.fold-projection-manifest/v1":
+                raise IntegrityFailure("unsupported fold projection manifest")
+            fold_manifests.append(body)
+        elif op.kind == "ontology_projection_manifest":
+            body = json.loads(op.payload.decode("utf-8"))
+            if body.get("schema") != "hyba.ontology-projection-manifest/v1":
+                raise IntegrityFailure("unsupported ontology projection manifest")
+            ontology_manifests.append(body)
         elif op.kind == "theseus_storage_address":
             body = json.loads(op.payload.decode("utf-8"))
             address = TheseusStorageAddress.from_dict(body)
@@ -185,7 +197,11 @@ def restore_projection_from_custody(
                         str(obj["retention_policy"]),
                         str(obj["created_at"]),
                         str(obj["created_by"]),
-                        obj.get("current_version_id"),
+                        # Fresh rebuild starts with no live head: versions are
+                        # replayed in order below.  Seeding the preserved final
+                        # head here points register_version() at a row that does
+                        # not exist yet and makes clean-database recovery fail.
+                        None,
                         str(obj.get("status", "ACTIVE")),
                         att.id,
                     ),
@@ -286,6 +302,69 @@ def restore_projection_from_custody(
                 ),
             )
 
+    restored_folds: list[str] = []
+    pending_folds = list(fold_manifests)
+    while pending_folds:
+        progressed = False
+        for body in list(pending_folds):
+            fold_id = str(body["fold_id"])
+            parent_id = body.get("parent_id")
+            if parent_id and str(parent_id) not in restored_folds:
+                continue
+            vector = tuple(float(value) for value in body.get("vector", ()))
+            rebuilt = store.write_fold(
+                tenant_id,
+                vector,
+                parent_id=(str(parent_id) if parent_id else None),
+                issuer="theseus-rebuild",
+                seal_manifest=False,
+            )
+            expected_cert = dict(body["certificate"])
+            cert = rebuilt.certificate
+            if (
+                rebuilt.id != fold_id
+                or cert.id != str(expected_cert["id"])
+                or tuple(cert.masks) != tuple(int(v) for v in expected_cert["masks"])
+                or cert.digest != str(expected_cert["digest"])
+                or cert.vector_digest != str(expected_cert["vector_digest"])
+                or tuple(cert.lucas) != tuple(int(v) for v in expected_cert["lucas"])
+                or cert.depth != int(expected_cert["depth"])
+                or cert.scale != int(expected_cert["scale"])
+            ):
+                raise IntegrityFailure(f"rebuilt fold/certificate identity changed: {fold_id}")
+            with store._tx() as db:
+                db.execute(
+                    "UPDATE folds SET created_at=? WHERE tenant_id=? AND id=?",
+                    (str(body["created_at"]), tenant_id, fold_id),
+                )
+            restored_folds.append(fold_id)
+            pending_folds.remove(body)
+            progressed = True
+        if not progressed:
+            raise IntegrityFailure("fold custody graph cannot be topologically rebuilt")
+
+    restored_ontology: list[str] = []
+    for body in sorted(
+        ontology_manifests,
+        key=lambda item: (str(item.get("term", "")), str(item.get("id", ""))),
+    ):
+        term_id = store.register_term(
+            tenant_id,
+            str(body["term"]),
+            str(body["definition"]),
+            dict(body.get("relations") or {}),
+            issuer="theseus-rebuild",
+            seal_manifest=False,
+        )
+        if term_id != str(body["id"]):
+            raise IntegrityFailure("rebuilt ontology-term identity changed")
+        with store._tx() as db:
+            db.execute(
+                "UPDATE ontology SET created_at=? WHERE tenant_id=? AND id=?",
+                (str(body["created_at"]), tenant_id, term_id),
+            )
+        restored_ontology.append(term_id)
+
     restored_mining: list[str] = []
     pending = list(mining_manifests)
     while pending:
@@ -357,6 +436,8 @@ def restore_projection_from_custody(
         "tenant_manifest": "CUSTODIED" if tenant_manifests else "LEGACY_FILE_MANIFEST",
         "file_versions": tuple(restored_versions),
         "file_links": tuple(restored_links),
+        "folds": tuple(restored_folds),
+        "ontology_terms": tuple(restored_ontology),
         "mining_records": tuple(restored_mining),
         "knowledge": knowledge,
         "ovid_index": ovid_index,
@@ -403,6 +484,36 @@ def projection_fingerprint(store: Any, tenant_id: str) -> dict[str, Any]:
             (tenant_id,),
         ).fetchall()
     )
+    certificates = tuple(
+        tuple(row)
+        for row in q(
+            "SELECT id,masks_json,digest,vector_digest,lucas_json,depth,scale "
+            "FROM certificates WHERE tenant_id=? ORDER BY id",
+            (tenant_id,),
+        ).fetchall()
+    )
+    folds = tuple(
+        (
+            str(row["id"]),
+            bytes(row["vector"]).hex(),
+            str(row["certificate_id"]),
+            row["parent_id"],
+            str(row["created_at"]),
+        )
+        for row in q(
+            "SELECT id,vector,certificate_id,parent_id,created_at "
+            "FROM folds WHERE tenant_id=? ORDER BY id",
+            (tenant_id,),
+        ).fetchall()
+    )
+    ontology = tuple(
+        tuple(row)
+        for row in q(
+            "SELECT id,term,definition,relations_json,created_at "
+            "FROM ontology WHERE tenant_id=? ORDER BY id",
+            (tenant_id,),
+        ).fetchall()
+    )
     mining = tuple(
         tuple(row)
         for row in q(
@@ -436,6 +547,9 @@ def projection_fingerprint(store: Any, tenant_id: str) -> dict[str, Any]:
         "versions": versions,
         "addresses": addresses,
         "links": links,
+        "certificates": certificates,
+        "folds": folds,
+        "ontology": ontology,
         "mining": mining,
         "knowledge": knowledge,
         "relations": relations,

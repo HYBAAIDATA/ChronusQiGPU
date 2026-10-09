@@ -3,8 +3,8 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "euclid-engine"
-version = "17.0.0"
+name = "hyba-euclid-intelligence"
+version = "1.0.0"
 description = "EUCLID — governed, local-first integrated adaptive intelligence: Bayesian mechanism world model, causal discrimination, value-of-information metacognition, strategy meta-learning, structural analogy, hierarchical planning, primitive discovery and transfer, with a falsifiable research programme."
 readme = "README.md"
 license = "MIT"
@@ -23,7 +23,12 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 # The v17 cognition stack is pure Python with no third-party dependency.
-dependencies = []
+dependencies = [
+    "numpy>=1.26,<3",
+    "hyba-kellogg-tensor>=1.0,<2",
+    "hyba-toe-intelligence>=1.0,<2",
+    "hyba-theseus-storage>=1.0,<2",
+]
 
 [project.scripts]
 euclid-v17-research = "euclid.cognition.research.cli:main"

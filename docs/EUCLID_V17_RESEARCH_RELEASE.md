@@ -1,6 +1,12 @@
 # EUCLID 17.0.0 — integrated adaptive intelligence
 
-**Release version:** `17.0.0` (package `euclid-engine`; `euclid.__version__`).
+**Research generation / runtime version:** `17.0.0` (`euclid.__version__`).
+**First-public distribution candidate:** `euclid-engine==1.0.0`; the research
+CLI remains `euclid-v17-research`. This reconciles the publication policy without
+renaming the research generation or rewriting historical measurements. Older
+17.0.0 package results do not qualify newly built 1.0.0 artifacts. Registry
+publication and clean-install evidence must be collected separately.
+**Classification:** research release, not production certification.
 **Baseline:** EUCLID v16.4 as present at commit `585d7b11` (the immutable
 production baseline; `euclid.__version__` there read `16.0.0`).
 **Evidence:** `reports/euclid_v17/research_report.md` and `.json` (every

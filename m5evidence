@@ -1,0 +1,1373 @@
+are we ready to publish packages now?
+
+I'll check the repo state before answering — the AGENTS.md directive requires reading UNIVERSAL_PRINCIPLE_MAP.md first, and I need to see the git/package status.
+
+Read
+UNIVERSAL_PRINCIPLE_MAP.md
+Command git, echo
+git -C "/Users/demouser/Desktop/PhiMiner" status --short && echo '---' && git -C "/Users/demouser/Desktop/PhiMiner" log --oneline -5
+---
+a4df7dc7 fixing m5 transfer
+8aa61f71 Add root requirements.txt for local setup
+41c59310 Merge pull request #148 from QuantumPhiRedux/feat/north-star-production-mining
+2af41cea Merge branch 'main' into feat/north-star-production-mining
+4f1b4e45 Merge pull request #143 from QuantumPhiRedux/feat/salamander-custodied-outcome-boundary-20261008
+
+Command ls, echo
+ls "/Users/demouser/Desktop/PhiMiner" && echo '=== packages ===' && ls "/Users/demouser/Desktop/PhiMiner/packages" 2>/dev/null && echo '=== packaging ===' && ls "/Users/demouser/Desktop/PhiMiner/packaging" 2>/dev/null
+AGENTS.md
+APPLE_M5_HANDOFF.md
+ARCHITECTURE.md
+CHANGELOG.md
+CONTRACTS.md
+CONTRIBUTING.md
+DEPLOYMENT.md
+Dockerfile
+Dockerfile.hybrid
+EVOLUTION.md
+GEMINI.md
+Intelligence
+LICENSE
+Makefile
+README.md
+README_MINING.md
+RESEARCH_INTAKE.md
+STRICT_QUANTUM_BOUNDARY.md
+UNIVERSAL_PRINCIPLE_MAP.md
+abi
+aethel
+agent_policy.yml
+agi
+al_haras
+artifacts
+artifacts_benchmark.json
+asi
+asic
+bench
+benchmarks
+chronos
+chronus
+chronus-aethel-review.md
+claims.yaml
+compiler
+config
+config.example.toml
+conformance
+core_engine
+cross_verification
+data
+deploy
+distributed
+docker-cleanup.sh
+docker-compose.chronus-linux.yml
+docker-compose.chronus-wsl2.yml
+docker-compose.cuda.yml
+docker-compose.hybrid.yml
+docker-compose.metal.yml
+docker-compose.override.yml
+docker-compose.pools.yml
+docker-compose.rocm.yml
+docker-compose.yml
+docs
+emulator
+enhanced_intelligence
+euclid
+euclid_delegation.py
+eval_harness
+evidence
+experiments
+format
+frontend
+governance
+gpu
+hyba
+hyba_compat
+hyba_contracts
+hyba_db
+hyba_profiles
+hyba_services
+hyba_substrate
+integrations
+isa
+kellogg
+kernels
+l_hras
+legacy
+lucas
+main.py
+make
+manifests
+millennium
+mining
+mtheory
+observability
+omega
+opencl
+orchestrate.py
+orcle.py
+package.json
+packages
+packaging
+pairings.yaml
+pci
+phi_rotation
+plugins
+pr_body_update.md
+proofs
+pyproject.toml
+pythagoras
+python_backend
+quantum_compute_substrate
+reports
+requirements-lock.txt
+requirements.txt
+resonance_intelligence
+run_tests.py
+runbooks
+salamander
+schema
+scripts
+seam_standard.toml
+services
+standard
+tensor
+test_voyage_plan.md
+tests
+thermo
+tmp_test_voyage
+toe
+tools
+turing_core.py
+turing_universal_quantum_computer
+=== packages ===
+chronos-one-igpu
+=== packaging ===
+PUBLISHING.md
+README.md
+RELEASE_STATUS.md
+chronos-core
+euclid-engine
+kellogg-tensor
+toe
+turing
+verify_release_candidates.py
+
+Git is clean and there's a packaging release pipeline. Let me check the publishing docs and release status.
+
+Command ls
+ls -R "/Users/demouser/Desktop/PhiMiner/packaging" | head -60
+PUBLISHING.md
+README.md
+RELEASE_STATUS.md
+chronos-core
+euclid-engine
+kellogg-tensor
+toe
+turing
+verify_release_candidates.py
+
+/Users/demouser/Desktop/PhiMiner/packaging/chronos-core:
+README.md
+pyproject.toml
+
+/Users/demouser/Desktop/PhiMiner/packaging/euclid-engine:
+README.md
+build_and_verify.py
+pyproject.toml
+
+/Users/demouser/Desktop/PhiMiner/packaging/kellogg-tensor:
+README.md
+build_and_verify.py
+pyproject.toml
+run_release_gate.py
+
+/Users/demouser/Desktop/PhiMiner/packaging/toe:
+OWNER_DECISIONS.md
+README.md
+build_and_verify.py
+pyproject.toml
+
+/Users/demouser/Desktop/PhiMiner/packaging/turing:
+build_wheel.py
+
+The release pipeline exists. Let me run the candidate verifier and check whether the workflows/verdict artifacts are in place.
+
+Command python
+cd "/Users/demouser/Desktop/PhiMiner" && ./.venv/bin/python packaging/verify_release_candidates.py 2>&1 | tail -40
+usage: verify_release_candidates.py [-h] --kellogg KELLOGG [--turing TURING]
+                                    --python PYTHON --out OUT
+verify_release_candidates.py: error: the following arguments are required: --kellogg, --python, --out
+
+Command ls, echo, find
+ls "/Users/demouser/Desktop/PhiMiner/.github/workflows" 2>/dev/null; echo '---'; find "/Users/demouser/Desktop/PhiMiner" -name "*verdict*" -o -name "*release-verdict*" 2>/dev/null | grep -v .venv | head
+al-haras-evidence-gates.yml
+azure-package.yml
+ci.yml
+dependency-audit.yml
+euclid-ci.yml
+euclid-evidence.yml
+euclid-v17-integration.yml
+euclid-v17-release.yml
+gate-evidence-integrity.yml
+gitleaks.yml
+hardware-acceptance.yml
+kellogg-tensor.yml
+lucas15-operator-ablation.yml
+mining-production-network.yml
+mutation.yml
+north-star-qualification.yml
+production-closure.yml
+promotion.yml
+pure-quantum-math.yml
+pythia-ci.yml
+pythia-push-gate.yml
+resident-hendrix.yml
+salamander-outcome-boundary.yml
+toe-release.yml
+turing-core.yml
+turing-release.yml
+---
+/Users/demouser/Desktop/PhiMiner/evidence/loopback_pool_verdict
+/Users/demouser/Desktop/PhiMiner/evidence/loopback_pool_verdict/3b8eca63d830/pool_verdicts.jsonl
+/Users/demouser/Desktop/PhiMiner/evidence/first-workload-closure/c0edec2eef8d/loopback/pool_verdicts.jsonl
+/Users/demouser/Desktop/PhiMiner/tests/test_layer_verdicts.py
+/Users/demouser/Desktop/PhiMiner/legacy/PYTHIA_Frontend/scripts/browser-smoke-verdict.test.mjs
+/Users/demouser/Desktop/PhiMiner/legacy/PYTHIA_Frontend/scripts/browser-smoke-verdict.mjs
+/Users/demouser/Desktop/PhiMiner/chronus/mla1517_platform/python/test_loopback_pool_verdict.py
+
+The verifier needs built artifacts as input. Let me look at what it expects and whether the KELLOGG build can stage its source.
+
+Read
+build_and_verify.py
+Command git, echo
+cd "/Users/demouser/Desktop/PhiMiner" && git remote -v && echo '---' && head -80 .github/workflows/kellogg-tensor.yml
+origin  https://github.com/QuantumPhiRedux/PhiMiner.git (fetch)
+origin  https://github.com/QuantumPhiRedux/PhiMiner.git (push)
+---
+name: kellogg-tensor
+
+on:
+  pull_request:
+    paths:
+      - "kellogg/**"
+      - "tests/test_kellogg*.py"
+      - "tests/test_canonical_tensor_ownership.py"
+      - "tests/test_exact_tensor_parity.py"
+      - "tests/test_geodesic_tensor_*.py"
+      - "tests/test_toe_tensor_ml.py"
+      - "benchmarks/tensor/**"
+      - "packaging/kellogg-tensor/**"
+      - "LICENSE"
+      - ".github/workflows/kellogg-tensor.yml"
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish the exact verified release artefacts"
+        type: choice
+        options: [none, testpypi, pypi]
+        default: none
+
+permissions:
+  contents: read
+
+jobs:
+  verify-wheel:
+    name: Installed wheel / Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install release tooling
+        run: python -m pip install --disable-pip-version-check build twine
+      - name: Build wheel + sdist and verify from clean installs
+        run: python packaging/kellogg-tensor/build_and_verify.py
+      - name: Retain interpreter evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: kellogg-fixture-${{ matrix.python }}
+          path: |
+            packaging/kellogg-tensor/dist/artifact-verdict.json
+            packaging/kellogg-tensor/dist/canonical-fixture.json
+            packaging/kellogg-tensor/dist/wheel-manifest.json
+          if-no-files-found: error
+      - name: Retain canonical release archives
+        if: matrix.python == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kellogg-tensor-dist
+          path: |
+            packaging/kellogg-tensor/dist/kellogg_tensor-1.0.0-py3-none-any.whl
+            packaging/kellogg-tensor/dist/kellogg_tensor-1.0.0.tar.gz
+            packaging/kellogg-tensor/dist/artifact-verdict.json
+            packaging/kellogg-tensor/dist/wheel-manifest.json
+          if-no-files-found: error
+
+  source-gate:
+    name: KELLOGG source tests + full benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check "numpy>=1.26,<3" "pytest>=7.4,<10"
+      - name: Execute release test and benchmark gate
+        run: python packaging/kellogg-tensor/run_release_gate.py
+      - name: Retain source and benchmark evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: kellogg-source-evidence
+
+The pipeline is well-defined. Let me check whether the local HEAD is pushed and what release tooling is available.
+
+Command git, echo, python$v
+cd "/Users/demouser/Desktop/PhiMiner" && git status -sb | head -3 && git log origin/main..HEAD --oneline | head && echo '=== local pythons ===' && for v in 3.11 3.12 3.13 3.14; do command -v python$v; done; ls .venv/bin | grep -iE 'build|twine|pytest' ; ./.venv/bin/python -c "import build, twine" 2>&1 | tail -1
+## main...origin/main
+=== local pythons ===
+/Users/demouser/.pyenv/shims/python3.13
+ModuleNotFoundError: No module named 'build'
+
+Command git, grep
+cd "/Users/demouser/Desktop/PhiMiner" && git check-ignore packaging/kellogg-tensor/dist packaging/kellogg-tensor/release-evidence; grep -nE 'dist|release-evidence' .gitignore | head
+3:dist/
+4:dist-public/
+
+dist/ is already gitignored. Installing the release tooling and running the KELLOGG artifact verification now — this builds, inspects, secret-scans, clean-installs, and sdist-rebuilds the wheel. It'll take a few minutes.
+
+Command python
+cd "/Users/demouser/Desktop/PhiMiner" && ./.venv/bin/python -m pip install -q --disable-pip-version-check build twine && ./.venv/bin/python packaging/kellogg-tensor/build_and_verify.py 2>&1 | tail -60
+$ /Users/demouser/Desktop/PhiMiner/.venv/bin/python -m build --wheel --sdist --outdir /Users/demouser/Desktop/PhiMiner/p
+ackaging/kellogg-tensor/dist /var/folders/dm/n_cn6kqj14s9yzw7h0kyj9980000gp/T/kellogg-build-py_80bnz/src
+* Creating isolated environment: venv+pip...
+* Installing packages in isolated environment:
+  - setuptools>=68.0
+  - wheel
+* Getting build dependencies for wheel...
+running egg_info
+creating kellogg_tensor.egg-info
+writing kellogg_tensor.egg-info/PKG-INFO
+writing dependency_links to kellogg_tensor.egg-info/dependency_links.txt
+writing entry points to kellogg_tensor.egg-info/entry_points.txt
+writing requirements to kellogg_tensor.egg-info/requires.txt
+writing top-level names to kellogg_tensor.egg-info/top_level.txt
+writing manifest file 'kellogg_tensor.egg-info/SOURCES.txt'
+reading manifest file 'kellogg_tensor.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'kellogg_tensor.egg-info/SOURCES.txt'
+* Installed build dependency versions:
+  - setuptools==84.0.0
+  - wheel==0.48.0
+* Building wheel...
+running bdist_wheel
+running build
+running build_py
+creating build/lib/kellogg
+copying kellogg/golden_stride.py -> build/lib/kellogg
+copying kellogg/dmrg.py -> build/lib/kellogg
+copying kellogg/compressed_tensor.py -> build/lib/kellogg
+copying kellogg/phi_dynamics.py -> build/lib/kellogg
+copying kellogg/vector11.py -> build/lib/kellogg
+copying kellogg/benchmark.py -> build/lib/kellogg
+copying kellogg/tensor_network.py -> build/lib/kellogg
+copying kellogg/certificate.py -> build/lib/kellogg
+copying kellogg/substrate.py -> build/lib/kellogg
+copying kellogg/exact_tensor.py -> build/lib/kellogg
+copying kellogg/traversal.py -> build/lib/kellogg
+copying kellogg/exact_linalg.py -> build/lib/kellogg
+copying kellogg/scales.py -> build/lib/kellogg
+copying kellogg/golden_stealth.py -> build/lib/kellogg
+copying kellogg/__init__.py -> build/lib/kellogg
+copying kellogg/spec.py -> build/lib/kellogg
+copying kellogg/tensor_serialization.py -> build/lib/kellogg
+copying kellogg/phi_renormalizer.py -> build/lib/kellogg
+copying kellogg/phi_tensor_core.py -> build/lib/kellogg
+copying kellogg/first_principles.py -> build/lib/kellogg
+copying kellogg/quantum_tensor.py -> build/lib/kellogg
+copying kellogg/exact_network.py -> build/lib/kellogg
+copying kellogg/tensor_ml.py -> build/lib/kellogg
+copying kellogg/dphi_transform.py -> build/lib/kellogg
+copying kellogg/golden_convolution.py -> build/lib/kellogg
+copying kellogg/channels.py -> build/lib/kellogg
+copying kellogg/attest.py -> build/lib/kellogg
+copying kellogg/phi_stability.py -> build/lib/kellogg
+copying kellogg/surface_code.py -> build/lib/kellogg
+copying kellogg/exact_field.py -> build/lib/kellogg
+copying kellogg/cyclotomic.py -> build/lib/kellogg
+copying kellogg/custody.py -> build/lib/kellogg
+copying kellogg/py.typed -> build/lib/kellogg
+copying kellogg/CAPABILITY_MANIFEST.json -> build/lib/kellogg
+installing to build/bdist.macosx-11.0-arm64/wheel
+running install
+running install_lib
+creating build/bdist.macosx-11.0-arm64/wheel
+creating build/bdist.macosx-11.0-arm64/wheel/kellogg
+copying build/lib/kellogg/golden_stride.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/dmrg.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/compressed_tensor.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/phi_dynamics.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/vector11.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/benchmark.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/tensor_network.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/certificate.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/substrate.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/exact_tensor.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/traversal.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/exact_linalg.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/scales.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/golden_stealth.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/spec.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/tensor_serialization.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/phi_renormalizer.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/phi_tensor_core.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/first_principles.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/quantum_tensor.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/exact_network.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/CAPABILITY_MANIFEST.json -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/tensor_ml.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/dphi_transform.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/py.typed -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/golden_convolution.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/channels.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/attest.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/phi_stability.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/surface_code.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/exact_field.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/cyclotomic.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/custody.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+running install_egg_info
+running egg_info
+writing kellogg_tensor.egg-info/PKG-INFO
+writing dependency_links to kellogg_tensor.egg-info/dependency_links.txt
+writing entry points to kellogg_tensor.egg-info/entry_points.txt
+writing requirements to kellogg_tensor.egg-info/requires.txt
+writing top-level names to kellogg_tensor.egg-info/top_level.txt
+reading manifest file 'kellogg_tensor.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'kellogg_tensor.egg-info/SOURCES.txt'
+Copying kellogg_tensor.egg-info to build/bdist.macosx-11.0-arm64/wheel/./kellogg_tensor-1.0.0-py3.13.egg-info
+running install_scripts
+creating build/bdist.macosx-11.0-arm64/wheel/kellogg_tensor-1.0.0.dist-info/WHEEL
+creating '/Users/demouser/Desktop/PhiMiner/packaging/kellogg-tensor/dist/.tmp-_f4osz6p/kellogg_tensor-1.0.0-py3-none-any
+.whl' and adding 'build/bdist.macosx-11.0-arm64/wheel' to it
+adding 'kellogg/CAPABILITY_MANIFEST.json'
+adding 'kellogg/__init__.py'
+adding 'kellogg/attest.py'
+adding 'kellogg/benchmark.py'
+adding 'kellogg/certificate.py'
+adding 'kellogg/channels.py'
+adding 'kellogg/compressed_tensor.py'
+adding 'kellogg/custody.py'
+adding 'kellogg/cyclotomic.py'
+adding 'kellogg/dmrg.py'
+adding 'kellogg/dphi_transform.py'
+adding 'kellogg/exact_field.py'
+adding 'kellogg/exact_linalg.py'
+adding 'kellogg/exact_network.py'
+adding 'kellogg/exact_tensor.py'
+adding 'kellogg/first_principles.py'
+adding 'kellogg/golden_convolution.py'
+adding 'kellogg/golden_stealth.py'
+adding 'kellogg/golden_stride.py'
+adding 'kellogg/phi_dynamics.py'
+adding 'kellogg/phi_renormalizer.py'
+adding 'kellogg/phi_stability.py'
+adding 'kellogg/phi_tensor_core.py'
+adding 'kellogg/py.typed'
+adding 'kellogg/quantum_tensor.py'
+adding 'kellogg/scales.py'
+adding 'kellogg/spec.py'
+adding 'kellogg/substrate.py'
+adding 'kellogg/surface_code.py'
+adding 'kellogg/tensor_ml.py'
+adding 'kellogg/tensor_network.py'
+adding 'kellogg/tensor_serialization.py'
+adding 'kellogg/traversal.py'
+adding 'kellogg/vector11.py'
+adding 'kellogg_tensor-1.0.0.dist-info/licenses/LICENSE'
+adding 'kellogg_tensor-1.0.0.dist-info/METADATA'
+adding 'kellogg_tensor-1.0.0.dist-info/WHEEL'
+adding 'kellogg_tensor-1.0.0.dist-info/entry_points.txt'
+adding 'kellogg_tensor-1.0.0.dist-info/top_level.txt'
+adding 'kellogg_tensor-1.0.0.dist-info/RECORD'
+removing build/bdist.macosx-11.0-arm64/wheel
+* Creating isolated environment: venv+pip...
+* Installing packages in isolated environment:
+  - setuptools>=68.0
+  - wheel
+* Getting build dependencies for sdist...
+running egg_info
+writing kellogg_tensor.egg-info/PKG-INFO
+writing dependency_links to kellogg_tensor.egg-info/dependency_links.txt
+writing entry points to kellogg_tensor.egg-info/entry_points.txt
+writing requirements to kellogg_tensor.egg-info/requires.txt
+writing top-level names to kellogg_tensor.egg-info/top_level.txt
+reading manifest file 'kellogg_tensor.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'kellogg_tensor.egg-info/SOURCES.txt'
+* Installed build dependency versions:
+  - setuptools==84.0.0
+  - wheel==0.48.0
+* Building sdist...
+running sdist
+running egg_info
+writing kellogg_tensor.egg-info/PKG-INFO
+writing dependency_links to kellogg_tensor.egg-info/dependency_links.txt
+writing entry points to kellogg_tensor.egg-info/entry_points.txt
+writing requirements to kellogg_tensor.egg-info/requires.txt
+writing top-level names to kellogg_tensor.egg-info/top_level.txt
+reading manifest file 'kellogg_tensor.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'kellogg_tensor.egg-info/SOURCES.txt'
+running check
+creating kellogg_tensor-1.0.0
+creating kellogg_tensor-1.0.0/kellogg
+creating kellogg_tensor-1.0.0/kellogg_tensor.egg-info
+copying files to kellogg_tensor-1.0.0...
+copying LICENSE -> kellogg_tensor-1.0.0
+copying README.md -> kellogg_tensor-1.0.0
+copying pyproject.toml -> kellogg_tensor-1.0.0
+copying kellogg/CAPABILITY_MANIFEST.json -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/__init__.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/attest.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/benchmark.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/certificate.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/channels.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/compressed_tensor.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/custody.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/cyclotomic.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/dmrg.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/dphi_transform.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/exact_field.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/exact_linalg.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/exact_network.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/exact_tensor.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/first_principles.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/golden_convolution.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/golden_stealth.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/golden_stride.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/phi_dynamics.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/phi_renormalizer.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/phi_stability.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/phi_tensor_core.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/py.typed -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/quantum_tensor.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/scales.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/spec.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/substrate.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/surface_code.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/tensor_ml.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/tensor_network.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/tensor_serialization.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/traversal.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg/vector11.py -> kellogg_tensor-1.0.0/kellogg
+copying kellogg_tensor.egg-info/PKG-INFO -> kellogg_tensor-1.0.0/kellogg_tensor.egg-info
+copying kellogg_tensor.egg-info/SOURCES.txt -> kellogg_tensor-1.0.0/kellogg_tensor.egg-info
+copying kellogg_tensor.egg-info/dependency_links.txt -> kellogg_tensor-1.0.0/kellogg_tensor.egg-info
+copying kellogg_tensor.egg-info/entry_points.txt -> kellogg_tensor-1.0.0/kellogg_tensor.egg-info
+copying kellogg_tensor.egg-info/requires.txt -> kellogg_tensor-1.0.0/kellogg_tensor.egg-info
+copying kellogg_tensor.egg-info/top_level.txt -> kellogg_tensor-1.0.0/kellogg_tensor.egg-info
+Writing kellogg_tensor-1.0.0/setup.cfg
+Creating tar archive
+removing 'kellogg_tensor-1.0.0' (and everything under it)
+Successfully built kellogg_tensor-1.0.0-py3-none-any.whl and kellogg_tensor-1.0.0.tar.gz
+$ /Users/demouser/Desktop/PhiMiner/.venv/bin/python -m twine check /Users/demouser/Desktop/PhiMiner/packaging/kellogg-te
+nsor/dist/kellogg_tensor-1.0.0-py3-none-any.whl /Users/demouser/Desktop/PhiMiner/packaging/kellogg-tensor/dist/kellogg_t
+ensor-1.0.0.tar.gz
+Checking
+/Users/demouser/Desktop/PhiMiner/packaging/kellogg-tensor/dist/kellogg_tensor-1.
+0.0-py3-none-any.whl: PASSED
+Checking
+/Users/demouser/Desktop/PhiMiner/packaging/kellogg-tensor/dist/kellogg_tensor-1.
+0.0.tar.gz: PASSED
+$ /var/folders/dm/n_cn6kqj14s9yzw7h0kyj9980000gp/T/kellogg-wheel-install-ofymwpee/venv/bin/python -m pip install -q --di
+sable-pip-version-check /Users/demouser/Desktop/PhiMiner/packaging/kellogg-tensor/dist/kellogg_tensor-1.0.0-py3-none-any
+.whl
+$ /var/folders/dm/n_cn6kqj14s9yzw7h0kyj9980000gp/T/kellogg-wheel-install-ofymwpee/venv/bin/python -I -c
+import importlib
+import importlib.metadata
+import json
+import pkgutil
+import sys
+
+import kellogg
+
+EXPECTED_VERSION = "1.0.0"
+REQUIRED = (
+    "attest", "verify_attestation", "verify_version", "ProofBoundary",
+    "certify", "verify_certificate",
+    "ResidentCustody", "default_custody", "REGISTRY", "verify_registry",
+)
+FORBIDDEN = {
+    "aethel", "chronus", "euclid", "Intelligence", "mining", "toe",
+    "turing_core", "turing_universal_quantum_computer",
+}
+
+assert "site-packages" in str(kellogg.__file__).replace("\\", "/"), kellogg.__file__
+assert kellogg.__version__ == EXPECTED_VERSION, kellogg.__version__
+
+metadata = importlib.metadata.metadata("kellogg-tensor")
+assert metadata["Name"] == "kellogg-tensor"
+assert metadata["Version"] == EXPECTED_VERSION
+assert metadata["Requires-Python"] == ">=3.11"
+assert metadata["Author"] == "HYBA Software Limited"
+license_value = metadata.get("License-Expression") or metadata.get("License")
+assert license_value == "MIT", license_value
+requires = importlib.metadata.requires("kellogg-tensor") or []
+hard_requires = [r for r in requires if "extra ==" not in r]
+assert len(hard_requires) == 1 and hard_requires[0].lower().startswith("numpy"), hard_requires
+project_urls = metadata.get_all("Project-URL") or []
+assert any("https://github.com/QuantumPhiRedux/PhiMiner" in u for u in project_urls), project_urls
+assert not any("QuantumPhi2/PhiMiner" in u for u in project_urls), project_urls
+
+mods = sorted(m.name for m in pkgutil.iter_modules(kellogg.__path__))
+failed = {}
+for module in mods:
+    try:
+        importlib.import_module("kellogg." + module)
+    except Exception as exc:
+        failed[module] = f"{type(exc).__name__}: {exc}"
+if failed:
+    raise AssertionError(f"module import failures: {failed}")
+
+missing = [name for name in REQUIRED if not hasattr(kellogg, name)]
+if missing:
+    raise AssertionError(f"missing public API: {missing}")
+
+from importlib.resources import files
+manifest = json.loads(files("kellogg").joinpath("CAPABILITY_MANIFEST.json").read_text())
+assert manifest["distribution"] == "kellogg-tensor"
+assert manifest["version"] == EXPECTED_VERSION
+assert manifest["hard_dependencies"] == ["numpy"]
+
+from kellogg.spec import verify_registry
+registry = verify_registry()
+assert registry["ok"], registry["problems"]
+
+from kellogg.exact_tensor import canonical_digest
+fixture = {
+    "schema": "kellogg.release-fixture/v1",
+    "version": EXPECTED_VERSION,
+    "integers": [0, 1, 2, 3, 5, 8, 13],
+    "nested": {"plane": "exact", "field": "Q(zeta8)"},
+}
+fixture_digest = canonical_digest(fixture)
+
+from kellogg.certificate import (
+    CertificateError,
+    certificate_from_dict,
+    certify,
+    cex,
+    verify_certificate,
+    verify_merkle_proof,
+    merkle_proof,
+    merkle_root,
+)
+cert = certify(
+    "release_fixture",
+    "Q(zeta8)",
+    "software",
+    "0" * 64,
+    fixture_digest,
+    parameters={"count": 7},
+    invariants={"exact": True},
+)
+assert verify_certificate(cert) is True
+assert certificate_from_dict(cert.to_dict()).digest == cert.digest
+try:
+    cex({"diagnostic": 0.5})
+except CertificateError:
+    pass
+else:
+    raise AssertionError("CEX silently accepted a float as exact")
+
+leaves = [fixture_digest, cert.digest, "1" * 64]
+root = merkle_root(leaves)
+assert verify_merkle_proof(leaves[1], merkle_proof(leaves, 1), root)
+assert not verify_merkle_proof(leaves[1], merkle_proof(leaves, 1), "f" * 64)
+
+from kellogg.attest import AttestationError, attest, verify_attestation
+attestation = attest(fixture)
+assert verify_attestation(fixture, attestation) is True
+tampered = dict(fixture)
+tampered["integers"] = [0, 1, 2, 4]
+try:
+    verify_attestation(tampered, attestation)
+except AttestationError:
+    pass
+else:
+    raise AssertionError("tampered attestation payload verified")
+
+from kellogg.custody import ResidentCustody
+from kellogg.cyclotomic import ONE8, Q8
+from kellogg.exact_network import ExactTensorTrain, ghz_circuit
+psi = ghz_circuit(8, custody=ResidentCustody())
+assert psi.norm2() == ONE8
+assert psi.ledger.verify_chain()
+vals = [Q8(i) for i in range(8)]
+tt = ExactTensorTrain.from_dense(vals, [2, 2, 2], custody=ResidentCustody())
+assert tt.to_dense() == vals
+
+from kellogg.benchmark import BENCHMARKS, run
+benchmarks = {}
+for bid, (axis, _) in BENCHMARKS.items():
+    if axis in ("correctness", "meta") and bid != "cross_version_digest":
+        result = run(bid, quick=True)
+        benchmarks[bid] = result["passed"]
+        if result["passed"] is not True:
+            raise AssertionError(f"installed benchmark {bid} failed: {result.get('error') or result['result']}")
+
+siblings_loaded = sorted(name for name in FORBIDDEN if name in sys.modules)
+if siblings_loaded:
+    raise AssertionError(f"standalone import loaded sibling products: {siblings_loaded}")
+
+print(json.dumps({
+    "product": "kellogg-tensor",
+    "version": kellogg.__version__,
+    "python": sys.version.split()[0],
+    "modules": mods,
+    "module_count": len(mods),
+    "registry_ok": registry["ok"],
+    "registry_items": registry["items"],
+    "metadata": {
+        "name": metadata["Name"],
+        "version": metadata["Version"],
+        "requires_python": metadata["Requires-Python"],
+        "license": license_value,
+        "project_urls": project_urls,
+        "hard_requires": hard_requires,
+    },
+    "canonical_digest": fixture_digest,
+    "certificate_digest": cert.digest,
+    "attestation_digest": attestation["attestation_digest"],
+    "benchmarks": benchmarks,
+    "siblings_loaded": siblings_loaded,
+}, sort_keys=True))
+
+$ /var/folders/dm/n_cn6kqj14s9yzw7h0kyj9980000gp/T/kellogg-sdist-rebuild-sa3wuj2d/build-venv/bin/python -m pip install -
+q build
+$ /var/folders/dm/n_cn6kqj14s9yzw7h0kyj9980000gp/T/kellogg-sdist-rebuild-sa3wuj2d/build-venv/bin/python -m build --wheel
+ --outdir /var/folders/dm/n_cn6kqj14s9yzw7h0kyj9980000gp/T/kellogg-sdist-rebuild-sa3wuj2d/rebuilt /var/folders/dm/n_cn6k
+qj14s9yzw7h0kyj9980000gp/T/kellogg-sdist-rebuild-sa3wuj2d/sdist/kellogg_tensor-1.0.0
+* Creating isolated environment: venv+pip...
+* Installing packages in isolated environment:
+  - setuptools>=68.0
+  - wheel
+* Getting build dependencies for wheel...
+running egg_info
+writing kellogg_tensor.egg-info/PKG-INFO
+writing dependency_links to kellogg_tensor.egg-info/dependency_links.txt
+writing entry points to kellogg_tensor.egg-info/entry_points.txt
+writing requirements to kellogg_tensor.egg-info/requires.txt
+writing top-level names to kellogg_tensor.egg-info/top_level.txt
+reading manifest file 'kellogg_tensor.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'kellogg_tensor.egg-info/SOURCES.txt'
+* Installed build dependency versions:
+  - setuptools==84.0.0
+  - wheel==0.48.0
+* Building wheel...
+running bdist_wheel
+running build
+running build_py
+creating build/lib/kellogg
+copying kellogg/golden_stride.py -> build/lib/kellogg
+copying kellogg/dmrg.py -> build/lib/kellogg
+copying kellogg/compressed_tensor.py -> build/lib/kellogg
+copying kellogg/phi_dynamics.py -> build/lib/kellogg
+copying kellogg/vector11.py -> build/lib/kellogg
+copying kellogg/benchmark.py -> build/lib/kellogg
+copying kellogg/tensor_network.py -> build/lib/kellogg
+copying kellogg/certificate.py -> build/lib/kellogg
+copying kellogg/substrate.py -> build/lib/kellogg
+copying kellogg/exact_tensor.py -> build/lib/kellogg
+copying kellogg/traversal.py -> build/lib/kellogg
+copying kellogg/exact_linalg.py -> build/lib/kellogg
+copying kellogg/scales.py -> build/lib/kellogg
+copying kellogg/golden_stealth.py -> build/lib/kellogg
+copying kellogg/__init__.py -> build/lib/kellogg
+copying kellogg/spec.py -> build/lib/kellogg
+copying kellogg/tensor_serialization.py -> build/lib/kellogg
+copying kellogg/phi_renormalizer.py -> build/lib/kellogg
+copying kellogg/phi_tensor_core.py -> build/lib/kellogg
+copying kellogg/first_principles.py -> build/lib/kellogg
+copying kellogg/quantum_tensor.py -> build/lib/kellogg
+copying kellogg/exact_network.py -> build/lib/kellogg
+copying kellogg/tensor_ml.py -> build/lib/kellogg
+copying kellogg/dphi_transform.py -> build/lib/kellogg
+copying kellogg/golden_convolution.py -> build/lib/kellogg
+copying kellogg/channels.py -> build/lib/kellogg
+copying kellogg/attest.py -> build/lib/kellogg
+copying kellogg/phi_stability.py -> build/lib/kellogg
+copying kellogg/surface_code.py -> build/lib/kellogg
+copying kellogg/exact_field.py -> build/lib/kellogg
+copying kellogg/cyclotomic.py -> build/lib/kellogg
+copying kellogg/custody.py -> build/lib/kellogg
+copying kellogg/py.typed -> build/lib/kellogg
+copying kellogg/CAPABILITY_MANIFEST.json -> build/lib/kellogg
+installing to build/bdist.macosx-11.0-arm64/wheel
+running install
+running install_lib
+creating build/bdist.macosx-11.0-arm64/wheel
+creating build/bdist.macosx-11.0-arm64/wheel/kellogg
+copying build/lib/kellogg/golden_stride.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/dmrg.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/compressed_tensor.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/phi_dynamics.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/vector11.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/benchmark.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/tensor_network.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/certificate.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/substrate.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/exact_tensor.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/traversal.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/exact_linalg.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/scales.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/golden_stealth.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/spec.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/tensor_serialization.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/phi_renormalizer.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/phi_tensor_core.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/first_principles.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/quantum_tensor.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/exact_network.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/CAPABILITY_MANIFEST.json -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/tensor_ml.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/dphi_transform.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/py.typed -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/golden_convolution.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/channels.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/attest.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/phi_stability.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/surface_code.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/exact_field.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/cyclotomic.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+copying build/lib/kellogg/custody.py -> build/bdist.macosx-11.0-arm64/wheel/./kellogg
+running install_egg_info
+running egg_info
+writing kellogg_tensor.egg-info/PKG-INFO
+writing dependency_links to kellogg_tensor.egg-info/dependency_links.txt
+writing entry points to kellogg_tensor.egg-info/entry_points.txt
+writing requirements to kellogg_tensor.egg-info/requires.txt
+writing top-level names to kellogg_tensor.egg-info/top_level.txt
+reading manifest file 'kellogg_tensor.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'kellogg_tensor.egg-info/SOURCES.txt'
+Copying kellogg_tensor.egg-info to build/bdist.macosx-11.0-arm64/wheel/./kellogg_tensor-1.0.0-py3.13.egg-info
+running install_scripts
+creating build/bdist.macosx-11.0-arm64/wheel/kellogg_tensor-1.0.0.dist-info/WHEEL
+creating '/var/folders/dm/n_cn6kqj14s9yzw7h0kyj9980000gp/T/kellogg-sdist-rebuild-sa3wuj2d/rebuilt/.tmp-48x4ih61/kellogg_
+tensor-1.0.0-py3-none-any.whl' and adding 'build/bdist.macosx-11.0-arm64/wheel' to it
+adding 'kellogg/CAPABILITY_MANIFEST.json'
+adding 'kellogg/__init__.py'
+adding 'kellogg/attest.py'
+adding 'kellogg/benchmark.py'
+adding 'kellogg/certificate.py'
+adding 'kellogg/channels.py'
+adding 'kellogg/compressed_tensor.py'
+adding 'kellogg/custody.py'
+adding 'kellogg/cyclotomic.py'
+adding 'kellogg/dmrg.py'
+adding 'kellogg/dphi_transform.py'
+adding 'kellogg/exact_field.py'
+adding 'kellogg/exact_linalg.py'
+adding 'kellogg/exact_network.py'
+adding 'kellogg/exact_tensor.py'
+adding 'kellogg/first_principles.py'
+adding 'kellogg/golden_convolution.py'
+adding 'kellogg/golden_stealth.py'
+adding 'kellogg/golden_stride.py'
+adding 'kellogg/phi_dynamics.py'
+adding 'kellogg/phi_renormalizer.py'
+adding 'kellogg/phi_stability.py'
+adding 'kellogg/phi_tensor_core.py'
+adding 'kellogg/py.typed'
+adding 'kellogg/quantum_tensor.py'
+adding 'kellogg/scales.py'
+adding 'kellogg/spec.py'
+adding 'kellogg/substrate.py'
+adding 'kellogg/surface_code.py'
+adding 'kellogg/tensor_ml.py'
+adding 'kellogg/tensor_network.py'
+adding 'kellogg/tensor_serialization.py'
+adding 'kellogg/traversal.py'
+adding 'kellogg/vector11.py'
+adding 'kellogg_tensor-1.0.0.dist-info/licenses/LICENSE'
+adding 'kellogg_tensor-1.0.0.dist-info/METADATA'
+adding 'kellogg_tensor-1.0.0.dist-info/WHEEL'
+adding 'kellogg_tensor-1.0.0.dist-info/entry_points.txt'
+adding 'kellogg_tensor-1.0.0.dist-info/top_level.txt'
+adding 'kellogg_tensor-1.0.0.dist-info/RECORD'
+removing build/bdist.macosx-11.0-arm64/wheel
+Successfully built kellogg_tensor-1.0.0-py3-none-any.whl
+$ /var/folders/dm/n_cn6kqj14s9yzw7h0kyj9980000gp/T/kellogg-sdist-install-906x7yda/venv/bin/python -m pip install -q --di
+sable-pip-version-check /var/folders/dm/n_cn6kqj14s9yzw7h0kyj9980000gp/T/kellogg-sdist-rebuild-sa3wuj2d/rebuilt/kellogg_
+tensor-1.0.0-py3-none-any.whl
+$ /var/folders/dm/n_cn6kqj14s9yzw7h0kyj9980000gp/T/kellogg-sdist-install-906x7yda/venv/bin/python -I -c
+import importlib
+import importlib.metadata
+import json
+import pkgutil
+import sys
+
+import kellogg
+
+EXPECTED_VERSION = "1.0.0"
+REQUIRED = (
+    "attest", "verify_attestation", "verify_version", "ProofBoundary",
+    "certify", "verify_certificate",
+    "ResidentCustody", "default_custody", "REGISTRY", "verify_registry",
+)
+FORBIDDEN = {
+    "aethel", "chronus", "euclid", "Intelligence", "mining", "toe",
+    "turing_core", "turing_universal_quantum_computer",
+}
+
+assert "site-packages" in str(kellogg.__file__).replace("\\", "/"), kellogg.__file__
+assert kellogg.__version__ == EXPECTED_VERSION, kellogg.__version__
+
+metadata = importlib.metadata.metadata("kellogg-tensor")
+assert metadata["Name"] == "kellogg-tensor"
+assert metadata["Version"] == EXPECTED_VERSION
+assert metadata["Requires-Python"] == ">=3.11"
+assert metadata["Author"] == "HYBA Software Limited"
+license_value = metadata.get("License-Expression") or metadata.get("License")
+assert license_value == "MIT", license_value
+requires = importlib.metadata.requires("kellogg-tensor") or []
+hard_requires = [r for r in requires if "extra ==" not in r]
+assert len(hard_requires) == 1 and hard_requires[0].lower().startswith("numpy"), hard_requires
+project_urls = metadata.get_all("Project-URL") or []
+assert any("https://github.com/QuantumPhiRedux/PhiMiner" in u for u in project_urls), project_urls
+assert not any("QuantumPhi2/PhiMiner" in u for u in project_urls), project_urls
+
+mods = sorted(m.name for m in pkgutil.iter_modules(kellogg.__path__))
+failed = {}
+for module in mods:
+    try:
+        importlib.import_module("kellogg." + module)
+    except Exception as exc:
+        failed[module] = f"{type(exc).__name__}: {exc}"
+if failed:
+    raise AssertionError(f"module import failures: {failed}")
+
+missing = [name for name in REQUIRED if not hasattr(kellogg, name)]
+if missing:
+    raise AssertionError(f"missing public API: {missing}")
+
+from importlib.resources import files
+manifest = json.loads(files("kellogg").joinpath("CAPABILITY_MANIFEST.json").read_text())
+assert manifest["distribution"] == "kellogg-tensor"
+assert manifest["version"] == EXPECTED_VERSION
+assert manifest["hard_dependencies"] == ["numpy"]
+
+from kellogg.spec import verify_registry
+registry = verify_registry()
+assert registry["ok"], registry["problems"]
+
+from kellogg.exact_tensor import canonical_digest
+fixture = {
+    "schema": "kellogg.release-fixture/v1",
+    "version": EXPECTED_VERSION,
+    "integers": [0, 1, 2, 3, 5, 8, 13],
+    "nested": {"plane": "exact", "field": "Q(zeta8)"},
+}
+fixture_digest = canonical_digest(fixture)
+
+from kellogg.certificate import (
+    CertificateError,
+    certificate_from_dict,
+    certify,
+    cex,
+    verify_certificate,
+    verify_merkle_proof,
+    merkle_proof,
+    merkle_root,
+)
+cert = certify(
+    "release_fixture",
+    "Q(zeta8)",
+    "software",
+    "0" * 64,
+    fixture_digest,
+    parameters={"count": 7},
+    invariants={"exact": True},
+)
+assert verify_certificate(cert) is True
+assert certificate_from_dict(cert.to_dict()).digest == cert.digest
+try:
+    cex({"diagnostic": 0.5})
+except CertificateError:
+    pass
+else:
+    raise AssertionError("CEX silently accepted a float as exact")
+
+leaves = [fixture_digest, cert.digest, "1" * 64]
+root = merkle_root(leaves)
+assert verify_merkle_proof(leaves[1], merkle_proof(leaves, 1), root)
+assert not verify_merkle_proof(leaves[1], merkle_proof(leaves, 1), "f" * 64)
+
+from kellogg.attest import AttestationError, attest, verify_attestation
+attestation = attest(fixture)
+assert verify_attestation(fixture, attestation) is True
+tampered = dict(fixture)
+tampered["integers"] = [0, 1, 2, 4]
+try:
+    verify_attestation(tampered, attestation)
+except AttestationError:
+    pass
+else:
+    raise AssertionError("tampered attestation payload verified")
+
+from kellogg.custody import ResidentCustody
+from kellogg.cyclotomic import ONE8, Q8
+from kellogg.exact_network import ExactTensorTrain, ghz_circuit
+psi = ghz_circuit(8, custody=ResidentCustody())
+assert psi.norm2() == ONE8
+assert psi.ledger.verify_chain()
+vals = [Q8(i) for i in range(8)]
+tt = ExactTensorTrain.from_dense(vals, [2, 2, 2], custody=ResidentCustody())
+assert tt.to_dense() == vals
+
+from kellogg.benchmark import BENCHMARKS, run
+benchmarks = {}
+for bid, (axis, _) in BENCHMARKS.items():
+    if axis in ("correctness", "meta") and bid != "cross_version_digest":
+        result = run(bid, quick=True)
+        benchmarks[bid] = result["passed"]
+        if result["passed"] is not True:
+            raise AssertionError(f"installed benchmark {bid} failed: {result.get('error') or result['result']}")
+
+siblings_loaded = sorted(name for name in FORBIDDEN if name in sys.modules)
+if siblings_loaded:
+    raise AssertionError(f"standalone import loaded sibling products: {siblings_loaded}")
+
+print(json.dumps({
+    "product": "kellogg-tensor",
+    "version": kellogg.__version__,
+    "python": sys.version.split()[0],
+    "modules": mods,
+    "module_count": len(mods),
+    "registry_ok": registry["ok"],
+    "registry_items": registry["items"],
+    "metadata": {
+        "name": metadata["Name"],
+        "version": metadata["Version"],
+        "requires_python": metadata["Requires-Python"],
+        "license": license_value,
+        "project_urls": project_urls,
+        "hard_requires": hard_requires,
+    },
+    "canonical_digest": fixture_digest,
+    "certificate_digest": cert.digest,
+    "attestation_digest": attestation["attestation_digest"],
+    "benchmarks": benchmarks,
+    "siblings_loaded": siblings_loaded,
+}, sort_keys=True))
+
+{
+  "artifact_secret_scan_passed": true,
+  "attestation_digest": "3676621769a62c332bd0cf67a724eae6388e0c0d31a96788e42623531d419e3a",
+  "attestation_verified": true,
+  "canonical_digest": "6133aee453007261c030af28f27d7695b392f503faf148e9a078c3555fd927ba",
+  "certificate_digest": "3c4877cf338f269fcdd64d6e571cc24b0cde205b7cf5447b4f89caf102cabbb7",
+  "certificate_verification_passed": true,
+  "git_sha": "a4df7dc7976a15ab6a6a901cd49aa11715b410e8",
+  "installed_imports_verified": true,
+  "module_count": 31,
+  "package_metadata_valid": true,
+  "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "product": "kellogg-tensor",
+  "public_api_verified": true,
+  "publishable": false,
+  "published": false,
+  "python": "3.13.16",
+  "quick_installed_benchmarks": {
+    "boundary_isolation": true,
+    "determinism": true,
+    "dmrg_vs_dense": true,
+    "fisher_exact": true,
+    "fold_roundtrip": true,
+    "hamiltonian_exact": true,
+    "kraus_trace": true,
+    "mpo_preservation": true,
+    "substrate_identities": true,
+    "surface_code_algebra": true,
+    "surface_code_correction": true,
+    "ten_thousand_qubit_voyage": true,
+    "tt_svd_error_bound": true,
+    "vector11_fold": true,
+    "zeckendorf_roundtrip": true
+  },
+  "rebuilt_wheel_sha256": "ecb34a18ceeeb96d911c45ae602d2ee693c0aa5df5f97174b96a718a6825786b",
+  "registry_verified": true,
+  "repository": "QuantumPhiRedux/PhiMiner",
+  "scope": "artefact verification; full test/benchmark/cross-version release gates run separately",
+  "sdist": {
+    "file": "kellogg_tensor-1.0.0.tar.gz",
+    "sha256": "b396b83e72e2bd4d68762ecb8159c2f3ab5716e36950716a99bf59d91d83bba5"
+  },
+  "sdist_verified": true,
+  "standalone_boundary_verified": true,
+  "version": "1.0.0",
+  "wheel": {
+    "file": "kellogg_tensor-1.0.0-py3-none-any.whl",
+    "sha256": "c6184aeaf0433d0788491e7c0617fb390bf611114650efd39a5141638e843b43"
+  },
+  "wheel_built": true,
+  "wheel_clean_install_verified": true,
+  "wheel_manifest": {
+    "file_count": 40,
+    "files": [
+      "kellogg/CAPABILITY_MANIFEST.json",
+      "kellogg/__init__.py",
+      "kellogg/attest.py",
+      "kellogg/benchmark.py",
+      "kellogg/certificate.py",
+      "kellogg/channels.py",
+      "kellogg/compressed_tensor.py",
+      "kellogg/custody.py",
+      "kellogg/cyclotomic.py",
+      "kellogg/dmrg.py",
+      "kellogg/dphi_transform.py",
+      "kellogg/exact_field.py",
+      "kellogg/exact_linalg.py",
+      "kellogg/exact_network.py",
+      "kellogg/exact_tensor.py",
+      "kellogg/first_principles.py",
+      "kellogg/golden_convolution.py",
+      "kellogg/golden_stealth.py",
+      "kellogg/golden_stride.py",
+      "kellogg/phi_dynamics.py",
+      "kellogg/phi_renormalizer.py",
+      "kellogg/phi_stability.py",
+      "kellogg/phi_tensor_core.py",
+      "kellogg/py.typed",
+      "kellogg/quantum_tensor.py",
+      "kellogg/scales.py",
+      "kellogg/spec.py",
+      "kellogg/substrate.py",
+      "kellogg/surface_code.py",
+      "kellogg/tensor_ml.py",
+      "kellogg/tensor_network.py",
+      "kellogg/tensor_serialization.py",
+      "kellogg/traversal.py",
+      "kellogg/vector11.py",
+      "kellogg_tensor-1.0.0.dist-info/METADATA",
+      "kellogg_tensor-1.0.0.dist-info/RECORD",
+      "kellogg_tensor-1.0.0.dist-info/WHEEL",
+      "kellogg_tensor-1.0.0.dist-info/entry_points.txt",
+      "kellogg_tensor-1.0.0.dist-info/licenses/LICENSE",
+      "kellogg_tensor-1.0.0.dist-info/top_level.txt"
+    ],
+    "product": "kellogg-tensor",
+    "sha256": "c6184aeaf0433d0788491e7c0617fb390bf611114650efd39a5141638e843b43",
+    "version": "1.0.0",
+    "wheel": "kellogg_tensor-1.0.0-py3-none-any.whl"
+  }
+}
+VERIFIED
+
+Command python
+cd "/Users/demouser/Desktop/PhiMiner" && ./.venv/bin/python -m pip install -q --disable-pip-version-check "pytest>=7.4,<10" && ./.venv/bin/python packaging/kellogg-tensor/run_release_gate.py 2>&1 | tail -30
+................................................................ [ 36%]
+.................................................F.............................................................      [10
+0%]
+=================================== FAILURES ===================================
+_______ test_attestation_replay_binds_computation_and_boundary_metadata ________
+
+    def test_attestation_replay_binds_computation_and_boundary_metadata():
+        payload = {
+            "schema": "kellogg.test-computation/v1",
+            "steps": [{"operation": "encode"}, {"operation": "measure"}],
+            "value": 17,
+        }
+        evidence = attest(
+            payload,
+            float_boundaries=("diagnostic display",),
+            notes=("test evidence",),
+        )
+        assert evidence["schema"] == "kellogg.attestation/v2"
+        assert len(evidence["attestation_digest"]) == 64
+        assert verify_attestation(payload, evidence) is True
+
+        tampered_payload = dict(payload)
+        tampered_payload["value"] = 18
+        with pytest.raises(AttestationError, match="digest"):
+            verify_attestation(tampered_payload, evidence)
+
+        forged_boundary = deepcopy(evidence)
+        forged_boundary["boundary"]["float_boundaries"].append("undeclared crossing")
+        with pytest.raises(AttestationError, match="envelope"):
+            verify_attestation(payload, forged_boundary)
+
+        overclaim = deepcopy(evidence)
+        overclaim["boundary"]["theorem_proven"] = True
+        with pytest.raises(AttestationError, match="theorem_proven"):
+            verify_attestation(payload, overclaim)
+
+        future_version = deepcopy(evidence)
+        future_version["version_lock"] = "999.0.0"
+        with pytest.raises(AttestationError, match="below the required floor"):
+            verify_attestation(payload, future_version)
+
+        corrupt_cassini = deepcopy(evidence)
+        first_cassini = list(corrupt_cassini["cassini"][0])
+        first_cassini[0] += 1
+        corrupt_cassini["cassini"][0] = first_cassini
+        with pytest.raises(AttestationError, match="cassini"):
+            verify_attestation(payload, corrupt_cassini)
+
+        corrupt_digest = deepcopy(evidence)
+        corrupt_digest["digest"] = "0" * 64
+        with pytest.raises(AttestationError, match="digest"):
+            verify_attestation(payload, corrupt_digest)
+
+        corrupt_zeckendorf = deepcopy(evidence)
+>       corrupt_zeckendorf["zeckendorf"] = list(corrupt_zeckendorf["zeckendorf"]) + [1]
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: 'int' object is not iterable
+
+tests/test_kellogg_production_evidence_boundary.py:83: TypeError
+=============================== warnings summary ===============================
+tests/test_toe_tensor_ml.py::TensorMLContractTests::test_legacy_fit_names_are_exactly_equivalent
+  /Users/demouser/Desktop/PhiMiner/kellogg/tensor_ml.py:1531: DeprecationWarning: kellogg.rf() is a deprecated alias for
+ exact_linear(); it does not implement the vendor algorithm of the same name. Migrate to kellogg.exact_linear(). Removal
+ in v2.
+    _deprecated_alias(name)(**params)
+
+tests/test_toe_tensor_ml.py::TensorMLContractTests::test_legacy_fit_names_are_exactly_equivalent
+  /Users/demouser/Desktop/PhiMiner/kellogg/tensor_ml.py:1531: DeprecationWarning: kellogg.xgb() is a deprecated alias fo
+r exact_linear(); it does not implement the vendor algorithm of the same name. Migrate to kellogg.exact_linear(). Remova
+l in v2.
+    _deprecated_alias(name)(**params)
+
+tests/test_toe_tensor_ml.py::TensorMLContractTests::test_legacy_fit_names_are_exactly_equivalent
+  /Users/demouser/Desktop/PhiMiner/kellogg/tensor_ml.py:1531: DeprecationWarning: kellogg.lgbm() is a deprecated alias f
+or exact_linear(); it does not implement the vendor algorithm of the same name. Migrate to kellogg.exact_linear(). Remov
+al in v2.
+    _deprecated_alias(name)(**params)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_kellogg_production_evidence_boundary.py::test_attestation_replay_binds_computation_and_boundary_metada
+ta
+1 failed, 174 passed, 3 warnings, 36 subtests passed in 5.78s
+Traceback (most recent call last):
+  File "/Users/demouser/Desktop/PhiMiner/packaging/kellogg-tensor/run_release_gate.py", line 200, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Users/demouser/Desktop/PhiMiner/packaging/kellogg-tensor/run_release_gate.py", line 174, in main
+    tests = run_tests()
+  File "/Users/demouser/Desktop/PhiMiner/packaging/kellogg-tensor/run_release_gate.py", line 96, in run_tests
+    raise RuntimeError(f"KELLOGG release tests failed: {evidence}")
+RuntimeError: KELLOGG release tests failed: {'command': ['/Users/demouser/Desktop/PhiMiner/.venv/bin/python', '-m', 'pyt
+est', '-q', 'tests/test_canonical_tensor_ownership.py', 'tests/test_exact_tensor_parity.py', 'tests/test_geodesic_tensor
+_engine.py', 'tests/test_geodesic_tensor_extensions.py', 'tests/test_kellogg_exact_linear_algorithm_audit.py', 'tests/te
+st_kellogg_exact_linear_field_audit.py', 'tests/test_kellogg_product.py', 'tests/test_kellogg_production_evidence_bounda
+ry.py', 'tests/test_kellogg_tensor.py', 'tests/test_kellogg_tensor_network_convergence.py', 'tests/test_toe_tensor_ml.py
+', '--junitxml=/Users/demouser/Desktop/PhiMiner/packaging/kellogg-tensor/release-evidence/tests-junit.xml'], 'python': '
+3.13.16', 'platform': 'macOS-27.0-arm64-arm-64bit-Mach-O', 'git_sha': 'a4df7dc7976a15ab6a6a901cd49aa11715b410e8', 'colle
+cted': 211, 'failed': 1, 'errors': 0, 'skipped': 0, 'duration_seconds': 5.776, 'wall_seconds': 5.954403916000047, 'passe
+d': 210, 'returncode': 1}
+
+Read shell
+Command grep, echo, git
+cd "/Users/demouser/Desktop/PhiMiner" && grep -n "def zeckendorf_11d" -A 15 kellogg/scales.py | head -20 && echo '=== history ===' && git log --oneline -3 -- tests/test_kellogg_production_evidence_boundary.py && git log --oneline -3 -- kellogg/attest.py kellogg/scales.py
+225:def zeckendorf_11d(x: int) -> int:
+226-    """Project a Zeckendorf representation onto an 11-bit token.
+227-
+228-    Bit (k mod 11) is set iff F_k appears in the Zeckendorf fold of x.
+229-    The projection is declared lossy — distinct integers may share a
+230-    token; it is a lane index, not an encoding.
+231-    """
+232-    token = 0
+233-    for k in zeckendorf(x):
+234-        token |= 1 << (k % 11)
+235-    return token
+236-
+237-
+238-def zeckendorf_is_legal(indices: Sequence[int]) -> bool:
+239-    """Non-adjacency check: no two Zeckendorf indices differ by less than 2."""
+240-    ordered = sorted(indices)
+=== history ===
+fea525a7 test(kellogg): exercise attestation fail-closed mutations
+43848911 feat(kellogg): ship Kellogg as a standalone product (kellogg-tensor 4.0.0)
+e7943f66 test(kellogg): mutate Cassini evidence without tuple write
+43848911 feat(kellogg): ship Kellogg as a standalone product (kellogg-tensor 4.0.0)
+b6a65d3f fix(kellogg): add fail-closed attestation verification
+03ca2730 Deploy sentry to zero; Pisot winding exact at every scale
+
+test_kellogg_production_evidence_boundary.py
++1
+-1
+    corrupt_zeckendorf = deepcopy(evidence)
+    corrupt_zeckendorf["zeckendorf"] = list(corrupt_zeckendorf["zeckendorf"]) + [1]
+    corrupt_zeckendorf["zeckendorf"] ^= 1
+    with pytest.raises(AttestationError, match="zeckendorf"):
+Command python
+cd "/Users/demouser/Desktop/PhiMiner" && ./.venv/bin/python -m pytest -q tests/test_kellogg_production_evidence_boundary.py 2>&1 | tail -5
+.....                                                                    [100%]
+5 passed in 0.23s
+
+The fixed test passes. Now rerunning the full source gate — after tests it proceeds to the complete tensor benchmark suite, which may take a while.
+
+Command python
+cd "/Users/demouser/Desktop/PhiMiner" && ./.venv/bin/python packaging/kellogg-tensor/run_release_gate.py 2>&1 | tail -40
+................................................................ [ 36%]
+...............................................................................................................      [10
+0%]
+=============================== warnings summary ===============================
+tests/test_toe_tensor_ml.py::TensorMLContractTests::test_legacy_fit_names_are_exactly_equivalent
+  /Users/demouser/Desktop/PhiMiner/kellogg/tensor_ml.py:1531: DeprecationWarning: kellogg.rf() is a deprecated alias for
+ exact_linear(); it does not implement the vendor algorithm of the same name. Migrate to kellogg.exact_linear(). Removal
+ in v2.
+    _deprecated_alias(name)(**params)
+
+tests/test_toe_tensor_ml.py::TensorMLContractTests::test_legacy_fit_names_are_exactly_equivalent
+  /Users/demouser/Desktop/PhiMiner/kellogg/tensor_ml.py:1531: DeprecationWarning: kellogg.xgb() is a deprecated alias fo
+r exact_linear(); it does not implement the vendor algorithm of the same name. Migrate to kellogg.exact_linear(). Remova
+l in v2.
+    _deprecated_alias(name)(**params)
+
+tests/test_toe_tensor_ml.py::TensorMLContractTests::test_legacy_fit_names_are_exactly_equivalent
+  /Users/demouser/Desktop/PhiMiner/kellogg/tensor_ml.py:1531: DeprecationWarning: kellogg.lgbm() is a deprecated alias f
+or exact_linear(); it does not implement the vendor algorithm of the same name. Migrate to kellogg.exact_linear(). Remov
+al in v2.
+    _deprecated_alias(name)(**params)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+175 passed, 3 warnings, 36 subtests passed in 5.20s
+fold_roundtrip                   PASS           0.07s
+tt_svd_error_bound               PASS           0.22s
+mpo_preservation                 PASS           0.04s
+kraus_trace                      PASS           0.00s
+cross_version_digest             INCOMPLETE     0.02s
+determinism                      PASS           0.01s
+boundary_isolation               PASS           0.07s
+substrate_identities             PASS           1.16s
+zeckendorf_roundtrip             PASS          24.84s
+surface_code_algebra             PASS           0.39s
+surface_code_correction          PASS           0.31s
+vector11_fold                    PASS           0.05s
+fisher_exact                     PASS           2.48s
+hamiltonian_exact                PASS           0.10s
+dmrg_vs_dense                    PASS           8.78s
+
+While that runs, let me check whether the package names already exist on PyPI/TestPyPI — that determines whether trusted-publisher setup is still pending.
+
+Command curl, echo
+for pkg in kellogg-tensor turing-universal-quantum-computer; do for idx in pypi.org test.pypi.org; do code=$(curl -s -o /dev/null -w '%{http_code}' "https://$idx/pypi/$pkg/json"); echo "$idx $pkg -> $code"; done; done
+pypi.org kellogg-tensor -> 404
+test.pypi.org kellogg-tensor -> 404
+pypi.org turing-universal-quantum-computer -> 404
+test.pypi.org turing-universal-quantum-computer -> 404
+
+Reading shell for 240sIn progress

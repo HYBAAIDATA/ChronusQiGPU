@@ -162,6 +162,65 @@ class M3MiningSubmissionGate:
             "http_status": verdict_dict.get("http_status"),
         }
 
+    def authorize_recovery(
+        self,
+        record: Any,
+        command: str,
+        target: str,
+    ) -> Mapping[str, Any]:
+        """Authorize and custody one exact recovery side effect.
+
+        The RecoveryGovernor calls this immediately before invoking the owning
+        actuator. The verdict binds recovery identity, command and target; a
+        denied or uncustodied decision prevents dispatch.
+        """
+        storage_health = self.recorder.health(reconcile=True)
+        if storage_health.get("healthy") is not True:
+            return {
+                "allowed": False,
+                "reason": "THESEUS_STORAGE_UNHEALTHY",
+                "storage_health": storage_health,
+            }
+        payload = {
+            "recovery_id": getattr(record, "recovery_id", None),
+            "origin": getattr(record, "origin", None),
+            "command": str(command),
+            "commands": list(getattr(record, "commands", ()) or ()),
+            "reason": getattr(record, "reason", None),
+            "target": str(target),
+            "authority": "SALAMANDER",
+            "actor": self.actor,
+        }
+        if not payload["recovery_id"] or not payload["command"] or not payload["target"]:
+            return {"allowed": False, "reason": "RECOVERY_IDENTITY_INCOMPLETE"}
+        verdict_dict = self._evaluate_guardian(
+            operation="mining.escalate",
+            resource=str(target),
+            payload=payload,
+            request_id=f"{payload['recovery_id']}:{payload['command']}",
+        )
+        try:
+            version_id = self.recorder.persist_authorization(
+                verdict_dict,
+                context=payload,
+            )
+        except Exception as exc:
+            raise M3StorageError(
+                f"could not custody AL HARAS recovery authorization: "
+                f"{type(exc).__name__}: {exc}"
+            ) from exc
+        return {
+            "allowed": verdict_dict.get("allowed") is True,
+            "reason": verdict_dict.get("reason"),
+            "authorization_evidence_id": verdict_dict.get("evidence_id"),
+            "authorization_version_id": version_id,
+            "policy_version": verdict_dict.get("policy_version"),
+            "intelligence_evidence_hash": verdict_dict.get(
+                "intelligence_evidence_hash"
+            ),
+            "http_status": verdict_dict.get("http_status"),
+        }
+
     def authorize_and_custody(
         self, *, context: Mapping[str, Any], proof: Any
     ) -> Mapping[str, Any]:

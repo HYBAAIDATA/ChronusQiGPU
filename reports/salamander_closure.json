@@ -1,0 +1,156 @@
+{
+  "schema": "salamander.required-closure/v1",
+  "baseline_commit": "585d7b11d9cc8e183ff4d5cda44996a9ac30dc4e",
+  "count_scope": "ENTIRE_CANONICAL_REPOSITORY_AND_PRODUCTION_RUNTIME",
+  "counters": {
+    "UNAUTHORISED_REMEDIATIONS": null,
+    "UNVERIFIED_SUCCESSFUL_ACTIONS": null,
+    "PRODUCTION_CANNED_HEALTH": null,
+    "PRODUCTION_SIMULATED_RECOVERIES": null,
+    "MISSING_REQUIRED_ROLLBACKS": null,
+    "UNVERIFIED_ROLLBACKS": null,
+    "UNBOUNDED_RECOVERY_LOOPS": null,
+    "CROSS_TENANT_REMEDIATIONS": null,
+    "SHADOW_DOMAIN_AUTHORITY": null,
+    "UNDURABLE_RECOVERY_EVIDENCE": null,
+    "RESTART_REPLAY_FAILURES": null,
+    "PRODUCTION_MOCK_SUBSTITUTIONS": null,
+    "FALSE_GREEN_HEALING_GATES": null,
+    "UNREVIEWED_HEALING_PATHS": null,
+    "OPEN_MATERIAL_HEALING_DEFECTS": null,
+    "CAPABILITIES_REMOVED_WITHOUT_REPLACEMENT": null
+  },
+  "counter_interpretation": "null = UNKNOWN / NOT QUALIFIED; never substitute zero",
+  "qualification_gates": {
+    "observation_gate": "UNAVAILABLE",
+    "diagnosis_gate": "UNAVAILABLE",
+    "authorization_gate": "UNAVAILABLE",
+    "actuation_gate": "UNAVAILABLE",
+    "independent_verification_gate": "UNAVAILABLE",
+    "rollback_gate": "UNAVAILABLE",
+    "evidence_gate": "UNAVAILABLE",
+    "persistence_gate": "UNAVAILABLE",
+    "restart_replay_gate": "UNAVAILABLE",
+    "adversarial_gate": "UNAVAILABLE",
+    "mutation_gate": "UNAVAILABLE",
+    "production_composition_gate": "UNAVAILABLE"
+  },
+  "SALAMANDER_PRODUCTION_READY": false,
+  "delivery_complete": false,
+  "inventory_complete": false,
+  "known_source_findings": [
+    {
+      "path": "salamander/control_plane.py",
+      "component": "AutonomicControlPlane.execute/recover",
+      "finding": "No AL HARAS in execute; no enforced rollback; idempotency global key; tenant plan/request mismatch unchecked"
+    },
+    {
+      "path": "salamander/control_plane.py",
+      "component": "ActionRegistry",
+      "finding": "Direct execute surface lacks authorisation; no owner-binding contract"
+    },
+    {
+      "path": "salamander/control_plane.py",
+      "component": "EvidenceLedger.append/verify",
+      "finding": "Baseline committed head before failed sink; not canonical custody by default"
+    },
+    {
+      "path": "salamander/control_plane.py",
+      "component": "CircuitBreaker/RecoveryPlan",
+      "finding": "No durable budgets or bound authorisation; deadline not checked between steps"
+    },
+    {
+      "path": "salamander/control_plane.py",
+      "component": "transition_policy/evaluate_optimization/rollback_on_regression",
+      "finding": "Rollback label is not owner-executed restoration; causal estimates not required"
+    },
+    {
+      "path": "salamander/runtime.py",
+      "component": "MiningAutonomyBridge",
+      "finding": "Canonical producer proof integration missing; diagnosis/observation migration incomplete"
+    },
+    {
+      "path": "salamander/runtime.py",
+      "component": "DurableEvidenceLedger",
+      "finding": "No shared THESEUS/OVID custody, multiprocess writer discipline or authenticated truncate-proof head"
+    },
+    {
+      "path": "salamander/models.py",
+      "component": "HealthObservation/ActionRequest/ActionResult",
+      "finding": "Canonical observation identity/provenance/trace/evidence classes absent from legacy model"
+    },
+    {
+      "path": "Intelligence/salamander.py",
+      "component": "SelfRepairEngine.apply_repair; SalamanderEngine.heal",
+      "finding": "Heuristic applied=true claims success without execution, AL HARAS or verification"
+    },
+    {
+      "path": "aethel/enterprise/system_relations.py",
+      "component": "SharedSalamander",
+      "finding": "Custody of applied=true does not prove actual recovery"
+    },
+    {
+      "path": "euclid/runtime.py",
+      "component": "EuclidRuntime.heal_organ",
+      "finding": "Advance FEEDBACK_CLOSED based on narrow verified result; governance/durable budget missing"
+    },
+    {
+      "path": "chronus/mla1517/mining/recovery_authority.py",
+      "component": "RecoveryGovernor.dispatch/observe/external_mode",
+      "finding": "Boolean/source-unbound verification; external-mode transition not independent postcondition; durable retry history missing"
+    },
+    {
+      "path": "chronus/mla1517_platform/python/mining_runtime.py",
+      "component": "publish_mining_evidence/_main_async",
+      "finding": "Shared proof producer/read adapter not configured; full canonical healing loop absent"
+    },
+    {
+      "path": "al_haras/guardian.py",
+      "component": "ALHaras.preflight/complete/evaluate",
+      "finding": "Baseline healing paths do not consistently invoke it; new verifier reads but does not invoke"
+    },
+    {
+      "path": "hyba_db/theseus_registry.py",
+      "component": "TheseusFileRegistry recovery/storage proof",
+      "finding": "Healing-history integration not implemented by increment"
+    },
+    {
+      "path": "hyba_db/ovid_index.py",
+      "component": "OvidDataIndex",
+      "finding": "Healing-history query schema/migration not delivered"
+    },
+    {
+      "path": "salamander/outcome_evidence.py",
+      "component": "RuntimeObservation/CustodiedMiningOutcomeVerifier",
+      "finding": "Producer schemas and shared port not wired; full observation/diagnosis not migrated"
+    }
+  ],
+  "unreviewed_candidate_count": 59,
+  "increment_scope": {
+    "capabilities_removed": 0,
+    "actuator_logic_changed": false,
+    "production_voyages_executed": 0
+  },
+  "CI": {
+    "execution_evidence": "UNAVAILABLE",
+    "check_runs_access": "403 Resource not accessible by personal access token",
+    "observed_pr": 134,
+    "observed_head": "e8da78053c35098884965a7a4c76183042237e4e",
+    "combined_status": "pending",
+    "reported_status_count": 0,
+    "zero_job_steps_confirmed": false,
+    "independent_new_increment_ci": "NOT_OBSERVED"
+  },
+  "required_voyages": {
+    "recovery_success": "NOT_EXECUTED",
+    "recovery_rejection_and_verified_rollback": "NOT_EXECUTED",
+    "authorization_rejection": "NOT_EXECUTED",
+    "budget_exhaustion": "NOT_EXECUTED",
+    "optimization_regression": "NOT_EXECUTED"
+  },
+  "external_blockers": [
+    "GitHub MCP token lacks check-run visibility",
+    "No qualified isolated production mining/policy/custody deployment for fault injection"
+  ],
+  "unfinished_implementation_is_not_external_blocker": true
+}

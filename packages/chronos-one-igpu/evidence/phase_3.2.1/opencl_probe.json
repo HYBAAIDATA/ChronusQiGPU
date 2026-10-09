@@ -1,0 +1,4 @@
+{
+  "reason": "OpenCL GPU unavailable: No module named 'pyopencl'",
+  "status": "BLOCKED"
+}

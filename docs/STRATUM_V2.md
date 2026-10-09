@@ -43,7 +43,26 @@ without Job Declaration or Template Distribution. Those are separate SV2
 subprotocols with separate roles and message families. PYTHIA does not claim
 those roles are implemented merely because Mining Protocol frames exist.
 
-V1 remains available through the platform coordinator
-(`chronus/mla1517/mining/coordinator.py`) for pools that
-have not enabled V2. No live credentials or pool-accepted share is fabricated by the
-contract tests; live acceptance requires a real pool response.
+## Canonical runtime integration
+
+There is still only one miner. Pool endpoints carry an explicit protocol:
+`stratum+tcp://` / `stratum+ssl://` select V1 and
+`sv2://` / `stratum2+noise://` select V2. Both feed the same
+`StratumRuntimeState`, `StratumProofAdapter`, PYTHIA work identity,
+nonce-space leasing, CHRONUS execution, local SHA256d validation, bounded
+submission queue and literal pool-outcome learning.
+
+Canonical V2 production use is restricted to **extended mining channels** so
+the negotiated extranonce namespace maps exactly onto PYTHIA's existing
+collision-free work partitioning contract. Standard-channel support remains in
+the codec for protocol completeness but is not a second mining execution path.
+
+The runtime loads its authenticated transport from
+`PYTHIA_SV2_CHANNEL_FACTORY=module:callable`. The factory must return a
+`SecureChannel` with `secure=True`; absence, import failure or an insecure
+channel makes that V2 endpoint unavailable. Failover may then try the next
+configured endpoint, but the runtime never downgrades that endpoint to V1,
+plaintext TCP or TLS.
+
+No live credentials or pool-accepted share is fabricated by the contract
+tests; live acceptance requires a literal pool response.

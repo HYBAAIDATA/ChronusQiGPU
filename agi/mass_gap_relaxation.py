@@ -132,7 +132,7 @@ class MassGapRelaxationEngine:
             Number of data points successfully absorbed
         """
         if not self.web_research:
-            return int(10 * (1 - threshold))  # Simulated absorption
+            return 0  # nothing was absorbed — no research service attached
 
         try:
             # Call web research service with lowered threshold

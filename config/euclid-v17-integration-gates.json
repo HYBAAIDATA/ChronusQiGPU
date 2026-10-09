@@ -18,7 +18,10 @@
   ],
   "required_runtime_methods": [
     "compose_adaptive_intelligence",
-    "solve_task"
+    "solve_task",
+    "bind_adaptive_data_port",
+    "adaptive_restart_receipt",
+    "verify_adaptive_restart_receipt"
   ],
   "closure_requirements": [
     {
@@ -61,5 +64,27 @@
     "full_repo_failed": 45,
     "archive_members_verified": 177
   },
-  "claim_boundary": "Reported local research evidence is preserved. Whole-product production readiness is unavailable until every closure requirement is directly evidenced on the integrated source head."
+  "claim_boundary": "Reported local research evidence is preserved. Whole-product production readiness is unavailable until every closure requirement is directly evidenced on the integrated source head.",
+  "qualification_nodes": [
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f1_normal_return_revokes_episode_dispatch_right",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f1_cancellation_revokes_episode_dispatch_right",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f2_component_credit_binds_verified_transition_digest",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f2_forged_transition_prevents_persistence_and_credit",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f1_solver_exception_revokes_episode_dispatch_right",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f1_baseexception_also_revokes_episode_dispatch_right",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f2_ablated_components_do_not_receive_episode_credit",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f3_same_process_recomposition_is_not_restart_verified",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f3_f5_fresh_process_restart_replays_shared_adaptive_state",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f5_adaptive_state_recovers_from_shared_ovid_theseus_custody",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f5_without_custody_knowledge_stays_in_memory",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f5_creators_are_isolated_and_forged_binding_is_rejected",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f5_failed_custody_write_emits_no_persistence_credit",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f3_forged_process_receipt_cannot_certify_restart",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f3_forged_artifact_process_origin_is_rejected",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f3_same_process_runtime_checkpoint_is_not_restart_verified",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f3_checkpoint_identity_binds_exact_artifact",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f4_concurrent_tasks_and_recomposition_preserve_identity",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f6_harmful_imported_strategy_is_detected_and_abandoned",
+    "tests/test_euclid_v17_production_integration.py::EuclidV17ProductionIntegration::test_f4_recomposition_preserves_unique_task_organ_identity"
+  ]
 }

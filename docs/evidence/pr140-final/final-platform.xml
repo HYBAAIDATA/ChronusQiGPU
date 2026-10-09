@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="0.151" timestamp="2026-10-08T13:18:13.233318+00:00" hostname="3545bb6a-f86"><testcase classname="" name="chronus.mla1517_platform.python.test_production_loop_e2e" time="0.000"><error message="collection failure">ImportError while importing test module '/data/pr140-bounded/canonical-snapshot/chronus/mla1517_platform/python/test_production_loop_e2e.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib64/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+chronus/mla1517_platform/python/test_production_loop_e2e.py:22: in &lt;module&gt;
+    import mining_runtime
+E   ModuleNotFoundError: No module named 'mining_runtime'</error></testcase></testsuite></testsuites>
