@@ -119,6 +119,9 @@ class OneIGPU:
         if self.db is None:raise RuntimeError('certified retrieval requires PrimeDB')
         return CertifiedMLAObject.from_dict(self.db.get(stored_id).payload).retrieve(mode)
     def close(self):
+        self._m5_ultra_closed=True
+        exact_gpu=getattr(self,"_m5_exact_opencl",None)
+        if exact_gpu is not None:exact_gpu.close()
         for runtime in getattr(self,'_feature_runtimes',[]):runtime.close()
         self._feature_runtimes=[]
         if self.db is not None: self.db.close()
