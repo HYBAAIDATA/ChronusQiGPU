@@ -27,6 +27,7 @@ from chronus.mla1517.mining.hashrate_governor import HashrateGovernor
 from chronus.mla1517.mining.pool_chain import PoolChainObserver
 from chronus.mla1517.mining.session import MiningSession
 from chronus.mla1517.mining.storage_recorder import MiningStorageRecorder
+from aethel.enterprise.governance import Quotas
 from hyba_db.models import Quota
 from hyba_db.store import OntologyStore
 from hyba_db.theseus_custody import TheseusFileCustody
@@ -42,7 +43,14 @@ def _short_root() -> Path:
 
 def _plane(tmp_path):
     tmp_path.mkdir(parents=True, exist_ok=True)
-    custody = TheseusFileCustody(tmp_path / "custody", hmac_key=CUSTODY_KEY)
+    # Live search_plan records are multi-MiB; the enterprise default (1 MiB)
+    # is documented as too small — production sizes it via
+    # PYTHIA_STORAGE_CUSTODY_MAX_PAYLOAD_BYTES.
+    custody = TheseusFileCustody(
+        tmp_path / "custody",
+        hmac_key=CUSTODY_KEY,
+        quotas=Quotas(max_payload=16 * 1024 * 1024),
+    )
     store = OntologyStore(tmp_path / "store.db", INTEGRITY_KEY, custody=custody)
     client = store.provision_client("m3-voyage", Quota(max_records=10**7, max_blob_bytes=10**9))
     return store, custody, client.tenant_id
