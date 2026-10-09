@@ -1,12 +1,12 @@
 {
   "schema": "chronos.m5_ultra_scope_contract/1",
-  "version": "3.11.3rc1",
-  "increment_base": "eb174c8cd9cb4695a4f1ed1360ca843d0191d203",
+  "version": "3.11.3rc2",
+  "increment_base": "8dd57e49998967899a88aaf53cf89e53386946ff",
   "scope": "CONTRACT_LAYER_INCREMENTAL_EVIDENCE_ONLY",
   "registry": "INTERNAL_INDEX",
   "certified": false,
   "elevation_complete": false,
-  "baseline_status": "PR151 still open; post-merge main baseline not available",
+  "baseline_status": "Post-PR151 merge main confirmed; bounded after-merge branch commits recovered into continuation",
   "inflation_ledger": {
     "allowed": [
       "operator_depth",
@@ -35,20 +35,21 @@
   "available_backends": {
     "CPU_REFERENCE": "independent symbolic basis-column host execution",
     "IGPU": "resident exact field host execution",
-    "GPU": "UNAVAILABLE; named reference fallback is not parity"
+    "GPU": "actual OpenCL integer executor implemented; dyadic field + common denominator <=60. Real GPU qualification unavailable on current host; never report CPU kernel conformance as GPU execution."
   },
   "replacement_policy": "additive; original bounded M5 APIs and broader RC3 feature runtime retained",
   "external_required": [
     "post-merge main baseline",
-    "exact GPU backend execution/parity",
-    "internal index URL and hash-pinned artifact/dependency manifest",
-    "caller-owned production Ed25519 signing identity",
-    "verified current-head CI"
+    "executed distinct-runner replay evidence"
   ],
   "unresolved": [
     "whole_product_composition",
     "full_register_semantics",
     "iGPU_qualified_VQC_beyond_M5_ULTRA",
     "public_publication_decision"
-  ]
+  ],
+  "recovered_bounded_implementation": "b4f34751559da2868fb5c4ef85c22adf00025b78",
+  "recovered_evidence_commit": "38c1456fce9adf4fe38d09645799a32ddca64d20",
+  "current_reconciliation_baseline": "53c5cfa246b4b1c99d016a1562fff47d3006d5c7",
+  "merge_reconciliation": "PR157 merged new modules but retained older facade/campaign/version/metadata surfaces; reconciled rather than capability removal"
 }

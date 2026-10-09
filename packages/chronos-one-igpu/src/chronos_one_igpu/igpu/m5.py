@@ -94,6 +94,6 @@ class M5ResidentRuntime:
         from .feature_profile import FeatureProfile
         return self.resident.gpu.feature_runtime(FeatureProfile.from_model(self._quantum_model),config)
 
-    def ultra_contract(self, rc_sha):
+    def ultra_contract(self, rc_sha, gpu_selector=None):
         from .m5_ultra_contract import M5UltraContract
-        return M5UltraContract(self.resident.gpu,self._quantum_model,rc_sha)
+        return M5UltraContract(self.resident.gpu,self._quantum_model,rc_sha,gpu_selector)

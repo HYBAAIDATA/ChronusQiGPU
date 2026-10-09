@@ -113,3 +113,23 @@ def test_distinct_exact_gpu_integer_work_counts():
     c=OperatorChain(2,(('H',0),('T',0),('TDG',1),('S',1),('CX',0,1)),(0,1));counts=integer_kernel_counts(c)
     assert counts['kernel_dispatches']==5 and counts['coefficient_writes']==80
     assert counts['checked_add_calls']==32 and counts['checked_negation_calls']==28 and counts['checked_doubling_calls']==32
+
+
+def test_public_facade_preserves_explicit_device_selector():
+    """Merge-regression guard: public facade must expose the exact executor."""
+    with OneIGPU(working_width=32,prime_rom_limit=1000)as gpu:
+        runtime=gpu.m5_resident(model=elevate_pads(1)).ultra_contract('a'*40,gpu_selector='explicit-device-identity')
+        assert runtime.gpu_selector=='explicit-device-identity'
+        # Selecting an identity does not itself execute or certify hardware.
+        assert not hasattr(gpu,'_m5_exact_opencl')
+
+
+def test_offline_replay_does_not_redispatch_execution(monkeypatch):
+    """Disabling execution must not prevent independent historical replay."""
+    with OneIGPU(working_width=32,prime_rom_limit=1000)as gpu:
+        runtime=gpu.m5_resident(model=elevate_pads(1)).ultra_contract('a'*40)
+        receipt=runtime.execute(OperatorChain(1,(('H',0),),(0,)))
+        def disabled(*args,**kwargs):
+            raise AssertionError('historical replay redispatched execution')
+        monkeypatch.setattr(runtime,'execute',disabled)
+        assert runtime.replay(receipt,device_contract('IGPU'))
