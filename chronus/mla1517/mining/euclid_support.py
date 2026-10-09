@@ -294,11 +294,6 @@ class EuclidMiningSupport:
                 if self._last_salamander and self._last_salamander.get("available")
                 else "UNAVAILABLE"
             ),
-            "salamander_evidence_head": (
-                self._last_salamander.get("evidence_head")
-                if self._last_salamander and self._last_salamander.get("available")
-                else None
-            ),
             "accepted_band": self._band(outcomes.get("accepted_ratio"), (0.5, 0.9, 0.99)),
             "rejected_band": self._band(outcomes.get("rejected_ratio"), (0.001, 0.01, 0.05)),
             "unknown_band": self._band(outcomes.get("unknown_ratio"), (0.001, 0.01, 0.05)),
@@ -435,6 +430,7 @@ class EuclidMiningSupport:
                 "last_reward_at": self._last_reward_at or None,
                 "claim_boundary": "bounded operating policy; no consensus authority",
                 "policy_identity": self.policy_identity,
+                "salamander_observation": dict(self._last_salamander or {}),
                 "cognition_problem": cognition_problem.problem.to_mapping(),
             },
         )
