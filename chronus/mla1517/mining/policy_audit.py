@@ -20,6 +20,7 @@ import math
 from typing import Any, Sequence
 
 from chronus.mla1517.quantum import classical_simulation_provenance
+from Intelligence.lucas_scales import ladder_capacity
 from .operating_policy import PolicyDecision
 
 # The VQC register is exact state-vector algebra on the host CPU; its
@@ -87,7 +88,8 @@ def grover_minimum(losses: Sequence[float], *, seed: int, register_cls=None) -> 
 
 
 class PolicyAuditor:
-    def __init__(self, *, every: int = 64) -> None:
+    # LUCAS_SCALED: the audit cadence is a Chronus-owned envelope.
+    def __init__(self, *, every: int = ladder_capacity(64)) -> None:
         self.every = max(1, every)
         self.audits = 0
         self.disagreements = 0

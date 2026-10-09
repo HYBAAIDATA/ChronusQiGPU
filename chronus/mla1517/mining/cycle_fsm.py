@@ -27,6 +27,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, Callable, Mapping
 
+from Intelligence.lucas_scales import ladder_capacity
+
 SCHEMA = "pythia.mining_cycle/1"
 THEOREM_PROVEN = False
 
@@ -281,7 +283,7 @@ class MiningCycleLedger:
     def __init__(
         self,
         *,
-        history: int = 256,
+        history: int = ladder_capacity(256),
         on_event: Callable[[CycleEvent], None] | None = None,
         clock: Callable[[], float] = time.time,
     ) -> None:

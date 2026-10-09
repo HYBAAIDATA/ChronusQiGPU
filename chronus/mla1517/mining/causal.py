@@ -24,6 +24,8 @@ from dataclasses import asdict, dataclass, fields, replace
 from pathlib import Path
 from typing import Any, Callable, Deque, Iterable
 
+from Intelligence.lucas_scales import ladder_capacity
+
 from .software_revision import software_revision
 
 LOG = logging.getLogger(__name__)
@@ -103,9 +105,9 @@ class CausalLedger:
     def __init__(
         self,
         *,
-        capacity: int = 4096,
+        capacity: int = ladder_capacity(4096),
         path: str | Path | None = None,
-        max_file_bytes: int = 32 * 1024 * 1024,
+        max_file_bytes: int = ladder_capacity(32 * 1024 * 1024),
         revision: str | None = None,
         observer: Callable[[CausalEvent], None] | None = None,
     ) -> None:

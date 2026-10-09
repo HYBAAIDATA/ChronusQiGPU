@@ -22,14 +22,18 @@ from collections import OrderedDict
 from dataclasses import dataclass, replace
 from typing import Any, Callable, Hashable
 
+from Intelligence.lucas_scales import ladder_capacity
+
 from .search_plan import LeaseState, NonceLease
 
 NONCE_SPACE = 1 << 32
 LANE_ALIGN = 32
 # How many recently worked header spaces keep their coverage across rebinds,
 # and how many extranonce2 values may be skipped looking for a fresh one.
-_WORK_SPACE_MEMORY = 8
-_EXTRANONCE2_SKIP_LIMIT = 64
+# LUCAS_SCALED (lemma_lucas_universal): retention/bound envelopes are
+# ladder stops. LANE_ALIGN stays raw — M32 lane topology, not an envelope.
+_WORK_SPACE_MEMORY = ladder_capacity(8)
+_EXTRANONCE2_SKIP_LIMIT = ladder_capacity(64)
 
 
 class LeaseConflict(RuntimeError):
@@ -75,7 +79,12 @@ def lease_span(window: int) -> int:
 
 
 class NonceLeaseLedger:
-    def __init__(self, *, max_active: int = 16, terminal_memory: int = 512) -> None:
+    def __init__(
+        self,
+        *,
+        max_active: int = ladder_capacity(16),
+        terminal_memory: int = ladder_capacity(512),
+    ) -> None:
         if max_active <= 0 or terminal_memory <= 0:
             raise ValueError("ledger bounds must be positive")
         self._max_active = max_active

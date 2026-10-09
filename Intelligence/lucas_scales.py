@@ -124,6 +124,18 @@ def next_ladder_index(n: int, direction: int, lo: int, hi: int) -> int:
     return n
 
 
+def ladder_capacity(bound: int) -> int:
+    """Snap a Chronus-owned capacity/retention bound to a ladder stop.
+
+    Returns the largest ladder stop not exceeding ``bound``; bounds below
+    the minimum stop (10) promote to 10. The bound is a scale-contract
+    envelope (lemma_lucas_universal, LUCAS_SCALED) — never a measured
+    quantity.
+    """
+    b = max(1, int(bound))
+    return nearest_ladder_index(b, 1, max(10, b))
+
+
 PHI = (1 + math.sqrt(5)) / 2
 
 
@@ -402,6 +414,7 @@ __all__ = [
     "CHRONUS_SCALE_RUNGS",
     "PISOT_EXACT_N",
     "is_ladder_index",
+    "ladder_capacity",
     "ladder_multiples_of",
     "nearest_ladder_index",
     "next_ladder_index",

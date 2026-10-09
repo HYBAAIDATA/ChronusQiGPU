@@ -12,6 +12,8 @@ from collections import Counter, deque
 from dataclasses import dataclass, field
 from typing import Any, Deque
 
+from Intelligence.lucas_scales import ladder_capacity
+
 from .search_plan import CompletionState, ExecutionRecord, PoolOutcome
 
 
@@ -87,7 +89,7 @@ class _PolicyQuality:
 
 
 class QualityLedger:
-    def __init__(self, *, window: int = 64) -> None:
+    def __init__(self, *, window: int = ladder_capacity(64)) -> None:
         if window <= 0:
             raise ValueError("window must be positive")
         self._window = window

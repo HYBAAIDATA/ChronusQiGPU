@@ -18,7 +18,16 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
+from Intelligence.lucas_scales import ladder_capacity
+
 from .software_revision import software_revision
+
+# LUCAS_SCALED (lemma_lucas_universal): retention/cadence envelopes are
+# ladder stops. min_samples/cooldown_windows/max_attempts are control
+# bounds and stay raw.
+_SAMPLE_RETENTION = ladder_capacity(32)
+_HISTORY_RETENTION = ladder_capacity(64)
+_PERSIST_EVERY = ladder_capacity(16)
 
 SCHEMA = "pythia.closed-loop-optimisation/1"
 
@@ -72,12 +81,12 @@ class ClosedLoopOptimizer:
         self.evidence_source = evidence_source
         self.state_path = Path(state_path) if state_path else None
         self.active: dict[str, int] = {}
-        self.samples: dict[str, deque[float]] = defaultdict(lambda: deque(maxlen=32))
+        self.samples: dict[str, deque[float]] = defaultdict(lambda: deque(maxlen=_SAMPLE_RETENTION))
         self.cooldown: dict[str, int] = defaultdict(int)
         self.attempts: dict[str, int] = defaultdict(int)
         self._software_revision = software_revision()
         self.trial: dict[str, Any] | None = None
-        self.history: deque[OptimizationEvent] = deque(maxlen=64)
+        self.history: deque[OptimizationEvent] = deque(maxlen=_HISTORY_RETENTION)
         self.last_observation: dict[str, Any] | None = None
         if self.state_path is not None:
             self.load()
@@ -219,7 +228,7 @@ class ClosedLoopOptimizer:
             values.append(rate)
             # Avoid an fsync on every mining window. Persist once the baseline
             # first becomes trial-eligible and then in bounded checkpoints.
-            if len(values) == self.min_samples or len(values) % 16 == 0:
+            if len(values) == self.min_samples or len(values) % _PERSIST_EVERY == 0:
                 self._persist()
 
     def fail_closed(self, route: str, reason: str) -> int | None:
@@ -341,9 +350,9 @@ class ClosedLoopOptimizer:
             ):
                 raise ValueError("persisted optimisation bounds are invalid")
             self.active = {str(k): int(v) for k, v in body.get("active", {}).items()}
-            self.samples = defaultdict(lambda: deque(maxlen=32))
+            self.samples = defaultdict(lambda: deque(maxlen=_SAMPLE_RETENTION))
             for key, values in body.get("samples", {}).items():
-                self.samples[str(key)].extend(float(v) for v in values[-32:])
+                self.samples[str(key)].extend(float(v) for v in values[-_SAMPLE_RETENTION:])
             self.cooldown = defaultdict(
                 int, {str(k): int(v) for k, v in body.get("cooldown", {}).items()}
             )
@@ -357,6 +366,6 @@ class ClosedLoopOptimizer:
             return True
         except Exception:
             self.active, self.trial = {}, None
-            self.samples = defaultdict(lambda: deque(maxlen=32))
-            self.history = deque(maxlen=64)
+            self.samples = defaultdict(lambda: deque(maxlen=_SAMPLE_RETENTION))
+            self.history = deque(maxlen=_HISTORY_RETENTION)
             return False

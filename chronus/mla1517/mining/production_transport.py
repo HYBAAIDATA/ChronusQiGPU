@@ -21,6 +21,8 @@ from manifold_pool_coordinator import (
     StratumClient,
 )
 
+from Intelligence.lucas_scales import ladder_capacity
+
 from .causal import CausalCoordinate, CausalLedger
 from .coordinator import IntelligentPoolCoordinator, MMIOControlSink
 from .cycle_fsm import MiningCycleLedger, MiningCycleState
@@ -82,7 +84,7 @@ class ProductionStratumClient(StratumClient):
     ) -> None:
         # Base __init__ publishes an initial status snapshot and therefore may
         # call our overridden _publish_status/status_snapshot immediately.
-        self._submit_rtt_ms: deque[float] = deque(maxlen=2048)
+        self._submit_rtt_ms: deque[float] = deque(maxlen=ladder_capacity(2048))
         self._stale_dropped = 0
         # Transport truth: incremented when writer.write() has accepted the
         # request bytes. A response timeout after this point is UNKNOWN and
@@ -114,8 +116,10 @@ class ProductionStratumClient(StratumClient):
             if enqueue_timeout is None
             else enqueue_timeout
         )
+        # LUCAS_SCALED: the Chronus-declared default is a ladder stop; an
+        # explicit caller/env bound is honored unchanged (caller authority).
         queue_size = (
-            _positive_int_env("PYTHIA_STRATUM_OUTBOUND_QUEUE", 256)
+            _positive_int_env("PYTHIA_STRATUM_OUTBOUND_QUEUE", ladder_capacity(256))
             if outbound_queue_size is None
             else outbound_queue_size
         )

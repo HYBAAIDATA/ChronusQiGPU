@@ -18,6 +18,8 @@ from queue import Full, Queue
 from types import MappingProxyType
 from typing import Any, Mapping
 
+from Intelligence.lucas_scales import ladder_capacity
+
 from .intelligence_controller import ControlSignal
 from .toe_context import TOEContext, TOEContextUnavailable
 
@@ -84,7 +86,8 @@ class NonBlockingRecoveryQueue:
     fail-closed backpressure policy rather than dropping a recovery action.
     """
 
-    def __init__(self, max_pending: int = 64) -> None:
+    # LUCAS_SCALED: the recovery-queue capacity default is a ladder stop.
+    def __init__(self, max_pending: int = ladder_capacity(64)) -> None:
         if max_pending <= 0:
             raise ValueError("max_pending must be positive")
         self._queue: Queue[RecoveryPlan] = Queue(maxsize=max_pending)
