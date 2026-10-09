@@ -26,6 +26,8 @@ dependencies = [
     # is part of the miner: the Hendrix nonce order and the VQC policy audit.
     # Install it beside this package: pip install ./turing_universal_quantum_computer .
     "hyba-turing-vqc>=1.0",
+    # The resident Chronus iGPU execution contract (in-tree: packages/chronos-one-igpu/)
+    "chronos-one-igpu>=3.11.3rc2",
 ]
 
 [project.scripts]
