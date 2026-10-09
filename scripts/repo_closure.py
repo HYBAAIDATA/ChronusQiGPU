@@ -54,6 +54,7 @@ AGENT_PREFIXES = {
         "distributed/",
         "emulator/",
         "conformance/",
+        "packages/chronos-one-igpu/",
     ),
     "D": (
         "turing_universal_quantum_computer/",
@@ -123,7 +124,7 @@ ROOT_EXPLICIT = {
 
 CONFIG_RULES = (
     ("B", re.compile(r"(?:^|/)(?:mining|pythia|stratum|pool|hendrix)", re.I)),
-    ("F", re.compile(r"(?:al[-_]?haras|security|salamander|governance|promotion)", re.I)),
+    ("F", re.compile(r"(?:al[-_]?haras|security|salamander|governance|promotion|assurance|gate)", re.I)),
 )
 
 DISCOVERY_PATTERNS = {

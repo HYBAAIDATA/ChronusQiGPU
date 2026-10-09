@@ -1,18 +1,13 @@
 {
-  "schema_version": 1,
-  "source_sha": "1f28cf9164df6d14b24c9fe22c8da65784e87283",
-  "tracked_file_count": 3690,
-  "unowned_files": [],
-  "multi_owned_files": [],
   "counts_by_agent": {
-    "A": 506,
-    "B": 60,
-    "C": 644,
-    "D": 428,
-    "E": 119,
-    "F": 173,
-    "G": 210,
-    "H": 1550
+    "A": 556,
+    "B": 62,
+    "C": 1193,
+    "D": 433,
+    "E": 121,
+    "F": 180,
+    "G": 245,
+    "H": 1738
   },
   "files": {
     ".agents/collide_scan.py": {
@@ -100,6 +95,20 @@
       "rule": "H:.agents/"
     },
     ".agents/struct_scan.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.agents/"
+    },
+    ".agents/sync_log3.txt": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.agents/"
+    },
+    ".agents/sync_stash3.txt": {
       "owner": "H",
       "owners": [
         "H"
@@ -253,6 +262,13 @@
       ],
       "rule": "H:.github/"
     },
+    ".github/workflows/chronos-m5-package.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.github/"
+    },
     ".github/workflows/ci.yml": {
       "owner": "H",
       "owners": [
@@ -281,7 +297,21 @@
       ],
       "rule": "H:.github/"
     },
+    ".github/workflows/euclid-v17-integration.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.github/"
+    },
     ".github/workflows/euclid-v17-release.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.github/"
+    },
+    ".github/workflows/gate-evidence-integrity.yml": {
       "owner": "H",
       "owners": [
         "H"
@@ -330,6 +360,13 @@
       ],
       "rule": "H:.github/"
     },
+    ".github/workflows/north-star-qualification.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.github/"
+    },
     ".github/workflows/production-closure.yml": {
       "owner": "H",
       "owners": [
@@ -338,6 +375,13 @@
       "rule": "H:.github/"
     },
     ".github/workflows/promotion.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.github/"
+    },
+    ".github/workflows/publication-naming.yml": {
       "owner": "H",
       "owners": [
         "H"
@@ -359,6 +403,41 @@
       "rule": "H:.github/"
     },
     ".github/workflows/pythia-push-gate.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.github/"
+    },
+    ".github/workflows/resident-hendrix.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.github/"
+    },
+    ".github/workflows/salamander-outcome-boundary.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.github/"
+    },
+    ".github/workflows/salamander-package.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.github/"
+    },
+    ".github/workflows/storage-publication-preparation.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.github/"
+    },
+    ".github/workflows/toe-release.yml": {
       "owner": "H",
       "owners": [
         "H"
@@ -428,13 +507,6 @@
       ],
       "rule": "root-infrastructure-fallback"
     },
-    "APPLE_M5_HANDOFF.md": {
-      "owner": "H",
-      "owners": [
-        "H"
-      ],
-      "rule": "root-infrastructure-fallback"
-    },
     "ARCHITECTURE.md": {
       "owner": "H",
       "owners": [
@@ -449,14 +521,14 @@
       ],
       "rule": "root-infrastructure-fallback"
     },
-    "CONTRACTS.md": {
+    "CONTRIBUTING.md": {
       "owner": "H",
       "owners": [
         "H"
       ],
       "rule": "root-infrastructure-fallback"
     },
-    "CONTRIBUTING.md": {
+    "Chronus_elevation": {
       "owner": "H",
       "owners": [
         "H"
@@ -484,13 +556,6 @@
       ],
       "rule": "root-explicit"
     },
-    "EVOLUTION.md": {
-      "owner": "H",
-      "owners": [
-        "H"
-      ],
-      "rule": "root-infrastructure-fallback"
-    },
     "GEMINI.md": {
       "owner": "H",
       "owners": [
@@ -499,6 +564,13 @@
       "rule": "root-infrastructure-fallback"
     },
     "Intelligence/__init__.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/_born.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -940,13 +1012,6 @@
       "rule": "A:Intelligence/"
     },
     "Intelligence/neural_plasticity_quantum.py": {
-      "owner": "A",
-      "owners": [
-        "A"
-      ],
-      "rule": "A:Intelligence/"
-    },
-    "Intelligence/nobel_fields_intelligence.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -1555,6 +1620,20 @@
       ],
       "rule": "A:Intelligence/"
     },
+    "Intelligence/tests/__init__.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/tests/test_born_substrate.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
     "Intelligence/unified_punch.py": {
       "owner": "A",
       "owners": [
@@ -1569,6 +1648,13 @@
       ],
       "rule": "root-infrastructure-fallback"
     },
+    "M5run": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "root-infrastructure-fallback"
+    },
     "Makefile": {
       "owner": "H",
       "owners": [
@@ -1577,20 +1663,6 @@
       "rule": "root-infrastructure-fallback"
     },
     "README.md": {
-      "owner": "H",
-      "owners": [
-        "H"
-      ],
-      "rule": "root-infrastructure-fallback"
-    },
-    "README_MINING.md": {
-      "owner": "H",
-      "owners": [
-        "H"
-      ],
-      "rule": "root-infrastructure-fallback"
-    },
-    "RESEARCH_INTAKE.md": {
       "owner": "H",
       "owners": [
         "H"
@@ -1905,6 +1977,13 @@
       ],
       "rule": "D:aethel/"
     },
+    "aethel/filesystem_paths.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:aethel/"
+    },
     "aethel/fold_store.py": {
       "owner": "D",
       "owners": [
@@ -2058,13 +2137,6 @@
         "D"
       ],
       "rule": "D:aethel/"
-    },
-    "agent_policy.yml": {
-      "owner": "H",
-      "owners": [
-        "H"
-      ],
-      "rule": "root-infrastructure-fallback"
     },
     "agi/MASS_GAP_RELAXATION_README.md": {
       "owner": "A",
@@ -2311,6 +2383,13 @@
       ],
       "rule": "A:agi/"
     },
+    "agi/quantum_decision.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:agi/"
+    },
     "agi/quantum_mathematics.py": {
       "owner": "A",
       "owners": [
@@ -2361,6 +2440,20 @@
       "rule": "A:agi/"
     },
     "agi/simulations.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:agi/"
+    },
+    "agi/tests/test_agi_honest_compute.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:agi/"
+    },
+    "agi/tests/test_quantum_substrate_compute.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -2808,13 +2901,6 @@
       ],
       "rule": "E:artifacts/"
     },
-    "artifacts_benchmark.json": {
-      "owner": "H",
-      "owners": [
-        "H"
-      ],
-      "rule": "root-infrastructure-fallback"
-    },
     "asi/__init__.py": {
       "owner": "F",
       "owners": [
@@ -3207,13 +3293,6 @@
       ],
       "rule": "C:chronos/"
     },
-    "chronus-aethel-review.md": {
-      "owner": "H",
-      "owners": [
-        "H"
-      ],
-      "rule": "root-infrastructure-fallback"
-    },
     "chronus/CIAAS_REQUIREMENTS.md": {
       "owner": "C",
       "owners": [
@@ -3277,6 +3356,13 @@
       ],
       "rule": "C:chronus/"
     },
+    "chronus/consortium_push.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronus/"
+    },
     "chronus/delivery.py": {
       "owner": "C",
       "owners": [
@@ -3313,6 +3399,13 @@
       "rule": "C:chronus/"
     },
     "chronus/engine.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronus/"
+    },
+    "chronus/exact_geometry.py": {
       "owner": "C",
       "owners": [
         "C"
@@ -3404,6 +3497,13 @@
       "rule": "C:chronus/"
     },
     "chronus/kernels/unified_punch_kernel.cl": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronus/"
+    },
+    "chronus/m5_ultra.py": {
       "owner": "C",
       "owners": [
         "C"
@@ -3984,6 +4084,13 @@
       ],
       "rule": "C:chronus/"
     },
+    "chronus/mla1517/mining/exact_search.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronus/"
+    },
     "chronus/mla1517/mining/execution.py": {
       "owner": "C",
       "owners": [
@@ -4208,6 +4315,20 @@
       ],
       "rule": "C:chronus/"
     },
+    "chronus/mla1517/mining/resident_router.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronus/"
+    },
+    "chronus/mla1517/mining/resident_search.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronus/"
+    },
     "chronus/mla1517/mining/retarget_telemetry.py": {
       "owner": "C",
       "owners": [
@@ -4292,6 +4413,13 @@
       ],
       "rule": "C:chronus/"
     },
+    "chronus/mla1517/mining/stratum_v2_transport.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronus/"
+    },
     "chronus/mla1517/mining/structure.py": {
       "owner": "C",
       "owners": [
@@ -4328,6 +4456,13 @@
       "rule": "C:chronus/"
     },
     "chronus/mla1517/mining/toe_decision.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronus/"
+    },
+    "chronus/mla1517/mining/toe_problem.py": {
       "owner": "C",
       "owners": [
         "C"
@@ -5524,6 +5659,13 @@
       ],
       "rule": "C:chronus/"
     },
+    "chronus/mla1517_platform/python/test_production_replacements.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronus/"
+    },
     "chronus/mla1517_platform/python/test_production_transport.py": {
       "owner": "C",
       "owners": [
@@ -5972,6 +6114,13 @@
       ],
       "rule": "C:chronus/"
     },
+    "chronus/one_igpu_mining.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronus/"
+    },
     "chronus/opencl_host.py": {
       "owner": "C",
       "owners": [
@@ -6064,6 +6213,13 @@
       "rule": "C:chronus/"
     },
     "chronus/report.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronus/"
+    },
+    "chronus/resident_hendrix.py": {
       "owner": "C",
       "owners": [
         "C"
@@ -7162,6 +7318,27 @@
       ],
       "rule": "config-F"
     },
+    "config/api-release-gates.json": {
+      "owner": "F",
+      "owners": [
+        "F"
+      ],
+      "rule": "config-F"
+    },
+    "config/assurance-gates.json": {
+      "owner": "F",
+      "owners": [
+        "F"
+      ],
+      "rule": "config-F"
+    },
+    "config/euclid-v17-integration-gates.json": {
+      "owner": "F",
+      "owners": [
+        "F"
+      ],
+      "rule": "config-F"
+    },
     "config/promotion-environments.json": {
       "owner": "F",
       "owners": [
@@ -7393,13 +7570,6 @@
       ],
       "rule": "C:distributed/"
     },
-    "docker-cleanup.sh": {
-      "owner": "G",
-      "owners": [
-        "G"
-      ],
-      "rule": "root-product-deployment"
-    },
     "docker-compose.chronus-linux.yml": {
       "owner": "G",
       "owners": [
@@ -7512,6 +7682,13 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/APPLE_M5_HANDOFF.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/ARCHITECTURE.md": {
       "owner": "H",
       "owners": [
@@ -7597,6 +7774,13 @@
       "rule": "H:docs/"
     },
     "docs/CHRONUS_DELIVERY_MATRIX.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/CHRONUS_ELEVATION_ROADMAP.md": {
       "owner": "H",
       "owners": [
         "H"
@@ -7729,6 +7913,13 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/CONTRACTS.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/CONTRACT_DRIFT_REPORT.md": {
       "owner": "H",
       "owners": [
@@ -7813,6 +8004,20 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/EUCLID_V17_INTEGRATION_GATE.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/EUCLID_V17_PRODUCTION_INTEGRATION.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/EUCLID_V17_RESEARCH_RELEASE.md": {
       "owner": "H",
       "owners": [
@@ -7820,7 +8025,21 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/EUCLID_V17_RUNTIME_INTEGRITY.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/EVIDENCE_PACK_API_CONTRACT.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/EVOLUTION.md": {
       "owner": "H",
       "owners": [
         "H"
@@ -8100,6 +8319,13 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/PR140_BOUNDED_HANDOFF.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/PRODUCTION_EXECUTION_WIRING.md": {
       "owner": "H",
       "owners": [
@@ -8142,7 +8368,21 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/PRODUCTION_READINESS_REPLACEMENT_PLAN.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/PRODUCTION_READINESS_REVIEW.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/PRODUCT_REPLACEMENT_WORK.md": {
       "owner": "H",
       "owners": [
         "H"
@@ -8191,6 +8431,13 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/README_MINING.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/RECOVERY_EVIDENCE.md": {
       "owner": "H",
       "owners": [
@@ -8205,7 +8452,21 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/RESEARCH_INTAKE.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/RESEARCH_RECONCILIATION.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/RESIDENT_HENDRIX_ONE_IGPU.md": {
       "owner": "H",
       "owners": [
         "H"
@@ -8227,6 +8488,13 @@
       "rule": "H:docs/"
     },
     "docs/SALAMANDER_AUTONOMIC_CONTROL_PLANE.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/SALAMANDER_OUTCOME_BOUNDARY.md": {
       "owner": "H",
       "owners": [
         "H"
@@ -8268,6 +8536,13 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/STANDALONE_RELEASE_RC_PLAN.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/STARTUP.md": {
       "owner": "H",
       "owners": [
@@ -8276,6 +8551,13 @@
       "rule": "H:docs/"
     },
     "docs/STARTUP_FS_MATRIX.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/STORAGE_PUBLICATION_PREPARATION.md": {
       "owner": "H",
       "owners": [
         "H"
@@ -8562,6 +8844,13 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/chronus-aethel-review.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/chronus/FIRST_WORKLOAD.md": {
       "owner": "H",
       "owners": [
@@ -8702,7 +8991,427 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/evidence/exact-hendrix/changed-files.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/exact-hendrix/distributions.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/exact-hendrix/exact-contract-audit.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/exact-hendrix/exact-installed-tests.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/exact-hendrix/exact-portable-tests.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/exact-hendrix/exact-standalone-tests.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/exact-hendrix/genesis-exact-receipt.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/exact-hendrix/restart-verification.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/exact-hendrix/verification-results.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/evidence/paradigm_triad_latest.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/boundary.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/capture_voyage.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/changed-files.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/evidence-manifest.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/final-commands.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/final-native.xml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/final-platform.xml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/final-portable.xml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/final_verify.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/focused-installed-native.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/focused-installed-portable.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/import-audit.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/installed-provenance-native.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/installed-provenance-portable.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/packaging.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/platform.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/preflight-boundary.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/replay-native.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/replay-portable.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/restart-execute-native.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/restart-execute-portable.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/restart-replay-native.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/pr140-final/restart-replay-portable.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/canonical-available-suite.exitcode": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/canonical-available-suite.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/capture_voyage.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/changed-files.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/evidence-manifest.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/import-final-native.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/import-final-portable.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/initial-installed-evolution-portable.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/initial-voyage-capture-failure.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/install_test.sh": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/installed-evolution-native.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/installed-evolution-native.xml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/installed-evolution-portable.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/installed-evolution-portable.xml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/installed-route-native.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/installed-route-native.xml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/installed-route-portable.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/installed-route-portable.xml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/replacement-ledger.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/replay-native.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/replay-portable.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/retest_installed.sh": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/standalone-regression.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/standalone-regression.xml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/voyage-native.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/voyage-native.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/voyage-portable.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/product-replacement/voyage-portable.log": {
       "owner": "H",
       "owners": [
         "H"
@@ -8752,6 +9461,97 @@
       "rule": "H:docs/"
     },
     "docs/evidence/remote_gpu_agent_deviceless.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/resident-hendrix/commands.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/resident-hendrix/distribution-digests.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/resident-hendrix/environment.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/resident-hendrix/genesis-receipt.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/resident-hendrix/installed-doctor.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/resident-hendrix/native-installed-tests.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/resident-hendrix/pure-installed-doctor.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/resident-hendrix/pure-installed-tests.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/resident-hendrix/release-binding.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/resident-hendrix/restart-verification.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/resident-hendrix/source-manifest.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/resident-hendrix/standalone-tests.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/evidence/resident-hendrix/twine-check.log": {
       "owner": "H",
       "owners": [
         "H"
@@ -8884,6 +9684,20 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/lemma_lucas_universal.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/lemma_lucas_universal_signoff.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/lemma_ordering_signoff.json": {
       "owner": "H",
       "owners": [
@@ -8892,6 +9706,13 @@
       "rule": "H:docs/"
     },
     "docs/lemma_signoff.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/lucas_scaling_audit.md": {
       "owner": "H",
       "owners": [
         "H"
@@ -8982,7 +9803,49 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/pr_body_update.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/production/APPLE_M5_TRANSFER_20261009.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/production/LIVE_MINING_GO_LIVE_20261009.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/production/M5_AGENT_FULL_PIPELINE_HANDOVER_20261009.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/production/PRODUCTION_DECLARATION.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/production/PYTHIA_M3_CUSTODY_REPLAY_QUALIFICATION.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/production/api-governed-release-increment.md": {
       "owner": "H",
       "owners": [
         "H"
@@ -9178,7 +10041,28 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/test_voyage_plan.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/toe/ARCHAEOLOGY.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/toe/ARCHITECTURE.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/toe/CLAIM_REGISTER.md": {
       "owner": "H",
       "owners": [
         "H"
@@ -9521,6 +10405,104 @@
       ],
       "rule": "A:euclid/"
     },
+    "euclid/cognition/integrated/__init__.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/integrated/agent.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/integrated/analogy.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/integrated/composition.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/integrated/consolidation.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/integrated/context.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/integrated/control.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/integrated/memory.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/integrated/phi_mechanisms.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/integrated/planning.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/integrated/reasoning.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/integrated/self_improvement.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/integrated/skills.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/integrated/world_model.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
     "euclid/cognition/interfaces.py": {
       "owner": "A",
       "owners": [
@@ -9584,6 +10566,41 @@
       ],
       "rule": "A:euclid/"
     },
+    "euclid/cognition/research/__init__.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/research/cli.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/research/programme.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/research/report.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/research/stats.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
     "euclid/cognition/service.py": {
       "owner": "A",
       "owners": [
@@ -9592,6 +10609,41 @@
       "rule": "A:euclid/"
     },
     "euclid/cognition/state.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/toe_capabilities.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/worlds/__init__.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/worlds/families.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/worlds/mechanisms.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/cognition/worlds/world.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -9948,6 +11000,13 @@
       ],
       "rule": "A:euclid/"
     },
+    "euclid/tests/test_actuation_authority.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
     "euclid/tests/test_ast_delta_discovery.py": {
       "owner": "A",
       "owners": [
@@ -10019,6 +11078,13 @@
       "rule": "A:euclid/"
     },
     "euclid/tests/test_process_sandbox.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:euclid/"
+    },
+    "euclid/tests/test_runtime_integrity.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -10760,6 +11826,13 @@
       ],
       "rule": "G:frontend/"
     },
+    "frontend/src/lib/__tests__/access.test.ts": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:frontend/"
+    },
     "frontend/src/lib/__tests__/api.test.ts": {
       "owner": "G",
       "owners": [
@@ -10789,6 +11862,13 @@
       "rule": "G:frontend/"
     },
     "frontend/src/lib/__tests__/stratum.test.ts": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:frontend/"
+    },
+    "frontend/src/lib/access.ts": {
       "owner": "G",
       "owners": [
         "G"
@@ -11558,6 +12638,13 @@
       ],
       "rule": "E:hyba_db/"
     },
+    "hyba_db/ovid_index.py": {
+      "owner": "E",
+      "owners": [
+        "E"
+      ],
+      "rule": "E:hyba_db/"
+    },
     "hyba_db/ovid_transform.py": {
       "owner": "E",
       "owners": [
@@ -11823,6 +12910,13 @@
         "G"
       ],
       "rule": "G:integrations/"
+    },
+    "isa/__init__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:isa/"
     },
     "isa/chronus1.json": {
       "owner": "C",
@@ -14932,6 +16026,13 @@
       ],
       "rule": "H:legacy/"
     },
+    "legacy/agent_policy.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy/"
+    },
     "legacy/bridge/base/0-pythia-main-namespace.yaml": {
       "owner": "H",
       "owners": [
@@ -17263,6 +18364,20 @@
       ],
       "rule": "D:lucas/"
     },
+    "m5": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "root-infrastructure-fallback"
+    },
+    "m5evidence": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "root-infrastructure-fallback"
+    },
     "main.py": {
       "owner": "H",
       "owners": [
@@ -17276,6 +18391,13 @@
         "H"
       ],
       "rule": "H:make/"
+    },
+    "manifests/__init__.py": {
+      "owner": "E",
+      "owners": [
+        "E"
+      ],
+      "rule": "E:manifests/"
     },
     "manifests/canonical_mining_voyage.json": {
       "owner": "E",
@@ -17669,6 +18791,20 @@
       ],
       "rule": "B:mining/"
     },
+    "mining/tests/__init__.py": {
+      "owner": "B",
+      "owners": [
+        "B"
+      ],
+      "rule": "B:mining/"
+    },
+    "mining/tests/test_agent_b_regressions.py": {
+      "owner": "B",
+      "owners": [
+        "B"
+      ],
+      "rule": "B:mining/"
+    },
     "mining/thermodynamics_exact.py": {
       "owner": "B",
       "owners": [
@@ -17795,6 +18931,3772 @@
       ],
       "rule": "root-explicit"
     },
+    "packages/chronos-one-igpu/.dockerignore": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/.github/workflows/ci.yml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/.github/workflows/formal.yml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/.github/workflows/package.yml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/.gitignore": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/ACADEMIC_AUDIT.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/ARCHIVE_MANIFEST.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/AUDIT_NOTES.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/BENCHMARKS.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/CHANGELOG-v3.10.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/CHANGELOG-v3.11.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/CHANGELOG-v3.5.1.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/CHANGELOG-v3.5.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/CHANGELOG-v3.6.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/CHANGELOG-v3.7.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/CHANGELOG-v3.8.1.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/CHANGELOG-v3.8.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/CHANGELOG-v3.9.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/Dockerfile": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/LICENSE": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/MANIFEST.in": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/README.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/architecture/golden_igpu.puml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/architecture/one_igpu.puml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/architecture/source_igpu_architecture.puml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/asic-adjacency-portable-c.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/asic-adjacency-results.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/asic-end-to-end-observations.csv": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/asic-mining-throughput.html": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/deterministic-reuse-observations.csv": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/deterministic-reuse-results.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/deterministic-reuse-throughput.html": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/elevation-results.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/lucas_engine_benchmark.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/lucas_results.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/reference_v3_8_1_solver_cache.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/reference_v3_8_golden_runtime.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/results.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/run_asic_adjacency.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/run_benchmarks.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/run_deterministic_reuse.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/run_standalone_elevation.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/run_structured_elevation.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/structured-elevation-observations.csv": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/structured-elevation-results.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/benchmarks/structured-elevation-throughput.html": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/chronos_gpu_demo.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/compose.yaml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/config.example.toml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/APPLE_NEURAL_INTEGRATION.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/ASIC_MINING.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/ATTACHED_SURFACE_INVENTORY.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/COMPLETION_CONTRACT.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/DETERMINISTIC_ELEVATION.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/EXACT_HENDRIX_PROFILE.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/FAMILY_COMPOSITION.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/FEEDBACK_AUDIT-v3.10.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/GOLDEN_IGPU_INTEGRATION.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/HISTORY-README-through-v3.11.1.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/IMPLEMENTATION_STATUS.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/M5-ELEVATION-FEEDBACK-LEDGER.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/M5-GENERIC-FEATURE-COVERAGE.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/M5-INTEGRATION-AUDIT.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/M5-ULTRA-CONTRACT.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/PUBLICATION.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/PUBLIC_TECHNIQUES.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/PYTHI_NATIVE_OBLIGATIONS.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/RESIDENT_ELEVATION.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/REVIEWED_NOTION-v3.10.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/SOURCE_MANIFEST.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/STANDALONE-v3.4-to-v3.6.patch": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/STANDALONE-v3.4-to-v3.7.patch": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/STANDALONE-v3.4-to-v3.8.1.patch": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/STANDALONE-v3.4-to-v3.8.patch": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/STANDALONE-v3.4-to-v3.9.patch": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/STRUCTURED_PYTHI_ELEVATION.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/USER_SCALING_REVIEW_VERBATIM.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/2270cdba87ec4cbab7ea2ecb23f65507.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/387ee3624e6b4b788bf1f720fae65d8e.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/3f3411d7e25c449db0087d32ba47f3f0.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/449671c29bc14fd1a3c1509696f6a0dc.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/4c570b8df65342089342464e2d12f11e.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/87ae041517d34a39b5ed0021cc8651af.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/94d69172a55b4b4896a6d3f8e4ad100a.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/ab93abfb6e9b4a2b9a122f8dad51bfc9.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/cbf3cbd3cb764b66a8798ba45da76dc6.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/reviewed-notion-v3.10/e3a44a55614e4cdca77ef8e2db200571.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/source_notes/MANIFEST-v3.10.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/source_notes/MANIFEST.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/source_notes/architecture.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/source_notes/elevation-module-inventory.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/source_notes/paradigm_spine.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/source_notes/phase4_core_directive.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/source_notes/pythi-native-user-proposal.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/source_notes/resident-projection-user-review.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/docs/source_notes/scaling_review.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/evidence/phase_3.2.1/adapter_spec.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/evidence/phase_3.2.1/execution_receipt.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/evidence/phase_3.2.1/manifest.sha256": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/evidence/phase_3.2.1/opencl_probe.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/evidence/phase_3.2.2/manifest.sha256": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/evidence/phase_3.2.2/sparse_limits.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/evidence/phase_3.2.2/tier_18_sample.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/evidence/phase_3.2.2/tier_plan.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/evidence/phase_3.2.3/manifest.sha256": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/evidence/phase_3.2.3/share_submission.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/evidence/phase_3.2.4/manifest.sha256": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/evidence/phase_3.2.4/proof_report.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/evidence/phase_3.2.5/integration.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/evidence/phase_3.2.5/manifest.sha256": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/evidence/phase_4.0.0/golden_ontology_validation.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/evidence/phase_4.0.0/manifest.sha256": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/evolution_engine.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/examples/demo.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/examples/golden_igpu_demo.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/hamiltonian_library.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/native/mla1517/contracts/mla1517.h": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/native/mla1517/cpp/mla1517_cpu.cpp": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/native/mla1517/rust/Cargo.toml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/native/mla1517/rust/src/lib.rs": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/proofs/README.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/proofs/lean/Projection.lean": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/pyproject.toml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/qsdl_compiler.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/reconstruction_prisma.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/requirements-tested.lock": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/requirements.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/scripts/audit_m5_ultra_contract.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/scripts/benchmark_generic_features.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/scripts/build_evidence_pack.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/scripts/check_formal_proofs.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/scripts/check_structured_kernel_syntax.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/scripts/golden_ontology_validation.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/scripts/replay_m5_ultra_evidence.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/scripts/seal_ci_evidence.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/scripts/sync_m5_model.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/scripts/verify_internal_m5_ultra.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/scripts/verify_m5_package.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/scripts/voyage_smoke.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/setup.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/__init__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/academic/__init__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/academic/caltech.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/academic/cambridge.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/academic/cern.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/academic/mit.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/academic/nist.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/academic/report.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/academic/tensor_compression.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/academic/tokyotech.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/adapters/__init__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/adapters/base.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/adapters/cpu.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/adapters/opencl.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/adapters/registry.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/certificate.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/core_hash.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/engine.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/evidence.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/evolution_engine.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/family_algebra.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/golden_quantum/__init__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/golden_quantum/coherence.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/golden_quantum/constants.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/golden_quantum/data_folding.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/golden_quantum/infinity_fold.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/golden_quantum/infinity_gpu.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/golden_quantum/mandelbrot.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/golden_quantum/memory.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/golden_quantum/mining.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/golden_quantum/oracles.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/golden_quantum/quantum_state.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/golden_quantum/search.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/golden_quantum/uci.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/hamiltonian.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/__init__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/apple.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/asic_mining.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/contracts.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/control.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/core.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/exact_dense.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/exact_fold.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/exact_geometry.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/exact_quantum.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/exact_solver.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/execution_identity.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/extended_algebra.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/fabric.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/facade.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/geometry11d.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/golden_runtime.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/hendrix_execution.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/host.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/intrinsics.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/kernels/hendrix600.cl": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/kernels/lucas256.cl": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/kernels/sha256d.cl": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/kernels/structured_matvec.cl": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/native/sha256d_native.c": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/native/structured_native.c": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/objects.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/overlay.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/qx.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/remote.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/resident.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/resident_hendrix.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/scaled_plan.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/scaling_validation.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/service.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/solver_cache.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/APPLE_NEURAL_INTEGRATION.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/ASIC_MINING.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/FAMILY_COMPOSITION.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/PUBLICATION.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/PUBLIC_TECHNIQUES.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/attached_surface_inventory.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/completion-v3.10.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/completion_contract.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/completion_contract_v1.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/deterministic_elevation.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/feedback-v3.10.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/implementation_status.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/integration_plan_v1.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/notion_sources_v1.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/pythi_native_obligations.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/source_manifest.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/MANIFEST-v3.10.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/MANIFEST.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/architecture.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/elevation-module-inventory.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/paradigm_spine.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/phase4_core_directive.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/pythi-native-user-proposal.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/resident-projection-user-review.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/source_notes/scaling_review.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/spec/structured_pythi_elevation.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/store.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/structured_solver.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/tensor_runtime.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/virtual_abi.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/igpu/witness_cache.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/lucas_datapath.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/lucas_engine.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/lucas_runtime.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/lucas_scaling.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/manifold.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/paradigm/__init__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/paradigm/__main__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/phi_scaling.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/pool.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/projection_analysis.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/pythi_native.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/qsdl_compiler.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/qsdl_parser.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/qualification.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/reconstruction.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/reference_contract.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/release_cli.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/sparse.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/test_harness.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/theory/__init__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/theory/anyons.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/theory/chemistry.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/theory/control.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/theory/cryogenics.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/theory/error_correction.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/theory/metrology.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/theory/oscillator_array.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/theory/photonics.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/theory/qcd.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/theory/report.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos/theory/superconductivity.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/__init__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/academic/__init__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/academic/caltech.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/academic/cambridge.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/academic/cern.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/academic/mit.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/academic/nist.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/academic/report.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/academic/tensor_compression.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/academic/tokyotech.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/adapters/__init__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/adapters/base.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/adapters/cpu.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/adapters/opencl.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/adapters/registry.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/certificate.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/core_hash.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/engine.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/evidence.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/evolution_engine.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/family_algebra.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/__init__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/coherence.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/constants.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/data_folding.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/infinity_fold.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/infinity_gpu.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/mandelbrot.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/memory.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/mining.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/oracles.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/quantum_state.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/search.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/golden_quantum/uci.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/hamiltonian.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/__init__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/apple.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/asic_mining.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/contracts.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/control.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/core.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/exact_dense.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/exact_fold.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/exact_geometry.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/exact_neural.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/exact_quantum.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/exact_solver.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/exact_stabilizer.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/execution_binding.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/execution_identity.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/extended_algebra.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/fabric.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/facade.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/feature_profile.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/feature_runtime.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/geometry11d.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/golden_runtime.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/hendrix_execution.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/host.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/intrinsics.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/kernels/hendrix600.cl": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/kernels/lucas256.cl": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/kernels/m5_exact_dyadic.cl": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/kernels/sha256d.cl": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/kernels/structured_matvec.cl": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/m5.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/m5_contract_custody.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/m5_exact_opencl.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/m5_quantum.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/m5_release_gates.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/m5_ultra_contract.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/native/sha256d_native.c": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/native/structured_native.c": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/objects.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/overlay.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/qx.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/remote.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/resident.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/resident_hendrix.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/scaled_plan.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/scaling_validation.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/service.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/solver_cache.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/APPLE_NEURAL_INTEGRATION.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/ASIC_MINING.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/FAMILY_COMPOSITION.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/PUBLICATION.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/PUBLIC_TECHNIQUES.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/attached_surface_inventory.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/completion-v3.10.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/completion_contract.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/completion_contract_v1.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/deterministic_elevation.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/feedback-v3.10.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/implementation_status.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/integration_plan_v1.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/notion_sources_v1.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/pythi_native_obligations.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_manifest.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/MANIFEST-v3.10.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/MANIFEST.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/architecture.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/elevation-module-inventory.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/paradigm_spine.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/phase4_core_directive.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/pythi-native-user-proposal.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/resident-projection-user-review.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/source_notes/scaling_review.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/spec/structured_pythi_elevation.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/store.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/structured_solver.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/tensor_runtime.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/unified_fabric.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/virtual_abi.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/igpu/witness_cache.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/lucas_datapath.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/lucas_engine.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/lucas_runtime.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/lucas_scaling.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/m5_ultra.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/manifold.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/paradigm/__init__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/paradigm/__main__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/phi_scaling.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/pool.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/projection_analysis.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/pythi_native.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/qsdl_compiler.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/qsdl_parser.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/qualification.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/reconstruction.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/reference_contract.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/release_cli.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/sparse.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/test_harness.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/theory/__init__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/theory/anyons.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/theory/chemistry.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/theory/control.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/theory/cryogenics.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/theory/error_correction.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/theory/metrology.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/theory/oscillator_array.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/theory/photonics.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/theory/qcd.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/theory/report.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/src/chronos_one_igpu/theory/superconductivity.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/README.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/fixtures/resident_hendrix_genesis.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_apple_extensions.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_asic_mining.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_elevation.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_elevation_intake.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_exact_evolution_replacement.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_execution_binding.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_family_algebra.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_generic_m5_features.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_golden_integration.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_lucas_datapath.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_lucas_engine.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_lucas_runtime.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_lucas_scaling.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_m32_public_replacement.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_m5_exact_opencl.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_m5_model.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_m5_quantum.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_m5_release_gates.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_m5_resident.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_m5_ultra_contract.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_next_round.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_one_igpu.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_opencl_adapter_replacement.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_pythi_native.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_reference_boundary.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_resident_projection.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_self_tests.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_solver_cache.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_structured_solver.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/tests/test_substrate_agnostic.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/CORE_PRESERVATION.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/EVIDENCE_INDEX-v3.10.0.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/EVIDENCE_INDEX-v3.8.1.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/EVIDENCE_INDEX-v3.9.0.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/RELEASE_REPORT-v3.8.1.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/RELEASE_REPORT-v3.8.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/RELEASE_REPORT.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/asic-benchmark-reconciliation.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/asic-openssl-build.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/asic-portable-build.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/asic-portable-tests.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/asic_v38_mining_notion_agent_chart.html": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/distribution-build.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/distribution-metadata-check.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/family-10-12-15.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/family-verify.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/full-junit.xml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/full-tests.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/historical-v3.5/README.md": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/historical-v3.5/demo_result.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/historical-v3.5/environment.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/historical-v3.5/full-junit.xml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/historical-v3.5/full-tests.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/historical-v3.5/golden-junit.xml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/historical-v3.5/golden-tests.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/historical-v3.5/original-junit.xml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/historical-v3.5/original-tests.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/historical-v3.5/requirements-tested.lock": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/historical-v3.5/source_changes.patch": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/historical-v3.5/summary.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/historical-v3.5/wheel_smoke.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/installed-native-wheel.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/installed-pure-wheel.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/sdist-rebuild.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.10.0-installed-smoke.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.10.0-junit.xml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.10.0-lean.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.10.0-lean.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.10.0-metadata.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.10.0-native-build.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.10.0-native-smoke.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.10.0-projection.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.10.0-pure-sdist-build.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.10.0-pure-smoke.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.10.0-sdist-rebuild.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.10.0-tests.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.7-doctor.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.7-junit.xml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.7-tests.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8-distribution-metadata.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8-junit.xml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8-native-distribution-build.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8-pure-distribution-build.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8-sdist-rebuild.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8-tests.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8.1-benchmark-reconciliation.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8.1-build.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8.1-final-metadata.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8.1-final-sdist-build.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8.1-final-sdist-rebuild.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8.1-installed-native.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8.1-installed-pure.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8.1-junit.xml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8.1-metadata.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8.1-pure-build.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8.1-sdist-rebuild.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.8.1-tests.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.9.0-benchmark-reconciliation.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.9.0-build.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.9.0-final-metadata.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.9.0-final-sdist-build.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.9.0-final-sdist-rebuild.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.9.0-historical-release-report.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.9.0-installed-native.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.9.0-installed-pure.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.9.0-junit.xml": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.9.0-kernel-syntax.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.9.0-metadata.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.9.0-pure-build.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.9.0-sdist-rebuild.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.9.0-structured-kernel-syntax.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.9.0-target-qualification.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/v3.9.0-tests.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/wheel-build.txt": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packages/chronos-one-igpu/validation/wheel-smoke.json": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:packages/chronos-one-igpu/"
+    },
+    "packaging/HYBA_PUBLICATION_CATALOG.md": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
     "packaging/PUBLISHING.md": {
       "owner": "G",
       "owners": [
@@ -17816,6 +22718,13 @@
       ],
       "rule": "G:packaging/"
     },
+    "packaging/check_publication_catalog.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
     "packaging/chronos-core/README.md": {
       "owner": "G",
       "owners": [
@@ -17823,7 +22732,35 @@
       ],
       "rule": "G:packaging/"
     },
+    "packaging/chronos-core/build_and_verify.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
     "packaging/chronos-core/pyproject.toml": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/euclid-engine/README.md": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/euclid-engine/build_and_verify.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/euclid-engine/pyproject.toml": {
       "owner": "G",
       "owners": [
         "G"
@@ -17851,6 +22788,20 @@
       ],
       "rule": "G:packaging/"
     },
+    "packaging/kellogg-tensor/release-evidence/tests-junit.xml": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/kellogg-tensor/release-evidence/tests.json": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
     "packaging/kellogg-tensor/run_release_gate.py": {
       "owner": "G",
       "owners": [
@@ -17858,7 +22809,182 @@
       ],
       "rule": "G:packaging/"
     },
+    "packaging/ovid/OWNER_DECISIONS.json": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/ovid/PUBLICATION_REQUIREMENTS.json": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/ovid/README.md": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/ovid/pyproject.toml": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/publication_catalog.json": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/publication_inventory_baseline.json": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/salamander/MANIFEST.in": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/salamander/README.md": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/salamander/RELEASE.md": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/salamander/build_and_verify.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/salamander/installed_smoke.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/salamander/pyproject.toml": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/salamander/tests/test_authority_boundary.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/salamander/tests/test_release_tooling.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/storage-release/build_and_verify.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/storage-release/voyage.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/theseus/OWNER_DECISIONS.json": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/theseus/PUBLICATION_REQUIREMENTS.json": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/theseus/README.md": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/theseus/pyproject.toml": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/toe/OWNER_DECISIONS.md": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/toe/README.md": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/toe/build_and_verify.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/toe/pyproject.toml": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
     "packaging/turing/build_wheel.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:packaging/"
+    },
+    "packaging/verify_registry_release.py": {
       "owner": "G",
       "owners": [
         "G"
@@ -17900,13 +23026,6 @@
       ],
       "rule": "C:pci/"
     },
-    "pci/engine_clean.py": {
-      "owner": "C",
-      "owners": [
-        "C"
-      ],
-      "rule": "C:pci/"
-    },
     "pci/forensics.py": {
       "owner": "C",
       "owners": [
@@ -17929,6 +23048,13 @@
       "rule": "C:pci/"
     },
     "pci/qi.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:pci/"
+    },
+    "pci/test_exact_engine.py": {
       "owner": "C",
       "owners": [
         "C"
@@ -19636,6 +24762,13 @@
       ],
       "rule": "D:quantum_compute_substrate/"
     },
+    "quantum_compute_substrate/run_tests.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:quantum_compute_substrate/"
+    },
     "quantum_compute_substrate/scaling_study/__init__.py": {
       "owner": "D",
       "owners": [
@@ -19944,7 +25077,77 @@
       ],
       "rule": "D:quantum_compute_substrate/"
     },
+    "reports/AGENT_A_CLOSURE_RECORD.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/AGENT_C_AUDIT.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/AGENT_D_ALGORITHM_DISPOSITION.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/AGENT_D_CLOSURE.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
     "reports/AGENT_HANDOFFS.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/API_GATE_PROTOCOL_LOCAL_TEST_OUTPUT.txt": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/API_GATE_PROTOCOL_LOCAL_VALIDATION.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/CHRONOS_M5_EXACT_EXPANSION_REVIEW.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/CHRONOS_M5_GENERIC_FEATURE_REVIEW.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/CHRONOS_M5_PACKAGE_REVIEW.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/CHRONOS_M5_ULTRA_CONTRACT_REVIEW.json": {
       "owner": "H",
       "owners": [
         "H"
@@ -19973,6 +25176,27 @@
       "rule": "H:reports/"
     },
     "reports/LHRAS_BLUEPRINT_VALIDATION.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/PR140_CLOSURE.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/PR140_CLOSURE_WITHDRAWN_75b91ffd.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/PR140_DEFICIENCY_INVENTORY.json": {
       "owner": "H",
       "owners": [
         "H"
@@ -20022,6 +25246,76 @@
       "rule": "H:reports/"
     },
     "reports/docs_drift_sweep.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/euclid_v17/research_report.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/euclid_v17/research_report.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/evidence/m5-generic-rc3/native-sdist-benchmark.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/evidence/m5-generic-rc3/native-wheel-benchmark.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/evidence/m5-generic-rc3/portable-sdist-benchmark.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/evidence/m5-generic-rc3/portable-wheel-benchmark.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/evidence/m5-ultra-3.11.3rc1/native-sdist-contract.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/evidence/m5-ultra-3.11.3rc1/native-wheel-contract.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/evidence/m5-ultra-3.11.3rc1/portable-sdist-contract.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/evidence/m5-ultra-3.11.3rc1/portable-wheel-contract.json": {
       "owner": "H",
       "owners": [
         "H"
@@ -20091,6 +25385,13 @@
       ],
       "rule": "H:reports/"
     },
+    "reports/mutation-hashrate_governor-agentC.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
     "reports/production_workflow_trace.json": {
       "owner": "H",
       "owners": [
@@ -20112,7 +25413,63 @@
       ],
       "rule": "H:reports/"
     },
+    "reports/salamander_closure.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/salamander_component_inventory.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/salamander_evidence_mutations.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/salamander_evidence_mutations_initial.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/salamander_increment_evidence.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/salamander_local_pytest.log": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/salamander_pr134_absorption.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
     "reports/sha256d-backend-benchmark-20261004T183607Z.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/toe_ablation_heldout.json": {
       "owner": "H",
       "owners": [
         "H"
@@ -20154,6 +25511,13 @@
       ],
       "rule": "H:reports/"
     },
+    "reports/toe_precision_cross_interpreter.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
     "reports/toe_representation_elevation.json": {
       "owner": "H",
       "owners": [
@@ -20176,6 +25540,13 @@
       "rule": "H:reports/"
     },
     "reports/toe_unified_disposition.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:reports/"
+    },
+    "reports/toe_universal_principle_evidence.json": {
       "owner": "H",
       "owners": [
         "H"
@@ -20218,6 +25589,13 @@
       "rule": "H:reports/"
     },
     "requirements-lock.txt": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "root-infrastructure-fallback"
+    },
+    "requirements.txt": {
       "owner": "H",
       "owners": [
         "H"
@@ -20336,13 +25714,6 @@
       ],
       "rule": "A:resonance_intelligence/"
     },
-    "run_tests.py": {
-      "owner": "H",
-      "owners": [
-        "H"
-      ],
-      "rule": "root-infrastructure-fallback"
-    },
     "runbooks/catalogue.json": {
       "owner": "G",
       "owners": [
@@ -20351,6 +25722,13 @@
       "rule": "G:runbooks/"
     },
     "salamander/__init__.py": {
+      "owner": "F",
+      "owners": [
+        "F"
+      ],
+      "rule": "F:salamander/"
+    },
+    "salamander/authority.py": {
       "owner": "F",
       "owners": [
         "F"
@@ -20378,7 +25756,28 @@
       ],
       "rule": "F:salamander/"
     },
+    "salamander/outcome_evidence.py": {
+      "owner": "F",
+      "owners": [
+        "F"
+      ],
+      "rule": "F:salamander/"
+    },
+    "salamander/py.typed": {
+      "owner": "F",
+      "owners": [
+        "F"
+      ],
+      "rule": "F:salamander/"
+    },
     "salamander/runtime.py": {
+      "owner": "F",
+      "owners": [
+        "F"
+      ],
+      "rule": "F:salamander/"
+    },
+    "salamander/tests/test_agent_f_closure.py": {
       "owner": "F",
       "owners": [
         "F"
@@ -20707,6 +26106,13 @@
       ],
       "rule": "H:scripts/"
     },
+    "scripts/docker-cleanup.sh": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
     "scripts/docker_smoke.py": {
       "owner": "H",
       "owners": [
@@ -20722,6 +26128,13 @@
       "rule": "H:scripts/"
     },
     "scripts/envelope_verify_gate.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
+    "scripts/euclid_v17_integration_gate.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -20826,6 +26239,13 @@
       ],
       "rule": "H:scripts/"
     },
+    "scripts/m5_transfer_preflight.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
     "scripts/measure_chronus.py": {
       "owner": "H",
       "owners": [
@@ -20862,6 +26282,13 @@
       "rule": "H:scripts/"
     },
     "scripts/pool_smoke.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
+    "scripts/pr140_restart_replay.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -20987,6 +26414,13 @@
       ],
       "rule": "H:scripts/"
     },
+    "scripts/provision_m3_tenant.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
     "scripts/publish_check_runs.py": {
       "owner": "H",
       "owners": [
@@ -21037,6 +26471,13 @@
       "rule": "H:scripts/"
     },
     "scripts/remote_gpu_hardware_acceptance.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
+    "scripts/render_euclid_v17_release_results.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -21099,6 +26540,13 @@
       ],
       "rule": "H:scripts/"
     },
+    "scripts/run_euclid_v17_research.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
     "scripts/run_integrated_stack.py": {
       "owner": "H",
       "owners": [
@@ -21107,6 +26555,20 @@
       "rule": "H:scripts/"
     },
     "scripts/run_loopback_evidence.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
+    "scripts/salamander_authority_mutation.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
+    "scripts/salamander_evidence_mutation.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -21169,7 +26631,42 @@
       ],
       "rule": "H:scripts/"
     },
+    "scripts/test_euclid_integrity_mutations.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
+    "scripts/toe_ablation_study.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
+    "scripts/toe_claim_register.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
+    "scripts/toe_mining_voyage.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
     "scripts/toe_unified_benchmark.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
+    "scripts/toe_universal_principle_evidence.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -21232,13 +26729,6 @@
       ],
       "rule": "H:scripts/"
     },
-    "seam_standard.toml": {
-      "owner": "H",
-      "owners": [
-        "H"
-      ],
-      "rule": "root-infrastructure-fallback"
-    },
     "services/resilience-gateway/Dockerfile": {
       "owner": "G",
       "owners": [
@@ -21282,6 +26772,13 @@
       "rule": "G:services/"
     },
     "services/resilience-gateway/package.json": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:services/"
+    },
+    "services/resilience-gateway/src/auth.ts": {
       "owner": "G",
       "owners": [
         "G"
@@ -21443,6 +26940,13 @@
       "rule": "D:standard/"
     },
     "standard/check_invariants.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:standard/"
+    },
+    "standard/seam_standard.toml": {
       "owner": "D",
       "owners": [
         "D"
@@ -22247,6 +27751,20 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_chronus_lucas_universal.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_chronus_m5_ultra.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_chronus_measurement.py": {
       "owner": "H",
       "owners": [
@@ -22520,6 +28038,13 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_consortium_push.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_coordinator_toe_posture.py": {
       "owner": "H",
       "owners": [
@@ -22723,6 +28248,13 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_euclid_toe_capabilities.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_euclid_training_genetic_healing.py": {
       "owner": "H",
       "owners": [
@@ -22737,7 +28269,63 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_euclid_v17_integrated_loop.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_euclid_v17_integration_gate.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_euclid_v17_phi_and_skills.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_euclid_v17_production_integration.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_euclid_v17_runtime.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_euclid_v17_world_model.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_euclid_v17_worlds.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_evidence_based_learning.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_exact_geometry.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -22815,6 +28403,13 @@
       "rule": "H:tests/"
     },
     "tests/test_gap_close.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_gate_evidence_integrity.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -23556,6 +29151,13 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_production_replacement_attacks.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_production_workflow_correlation.py": {
       "owner": "H",
       "owners": [
@@ -23578,6 +29180,13 @@
       "rule": "H:tests/"
     },
     "tests/test_public_api_nonces.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_publication_catalog.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -23689,6 +29298,13 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_registry_release_protocol.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_remote_hasher.py": {
       "owner": "H",
       "owners": [
@@ -23697,6 +29313,13 @@
       "rule": "H:tests/"
     },
     "tests/test_repo_closure.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_resident_hendrix.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -23717,7 +29340,21 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_salamander_authority_replay.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_salamander_autonomic.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_salamander_outcome_evidence.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -23809,6 +29446,13 @@
       "rule": "H:tests/"
     },
     "tests/test_storage_database_ontology_v3.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_storage_publication_preparation.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -23934,6 +29578,13 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_theseus_long_paths.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_theseus_operational_records.py": {
       "owner": "H",
       "owners": [
@@ -23976,6 +29627,13 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_toe_cross_domain.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_toe_elevation.py": {
       "owner": "H",
       "owners": [
@@ -23984,6 +29642,13 @@
       "rule": "H:tests/"
     },
     "tests/test_toe_expansion_contract.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_toe_geometry.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -24004,7 +29669,21 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_toe_learning_persistence.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_toe_loop.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_toe_machine.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -24019,6 +29698,13 @@
       "rule": "H:tests/"
     },
     "tests/test_toe_meta_precision.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_toe_mining_voyage.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -24054,6 +29740,13 @@
       "rule": "H:tests/"
     },
     "tests/test_toe_runtime.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_toe_runtime_solve.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -24326,6 +30019,27 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/tmp_test_voyage/fb_state.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/tmp_test_voyage/server_boot.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/tmp_test_voyage/voyage.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "thermo/__init__.py": {
       "owner": "B",
       "owners": [
@@ -24340,6 +30054,20 @@
       ],
       "rule": "B:thermo/"
     },
+    "toe/CAPABILITY_MANIFEST.json": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
+    "toe/CLAIM_REGISTER.json": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
     "toe/README.md": {
       "owner": "A",
       "owners": [
@@ -24348,6 +30076,69 @@
       "rule": "A:toe/"
     },
     "toe/__init__.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
+    "toe/adapters/__init__.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
+    "toe/adapters/base.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
+    "toe/adapters/causal_system.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
+    "toe/adapters/code.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
+    "toe/adapters/graph.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
+    "toe/adapters/legacy_hr.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
+    "toe/adapters/scientific.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
+    "toe/adapters/tabular.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
+    "toe/adapters/temporal.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -24390,6 +30181,13 @@
       "rule": "A:toe/"
     },
     "toe/ciaas_api.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
+    "toe/custody.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -24446,6 +30244,13 @@
       "rule": "A:toe/"
     },
     "toe/geometric_contract.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
+    "toe/geometry.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -24522,6 +30327,13 @@
       ],
       "rule": "A:toe/"
     },
+    "toe/machine.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
     "toe/manifold_bridge.py": {
       "owner": "A",
       "owners": [
@@ -24592,6 +30404,13 @@
       ],
       "rule": "A:toe/"
     },
+    "toe/problem.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
     "toe/py.typed": {
       "owner": "A",
       "owners": [
@@ -24600,6 +30419,13 @@
       "rule": "A:toe/"
     },
     "toe/receipts.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
+    "toe/relationships.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -24642,6 +30468,20 @@
       "rule": "A:toe/"
     },
     "toe/system.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
+    "toe/tests/__init__.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
+    "toe/tests/test_learned_policy_regressions.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -24824,6 +30664,13 @@
       "rule": "A:toe/"
     },
     "toe/unified/security.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:toe/"
+    },
+    "toe/voyage.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -25250,7 +31097,21 @@
       ],
       "rule": "D:turing_universal_quantum_computer/"
     },
+    "turing_universal_quantum_computer/tests/test_hendrix_execution_receipts.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:turing_universal_quantum_computer/"
+    },
     "turing_universal_quantum_computer/tests/test_large_scale.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:turing_universal_quantum_computer/"
+    },
+    "turing_universal_quantum_computer/tests/test_lucas_vendor_parity.py": {
       "owner": "D",
       "owners": [
         "D"
@@ -25845,5 +31706,10 @@
       ],
       "rule": "D:turing_universal_quantum_computer/"
     }
-  }
+  },
+  "multi_owned_files": [],
+  "schema_version": 1,
+  "source_sha": "7f76e39d4543566ea4a4463e0cecc9c099acc552",
+  "tracked_file_count": 4528,
+  "unowned_files": []
 }
