@@ -23,7 +23,7 @@ CUSTODY_KEY = b"m3-adversarial-theseus-key-0123456789"
 
 def _root() -> Path:
     """CAS root short enough for Windows MAX_PATH with 39-char tenant ids."""
-    return Path(tempfile.gettempdir()) / f"m3a-{uuid.uuid4().hex[:8]}"
+    return (Path(tempfile.gettempdir()) / f"m3a-{uuid.uuid4().hex[:8]}").resolve()
 
 
 def _plane(tmp_path, name="adv"):
@@ -295,7 +295,7 @@ def test_cross_tenant_blob_is_a_mismatch(tmp_path):
         (tenant_id, version_id),
     ).fetchone()
     real = Path(row["storage_uri"][7:])
-    rel = real.relative_to(root / tenant_id)
+    rel = real.relative_to((root / tenant_id).resolve())
     moved = root / other.tenant_id / rel
     moved.parent.mkdir(parents=True, exist_ok=True)
     real.replace(moved)

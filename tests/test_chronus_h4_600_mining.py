@@ -1,6 +1,12 @@
 """Executable contract for the canonical Chronus H4/600 mining fabric."""
 from __future__ import annotations
 
+import json
+import time
+
+import pytest
+
+from chronos_one_igpu.reference_contract import reference_execution
 from chronus.mla1517.mining.geodesic_support import (
     chronus_fabric_execution_state_for,
     chronus_fabric_state_for,
@@ -17,6 +23,28 @@ from hyba.hybrid.nonce_scheduler import (
     DispatchHandle,
     next_handle_id,
 )
+
+
+@pytest.fixture
+def h4_reference_contract(tmp_path, monkeypatch):
+    """Operator approval registry for the reference-only h4_600 capability."""
+    path = tmp_path / "approved.json"
+    record = {
+        "schema": "chronos.reference_approvals/1",
+        "approvals": {
+            "qc-local": {
+                "approved": True,
+                "approved_by": "local-test-operator",
+                "purpose": "H4/600 contract verification, not production evidence",
+                "mode": "reference",
+                "expires_unix": time.time() + 120,
+                "capabilities": ["chronus.h4_600"],
+            }
+        },
+    }
+    path.write_text(json.dumps(record))
+    monkeypatch.setenv("CHRONOS_REFERENCE_APPROVALS_FILE", str(path))
+    return path
 
 
 class _Scheduler:
@@ -70,10 +98,11 @@ class _Scheduler:
             self._done[handle.handle_id] = 0
 
 
-def test_h4_partition_is_600_disjoint_11d_logical_vertices():
+def test_h4_partition_is_600_disjoint_11d_logical_vertices(h4_reference_contract):
     fast = _Scheduler("chronus-a", 9.0)
     slow = _Scheduler("chronus-b", 1.0)
-    spans, cert = partition(6000, [fast, slow], strategy="h4_600")
+    with reference_execution("qc-local"):
+        spans, cert = partition(6000, [fast, slow], strategy="h4_600")
 
     assert cert.verify()
     assert cert.topology == "chronus_h4_600_11d"
@@ -92,9 +121,10 @@ def test_h4_partition_is_600_disjoint_11d_logical_vertices():
     assert by_device == {"chronus-a": 5400, "chronus-b": 600}
 
 
-def test_small_lease_folds_only_empty_vertices_without_losing_coverage():
+def test_small_lease_folds_only_empty_vertices_without_losing_coverage(h4_reference_contract):
     worker = _Scheduler("chronus-a", 1.0)
-    spans, cert = partition(32, [worker], strategy="h4_600")
+    with reference_execution("qc-local"):
+        spans, cert = partition(32, [worker], strategy="h4_600")
     assert cert.verify()
     assert len(spans) == 32
     assert all(span.span == 1 for span in spans)
@@ -102,7 +132,7 @@ def test_small_lease_folds_only_empty_vertices_without_losing_coverage():
     assert sum(span.span for span in spans) == 32
 
 
-def test_h4_coordinator_dispatches_all_600_before_polling():
+def test_h4_coordinator_dispatches_all_600_before_polling(h4_reference_contract):
     a = _Scheduler("chronus-a", 1.0)
     b = _Scheduler("chronus-b", 1.0)
     coordinator = H4600HybridCoordinator(a, extra_devices=[b])
@@ -113,7 +143,8 @@ def test_h4_coordinator_dispatches_all_600_before_polling():
         nonce_space=600,
     )
 
-    result = coordinator.run_job(job)
+    with reference_execution("qc-local"):
+        result = coordinator.run_job(job)
     assert result.certificate.verify()
     assert result.certificate.topology == "chronus_h4_600_11d"
     assert len(result.handles) == 600
@@ -167,12 +198,15 @@ def test_bound_h4_capability_is_not_reported_as_observed_fanout_before_execution
     assert state["execution_evidence"] == "Unavailable"
 
 
-def test_fragmented_ordered_batch_preserves_membership_without_false_600_fanout_claim():
+def test_fragmented_ordered_batch_preserves_membership_without_false_600_fanout_claim(
+    h4_reference_contract,
+):
     worker = _Scheduler("chronus-a", 1.0)
     hasher = _promoted_super_asic(worker)
     nonces = [1000, 1002, 1004, 1006, 1008, 1010]
 
-    nonce, digest, done = hasher.grind_target_batch(bytes(80), bytes(32), nonces)
+    with reference_execution("qc-local"):
+        nonce, digest, done = hasher.grind_target_batch(bytes(80), bytes(32), nonces)
 
     assert nonce is None
     assert digest is None
@@ -210,12 +244,13 @@ class _SkewedCountScheduler(_Scheduler):
         return super().hashed_count(handle)
 
 
-def test_ordered_batch_failure_records_terminal_device_error_evidence():
+def test_ordered_batch_failure_records_terminal_device_error_evidence(h4_reference_contract):
     worker = _FailingScheduler("chronus-a", 1.0)
     hasher = _promoted_super_asic(worker)
 
     try:
-        hasher.grind_target_batch(bytes(80), bytes(32), [1000])
+        with reference_execution("qc-local"):
+            hasher.grind_target_batch(bytes(80), bytes(32), [1000])
     except RuntimeError as exc:
         assert "test scheduler failure" in str(exc)
     else:
@@ -228,12 +263,13 @@ def test_ordered_batch_failure_records_terminal_device_error_evidence():
     assert "RuntimeError" in evidence["error"]
 
 
-def test_aggregate_count_cannot_mask_an_incomplete_h4_shard():
+def test_aggregate_count_cannot_mask_an_incomplete_h4_shard(h4_reference_contract):
     worker = _SkewedCountScheduler("chronus-a", 1.0)
     hasher = _promoted_super_asic(worker)
     nonces = list(range(30_000, 30_600))
 
-    nonce, digest, done = hasher.grind_target_batch(bytes(80), bytes(32), nonces)
+    with reference_execution("qc-local"):
+        nonce, digest, done = hasher.grind_target_batch(bytes(80), bytes(32), nonces)
 
     assert nonce is None
     assert digest is None
@@ -249,12 +285,13 @@ def test_aggregate_count_cannot_mask_an_incomplete_h4_shard():
     assert handles[1]["completed_nonces"] != handles[1]["assigned_nonces"]
 
 
-def test_contiguous_600_nonce_batch_records_real_full_h4_fanout():
+def test_contiguous_600_nonce_batch_records_real_full_h4_fanout(h4_reference_contract):
     worker = _Scheduler("chronus-a", 1.0)
     hasher = _promoted_super_asic(worker)
     nonces = list(range(20_000, 20_600))
 
-    nonce, digest, done = hasher.grind_target_batch(bytes(80), bytes(32), nonces)
+    with reference_execution("qc-local"):
+        nonce, digest, done = hasher.grind_target_batch(bytes(80), bytes(32), nonces)
 
     assert nonce is None
     assert digest is None

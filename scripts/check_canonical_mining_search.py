@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 POLICY = ROOT / "governance" / "canonical_mining_search.yaml"
 DOCTRINE = ROOT / "docs" / "CANONICAL_PYTHIA_SEARCH_DOCTRINE.md"
 README = ROOT / "README.md"
-MINING_README = ROOT / "README_MINING.md"
+MINING_README = ROOT / "docs" / "README_MINING.md"
 
 
 class CanonicalSearchDoctrineError(RuntimeError):
