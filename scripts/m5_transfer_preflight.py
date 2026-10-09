@@ -35,7 +35,7 @@ TEST_SUITES = {
     ),
     "mining_intelligence": (
         "tests/test_resident_hendrix.py",
-        "tests/test_euclid_cognition_mining.py",
+        "chronus/mla1517_platform/python/test_euclid_mining_support.py",
     ),
 }
 # A historically named test that has been renamed must be resolved, never skipped.
