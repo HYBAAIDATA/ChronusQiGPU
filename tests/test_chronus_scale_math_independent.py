@@ -149,7 +149,9 @@ def test_scale_job_is_deterministic_and_reports_rungs_that_divide() -> None:
     assert a == b
     assert a.rungs and all(a.work_items % r == 0 for r in a.rungs)
     assert list(a.rungs) == ladder_multiples_of(a.work_items)
-    assert len(a.t11) == 11 and all(0.0 <= v < 1.0 for v in a.t11)
+    assert len(a.t11) == 11 and all(
+        len(c) == 2 and all(isinstance(x, int) for x in c) for c in a.t11
+    )
     assert scale_job("job-y", 1000, "p").t11 != a.t11
 
 
