@@ -31,6 +31,17 @@ pythia verify r.json     # structurally verify a receipt file
 pythia console           # serve the three-tab console on http://127.0.0.1:8777
 ```
 
+## macOS app
+
+```bash
+python build_app.py      # dist/PYTHIA.app — standalone runtime + bundled wheel
+```
+
+`build_app.py` embeds a python-build-standalone interpreter and installs the
+wheel + deps into `Contents/Resources` — no Homebrew/system Python needed on
+the target Mac. Builds are **unsigned**; signing (Developer ID) and
+notarisation (`notarytool`) are owner-controlled steps for distribution.
+
 ## Honest boundaries
 
 - Verification is **structural**: it proves a receipt's internal invariants
