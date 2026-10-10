@@ -75,8 +75,10 @@ fetch('/api/status').then(r=>r.json()).then(s=>{
 });
 $('#doverify').onclick=()=>{let body;try{body=JSON.parse($('#receipt').value)}catch(e){$('#vout').textContent='invalid JSON: '+e;return}
   fetch('/api/verify',{method:'POST',body:$('#receipt').value}).then(r=>r.json()).then(v=>{
-    $('#vout').textContent=v.checks.map(c=>(c.passed?'✓':'✗')+' '+c.check+(c.detail?' — '+c.detail:'')).join('\n')
-      +'\n\nverdict: '+v.verdict+'  (structural; custody_proof=false)';});};
+    const l=v.levels||{};
+    $('#vout').textContent=v.checks.map(c=>(c.result==='pass'?'✓':c.result==='skipped'?'–':'✗')+' '+c.check+(c.detail?' — '+c.detail:'')).join('\n')
+      +'\n\nverdict: '+v.verdict
+      +'\nstructural: '+l.structural+'   canonical_binding: '+l.canonical_binding+'   provenance: '+l.provenance_authentication;});};
 fetch('/api/intelligence').then(r=>r.json()).then(i=>{
   [['Configured',badge(i.configured?'yes':'dim',i.configured?'yes':'no')],
    ['Available',badge(i.available?'yes':'no',i.available?'yes':'no')],
