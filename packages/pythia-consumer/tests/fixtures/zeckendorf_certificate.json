@@ -1,0 +1,36 @@
+{
+ "active_dimensions": [
+  0,
+  2,
+  4,
+  6,
+  8,
+  10
+ ],
+ "canonical_int": 15678493524076244487,
+ "context_id": "pythia-consumer-e2e-v1",
+ "coordinate_masks": [
+  33940,
+  20756,
+  16720,
+  8740,
+  2688,
+  0,
+  2688,
+  8740,
+  16720,
+  20756,
+  33940
+ ],
+ "decoupling_mask": 1365,
+ "decoupling_mask_11d": "10101010101",
+ "is_valid": true,
+ "mask_int": 1365,
+ "max_k": 21,
+ "non_adjacent_mask": 1365,
+ "prime_mod": 79,
+ "slot_address": 21540,
+ "token": "ZECK-D99532CABBD3AE07",
+ "token_hex": "ZECK-D99532CABBD3AE07",
+ "truth_class": "mathematical"
+}
