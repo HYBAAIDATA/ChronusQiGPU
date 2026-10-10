@@ -1,0 +1,8 @@
+# Build artifacts — vendored trees staged by build_bundle.py
+src/aethel/
+src/hyba_db/
+src/chronos_one_igpu/
+src/pythia_consumer/bundled_products.json
+dist/
+*.egg-info/
+.venv/

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PYTHIA Console</title>
+<style>
+:root{--bg:#0d1117;--panel:#161b22;--line:#30363d;--fg:#e6edf3;--dim:#8b949e;--gold:#d4a72c;--ok:#3fb950;--bad:#f85149}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,system-ui,sans-serif}
+header{display:flex;gap:16px;align-items:baseline;padding:14px 20px;border-bottom:1px solid var(--line)}
+h1{font-size:16px;color:var(--gold);margin:0;letter-spacing:.12em}
+.tag{font-size:11px;color:var(--dim)}
+nav{display:flex;gap:4px;padding:10px 20px 0}
+nav button{background:none;border:1px solid var(--line);border-bottom:none;color:var(--dim);padding:8px 16px;border-radius:6px 6px 0 0;cursor:pointer;font:inherit}
+nav button.on{color:var(--fg);background:var(--panel)}
+main{padding:20px}
+section{display:none;background:var(--panel);border:1px solid var(--line);border-radius:0 8px 8px;padding:18px}
+section.on{display:block}
+table{border-collapse:collapse;width:100%}
+td,th{padding:5px 10px;border-bottom:1px solid var(--line);text-align:left;font-weight:normal;vertical-align:top}
+th{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.b{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;border:1px solid var(--line)}
+.b.ok{color:var(--ok);border-color:var(--ok)} .b.bad{color:var(--bad);border-color:var(--bad)} .b.dim{color:var(--dim)}
+pre{background:#0d1117;border:1px solid var(--line);border-radius:6px;padding:10px;overflow:auto;font-size:12px;max-height:50vh}
+textarea{width:100%;min-height:160px;background:#0d1117;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:10px;font:12px/1.5 ui-monospace,monospace}
+button.go{background:var(--gold);color:#111;border:none;border-radius:6px;padding:8px 18px;font:inherit;font-weight:600;cursor:pointer;margin:10px 0}
+.hint{color:var(--dim);font-size:12px}
+</style>
+</head>
+<body>
+<header><h1>PYTHIA</h1><span class="tag">computation you can check — local console</span></header>
+<nav>
+  <button class="on" data-t="node">Node</button>
+  <button data-t="verify">Verify</button>
+  <button data-t="intel">Intelligence</button>
+</nav>
+<main>
+<section id="node" class="on">
+  <h3>Platform</h3><table id="plat"></table>
+  <h3>Compute routes</h3><table id="routes"></table>
+  <h3>Products</h3><table id="products"><tr><th>Distribution</th><th>Role</th><th>State</th><th>Origin</th><th>Version</th></tr></table>
+  <p class="hint" id="api-note"></p>
+</section>
+<section id="verify">
+  <p class="hint">Paste a substrate receipt (JSON). Verification is <b>structural</b> — it proves internal invariants (non-adjacency, Cassini identities, token form), not custody or provenance.</p>
+  <textarea id="receipt" placeholder='{"token_hex":"ZECK-…","non_adjacent_mask":…,"cassini_ledger":[[i,F(i-1),F(i),F(i+1),(-1)^i]]}'></textarea><br>
+  <button class="go" id="doverify">Verify receipt</button>
+  <pre id="vout"></pre>
+</section>
+<section id="intel">
+  <table id="itable"></table>
+  <p class="hint">The intelligence surface activates when <code>PYTHIA_CIAAS_URL</code> is configured on the host running this console.</p>
+</section>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button,section').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');document.getElementById(b.dataset.t).classList.add('on');
+});
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const row=(t,cells)=>document.getElementById(t).insertAdjacentHTML('beforeend','<tr>'+cells.map(c=>'<td>'+c+'</td>').join('')+'</tr>');
+const badge=(ok,txt)=>`<span class="b ${ok==='yes'?'ok':ok==='no'?'bad':'dim'}">${txt}</span>`;
+fetch('/api/status').then(r=>r.json()).then(s=>{
+  const p=s.platform;
+  [['System',esc(p.system)+' / '+esc(p.machine)],['Python',esc(p.python)],['Chip',p.chip?esc(p.chip):'—'],['Apple Silicon',badge(p.apple_silicon?'yes':'dim',p.apple_silicon?'yes':'no')]
+  ].forEach(r=>row('plat',r.map(esc).map((c,i)=>i?c:c)));
+  s.compute_routes.forEach(r=>row('routes',[esc(r.route),esc(r.kind),esc(r.note)]));
+  s.products.forEach(p=>row('products',[esc(p.distribution),esc(p.role),
+    badge(p.state==='available'?'yes':p.state==='absent'?'dim':'no',p.state),
+    esc(p.origin),esc(p.installed_version||'—')]));
+  if(s.control_api)$('#api-note').textContent='Control API: '+(s.control_api.reachable?'reachable':'unreachable')+' — '+s.control_api.url;
+  $('#plat').insertAdjacentHTML('beforeend','<tr><td>Mining</td><td>'+badge('dim','not performed by this console')+'</td></tr>');
+});
+$('#doverify').onclick=()=>{let body;try{body=JSON.parse($('#receipt').value)}catch(e){$('#vout').textContent='invalid JSON: '+e;return}
+  fetch('/api/verify',{method:'POST',body:$('#receipt').value}).then(r=>r.json()).then(v=>{
+    $('#vout').textContent=v.checks.map(c=>(c.passed?'✓':'✗')+' '+c.check+(c.detail?' — '+c.detail:'')).join('\n')
+      +'\n\nverdict: '+v.verdict+'  (structural; custody_proof=false)';});};
+fetch('/api/intelligence').then(r=>r.json()).then(i=>{
+  [['Configured',badge(i.configured?'yes':'dim',i.configured?'yes':'no')],
+   ['Available',badge(i.available?'yes':'no',i.available?'yes':'no')],
+   ['Endpoint',esc(i.endpoint||'—')],['Detail',esc(i.note||i.error||(i.http_status?'HTTP '+i.http_status:'—'))]
+  ].forEach(r=>row('itable',r));
+});
+</script>
+</body>
+</html>

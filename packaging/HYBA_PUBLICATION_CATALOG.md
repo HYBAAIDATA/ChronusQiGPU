@@ -4,8 +4,8 @@
 
 ## How many packages?
 
-- **11 distinct existing Python distribution candidates** from **12 Python manifests**.
-- **2 additional planned CHRONUS splits**: **13-package roadmap**, not 13 built packages.
+- **12 distinct existing Python distribution candidates** from **13 Python manifests**.
+- **2 additional planned CHRONUS splits**: **14-package roadmap**, not 14 built packages.
 - EUCLID has two definitions for one identity; use `packaging/euclid-engine/pyproject.toml` for the public wheel.
 - Four private JavaScript applications are not public distributions. AL HARAS is bundled with SALAMANDER; it is not a separate package in this count.
 
@@ -22,6 +22,7 @@
 | CHRONOS ONE | `hyba-chronos-one-igpu` | EXISTING_SCAFFOLD | `1.0.0` |
 | PYTHIA | `hyba-pythia-mining` | EXISTING_SCAFFOLD | `1.0.0` |
 | PYTHIA | `hyba-pythia-mining-runtime` | EXISTING_SCAFFOLD | `1.0.0` |
+| PYTHIA | `hyba-pythia-consumer` | EXISTING_SCAFFOLD | `1.0.0` |
 | CHRONUS | `hyba-chronus-igpu` | PLANNED_NOT_SCAFFOLDED | `1.0.0` |
 | CHRONUS | `hyba-chronus-tensor` | PLANNED_NOT_SCAFFOLDED | `1.0.0` |
 
@@ -30,6 +31,7 @@ The approved first-public version is **1.0.0 for each package**. Existing develo
 ## Boundaries and compatibility
 
 - THESEUS storage owns all unchanged `aethel/**`; OVID owns `hyba_db/**` and consumes `hyba-theseus-storage==1.0.0`. Do not split or duplicate the eager `aethel` initializer across wheels.
+- `hyba-pythia-consumer` is a **bundle distribution**: it vendors `aethel`, `hyba_db` and `chronos_one_igpu` into one wheel at build time (`packages/pythia-consumer/build_bundle.py`) because the sibling distributions are not yet published. It is a separate consumer track — do **not** co-install it with the singular sibling wheels (top-level namespace collision), and do not treat the bundle as evidence of the singular wheels' qualification.
 - KELLOGG is the tensor substrate; TURING VQC consumes it, as do TOE and EUCLID. Do not duplicate their implementation inside a dependent distribution.
 - CHRONOS mathematics, CHRONOS ONE iGPU and planned CHRONUS execution/tensor splits remain separate scopes. Module/file ownership must be reconciled before releasing overlapping namespaces.
 - The PYTHIA monorepo and MLA runtime have different current package identities; count them separately, but do not infer co-installability or recommend installing the umbrella alongside overlapping split wheels until proven.

@@ -255,6 +255,29 @@
       "first_public_version": "1.0.0",
       "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
       "preserved_interface_fingerprints": {}
+    },
+    {
+      "system": "PYTHIA",
+      "capability": "consumer",
+      "distribution": "hyba-pythia-consumer",
+      "legacy_distribution": "hyba-pythia-consumer",
+      "manifest_paths": [
+        "packages/pythia-consumer/pyproject.toml"
+      ],
+      "canonical_manifest": "packages/pythia-consumer/pyproject.toml",
+      "state": "EXISTING_SCAFFOLD",
+      "imports_unchanged": [
+        "pythia_consumer",
+        "aethel",
+        "hyba_db",
+        "chronos_one_igpu"
+      ],
+      "first_public_version": "1.0.0",
+      "source_metadata_version": "0.1.0",
+      "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
+      "preserved_interface_fingerprints": {
+        "packages/pythia-consumer/pyproject.toml": "afcee518999459ca1178c4b338403ba6e0435891d717f4793b637a36fb5a18f4"
+      }
     }
   ],
   "private_applications": [
@@ -289,6 +312,27 @@
       "brand_descriptor": "hyba-al-haras-security",
       "distributed_by": "hyba-salamander-self-healing",
       "separate_distribution": false
+    },
+    {
+      "system": "THESEUS",
+      "brand_descriptor": "hyba-theseus-storage",
+      "distributed_by": "hyba-pythia-consumer",
+      "separate_distribution": true,
+      "note": "aethel namespace vendored into the consumer wheel at build time"
+    },
+    {
+      "system": "OVID",
+      "brand_descriptor": "hyba-ovid-data-organisation",
+      "distributed_by": "hyba-pythia-consumer",
+      "separate_distribution": true,
+      "note": "hyba_db namespace vendored into the consumer wheel at build time"
+    },
+    {
+      "system": "CHRONOS ONE",
+      "brand_descriptor": "hyba-chronos-one-igpu",
+      "distributed_by": "hyba-pythia-consumer",
+      "separate_distribution": true,
+      "note": "chronos_one_igpu namespace vendored into the consumer wheel at build time"
     }
   ],
   "decision_record": "Standalone package publication and whole-platform production qualification are separate evidence tracks; neither inherits readiness from the other."
