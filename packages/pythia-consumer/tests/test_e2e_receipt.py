@@ -17,13 +17,20 @@ What this test establishes:
   - non-adjacency invariant (mask & (mask << 1)) == 0 ....... PASS/FAIL cases
   - malformed input is rejected safely, no crash ............ CLI exit codes
 
-Documented limitations (pinned by assertions below, NOT hidden):
-  - fields outside the contract (canonical_int, coordinate_masks,
-    slot_address, context_id) are ignored — mutating them passes
-  - receipt fields are all optional; a receipt containing only a valid
-    mask yields "pass" with a reduced check count
-  - no producer authentication exists: a hand-crafted dict with a legal
-    token + legal mask passes. Verification is structural, not provenance.
+Contract v2 additionally pins (assertions below):
+  - required fields: token_hex, non_adjacent_mask, canonical_int,
+    coordinate_masks (×11), context_id — missing/mistyped → fail
+  - token_canonical_binding: token == ZECK-%016X of canonical_int
+  - canonical_derivation: independent re-fold of coordinate_masks +
+    context_id must equal canonical_int (verified against genuine
+    producer vectors, not circularly)
+  - skipped checks are reported, never counted as evidence
+
+Remaining documented limitations:
+  - fields outside the contract (slot_address, truth_class, is_valid,
+    active_dimensions) are ignored — mutating them passes
+  - canonical binding proves internal consistency under the published
+    algorithm; anyone can compute the same fold — still no provenance
 """
 
 import json
@@ -38,6 +45,10 @@ from pythia_consumer import cli  # noqa: E402
 
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "zeckendorf_certificate.json"
 EXPECTED_SHA256 = "150ec7d58ef7c740757db58f1310f7ac0db39e59027817cda91b05a3d231716c"
+
+
+def _c(verdict: dict, name: str) -> dict:
+    return next(c for c in verdict["checks"] if c["check"] == name)
 
 
 def _load() -> dict:
@@ -65,7 +76,8 @@ class TestGenuineReceipt:
         assert cli.main(["verify", str(FIXTURE)]) == 0
         verdict = json.loads(capsys.readouterr().out)
         assert verdict["verdict"] == "pass"
-        assert verdict["verification_level"] == "structural"
+        assert verdict["verification_level"] == "canonical_binding"
+        assert verdict["levels"]["provenance_authentication"] == "unsupported"
         assert verdict["custody_proof"] is False
         names = {c["check"] for c in verdict["checks"]}
         assert {"token_format", "non_adjacent_mask"} <= names
@@ -91,22 +103,106 @@ class TestTamperedReceipt:
         v = _verify(tmp_path, r)
         assert v["verdict"] == "fail"
 
-    def test_unvalidated_field_mutation_passes(self, tmp_path):
-        """canonical_int is outside the verifier contract — mutating it is
-        undetectable structurally. This documents, not certifies, the gap."""
+    def test_token_mutation_canonical_unchanged(self, tmp_path):
         r = _load()
-        r["canonical_int"] = 0
+        r["token_hex"] = "ZECK-" + "0" * 15 + "0"
+        v = _verify(tmp_path, r)
+        assert v["verdict"] == "fail"
+        assert _c(v, "token_canonical_binding")["result"] == "fail"
+
+    def test_canonical_mutation_token_unchanged(self, tmp_path):
+        r = _load()
+        r["canonical_int"] += 1
+        v = _verify(tmp_path, r)
+        assert v["verdict"] == "fail"
+        assert _c(v, "canonical_derivation")["result"] == "fail"
+
+    def test_coordinate_mask_mutation(self, tmp_path):
+        r = _load()
+        r["coordinate_masks"][0] ^= 0b100           # flips a legal-index bit → fold changes
+        v = _verify(tmp_path, r)
+        assert v["verdict"] == "fail"
+        assert _c(v, "canonical_derivation")["result"] == "fail"
+
+    def test_context_substitution(self, tmp_path):
+        r = _load()
+        r["context_id"] = "attacker-context"
+        v = _verify(tmp_path, r)
+        assert v["verdict"] == "fail"
+        assert _c(v, "canonical_derivation")["result"] == "fail"
+
+    def test_unvalidated_field_mutation_passes(self, tmp_path):
+        """Fields outside contract v2 (slot_address, truth_class, is_valid)
+        are ignored — mutating them is structurally undetectable. Documented
+        gap, not certification."""
+        r = _load()
+        r["slot_address"] = 0; r["truth_class"] = "forged"
         v = _verify(tmp_path, r)
         assert v["verdict"] == "pass"
 
-    def test_missing_optional_field_reduces_coverage(self, tmp_path):
-        """All fields are optional by contract: removing token_hex still
-        yields 'pass' — on fewer checks. Coverage shrink is observable."""
+
+class TestRequiredFields:
+    @pytest.mark.parametrize("field", [
+        "token_hex", "non_adjacent_mask", "canonical_int",
+        "coordinate_masks", "context_id",
+    ])
+    def test_missing_required_field_fails(self, tmp_path, field):
         r = _load()
-        del r["token_hex"], r["token"]
+        r.pop(field, None); r.pop("token", None) if field == "token_hex" else None
         v = _verify(tmp_path, r)
-        assert v["verdict"] == "pass"
-        assert len(v["checks"]) == 1
+        assert v["verdict"] == "fail"
+        assert _c(v, f"required:{field}")["result"] == "fail"
+
+    def test_missing_required_skips_dependents(self, tmp_path):
+        """A missing field must never pass by reducing the check set:
+        dependents are reported skipped, and 'pass' is impossible."""
+        r = _load(); del r["canonical_int"]
+        v = _verify(tmp_path, r)
+        assert v["verdict"] == "fail"
+        assert _c(v, "canonical_derivation")["result"] == "skipped"
+
+    @pytest.mark.parametrize("field,bad", [
+        ("token_hex", 12345), ("non_adjacent_mask", "1365"),
+        ("non_adjacent_mask", True), ("canonical_int", "1693898459760322"),
+        ("canonical_int", False), ("coordinate_masks", [0] * 10),
+        ("coordinate_masks", "00"), ("context_id", 42),
+    ])
+    def test_wrong_types_rejected(self, tmp_path, field, bad):
+        r = _load(); r[field] = bad
+        v = _verify(tmp_path, r)
+        assert v["verdict"] == "fail"
+        assert _c(v, f"required:{field}")["result"] == "fail"
+
+    @pytest.mark.parametrize("mask", [0b11, 0b111, 1 << 11, -1])
+    def test_mask_bounds_and_adjacency(self, tmp_path, mask):
+        r = _load(); r["non_adjacent_mask"] = mask
+        assert _verify(tmp_path, r)["verdict"] == "fail"
+
+    def test_unproducible_coordinate_mask(self, tmp_path):
+        """Bits <2 or ≥25 are unreachable by the genuine encoder."""
+        for i, bad in enumerate([0b1, 1 << 25]):
+            r = _load(); r["coordinate_masks"][i] = bad
+            v = _verify(tmp_path, r)
+            assert v["verdict"] == "fail"
+
+    def test_adjacent_coordinate_mask(self, tmp_path):
+        r = _load(); r["coordinate_masks"][0] = 0b1100   # bits 2,3 adjacent
+        v = _verify(tmp_path, r)
+        assert v["verdict"] == "fail"
+
+    def test_token_alias_contradiction(self, tmp_path):
+        r = _load(); r["token"] = "ZECK-0000000000000000"
+        v = _verify(tmp_path, r)
+        assert v["verdict"] == "fail"
+
+    def test_lowercase_token_fails_binding(self, tmp_path):
+        r = _load(); r["token_hex"] = r["token_hex"].lower(); r["token"] = r["token_hex"]
+        v = _verify(tmp_path, r)
+        assert v["verdict"] == "fail"          # form OK, canonical binding fails
+
+    def test_unknown_fields_ignored(self, tmp_path):
+        r = _load(); r["future_field"] = {"anything": 1}
+        assert _verify(tmp_path, r)["verdict"] == "pass"
 
 
 class TestMalformedInput:

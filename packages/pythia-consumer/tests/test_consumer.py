@@ -38,10 +38,15 @@ class TestMath:
 
 class TestReceipt:
     def _good(self):
+        """Contract-v2 compliant receipt — core values are a genuine
+        compute_zeckendorf_certificate(np.zeros(11), "") output."""
         i = 7
         return {
-            "token_hex": "ZECK-0123456789abcdef",
-            "non_adjacent_mask": 0b10101,
+            "token_hex": "ZECK-0006049777FAC6C2",
+            "non_adjacent_mask": 1365,
+            "canonical_int": 1693898459760322,
+            "coordinate_masks": [0] * 11,
+            "context_id": "",
             "zeckendorf_indices": verify.zeckendorf(100),
             "zeckendorf_value": 100,
             "cassini_ledger": [[i, verify.fibonacci(i - 1), verify.fibonacci(i),
@@ -52,6 +57,8 @@ class TestReceipt:
     def test_pass(self):
         v = verify.verify_receipt(self._good())
         assert v["verdict"] == "pass" and v["custody_proof"] is False
+        assert v["levels"]["canonical_binding"] is True
+        assert v["levels"]["provenance_authentication"] == "unsupported"
 
     def test_fail_mask(self):
         r = self._good(); r["non_adjacent_mask"] = 0b11
@@ -61,8 +68,10 @@ class TestReceipt:
         r = self._good(); r["cassini_ledger"][0][3] += 1
         assert verify.verify_receipt(r)["verdict"] == "fail"
 
-    def test_incomplete_empty(self):
-        assert verify.verify_receipt({})["verdict"] == "incomplete"
+    def test_empty_fails_required(self):
+        v = verify.verify_receipt({})
+        assert v["verdict"] == "fail"
+        assert all(c["result"] in ("fail", "skipped") for c in v["checks"])
 
     def test_fail_not_dict(self):
         assert verify.verify_receipt("x")["verdict"] == "fail"
@@ -92,10 +101,10 @@ class TestCli:
 
     def test_verify_exit_codes(self, tmp_path, capsys):
         good = tmp_path / "r.json"
-        i = 7
         good.write_text(json.dumps({
-            "cassini_ledger": [[i, verify.fibonacci(i - 1), verify.fibonacci(i),
-                                verify.fibonacci(i + 1), (-1) ** i]]}))
+            "token_hex": "ZECK-0006049777FAC6C2", "non_adjacent_mask": 1365,
+            "canonical_int": 1693898459760322, "coordinate_masks": [0] * 11,
+            "context_id": ""}))
         assert cli.main(["verify", str(good)]) == 0
         bad = tmp_path / "bad.json"; bad.write_text(json.dumps({"non_adjacent_mask": 3}))
         assert cli.main(["verify", str(bad)]) == 1

@@ -44,9 +44,18 @@ notarisation (`notarytool`) are owner-controlled steps for distribution.
 
 ## Honest boundaries
 
-- Verification is **structural**: it proves a receipt's internal invariants
-  (non-adjacency, Cassini identities, certificate token form). It is not a
-  custody or provenance proof.
+Receipt verification reports three distinct levels:
+
+- **Structural** — required fields present and receipt invariants hold
+  (token form, non-adjacency, producible coordinate masks).
+- **Canonical binding** — the token is independently re-derived from
+  `coordinate_masks` + `context_id` via the documented φ¹⁵/ZECK fold and
+  matches `canonical_int`. Proves internal consistency under the published
+  algorithm — anyone can compute the same fold, so this is **not**
+  provenance.
+- **Provenance authentication** — `unsupported`. No signature or
+  key-distribution trust model exists yet; unsigned receipts are never
+  reported as authenticated.
 - The node census reports detected facts only; unavailable hardware and
   backends are reported as such, never stubbed.
 - No mining is performed by this package.

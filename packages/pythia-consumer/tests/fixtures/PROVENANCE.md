@@ -9,10 +9,21 @@
 - **Deterministic**: yes — fixed input vector and context bind the φ¹⁵ lattice
   quantization, Zeckendorf masks, and 64-bit canonical accumulator.
 
-## Producer → verifier contract
+## Producer → verifier contract (v2)
 
-Verifier checks `token_hex` form and `non_adjacent_mask` non-adjacency —
-the same predicate as the producer's `ZeckendorfCertificate.is_valid`.
-Fields the verifier ignores: `canonical_int`, `coordinate_masks`,
-`slot_address`, `context_id`, `truth_class`, `is_valid`, `active_dimensions`.
-This is structural verification only; it does not authenticate the producer.
+Required: `token_hex`, `non_adjacent_mask`, `canonical_int`,
+`coordinate_masks` (11 producible masks), `context_id`.
+The verifier independently re-derives the canonical accumulator —
+`acc = fold((mask_i ^ PRIME_BUCKETS[max_k_i]), *31, mod 2^64)` over 11
+coordinates, then a `SHA256(context_id)[:8]` mix when non-empty — and
+binds `token_hex == ZECK-{acc:016X}`. Passing proves internal
+consistency under the published algorithm.
+
+Ignored fields: `canonical_int` extras, `slot_address`, `truth_class`,
+`is_valid`, `active_dimensions`, `max_k`, `prime_mod`, `mask_int`,
+`decoupling_mask*`, `token` (checked only for consistency with
+`token_hex`), unknown fields.
+
+Canonical binding is not provenance: the fold is public and recomputable
+by anyone. Authenticated provenance remains unsupported pending an
+asymmetric signature or documented key-distribution trust model.
