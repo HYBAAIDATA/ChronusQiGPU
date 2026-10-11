@@ -36,6 +36,7 @@ from __future__ import annotations
 import argparse
 import ast
 import fnmatch
+import functools
 import json
 import os
 import re
@@ -75,7 +76,15 @@ ENTRY_SCRIPTS = (
     f"{PLATFORM}/discovery_runtime.py",
 )
 # Distributions whose import name differs from the distribution name.
-IMPORT_NAMES = {"pyyaml": "yaml", "scikit-learn": "sklearn", "pytest-asyncio": "pytest_asyncio"}
+IMPORT_NAMES = {
+    "pyyaml": "yaml",
+    "scikit-learn": "sklearn",
+    "pytest-asyncio": "pytest_asyncio",
+    # In-tree HYBA distributions whose import package differs from the dist name.
+    "hyba-chronos-one-igpu": "chronos_one_igpu",
+    "hyba-kellogg-tensor": "kellogg",
+    "hyba-turing-vqc": "turing_universal_quantum_computer",
+}
 # Distributions used as tools or plugins rather than imported.
 TOOL_DISTS = {"black", "flake8", "mypy", "pytest", "pytest-asyncio", "ruff", "setuptools", "wheel"}
 SHELL_WORDS = {
@@ -335,8 +344,30 @@ def _search_roots(root: Path) -> list[Path]:
     return [root, root / PLATFORM]
 
 
+@functools.lru_cache(maxsize=None)
+def _package_dirs(root: Path) -> dict[str, Path]:
+    """Top-level packages the root distribution maps from elsewhere in the tree.
+
+    ``[tool.setuptools.package-dir]`` ships e.g. ``lucas`` from ``chronus/lucas``;
+    those are first-party even though no ``lucas/`` exists at the repo root.
+    """
+    try:
+        cfg = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError):
+        return {}
+    mapping = cfg.get("tool", {}).get("setuptools", {}).get("package-dir", {})
+    return {k: root / v for k, v in mapping.items() if k and "." not in k}
+
+
 def _resolve_local(module: str, roots: list[Path]) -> Path | None:
     parts = module.split(".")
+    mapped = next((m[parts[0]] for m in map(_package_dirs, roots) if parts[0] in m), None)
+    if mapped is not None:
+        candidate = mapped.joinpath(*parts[1:])
+        if parts[1:] and candidate.with_suffix(".py").is_file():
+            return candidate.with_suffix(".py")
+        if (candidate / "__init__.py").is_file():
+            return candidate / "__init__.py"
     for base in roots:
         candidate = base.joinpath(*parts)
         if candidate.with_suffix(".py").is_file():
@@ -347,6 +378,8 @@ def _resolve_local(module: str, roots: list[Path]) -> Path | None:
 
 
 def _is_local_top(top: str, roots: list[Path]) -> bool:
+    if any(top in _package_dirs(base) for base in roots):
+        return True
     return any((base / f"{top}.py").is_file() or (base / top).is_dir() for base in roots)
 
 

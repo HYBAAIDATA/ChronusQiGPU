@@ -41,7 +41,6 @@ env:
   CI_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
   TURING_DISTRIBUTION: hyba-turing-vqc
   TURING_VERSION: "1.0.0"
-  KELLOGG_VERSION: "1.0.0"
 
 jobs:
   preflight:

@@ -61,7 +61,6 @@ graph = [
     "networkx>=3.0",
 ]
 ml = [
-    "nltk>=3.8",
     "scikit-learn>=1.3",
     # millennium.millennium_reasoning_service imports fastapi at module load.
     "fastapi>=0.110",

@@ -6,7 +6,6 @@ numpy==1.26.4
 pyyaml==6.0.2
 sympy==1.13.3
 pyopencl==2024.1
-nltk==3.9.1
 scikit-learn==1.5.2
 fastapi==0.115.6
 scipy==1.18.1
