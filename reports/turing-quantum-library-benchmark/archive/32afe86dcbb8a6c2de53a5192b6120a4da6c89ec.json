@@ -1,0 +1,419 @@
+{
+ "artifacts": [
+  {
+   "attestation": "61fa915241111471b43215680d540f168dc8a2f53dae2b58af12dbb4e29b3d58",
+   "axis": "correctness",
+   "benchmark_id": "quantum_library_lanes",
+   "classification": "MEASURED",
+   "commit": "32afe86dcbb8a6c2de53a5192b6120a4da6c89ec",
+   "configuration": {
+    "axis": "correctness",
+    "benchmark_id": "quantum_library_lanes",
+    "quick": false
+   },
+   "digest": "36957961ed2c56a0d1ff59e00a07d47a58e022e4709c07eac121248fb9a1773c",
+   "error": null,
+   "hardware": {
+    "cores": 18,
+    "cpu": "arm",
+    "gpu": null,
+    "ram_gb": 36.0
+   },
+   "kellogg_version": "1.0.0",
+   "measurement": {
+    "max_ns": 3635500792,
+    "median_ns": 3635500792,
+    "min_ns": 3635500792,
+    "p50_ns": 3635500792,
+    "p95_ns": 3635500792,
+    "p99_ns": 3635500792,
+    "samples": 1,
+    "wall_ns": 3635500792
+   },
+   "passed": true,
+   "result": {
+    "all_refusals_held": true,
+    "all_rows_audit_exact": true,
+    "refusals": [
+     {
+      "classification": "MEASURED",
+      "error_type": "ExactLaneError",
+      "probe": "irrational_turns",
+      "reason": "gamma_turns=pi is not a rational number of turns; exact lanes accept e^{2*pi*i*t} for t in Q only",
+      "refused": true
+     },
+     {
+      "classification": "MEASURED",
+      "error_type": "StatevectorTooLargeError",
+      "probe": "beyond_exact_budget",
+      "reason": "no backend can answer this program exactly: static Schmidt bound 2^20 at cut 19 exceeds chi_max=64; refused rather than truncated",
+      "refused": true
+     },
+     {
+      "classification": "MEASURED",
+      "error_type": "ValueError",
+      "probe": "unknown_gate",
+      "reason": "operation 'tooffoli' addresses qubit 2, outside a 2-qubit register",
+      "refused": true
+     }
+    ],
+    "rows": [
+     {
+      "classification": "MEASURED",
+      "exactness_audit": {
+       "arithmetic_domain": "rational",
+       "exact": true,
+       "violations": []
+      },
+      "family": "entanglement",
+      "lane": "clifford_tableau",
+      "lane_owner": "stabilizer.StabilizerState",
+      "max_ns": 18708,
+      "median_ns": 11833,
+      "min_ns": 8500,
+      "p50_ns": 11833,
+      "p95_ns": 18708,
+      "p99_ns": 18708,
+      "params": {},
+      "payload_digest": "08f14ef73f855b0656bb0129f309b4b7c58b8bedc3001e2da5df35be32fe3db4",
+      "repeats": 3,
+      "samples": 3,
+      "truth_class": "exact"
+     },
+     {
+      "classification": "MEASURED",
+      "exactness_audit": {
+       "arithmetic_domain": "rational",
+       "exact": true,
+       "violations": []
+      },
+      "family": "entanglement",
+      "lane": "clifford_tableau",
+      "lane_owner": "stabilizer.StabilizerState",
+      "max_ns": 405625,
+      "median_ns": 395667,
+      "min_ns": 394083,
+      "p50_ns": 395667,
+      "p95_ns": 405625,
+      "p99_ns": 405625,
+      "params": {
+       "n_qubits": 1024,
+       "subset": [
+        0
+       ]
+      },
+      "payload_digest": "b1b1941f8a439391ca674e23584fd60441bffaff7965205210ad109308759089",
+      "repeats": 3,
+      "samples": 3,
+      "truth_class": "exact"
+     },
+     {
+      "classification": "MEASURED",
+      "exactness_audit": {
+       "arithmetic_domain": "label_only",
+       "exact": true,
+       "violations": []
+      },
+      "family": "quantum_walk",
+      "lane": "exact_register",
+      "lane_owner": "quantum_walk.CoinedCycleWalk",
+      "max_ns": 63151833,
+      "median_ns": 63151833,
+      "min_ns": 63151833,
+      "p50_ns": 63151833,
+      "p95_ns": 63151833,
+      "p99_ns": 63151833,
+      "params": {
+       "num_positions": 32,
+       "steps": 200
+      },
+      "payload_digest": "fc2aac47ca3749d0e83acb9b05818bf9476ce0900c20cbc9e092e4657344cffa",
+      "repeats": 1,
+      "samples": 1,
+      "truth_class": "exact"
+     },
+     {
+      "classification": "MEASURED",
+      "exactness_audit": {
+       "arithmetic_domain": "rational",
+       "exact": true,
+       "violations": []
+      },
+      "family": "quantum_walk",
+      "lane": "closed_form",
+      "lane_owner": "quantum_walk.HypercubeWalk",
+      "max_ns": 210167,
+      "median_ns": 194208,
+      "min_ns": 189750,
+      "p50_ns": 194208,
+      "p95_ns": 210167,
+      "p99_ns": 210167,
+      "params": {
+       "n_qubits": 64,
+       "t": "pi/4"
+      },
+      "payload_digest": "0b48421fc750a594ec5d7dc15be2076d0a9e46542058d75957a99c5936870666",
+      "repeats": 3,
+      "samples": 3,
+      "truth_class": "exact"
+     },
+     {
+      "classification": "MEASURED",
+      "exactness_audit": {
+       "arithmetic_domain": "rational",
+       "exact": true,
+       "violations": []
+      },
+      "family": "grover",
+      "lane": "closed_form",
+      "lane_owner": "hilbert.GroverExact",
+      "max_ns": 124917,
+      "median_ns": 112125,
+      "min_ns": 109709,
+      "p50_ns": 112125,
+      "p95_ns": 124917,
+      "p99_ns": 124917,
+      "params": {
+       "marked": 613,
+       "n_qubits": 10
+      },
+      "payload_digest": "bee4615d4f141936a88de31808c47084bbbcf4cb5440aa2cfcae4ba39a0533b5",
+      "repeats": 3,
+      "samples": 3,
+      "truth_class": "exact"
+     },
+     {
+      "classification": "MEASURED",
+      "exactness_audit": {
+       "arithmetic_domain": "rational",
+       "exact": true,
+       "violations": []
+      },
+      "family": "qpe",
+      "lane": "exact_register_cyclotomic",
+      "lane_owner": "hilbert.QuantumRegister+qft",
+      "max_ns": 1668459,
+      "median_ns": 1338459,
+      "min_ns": 1303125,
+      "p50_ns": 1338459,
+      "p95_ns": 1668459,
+      "p99_ns": 1668459,
+      "params": {
+       "counting_qubits": 3,
+       "phase_turns": "1/8"
+      },
+      "payload_digest": "f8ba01b9cd05b13a951b0a03a430489951678e8b35b8555817af9f7ceb297bf6",
+      "repeats": 3,
+      "samples": 3,
+      "truth_class": "exact"
+     },
+     {
+      "classification": "MEASURED",
+      "exactness_audit": {
+       "arithmetic_domain": "rational",
+       "exact": true,
+       "violations": []
+      },
+      "family": "qaoa",
+      "lane": "exact_register_cyclotomic",
+      "lane_owner": "hilbert.QuantumRegister",
+      "max_ns": 726292,
+      "median_ns": 713083,
+      "min_ns": 712709,
+      "p50_ns": 713083,
+      "p95_ns": 726292,
+      "p99_ns": 726292,
+      "params": {
+       "edges": "triangle",
+       "layers": [
+        [
+         "3/8",
+         "1/8"
+        ]
+       ]
+      },
+      "payload_digest": "49049e4ab40e07d41e9eaca56ba18c6e16297b9922f36c58ccef3b5a887430fc",
+      "repeats": 3,
+      "samples": 3,
+      "truth_class": "exact"
+     },
+     {
+      "classification": "MEASURED",
+      "exactness_audit": {
+       "arithmetic_domain": "rational",
+       "exact": true,
+       "violations": []
+      },
+      "family": "vqe",
+      "lane": "exact_register_cyclotomic",
+      "lane_owner": "quantum_library.pauli_expectation",
+      "max_ns": 84886250,
+      "median_ns": 83955125,
+      "min_ns": 80240167,
+      "p50_ns": 83955125,
+      "p95_ns": 84886250,
+      "p99_ns": 84886250,
+      "params": {
+       "J": 1,
+       "g": 1,
+       "grid": 8,
+       "n_qubits": 2
+      },
+      "payload_digest": "349e4de51b00613624b47c19d2bbd7bbeae8a291e65fc899872e0fc6c90a3e85",
+      "repeats": 3,
+      "samples": 3,
+      "truth_class": "exact"
+     },
+     {
+      "classification": "MEASURED",
+      "exactness_audit": {
+       "arithmetic_domain": "rational",
+       "exact": true,
+       "violations": []
+      },
+      "family": "execute",
+      "lane": "exact_algebraic",
+      "lane_owner": "",
+      "max_ns": 674375,
+      "median_ns": 634500,
+      "min_ns": 625167,
+      "p50_ns": 634500,
+      "p95_ns": 674375,
+      "p99_ns": 674375,
+      "params": {
+       "n_qubits": 2,
+       "ops": [
+        "h 0",
+        "cx 0 1"
+       ]
+      },
+      "payload_digest": "775eb9875e67d045999a420c1964a98b8a7efd68a60b1fc29e2204b3751c87c8",
+      "repeats": 3,
+      "samples": 3,
+      "truth_class": "exact"
+     },
+     {
+      "classification": "MEASURED",
+      "exactness_audit": {
+       "arithmetic_domain": "rational",
+       "exact": true,
+       "violations": []
+      },
+      "family": "execute",
+      "lane": "stabilizer",
+      "lane_owner": "",
+      "max_ns": 7744500,
+      "median_ns": 7482209,
+      "min_ns": 7427625,
+      "p50_ns": 7482209,
+      "p95_ns": 7744500,
+      "p99_ns": 7744500,
+      "params": {
+       "n_qubits": 100,
+       "ops": "h 0 + cx 0 k for k<100"
+      },
+      "payload_digest": "af1c3c5b079c05eccb282c3c44d2811ba47c0cb30b953096f0b4f579e2737044",
+      "repeats": 3,
+      "samples": 3,
+      "truth_class": "exact"
+     },
+     {
+      "classification": "MEASURED",
+      "exactness_audit": {
+       "arithmetic_domain": "rational",
+       "exact": true,
+       "violations": []
+      },
+      "family": "entanglement",
+      "lane": "clifford_tableau",
+      "lane_owner": "stabilizer.StabilizerState",
+      "max_ns": 15823291,
+      "median_ns": 13909500,
+      "min_ns": 12414042,
+      "p50_ns": 13909500,
+      "p95_ns": 15823291,
+      "p99_ns": 15823291,
+      "params": {
+       "n_qubits": 10000,
+       "subset": [
+        0
+       ]
+      },
+      "payload_digest": "a6d09adf48d72c6208003bb94f103ec32be17d1de7871463d8d54c713463abe2",
+      "repeats": 3,
+      "samples": 3,
+      "truth_class": "exact"
+     },
+     {
+      "classification": "MEASURED",
+      "exactness_audit": {
+       "arithmetic_domain": "rational",
+       "exact": true,
+       "violations": []
+      },
+      "family": "qpe",
+      "lane": "exact_register_cyclotomic",
+      "lane_owner": "hilbert.QuantumRegister+qft",
+      "max_ns": 992249000,
+      "median_ns": 992249000,
+      "min_ns": 992249000,
+      "p50_ns": 992249000,
+      "p95_ns": 992249000,
+      "p99_ns": 992249000,
+      "params": {
+       "counting_qubits": 5,
+       "phase_turns": "1/16"
+      },
+      "payload_digest": "c90f9d312ec615212d0cebcfa9e7ac2a22995da41b53963cadcc329a8e680969",
+      "repeats": 1,
+      "samples": 1,
+      "truth_class": "exact"
+     },
+     {
+      "classification": "MEASURED",
+      "exactness_audit": {
+       "arithmetic_domain": "rational",
+       "exact": true,
+       "violations": []
+      },
+      "family": "qaoa",
+      "lane": "exact_register_cyclotomic",
+      "lane_owner": "hilbert.QuantumRegister",
+      "max_ns": 357986209,
+      "median_ns": 357986209,
+      "min_ns": 357986209,
+      "p50_ns": 357986209,
+      "p95_ns": 357986209,
+      "p99_ns": 357986209,
+      "params": {
+       "edges": "K4",
+       "grid": 8,
+       "p_layers": 1
+      },
+      "payload_digest": "d7a35644cac7f591f3a36dff02fd105f8e1dca1db46e5e4a5825a86b0ce36c65",
+      "repeats": 1,
+      "samples": 1,
+      "truth_class": "exact"
+     }
+    ]
+   },
+   "schema": "turing.vqc-benchmark/v1",
+   "software": {
+    "numpy": "2.5.4",
+    "os": "macOS-27.0-arm64-arm-64bit",
+    "python": "3.12.15"
+   },
+   "timestamp": "2026-10-11T16:30:56.668436+00:00",
+   "turing_version": "1.0.0"
+  }
+ ],
+ "commit": "32afe86dcbb8a6c2de53a5192b6120a4da6c89ec",
+ "digest": "ff9abf6fb60c5d399079a05905b0fe1293467c0b7f296311782b2383bfac1247",
+ "failed": [],
+ "incomplete": [],
+ "passed": [
+  "quantum_library_lanes"
+ ],
+ "quick": false,
+ "schema": "turing.vqc-benchmark/v1#suite"
+}

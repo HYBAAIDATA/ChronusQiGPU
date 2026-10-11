@@ -1,0 +1,81 @@
+{
+ "benchmark_contract": {
+  "warmup_policy": "2 unmeasured-then-discarded runs",
+  "timing_boundary": "facade call, payload construction included",
+  "memory_accounting": "process-cumulative peak RSS via getrusage; per-operation allocation is NOT separately attributed (documented limitation)"
+ },
+ "environment": {
+  "host_model": "Apple M5 Max",
+  "machine": "arm64",
+  "os": "Darwin 27.0.0",
+  "python": "3.12.15",
+  "sympy": "1.14.0"
+ },
+ "benchmarks": [
+  {
+   "benchmark": "ghz_entropy_n10000",
+   "claim_scope": "tableau entropy for GHZ-class stabilizer states at n=10000; says nothing about generic deep circuits",
+   "correctness_verified_outside_timing": true,
+   "lane": "clifford_tableau",
+   "lane_owner": "stabilizer.StabilizerState",
+   "arithmetic_domain": "rational",
+   "warmup_reps_excluded": 2,
+   "timed_reps": 9,
+   "wall_ms": {
+    "min": 10.898958998950548,
+    "median": 11.089167001046007,
+    "p90": 12.181042000520392,
+    "max": 12.19491600022593
+   }
+  },
+  {
+   "benchmark": "qpe_T_phase_3q",
+   "claim_scope": "exact cyclotomic phase estimation at 3 counting qubits",
+   "correctness_verified_outside_timing": true,
+   "lane": "exact_register_cyclotomic",
+   "lane_owner": "hilbert.QuantumRegister+qft",
+   "arithmetic_domain": "rational",
+   "warmup_reps_excluded": 2,
+   "timed_reps": 9,
+   "wall_ms": {
+    "min": 1.2214159996801754,
+    "median": 1.238625000041793,
+    "p90": 1.247166999746696,
+    "max": 1.3280000002851011
+   }
+  },
+  {
+   "benchmark": "qaoa_triangle_p1",
+   "claim_scope": "exact QAOA expected cut on K3 at declared rational-turn angles",
+   "correctness_verified_outside_timing": true,
+   "lane": "exact_register_cyclotomic",
+   "lane_owner": "hilbert.QuantumRegister",
+   "arithmetic_domain": "rational",
+   "warmup_reps_excluded": 2,
+   "timed_reps": 9,
+   "wall_ms": {
+    "min": 0.6804170006944332,
+    "median": 0.6861250003566965,
+    "p90": 0.8012500002223533,
+    "max": 0.9320419994764961
+   }
+  },
+  {
+   "benchmark": "execute_ghz100_registry",
+   "claim_scope": "certified lane selection + exact execution for a 100-qubit Clifford program",
+   "correctness_verified_outside_timing": true,
+   "lane": "stabilizer",
+   "lane_owner": "backends.execute",
+   "arithmetic_domain": "rational",
+   "warmup_reps_excluded": 2,
+   "timed_reps": 9,
+   "wall_ms": {
+    "min": 6.922041999132489,
+    "median": 7.133290999263409,
+    "p90": 7.91837499855319,
+    "max": 8.170083001459716
+   }
+  }
+ ],
+ "peak_rss_bytes_cumulative": 117047296
+}

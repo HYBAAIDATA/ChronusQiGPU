@@ -180,14 +180,22 @@ def _strip_approx(tree: Any) -> Any:
     Backend amplitude tables carry ``amplitude_approx``/``probability_approx``
     floats for human rendering.  The facade admits no float atom in an exact
     result, so those keys are removed at the boundary; the ``*_exact`` siblings
-    remain the auditable evidence.
+    remain the auditable evidence.  The ``state`` key — a live backend object
+    for in-process callers — is likewise removed: it serialises to a
+    nondeterministic ``<object at 0x…>`` repr, while ``amplitudes``, ``dirac``
+    and ``norm_sq_exact`` already carry the exact state deterministically.
     """
+    def keep(k: Any, v: Any) -> bool:
+        if not isinstance(k, str):
+            return True
+        if k.endswith("_approx"):
+            return False
+        # ``state`` maps to a live backend object in the algebraic lane; a
+        # string/bool leaf of the same name (e.g. stage labels) is kept.
+        return k != "state" or isinstance(v, (str, int, bool, dict, list, tuple, type(None)))
+
     if isinstance(tree, dict):
-        return {
-            k: _strip_approx(v)
-            for k, v in tree.items()
-            if not (isinstance(k, str) and k.endswith("_approx"))
-        }
+        return {k: _strip_approx(v) for k, v in tree.items() if keep(k, v)}
     if isinstance(tree, list):
         return [_strip_approx(v) for v in tree]
     if isinstance(tree, tuple):
@@ -221,8 +229,25 @@ class LibraryResult:
         return audit_exactness(self.payload)
 
     def to_dict(self) -> Dict[str, Any]:
-        """Canonical JSON-ready form for receipts and hashing."""
+        """Canonical JSON-ready form for receipts and hashing.
+
+        Sympy/algebraic values serialize as tagged exact expressions;
+        non-string mapping keys are normalized to strings.  ``wall_ms``
+        stays a plain float in the envelope — it is classical metadata,
+        and the canonical serializer would rightly reject it inside the
+        exact payload.
+        """
         from .canonical_serialization import canonical_value
+
+        def canon(v: Any) -> Any:
+            if isinstance(v, dict):
+                return {str(k): canon(item) for k, item in v.items()}
+            if isinstance(v, (list, tuple)):
+                return [canon(item) for item in v]
+            if isinstance(v, sp.Basic) or hasattr(v, "to_sympy"):
+                expr = v if isinstance(v, sp.Basic) else v.to_sympy()
+                return {"$exact": str(expr)}
+            return v
 
         return {
             "family": self.family,
@@ -232,7 +257,7 @@ class LibraryResult:
             "arithmetic_domain": self.arithmetic_domain,
             "sampled": self.sampled,
             "wall_ms": self.wall_ms,
-            "payload": canonical_value(self.payload),
+            "payload": canonical_value(canon(self.payload)),
         }
 
 
@@ -924,4 +949,6 @@ class QuantumLibrary:
             payload=res.payload,
             truth_class=res.payload["truth_class"],
             wall_ms=res.wall_ms,
+            arithmetic_domain=res.arithmetic_domain,
+            lane_owner=res.lane_owner,
         )

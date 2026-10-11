@@ -124,12 +124,14 @@ class TestAdmissionAudit:
         assert "no backend can answer this program exactly" in msg
         assert "Schmidt bound" in msg  # refusal reason is recorded
 
-    def test_runtime_densification_refuses_in_sparse_lane(self):
+    def test_runtime_densification_refuses_in_sparse_lane(self, monkeypatch):
         # The sparse lane admits on gate bindings, then the register's
-        # support bound fails closed when H^25 densifies past 2^24.
+        # support bound fails closed when the state densifies past the
+        # declared amplitude budget (shrink the envelope for the test).
+        monkeypatch.setenv("PYTHIA_MAX_AMPLITUDES", "4096")
         with pytest.raises(Exception) as exc:
             QuantumLibrary.execute_ops(
-                25, [("h", q) for q in range(25)], prefer="sparse"
+                13, [("h", q) for q in range(13)], prefer="sparse"
             )
         assert isinstance(exc.value, (StatevectorTooLargeError, MemoryError, RuntimeError))
 
@@ -173,13 +175,12 @@ class TestCanonicalReceipts:
     def test_identical_exact_runs_have_identical_payload_digests(self):
         from turing_universal_quantum_computer.canonical_serialization import (
             canonical_sha256,
-            canonical_value,
         )
 
         a = QuantumLibrary.qpe(Fraction(1, 8), 3)
         b = QuantumLibrary.qpe(Fraction(1, 8), 3)
-        da = canonical_sha256(canonical_value(a.payload))
-        db = canonical_sha256(canonical_value(b.payload))
+        da = canonical_sha256(a.to_dict()["payload"])
+        db = canonical_sha256(b.to_dict()["payload"])
         assert da == db
 
     def test_wall_clock_is_metadata_not_payload(self):
