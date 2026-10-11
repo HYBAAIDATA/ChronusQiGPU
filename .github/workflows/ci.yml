@@ -170,7 +170,5 @@ jobs:
           cache: pip
       - name: Install Python dependencies with ML extras
         run: bash scripts/ci_install.sh "ml"
-      - name: Fetch NLTK resources (vader_lexicon for toe.PredictiveEngine)
-        run: python -c "import nltk; nltk.download('vader_lexicon', quiet=True)"
       - name: Run Intelligence self-test
         run: python -u -X utf8 -m Intelligence.self_test

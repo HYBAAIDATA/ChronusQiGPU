@@ -55,8 +55,8 @@ SPECS: dict[str, MutationSpec] = {
     "toe-feedback-connected": MutationSpec(
         name="toe-feedback-connected",
         path="toe/runtime.py",
-        before="        self._record_decision(tenant, decision_id, result, confidence)\n",
-        after="        pass  # MUTATION: feedback/evidence recording disconnected\n",
+        before="        decision_id = self._record_decision(tenant, operation, result, confidence)\n",
+        after="        decision_id = None  # MUTATION: feedback/evidence recording disconnected\n",
         test=(
             "tests/test_toe_runtime.py::TestTOEIntelligenceRuntime::"
             "test_predict_records_decision_in_feedback"
@@ -140,6 +140,8 @@ SPECS: dict[str, MutationSpec] = {
         name="sha256d-m32-independent-recheck",
         path="mining/hash_pipeline.py",
         before=(
+            "            header80, target_be, base_nonce, lane_order, count\n"
+            "        )\n"
             "        if winner is not None:\n"
             "            reference = double_sha256(header80[:76] + "
             "struct.pack(\"<I\", int(winner) & 0xFFFFFFFF))\n"
@@ -148,6 +150,8 @@ SPECS: dict[str, MutationSpec] = {
             "        el = time.perf_counter() - t0\n"
         ),
         after=(
+            "            header80, target_be, base_nonce, lane_order, count\n"
+            "        )\n"
             "        if winner is not None:\n"
             "            reference = double_sha256(header80[:76] + "
             "struct.pack(\"<I\", int(winner) & 0xFFFFFFFF))\n"

@@ -89,7 +89,7 @@ jobs:
           python scripts/mutation_check.py
           ${{ matrix.path || format('chronus/mla1517/mining/{0}.py', matrix.module) }}
           --tests ${{ matrix.tests }}
-          --pythonpath chronus/mla1517_platform/python turing_universal_quantum_computer
+          --pythonpath chronus/mla1517_platform/python turing_universal_quantum_computer chronus
           --workers 4
           --min-score ${{ matrix.floor }}
           --json mutation-${{ matrix.module }}.json
