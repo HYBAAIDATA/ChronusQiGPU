@@ -2,16 +2,49 @@
   "cycles": [
     [
       "Intelligence/__init__.py",
-      "Intelligence/self_healing/__init__.py",
-      "Intelligence/self_healing/governor.py",
-      "Intelligence/self_healing/startup_self_healing.py"
-    ],
-    [
+      "Intelligence/agi_substrate.py",
+      "Intelligence/apple_plasticity.py",
       "Intelligence/asi/__init__.py",
       "Intelligence/asi/causal_reasoning.py",
+      "Intelligence/asi/discovery_engine.py",
       "Intelligence/asi/framework.py",
       "Intelligence/asi/information_integration.py",
-      "Intelligence/asi/predictive_processing.py"
+      "Intelligence/asi/manifold_bridge.py",
+      "Intelligence/asi/metacognition.py",
+      "Intelligence/asi/neural_plasticity.py",
+      "Intelligence/asi/predictive_processing.py",
+      "Intelligence/asi/safety_alignment.py",
+      "Intelligence/asi/self_referential.py",
+      "Intelligence/asi/theory_of_mind.py",
+      "Intelligence/autonomous_capabilities.py",
+      "Intelligence/counterfactual_intelligence.py",
+      "Intelligence/intelligence_integration.py",
+      "Intelligence/meta_evolution.py",
+      "Intelligence/neural_plasticity.py",
+      "Intelligence/neural_plasticity_integration.py",
+      "Intelligence/neural_plasticity_quantum.py",
+      "Intelligence/orchestrator.py",
+      "Intelligence/pythia_learning.py",
+      "Intelligence/pythia_memory.py",
+      "Intelligence/pythia_store.py",
+      "Intelligence/pythia_tools.py",
+      "Intelligence/salamander.py",
+      "Intelligence/self_healing/__init__.py",
+      "Intelligence/self_healing/governor.py",
+      "Intelligence/self_healing/startup_self_healing.py",
+      "Intelligence/skill_loader.py",
+      "chronus/mla1517/__init__.py",
+      "chronus/mla1517/mining/__init__.py",
+      "chronus/mla1517/mining/self_healing_agent.py",
+      "toe/__init__.py",
+      "toe/bridge.py",
+      "toe/engine.py",
+      "toe/expansion.py",
+      "toe/generalization.py",
+      "toe/golden_unified.py",
+      "toe/intelligence_state.py",
+      "toe/machine.py",
+      "toe/representation.py"
     ],
     [
       "aethel/__init__.py",
@@ -23,35 +56,12 @@
       "aethel/enterprise/system_relations.py"
     ],
     [
-      "chronus/seam/__init__.py",
-      "chronus/seam/buffer.py",
-      "chronus/seam/fleet.py",
-      "chronus/seam/hybrid.py",
-      "chronus/seam/kernel.py",
-      "chronus/seam/probe.py",
-      "chronus/seam/queue.py"
-    ],
-    [
       "chronus/v33/theory/__init__.py",
       "chronus/v33/theory/report.py"
     ],
     [
-      "euclid/__init__.py",
-      "euclid/adapter.py",
       "euclid/agents/__init__.py",
-      "euclid/agents/orchestrator.py",
-      "euclid/core/phi_metric.py",
-      "euclid/discovery/__init__.py",
-      "euclid/discovery/ast_delta_discovery.py",
-      "euclid/enterprise/__init__.py",
-      "euclid/geometry/__init__.py",
-      "euclid/search/__init__.py",
-      "euclid/search/evolutionary_search.py",
-      "euclid/search/mcts_search.py",
-      "euclid/surrogate/__init__.py",
-      "euclid/transfer/__init__.py",
-      "euclid/transfer/persistent_repository.py",
-      "euclid/validation/__init__.py"
+      "euclid/agents/orchestrator.py"
     ],
     [
       "gpu/__init__.py",
@@ -115,18 +125,6 @@
       "pythagoras/engine/primitive_repository.py"
     ],
     [
-      "toe/__init__.py",
-      "toe/bridge.py",
-      "toe/engine.py",
-      "toe/expansion.py",
-      "toe/generalization.py",
-      "toe/golden_unified.py",
-      "toe/intelligence_state.py",
-      "toe/manifold_bridge.py",
-      "toe/representation.py",
-      "toe/system.py"
-    ],
-    [
       "toe/unified/__init__.py",
       "toe/unified/platform.py"
     ],
@@ -138,11 +136,11 @@
   "layers": [
     "Intelligence/__init__.py:55: imports test module Intelligence/self_test.py",
     "agi/enhanced_ai/__init__.py:36: imports test module agi/enhanced_ai/test_enhanced_agi.py",
-    "chronus/conformance.py:38: imports test module tests/test_chronus_tensor_compute.py",
-    "chronus/conformance.py:39: imports test module tests/test_chronus_igpu_runtime.py",
+    "chronus/conformance.py:38: imports test module chronus/tests/test_chronus_tensor_compute.py",
+    "chronus/conformance.py:39: imports test module chronus/tests/test_chronus_igpu_runtime.py",
     "chronus/mla1517_platform/python/soak_voyage.py:31: imports test module chronus/mla1517_platform/python/test_agentic_voyages.py",
-    "chronus/mla1517_platform/python/system_fabric.py:1276: imports test module Intelligence/self_test.py",
-    "chronus/v33/__init__.py:9: imports test module chronus/v33/test_harness.py",
+    "chronus/mla1517_platform/python/system_fabric.py:1332: imports test module Intelligence/self_test.py",
+    "chronus/v33/__init__.py:20: imports test module chronus/v33/test_harness.py",
     "hyba/operating_model/failure_modes.py:15: imports test module tests/test_operating_model.py",
     "millennium/clay_checklist.py:68: imports test module tests/test_millennium_package.py",
     "tensor/capability.py:104: imports test module tests/test_tensor_gpu_compat.py",
@@ -155,13 +153,13 @@
     "tensor/capability.py:166: imports test module tests/test_tensor_receipts_benchmarks.py",
     "tensor/capability.py:16: imports test module tests/test_tensor_backends.py",
     "tensor/capability.py:176: imports test module tests/test_canonical_tensor_ownership.py",
-    "tensor/capability.py:21: imports test module tests/test_chronus_tensor_compute.py",
     "tensor/capability.py:43: imports test module tests/test_tensor_runtime.py",
     "tensor/capability.py:53: imports test module tests/test_kellogg_tensor.py",
     "tensor/capability.py:63: imports test module tests/test_toe_tensor_ml.py",
     "tensor/capability.py:73: imports test module tests/test_geodesic_tensor_extensions.py",
     "tensor/capability.py:83: imports test module tests/test_tensor_hybrid_router.py",
     "tensor/capability.py:88: imports test module tests/test_folded_inference.py",
-    "tensor/capability.py:94: imports test module tests/test_tensor_package.py"
+    "tensor/capability.py:94: imports test module tests/test_tensor_package.py",
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py:194: imports test module tests/test_shared_system_relations_production.py"
   ]
 }
