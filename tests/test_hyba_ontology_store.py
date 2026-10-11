@@ -8,14 +8,17 @@ from hyba_db import (
     AccessDenied, EdgeKind, IntegrityFailure, NodeKind, OntologyStore,
     ProofStatus, Quota, QuotaExceeded,
 )
+from hyba_db.theseus_custody import TheseusFileCustody
 
 KEY = b"hyba-test-integrity-key-32-bytes!!"
+CUSTODY_KEY = b"hyba-test-custody-key-32-bytes!!!!"
 VECTOR = tuple((i - 5) / 7 for i in range(11))
 
 
 @pytest.fixture
 def store(tmp_path):
-    with OntologyStore(tmp_path / "ontology.db", KEY) as value:
+    custody = TheseusFileCustody(tmp_path / "custody", hmac_key=CUSTODY_KEY)
+    with OntologyStore(tmp_path / "ontology.db", KEY, custody=custody) as value:
         yield value
 
 

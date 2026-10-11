@@ -16,12 +16,18 @@ on:
         description: Full frozen storage candidate SHA, matching dispatch head
         required: true
         type: string
+      publish:
+        description: "Publish the exact verified release artefacts"
+        type: choice
+        options: [none, testpypi, pypi]
+        default: none
 
 permissions:
   contents: read
 
 env:
   RC_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  CI_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
 jobs:
   preparation-guards:
@@ -56,7 +62,12 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: Install build and source-test tooling
-        run: python -m pip install build twine pytest 'numpy>=1.26,<3'
+        # pyyaml and the installed chronos_one_igpu import package are required
+        # by the OVID mandatory suite (test_m3_storage_voyage collects the
+        # mla1517 mining coordinator chain).
+        run: |
+          python -m pip install build twine pytest 'pyyaml>=6,<8' 'numpy>=1.26,<3'
+          python -m pip install ./packages/chronos-one-igpu
       - name: Build unchanged canonical artifacts and execute installed voyages
         run: python packaging/storage-release/build_and_verify.py --product all --source-tests
       - name: Retain actual outcomes, including failed candidate diagnostics
@@ -69,6 +80,532 @@ jobs:
             packaging/ovid/dist/
           if-no-files-found: error
 
-# Deliberately no OIDC upload job. Public naming approval, real registry smoke,
-# promotion receipts and publication authorization must be resolved separately.
+  release-verdict:
+    name: Compose per-product release verdicts
+    needs: installed-candidates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: storage-candidates-*
+          path: candidates
+      - name: Verify matrix outcomes, owner naming approval and PyPI name state
+        shell: python
+        run: |
+          import hashlib, json, os, subprocess, urllib.error, urllib.request
+          from pathlib import Path
+
+          PRODUCTS = {
+              "theseus": "hyba-theseus-storage",
+              "ovid": "hyba-ovid-data-organisation",
+          }
+          verdicts = {}
+          for product, name in PRODUCTS.items():
+              decisions = json.loads(Path(f"packaging/{product}/OWNER_DECISIONS.json").read_text())
+              if decisions["approved_distribution_name"] != name or not decisions["identity_status"].startswith("APPROVED"):
+                  raise SystemExit(f"{name}: owner naming approval missing")
+              if decisions["first_public_version"] != "1.0.0":
+                  raise SystemExit(f"{name}: first public version not approved as 1.0.0")
+              records = sorted(Path("candidates").glob(f"*/{product}/dist/artifact-verdict.json"))
+              if len(records) != 4:
+                  raise SystemExit(f"{name}: expected 4 interpreter verdicts, found {len(records)}")
+              rows = [json.loads(p.read_text()) for p in records]
+              if not all(r["status"] == "PASS" and r["source_commit"] == os.environ["RC_SHA"] for r in rows):
+                  raise SystemExit(f"{name}: stale or failing candidate verdict")
+              if not all(r["product"] == name and r["version"] == "1.0.0" for r in rows):
+                  raise SystemExit(f"{name}: verdict identity mismatch")
+              suites = [r["source_suites"]["counts"] for r in rows]
+              if not all(c["tests"] > 0 and c["failures"] == 0 and c["errors"] == 0 and c["skipped"] == 0 for c in suites):
+                  raise SystemExit(f"{name}: source suite not green on every interpreter")
+              canonical = rows[0]  # every interpreter verifies the same reproduced archives
+              for key in ("wheel", "sdist"):
+                  if len({r[key]["sha256"] for r in rows}) != 1:
+                      raise SystemExit(f"{name}: {key} is not byte-reproducible across interpreters")
+                  f = records[0].parent / canonical[key]["file"]
+                  if hashlib.sha256(f.read_bytes()).hexdigest() != canonical[key]["sha256"]:
+                      raise SystemExit(f"{name}: {key} digest changed after verification")
+              try:
+                  with urllib.request.urlopen(f"https://pypi.org/pypi/{name}/json", timeout=20) as resp:
+                      state = {"registered": True, "versions": sorted(json.load(resp).get("releases", {}))}
+              except urllib.error.HTTPError as exc:
+                  if exc.code != 404:
+                      raise
+                  state = {"registered": False, "versions": []}
+              if "1.0.0" in state["versions"]:
+                  raise SystemExit(f"{name} 1.0.0 already exists on PyPI")
+              verdicts[product] = {
+                  "product": name, "version": "1.0.0",
+                  "repository": "QuantumPhiRedux/PhiMiner",
+                  "git_sha": os.environ["RC_SHA"],
+                  "distribution_name_status": "APPROVED",
+                  "installed_matrix": ["3.11", "3.12", "3.13", "3.14"],
+                  "source_suites": canonical["source_suites"]["counts"],
+                  "wheel": canonical["wheel"], "sdist": canonical["sdist"],
+                  "archive_inspection": canonical["archive_inspection"],
+                  "pypi_name_state": state,
+                  "testpypi_verified": False,
+                  "publishable": True,
+                  "published": False,
+              }
+          out = Path("verdicts"); out.mkdir()
+          for product, verdict in verdicts.items():
+              (out / f"{product}-release-verdict.json").write_text(
+                  json.dumps(verdict, indent=2, sort_keys=True))
+              print(json.dumps(verdict, indent=2, sort_keys=True))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: storage-release-verdicts
+          path: verdicts/*
+          if-no-files-found: error
+
+  publish-theseus-testpypi:
+    name: OIDC upload exact THESEUS archives to TestPyPI
+    needs: release-verdict
+    if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: storage-candidates-3.12
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: storage-release-verdicts
+          path: verdicts
+      - name: Stage exact verdict-bound THESEUS archives
+        run: |
+          mkdir upload
+          python - <<'PY'
+          import hashlib, json, shutil
+          v = json.load(open("verdicts/theseus-release-verdict.json"))
+          for key in ("wheel", "sdist"):
+              f = f"dist/theseus/dist/{v[key]['file']}"
+              assert hashlib.sha256(open(f, "rb").read()).hexdigest() == v[key]["sha256"], f
+              shutil.copy(f, "upload/")
+          PY
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: upload/
+          repository-url: https://test.pypi.org/legacy/
+
+  theseus-testpypi-smoke:
+    name: THESEUS clean TestPyPI execution / Python ${{ matrix.python }}
+    needs: publish-theseus-testpypi
+    if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Registry install + custody voyages outside the source
+        run: |
+          python -m venv /tmp/st
+          . /tmp/st/bin/activate
+          for i in 1 2 3 4 5; do
+            python -m pip install --index-url https://test.pypi.org/simple/ \
+              --extra-index-url https://pypi.org/simple/ "hyba-theseus-storage==1.0.0" && break
+            sleep 30
+          done
+          mkdir -p /tmp/voy
+          head -c32 /dev/urandom > /tmp/voy/custody.key
+          head -c32 /dev/urandom > /tmp/voy/integrity.key
+          cd /tmp
+          python -I -c "import aethel, importlib.metadata as md; assert md.version('hyba-theseus-storage') == '1.0.0'; assert 'site-packages' in aethel.__file__"
+          hyba-theseus --help
+          for phase in write restart negative; do
+            python -I "$GITHUB_WORKSPACE/packaging/storage-release/voyage.py" --product theseus --phase "$phase" --root /tmp/voy
+          done
+      - name: Emit execution receipt
+        shell: python
+        run: |
+          import json, os, platform
+          from pathlib import Path
+          Path("receipts").mkdir()
+          receipt = {
+              "schema": "hyba.registry-execution.v1",
+              "product": "hyba-theseus-storage", "version": "1.0.0",
+              "registry": "testpypi", "python": platform.python_version(),
+              "source_commit": os.environ["RC_SHA"],
+              "ci_run_url": os.environ["CI_RUN_URL"],
+              "checks": {"registry_install": True, "import_site_packages": True,
+                         "cli": True, "custody_voyages": True},
+              "status": "PASS",
+          }
+          Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: theseus-testpypi-smoke-${{ matrix.python }}
+          path: receipts/receipt.json
+          if-no-files-found: error
+
+  publish-ovid-testpypi:
+    name: OIDC upload exact OVID archives to TestPyPI (after THESEUS resolves)
+    needs: [release-verdict, theseus-testpypi-smoke]
+    if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: storage-candidates-3.12
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: storage-release-verdicts
+          path: verdicts
+      - name: Stage exact verdict-bound OVID archives
+        run: |
+          mkdir upload
+          python - <<'PY'
+          import hashlib, json, shutil
+          v = json.load(open("verdicts/ovid-release-verdict.json"))
+          for key in ("wheel", "sdist"):
+              f = f"dist/ovid/dist/{v[key]['file']}"
+              assert hashlib.sha256(open(f, "rb").read()).hexdigest() == v[key]["sha256"], f
+              shutil.copy(f, "upload/")
+          PY
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: upload/
+          repository-url: https://test.pypi.org/legacy/
+
+  ovid-testpypi-smoke:
+    name: OVID clean TestPyPI execution / Python ${{ matrix.python }}
+    needs: publish-ovid-testpypi
+    if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Registry install resolves THESEUS from TestPyPI, then voyages
+        run: |
+          python -m venv /tmp/ov
+          . /tmp/ov/bin/activate
+          for i in 1 2 3 4 5; do
+            python -m pip install --index-url https://test.pypi.org/simple/ \
+              --extra-index-url https://pypi.org/simple/ "hyba-ovid-data-organisation==1.0.0" && break
+            sleep 30
+          done
+          python -c "import importlib.metadata as md; assert md.version('hyba-theseus-storage') == '1.0.0'"
+          mkdir -p /tmp/voy
+          head -c32 /dev/urandom > /tmp/voy/custody.key
+          head -c32 /dev/urandom > /tmp/voy/integrity.key
+          cd /tmp
+          python -I -c "import hyba_db, importlib.metadata as md; assert md.version('hyba-ovid-data-organisation') == '1.0.0'; assert 'site-packages' in hyba_db.__file__"
+          pythia-storage-db-gate --help
+          ! pythia-storage-db-gate --db absent.db --root absent-files --tenant unknown --custody-root absent-custody
+          for phase in write restart negative; do
+            python -I "$GITHUB_WORKSPACE/packaging/storage-release/voyage.py" --product ovid --phase "$phase" --root /tmp/voy
+          done
+      - name: Emit execution receipt
+        shell: python
+        run: |
+          import json, os, platform
+          from pathlib import Path
+          Path("receipts").mkdir()
+          receipt = {
+              "schema": "hyba.registry-execution.v1",
+              "product": "hyba-ovid-data-organisation", "version": "1.0.0",
+              "registry": "testpypi", "python": platform.python_version(),
+              "source_commit": os.environ["RC_SHA"],
+              "ci_run_url": os.environ["CI_RUN_URL"],
+              "checks": {"registry_install_with_theseus_dep": True,
+                         "import_site_packages": True, "cli": True,
+                         "cli_negative": True, "projection_voyages": True},
+              "status": "PASS",
+          }
+          Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ovid-testpypi-smoke-${{ matrix.python }}
+          path: receipts/receipt.json
+          if-no-files-found: error
+
+  publish-theseus-pypi:
+    name: OIDC promote the same THESEUS bytes to PyPI
+    needs: theseus-testpypi-smoke
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: storage-candidates-3.12
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: storage-release-verdicts
+          path: verdicts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: theseus-testpypi-smoke-*
+          path: receipts
+      - name: Require executed TestPyPI gate and stage the same bytes
+        run: |
+          mkdir upload
+          python - <<'PY'
+          import glob, hashlib, json, os, shutil
+          receipts = [json.load(open(p)) for p in glob.glob("receipts/*/receipt.json")]
+          assert len(receipts) == 4 and all(
+              r["status"] == "PASS" and r["registry"] == "testpypi"
+              and r["product"] == "hyba-theseus-storage"
+              and r["source_commit"] == os.environ["RC_SHA"]
+              and all(r["checks"].values()) for r in receipts), "missing executed THESEUS TestPyPI gate"
+          v = json.load(open("verdicts/theseus-release-verdict.json"))
+          for key in ("wheel", "sdist"):
+              f = f"dist/theseus/dist/{v[key]['file']}"
+              assert hashlib.sha256(open(f, "rb").read()).hexdigest() == v[key]["sha256"], f
+              shutil.copy(f, "upload/")
+          PY
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: upload/
+
+  theseus-pypi-smoke:
+    name: THESEUS clean PyPI execution / Python ${{ matrix.python }}
+    needs: publish-theseus-pypi
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Registry install + custody voyages outside the source
+        run: |
+          python -m venv /tmp/st
+          . /tmp/st/bin/activate
+          for i in 1 2 3 4 5; do
+            python -m pip install --index-url https://pypi.org/simple/ "hyba-theseus-storage==1.0.0" && break
+            sleep 30
+          done
+          mkdir -p /tmp/voy
+          head -c32 /dev/urandom > /tmp/voy/custody.key
+          head -c32 /dev/urandom > /tmp/voy/integrity.key
+          cd /tmp
+          python -I -c "import aethel, importlib.metadata as md; assert md.version('hyba-theseus-storage') == '1.0.0'; assert 'site-packages' in aethel.__file__"
+          hyba-theseus --help
+          for phase in write restart negative; do
+            python -I "$GITHUB_WORKSPACE/packaging/storage-release/voyage.py" --product theseus --phase "$phase" --root /tmp/voy
+          done
+      - name: Emit execution receipt
+        shell: python
+        run: |
+          import json, os, platform
+          from pathlib import Path
+          Path("receipts").mkdir()
+          receipt = {
+              "schema": "hyba.registry-execution.v1",
+              "product": "hyba-theseus-storage", "version": "1.0.0",
+              "registry": "pypi", "python": platform.python_version(),
+              "source_commit": os.environ["RC_SHA"],
+              "ci_run_url": os.environ["CI_RUN_URL"],
+              "checks": {"registry_install": True, "import_site_packages": True,
+                         "cli": True, "custody_voyages": True},
+              "status": "PASS",
+          }
+          Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: theseus-pypi-smoke-${{ matrix.python }}
+          path: receipts/receipt.json
+          if-no-files-found: error
+
+  publish-ovid-pypi:
+    name: OIDC promote the same OVID bytes to PyPI
+    needs: [theseus-pypi-smoke, ovid-testpypi-smoke]
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: storage-candidates-3.12
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: storage-release-verdicts
+          path: verdicts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ovid-testpypi-smoke-*
+          path: receipts
+      - name: Require executed TestPyPI gate and stage the same bytes
+        run: |
+          mkdir upload
+          python - <<'PY'
+          import glob, hashlib, json, os, shutil
+          receipts = [json.load(open(p)) for p in glob.glob("receipts/*/receipt.json")]
+          assert len(receipts) == 4 and all(
+              r["status"] == "PASS" and r["registry"] == "testpypi"
+              and r["product"] == "hyba-ovid-data-organisation"
+              and r["source_commit"] == os.environ["RC_SHA"]
+              and all(r["checks"].values()) for r in receipts), "missing executed OVID TestPyPI gate"
+          v = json.load(open("verdicts/ovid-release-verdict.json"))
+          for key in ("wheel", "sdist"):
+              f = f"dist/ovid/dist/{v[key]['file']}"
+              assert hashlib.sha256(open(f, "rb").read()).hexdigest() == v[key]["sha256"], f
+              shutil.copy(f, "upload/")
+          PY
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: upload/
+
+  ovid-pypi-smoke:
+    name: OVID clean PyPI execution / Python ${{ matrix.python }}
+    needs: publish-ovid-pypi
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Registry install resolves THESEUS from PyPI, then voyages
+        run: |
+          python -m venv /tmp/ov
+          . /tmp/ov/bin/activate
+          for i in 1 2 3 4 5; do
+            python -m pip install --index-url https://pypi.org/simple/ "hyba-ovid-data-organisation==1.0.0" && break
+            sleep 30
+          done
+          python -c "import importlib.metadata as md; assert md.version('hyba-theseus-storage') == '1.0.0'"
+          mkdir -p /tmp/voy
+          head -c32 /dev/urandom > /tmp/voy/custody.key
+          head -c32 /dev/urandom > /tmp/voy/integrity.key
+          cd /tmp
+          python -I -c "import hyba_db, importlib.metadata as md; assert md.version('hyba-ovid-data-organisation') == '1.0.0'; assert 'site-packages' in hyba_db.__file__"
+          pythia-storage-db-gate --help
+          ! pythia-storage-db-gate --db absent.db --root absent-files --tenant unknown --custody-root absent-custody
+          for phase in write restart negative; do
+            python -I "$GITHUB_WORKSPACE/packaging/storage-release/voyage.py" --product ovid --phase "$phase" --root /tmp/voy
+          done
+      - name: Emit execution receipt
+        shell: python
+        run: |
+          import json, os, platform
+          from pathlib import Path
+          Path("receipts").mkdir()
+          receipt = {
+              "schema": "hyba.registry-execution.v1",
+              "product": "hyba-ovid-data-organisation", "version": "1.0.0",
+              "registry": "pypi", "python": platform.python_version(),
+              "source_commit": os.environ["RC_SHA"],
+              "ci_run_url": os.environ["CI_RUN_URL"],
+              "checks": {"registry_install_with_theseus_dep": True,
+                         "import_site_packages": True, "cli": True,
+                         "cli_negative": True, "projection_voyages": True},
+              "status": "PASS",
+          }
+          Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ovid-pypi-smoke-${{ matrix.python }}
+          path: receipts/receipt.json
+          if-no-files-found: error
+
+  github-release:
+    name: Publish evidence-linked standalone GitHub releases
+    needs: [theseus-pypi-smoke, ovid-pypi-smoke]
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: storage-candidates-3.12
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: storage-release-verdicts
+          path: verdicts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "*-smoke-*"
+          path: receipts
+      - name: Retain complete publication evidence and create releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |-
+          python - <<'PY'
+          import glob, json, os
+          from pathlib import Path
+          for product, tag in (("theseus", "theseus-storage"), ("ovid", "ovid-data-organisation")):
+              v = json.load(open(f"verdicts/{product}-release-verdict.json"))
+              receipts = [json.load(open(p)) for p in glob.glob(f"receipts/*{product}*/receipt.json")]
+              registries = {r["registry"] for r in receipts}
+              assert registries == {"testpypi", "pypi"} and len(receipts) == 8, (product, registries)
+              assert all(r["source_commit"] == os.environ["RC_SHA"] and r["status"] == "PASS" for r in receipts)
+              v["published"] = True
+              v["testpypi_verified"] = True
+              v["registry_receipts"] = receipts
+              v["ci_run_url"] = os.environ["CI_RUN_URL"]
+              Path("publication.json").write_text(json.dumps(v, indent=2, sort_keys=True))
+              d = Path(f"dist/{product}/dist")
+              Path("release-notes.md").write_text(
+                  f"Standalone {v['product']} 1.0.0\n\nRC: {os.environ['RC_SHA']}\nCI: {os.environ['CI_RUN_URL']}\n\n"
+                  "Both registries used the same wheel/sdist SHA-256 archives; attached publication.json contains executed receipts. "
+                  "This release does not certify the whole HYBA platform.\n")
+              os.system(f"gh release create {tag}-v1.0.0 --target {os.environ['RC_SHA']} "
+                        f"--title '{v['product']} 1.0.0' --notes-file release-notes.md "
+                        f"{d}/*.whl {d}/*.tar.gz publication.json")
+              Path(f"{product}-publication.json").write_text(Path("publication.json").read_text())
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: storage-final-publication
+          path: "*-publication.json"
+          if-no-files-found: error
+
+# Upload is authorised at the reviewer-gated GitHub environments only
+# (testpypi / pypi). OWNER_DECISIONS upload_authorised remains a false evidence
+# field until the registry configuration exists; this workflow never asserts it.
 # A successful preparation workflow is not a production certificate.

@@ -10,11 +10,13 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, Literal, Optional
+from typing import TYPE_CHECKING, Any, Dict, Literal, Optional
 
 from aethel.chronus import ChronusContext
 from aethel.storage import AddressSpace, FibonacciAddress
-from chronus.seam.scale import ChronusScale, scale_job
+
+if TYPE_CHECKING:
+    from chronus.seam.scale import ChronusScale
 
 Mode = Literal["standalone", "nested"]
 
@@ -74,6 +76,8 @@ class ChronusSku:
         requested: int,
         payload: str = "",
     ) -> DeviceTicket:
+        from chronus.seam.scale import scale_job
+
         scale: ChronusScale = scale_job(job_id, requested, payload)
         body = json.dumps(
             {

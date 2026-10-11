@@ -16,7 +16,6 @@ from typing import Any, Dict, List, Tuple
 
 from aethel.encoding import ZeckendorfVector, fold, unfold
 from aethel.storage import AddressSpace, FibonacciAddress
-from chronus.seam.scale import scale_job
 
 INVARIANTS = ("H1", "H2", "H3", "H4", "H5")
 
@@ -76,6 +75,8 @@ class HyperscalerSku:
         prev = self._chain[-1] if self._chain else ""
         chained = hashlib.sha256((prev + merkle).encode("ascii")).hexdigest()
         self._chain.append(chained)
+        from chronus.seam.scale import scale_job
+
         scale = scale_job(job_id, max(vector.folded_units, 1))
         addr = self.space.write(vector_to_bytes(vector))
         self._index.append(addr)
