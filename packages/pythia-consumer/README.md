@@ -10,6 +10,9 @@ three tabs of the product:
   `pythia-node-large-memory` at ≥96 GiB).
 - **Verify** — structural verification of substrate receipts: Zeckendorf
   certificates, non-adjacency masks, Cassini ledger rows, Lucas ladder anchors.
+- **Mint** — produce a fold-consistent receipt locally (`pythia mint`), on the
+  console (`POST /api/mint`), or in the companion. Minted receipts prove the
+  fold — `provenance_authentication` stays `unsupported`.
 - **Intelligence** — pass-through status for a configured CIaaS endpoint
   (`PYTHIA_CIAAS_URL`); reports unavailable honestly when unconfigured.
 - **Companion** — the iPhone surface: an installable PWA at `/companion` with
@@ -35,6 +38,9 @@ wheels — the top-level namespaces would collide.
 ```bash
 pythia census            # local hardware census (JSON, incl. device/offer tier)
 pythia verify r.json     # structurally verify a receipt file
+pythia mint              # mint a receipt: --context STR, --data FILE, --masks m0,…,m10
+pythia offers            # consumer offer catalog with honest per-offer states
+pythia products          # substrate distribution availability
 pythia console           # serve the three-tab console on http://127.0.0.1:8777
 pythia console --lan     # also bind 0.0.0.0 and print the iPhone companion URL
 ```

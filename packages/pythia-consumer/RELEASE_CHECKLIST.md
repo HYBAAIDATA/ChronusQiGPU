@@ -7,7 +7,7 @@ marketing assertion — each row names the artifact or command that proves it.
 
 | Requirement | Value | Evidence |
 |---|---|---|
-| Python | ≥3.10 (built/tested on 3.12) | `pyproject.toml`, `pytest` 78/78 on cpython-3.12 |
+| Python | ≥3.10 (built/tested on 3.12) | `pyproject.toml`, `pytest` 86/86 on cpython-3.12 |
 | macOS | 13+; **arm64 only** today | `build_app.py` runtime `cpython-3.12-macos-aarch64`; universal2 untested |
 | iPhone | companion PWA via `pythia console --lan` → `/companion`; Add-to-Home-Screen install | `companion/` assets, route tests, live serve on M5 Max |
 | Linux/Windows | wheel is `py3-none-any`; untested, no claim | — |
@@ -27,7 +27,9 @@ marketing assertion — each row names the artifact or command that proves it.
 
 | Claim | Status | Evidence anchor |
 |---|---|---|
-| "Receipts you can check" — structural + canonical binding | ✅ supported | `verify.py`, 78 tests, `demo_verify.py` |
+| "Receipts you can check" — structural + canonical binding | ✅ supported | `verify.py`, 86 tests, `demo_verify.py` |
+| "…and make" — local receipt minting closes the loop | ✅ supported | `mint.py`, `/api/mint`, companion Mint card; minted receipts pass `verify` (JS mint parity tested: identical canonical_int/token/masks) |
+| Honest offer catalog | ✅ supported | `offers.py` → `pythia offers`, `/api/offers`; states: `installed`/`this-device`/`served`/`absent`/`not-productized` |
 | "…on your iPhone" — JS verifier parity with the Python contract | ✅ supported | `companion/verify.js`, JXA parity test (8 case classes incl. >2^53 canonical, non-ASCII context) |
 | Local-first, offline verification | ✅ supported | stdlib server on 127.0.0.1, no network calls; client-side JS needs none |
 | Device-aware offer tier (MacBook/iMac/Mac Studio memory) | ✅ supported | `census.device_block` — model family + unified GiB → `offer_tier` |
@@ -57,6 +59,16 @@ marketing assertion — each row names the artifact or command that proves it.
 | Clean-machine launch/uninstall | ⚠️ verified only on build host; uninstall = drag-delete by design |
 | Mac App Store | ❌ not targeted — bundled runtime + mining-adjacent lineage argue direct distribution |
 | iPhone App Store | ❌ not required — companion is a PWA; verification is client-side so no App Store review exposure |
+
+## Publication lane
+
+`.github/workflows/consumer-publication.yml` mirrors the storage lane:
+guards → bundled build + digests → installed-wheel smoke matrix (3.10–3.13) →
+catalog/PyPI-state verdict → reviewer-gated OIDC TestPyPI → TestPyPI smoke →
+same-bytes PyPI promotion → PyPI smoke → evidence-linked GitHub release.
+Upload authorization lives only in the `testpypi`/`pypi` environments;
+trusted-publisher configuration and the `hyba-pythia-consumer` PyPI namespace
+remain owner-controlled.
 
 ## Known limitations carried into release
 

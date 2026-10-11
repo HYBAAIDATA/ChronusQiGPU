@@ -47,12 +47,6 @@ _OFFERS = [
 ]
 
 
-def _node_state(device: Dict[str, Any], bundled: int) -> str:
-    if not device.get("unified_memory"):
-        return "absent"
-    return "this-device" if device.get("offer_tier") == "pythia-node" else "absent"
-
-
 def offer_catalog(api_url: str | None = None) -> Dict[str, Any]:
     status = census.node_status(api_url=api_url)
     device = status.get("device") or {}
