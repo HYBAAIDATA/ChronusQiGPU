@@ -284,3 +284,80 @@ jobs:
           assert cv["decision_changed"] and cv["replay_episode_1"]["identical"]
           print("TestPyPI TOE", toe.__version__, "voyages OK")
           PY
+
+  pypi-smoke:
+    name: Install TOE from PyPI into an empty environment and run the voyages
+    needs: publish
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: toe-verified-release
+          path: release
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Registry install (no checkout) + canonical and cross-domain voyages
+        run: |
+          python -m venv /tmp/toe-registry
+          . /tmp/toe-registry/bin/activate
+          NAME=$(python -c "import json; print(json.load(open('release/release-verdict.json'))['distribution'])")
+          VER=$(python -c "import json; print(json.load(open('release/release-verdict.json'))['version'])")
+          python -m pip install --disable-pip-version-check release/hyba_kellogg_tensor-1.0.0-py3-none-any.whl numpy
+          for i in 1 2 3 4 5; do
+            python -m pip install --no-deps --index-url https://pypi.org/simple/ "$NAME==$VER" && break
+            sleep 30
+          done
+          cd /tmp
+          python - <<'PY'
+          import toe
+          from toe.voyage import canonical_voyage, cross_domain_voyage
+          assert "site-packages" in toe.__file__
+          xd = cross_domain_voyage()
+          assert xd["reuse"]["adapter_code_in_any_backend_trace"] == []
+          cv = canonical_voyage(None)
+          assert cv["decision_changed"] and cv["replay_episode_1"]["identical"]
+          print("PyPI TOE", toe.__version__, "voyages OK")
+          PY
+
+  github-release:
+    name: Publish evidence-linked standalone GitHub release
+    needs: [pypi-smoke]
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: toe-verified-release
+          path: release
+      - name: Seal executed registry evidence and create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |-
+          python - <<'PY'
+          import json, os, subprocess
+          v = json.load(open("release/release-verdict.json"))
+          v["published"] = True
+          v["testpypi_verified"] = True
+          v["git_sha"] = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          v["ci_run_url"] = os.environ["GITHUB_SERVER_URL"] + "/" + os.environ["GITHUB_REPOSITORY"] + "/actions/runs/" + os.environ["GITHUB_RUN_ID"]
+          open("publication.json", "w").write(json.dumps(v, indent=2, sort_keys=True))
+          open("release-notes.md", "w").write(
+              "Standalone " + v["distribution"] + " " + v["version"] + "\n\n"
+              "RC: " + v["git_sha"] + "\nCI: " + v["ci_run_url"] + "\n\n"
+              "TestPyPI and PyPI installs executed the same wheel/sdist SHA-256 archives. "
+              "This release does not certify the whole HYBA platform.\n")
+          PY
+          gh release create toe-intelligence-v1.0.0 --target "$(git rev-parse HEAD)" \
+            --title "hyba-toe-intelligence 1.0.0" --notes-file release-notes.md \
+            release/*.whl release/*.tar.gz publication.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: toe-final-publication
+          path: publication.json
+          if-no-files-found: error

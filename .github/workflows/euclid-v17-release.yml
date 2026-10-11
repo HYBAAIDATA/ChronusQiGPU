@@ -15,10 +15,25 @@ on:
       - "docs/EUCLID_V17_RESEARCH_RELEASE.md"
       - "pyproject.toml"
       - ".github/workflows/euclid-v17-release.yml"
+      - "packaging/euclid-engine/**"
   workflow_dispatch:
+    inputs:
+      rc_sha:
+        description: Full frozen release-candidate commit; must equal dispatch head
+        required: true
+        type: string
+      publish:
+        description: "Publish the exact verified release artefacts"
+        type: choice
+        options: [none, testpypi, pypi]
+        default: none
 
 permissions:
   contents: read
+
+env:
+  RC_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  CI_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
 jobs:
   release-evidence:
@@ -93,3 +108,344 @@ jobs:
             euclid-v17-benchmark.txt
             euclid-v17-release-build.txt
             euclid-v17-release/**
+
+  preflight:
+    name: Freeze and verify source identity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
+      - name: Require exact requested RC
+        run: |
+          test "$(git rev-parse HEAD)" = "$RC_SHA"
+          if [ "${{ github.event_name }}" = workflow_dispatch ]; then
+            test "${{ inputs.rc_sha }}" = "${{ github.sha }}"
+          fi
+
+  installed-candidates:
+    name: Canonical wheel verified / Python ${{ matrix.python }}
+    needs: preflight
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Build wheel + sdist; inspect, install and run v17 episodes outside the repo
+        # build_and_verify.py stages only euclid/hyba_substrate/resonance_intelligence,
+        # builds sibling dependency wheels itself, installs from a clean venv,
+        # imports every v17 module and runs real episodes from the installed copy.
+        run: |
+          python -m pip install --disable-pip-version-check build
+          python packaging/euclid-engine/build_and_verify.py
+      - name: Retain interpreter evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: euclid-candidates-${{ matrix.python }}
+          path: packaging/euclid-engine/dist/
+          if-no-files-found: error
+
+  release-verdict:
+    name: Compose EUCLID release verdict
+    needs: installed-candidates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: euclid-candidates-*
+          path: candidates
+      - name: Verify matrix outcomes and PyPI name state
+        shell: python
+        run: |
+          import hashlib, json, os, urllib.error, urllib.request
+          from pathlib import Path
+
+          records = sorted(Path("candidates").glob("*/euclid-engine-verification.json"))
+          if len(records) != 3:
+              raise SystemExit(f"expected 3 interpreter verdicts, found {len(records)}")
+          rows = [json.loads(p.read_text()) for p in records]
+          if not all(r["passed"] and r["source_commit"] == os.environ["RC_SHA"] for r in rows):
+              raise SystemExit("stale or failing EUCLID candidate verdict")
+          if not all(r["product"] == "hyba-euclid-intelligence" and r["version"] == "1.0.0" for r in rows):
+              raise SystemExit("verdict identity mismatch")
+          if not all(r["wheel_sha256"] == rows[0]["wheel_sha256"]
+                     and r["sdist_sha256"] == rows[0]["sdist_sha256"] for r in rows):
+              raise SystemExit("archives are not byte-reproducible across interpreters")
+          canonical = rows[0]
+          for key, sha_key in (("wheel", "wheel_sha256"), ("sdist", "sdist_sha256")):
+              f = records[0].parent / canonical[key]
+              if hashlib.sha256(f.read_bytes()).hexdigest() != canonical[sha_key]:
+                  raise SystemExit(f"{key} digest changed after verification")
+          name = "hyba-euclid-intelligence"
+          try:
+              with urllib.request.urlopen(f"https://pypi.org/pypi/{name}/json", timeout=20) as resp:
+                  state = {"registered": True, "versions": sorted(json.load(resp).get("releases", {}))}
+          except urllib.error.HTTPError as exc:
+              if exc.code != 404:
+                  raise
+              state = {"registered": False, "versions": []}
+          if "1.0.0" in state["versions"]:
+              raise SystemExit(f"{name} 1.0.0 already exists on PyPI")
+          verdict = {
+              "product": name, "version": "1.0.0",
+              "repository": "QuantumPhiRedux/PhiMiner",
+              "git_sha": os.environ["RC_SHA"],
+              "installed_matrix": ["3.11", "3.12", "3.13"],
+              "installed_smoke": canonical["installed_smoke"],
+              "wheel": {"file": canonical["wheel"], "sha256": canonical["wheel_sha256"]},
+              "sdist": {"file": canonical["sdist"], "sha256": canonical["sdist_sha256"]},
+              "pypi_name_state": state,
+              "testpypi_verified": False,
+              "publishable": True,
+              "published": False,
+          }
+          Path("euclid-release-verdict.json").write_text(json.dumps(verdict, indent=2, sort_keys=True))
+          print(json.dumps(verdict, indent=2, sort_keys=True))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: euclid-release-verdict
+          path: euclid-release-verdict.json
+          if-no-files-found: error
+
+  publish-testpypi:
+    name: OIDC upload exact EUCLID archives to TestPyPI
+    needs: release-verdict
+    if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: euclid-candidates-3.12
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: euclid-release-verdict
+          path: verdict
+      - name: Require declared siblings live on TestPyPI, then stage exact archives
+        run: |
+          mkdir upload
+          python - <<'PY'
+          import hashlib, json, urllib.request
+          for dep in ("hyba-kellogg-tensor", "hyba-toe-intelligence", "hyba-theseus-storage"):
+              with urllib.request.urlopen(f"https://test.pypi.org/pypi/{dep}/json", timeout=20) as r:
+                  assert "1.0.0" in json.load(r).get("releases", {}), f"{dep} 1.0.0 not on TestPyPI"
+          v = json.load(open("verdict/euclid-release-verdict.json"))
+          for key in ("wheel", "sdist"):
+              f = f"dist/{v[key]['file']}"
+              assert hashlib.sha256(open(f, "rb").read()).hexdigest() == v[key]["sha256"], f
+              import shutil; shutil.copy(f, "upload/")
+          PY
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: upload/
+          repository-url: https://test.pypi.org/legacy/
+
+  testpypi-smoke:
+    name: EUCLID clean TestPyPI execution / Python ${{ matrix.python }}
+    needs: publish-testpypi
+    if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Registry install resolves sibling deps, then import + CLI
+        run: |
+          python -m venv /tmp/eu
+          . /tmp/eu/bin/activate
+          for i in 1 2 3 4 5; do
+            python -m pip install --index-url https://test.pypi.org/simple/ \
+              --extra-index-url https://pypi.org/simple/ "hyba-euclid-intelligence==1.0.0" && break
+            sleep 30
+          done
+          cd /tmp
+          python -I -c "import euclid, importlib.metadata as md; assert md.version('hyba-euclid-intelligence') == '1.0.0'; assert 'site-packages' in euclid.__file__; [__import__(m) for m in ('euclid.cognition.integrated','euclid.cognition.research.cli')]"
+          euclid-v17-research --help
+      - name: Emit execution receipt
+        shell: python
+        run: |
+          import json, os, platform
+          from pathlib import Path
+          Path("receipts").mkdir()
+          receipt = {
+              "schema": "hyba.registry-execution.v1",
+              "product": "hyba-euclid-intelligence", "version": "1.0.0",
+              "registry": "testpypi", "python": platform.python_version(),
+              "source_commit": os.environ["RC_SHA"],
+              "ci_run_url": os.environ["CI_RUN_URL"],
+              "checks": {"registry_install_with_sibling_deps": True,
+                         "import_site_packages": True, "v17_modules": True, "cli": True},
+              "status": "PASS",
+          }
+          Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: euclid-testpypi-smoke-${{ matrix.python }}
+          path: receipts/receipt.json
+          if-no-files-found: error
+
+  publish-pypi:
+    name: OIDC promote the same EUCLID bytes to PyPI
+    needs: testpypi-smoke
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: euclid-candidates-3.12
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: euclid-release-verdict
+          path: verdict
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: euclid-testpypi-smoke-*
+          path: receipts
+      - name: Require executed TestPyPI gate, sibling deps on PyPI, stage same bytes
+        run: |
+          mkdir upload
+          python - <<'PY'
+          import glob, hashlib, json, os, shutil, urllib.request
+          receipts = [json.load(open(p)) for p in glob.glob("receipts/*/receipt.json")]
+          assert len(receipts) == 3 and all(
+              r["status"] == "PASS" and r["registry"] == "testpypi"
+              and r["product"] == "hyba-euclid-intelligence"
+              and r["source_commit"] == os.environ["RC_SHA"]
+              and all(r["checks"].values()) for r in receipts), "missing executed EUCLID TestPyPI gate"
+          for dep in ("hyba-kellogg-tensor", "hyba-toe-intelligence", "hyba-theseus-storage"):
+              with urllib.request.urlopen(f"https://pypi.org/pypi/{dep}/json", timeout=20) as r:
+                  assert "1.0.0" in json.load(r).get("releases", {}), f"{dep} 1.0.0 not on PyPI"
+          v = json.load(open("verdict/euclid-release-verdict.json"))
+          for key in ("wheel", "sdist"):
+              f = f"dist/{v[key]['file']}"
+              assert hashlib.sha256(open(f, "rb").read()).hexdigest() == v[key]["sha256"], f
+              shutil.copy(f, "upload/")
+          PY
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: upload/
+
+  pypi-smoke:
+    name: EUCLID clean PyPI execution / Python ${{ matrix.python }}
+    needs: publish-pypi
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Registry install resolves sibling deps, then import + CLI
+        run: |
+          python -m venv /tmp/eu
+          . /tmp/eu/bin/activate
+          for i in 1 2 3 4 5; do
+            python -m pip install --index-url https://pypi.org/simple/ "hyba-euclid-intelligence==1.0.0" && break
+            sleep 30
+          done
+          cd /tmp
+          python -I -c "import euclid, importlib.metadata as md; assert md.version('hyba-euclid-intelligence') == '1.0.0'; assert 'site-packages' in euclid.__file__; [__import__(m) for m in ('euclid.cognition.integrated','euclid.cognition.research.cli')]"
+          euclid-v17-research --help
+      - name: Emit execution receipt
+        shell: python
+        run: |
+          import json, os, platform
+          from pathlib import Path
+          Path("receipts").mkdir()
+          receipt = {
+              "schema": "hyba.registry-execution.v1",
+              "product": "hyba-euclid-intelligence", "version": "1.0.0",
+              "registry": "pypi", "python": platform.python_version(),
+              "source_commit": os.environ["RC_SHA"],
+              "ci_run_url": os.environ["CI_RUN_URL"],
+              "checks": {"registry_install_with_sibling_deps": True,
+                         "import_site_packages": True, "v17_modules": True, "cli": True},
+              "status": "PASS",
+          }
+          Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: euclid-pypi-smoke-${{ matrix.python }}
+          path: receipts/receipt.json
+          if-no-files-found: error
+
+  github-release:
+    name: Publish evidence-linked standalone GitHub release
+    needs: pypi-smoke
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: euclid-candidates-3.12
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: euclid-release-verdict
+          path: verdict
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: euclid-*-smoke-*
+          path: receipts
+      - name: Retain complete publication evidence and create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |-
+          python - <<'PY'
+          import glob, json, os
+          from pathlib import Path
+          v = json.load(open("verdict/euclid-release-verdict.json"))
+          receipts = [json.load(open(p)) for p in glob.glob("receipts/*/receipt.json")]
+          assert {r["registry"] for r in receipts} == {"testpypi", "pypi"} and len(receipts) == 6
+          assert all(r["source_commit"] == os.environ["RC_SHA"] and r["status"] == "PASS" for r in receipts)
+          v["published"] = True
+          v["testpypi_verified"] = True
+          v["registry_receipts"] = receipts
+          v["ci_run_url"] = os.environ["CI_RUN_URL"]
+          Path("publication.json").write_text(json.dumps(v, indent=2, sort_keys=True))
+          Path("release-notes.md").write_text(
+              "Standalone hyba-euclid-intelligence 1.0.0 (research generation 17.0.0)\n\n"
+              f"RC: {os.environ['RC_SHA']}\nCI: {os.environ['CI_RUN_URL']}\n\n"
+              "Both registries used the same wheel/sdist SHA-256 archives; attached publication.json contains executed receipts. "
+              "Research-package release; not a production or platform certificate.\n")
+          PY
+          gh release create euclid-intelligence-v1.0.0 --target "$RC_SHA" \
+            --title "hyba-euclid-intelligence 1.0.0" --notes-file release-notes.md \
+            dist/*.whl dist/*.tar.gz publication.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: euclid-final-publication
+          path: publication.json
+          if-no-files-found: error

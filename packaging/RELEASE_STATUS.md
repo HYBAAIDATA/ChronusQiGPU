@@ -16,6 +16,13 @@
 > `test_hyba_ontology_store` lacked the custody wiring that `6844e66a` made
 > mandatory. `storage-publication-preparation.yml` now carries the full OIDC
 > publish lane (verdict → TestPyPI → smoke → same-bytes PyPI → release).
+> `hyba-euclid-intelligence` passed `packaging/euclid-engine/build_and_verify.py`
+> (11 v17 modules + 11 episodes from the installed wheel) and
+> `euclid-v17-release.yml` now carries its publish lane with a fail-closed
+> sibling-presence gate (kellogg/toe/theseus must resolve on the target
+> registry first). `toe-release.yml` gained the PyPI smoke and
+> evidence-linked release jobs it lacked. Every product in the documented
+> publish order now has a complete OIDC publication workflow.
 > **None of this is registry qualification or upload authorisation** — the
 > commit-bound CI verdicts, trusted-publisher configuration and TestPyPI/PyPI
 > execution receipts below remain the only publication evidence.
