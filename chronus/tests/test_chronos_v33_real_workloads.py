@@ -25,7 +25,6 @@ from chronus.v33.benchmarks import claims as claim_mod
 from chronus.v33.benchmarks import protocol
 from chronus.v33.benchmarks import real_workloads as rw
 
-
 O = np.array([0.0, 0.0, 0.0])
 
 

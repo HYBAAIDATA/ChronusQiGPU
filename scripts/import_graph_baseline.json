@@ -153,6 +153,7 @@
     "tensor/capability.py:166: imports test module tests/test_tensor_receipts_benchmarks.py",
     "tensor/capability.py:16: imports test module tests/test_tensor_backends.py",
     "tensor/capability.py:176: imports test module tests/test_canonical_tensor_ownership.py",
+    "tensor/capability.py:21: imports test module chronus/tests/test_chronus_tensor_compute.py",
     "tensor/capability.py:43: imports test module tests/test_tensor_runtime.py",
     "tensor/capability.py:53: imports test module tests/test_kellogg_tensor.py",
     "tensor/capability.py:63: imports test module tests/test_toe_tensor_ml.py",

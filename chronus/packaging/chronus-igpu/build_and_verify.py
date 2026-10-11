@@ -34,7 +34,7 @@ import venv
 import zipfile
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]  # chronus/packaging/chronus-igpu -> repository root
@@ -81,9 +81,9 @@ REQUIRED_IMPORTS = (
 # (chronus.paradigm itself is a lazy PEP 562 facade — the eager umbrella
 # import lives in chronus.paradigm.thesis.)
 UMBRELLA_BOUND = (
-    "chronus.fabric",          # hyba.inventory
-    "chronus.mining_bridge",   # quantum_compute_substrate
-    "chronus.paradigm.thesis", # al_haras.refuted_claims
+    "chronus.fabric",  # hyba.inventory
+    "chronus.mining_bridge",  # quantum_compute_substrate
+    "chronus.paradigm.thesis",  # al_haras.refuted_claims
 )
 
 # Modules that must be absent from the installed environment entirely
@@ -154,9 +154,25 @@ def stage(root: Path) -> Path:
     # sibling distributions). They are not part of this distribution's boundary;
     # lucas/ is staged separately below.
     relocated = {
-        "abi", "artifacts", "bench", "chronos", "compiler", "cross_verification",
-        "docs", "emulator", "evidence", "format", "isa", "lucas",
-        "opencl", "packages", "packaging", "reports", "scripts", "tests", "tools",
+        "abi",
+        "artifacts",
+        "bench",
+        "chronos",
+        "compiler",
+        "cross_verification",
+        "docs",
+        "emulator",
+        "evidence",
+        "format",
+        "isa",
+        "lucas",
+        "opencl",
+        "packages",
+        "packaging",
+        "reports",
+        "scripts",
+        "tests",
+        "tools",
         "Chronus_elevation",
     }
 
@@ -171,7 +187,11 @@ def stage(root: Path) -> Path:
                 out.add(n)  # assembler sources, not the OpenCL payload
             if r == Path("__init__.py"):
                 out.add(n)  # facade owned by hyba-chronos-mathematics
-            if r.parts[:1] == ("v33",) or r.parts[:1] == ("mla1517",) or r.parts[:1] == ("mla1517_platform",):
+            if (
+                r.parts[:1] == ("v33",)
+                or r.parts[:1] == ("mla1517",)
+                or r.parts[:1] == ("mla1517_platform",)
+            ):
                 out.add(n)
             if n.endswith((".pyc", ".pyo")) or n == "__pycache__" or n == ".DS_Store":
                 out.add(n)
@@ -215,14 +235,16 @@ def inspect_wheel(wheel: Path, version: str) -> Dict[str, Any]:
         raise RuntimeError(f"expected one dist-info, found {sorted(dist_info)}")
     di = next(iter(dist_info))
     outside = [
-        n for n in names
+        n
+        for n in names
         if not (n.startswith(di) or n.startswith("chronus/") or n.startswith("lucas/"))
     ]
     if outside:
-        raise RuntimeError(f"wheel ships files outside the hyba-chronus-igpu boundary: {outside[:20]}")
+        raise RuntimeError(
+            f"wheel ships files outside the hyba-chronus-igpu boundary: {outside[:20]}"
+        )
     leaked = [
-        n for n in names
-        if n.startswith(FORBIDDEN_WHEEL_PREFIXES) or n in FORBIDDEN_WHEEL_FILES
+        n for n in names if n.startswith(FORBIDDEN_WHEEL_PREFIXES) or n in FORBIDDEN_WHEEL_FILES
     ]
     if leaked:
         raise RuntimeError(f"wheel ships surfaces owned by other distributions: {leaked[:20]}")
@@ -273,7 +295,8 @@ def scan(archive: Path) -> Dict[str, Any]:
     return {"artifact": archive.name, "sha256": sha256(archive), "findings": []}
 
 
-INSTALLED_CHECK = r"""
+INSTALLED_CHECK = (
+    r"""
 import importlib, importlib.metadata, importlib.util, json, sys
 
 EXPECTED_VERSION, DIST = sys.argv[1], sys.argv[2]
@@ -324,7 +347,8 @@ for name in UMBRELLA_BOUND:
         bound_failures[name] = f"{type(exc).__name__}: {exc}"
 assert not bound_failures, bound_failures
 
-""" + '''
+"""
+    + """
 import json as _json
 from lucas.ladder import (
     CHRONUS_SCALE_RUNGS, FULL_LADDER, ladder_capacity, nearest_ladder_index, verify_ladder,
@@ -346,7 +370,8 @@ print(json.dumps({
     "lucas_ladder": {"valid": v["valid"], "rungs": list(FULL_LADDER)},
     "umbrella_bound_checked": list(UMBRELLA_BOUND),
 }, sort_keys=True))
-'''
+"""
+)
 
 
 def installed_check(
@@ -356,7 +381,18 @@ def installed_check(
     sh([python, "-m", "venv", "--clear", env_dir])
     py = _py(env_dir)
     findlinks = wheels[0].parent
-    sh([py, "-m", "pip", "install", "-q", "--find-links", str(findlinks), *[str(w) for w in wheels]])
+    sh(
+        [
+            py,
+            "-m",
+            "pip",
+            "install",
+            "-q",
+            "--find-links",
+            str(findlinks),
+            *[str(w) for w in wheels],
+        ]
+    )
     check = workdir / "installed_check.py"
     check.write_text(
         INSTALLED_CHECK % (REQUIRED_IMPORTS, ABSENT_MODULES, UMBRELLA_BOUND),
@@ -379,7 +415,7 @@ def _dep_wheels(findlinks: Path) -> List[Path]:
     """
     findlinks.mkdir(parents=True, exist_ok=True)
     builds = {
-        "hyba_chronos_mathematics": REPO / "packaging" / "chronos-core-src" ,
+        "hyba_chronos_mathematics": REPO / "packaging" / "chronos-core-src",
         "hyba_kellogg_tensor": REPO / "packaging" / "kellogg-tensor-src",
         "hyba_chronos_one_igpu": REPO / "chronus" / "packages" / "chronos-one-igpu",
     }
@@ -392,10 +428,18 @@ def _dep_wheels(findlinks: Path) -> List[Path]:
         if existing:
             staged[key] = existing[-1]
             continue
-        candidates = sorted((REPO / "chronus" / "packaging" / "chronos-core" / "dist").glob(f"{key}-*.whl"))
+        candidates = sorted(
+            (REPO / "chronus" / "packaging" / "chronos-core" / "dist").glob(f"{key}-*.whl")
+        )
         candidates += sorted((REPO / "packaging" / "kellogg-tensor" / "dist").glob(f"{key}-*.whl"))
-        candidates += sorted((REPO / "chronus" / "packages" / "chronos-one-igpu" / "dist").glob(f"{key}-*.whl"))
-        candidates += sorted(Path("/tmp/pythia-dist").glob(f"{key}-*.whl")) if Path("/tmp/pythia-dist").exists() else []
+        candidates += sorted(
+            (REPO / "chronus" / "packages" / "chronos-one-igpu" / "dist").glob(f"{key}-*.whl")
+        )
+        candidates += (
+            sorted(Path("/tmp/pythia-dist").glob(f"{key}-*.whl"))
+            if Path("/tmp/pythia-dist").exists()
+            else []
+        )
         if candidates:
             dest = findlinks / candidates[-1].name
             shutil.copy2(candidates[-1], dest)
@@ -451,7 +495,9 @@ def main() -> int:
         checks = []
         for i, py in enumerate(pythons):
             checks.append(
-                installed_check(py, [wheel] + dep_wheels, work / f"verify-{i}", f"wheel-{i}", version)
+                installed_check(
+                    py, [wheel] + dep_wheels, work / f"verify-{i}", f"wheel-{i}", version
+                )
             )
 
         rebuilt = rebuild_from_sdist(tool_py, sdist, work)
@@ -482,9 +528,21 @@ def main() -> int:
         (DIST / "artifact-verdict.json").write_text(
             json.dumps(verdict, indent=2, sort_keys=True), encoding="utf-8"
         )
-        print(json.dumps({k: verdict[k] for k in (
-            "distribution", "version", "source_revision", "wheel_sha256", "publishable"
-        )}, indent=2))
+        print(
+            json.dumps(
+                {
+                    k: verdict[k]
+                    for k in (
+                        "distribution",
+                        "version",
+                        "source_revision",
+                        "wheel_sha256",
+                        "publishable",
+                    )
+                },
+                indent=2,
+            )
+        )
         print("VERIFIED")
         return 0
     finally:

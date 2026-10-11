@@ -5,6 +5,7 @@ This command runs the production Chronus tensor runtime.  It never substitutes
 CPU execution for a requested GPU, never invents unavailable sensor values, and
 labels package-level RAPL data as a proxy rather than iGPU-only power.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -20,7 +21,6 @@ import time
 from typing import Any, Iterable
 
 import numpy as np
-
 
 SCHEMA = "chronus.igpu-evidence.v1"
 UNAVAILABLE = "Unavailable"
@@ -65,12 +65,8 @@ def _sensor_rows(sys_root: Path = Path("/sys")) -> list[dict[str, Any]]:
             "temperature_c": UNAVAILABLE,
             "power_w": UNAVAILABLE,
         }
-        temperatures = [
-            value for path in names if (value := _read_float(path, 1000.0)) is not None
-        ]
-        watts = [
-            value for path in powers if (value := _read_float(path, 1_000_000.0)) is not None
-        ]
+        temperatures = [value for path in names if (value := _read_float(path, 1000.0)) is not None]
+        watts = [value for path in powers if (value := _read_float(path, 1_000_000.0)) is not None]
         if temperatures:
             row["temperature_c"] = max(temperatures)
         if watts:
@@ -253,9 +249,7 @@ def _benchmark_once(runtime: Any, a: np.ndarray, b: np.ndarray) -> dict[str, Any
             "arithmetic_intensity_flops_per_byte": operations / bytes_minimum,
         },
         "measured": {
-            "device_gflops": (
-                operations / device_s / 1e9 if device_s is not None else UNAVAILABLE
-            ),
+            "device_gflops": (operations / device_s / 1e9 if device_s is not None else UNAVAILABLE),
             "device_effective_bandwidth_gbps": (
                 bytes_minimum / device_s / 1e9 if device_s is not None else UNAVAILABLE
             ),
@@ -289,9 +283,7 @@ def _mining_measurement(count: int) -> dict[str, Any]:
         "kernel_ms": float(getattr(hasher, "kernel_ms", 0.0)),
         "launches": int(getattr(hasher, "launches", 0)),
         "share": (
-            UNAVAILABLE
-            if nonce is None
-            else {"nonce": int(nonce), "digest": bytes(digest).hex()}
+            UNAVAILABLE if nonce is None else {"nonce": int(nonce), "digest": bytes(digest).hex()}
         ),
         "share_verification": "production BitcoinHasher exact recheck",
         "pool_acknowledgement": UNAVAILABLE,
@@ -436,9 +428,7 @@ def validate_artifact(artifact: dict[str, Any]) -> None:
     claimed = str(artifact.get("artifact_sha256", ""))
     unsigned = dict(artifact)
     unsigned.pop("artifact_sha256", None)
-    actual = _sha256_bytes(
-        json.dumps(unsigned, sort_keys=True, separators=(",", ":")).encode()
-    )
+    actual = _sha256_bytes(json.dumps(unsigned, sort_keys=True, separators=(",", ":")).encode())
     if claimed != actual:
         raise ValueError("artifact content hash mismatch")
 
@@ -457,12 +447,7 @@ def main() -> int:
     parser.add_argument("--peak-bandwidth-gbps", type=float)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    if (
-        args.size <= 0
-        or args.iterations <= 0
-        or args.stress_seconds < 0
-        or args.sha256d_count < 0
-    ):
+    if args.size <= 0 or args.iterations <= 0 or args.stress_seconds < 0 or args.sha256d_count < 0:
         parser.error("size/iterations must be positive; durations/counts must be non-negative")
     artifact = capture(
         size=args.size,

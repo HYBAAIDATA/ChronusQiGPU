@@ -47,13 +47,13 @@ jobs:
         run: |
           BASE="${{ github.base_ref || 'main' }}"
           git fetch --depth=1 origin "$BASE"
-          CHANGED=$(git diff --name-only --diff-filter=d "origin/$BASE"...HEAD -- '*.py')
+          CHANGED=$(git diff --name-only -M100% --diff-filter=AM "origin/$BASE"...HEAD -- '*.py')  # exact moves are not re-linted
           if [ -n "$CHANGED" ]; then python -m flake8 --count $CHANGED; else echo "no changed .py files"; fi
       - name: Fatal lint gate (ruff E9/F)
         run: |
           BASE="${{ github.base_ref || 'main' }}"
           git fetch --depth=1 origin "$BASE"
-          CHANGED=$(git diff --name-only --diff-filter=d "origin/$BASE"...HEAD -- '*.py')
+          CHANGED=$(git diff --name-only -M100% --diff-filter=AM "origin/$BASE"...HEAD -- '*.py')  # exact moves are not re-linted
           if [ -n "$CHANGED" ]; then python -m ruff check --select E9,F $CHANGED; else echo "no changed .py files"; fi
       - name: Clean-wheel remote GPU smoke test
         run: |

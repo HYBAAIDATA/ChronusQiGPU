@@ -2,9 +2,9 @@
   "counts_by_agent": {
     "A": 556,
     "B": 62,
-    "C": 1366,
+    "C": 1363,
     "D": 416,
-    "E": 108,
+    "E": 111,
     "F": 180,
     "G": 260,
     "H": 1643
@@ -4021,20 +4021,6 @@
       ],
       "rule": "C:chronus/"
     },
-    "chronus/kernels/matmul_tiled.chronus.s": {
-      "owner": "C",
-      "owners": [
-        "C"
-      ],
-      "rule": "C:chronus/"
-    },
-    "chronus/kernels/reduce_local.chronus.s": {
-      "owner": "C",
-      "owners": [
-        "C"
-      ],
-      "rule": "C:chronus/"
-    },
     "chronus/kernels/scan_sha256d.cl": {
       "owner": "C",
       "owners": [
@@ -4050,13 +4036,6 @@
       "rule": "C:chronus/"
     },
     "chronus/kernels/unified_punch_kernel.cl": {
-      "owner": "C",
-      "owners": [
-        "C"
-      ],
-      "rule": "C:chronus/"
-    },
-    "chronus/kernels/vector_add.chronus.s": {
       "owner": "C",
       "owners": [
         "C"
@@ -4134,27 +4113,6 @@
       "rule": "C:chronus/"
     },
     "chronus/m5_ultra.py": {
-      "owner": "C",
-      "owners": [
-        "C"
-      ],
-      "rule": "C:chronus/"
-    },
-    "chronus/manifests/chronus105/intel-opencl-translated.json": {
-      "owner": "C",
-      "owners": [
-        "C"
-      ],
-      "rule": "C:chronus/"
-    },
-    "chronus/manifests/chronus106/intrinsics.json": {
-      "owner": "C",
-      "owners": [
-        "C"
-      ],
-      "rule": "C:chronus/"
-    },
-    "chronus/manifests/chronus107/production-mining.json": {
       "owner": "C",
       "owners": [
         "C"
@@ -17951,7 +17909,28 @@
       ],
       "rule": "C:kernels/"
     },
+    "kernels/matmul_tiled.chronus.s": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:kernels/"
+    },
+    "kernels/reduce_local.chronus.s": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:kernels/"
+    },
     "kernels/unified_punch_kernel.cl": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:kernels/"
+    },
+    "kernels/vector_add.chronus.s": {
       "owner": "C",
       "owners": [
         "C"
@@ -23069,6 +23048,27 @@
       "rule": "E:manifests/"
     },
     "manifests/canonical_mining_voyage.json": {
+      "owner": "E",
+      "owners": [
+        "E"
+      ],
+      "rule": "E:manifests/"
+    },
+    "manifests/chronus105/intel-opencl-translated.json": {
+      "owner": "E",
+      "owners": [
+        "E"
+      ],
+      "rule": "E:manifests/"
+    },
+    "manifests/chronus106/intrinsics.json": {
+      "owner": "E",
+      "owners": [
+        "E"
+      ],
+      "rule": "E:manifests/"
+    },
+    "manifests/chronus107/production-mining.json": {
       "owner": "E",
       "owners": [
         "E"
@@ -32150,7 +32150,7 @@
   },
   "multi_owned_files": [],
   "schema_version": 1,
-  "source_sha": "5a89a7f61f4f39236f2307a74700ed83f0f102a3",
+  "source_sha": "81e3231e4007a73a2aa9c581404a5f9777860a73",
   "tracked_file_count": 4591,
   "unowned_files": []
 }

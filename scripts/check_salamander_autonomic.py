@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """#108 acceptance: inherited #107 first, then focused deterministic tests."""
+
 from __future__ import annotations
 
 import hashlib
