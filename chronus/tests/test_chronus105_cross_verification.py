@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 import pytest
-from cross_verification import CapabilityManifest,Float32Policy,IntelOpenCLTranslatedAdapter
+from chronus.cross_verification import CapabilityManifest,Float32Policy,IntelOpenCLTranslatedAdapter
 
 def test_float_policy_fused_and_tolerant():
  import struct
@@ -18,4 +18,4 @@ def test_opencl_absence_is_not_pass():
  a=IntelOpenCLTranslatedAdapter();m=a.capabilities();assert not m.hardware_executed
  assert set(m.verification_state.values())=={'PHYSICAL_EVIDENCE_REQUIRED'}
 def test_manifest_file_is_honest():
- p=Path('chronus/manifests/chronus105/intel-opencl-translated.json');m=json.loads(p.read_text());assert m['hardware_executed'] is False and m['device']=='UNBOUND'
+ p=Path('manifests/chronus105/intel-opencl-translated.json');m=json.loads(p.read_text());assert m['hardware_executed'] is False and m['device']=='UNBOUND'

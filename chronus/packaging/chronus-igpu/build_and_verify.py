@@ -155,7 +155,7 @@ def stage(root: Path) -> Path:
     # lucas/ is staged separately below.
     relocated = {
         "abi", "artifacts", "bench", "chronos", "compiler", "cross_verification",
-        "docs", "emulator", "evidence", "format", "isa", "lucas", "manifests",
+        "docs", "emulator", "evidence", "format", "isa", "lucas",
         "opencl", "packages", "packaging", "reports", "scripts", "tests", "tools",
         "Chronus_elevation",
     }

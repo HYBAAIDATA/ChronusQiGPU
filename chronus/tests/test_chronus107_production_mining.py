@@ -19,7 +19,7 @@ def test_manifest_locks_base_authorities_and_negative_states():
     assert x.manifest["truth_states"]["f64"] == "UNSUPPORTED"
     assert x.manifest["truth_states"]["opencl.BINET_EXACT"] == "UNSUPPORTED"
     assert x.manifest["truth_states"]["FOLDED_NATIVE"] == "OPEN"
-    bad = json.loads((ROOT / "chronus/manifests/chronus107/production-mining.json").read_text())
+    bad = json.loads((ROOT / "manifests/chronus107/production-mining.json").read_text())
     bad["authority"]["pool_outcome"] = "planner"
     with pytest.raises(ProductionIntegrationError): ProductionMiningIntegration(bad)
 

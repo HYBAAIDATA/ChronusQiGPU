@@ -247,7 +247,7 @@ def test_wrapper_binds_the_uhd620_identity_and_closes_the_findings():
 
     root = Path(__file__).resolve().parents[2]
     spec = importlib.util.spec_from_file_location(
-        "uhd_gate", root / "scripts" / "chronus_uhd620_evidence_gate.py"
+        "uhd_gate", root / "chronus" / "scripts" / "chronus_uhd620_evidence_gate.py"
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

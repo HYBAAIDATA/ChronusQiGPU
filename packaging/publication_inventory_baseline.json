@@ -3,7 +3,7 @@
   "source_sha": "4cb6f5d95785be4129bf6337bc2fecfedd329973",
   "rows": [
     {
-      "path": "packages/chronos-one-igpu/pyproject.toml",
+      "path": "chronus/packages/chronos-one-igpu/pyproject.toml",
       "name": "hyba-chronos-one-igpu",
       "version": "1.0.0",
       "ecosystem": "python",
@@ -27,7 +27,7 @@
       "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/euclid/pyproject.toml"
     },
     {
-      "path": "packaging/chronos-core/pyproject.toml",
+      "path": "chronus/packaging/chronos-core/pyproject.toml",
       "name": "hyba-chronos-mathematics",
       "version": "1.0.0",
       "ecosystem": "python",
@@ -35,7 +35,7 @@
       "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/packaging/chronos-core/pyproject.toml"
     },
     {
-      "path": "packaging/chronus-igpu/pyproject.toml",
+      "path": "chronus/packaging/chronus-igpu/pyproject.toml",
       "name": "hyba-chronus-igpu",
       "version": "1.0.0",
       "ecosystem": "python",

@@ -14,7 +14,7 @@ from pathlib import Path
 DIST_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = Path(__file__).resolve().parents[2]
 VENDORED = DIST_ROOT / "turing_universal_quantum_computer" / "lucas"
-CANONICAL = REPO_ROOT / "lucas"
+CANONICAL = REPO_ROOT / "chronus" / "lucas"
 
 SHARED_MODULES = [
     "__init__.py",
