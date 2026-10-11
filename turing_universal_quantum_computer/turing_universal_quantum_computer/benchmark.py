@@ -401,6 +401,104 @@ def bench_ten_thousand_qubit_vqc_voyage(quick: bool) -> Dict[str, Any]:
     }
 
 
+def bench_quantum_library_lanes(quick: bool) -> Dict[str, Any]:
+    """Exactness-audited lane evidence for the ``quantum_library`` facade.
+
+    Each probe records the executing lane, its declared parameters, the
+    ``audit_exactness`` verdict on the returned payload — "exact" means the
+    payload tree was walked and holds no float atom, not merely that an
+    exact-capable lane was selected — repetition statistics, and a canonical
+    digest binding the whole payload.  Refusal probes must refuse: a call
+    that returns instead is a contract violation, so it fails the row.
+    """
+    import sympy as sp
+
+    from .quantum_library import QuantumLibrary as Q
+
+    def probe(params: Dict[str, Any], fn, repeats: int = 3) -> Dict[str, Any]:
+        res = fn()
+        samples = timed(lambda: fn(), repeats)
+        report = res.verify_exactness()
+        return {
+            "family": res.family,
+            "lane": res.lane,
+            "lane_owner": res.lane_owner,
+            "params": params,
+            "truth_class": res.truth_class,
+            "exactness_audit": report.as_dict(),
+            "payload_digest": digest(_plain(res.payload)),
+            "classification": "MEASURED",
+            "repeats": len(samples),
+            **stats(samples),
+        }
+
+    def refusal(name: str, fn) -> Dict[str, Any]:
+        try:
+            fn()
+        except Exception as exc:
+            return {"probe": name, "refused": True,
+                    "error_type": type(exc).__name__,
+                    "reason": str(exc)[:200],
+                    "classification": "MEASURED"}
+        return {"probe": name, "refused": False, "classification": "MEASURED"}
+
+    k4_edges = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
+    rows = [
+        probe({}, lambda: Q.bell_pair()),
+        probe({"n_qubits": 1024, "subset": [0]}, lambda: Q.ghz(1024, subset={0})),
+        probe({"num_positions": 32, "steps": 200},
+              lambda: Q.quantum_walk_cycle(32, 200), repeats=1),
+        probe({"n_qubits": 64, "t": "pi/4"},
+              lambda: Q.quantum_walk_hypercube(64, sp.pi / 4)),
+        probe({"n_qubits": 10, "marked": 613}, lambda: Q.grover(10, marked=613)),
+        probe({"phase_turns": "1/8", "counting_qubits": 3},
+              lambda: Q.qpe(Fraction(1, 8), 3)),
+        probe({"edges": "triangle", "layers": [["3/8", "1/8"]]},
+              lambda: Q.qaoa_maxcut([(0, 1), (1, 2), (0, 2)],
+                                    [(Fraction(3, 8), Fraction(1, 8))])),
+        probe({"n_qubits": 2, "J": 1, "g": 1, "grid": 8},
+              lambda: Q.vqe_ising_scan(2, J=1, g=1, grid=8)),
+        probe({"n_qubits": 2, "ops": ["h 0", "cx 0 1"]},
+              lambda: Q.execute_ops(2, [("h", 0), ("cx", 0, 1)])),
+        probe({"n_qubits": 100, "ops": "h 0 + cx 0 k for k<100"},
+              lambda: Q.execute_ops(
+                  100, [("h", 0)] + [("cx", 0, k) for k in range(1, 100)])),
+    ]
+    if not quick:
+        rows += [
+            probe({"n_qubits": 10000, "subset": [0]},
+                  lambda: Q.ghz(10_000, subset={0})),
+            probe({"phase_turns": "1/16", "counting_qubits": 5},
+                  lambda: Q.qpe(Fraction(1, 16), 5), repeats=1),
+            probe({"edges": "K4", "p_layers": 1, "grid": 8},
+                  lambda: Q.qaoa_maxcut_grid(k4_edges, p_layers=1, grid=8),
+                  repeats=1),
+        ]
+    refusals = [
+        refusal("irrational_turns",
+                lambda: Q.qaoa_maxcut([(0, 1)], [(sp.pi, Fraction(1, 4))])),
+        refusal("beyond_exact_budget",
+                lambda: Q.execute_ops(
+                    40,
+                    [("h", q) for q in range(20)]
+                    + [("t", 0)]
+                    + [("cx", q, q + 20) for q in range(20)])),
+        refusal("unknown_gate",
+                lambda: Q.execute_ops(2, [("tooffoli", 0, 1, 2)])),
+    ]
+    exact_rows = all(r["exactness_audit"]["exact"] for r in rows)
+    refused_rows = all(r["refused"] for r in refusals)
+    return {
+        "passed": exact_rows and refused_rows,
+        "result": {
+            "rows": rows,
+            "refusals": refusals,
+            "all_rows_audit_exact": exact_rows,
+            "all_refusals_held": refused_rows,
+        },
+    }
+
+
 BENCHMARKS: Dict[str, tuple] = {
     "backend_agreement": ("correctness", bench_backend_agreement),
     "refusal_boundary": ("correctness", bench_refusal_boundary),
@@ -411,6 +509,7 @@ BENCHMARKS: Dict[str, tuple] = {
     "boundary_isolation": ("correctness", bench_boundary_isolation),
     "product_registry": ("correctness", bench_product_registry),
     "cross_version_digest": ("correctness", bench_cross_version_digest),
+    "quantum_library_lanes": ("correctness", bench_quantum_library_lanes),
     "stabilizer_throughput": ("cost", bench_stabilizer_throughput),
     "mps_throughput": ("cost", bench_mps_throughput),
     "dense_throughput": ("cost", bench_dense_throughput),
