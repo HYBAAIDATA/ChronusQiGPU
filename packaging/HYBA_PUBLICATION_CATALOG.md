@@ -4,8 +4,8 @@
 
 ## How many packages?
 
-- **12 distinct existing Python distribution candidates** from **13 Python manifests**.
-- **2 additional planned CHRONUS splits**: **14-package roadmap**, not 14 built packages.
+- **13 distinct existing Python distribution candidates** from **14 Python manifests**.
+- **1 additional planned CHRONUS split**: **14-package roadmap**, not 14 built packages.
 - EUCLID has two definitions for one identity; use `packaging/euclid-engine/pyproject.toml` for the public wheel.
 - Four private JavaScript applications are not public distributions. AL HARAS is bundled with SALAMANDER; it is not a separate package in this count.
 
@@ -23,17 +23,17 @@
 | PYTHIA | `hyba-pythia-mining` | EXISTING_SCAFFOLD | `1.0.0` |
 | PYTHIA | `hyba-pythia-mining-runtime` | EXISTING_SCAFFOLD | `1.0.0` |
 | PYTHIA | `hyba-pythia-consumer` | EXISTING_SCAFFOLD | `1.0.0` |
-| CHRONUS | `hyba-chronus-igpu` | PLANNED_NOT_SCAFFOLDED | `1.0.0` |
+| CHRONUS | `hyba-chronus-igpu` | EXISTING_SCAFFOLD | `1.0.0` |
 | CHRONUS | `hyba-chronus-tensor` | PLANNED_NOT_SCAFFOLDED | `1.0.0` |
 
-The approved first-public version is **1.0.0 for each package**. Existing development/research metadata is deliberately retained in this branding-only change: root PYTHIA 0.1.0, MLA runtime 0.3.0, Chronos maths 3.3.0, ONE iGPU 3.11.2rc3, legacy EUCLID 17.0.0. These require explicit public/runtime version reconciliation before publication; they are not approved first-public versions. Canonical EUCLID public metadata is already 1.0.0; research/runtime generation 17 remains unchanged.
+The approved first-public version is **1.0.0 for each package** and is now reflected in every canonical manifest: development/research versions (root PYTHIA 0.1.0, MLA runtime 0.3.0, Chronos maths 3.3.0, ONE iGPU 3.11.x, consumer 0.1.0) were reconciled to the first-public identity, and `chronos-one-igpu` was renamed `hyba-chronos-one-igpu`. Only the EUCLID research/runtime manifest retains generation `17.0.0` by design — it is the research lineage, not the public wheel metadata (canonical EUCLID public metadata is already 1.0.0).
 
 ## Boundaries and compatibility
 
 - THESEUS storage owns all unchanged `aethel/**`; OVID owns `hyba_db/**` and consumes `hyba-theseus-storage==1.0.0`. Do not split or duplicate the eager `aethel` initializer across wheels.
 - `hyba-pythia-consumer` is a **bundle distribution**: it vendors `aethel`, `hyba_db` and `chronos_one_igpu` into one wheel at build time (`packages/pythia-consumer/build_bundle.py`) because the sibling distributions are not yet published. It is a separate consumer track — do **not** co-install it with the singular sibling wheels (top-level namespace collision), and do not treat the bundle as evidence of the singular wheels' qualification.
 - KELLOGG is the tensor substrate; TURING VQC consumes it, as do TOE and EUCLID. Do not duplicate their implementation inside a dependent distribution.
-- CHRONOS mathematics, CHRONOS ONE iGPU and planned CHRONUS execution/tensor splits remain separate scopes. Module/file ownership must be reconciled before releasing overlapping namespaces.
+- CHRONOS mathematics, CHRONOS ONE iGPU, the scaffolded CHRONUS execution split and the still-planned CHRONUS tensor split remain separate scopes. Module/file ownership must be reconciled before releasing overlapping namespaces.
 - The PYTHIA monorepo and MLA runtime have different current package identities; count them separately, but do not infer co-installability or recommend installing the umbrella alongside overlapping split wheels until proven.
 - Distribution renaming does not provide a PyPI alias. Legacy names are recorded for migration, not claimed as published compatibility packages. Before uploading, verify registry ownership/history and migrate supported installer/dependency/metadata consumers. Existing Python module names, CLI commands, gate IDs, schema IDs and repository paths stay unchanged.
 - Historical reports, measurements, source hashes and frozen RC documents keep their original identities. They must not certify renamed artifacts.

@@ -1,102 +1,118 @@
 {
   "record_type": "SOURCE_INVENTORY_NOT_QUALIFICATION",
-  "source_sha": "8dd57e49998967899a88aaf53cf89e53386946ff",
+  "source_sha": "4cb6f5d95785be4129bf6337bc2fecfedd329973",
   "rows": [
     {
       "path": "packages/chronos-one-igpu/pyproject.toml",
-      "name": "chronos-one-igpu",
-      "version": "3.11.2rc3",
+      "name": "hyba-chronos-one-igpu",
+      "version": "1.0.0",
       "ecosystem": "python",
       "private": false,
-      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/8dd57e49998967899a88aaf53cf89e53386946ff/contents/packages/chronos-one-igpu/pyproject.toml"
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/packages/chronos-one-igpu/pyproject.toml"
     },
     {
       "path": "chronus/mla1517_platform/pyproject.toml",
-      "name": "pythia-production-mining",
-      "version": "0.3.0",
+      "name": "hyba-pythia-mining-runtime",
+      "version": "1.0.0",
       "ecosystem": "python",
       "private": false,
-      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/8dd57e49998967899a88aaf53cf89e53386946ff/contents/chronus/mla1517_platform/pyproject.toml"
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/chronus/mla1517_platform/pyproject.toml"
     },
     {
       "path": "euclid/pyproject.toml",
-      "name": "euclid-engine",
+      "name": "hyba-euclid-intelligence",
       "version": "17.0.0",
       "ecosystem": "python",
       "private": false,
-      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/8dd57e49998967899a88aaf53cf89e53386946ff/contents/euclid/pyproject.toml"
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/euclid/pyproject.toml"
     },
     {
       "path": "packaging/chronos-core/pyproject.toml",
-      "name": "chronos-core",
-      "version": "3.3.0",
+      "name": "hyba-chronos-mathematics",
+      "version": "1.0.0",
       "ecosystem": "python",
       "private": false,
-      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/8dd57e49998967899a88aaf53cf89e53386946ff/contents/packaging/chronos-core/pyproject.toml"
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/packaging/chronos-core/pyproject.toml"
+    },
+    {
+      "path": "packaging/chronus-igpu/pyproject.toml",
+      "name": "hyba-chronus-igpu",
+      "version": "1.0.0",
+      "ecosystem": "python",
+      "private": false,
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/packaging/chronus-igpu/pyproject.toml"
     },
     {
       "path": "packaging/kellogg-tensor/pyproject.toml",
-      "name": "kellogg-tensor",
+      "name": "hyba-kellogg-tensor",
       "version": "DYNAMIC",
       "ecosystem": "python",
       "private": false,
-      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/8dd57e49998967899a88aaf53cf89e53386946ff/contents/packaging/kellogg-tensor/pyproject.toml"
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/packaging/kellogg-tensor/pyproject.toml"
     },
     {
       "path": "turing_universal_quantum_computer/pyproject.toml",
-      "name": "turing-universal-quantum-computer",
+      "name": "hyba-turing-vqc",
       "version": "1.0.0",
       "ecosystem": "python",
       "private": false,
-      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/8dd57e49998967899a88aaf53cf89e53386946ff/contents/turing_universal_quantum_computer/pyproject.toml"
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/turing_universal_quantum_computer/pyproject.toml"
     },
     {
       "path": "packaging/theseus/pyproject.toml",
-      "name": "hyba-theseus",
+      "name": "hyba-theseus-storage",
       "version": "1.0.0",
       "ecosystem": "python",
       "private": false,
-      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/8dd57e49998967899a88aaf53cf89e53386946ff/contents/packaging/theseus/pyproject.toml"
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/packaging/theseus/pyproject.toml"
     },
     {
       "path": "packaging/ovid/pyproject.toml",
-      "name": "hyba-ovid",
+      "name": "hyba-ovid-data-organisation",
       "version": "1.0.0",
       "ecosystem": "python",
       "private": false,
-      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/8dd57e49998967899a88aaf53cf89e53386946ff/contents/packaging/ovid/pyproject.toml"
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/packaging/ovid/pyproject.toml"
     },
     {
       "path": "packaging/toe/pyproject.toml",
-      "name": "hyba-toe",
+      "name": "hyba-toe-intelligence",
       "version": "DYNAMIC",
       "ecosystem": "python",
       "private": false,
-      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/8dd57e49998967899a88aaf53cf89e53386946ff/contents/packaging/toe/pyproject.toml"
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/packaging/toe/pyproject.toml"
     },
     {
       "path": "packaging/euclid-engine/pyproject.toml",
-      "name": "euclid-engine",
+      "name": "hyba-euclid-intelligence",
       "version": "1.0.0",
       "ecosystem": "python",
       "private": false,
-      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/8dd57e49998967899a88aaf53cf89e53386946ff/contents/packaging/euclid-engine/pyproject.toml"
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/packaging/euclid-engine/pyproject.toml"
     },
     {
       "path": "packaging/salamander/pyproject.toml",
-      "name": "hyba-salamander",
+      "name": "hyba-salamander-self-healing",
       "version": "1.0.0",
       "ecosystem": "python",
       "private": false,
-      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/8dd57e49998967899a88aaf53cf89e53386946ff/contents/packaging/salamander/pyproject.toml"
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/packaging/salamander/pyproject.toml"
+    },
+    {
+      "path": "packages/pythia-consumer/pyproject.toml",
+      "name": "hyba-pythia-consumer",
+      "version": "1.0.0",
+      "ecosystem": "python",
+      "private": false,
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/packages/pythia-consumer/pyproject.toml"
     },
     {
       "path": "pyproject.toml",
-      "name": "pythia-mla1517",
-      "version": "0.1.0",
+      "name": "hyba-pythia-mining",
+      "version": "1.0.0",
       "ecosystem": "python",
       "private": false,
-      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/8dd57e49998967899a88aaf53cf89e53386946ff/contents/pyproject.toml"
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/pyproject.toml"
     },
     {
       "path": "services/resilience-gateway/package.json",
@@ -104,7 +120,7 @@
       "version": "1.0.0",
       "ecosystem": "javascript",
       "private": true,
-      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/8dd57e49998967899a88aaf53cf89e53386946ff/contents/services/resilience-gateway/package.json"
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/services/resilience-gateway/package.json"
     },
     {
       "path": "frontend/package.json",
@@ -112,7 +128,7 @@
       "version": "0.1.0",
       "ecosystem": "javascript",
       "private": true,
-      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/8dd57e49998967899a88aaf53cf89e53386946ff/contents/frontend/package.json"
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/frontend/package.json"
     },
     {
       "path": "legacy/PYTHIA_Frontend/package.json",
@@ -120,7 +136,7 @@
       "version": "UNSPECIFIED",
       "ecosystem": "javascript",
       "private": true,
-      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/8dd57e49998967899a88aaf53cf89e53386946ff/contents/legacy/PYTHIA_Frontend/package.json"
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/legacy/PYTHIA_Frontend/package.json"
     },
     {
       "path": "package.json",
@@ -128,7 +144,7 @@
       "version": "0.1.0",
       "ecosystem": "javascript",
       "private": true,
-      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/8dd57e49998967899a88aaf53cf89e53386946ff/contents/package.json"
+      "source_url": "repo://QuantumPhiRedux/PhiMiner/sha/4cb6f5d95785be4129bf6337bc2fecfedd329973/contents/package.json"
     }
   ]
 }

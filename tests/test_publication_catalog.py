@@ -41,10 +41,10 @@ class PublicationCatalogTests(unittest.TestCase):
         self.assertEqual(row['naming_status'], 'PASS', row['errors'])
         self.assertEqual((row['python_manifest_count'], row['existing_distribution_candidates'],
                           row['planned_additional_packages'], row['roadmap_package_count'],
-                          row['excluded_private_applications']), (12, 11, 2, 13, 4))
+                          row['excluded_private_applications']), (14, 13, 1, 14, 4))
         self.assertEqual(row['release_qualification'], 'NOT_EVALUATED')
         self.assertNotIn('production_ready', row)
-        self.assertEqual(len(row['version_reconciliation_actions']), 4)
+        self.assertEqual(len(row['version_reconciliation_actions']), 0)
 
     def test_duplicate_catalog_is_not_an_extra_package(self):
         self.edit_catalog(lambda c: c['packages'].append(c['packages'][0].copy()))

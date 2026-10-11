@@ -1,7 +1,7 @@
 {
   "schema": "hyba.publication-identities/1",
   "naming_rule": "hyba-<system>-<capability>",
-  "audited_base_sha": "8dd57e49998967899a88aaf53cf89e53386946ff",
+  "audited_base_sha": "4cb6f5d95785be4129bf6337bc2fecfedd329973",
   "approval_scope": "owner-approved publication naming; not upload or qualification",
   "packages": [
     {
@@ -164,9 +164,8 @@
         "chronus"
       ],
       "first_public_version": "1.0.0",
-      "source_metadata_version": "3.3.0",
+      "source_metadata_version": "1.0.0",
       "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
-      "version_reconciliation": "REQUIRED_BEFORE_PUBLICATION",
       "preserved_interface_fingerprints": {
         "packaging/chronos-core/pyproject.toml": "6f3127892bc0c70a8bf0a05dac125327be48083866f4520ac442671ae66c8da5"
       }
@@ -185,9 +184,8 @@
         "chronos_one_igpu"
       ],
       "first_public_version": "1.0.0",
-      "source_metadata_version": "3.11.2rc3",
+      "source_metadata_version": "1.0.0",
       "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
-      "version_reconciliation": "REQUIRED_BEFORE_PUBLICATION",
       "preserved_interface_fingerprints": {
         "packages/chronos-one-igpu/pyproject.toml": "e69b88388d7f1e64d2f60745a7d3f078ecdfdf64b3c453ce1d0ce4d3472f6b24"
       }
@@ -206,11 +204,10 @@
         "existing monorepo mapping retained"
       ],
       "first_public_version": "1.0.0",
-      "source_metadata_version": "0.1.0",
+      "source_metadata_version": "1.0.0",
       "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
-      "version_reconciliation": "REQUIRED_BEFORE_PUBLICATION",
       "preserved_interface_fingerprints": {
-        "pyproject.toml": "5d85f4b3da1e4e799da6438e124f0a91881a4edb8004c171b547e756caef242f"
+        "pyproject.toml": "56529ce88cce37079f4bd968db21778264b427de3810b6d13f1b368579fdea6b"
       }
     },
     {
@@ -227,9 +224,8 @@
         "mla1517"
       ],
       "first_public_version": "1.0.0",
-      "source_metadata_version": "0.3.0",
+      "source_metadata_version": "1.0.0",
       "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
-      "version_reconciliation": "REQUIRED_BEFORE_PUBLICATION",
       "preserved_interface_fingerprints": {
         "chronus/mla1517_platform/pyproject.toml": "a5dbd19394b64ec2a09d85c68e807863a845b73ba9e59ff799f37e9b0fdfbd08"
       }
@@ -239,11 +235,21 @@
       "capability": "igpu",
       "distribution": "hyba-chronus-igpu",
       "legacy_distribution": "chronus-igpu",
-      "manifest_paths": [],
-      "state": "PLANNED_NOT_SCAFFOLDED",
+      "manifest_paths": [
+        "packaging/chronus-igpu/pyproject.toml"
+      ],
+      "canonical_manifest": "packaging/chronus-igpu/pyproject.toml",
+      "state": "EXISTING_SCAFFOLD",
+      "imports_unchanged": [
+        "chronus",
+        "lucas"
+      ],
       "first_public_version": "1.0.0",
+      "source_metadata_version": "1.0.0",
       "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
-      "preserved_interface_fingerprints": {}
+      "preserved_interface_fingerprints": {
+        "packaging/chronus-igpu/pyproject.toml": "7ff4770f3df28c75f43c4f0b31ff57f61465fbe2f53796b42cf2d24ee969b6c1"
+      }
     },
     {
       "system": "CHRONUS",
@@ -273,7 +279,7 @@
         "chronos_one_igpu"
       ],
       "first_public_version": "1.0.0",
-      "source_metadata_version": "0.1.0",
+      "source_metadata_version": "1.0.0",
       "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
       "preserved_interface_fingerprints": {
         "packages/pythia-consumer/pyproject.toml": "afcee518999459ca1178c4b338403ba6e0435891d717f4793b637a36fb5a18f4"

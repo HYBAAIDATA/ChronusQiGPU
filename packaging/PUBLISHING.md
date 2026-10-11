@@ -80,9 +80,11 @@ second package. Research claims and bundled cross-product dependencies remain
 bounded and disclosed; neither artifact existence nor naming certifies production.
 
 CHRONOS/CHRONUS, SALAMANDER and PYTHIA retain separate qualification tracks.
-Four canonical development metadata versions still need first-public version
-reconciliation; do not upload 0.x/3.x as their first public releases. Planned
-CHRONUS splits require scaffolds and ownership review before qualification.
+Canonical development metadata versions were reconciled to the approved
+first-public 1.0.0 identity — that is a naming/version alignment, not release
+qualification. `hyba-chronus-igpu` is scaffolded; `hyba-chronus-tensor`
+remains planned and requires a scaffold plus ownership review before
+qualification.
 
 ## Truth boundary
 

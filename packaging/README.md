@@ -9,8 +9,8 @@ implementation name is not a replacement (THESEUS owns unchanged `aethel`).
 - Check identity/dependency/count drift: `python packaging/check_publication_catalog.py`
 - Existing publication workflows: [PUBLISHING.md](PUBLISHING.md)
 
-**11 existing Python distribution candidates; 2 additional planned CHRONUS
-splits; 13-package roadmap.** This is not a count of qualified/published packages.
+**13 existing Python distribution candidates; 1 additional planned CHRONUS
+split; 14-package roadmap.** This is not a count of qualified/published packages.
 Two EUCLID build definitions name one distribution. Four private JavaScript
 applications are excluded. AL HARAS remains bundled with SALAMANDER.
 
@@ -31,9 +31,13 @@ receipt or registry namespace as evidence for a newly named distribution.
   excludes ONE iGPU, delivery and mining runtime.
 - `hyba-chronos-one-igpu`: existing resident standalone product; not certified
   by scoped installed-package checks or modeled M5 descriptors.
-- `hyba-chronus-igpu`, `hyba-chronus-tensor`: planned splits, not yet
-  scaffolded. Reconcile module/file ownership and retain one canonical runtime
-  before building these; do not duplicate THESEUS-owned `aethel/fold_store.py`.
+- `hyba-chronus-igpu`: scaffolded at `packaging/chronus-igpu/` with its own
+  build_and_verify boundary protocol; the `chronus` facade and `v33` maths
+  plane stay with `hyba-chronos-mathematics`, `mla1517` stays with
+  `hyba-pythia-mining`.
+- `hyba-chronus-tensor`: still planned, not yet scaffolded. Reconcile
+  module/file ownership and retain one canonical runtime before building it;
+  do not duplicate THESEUS-owned `aethel/fold_store.py`.
 
 CHRONUS remains substrate-agnostic. Explicit unavailable routes fail closed;
 software execution is never relabeled physical GPU/QPU execution. Its separate
