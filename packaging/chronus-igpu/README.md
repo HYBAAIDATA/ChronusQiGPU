@@ -18,7 +18,7 @@ facade `chronus/__init__.py` and the `chronus/v33` mathematics plane (owned by
 | `chronus/mla1517/`, `chronus/mla1517_platform/` | `hyba-pythia-mining` |
 | `lucas/` | **this package** |
 | `kellogg/` | `hyba-kellogg-tensor` |
-| `chronos_one_igpu/` | `chronos-one-igpu` |
+| `chronos_one_igpu/` | `hyba-chronos-one-igpu` |
 
 Modules that integrate the orchestrator (`chronus.fabric` → `hyba.inventory`,
 `chronus.mining_bridge` → `quantum_compute_substrate`, `chronus.paradigm` →

@@ -23,8 +23,8 @@ jobs:
         working-directory: chronus/mla1517_platform
         run: |
           python -m pip install --upgrade pip
-          # hyba-kellogg-tensor and chronos-one-igpu are not on PyPI; stage and
-          # install them from the checkout so hyba-turing-vqc resolves locally.
+          # hyba-kellogg-tensor and hyba-chronos-one-igpu are not on PyPI; stage
+          # and install them from the checkout so hyba-turing-vqc resolves locally.
           KELLOGG_STAGE="$(mktemp -d)/kellogg-tensor"
           mkdir -p "$KELLOGG_STAGE"
           cp -r ../../kellogg ../../LICENSE \

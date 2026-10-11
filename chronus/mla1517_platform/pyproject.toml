@@ -1,12 +1,12 @@
-# Public naming is approved; first-public version target is 1.0.0.
-# Existing development/research version retained pending publication reconciliation.
+# Public naming is approved; first-public version is 1.0.0.
+# Development/research version reconciled to the first-public identity.
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "hyba-pythia-mining-runtime"
-version = "0.3.0"
+version = "1.0.0"
 description = "Truth-labelled Python mining control plane with MLA1517/OpenCL integration"
 requires-python = ">=3.11"
 dependencies = [

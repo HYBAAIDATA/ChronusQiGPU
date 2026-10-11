@@ -56,7 +56,7 @@ FORBIDDEN_WHEEL_FILES = (
 )
 
 # Modules the isolated install must import cleanly — the clean execution
-# surface (numpy + chronos-one-igpu + kellogg + lucas only).
+# surface (numpy + hyba-chronos-one-igpu + kellogg + lucas only).
 REQUIRED_IMPORTS = (
     "chronus.virtual_igpu.adapters",
     "chronus.virtual_igpu.runtime",
@@ -270,7 +270,7 @@ reqs = sorted(
     r.split(">")[0].split("<")[0].split("=")[0].strip().lower()
     for r in (importlib.metadata.requires(DIST) or []) if "extra ==" not in r
 )
-assert reqs == ["chronos-one-igpu", "hyba-chronos-mathematics", "hyba-kellogg-tensor", "numpy"], reqs
+assert reqs == ["hyba-chronos-one-igpu", "hyba-chronos-mathematics", "hyba-kellogg-tensor", "numpy"], reqs
 
 failed = {}
 for name in REQUIRED:
@@ -352,14 +352,14 @@ def _dep_wheels(findlinks: Path) -> List[Path]:
 
     hyba-chronos-mathematics (packaging/chronos-core stage+build),
     hyba-kellogg-tensor (packaging/kellogg-tensor staged dist) and
-    chronos-one-igpu (packages/chronos-one-igpu) are built from source when
-    their dist/ artefacts are absent.
+    hyba-chronos-one-igpu (packages/chronos-one-igpu) are built from source
+    when their dist/ artefacts are absent.
     """
     findlinks.mkdir(parents=True, exist_ok=True)
     builds = {
         "hyba_chronos_mathematics": REPO / "packaging" / "chronos-core-src" ,
         "hyba_kellogg_tensor": REPO / "packaging" / "kellogg-tensor-src",
-        "chronos_one_igpu": REPO / "packages" / "chronos-one-igpu",
+        "hyba_chronos_one_igpu": REPO / "packages" / "chronos-one-igpu",
     }
     staged: Dict[str, Path] = {}
     # chronos-core/kellogg stage their sources via their own build scripts;

@@ -106,7 +106,7 @@ def main(argv=None) -> int:
             "source_commit": commit,
             "variant": args.variant,
             "package_file": str(package),
-            "package_version": importlib.metadata.version("chronos-one-igpu"),
+            "package_version": importlib.metadata.version("hyba-chronos-one-igpu"),
             "native_module": native.origin if native is not None else None,
             "database_sha256": sha256(db),
             "plan": artifact.as_dict(),

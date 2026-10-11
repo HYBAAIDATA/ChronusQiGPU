@@ -49,13 +49,13 @@ dependencies = [
     "numpy>=1.26,<3",
     # chronus/__init__.py + chronus/v33 (maths plane) — provides the package
     # facade this distribution extends; ships no overlapping paths.
-    "hyba-chronos-mathematics>=3.3.0",
+    "hyba-chronos-mathematics>=1.0",
     # KELLOGG tensor substrate (seam.scale -> kellogg.scales).
     "hyba-kellogg-tensor>=1.0",
     # The resident execution contract (reference_contract, family_algebra,
     # igpu resident_hendrix/hendrix_execution) used by chronus.h4_600,
     # chronus.exact_geometry and the sealed mining route.
-    "chronos-one-igpu>=3.11.3rc2",
+    "hyba-chronos-one-igpu>=1.0",
 ]
 
 [project.optional-dependencies]

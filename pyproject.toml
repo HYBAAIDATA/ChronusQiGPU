@@ -1,8 +1,8 @@
-# Public naming is approved; first-public version target is 1.0.0.
-# Existing development/research version retained pending publication reconciliation.
+# Public naming is approved; first-public version is 1.0.0.
+# Development/research version reconciled to the first-public identity.
 [project]
 name = "hyba-pythia-mining"
-version = "0.1.0"
+version = "1.0.0"
 description = "PYTHIA operational mining backend with the canonical MLA1517 execution path."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -27,7 +27,7 @@ dependencies = [
     # Install it beside this package: pip install ./turing_universal_quantum_computer .
     "hyba-turing-vqc>=1.0",
     # The resident Chronus iGPU execution contract (in-tree: packages/chronos-one-igpu/)
-    "chronos-one-igpu>=3.11.3rc2",
+    "hyba-chronos-one-igpu>=1.0",
     # KELLOGG tensor substrate ships as its own distribution (packaging/kellogg-tensor/);
     # the umbrella must not vendor it — RECORD overlap is a release blocker.
     "hyba-kellogg-tensor>=1.0",

@@ -1,12 +1,12 @@
-# Public naming is approved; first-public version target is 1.0.0.
-# Existing development/research version retained pending publication reconciliation.
+# Public naming is approved; first-public version is 1.0.0.
+# Development/research version reconciled to the first-public identity.
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "hyba-chronos-mathematics"
-version = "3.3.0"
+version = "1.0.0"
 description = "Chronos GPU -- mathematical quantum graphics engine (Chronos v3.3 maths: manifold, QSDL, Hamiltonian, evolution, ray-traced reconstruction, theory domains)."
 readme = "README.md"
 license = "MIT"

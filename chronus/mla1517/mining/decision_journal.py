@@ -48,11 +48,11 @@ class DecisionDisposition(StrEnum):
 def _software_revision() -> str:
     """The build that made the decision; honest when uninstalled."""
     try:
-        return f"pythia-mla1517@{importlib.metadata.version('pythia-mla1517')}"
+        return f"hyba-pythia-mining@{importlib.metadata.version('hyba-pythia-mining')}"
     except importlib.metadata.PackageNotFoundError:
-        return "pythia-mla1517@uninstalled"
+        return "hyba-pythia-mining@uninstalled"
     except Exception:
-        return "pythia-mla1517@unknown"
+        return "hyba-pythia-mining@unknown"
 
 
 SOFTWARE_REVISION = _software_revision()

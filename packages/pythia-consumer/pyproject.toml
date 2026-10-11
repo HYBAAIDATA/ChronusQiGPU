@@ -13,9 +13,10 @@ build-backend = "setuptools.build_meta"
 # singular sibling wheels — top-level namespaces (aethel, hyba_db,
 # chronos_one_igpu) would collide on file ownership.
 # NOTE: distribution name follows the owner-approved `hyba-<system>-<capability>`
-# rule but is NOT yet registered in packaging/publication_catalog.json.
+# rule and is registered in packaging/publication_catalog.json.
+# First public release is 1.0.0 (owner decision 2026-10-07).
 name = "hyba-pythia-consumer"
-version = "0.1.0"
+version = "1.0.0"
 description = "PYTHIA consumer console — node census, receipt verification, intelligence surface, bundled substrate"
 readme = "README.md"
 license = "MIT"

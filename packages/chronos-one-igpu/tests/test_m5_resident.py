@@ -128,7 +128,7 @@ print('REPLAY_VERIFIED')
 def test_cli_installed_name_and_m5_manifest():
     version = json.loads(subprocess.check_output([sys.executable, "-I", "-m", "chronos_one_igpu.release_cli", "version"], text=True))
     from importlib.metadata import version as installed_version
-    assert version["version"] == installed_version("chronos-one-igpu")
+    assert version["version"] == installed_version("hyba-chronos-one-igpu")
     result = json.loads(subprocess.check_output([sys.executable, "-I", "-m", "chronos_one_igpu.release_cli", "m5-info"], text=True))
     assert result["model_is_execution_evidence"] is False
     assert result["resident"]["mode"] == "independent"

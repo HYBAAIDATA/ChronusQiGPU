@@ -41,8 +41,8 @@ WORKDIR /app
 COPY . .
 COPY --from=frontend /build/dist/public ./dist/public
 COPY --from=native /src/host/libmla1517_mmio.so /src/host/libprimedb_storage.so /usr/local/lib/
-# hyba-kellogg-tensor and chronos-one-igpu are not on PyPI; install them from
-# this checkout. Kellogg is staged the way packaging/kellogg-tensor stages it.
+# hyba-kellogg-tensor and hyba-chronos-one-igpu are not on PyPI; install them
+# from this checkout. Kellogg is staged the way packaging/kellogg-tensor stages it.
 RUN mkdir -p /tmp/kellogg-tensor \
     && cp -r kellogg LICENSE packaging/kellogg-tensor/pyproject.toml \
        packaging/kellogg-tensor/README.md /tmp/kellogg-tensor/ \

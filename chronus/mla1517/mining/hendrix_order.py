@@ -39,7 +39,7 @@ def load_hendrix() -> Tuple[Optional[Any], Optional[str]]:
     """``(HendrixStructuredSearch, None)``, else ``(None, reason)``.
 
     The virtual quantum computer is a declared dependency of the miner
-    (``turing-universal-quantum-computer``), imported as installed; a missing
+    (``hyba-turing-vqc``), imported as installed; a missing
     install is reported, never papered over by searching the source tree.
     """
     try:
