@@ -8,6 +8,14 @@
 > Local artifact gates re-verified on this head: `hyba-kellogg-tensor`,
 > `hyba-chronos-mathematics`, `hyba-toe-intelligence` and `hyba-chronus-igpu`
 > all produce `VERIFIED` artefacts via `packaging/*/build_and_verify.py`.
+> **2026-10-11 (later same day):** `hyba-theseus-storage` and
+> `hyba-ovid-data-organisation` now also produce `PASS` preparation verdicts
+> (264 + 119 source tests, installed wheel/sdist, custody/restart/negative
+> voyages) after two real defect fixes: `aethel` eagerly imported
+> `chronus.seam.scale` (undeclared execution-plane dependency) and
+> `test_hyba_ontology_store` lacked the custody wiring that `6844e66a` made
+> mandatory. `storage-publication-preparation.yml` now carries the full OIDC
+> publish lane (verdict → TestPyPI → smoke → same-bytes PyPI → release).
 > **None of this is registry qualification or upload authorisation** — the
 > commit-bound CI verdicts, trusted-publisher configuration and TestPyPI/PyPI
 > execution receipts below remain the only publication evidence.

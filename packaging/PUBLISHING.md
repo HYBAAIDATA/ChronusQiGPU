@@ -64,10 +64,18 @@ and SHA; they are historical, not renamed-package qualification.
 ## Remaining products
 
 THESEUS (`hyba-theseus-storage`) and OVID (`hyba-ovid-data-organisation`) have
-preparation workflows, owner naming records and unexecuted publication gate
-requirements. OVID consumes THESEUS `==1.0.0`. No publisher is enabled by this
-change. Execute canonical product suites, installed composition, isolation,
-custody and fresh-process replay before designing/using the registry promotion.
+owner naming records, executed preparation gates, and a complete OIDC publish
+lane in `.github/workflows/storage-publication-preparation.yml` (dispatch
+`publish=testpypi|pypi` with the frozen `rc_sha`). The lane composes
+RC-bound release verdicts, uploads THESEUS to TestPyPI, runs a 4-interpreter
+clean-registry custody voyage, then uploads OVID — whose
+`hyba-theseus-storage==1.0.0` pin is required to resolve from the same
+registry — and promotes the same digested bytes to PyPI before creating the
+evidence-linked GitHub releases. Trusted publishers for both names must be
+configured against `storage-publication-preparation.yml` with `testpypi` and
+`pypi` environments; `upload_authorised` in the owner records stays `false`
+evidence until that configuration exists — upload authorization is exercised
+through the reviewer-gated environments, not the file.
 
 TOE (`hyba-toe-intelligence`) depends on KELLOGG. Its existing publication
 workflow still needs an executed TestPyPI **same-artifact promotion** protocol;
