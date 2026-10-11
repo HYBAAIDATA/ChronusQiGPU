@@ -1,0 +1,148 @@
+{
+ "sections": {
+  "adapter_census": {
+   "cpu-emulator": {
+    "kind": "software",
+    "available": true,
+    "detail": {
+     "substrate": "classical_silicon",
+     "mode": "standalone_software"
+    }
+   },
+   "opencl-intel-uhd": {
+    "kind": "opencl",
+    "available": false,
+    "detail": {
+     "reason": "opencl_unavailable: pyopencl unavailable: ModuleNotFoundError: No module named 'pyopencl'"
+    }
+   },
+   "cuda": {
+    "kind": "cuda",
+    "available": false,
+    "detail": {
+     "reason": "CUDA SDK/device not configured"
+    }
+   },
+   "rocm": {
+    "kind": "rocm",
+    "available": false,
+    "detail": {
+     "reason": "ROCm SDK/device not configured"
+    }
+   },
+   "oneapi": {
+    "kind": "oneapi",
+    "available": false,
+    "detail": {
+     "reason": "oneAPI not configured"
+    }
+   },
+   "metal": {
+    "kind": "metal",
+    "available": false,
+    "detail": {
+     "reason": "Metal not available on this host"
+    }
+   },
+   "opencl-generic": {
+    "kind": "opencl",
+    "available": false,
+    "detail": {
+     "reason": "generic OpenCL adapter not configured"
+    }
+   }
+  },
+  "probe": {
+   "adapter": "cpu-emulator",
+   "ms": 1.065584,
+   "status": "ok",
+   "trust": "runtime_signed"
+  },
+  "fold_roundtrip": {
+   "fold_engine": "aethel.encoding.fold",
+   "logical_bytes": 10240,
+   "folded_bytes": 45154,
+   "expansion": 4.41,
+   "unfold_engine": "aethel.encoding.unfold",
+   "byte_identical": true,
+   "fold_ms": 32.910791,
+   "unfold_ms": 5.251625,
+   "adapter": "cpu-emulator"
+  },
+  "lucas_transform": {
+   "L_10": {
+    "matches_fast_doubling": true,
+    "engine": "exact_recurrence",
+    "ms": 0.49,
+    "digits": 3
+   },
+   "L_76": {
+    "matches_fast_doubling": true,
+    "engine": "exact_recurrence",
+    "ms": 0.4,
+    "digits": 16
+   },
+   "L_1364": {
+    "matches_fast_doubling": true,
+    "engine": "exact_recurrence",
+    "ms": 0.44,
+    "digits": 286
+   },
+   "L_10000": {
+    "matches_fast_doubling": true,
+    "engine": "exact_recurrence",
+    "ms": 2.54,
+    "digits": 2090
+   }
+  },
+  "pisot_transform": {
+   "n=76": {
+    "pisot_nearest_digits": 16,
+    "phi_pow_is_none_beyond_f64": true,
+    "engine": "exact_pisot_via_lucas",
+    "ms": 0.38
+   },
+   "n=1500": {
+    "pisot_nearest_digits": 314,
+    "phi_pow_is_none_beyond_f64": true,
+    "engine": "exact_pisot_via_lucas",
+    "ms": 0.41
+   },
+   "n=10000": {
+    "pisot_nearest_digits": 2090,
+    "phi_pow_is_none_beyond_f64": true,
+    "engine": "exact_pisot_via_lucas",
+    "ms": 2.47
+   }
+  },
+  "tensor_op_matmul_64": {
+   "adapter": "cpu-emulator",
+   "dtype": "float64",
+   "max_abs_err": 0.0,
+   "ms": 15.19
+  },
+  "sha256d_scan": {
+   "engine": "hashlib_sha256d",
+   "checked": 3,
+   "hits": 1,
+   "adapter": "cpu-emulator",
+   "trust": "runtime_signed",
+   "ms": 0.51,
+   "hashes_per_s": 5858
+  },
+  "fail_closed_policies": {
+   "required_cuda": "fail_closed: AdapterUnavailable: required adapter unavailable: cuda",
+   "custody_required_no_custody": "fail_closed: CustodyError: custody required but no THESEUS custody is configured",
+   "admission_deny": "fail_closed: AdmissionDenied: admission policy refused workload"
+  },
+  "evidence_ledger": {
+   "entries": 12,
+   "sample": [
+    "47ae5d4cc1a43a4ae9b8a795a67f0d0fea2095d04f17bbbadf6dcae2676b6c04.json",
+    "49a1fda02442d24874c6e4b6f15ca24f7fc1c26a58970225e963b12c9bc92c61.json",
+    "57785f934a64d173d6bc6f45f8aac6e030458e7a6d1f39996e2de1269be03724.json"
+   ]
+  }
+ },
+ "daemon_state": "RuntimeState.READY"
+}

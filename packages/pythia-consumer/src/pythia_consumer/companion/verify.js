@@ -305,6 +305,66 @@ function verify_receipt(receipt) {
   return _finish(verdict);
 }
 
+/* ---------------- receipt minting (parity with mint.py) ---------------- */
+
+function data_coordinate_masks(data /* Uint8Array */) {
+  const digest = sha256Bytes(data);
+  let value = 0n;
+  for (const b of digest) value = (value << 8n) | BigInt(b);
+  const masks = [];
+  for (let d = 0; d < _DIMS; d++) {
+    const chunk = value & ((1n << 22n) - 1n);
+    value >>= 22n;
+    let m = 0n;
+    for (let i = 0n; i < 11n; i++) m |= ((chunk >> i) & 1n) << (2n * i + 2n);
+    masks.push(Number(m));
+  }
+  return masks;
+}
+
+function mint_receipt({ context_id = "", coordinate_masks = null, data = null, producer_version = "js" } = {}) {
+  let derivation;
+  if (coordinate_masks == null) {
+    if (data != null) {
+      coordinate_masks = data_coordinate_masks(data instanceof Uint8Array ? data : utf8Bytes(data));
+      derivation = "sha256-data";
+    } else {
+      coordinate_masks = new Array(_DIMS).fill(0);
+      derivation = "zero-masks";
+    }
+  } else {
+    derivation = "explicit";
+  }
+  if (coordinate_masks.length !== _DIMS || !coordinate_masks.every((m) => _isInt(m) && m >= 0)) {
+    throw new RangeError(`coordinate_masks must be ${_DIMS} non-negative ints`);
+  }
+  const canonical = canonical_accumulator(coordinate_masks.map(BigInt), context_id);
+  let decoupling = 0;
+  for (let i = 0n; i < 6n; i++) decoupling |= Number((canonical >> i) & 1n) << (2 * Number(i));
+  return {
+    token_hex: `ZECK-${canonical.toString(16).toUpperCase().padStart(16, "0")}`,
+    non_adjacent_mask: decoupling,
+    canonical_int: canonical.toString(10),  // string keeps 64-bit exactness
+    coordinate_masks: [...coordinate_masks],
+    context_id,
+    producer: {
+      distribution: "hyba-pythia-consumer",
+      version: producer_version,
+      derivation,
+      provenance: "unsupported — minted receipts prove the fold, not origin",
+    },
+  };
+}
+
+/* Canonical wire form: canonical_int must be a bare integer literal — the
+ * Python contract rejects a quoted string and naive JSON.parse rounds one
+ * above 2^53. receipt_json() emits the string field unquoted so the text
+ * verifies exactly under BOTH implementations. */
+function receipt_json(receipt, space = 1) {
+  return JSON.stringify(receipt, null, space)
+    .replace(/"canonical_int": "(\d+)"/g, '"canonical_int": $1');
+}
+
 function _finish(verdict) {
   const checks = verdict.checks;
   const passedAll = checks.length > 0 && checks.every((c) => c.result === "pass");
@@ -323,6 +383,7 @@ function _finish(verdict) {
 return {
   fibonacci, lucas, cassini_holds, zeckendorf, zeckendorf_legal,
   canonical_accumulator, verify_receipt, parse_receipt, sha256Bytes, utf8Bytes,
+  data_coordinate_masks, mint_receipt, receipt_json,
 };
 })();
 

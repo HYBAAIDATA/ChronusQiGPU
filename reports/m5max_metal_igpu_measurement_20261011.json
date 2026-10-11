@@ -1,0 +1,164 @@
+{
+ "host": "arm64",
+ "sections": {
+  "tensor_ops_on_gpu": {
+   "matmul_256": {
+    "gpu_ms": 0.225,
+    "cpu_ms": 0.023334,
+    "gpu_tflops": 0.149,
+    "cpu_tflops": 1.438,
+    "max_abs_err": 0.053131103515625,
+    "speedup": 0.1
+   },
+   "matmul_1024": {
+    "gpu_ms": 0.719209,
+    "cpu_ms": 0.993666,
+    "gpu_tflops": 2.986,
+    "cpu_tflops": 2.1612,
+    "max_abs_err": 0.12664794921875,
+    "speedup": 1.38
+   },
+   "matmul_2048": {
+    "gpu_ms": 2.761709,
+    "cpu_ms": 6.870792,
+    "gpu_tflops": 6.221,
+    "cpu_tflops": 2.5004,
+    "max_abs_err": 0.197174072265625,
+    "speedup": 2.49
+   },
+   "matmul_4096": {
+    "gpu_ms": 7.027959,
+    "cpu_ms": 54.162042,
+    "gpu_tflops": 19.556,
+    "cpu_tflops": 2.5376,
+    "max_abs_err": 0.2550201416015625,
+    "speedup": 7.71
+   },
+   "add": {
+    "gpu_ms": 3.711125,
+    "cpu_ms": 1.529334,
+    "max_abs_err": 0.0,
+    "elements": 16777216,
+    "speedup": 0.41
+   },
+   "hadamard": {
+    "gpu_ms": 3.110792,
+    "cpu_ms": 1.552125,
+    "max_abs_err": 0.0,
+    "elements": 16777216,
+    "speedup": 0.5
+   },
+   "scale": {
+    "gpu_ms": 1.783625,
+    "cpu_ms": 1.061375,
+    "max_abs_err": 0.0,
+    "elements": 16777216,
+    "speedup": 0.6
+   },
+   "kron_1d": {
+    "gpu_ms": 0.255958,
+    "cpu_ms": 0.541416,
+    "max_abs_err": 0.0,
+    "speedup": 2.12
+   },
+   "kron_2d": {
+    "gpu_ms": 1.650459,
+    "cpu_ms": 4.449125,
+    "max_abs_err": 0.0,
+    "speedup": 2.7
+   },
+   "device_proof_matmul_2048": {
+    "mlx_forced_cpu_ms": 7.104042,
+    "mlx_default_gpu_ms": 2.787,
+    "gpu_faster_by": 2.55,
+    "conclusion": "runtime follows MLX device; default_device=gpu confirmed"
+   }
+  },
+  "lucas_lattice": {
+   "rungs": [
+    10,
+    12,
+    15,
+    18,
+    20,
+    31,
+    50,
+    76
+   ],
+   "L_rungs": {
+    "10": 123,
+    "12": 322,
+    "15": 1364,
+    "18": 5778,
+    "20": 15127,
+    "31": 3010349,
+    "50": 28143753123,
+    "76": 7639424778862807
+   },
+   "snap_all_on_lattice": true,
+   "snap_max_displacement": 9,
+   "snap_mean_displacement": 1.2602,
+   "snap_is_step_function": true,
+   "distinct_stops_in_range": 16654,
+   "effective_capacity_exact_Ln_over_L10": true,
+   "example_80_at_L76": 4968731563488004,
+   "memory_budget_1MiB_at_L76_bytes": 65126158348949973275,
+   "memory_budget_is_lucas_ratio": true,
+   "scale_job_5000": {
+    "work_items": 5000,
+    "on_lattice": true,
+    "lucas_L_equals_L_work_items": true,
+    "rungs_dividing": [
+     10,
+     20,
+     50
+    ],
+    "t11_all_integer_pairs": true,
+    "t11_len": 11
+   },
+   "scale_job_deterministic": true,
+   "hyperscaler_work_items_snapped": true,
+   "hyperscaler_units": {
+    "folded": 512,
+    "work_items": 510
+   },
+   "genetic_snap": "inspected statically: evolve_mining_config() missing 1 required positional argument: 'scale'"
+  }
+ },
+ "mlx_default_device": "Device(gpu, 0)",
+ "probe_metal_tensor": {
+  "backend": "metal",
+  "available": true,
+  "device_id": "metal:arm64:Device(gpu, 0)",
+  "device_name": "Apple arm64",
+  "platform_name": "Metal/MLX",
+  "reason": "",
+  "operations": [
+   "matmul",
+   "add",
+   "scale",
+   "kron",
+   "hadamard"
+  ],
+  "dtypes": [
+   "float32"
+  ],
+  "opencl_required": false
+ },
+ "probe_metal_hash": {
+  "backend_id": "chronus-metal",
+  "available": true,
+  "opencl_required": false,
+  "device_name": "Device(gpu, 0)",
+  "device_index": null,
+  "reason": "",
+  "detail": {
+   "stack": "mlx"
+  },
+  "physical_run_status": "host_dependent"
+ },
+ "metal_hash_lane": {
+  "status": "fail_closed",
+  "reason": "chronus-metal: Apple GPU SHA-256d kernel binding not yet production-verified on this host build; refuse CPU-labeled-as-Metal. Use backend=opencl or backend=cpu "
+ }
+}

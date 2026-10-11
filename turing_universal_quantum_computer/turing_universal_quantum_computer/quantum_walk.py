@@ -111,11 +111,13 @@ class CoinedCycleWalk:
         mean = sp.Integer(0)
         for x, p in dist.items():
             d = min((x - center) % n, (center - x) % n)
-            mean += sp.sympify(d) * sp.sympify(p)
+            pv = p.to_sympy() if hasattr(p, "to_sympy") else sp.sympify(p)
+            mean += sp.sympify(d) * pv
         var = sp.Integer(0)
         for x, p in dist.items():
             d = min((x - center) % n, (center - x) % n)
-            var += sp.sympify(p) * (sp.sympify(d) - mean) ** 2
+            pv = p.to_sympy() if hasattr(p, "to_sympy") else sp.sympify(p)
+            var += pv * (sp.sympify(d) - mean) ** 2
         return sp.simplify(var)
 
 

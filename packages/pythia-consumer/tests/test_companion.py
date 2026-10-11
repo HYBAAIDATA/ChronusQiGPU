@@ -101,6 +101,81 @@ class TestConsoleRoutes:
         assert status == 200 and "device" in s
 
 
+class TestMint:
+    def test_minted_receipt_verifies(self):
+        from pythia_consumer import mint, verify
+        for kwargs in ({}, {"context_id": "ctx-1"}, {"data": b"payload-bytes"},
+                       {"data": "unicode-∂-text".encode()}, {"context_id": "c", "data": b"d"}):
+            r = mint.mint_receipt(**kwargs)
+            v = verify.verify_receipt(r)
+            assert v["verdict"] == "pass", (kwargs, v["checks"])
+            assert v["levels"]["canonical_binding"] is True
+            assert r["producer"]["provenance"].startswith("unsupported")
+
+    def test_mint_masks_producible_and_deterministic(self):
+        from pythia_consumer import mint, verify
+        m1 = mint.data_coordinate_masks(b"hello")
+        m2 = mint.data_coordinate_masks(b"hello")
+        assert m1 == m2 and len(m1) == 11
+        for m in m1:
+            assert (m >> 25) == 0 and (m & 0b11) == 0 and (m & (m << 1)) == 0
+
+    def test_minted_survives_wire_roundtrip(self):
+        from pythia_consumer import mint, verify
+        r = mint.mint_receipt(data=b"roundtrip", context_id="wire")
+        assert verify.verify_receipt(json.loads(json.dumps(r)))["verdict"] == "pass"
+
+    def test_mint_cli(self, capsys):
+        from pythia_consumer import cli
+        assert cli.main(["mint", "--context", "x", "--masks", ",".join(["4"] * 11)]) == 0
+        out = json.loads(capsys.readouterr().out)
+        assert out["token_hex"].startswith("ZECK-")
+
+
+class TestOffers:
+    def test_catalog_shape(self):
+        from pythia_consumer import offers
+        cat = offers.offer_catalog()
+        assert cat["schema"] == "pythia.consumer.offers/1"
+        names = {o["offer"] for o in cat["offers"]}
+        assert {"pythia", "pythia-node", "pythia-node-large-memory",
+                "pythia-companion", "pythia-studio"} == names
+        states = {o["offer"]: o["state"] for o in cat["offers"]}
+        assert states["pythia"] == "installed"
+        assert states["pythia-companion"] == "served"
+        assert states["pythia-studio"] == "not-productized"  # honest stub
+
+    def test_offers_cli(self, capsys):
+        from pythia_consumer import cli
+        assert cli.main(["offers"]) == 0
+        out = json.loads(capsys.readouterr().out)
+        assert len(out["offers"]) == 5
+
+
+class TestMintRoute:
+    def test_api_mint_and_offers(self):
+        import threading, urllib.request
+        from pythia_consumer.console import make_handler
+        from http.server import ThreadingHTTPServer
+        srv = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(None))
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        try:
+            base = f"http://127.0.0.1:{srv.server_address[1]}"
+            req = urllib.request.Request(
+                base + "/api/mint", method="POST",
+                data=json.dumps({"context_id": "api", "data": "payload"}).encode(),
+                headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=5) as r:
+                receipt = json.loads(r.read())
+            from pythia_consumer import verify
+            assert verify.verify_receipt(receipt)["verdict"] == "pass"
+            with urllib.request.urlopen(base + "/api/offers", timeout=5) as r:
+                assert json.loads(r.read())["schema"] == "pythia.consumer.offers/1"
+        finally:
+            srv.shutdown()
+            srv.server_close()
+
+
 class TestJsParity:
     """verify.js must produce verdicts identical to the Python contract.
     Runs the JS under macOS JXA (JavaScriptCore); skipped off-Darwin."""
@@ -161,3 +236,42 @@ console.log(JSON.stringify(out));
                         "verdict": pv["verdict"],
                         "verification_level": pv["verification_level"]}
             assert js.get(name) == expected, f"JS/Python verdict drift on {name}"
+
+    def test_mint_parity(self):
+        """JS mint must produce fold-identical receipts to Python mint."""
+        from pythia_consumer import mint as pym, verify as pyv
+        verify_js = (COMPANION / "verify.js").read_text()
+        cases = {"empty": {}, "ctx": {"context_id": "ctx-∂"},
+                 "data": {"data": "hello-world", "context_id": "d"}}
+        harness = verify_js + "\n" + f"""
+const cases = {json.dumps(cases)};
+const out = {{}};
+for (const [name, kw] of Object.entries(cases)) {{
+  const r = PythiaVerify.mint_receipt(kw);
+  const text = PythiaVerify.receipt_json(r);
+  const parsed = PythiaVerify.parse_receipt(text);   // JS-side roundtrip
+  const v = PythiaVerify.verify_receipt(parsed);
+  out[name] = {{text, verdict: v.verdict}};
+}}
+console.log(JSON.stringify(out));
+"""
+        with open("/tmp/pythia_jxa_mint.js", "w") as f:
+            f.write(harness)
+        proc = subprocess.run(
+            ["osascript", "-l", "JavaScript", "/tmp/pythia_jxa_mint.js"],
+            capture_output=True, text=True, timeout=120)
+        raw = proc.stdout.strip() or proc.stderr.strip()
+        assert proc.returncode == 0 and raw, proc.stderr[:400]
+        js = json.loads(raw.splitlines()[-1])
+        for name, kw in cases.items():
+            args = dict(kw)
+            if "data" in args:
+                args["data"] = args["data"].encode()
+            pyr = pym.mint_receipt(**args)
+            jsr = json.loads(js[name]["text"])  # wire text parses as bare int
+            assert jsr["canonical_int"] == pyr["canonical_int"], name
+            assert jsr["token_hex"] == pyr["token_hex"], name
+            assert jsr["coordinate_masks"] == pyr["coordinate_masks"], name
+            assert jsr["non_adjacent_mask"] == pyr["non_adjacent_mask"], name
+            assert js[name]["verdict"] == "pass", name
+            assert pyv.verify_receipt(jsr)["verdict"] == "pass", name

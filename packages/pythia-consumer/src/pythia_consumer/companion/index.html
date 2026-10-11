@@ -42,6 +42,13 @@ input[type=file]{display:none}
 <header><h1>PYTHIA</h1><span class="tag">companion — receipts you can check</span></header>
 <main>
 <div class="card">
+  <h2>Mint a receipt</h2>
+  <p class="hint">Derive a fold-consistent receipt on this device — SHA-256 of your text → 11 producible masks → canonical fold. Proves the fold, not origin: provenance stays <b>unsupported</b>.</p>
+  <textarea id="mintdata" style="min-height:60px" placeholder="text or note to bind into the receipt"></textarea>
+  <textarea id="mintctx" style="min-height:34px" placeholder="context_id (optional)"></textarea>
+  <button class="go" id="domint">Mint</button>
+</div>
+<div class="card">
   <h2>Verify a receipt</h2>
   <p class="hint">Verification runs entirely on this device — structural invariants plus canonical binding re-derived in JavaScript. Provenance authentication is <b>unsupported</b>: no signature trust model exists yet.</p>
   <textarea id="receipt" placeholder='{"token_hex":"ZECK-…","non_adjacent_mask":…,"canonical_int":…,"coordinate_masks":[…],"context_id":"…"}'></textarea>
@@ -79,11 +86,17 @@ function renderWallet(){
   el.innerHTML=w.map((r,i)=>`<div class="wi" data-i="${i}"><span class="n">${esc(r.name)}</span>`+
     badge(r.verdict==='pass'?'ok':'bad',r.verdict)+
     `<span class="hint">${new Date(r.ts).toLocaleDateString()}</span></div>`).join('');
-  el.querySelectorAll('.wi').forEach(d=>d.onclick=()=>{$('#receipt').value=JSON.stringify(w[+d.dataset.i].receipt,null,1)});
+  el.querySelectorAll('.wi').forEach(d=>d.onclick=()=>{$('#receipt').value=w[+d.dataset.i].text});
 }
 $('#clear').onclick=()=>{save([]);renderWallet()};
 $('#pick').onclick=()=>$('#file').click();
 $('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>$('#receipt').value=t)};
+
+$('#domint').onclick=()=>{
+  const data=$('#mintdata').value, ctx=$('#mintctx').value;
+  const r=PythiaVerify.mint_receipt({context_id:ctx, data:data||null, producer_version:'companion-js'});
+  $('#receipt').value=PythiaVerify.receipt_json(r);
+};
 
 $('#doverify').onclick=()=>{
   let body;try{body=PythiaVerify.parse_receipt($('#receipt').value)}catch(e){$('#vout').style.display='block';$('#vout').textContent='invalid JSON: '+e;return}
@@ -92,7 +105,7 @@ $('#doverify').onclick=()=>{
   $('#vout').textContent=v.checks.map(c=>(c.result==='pass'?'✓':c.result==='skipped'?'–':'✗')+' '+c.check+(c.detail?' — '+c.detail:'')).join('\n')
     +'\n\nverdict: '+v.verdict
     +'\nstructural: '+l.structural+'   canonical_binding: '+l.canonical_binding+'   provenance: '+l.provenance_authentication;
-  const w=wallet();w.unshift({name:(body.token_hex||'receipt'),ts:Date.now(),verdict:v.verdict,receipt:body});save(w);renderWallet();
+  const w=wallet();w.unshift({name:(body.token_hex||'receipt'),ts:Date.now(),verdict:v.verdict,text:$('#receipt').value});save(w);renderWallet();
 };
 
 fetch('/api/status').then(r=>r.json()).then(s=>{

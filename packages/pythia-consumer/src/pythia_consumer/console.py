@@ -64,6 +64,9 @@ def make_handler(api_url: Optional[str]):
                 self._send(census.node_status(api_url=api_url))
             elif path == "/api/intelligence":
                 self._send(intelligence_status())
+            elif path == "/api/offers":
+                from . import offers
+                self._send(offers.offer_catalog(api_url=api_url))
             elif path == "/companion" or path == "/companion/":
                 self._send(_companion_asset("index.html"),
                            ctype="text/html; charset=utf-8")
@@ -85,16 +88,28 @@ def make_handler(api_url: Optional[str]):
                 self._send({"error": "not found"}, 404)
 
         def do_POST(self):  # noqa: N802
-            if self.path != "/api/verify":
+            path = self.path.split("?", 1)[0].split("#", 1)[0]
+            if path not in ("/api/verify", "/api/mint"):
                 return self._send({"error": "not found"}, 404)
             try:
                 length = int(self.headers.get("Content-Length") or 0)
                 if not 0 < length <= _MAX_BODY:
                     return self._send({"error": "body required (max 1 MiB)"}, 400)
-                receipt = json.loads(self.rfile.read(length))
+                body = json.loads(self.rfile.read(length))
             except (ValueError, json.JSONDecodeError):
-                return self._send({"error": "invalid JSON receipt"}, 400)
-            self._send(verify.verify_receipt(receipt))
+                return self._send({"error": "invalid JSON body"}, 400)
+            if path == "/api/verify":
+                return self._send(verify.verify_receipt(body))
+            try:
+                from . import mint
+                data = body.get("data")
+                receipt = mint.mint_receipt(
+                    context_id=body.get("context_id", ""),
+                    coordinate_masks=body.get("coordinate_masks"),
+                    data=data.encode("utf-8") if isinstance(data, str) else None)
+            except (ValueError, TypeError) as exc:
+                return self._send({"error": f"cannot mint: {exc}"}, 400)
+            self._send(receipt)
 
         def log_message(self, *_):  # quiet console
             pass

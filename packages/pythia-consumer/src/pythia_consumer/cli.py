@@ -3,9 +3,11 @@
     pythia version
     pythia census [--json]
     pythia products [--json]
+    pythia offers
     pythia node status [--api URL]
+    pythia mint [--context STR] [--data FILE] [--masks m0,…,m10]
     pythia verify RECEIPT.json
-    pythia console [--port N] [--api URL]
+    pythia console [--port N] [--api URL] [--lan]
 """
 
 from __future__ import annotations
@@ -32,6 +34,13 @@ def main(argv=None) -> int:
     p.add_argument("--json", action="store_true", help="JSON output (default)")
 
     sub.add_parser("products", help="list bundled/installed substrate products")
+
+    sub.add_parser("offers", help="consumer offer catalog with honest states")
+
+    p = sub.add_parser("mint", help="mint a receipt you can verify (fold-consistent, provenance unsupported)")
+    p.add_argument("--context", default="", help="context_id bound into the receipt")
+    p.add_argument("--data", type=Path, help="derive coordinate masks from this file's SHA-256")
+    p.add_argument("--masks", help="explicit comma-separated 11 producible masks")
 
     p = sub.add_parser("node", help="node surface")
     n = p.add_subparsers(dest="node_cmd", required=True)
@@ -60,6 +69,22 @@ def main(argv=None) -> int:
     if args.cmd == "products":
         _dump(census.available_products())
         return 0
+    if args.cmd == "offers":
+        from . import offers
+        _dump(offers.offer_catalog())
+        return 0
+    if args.cmd == "mint":
+        from . import mint
+        try:
+            masks = ([int(x) for x in args.masks.split(",")]
+                     if args.masks else None)
+            data = args.data.read_bytes() if args.data else None
+            _dump(mint.mint_receipt(context_id=args.context,
+                                    coordinate_masks=masks, data=data))
+            return 0
+        except (OSError, ValueError) as exc:
+            print(f"cannot mint: {exc}", file=sys.stderr)
+            return 2
     if args.cmd == "node":
         _dump(census.node_status(api_url=args.api))
         return 0

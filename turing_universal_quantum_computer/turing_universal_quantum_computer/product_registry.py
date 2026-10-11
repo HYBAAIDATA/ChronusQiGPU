@@ -73,6 +73,8 @@ MODULES: Tuple[ModuleEntry, ...] = (
     _m("exact_field_registry", "core", "Registry of the exact cyclotomic field Q(zeta_8)."),
     _m("canonical_serialization", "core", "Canonical, fail-closed serialization for exact evidence."),
     _m("quantum_walk", "core", "Coined cycle walk (sparse exact) and closed-form hypercube walk."),
+    _m("quantum_library", "algorithm", "Curated exact algorithm library surface (Grover, QAOA, "
+       "VQE/TFIM scans, walks, counting) returning truth-labelled LibraryResults."),
     _m("annealing", "core", "Exact TFIM free-fermion spectrum, adiabatic gap, Landau-Zener."),
     _m("swarm", "core", "Agents sampling exact Born distributions."),
     _m("trotter_simulation", "core", "Trotter-Suzuki evolution, declared approximate with its error."),

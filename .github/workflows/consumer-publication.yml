@@ -1,0 +1,442 @@
+name: PYTHIA consumer publication preparation
+
+on:
+  pull_request:
+    paths:
+      - 'packages/pythia-consumer/**'
+      - 'aethel/**'
+      - 'hyba_db/**'
+      - 'packages/chronos-one-igpu/**'
+      - 'packaging/publication_catalog.json'
+      - '.github/workflows/consumer-publication.yml'
+  workflow_dispatch:
+    inputs:
+      rc_sha:
+        description: Full frozen consumer candidate SHA, matching dispatch head
+        required: true
+        type: string
+      publish:
+        description: "Publish the exact verified release artefacts"
+        type: choice
+        options: [none, testpypi, pypi]
+        default: none
+
+permissions:
+  contents: read
+
+env:
+  RC_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  CI_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+jobs:
+  preparation-guards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify candidate identity and package guards
+        run: |
+          test "$(git rev-parse HEAD)" = "$RC_SHA"
+          if [ "${{ github.event_name }}" = workflow_dispatch ]; then
+            test "${{ inputs.rc_sha }}" = "${{ github.sha }}"
+          fi
+          python -m pip install pytest
+          python -m pytest packages/pythia-consumer/tests -q
+
+  candidate-build:
+    needs: preparation-guards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build the bundled wheel + sdist and record digests
+        run: |
+          python -m pip install build twine
+          cd packages/pythia-consumer
+          python build_bundle.py
+          python -m twine check dist/*
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          arts = sorted(Path("dist").glob("hyba_pythia_consumer-*"))
+          record = {a.name: hashlib.sha256(a.read_bytes()).hexdigest() for a in arts}
+          assert any(n.endswith(".whl") for n in record) and any(n.endswith(".tar.gz") for n in record)
+          Path("dist/artifact-digests.json").write_text(json.dumps(record, indent=1, sort_keys=True))
+          print(json.dumps(record, indent=1))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: consumer-candidate
+          path: packages/pythia-consumer/dist/
+          if-no-files-found: error
+
+  installed-smoke:
+    name: Installed wheel smoke / Python ${{ matrix.python }}
+    needs: candidate-build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.10', '3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: consumer-candidate
+          path: dist
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Fresh-venv install of the exact wheel, then exercise the surface
+        run: |
+          python -m venv /tmp/pc
+          . /tmp/pc/bin/activate
+          pip install dist/hyba_pythia_consumer-*-py3-none-any.whl
+          python -c "import importlib.metadata as md; assert md.version('hyba-pythia-consumer') == '1.0.0'"
+          cd /tmp
+          pythia mint --context ci-smoke --data /etc/hostname > /tmp/receipt.json
+          pythia verify /tmp/receipt.json
+          pythia census > /dev/null
+          pythia offers | python -c "import json,sys; assert json.load(sys.stdin)['schema'] == 'pythia.consumer.offers/1'"
+      - name: Emit execution receipt
+        shell: python
+        run: |
+          import json, os, platform
+          from pathlib import Path
+          Path("receipts").mkdir()
+          receipt = {
+              "schema": "hyba.installed-smoke.v1",
+              "product": "hyba-pythia-consumer", "version": "1.0.0",
+              "python": platform.python_version(),
+              "source_commit": os.environ["RC_SHA"],
+              "ci_run_url": os.environ["CI_RUN_URL"],
+              "checks": {"wheel_install": True, "cli_mint": True,
+                         "cli_verify": True, "census": True, "offers": True},
+              "status": "PASS",
+          }
+          Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: consumer-smoke-${{ matrix.python }}
+          path: receipts/receipt.json
+          if-no-files-found: error
+
+  release-verdict:
+    name: Compose the consumer release verdict
+    needs: installed-smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: consumer-candidate
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: consumer-smoke-*
+          path: receipts
+      - name: Verify matrix outcomes, catalog identity and PyPI name state
+        shell: python
+        run: |
+          import glob, hashlib, json, os, urllib.error, urllib.request
+          from pathlib import Path
+
+          NAME = "hyba-pythia-consumer"
+          cat = json.loads(Path("packaging/publication_catalog.json").read_text())
+          rows = [r for r in cat["packages"] if r["distribution"] == NAME]
+          assert len(rows) == 1 and rows[0]["state"] == "EXISTING_SCAFFOLD", \
+              f"{NAME}: catalog identity missing or not scaffolded"
+          assert rows[0]["first_public_version"] == "1.0.0"
+
+          digests = json.loads(Path("dist/artifact-digests.json").read_text())
+          for n, d in digests.items():
+              assert hashlib.sha256(Path("dist", n).read_bytes()).hexdigest() == d, n
+          receipts = [json.load(open(p)) for p in glob.glob("receipts/*/receipt.json")]
+          assert len(receipts) == 4 and all(
+              r["status"] == "PASS" and r["source_commit"] == os.environ["RC_SHA"]
+              and all(r["checks"].values()) for r in receipts), "installed matrix not green"
+
+          try:
+              with urllib.request.urlopen(f"https://pypi.org/pypi/{NAME}/json", timeout=20) as resp:
+                  state = {"registered": True, "versions": sorted(json.load(resp).get("releases", {}))}
+          except urllib.error.HTTPError as exc:
+              if exc.code != 404:
+                  raise
+              state = {"registered": False, "versions": []}
+          assert "1.0.0" not in state["versions"], f"{NAME} 1.0.0 already exists on PyPI"
+
+          verdict = {
+              "product": NAME, "version": "1.0.0",
+              "repository": "QuantumPhiRedux/PhiMiner",
+              "git_sha": os.environ["RC_SHA"],
+              "bundle_note": ("bundle wheel vendors aethel/hyba_db/chronos_one_igpu; "
+                              "not evidence of the singular sibling wheels' qualification"),
+              "installed_matrix": ["3.10", "3.11", "3.12", "3.13"],
+              "artifact_digests": digests,
+              "pypi_name_state": state,
+              "publishable": True,
+              "published": False,
+          }
+          Path("verdicts").mkdir()
+          Path("verdicts/consumer-release-verdict.json").write_text(
+              json.dumps(verdict, indent=2, sort_keys=True))
+          print(json.dumps(verdict, indent=2, sort_keys=True))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: consumer-release-verdict
+          path: verdicts/*
+          if-no-files-found: error
+
+  publish-testpypi:
+    name: OIDC upload exact consumer archives to TestPyPI
+    needs: release-verdict
+    if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: consumer-candidate
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: consumer-release-verdict
+          path: verdicts
+      - name: Stage exact verdict-bound archives
+        run: |
+          mkdir upload
+          python - <<'PY'
+          import hashlib, json, shutil
+          from pathlib import Path
+          v = json.load(open("verdicts/consumer-release-verdict.json"))
+          for n, d in v["artifact_digests"].items():
+              f = Path("dist") / n
+              assert hashlib.sha256(f.read_bytes()).hexdigest() == d, n
+              shutil.copy(f, "upload/")
+          PY
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: upload/
+          repository-url: https://test.pypi.org/legacy/
+
+  testpypi-smoke:
+    name: Consumer clean TestPyPI execution / Python ${{ matrix.python }}
+    needs: publish-testpypi
+    if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.10', '3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Registry install outside the source + CLI surface
+        run: |
+          python -m venv /tmp/pc
+          . /tmp/pc/bin/activate
+          for i in 1 2 3 4 5; do
+            pip install --index-url https://test.pypi.org/simple/ \
+              --extra-index-url https://pypi.org/simple/ "hyba-pythia-consumer==1.0.0" && break
+            sleep 30
+          done
+          python -c "import importlib.metadata as md; assert md.version('hyba-pythia-consumer') == '1.0.0'"
+          cd /tmp
+          pythia mint --context testpypi-smoke --data /etc/hostname > /tmp/r.json
+          pythia verify /tmp/r.json
+          pythia census > /dev/null
+      - name: Emit execution receipt
+        shell: python
+        run: |
+          import json, os, platform
+          from pathlib import Path
+          Path("receipts").mkdir()
+          receipt = {
+              "schema": "hyba.registry-execution.v1",
+              "product": "hyba-pythia-consumer", "version": "1.0.0",
+              "registry": "testpypi", "python": platform.python_version(),
+              "source_commit": os.environ["RC_SHA"],
+              "ci_run_url": os.environ["CI_RUN_URL"],
+              "checks": {"registry_install": True, "cli_mint": True,
+                         "cli_verify": True, "census": True},
+              "status": "PASS",
+          }
+          Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: consumer-testpypi-smoke-${{ matrix.python }}
+          path: receipts/receipt.json
+          if-no-files-found: error
+
+  publish-pypi:
+    name: OIDC promote the same consumer bytes to PyPI
+    needs: testpypi-smoke
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: consumer-candidate
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: consumer-release-verdict
+          path: verdicts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: consumer-testpypi-smoke-*
+          path: receipts
+      - name: Require executed TestPyPI gate and stage the same bytes
+        run: |
+          mkdir upload
+          python - <<'PY'
+          import glob, hashlib, json, os, shutil
+          from pathlib import Path
+          receipts = [json.load(open(p)) for p in glob.glob("receipts/*/receipt.json")]
+          assert len(receipts) == 4 and all(
+              r["status"] == "PASS" and r["registry"] == "testpypi"
+              and r["product"] == "hyba-pythia-consumer"
+              and r["source_commit"] == os.environ["RC_SHA"]
+              and all(r["checks"].values()) for r in receipts), "missing executed TestPyPI gate"
+          v = json.load(open("verdicts/consumer-release-verdict.json"))
+          for n, d in v["artifact_digests"].items():
+              f = Path("dist") / n
+              assert hashlib.sha256(f.read_bytes()).hexdigest() == d, n
+              shutil.copy(f, "upload/")
+          PY
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: upload/
+
+  pypi-smoke:
+    name: Consumer clean PyPI execution / Python ${{ matrix.python }}
+    needs: publish-pypi
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.10', '3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Registry install outside the source + CLI surface
+        run: |
+          python -m venv /tmp/pc
+          . /tmp/pc/bin/activate
+          for i in 1 2 3 4 5; do
+            pip install --index-url https://pypi.org/simple/ "hyba-pythia-consumer==1.0.0" && break
+            sleep 30
+          done
+          python -c "import importlib.metadata as md; assert md.version('hyba-pythia-consumer') == '1.0.0'"
+          cd /tmp
+          pythia mint --context pypi-smoke --data /etc/hostname > /tmp/r.json
+          pythia verify /tmp/r.json
+          pythia census > /dev/null
+      - name: Emit execution receipt
+        shell: python
+        run: |
+          import json, os, platform
+          from pathlib import Path
+          Path("receipts").mkdir()
+          receipt = {
+              "schema": "hyba.registry-execution.v1",
+              "product": "hyba-pythia-consumer", "version": "1.0.0",
+              "registry": "pypi", "python": platform.python_version(),
+              "source_commit": os.environ["RC_SHA"],
+              "ci_run_url": os.environ["CI_RUN_URL"],
+              "checks": {"registry_install": True, "cli_mint": True,
+                         "cli_verify": True, "census": True},
+              "status": "PASS",
+          }
+          Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: consumer-pypi-smoke-${{ matrix.python }}
+          path: receipts/receipt.json
+          if-no-files-found: error
+
+  github-release:
+    name: Publish evidence-linked consumer GitHub release
+    needs: pypi-smoke
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: consumer-candidate
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: consumer-release-verdict
+          path: verdicts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "consumer-*-smoke-*"
+          path: receipts
+      - name: Retain complete publication evidence and create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |-
+          python - <<'PY'
+          import glob, json, os
+          from pathlib import Path
+          v = json.load(open("verdicts/consumer-release-verdict.json"))
+          receipts = [json.load(open(p)) for p in glob.glob("receipts/*smoke*/receipt.json")]
+          registries = {r["registry"] for r in receipts}
+          assert {"testpypi", "pypi"} <= registries and len(receipts) == 12, registries
+          assert all(r["source_commit"] == os.environ["RC_SHA"] and r["status"] == "PASS"
+                     for r in receipts)
+          v["published"] = True
+          v["testpypi_verified"] = True
+          v["registry_receipts"] = receipts
+          v["ci_run_url"] = os.environ["CI_RUN_URL"]
+          Path("publication.json").write_text(json.dumps(v, indent=2, sort_keys=True))
+          Path("release-notes.md").write_text(
+              f"{v['product']} 1.0.0 — PYTHIA free consumer tier\n\n"
+              f"RC: {os.environ['RC_SHA']}\nCI: {os.environ['CI_RUN_URL']}\n\n"
+              "Both registries used the same wheel/sdist SHA-256 archives; attached "
+              "publication.json contains executed receipts. The bundle wheel vendors "
+              "aethel/hyba_db/chronos_one_igpu and does not certify the whole HYBA platform.\n")
+          os.system(f"gh release create hyba-pythia-consumer-v1.0.0 "
+                    f"--target {os.environ['RC_SHA']} "
+                    f"--title '{v['product']} 1.0.0' --notes-file release-notes.md "
+                    f"dist/*.whl dist/*.tar.gz publication.json")
+          Path("consumer-publication.json").write_text(Path("publication.json").read_text())
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: consumer-final-publication
+          path: "*-publication.json"
+          if-no-files-found: error
+
+# Upload is authorised at the reviewer-gated GitHub environments only
+# (testpypi / pypi). OIDC trusted-publisher configuration and PyPI namespace
+# registration remain owner-controlled; this workflow never asserts them.
+# A successful preparation workflow is not a production certificate.
+# The bundle wheel vendors aethel/hyba_db/chronos_one_igpu; it must not be
+# co-installed with the singular sibling wheels (top-level name collision).
