@@ -55,7 +55,7 @@ EXCLUDE = (
     "PYTHIA-main/",
     # Preserved standalone package: carries its own src/chronos namespace and
     # is not part of the consolidated import graph (same rule as PYTHIA-main/).
-    "packages/chronos-one-igpu/",
+    "chronus/packages/chronos-one-igpu/",
 )
 CATCH_ALL = {"Exception", "BaseException", "ImportError", "ModuleNotFoundError"}
 

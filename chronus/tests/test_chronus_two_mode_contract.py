@@ -140,7 +140,7 @@ def test_convergence_manifest_pins_original_two_mode_design() -> None:
     import json
     from pathlib import Path
 
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[2]
     manifest = json.loads(
         (root / "chronus" / "CONVERGENCE_MANIFEST.json").read_text(encoding="utf-8")
     )

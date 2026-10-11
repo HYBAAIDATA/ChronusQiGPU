@@ -3,7 +3,7 @@ on:
   pull_request:
     paths:
       - 'chronus/m5_ultra.py'
-      - 'packages/chronos-one-igpu/**'
+      - 'chronus/packages/chronos-one-igpu/**'
       - '.github/workflows/chronos-m5-package.yml'
   workflow_dispatch:
 permissions:
@@ -22,12 +22,12 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: python -m pip install 'build>=1.2,<2' 'twine>=6,<7'
-      - run: python packages/chronos-one-igpu/scripts/verify_m5_package.py --variant ${{ matrix.variant }} --skip-benchmark --contract-rc-sha ${{ github.sha }}
+      - run: python chronus/packages/chronos-one-igpu/scripts/verify_m5_package.py --variant ${{ matrix.variant }} --skip-benchmark --contract-rc-sha ${{ github.sha }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: chronos-m5-${{ matrix.python }}-${{ matrix.variant }}-${{ github.sha }}
-          path: packages/chronos-one-igpu/dist/m5-${{ matrix.variant }}/
+          path: chronus/packages/chronos-one-igpu/dist/m5-${{ matrix.variant }}/
 # No registry credentials or publication step. These are scoped package checks,
 # not the whole-product production-certification gate.
 
@@ -51,7 +51,7 @@ jobs:
       - name: Replay producer evidence on another runner context
         run: |
           HASH=$(sha256sum incoming/wheel-ultra-contract.json | cut -d' ' -f1)
-          python -I packages/chronos-one-igpu/scripts/replay_m5_ultra_evidence.py --source-report incoming/wheel-ultra-contract.json --report-sha256 "$HASH" --rc-sha "${{ github.sha }}" --output cross-runner-replay.json
+          python -I chronus/packages/chronos-one-igpu/scripts/replay_m5_ultra_evidence.py --source-report incoming/wheel-ultra-contract.json --report-sha256 "$HASH" --rc-sha "${{ github.sha }}" --output cross-runner-replay.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

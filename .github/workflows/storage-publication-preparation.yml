@@ -67,7 +67,7 @@ jobs:
         # mla1517 mining coordinator chain).
         run: |
           python -m pip install build twine pytest 'pyyaml>=6,<8' 'numpy>=1.26,<3'
-          python -m pip install ./packages/chronos-one-igpu
+          python -m pip install ./chronus/packages/chronos-one-igpu
       - name: Build unchanged canonical artifacts and execute installed voyages
         run: python packaging/storage-release/build_and_verify.py --product all --source-tests
       - name: Retain actual outcomes, including failed candidate diagnostics

@@ -38,7 +38,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 HERE = Path(__file__).resolve().parent
-REPO = HERE.parent.parent
+REPO = HERE.parents[2]  # chronus/packaging/chronos-core -> repository root
 DIST = HERE / "dist"
 REPOSITORY = "QuantumPhiRedux/PhiMiner"
 
@@ -368,10 +368,10 @@ def installed_check(
     for rel in RELEASE_TESTS:
         dest = tests / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(REPO / "tests" / rel, dest)
+        shutil.copy2(REPO / "chronus" / "tests" / rel, dest)
     (tests / "test_chronus_v33" / "__init__.py").write_text("", encoding="utf-8")
     shutil.copy2(
-        REPO / "tests" / "test_chronus_v33" / "conftest.py",
+        REPO / "chronus" / "tests" / "test_chronus_v33" / "conftest.py",
         tests / "test_chronus_v33" / "conftest.py",
     )
     res = subprocess.run(

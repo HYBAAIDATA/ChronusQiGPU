@@ -13,7 +13,7 @@ def main():
     parser.add_argument("--write", action="store_true")
     args = parser.parse_args()
     package = Path(__file__).resolve().parents[1]
-    source = package.parents[1] / "chronus/m5_ultra.py"
+    source = package.parents[2] / "chronus/m5_ultra.py"
     target = package / "src/chronos_one_igpu/m5_ultra.py"
     original = source.read_bytes()
     if args.write:

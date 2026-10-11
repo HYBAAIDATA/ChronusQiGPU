@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from mining.bitcoin_hasher import BitcoinHasher
-from scripts import measure_chronus
+from chronus.scripts import measure_chronus
 
 
 def test_self_check_accepts_a_correct_device_and_refuses_a_wrong_one():

@@ -9,7 +9,7 @@ from chronus.v33.research_registry import (
     validate_registry,
 )
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 
 _ACADEMIC_KEYS = {
     "qaoa-reference",

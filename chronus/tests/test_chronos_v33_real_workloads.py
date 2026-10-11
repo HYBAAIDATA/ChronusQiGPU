@@ -1,6 +1,6 @@
 # test_chronos_v33_real_workloads.py
 # Chronos GPU -- v3.2 composite elevation + reproducible benchmark protocol
-# (5 Oct 2026). Runs standalone (python tests/test_chronos_v33_real_workloads.py)
+# (5 Oct 2026). Runs standalone (python chronus/tests/test_chronos_v33_real_workloads.py)
 # or under pytest.
 
 import math

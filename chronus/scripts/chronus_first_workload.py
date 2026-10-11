@@ -1,6 +1,6 @@
 """Chronus first workload — executable contract run.
 
-Implements ``chronus.first-workload/1`` (docs/chronus/FIRST_WORKLOAD.md),
+Implements ``chronus.first-workload/1`` (chronus/docs/chronus/FIRST_WORKLOAD.md),
 Chronus's own workload shape end to end:
 
   submit → select adapter → execute → independent recompute →
@@ -20,7 +20,7 @@ nonzero — it never fakes a pass.
 
 Usage::
 
-    python scripts/chronus_first_workload.py [--workdir DIR]
+    python chronus/scripts/chronus_first_workload.py [--workdir DIR]
 
 Exit 0 iff every stage passes.
 """
@@ -36,7 +36,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 

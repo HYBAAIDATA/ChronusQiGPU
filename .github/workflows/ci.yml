@@ -126,7 +126,7 @@ jobs:
         working-directory: turing_universal_quantum_computer
         run: python -m pytest tests -q
       - name: Byte-compile all Python sources
-        run: python -m compileall -q Intelligence core_engine mining hyba lucas pythagoras scripts tests chronus aethel l_hras bench experiments quantum_compute_substrate python_backend tensor
+        run: python -m compileall -q Intelligence core_engine mining hyba pythagoras scripts tests chronus aethel l_hras bench experiments quantum_compute_substrate python_backend tensor
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4

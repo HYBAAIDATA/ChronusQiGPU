@@ -16,7 +16,7 @@ from chronus.virtual_igpu.adapters import CPUEmulatorAdapter
 from chronus.virtual_igpu.runtime import CustodyError, RuntimeDaemon
 
 KEY = bytes(range(32))
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[2]
 HEADER = bytes(range(76)) + bytes(4)
 
 CHILD = """

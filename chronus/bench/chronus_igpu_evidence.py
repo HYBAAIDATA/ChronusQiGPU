@@ -361,8 +361,8 @@ def capture(
         peak_gflops=peak_gflops,
         peak_bandwidth_gbps=peak_bandwidth_gbps,
     )
-    module_path = Path(__file__).resolve().parents[1] / "chronus" / "tensor_compute.py"
-    kernel_path = Path(__file__).resolve().parents[1] / "chronus" / "kernels" / "tensor_ops.cl"
+    module_path = Path(__file__).resolve().parents[2] / "chronus" / "tensor_compute.py"
+    kernel_path = Path(__file__).resolve().parents[2] / "chronus" / "kernels" / "tensor_ops.cl"
     attestation_record = {
         "kind": "software_content_binding",
         "hardware_rooted": False,

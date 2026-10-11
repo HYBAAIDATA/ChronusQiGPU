@@ -1,7 +1,7 @@
 """Generate the canonical byte-level 2+2 -> VRAM Chronus fixture."""
 from pathlib import Path
 import sys
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 from format.chronus1_executable import Executable,Symbol,write
 def i(op,rd,rs,imm):return(op<<26)|(rd<<21)|(rs<<16)|(imm&0xffff)
 def r(op,rd=0,a=0,b=0):return(op<<26)|(rd<<21)|(a<<16)|(b<<11)

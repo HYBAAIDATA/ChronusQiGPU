@@ -34,7 +34,7 @@ def main() -> None:
         "  `turing_universal_quantum_computer/july_compat.py`, plus a retirement",
         "  reason.",
         "- The aggregate gate is `tests/test_july_capability_gap_analysis.py` and",
-        "  `tests/test_july_chronos_mapping.py`: any row whose evidence test is",
+        "  `chronus/tests/test_july_chronos_mapping.py`: any row whose evidence test is",
         "  renamed or deleted fails CI.",
         "",
         "Nothing in this table claims production readiness without a named,",

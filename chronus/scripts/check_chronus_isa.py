@@ -5,7 +5,7 @@ from pathlib import Path
 EXPECTED = ["NOP","MOV","MOVI","ADD","SUB","MUL","FMA","LOAD","STORE","LLOAD","LSTORE","BARRIER","BRA","BRAZ","BRANZ","GET_GID","GET_LID","GET_GSIZE","GET_LSIZE","EXIT"]
 REQUIRED_SECTIONS = ["Encoding","Opcode table","Address spaces","Divergence and reconvergence","Barrier and memory fence","Dispatch built-ins","Traps and fail-closed behavior","Expressibility of tiled matrix multiplication"]
 def main() -> int:
- root=Path(__file__).resolve().parents[1]; spec=json.loads((root/"isa/chronus1.json").read_text()); md=(root/"isa/chronus1.md").read_text()
+ root=Path(__file__).resolve().parents[2]; spec=json.loads((root/"chronus/isa/chronus1.json").read_text()); md=(root/"chronus/isa/chronus1.md").read_text()
  assert spec["instruction_width_bits"]==32 and spec["warp_lanes"]==32
  assert set(spec["opcodes"])==set(EXPECTED) and len(set(spec["opcodes"].values()))==20
  assert spec["memory"]=={"global_address_bits":32,"local_bytes_per_cu":65536,"alignment_bytes":4}

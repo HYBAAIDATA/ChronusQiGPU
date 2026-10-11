@@ -24,7 +24,7 @@ def run(command: list[str]) -> dict[str, object]:
 
 
 def main() -> int:
-    inherited = run([sys.executable, "scripts/check_chronus107.py"])
+    inherited = run([sys.executable, "chronus/scripts/check_chronus107.py"])
     focused = run([sys.executable, "-m", "pytest", "-q", "tests/test_salamander_autonomic.py"])
     payload = {
         "schema": "salamander.autonomic.acceptance.v1",

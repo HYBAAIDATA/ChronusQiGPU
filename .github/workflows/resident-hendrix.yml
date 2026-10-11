@@ -17,11 +17,11 @@ jobs:
       - name: Install canonical and isolated standalone products
         run: |
           bash scripts/ci_install.sh "ml,dev"
-          python -m pip install ./packages/chronos-one-igpu
+          python -m pip install ./chronus/packages/chronos-one-igpu
       - name: Canonical resident geometry and real hash tests
         run: python -m pytest tests/test_exact_geometry.py tests/test_resident_hendrix.py tests/test_production_replacement_attacks.py -q --junitxml=resident-results.xml
       - name: Preserved standalone source regression suite
-        working-directory: packages/chronos-one-igpu
+        working-directory: chronus/packages/chronos-one-igpu
         env:
           PYTHONPATH: src
         run: python -m pytest tests -q --junitxml=standalone-results.xml
@@ -37,7 +37,7 @@ jobs:
           path: |
             resident-results.xml
             canonical-results.xml
-            packages/chronos-one-igpu/standalone-results.xml
+            chronus/packages/chronos-one-igpu/standalone-results.xml
   installed-boundaries:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -57,7 +57,7 @@ jobs:
       - name: Build wheel from canonical source distribution
         run: |
           python -m pip install 'build>=1.2' 'setuptools>=77' wheel 'twine>=6,<7'
-          python -m build --sdist packages/chronos-one-igpu --outdir /tmp/igpu-sdist
+          python -m build --sdist chronus/packages/chronos-one-igpu --outdir /tmp/igpu-sdist
           mkdir /tmp/igpu-rebuild
           tar -xzf /tmp/igpu-sdist/*.tar.gz -C /tmp/igpu-rebuild --strip-components=1
           python -m build --wheel --no-isolation /tmp/igpu-rebuild --outdir /tmp/igpu-wheel
@@ -67,7 +67,7 @@ jobs:
           python -m pip install ./turing_universal_quantum_computer . /tmp/igpu-wheel/*.whl 'pytest>=8,<10'
       - name: Installed artifact boundary and substitution attacks
         run: |
-          python -m pytest packages/chronos-one-igpu/tests/test_reference_boundary.py packages/chronos-one-igpu/tests/test_exact_evolution_replacement.py tests/test_exact_geometry.py tests/test_resident_hendrix.py tests/test_production_replacement_attacks.py -q --junitxml=installed-focused.xml
+          python -m pytest chronus/packages/chronos-one-igpu/tests/test_reference_boundary.py chronus/packages/chronos-one-igpu/tests/test_exact_evolution_replacement.py tests/test_exact_geometry.py tests/test_resident_hendrix.py tests/test_production_replacement_attacks.py -q --junitxml=installed-focused.xml
       - name: Genesis execution and separate-process custody replay
         run: |
           python scripts/pr140_restart_replay.py execute --variant ${{ matrix.variant }} --state-dir /tmp/pr140-voyage

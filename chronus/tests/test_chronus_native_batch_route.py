@@ -156,7 +156,7 @@ def _lease(plan: SearchPlan) -> NonceLease:
 
 def _runtime_config_module():
     path = (
-        Path(__file__).resolve().parents[1]
+        Path(__file__).resolve().parents[2]
         / "chronus"
         / "mla1517_platform"
         / "python"

@@ -2,7 +2,7 @@
 from __future__ import annotations
 import hashlib,json,struct,subprocess,sys,tempfile,zlib
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
+ROOT=Path(__file__).resolve().parents[2];sys.path.insert(0,str(ROOT))
 import numpy as np
 from format.chronus1_executable import Executable,Symbol,HEADER,pack,unpack,write
 from tools.asm import assemble_file,assemble_source,parse_source,tokenize
@@ -18,7 +18,7 @@ def run_cli(cli,exe,a,b):
   td=Path(td);pa=td/'a.bin';pb=td/'b.bin';pa.write_bytes(a.tobytes());pb.write_bytes(b.tobytes())
   out=subprocess.check_output([str(cli),'--load',str(exe),'--global','32,32,1','--local','16,16,1','--memory','3150000','--upload',f'{pa}@0x100000','--upload',f'{pb}@0x200000','--dump','0x300000:1024'],text=True)
   return json.loads(out)
-SOURCE=ROOT/'kernels/matmul_tiled.chronus.s'
+SOURCE=ROOT/'chronus/kernels/matmul_tiled.chronus.s'
 @check('lexer handles full source')
 def _():
  t=tokenize(SOURCE.read_text());assert t[-1].kind=='EOF' and any(x.kind=='REG' for x in t) and any(x.kind=='LBRACKET' for x in t)
@@ -70,17 +70,17 @@ def _():
  b=assemble_file(SOURCE);x=unpack(b);gold=tuple(int(v,16) for v in (ROOT/'tests/fixtures/matmul_tiled.hand.hex').read_text().split());assert x.code==gold
  with tempfile.TemporaryDirectory() as td:
   td=Path(td);assembled=td/'a.chronus';hand=td/'h.chronus';assembled.write_bytes(b);write(hand,Executable(gold,x.entry,x.required_global_bytes,x.flags,x.symbols,x.reconvergence))
-  rng=np.random.default_rng(7);a=rng.normal(size=(32,32)).astype(np.float32);bb=rng.normal(size=(32,32)).astype(np.float32);ra=run_cli(ROOT/'emulator/build/chronus-emu',assembled,a,bb);rh=run_cli(ROOT/'emulator/build/chronus-emu',hand,a,bb);assert ra==rh
+  rng=np.random.default_rng(7);a=rng.normal(size=(32,32)).astype(np.float32);bb=rng.normal(size=(32,32)).astype(np.float32);ra=run_cli(ROOT/'chronus/emulator/build/chronus-emu',assembled,a,bb);rh=run_cli(ROOT/'chronus/emulator/build/chronus-emu',hand,a,bb);assert ra==rh
 @check('I4 assembled matmul equals NumPy float32')
 def _():
  with tempfile.TemporaryDirectory() as td:
-  exe=Path(td)/'m.chronus';exe.write_bytes(assemble_file(SOURCE));rng=np.random.default_rng(1);a=rng.normal(size=(32,32)).astype(np.float32);b=rng.normal(size=(32,32)).astype(np.float32);result=run_cli(ROOT/'emulator/build/chronus-emu',exe,a,b);got=np.asarray(result['dump'],dtype=np.uint32).view(np.float32).reshape(32,32);expected=a@b;err=float(np.max(np.abs(got-expected)));assert err<=1e-5,err
+  exe=Path(td)/'m.chronus';exe.write_bytes(assemble_file(SOURCE));rng=np.random.default_rng(1);a=rng.normal(size=(32,32)).astype(np.float32);b=rng.normal(size=(32,32)).astype(np.float32);result=run_cli(ROOT/'chronus/emulator/build/chronus-emu',exe,a,b);got=np.asarray(result['dump'],dtype=np.uint32).view(np.float32).reshape(32,32);expected=a@b;err=float(np.max(np.abs(got-expected)));assert err<=1e-5,err
 @check('deterministic assembly/execution/evidence')
 def _():
  blobs=[assemble_file(SOURCE) for _ in range(10)];assert len({hashlib.sha256(b).digest() for b in blobs})==1
  closure={'schema':'chronus102-evidence-v1','binary_sha256':hashlib.sha256(blobs[0]).hexdigest(),'i1':True,'i2':True,'i3':True,'i4':True};raw=json.dumps(closure,sort_keys=True,separators=(',',':')).encode();digest=hashlib.sha256(raw).hexdigest();out=ROOT/'artifacts';out.mkdir(exist_ok=True);(out/'chronus102-evidence.json').write_bytes(raw);(out/'chronus102-sha256sums.txt').write_text(f'{digest}  chronus102-evidence.json\n')
 def main():
- subprocess.run([sys.executable,'scripts/check_chronus101.py'],cwd=ROOT,check=True)
+ subprocess.run([sys.executable,'chronus/scripts/check_chronus101.py'],cwd=ROOT,check=True)
  for name,fn in CHECKS:
   try:fn();print(f'{name:52s} PASS')
   except Exception as exc:print(f'{name:52s} FAIL: {exc}');raise

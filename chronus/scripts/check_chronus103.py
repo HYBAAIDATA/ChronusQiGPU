@@ -2,7 +2,7 @@
 from __future__ import annotations
 import hashlib,json,subprocess,sys,tempfile
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
+ROOT=Path(__file__).resolve().parents[2];sys.path.insert(0,str(ROOT))
 import numpy as np
 from compiler import ChronusIR,compile_ir
 from format.chronus1_executable import unpack
@@ -11,14 +11,14 @@ from tools.disasm import disassemble
 
 def execute(comp,uploads,dump):
  with tempfile.TemporaryDirectory() as td:
-  td=Path(td);exe=td/'x.chronus';exe.write_bytes(comp.container);cmd=[str(ROOT/'emulator/build/chronus-emu'),'--load',str(exe),'--global',','.join(map(str,comp.geometry.global_size)),'--local',','.join(map(str,comp.geometry.local_size)),'--memory',str(comp.memory['required_bytes']),'--dump',f'{dump[0]}:{dump[1]}']
+  td=Path(td);exe=td/'x.chronus';exe.write_bytes(comp.container);cmd=[str(ROOT/'chronus/emulator/build/chronus-emu'),'--load',str(exe),'--global',','.join(map(str,comp.geometry.global_size)),'--local',','.join(map(str,comp.geometry.local_size)),'--memory',str(comp.memory['required_bytes']),'--dump',f'{dump[0]}:{dump[1]}']
   for idx,(address,array) in enumerate(uploads):
    p=td/f'in{idx}.bin';p.write_bytes(np.asarray(array,dtype=np.float32).tobytes());cmd+=['--upload',f'{p}@{address}']
   return json.loads(subprocess.check_output(cmd,text=True))
 def floats(words):return np.asarray(words,dtype=np.uint32).view(np.float32)
-def load_case(name):return json.loads((ROOT/'compiler/cases'/name).read_text())
+def load_case(name):return json.loads((ROOT/'chronus/compiler/cases'/name).read_text())
 def main():
- subprocess.run([sys.executable,'scripts/check_chronus102.py'],cwd=ROOT,check=True)
+ subprocess.run([sys.executable,'chronus/scripts/check_chronus102.py'],cwd=ROOT,check=True)
  results={}
  # Type/shape/op fail-closed checks.
  for bad in [

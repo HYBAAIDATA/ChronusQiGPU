@@ -9,9 +9,9 @@ re-derives each contract's status from the repository as it actually is,
 including whether the governing spec is present at all.
 
 Usage:
-    python scripts/audit_chronus_contracts.py
-    python scripts/audit_chronus_contracts.py --report reports/chronus_contract_audit.json
-    python scripts/audit_chronus_contracts.py --only spec,C2,seam
+    python chronus/scripts/audit_chronus_contracts.py
+    python chronus/scripts/audit_chronus_contracts.py --report chronus/reports/chronus_contract_audit.json
+    python chronus/scripts/audit_chronus_contracts.py --only spec,C2,seam
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -429,8 +429,8 @@ def section_tests(a: Audit) -> None:
     print("\n=== contract test suites ===")
     groups = {
         "seam/Chronus": [
-            "tests/test_chronus_seam.py",
-            "tests/test_chronus_scan.py",
+            "chronus/tests/test_chronus_seam.py",
+            "chronus/tests/test_chronus_scan.py",
             "tests/test_seam_axioms.py",
             "tests/test_seam_v2.py",
             "tests/test_device_identity_contract.py",

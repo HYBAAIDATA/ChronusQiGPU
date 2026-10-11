@@ -143,14 +143,14 @@ def main() -> None:
             "chronus/v33/academic",
             "chronus.v33.academic:AcademicChronosEngine",
             [
-                ("unit", "tests/test_july_chronos_mapping.py::test_v33_academic_surface"),
+                ("unit", "chronus/tests/test_july_chronos_mapping.py::test_v33_academic_surface"),
                 (
                     "invariant",
-                    "tests/test_chronus_v33/test_academic.py::test_uhlmann_fidelity_self",
+                    "chronus/tests/test_chronus_v33/test_academic.py::test_uhlmann_fidelity_self",
                 ),
                 (
                     "integration",
-                    "tests/test_chronus_v33/test_academic_integration.py::"
+                    "chronus/tests/test_chronus_v33/test_academic_integration.py::"
                     "test_academic_engine_end_to_end",
                 ),
             ],
@@ -169,14 +169,14 @@ def main() -> None:
             "chronus/v33/memory",
             "chronus.v33.memory:MemoryHierarchy",
             [
-                ("unit", "tests/test_july_chronos_mapping.py::test_v33_memory_surface"),
+                ("unit", "chronus/tests/test_july_chronos_mapping.py::test_v33_memory_surface"),
                 (
                     "invariant",
-                    "tests/test_chronus_v33/test_memory.py::test_table_qram_roundtrip",
+                    "chronus/tests/test_chronus_v33/test_memory.py::test_table_qram_roundtrip",
                 ),
                 (
                     "integration",
-                    "tests/test_chronus_v33/test_memory.py::test_hierarchy_pipeline",
+                    "chronus/tests/test_chronus_v33/test_memory.py::test_hierarchy_pipeline",
                 ),
             ],
             "Exact software models of the memory primitives; no hardware QRAM or "
@@ -192,14 +192,14 @@ def main() -> None:
             "chronus/v33/compression",
             "chronus.v33.compression:run_tebd",
             [
-                ("unit", "tests/test_july_chronos_mapping.py::test_v33_compression_surface"),
+                ("unit", "chronus/tests/test_july_chronos_mapping.py::test_v33_compression_surface"),
                 (
                     "invariant",
-                    "tests/test_july_chronos_mapping.py::test_tebd_step_preserves_state_norm",
+                    "chronus/tests/test_july_chronos_mapping.py::test_tebd_step_preserves_state_norm",
                 ),
                 (
                     "integration",
-                    "tests/test_chronus_v33/test_memory.py::test_mps_ghz_compression",
+                    "chronus/tests/test_chronus_v33/test_memory.py::test_mps_ghz_compression",
                 ),
             ],
             "Finite-bond-dimension TEBD with measured truncation and energy "
@@ -216,14 +216,14 @@ def main() -> None:
             "chronus/v33/control",
             "chronus.v33.control:ClosedLoopController",
             [
-                ("unit", "tests/test_july_chronos_mapping.py::test_v33_control_surface"),
+                ("unit", "chronus/tests/test_july_chronos_mapping.py::test_v33_control_surface"),
                 (
                     "invariant",
-                    "tests/test_july_chronos_mapping.py::test_control_evolution_preserves_norm",
+                    "chronus/tests/test_july_chronos_mapping.py::test_control_evolution_preserves_norm",
                 ),
                 (
                     "integration",
-                    "tests/test_july_chronos_mapping.py::test_closed_loop_step_produces_feedback",
+                    "chronus/tests/test_july_chronos_mapping.py::test_closed_loop_step_produces_feedback",
                 ),
             ],
             "Exact state evolution under declared Hamiltonians and pulses; no "
@@ -239,14 +239,14 @@ def main() -> None:
             "chronus/v33/environment",
             "chronus.v33.environment:CryogenicEnvironment",
             [
-                ("unit", "tests/test_july_chronos_mapping.py::test_v33_environment_surface"),
+                ("unit", "chronus/tests/test_july_chronos_mapping.py::test_v33_environment_surface"),
                 (
                     "invariant",
-                    "tests/test_july_chronos_mapping.py::" "test_amplitude_damping_preserves_trace",
+                    "chronus/tests/test_july_chronos_mapping.py::" "test_amplitude_damping_preserves_trace",
                 ),
                 (
                     "integration",
-                    "tests/test_july_chronos_mapping.py::test_cryogenic_environment_reports",
+                    "chronus/tests/test_july_chronos_mapping.py::test_cryogenic_environment_reports",
                 ),
             ],
             "Exact Kraus/Lindblad channels on declared density matrices; no device "
@@ -262,14 +262,14 @@ def main() -> None:
             "chronus/v33/fields",
             "chronus.v33.fields:CoherentLaser",
             [
-                ("unit", "tests/test_july_chronos_mapping.py::test_v33_fields_surface"),
+                ("unit", "chronus/tests/test_july_chronos_mapping.py::test_v33_fields_surface"),
                 (
                     "invariant",
-                    "tests/test_july_chronos_mapping.py::test_rabi_evolve_preserves_norm",
+                    "chronus/tests/test_july_chronos_mapping.py::test_rabi_evolve_preserves_norm",
                 ),
                 (
                     "integration",
-                    "tests/test_july_chronos_mapping.py::"
+                    "chronus/tests/test_july_chronos_mapping.py::"
                     "test_microwave_drive_rotates_population",
                 ),
             ],
@@ -289,15 +289,15 @@ def main() -> None:
             "chronus/v33",
             "chronus.v33:ChronosEngine",
             [
-                ("unit", "tests/test_july_chronos_mapping.py::test_v33_engine_surface"),
+                ("unit", "chronus/tests/test_july_chronos_mapping.py::test_v33_engine_surface"),
                 (
                     "invariant",
-                    "tests/test_chronus_v33/test_gap_close.py::"
+                    "chronus/tests/test_chronus_v33/test_gap_close.py::"
                     "test_engine_default_path_unchanged_energy",
                 ),
                 (
                     "integration",
-                    "tests/test_chronus_v33/test_gap_close.py::test_engine_emp_path_smoke",
+                    "chronus/tests/test_chronus_v33/test_gap_close.py::test_engine_emp_path_smoke",
                 ),
             ],
             "Engine outputs are computed states and reports; performance numbers "
@@ -313,14 +313,14 @@ def main() -> None:
             "chronus/v33",
             "chronus.v33:QSDLCompiler",
             [
-                ("unit", "tests/test_july_chronos_mapping.py::test_v33_qsdl_surface"),
+                ("unit", "chronus/tests/test_july_chronos_mapping.py::test_v33_qsdl_surface"),
                 (
                     "invariant",
-                    "tests/test_july_chronos_mapping.py::test_qsdl_default_scene_is_stable",
+                    "chronus/tests/test_july_chronos_mapping.py::test_qsdl_default_scene_is_stable",
                 ),
                 (
                     "integration",
-                    "tests/test_july_chronos_mapping.py::"
+                    "chronus/tests/test_july_chronos_mapping.py::"
                     "test_qsdl_compile_produces_scene_objects",
                 ),
             ],
@@ -340,16 +340,16 @@ def main() -> None:
             [
                 (
                     "unit",
-                    "tests/test_chronus_v33/test_gap_close.py::" "test_weak_measurement_self_test",
+                    "chronus/tests/test_chronus_v33/test_gap_close.py::" "test_weak_measurement_self_test",
                 ),
                 (
                     "invariant",
-                    "tests/test_chronus_v33/test_gap_close.py::"
+                    "chronus/tests/test_chronus_v33/test_gap_close.py::"
                     "test_weak_measurement_kraus_preserves_trace",
                 ),
                 (
                     "integration",
-                    "tests/test_chronus_v33/test_gap_close.py::"
+                    "chronus/tests/test_chronus_v33/test_gap_close.py::"
                     "test_bayesian_inversion_high_fidelity_small_epsilon",
                 ),
             ],
@@ -366,15 +366,15 @@ def main() -> None:
             "chronus/v33/theory",
             "chronus.v33.theory:run_unbuilt_maths",
             [
-                ("unit", "tests/test_july_chronos_mapping.py::test_v33_theory_surface"),
+                ("unit", "chronus/tests/test_july_chronos_mapping.py::test_v33_theory_surface"),
                 (
                     "invariant",
-                    "tests/test_chronus_v33/test_research_reconciliation.py::"
+                    "chronus/tests/test_chronus_v33/test_research_reconciliation.py::"
                     "test_every_documented_claim_is_dispositioned_and_sourced",
                 ),
                 (
                     "integration",
-                    "tests/test_chronus_v33/test_research_registry.py::"
+                    "chronus/tests/test_chronus_v33/test_research_registry.py::"
                     "test_research_registry_is_source_linked_and_executable",
                 ),
             ],

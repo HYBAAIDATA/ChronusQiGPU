@@ -37,7 +37,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 HERE = Path(__file__).resolve().parent
-REPO = HERE.parent.parent
+REPO = HERE.parents[2]  # chronus/packaging/chronus-igpu -> repository root
 DIST = HERE / "dist"
 REPOSITORY = "QuantumPhiRedux/PhiMiner"
 
@@ -150,11 +150,25 @@ def stage(root: Path) -> Path:
     src = root / "chronus-igpu-src"
     ignore = shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo", ".DS_Store")
 
+    # Repository components relocated under chronus/ (tooling, docs, evidence,
+    # sibling distributions). They are not part of this distribution's boundary;
+    # lucas/ is staged separately below.
+    relocated = {
+        "abi", "artifacts", "bench", "chronos", "compiler", "cross_verification",
+        "docs", "emulator", "evidence", "format", "isa", "lucas", "manifests",
+        "opencl", "packages", "packaging", "reports", "scripts", "tests", "tools",
+        "Chronus_elevation",
+    }
+
     def chronus_filter(directory: str, names: list[str]) -> set[str]:
         rel = Path(directory).relative_to(REPO / "chronus")
         out = set()
         for n in names:
             r = rel / n
+            if len(r.parts) == 1 and n in relocated:
+                out.add(n)
+            if r.parts[:1] == ("kernels",) and n.endswith(".chronus.s"):
+                out.add(n)  # assembler sources, not the OpenCL payload
             if r == Path("__init__.py"):
                 out.add(n)  # facade owned by hyba-chronos-mathematics
             if r.parts[:1] == ("v33",) or r.parts[:1] == ("mla1517",) or r.parts[:1] == ("mla1517_platform",):
@@ -164,7 +178,7 @@ def stage(root: Path) -> Path:
         return out
 
     shutil.copytree(REPO / "chronus", src / "chronus", ignore=chronus_filter)
-    shutil.copytree(REPO / "lucas", src / "lucas", ignore=ignore)
+    shutil.copytree(REPO / "chronus" / "lucas", src / "lucas", ignore=ignore)
     for name in ("pyproject.toml", "README.md"):
         shutil.copy2(HERE / name, src / name)
     shutil.copy2(REPO / "LICENSE", src / "LICENSE")
@@ -367,7 +381,7 @@ def _dep_wheels(findlinks: Path) -> List[Path]:
     builds = {
         "hyba_chronos_mathematics": REPO / "packaging" / "chronos-core-src" ,
         "hyba_kellogg_tensor": REPO / "packaging" / "kellogg-tensor-src",
-        "hyba_chronos_one_igpu": REPO / "packages" / "chronos-one-igpu",
+        "hyba_chronos_one_igpu": REPO / "chronus" / "packages" / "chronos-one-igpu",
     }
     staged: Dict[str, Path] = {}
     # chronos-core/kellogg stage their sources via their own build scripts;
@@ -378,9 +392,9 @@ def _dep_wheels(findlinks: Path) -> List[Path]:
         if existing:
             staged[key] = existing[-1]
             continue
-        candidates = sorted((REPO / "packaging" / "chronos-core" / "dist").glob(f"{key}-*.whl"))
+        candidates = sorted((REPO / "chronus" / "packaging" / "chronos-core" / "dist").glob(f"{key}-*.whl"))
         candidates += sorted((REPO / "packaging" / "kellogg-tensor" / "dist").glob(f"{key}-*.whl"))
-        candidates += sorted((REPO / "packages" / "chronos-one-igpu" / "dist").glob(f"{key}-*.whl"))
+        candidates += sorted((REPO / "chronus" / "packages" / "chronos-one-igpu" / "dist").glob(f"{key}-*.whl"))
         candidates += sorted(Path("/tmp/pythia-dist").glob(f"{key}-*.whl")) if Path("/tmp/pythia-dist").exists() else []
         if candidates:
             dest = findlinks / candidates[-1].name

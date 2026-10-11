@@ -2,7 +2,7 @@
 from __future__ import annotations
 import hashlib,json,os,subprocess,sys,tempfile
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[1]
+ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT))
 from format.chronus1_executable import Executable,Symbol,load,pack,unpack,write
 from emulator.evidence import canonical,execute
@@ -14,8 +14,8 @@ def expect_cli_trap(cli,path):
  p=subprocess.run([str(cli),"--load",str(path)],cwd=ROOT,capture_output=True,text=True)
  assert p.returncode==2,(p.returncode,p.stdout,p.stderr)
 def main():
- run([sys.executable,"scripts/check_chronus_isa.py"]);run([sys.executable,"scripts/check_chronus_emulator.py"])
- cli=ROOT/"emulator/build/chronus-emu";assert cli.is_file()
+ run([sys.executable,"chronus/scripts/check_chronus_isa.py"]);run([sys.executable,"chronus/scripts/check_chronus_emulator.py"])
+ cli=ROOT/"chronus/emulator/build/chronus-emu";assert cli.is_file()
  code=(i(2,1,0,2),i(2,2,0,2),r(3,3,1,2),i(9,3,0,0),r(63))
  exe=Executable(code,required_global_bytes=1024,symbols=(Symbol("main",0,len(code)*4,1,0),),reconvergence=())
  blob=pack(exe);parsed=unpack(blob);assert parsed==exe and pack(parsed)==blob
@@ -30,7 +30,7 @@ def main():
   assert json.loads(subprocess.check_output([str(cli),"--load",str(good),"--memory","1024","--dump","0:1"],text=True))["dump"]==[4]
   artifact=canonical(record);assert hashlib.sha256(artifact).hexdigest()==digests[0]
   out=ROOT/"artifacts";out.mkdir(exist_ok=True);(out/"chronus101-evidence.json").write_bytes(artifact);(out/"chronus101-sha256sums.txt").write_text(f"{digests[0]}  chronus101-evidence.json\n")
- source="\n".join(p.read_text(errors="ignore") for p in (ROOT/"emulator").rglob("*.cpp"))
+ source="\n".join(p.read_text(errors="ignore") for p in (ROOT/"chronus/emulator").rglob("*.cpp"))
  assert "case Opcode::NOP" in source and "default:" in source and "IllegalOpcode" in source
  assert not any(x in source.lower() for x in ("fallback_to_host","execute_on_host","silent_nop"))
  print("Chronus #101 closure gate: PASS (format, ABI, 1M decode fuzz, 100x replay, evidence hash)")

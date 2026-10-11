@@ -1,6 +1,6 @@
 """Measure what Chronus can do on THIS host, on real data, and emit one JSON artifact.
 
-Run from the repo root:  python scripts/chronus_capability_probe.py [--out PATH] [--quick]
+Run from the repo root:  python chronus/scripts/chronus_capability_probe.py [--out PATH] [--quick]
 
 Honesty rules (same as chronus/README.md):
   * Real data = Bitcoin block headers that reproduce their published block hashes
@@ -25,7 +25,7 @@ import tempfile
 import time
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
 from chronus.mla1517.mining.execution_router import NONCE_ORDER_HENDRIX  # noqa: E402

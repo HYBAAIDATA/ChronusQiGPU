@@ -21,7 +21,7 @@ import venv
 import zipfile
 
 PACKAGE = Path(__file__).resolve().parents[1]
-REPO = PACKAGE.parents[1]
+REPO = PACKAGE.parents[2]  # chronus/packages/<pkg> -> repository root
 TESTS = ("test_m5_model.py", "test_m5_resident.py", "test_m5_quantum.py", "test_execution_binding.py", "test_generic_m5_features.py", "test_m5_ultra_contract.py", "test_m5_exact_opencl.py", "test_m5_release_gates.py", "test_opencl_adapter_replacement.py", "test_m32_public_replacement.py")
 
 

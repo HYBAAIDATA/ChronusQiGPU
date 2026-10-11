@@ -1,7 +1,7 @@
 """Measure what the OpenCL route really sustains on this machine, in one command.
 
-    python scripts/measure_chronus.py                # the default OpenCL device
-    python scripts/measure_chronus.py --device "UHD" --repeats 5 --out chronus.json
+    python chronus/scripts/measure_chronus.py                # the default OpenCL device
+    python chronus/scripts/measure_chronus.py --device "UHD" --repeats 5 --out chronus.json
 
 The simulator's iGPU figures are assumptions; only the device can replace
 them. This runs real SHA256d windows of several sizes on the device (the same
@@ -26,7 +26,7 @@ import sys
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 for path in (ROOT, ROOT / "chronus/mla1517_platform" / "python"):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
