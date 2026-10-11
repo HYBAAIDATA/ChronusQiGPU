@@ -620,7 +620,7 @@
         },
         {
           "kind": "invariant",
-          "nodeid": "tests/test_chronus_gpu_capability_closure.py::test_pipeline_uses_safe_kellogg_serialization"
+          "nodeid": "chronus/tests/test_chronus_gpu_capability_closure.py::test_pipeline_uses_safe_kellogg_serialization"
         },
         {
           "kind": "integration",
@@ -935,15 +935,15 @@
       "evidence_tests": [
         {
           "kind": "unit",
-          "nodeid": "tests/test_chronus_tensor_compute.py::test_chronus_backend_wires_runtime"
+          "nodeid": "chronus/tests/test_chronus_tensor_compute.py::test_chronus_backend_wires_runtime"
         },
         {
           "kind": "invariant",
-          "nodeid": "tests/test_chronus_production_measurement.py::test_device_tensor_measurement_rejects_unverified_output"
+          "nodeid": "chronus/tests/test_chronus_production_measurement.py::test_device_tensor_measurement_rejects_unverified_output"
         },
         {
           "kind": "integration",
-          "nodeid": "tests/test_chronus_production_measurement.py::test_device_tensor_measurement_is_verified_and_device_labelled"
+          "nodeid": "chronus/tests/test_chronus_production_measurement.py::test_device_tensor_measurement_is_verified_and_device_labelled"
         }
       ],
       "claim_boundary": "A real device claim requires runtime hardware and verified output provenance; absence is unavailable, not simulated success.",
@@ -962,15 +962,15 @@
       "evidence_tests": [
         {
           "kind": "unit",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_academic_surface"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_v33_academic_surface"
         },
         {
           "kind": "invariant",
-          "nodeid": "tests/test_chronus_v33/test_academic.py::test_uhlmann_fidelity_self"
+          "nodeid": "chronus/tests/test_chronus_v33/test_academic.py::test_uhlmann_fidelity_self"
         },
         {
           "kind": "integration",
-          "nodeid": "tests/test_chronus_v33/test_academic_integration.py::test_academic_engine_end_to_end"
+          "nodeid": "chronus/tests/test_chronus_v33/test_academic_integration.py::test_academic_engine_end_to_end"
         }
       ],
       "claim_boundary": "Software model facades executing deterministic computations; no lab hardware access or published-result replication is claimed.",
@@ -989,15 +989,15 @@
       "evidence_tests": [
         {
           "kind": "unit",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_memory_surface"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_v33_memory_surface"
         },
         {
           "kind": "invariant",
-          "nodeid": "tests/test_chronus_v33/test_memory.py::test_table_qram_roundtrip"
+          "nodeid": "chronus/tests/test_chronus_v33/test_memory.py::test_table_qram_roundtrip"
         },
         {
           "kind": "integration",
-          "nodeid": "tests/test_chronus_v33/test_memory.py::test_hierarchy_pipeline"
+          "nodeid": "chronus/tests/test_chronus_v33/test_memory.py::test_hierarchy_pipeline"
         }
       ],
       "claim_boundary": "Exact software models of the memory primitives; no hardware QRAM or physical qubit array is claimed.",
@@ -1016,15 +1016,15 @@
       "evidence_tests": [
         {
           "kind": "unit",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_compression_surface"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_v33_compression_surface"
         },
         {
           "kind": "invariant",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_tebd_step_preserves_state_norm"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_tebd_step_preserves_state_norm"
         },
         {
           "kind": "integration",
-          "nodeid": "tests/test_chronus_v33/test_memory.py::test_mps_ghz_compression"
+          "nodeid": "chronus/tests/test_chronus_v33/test_memory.py::test_mps_ghz_compression"
         }
       ],
       "claim_boundary": "Finite-bond-dimension TEBD with measured truncation and energy reports; convergence claims come from the run report, not assertion.",
@@ -1043,15 +1043,15 @@
       "evidence_tests": [
         {
           "kind": "unit",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_control_surface"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_v33_control_surface"
         },
         {
           "kind": "invariant",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_control_evolution_preserves_norm"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_control_evolution_preserves_norm"
         },
         {
           "kind": "integration",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_closed_loop_step_produces_feedback"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_closed_loop_step_produces_feedback"
         }
       ],
       "claim_boundary": "Exact state evolution under declared Hamiltonians and pulses; no physical control electronics is implied.",
@@ -1070,15 +1070,15 @@
       "evidence_tests": [
         {
           "kind": "unit",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_environment_surface"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_v33_environment_surface"
         },
         {
           "kind": "invariant",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_amplitude_damping_preserves_trace"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_amplitude_damping_preserves_trace"
         },
         {
           "kind": "integration",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_cryogenic_environment_reports"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_cryogenic_environment_reports"
         }
       ],
       "claim_boundary": "Exact Kraus/Lindblad channels on declared density matrices; no device noise characterization is claimed.",
@@ -1097,15 +1097,15 @@
       "evidence_tests": [
         {
           "kind": "unit",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_fields_surface"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_v33_fields_surface"
         },
         {
           "kind": "invariant",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_rabi_evolve_preserves_norm"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_rabi_evolve_preserves_norm"
         },
         {
           "kind": "integration",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_microwave_drive_rotates_population"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_microwave_drive_rotates_population"
         }
       ],
       "claim_boundary": "Deterministic field-driven state evolution in software; no lab instruments are driven.",
@@ -1124,15 +1124,15 @@
       "evidence_tests": [
         {
           "kind": "unit",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_engine_surface"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_v33_engine_surface"
         },
         {
           "kind": "invariant",
-          "nodeid": "tests/test_chronus_v33/test_gap_close.py::test_engine_default_path_unchanged_energy"
+          "nodeid": "chronus/tests/test_chronus_v33/test_gap_close.py::test_engine_default_path_unchanged_energy"
         },
         {
           "kind": "integration",
-          "nodeid": "tests/test_chronus_v33/test_gap_close.py::test_engine_emp_path_smoke"
+          "nodeid": "chronus/tests/test_chronus_v33/test_gap_close.py::test_engine_emp_path_smoke"
         }
       ],
       "claim_boundary": "Engine outputs are computed states and reports; performance numbers come only from measured paths.",
@@ -1151,15 +1151,15 @@
       "evidence_tests": [
         {
           "kind": "unit",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_qsdl_surface"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_v33_qsdl_surface"
         },
         {
           "kind": "invariant",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_qsdl_default_scene_is_stable"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_qsdl_default_scene_is_stable"
         },
         {
           "kind": "integration",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_qsdl_compile_produces_scene_objects"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_qsdl_compile_produces_scene_objects"
         }
       ],
       "claim_boundary": "The compiler validates declared scenes; scene contents are configuration, not measured hardware evidence.",
@@ -1178,15 +1178,15 @@
       "evidence_tests": [
         {
           "kind": "unit",
-          "nodeid": "tests/test_chronus_v33/test_gap_close.py::test_weak_measurement_self_test"
+          "nodeid": "chronus/tests/test_chronus_v33/test_gap_close.py::test_weak_measurement_self_test"
         },
         {
           "kind": "invariant",
-          "nodeid": "tests/test_chronus_v33/test_gap_close.py::test_weak_measurement_kraus_preserves_trace"
+          "nodeid": "chronus/tests/test_chronus_v33/test_gap_close.py::test_weak_measurement_kraus_preserves_trace"
         },
         {
           "kind": "integration",
-          "nodeid": "tests/test_chronus_v33/test_gap_close.py::test_bayesian_inversion_high_fidelity_small_epsilon"
+          "nodeid": "chronus/tests/test_chronus_v33/test_gap_close.py::test_bayesian_inversion_high_fidelity_small_epsilon"
         }
       ],
       "claim_boundary": "Statistical estimation over simulated measurement records; no physical meter is read.",
@@ -1205,15 +1205,15 @@
       "evidence_tests": [
         {
           "kind": "unit",
-          "nodeid": "tests/test_july_chronos_mapping.py::test_v33_theory_surface"
+          "nodeid": "chronus/tests/test_july_chronos_mapping.py::test_v33_theory_surface"
         },
         {
           "kind": "invariant",
-          "nodeid": "tests/test_chronus_v33/test_research_reconciliation.py::test_every_documented_claim_is_dispositioned_and_sourced"
+          "nodeid": "chronus/tests/test_chronus_v33/test_research_reconciliation.py::test_every_documented_claim_is_dispositioned_and_sourced"
         },
         {
           "kind": "integration",
-          "nodeid": "tests/test_chronus_v33/test_research_registry.py::test_research_registry_is_source_linked_and_executable"
+          "nodeid": "chronus/tests/test_chronus_v33/test_research_registry.py::test_research_registry_is_source_linked_and_executable"
         }
       ],
       "claim_boundary": "Theory reports enumerate declared material with measured statuses; they assert no unmeasured result.",

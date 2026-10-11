@@ -35,8 +35,8 @@ CHILD_MARKER = "CHRONUS_CONFORMANCE_CHILD"
 
 #: Software tests that must pass before hardware evidence means anything.
 SOFTWARE_TEST_TARGETS = (
-    "tests/test_chronus_tensor_compute.py",
-    "tests/test_chronus_igpu_runtime.py",
+    "chronus/tests/test_chronus_tensor_compute.py",
+    "chronus/tests/test_chronus_igpu_runtime.py",
 )
 
 _PASS = "PASS"

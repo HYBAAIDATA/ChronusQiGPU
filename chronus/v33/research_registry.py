@@ -50,7 +50,7 @@ ACADEMIC_CASES: tuple[ResearchCase, ...] = (
         source_url="https://arxiv.org/abs/1411.4028",
         implementation="chronus.v33.academic.nist.NIST_Benchmark",
         invariant="p=1 two-vertex MaxCut QAOA cost reduction is positive",
-        test_node="tests/test_chronus_v33/test_academic.py::test_nist_benchmark_determinism_score",
+        test_node="chronus/tests/test_chronus_v33/test_academic.py::test_nist_benchmark_determinism_score",
     ),
     ResearchCase(
         key="surface-code-single-error",
@@ -59,7 +59,7 @@ ACADEMIC_CASES: tuple[ResearchCase, ...] = (
         source_url="https://arxiv.org/abs/1208.0928",
         implementation="chronus.v33.academic.caltech.Caltech_Surface_Code",
         invariant="distance-3 reference decoder corrects a single injected Pauli error",
-        test_node="tests/test_chronus_v33/test_academic.py::test_surface_code_decodes_single_error",
+        test_node="chronus/tests/test_chronus_v33/test_academic.py::test_surface_code_decodes_single_error",
     ),
     ResearchCase(
         key="tensor-network-bell",
@@ -68,7 +68,7 @@ ACADEMIC_CASES: tuple[ResearchCase, ...] = (
         source_url="https://arxiv.org/abs/2310.03978",
         implementation="chronus.v33.academic.tensor_compression.MatrixProductState",
         invariant="Bell-state dense reconstruction and one-bit cut entropy agree",
-        test_node="tests/test_chronus_v33/test_academic.py::test_mps_bell_state",
+        test_node="chronus/tests/test_chronus_v33/test_academic.py::test_mps_bell_state",
     ),
     ResearchCase(
         key="qsvt-unitarity",
@@ -77,7 +77,7 @@ ACADEMIC_CASES: tuple[ResearchCase, ...] = (
         source_url="https://arxiv.org/abs/1806.01838",
         implementation="chronus.v33.memory.qsvt_from_block_enc",
         invariant="small block-encoded QSVT construction remains unitary",
-        test_node="tests/test_chronus_v33/test_memory.py::test_qsvt_unitary",
+        test_node="chronus/tests/test_chronus_v33/test_memory.py::test_qsvt_unitary",
     ),
 )
 
