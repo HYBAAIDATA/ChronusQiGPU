@@ -46,5 +46,5 @@ jobs:
       - name: Run canonical Python tests
         working-directory: chronus/mla1517_platform
         env:
-          PYTHONPATH: python:../..
+          PYTHONPATH: python:../..:..  # ..: first-party pkgs relocated under chronus/ (lucas, compiler, ...)
         run: python -m pytest python -q -rs
