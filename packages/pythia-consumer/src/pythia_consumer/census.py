@@ -11,6 +11,7 @@ import importlib.metadata
 import importlib.util
 import json
 import platform
+import re
 import subprocess
 import urllib.request
 from typing import Any, Dict, Optional
@@ -19,6 +20,20 @@ from . import __version__
 
 _OPTIONAL_DEPS = ("numpy", "mlx.core", "coremltools", "pyopencl")
 _OPENCL_FRAMEWORK = "/System/Library/Frameworks/OpenCL.framework"
+
+# Mac hardware facts for the consumer device offers. Parsed from
+# system_profiler output — serial number / UUID are never collected.
+_MAC_HW_RE = re.compile(
+    r"^\s*(Model Name|Model Identifier|Chip|Memory):\s*(.+?)\s*$")
+_MAC_FAMILIES = {
+    "macbook": "macbook", "macbook pro": "macbook", "macbook air": "macbook",
+    "imac": "imac", "mac studio": "mac-studio", "mac mini": "mac-mini",
+    "mac pro": "mac-pro",
+}
+# Unified-memory threshold (GiB) for the large-memory offer tier — Mac
+# Studio-class configurations whose shared memory holds exact-state widths
+# discrete GPUs cannot. Matches POSITIONING.md surfaces table.
+_LARGE_MEMORY_GIB = 96
 
 # Sibling HYBA distributions the consumer surface can leverage. Presence is
 # detected via installed distribution metadata plus module importability —
@@ -69,6 +84,70 @@ def _metal_present() -> bool:
         return "Metal" in out
     except Exception:
         return False
+
+
+def _sysctl_int(key: str) -> Optional[int]:
+    try:
+        out = subprocess.run(
+            ["sysctl", "-n", key], capture_output=True, text=True, timeout=5,
+        ).stdout.strip()
+        return int(out) if out else None
+    except Exception:
+        return None
+
+
+def _mac_hardware() -> Dict[str, str]:
+    """Model/chip facts from system_profiler. Never returns serial or UUID."""
+    if platform.system() != "Darwin":
+        return {}
+    try:
+        out = subprocess.run(
+            ["system_profiler", "SPHardwareDataType"],
+            capture_output=True, text=True, timeout=10,
+        ).stdout
+    except Exception:
+        return {}
+    fields: Dict[str, str] = {}
+    for line in out.splitlines():
+        m = _MAC_HW_RE.match(line)
+        if m:
+            fields[m.group(1)] = m.group(2)
+    return fields
+
+
+def offer_tier(memory_gib: Optional[float]) -> Optional[str]:
+    """Memory-tier mapping for the consumer offers.
+
+    Apple Silicon unified memory is shared between CPU and GPU — large
+    configurations hold exact-state widths discrete GPUs cannot. Below 96 GiB
+    is the standard PYTHIA Node tier (MacBook, iMac, Mac mini); at or above
+    96 GiB is the large-memory tier (Mac Studio class).
+    """
+    if memory_gib is None:
+        return None
+    return ("pythia-node-large-memory" if memory_gib >= _LARGE_MEMORY_GIB
+            else "pythia-node")
+
+
+def device_block() -> Dict[str, Any]:
+    """Detected device facts for the consumer offers. Detected facts only —
+    model strings come straight from system_profiler; no marketing claims."""
+    if platform.system() != "Darwin":
+        return {"family": "non-apple", "offer_tier": None, "unified_memory": False}
+    hw = _mac_hardware()
+    mem_bytes = _sysctl_int("hw.memsize")
+    memory_gib = round(mem_bytes / (1 << 30), 1) if mem_bytes else None
+    model_name = hw.get("Model Name")
+    unified = platform.machine().lower() in ("arm64", "aarch64")
+    return {
+        "family": _MAC_FAMILIES.get((model_name or "").lower(), "mac" if model_name else "unknown"),
+        "model_name": model_name,
+        "model_id": hw.get("Model Identifier"),
+        "chip": hw.get("Chip") or _apple_chip(),
+        "memory_gib": memory_gib,
+        "unified_memory": unified,
+        "offer_tier": offer_tier(memory_gib) if unified else None,
+    }
 
 
 def _opencl_present() -> bool:
@@ -145,6 +224,7 @@ def node_status(api_url: Optional[str] = None) -> Dict[str, Any]:
             "apple_silicon": apple_silicon,
             "chip": _apple_chip(),
         },
+        "device": device_block(),
         "backends": {
             "metal": apple_silicon and _metal_present(),
             "mlx": apple_silicon and deps["mlx_core"],

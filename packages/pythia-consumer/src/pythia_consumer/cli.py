@@ -44,6 +44,10 @@ def main(argv=None) -> int:
     p = sub.add_parser("console", help="serve the local console UI")
     p.add_argument("--port", type=int, default=8777)
     p.add_argument("--api", metavar="URL", help="control API base URL to probe")
+    p.add_argument("--lan", action="store_true",
+                   help="bind 0.0.0.0 so LAN devices (iPhone companion at "
+                        "/companion) can reach the console — no auth; "
+                        "exposes read-only census and stateless verify")
 
     args = ap.parse_args(argv)
 
@@ -70,6 +74,6 @@ def main(argv=None) -> int:
         return 0 if verdict["verdict"] == "pass" else 1
     if args.cmd == "console":
         from .console import serve
-        serve(port=args.port, api_url=args.api)
+        serve(port=args.port, api_url=args.api, lan=args.lan)
         return 0
     return 2

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
@@ -19,6 +20,15 @@ from typing import Any, Dict, Optional
 from . import census, verify
 
 _MAX_BODY = 1 << 20
+
+# iPhone companion PWA assets — static files inside the package, served at
+# /companion. Read-only; the page's verification runs client-side in JS.
+_COMPANION_TYPES = {
+    ".html": "text/html; charset=utf-8",
+    ".js": "text/javascript; charset=utf-8",
+    ".webmanifest": "application/manifest+json",
+    ".png": "image/png",
+}
 
 
 def intelligence_status(timeout: float = 3.0) -> Dict[str, Any]:
@@ -46,14 +56,32 @@ def make_handler(api_url: Optional[str]):
             self.wfile.write(body)
 
         def do_GET(self):  # noqa: N802
-            if self.path in ("/", "/console", "/index.html"):
+            path = self.path.split("?", 1)[0].split("#", 1)[0]
+            if path in ("/", "/console", "/index.html"):
                 self._send(files("pythia_consumer").joinpath("console.html").read_bytes(),
                            ctype="text/html; charset=utf-8")
-            elif self.path == "/api/status":
+            elif path == "/api/status":
                 self._send(census.node_status(api_url=api_url))
-            elif self.path == "/api/intelligence":
+            elif path == "/api/intelligence":
                 self._send(intelligence_status())
+            elif path == "/companion" or path == "/companion/":
+                self._send(_companion_asset("index.html"),
+                           ctype="text/html; charset=utf-8")
+            elif path.startswith("/companion/"):
+                self._serve_companion(path[len("/companion/"):])
             else:
+                self._send({"error": "not found"}, 404)
+
+        def _serve_companion(self, name: str):
+            if not name or "/" in name or ".." in name:
+                return self._send({"error": "not found"}, 404)
+            ext = os.path.splitext(name)[1]
+            ctype = _COMPANION_TYPES.get(ext)
+            if ctype is None:
+                return self._send({"error": "not found"}, 404)
+            try:
+                self._send(_companion_asset(name), ctype=ctype)
+            except FileNotFoundError:
                 self._send({"error": "not found"}, 404)
 
         def do_POST(self):  # noqa: N802
@@ -74,9 +102,33 @@ def make_handler(api_url: Optional[str]):
     return Handler
 
 
-def serve(port: int = 8777, api_url: Optional[str] = None) -> None:
-    server = ThreadingHTTPServer(("127.0.0.1", port), make_handler(api_url))
+def _companion_asset(name: str) -> bytes:
+    return files("pythia_consumer").joinpath("companion").joinpath(name).read_bytes()
+
+
+def _lan_ip() -> Optional[str]:
+    """Best-effort LAN address; the UDP connect sends no traffic."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("192.0.2.1", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return None
+
+
+def serve(port: int = 8777, api_url: Optional[str] = None, lan: bool = False) -> None:
+    host = "0.0.0.0" if lan else "127.0.0.1"
+    server = ThreadingHTTPServer((host, port), make_handler(api_url))
     print(f"PYTHIA console → http://127.0.0.1:{port}  (Ctrl-C to stop)")
+    if lan:
+        ip = _lan_ip()
+        print(f"LAN serving enabled — read-only census + stateless receipt "
+              f"verify are now reachable by other devices (no auth).")
+        if ip:
+            print(f"iPhone companion: http://{ip}:{port}/companion  "
+                  f"(Share → Add to Home Screen)")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

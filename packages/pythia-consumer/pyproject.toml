@@ -31,7 +31,7 @@ where = ["src"]
 include = ["pythia_consumer*", "aethel*", "hyba_db*", "chronos_one_igpu*"]
 
 [tool.setuptools.package-data]
-pythia_consumer = ["console.html", "bundled_products.json"]
+pythia_consumer = ["console.html", "bundled_products.json", "companion/*"]
 chronos_one_igpu = ["igpu/spec/*.json", "igpu/spec/*.md", "igpu/kernels/*.cl", "igpu/spec/source_notes/*.txt", "igpu/spec/source_notes/*.json", "igpu/native/*.c"]
 
 [project.optional-dependencies]

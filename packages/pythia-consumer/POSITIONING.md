@@ -29,11 +29,11 @@ Honesty is a marketing asset, not a constraint: *"we measure, we don't claim."*
 
 ## Surfaces
 
-| Device | Product | Role |
-|---|---|---|
-| iPhone | Companion app (PWA/native shell over control API) | Receipt wallet, monitoring, certificate inspection — verification-first by App Store necessity, which is our strongest surface anyway |
-| MacBook / iMac | PYTHIA Node — bundled wheel (iGPU + OVID + THESEUS) | Full consumer node; MLX/Metal where available, honest CPU fallback |
-| Mac Studio / high-RAM Macs | PYTHIA Node (large-memory tier) | Unified memory 128–192 GB enables exact-state widths discrete GPUs can't hold — a niche NVIDIA doesn't serve |
+| Device | Product | Role | State |
+|---|---|---|---|
+| iPhone | Companion PWA at `/companion` (`pythia console --lan`) | Receipt wallet (localStorage), on-device JS verification at parity with the Python contract, node monitor | **built** |
+| MacBook / iMac | PYTHIA Node — bundled wheel (iGPU + OVID + THESEUS) + `PYTHIA.app` | Full consumer node; MLX/Metal where available, honest CPU fallback | **built** (unsigned; signing/notarisation owner-gated) |
+| Mac Studio / high-RAM Macs | PYTHIA Node (large-memory tier) | Unified memory ≥96 GiB → `pythia-node-large-memory` in census — exact-state widths discrete GPUs can't hold | **detected in census**; tier-specific productisation still open |
 
 ## Tiers
 

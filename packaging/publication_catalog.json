@@ -282,7 +282,7 @@
       "source_metadata_version": "1.0.0",
       "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
       "preserved_interface_fingerprints": {
-        "packages/pythia-consumer/pyproject.toml": "afcee518999459ca1178c4b338403ba6e0435891d717f4793b637a36fb5a18f4"
+        "packages/pythia-consumer/pyproject.toml": "9a87574b493f2f077d7381e9f2579c55a1e72308ed45649d49f2fd84081bb5ee"
       }
     }
   ],
