@@ -1,5 +1,17 @@
 > Current publication names are defined in [HYBA_PUBLICATION_CATALOG.md](HYBA_PUBLICATION_CATALOG.md). Historical candidate names/SHA evidence below are not qualification for the renamed packages.
 
+> **2026-10-11 — naming reconciliation executed.** All canonical manifests now
+> carry the approved `hyba-<system>-<capability>` identity and the first-public
+> `1.0.0` version (`chronos-one-igpu` → `hyba-chronos-one-igpu`; the 0.x/3.x
+> development versions were reconciled, not skipped). The catalog checker is
+> green and `hyba-chronus-igpu` is registered as a scaffolded candidate.
+> Local artifact gates re-verified on this head: `hyba-kellogg-tensor`,
+> `hyba-chronos-mathematics`, `hyba-toe-intelligence` and `hyba-chronus-igpu`
+> all produce `VERIFIED` artefacts via `packaging/*/build_and_verify.py`.
+> **None of this is registry qualification or upload authorisation** — the
+> commit-bound CI verdicts, trusted-publisher configuration and TestPyPI/PyPI
+> execution receipts below remain the only publication evidence.
+
 ## Qualification status after integrated baseline review
 
 Baseline audited: `c63ff4d7e9d25135b8e2ca17f84da6714d23d5b7`. KELLOGG's recorded

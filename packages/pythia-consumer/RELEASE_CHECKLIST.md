@@ -54,6 +54,6 @@ marketing assertion — each row names the artifact or command that proves it.
 
 ## Known limitations carried into release
 
-- `packaging/publication_catalog.json` checker reports pre-existing lane-owned errors + expected post-audit baseline count drift — not caused by this package.
+- `packaging/publication_catalog.json` checker: previously reported post-audit baseline drift; resolved by the 2026-10-11 identity reconciliation (`hyba-chronos-one-igpu` rename + 1.0.0 first-public versions). Catalog now PASSes.
 - Unverified fields (`slot_address`, `truth_class`, etc.) remain forgeable — documented, assertion-pinned.
 - App is 124 MB (full standalone runtime); slimming is a future increment.
