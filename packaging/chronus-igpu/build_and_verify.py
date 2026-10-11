@@ -78,17 +78,21 @@ REQUIRED_IMPORTS = (
 
 # Shipped modules that import umbrella-only packages eagerly — must raise
 # ModuleNotFoundError naming an umbrella package, never a fake success.
+# (chronus.paradigm itself is a lazy PEP 562 facade — the eager umbrella
+# import lives in chronus.paradigm.thesis.)
 UMBRELLA_BOUND = (
     "chronus.fabric",          # hyba.inventory
     "chronus.mining_bridge",   # quantum_compute_substrate
-    "chronus.paradigm",        # al_haras.refuted_claims (package __init__)
+    "chronus.paradigm.thesis", # al_haras.refuted_claims
 )
 
-# Modules that must be absent from the wheel entirely (namespace boundary).
+# Modules that must be absent from the installed environment entirely
+# (namespace boundary). chronus.v33 is deliberately NOT listed: it is absent
+# from this wheel (enforced in inspect_wheel) but legitimately provided by
+# the declared hyba-chronos-mathematics dependency in the installed env.
 ABSENT_MODULES = (
     "chronus.mla1517",
     "chronus.mla1517.mining",
-    "chronus.v33",
 )
 
 SECRET_PATTERNS = (
@@ -270,7 +274,7 @@ reqs = sorted(
     r.split(">")[0].split("<")[0].split("=")[0].strip().lower()
     for r in (importlib.metadata.requires(DIST) or []) if "extra ==" not in r
 )
-assert reqs == ["hyba-chronos-one-igpu", "hyba-chronos-mathematics", "hyba-kellogg-tensor", "numpy"], reqs
+assert reqs == ["hyba-chronos-mathematics", "hyba-chronos-one-igpu", "hyba-kellogg-tensor", "numpy"], reqs
 
 failed = {}
 for name in REQUIRED:
@@ -284,11 +288,15 @@ for name in REQUIRED:
 assert not failed, failed
 
 for gone in ABSENT:
-    assert importlib.util.find_spec(gone) is None, gone
+    try:
+        spec = importlib.util.find_spec(gone)
+    except ModuleNotFoundError:
+        spec = None  # a missing parent also means the module is absent
+    assert spec is None, gone
 
 # Umbrella-bound modules must fail closed on the missing dependency, not on
 # an internal bug: ModuleNotFoundError naming an umbrella package.
-UMBRELLA_PKGS = ("hyba", "aethel", "toe", "Intelligence", "mining", "turing",
+UMBRELLA_PKGS = ("hyba", "aethel", "al_haras", "toe", "Intelligence", "mining", "turing",
                  "quantum_compute_substrate", "chronus.mla1517", "salamander")
 bound_failures = {}
 for name in UMBRELLA_BOUND:
