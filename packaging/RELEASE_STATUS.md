@@ -43,6 +43,28 @@ distribution candidate is `euclid-engine==1.0.0`, containing research/runtime
 17.0.0 and the unchanged `euclid-v17-research` CLI. Neither statement is registry
 publication evidence. Historical notes below are not a frozen-RC certificate.
 
+## Portfolio release control plane (11 October 2026)
+
+`packaging/portfolio_release_audit.py` now derives one evidence-backed state per
+publish-order product — `BLOCKED → QUALIFIED → TESTPYPI_VERIFIED → PYPI_VERIFIED
+→ RELEASE_COMPLETE` — from the six release workflows' declared contract, local
+verdicts, executed receipts under `release-evidence/`, and live registry state.
+No state is manually assigned. `--sha` performs a frozen-RC audit that rejects
+evidence bound to any other commit; the default latest-evidence mode reports each
+verdict's bound SHA and flags staleness against HEAD without discarding it.
+Dependency gates require every declared `hyba-*` floor to satisfy its specifier
+on the target registry; an immutable PyPI presence without executed smoke
+evidence is reported as an incident (`published_without_executed_pypi_evidence`
+/ `pypi_smoke_failure`) requiring remediation, not as a rollback or a success.
+CI runs it via `.github/workflows/portfolio-release-audit.yml`; unit coverage in
+`tests/test_portfolio_release_audit.py`.
+
+Current derived state (latest-evidence mode, offline): all six products
+`QUALIFIED` from real local gates; zero `TESTPYPI_VERIFIED`+ because no
+publication receipts or registry presence exist yet. External prerequisites
+remain: `testpypi`/`pypi` GitHub environments and per-product pending trusted
+publishers on both indexes.
+
 # Product release status
 
 Last updated 7 October 2026 for the canonical repository
