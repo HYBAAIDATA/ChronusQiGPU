@@ -13,6 +13,10 @@ services:
       PYTHIA_WEB_ROOT: /app/dist/public
       # Required: control is closed without it (openssl rand -hex 32).
       EUCLID_ADMIN_API_KEY: "${EUCLID_ADMIN_API_KEY:?set EUCLID_ADMIN_API_KEY}"
+      # Required: the startup contract refuses to boot without a Stratum identity.
+      MLA1517_STRATUM_USER: "${MLA1517_STRATUM_USER:?set MLA1517_STRATUM_USER (account.worker)}"
+      # 32-byte hex HMAC secret for worker heartbeats (openssl rand -hex 32).
+      PYTHIA_IDENTITY_HMAC_SECRET: "${PYTHIA_IDENTITY_HMAC_SECRET:-}"
       HYBA_REQUIRE_HYBA: "${HYBA_REQUIRE_HYBA:-1}"
       HYBA_DEVICE_ALIAS: "${HYBA_DEVICE_ALIAS:-}"
     devices:

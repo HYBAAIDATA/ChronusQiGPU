@@ -33,3 +33,6 @@ data
 # Desktop / temp files
 *.tmp
 *.bak
+
+# Development-only signing material never enters an image (dev-signing.key.README).
+manifests/dev-signing.key
