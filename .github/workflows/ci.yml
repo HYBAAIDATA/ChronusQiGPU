@@ -60,8 +60,17 @@ jobs:
           rm -rf dist /tmp/pythia-wheel-smoke
           python -m pip wheel . --no-deps --wheel-dir dist
           python -m pip wheel ./turing_universal_quantum_computer --no-deps --wheel-dir dist
+          # In-tree core dependencies (never on PyPI): chronos-one-igpu, and
+          # kellogg-tensor staged exactly as scripts/ci_install.sh stages it.
+          python -m pip wheel ./chronus/packages/chronos-one-igpu --no-deps --wheel-dir dist
+          KELLOGG_STAGE="$(mktemp -d)/kellogg-tensor"
+          mkdir -p "$KELLOGG_STAGE"
+          cp -r kellogg LICENSE packaging/kellogg-tensor/pyproject.toml \
+                packaging/kellogg-tensor/README.md "$KELLOGG_STAGE/"
+          python -m pip wheel "$KELLOGG_STAGE" --no-deps --wheel-dir dist
           python -m venv /tmp/pythia-wheel-smoke
-          /tmp/pythia-wheel-smoke/bin/pip install --quiet --no-deps numpy dist/*.whl
+          # Resolve declared runtime deps normally; in-tree ones come from dist/.
+          /tmp/pythia-wheel-smoke/bin/pip install --quiet --find-links dist dist/*.whl
           cd /tmp
           /tmp/pythia-wheel-smoke/bin/python - <<'PY'
           import json
