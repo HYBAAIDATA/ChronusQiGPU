@@ -6,6 +6,39 @@
 
 ---
 
+## Owner-Declared Canonical Direction
+
+**This document is governed by [`OWNER_DECLARATIONS.md`](./OWNER_DECLARATIONS.md).**
+Owner declarations supersede any conflicting text in this map and in the
+repository; where conflict exists, the text is stale and must be updated.
+`DECLARED` = owner's canonical direction. `MEASURED` = evidence status toward
+it — progress, not counterclaim.
+
+1. **Chronus is the owner's GPU — exponential potential, limited by
+   mathematics only.** The execution plane's ceiling is set by the exact-lane
+   representation model, not by host silicon.
+2. **Lucas scales everything — and Lucas scales the iGPU.** Lucas is the
+   execution scale model, not a budget convention.
+3. **The iGPU is independent of the host GPU. Two modes:** Chronus climbs
+   into and scales a certified host GPU, **or** Chronus operates
+   independently as the execution plane.
+4. **The TRIAD — Chronus, Theseus, Ovid — is one system. Pulvini folds.**
+   Pulvini produces the folded working form; Theseus stores it; Ovid
+   documents where it is stored and how it is searched — Geodesic search;
+   Chronus computes on it.
+5. **Substrate vocabulary:** Lucas and Pisot **scale**; Zeckendorf and Binet
+   **fold**; Fibonacci and Cassini **store**.
+6. **Quantum comes from mathematics — substrate- and hardware-agnostic.**
+   No simulations, no approximations, no heuristics, nothing classical
+   dressed as quantum. The entire library — entanglement, QAOA, VQE, quantum
+   walks, and the families around them — is implemented from first
+   principles; performance follows from real implementation.
+
+Section 20 below anchors each declaration to the code surfaces that realise
+it and records the evidence status of each.
+
+---
+
 ## 0. Statement of the Principle
 
 A single mathematical object — the golden ratio φ = (1+√5)/2 and its algebraic family — is the seed from which the entire computational substrate grows. The propagation chain is:
@@ -1771,3 +1804,99 @@ reach 60/60 because float `sum()` became compensated. Exact escalation is what m
 interpreter-invariant.
 
 Claim register: `docs/toe/CLAIM_REGISTER.md` (machine-readable `toe/CLAIM_REGISTER.json`).
+
+---
+
+## Section 20 — Anchors for the Owner-Declared Direction (2026-10-11)
+
+This section is the anchored elaboration of the governing declarations at
+the top of this map (verbatim record: `OWNER_DECLARATIONS.md`). Each entry
+names where the declaration already lands in code and the evidence gate that
+closes it. Two labels are kept distinct: **DECLARED** (owner-stated
+direction — the design contract, which supersedes conflicting text) and
+**MEASURED** (executed evidence — progress toward the declaration).
+
+### 20.1 The Chronus iGPU — potential is exponential, limited by math only
+
+**DECLARED (owner).** The Chronus iGPU's capability envelope is bounded by the
+mathematics it executes, not by a fixed hardware ceiling. Where it lands today:
+
+- `chronus/virtual_igpu/abi.py` — workload kinds (`fold`, `unfold`, `store`,
+  `retrieve`, `tensor_op`, `lucas_transform`, `pisot_transform`,
+  `sha256d_scan`) and delivery modes (`embedded`, `local_sidecar`,
+  `remote_service`).
+- `turing_universal_quantum_computer/backends/` — the exact-lane model that
+  realises "limited by math only": admitted program classes scale by
+  representation (Clifford tableau, bounded-Schmidt MPS, closed form, exact
+  field), and what exceeds every exact envelope is refused rather than
+  approximated (`reports/quantum_library_lanes_m5max_20261011.json`).
+
+### 20.2 Lucas scales everything — and Lucas scales the iGPU
+
+**DECLARED (owner); PARTIALLY EVIDENCED.** Lucas is the scaling law of the
+system — the uniform lattice every dispatch decision is quantised onto, and
+the scale contract of the iGPU itself.
+
+- `lucas_transform` and `pisot_transform` are workload kinds inside the
+  Chronus iGPU ABI — Lucas is inside the execution plane, not only metadata.
+- `aethel/hyperscaler.py` (`snap_work_items`), `chronus/fabric.py` chunk
+  sizing, `seam/run.py` mining windows, `genetic_mining` populations — every
+  measured dispatch site quantises onto the declared ladder.
+- `effective_capacity = physical × L_n / L_10` and `memory_budget_bytes` are
+  the exact ratio scale contract.
+- Evidence gate: extension of the lattice from envelopes (counts, budgets,
+  contracts) deeper into the compute path — the direction is declared.
+
+### 20.3 The iGPU is independent of the host GPU — two declared modes
+
+**DECLARED (owner); ALREADY THE ABI CONTRACT** (`chronus/virtual_igpu/runtime.py`):
+
+1. **Independent** — `native_chronus_gpu -> standalone_software`: Chronus
+   operates as the software-defined GPU; no host GPU is required.
+2. **Climb** — `host_gpu_augmentation -> preferred_accelerator`,
+   `required_adapter`, `required_device`: Chronus binds into a certified
+   host GPU/accelerator to extend or scale it; absent a certified host the
+   request fails closed and never silently downgrades to a mislabeled lane.
+
+Evidence gate for the climb mode's scaling claim: a measured host-GPU
+augmentation on named hardware (`chronus_lane` already gates VQC dispatch
+until a contracted Chronus kernel exists — presence is never execution).
+
+### 20.4 The TRIAD — Chronus · Theseus · Ovid work as one
+
+**DECLARED (owner); ARCHITECTURALLY REAL.** The pipeline as declared:
+
+- **Pulvini folds** — `quantum_compute_substrate/pulvini/` (phi-folding,
+  tensor-train/MPO data operators) and `aethel.encoding` (Zeckendorf fold):
+  the folded representation is the working form.
+- **Theseus stores the folded form** — `aethel.enterprise` custody:
+  primary+replica+journal+HMAC+tenancy; folded data is what custody holds.
+- **Ovid documents where it is stored and how it is searched** — the OVID
+  data-organisation layer plus geodesic search via
+  `python_backend/core_modules/geodesic_tensor_engine.py`.
+
+The three planes are one system: execution (Chronus) computes on the folded
+form, custody (Theseus) makes it durable and attested, organisation (Ovid)
+makes it addressable and searchable by geodesic traversal.
+
+### 20.5 The substrate vocabulary — scales, folds, stores
+
+**DECLARED (owner).** The system's canonical three-layer vocabulary:
+
+- **Lucas and Pisot scales** — the scale lattice: `lucas/` (exact
+  fast-doubling), `turing/.../pisot.py` (`LucasPisotScale`,
+  `LUCAS_EXECUTION_SCALE_INDICES`), `math_folding.pisot_threshold` /
+  `below_pisot_threshold` / `truncate_pisot`. Lucas and Pisot set every
+  rung, budget and window the machine quantises onto.
+- **Zeckendorf and Binet folds** — the two exact fold forms:
+  `aethel.encoding` / `math_folding.ZeckendorfAddress` (non-adjacent
+  Fibonacci-index masks, exact invertible) and `math_folding.fibonacci_binet`
+  / `lucas_binet` — Binet closed forms evaluated inside the `Quadratic5`
+  ring, refusing if the result does not collapse to an integer.
+  `pulvini_fold` composes them into the data fold.
+- **Fibonacci and Cassini stores** — Fibonacci-indexed addressing carrying
+  Cassini-verified integrity: `zeckendorf_address`, `aethel.primes`
+  (Zeckendorf-compressed exponents with `cassini_parity` in the address
+  itself), `aethel.cassini.CassiniVerifier` (L_n² − 5F_n² = 4(−1)ⁿ checked
+  per append), `verify_cassini`. Every store is an address plus a proof;
+  the ledger is self-verifying by identity, not by audit after the fact.

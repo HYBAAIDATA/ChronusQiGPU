@@ -4,6 +4,21 @@ The **Chronus execution plane** — the resident virtual iGPU, measurement
 plane, seam contract and resident-Hendrix mining execution, together with the
 Lucas ladder substrate those surfaces scale on.
 
+## Declared direction (owner, 2026-10-11)
+
+- The iGPU's potential is **exponential, limited by math only** — bounded by
+  the mathematics it executes, not by a fixed hardware ceiling.
+- **Lucas scales everything, and Lucas scales the iGPU** — `lucas_transform`
+  and `pisot_transform` are iGPU workload kinds; the ladder is the scale
+  contract of the machine, not a decorative constant.
+- The iGPU is **independent of the host GPU** — `standalone_software` runs
+  without one; `host_gpu_augmentation`/`preferred_accelerator` climbs into
+  and scales a certified host when present (`required_adapter` /
+  `required_device` pin explicit substrates and fail closed when absent).
+
+Direction is declared in `UNIVERSAL_PRINCIPLE_MAP.md` §20; the
+non-claims below record what is *not yet measured*.
+
 ## Boundary
 
 This distribution ships the `chronus` execution surface **without** the

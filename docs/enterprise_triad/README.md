@@ -4,6 +4,31 @@
 **Package:** `aethel.enterprise`  
 **Claim scopes:** software-measured only (see Proven below). `production_ready` remains **false**.
 
+## Owner-declared operating model (2026-10-11)
+
+The TRIAD is one system, three planes — as declared by the owner and anchored
+to `UNIVERSAL_PRINCIPLE_MAP.md` §20:
+
+- **Pulvini folds** — phi-folding / tensor-train data operators
+  (`quantum_compute_substrate/pulvini/`, `aethel.encoding`). The folded
+  representation is the working form.
+- **Theseus stores the folded form** — durable, attested custody
+  (`aethel.enterprise`).
+- **Ovid documents where it is stored and how it is searched** — the data-
+  organisation layer plus geodesic search
+  (`python_backend/core_modules/geodesic_tensor_engine.py`).
+- **Chronus executes on it** — the iGPU plane: `standalone_software`
+  (independent of any host GPU) or `host_gpu_augmentation` /
+  `preferred_accelerator` (climb into and scale a certified host);
+  `required_adapter`/`required_device` pin explicit substrates and fail
+  closed when absent. Its potential is bounded by the mathematics it
+  executes — exponential reach through representation selection — and
+  Lucas is the scale law of the machine (`lucas_transform` /
+  `pisot_transform` are iGPU workload kinds).
+
+Declaration ≠ measurement: the scopes below record what is *measured*
+today; §20 records what the system is *declared to become*.
+
 ## Proven (extended software scopes)
 
 | Scope string | What was measured |
