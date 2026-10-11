@@ -78,9 +78,12 @@ jobs:
       # No install of the mutated package itself: the sandboxes must be what
       # imports. The virtual quantum computer is a dependency of the miner
       # (the default Hendrix order), installed as it is everywhere else.
-      - run: >-
+      # TURING depends on hyba-kellogg-tensor, which is in-tree and not on
+      # PyPI; ci_install.sh --no-root stages it (plus chronos-one-igpu and
+      # TURING) without installing the umbrella package under mutation.
+      - run: |
           python -m pip install "numpy>=1.26,<3" "pytest>=7.4,<10" "pyyaml>=6.0,<7"
-          ./turing_universal_quantum_computer
+          bash scripts/ci_install.sh "" --no-root
       - name: Mutate ${{ matrix.module }}
         run: >-
           python scripts/mutation_check.py

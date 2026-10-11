@@ -35,6 +35,11 @@ env:
   RC_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
   CI_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
+# Explicit bash => "-eo pipefail": a failing step piped through tee must fail.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   release-evidence:
     runs-on: ubuntu-latest

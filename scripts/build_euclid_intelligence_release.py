@@ -33,7 +33,6 @@ INCLUDE = (
     "docs/INTELLIGENCE_CONVERGENCE.md",
     "reports/euclid_v17/research_report.md",
     "reports/euclid_v17/research_report.json",
-    "reports/euclid_v17/run.log",
     "scripts/run_euclid_v17_research.py",
     "scripts/render_euclid_v17_release_results.py",
     "scripts/run_euclid_v17_benchmark.py",

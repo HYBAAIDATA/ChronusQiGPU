@@ -46,7 +46,7 @@ COPY --from=native /src/host/libmla1517_mmio.so /src/host/libprimedb_storage.so 
 RUN mkdir -p /tmp/kellogg-tensor \
     && cp -r kellogg LICENSE packaging/kellogg-tensor/pyproject.toml \
        packaging/kellogg-tensor/README.md /tmp/kellogg-tensor/ \
-    && pip install --no-cache-dir /tmp/kellogg-tensor ./packages/chronos-one-igpu \
+    && pip install --no-cache-dir /tmp/kellogg-tensor ./chronus/packages/chronos-one-igpu \
        ./turing_universal_quantum_computer . \
     && rm -rf /tmp/kellogg-tensor \
     && groupadd --gid 10001 pythia \
