@@ -8,6 +8,9 @@ implementation name is not a replacement (THESEUS owns unchanged `aethel`).
 - Machine-readable identities: `publication_catalog.json`
 - Check identity/dependency/count drift: `python packaging/check_publication_catalog.py`
 - Existing publication workflows: [PUBLISHING.md](PUBLISHING.md)
+- Owner setup (environments, pending publishers, Apple): [OWNER_CREDENTIALS.md](OWNER_CREDENTIALS.md)
+- Portfolio release audit (evidence-derived states): `python packaging/portfolio_release_audit.py`
+- Executed registry receipts land in `../release-evidence/`
 
 **13 existing Python distribution candidates; 1 additional planned CHRONUS
 split; 14-package roadmap.** This is not a count of qualified/published packages.

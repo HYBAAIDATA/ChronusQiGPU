@@ -41,9 +41,9 @@ The approved first-public version is **1.0.0 for each package** and is now refle
 ## Publication order and remaining actions
 
 1. Qualify/rebuild **KELLOGG Tensor**, then **TURING VQC**, on a frozen current RC. Publish TestPyPI → clean install/import/entry-point/smoke/replay → same archives via PyPI OIDC → clean PyPI execution → evidence-linked GitHub release.
-2. Qualify **THESEUS Storage**, then **OVID Data Organisation**, including real-component composition, negative voyages and fresh-process custody/replay. Naming approval does not enable registry uploads.
-3. **TOE Intelligence**, then **EUCLID Intelligence** after their dependencies and current-head qualification. EUCLID remains a research release, not platform production certification. TOE still needs same-artifact, executed TestPyPI promotion evidence rather than registry existence.
-4. Keep **CHRONOS mathematics / ONE iGPU / CHRONUS splits**, **SALAMANDER**, and **PYTHIA** on their separate product qualification tracks. Do not borrow their scoped local results or unavailable composition evidence.
+2. Qualify **THESEUS Storage**, then **OVID Data Organisation**, including real-component composition, negative voyages and fresh-process custody/replay. `storage-publication-preparation.yml` enforces the THESEUS→OVID pin on the target registry. Naming approval does not enable registry uploads.
+3. **TOE Intelligence**, then **EUCLID Intelligence** after their dependencies and current-head qualification. EUCLID remains a research release, not platform production certification. `toe-release.yml` and `euclid-v17-release.yml` carry the full same-bytes TestPyPI→PyPI protocol with in-lane registry dependency gates; what remains is executed registry evidence from real dispatches, not workflow coverage.
+4. **PYTHIA consumer** (`consumer-publication.yml`) vendors its siblings and may dispatch in wave 1; keep **CHRONOS mathematics / ONE iGPU / CHRONUS splits** and **SALAMANDER** on their separate qualification tracks. Do not borrow their scoped local results or unavailable composition evidence. The portfolio audit (`portfolio_release_audit.py`) derives each product's state — a lane's existence never substitutes for its receipts.
 
 Every renamed distribution needs current-commit build/install/testing and digest-bound evidence. Registry namespace availability and OIDC trusted-publisher configuration have **not** been established by this change. The new names require publisher registrations to match. No registry upload, GitHub release, CI pass or production readiness is asserted.
 
