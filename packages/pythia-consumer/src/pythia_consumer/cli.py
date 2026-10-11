@@ -102,3 +102,7 @@ def main(argv=None) -> int:
         serve(port=args.port, api_url=args.api, lan=args.lan)
         return 0
     return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

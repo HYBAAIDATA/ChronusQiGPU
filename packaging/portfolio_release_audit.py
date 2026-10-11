@@ -1,6 +1,6 @@
 """Portfolio release audit — one evidence-derived state per product.
 
-Reads the six release workflows (static contract), the products' local
+Reads the portfolio release workflows (static contract), the products' local
 verification verdicts (``packaging/*/dist/*``), executed registry receipts
 (``--receipts`` dir — typically downloaded Actions artifacts committed under
 ``release-evidence/``), and live registry state (PyPI/TestPyPI JSON APIs, or a
@@ -114,6 +114,18 @@ PRODUCTS = {
                  "hyba-toe-intelligence": ">=1.0,<2",
                  "hyba-theseus-storage": ">=1.0,<2"},
         "smoke_pythons": ["3.11", "3.12", "3.13"],
+    },
+    "hyba-pythia-consumer": {
+        "order": 7,
+        "workflow": ".github/workflows/consumer-publication.yml",
+        "workflow_strings": ["consumer-release-verdict"],
+        "verdict": "packages/pythia-consumer/dist/artifact-verdict.json",
+        "verdict_status": "PASS",
+        "sha_field": "source_commit",
+        # Vendored bundle — no hyba-* registry dependencies to gate on; the
+        # wheel carries aethel/hyba_db/chronos_one_igpu sources itself.
+        "deps": {},
+        "smoke_pythons": ["3.10", "3.11", "3.12", "3.13"],
     },
 }
 

@@ -18,7 +18,9 @@ on:
       - ".github/workflows/storage-publication-preparation.yml"
       - ".github/workflows/toe-release.yml"
       - ".github/workflows/euclid-v17-release.yml"
+      - ".github/workflows/consumer-publication.yml"
       - ".github/workflows/portfolio-release-audit.yml"
+      - "packages/pythia-consumer/verify_bundle.py"
   workflow_dispatch:
     inputs:
       rc_sha:
