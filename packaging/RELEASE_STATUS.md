@@ -59,11 +59,20 @@ evidence is reported as an incident (`published_without_executed_pypi_evidence`
 CI runs it via `.github/workflows/portfolio-release-audit.yml`; unit coverage in
 `tests/test_portfolio_release_audit.py`.
 
-Current derived state (latest-evidence mode, offline): all six products
-`QUALIFIED` from real local gates; zero `TESTPYPI_VERIFIED`+ because no
-publication receipts or registry presence exist yet. External prerequisites
-remain: `testpypi`/`pypi` GitHub environments and per-product pending trusted
-publishers on both indexes.
+`hyba-pythia-consumer` joined the audit as product 7 on 11 October 2026 with
+its own executed local gate (`packages/pythia-consumer/verify_bundle.py`):
+artifact digests, twine, catalog identity, a fresh-venv wheel install, and
+output-asserted CLI smoke (mint must emit a real ZECK-token receipt, verify
+must return a `pass` verdict — exit codes alone are not evidence). The same
+work surfaced a real defect: `pythia_consumer/cli.py` lacked a `__main__`
+guard, so `python -m pythia_consumer.cli` was a silent no-op returning exit 0;
+fixed, plus `pythia_consumer/__main__.py` added for `python -m pythia_consumer`.
+
+Current derived state (frozen-RC mode at `bf7acb18`, offline): all **seven**
+products `QUALIFIED` with zero stale evidence — every local verdict re-executed
+at that commit. Zero `TESTPYPI_VERIFIED`+ because no publication receipts or
+registry presence exist yet. External prerequisites remain: `testpypi`/`pypi`
+GitHub environments and per-product pending trusted publishers on both indexes.
 
 # Product release status
 
