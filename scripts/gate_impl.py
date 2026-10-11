@@ -97,8 +97,22 @@ def claims(root):
         except ClaimRejected:
             ok = True
         reg.close()
+    if not ok:
+        return Outcome(Status.FAIL, "claim register accepted an unreviewed PRODUCTION claim")
+
+    # The machine-checked register itself (claims.yaml, CONTRACTS.md §12.8):
+    # VERIFIED artifact hashes must match and PROHIBITED text must be absent
+    # from external material. Use evaluate_release(..., reproduce=True) to also
+    # re-run each VERIFIED test_command (slower; release-candidate check).
+    from al_haras.claims_yaml import evaluate_release
+    from al_haras.claims_yaml import load_claims
+
+    report = evaluate_release(load_claims(root / "claims.yaml"), root)
+    if not report.passed:
+        return Outcome(Status.FAIL, "claims.yaml: " + "; ".join(report.violations))
     return Outcome(
-        Status.PASS if ok else Status.FAIL, "claim evidence and independent-review boundary checked"
+        Status.PASS,
+        "claim evidence, independent-review boundary and claims.yaml register checked",
     )
 
 
