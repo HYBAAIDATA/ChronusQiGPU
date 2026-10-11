@@ -1,0 +1,55 @@
+name: portfolio release audit
+
+# The release control plane: derives one evidence-backed state per product
+# (BLOCKED / QUALIFIED / TESTPYPI_VERIFIED / PYPI_VERIFIED / RELEASE_COMPLETE)
+# from the six release workflows, local verdicts, executed receipts under
+# release-evidence/, and live registry state. It never self-awards and never
+# treats a scheduled job as a completed release.
+
+on:
+  pull_request:
+    paths:
+      - "packaging/portfolio_release_audit.py"
+      - "packaging/verify_registry_release.py"
+      - "tests/test_portfolio_release_audit.py"
+      - "release-evidence/**"
+      - ".github/workflows/kellogg-tensor.yml"
+      - ".github/workflows/turing-release.yml"
+      - ".github/workflows/storage-publication-preparation.yml"
+      - ".github/workflows/toe-release.yml"
+      - ".github/workflows/euclid-v17-release.yml"
+      - ".github/workflows/portfolio-release-audit.yml"
+  workflow_dispatch:
+    inputs:
+      rc_sha:
+        description: Frozen release-candidate SHA for a strict frozen-RC audit
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: Audit unit tests + portfolio verdict
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Audit self-tests
+        run: python -m unittest discover -s tests -p test_portfolio_release_audit.py -v
+      - name: Derive portfolio verdict
+        run: |
+          if [ -n "${{ inputs.rc_sha }}" ]; then
+            python packaging/portfolio_release_audit.py \
+              --sha "${{ inputs.rc_sha }}" --out portfolio-verdict.json
+          else
+            python packaging/portfolio_release_audit.py --out portfolio-verdict.json
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-release-verdict
+          path: portfolio-verdict.json
+          if-no-files-found: error

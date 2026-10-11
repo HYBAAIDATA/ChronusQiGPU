@@ -306,6 +306,13 @@ jobs:
         run: |
           python -m venv /tmp/ov
           . /tmp/ov/bin/activate
+          # Sibling dependency must resolve from the target registry itself —
+          # never silently fall through to the production index.
+          for i in 1 2 3 4 5; do
+            python -m pip install --index-url https://test.pypi.org/simple/ \
+              --no-deps "hyba-theseus-storage==1.0.0" && break
+            sleep 30
+          done
           for i in 1 2 3 4 5; do
             python -m pip install --index-url https://test.pypi.org/simple/ \
               --extra-index-url https://pypi.org/simple/ "hyba-ovid-data-organisation==1.0.0" && break
@@ -508,6 +515,11 @@ jobs:
         run: |
           python -m venv /tmp/ov
           . /tmp/ov/bin/activate
+          for i in 1 2 3 4 5; do
+            python -m pip install --index-url https://pypi.org/simple/ \
+              --no-deps "hyba-theseus-storage==1.0.0" && break
+            sleep 30
+          done
           for i in 1 2 3 4 5; do
             python -m pip install --index-url https://pypi.org/simple/ "hyba-ovid-data-organisation==1.0.0" && break
             sleep 30

@@ -271,6 +271,15 @@ jobs:
         run: |
           python -m venv /tmp/eu
           . /tmp/eu/bin/activate
+          # Sibling dependencies must resolve from the target registry itself —
+          # never silently fall through to the production index.
+          for dep in hyba-kellogg-tensor hyba-toe-intelligence hyba-theseus-storage; do
+            for i in 1 2 3 4 5; do
+              python -m pip install --index-url https://test.pypi.org/simple/ \
+                --no-deps "$dep==1.0.0" && break
+              sleep 30
+            done
+          done
           for i in 1 2 3 4 5; do
             python -m pip install --index-url https://test.pypi.org/simple/ \
               --extra-index-url https://pypi.org/simple/ "hyba-euclid-intelligence==1.0.0" && break
@@ -365,6 +374,13 @@ jobs:
         run: |
           python -m venv /tmp/eu
           . /tmp/eu/bin/activate
+          for dep in hyba-kellogg-tensor hyba-toe-intelligence hyba-theseus-storage; do
+            for i in 1 2 3 4 5; do
+              python -m pip install --index-url https://pypi.org/simple/ \
+                --no-deps "$dep==1.0.0" && break
+              sleep 30
+            done
+          done
           for i in 1 2 3 4 5; do
             python -m pip install --index-url https://pypi.org/simple/ "hyba-euclid-intelligence==1.0.0" && break
             sleep 30
