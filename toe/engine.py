@@ -1183,7 +1183,8 @@ class PredictiveEngine:
         """
         return {
             "model_names": ["rf", "xgb", "lgbm", "gb"],
-            "model_dir": "models/",
+            "model_dir": os.path.join(os.environ["PYTHIA_INTELLIGENCE_DIR"], "models")
+            if os.environ.get("PYTHIA_INTELLIGENCE_DIR") else "models/",
             # Legacy estimator-schema keys — validated, never consumed.
             "n_estimators": 100,
             "max_depth": 8,

@@ -27,6 +27,7 @@ theorem ten_eh_canonical_floor :
       (1000001 * 10000 * 1000000000)
       1
       10000000000000000000 := by
+  unfold capacityFloorMet
   decide
 
 end MiningCapacity

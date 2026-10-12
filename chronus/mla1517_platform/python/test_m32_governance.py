@@ -235,12 +235,28 @@ class CoordinatorEvidenceWiringTests(unittest.TestCase):
             username="u",
             password="x",
         )
-        job = SimpleNamespace(
-            job_id="job-observed",
-            params=("job-observed", "00" * 32, "cb1", "cb2"),
-            received_at=1.0,
+        # Hermetic observation fixture uses the real normalization boundary.
+        from chronus.mla1517.mining.stratum_adapter import StratumProofAdapter
+
+        adapter = StratumProofAdapter()
+        adapter.handle_subscribe_result([[], "01020304", 4])
+        adapter.handle_message(
+            {
+                "method": "mining.notify",
+                "params": [
+                    "job-observed",
+                    "00" * 32,
+                    "01000000",
+                    "ffffffff",
+                    [],
+                    "20000000",
+                    "1d00ffff",
+                    "65abcdef",
+                    True,
+                ],
+            }
         )
-        coord.client = SimpleNamespace(latest_job=lambda: job)
+        coord.client = SimpleNamespace(proof_adapter=adapter)
         return coord
 
     def test_cassini_fault_detects_torn_state(self):
@@ -262,6 +278,20 @@ class CoordinatorEvidenceWiringTests(unittest.TestCase):
         self.assertEqual(len(set(window)), len(window))
         lanes = {coord.solver.topology.lane_for_nonce(n) for n in window}
         self.assertEqual(lanes, set(range(LANES)))
+
+    def test_raw_unnormalized_job_does_not_trigger_observation_or_submission(self):
+        import asyncio
+        from chronus.mla1517.hardware import VaultRecord
+
+        coord = self._coordinator()
+        coord.client = SimpleNamespace(latest_job=lambda: SimpleNamespace(job_id="raw-job"))
+        record = VaultRecord(
+            node_id=3, sequence=1, state=struct.pack("<Q14I", 9, *([0] * 8), 1, 0, 0, 0, 0, 0)
+        )
+        self.assertFalse(asyncio.run(coord.submit_record(record)))
+        self.assertIsNone(coord.last_toe_context)
+        self.assertIsNone(coord.last_mining_decision)
+        self.assertEqual(coord._records_observed, 0)
 
     def test_submit_record_runs_toe_heal_and_choose_without_share(self):
         import asyncio

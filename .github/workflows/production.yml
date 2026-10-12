@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  PYTHONPATH: ${{ github.workspace }}/chronus/mla1517_platform/python:${{ github.workspace }}
+  PYTHONPATH: ${{ github.workspace }}/chronus/mla1517_platform/python:${{ github.workspace }}:${{ github.workspace }}/chronus
 
 jobs:
   configuration-preflight:

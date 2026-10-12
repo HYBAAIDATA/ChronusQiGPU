@@ -27,7 +27,7 @@ jobs:
         run: python -m pytest tests -q --junitxml=standalone-results.xml
       - name: Broad canonical repository suite
         env:
-          PYTHONPATH: chronus/mla1517_platform/python
+          PYTHONPATH: chronus/mla1517_platform/python:chronus:.
         run: python -m pytest tests/ -x -q --junitxml=canonical-results.xml
       - name: Retain actual test evidence
         if: always()
@@ -80,7 +80,7 @@ jobs:
           python scripts/pr140_restart_replay.py replay --variant ${{ matrix.variant }} --state-dir /tmp/pr140-voyage
       - name: Canonical product platform checks
         env:
-          PYTHONPATH: chronus/mla1517_platform/python
+          PYTHONPATH: chronus/mla1517_platform/python:chronus:.
         run: python -m pytest chronus/mla1517_platform/python/test_production_loop_e2e.py chronus/mla1517_platform/python/test_production_replacements.py -q --junitxml=installed-platform.xml
       - name: Preserve local-scope artifacts without certification
         if: always()

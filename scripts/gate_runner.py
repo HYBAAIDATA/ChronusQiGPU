@@ -22,6 +22,7 @@ class Status(str, Enum):
     PASS = "PASS"
     FAIL = "FAIL"
     SKIP = "SKIP"
+    NOT_RUN = "NOT_RUN"
     ERROR = "ERROR"
 
 

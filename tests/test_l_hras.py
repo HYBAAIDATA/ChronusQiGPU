@@ -97,7 +97,11 @@ ROOT = TrustRoot(key_id="test-root", secret=b"test-root-secret")
 def make_cfg(**overrides) -> Config:
     bundle = PolicyBundle(
         version="1.0.0",
-        rules=[],
+        # Explicit signed fixture admission, never a permissive production default.
+        rules=[
+            PolicyRule(effect="allow", kind="benign"),
+            PolicyRule(effect="allow", kind="adversarial"),
+        ],
         throttle_modes={"purity_gate": {"type": "rate_reduction", "factor": 0.25}},
         compliance_mappings={"soc2": ["CC6.1"]},
     )
@@ -1098,3 +1102,15 @@ def test_willow_bend_positive(lhras):
 def test_negative_control_passes(lhras):
     resp = respond(lhras, make_request())
     assert resp.is_ok and resp.value.allowed
+
+
+def test_empty_signed_policy_still_denies_requests():
+    bundle = PolicyBundle(version="unit-empty-policy", rules=[])
+    bundle.sign_with(ROOT)
+    bundle.verify_signature(ROOT)
+    instance = initialize(make_cfg(policy_bundle=bundle)).value
+    stand(instance)
+    response = respond(instance, make_request())
+    assert response.is_err
+    assert response.error.code == "policy_violation"
+    assert bundle.default_allow is False

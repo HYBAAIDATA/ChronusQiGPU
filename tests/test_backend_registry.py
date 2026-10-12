@@ -48,9 +48,7 @@ class BackendRegistryTests(unittest.TestCase):
                 BackendLane.REMOTE_GPU, False, reason="no remote endpoint"
             ),
             BackendLane.ASIC: _probe(BackendLane.ASIC, False, reason="no ASIC transport"),
-            BackendLane.SUPER_ASIC: _probe(
-                BackendLane.SUPER_ASIC, False, reason="not implemented"
-            ),
+            BackendLane.SUPER_ASIC: _probe(BackendLane.SUPER_ASIC, False, reason="not implemented"),
         }
         probes.update(overrides)
         return BackendRegistry(
@@ -90,11 +88,19 @@ class BackendRegistryTests(unittest.TestCase):
         snapshot = registry.snapshot()
         self.assertEqual(
             set(snapshot["lanes"]),
-            {"cpu", "gpu", "cuda", "metal", "remote_gpu", "asic", "super_asic", "chronus"},
+            {
+                "cpu",
+                "gpu",
+                "cuda",
+                "metal",
+                "remote_gpu",
+                "asic",
+                "super_asic",
+                "chronus",
+                "one_igpu",
+            },
         )
-        self.assertEqual(
-            snapshot["policy"]["auto"], ["gpu", "cuda", "metal", "remote_gpu", "cpu"]
-        )
+        self.assertEqual(snapshot["policy"]["auto"], ["gpu", "cuda", "metal", "remote_gpu", "cpu"])
         self.assertFalse(snapshot["lanes"]["asic"]["available"])
         self.assertTrue(snapshot["lanes"]["cpu"]["available"])
 
