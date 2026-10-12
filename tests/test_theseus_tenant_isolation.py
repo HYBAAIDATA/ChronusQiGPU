@@ -91,6 +91,16 @@ def test_record_ids_are_bounded_identifiers(tmp_path, record_id):
     assert not any(p.name == "passwd" for p in tmp_path.rglob("*"))
 
 
+def test_percent_encoded_record_ids_are_accepted(tmp_path):
+    # CHRONUS commits workloads under urllib.parse.quote(..., safe="") ids.
+    custody = _custody(tmp_path)
+    try:
+        custody.put(b"workload", record_id="vigpu-chronus.first-workload%2F1-a1")
+        assert custody.get("vigpu-chronus.first-workload%2F1-a1") == b"workload"
+    finally:
+        custody.close()
+
+
 def test_invalid_record_id_reads_as_not_found(tmp_path):
     custody = _custody(tmp_path)
     try:

@@ -57,7 +57,9 @@ from .schema import (
 from .telemetry import EvidenceTelemetry
 
 _SAFE_TENANT = re.compile(r"[A-Za-z0-9_-]{1,128}")
-_SAFE_RECORD_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
+# ``%`` admits percent-encoded ids (CHRONUS quotes workload ids with
+# urllib.parse.quote): filesystem-safe on POSIX and Windows alike.
+_SAFE_RECORD_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._%-]{0,127}")
 
 
 def _contracted_ovid_versions(ovid: Any) -> tuple[int, ...]:
@@ -204,7 +206,7 @@ class EnterpriseCustody:
         """Record ids are bounded identifiers, never path fragments (R02)."""
         if not isinstance(record_id, str) or not _SAFE_RECORD_ID.fullmatch(record_id):
             raise InvalidRecordIdError(
-                "record_id must match [A-Za-z0-9][A-Za-z0-9._-]{0,127} with no '..'"
+                "record_id must match [A-Za-z0-9][A-Za-z0-9._%-]{0,127} with no '..'"
             )
         if ".." in record_id:
             raise InvalidRecordIdError("record_id must not contain '..'")

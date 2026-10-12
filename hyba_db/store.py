@@ -769,23 +769,36 @@ class OntologyStore:
         while queue:
             node,depth=queue.popleft(); out.append(self._node(tenant_id,node))
             if depth>=max_depth: continue
-            for r in self._db.execute("SELECT to_node,kind FROM edges WHERE tenant_id=? AND from_node=? ORDER BY id",(tenant_id,node)):
-                if allowed is not None and r["kind"] not in allowed: continue
-                if r["to_node"] not in seen: seen.add(r["to_node"]); queue.append((r["to_node"],depth+1))
+            # Every edge that steers navigation is integrity-verified first
+            # (attestation + content address, via get_edge): a tampered edge
+            # row fails the traversal instead of silently redirecting it (R09).
+            ids=[r[0] for r in self._db.execute("SELECT id FROM edges WHERE tenant_id=? AND from_node=? ORDER BY id",(tenant_id,node))]
+            for edge_id in ids:
+                edge=self.get_edge(tenant_id,edge_id)
+                if edge.from_node!=node: raise IntegrityFailure("edge source does not match its index row")
+                if allowed is not None and edge.kind not in allowed: continue
+                if edge.to_node not in seen: seen.add(edge.to_node); queue.append((edge.to_node,depth+1))
         return tuple(out)
+
+    def _verified_edges(self, tenant_id: str) -> list[EdgeRecord]:
+        """All tenant edges, each attestation- and content-verified (R09)."""
+        ids=[r[0] for r in self._db.execute("SELECT id FROM edges WHERE tenant_id=? ORDER BY id",(tenant_id,))]
+        return [self.get_edge(tenant_id,edge_id) for edge_id in ids]
 
     def topology(self, tenant_id: str) -> dict[str,Any]:
         self._tenant(tenant_id)
         nodes=self._db.execute("SELECT COUNT(*) FROM nodes WHERE tenant_id=?",(tenant_id,)).fetchone()[0]
-        edges=self._db.execute("SELECT COUNT(*) FROM edges WHERE tenant_id=?",(tenant_id,)).fetchone()[0]
-        components=self._components(tenant_id)
+        verified=self._verified_edges(tenant_id)
+        edges=len(verified)
+        components=self._components(tenant_id, verified)
         betti1=max(0,edges-nodes+components)
         persistence=[r[0] for r in self._db.execute("SELECT persistence FROM nodes WHERE tenant_id=? AND persistence IS NOT NULL",(tenant_id,))]
         return {"nodes":nodes,"edges":edges,"components":components,"betti":[components,betti1],"persistence":persistence}
 
-    def _components(self, tenant_id: str) -> int:
+    def _components(self, tenant_id: str, verified: Sequence[EdgeRecord]|None=None) -> int:
         nodes={r[0] for r in self._db.execute("SELECT id FROM nodes WHERE tenant_id=?",(tenant_id,))}; adj={n:set() for n in nodes}
-        for a,b in self._db.execute("SELECT from_node,to_node FROM edges WHERE tenant_id=?",(tenant_id,)): adj[a].add(b); adj[b].add(a)
+        for edge in (self._verified_edges(tenant_id) if verified is None else verified):
+            a,b=edge.from_node,edge.to_node; adj[a].add(b); adj[b].add(a)
         count=0
         while nodes:
             count+=1; stack=[nodes.pop()]
@@ -913,7 +926,10 @@ class OntologyStore:
             except Exception as exc: fold_dag_ok=False; errors.append(f"{tid} fold DAG: {exc}")
             row=self._db.execute("SELECT used_records,used_blob_bytes FROM tenants WHERE tenant_id=?",(tid,)).fetchone(); sums=self._db.execute("SELECT COALESCE(SUM(record_delta),0),COALESCE(SUM(byte_delta),0) FROM quota_events WHERE tenant_id=?",(tid,)).fetchone()
             if tuple(row)!=tuple(sums): tenant_usage_ok=False; errors.append(f"{tid} quota ledger mismatch")
-            if self._components(tid)!=1: graph_connected=False; errors.append(f"{tid} graph is disconnected")
+            try:
+                if self._components(tid)!=1: graph_connected=False; errors.append(f"{tid} graph is disconnected")
+            except Exception as exc:
+                graph_connected=False; attestations_ok=False; errors.append(f"{tid} graph edge integrity: {exc}")
         file_report = self.files.verify_database(tenant_id)
         file_plane_ok = bool(file_report.get("passed"))
         if not file_plane_ok:
