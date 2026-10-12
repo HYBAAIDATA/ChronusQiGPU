@@ -1,3 +1,17 @@
+BLUF
+The research report is ready and published above. Here's the outcome in brief:
+
+**Key findings**
+
+- **Golden ratio in code** — φ's real engineering home is *Fibonacci hashing*: multiplying by `2^64/φ ≈ 11400714819323198485` (`0x9E3779B97F4A7C15`, or the 32-bit `0x9E3779B9`) maps hashes into buckets faster and more evenly than integer modulo — benchmarks show ~2x faster lookups vs typical `std::unordered_map`. φ also appears in SplitMix64, TEA/XTEA, golden-section search, and even gRPC's 1.6 backoff multiplier. The classic *missed opportunity* is a hash table using `%` where Fibonacci hashing would win — §2.3 of the report has a 60-second grep suite to find that in your repo.
+- **SHA-256: safe.** Confirmed with 2026 sources: only *reduced-round* attacks (mostly quantum) make academic news; NIST literally anchors its "hard" categories on SHA-256 collision cost. One genuine footnote: use HMAC-SHA-256, never raw `SHA(key‖msg)` (length extension).
+- **"Safe from PYTHIA"** — true under all three referents: EleutherAI's Pythia LLMs can't invert hashes (AI attacks implementations, not math); the USENIX 2015 PYTHIA PRF *hardens* password hashing rather than attacking it; and the oracle metaphor holds. Notably, the current AI-panic (Buterin's "bunker mode", Oct 2026) fears **lattice** crypto and endorses **hash-based** crypto — SHA-256 is what people flee *to*.
+- **The golden goose** — correct instinct: nobody rational breaks SHA-256 since it *is* the golden egg (Bitcoin's security budget, TLS, NIST's benchmark). The ways compute actually leaks are mundane: pool fees (0.5–4%), miner devfees (~1%), donation forks, exposed CI runners, unauthenticated compute endpoints — §3 is a full audit checklist.
+- **GPU → ASIC, now** — one S21 XP Hyd (473 TH/s, ~12 J/TH) ≈ **~236,000 RTX 4090s** of SHA-256 hashrate; GPUs are ~16,000x worse per joule. The GPU chapter for SHA-256 closed in 2013; GPUs only live on ASIC-resistant algos (KawPoW, Autolykos 2) or rented to AI markets (io.net/Render/Akash).
+
+**One blocker:** the workspace contains no repo files and no code-hosting connector is connected, so I couldn't inspect "your repo" itself. To complete the repo-specific half, share a public GitHub/GitLab URL or upload a zip — I'll then run the φ/grep audit, the compute-leak config audit, and the SHA-256/HMAC check, and deliver a corrected, repo-specific version of the report.
+
+
 Deep Research: The Golden Ratio, Compute Leaks, SHA-256, and the ASIC Era in Your Project
 Date: 12 October 2026 · Scope: Desktop research + repo-audit playbook Important caveat: No repo files were found in the current workspace and no code-hosting connector is connected to this session, so the repo-specific sections below are (a) a research synthesis of each topic and (b) a concrete audit playbook you can run against the repo — or hand back to me by sharing the repo URL or a zip to analyze directly (see §8).
 
