@@ -45,6 +45,8 @@ from .hilbert import (
     QuantumRegister,
     _e_abs2,
     _e_mul,
+    _frac,
+    _integer,
     _phase_factor,
     qft,
     von_neumann_entropy_exact,
@@ -286,11 +288,9 @@ def _timed(family: str, lane: str, fn, owner: str = "") -> LibraryResult:
 
 def _turns(value: Any, name: str) -> Fraction:
     """Validate an angle declared as a rational number of turns."""
-    if isinstance(value, bool):
-        raise ExactLaneError(f"{name} must be a rational number of turns")
     try:
-        t = Fraction(value)
-    except (TypeError, ValueError):
+        t = _frac(value)
+    except (TypeError, ValueError, ZeroDivisionError):
         raise ExactLaneError(
             f"{name}={value!r} is not a rational number of turns; "
             "exact lanes accept e^{2*pi*i*t} for t in Q only"
@@ -584,7 +584,7 @@ class QuantumLibrary:
             from .hilbert import GroverExact
 
             g = GroverExact(n_qubits, marked)
-            k = g.optimal_iterations() if iterations is None else int(iterations)
+            k = g.optimal_iterations() if iterations is None else _integer(iterations, "iterations")
             a, b = g.iterate(k)
             pa, pb = a.square(), b.square()
             return {

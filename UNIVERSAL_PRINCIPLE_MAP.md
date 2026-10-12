@@ -1900,3 +1900,22 @@ makes it addressable and searchable by geodesic traversal.
   itself), `aethel.cassini.CassiniVerifier` (L_n² − 5F_n² = 4(−1)ⁿ checked
   per append), `verify_cassini`. Every store is an address plus a proof;
   the ledger is self-verifying by identity, not by audit after the fact.
+
+
+### 20.6 Owner implementation authority and exact-operator closure
+
+**DECLARED (owner; D7).** First-principles quantum mathematics remains the
+implementation target, substrate- and hardware-agnostic. Earlier reports are
+inspected against implementation rather than used to demote that target.
+Independent review follows implementation and is not self-issued.
+
+Exact-operator closure work lands in TURING's canonical `hilbert.py` and
+`quantum_library.py`: rational admission rejects floats/booleans/decimal text;
+literal phases require an exact unit-modulus proof; register gates and oracles
+validate their domain before mutation; norm and unitarity checks survive
+Python optimization; first-peak Grover iteration selection compares exact Born
+probabilities instead of floating-point angle estimates.
+
+Evidence: `turing_universal_quantum_computer/tests/test_exact_operator_contracts.py`
+and `docs/EXACT_OPERATOR_CLOSURE_REVIEW.md`. Focused local tests are not the full
+repository, installed-package, physical-device or production release gate.
