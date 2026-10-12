@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import os
+import time
 
 import pytest
+from chronos_one_igpu.reference_contract import reference_execution
 
 from chronus.mla1517.mining import poincare_11d_order
 from chronus.mla1517.mining.coordinator import resolve_nonce_order
@@ -26,6 +30,42 @@ from chronus.mla1517.mining.search_plan import (
 )
 from chronus.mla1517.mining.solver import M32SearchSolver
 from test_governance_causality import RecordingHasher, _plan
+
+
+@pytest.fixture(scope="module", autouse=True)
+def reference_scope(tmp_path_factory):
+    """The 11D order is reference-only: production context refuses it.
+
+    These tests verify the reference order itself, so they run inside an
+    explicit, scoped, expiring operator approval -- the only way the
+    capability is reachable -- never in production context.
+    """
+    record = {
+        "schema": "chronos.reference_approvals/1",
+        "approvals": {
+            "qc-local": {
+                "approved": True,
+                "approved_by": "local-test-operator",
+                "purpose": "poincare 11D reference-order verification, not production evidence",
+                "mode": "reference",
+                "expires_unix": time.time() + 600,
+                "capabilities": ["poincare_11d_order"],
+            }
+        },
+    }
+    path = tmp_path_factory.mktemp("reference-approvals") / "approvals.json"
+    path.write_text(json.dumps(record))
+    previous = os.environ.get("CHRONOS_REFERENCE_APPROVALS_FILE")
+    os.environ["CHRONOS_REFERENCE_APPROVALS_FILE"] = str(path)
+    try:
+        with reference_execution("qc-local"):
+            yield
+    finally:
+        if previous is None:
+            os.environ.pop("CHRONOS_REFERENCE_APPROVALS_FILE", None)
+        else:
+            os.environ["CHRONOS_REFERENCE_APPROVALS_FILE"] = previous
+
 
 BASE = 0x0010_0000
 HEADER = bytes(range(80))

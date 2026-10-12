@@ -29,9 +29,14 @@ import mining_runtime
 from test_agentic_voyages import bip34_coinb1, _line, until
 
 DIFF1_TARGET = 0x00000000FFFF0000000000000000000000000000000000000000000000000000
-# A loopback share difficulty: ~2^18 expected SHA256d per accepted share —
-# real grinding on the CPU lane, seconds not hours and never trivially-easy.
-LOOPBACK_DIFFICULTY = 2.0**-14
+# A loopback share difficulty: ~2^8 expected SHA256d per accepted share —
+# real grinding across several leased windows on the CPU lane, never
+# trivially-easy (EASY_TARGET accepts any hash). The canonical CPU reference
+# lane leases lucas(rung) nonces per plan (96 at the starting rung) under the
+# exact profile with strict-M3 authorisation and custody on every window, so
+# the former ~2^18 (thousands of windows per share) cannot complete in a test
+# budget. Throughput lanes (OpenCL) lease their measured launch cap instead.
+LOOPBACK_DIFFICULTY = 2.0**-24
 LOOPBACK_TARGET = DIFF1_TARGET * (1 / LOOPBACK_DIFFICULTY)
 
 
@@ -406,13 +411,21 @@ def test_canonical_loopback_submit_to_pool_verdict_and_durable_recording(
     )
     monkeypatch.setenv("PYTHIA_IDENTITY_HMAC_SECRET", "ab" * 32)
     # M3 storage plane: THESEUS-custodied mining records for the same voyage.
-    monkeypatch.setenv("PYTHIA_STORAGE_DB", str(tmp_path / "hyba.sqlite3"))
-    monkeypatch.setenv("PYTHIA_STORAGE_ROOT", str(tmp_path / "cas"))
-    monkeypatch.setenv(
-        "PYTHIA_STORAGE_CUSTODY_ROOT", str(tmp_path / "theseus-custody")
+    # Live submission requires strict M3: provision the real AL HARAS +
+    # THESEUS custody plane and admit the tenant as an operator would.
+    from strict_m3_fixture import provision_strict_m3
+
+    provision_strict_m3(
+        tmp_path,
+        monkeypatch.setenv,
+        overrides={
+            "PYTHIA_STORAGE_DB": str(tmp_path / "hyba.sqlite3"),
+            "PYTHIA_STORAGE_ROOT": str(tmp_path / "cas"),
+            "PYTHIA_STORAGE_CUSTODY_ROOT": str(tmp_path / "theseus-custody"),
+            "PYTHIA_STORAGE_INTEGRITY_KEY_HEX": "11" * 32,
+            "PYTHIA_STORAGE_CUSTODY_KEY_HEX": "22" * 32,
+        },
     )
-    monkeypatch.setenv("PYTHIA_STORAGE_INTEGRITY_KEY_HEX", "11" * 32)
-    monkeypatch.setenv("PYTHIA_STORAGE_CUSTODY_KEY_HEX", "22" * 32)
     monkeypatch.delenv("PYTHIA_BITCOIN_RPC_URL", raising=False)
     monkeypatch.delenv("PYTHIA_BITCOIN_NETWORK", raising=False)
 

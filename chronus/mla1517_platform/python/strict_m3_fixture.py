@@ -93,14 +93,39 @@ def _reset_guardian_cache() -> None:
     pythia_guardian_api.cache_clear()
 
 
-def provision_strict_m3(root: Path, setenv: Callable[[str, str], None] | None = None) -> str:
+def provision_strict_m3(
+    root: Path,
+    setenv: Callable[[str, str], None] | None = None,
+    overrides: dict[str, str] | None = None,
+) -> str:
     """Set the strict-M3 environment, admit the tenant, return its tenant id.
 
     ``setenv`` defaults to ``os.environ.__setitem__``; pass
     ``monkeypatch.setenv`` from pytest so the environment is restored.
     """
     setter = setenv or os.environ.__setitem__
-    for key, value in strict_m3_environment(root).items():
+    for key, value in {**strict_m3_environment(root), **(overrides or {})}.items():
         setter(key, value)
     _reset_guardian_cache()
     return admit_tenant()
+
+
+def strict_m3_child_env(root: Path) -> dict[str, str]:
+    """Admit the tenant and return the strict-M3 variables for a subprocess.
+
+    The admission reads ``os.environ``; it is applied only for the duration
+    of the admission and then restored, so the caller's process environment
+    is unchanged.
+    """
+    env = strict_m3_environment(root)
+    saved = {key: os.environ.get(key) for key in env}
+    os.environ.update(env)
+    try:
+        admit_tenant()
+    finally:
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+    return env
