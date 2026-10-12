@@ -16,7 +16,6 @@ from chronus.consortium_push import (
     PushableFabric,
     TruthClass,
     admit,
-    append,
     canonical_institution,
     diagnose,
     is_falsifiable,
@@ -33,7 +32,7 @@ from chronus.consortium_push import (
     verify_ledger,
     verify_receipt,
 )
-from chronus.m5_ultra import consortium_fabric, elevate_pads, m5_ultra_fabric
+from chronus.m5_ultra import consortium_fabric
 
 
 def _state(fab=None) -> PushableFabric:
@@ -88,11 +87,10 @@ def test_ownership_table_exclusive():
 # ---------------------------------------------------------------------------
 
 def test_measured_requires_bound_receipt():
-    state = _state()
     p = _proposal()
     p_no_ev = PushProposal(**{**p.canonical(), "evidence": None,
-                            "truth_class": TruthClass.MEASURED,
-                            "axis": p.axis})
+                              "truth_class": TruthClass.MEASURED,
+                              "axis": p.axis})
     assert passes_truth_gate(p_no_ev) == PushVerdict.REJECTED_NO_EVIDENCE
     forged = PushProposal(**{**p.canonical(), "evidence": "sha256:" + "0" * 64,
                              "truth_class": TruthClass.MEASURED, "axis": p.axis})
@@ -199,11 +197,14 @@ def test_gates_run_in_order_first_failure_wins():
 
 def test_apply_push_updates_state_and_promotes_truth():
     state = _state()
+    trigger_before = state.elevation["channel_bandwidths"]["cern_wlcg_trigger"]
     r = admit(_proposal(), state)
     assert r.verdict == PushVerdict.ADMITTED
     assert state.read("cern_wlcg.capacity_bytes") == 2.0e18
     assert state.truth_class == "measured"
-    assert state.elevation["channel_bandwidths"]["cern_wlcg_trigger"] is None or True
+    # A capacity push leaves unrelated channel bandwidth untouched (this was
+    # "is None or True", which could never fail).
+    assert state.elevation["channel_bandwidths"]["cern_wlcg_trigger"] == trigger_before
     # Source fabric untouched.
     assert read_metric(state.fabric, "cern_wlcg.capacity_bytes") == 1.0e18
 
@@ -262,7 +263,7 @@ def test_documented_trajectory():
         from_value=1.0e18, to_value=2.0e18,
         truth_class=TruthClass.MEASURED,
         evidence=measurement_evidence("CERN", "cern_wlcg.capacity_bytes",
-                                    1.0e18, 2.0e18),
+                                      1.0e18, 2.0e18),
         verifiers=("MIT", "Caltech"), timestamp=0.1,
     )
     p2 = PushProposal(
