@@ -13,7 +13,8 @@ gate-results-clean:
 
 release-gate: gates
 	python3 scripts/repo_closure.py defects --output reports/DEFECT_REGISTER.json --require-closed
-	python3 scripts/assert_gate_rollup.py --require-no-skip
+	# The rollup always rejects mandatory SKIP/NOT_RUN; no optional bypass flag.
+	python3 scripts/assert_gate_rollup.py
 
 rule7-no-float:
 	python3 scripts/rule7_no_float_gate.py

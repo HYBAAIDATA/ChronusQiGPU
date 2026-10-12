@@ -468,7 +468,7 @@ The 32-dimensional Hilbert space. Any observation, regardless of domain, is enco
 | `kellogg/quantum_tensor.py` | `causal_factor_ranking` | Rank factors by expectation values |
 | `kellogg/quantum_tensor.py` | `model_agreement_from_ensemble` | Agreement across measurement bases |
 | `kellogg/exact_tensor.py` | `ExactTOETensor` | Clifford+T over Q(√2)+iQ(√2) with Fraction amplitudes; fail-closed gates, deterministic Born weights |
-| `kellogg/exact_field.py` | — | Exact √5 over F₄ = Q(ζ₈); plane-checked value algebra |
+| `kellogg/exact_field.py` | — | Exact representable non-negative real square roots in F₄ = Q(ζ₈); √5 is not in this field |
 | `kellogg/tensor_ml.py` | `fit, predict` | Exact-tensor ML family (`exact_linear`); deterministic `dump`/`load` |
 | `kellogg/cyclotomic.py` | — | Cyclotomic field arithmetic |
 | `kellogg/exact_linalg.py` | — | Exact linear algebra |
@@ -951,7 +951,7 @@ The threshold φ − 1 = 1/φ ≈ 0.618 (61.8%) appears as:
 | `kellogg/scales.py` | Z[φ] ring, fast-doubling, Binet fold, Pisot drift, Zeckendorf, Cassini ledger |
 | `kellogg/quantum_tensor.py` | 32-dim Hilbert space: Complex, ComplexMatrix, QuantumState, Observables, Born rule, QFI |
 | `kellogg/exact_tensor.py` | ExactTOETensor — Clifford+T over Q(√2)+iQ(√2) |
-| `kellogg/exact_field.py` | Exact √5 over F₄ = Q(ζ₈) |
+| `kellogg/exact_field.py` | Exact representable non-negative real square roots in F₄ = Q(ζ₈); golden-field √5 is separate |
 | `kellogg/tensor_ml.py` | Exact-tensor ML family (exact_linear) |
 | `kellogg/dphi_transform.py` | Discrete phi transform — recursive Z[φ] lattice folding |
 | `kellogg/phi_dynamics.py` | Golden Laplacian, golden propagator |
@@ -1900,3 +1900,22 @@ makes it addressable and searchable by geodesic traversal.
   itself), `aethel.cassini.CassiniVerifier` (L_n² − 5F_n² = 4(−1)ⁿ checked
   per append), `verify_cassini`. Every store is an address plus a proof;
   the ledger is self-verifying by identity, not by audit after the fact.
+
+
+### 20.6 Owner implementation authority and exact-operator closure
+
+**DECLARED (owner; D7).** First-principles quantum mathematics remains the
+implementation target, substrate- and hardware-agnostic. Earlier reports are
+inspected against implementation rather than used to demote that target.
+Independent review follows implementation and is not self-issued.
+
+Exact-operator closure work lands in TURING's canonical `hilbert.py` and
+`quantum_library.py`: rational admission rejects floats/booleans/decimal text;
+literal phases require an exact unit-modulus proof; register gates and oracles
+validate their domain before mutation; norm and unitarity checks survive
+Python optimization; first-peak Grover iteration selection compares exact Born
+probabilities instead of floating-point angle estimates.
+
+Evidence: `turing_universal_quantum_computer/tests/test_exact_operator_contracts.py`
+and `docs/EXACT_OPERATOR_CLOSURE_REVIEW.md`. Focused local tests are not the full
+repository, installed-package, physical-device or production release gate.

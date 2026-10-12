@@ -61,7 +61,7 @@ def _validate(payload: dict, root: Path, commit: str) -> None:
     gate = payload.get("gate")
     if not isinstance(gate, str) or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", gate):
         raise ValueError("invalid gate identity")
-    if payload.get("status") not in {"PASS", "FAIL", "SKIP", "ERROR"}:
+    if payload.get("status") not in {"PASS", "FAIL", "SKIP", "NOT_RUN", "ERROR"}:
         raise ValueError("invalid gate status")
     if payload.get("source_commit") != commit:
         raise ValueError("stale or missing source commit")
@@ -141,14 +141,15 @@ def evaluate(results_dir: Path, *, repo_root: Path = ROOT,
     missing = sorted(set(required) - set(observed))
     failed = sorted(g for g, p in observed.items() if p["status"] in {"FAIL", "ERROR"})
     skipped = sorted(g for g, p in observed.items() if p["status"] == "SKIP")
+    not_run = sorted(g for g, p in observed.items() if p["status"] == "NOT_RUN")
     return {
         "scope": "assurance_only_not_api_production_certification",
         "source_commit": commit, "required": required, "observed": sorted(observed),
-        "missing": missing, "failed": failed, "skipped": skipped,
+        "missing": missing, "failed": failed, "skipped": skipped, "not_run": not_run,
         "duplicates": sorted(set(duplicates)), "malformed": errors,
         "ignored_files": ignored,
         "evidence_digests": {g: p["evidence_digest"] for g, p in observed.items()},
-        "passed": bool(required) and not (missing or failed or skipped or duplicates or errors),
+        "passed": bool(required) and not (missing or failed or skipped or not_run or duplicates or errors),
     }
 
 

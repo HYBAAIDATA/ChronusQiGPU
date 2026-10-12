@@ -1,0 +1,53 @@
+{
+  "schema": "turing.exact_operator_closure.local_validation/1",
+  "baseline_main": "3365bb3c28fe1aeb672e2309556d5979cb8f5d71",
+  "branch_parent": "99e0ef32f45907cf746242ca101d4a5e53fe3eb7",
+  "scope": "real canonical modules imported as a local namespace package; no mocks; root __init__, conftest and registry integration excluded",
+  "python": "3.13.14",
+  "tests": {
+    "new_contract_cases": 45,
+    "baseline_failed": 29,
+    "baseline_passed": 16,
+    "patched_contract_passed": 45,
+    "existing_family_regressions_passed": 14,
+    "registry_tests_deselected": 3
+  },
+  "commands": [
+    {
+      "command": "PYTHONPATH=/data/quantum-baseline python -m pytest tests/test_exact_operator_contracts.py -q",
+      "exit_code": 1,
+      "expected_failure": true
+    },
+    {
+      "command": "PYTHONPATH=/data/quantum-review python -m pytest tests/test_exact_operator_contracts.py tests/test_quantum_library.py -q -k 'not lanes_report_live_backends and not execute_ops'",
+      "exit_code": 0
+    },
+    {
+      "command": "python -m compileall -q hilbert.py quantum_library.py test_exact_operator_contracts.py",
+      "exit_code": 0
+    },
+    {
+      "command": "python -m black --check --line-length 100 tests/test_exact_operator_contracts.py",
+      "exit_code": 0
+    }
+  ],
+  "file_sha256": {
+    "hilbert.py": "6ecf53a94af50f18d83fba831c598c3be703edfb515e2ec4f6290c4e484bd296",
+    "quantum_library.py": "62b25053afc3ed9c5f0891488907b7170964acb6685fbcb1e5aa4cdf76c8ed50",
+    "quantum_walk.py": "52b89109723ecae36e4bf477740931a8ca0ee4b37b2b9d6771bd526c84cdd338",
+    "stabilizer.py": "a797ffb00561a6db4344bfe1de8cd72784dc76b097b530a39e63a783085ab69d",
+    "test_exact_operator_contracts.py": "9a8cf1e31d89949c80ba023e1b0d98ded08e65d84db4b33e965e0f48210fefab"
+  },
+  "unrun": [
+    "full registry/certificate pipeline",
+    "root package initialization",
+    "repository conftest",
+    "full TUQC suite",
+    "full repo suite",
+    "installed artifact tests",
+    "CI",
+    "production gates"
+  ],
+  "production_ready": false,
+  "independent_review_performed": false
+}

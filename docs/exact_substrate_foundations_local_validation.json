@@ -1,0 +1,45 @@
+{
+  "schema": "chronus.substrate_foundations.local_validation/1",
+  "baseline_sha": "3365bb3c28fe1aeb672e2309556d5979cb8f5d71",
+  "python": "3.13.14",
+  "execution_scope": "isolated new modules with unmodified baseline chronus/__init__.py; not a repository checkout",
+  "commands": [
+    {
+      "command": "python -m unittest discover -s tests -p 'test_chronus_*.py' -v",
+      "exit_code": 0,
+      "test_count": 25
+    },
+    {
+      "command": "AST exact-literal and stdlib-import check on four new modules",
+      "exit_code": 0
+    },
+    {
+      "command": "python -m compileall -q chronus/pisano.py chronus/metallic.py chronus/tribonacci.py chronus/calkin_wilf.py tests",
+      "exit_code": 0
+    }
+  ],
+  "file_sha256": {
+    "chronus/__init__.py": "bde35a61975de04159bd968a6497fea58557ea5edb0e8c31a01526f042594105",
+    "chronus/calkin_wilf.py": "1a88719b7b298e4a57420a133bde567144e1fec3eb86ac8ad5f0afca60fdcd04",
+    "chronus/metallic.py": "180cc94433f554f4109fcb2efc000012f158c19d87954849468486c95df19271",
+    "chronus/pisano.py": "3210968a8a3e40902cdbb539b0f92526e7fd21f7ef1b5955411744e62ea24875",
+    "chronus/tribonacci.py": "8f8aec2211921abfac61f884093af5334c8b8c22acfa218ea08944825647a86b",
+    "tests/test_chronus_calkin_wilf.py": "48c80d52370ddb3c17ac44f8672bb2704839df13a939679d4be1443610eb19b2",
+    "tests/test_chronus_metallic.py": "4aac5a981079bceca4836bea1d1ada5b983842bd95724bd7b63c20b23ad241c7",
+    "tests/test_chronus_pisano.py": "32ad94a010f49d394d4f9107bc272c375ac8d1cbcecfb03dbc875c1d2bd1e6c8",
+    "tests/test_chronus_tribonacci.py": "e87026d01099bce59a3da00f8d7c28f3b0d085a33d24aab0ddb217f7b91b8e2d"
+  },
+  "not_executed": [
+    "full repository tests",
+    "pytest/conftest integration",
+    "black",
+    "flake8",
+    "installed wheel/sdist tests",
+    "CI",
+    "benchmarks",
+    "device qualification",
+    "security and provenance gates"
+  ],
+  "production_ready": false,
+  "quantum_advantage_claimed": false
+}

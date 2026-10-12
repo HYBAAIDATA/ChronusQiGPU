@@ -5,6 +5,8 @@ on:
     paths:
       - "euclid/**"
       - "tests/test_euclid_runtime.py"
+      - "tests/test_pi01_readiness_regressions.py"
+      - "Intelligence/chain_verification.py"
       - "docs/EUCLID_KAIROS_RUNTIME.md"
       - "pyproject.toml"
       - ".github/workflows/euclid-ci.yml"
@@ -13,6 +15,8 @@ on:
     paths:
       - "euclid/**"
       - "tests/test_euclid_runtime.py"
+      - "tests/test_pi01_readiness_regressions.py"
+      - "Intelligence/chain_verification.py"
       - "pyproject.toml"
 
 permissions:
@@ -37,4 +41,4 @@ jobs:
       - name: Compile
         run: python -m compileall -q euclid tests/test_euclid_runtime.py
       - name: Focused tests
-        run: python -m unittest -v tests.test_euclid_runtime
+        run: python -m unittest -v tests.test_euclid_runtime tests.test_pi01_readiness_regressions
