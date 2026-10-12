@@ -977,8 +977,13 @@ def check_ci_triggers(root: Path, branches: set[str] | None = None) -> list[Find
             on = {name: None for name in on}
         push = on.get("push") if isinstance(on, dict) else None
         push_filter = (push or {}).get("branches") if isinstance(push, dict) else None
+        tag_only = (
+            isinstance(push, dict)
+            and ("tags" in push or "tags-ignore" in push)
+            and not ("branches" in push or "branches-ignore" in push)
+        )
         if isinstance(on, dict) and "push" in on and "pull_request" in on:
-            if not push_filter or any(b in ("*", "**") for b in push_filter):
+            if not tag_only and (not push_filter or any(b in ("*", "**") for b in push_filter)):
                 findings.append(
                     Finding(
                         "DS04",
