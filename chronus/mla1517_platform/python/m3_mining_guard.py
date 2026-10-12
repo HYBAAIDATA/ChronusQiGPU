@@ -8,6 +8,7 @@ custodied by the M3 file plane before the coordinator may call mining.submit.
 from __future__ import annotations
 
 import os
+import time
 import uuid
 from typing import Any, Mapping
 
@@ -112,9 +113,34 @@ class M3MiningSubmissionGate:
         verdict["http_status"] = int(status)
         return verdict
 
+    def _lease_storage_health(self) -> Mapping[str, Any]:
+        """Storage health for one lease authorisation.
+
+        Every lease re-verifies the attestation chain, the mining chain and
+        the recorder's error count. The physical file reconciliation (every
+        stored file's address re-derived and read back) costs O(files) and
+        ran on the Stratum read loop for every work identity, so it runs at
+        most once per ``PYTHIA_STORAGE_RECONCILE_INTERVAL_S`` (default 60;
+        0 = every lease). Between runs the last result is carried forward, so
+        a failed reconciliation keeps leases refused until a later one passes.
+        """
+        raw = os.getenv("PYTHIA_STORAGE_RECONCILE_INTERVAL_S", "60").strip()
+        try:
+            interval = max(0.0, float(raw))
+        except ValueError:
+            interval = 0.0  # unreadable bound: reconcile every lease
+        now = time.monotonic()
+        last = getattr(self, "_reconciled_at", None)
+        due = interval == 0.0 or last is None or now - last >= interval
+        health = self.recorder.health(reconcile=due)
+        if due:
+            self._reconciled_at = now
+        return {**health, "reconciled_this_lease": due,
+                "reconcile_interval_s": interval}
+
     def authorize_lease(self, *, context: Mapping[str, Any]) -> Mapping[str, Any]:
         """Authorize one Stratum work identity before PYTHIA reserves leases."""
-        storage_health = self.recorder.health(reconcile=True)
+        storage_health = self._lease_storage_health()
         if storage_health.get("healthy") is not True:
             return {
                 "allowed": False,

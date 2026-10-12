@@ -107,3 +107,24 @@ def test_bulk_memo_proves_each_attestation_once_and_still_detects_tamper(tmp_pat
     passed = report["passed"] if isinstance(report, dict) else report.passed
     assert not passed
     store.close()
+
+
+def test_storage_address_prime_memo_is_exact_and_tamper_evident():
+    from aethel import storage_topology as st
+
+    data = os.urandom(2048)
+    st._PRIME_KEY_MEMO.clear()
+    cold = st.derive_storage_address(data, tenant_id="t", scope="s")
+    warm = st.derive_storage_address(data, tenant_id="t", scope="s")
+    st._PRIME_KEY_MEMO.clear()
+    assert cold == warm == st.derive_storage_address(data, tenant_id="t", scope="s")
+    bad = bytearray(data)
+    bad[-1] ^= 1
+    assert st.verify_storage_address(cold, data)
+    assert not st.verify_storage_address(cold, bytes(bad))
+    # a caller passing a digest that does not match the bytes is never served from the memo
+    digest = st._sha(data)
+    anchor = int(digest[:16], 16) % st.ANCHOR_MODULUS
+    assert st._prime_key(anchor, digest, bytes(bad)) == int(
+        st.GaloisPrimeSubstrate().commit(anchor, digest, bytes(bad))
+    )
