@@ -7,6 +7,8 @@ on:
       - '.dockerignore'
       - 'frontend/**'
       - 'chronus/**'
+      - 'Intelligence/**'
+      - 'turing_universal_quantum_computer/**'
       - 'scripts/ci_install.sh'
       - 'scripts/verify_release_tag.py'
       - 'tests/test_release_workflow_regressions.py'
@@ -65,6 +67,13 @@ jobs:
         run: python -m pytest tests/ -x -q
         env:
           PYTHONPATH: ${{ github.workspace }}/chronus/mla1517_platform/python
+      - name: Intelligence standalone self-test
+        run: python -X utf8 -m Intelligence.self_test
+        env:
+          PYTHONPATH: ${{ github.workspace }}/chronus/mla1517_platform/python:${{ github.workspace }}/chronus:${{ github.workspace }}
+      - name: TURING standalone test suite
+        working-directory: turing_universal_quantum_computer
+        run: python -m pytest tests -q --junitxml=standalone-release-checks.xml
       - name: Platform behavioral suite
         run: python -m unittest discover -s chronus/mla1517_platform/python
       - name: Import, drift and deployment gates
@@ -80,7 +89,9 @@ jobs:
         if: always()
         with:
           name: container-checks-${{ matrix.python }}
-          path: release-checks.xml
+          path: |
+            release-checks.xml
+            turing_universal_quantum_computer/standalone-release-checks.xml
           if-no-files-found: error
 
   signed-tag:
