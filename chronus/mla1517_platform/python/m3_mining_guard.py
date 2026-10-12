@@ -116,12 +116,13 @@ class M3MiningSubmissionGate:
     def _lease_storage_health(self) -> Mapping[str, Any]:
         """Storage health for one lease authorisation.
 
-        Every lease re-verifies the attestation chain, the mining chain and
-        the recorder's error count. The physical file reconciliation (every
-        stored file's address re-derived and read back) costs O(files) and
-        ran on the Stratum read loop for every work identity, so it runs at
-        most once per ``PYTHIA_STORAGE_RECONCILE_INTERVAL_S`` (default 60;
-        0 = every lease). Between runs the last result is carried forward, so
+        Every lease verifies all records appended since the previous check
+        (custody read-back, provenance attestation, mining chain links) and
+        the recorder's error count. The full pass — re-verifying every older
+        record and re-deriving and reading back every stored file — costs
+        O(files) and ran on the Stratum read loop for every work identity
+        (quadratic over a run), so it runs at most once per
+        ``PYTHIA_STORAGE_RECONCILE_INTERVAL_S`` (default 60; 0 = every lease). Between runs the last result is carried forward, so
         a failed reconciliation keeps leases refused until a later one passes.
         """
         raw = os.getenv("PYTHIA_STORAGE_RECONCILE_INTERVAL_S", "60").strip()
@@ -132,7 +133,7 @@ class M3MiningSubmissionGate:
         now = time.monotonic()
         last = getattr(self, "_reconciled_at", None)
         due = interval == 0.0 or last is None or now - last >= interval
-        health = self.recorder.health(reconcile=due)
+        health = self.recorder.health(reconcile=due, full=due)
         if due:
             self._reconciled_at = now
         return {**health, "reconciled_this_lease": due,

@@ -528,7 +528,9 @@ async def _main_async(args) -> None:
                     LOG.exception("Could not refresh PYTHIA agentic evidence after Salamander")
                 enriched["salamander_autonomy"] = autonomy_snapshot
                 storage_health = (
-                    storage_recorder.health(reconcile=False)
+                    # Status report: new rows only, prior failures carried
+                    # forward; the lease gate owns the timed full pass.
+                    storage_recorder.health(reconcile=False, full=False)
                     if storage_recorder is not None
                     else {
                         "schema": "pythia.m3-storage-health/1",

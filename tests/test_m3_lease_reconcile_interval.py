@@ -17,7 +17,8 @@ class Recorder:
         self.reconciliation_ok = reconciliation_ok
         self.last = None
 
-    def health(self, *, reconcile=True):
+    def health(self, *, reconcile=True, full=True):
+        assert full == reconcile
         self.calls.append(reconcile)
         ok = self.reconciliation_ok if reconcile else (self.last or {}).get("reconciliation_ok", False)
         self.last = {"healthy": ok, "reconciliation_ok": ok}

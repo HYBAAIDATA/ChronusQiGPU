@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import collections
 import json
+import re
 import os
 import secrets
 import shutil
@@ -388,6 +389,17 @@ class Smoke:
                 observed >= 3,
                 f"{observed} vault records reached the chooser in {self.args.seconds}s",
             )
+        # A read-only image must keep every writer on the state volume: any
+        # component still writing beside its code shows up here.
+        denied = sorted(set(re.findall(
+            r"(?:Permission denied|Read-only file system): '([^']+)'",
+            log_text + json.dumps(evidence, default=str),
+        )))
+        self.stage(
+            "state stays on the volume",
+            not denied,
+            "no permission/read-only errors" if not denied else "denied: " + ", ".join(denied[:6]),
+        )
         recoveries = {k: v for k, v in kinds.items() if k and k.startswith("recovery_")}
         self.note(
             "self-healing", json.dumps(recoveries) if recoveries else "no recoveries recorded"
