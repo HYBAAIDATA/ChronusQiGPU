@@ -25,7 +25,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 from hyba.attestation import AttestationLog
 from hyba.inventory import ClusterInventory, DeviceInfo

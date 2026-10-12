@@ -47,21 +47,30 @@ jobs:
         run: |
           BASE="${{ github.base_ref || 'main' }}"
           git fetch --depth=1 origin "$BASE"
-          CHANGED=$(git diff --name-only --diff-filter=d "origin/$BASE"...HEAD -- '*.py')
+          CHANGED=$(git diff --name-only -M100% --diff-filter=AM "origin/$BASE"...HEAD -- '*.py')  # exact moves are not re-linted
           if [ -n "$CHANGED" ]; then python -m flake8 --count $CHANGED; else echo "no changed .py files"; fi
       - name: Fatal lint gate (ruff E9/F)
         run: |
           BASE="${{ github.base_ref || 'main' }}"
           git fetch --depth=1 origin "$BASE"
-          CHANGED=$(git diff --name-only --diff-filter=d "origin/$BASE"...HEAD -- '*.py')
+          CHANGED=$(git diff --name-only -M100% --diff-filter=AM "origin/$BASE"...HEAD -- '*.py')  # exact moves are not re-linted
           if [ -n "$CHANGED" ]; then python -m ruff check --select E9,F $CHANGED; else echo "no changed .py files"; fi
       - name: Clean-wheel remote GPU smoke test
         run: |
           rm -rf dist /tmp/pythia-wheel-smoke
           python -m pip wheel . --no-deps --wheel-dir dist
           python -m pip wheel ./turing_universal_quantum_computer --no-deps --wheel-dir dist
+          # In-tree core dependencies (never on PyPI): chronos-one-igpu, and
+          # kellogg-tensor staged exactly as scripts/ci_install.sh stages it.
+          python -m pip wheel ./chronus/packages/chronos-one-igpu --no-deps --wheel-dir dist
+          KELLOGG_STAGE="$(mktemp -d)/kellogg-tensor"
+          mkdir -p "$KELLOGG_STAGE"
+          cp -r kellogg LICENSE packaging/kellogg-tensor/pyproject.toml \
+                packaging/kellogg-tensor/README.md "$KELLOGG_STAGE/"
+          python -m pip wheel "$KELLOGG_STAGE" --no-deps --wheel-dir dist
           python -m venv /tmp/pythia-wheel-smoke
-          /tmp/pythia-wheel-smoke/bin/pip install --quiet --no-deps numpy dist/*.whl
+          # Resolve declared runtime deps normally; in-tree ones come from dist/.
+          /tmp/pythia-wheel-smoke/bin/pip install --quiet --find-links dist dist/*.whl
           cd /tmp
           /tmp/pythia-wheel-smoke/bin/python - <<'PY'
           import json
@@ -126,7 +135,7 @@ jobs:
         working-directory: turing_universal_quantum_computer
         run: python -m pytest tests -q
       - name: Byte-compile all Python sources
-        run: python -m compileall -q Intelligence core_engine mining hyba lucas pythagoras scripts tests chronus aethel l_hras bench experiments quantum_compute_substrate python_backend tensor
+        run: python -m compileall -q Intelligence core_engine mining hyba pythagoras scripts tests chronus aethel l_hras bench experiments quantum_compute_substrate python_backend tensor
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -161,7 +170,5 @@ jobs:
           cache: pip
       - name: Install Python dependencies with ML extras
         run: bash scripts/ci_install.sh "ml"
-      - name: Fetch NLTK resources (vader_lexicon for toe.PredictiveEngine)
-        run: python -c "import nltk; nltk.download('vader_lexicon', quiet=True)"
       - name: Run Intelligence self-test
         run: python -u -X utf8 -m Intelligence.self_test

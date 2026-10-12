@@ -156,9 +156,9 @@
       "distribution": "hyba-chronos-mathematics",
       "legacy_distribution": "chronos-core",
       "manifest_paths": [
-        "packaging/chronos-core/pyproject.toml"
+        "chronus/packaging/chronos-core/pyproject.toml"
       ],
-      "canonical_manifest": "packaging/chronos-core/pyproject.toml",
+      "canonical_manifest": "chronus/packaging/chronos-core/pyproject.toml",
       "state": "EXISTING_SCAFFOLD",
       "imports_unchanged": [
         "chronus"
@@ -167,7 +167,7 @@
       "source_metadata_version": "1.0.0",
       "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
       "preserved_interface_fingerprints": {
-        "packaging/chronos-core/pyproject.toml": "6f3127892bc0c70a8bf0a05dac125327be48083866f4520ac442671ae66c8da5"
+        "chronus/packaging/chronos-core/pyproject.toml": "6f3127892bc0c70a8bf0a05dac125327be48083866f4520ac442671ae66c8da5"
       }
     },
     {
@@ -176,9 +176,9 @@
       "distribution": "hyba-chronos-one-igpu",
       "legacy_distribution": "chronos-one-igpu",
       "manifest_paths": [
-        "packages/chronos-one-igpu/pyproject.toml"
+        "chronus/packages/chronos-one-igpu/pyproject.toml"
       ],
-      "canonical_manifest": "packages/chronos-one-igpu/pyproject.toml",
+      "canonical_manifest": "chronus/packages/chronos-one-igpu/pyproject.toml",
       "state": "EXISTING_SCAFFOLD",
       "imports_unchanged": [
         "chronos_one_igpu"
@@ -187,7 +187,7 @@
       "source_metadata_version": "1.0.0",
       "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
       "preserved_interface_fingerprints": {
-        "packages/chronos-one-igpu/pyproject.toml": "e69b88388d7f1e64d2f60745a7d3f078ecdfdf64b3c453ce1d0ce4d3472f6b24"
+        "chronus/packages/chronos-one-igpu/pyproject.toml": "e69b88388d7f1e64d2f60745a7d3f078ecdfdf64b3c453ce1d0ce4d3472f6b24"
       }
     },
     {
@@ -207,7 +207,7 @@
       "source_metadata_version": "1.0.0",
       "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
       "preserved_interface_fingerprints": {
-        "pyproject.toml": "56529ce88cce37079f4bd968db21778264b427de3810b6d13f1b368579fdea6b"
+        "pyproject.toml": "b27c7c61c4566b15386cc700d4bf4192efc910ee2ec4cc052ade0887d48c922d"
       }
     },
     {
@@ -236,9 +236,9 @@
       "distribution": "hyba-chronus-igpu",
       "legacy_distribution": "chronus-igpu",
       "manifest_paths": [
-        "packaging/chronus-igpu/pyproject.toml"
+        "chronus/packaging/chronus-igpu/pyproject.toml"
       ],
-      "canonical_manifest": "packaging/chronus-igpu/pyproject.toml",
+      "canonical_manifest": "chronus/packaging/chronus-igpu/pyproject.toml",
       "state": "EXISTING_SCAFFOLD",
       "imports_unchanged": [
         "chronus",
@@ -248,7 +248,7 @@
       "source_metadata_version": "1.0.0",
       "publication_status": "NOT_QUALIFIED_BY_THIS_CHANGE",
       "preserved_interface_fingerprints": {
-        "packaging/chronus-igpu/pyproject.toml": "7ff4770f3df28c75f43c4f0b31ff57f61465fbe2f53796b42cf2d24ee969b6c1"
+        "chronus/packaging/chronus-igpu/pyproject.toml": "7ff4770f3df28c75f43c4f0b31ff57f61465fbe2f53796b42cf2d24ee969b6c1"
       }
     },
     {

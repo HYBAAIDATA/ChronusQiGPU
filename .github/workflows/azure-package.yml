@@ -22,7 +22,7 @@ jobs:
       - name: Build Azure control image
         run: docker build -f deploy/azure/Dockerfile -t pythia-control:ci .
       - name: Live smoke (boot, operator start, pool session, device path, evidence)
-        run: python3 scripts/docker_smoke.py --image pythia-control:ci --seconds 60 --out smoke-artifacts
+        run: python3 scripts/docker_smoke.py --image pythia-control:ci --seconds 150 --out smoke-artifacts
       - name: Upload smoke evidence
         if: always()
         uses: actions/upload-artifact@v4

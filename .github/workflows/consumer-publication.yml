@@ -6,7 +6,7 @@ on:
       - 'packages/pythia-consumer/**'
       - 'aethel/**'
       - 'hyba_db/**'
-      - 'packages/chronos-one-igpu/**'
+      - 'chronus/packages/chronos-one-igpu/**'
       - 'packaging/publication_catalog.json'
       - '.github/workflows/consumer-publication.yml'
   workflow_dispatch:

@@ -2113,7 +2113,7 @@ apis:
     support_owner: CHRONUS
     runtime_evidence: LOCAL_CROSS_SERVICE_EXECUTED
     lifecycle: STABLE
-    tests: [chronus/mla1517_platform/python/test_remote_gpu.py, tests/test_chronus_delivery.py, tests/test_remote_hasher.py]
+    tests: [chronus/mla1517_platform/python/test_remote_gpu.py, chronus/tests/test_chronus_delivery.py, tests/test_remote_hasher.py]
 
 # ---------------------------------------------------------------------------
 # File/artifact contracts between processes.

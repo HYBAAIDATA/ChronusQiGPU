@@ -365,7 +365,7 @@ for i in range(count):
 
 
 def test_concurrent_writer_processes_never_fork_the_ledger(tmp_path) -> None:
-    repo = Path(__file__).resolve().parent.parent
+    repo = Path(__file__).resolve().parents[2]
     env = {**os.environ, "PYTHONPATH": os.pathsep.join(filter(None, [str(repo), os.environ.get("PYTHONPATH")]))}
     writers = [
         subprocess.Popen(

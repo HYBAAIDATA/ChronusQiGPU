@@ -9,7 +9,7 @@ from chronus.v33.research_registry import (
     validate_registry,
 )
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 
 _ACADEMIC_KEYS = {
     "qaoa-reference",
@@ -43,7 +43,7 @@ def test_academic_cases_stay_inside_the_chronus_tree():
     assert len(ACADEMIC_CASES) == len(_ACADEMIC_KEYS)
     for case in ACADEMIC_CASES:
         assert case.implementation.startswith("chronus.v33.")
-        assert case.as_dict()["command"].startswith("python -m pytest -q tests/")
+        assert case.as_dict()["command"].startswith("python -m pytest -q chronus/tests/")
 
 
 def test_product_boundary_cases_address_the_vqc_package():

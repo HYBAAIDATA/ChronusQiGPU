@@ -73,7 +73,12 @@ class ComputationalSubstrate:
         self.adjacency = 0.5 * (weights + weights.T)  # enforce symmetry
         self.degrees = self.adjacency.sum(axis=1)
         self.phi_field = self._build_phi_field()
-        self.psi_field = np.exp(1j * self.phi_field * 2.0 * math.pi)
+        # Amplitude sqrt(phi) so |psi|^2 is the local integrated-information
+        # field. A unit-modulus field (exp(i*2*pi*phi) alone) has |psi|^2 == 1
+        # everywhere, which made the entropy ln(n) for every substrate.
+        self.psi_field = np.sqrt(np.clip(self.phi_field, 0.0, None)) * np.exp(
+            1j * self.phi_field * 2.0 * math.pi
+        )
         self.total_information: float = 0.0
         self.gauge_curvature: float = 0.0
         self.integrability_satisfied: bool = False

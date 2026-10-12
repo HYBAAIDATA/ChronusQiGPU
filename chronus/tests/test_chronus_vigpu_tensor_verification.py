@@ -2,7 +2,7 @@
 
 Regression: the control-plane verifier compared nested (2-D) results with a flat float() loop, so
 every correct 2-D matmul/scale/add was marked ``verification_failed``. Found by running Chronus
-on real workloads (scripts/chronus_capability_probe.py).
+on real workloads (chronus/scripts/chronus_capability_probe.py).
 """
 
 from __future__ import annotations

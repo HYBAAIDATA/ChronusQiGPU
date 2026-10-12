@@ -1,6 +1,6 @@
 # test_chronos_v33_real_workloads.py
 # Chronos GPU -- v3.2 composite elevation + reproducible benchmark protocol
-# (5 Oct 2026). Runs standalone (python tests/test_chronos_v33_real_workloads.py)
+# (5 Oct 2026). Runs standalone (python chronus/tests/test_chronos_v33_real_workloads.py)
 # or under pytest.
 
 import math
@@ -24,7 +24,6 @@ from chronus.v33.reconstruction import (
 from chronus.v33.benchmarks import claims as claim_mod
 from chronus.v33.benchmarks import protocol
 from chronus.v33.benchmarks import real_workloads as rw
-
 
 O = np.array([0.0, 0.0, 0.0])
 

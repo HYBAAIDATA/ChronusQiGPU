@@ -18,7 +18,7 @@ from chronus.v33.research_reconciliation import (
     validate_claims,
 )
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def test_every_documented_claim_is_dispositioned_and_sourced():

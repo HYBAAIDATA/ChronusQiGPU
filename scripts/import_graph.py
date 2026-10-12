@@ -56,6 +56,10 @@ _PY_RUN = re.compile(r"\bpython3?(?:\.\d+)?\s+(?:-u\s+)?(-m\s+([\w.]+)|([\w./-]+
 _UVICORN = re.compile(r"\b(?:uvicorn|gunicorn)\s+(?:.*\s)?([\w.]+):\w+")
 
 
+# Tooling that legitimately drives test modules (gates, probes, evidence replays).
+_TOOLING_PREFIXES = ("scripts/", "chronus/scripts/", "docs/evidence/")
+
+
 def _is_test(rel: str) -> bool:
     name = rel.rsplit("/", 1)[-1]
     return (
@@ -395,7 +399,11 @@ def layer_violations(graph: Graph) -> list[str]:
             line = graph.lines.get((src, dst), 0)
             if to.startswith("legacy/"):
                 out.append(f"{rel}:{line}: imports legacy module {to}")
-            elif _is_test(to) and not rel.startswith("scripts/"):
+            elif (
+                _is_test(to)
+                and not rel.startswith(_TOOLING_PREFIXES)
+                and not rel.endswith("/run_release_gate.py")
+            ):
                 # Tooling may drive the tests (capability probes); live code may not.
                 out.append(f"{rel}:{line}: imports test module {to}")
     return sorted(out)

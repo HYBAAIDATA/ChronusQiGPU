@@ -331,7 +331,8 @@ constitutions:
   - frontend IntelligenceView
   schema:
     request: none
-    response: runner status {state, last_result, ...}
+    response: intelligence status with first-class euclid_cognition projection; cognition/status returns
+      pythia.euclid.cognition/1 directly
     version: pythia.runner/1
   dependency:
   - euclid.orchestration

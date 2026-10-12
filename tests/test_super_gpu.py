@@ -1,6 +1,6 @@
 """Super-GPU surface regression tests — spec-named entry points.
 
-``tests/test_chronus_fabric.py`` owns the (a)–(h) coverage contract for the
+``chronus/tests/test_chronus_fabric.py`` owns the (a)–(h) coverage contract for the
 substrate itself; this file pins the spec-named surfaces that sit on top of
 it: ``hyba.virtual_gpu.SuperGPU``, ``hyba.math_ir.emit_msl``, the
 ``benchmark_super_gpu`` alias, the per-device pin on

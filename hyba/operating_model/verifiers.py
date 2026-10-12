@@ -555,7 +555,7 @@ _DECLARED_CLAIMS = (
     },
     {
         "claim": "round_trip_bit_exact",
-        "source": "lucas/fold.py",
+        "source": "chronus/lucas/fold.py",
         "laureate": None,
         "reduction": None,
     },
@@ -772,7 +772,7 @@ def _submission_route_check(root: Path) -> List[Dict[str, Any]]:
 # ---------------------------------------------------------------------------
 
 _LADDER_PATTERNS = (tuple(CURRICULUM_RUNGS), tuple(FULL_LADDER))
-_LADDER_DECLARING_MODULE = "lucas/ladder.py"
+_LADDER_DECLARING_MODULE = "chronus/lucas/ladder.py"
 
 
 def _ladder_source_check(root: Path) -> List[Dict[str, Any]]:

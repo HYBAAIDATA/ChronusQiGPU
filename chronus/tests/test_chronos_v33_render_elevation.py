@@ -1,4 +1,4 @@
-# tests/test_chronos_v33_render_elevation.py
+# chronus/tests/test_chronos_v33_render_elevation.py
 # Chronos GPU v3.1 elevation pass (5 Oct 2026).
 #
 # Gates:
@@ -14,7 +14,7 @@
 #      per dispatch, and a device that disagrees fails closed to the
 #      reference result while the frame stays correct.
 #
-# Runs under pytest, or standalone: python3 tests/test_chronos_v33_render_elevation.py
+# Runs under pytest, or standalone: python3 chronus/tests/test_chronos_v33_render_elevation.py
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ from pathlib import Path
 
 import numpy as np
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 

@@ -37,7 +37,7 @@ cp -r kellogg LICENSE packaging/kellogg-tensor/pyproject.toml \
 # Substrate distributions that are in-tree and never on PyPI.
 SUBSTRATE=(
   "$KELLOGG_STAGE"
-  ./packages/chronos-one-igpu
+  ./chronus/packages/chronos-one-igpu
   ./turing_universal_quantum_computer
 )
 

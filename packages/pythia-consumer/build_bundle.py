@@ -5,7 +5,7 @@ self-contained (the sibling distributions are not yet published):
 
 - ``aethel``            — THESEUS storage/custody  (repo root ``aethel/``)
 - ``hyba_db``           — OVID data organisation    (repo root ``hyba_db/``)
-- ``chronos_one_igpu``  — CHRONOS ONE iGPU fabric   (``packages/chronos-one-igpu/src``)
+- ``chronos_one_igpu``  — CHRONOS ONE iGPU fabric   (``chronus/packages/chronos-one-igpu/src``)
 
 Then builds the wheel via ``python -m build``. Staged trees are gitignored
 build artifacts — never edit them in place; edit the upstream sources.
@@ -34,7 +34,7 @@ BUNDLED = {
     "aethel": (REPO / "aethel", "hyba-theseus-storage"),
     "hyba_db": (REPO / "hyba_db", "hyba-ovid-data-organisation"),
     "chronos_one_igpu": (
-        REPO / "packages" / "chronos-one-igpu" / "src" / "chronos_one_igpu",
+        REPO / "chronus" / "packages" / "chronos-one-igpu" / "src" / "chronos_one_igpu",
         "hyba-chronos-one-igpu",
     ),
 }

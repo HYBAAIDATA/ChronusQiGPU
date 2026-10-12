@@ -16,6 +16,7 @@ from hyba_db.models import IntegrityFailure, InvalidRecord, Quota
 from hyba_db.ovid_transform import OvidTransformPlane
 from hyba_db.store import OntologyStore
 from hyba_db.theseus_custody import TheseusFileCustody
+from aethel.filesystem_paths import filesystem_root
 
 INTEGRITY_KEY = b"m3-adversarial-integrity-key-0123456"
 CUSTODY_KEY = b"m3-adversarial-theseus-key-0123456789"
@@ -162,7 +163,8 @@ def test_orphan_file_and_orphan_record_detected(tmp_path):
         producer="chronus",
     )
     report = store.files.reconcile_files(tenant_id, root)
-    assert str(stray.resolve()) in report.orphan_files
+    # Windows storage paths are extended-length (\\?\); compare like for like.
+    assert str(filesystem_root(stray.resolve())) in report.orphan_files
     orphans = report.orphan_records
     assert len(orphans) == 1
     assert not report.passed
@@ -295,7 +297,7 @@ def test_cross_tenant_blob_is_a_mismatch(tmp_path):
         (tenant_id, version_id),
     ).fetchone()
     real = Path(row["storage_uri"][7:])
-    rel = real.relative_to((root / tenant_id).resolve())
+    rel = real.relative_to(filesystem_root((root / tenant_id).resolve()))
     moved = root / other.tenant_id / rel
     moved.parent.mkdir(parents=True, exist_ok=True)
     real.replace(moved)

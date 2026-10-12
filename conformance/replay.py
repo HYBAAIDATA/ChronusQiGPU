@@ -16,6 +16,13 @@ from conformance.oracle import POLICY
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _chronus_path(name: str) -> Path:
+    """Source-tree location of a Chronus component (relocated under chronus/),
+    falling back to the flat layout used by installed wheels."""
+    nested = ROOT / "chronus" / name
+    return nested if nested.exists() else ROOT / name
+
+
 def _artifact(root: Path, kind: str, digest: str) -> Path:
     path = root / "artifacts" / kind / digest
     if not path.is_file():
@@ -26,7 +33,7 @@ def _artifact(root: Path, kind: str, digest: str) -> Path:
 
 
 def _find_emulator(name: str) -> Path:
-    build = ROOT / "emulator" / "build"
+    build = _chronus_path("emulator") / "build"
     candidates = [
         build / name,
         build / f"{name}.exe",
@@ -181,7 +188,7 @@ def replay_semantic(root: Path, cli: Path | None = None) -> dict:
     root = Path(root)
     cli = cli or _find_emulator("chronus-emu")
     cli_sha = sha(cli.read_bytes())
-    compiler_sha = tree_digest(ROOT / "compiler")
+    compiler_sha = tree_digest(_chronus_path("compiler"))
     passed = rejected = 0
 
     for case_path in sorted((root / "cases" / "semantic").glob("*.json")):
@@ -277,7 +284,7 @@ def replay_machine(root: Path, cli: Path | None = None) -> dict:
     cli = cli or _find_emulator("chronus-emu")
     cli_sha = sha(cli.read_bytes())
     suite = _find_emulator("chronus-emulator-tests")
-    suite_source = ROOT / "emulator" / "tests" / "test_emulator.cpp"
+    suite_source = _chronus_path("emulator") / "tests" / "test_emulator.cpp"
     suite_source_text = suite_source.read_text(errors="ignore")
     suite_sha = sha(suite.read_bytes() + suite_source.read_bytes())
     counts: dict[str, int] = {}

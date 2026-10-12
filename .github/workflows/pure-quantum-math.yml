@@ -43,7 +43,10 @@ jobs:
         run: |
           python -m pip install "numpy>=1.26,<3" "sympy>=1.12,<2"
           python -m pip install --no-deps -e ./turing_universal_quantum_computer
-          echo "PYTHONPATH=${{ github.workspace }}" >> "$GITHUB_ENV"
+          # mining/search.py imports chronos_one_igpu at module load (in-tree, not on PyPI).
+          python -m pip install --no-deps ./chronus/packages/chronos-one-igpu
+          # chronus/ after the root: first-party packages relocated under chronus/ (lucas, ...)
+          echo "PYTHONPATH=${{ github.workspace }}:${{ github.workspace }}/chronus" >> "$GITHUB_ENV"
       - name: Compile exact implementation
         run: >-
           python -m py_compile

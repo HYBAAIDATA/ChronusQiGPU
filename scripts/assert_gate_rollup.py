@@ -114,7 +114,14 @@ def evaluate(results_dir: Path, *, repo_root: Path = ROOT,
         try:
             payload = read_json(path)
             if not isinstance(payload, dict):
-                raise ValueError("gate evidence must be an object")
+                # Gates also write auxiliary detail files (e.g. the import-audit
+                # findings list) beside their verdicts. Only a file named for a
+                # required gate must be a verdict object; anything else that is
+                # not an object cannot claim a gate and is reported as ignored.
+                if path.stem in required:
+                    raise ValueError("gate evidence must be an object")
+                ignored.append(path.name)
+                continue
             if "gate" not in payload and path.stem not in required:
                 ignored.append(path.name)
                 continue

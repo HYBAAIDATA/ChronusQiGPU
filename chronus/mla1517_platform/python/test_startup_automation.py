@@ -31,6 +31,7 @@ REPO = PLATFORM.parents[2]
 TUQC = REPO / "turing_universal_quantum_computer"
 PYTHON = sys.executable or r"C:\Python312\python.exe"
 
+from strict_m3_fixture import strict_m3_child_env
 from test_agentic_voyages import EASY_TARGET, FakePool, _job, bip34_coinb1
 
 PATIENCE_S = float(os.getenv("PYTHIA_STARTUP_TEST_TIMEOUT_S", "120"))
@@ -94,7 +95,8 @@ class StartupAutomationTests(unittest.TestCase):
                         "INFO",
                     ],
                     cwd=REPO,
-                    env=_child_env(tmp, port),
+                    # --submit requires strict M3: real custody plane + admitted tenant.
+                    env={**_child_env(tmp, port), **strict_m3_child_env(tmp)},
                     stdout=log,
                     stderr=subprocess.STDOUT,
                 )

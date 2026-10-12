@@ -25,11 +25,11 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 sys.path.insert(
     0,
     str(
-        Path(__file__).resolve().parent.parent / "chronus/mla1517_platform" / "python"
+        Path(__file__).resolve().parents[2] / "chronus/mla1517_platform" / "python"
     ),
 )
 
@@ -40,7 +40,7 @@ from hyba.inventory import ClusterInventory
 from hyba.multi_hasher import MultiDeviceHasher
 from chronus.fabric import ChronusFabric
 
-REPORTS = Path(__file__).resolve().parent.parent / "reports"
+REPORTS = Path(__file__).resolve().parents[2] / "reports"
 CORPUS_SEED = 0x53555047
 
 

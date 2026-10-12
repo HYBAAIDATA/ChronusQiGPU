@@ -100,8 +100,21 @@ async def _run(out_dir: Path, *, min_accepted: int, timeout: float) -> dict:
         "PYTHIA_STORAGE_INTEGRITY_KEY_HEX": "11" * 32,
         "PYTHIA_STORAGE_CUSTODY_KEY_HEX": "22" * 32,
     }
+    # Live submission requires strict M3 (AL HARAS + THESEUS custody): the
+    # loopback voyage provisions the real plane and admits its tenant once.
+    from strict_m3_fixture import strict_m3_environment
+
+    m3 = strict_m3_environment(work)
+    for key in ("PYTHIA_STORAGE_DB", "PYTHIA_STORAGE_ROOT", "PYTHIA_STORAGE_CUSTODY_ROOT",
+                "PYTHIA_STORAGE_INTEGRITY_KEY_HEX", "PYTHIA_STORAGE_CUSTODY_KEY_HEX"):
+        m3[key] = env[key]
+    env.update(m3)
     saved = {k: os.environ.get(k) for k in env}
     os.environ.update(env)
+    from strict_m3_fixture import _reset_guardian_cache, admit_tenant
+
+    _reset_guardian_cache()
+    admit_tenant()
     os.environ.pop("PYTHIA_BITCOIN_RPC_URL", None)
     os.environ.pop("PYTHIA_BITCOIN_NETWORK", None)
 

@@ -18,13 +18,13 @@ CAPABILITY_MANIFEST: Dict[str, Dict[str, Any]] = {
     "backend.chronus_adapter": {
         "status": "hardware_evidence_required",
         "implementation": "tensor/backends/chronus_backend.py + chronus/tensor_compute.py + chronus/kernels/tensor_ops.cl",
-        "tests": "tests/test_chronus_tensor_compute.py",
+        "tests": "chronus/tests/test_chronus_tensor_compute.py",
         "evidence_needed": "Physical OpenCL GPU numerical comparison against NumPy reference.",
     },
     "hardware.chronus_tensor_kernels": {
         "status": "hardware_evidence_required",
         "implementation": "chronus/kernels/tensor_ops.cl; chronus/tensor_compute.py",
-        "tests": "tests/test_chronus_tensor_compute.py",
+        "tests": "chronus/tests/test_chronus_tensor_compute.py",
         "evidence_needed": "Physical float32 matmul/add/hadamard/scale/kron run with TensorMeasurement/provenance.",
     },
     "router.explicit_backend_fail_closed": {

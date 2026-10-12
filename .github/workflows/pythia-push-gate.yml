@@ -31,7 +31,7 @@ jobs:
              ../../packaging/kellogg-tensor/pyproject.toml \
              ../../packaging/kellogg-tensor/README.md "$KELLOGG_STAGE/"
           python -m pip install "$KELLOGG_STAGE" \
-             ../../packages/chronos-one-igpu \
+             ../../chronus/packages/chronos-one-igpu \
              ../../turing_universal_quantum_computer \
              -e ".[test]"
           rm -rf "$(dirname "$KELLOGG_STAGE")"
@@ -46,5 +46,5 @@ jobs:
       - name: Run canonical Python tests
         working-directory: chronus/mla1517_platform
         env:
-          PYTHONPATH: python:../..
+          PYTHONPATH: python:../..:..  # ..: first-party pkgs relocated under chronus/ (lucas, compiler, ...)
         run: python -m pytest python -q -rs

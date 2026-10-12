@@ -161,6 +161,30 @@ class _PendingSubmission:
     block_candidate: bool
 
 
+def _ledger_resident_evidence(evidence) -> dict:
+    """Resident-Hendrix evidence as recorded on the causal ledger.
+
+    The sealed exact geometry (``geometry.transport.folded_hex``, ~400 KB)
+    is identical for every plan built from one precompute state and is
+    already bound by its seal ``digest`` and ``raw_sha256``. The ledger, and
+    the strict-M3 custody record derived from it, carry that content-addressed
+    reference rather than one copy of the raw transport per plan, which would
+    exceed the custody per-record payload cap. The full certificate stays on
+    the plan itself for execution and verification.
+    """
+    value = dict(evidence or {})
+    geometry = value.get("geometry")
+    if isinstance(geometry, Mapping) and isinstance(geometry.get("transport"), Mapping):
+        transport = geometry["transport"]
+        value["geometry"] = {
+            **{k: v for k, v in geometry.items() if k != "transport"},
+            "transport": {
+                k: v for k, v in transport.items() if k != "folded_hex"
+            } | {"folded_hex_omitted": "sealed by geometry.digest"},
+        }
+    return value
+
+
 def _positive_int_env(name: str, default: int) -> int:
     raw = os.getenv(name, "").strip()
     if not raw:
@@ -1540,7 +1564,9 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     plan_id=plan.plan_id,
                     lease_id=plan.plan_id,
                 ),
-                resident_hendrix=dict(plan.evidence_refs.get("resident_hendrix") or {}),
+                resident_hendrix=_ledger_resident_evidence(
+                    plan.evidence_refs.get("resident_hendrix")
+                ),
                 route=plan.executor_route,
                 nonce_start=plan.base_step,
                 window=plan.window,
@@ -2430,7 +2456,6 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         """Single network writer for candidates produced by the compute plane."""
         while True:
             pending = await self._submission_queue.get()
-            retain_identity = True
             try:
                 self._submission_in_flight = True
                 retry_delay = 0.01
@@ -2857,7 +2882,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                         plan_id=plan.plan_id,
                         lease_id=plan.plan_id,
                     ),
-                    resident_hendrix=dict(plan.evidence_refs.get("resident_hendrix") or {}),
+                    resident_hendrix=_ledger_resident_evidence(plan.evidence_refs.get("resident_hendrix")),
                     route=plan.executor_route,
                     nonce_start=plan.base_step,
                     window=plan.window,

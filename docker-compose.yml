@@ -13,8 +13,30 @@ services:
       PYTHIA_WEB_ROOT: /app/dist/public
       # Required: control is closed without it (openssl rand -hex 32).
       EUCLID_ADMIN_API_KEY: "${EUCLID_ADMIN_API_KEY:?set EUCLID_ADMIN_API_KEY}"
+      # Required: the startup contract refuses to boot without a Stratum identity.
+      MLA1517_STRATUM_USER: "${MLA1517_STRATUM_USER:?set MLA1517_STRATUM_USER (account.worker)}"
+      # 32-byte hex HMAC secret for worker heartbeats (openssl rand -hex 32).
+      PYTHIA_IDENTITY_HMAC_SECRET: "${PYTHIA_IDENTITY_HMAC_SECRET:-}"
       HYBA_REQUIRE_HYBA: "${HYBA_REQUIRE_HYBA:-1}"
       HYBA_DEVICE_ALIAS: "${HYBA_DEVICE_ALIAS:-}"
+      # Live submission (operator-armed via runtime_config live_submit) is
+      # refused unless strict M3 is configured: AL HARAS authorisation and
+      # THESEUS custody. Leave ALL of these unset for shadow mining; set ALL
+      # of them for live, then admit the tenant once with
+      # scripts/provision_m3_tenant.py --approve-tenant and run
+      # scripts/production_preflight.py. Paths should live on pythia_data.
+      PYTHIA_M3_REQUIRED: "${PYTHIA_M3_REQUIRED:-}"
+      PYTHIA_STORAGE_DB: "${PYTHIA_STORAGE_DB:-}"
+      PYTHIA_STORAGE_ROOT: "${PYTHIA_STORAGE_ROOT:-}"
+      PYTHIA_STORAGE_CUSTODY_ROOT: "${PYTHIA_STORAGE_CUSTODY_ROOT:-}"
+      PYTHIA_STORAGE_TENANT: "${PYTHIA_STORAGE_TENANT:-}"
+      PYTHIA_STORAGE_INTEGRITY_KEY_HEX: "${PYTHIA_STORAGE_INTEGRITY_KEY_HEX:-}"
+      PYTHIA_STORAGE_CUSTODY_KEY_HEX: "${PYTHIA_STORAGE_CUSTODY_KEY_HEX:-}"
+      PYTHIA_M3_TENANT: "${PYTHIA_M3_TENANT:-}"
+      PYTHIA_M3_ACTOR: "${PYTHIA_M3_ACTOR:-}"
+      PYTHIA_M3_AL_HARAS_TOKEN: "${PYTHIA_M3_AL_HARAS_TOKEN:-}"
+      AL_HARAS_SUBSCRIPTION_KEYS: "${AL_HARAS_SUBSCRIPTION_KEYS:-}"
+      AL_HARAS_DATA_DIR: "${AL_HARAS_DATA_DIR:-/app/data/al-haras}"
     devices:
       - "${MLA1517_UIO_DEVICE:-/dev/uio0}:/dev/uio0"
     volumes:

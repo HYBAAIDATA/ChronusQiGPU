@@ -9,7 +9,7 @@ import chronus
 import chronus.mla1517
 from chronus import Chronus, ChronusFabric, ChronusOpenCLEngine, ChronusTelemetry
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SKIP = {"legacy", ".git", "node_modules", ".venv", "venv", "dist", "build"}
 TEXT_SUFFIXES = {".py", ".md", ".toml", ".yml", ".yaml", ".json", ".ts", ".tsx", ".js", ".cl"}
 

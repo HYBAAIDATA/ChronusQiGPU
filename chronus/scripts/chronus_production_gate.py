@@ -6,7 +6,7 @@ substrate is evidence about where the run executed, not the Chronus product iden
 Host-GPU/accelerator augmentation certification is a separate workflow.
 
 Run from repository root:
-    python scripts/chronus_production_gate.py --out artifacts/chronus-production
+    python chronus/scripts/chronus_production_gate.py --out artifacts/chronus-production
 
 The runner stops neither at imports nor at source inspection. It executes focused
 contracts, first workload, clean-wheel installation, and the complete configured
@@ -29,7 +29,7 @@ import sys
 import tempfile
 from typing import Sequence
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 @dataclass(frozen=True)
@@ -97,27 +97,27 @@ def _focused_commands() -> list[tuple[str, list[str]]]:
     return [
         (
             "two_mode_contract",
-            [py, "-m", "pytest", "tests/test_chronus_two_mode_contract.py", "-q", "--tb=short"],
+            [py, "-m", "pytest", "chronus/tests/test_chronus_two_mode_contract.py", "-q", "--tb=short"],
         ),
         (
             "delivery_contract",
-            [py, "-m", "pytest", "tests/test_chronus_delivery.py", "-q", "--tb=short"],
+            [py, "-m", "pytest", "chronus/tests/test_chronus_delivery.py", "-q", "--tb=short"],
         ),
         (
             "vigpu_fail_closed",
-            [py, "-m", "pytest", "tests/test_chronus_vigpu_fail_closed_contract.py", "-q", "--tb=short"],
+            [py, "-m", "pytest", "chronus/tests/test_chronus_vigpu_fail_closed_contract.py", "-q", "--tb=short"],
         ),
         (
             "production_route",
-            [py, "-m", "pytest", "tests/test_chronus_production_route.py", "-q", "--tb=short"],
+            [py, "-m", "pytest", "chronus/tests/test_chronus_production_route.py", "-q", "--tb=short"],
         ),
         (
             "theseus_restart",
-            [py, "-m", "pytest", "tests/test_chronus_theseus_restart_contract.py", "-q", "--tb=short"],
+            [py, "-m", "pytest", "chronus/tests/test_chronus_theseus_restart_contract.py", "-q", "--tb=short"],
         ),
         (
             "first_workload",
-            [py, "-m", "pytest", "tests/test_chronus_first_workload.py", "-q", "--tb=short"],
+            [py, "-m", "pytest", "chronus/tests/test_chronus_first_workload.py", "-q", "--tb=short"],
         ),
         (
             "import_audit",
@@ -227,7 +227,7 @@ def main() -> int:
             "capability_probe",
             [
                 _python(),
-                "scripts/chronus_capability_probe.py",
+                "chronus/scripts/chronus_capability_probe.py",
                 "--quick",
                 "--out",
                 str(out_dir / "capability.json"),
@@ -270,7 +270,7 @@ def main() -> int:
     summary_path = out_dir / "gate-summary.json"
     summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
 
-    producer = "scripts/chronus_production_gate.py"
+    producer = "chronus/scripts/chronus_production_gate.py"
     evidence = {}
     if summary["all_required_passed"]:
         capability_path = out_dir / "capability.json"

@@ -54,7 +54,7 @@ AGENT_PREFIXES = {
         "distributed/",
         "emulator/",
         "conformance/",
-        "packages/chronos-one-igpu/",
+        "chronus/packages/chronos-one-igpu/",
     ),
     "D": (
         "turing_universal_quantum_computer/",
@@ -71,6 +71,7 @@ AGENT_PREFIXES = {
     "E": (
         "hyba_db/",
         "evidence/",
+        "release-evidence/",
         "artifacts/",
         "schema/",
         "manifests/",
@@ -88,6 +89,7 @@ AGENT_PREFIXES = {
         "plugins/",
         "deploy/",
         "packaging/",
+        "packages/pythia-consumer/",
         "observability/",
         "runbooks/",
         "tools/",
@@ -104,6 +106,7 @@ AGENT_PREFIXES = {
         ".agents/",
         ".devin/",
         "docs/",
+        "delegation/",
         "legacy/",
         "make/",
         "unused/",

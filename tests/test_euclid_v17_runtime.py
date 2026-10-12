@@ -1,7 +1,6 @@
 """EUCLID v17 adaptive intelligence inside the governed EuclidRuntime."""
 from __future__ import annotations
 
-import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -11,8 +10,6 @@ from euclid.cognition.baselines import DelegatorExecutor
 from euclid.cognition.reachability import ReachabilityStage
 from euclid.cognition.worlds import MechanismWorld, WorldExecutor, generate_task
 from euclid.runtime import EuclidRuntime
-
-CUSTODY_KEY = b"v17-runtime-custody-key-32b!"
 
 
 class AdaptiveRuntime(unittest.TestCase):
@@ -28,7 +25,7 @@ class AdaptiveRuntime(unittest.TestCase):
 
     def test_tasks_execute_only_through_governed_delegation(self) -> None:
         runtime = self._runtime()
-        runtime.compose_adaptive_intelligence(custody=self.custody)
+        runtime.compose_adaptive_intelligence()
         spec, truth = generate_task("program-transformation", seed=12, partition="evaluation")
         world = MechanismWorld(spec, truth, seed=1)
         result = runtime.solve_task(spec, WorldExecutor(world), seed=1)

@@ -8,7 +8,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from compiler import compile_ir
@@ -64,7 +64,7 @@ def source_revision():
 
 
 def main():
-    subprocess.run([sys.executable, "scripts/check_chronus103.py"], cwd=ROOT, check=True)
+    subprocess.run([sys.executable, "chronus/scripts/check_chronus103.py"], cwd=ROOT, check=True)
     say("#100-#103 inherited gates")
 
     for n in (1, 31, 32, 33, 255, 256, 257, 1024, 4063, 4064, 4065, 4079, 4080):

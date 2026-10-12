@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from bench.chronus_igpu_evidence import (
+from chronus.bench.chronus_igpu_evidence import (
     UNAVAILABLE,
     _rapl_delta,
     _rapl_snapshot,

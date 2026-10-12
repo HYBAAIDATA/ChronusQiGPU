@@ -16,12 +16,16 @@ COPY --from=frontend /build/dist/public ./dist/public
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ocl-icd-libopencl1 intel-opencl-icd pocl-opencl-icd rocm-opencl-icd clinfo \
     && rm -rf /var/lib/apt/lists/*
-RUN pip install --no-cache-dir ./turing_universal_quantum_computer ".[hardware]"
+# hyba-kellogg-tensor and hyba-chronos-one-igpu are in-tree only (not on PyPI);
+# ci_install.sh stages them so resolution never reaches PyPI for them.
+RUN PIP_NO_CACHE_DIR=1 bash scripts/ci_install.sh "hardware"
 
 # Create non-root user for production security
 RUN groupadd -r pythia && useradd -r -g pythia -d /app -s /sbin/nologin pythia
-RUN mkdir -p /var/lib/hyba/al-haras && chmod 700 /var/lib/hyba/al-haras
-RUN chown -R pythia:pythia /app /var/lib/hyba/al-haras
+# The worker heartbeat dir defaults to /run/pythia/hb; as a non-root user the
+# service cannot create it at boot, so it is provisioned and owned here.
+RUN mkdir -p /var/lib/hyba/al-haras /run/pythia/hb && chmod 700 /var/lib/hyba/al-haras /run/pythia/hb
+RUN chown -R pythia:pythia /app /var/lib/hyba/al-haras /run/pythia
 
 ENV PYTHIA_HOST=0.0.0.0
 ENV PYTHIA_PORT=3000
@@ -29,6 +33,7 @@ ENV PYTHIA_WEB_ROOT=/app/dist/public
 ENV HYBA_REQUIRE_HYBA=1
 ENV OCL_ICD_VENDORS=/etc/OpenCL/vendors
 ENV AL_HARAS_DATA_DIR=/var/lib/hyba/al-haras
+ENV PYTHIA_WORKER_HEARTBEAT_DIR=/run/pythia/hb
 
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
