@@ -53,6 +53,10 @@ RUN mkdir -p /tmp/kellogg-tensor \
     && useradd --uid 10001 --gid pythia --no-create-home pythia \
     && mkdir -p /var/lib/pythia /tmp/pythia/hb /app/data/repo_engineer \
     && chown -R pythia:pythia /var/lib/pythia /tmp/pythia /app/data
+# The runtime sets PYTHONDONTWRITEBYTECODE and runs as uid 10001, so nothing
+# can cache bytecode at run time: precompile the application tree once here,
+# otherwise every supervised worker spawn recompiles it before mining.
+RUN python -m compileall -q -j 0 -x '/(legacy|node_modules|frontend)/' /app >/dev/null || true
 USER 10001:10001
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
