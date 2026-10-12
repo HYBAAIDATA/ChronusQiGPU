@@ -1,0 +1,49 @@
+# Sovereign proof: the HYBA sovereign products (CHRONUS, THESEUS, OVID with
+# Salamander, Kellogg and TURING) inside the AL HARAS air-gapped boundary,
+# on a Docker network with no route out (internal: true).
+#
+#   export HYBA_SOVEREIGN_ATTESTATION_KEY=$(openssl rand -hex 32)
+#   docker compose -f docker-compose.sovereign.yml run --rm sovereign-proof
+#   docker compose -f docker-compose.sovereign.yml run --rm --entrypoint cat \
+#       sovereign-proof /app/data/sovereign-proof/summary.md
+#
+# This stack is separate from docker-compose.yml on purpose: it does not
+# start the mining control service, needs no Stratum identity and imports no
+# pool, wallet or submission path. The proof pack exits non-zero unless every
+# boundary check holds AND its hook-free network probe finds no route out.
+# Keep the attestation key: verifying attestation.json later needs it
+# (python -m al_haras.sovereign_control verify attestation.json --audit audit.jsonl).
+services:
+  sovereign-proof:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: hyba-sovereign:local
+    networks:
+      - enclave
+    environment:
+      HYBA_SOVEREIGN_MODE: air_gapped
+      HYBA_SOVEREIGN_AUDIT_PATH: /app/data/sovereign/audit.jsonl
+      HYBA_SOVEREIGN_ATTESTATION_KEY: "${HYBA_SOVEREIGN_ATTESTATION_KEY:?set HYBA_SOVEREIGN_ATTESTATION_KEY (openssl rand -hex 32)}"
+      HYBA_SOVEREIGN_NETWORK_ISOLATION: docker-internal-network
+      HYBA_SOVEREIGN_PROOF_LOCAL: /app/data
+      HYBA_SOVEREIGN_STORAGE_ROOTS: /app/data,/tmp
+      # Private egress inside the enclave (e.g. an internal registry or
+      # database) is opt-in and must be non-global: "10.0.0.0/8:5432".
+      HYBA_SOVEREIGN_EGRESS_ALLOW: "${HYBA_SOVEREIGN_EGRESS_ALLOW:-}"
+    volumes:
+      - sovereign_data:/app/data
+    command:
+      - python3
+      - scripts/sovereign_proof_pack.py
+      - --require-network-isolation
+      - --out
+      - /app/data/sovereign-proof
+
+networks:
+  enclave:
+    internal: true
+
+volumes:
+  sovereign_data:
+    driver: local
