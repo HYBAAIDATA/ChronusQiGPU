@@ -30,3 +30,31 @@ jobs:
           name: docker-live-smoke
           path: smoke-artifacts/
           if-no-files-found: warn
+      - name: Sovereign air-gap proof (internal Docker network, no route out)
+        # The same image, on a network with no egress, in AL HARAS air_gapped
+        # mode: real egress/DNS/cloud-storage/ingestion attempts must be
+        # refused and recorded, THESEUS/OVID/CHRONUS must work on local
+        # storage, the signed attestation must verify, every tamper must be
+        # detected, and the hook-free probe must find no route out.
+        run: |
+          docker network create --internal hyba-enclave
+          mkdir -p sovereign-proof && chmod 777 sovereign-proof
+          docker run --rm --network hyba-enclave \
+            -e HYBA_SOVEREIGN_MODE=air_gapped \
+            -e HYBA_SOVEREIGN_AUDIT_PATH=/out/audit/sovereign.jsonl \
+            -e HYBA_SOVEREIGN_ATTESTATION_KEY="$(openssl rand -hex 32)" \
+            -e HYBA_SOVEREIGN_NETWORK_ISOLATION=docker-internal-network \
+            -e HYBA_SOVEREIGN_PROOF_LOCAL=/out/data \
+            -e HYBA_BUILD_COMMIT="${{ github.sha }}" \
+            -v "$PWD/sovereign-proof:/out" \
+            pythia-control:ci python scripts/sovereign_proof_pack.py --require-network-isolation --out /out/pack
+      - name: Publish sovereign proof summary
+        if: always()
+        run: cat sovereign-proof/pack/summary.md >> "$GITHUB_STEP_SUMMARY" || true
+      - name: Upload sovereign proof pack
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sovereign-proof-pack
+          path: sovereign-proof/pack/
+          if-no-files-found: warn

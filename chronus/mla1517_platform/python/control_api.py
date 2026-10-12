@@ -567,8 +567,20 @@ class ControlPlane:
         env.setdefault("PYTHONPATH", str(self.python_root))
         # Workers inherit the service's stdout/stderr so a container log
         # shows why a worker exited; the restart budget still bounds it.
+        # Sovereign deployments run every worker inside the same AL HARAS
+        # boundary as this service (al_haras.sovereign_exec); connected mode
+        # keeps the plain interpreter argv.
+        try:
+            from al_haras.sovereign_control import ENV_ROLE, worker_argv
+        except ImportError:  # pragma: no cover - al_haras ships with the service
+            if (env.get("HYBA_SOVEREIGN_MODE") or "connected").strip().lower() != "connected":
+                raise RuntimeError("sovereign mode requires al_haras; refusing to spawn unbounded")
+            argv = [sys.executable, str(handle.script)]
+        else:
+            argv = worker_argv(handle.script, env)
+            env.setdefault(ENV_ROLE, f"worker:{handle.record.worker_id}")
         handle.process = subprocess.Popen(
-            [sys.executable, str(handle.script)],
+            argv,
             cwd=str(self.python_root),
             env=env,
             text=True,

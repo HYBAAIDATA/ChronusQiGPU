@@ -19,6 +19,7 @@ import re
 import tempfile
 import threading
 import time
+from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
@@ -177,12 +178,38 @@ class TheseusStorageAddress:
         return address
 
 
+_PRIME_KEY_MEMO: "OrderedDict[tuple[int, str, int], int]" = OrderedDict()
+_PRIME_KEY_MEMO_SIZE = 4096
+_PRIME_KEY_LOCK = threading.Lock()
+
+
 def _prime_key(anchor: int, digest: str, data: bytes) -> int:
     # Use the existing Galois substrate's exact commit algorithm.  The ephemeral
     # substrate is intentional: placement derivation must not depend on mutable
     # process state, while the canonical key must stay identical to Aethel's
     # implemented prime addressing.
-    return int(GaloisPrimeSubstrate().commit(anchor, digest, data))
+    #
+    # The commit is a pure function of the payload. Every caller computes
+    # ``digest`` as SHA-256 of ``data`` itself, so a memo keyed on
+    # (anchor, digest, length) returns exactly what recomputation would and
+    # altered bytes always miss. Reconciliation re-derives every stored
+    # file's address on each pass; without this it re-ran the prime commit
+    # per file per pass on the mining event loop.
+    if _sha(data) != digest:
+        return int(GaloisPrimeSubstrate().commit(anchor, digest, data))
+    key = (int(anchor), digest, len(data))
+    with _PRIME_KEY_LOCK:
+        hit = _PRIME_KEY_MEMO.get(key)
+        if hit is not None:
+            _PRIME_KEY_MEMO.move_to_end(key)
+            return hit
+    value = int(GaloisPrimeSubstrate().commit(anchor, digest, data))
+    with _PRIME_KEY_LOCK:
+        _PRIME_KEY_MEMO[key] = value
+        _PRIME_KEY_MEMO.move_to_end(key)
+        while len(_PRIME_KEY_MEMO) > _PRIME_KEY_MEMO_SIZE:
+            _PRIME_KEY_MEMO.popitem(last=False)
+    return value
 
 
 def derive_storage_address(

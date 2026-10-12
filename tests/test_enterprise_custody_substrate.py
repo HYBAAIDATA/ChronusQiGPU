@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -21,7 +20,6 @@ def _mp_child_get(q, root_s: str, key_hex: str, record_id: str) -> None:
         q.put(("err", f"{type(exc).__name__}: {exc}"))
 
 
-
 from aethel.enterprise import (
     AlHarasEvidenceAdapter,
     AuthenticityError,
@@ -29,7 +27,6 @@ from aethel.enterprise import (
     CompositionRoot,
     ConcurrencyConflict,
     DenyingHook,
-    EnterpriseCustody,
     EvidenceTelemetry,
     Quotas,
     ReadOnlyModeError,
@@ -55,7 +52,6 @@ def key() -> bytes:
     return b"unit-test-hmac-key-32b!!!!!!!!"
 
 
-
 # --- A1 restart recover identical ---
 def test_a1_put_get_restart_recover_identical(root: Path, key: bytes) -> None:
     c1 = compose(root, hmac_key=key)
@@ -66,7 +62,8 @@ def test_a1_put_get_restart_recover_identical(root: Path, key: bytes) -> None:
 
     c2 = compose(root, hmac_key=key)
     assert c2.get("r1") == b"hello-a1"
-    assert content_digest(c2.get("r1")) == dig or True  # payload digest path
+    # Review finding R12: this was "== dig or True" and could never fail.
+    assert content_digest(c2.get("r1")) == dig
     assert c2.get("r1") == b"hello-a1"
 
 
@@ -396,9 +393,10 @@ def test_a20_light_endurance_is_not_soak(root: Path, key: bytes) -> None:
         rid = f"le{i}"
         c.put(f"v{i}".encode(), record_id=rid)
         assert c.get(rid) == f"v{i}".encode()
-    tel = c.telemetry.snapshot() if hasattr(c, "telemetry") else {}
-    # Label check via health/telemetry scope if present; always document in test name.
-    assert tel.get("put_ok", 50) >= 50 or True
+    # Review finding R12: this was ">= 50 or True" with a defaulted key, so
+    # it could never fail. The counter must be real and count every put.
+    tel = c.telemetry.snapshot()
+    assert tel["put_ok"] >= 50
     # Explicit non-claim:
     claim = "light endurance (50 ops) — NOT soak / NOT hyperscaler"
     assert "50" in claim and "NOT soak" in claim

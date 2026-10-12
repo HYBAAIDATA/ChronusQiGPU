@@ -2681,12 +2681,13 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             # socket write). Record the stale outcome instead of crashing
             # the execution loop.
             self._last_pool_outcome = PoolOutcome.STALE
-            self.cycle.try_transition(
-                MiningCycleState.HEAL,
-                event="stale",
-                reason="job generation rotated before submission",
-                evidence={"outcome": PoolOutcome.STALE.value},
-            )
+            if cycle_reporting:  # the independent submitter never moves the search cycle
+                self.cycle.try_transition(
+                    MiningCycleState.HEAL,
+                    event="stale",
+                    reason="job generation rotated before submission",
+                    evidence={"outcome": PoolOutcome.STALE.value},
+                )
             return False
         except BaseException:
             if callable(wire_counter) and wire_before is not None:

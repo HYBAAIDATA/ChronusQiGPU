@@ -25,7 +25,6 @@ from aethel.storage_topology import (
     TheseusPhysicalStore,
     TheseusStorageAddress,
     derive_storage_address,
-    verify_storage_address,
 )
 
 from .models import AccessDenied, IntegrityFailure, InvalidRecord
@@ -1174,7 +1173,32 @@ class FileRegistry:
             )
         return list(self.store._db.execute("SELECT * FROM file_versions"))
 
-    def verify_database(self, tenant_id: str | None = None) -> dict[str, Any]:
+    def verify_database(
+        self, tenant_id: str | None = None, *, since: Mapping[str, int] | None = None
+    ) -> dict[str, Any]:
+        """Verify the file and mining planes.
+
+        ``since`` maps table name to a rowid watermark returned by an earlier
+        pass: only rows appended after it are verified (incremental check of
+        new evidence). Omitted, every row is verified. The result's
+        ``watermark`` is the highest rowid seen per table, for the next pass.
+        """
+        since = dict(since or {})
+        watermark: dict[str, int] = {}
+
+        def rows(table: str, tid: str, order: str = ""):
+            floor = int(since.get(table, 0))
+            out = self.store._db.execute(
+                f"SELECT rowid AS _rowid, * FROM {table} WHERE tenant_id=? AND rowid>?{order}",
+                (tid, floor),
+            ).fetchall()
+            for r in out:
+                watermark[table] = max(watermark.get(table, floor), int(r["_rowid"]))
+            watermark.setdefault(table, floor)
+            return out
+
+        # One proof per attestation per pass (each walk shares the proved set).
+        proved: dict[str, set[str]] = {}
         errors: list[str] = []
         tids = (
             [tenant_id]
@@ -1183,9 +1207,7 @@ class FileRegistry:
         )
         for tid in tids:
             self._tenant(tid)
-            for row in self.store._db.execute(
-                "SELECT * FROM file_versions WHERE tenant_id=?", (tid,)
-            ):
+            for row in rows("file_versions", tid):
                 if len(row["content_sha256"]) != 64 or row["size_bytes"] < 0:
                     errors.append(f"{tid}:{row['file_version_id']}:invalid digest/size")
                 if not row["custody_record_id"]:
@@ -1221,7 +1243,9 @@ class FileRegistry:
                     if _sha(prov["provenance_json"].encode()) != prov["provenance_sha256"]:
                         errors.append(f"{tid}:{row['file_version_id']}:provenance digest mismatch")
                     try:
-                        self.store.verify_attestation(tid, prov["attestation_id"])
+                        self.store.verify_attestation(
+                            tid, prov["attestation_id"], verified=proved.setdefault(tid, set())
+                        )
                         details = self.store.get_attestation(
                             tid, prov["attestation_id"]
                         ).details
@@ -1242,20 +1266,15 @@ class FileRegistry:
                     ).fetchone()
                 ):
                     errors.append(f"{tid}:{row['file_version_id']}:missing previous version")
-            for row in self.store._db.execute("SELECT * FROM file_links WHERE tenant_id=?", (tid,)):
+            for row in rows("file_links", tid):
                 if not self._domain_exists(
                     self.store._db, tid, row["domain_type"], row["domain_id"]
                 ):
                     errors.append(f"{tid}:{row['link_id']}:dangling domain link")
-            for row in self.store._db.execute(
-                "SELECT * FROM file_events WHERE tenant_id=? ORDER BY file_version_id,sequence",
-                (tid,),
-            ):
+            for row in rows("file_events", tid, " ORDER BY file_version_id,sequence"):
                 if row["event_type"] not in FILE_EVENTS:
                     errors.append(f"{tid}:{row['event_id']}:unknown event")
-            for row in self.store._db.execute(
-                "SELECT * FROM mining_lifecycle WHERE tenant_id=?", (tid,)
-            ):
+            for row in rows("mining_lifecycle", tid):
                 if not row["custody_record_id"]:
                     errors.append(f"{tid}:{row['record_id']}:missing mining custody")
                 elif self.custody is None:
@@ -1290,7 +1309,13 @@ class FileRegistry:
                     "MEASURED",
                 }:
                     errors.append(f"{tid}:{row['record_id']}:verified proof not positive")
-        return {"passed": not errors, "errors": tuple(errors), "file_plane_ok": not errors}
+        return {
+            "passed": not errors,
+            "errors": tuple(errors),
+            "file_plane_ok": not errors,
+            "incremental": bool(since),
+            "watermark": watermark,
+        }
 
     def verify_mining(self, tenant_id: str | None = None) -> bool:
         tids = (
@@ -1640,6 +1665,7 @@ class FileRegistry:
         retention_violations: list[str] = []
         attestation_invalid: list[str] = []
         attestation_cache: dict[str, bool] = {}
+        attestation_proved: set[str] = set()
         for row in rows:
             version_id = row["file_version_id"]
             uri = str(row["storage_uri"])
@@ -1697,7 +1723,9 @@ class FileRegistry:
             aid = str(row["attestation_id"])
             if aid not in attestation_cache:
                 try:
-                    attestation_cache[aid] = bool(self.store.verify_attestation(tenant_id, aid))
+                    attestation_cache[aid] = bool(
+                        self.store.verify_attestation(tenant_id, aid, verified=attestation_proved)
+                    )
                 except IntegrityFailure:
                     attestation_cache[aid] = False
             if not attestation_cache[aid]:
@@ -2173,4 +2201,3 @@ class FileRegistry:
                     ),
                 )
             raise
-

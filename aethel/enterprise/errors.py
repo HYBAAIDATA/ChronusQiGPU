@@ -73,4 +73,9 @@ __all__ = [
     "RegionFailoverError",
     "SoakThresholdError",
     "CertificationError",
+    "InvalidRecordIdError",
 ]
+
+
+class InvalidRecordIdError(EnterpriseCustodyError, KeyError, ValueError):
+    """A record id is not a bounded identifier (path fragment, traversal, symlink)."""
