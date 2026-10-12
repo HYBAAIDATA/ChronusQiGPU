@@ -28,15 +28,23 @@ class EvidenceTests(unittest.TestCase):
         self.manifest.write_text(json.dumps({"schema_version": 1, "mandatory_gates": ["probe"]}))
         subprocess.run(["git", "init", "-q", str(self.root)], check=True)
         self.git("add", ".")
-        self.git("-c", "user.name=GateTest", "-c", "user.email=test@example.invalid",
-                 "commit", "-qm", "fixture")
+        self.git(
+            "-c",
+            "user.name=GateTest",
+            "-c",
+            "user.email=test@example.invalid",
+            "commit",
+            "-qm",
+            "fixture",
+        )
         self.sha = current_commit(self.root)
         self.results = self.root / "results"
         self.path = self.results / "probe.json"
 
     def git(self, *args):
-        return subprocess.run(["git", "-C", str(self.root), *args], check=True,
-                              capture_output=True, text=True)
+        return subprocess.run(
+            ["git", "-C", str(self.root), *args], check=True, capture_output=True, text=True
+        )
 
     def report(self, **kwargs):
         return evaluate(self.results, repo_root=self.root, **kwargs)
@@ -58,9 +66,7 @@ class EvidenceTests(unittest.TestCase):
         payload = self.evidence()
         self.assertEqual(payload["source_commit"], self.sha)
         self.assertTrue(self.report()["passed"])
-        self.assertEqual(
-            self.report()["scope"], "assurance_only_not_api_production_certification"
-        )
+        self.assertEqual(self.report()["scope"], "assurance_only_not_api_production_certification")
 
     def test_api_release_obligations_fail_without_producers(self):
         manifest = Path(__file__).resolve().parents[1] / "config/api-release-gates.json"
@@ -93,12 +99,24 @@ class EvidenceTests(unittest.TestCase):
     def test_skipped_mandatory_fails(self):
         self.mutate(lambda p: p.update(status="SKIP"))
 
+    def test_not_run_is_distinct_and_blocks_promotion(self):
+        payload = self.evidence()
+        payload["status"] = "NOT_RUN"
+        payload["evidence_digest"] = canonical_digest(payload)
+        self.path.write_text(json.dumps(payload))
+        report = self.report()
+        self.assertFalse(report["passed"])
+        self.assertEqual(report["not_run"], ["probe"])
+        self.assertEqual(report["skipped"], [])
+        self.assertEqual(report["failed"], [])
+
     def test_failed_mandatory_fails(self):
         self.mutate(lambda p: p.update(status="FAIL"))
 
     def test_crashed_gate_fails(self):
         def crash(root):
             raise RuntimeError("do-not-persist-this-secret")
+
         result = run("probe", crash, self.root)
         self.assertEqual(result.status, Status.ERROR)
         self.assertNotIn("do-not-persist-this-secret", self.path.read_text())
@@ -137,8 +155,9 @@ class EvidenceTests(unittest.TestCase):
         self.mutate(lambda p: p.update(artifact_digests={}))
 
     def test_path_escape_fails(self):
-        self.mutate(lambda p: p.update(artifacts=["../private"],
-                                       artifact_digests={"../private": "a" * 64}))
+        self.mutate(
+            lambda p: p.update(artifacts=["../private"], artifact_digests={"../private": "a" * 64})
+        )
 
     def test_symlink_escape_fails(self):
         self.evidence()
@@ -162,8 +181,9 @@ class EvidenceTests(unittest.TestCase):
 
     def test_duplicate_json_key_fails(self):
         self.evidence()
-        self.path.write_text(self.path.read_text().replace('"status": "PASS"',
-                                                        '"status": "FAIL", "status": "PASS"'))
+        self.path.write_text(
+            self.path.read_text().replace('"status": "PASS"', '"status": "FAIL", "status": "PASS"')
+        )
         self.assertFalse(self.report()["passed"])
 
     def test_invalid_timestamp_fails(self):
@@ -191,8 +211,9 @@ class EvidenceTests(unittest.TestCase):
         self.assertFalse(self.report()["passed"])
 
     def test_duplicate_manifest_gate_fails(self):
-        self.manifest.write_text(json.dumps({"schema_version": 1,
-                                           "mandatory_gates": ["probe", "probe"]}))
+        self.manifest.write_text(
+            json.dumps({"schema_version": 1, "mandatory_gates": ["probe", "probe"]})
+        )
         with self.assertRaises(ValueError):
             load_manifest(self.manifest)
 
@@ -216,17 +237,25 @@ class EvidenceTests(unittest.TestCase):
         # Independent JSON readback; not a claim of subsystem restart/replay.
         payload = json.loads(self.path.read_text())
         self.assertEqual(payload["evidence_digest"], canonical_digest(payload))
-        self.assertEqual(asdict(run("probe", successful_gate, self.root))["source_commit"], self.sha)
+        self.assertEqual(
+            asdict(run("probe", successful_gate, self.root))["source_commit"], self.sha
+        )
+
 
 class ConsumerTests(unittest.TestCase):
     def test_publisher_never_reports_success_for_empty_evidence(self):
         from unittest.mock import patch
         from scripts import publish_check_runs
-        env = {"GITHUB_TOKEN": "unit-fixture-not-a-credential",
-               "GITHUB_REPOSITORY": "unit/fixture", "GITHUB_SHA": "0" * 40,
-               "GITHUB_API_URL": "https://api.github.invalid"}
+
+        env = {
+            "GITHUB_TOKEN": "unit-fixture-not-a-credential",
+            "GITHUB_REPOSITORY": "unit/fixture",
+            "GITHUB_SHA": "0" * 40,
+            "GITHUB_API_URL": "https://api.github.invalid",
+        }
         with tempfile.TemporaryDirectory() as directory:
             import os
+
             old = os.getcwd()
             try:
                 os.chdir(directory)
@@ -239,14 +268,18 @@ class ConsumerTests(unittest.TestCase):
 
     def test_manifest_make_and_implementation_have_same_gate_set(self):
         import ast
+
         root = Path(__file__).resolve().parents[1]
         manifest = set(load_manifest(root / "config/assurance-gates.json"))
         line = (root / "make/gates.mk").read_text().splitlines()[0]
         self.assertEqual(set(line.split(":=", 1)[1].split()), manifest)
         tree = ast.parse((root / "scripts/gate_impl.py").read_text())
-        assignment = next(node for node in tree.body if isinstance(node, ast.Assign)
-                          and any(isinstance(t, ast.Name) and t.id == "GATES"
-                                  for t in node.targets))
+        assignment = next(
+            node
+            for node in tree.body
+            if isinstance(node, ast.Assign)
+            and any(isinstance(t, ast.Name) and t.id == "GATES" for t in node.targets)
+        )
         self.assertEqual({k.value for k in assignment.value.keys}, manifest)
 
     def test_workflow_does_not_swallow_gate_failure(self):
@@ -258,14 +291,22 @@ class ConsumerTests(unittest.TestCase):
     def test_resilience_gate_executes_instead_of_checking_only_files(self):
         # Static contract check, not a production-resilience result.
         import ast
+
         root = Path(__file__).resolve().parents[1]
         tree = ast.parse((root / "scripts/gate_impl.py").read_text())
-        resilience = next(n for n in tree.body if isinstance(n, ast.FunctionDef)
-                          and n.name == "resilience")
+        resilience = next(
+            n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "resilience"
+        )
         calls = [n for n in ast.walk(resilience) if isinstance(n, ast.Call)]
-        self.assertTrue(any(isinstance(n.func, ast.Attribute) and n.func.attr == "run"
-                            and isinstance(n.func.value, ast.Name)
-                            and n.func.value.id == "subprocess" for n in calls))
+        self.assertTrue(
+            any(
+                isinstance(n.func, ast.Attribute)
+                and n.func.attr == "run"
+                and isinstance(n.func.value, ast.Name)
+                and n.func.value.id == "subprocess"
+                for n in calls
+            )
+        )
 
 
 if __name__ == "__main__":

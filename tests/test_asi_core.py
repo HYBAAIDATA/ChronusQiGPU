@@ -7,8 +7,8 @@ than assert them in a docstring:
 - ``ASICore`` composes the five real substrates.
 - ``capability_report`` never reports a capability as available unless its
   probe method exists AND ran without raising.
-- The two unbounded background loops are scheduled, awaited to their first
-  suspension, and fully torn down — no leaked tasks.
+- Startup performs a bounded SALAMANDER-owned probe; ASI starts no forever
+  loop and does not implicitly activate an optional research backend.
 """
 
 import asyncio
@@ -72,10 +72,12 @@ def test_injected_substrates_are_used_verbatim():
 # --------------------------------------------------------------------------
 
 
-def test_report_marks_every_declared_capability_present():
+def test_report_marks_optional_backend_unavailable_without_inventing_capability():
     report = _make_core().capability_report()
     for name in ASI_CAPABILITIES:
-        assert report[name]["available"] is True, (name, report[name])
+        expected = report[name]["statistics"].get("backend_available", True)
+        assert report[name]["available"] is expected, (name, report[name])
+    assert report["authority"]["self_healing"] == "SALAMANDER"
 
 
 def test_report_actually_executes_the_probes():
@@ -90,69 +92,52 @@ def test_report_actually_executes_the_probes():
 # --------------------------------------------------------------------------
 
 
-class _CountingLoop:
-    """A background loop that records how many times it was entered."""
+class _BoundedProbe:
+    """Finite injected probe. It cannot be mistaken for a production backend."""
 
-    def __init__(self):
+    def __init__(self, result=True):
         self.entered = 0
         self.stopped = False
-        self.active = False
+        self.result = result
+        self.cycles = []
 
-    async def _run(self):
+    async def start_monitoring(self, *, max_cycles):
         self.entered += 1
-        self.active = True
-        try:
-            while not self.stopped:
-                await asyncio.sleep(0)
-        finally:
-            self.active = False
-
-    async def start_monitoring(self):
-        await self._run()
+        self.cycles.append(max_cycles)
+        await asyncio.sleep(0)
+        return self.result
 
     def stop_monitoring(self):
         self.stopped = True
 
+
+class _OptionalLearner:
+    def __init__(self):
+        self.entered = 0
+        self.stopped = False
+
     async def start(self):
-        await self._run()
+        self.entered += 1
+        raise AssertionError("ASI must not start optional learning")
 
     def stop(self):
         self.stopped = True
 
 
-def test_start_schedules_both_loops_without_deadlocking():
+def test_start_runs_one_bounded_probe_without_starting_optional_learning():
     async def scenario():
-        healing = _CountingLoop()
-        learner = _CountingLoop()
+        healing = _BoundedProbe()
+        learner = _OptionalLearner()
         core = _make_core(self_healing=healing, web_learner=learner)
-
         assert await asyncio.wait_for(core.start(), timeout=2.0) is True
         assert core.running is True
-        assert set(core.background_tasks) == {"self_healing", "continuous_learning"}
-        # Both loops were actually entered, not merely scheduled.
-        assert healing.entered == 1
-        assert learner.entered == 1
-        return await asyncio.wait_for(core.stop(), timeout=2.0)
-
-    assert asyncio.run(scenario()) is True
-
-
-def test_stop_tears_down_every_task_and_leaves_none_running():
-    async def scenario():
-        healing = _CountingLoop()
-        learner = _CountingLoop()
-        core = _make_core(self_healing=healing, web_learner=learner)
-        await core.start()
-        assert await core.stop() is True
-
         assert core.background_tasks == {}
+        assert healing.cycles == [1]
+        assert learner.entered == 0
+        assert await core.stop() is True
+        assert healing.stopped and learner.stopped
         assert core.running is False
-        # The loops observed their stop signal and exited.
-        assert healing.active is False
-        assert learner.active is False
-        # No task objects survive the teardown.
-        leftover = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
-        assert leftover == []
+        assert [t for t in asyncio.all_tasks() if t is not asyncio.current_task()] == []
 
     asyncio.run(scenario())
 
@@ -160,18 +145,42 @@ def test_stop_tears_down_every_task_and_leaves_none_running():
 def test_stop_is_idempotent_and_safe_without_start():
     core = _make_core()
     assert asyncio.run(core.stop()) is True
+    assert asyncio.run(core.stop()) is True
 
 
-def test_double_start_does_not_duplicate_tasks():
+def test_double_start_does_not_repeat_probe_or_create_tasks():
     async def scenario():
-        healing = _CountingLoop()
-        learner = _CountingLoop()
-        core = _make_core(self_healing=healing, web_learner=learner)
+        healing = _BoundedProbe()
+        core = _make_core(self_healing=healing)
         assert await core.start() is True
-        assert await core.start() is True  # second call is a no-op
-        assert len(core.background_tasks) == 2
+        assert await core.start() is True
+        assert core.background_tasks == {}
         assert healing.entered == 1
         await core.stop()
+
+    asyncio.run(scenario())
+
+
+def test_failed_bounded_probe_does_not_report_running():
+    async def scenario():
+        core = _make_core(self_healing=_BoundedProbe(result=False))
+        assert await core.start() is False
+        assert core.running is False
+        assert core.background_tasks == {}
+
+    asyncio.run(scenario())
+
+
+def test_legacy_unbounded_signature_is_rejected_without_entering_it():
+    class Legacy:
+        async def start_monitoring(self):
+            raise AssertionError("legacy unbounded entry point must not run")
+
+    async def scenario():
+        core = _make_core(self_healing=Legacy())
+        assert await asyncio.wait_for(core.start(), timeout=1) is False
+        assert core.running is False
+        assert core.background_tasks == {}
 
     asyncio.run(scenario())
 

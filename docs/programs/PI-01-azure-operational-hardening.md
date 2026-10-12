@@ -1,6 +1,6 @@
-# PI-01: Azure Operational Hardening
+# PI-01: Evidence Restoration and Operational Hardening
 
-Status: Proposed program baseline for review. Qualification has not been demonstrated
+Status: Governing program charter approved by the repository owner. Operational qualification has not been demonstrated
 by adopting this charter. The 90-day delivery clock starts only after scope, owners,
 capacity, pilot population and acceptance thresholds are approved.
 
@@ -56,7 +56,9 @@ remain UNVERIFIED. Finite samples support only their recorded scope, not univers
 
 ## Four evidence classes
 
-These are proposed versioned contract requirements, not implemented runtime APIs.
+These are versioned contract requirements, not yet implemented telemetry runtime APIs.
+The executable readiness register and promotion enforcement are described in
+[CEDR enforcement](PI-01-cedr-enforcement.md); engine validation does not qualify runtime behavior.
 Class names are independent of the existing measured/computed/projected truth labels.
 
 | Class | Required meaning | Does not establish |

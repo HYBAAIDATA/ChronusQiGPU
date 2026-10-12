@@ -11,7 +11,7 @@ establish operational coverage or production readiness. Preserve domain authorit
 strengthen surrounding infrastructure; require executed, scoped evidence for readiness.
 
 [PI-01: Azure Operational Hardening](programs/PI-01-azure-operational-hardening.md)
-defines the proposed qualification gates and go/no-go record.
+defines the governing qualification gates and go/no-go record.
 [ADR-PI01-001](decisions/ADR-PI01-001-hosting-platform.md) evaluates AKS suitability
 against the existing Container Apps candidate; it does not presume migration or
 transfer domain responsibility. Neither document is a current readiness certificate.

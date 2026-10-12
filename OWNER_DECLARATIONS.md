@@ -82,3 +82,13 @@ simulation relabelled as quantum.
 
 New declarations are appended to this file verbatim as issued, then
 propagated into `UNIVERSAL_PRINCIPLE_MAP.md` and affected documents.
+
+## PI-01 governing program instruction
+
+> Preserve domain authority. Strengthen surrounding infrastructure. Require executed evidence for readiness claims.
+
+Approved program: Evidence Restoration and Operational Hardening. A release or
+promotion claim requires scoped, retained, reviewed, fresh executed evidence.
+Documentation, code presence, infrastructure placement and inferred capability do
+not qualify readiness. This governs platform adoption without transferring domain
+authority or superseding the exact-mathematics declarations above.
