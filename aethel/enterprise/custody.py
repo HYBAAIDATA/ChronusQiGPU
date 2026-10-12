@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import re
 import shutil
 import threading
 import time
@@ -16,6 +18,7 @@ from .errors import (
     AuthenticityError,
     AuthorityBoundaryError,
     ConcurrencyConflict,
+    InvalidRecordIdError,
     ReadOnlyModeError,
     SchemaVersionError,
     UnrecoverableCustodyError,
@@ -52,6 +55,11 @@ from .schema import (
     CustodyEvent,
 )
 from .telemetry import EvidenceTelemetry
+
+_SAFE_TENANT = re.compile(r"[A-Za-z0-9_-]{1,128}")
+# ``%`` admits percent-encoded ids (CHRONUS quotes workload ids with
+# urllib.parse.quote): filesystem-safe on POSIX and Windows alike.
+_SAFE_RECORD_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._%-]{0,127}")
 
 
 def _contracted_ovid_versions(ovid: Any) -> tuple[int, ...]:
@@ -177,14 +185,47 @@ class EnterpriseCustody:
 
     @staticmethod
     def _safe_tenant(tenant: str) -> str:
-        cleaned = "".join(c if c.isalnum() or c in "-_" else "_" for c in tenant)
-        return cleaned or "default"
+        """Collision-free tenant directory name (review finding R02).
+
+        Tenant ids that are already filesystem-safe map to themselves, so
+        existing tenant roots are unchanged. Any other id keeps a readable
+        prefix plus a digest of the exact id: ``a/b`` and ``a?b`` no longer
+        share ``a_b``, and ``~`` never appears in a safe id, so a digest name
+        cannot collide with a safe one.
+        """
+        if not isinstance(tenant, str) or not tenant or len(tenant) > 256:
+            raise ValueError("tenant id must be a non-empty string of at most 256 characters")
+        if _SAFE_TENANT.fullmatch(tenant):
+            return tenant
+        cleaned = "".join(c if c.isalnum() or c in "-_" else "_" for c in tenant)[:64]
+        tag = hashlib.sha256(tenant.encode("utf-8")).hexdigest()[:24]
+        return f"{cleaned or 'tenant'}~{tag}"
+
+    @staticmethod
+    def _checked_record_id(record_id: str) -> str:
+        """Record ids are bounded identifiers, never path fragments (R02)."""
+        if not isinstance(record_id, str) or not _SAFE_RECORD_ID.fullmatch(record_id):
+            raise InvalidRecordIdError(
+                "record_id must match [A-Za-z0-9][A-Za-z0-9._%-]{0,127} with no '..'"
+            )
+        if ".." in record_id:
+            raise InvalidRecordIdError("record_id must not contain '..'")
+        return record_id
+
+    def _contained(self, directory: Path, record_id: str) -> Path:
+        path = directory / f"{self._checked_record_id(record_id)}.json"
+        if path.is_symlink():
+            raise InvalidRecordIdError(f"record path is a symlink: {record_id}")
+        resolved_dir = directory.resolve()
+        if path.resolve().parent != resolved_dir:
+            raise InvalidRecordIdError(f"record path escapes the tenant root: {record_id}")
+        return path
 
     def _primary_path(self, record_id: str) -> Path:
-        return self.primary_dir / f"{record_id}.json"
+        return self._contained(self.primary_dir, record_id)
 
     def _replica_path(self, record_id: str) -> Path:
-        return self.replica_dir / f"{record_id}.json"
+        return self._contained(self.replica_dir, record_id)
 
     def _resolve_hmac_key(self, hmac_key: Optional[bytes]) -> bytes:
         """Fail-closed when authenticity required and no usable key is provided.
@@ -298,7 +339,9 @@ class EnterpriseCustody:
             _read_json(self._replica_path(record_id)),
         )
 
-    def _validate_dict(self, data: dict[str, Any]) -> CustodyEnvelope:
+    def _validate_dict(
+        self, data: dict[str, Any], expected_record_id: Optional[str] = None
+    ) -> CustodyEnvelope:
         fmt = int(data.get("format_version", THESEUS_FORMAT_VERSION))
         if fmt != THESEUS_FORMAT_VERSION:
             raise SchemaVersionError(f"unsupported format_version={fmt}")
@@ -309,6 +352,17 @@ class EnterpriseCustody:
         mac = env.mac
         if not mac_verify(self.hmac_key, env, mac, previous_keys=self.previous_hmac_keys):
             raise AuthenticityError(f"MAC verify failed for {env.record_id}")
+        # A valid MAC under a shared key does not bind the envelope to this
+        # tenant or path: an envelope copied from another tenant, or renamed
+        # to another record id, is rejected (R02).
+        if env.tenant != self.tenant:
+            raise AuthenticityError(
+                f"envelope tenant {env.tenant!r} is not this custody's tenant"
+            )
+        if expected_record_id is not None and env.record_id != expected_record_id:
+            raise AuthenticityError(
+                f"envelope record_id {env.record_id!r} stored under {expected_record_id!r}"
+            )
         try:
             stored = b64d(env.payload_b64)
         except Exception as exc:
@@ -333,11 +387,11 @@ class EnterpriseCustody:
                 raise AuthenticityError(f"content digest mismatch for {env.record_id}")
         return env
 
-    def _side_ok(self, data: Optional[dict]) -> bool:
+    def _side_ok(self, data: Optional[dict], expected_record_id: Optional[str] = None) -> bool:
         if not data:
             return False
         try:
-            self._validate_dict(data)
+            self._validate_dict(data, expected_record_id)
             return True
         except (
             AuthenticityError,
@@ -351,19 +405,27 @@ class EnterpriseCustody:
 
     def _load_envelope(self, record_id: str, verify: bool = True) -> Optional[CustodyEnvelope]:
         primary, replica = self._load_raw_sides(record_id)
-        p_ok = self._side_ok(primary)
-        r_ok = self._side_ok(replica)
+        p_ok = self._side_ok(primary, record_id)
+        r_ok = self._side_ok(replica, record_id)
         if p_ok and primary is not None:
             if not r_ok:
                 # heal replica
                 _atomic_write_json(self._replica_path(record_id), primary)
                 self._degraded = False
                 self.telemetry.incr("heal_replica")
-            return self._validate_dict(primary) if verify else CustodyEnvelope.from_dict(primary)
+            return (
+                self._validate_dict(primary, record_id)
+                if verify
+                else CustodyEnvelope.from_dict(primary)
+            )
         if r_ok and replica is not None:
             _atomic_write_json(self._primary_path(record_id), replica)
             self.telemetry.incr("heal_primary")
-            return self._validate_dict(replica) if verify else CustodyEnvelope.from_dict(replica)
+            return (
+                self._validate_dict(replica, record_id)
+                if verify
+                else CustodyEnvelope.from_dict(replica)
+            )
         if primary is None and replica is None:
             return None
         raise UnrecoverableCustodyError(f"all replicas bad for record_id={record_id}")

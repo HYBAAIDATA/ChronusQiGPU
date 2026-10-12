@@ -37,7 +37,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHIA_RETARGET_TELEMETRY_PATH=/var/lib/pythia/retarget_windows.json \
     PYTHIA_BACKEND_EVIDENCE_PATH=/var/lib/pythia/backend_decisions.jsonl \
     PYTHIA_INTELLIGENCE_DIR=/var/lib/pythia/intelligence \
-    PYTHIA_STORE_DIR=/var/lib/pythia/pythia-store
+    PYTHIA_STORE_DIR=/var/lib/pythia/pythia-store \
+    CHRONUS_VIGPU_STORE=/var/lib/pythia/chronus-virtual-igpu \
+    PYTHIA_EUCLID_MINING_STATE=/var/lib/pythia/euclid_mining_policy.json \
+    PYTHIA_SALAMANDER_EVIDENCE_PATH=/var/lib/pythia/salamander_autonomy.jsonl
 WORKDIR /app
 COPY . .
 COPY --from=frontend /build/dist/public ./dist/public

@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import collections
 import json
+import re
 import os
 import secrets
 import shutil
@@ -173,6 +174,14 @@ class Smoke:
             "AL_HARAS_SUBSCRIPTION_KEYS": json.dumps({"smoke": SUBSCRIPTION_KEY}),
             "AL_HARAS_DATA_DIR": "/var/lib/pythia/al-haras",
         }
+        if self.args.execution_device:
+            # Bridge-free route (e.g. the exact SHA256d CPU reference): the
+            # MMIO register block is not the execution device.
+            env.pop("MLA1517_MMIO_DEVICE", None)
+            env["PYTHIA_EXECUTION_DEVICE"] = self.args.execution_device
+        if self.args.live_submit:
+            env.update(self.strict_env())
+            self.provision(state, env)
         argv = [
             "docker",
             "run",
@@ -187,6 +196,56 @@ class Smoke:
         for key, value in env.items():
             argv += ["-e", f"{key}={value}"]
         subprocess.run(argv + [self.args.image], check=True, capture_output=True)
+
+    def strict_env(self) -> dict:
+        """Strict storage/governance: THESEUS custody + OVID store + AL HARAS identity."""
+        if not hasattr(self, "_strict"):
+            self._strict = {
+                "PYTHIA_M3_REQUIRED": "1",
+                "PYTHIA_STORAGE_DB": "/var/lib/pythia/storage/ontology.db",
+                "PYTHIA_STORAGE_ROOT": "/var/lib/pythia/storage/root",
+                "PYTHIA_STORAGE_CUSTODY_ROOT": "/var/lib/pythia/storage/custody",
+                "PYTHIA_STORAGE_INTEGRITY_KEY_HEX": secrets.token_hex(32),
+                "PYTHIA_STORAGE_CUSTODY_KEY_HEX": secrets.token_hex(32),
+                "PYTHIA_STORAGE_TENANT": "smoke",
+                "PYTHIA_M3_TENANT": "smoke",
+                "PYTHIA_M3_ACTOR": "operator-1",
+                "PYTHIA_M3_AL_HARAS_TOKEN": SUBSCRIPTION,
+            }
+        return self._strict
+
+    def provision(self, state: Path, env: dict) -> None:
+        """One-time operator admission of the storage tenant, in the image."""
+        argv = ["docker", "run", "--rm", "--network", "none", "-v", f"{state}:/var/lib/pythia"]
+        for key, value in env.items():
+            argv += ["-e", f"{key}={value}"]
+        argv += [self.args.image, "sh", "-c",
+                 "mkdir -p /var/lib/pythia/storage/root && "
+                 "python scripts/provision_m3_tenant.py --tenant smoke --approve-tenant"]
+        proc = subprocess.run(argv, capture_output=True, text=True, timeout=300)
+        (self.out / "provision.log").write_text(proc.stdout + proc.stderr, encoding="utf-8")
+        if proc.returncode != 0:
+            raise RuntimeError(f"tenant provisioning failed: {proc.stderr[-300:]}")
+
+    def approve_live_submission(self) -> bool:
+        body = {
+            "pools": [{"endpoint": f"127.0.0.1:{self.args.pool_port}", "worker": "smoke.rig",
+                       "password": "x", "enabled": True}],
+            "live_submit": {"enabled": True},
+        }
+        last = ""
+        until = time.monotonic() + 120
+        while time.monotonic() < until:
+            try:
+                status, reply = http_json(f"{self.base}/api/v1/config", method="PUT",
+                                          body=body, timeout=60)
+            except OSError as exc:
+                status, reply = 0, {"error": f"{type(exc).__name__}: {exc}"}
+            last = f"PUT /api/v1/config -> {status} {json.dumps(reply)[:200]}"
+            if status == 200:
+                return self.stage("live submission approved (operator)", True, last)
+            time.sleep(3)
+        return self.stage("live submission approved (operator)", False, last)
 
     def teardown(self) -> None:
         with open(self.out / "container.log", "w", encoding="utf-8") as fh:
@@ -265,6 +324,8 @@ class Smoke:
             status == 200 and started_payload.get("ok") is True,
             f"POST /api/v1/mining/start -> {status} {json.dumps(started_payload)[:200]}",
         )
+        if self.args.live_submit and not self.approve_live_submission():
+            return False
 
         deadline = time.monotonic() + self.args.seconds
         evidence: dict = {}
@@ -280,6 +341,12 @@ class Smoke:
             }
             (self.out / "evidence.json").write_text(json.dumps(evidence, indent=2, default=str))
             (self.out / "status.json").write_text(json.dumps(status_payload, indent=2, default=str))
+            if self.args.stop_on_accept:
+                try:
+                    if json.loads((self.out / "pool.json").read_text()).get("accepted", 0) >= 1:
+                        break
+                except (OSError, ValueError):
+                    pass
 
         self.stage(
             "workers",
@@ -316,10 +383,22 @@ class Smoke:
         )
         log_text = container_log.stdout + container_log.stderr
         observed = log_text.count("selected lane=")
+        if not self.args.execution_device:
+            self.stage(
+                "device path (no wedge)",
+                observed >= 3,
+                f"{observed} vault records reached the chooser in {self.args.seconds}s",
+            )
+        # A read-only image must keep every writer on the state volume: any
+        # component still writing beside its code shows up here.
+        denied = sorted(set(re.findall(
+            r"(?:Permission denied|Read-only file system): '([^']+)'",
+            log_text + json.dumps(evidence, default=str),
+        )))
         self.stage(
-            "device path (no wedge)",
-            observed >= 3,
-            f"{observed} vault records reached the chooser in {self.args.seconds}s",
+            "state stays on the volume",
+            not denied,
+            "no permission/read-only errors" if not denied else "denied: " + ", ".join(denied[:6]),
         )
         recoveries = {k: v for k, v in kinds.items() if k and k.startswith("recovery_")}
         self.note(
@@ -334,6 +413,27 @@ class Smoke:
         )
         loss = (intelligence or {}).get("loss", {})
         executions = loss.get("executions", 0)
+        if self.args.execution_device:
+            self.stage(
+                "search executed",
+                int(loss.get("hashes", 0) or 0) > 0,
+                f"{executions} executions, {loss.get('hashes', 0)} hashes "
+                f"(PYTHIA_EXECUTION_DEVICE={self.args.execution_device})",
+            )
+            outcome = (evidence.get("agentic") or {}).get("last_outcome") or {}
+            self.note(
+                "candidates",
+                f"host_verified={outcome.get('candidate_host_verified')} "
+                f"pool_outcome={outcome.get('pool_outcome')} submission={evidence.get('submission')}",
+            )
+        if self.args.live_submit:
+            self.stage("share submitted", pool.get("submits", 0) >= 1, f"submits={pool.get('submits')}")
+            self.stage(
+                "pool verified + accepted",
+                pool.get("accepted", 0) >= 1 and not pool.get("rejected", 0),
+                f"accepted={pool.get('accepted')} rejected={pool.get('rejected')} "
+                f"reasons={pool.get('reject_reasons')}",
+            )
         self.note(
             "hashing",
             f"{executions} executions, {loss.get('hashes', 0)} hashes"
@@ -371,6 +471,11 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=3000)
     parser.add_argument("--pool-port", type=int, default=3334)
     parser.add_argument("--out", default="smoke-artifacts")
+    parser.add_argument("--execution-device", default="",
+                        help="bridge-free route, e.g. cpu (default: the MMIO register bridge)")
+    parser.add_argument("--live-submit", action="store_true",
+                        help="strict storage/governance, tenant admission, operator approval")
+    parser.add_argument("--stop-on-accept", action="store_true")
     args = parser.parse_args()
     smoke = Smoke(args)
     passed = False

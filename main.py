@@ -16,6 +16,18 @@ _CANONICAL_PYTHON = _PROJECT_ROOT / "chronus/mla1517_platform" / "python"
 if str(_CANONICAL_PYTHON) not in sys.path:
     sys.path.insert(0, str(_CANONICAL_PYTHON))
 
+# Sovereign deployments (HYBA_SOVEREIGN_MODE=private|air_gapped) install the
+# AL HARAS egress/ingestion/storage boundary before any service code loads;
+# an invalid sovereign configuration refuses to start (exit 78, EX_CONFIG).
+# Connected mode (the default) installs nothing.
+from al_haras.sovereign_control import SovereignConfigError, install_from_env  # noqa: E402
+
+try:
+    install_from_env(role="control-api")
+except SovereignConfigError as _exc:
+    print(f"sovereign configuration error: {_exc}", file=sys.stderr)
+    raise SystemExit(78) from _exc
+
 from control_api import main  # noqa: E402
 
 

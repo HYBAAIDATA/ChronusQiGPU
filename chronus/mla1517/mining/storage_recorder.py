@@ -709,10 +709,33 @@ class MiningStorageRecorder:
             self.receipts[record_id] = version_id
             return record_id, version_id
 
-    def health(self, *, reconcile: bool = True) -> dict[str, Any]:
-        """Return measured M3 storage/custody health; never synthesize PASS."""
+    def health(self, *, reconcile: bool = True, full: bool = True) -> dict[str, Any]:
+        """Return measured M3 storage/custody health; never synthesize PASS.
+
+        ``full=False`` verifies only records appended since the last pass
+        (rowid watermark) and carries forward the last full verdict: a
+        failure stays failed until a later full pass succeeds. Without a
+        prior successful full pass an incremental request runs in full.
+        """
         try:
-            verification = self.files.verify_database(self.tenant_id)
+            last_full_ok = getattr(self, "_last_full_verify_ok", None)
+            incremental = not full and last_full_ok is not None
+            verification = self.files.verify_database(
+                self.tenant_id,
+                since=getattr(self, "_verify_watermark", None) if incremental else None,
+            )
+            if not incremental:
+                self._last_full_verify_ok = bool(verification.get("passed"))
+            elif not verification.get("passed"):
+                self._last_full_verify_ok = False  # new rows failed: sticky until a full pass
+            if isinstance(verification.get("watermark"), dict):
+                self._verify_watermark = dict(verification["watermark"])
+            verification = {
+                **verification,
+                "passed": bool(verification.get("passed")) and bool(self._last_full_verify_ok),
+                "file_plane_ok": bool(verification.get("file_plane_ok"))
+                and bool(self._last_full_verify_ok),
+            }
             report = (
                 self.files.reconcile_files(self.tenant_id, self.root)
                 if reconcile
@@ -739,6 +762,7 @@ class MiningStorageRecorder:
                 "file_plane_ok": bool(verification.get("file_plane_ok")),
                 "mining_chain_ok": bool(self.files.verify_mining(self.tenant_id)),
                 "reconciliation_ok": bool(reconciliation_ok),
+                "verification": "incremental" if incremental else "full",
                 "unresolved": (
                     list(report.unresolved)
                     if report is not None

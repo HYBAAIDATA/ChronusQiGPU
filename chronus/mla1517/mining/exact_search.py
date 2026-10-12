@@ -4,12 +4,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from fractions import Fraction
 from functools import lru_cache
-import hashlib, json, heapq
+import hashlib
+import heapq
+import json
+import threading
+from collections import OrderedDict
 from chronus.exact_geometry import (
     Q,
-    ExactRay,
     encode,
-    decode,
     score,
     m32,
     h4,
@@ -109,6 +111,39 @@ def precompute_exact_search():
     )
 
 
+# Exact results are pure functions of (header[:76], geometry). Every nonce
+# lease of one job/extranonce shares header[:76], so recomputing the exact
+# rational scores for each plan repeated ~1 s of identical arithmetic on the
+# mining event loop. A small bounded memo returns the identical tuples; the
+# inputs are still validated on every call. Keyed by the geometry's content
+# digests and the state object (entries hold no reference, so the bounded
+# LRU is the only lifetime).
+_EXACT_MEMO_SIZE = 64
+_exact_memo: "OrderedDict[tuple, tuple]" = OrderedDict()
+_exact_memo_lock = threading.Lock()
+
+
+def _memo(key, compute):
+    with _exact_memo_lock:
+        hit = _exact_memo.get(key)
+        if hit is not None:
+            _exact_memo.move_to_end(key)
+            return hit
+    value = compute()
+    with _exact_memo_lock:
+        _exact_memo[key] = value
+        _exact_memo.move_to_end(key)
+        while len(_exact_memo) > _EXACT_MEMO_SIZE:
+            _exact_memo.popitem(last=False)
+    return value
+
+
+def _state_key(state):
+    # Content digests plus the object itself: a different state object that
+    # merely claims the same digest never reuses another object's result.
+    return (state.digest, state.hilbert_walk_digest, id(state))
+
+
 def exact_face_order(header, state=None):
     """Header-bound exact geometric ordering; no predictor/advisory input."""
     if not isinstance(header, bytes) or len(header) != 80:
@@ -116,6 +151,13 @@ def exact_face_order(header, state=None):
     state = state or precompute_exact_search()
     if not isinstance(state, ExactSearchState):
         raise ValueError("exact geometry required")
+    return _memo(
+        ("faces", bytes(header[:76]), _state_key(state)),
+        lambda: _exact_face_order(header, state),
+    )
+
+
+def _exact_face_order(header, state):
     h = hashlib.sha256(header[:76]).digest()
     direction = tuple(Q(Fraction(2 * h[i] - 255, 255)) for i in range(11))
     return tuple(
@@ -194,6 +236,13 @@ def exact_vertex_itinerary(
     canonical_faces = exact_face_order(header, state)
     if preferred_face is not None and preferred_face != canonical_faces[0]:
         raise ValueError("advisory face cannot enter exact first-principles profile")
+    return _memo(
+        ("itinerary", bytes(header[:76]), _state_key(state), bool(use_hilbert)),
+        lambda: _exact_vertex_itinerary(header, state, canonical_faces, use_hilbert),
+    )
+
+
+def _exact_vertex_itinerary(header, state, canonical_faces, use_hilbert):
     h = hashlib.sha256(header[:76]).digest()
     direction = tuple(Q(Fraction(2 * h[i] - 255, 255)) for i in range(11))
     coarse = canonical_faces
