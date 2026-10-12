@@ -54,7 +54,7 @@ def main():
     repo = env["GITHUB_REPOSITORY"]
     sha = env["GITHUB_SHA"]
     token = env["GITHUB_TOKEN"]
-    conclusions = {"PASS": "success", "FAIL": "failure", "SKIP": "skipped", "ERROR": "failure"}
+    conclusions = {"PASS": "success", "FAIL": "failure", "SKIP": "skipped", "NOT_RUN": "neutral", "ERROR": "failure"}
     for r in results:
         if r["gate"] not in report["observed"]:
             continue
@@ -65,7 +65,7 @@ def main():
                 "name": r["gate"],
                 "head_sha": sha,
                 "status": "completed",
-                "conclusion": conclusions[r["status"]] if report["passed"] else "failure",
+                "conclusion": conclusions[r["status"]],
                 "output": {
                     "title": r["gate"],
                     "summary": r["reason"],

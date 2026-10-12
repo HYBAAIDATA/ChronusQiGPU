@@ -373,6 +373,20 @@ def test_live_submit_approval_binds_pool_identity_and_revokes(tmp_path, monkeypa
         "enabled": True,
     }
 
+    # Unit fixture only: M3 admission is mandatory, not an implicit approval.
+    status, body = control_api._config_put({"pools": [pool], "live_submit": {"enabled": True}})
+    assert status == HTTPStatus.BAD_REQUEST
+    assert "PYTHIA_M3_REQUIRED" in body["error"]
+    monkeypatch.setenv("PYTHIA_M3_REQUIRED", "1")
+    monkeypatch.setattr(
+        control_api, "_m3_dependency_reason", lambda: (False, "fixture unavailable")
+    )
+    status, body = control_api._config_put({"pools": [pool], "live_submit": {"enabled": True}})
+    assert status == HTTPStatus.BAD_REQUEST
+    assert "fixture unavailable" in body["error"]
+    assert not runtime_config.load()["live_submit"]["enabled"]
+    # Only the in-process configuration binding is exercised, never a live pool.
+    monkeypatch.setattr(control_api, "_m3_dependency_reason", lambda: (True, None))
     status, _body = control_api._config_put({"pools": [pool], "live_submit": {"enabled": True}})
     assert status == HTTPStatus.OK
     saved = runtime_config.load()

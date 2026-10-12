@@ -42,7 +42,7 @@ jobs:
         run: |
           pip install "numpy>=1.26,<3" "sympy>=1.12,<2" "pytest>=7.4,<10"
           pip install --no-deps -e ./turing_universal_quantum_computer
-          echo "PYTHONPATH=${{ github.workspace }}" >> "$GITHUB_ENV"
+          echo "PYTHONPATH=${{ github.workspace }}:${{ github.workspace }}/chronus" >> "$GITHUB_ENV"
       - name: Exact specification and inventory tests
         run: >-
           python -m pytest -q

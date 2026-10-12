@@ -14,6 +14,7 @@ import socketserver
 import sys
 import threading
 import types
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -162,7 +163,12 @@ def test_dispatch_sends_bound_header_and_share_verifies(bridge):
     target = b"\xff" * 32  # first nonce always meets it
     solver.prepare("j-bind", header)
     handle = solver.dispatch(_window("j-bind", base=0, span=16, target=target))
+    # poll is nonblocking; allow the real loopback bridge thread to respond.
+    deadline = time.monotonic() + 2.0
     share = solver.poll(handle)
+    while share is None and time.monotonic() < deadline:
+        time.sleep(0.005)
+        share = solver.poll(handle)
     assert share is not None
     sent = bridge.received[-1]
     assert sent["header_prefix_hex"] == header[:76].hex()

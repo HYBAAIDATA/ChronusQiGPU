@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PYTHONPATH: ${{ github.workspace }}/chronus/mla1517_platform/python
+  PYTHONPATH: ${{ github.workspace }}/chronus/mla1517_platform/python:${{ github.workspace }}:${{ github.workspace }}/chronus
 
 jobs:
   format-and-lint:

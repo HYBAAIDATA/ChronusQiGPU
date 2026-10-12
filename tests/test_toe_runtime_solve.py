@@ -67,18 +67,30 @@ def test_mining_mode_refuses_consensus_named_variables():
 
 
 def test_problem_content_round_trips_through_the_api():
-    svc = CIaaSService(runtime=_runtime())
+    # Explicit isolated authentication/tenant fixture, never production credentials.
+    key = "isolated-api-fixture-not-production-credential"
+    svc = CIaaSService(runtime=_runtime(), api_key=key)
+    svc.register_tenant("acme")
     p = voyage_problem()
-    resp, status = svc.handle_request("solve", p.content(), "acme", metadata={"domain": p.domain})
+    _, denied = svc.handle_request("solve", p.content(), "acme")
+    assert denied == 401
+    _, unknown = svc.handle_request("solve", p.content(), "unknown", api_key=key)
+    assert unknown == 403
+    resp, status = svc.handle_request(
+        "solve", p.content(), "acme", api_key=key, metadata={"domain": p.domain}
+    )
     assert status == 200 and resp.result["identity"]["content_digest"] == p.content_digest()
     resp2, status2 = svc.handle_request(
         "learn",
         [{"x": 1.0, "z": 0.1, "y": 0.6}],
         "acme",
+        api_key=key,
         metadata={"episode_sha256": resp.decision_id},
     )
     assert status2 == 200 and resp2.ok
-    _, missing = svc.handle_request("learn", [], "acme", metadata={"episode_sha256": "nope"})
+    _, missing = svc.handle_request(
+        "learn", [], "acme", api_key=key, metadata={"episode_sha256": "nope"}
+    )
     assert missing == 404
 
 

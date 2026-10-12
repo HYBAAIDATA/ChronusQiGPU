@@ -358,18 +358,21 @@ async def _voyage_async_submission_does_not_stall_hashing():
         await _connected(coord, "job-async")
         chain.block_hash = parent_of_current_job(coord)
 
-        # First candidate enters the independent submitter.
-        assert await coord.search_current_job() is True
+        # Queuing execution is not a pool acknowledgement. The method only
+        # reports True for a literal ACCEPTED outcome; delayed shares are pending.
+        assert await coord.search_current_job() is False
+        assert coord.last_execution["pool_outcome_pending"] is True
+        assert coord.client.status_snapshot()["counters"]["accepted"] == 0
         await until(
-            lambda: coord._submission_in_flight
-            and coord.session.state == "SUBMITTING",
+            lambda: coord._submission_in_flight and coord.session.state == "SUBMITTING",
             what="ordinary share in flight",
         )
         before = coord._executions_total
 
         # The pool deliberately withholds its acknowledgement. Hashing must
         # still progress against the unchanged canonical work identity.
-        assert await coord.search_current_job() is True
+        assert await coord.search_current_job() is False
+        assert coord.last_execution["pool_outcome_pending"] is True
         assert coord._executions_total > before
         snap = coord.submission_pipeline_snapshot()
         assert snap["in_flight"] is True

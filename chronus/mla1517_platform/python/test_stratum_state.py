@@ -96,6 +96,10 @@ class StratumRuntimeStateTests(unittest.TestCase):
             value=f"{target:064x}",
         )
         snapshot = state.snapshot()
+        # Target telemetry is observable, but it does not synthesize a job.
+        self.assertFalse(snapshot["job"]["active"])
+        self.assertIsNone(snapshot["job"]["job_id"])
+        self.assertFalse(snapshot["ready"])
         self.assertEqual(snapshot["job"]["difficulty_source"], "sv2.SetTarget")
         self.assertAlmostEqual(snapshot["job"]["difficulty"], 8.0)
 

@@ -5,6 +5,7 @@ The signal is feed-forward ordering/gating evidence only. These tests prove
 the wire exists (face_bias -> solver start lane, causal_throttle -> dispatch
 breadth + throttle latch) and that the proof boundary is never touched.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -30,9 +31,7 @@ _TORN_RESULT = {
     "trajectory_prediction": {
         "trend": "rising",
         "trend_rate": 0.1,
-        "intervention_points": [
-            {"time": 1.7, "fisher_info": 1.0, "is_optimal": True}
-        ],
+        "intervention_points": [{"time": 1.7, "fisher_info": 1.0, "is_optimal": True}],
     },
 }
 
@@ -106,12 +105,28 @@ class CoordinatorThrottleWiringTests(unittest.TestCase):
             username="u",
             password="x",
         )
-        job = SimpleNamespace(
-            job_id="job-toe-wiring",
-            params=("job-toe-wiring", "00" * 32, "cb1", "cb2"),
-            received_at=1.0,
+        # Hermetic observation fixture uses the real normalization boundary.
+        from chronus.mla1517.mining.stratum_adapter import StratumProofAdapter
+
+        adapter = StratumProofAdapter()
+        adapter.handle_subscribe_result([[], "01020304", 4])
+        adapter.handle_message(
+            {
+                "method": "mining.notify",
+                "params": [
+                    "job-toe-wiring",
+                    "00" * 32,
+                    "01000000",
+                    "ffffffff",
+                    [],
+                    "20000000",
+                    "1d00ffff",
+                    "65abcdef",
+                    True,
+                ],
+            }
         )
-        coord.client = SimpleNamespace(latest_job=lambda: job)
+        coord.client = SimpleNamespace(proof_adapter=adapter)
         context = TOEMiningContext(
             job_id="job-toe-wiring",
             node_id=0,
@@ -158,9 +173,11 @@ class CoordinatorThrottleWiringTests(unittest.TestCase):
     def test_throttle_does_not_touch_consensus(self):
         coord = self._coordinator(_TORN_RESULT)
         boom = AssertionError("consensus path reached from throttle wiring")
-        with mock.patch.object(pow_module, "sha256d", side_effect=boom), \
-             mock.patch.object(pow_module, "check_pow", side_effect=boom), \
-             mock.patch.object(pow_module, "compact_target", side_effect=boom):
+        with (
+            mock.patch.object(pow_module, "sha256d", side_effect=boom),
+            mock.patch.object(pow_module, "check_pow", side_effect=boom),
+            mock.patch.object(pow_module, "compact_target", side_effect=boom),
+        ):
             accepted = asyncio.run(coord.submit_record(_torn_record()))
         self.assertFalse(accepted)
         self.assertTrue(coord.mining_intelligence.throttle)

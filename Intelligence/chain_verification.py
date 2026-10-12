@@ -40,6 +40,7 @@ Substrate route: gap
 from __future__ import annotations
 
 import hashlib
+from decimal import Decimal, localcontext
 import logging
 import struct
 import time
@@ -98,6 +99,17 @@ def _stage(
     }
     entry.update(evidence)
     return entry
+
+
+def mandatory_stages_pass(stages, required):
+    """No missing verdict, truthy string or omitted stage may imply success."""
+    if not required or set(stages) != set(required):
+        return False
+    return all(
+        isinstance(stages[name], dict)
+        and stages[name].get("correct", stages[name].get("passed")) is True
+        for name in required
+    )
 
 
 def _double_sha256(data: bytes) -> bytes:
@@ -165,9 +177,9 @@ def verify_full_chain(backend: Optional[Any] = None) -> Dict[str, Any]:
         bound.backend.value,
         detail=bound.detail,
         gpu_bound=bound.gpu_bound,
-        failed=bound.failed,
-        successful=not bound.failed,
-        correct=not bound.failed,
+        failed=not bound.healthy,
+        successful=bound.healthy,
+        correct=bound.healthy,
         fail_explicit=True,
     )
 
@@ -194,6 +206,10 @@ def verify_full_chain(backend: Optional[Any] = None) -> Dict[str, Any]:
     decoded = reverse_zeckendorf_expansion(sparse, host=host)
     decode_ok = decoded == payload
     ok = ok and decode_ok
+    # Encoding is qualified by the independently executed lossless decode,
+    # not merely by the existence of sparse blocks.
+    stages["storage_encoding"]["correct"] = decode_ok and bool(sparse.blocks)
+    stages["storage_encoding"]["check_scope"] = "declared-payload-lossless-roundtrip"
     stages["storage_reconstruction"] = _stage(
         "storage_reconstruction",
         gpu,
@@ -208,11 +224,25 @@ def verify_full_chain(backend: Optional[Any] = None) -> Dict[str, Any]:
     manifold = PrimeStorageManifold(ctx, punch_host=host)
     vec = np.arange(11, dtype=np.float32) * 0.5
     anchor = ctx.project_and_collapse_pv(vec)
+    # Independent high-precision evaluation of Aethel's declared numerical
+    # projection contract, not a hardware or exact-quantum claim.
+    from aethel.constants import PHI
+
+    with localcontext() as arithmetic:
+        arithmetic.prec = 50
+        base = Decimal(str(PHI))
+        norm_sq = sum((base ** -(i + 1)) * Decimal(str(float(v))) ** 2 for i, v in enumerate(vec))
+        expected_anchor = int(norm_sq.sqrt().to_integral_value()) % 90
+    index_ok = type(anchor) is int and anchor == expected_anchor
+    ok = ok and index_ok
     stages["storage_indexing"] = _stage(
         "storage_indexing",
         gpu,
         ctx.projection_backend,
         anchor=anchor,
+        expected_anchor=expected_anchor,
+        correct=index_ok,
+        check_scope="declared-numerical-projection-only",
         kernel="manifold_compute",
     )
 
@@ -432,16 +462,18 @@ def verify_full_chain(backend: Optional[Any] = None) -> Dict[str, Any]:
         measured_not_projected=True,
     )
 
+    ok = bool(ok) and mandatory_stages_pass(stages, CHAIN_STAGES)
     elapsed = time.perf_counter() - t0
     logger.info(
         "Full-chain verification %s — %d/%d stages passed in %.3fs",
         "READY" if ok else "NOT READY",
-        sum(1 for s in stages.values() if s.get("correct", True)),
+        sum(1 for s in stages.values() if s.get("correct", s.get("passed")) is True),
         len(stages),
         elapsed,
     )
     return {
         "ready": bool(ok),
+        "qualification_scope": "bounded-local-chain-validation-not-fleet-or-mining-readiness",
         "backend": bound.backend.value,
         "gpu_dispatched": gpu,
         "stages": stages,

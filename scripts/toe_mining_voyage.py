@@ -28,8 +28,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 ROOT = Path(__file__).resolve().parent.parent
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # append: an installed toe wins over the checkout
+for source_root in (ROOT, ROOT / "chronus"):
+    if str(source_root) not in sys.path:
+        # Append: an installed TOE wheel must win over checkout source. The
+        # sibling CHRONUS path resolves relocated first-party LUCAS packages.
+        sys.path.append(str(source_root))
 
 from chronus.mla1517.mining.toe_problem import (  # noqa: E402
     WINDOW_LEVELS,

@@ -19,7 +19,7 @@ concurrency:
 env:
   PYTHONUNBUFFERED: "1"
   PYTHONIOENCODING: "utf-8"
-  PYTHONPATH: ${{ github.workspace }}/chronus/mla1517_platform/python
+  PYTHONPATH: ${{ github.workspace }}/chronus/mla1517_platform/python:${{ github.workspace }}:${{ github.workspace }}/chronus
 
 jobs:
   focused:
