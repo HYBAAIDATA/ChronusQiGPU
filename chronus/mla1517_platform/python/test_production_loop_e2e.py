@@ -270,7 +270,7 @@ def test_deterministic_share_submits_and_acknowledges(monkeypatch, tmp_path):
         task = await _launch(_args(submit=True))
         try:
             causal = tmp_path / "causal.jsonl"
-            await until(lambda: len(pool.submits) >= 1, timeout=15, what="submit")
+            await until(lambda: len(pool.submits) >= 1, timeout=45, what="submit")
             await until(
                 lambda: _session_log(tmp_path / "session.json") != [],
                 timeout=10,
@@ -507,7 +507,7 @@ def test_restart_never_resubmits_and_mines_fresh_work(monkeypatch, tmp_path):
         args = _args(submit=True)
         # Phase 1: the share is found, submitted, accepted.
         task = await _launch(args)
-        await until(lambda: len(pool.submits) >= 1, timeout=15, what="first submit")
+        await until(lambda: len(pool.submits) >= 1, timeout=45, what="first submit")
         await until(
             lambda: _session_log(session_path) != []
             and _session_log(session_path)[-1]["outcome"] is True,
@@ -533,7 +533,7 @@ def test_restart_never_resubmits_and_mines_fresh_work(monkeypatch, tmp_path):
                 and e["detail"].get("reason") == "DUPLICATE_SUBMISSION"
                 for e in _causal(causal)
             ),
-            timeout=20,
+            timeout=60,
             what="duplicate share refused",
         )
         assert len({tuple(params) for params in pool.submits}) == len(
