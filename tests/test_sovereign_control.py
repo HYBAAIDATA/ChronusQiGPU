@@ -239,3 +239,34 @@ def test_proof_pack_end_to_end(tmp_path):
         assert (out / name).is_file()
     tampers = json.loads((out / "tamper_tests.json").read_text())
     assert len(tampers) == 5 and all(t["detected"] for t in tampers)
+
+
+def test_offline_verify_cli_needs_only_the_key(tmp_path):
+    plane = _plane(tmp_path)
+    with pytest.raises(SovereignEgressDenied):
+        plane.check_connect(2, ("1.1.1.1", 443))
+    doc = tmp_path / "attestation.json"
+    doc.write_text(json.dumps(plane.attestation()), encoding="utf-8")
+    audit = tmp_path / "audit" / "sovereign.jsonl"
+    key_file = tmp_path / "key"
+    key_file.write_text(KEY_HEX + "\n", encoding="utf-8")
+    base = [sys.executable, "-m", "al_haras.sovereign_control", "verify", str(doc), "--audit", str(audit)]
+    clean = {k: v for k, v in os.environ.items() if not k.startswith("HYBA_SOVEREIGN")}
+    clean["PYTHONPATH"] = str(ROOT)
+
+    def run(*extra, env=clean):
+        return subprocess.run(base + list(extra), env=env, cwd=str(ROOT),
+                              capture_output=True, text=True, timeout=60)
+
+    assert run().returncode == 78
+    assert run("--key-file", str(key_file)).returncode == 0
+    assert run(env={**clean, "HYBA_SOVEREIGN_ATTESTATION_KEY": KEY_HEX}).returncode == 0
+    lines = audit.read_text(encoding="utf-8").splitlines()
+    index = next(i for i, line in enumerate(lines) if '"denied"' in line)
+    record = json.loads(lines[index])
+    record["event"]["target"] = "10.0.0.1:443"
+    lines[index] = json.dumps(record)
+    audit.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    tampered = run("--key-file", str(key_file))
+    assert tampered.returncode == 1
+    assert json.loads(tampered.stdout)["first_broken_record"] == index

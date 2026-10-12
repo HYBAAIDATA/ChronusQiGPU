@@ -224,11 +224,7 @@ def load_policy(env: Optional[Mapping[str, str]] = None) -> SovereignPolicy:
         raise SovereignConfigError(f"{ENV_AUDIT} is required in {mode} mode (durable audit)")
     if _is_remote_location(audit_raw):
         raise SovereignConfigError(f"{ENV_AUDIT} must be a local path, got {audit_raw!r}")
-    key_raw = env.get(ENV_KEY) or ""
-    try:
-        key = bytes.fromhex(key_raw) if key_raw and len(key_raw) % 2 == 0 else key_raw.encode()
-    except ValueError:
-        key = key_raw.encode()
+    key = decode_key(env.get(ENV_KEY) or "")
     if len(key) < MIN_KEY_BYTES:
         raise SovereignConfigError(
             f"{ENV_KEY} must carry at least {MIN_KEY_BYTES} bytes (e.g. openssl rand -hex 32)"
@@ -485,6 +481,15 @@ def _git_commit() -> str:
         return "unknown"
 
 
+def decode_key(raw: str) -> bytes:
+    """Hex keys (``openssl rand -hex 32``) decode to bytes; anything else is UTF-8."""
+    raw = raw.strip()
+    try:
+        return bytes.fromhex(raw) if raw and len(raw) % 2 == 0 else raw.encode()
+    except ValueError:
+        return raw.encode()
+
+
 def verify_attestation(
     document: Mapping[str, Any],
     key: bytes,
@@ -594,6 +599,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     verify = sub.add_parser("verify", help="verify an attestation (and its audit chain)")
     verify.add_argument("attestation", type=Path)
     verify.add_argument("--audit", type=Path)
+    verify.add_argument("--key-file", type=Path,
+                        help=f"file holding the attestation key (default: ${ENV_KEY})")
     args = parser.parse_args(argv)
     try:
         if args.command == "status":
@@ -611,10 +618,17 @@ def main(argv: Optional[list[str]] = None) -> int:
                 args.out.write_text(text + "\n", encoding="utf-8")
             print(text)
             return 0
-        policy = load_policy()
+        # Offline verification needs only the key, not a sovereign runtime.
+        raw = (args.key_file.read_text(encoding="utf-8") if args.key_file
+               else os.environ.get(ENV_KEY, ""))
+        key = decode_key(raw)
+        if len(key) < MIN_KEY_BYTES:
+            raise SovereignConfigError(
+                f"verification needs the attestation key: --key-file or {ENV_KEY}"
+            )
         document = json.loads(args.attestation.read_text(encoding="utf-8"))
         records = read_audit(args.audit) if args.audit else None
-        result = verify_attestation(document, policy.attestation_key, records)
+        result = verify_attestation(document, key, records)
         print(json.dumps(result, indent=2))
         return 0 if result["valid"] else 1
     except SovereignConfigError as exc:

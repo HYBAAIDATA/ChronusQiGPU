@@ -112,3 +112,4 @@ results/
 
 # Chronus Virtual iGPU default embedded store
 .chronus-virtual-igpu/
+local-ci/
