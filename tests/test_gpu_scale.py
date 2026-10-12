@@ -43,4 +43,9 @@ def test_large_windows_wind_without_overflow_and_stay_exact():
         error = abs(exact - _drift_step(m))
         assert min(error, 1 - error) < 1e-9, m
     s = scale_job("job-big", 4096)
-    assert len(s.t11) == DIM and all(0.0 <= x < 1.0 for x in s.t11)
+    # The current contract is exact Z[phi] integer pairs, not a float torus.
+    assert len(s.t11) == DIM
+    assert all(
+        len(coordinate) == 2 and all(type(x) is int for x in coordinate) for coordinate in s.t11
+    )
+    assert scale_job("job-big", 4096).t11 == s.t11
