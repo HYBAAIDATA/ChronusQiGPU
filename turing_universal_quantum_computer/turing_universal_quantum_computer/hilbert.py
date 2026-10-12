@@ -50,6 +50,7 @@ __all__ = [
     "QSqrt",
     "QuantumRegister",
     "GroverExact",
+    "GroverControllerBudgetError",
     "qft",
     "fourier_matrix",
     "verify_unitary",
@@ -965,6 +966,10 @@ def qft(register: QuantumRegister, qubits, inverse: bool = False):
 # ---------------------------------------------------------------------------
 
 
+class GroverControllerBudgetError(ValueError):
+    """Default peak selection exceeds its declared controller work budget."""
+
+
 class GroverExact:
     """Exact Grover iteration on N = 2^n_qubits states, one marked |w>.
 
@@ -1011,23 +1016,32 @@ class GroverExact:
         A, B = self._coeffs(k)
         return QSqrt(0, A / self.N, self.N), QSqrt(0, B / self.N, self.N)
 
-    def optimal_iterations(self) -> int:
+    def optimal_iterations(self, *, max_stages: int = 1024) -> int:
         """First-peak Grover count from exact adjacent Born probabilities.
 
         Advance the two rational coefficients until the next probability
         fails to improve. Ties choose the earlier count. This certifies the
         first amplification peak, not a global optimum over all later cycles.
         It needs O(sqrt(N)) recurrence stages; rational bit costs are additional.
+        The default controller admits N <= max_stages**2 conservatively and
+        executes at most max_stages transitions. This is an explicit work
+        envelope, not a limit on the exact quantum representation. Callers
+        may request a larger controller budget or supply an iteration count.
         """
+        max_stages = _integer(max_stages, "max_stages", 1)
+        if self.N > max_stages * max_stages:
+            raise GroverControllerBudgetError(
+                "exact peak selection exceeds the controller admission budget; "
+                "provide iterations explicitly or request a larger max_stages"
+            )
         A, B = Fraction(1), Fraction(1)
-        k = 0
-        while True:
+        for k in range(max_stages):
             mean = ((self.N - 1) * B - A) / self.N
             next_a, next_b = A + 2 * mean, 2 * mean - B
             if next_a * next_a <= A * A:
                 return k
             A, B = next_a, next_b
-            k += 1
+        raise GroverControllerBudgetError("exact peak selection exhausted max_stages")
 
     def success_probability(self, k: int) -> Fraction:
         """Exact a_k^2 = sin^2((2k+1) theta) as a Fraction in Q."""
