@@ -74,7 +74,6 @@ _PLACEHOLDER_WORKERS = {
     "your_worker",
     "your.worker",
     "worker",
-    "pythia.001",
     "test.worker",
 }
 
