@@ -36,7 +36,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHIA_TELEMETRY_HISTORY_PATH=/var/lib/pythia/telemetry_history.jsonl \
     PYTHIA_RETARGET_TELEMETRY_PATH=/var/lib/pythia/retarget_windows.json \
     PYTHIA_BACKEND_EVIDENCE_PATH=/var/lib/pythia/backend_decisions.jsonl \
-    PYTHIA_INTELLIGENCE_DIR=/var/lib/pythia/intelligence
+    PYTHIA_INTELLIGENCE_DIR=/var/lib/pythia/intelligence \
+    PYTHIA_STORE_DIR=/var/lib/pythia/pythia-store
 WORKDIR /app
 COPY . .
 COPY --from=frontend /build/dist/public ./dist/public
@@ -51,8 +52,8 @@ RUN mkdir -p /tmp/kellogg-tensor \
     && rm -rf /tmp/kellogg-tensor \
     && groupadd --gid 10001 pythia \
     && useradd --uid 10001 --gid pythia --no-create-home pythia \
-    && mkdir -p /var/lib/pythia /tmp/pythia/hb /app/data/repo_engineer \
-    && chown -R pythia:pythia /var/lib/pythia /tmp/pythia /app/data
+    && mkdir -p /var/lib/pythia /tmp/pythia/hb /app/data/repo_engineer /app/artifacts /app/models \
+    && chown -R pythia:pythia /var/lib/pythia /tmp/pythia /app/data /app/artifacts /app/models
 # The runtime sets PYTHONDONTWRITEBYTECODE and runs as uid 10001, so nothing
 # can cache bytecode at run time: precompile the application tree once here,
 # otherwise every supervised worker spawn recompiles it before mining.

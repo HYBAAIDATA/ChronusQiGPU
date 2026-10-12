@@ -54,7 +54,9 @@ PSI = (1 - math.sqrt(5)) / 2
 INV_PHI = 1.0 / PHI
 INV_PHI2 = INV_PHI * INV_PHI  # ~0.382 — the "weak tail" fraction
 
-DEFAULT_STORE_DIR = Path("artifacts") / "pythia"
+# Production images run as a non-root user with a read-only application
+# tree; PYTHIA_STORE_DIR places the durable store on the writable volume.
+DEFAULT_STORE_DIR = Path(os.environ.get("PYTHIA_STORE_DIR") or Path("artifacts") / "pythia")
 
 
 # ---------------------------------------------------------------------------
