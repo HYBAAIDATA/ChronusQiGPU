@@ -243,3 +243,22 @@ def test_configured_target_throttles_a_live_coordinator(tmp_path, monkeypatch):
     # Deferred windows never reach the pool.
     assert len(submits) == 1
     assert outcomes == [True, False, False, False, False]
+
+
+def test_hashrate_governor_constants_and_cap_rules_are_locked():
+    """Lock network fraction, block interval, default ceiling and Poisson alpha
+    so mutations of MAX_NETWORK_FRACTION, BLOCK_INTERVAL_S or the 1% hard cap cannot survive."""
+    from chronus.mla1517.mining.hashrate_governor import (
+        MAX_NETWORK_FRACTION, BLOCK_INTERVAL_S, DEFAULT_CEILING_HS, poisson_interval
+    )
+    assert MAX_NETWORK_FRACTION == 0.01
+    assert BLOCK_INTERVAL_S == 600.0
+    assert DEFAULT_CEILING_HS == 1e19
+    # Poisson interval uses alpha=0.05 by default (Garwood)
+    lo, hi = poisson_interval(0)
+    assert lo == 0.0 and hi > 0.0
+    # Cap is the min of target, ceiling and 1% of network
+    clock = Clock()
+    gov = HashrateGovernor(target_hs=1e12, ceiling_hs=1e18, clock=clock)
+    gov.observe_network(MAINNET_LIKE_NBITS)
+    assert gov.cap_hs == pytest.approx(0.01 * gov.network_hs)
