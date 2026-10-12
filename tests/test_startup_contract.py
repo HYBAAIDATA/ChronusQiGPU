@@ -52,7 +52,7 @@ def test_identity_public_view_contains_no_password(monkeypatch):
 
 @pytest.mark.parametrize(
     "worker",
-    ["account.worker", "YOUR_WORKER", "PYTHIA.001", "worker", "test.worker"],
+    ["account.worker", "YOUR_WORKER", "worker", "test.worker"],
 )
 def test_placeholder_worker_identities_fail_closed(worker):
     with pytest.raises(StartupConfigError, match="real pool worker identity"):
@@ -61,6 +61,8 @@ def test_placeholder_worker_identities_fail_closed(worker):
 
 def test_real_worker_identity_is_preserved():
     assert validate_worker_identity("actual-account.rig-01") == "actual-account.rig-01"
+    assert validate_worker_identity("PYTHIA.001") == "PYTHIA.001"
+    assert validate_worker_identity("PYTHAGOROS.PYTHIA.002") == "PYTHAGOROS.PYTHIA.002"
 
 
 def test_epoch_change_resets_sequence_without_regression(tmp_path, monkeypatch):

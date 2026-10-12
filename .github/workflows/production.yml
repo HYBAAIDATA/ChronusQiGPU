@@ -1,0 +1,58 @@
+name: Production environment preflight (no mining)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-environment-preflight
+  cancel-in-progress: false
+
+env:
+  PYTHONPATH: ${{ github.workspace }}/chronus/mla1517_platform/python:${{ github.workspace }}
+
+jobs:
+  configuration-preflight:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Offline configuration regression tests
+        run: python -m unittest discover -s tests -p test_runtime_environment_preflight.py -v
+      - name: Validate configured runtime inputs without starting services
+        env:
+          MLA1517_STRATUM_USER: ${{ secrets.VIABTC_USER }}
+          MLA1517_STRATUM_PASSWORD: ${{ secrets.VIABTC_PASSWORD }}
+          MLA1517_VIABTC_USER: ${{ secrets.VIABTC_USER }}
+          MLA1517_VIABTC_PASSWORD: ${{ secrets.VIABTC_PASSWORD }}
+          MLA1517_BRAIINS_USER: ${{ secrets.BRAIINS_USER }}
+          MLA1517_BRAIINS_PASSWORD: ${{ secrets.BRAIINS_PASSWORD }}
+          EUCLID_ADMIN_API_KEY: ${{ secrets.EUCLID_ADMIN_API_KEY }}
+          PYTHIA_POOLS: viabtc,braiins
+          PYTHIA_POOL_PROFILE: viabtc
+          PYTHIA_AUTOSTART_WORKERS: "0"
+          PYTHIA_M3_REQUIRED: "1"
+          PYTHIA_STORAGE_DB: ${{ vars.PYTHIA_STORAGE_DB }}
+          PYTHIA_STORAGE_ROOT: ${{ vars.PYTHIA_STORAGE_ROOT }}
+          PYTHIA_STORAGE_CUSTODY_ROOT: ${{ vars.PYTHIA_STORAGE_CUSTODY_ROOT }}
+          PYTHIA_STORAGE_TENANT: ${{ vars.PYTHIA_STORAGE_TENANT }}
+          PYTHIA_M3_ACTOR: ${{ vars.PYTHIA_M3_ACTOR }}
+          PYTHIA_STORAGE_INTEGRITY_KEY_HEX: ${{ secrets.PYTHIA_STORAGE_INTEGRITY_KEY_HEX }}
+          PYTHIA_STORAGE_CUSTODY_KEY_HEX: ${{ secrets.PYTHIA_STORAGE_CUSTODY_KEY_HEX }}
+          PYTHIA_M3_AL_HARAS_TOKEN: ${{ secrets.PYTHIA_M3_AL_HARAS_TOKEN }}
+        run: python scripts/runtime_environment_preflight.py --output artifacts/runtime-environment-preflight.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-environment-preflight
+          path: artifacts/runtime-environment-preflight.json
+          if-no-files-found: warn
+          retention-days: 7
