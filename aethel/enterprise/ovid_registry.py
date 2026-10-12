@@ -13,7 +13,10 @@ transform declared UNSUPPORTED cannot fold or unfold at all.
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
+import threading
+from collections import OrderedDict
 from typing import Any, Callable, Dict, Tuple
 
 from .errors import SchemaVersionError
@@ -114,6 +117,17 @@ class OvidRegistry:
             OVID_TRANSFORM_V1: (_fold_v1, _unfold_v1),
         }
         self._contracts: Dict[int, Any] = {OVID_TRANSFORM_V1: _v1_contract()}
+        # Unfold is a pure, keyless function of (version, working bytes). The
+        # custody plane authenticates every envelope (HMAC + digests) on each
+        # load, and each load unfolds the same immutable record several times
+        # (primary, replica, read-back); repeated health reconciliation would
+        # otherwise redo the exact Zeckendorf decode for every record, making
+        # strict-M3 checks O(ledger) in arithmetic. Results are memoised by the
+        # SHA-256 of the exact input bytes, so any altered byte misses the
+        # cache and is unfolded (and authenticated) afresh. Bounded by bytes.
+        self._unfold_cache: "OrderedDict[tuple[int, bytes], bytes]" = OrderedDict()
+        self._unfold_cache_bytes = 0
+        self._unfold_lock = threading.Lock()
 
     def register(
         self,
@@ -129,6 +143,9 @@ class OvidRegistry:
             _check_contract(contract)
         self._reg[int(version)] = (fold_fn, unfold_fn)
         self._contracts[int(version)] = contract
+        with self._unfold_lock:
+            self._unfold_cache.clear()
+            self._unfold_cache_bytes = 0
 
     def supported(self) -> tuple[int, ...]:
         return tuple(sorted(self._reg))
@@ -167,9 +184,28 @@ class OvidRegistry:
             raise TypeError("fold payload must be bytes")
         return self._reg[version][0](bytes(payload))
 
+    _UNFOLD_CACHE_MAX_BYTES = 64 * 1024 * 1024
+
     def unfold(self, working: bytes, version: int = OVID_TRANSFORM_V1) -> bytes:
         self._gate(version)
-        return self._reg[version][1](working)
+        if not isinstance(working, (bytes, bytearray)):
+            return self._reg[version][1](working)
+        key = (int(version), hashlib.sha256(bytes(working)).digest())
+        with self._unfold_lock:
+            hit = self._unfold_cache.get(key)
+            if hit is not None:
+                self._unfold_cache.move_to_end(key)
+                return hit
+        result = self._reg[version][1](working)
+        if isinstance(result, bytes) and len(result) <= self._UNFOLD_CACHE_MAX_BYTES // 8:
+            with self._unfold_lock:
+                if key not in self._unfold_cache:
+                    self._unfold_cache[key] = result
+                    self._unfold_cache_bytes += len(result)
+                    while self._unfold_cache_bytes > self._UNFOLD_CACHE_MAX_BYTES:
+                        _, old = self._unfold_cache.popitem(last=False)
+                        self._unfold_cache_bytes -= len(old)
+        return result
 
 
 DEFAULT_OVID_REGISTRY = OvidRegistry()

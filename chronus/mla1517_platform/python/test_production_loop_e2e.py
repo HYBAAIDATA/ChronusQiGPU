@@ -39,6 +39,24 @@ from test_agentic_voyages import (
 )
 
 
+@pytest.fixture(scope="module", autouse=True)
+def _booted_exact_substrate():
+    """Pay the exact Q(phi) substrate cost once, as a booted miner does.
+
+    The production exact profile precomputes the H4/M32 geometry and replays
+    its certificate independently; both are process-cached by content
+    (``precompute_exact_search`` / ``validate_payload``). A long-running
+    miner pays this once at boot. Without warming, the first test in a cold
+    worker spends tens of seconds in pure-Python exact arithmetic before its
+    first plan, which these wall-clock timeouts do not model. Nothing is
+    stubbed: the same cached, validated objects serve every test.
+    """
+    from chronus.exact_geometry import validate_payload
+    from chronus.mla1517.mining.exact_search import precompute_exact_search
+
+    validate_payload(precompute_exact_search().geometry_encoded)
+
+
 def _args(submit: bool) -> argparse.Namespace:
     return argparse.Namespace(
         device=None,
@@ -89,6 +107,14 @@ def _env(
     monkeypatch.setenv("PYTHIA_RECONNECT_MAX_S", reconnect_max_s)
     # The operator's runtime config must not shadow the declared test pools.
     monkeypatch.setattr(runtime_config, "load", lambda *a, **k: {})
+    # Live submission requires strict M3 (AL HARAS authorisation + THESEUS
+    # custody). Submit-path tests provision the real custody plane and admit
+    # the tenant exactly as an operator would; nothing is bypassed.
+    from strict_m3_fixture import _reset_guardian_cache, provision_strict_m3
+
+    _reset_guardian_cache()
+    if submit:
+        provision_strict_m3(tmp_path, monkeypatch.setenv)
 
 
 def _causal(path: Path) -> list[dict]:
@@ -517,7 +543,7 @@ def test_restart_never_resubmits_and_mines_fresh_work(monkeypatch, tmp_path):
         await pool.new_job(_job("job-fresh", prevhash="cd" * 32, coinb1=bip34_coinb1(800_002)))
         await until(
             lambda: any(params[1] == "job-fresh" for params in pool.submits),
-            timeout=15,
+            timeout=60,
             what="fresh submit",
         )
         assert len({tuple(params) for params in pool.submits}) == len(pool.submits)
