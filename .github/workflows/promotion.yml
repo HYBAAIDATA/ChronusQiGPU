@@ -26,7 +26,7 @@ jobs:
     outputs:
       authors: ${{ steps.authors.outputs.list }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: {ref: '${{ inputs.commit_sha }}', fetch-depth: 0}
       - id: authors
         run: python scripts/list_authors.py --subsystem '${{ inputs.subsystem }}' --commit '${{ inputs.commit_sha }}' >> "$GITHUB_OUTPUT"
@@ -34,7 +34,7 @@ jobs:
     needs: preflight
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: {ref: '${{ inputs.commit_sha }}'}
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
@@ -43,7 +43,7 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: {ref: '${{ inputs.commit_sha }}'}
       - name: Run all gates without swallowing failures
         run: make -k gates
@@ -81,7 +81,7 @@ jobs:
        (inputs.target_state == 'PRODUCTION' && needs.approvals-production.result == 'success'))
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: {ref: '${{ inputs.commit_sha }}'}
       - uses: actions/download-artifact@v4
         with: {name: promotion-gate-results, path: results}
@@ -93,7 +93,7 @@ jobs:
     needs: collect-approvals
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: {ref: '${{ inputs.commit_sha }}'}
       - uses: actions/download-artifact@v4
         with: {name: promotion-gate-results, path: results}
