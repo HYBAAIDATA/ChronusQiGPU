@@ -37,7 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.11", "3.12", "3.13"]
+        python: ["3.11", "3.12", "3.13"]  # verified with updated numpy/pytest pins
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

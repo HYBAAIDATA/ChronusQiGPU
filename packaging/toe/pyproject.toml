@@ -36,7 +36,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "numpy>=1.26,<3",
+    "numpy>=1.26.4,<3",  # 3.11–3.13 compatible wheels
     # Exact tensor / golden-field mathematics is KELLOGG's; TOE consumes it.
     "hyba-kellogg-tensor>=1.0,<2",
 ]
@@ -44,7 +44,7 @@ dependencies = [
 [project.optional-dependencies]
 # The original discovery surface (toe.engine.PredictiveEngine) reads DataFrames.
 legacy-hr = ["pandas>=2.0"]
-dev = ["pytest>=7.4,<10"]
+dev = ["pytest>=8.0,<10"]  # 3.11–3.13
 
 [project.urls]
 Homepage = "https://github.com/QuantumPhiRedux/PhiMiner"
