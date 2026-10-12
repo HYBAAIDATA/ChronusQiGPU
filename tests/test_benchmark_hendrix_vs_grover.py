@@ -1,6 +1,8 @@
 """Smoke tests for the Hendrix-vs-Grover benchmark harness."""
 
 import sys
+import json
+import time
 from math import gcd
 from pathlib import Path
 
@@ -39,7 +41,34 @@ def _simulated_grover_walk(n: int):
     return order
 
 
-def test_grover_index_formula_matches_simulated_walk():
+def test_grover_index_formula_matches_simulated_walk(tmp_path, monkeypatch):
+    # Explicit numerical reference fixture; never production evidence or approval.
+    from chronos_one_igpu.reference_contract import reference_execution
+
+    approval = tmp_path / "reference-approval.json"
+    approval.write_text(
+        json.dumps(
+            {
+                "schema": "chronos.reference_approvals/1",
+                "approvals": {
+                    "benchmark-fixture": {
+                        "approved": True,
+                        "approved_by": "unit-test-fixture",
+                        "purpose": "numerical schedule regression only",
+                        "mode": "reference",
+                        "expires_unix": time.time() + 60,
+                        "capabilities": ["mining.GroverStyleSearch"],
+                    }
+                },
+            }
+        )
+    )
+    monkeypatch.setenv("CHRONOS_REFERENCE_APPROVALS_FILE", str(approval))
+    with reference_execution("benchmark-fixture"):
+        _assert_reference_walk()
+
+
+def _assert_reference_walk():
     for n in (64, 256, 1024, 4096):
         truth = _simulated_grover_walk(n)
         assert len(truth) == n
@@ -77,3 +106,12 @@ def test_model_arm_small_run_parity():
 
     for vals in (seq, hen, gro):
         assert abs(statistics.fmean(vals) / (n / 5.0) - 1.0) < 0.25
+
+
+def test_numerical_reference_fixture_never_unlocks_production():
+    import pytest
+    from mining.search import GroverStyleSearch
+    from chronos_one_igpu.reference_contract import ReferenceUnavailable
+
+    with pytest.raises(ReferenceUnavailable):
+        GroverStyleSearch.optimal_iterations(64)

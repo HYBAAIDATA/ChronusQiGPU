@@ -68,6 +68,8 @@ def fixture(tmp_path):
             "expiry": (NOW + timedelta(days=1)).isoformat(),
         },
     }
+    log = tmp_path / "execution.log"
+    log.write_bytes(b"isolated fixture execution; not operational evidence")
     package = {
         "schema_version": "cedr.evidence/1",
         "statement": {k: claim[k] for k in ("claim", "title", "owner")},
@@ -82,7 +84,13 @@ def fixture(tmp_path):
         "freshness": claim["freshness"],
         "limitations": claim["limitations"],
         "checks": [
-            {"name": "fixture-execution", "result": "PASS", "execution_reference": "fixture-run/1"}
+            {
+                "name": "fixture-execution",
+                "result": "PASS",
+                "execution_reference": "fixture-run/1",
+                "retained_artifact": "execution.log",
+                "retained_digest": hashlib.sha256(log.read_bytes()).hexdigest(),
+            }
         ],
     }
     document = {"schema_version": "cedr/1", "profiles": {"test": profile}, "claims": [claim]}
@@ -288,4 +296,17 @@ def test_reviewed_claim_cannot_be_reworded_after_signing(tmp_path, field):
     document, package, artifact, key = fixture(tmp_path)
     retain(tmp_path, document, package, key)
     document["claims"][0][field] = "different operational claim"
+    assert not result(tmp_path, document, artifact)["eligible"]
+
+
+@pytest.mark.parametrize("mutation", ["missing", "tampered", "escaped"])
+def test_signed_reference_without_valid_retained_execution_bytes_is_rejected(tmp_path, mutation):
+    document, package, artifact, key = fixture(tmp_path)
+    if mutation == "missing":
+        (tmp_path / "execution.log").unlink()
+    elif mutation == "tampered":
+        (tmp_path / "execution.log").write_text("rewritten execution")
+    else:
+        package["checks"][0]["retained_artifact"] = "../outside.log"
+    retain(tmp_path, document, package, key)
     assert not result(tmp_path, document, artifact)["eligible"]

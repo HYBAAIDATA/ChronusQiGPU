@@ -149,6 +149,21 @@ def verify_package(package: dict, profile: dict, reviewer: str) -> None:
         raise ValueError("invalid evidence signature") from exc
 
 
+def retained_digest(root: Path, relative: str) -> str:
+    """Hash retained evidence bytes, never trusting a mere reference string."""
+    if not isinstance(relative, str) or not relative:
+        raise ValueError("missing retained evidence artifact")
+    name = Path(relative)
+    path = (root / name).resolve()
+    if name.is_absolute() or ".." in name.parts or not path.is_relative_to(root.resolve()):
+        raise ValueError("retained evidence escapes custody root")
+    digest = hashlib.sha256()
+    with path.open("rb") as content:
+        for chunk in iter(lambda: content.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def qualify(
     claim: dict, profile: dict, root: Path, commit: str, artifact_digest: str, now: datetime
 ) -> dict:
@@ -256,6 +271,11 @@ def qualify(
             or not set(required_checks) <= {c["name"] for c in checks}
         ):
             raise ValueError("required acceptance scenarios are not covered")
+        for check in checks:
+            if retained_digest(root, check.get("retained_artifact")) != check.get(
+                "retained_digest"
+            ):
+                raise ValueError("executed evidence is missing or altered")
         if len({c["name"] for c in checks}) != len(checks):
             raise ValueError("duplicate check evidence")
         if any(c["result"] in {"FAIL", "ERROR"} for c in checks):

@@ -38,7 +38,9 @@ credentials. Required acceptance-check names are explicit per claim in each prof
 
 Evidence producers retain a `cedr.evidence/1` JSON package with claim ID, source commit,
 artifact digest, build ID, scope, execution date, retained-until, checks, limitations,
-freshness and review. Each check has name, result and retrievable execution reference.
+freshness and review. Each check has name, result, execution reference, retained_artifact (a relative file
+within custody) and retained_digest. The gate hashes the retained execution bytes;
+a reference string without the retained evidence cannot qualify a claim.
 Attestation records reviewer, key ID, Ed25519 algorithm, trust policy and hexadecimal
 signature over canonical JSON of the complete package excluding `attestation` (sorted
 keys, compact separators, finite JSON). The register records its package path and digest.
