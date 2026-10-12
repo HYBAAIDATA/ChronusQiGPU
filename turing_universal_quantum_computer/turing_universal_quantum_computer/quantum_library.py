@@ -41,9 +41,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 import sympy as sp
 
 from .hilbert import (
-    ExactComplex,
     QuantumRegister,
-    _e_abs2,
     _e_mul,
     _frac,
     _integer,
@@ -423,7 +421,7 @@ class QuantumLibrary:
             "grover": {
                 "owner": "hilbert.GroverExact",
                 "lane": "closed_form Q(sqrt(N)) amplitudes",
-                "scale": "any n; no state materialised",
+                "scale": "compact peak count; rational amplitudes within declared materialization budget",
             },
             "qpe": {
                 "owner": "hilbert.QuantumRegister + qft",

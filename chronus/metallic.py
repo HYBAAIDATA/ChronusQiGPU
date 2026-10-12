@@ -33,7 +33,7 @@ class MetallicElement:
         if not isinstance(other, MetallicElement):
             return NotImplemented
         if self.n != other.n:
-            raise ValueError("different metallic fields")
+            raise ArithmeticError("different metallic fields")
         return MetallicElement(
             self.n,
             self.a * other.a + self.b * other.b,

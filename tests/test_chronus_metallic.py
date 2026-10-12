@@ -43,7 +43,7 @@ class MetallicTests(unittest.TestCase):
         self.assertEqual(metallic_ladder(2, [0, 1, 3]), [silver()**k for k in (0, 1, 3)])
 
     def test_invalid_fields_and_coefficients(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ArithmeticError):
             silver() * bronze()
         with self.assertRaises(ValueError):
             metallic(0)

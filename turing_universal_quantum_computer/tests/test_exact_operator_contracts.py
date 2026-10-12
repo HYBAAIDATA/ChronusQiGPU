@@ -157,3 +157,64 @@ for verify in (r.assert_normalized, lambda: verify_unitary([[ExactComplex(2)]]))
 def test_grover_facade_does_not_truncate_invalid_iteration_counts(iterations):
     with pytest.raises((TypeError, ValueError)):
         QuantumLibrary.grover(2, 1, iterations=iterations)
+
+
+def test_compact_peak_selector_and_large_default_refusal_finish_within_budget():
+    # A subprocess timeout detects the original billion-step controller hang.
+    code = """
+from turing_universal_quantum_computer.hilbert import GroverExact
+from turing_universal_quantum_computer.quantum_library import QuantumLibrary
+assert GroverExact(64).certified_peak_iterations() == 3373259426
+assert GroverExact(128).certified_peak_iterations().bit_length() == 64
+assert GroverExact(1024).certified_peak_iterations().bit_length() == 512
+for operation in (
+    lambda: GroverExact(64).iterate(3373259426),
+    lambda: GroverExact(64).success_probability(3373259426),
+    lambda: GroverExact(64).distribution(3373259426),
+    lambda: GroverExact(64).run_register(),
+    lambda: GroverExact(64).full_distribution(0),
+    lambda: QuantumLibrary.grover(64, marked=0),
+):
+    try:
+        operation()
+    except ValueError as exc:
+        assert 'budget' in str(exc)
+    else:
+        raise AssertionError('oversized exact materialization was admitted')
+"""
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(Path(__file__).resolve().parents[1])
+    completed = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, env=env, timeout=15
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
+def test_grover_peak_certificate_matches_independent_recurrence():
+    # Deliberately do not reuse the controller's enclosure arithmetic.
+    for width in range(1, 17):
+        dimension = 1 << width
+        a, b, k = Fraction(1), Fraction(1), 0
+        while True:
+            mean = ((dimension - 1) * b - a) / dimension
+            next_a, next_b = a + 2 * mean, 2 * mean - b
+            if next_a * next_a <= a * a:
+                break
+            a, b = next_a, next_b
+            k += 1
+        assert GroverExact(width).certified_peak_iterations() == k
+
+
+def test_grover_materialization_refuses_before_allocating_coefficients_or_register():
+    grover = GroverExact(8)
+    with pytest.raises(ValueError, match="budget"):
+        grover.iterate(grover.MAX_MATERIALIZED_ITERATIONS + 1)
+    grover.MAX_COEFFICIENT_BITS = 16
+    with pytest.raises(ValueError, match="budget"):
+        grover.iterate(2)
+    with pytest.raises(ValueError, match="budget"):
+        GroverExact(13).run_register(0)
+    with pytest.raises(ValueError, match="budget"):
+        GroverExact(13).full_distribution(0)
+    with pytest.raises(ValueError):
+        GroverExact(3).run_register(-1)

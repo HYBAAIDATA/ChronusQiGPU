@@ -984,8 +984,9 @@ class GroverExact:
         M  = ((N-1) B - A) / N          (post-oracle mean, in 1/sqrt(N))
         A' = A + 2M,   B' = 2M - B
 
-    No floats in amplitudes or iteration selection: ``optimal_iterations``
-    certifies the first peak by exact adjacent Born-probability comparison.
+    No floats in amplitudes or iteration selection: ``certified_peak_iterations``
+    certifies the first peak with rational enclosures and integer square roots.
+    No approximate amplitude or numerical angle is constructed.
     """
 
     def __init__(self, n_qubits: int, marked: int = 0):
@@ -997,9 +998,25 @@ class GroverExact:
             raise ValueError("marked index out of range")
         self.marked = marked
 
+    # Materialised rational coefficients have bit size proportional to k*n.
+    # Refuse before starting a request outside this finite execution envelope.
+    MAX_MATERIALIZED_ITERATIONS = 4096
+    MAX_COEFFICIENT_BITS = 1 << 20
+    MAX_REGISTER_STATES = 4096
+
+    def _materialization_count(self, k: int) -> int:
+        k = _integer(k, "k")
+        if (k > self.MAX_MATERIALIZED_ITERATIONS
+                or (k + 1) * self.n_qubits > self.MAX_COEFFICIENT_BITS):
+            raise ValueError(
+                "exact Grover rational materialization budget exceeded; "
+                "request fewer iterations or use the compact first-peak count"
+            )
+        return k
+
     def _coeffs(self, k: int):
         """Exact (A_k, B_k) — amplitudes are A_k/sqrt(N) and B_k/sqrt(N)."""
-        k = _integer(k, "k")
+        k = self._materialization_count(k)
         N = self.N
         A, B = Fraction(1), Fraction(1)
         for _ in range(k):
@@ -1015,6 +1032,56 @@ class GroverExact:
         """
         A, B = self._coeffs(k)
         return QSqrt(0, A / self.N, self.N), QSqrt(0, B / self.N, self.N)
+
+    @staticmethod
+    def _atan_reciprocal_bounds(denominator: int, terms: int):
+        """Certified bounds from an alternating rational atan series."""
+        partial = Fraction(0)
+        power = denominator
+        for j in range(terms):
+            partial += Fraction((-1) ** j, (2 * j + 1) * power)
+            power *= denominator * denominator
+        endpoint = partial + Fraction((-1) ** terms, (2 * terms + 1) * power)
+        return min(partial, endpoint), max(partial, endpoint)
+
+    def certified_peak_iterations(self) -> int:
+        """Certify the first peak without walking O(sqrt(N)) iterates.
+
+        P(k+1)-P(k) has the sign of sin(4(k+1)*theta), with
+        theta=asin(1/sqrt(N)). Thus the first peak is floor(pi/(4*theta)),
+        except N=2's exact tie (choose zero). For N>=4 the boundary cannot
+        be an integer: a rational cos(2*theta)=1-2/N at a rational multiple
+        of pi can only be 0, +/-1/2 or +/-1; N=4 gives boundary 3/2.
+
+        Machin's identity bounds pi with alternating rational series.
+        asin(1/sqrt(N))=S(1/N)/sqrt(N); the positive S coefficients
+        are <=1, so its remainder is bounded by z**terms/(1-z).
+        Refine until both rational enclosures certify the SAME integer.
+        No tolerance, float, angle evaluation or approximate result is used.
+        """
+        if self.N == 2:
+            return 0
+        terms = 4
+        z = Fraction(1, self.N)
+        while True:
+            a_lo, a_hi = self._atan_reciprocal_bounds(5, terms)
+            b_lo, b_hi = self._atan_reciprocal_bounds(239, terms)
+            pi_lo, pi_hi = 16 * a_lo - 4 * b_hi, 16 * a_hi - 4 * b_lo
+            coefficient = Fraction(1)
+            power = Fraction(1)
+            s_lo = Fraction(0)
+            for j in range(terms):
+                s_lo += coefficient * power
+                coefficient *= Fraction((2 * j + 1) ** 2, 2 * (j + 1) * (2 * j + 3))
+                power *= z
+            s_hi = s_lo + power / (1 - z)
+            lower, upper = pi_lo / (4 * s_hi), pi_hi / (4 * s_lo)
+            # floor(r*sqrt(N)) = isqrt(floor(N*r*r)), all integer arithmetic.
+            low_count = math.isqrt(self.N * lower.numerator**2 // lower.denominator**2)
+            high_count = math.isqrt(self.N * upper.numerator**2 // upper.denominator**2)
+            if low_count == high_count:
+                return low_count
+            terms *= 2
 
     def optimal_iterations(self, *, max_stages: int = 1024) -> int:
         """First-peak Grover count from exact adjacent Born probabilities.
@@ -1055,6 +1122,8 @@ class GroverExact:
 
     def full_distribution(self, k: int):
         """Exact per-basis-state {index: probability} dict."""
+        if self.N > self.MAX_REGISTER_STATES:
+            raise ValueError("exact Grover full distribution exceeds register-state budget")
         d = self.distribution(k)
         out = {}
         for i in range(self.N):
@@ -1070,6 +1139,9 @@ class GroverExact:
         """
         if k is None:
             k = self.optimal_iterations()
+        k = self._materialization_count(k)
+        if self.N > self.MAX_REGISTER_STATES:
+            raise ValueError("exact Grover register exceeds register-state budget")
         reg = QuantumRegister(self.n_qubits)
         reg.uniform_superposition()
         for _ in range(k):
