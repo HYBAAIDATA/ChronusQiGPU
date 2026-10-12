@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: {ref: '${{ inputs.commit_sha }}'}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with: {python-version: '3.12'}
       - run: python scripts/promotion_pipeline.py validate --subsystem '${{ inputs.subsystem }}' --target '${{ inputs.target_state }}' --commit '${{ inputs.commit_sha }}'
   gates:
