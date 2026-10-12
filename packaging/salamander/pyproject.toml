@@ -34,6 +34,8 @@ classifiers = [
 dependencies = [
     # AL HARAS parses the claims/pairings policy files with PyYAML.
     "PyYAML>=6.0,<7",
+    # Bundled AL HARAS CEDR verifies real Ed25519 reviewer attestations.
+    "cryptography>=46,<51",
 ]
 
 [project.urls]
