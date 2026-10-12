@@ -1,0 +1,47 @@
+{
+  "compileall": 0,
+  "conformance": {
+    "joint_basis_checks": 138,
+    "scope": "finite_clifford_register_tableau_not_universal_or_production_certification",
+    "vectors": 8
+  },
+  "lint": {
+    "flake8": 0,
+    "ruff_E9_F": 0,
+    "scope": "original foundation files and these repair files; not every concurrent PR change"
+  },
+  "not_run": [
+    "full GitHub check/log inspection (403)",
+    "full mandatory gate rollup",
+    "complete repository and TUQC suites",
+    "installed wheel/sdist qualification",
+    "native/frontend/formal/hardware qualification",
+    "package publication"
+  ],
+  "pytest": {
+    "deselected": 3,
+    "deselected_cases": [
+      "test_lanes_report_live_backends",
+      "test_execute_ops_selects_exact_lane_for_clifford",
+      "test_execute_ops_refuses_unknown_gate"
+    ],
+    "exit_code": 0,
+    "passed": 108,
+    "reason": "complete backend registry absent from isolated local workspace"
+  },
+  "python": "3.13.14",
+  "reconciled_parent": "37680f194c404944aafd7bcc1c3386602a311f32",
+  "scope": "isolated_local_repairs_not_full_CI_or_package_publication_qualification",
+  "source_sha256": {
+    "chronus/metallic.py": "05499298c8e913bab13dd60351b9ab0aa0de18e6f22621b93c0483dce500a495",
+    "make/gates.mk": "b265ca2906974dad13f637e0cec0247995b07955be126a9bd1839d3d914c9aed",
+    "scripts/exact_conformance.py": "77036d830d3c027d3579758cc5589cfced258cc94d4f4237aca3a50074ee2875",
+    "scripts/gate_impl.py": "b93dae3df8b2e19e3b7bcaead969e771f806411973e2d47ad829d9c6f5179b9a",
+    "tests/test_chronus_metallic.py": "f17632ee0b5dd3355538c4d066d1438c9c0b0021a2a4caf21577628bac28b06a",
+    "tests/test_exact_conformance_gate.py": "dacd12e863fd7cde3543fa072ba4407089f644b951164f28d9bd15a711076d60",
+    "tests/test_release_gate_entrypoint.py": "9159210dd16b7db6df2d9c493774362106ff05916d5e2a28210d4c71b1a22330",
+    "turing_universal_quantum_computer/tests/test_exact_operator_contracts.py": "91cdbc05b6471c71ca0c0e22d5f777d19e15dae07d673986d85644d66e01e300",
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/hilbert.py": "58d613dda0d662607672a3cc5d25108d8824a079f46393ab506e66e5f9615deb",
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py": "06a4ae52634655a11921a18f33d1f3321b966d4b0e78b27e811e27aec826ba41"
+  }
+}

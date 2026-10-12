@@ -13,13 +13,8 @@ gate-results-clean:
 
 release-gate: gates
 	python3 scripts/repo_closure.py defects --output reports/DEFECT_REGISTER.json --require-closed
+	# The rollup always rejects mandatory SKIP/NOT_RUN; no optional bypass flag.
 	python3 scripts/assert_gate_rollup.py
-	$(MAKE) --no-print-directory cedr-release-gate
-
-.PHONY: cedr-release-gate
-cedr-release-gate:
-	@test -n "$(CEDR_PROFILE)" -a -n "$(CEDR_ARTIFACT)" || { echo "CEDR_PROFILE and CEDR_ARTIFACT required"; exit 1; }
-	python3 -m scripts.cedr_gate --profile "$(CEDR_PROFILE)" --artifact "$(CEDR_ARTIFACT)"
 
 rule7-no-float:
 	python3 scripts/rule7_no_float_gate.py

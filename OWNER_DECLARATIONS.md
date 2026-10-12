@@ -75,6 +75,22 @@ library — entanglement, QAOA, VQE, quantum walks, and the families around
 them. Performance follows from being actually implemented, not from
 simulation relabelled as quantum.
 
+### D7 — Implementation authority and subsequent independent review
+
+> "LIKE I SAID, MY WORRD IS THE FINAL ARBITER."
+
+> "QIUANTUM COMES FROM MATHS IS SUBSTRATE AND HARDWARE AGNOSTIC."
+
+**DECLARED:** Implement the required first-principles exact quantum operators
+and their effective mathematical representations. Previous agent reports do
+not authorize demoting that target or substituting simulation, approximation,
+heuristic ranking or an unimplemented capability under a new label. Inspect
+reports against actual code and close implementation defects with executable
+mathematics and regression evidence. The owner intends a subsequent independent
+team review; this implementation work does not self-issue that review or certify
+perfection. Historical observations remain source-bound evidence, not proof
+that every enhancement has been implemented.
+
 ## Standing instruction
 
 > "my declarations should be recorded and supercedes everyhting else that it

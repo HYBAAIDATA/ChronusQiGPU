@@ -239,8 +239,17 @@ def refuted(root):
 
 
 def conformance(root):
+    from scripts.exact_conformance import evaluate_conformance
+
+    report = evaluate_conformance()
+    artifact = root / "results" / "conformance-execution.json"
+    artifact.parent.mkdir(exist_ok=True)
+    artifact.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
     return Outcome(
-        Status.SKIP, "fewer than two independently available exact backends; no conformance claim"
+        Status.PASS if report["passed"] else Status.FAIL,
+        f"{report['checks']} exact Clifford joint-distribution checks; "
+        f"{len(report['mismatches'])} mismatches; scoped register/tableau conformance",
+        (str(artifact),),
     )
 
 

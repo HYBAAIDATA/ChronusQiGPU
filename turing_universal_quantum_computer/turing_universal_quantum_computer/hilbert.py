@@ -39,6 +39,7 @@ from __future__ import annotations
 import math
 import os
 import random
+import re
 from fractions import Fraction
 
 import sympy as sp
@@ -49,6 +50,7 @@ __all__ = [
     "QSqrt",
     "QuantumRegister",
     "GroverExact",
+    "GroverControllerBudgetError",
     "qft",
     "fourier_matrix",
     "verify_unitary",
@@ -71,11 +73,23 @@ __all__ = [
 
 
 def _frac(v) -> Fraction:
-    if isinstance(v, Fraction):
-        return v
+    """Admit declared rational values, never rationalize a float or boolean."""
+    if type(v) is int or isinstance(v, Fraction):
+        return Fraction(v)
     if isinstance(v, sp.Rational):
         return Fraction(int(v.p), int(v.q))
-    return Fraction(v)
+    if isinstance(v, str) and re.fullmatch(r"[+-]?\d+(?:/[+-]?\d+)?", v):
+        return Fraction(v)
+    raise TypeError("exact integer, Fraction, sympy Rational or rational text required")
+
+
+def _integer(v, name: str, minimum: int = 0) -> int:
+    if type(v) is not int and not isinstance(v, sp.Integer):
+        raise TypeError(f"{name} must be an exact integer")
+    value = int(v)
+    if value < minimum:
+        raise ValueError(f"{name} must be >= {minimum}")
+    return value
 
 
 class QSqrt2:
@@ -486,8 +500,14 @@ def _phase_factor(theta_exact):
         all others become exact sympy cyclotomics.
     """
     if isinstance(theta_exact, ExactComplex):
+        if theta_exact.abs2() != 1:
+            raise ValueError("literal phase factor must have exact unit modulus")
         return theta_exact
     if isinstance(theta_exact, sp.Expr) and not isinstance(theta_exact, sp.Rational):
+        if theta_exact.atoms(sp.Float):
+            raise TypeError("floating-point atoms are forbidden in phase factors")
+        if sp.simplify(theta_exact * sp.conjugate(theta_exact) - 1) != 0:
+            raise ValueError("literal phase factor needs an exact unit-modulus proof")
         return theta_exact
     t = _frac(theta_exact) % 1
     if t in _EIGHTH_ROOTS:
@@ -525,8 +545,8 @@ class QuantumRegister:
     """
 
     def __init__(self, n_qubits: int = 11, basis: int = 0, max_amplitudes=None):
-        if n_qubits < 1:
-            raise ValueError("n_qubits must be >= 1")
+        n_qubits = _integer(n_qubits, "n_qubits", 1)
+        basis = _integer(basis, "basis")
         if not 0 <= basis < (1 << n_qubits):
             raise ValueError("basis index out of range")
         self.n_qubits = n_qubits
@@ -536,7 +556,7 @@ class QuantumRegister:
         # operations that would densify the state (H^{otimes n}, diffusion)
         # raise instead of silently attempting 2^n materialisation.
         self.max_amplitudes = (
-            int(max_amplitudes) if max_amplitudes is not None
+            _integer(max_amplitudes, "max_amplitudes", 1) if max_amplitudes is not None
             else int(os.environ.get("PYTHIA_MAX_AMPLITUDES", 1 << 24))
         )
         if self.max_amplitudes < 1:
@@ -556,10 +576,17 @@ class QuantumRegister:
         r.amplitudes = dict(self.amplitudes)
         return r
 
+    def _require_qubit(self, q: int) -> int:
+        q = _integer(q, "qubit")
+        if q >= self.n_qubits:
+            raise IndexError(f"qubit {q} out of range [0,{self.n_qubits})")
+        return q
+
     # -- one-qubit gates ---------------------------------------------------
 
     def apply_h(self, q: int):
         """Hadamard on qubit q: |a,b> -> ((a+b)/sqrt(2), (a-b)/sqrt(2))."""
+        q = self._require_qubit(q)
         mask = 1 << q
         # Worst case doubles the support of states untouched on qubit q.
         self._check_support(len(self.amplitudes))
@@ -585,6 +612,7 @@ class QuantumRegister:
                 self.amplitudes[j] = d
 
     def apply_x(self, q: int):
+        q = self._require_qubit(q)
         mask = 1 << q
         seen = set()
         for i in list(self.amplitudes):
@@ -601,18 +629,21 @@ class QuantumRegister:
                 self.amplitudes[j] = a
 
     def apply_z(self, q: int):
+        q = self._require_qubit(q)
         mask = 1 << q
         for i in list(self.amplitudes):
             if i & mask:
                 self.amplitudes[i] = _e_neg(self.amplitudes[i])
 
     def apply_s(self, q: int):
+        q = self._require_qubit(q)
         mask = 1 << q
         for i in list(self.amplitudes):
             if i & mask:
                 self.amplitudes[i] = _e_mul(self.amplitudes[i], EC_I)
 
     def apply_t(self, q: int):
+        q = self._require_qubit(q)
         mask = 1 << q
         for i in list(self.amplitudes):
             if i & mask:
@@ -625,6 +656,7 @@ class QuantumRegister:
         value used literally, or a rational number of turns t giving the
         exact cyclotomic e^{2 pi i t}.
         """
+        q = self._require_qubit(q)
         factor = _phase_factor(theta_exact)
         mask = 1 << q
         for i in list(self.amplitudes):
@@ -632,6 +664,8 @@ class QuantumRegister:
                 self.amplitudes[i] = _e_mul(self.amplitudes[i], factor)
 
     def apply_cnot(self, c: int, t: int):
+        c = self._require_qubit(c)
+        t = self._require_qubit(t)
         if c == t:
             raise ValueError("control and target must differ")
         cm, tm = 1 << c, 1 << t
@@ -655,9 +689,14 @@ class QuantumRegister:
 
     def apply_grover_oracle(self, marked):
         """Exact phase oracle O = I - 2|w><w|: negate marked amplitudes."""
-        if isinstance(marked, int):
+        if type(marked) is int or isinstance(marked, sp.Integer):
             marked = (marked,)
-        for w in marked:
+        indices = tuple(_integer(w, "marked index") for w in marked)
+        if any(w >= self.dim for w in indices):
+            raise IndexError("marked index outside register")
+        if len(set(indices)) != len(indices):
+            raise ValueError("marked oracle indices must be unique")
+        for w in indices:
             if w in self.amplitudes:
                 self.amplitudes[w] = _e_neg(self.amplitudes[w])
 
@@ -708,9 +747,11 @@ class QuantumRegister:
     def assert_normalized(self):
         ns = self.norm_squared()
         if isinstance(ns, QSqrt2):
-            assert ns == 1, f"state not normalized: |psi|^2 = {ns!r}"
+            if ns != 1:
+                raise AssertionError(f"state not normalized: |psi|^2 = {ns!r}")
         else:
-            assert sp.simplify(ns - 1) == 0, f"state not normalized: |psi|^2 = {ns}"
+            if sp.simplify(ns - 1) != 0:
+                raise AssertionError(f"state not normalized: |psi|^2 = {ns}")
         return True
 
     def distribution(self, include_zeros: bool = False):
@@ -835,6 +876,8 @@ def verify_unitary(U) -> bool:
     Works on ExactComplex and exact sympy entries alike.
     """
     n = len(U)
+    if not n or any(len(row) != n for row in U):
+        raise ValueError("a nonempty square operator matrix is required")
     for i in range(n):
         for j in range(n):
             s = EC_ZERO
@@ -842,10 +885,12 @@ def verify_unitary(U) -> bool:
                 s = _e_add(s, _e_mul(_e_conj(U[k][i]), U[k][j]))
             if i == j:
                 ok = (s == 1) if isinstance(s, ExactComplex) else sp.simplify(_to_sympy(s) - 1) == 0
-                assert ok, f"(U^dag U)[{i}][{j}] = {s!r} != 1"
+                if not ok:
+                    raise AssertionError(f"(U^dag U)[{i}][{j}] = {s!r} != 1")
             else:
                 ok = _e_is_zero(s)
-                assert ok, f"(U^dag U)[{i}][{j}] = {s!r} != 0"
+                if not ok:
+                    raise AssertionError(f"(U^dag U)[{i}][{j}] = {s!r} != 0")
     return True
 
 
@@ -921,6 +966,10 @@ def qft(register: QuantumRegister, qubits, inverse: bool = False):
 # ---------------------------------------------------------------------------
 
 
+class GroverControllerBudgetError(ValueError):
+    """Default peak selection exceeds its declared controller work budget."""
+
+
 class GroverExact:
     """Exact Grover iteration on N = 2^n_qubits states, one marked |w>.
 
@@ -935,23 +984,39 @@ class GroverExact:
         M  = ((N-1) B - A) / N          (post-oracle mean, in 1/sqrt(N))
         A' = A + 2M,   B' = 2M - B
 
-    No floats anywhere in the amplitudes; ``math`` is used ONLY for the
-    scalar iteration-count bound in ``optimal_iterations``.
+    No floats in amplitudes or iteration selection: ``certified_peak_iterations``
+    certifies the first peak with rational enclosures and integer square roots.
+    No approximate amplitude or numerical angle is constructed.
     """
 
     def __init__(self, n_qubits: int, marked: int = 0):
-        if n_qubits < 1:
-            raise ValueError("n_qubits must be >= 1")
+        n_qubits = _integer(n_qubits, "n_qubits", 1)
+        marked = _integer(marked, "marked")
         self.n_qubits = n_qubits
         self.N = 1 << n_qubits
         if not 0 <= marked < self.N:
             raise ValueError("marked index out of range")
         self.marked = marked
 
+    # Materialised rational coefficients have bit size proportional to k*n.
+    # Refuse before starting a request outside this finite execution envelope.
+    MAX_MATERIALIZED_ITERATIONS = 4096
+    MAX_COEFFICIENT_BITS = 1 << 20
+    MAX_REGISTER_STATES = 4096
+
+    def _materialization_count(self, k: int) -> int:
+        k = _integer(k, "k")
+        if (k > self.MAX_MATERIALIZED_ITERATIONS
+                or (k + 1) * self.n_qubits > self.MAX_COEFFICIENT_BITS):
+            raise ValueError(
+                "exact Grover rational materialization budget exceeded; "
+                "request fewer iterations or use the compact first-peak count"
+            )
+        return k
+
     def _coeffs(self, k: int):
         """Exact (A_k, B_k) — amplitudes are A_k/sqrt(N) and B_k/sqrt(N)."""
-        if k < 0:
-            raise ValueError("k must be >= 0")
+        k = self._materialization_count(k)
         N = self.N
         A, B = Fraction(1), Fraction(1)
         for _ in range(k):
@@ -968,14 +1033,82 @@ class GroverExact:
         A, B = self._coeffs(k)
         return QSqrt(0, A / self.N, self.N), QSqrt(0, B / self.N, self.N)
 
-    def optimal_iterations(self) -> int:
-        """r = round(pi/(4 theta) - 1/2), theta = arcsin(1/sqrt(N)).
+    @staticmethod
+    def _atan_reciprocal_bounds(denominator: int, terms: int):
+        """Certified bounds from an alternating rational atan series."""
+        partial = Fraction(0)
+        power = denominator
+        for j in range(terms):
+            partial += Fraction((-1) ** j, (2 * j + 1) * power)
+            power *= denominator * denominator
+        endpoint = partial + Fraction((-1) ** terms, (2 * terms + 1) * power)
+        return min(partial, endpoint), max(partial, endpoint)
 
-        Scalar bound only — computed with ``math``; all state amplitudes
-        remain exact.
+    def certified_peak_iterations(self) -> int:
+        """Certify the first peak without walking O(sqrt(N)) iterates.
+
+        P(k+1)-P(k) has the sign of sin(4(k+1)*theta), with
+        theta=asin(1/sqrt(N)). Thus the first peak is floor(pi/(4*theta)),
+        except N=2's exact tie (choose zero). For N>=4 the boundary cannot
+        be an integer: a rational cos(2*theta)=1-2/N at a rational multiple
+        of pi can only be 0, +/-1/2 or +/-1; N=4 gives boundary 3/2.
+
+        Machin's identity bounds pi with alternating rational series.
+        asin(1/sqrt(N))=S(1/N)/sqrt(N); the positive S coefficients
+        are <=1, so its remainder is bounded by z**terms/(1-z).
+        Refine until both rational enclosures certify the SAME integer.
+        No tolerance, float, angle evaluation or approximate result is used.
         """
-        theta = math.asin(1.0 / math.sqrt(self.N))
-        return max(0, int(round(math.pi / (4.0 * theta) - 0.5)))
+        if self.N == 2:
+            return 0
+        terms = 4
+        z = Fraction(1, self.N)
+        while True:
+            a_lo, a_hi = self._atan_reciprocal_bounds(5, terms)
+            b_lo, b_hi = self._atan_reciprocal_bounds(239, terms)
+            pi_lo, pi_hi = 16 * a_lo - 4 * b_hi, 16 * a_hi - 4 * b_lo
+            coefficient = Fraction(1)
+            power = Fraction(1)
+            s_lo = Fraction(0)
+            for j in range(terms):
+                s_lo += coefficient * power
+                coefficient *= Fraction((2 * j + 1) ** 2, 2 * (j + 1) * (2 * j + 3))
+                power *= z
+            s_hi = s_lo + power / (1 - z)
+            lower, upper = pi_lo / (4 * s_hi), pi_hi / (4 * s_lo)
+            # floor(r*sqrt(N)) = isqrt(floor(N*r*r)), all integer arithmetic.
+            low_count = math.isqrt(self.N * lower.numerator**2 // lower.denominator**2)
+            high_count = math.isqrt(self.N * upper.numerator**2 // upper.denominator**2)
+            if low_count == high_count:
+                return low_count
+            terms *= 2
+
+    def optimal_iterations(self, *, max_stages: int = 1024) -> int:
+        """First-peak Grover count from exact adjacent Born probabilities.
+
+        Advance the two rational coefficients until the next probability
+        fails to improve. Ties choose the earlier count. This certifies the
+        first amplification peak, not a global optimum over all later cycles.
+        It needs O(sqrt(N)) recurrence stages; rational bit costs are additional.
+        The default controller admits N <= max_stages**2 conservatively and
+        executes at most max_stages transitions. This is an explicit work
+        envelope, not a limit on the exact quantum representation. Callers
+        may request a larger controller budget or supply an iteration count.
+        """
+        max_stages = _integer(max_stages, "max_stages", 1)
+        if self.N > max_stages * max_stages:
+            raise GroverControllerBudgetError(
+                "exact peak selection exceeds the controller admission budget; "
+                "provide iterations explicitly or request a larger max_stages"
+            )
+        A, B = Fraction(1), Fraction(1)
+        for k in range(max_stages):
+            mean = ((self.N - 1) * B - A) / self.N
+            next_a, next_b = A + 2 * mean, 2 * mean - B
+            if next_a * next_a <= A * A:
+                return k
+            A, B = next_a, next_b
+        raise GroverControllerBudgetError("exact peak selection exhausted max_stages")
 
     def success_probability(self, k: int) -> Fraction:
         """Exact a_k^2 = sin^2((2k+1) theta) as a Fraction in Q."""
@@ -989,6 +1122,8 @@ class GroverExact:
 
     def full_distribution(self, k: int):
         """Exact per-basis-state {index: probability} dict."""
+        if self.N > self.MAX_REGISTER_STATES:
+            raise ValueError("exact Grover full distribution exceeds register-state budget")
         d = self.distribution(k)
         out = {}
         for i in range(self.N):
@@ -1004,6 +1139,9 @@ class GroverExact:
         """
         if k is None:
             k = self.optimal_iterations()
+        k = self._materialization_count(k)
+        if self.N > self.MAX_REGISTER_STATES:
+            raise ValueError("exact Grover register exceeds register-state budget")
         reg = QuantumRegister(self.n_qubits)
         reg.uniform_superposition()
         for _ in range(k):
