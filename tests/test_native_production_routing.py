@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import time
+from types import SimpleNamespace
 
 import pytest
 
@@ -23,9 +24,13 @@ from chronus.mla1517.mining.geodesic_support import (
     PythiaProductionMiningCoordinator,
     ProductionExecutionRouter,
 )
-from chronus.mla1517.mining.pythia_search import (
-    SEARCH_ARCHITECTURE_ID,
-    precompute_pythia_search,
+from chronus.mla1517.mining.pythia_search import SEARCH_ARCHITECTURE_ID
+
+# The production coordinator's precompute is the exact profile
+# (geodesic_support aliases exact_search.precompute_exact_search); the fp64
+# pythia_search precompute is reference-only and refused in production.
+from chronus.mla1517.mining.exact_search import (
+    precompute_exact_search as precompute_pythia_search,
 )
 from chronus.mla1517.mining.search_plan import (
     CompletionState,
@@ -232,8 +237,26 @@ def test_coordinator_binds_canonical_search_and_workforce_intent_into_plan():
     }
     coordinator.execution_hasher = _NativeHasher("cpu")
     coordinator.pythia_search_precompute = precompute_pythia_search()
+    # Resident Hendrix issuance binds the plan to the authoritative current
+    # Stratum job; a minimal adapter supplies it (same shape as
+    # tests/test_m3_runtime_closure.py).
+    job = SimpleNamespace(job_id="job-native", nbits=0x1D00FFFF, ntime=1700000000, target=1 << 232)
+    coordinator.client = SimpleNamespace(
+        proof_adapter=SimpleNamespace(
+            current_job=job, build_header=lambda *a, **k: bytes(range(80))
+        )
+    )
 
-    plan = coordinator._bind_plan_execution_intent(_plan())
+    from dataclasses import replace
+
+    from chronus.mla1517.mining.exact_search import exact_face_order
+
+    # The exact profile admits only the exact face order for this header,
+    # exactly as the production plan builder derives it.
+    exact_lanes = exact_face_order(bytes(range(80)), coordinator.pythia_search_precompute)
+    plan = coordinator._bind_plan_execution_intent(
+        replace(_plan(), lane_order=tuple(exact_lanes), preferred_face=exact_lanes[0])
+    )
 
     # Hendrix is the immutable production search algorithm. The structural
     # architecture is supporting evidence, not a replacement search identity.
