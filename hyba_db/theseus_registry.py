@@ -150,13 +150,16 @@ class TheseusFileRegistry(FileRegistry):
         retention_violations: list[str] = []
         attestation_invalid: list[str] = []
 
+        proved: set[str] = set()
         for row in self._file_rows(tenant_id):
             vid = str(row["file_version_id"])
             # These independent semantic failures must remain visible even
             # when physical/custody checks also fail during partial recovery.
             attestation_ok = False
             try:
-                attestation_ok = self.store.verify_attestation(tenant_id, str(row["attestation_id"]))
+                attestation_ok = self.store.verify_attestation(
+                    tenant_id, str(row["attestation_id"]), verified=proved
+                )
             except Exception:
                 pass
             if not attestation_ok:

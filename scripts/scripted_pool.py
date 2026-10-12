@@ -1,7 +1,10 @@
 """Scripted Stratum V1 pool for observable smoke runs.
 
 Serves real-shaped jobs (BIP34 height in coinbase1, changing prevhash,
-clean_jobs), rotates them on a timer, accepts every submit and records
+clean_jobs), rotates them on a timer, verifies every submit the way a pool
+does (rebuilds coinbase, merkle root and header, SHA256d against the share
+target it set, stale and duplicate checks) and answers true/false with a
+reason, and records
 every message the miner sends: one JSON line per event on stdout and in
 ``--log``, and a running ``--summary`` JSON file. Standard library only.
 
@@ -12,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import secrets
 import time
@@ -34,6 +38,41 @@ def coinbase1(height: int) -> str:
     )
 
 
+DIFF1_TARGET = 0xFFFF * 2**208
+VERSION_ROLLING_MASK = 0x1FFFE000
+
+
+def sha256d(data: bytes) -> bytes:
+    return hashlib.sha256(hashlib.sha256(data).digest()).digest()
+
+
+def share_target(difficulty: float) -> int:
+    return int(DIFF1_TARGET / difficulty)
+
+
+def share_hash(job: list, extranonce1: str, extranonce2: str, ntime: str, nonce: str,
+               version_bits: str | None = None) -> bytes:
+    """SHA256d of the header a Stratum V1 submit describes (internal byte order)."""
+    _, prevhash, coinb1, coinb2, branches, version, nbits, _, _ = job
+    coinbase = bytes.fromhex(coinb1 + extranonce1 + extranonce2 + coinb2)
+    root = sha256d(coinbase)
+    for branch in branches:
+        root = sha256d(root + bytes.fromhex(branch))
+    version_int = int(version, 16)
+    if version_bits is not None:
+        version_int = (version_int & ~VERSION_ROLLING_MASK) | (int(version_bits, 16) & VERSION_ROLLING_MASK)
+    prev = b"".join(bytes.fromhex(prevhash)[i:i + 4][::-1] for i in range(0, 32, 4))
+    header = (
+        version_int.to_bytes(4, "little")
+        + prev
+        + root
+        + bytes.fromhex(ntime)[::-1]
+        + bytes.fromhex(nbits)[::-1]
+        + bytes.fromhex(nonce)[::-1]
+    )
+    return sha256d(header)
+
+
 class ScriptedPool:
     def __init__(
         self, *, difficulty: float, job_interval: float, log: Path | None, summary: Path | None
@@ -45,6 +84,8 @@ class ScriptedPool:
         self.height = 900_000
         self.prevhash = secrets.token_hex(32)
         self.job_seq = 0
+        self.jobs: dict[str, list] = {}
+        self.seen: set[tuple] = set()
         self.job = self._next_job(new_block=True)
         self.writers: set[asyncio.StreamWriter] = set()
         self.stats = {
@@ -54,7 +95,11 @@ class ScriptedPool:
             "methods": {},
             "jobs_sent": 0,
             "submits": 0,
+            "accepted": 0,
+            "rejected": 0,
+            "reject_reasons": {},
             "last_submit": None,
+            "share_target": f"{share_target(difficulty):064x}",
         }
 
     def _next_job(self, *, new_block: bool) -> list:
@@ -62,7 +107,7 @@ class ScriptedPool:
             self.height += 1
             self.prevhash = secrets.token_hex(32)
         self.job_seq += 1
-        return [
+        job = [
             f"smoke-{self.job_seq}",
             self.prevhash,
             coinbase1(self.height),
@@ -73,6 +118,35 @@ class ScriptedPool:
             f"{int(time.time()):08x}",
             new_block,
         ]
+        if new_block:
+            self.jobs.clear()  # clean_jobs: earlier work is stale
+        self.jobs[job[0]] = job
+        return job
+
+    def verify_submit(self, params: list) -> tuple[bool, str, str | None]:
+        try:
+            _worker, job_id, extranonce2, ntime, nonce = (str(p) for p in params[:5])
+            version_bits = str(params[5]) if len(params) > 5 else None
+        except (TypeError, ValueError):
+            return False, "malformed", None
+        job = self.jobs.get(job_id)
+        if job is None:
+            return False, "stale-job", None
+        if len(extranonce2) != EXTRANONCE2_SIZE * 2:
+            return False, "bad-extranonce2-size", None
+        key = (job_id, extranonce2, ntime, nonce, version_bits)
+        if key in self.seen:
+            return False, "duplicate", None
+        try:
+            digest = share_hash(job, EXTRANONCE1, extranonce2, ntime, nonce, version_bits)
+        except ValueError:
+            return False, "malformed-hex", None
+        value = int.from_bytes(digest, "little")
+        hash_hex = digest[::-1].hex()
+        if value > share_target(self.difficulty):
+            return False, "high-hash", hash_hex
+        self.seen.add(key)
+        return True, "ok", hash_hex
 
     def event(self, kind: str, **fields) -> None:
         record = {"t": round(time.time(), 3), "event": kind, **fields}
@@ -138,8 +212,17 @@ class ScriptedPool:
                 elif method == "mining.submit":
                     self.stats["submits"] += 1
                     self.stats["last_submit"] = message.get("params")
-                    self.event("submit", params=message.get("params"))
-                    writer.write(self._line({"id": mid, "result": True, "error": None}))
+                    ok, reason, hash_hex = self.verify_submit(list(message.get("params") or []))
+                    if ok:
+                        self.stats["accepted"] += 1
+                    else:
+                        self.stats["rejected"] += 1
+                        reasons = self.stats["reject_reasons"]
+                        reasons[reason] = reasons.get(reason, 0) + 1
+                    self.event("submit", params=message.get("params"), accepted=ok,
+                               reason=reason, hash=hash_hex)
+                    error = None if ok else [23 if reason == "high-hash" else 21, reason, None]
+                    writer.write(self._line({"id": mid, "result": ok, "error": error}))
                     await writer.drain()
                 else:
                     self.event("request", method=method)

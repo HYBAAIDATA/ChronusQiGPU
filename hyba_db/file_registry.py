@@ -25,7 +25,6 @@ from aethel.storage_topology import (
     TheseusPhysicalStore,
     TheseusStorageAddress,
     derive_storage_address,
-    verify_storage_address,
 )
 
 from .models import AccessDenied, IntegrityFailure, InvalidRecord
@@ -1175,6 +1174,8 @@ class FileRegistry:
         return list(self.store._db.execute("SELECT * FROM file_versions"))
 
     def verify_database(self, tenant_id: str | None = None) -> dict[str, Any]:
+        # One proof per attestation per pass (each walk shares the proved set).
+        proved: dict[str, set[str]] = {}
         errors: list[str] = []
         tids = (
             [tenant_id]
@@ -1221,7 +1222,9 @@ class FileRegistry:
                     if _sha(prov["provenance_json"].encode()) != prov["provenance_sha256"]:
                         errors.append(f"{tid}:{row['file_version_id']}:provenance digest mismatch")
                     try:
-                        self.store.verify_attestation(tid, prov["attestation_id"])
+                        self.store.verify_attestation(
+                            tid, prov["attestation_id"], verified=proved.setdefault(tid, set())
+                        )
                         details = self.store.get_attestation(
                             tid, prov["attestation_id"]
                         ).details
@@ -1640,6 +1643,7 @@ class FileRegistry:
         retention_violations: list[str] = []
         attestation_invalid: list[str] = []
         attestation_cache: dict[str, bool] = {}
+        attestation_proved: set[str] = set()
         for row in rows:
             version_id = row["file_version_id"]
             uri = str(row["storage_uri"])
@@ -1697,7 +1701,9 @@ class FileRegistry:
             aid = str(row["attestation_id"])
             if aid not in attestation_cache:
                 try:
-                    attestation_cache[aid] = bool(self.store.verify_attestation(tenant_id, aid))
+                    attestation_cache[aid] = bool(
+                        self.store.verify_attestation(tenant_id, aid, verified=attestation_proved)
+                    )
                 except IntegrityFailure:
                     attestation_cache[aid] = False
             if not attestation_cache[aid]:
@@ -2173,4 +2179,3 @@ class FileRegistry:
                     ),
                 )
             raise
-
