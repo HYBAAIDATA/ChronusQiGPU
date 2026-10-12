@@ -1,6 +1,7 @@
 name: Secret Scan (gitleaks)
 
 on:
+  workflow_call:
   push:
     branches: [main]
   pull_request:
@@ -13,12 +14,13 @@ jobs:
     name: Gitleaks secret scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
       - name: Install gitleaks
         run: |
           curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz -o /tmp/gitleaks.tgz
+          echo "9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c  /tmp/gitleaks.tgz" | sha256sum --check --status
           tar -xzf /tmp/gitleaks.tgz -C /tmp gitleaks
       # gitleaks-action@v2 requires a paid GITLEAKS_LICENSE for org repos;
       # the OSS CLI enforces the same ruleset without a license.
