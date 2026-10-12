@@ -380,3 +380,16 @@ def test_the_model_envelope_is_inclusive():
     world = _world(2**-9, 2**-20, invalidations_per_s=0.0)  # exact estimate
     assert world.route(ROUTE).estimate() == (2**-9, 2**-20)
     assert OperatingPolicy(world).decide(_context(max_window_seconds=320 * 2**-20)).window == 320
+
+
+def test_operating_policy_constants_and_probe_misfit_gates_are_locked():
+    """Lock probe cadence, misfit threshold and Lucas ladder so mutations
+    of _PROBE_EVERY, _MISFIT or the lane-aligned Fibonacci generation cannot survive."""
+    from chronus.mla1517.mining.operating_policy import _PROBE_EVERY, _MISFIT, lucas_ladder
+    assert _PROBE_EVERY == 8
+    assert _MISFIT == 0.25
+    # Lucas ladder is lane-aligned and includes the cap
+    ladder = lucas_ladder(1000, 32)
+    assert all(w % 32 == 0 for w in ladder)
+    assert 32 in ladder and 992 in ladder  # 1000 - 1000%32 = 992
+    assert sorted(ladder) == ladder
