@@ -547,12 +547,18 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                 # order moved off the primary. Evidence only — the machine
                 # stays wherever it is unless it is still in SCAN.
                 try:
-                    self._cycle_ledger().try_transition(
-                        MiningCycleState.HEAL,
-                        event="failure",
-                        reason="pool failover rotated endpoints",
-                        evidence={"pool": endpoint.name, "failures": list(errors)},
-                    )
+                    ledger = self._cycle_ledger()
+                    # Only the SCAN leg is healed here. EXECUTE/VERIFY/SUBMIT
+                    # belong to the search loop: moving them to HEAL under an
+                    # in-flight execution made its EXECUTE -> VERIFY step an
+                    # undeclared edge and killed the worker.
+                    if ledger.state is MiningCycleState.SCAN:
+                        ledger.try_transition(
+                            MiningCycleState.HEAL,
+                            event="failure",
+                            reason="pool failover rotated endpoints",
+                            evidence={"pool": endpoint.name, "failures": list(errors)},
+                        )
                 except Exception:
                     pass
             # Preserve IntelligentPoolCoordinator's post-handshake binding:

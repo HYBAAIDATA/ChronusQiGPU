@@ -9,7 +9,7 @@ import unittest
 
 from manifold_pool_coordinator import PoolEndpoint
 from chronus.mla1517.mining.causal import CausalLedger
-from chronus.mla1517.mining.cycle_fsm import MiningCycleLedger
+from chronus.mla1517.mining.cycle_fsm import MiningCycleLedger, MiningCycleState
 from chronus.mla1517.mining.production_transport import (
     ProductionMiningCoordinator,
     ProductionStratumClient,
@@ -340,3 +340,52 @@ class ProductionTransportTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FailoverDoesNotPreemptSearchTests(unittest.TestCase):
+    """A failover must not move a cycle owned by an in-flight execution.
+
+    Found in the Docker smoke: the transport moved MINE -> HEAL while an
+    execution ran; the execution's MINE -> VERIFY then raised
+    IllegalCycleTransition (HEAL -> VERIFY) and killed the mining worker.
+    """
+
+    def test_failover_during_mine_leaves_the_cycle_to_the_search_loop(self) -> None:
+        asyncio.run(self._run())
+
+    async def _run(self) -> None:
+        pool = _HandshakePool()
+        server = await asyncio.start_server(pool.handle, "127.0.0.1", 0)
+        live_port = server.sockets[0].getsockname()[1]
+        probe = socket.socket()
+        probe.bind(("127.0.0.1", 0))
+        dead_port = probe.getsockname()[1]
+        probe.close()
+        coord = ProductionMiningCoordinator.__new__(ProductionMiningCoordinator)
+        coord.endpoints = (
+            PoolEndpoint("127.0.0.1", dead_port, "primary"),
+            PoolEndpoint("127.0.0.1", live_port, "secondary"),
+        )
+        coord.username, coord.password = "worker", "x"
+        coord.endpoint_index, coord.client, coord.stratum_status_sink = 0, None, None
+        coord.production_connect_timeout = 0.05
+        coord.production_request_timeout = 1.0
+        coord.production_write_timeout = 0.1
+        coord.production_outbound_queue_size = 8
+        coord._refresh_work_identity = lambda: None
+        coord._precompute_wake = asyncio.Event()
+        coord.causal = CausalLedger()
+        coord.cycle = MiningCycleLedger(on_event=coord._mirror_cycle_event)
+        for state in (MiningCycleState.SCAN, MiningCycleState.PLAN, MiningCycleState.MINE):
+            coord.cycle.transition(state, event="success", reason="test")
+        client = None
+        try:
+            client = await coord.connect_with_failover()
+            self.assertEqual(client.endpoint.name, "secondary")
+            self.assertIs(coord.cycle.state, MiningCycleState.MINE)
+            coord.cycle.transition(MiningCycleState.VERIFY, event="success", reason="execution done")
+        finally:
+            if client is not None:
+                await client.close()
+            server.close()
+            await server.wait_closed()
