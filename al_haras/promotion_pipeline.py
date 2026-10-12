@@ -44,6 +44,7 @@ class PromotionReceipt:
     issued_at: int
     signature_algorithm: str
     signature: str
+    cedr_decision_digest: str = ""
 
 
 class PromotionRejected(ValueError):
@@ -109,9 +110,25 @@ def build_receipt(
     gate_results: Iterable[dict],
     approvals: Iterable[Approval],
     key: bytes,
+    *,
+    cedr_decision: dict | None = None,
 ) -> PromotionReceipt:
     if len(key) < 32:
         raise PromotionRejected("promotion signing key too short")
+    # This low-level signing helper is not itself a qualification producer.
+    # The receipt command evaluates CEDR and binds that complete report here.
+    cedr_digest = ""
+    if cedr_decision is not None:
+        if (
+            cedr_decision.get("eligible") is not True
+            or cedr_decision.get("source_commit") != commit
+        ):
+            raise PromotionRejected("CEDR report does not qualify this candidate")
+        cedr_digest = hashlib.sha256(
+            json.dumps(
+                cedr_decision, sort_keys=True, separators=(",", ":"), allow_nan=False
+            ).encode()
+        ).hexdigest()
     results = tuple(gate_results)
     if not results or any(r.get("status") != "PASS" for r in results):
         raise PromotionRejected("all required gates must PASS; SKIP is not promotable")
@@ -120,6 +137,7 @@ def build_receipt(
         for r in results
     )
     unsigned = {
+        "cedr_decision_digest": cedr_digest,
         "subsystem": subsystem,
         "from_state": current,
         "to_state": target,

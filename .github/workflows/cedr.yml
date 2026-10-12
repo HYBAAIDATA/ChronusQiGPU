@@ -1,0 +1,32 @@
+name: CEDR contract and enforcement tests (not operational qualification)
+on:
+  pull_request:
+    paths:
+      - 'al_haras/cedr.py'
+      - 'governance/cedr.json'
+      - 'scripts/cedr_gate.py'
+      - 'scripts/advance_state.py'
+      - 'tests/test_cedr.py'
+      - 'tests/test_cedr_integration.py'
+      - 'pyproject.toml'
+      - 'make/gates.mk'
+      - '.github/workflows/promotion.yml'
+      - '.github/workflows/cedr.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  enforcement:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install 'pytest>=8,<9' 'cryptography>=46,<51'
+      - name: Validate registry structure only
+        run: python -m scripts.cedr_gate --validate
+      - name: Exercise positive and negative controls
+        run: python -m pytest tests/test_cedr.py tests/test_cedr_integration.py -q

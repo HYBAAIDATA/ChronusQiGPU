@@ -29,7 +29,13 @@ jobs:
       - uses: actions/checkout@v4
         with: {ref: '${{ inputs.commit_sha }}', fetch-depth: 0}
       - id: authors
-        run: python scripts/list_authors.py --subsystem '${{ inputs.subsystem }}' --commit '${{ inputs.commit_sha }}' >> "$GITHUB_OUTPUT"
+        env:
+          CANDIDATE_COMMIT: ${{ inputs.commit_sha }}
+          SUBSYSTEM: ${{ inputs.subsystem }}
+        run: |
+          [[ "$CANDIDATE_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_COMMIT"
+          python scripts/list_authors.py --subsystem "$SUBSYSTEM" --commit "$CANDIDATE_COMMIT" >> "$GITHUB_OUTPUT"
   validate:
     needs: preflight
     runs-on: ubuntu-latest
@@ -38,13 +44,20 @@ jobs:
         with: {ref: '${{ inputs.commit_sha }}'}
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - run: python scripts/promotion_pipeline.py validate --subsystem '${{ inputs.subsystem }}' --target '${{ inputs.target_state }}' --commit '${{ inputs.commit_sha }}'
+      - run: python scripts/promotion_pipeline.py validate --subsystem "$SUBSYSTEM" --target "$TARGET" --commit "$CANDIDATE_COMMIT"
+        env:
+          SUBSYSTEM: ${{ inputs.subsystem }}
+          TARGET: ${{ inputs.target_state }}
+          CANDIDATE_COMMIT: ${{ inputs.commit_sha }}
   gates:
     needs: validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with: {ref: '${{ inputs.commit_sha }}'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: bash scripts/ci_install.sh "ml,dev,graph"
       - name: Run all gates without swallowing failures
         run: make -k gates
         env: {MEDIATION_MANIFEST_KEY: '${{ secrets.MEDIATION_MANIFEST_KEY }}'}
@@ -54,6 +67,18 @@ jobs:
       - name: Require complete gate evidence
         if: always()
         run: make gate-rollup
+  candidate:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ inputs.commit_sha }}'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install 'build==1.3.0'
+      - run: python -m build --wheel
+      - uses: actions/upload-artifact@v4
+        with: {name: promotion-candidate, path: dist/*.whl, if-no-files-found: error}
   approvals-verified:
     if: inputs.target_state == 'VERIFIED'
     needs: gates
@@ -85,12 +110,18 @@ jobs:
         with: {ref: '${{ inputs.commit_sha }}'}
       - uses: actions/download-artifact@v4
         with: {name: promotion-gate-results, path: results}
-      - run: python scripts/collect_approvals.py --subsystem '${{ inputs.subsystem }}' --target '${{ inputs.target_state }}' --commit '${{ inputs.commit_sha }}' --authors '${{ needs.preflight.outputs.authors }}'
-        env: {GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'}
+      - run: python scripts/collect_approvals.py --subsystem "$SUBSYSTEM" --target "$TARGET" --commit "$CANDIDATE_COMMIT" --authors "$AUTHORS"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SUBSYSTEM: ${{ inputs.subsystem }}
+          TARGET: ${{ inputs.target_state }}
+          CANDIDATE_COMMIT: ${{ inputs.commit_sha }}
+          AUTHORS: ${{ needs.preflight.outputs.authors }}
       - uses: actions/upload-artifact@v4
         with: {name: promotion-approvals, path: results/approvals/}
   advance:
-    needs: collect-approvals
+    needs: [collect-approvals, candidate]
+    environment: ${{ inputs.target_state == 'PRODUCTION' && 'promotion-production' || inputs.target_state == 'PILOT' && 'promotion-pilot' || 'promotion-verified' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -99,7 +130,27 @@ jobs:
         with: {name: promotion-gate-results, path: results}
       - uses: actions/download-artifact@v4
         with: {name: promotion-approvals, path: results/approvals}
-      - run: python scripts/advance_state.py --subsystem '${{ inputs.subsystem }}' --target '${{ inputs.target_state }}' --commit '${{ inputs.commit_sha }}'
-        env: {PROMOTION_SIGNING_KEY: '${{ secrets.PROMOTION_SIGNING_KEY }}'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install 'cryptography>=46,<51'
+      - uses: actions/download-artifact@v4
+        with: {name: promotion-candidate, path: dist}
+      - name: Enforce scoped CEDR before issuing any promotion receipt
+        env:
+          PROMOTION_SIGNING_KEY: ${{ secrets.PROMOTION_SIGNING_KEY }}
+          SUBSYSTEM: ${{ inputs.subsystem }}
+          TARGET: ${{ inputs.target_state }}
+          CANDIDATE_COMMIT: ${{ inputs.commit_sha }}
+        run: |
+          shopt -s nullglob
+          artifacts=(dist/*.whl)
+          test "${#artifacts[@]}" -eq 1
+          PROFILE=pilot-operations
+          if [ "$TARGET" = PRODUCTION ]; then PROFILE=mining-production; fi
+          python scripts/advance_state.py --subsystem "$SUBSYSTEM" --target "$TARGET" \
+            --commit "$CANDIDATE_COMMIT" --cedr-profile "$PROFILE" --artifact "${artifacts[0]}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: cedr-promotion-decision, path: results/cedr-decision.json, if-no-files-found: error}
       - uses: actions/upload-artifact@v4
         with: {name: promotion-receipt, path: results/promotion_receipt.json}
