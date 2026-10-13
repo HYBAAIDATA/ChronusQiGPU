@@ -36,7 +36,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.RC_SHA }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Verify candidate identity and packaging guards
@@ -58,7 +58,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.RC_SHA }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
       - name: Install build and source-test tooling
@@ -208,7 +208,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.RC_SHA }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
       - name: Registry install + custody voyages outside the source
@@ -299,7 +299,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.RC_SHA }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
       - name: Registry install resolves THESEUS from TestPyPI, then voyages
@@ -409,7 +409,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.RC_SHA }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
       - name: Registry install + custody voyages outside the source
@@ -508,7 +508,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.RC_SHA }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
       - name: Registry install resolves THESEUS from PyPI, then voyages

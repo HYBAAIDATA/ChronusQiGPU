@@ -59,7 +59,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.RC_SHA }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
       - name: Install release tooling
@@ -95,7 +95,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.RC_SHA }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Install test dependencies
@@ -330,7 +330,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: ${{ env.RC_SHA }}
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python }}
     - uses: actions/download-artifact@v4
@@ -386,7 +386,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: ${{ env.RC_SHA }}
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python }}
     - uses: actions/download-artifact@v4
