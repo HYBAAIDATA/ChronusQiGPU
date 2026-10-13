@@ -27,3 +27,11 @@ The earlier fixed-N phase-damp sweep tested the wrong operator.
 It is not a like-for-like test. A fixed-N rerun inside the repository harness is still required before that file supports a performance claim.
 
 theorem_proven: False
+
+## Structural lattice properties (independent verification)
+
+- **Zeckendorf atomicity.** Every tested \(L_n\) decomposes to a single Zeckendorf term. \(L_n\) is an atomic address unit in the non-adjacent Fibonacci space.
+- **Coverage parity.** Over a power-of-two nonce estate, odd \(L_n\) give \(\gcd=1\) and exact coverage. Even \(L_n\) (n=20, n=50) give \(\gcd=2\) and cover only half the estate. This is an actionable design constraint: use odd rungs for stride work on power-of-two estates, or size the estate to the rung.
+- **Throughput.** In the lane-indexing scheme tested (fixed estate, \(L_n\) cells), total work increased with the rung. A throughput claim requires a different construction (estate sized to the rung, super-cell, recursive, etc.).
+
+The decorative phase-damp reading remains superseded. The structural identity (Lucas ≡ Pisot) and the lattice properties above are verified. The throughput construction is open.

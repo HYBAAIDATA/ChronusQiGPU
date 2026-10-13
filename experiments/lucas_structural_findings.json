@@ -1,0 +1,30 @@
+{
+  "experiment": "lucas_structural_lattice",
+  "description": "Independent verification of structural properties of Lucas rungs in Fibonacci address space and nonce-estate coverage.",
+  "zeckendorf_atomicity": {
+    "holds": true,
+    "note": "Every tested L_n decomposes to a single Zeckendorf term (L_n = F_{n-1} + F_{n+1}).",
+    "examples": {
+      "L_10": "89 = F_11",
+      "L_12": "233 = F_13",
+      "L_15": "987 = F_16",
+      "L_18": "4181 = F_19"
+    }
+  },
+  "coverage_parity": {
+    "holds": true,
+    "note": "Odd L_n partition a power-of-two estate exactly (gcd=1). Even L_n yield gcd=2 and cover only half the estate.",
+    "failures": [20, 50],
+    "reason": "L_20 and L_50 are even; reduced mod 2^k the gcd is 2."
+  },
+  "throughput_in_tested_scheme": {
+    "costs_work": true,
+    "note": "Indexing a fixed estate by L_n lanes increased total iterations in the construction tested. The estate must be sized to the rung, or a different indexing used, before a throughput claim can be made."
+  },
+  "claim_status": {
+    "zeckendorf_atomicity": "verified",
+    "coverage_parity_constraint": "verified_and_actionable",
+    "throughput_advantage_from_lane_indexing": "not_supported_in_tested_scheme"
+  },
+  "theorem_proven": false
+}
