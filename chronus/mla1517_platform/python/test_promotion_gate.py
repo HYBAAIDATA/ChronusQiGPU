@@ -149,3 +149,22 @@ def test_measured_valid_rate_charges_half_a_chunk_per_invalidation():
     assert measured_valid_rate(world, ROUTE, 320, 256) == pytest.approx(
         320 / t * (1 - rate * t * 256 / 320 / 2)
     )
+
+
+def test_constants_and_exact_sign_test_boundaries_are_locked():
+    """Lock the statistical contract so mutations of ALPHA, MIN_PAIRS, or the
+    exact binomial tail cannot survive."""
+    from chronus.mla1517.mining.promotion import ALPHA, MIN_PAIRS, EPOCH, MAX_EPOCHS
+    assert ALPHA == 0.05
+    assert MIN_PAIRS == 6
+    assert EPOCH == 64
+    assert MAX_EPOCHS == 40
+    # Exact boundary cases that flip on a one-count change
+    assert sign_test(6, 0) == 1 / 64
+    assert sign_test(5, 1) > ALPHA  # 6/64 = 0.09375
+    assert sign_test(6, 1) == 7 / 128  # 0.0546875 > 0.05
+    assert sign_test(7, 1) == 8 / 256  # 0.03125 < 0.05
+    assert judge(6, 1) == "undecided"
+    assert judge(7, 1) == "promote"
+    assert judge(6, 0) == "promote"
+    assert judge(5, 0) == "undecided"
