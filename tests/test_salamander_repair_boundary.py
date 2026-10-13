@@ -363,3 +363,33 @@ def test_self_repair_audit_save_failure_is_not_fake_rollback(source, tmp_path, m
     assert result.reverted is False
     assert "Audit persistence unavailable" in result.message
     assert source.read_text() == CANDIDATE
+
+
+def test_dependency_proposal_is_read_only(tmp_path, monkeypatch):
+    from Intelligence.self_healing.self_repair import (
+        PytestFailure,
+        ClassifiedFailure,
+        propose_rule_based_repair,
+        CATEGORY_IMPORT_COLLECTION_ERROR,
+    )
+
+    monkeypatch.delenv("HYBA_SELF_REPAIR_AUTO_APPLY", raising=False)
+    requirements = tmp_path / "requirements.txt"
+    original = "# existing dependencies\n"
+    requirements.write_text(original)
+    failure = PytestFailure(
+        "tests/test_x.py::test_x",
+        "tests/test_x.py",
+        None,
+        "error",
+        "No module named 'httpx'",
+        "",
+        "tests",
+    )
+    classified = ClassifiedFailure(
+        failure, CATEGORY_IMPORT_COLLECTION_ERROR, "high", "missing optional dependency"
+    )
+    outcome = propose_rule_based_repair(classified, tmp_path)
+    assert outcome.available is True
+    assert "httpx" in outcome.proposed_file_content
+    assert requirements.read_text() == original
