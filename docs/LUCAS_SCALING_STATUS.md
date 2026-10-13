@@ -55,3 +55,19 @@ The golden angle \(2\pi/\phi^2 \approx 137.5^\circ\) is the global optimum of th
 This is a structural packing constant for distributing discrete elements in an expanding space. It does not by itself supply an 8→100 device-count identity. A fleet-distribution test (golden-angle assignment vs round-robin across modelled workers) remains open.
 
 The coverage-parity constraint (even Lucas rungs lose half a power-of-two estate) sits in the same frame: a packing failure when the structure is frustrated.
+
+## Fleet distribution — reconciled
+
+Two formulations were conflated earlier.
+
+- **Formulation A** (equal items, N multiple of D): round-robin is perfectly balanced by construction (CV = 0). Nothing can beat it.
+- **Formulation B** (variable durations): round-robin and golden-angle are comparable. Golden-angle was better in 1 of 8 configurations. Not a transferable advantage.
+
+### Boundary
+The packing advantage of the golden angle is real in continuous expanding spaces (phyllotaxis). It does not appear in a simple modular assignment of equal-sized items to a fixed device count, because that assignment is already exact. A packing advantage requires a growing device count, non-uniform item sizes, or a spatial embedding.
+
+### Coprimality guard
+The golden stride \(0x9E3779B9 = 3^2 \times 7 \times 11 \times 17 \times 331 \times 359\).  
+A golden-stride assignment over \(D\) devices is a bijection only when \(\gcd(\text{stride}, D) = 1\).  
+D = 9 (odd) fails because it shares the factor 3. D = 12 reaches only 4 of 12 devices.  
+Parity is a special case of coprimality. Any scheduler using the stride must assert the gcd condition.
