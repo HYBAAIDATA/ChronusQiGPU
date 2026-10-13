@@ -1,37 +1,28 @@
-"""Deprecated facade: ``chronos.academic`` → ``chronus.v33.academic``.
+from .cern import CERN_CavityQED, CERN_QFT_Enhancement, LHCIntegration
+from .mit import MIT_FaultTolerant_Control
+from .caltech import Caltech_Ising_Anyons, Caltech_Topological_Quantum, Caltech_Surface_Code
+from .cambridge import Cambridge_PINN, Cambridge_GQN, Cambridge_RL_EC
+from .tokyotech import TokyoTech_Metrology
+from .nist import NIST_Standards, NIST_Benchmark
+from .tensor_compression import MatrixProductState, CompressionAudit
+from .report import run_academic_enhancements
 
-Re-exports the v3.3 academic-review modules (includes integration +
-Jaynes–Cummings pages that the archived v2 drop did not carry).
-"""
+__all__ = [
+    "CERN_CavityQED", "CERN_QFT_Enhancement", "LHCIntegration",
+    "MIT_FaultTolerant_Control",
+    "Caltech_Ising_Anyons", "Caltech_Topological_Quantum", "Caltech_Surface_Code",
+    "Cambridge_PINN", "Cambridge_GQN", "Cambridge_RL_EC",
+    "TokyoTech_Metrology",
+    "NIST_Standards", "NIST_Benchmark",
+    "MatrixProductState", "CompressionAudit",
+    "run_academic_enhancements",
+]
 
-from __future__ import annotations
-
-import importlib
-import sys
-
-from chronus.v33.academic import *  # noqa: F401,F403
-from chronus.v33.academic import __all__ as _ACADEMIC_ALL
-
-# Nested paths: from chronos.academic.caltech import Caltech_Ising_Anyons
-_ACADEMIC_SUBMODULES = (
-    "caltech",
-    "cambridge",
-    "cern",
-    "mit",
-    "nist",
-    "tokyotech",
-    "report",
-    "tensor_compression",
-    "integration",
-    "jaynes_cummings",
-)
-
-for _name in _ACADEMIC_SUBMODULES:
-    try:
-        _mod = importlib.import_module(f"chronus.v33.academic.{_name}")
-    except ModuleNotFoundError:
-        continue
-    sys.modules[f"{__name__}.{_name}"] = _mod
-    setattr(sys.modules[__name__], _name, _mod)
-
-__all__ = list(_ACADEMIC_ALL)
+# Revision (3 Aug 2026): per explicit user instruction, all hardware-only
+# specification modules (Oxford materials/nanofab/cryogenics, ETH cryocooler/
+# vibration isolation, MIT silicon photonics/cryogenic CMOS, Tokyo Tech atomic
+# clock) were removed -- "quantum comes from maths, is substrate and hardware
+# agnostic, discard the hardware ideas, not needed". A real Matrix Product
+# State / tensor-train module was added instead, matching this workspace's
+# own real 1000-qubit tensor-train work (bond_dim=64) referenced in the HYBA
+# quantum-from-maths research pages. See ACADEMIC_AUDIT.md.

@@ -78,10 +78,12 @@ class SoftwareTaskWorld:
         candidate_code, ops = self._apply_program(program)
         safe, sec_msg = ASTSafetyValidator.validate_code_str(candidate_code)
         diff = self._diff(self.initial_code, candidate_code)
+        trajectory = [[1 if safe else 0, 0] for _ in program]
 
         result = {
             "kind": "intervention",
             "program": normalise_program(program),
+            "trajectory": trajectory,
             "safe": safe,
             "security_message": sec_msg,
             "diff": diff,
@@ -112,10 +114,12 @@ class SoftwareTaskWorld:
             external_test_code=self.test_code,
         )
         goal_met = bool(parse_v and comp_v and test_v)
+        trajectory = [[1 if parse_v and comp_v else 0, 1 if test_v else 0] for _ in program]
 
         result = {
             "kind": "plan",
             "program": normalise_program(program),
+            "trajectory": trajectory,
             "parse_valid": parse_v,
             "compile_valid": comp_v,
             "test_valid": test_v,

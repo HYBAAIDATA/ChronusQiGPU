@@ -66,7 +66,12 @@ def pool_settings(
 
     def configured(suffix: str) -> str | None:
         canonical = os.getenv(f"MLA1517_STRATUM_{suffix}") if primary else None
-        value = canonical or os.getenv(f"{prefix}_{suffix}") or ""
+        value = (
+            canonical
+            or os.getenv(f"{prefix}_{suffix}")
+            or os.getenv(f"{name.upper()}_{suffix}")
+            or ""
+        )
         if not value.strip():
             return None
         # Passwords are opaque; hosts and workers are not.

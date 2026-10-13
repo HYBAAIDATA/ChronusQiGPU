@@ -492,7 +492,40 @@ def build_default_registry() -> ModuleRegistry:
         factory=lambda: _import("Intelligence.backend_binding").get_compute_backend(),
     )
 
+    # --- cortex_context: consolidated topological & spectral context ----
+    reg.register(
+        "cortex_context",
+        "Intelligence.cortex_context",
+        "Consolidated Cortex topological & spectral context engine: computes "
+        "Betti numbers, Euler characteristics, and gauge-invariant Casimir "
+        "spectra on high-dimensional manifolds.",
+        ["topological_context", "spectral_context", "betti_analytics"],
+        factory=lambda: _import("Intelligence.cortex_context").CortexTopologicalEngine(),
+    )
+
+    # --- enterprise_domains: multi-sector verticals (finance, energy, defense, biotech) ---
+    reg.register(
+        "enterprise_domains",
+        "Intelligence.domains",
+        "Enterprise multi-sector reasoning surfaces: quantitative finance "
+        "tail-risk holonomy (FTSE constituent manifolds), energy thermodynamics, "
+        "sovereign defense assurance, and bio-molecular resonance.",
+        ["market_holonomy", "energy_optimization", "defense_assurance", "biotech_resonance"],
+        factory=lambda: _import("Intelligence.domains").FinancialHolonomyEngine(),
+    )
+
+    # --- exact_yangmills_gap: closed-form 2I mass gap in Q(sqrt5) --------
+    reg.register(
+        "exact_yangmills_gap",
+        "millennium.exact_gap",
+        "Exact closed-form 2I quantum-group mass gap Delta = (3 - sqrt(5))/4 "
+        "derived from the integer class algebra of order 120 without float tolerance.",
+        ["exact_mass_gap", "spectrum_derivation", "class_algebra_closure"],
+        factory=lambda: _import("millennium.exact_gap").derive_exact_mass_gap,
+    )
+
     return reg
+
 
 
 def _import(path: str):

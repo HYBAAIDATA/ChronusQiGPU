@@ -80,6 +80,21 @@ class ExternalAGI:
             "security": "PASS",
         }
 
+    def explore_bsd_team(
+        self, a: int = 0, b: int = 1, max_prime: int = 200
+    ) -> Dict[str, Any]:
+        """Run the full 4-agent collaborative team (EUCLID + SALAMANDER + PYTHIA + AL HARAS).
+
+        Returns multi-agent report with verified invariants and Zeckendorf certificates.
+        """
+        assert_external_boundary()
+        from integrations.solvers.bsd_solver import BSDSolverTeam
+
+        team = BSDSolverTeam()
+        report = team.solve(a, b, max_prime=max_prime)
+        return report.to_dict()
+
+
     def capabilities(self) -> List[str]:
         return [c["name"] for c in EXTERNAL_AGI_CAPABILITIES]
 

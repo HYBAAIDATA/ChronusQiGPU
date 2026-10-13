@@ -157,6 +157,13 @@ from .autonomous_capabilities import (
     telemetry_snapshot,
     cassini_fingerprint,
 )
+from .cortex_context import CortexTopologicalEngine, CortexSpectralEngine
+from .domains import (
+    FinancialHolonomyEngine,
+    EnergyThermodynamicsEngine,
+    DefenseAssuranceEngine,
+    BiotechResonanceEngine,
+)
 from toe.poincare_golden_11d import (
     PHI,
     PSI,
@@ -578,4 +585,12 @@ __all__ = [
     "OverheadMeter",
     "container_bytes",
     "measure_alloc",
+    # Cortex topological and spectral analysis
+    "CortexTopologicalEngine",
+    "CortexSpectralEngine",
+    # Enterprise multi-sector reasoning engines
+    "FinancialHolonomyEngine",
+    "EnergyThermodynamicsEngine",
+    "DefenseAssuranceEngine",
+    "BiotechResonanceEngine",
 ]

@@ -525,7 +525,7 @@ The complete chain from φ to the mass gap, every stage computed.
 | `millennium/hyba_poincare_yangmills.py` | `class_multiplication(elist, classes)` | Structure constants c_{ijl} of the class algebra |
 | `millennium/hyba_poincare_yangmills.py` | `fixed_generating_set(elist, k=12)` | Stage 6: S = 12 nearest neighbors of identity (600-cell edges, inverse-closed) |
 | `millennium/hyba_poincare_yangmills.py` | `group_laplacian(elist, S)` | L = I − (1/|S|)ΣR_s on C[2I]; Hermitian |
-| `millennium/hyba_poincare_yangmills.py` | `recognize_q5(x, tol=1e-8)` | Stage 7: recognize float as (p+q√5)/k with small integers |
+| `millennium/hyba_poincare_yangmills.py` | `exact_spectrum(elist, classes, sizes)` | Stage 7: exact Q(√5) character table and levels λ_ρ = 1 − χ_ρ(g)/d_ρ; the float eigendecomposition only conjectures, the class algebra and column orthogonality verify (`recognize_q5` retired) |
 | `millennium/hyba_poincare_yangmills.py` | `run(verbose=True)` | Complete engine: all 9 stages, returns full report |
 | `millennium/hyba_poincare_yangmills.py` | `cached_report(verbose=False)` | Compute once per process; TOE reads this, does not re-derive a constant |
 

@@ -91,6 +91,14 @@ team review; this implementation work does not self-issue that review or certify
 perfection. Historical observations remain source-bound evidence, not proof
 that every enhancement has been implemented.
 
+### D8 — Restoration of Misnomers: Whole-System Integration
+
+> "they out to bemoved from those folders and be renamed as misnomers and integrated and wored properly and then tested as a whole shystem"
+
+> "I have added two folders from the other repo, one folder labelled archived and one labeleed legacy for us to implement. remeber we are not just mining, we have enterporise data offering and Intelligence and quantum and analytics and security and finance. We have the leading 10 FTSE compaies encoded here."
+
+Folders labelled `_archive_research` and `legacy` were historical misnomers. The enterprise capabilities (first-principles quantum library, Chronus GPU execution plane, core unified platform engine, golden quantum framework, Poincaré-Cassini search, multi-sector enterprise reasoning, and benchmark portfolio) are active, canonical components. They are restored to their active paths, integrated, properly wired, and tested as a unified whole system.
+
 ## Standing instruction
 
 > "my declarations should be recorded and supercedes everyhting else that it

@@ -25,11 +25,40 @@ from integrations.solvers.bsd_scaffold import (
     EllipticCurvePoint,
     integrate_information,
 )
+from integrations.solvers.bsd_solver import (
+    AlHarasAgent,
+    AlHarasAttestation,
+    BSDTeamReport,
+    BSDSolverTeam,
+    CurveParameters,
+    EuclidAgent,
+    EuclidFindings,
+    HonestyBoundaryViolation,
+    LocalReductionData,
+    PythiaAgent,
+    PythiaLedgerEntry,
+    SalamanderAgent,
+    SalamanderVerification,
+)
 
 __all__ = [
+    "AlHarasAgent",
+    "AlHarasAttestation",
+    "BSDTeamReport",
     "BSDScribe",
     "BSDScribeConfig",
+    "BSDSolverTeam",
+    "CurveParameters",
     "EllipticCurve",
     "EllipticCurvePoint",
+    "EuclidAgent",
+    "EuclidFindings",
+    "HonestyBoundaryViolation",
+    "LocalReductionData",
+    "PythiaAgent",
+    "PythiaLedgerEntry",
+    "SalamanderAgent",
+    "SalamanderVerification",
     "integrate_information",
 ]
+

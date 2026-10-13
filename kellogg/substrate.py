@@ -343,6 +343,40 @@ def star_discrepancy_2d(points: Sequence[Tuple[Fraction, Fraction]]) -> Fraction
     return best
 
 
+def cat_map_orbit_topology(modulus: int) -> dict:
+    """Decompose the discrete torus (Z/qZ)^2 under the golden cat map R into orbits via StateTopology.
+
+    Constructs StateTopology with states = (x, y) in [0, modulus-1]^2 and directed edges (p, cat_map(p, modulus)).
+    Because R is a bijection on (Z/qZ)^2, the connected components are the disjoint periodic orbits.
+    Verifies that all cycle lengths divide the Pisano period cat_map_period(modulus).
+    """
+    from toe.topology import StateTopology
+
+    if modulus < 1:
+        raise ValueError("modulus must be positive")
+
+    states = [(x, y) for x in range(modulus) for y in range(modulus)]
+    transitions = [(s, cat_map(s, modulus)) for s in states]
+
+    topo = StateTopology(states, transitions)
+    components = topo.components()
+    cycle_lengths = [len(c) for c in components]
+    pisano = cat_map_period(modulus)
+    divides_period = all(pisano % l == 0 for l in cycle_lengths)
+    fixed_points = [next(iter(c)) for c in components if len(c) == 1]
+
+    return {
+        "modulus": modulus,
+        "state_count": len(states),
+        "orbit_count": len(components),
+        "cycle_lengths": sorted(cycle_lengths),
+        "pisano_period": pisano,
+        "divides_period": divides_period,
+        "fixed_points": fixed_points,
+        "topology": topo,
+    }
+
+
 __all__ = [
     "FAMILY_COEFFS",
     "PHI_FIELD",
@@ -352,6 +386,7 @@ __all__ = [
     "cassini_step",
     "cat_map",
     "cat_map_inverse",
+    "cat_map_orbit_topology",
     "cat_map_period",
     "det2",
     "family_companion",
@@ -370,3 +405,4 @@ __all__ = [
     "star_discrepancy_2d",
     "trace",
 ]
+
