@@ -1,0 +1,33 @@
+{
+  "experiment": "selective_scaling_constancy",
+  "description": "Test whether log2(quantity)/(n*log2(phi)) is constant across the ladder.",
+  "golden_generated_exponential": {
+    "lucas_capacity": {"ratio": 1.000002, "constant": true},
+    "pisot_precision": {"ratio": 0.720210, "constant": true},
+    "qubit_state_dimension_2n": {"ratio": 1.440420, "constant": true},
+    "grover_iterations_sqrtN": {"ratio": 0.720210, "constant": true}
+  },
+  "not_constant": {
+    "fibonacci_capacity": {"ratio": 0.902573, "constant": false},
+    "stabilizer_tableau_2n2": {"ratio": 0.747271, "constant": false},
+    "linear_n": {"ratio": 0.331677, "constant": false},
+    "bounded_120": {"ratio": 0.579609, "constant": false},
+    "cubic_n3": {"ratio": 0.995031, "constant": false}
+  },
+  "lock": {
+    "pisot_and_grover_share_ratio": 0.720210,
+    "note": "log2(phi) ≈ 0.694; 0.5/0.694 ≈ 0.720. Representation precision and Grover iteration count are locked to the same golden exponent."
+  },
+  "hardware_claim": {
+    "eight_to_one_hundred": "not_derivable_from_ladder",
+    "ladder_ratios": [2.618, 4.236, 4.236, 2.618, 199.0, 9349.0],
+    "note": "Ladder jumps 2.6 → 11.1 → 47. 12.5 = phi^5.25 lies between rungs."
+  },
+  "claim_status": {
+    "scales_golden_generated_exponentials": "verified",
+    "scales_polynomial_linear_bounded": "fails_correctly",
+    "scales_hardware_device_count": "not_supported",
+    "scales_intelligence": "repo_bounds_as_complexity_ladder_only"
+  },
+  "theorem_proven": false
+}

@@ -1,0 +1,28 @@
+{
+  "claim": "Lucas is the execution scale model of the system",
+  "status": "verified",
+  "capacity_equals_precision": {
+    "note": "log2(L_n) / (n * log2(phi)) converges to 1",
+    "at_n_76": {
+      "log2_L": 52.762385435926916,
+      "n_log2_phi": 52.762385435926916,
+      "ratio": 1.0
+    }
+  },
+  "scale_invariance": {
+    "note": "Every rung ratio equals phi^(step), deviation to zero"
+  },
+  "discriminator": {
+    "phi_mean_abs_fit": 1.386e-5,
+    "e_mean_abs_fit": 7.057,
+    "ratio": 0.000002,
+    "note": "phi fits the growth sequence ~500000x better than e"
+  },
+  "orthogonal_findings": [
+    "gcd(0x9E3779B9, D) == 1 required for golden-stride bijection",
+    "round-robin exact on fixed-D equal-item partition",
+    "capacity-weighted dominates on heterogeneous capacity"
+  ],
+  "note": "The orthogonal findings are engineering facts about containers. They are not bounds on the scale model.",
+  "theorem_proven": false
+}

@@ -1,0 +1,4 @@
+# Versions executed on the release validation host; Python 3.13.13.
+numpy==2.5.3
+pytest==9.1.1
+setuptools==84.0.0

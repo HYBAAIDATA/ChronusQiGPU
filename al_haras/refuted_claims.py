@@ -28,6 +28,20 @@ CLAIMS_STILL_REFUTED = (
     "Exponential speed is universal",
 )
 
+# Phrasings retired from the quantum simulation modules. Each is a claim the
+# repository does not support: a parallelism factor no assignment of the
+# module's own constants produces, an unlabelled materialisation clamp, a
+# placeholder difficulty fed into a cost estimate, and a field name that reads
+# as a measured speedup when it is an oracle-query ratio. The source lint in
+# ``quantum_compute_substrate/tests/test_amplitude_amplification.py`` keeps them
+# out of the module; these entries keep them out of generated text.
+CLAIMS_RETIRED_FROM_QUANTUM_MODULES = (
+    "8192x parallelism",
+    "8,192x parallelism",
+    "Grover search at 8,192x parallelism",
+    "theoretical_speedup",
+)
+
 
 class ClaimRefuted(ValueError):
     pass
@@ -35,6 +49,6 @@ class ClaimRefuted(ValueError):
 
 def assert_claims(text: str) -> None:
     folded = text.casefold()
-    for claim in CLAIMS_STILL_REFUTED:
+    for claim in CLAIMS_STILL_REFUTED + CLAIMS_RETIRED_FROM_QUANTUM_MODULES:
         if claim.casefold() in folded:
             raise ClaimRefuted(claim)

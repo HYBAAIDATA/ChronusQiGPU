@@ -1,0 +1,120 @@
+{
+  "reconciliation": "PASS",
+  "summary": [
+    {
+      "phase": "cold_solver",
+      "case": "v381_dense",
+      "completed": 491520,
+      "seconds": 0.45397295899510304,
+      "rate": 1082707.6596985196,
+      "samples": 120
+    },
+    {
+      "phase": "cold_solver",
+      "case": "v39_structured",
+      "completed": 491520,
+      "seconds": 0.370343176001364,
+      "rate": 1327201.4494961011,
+      "samples": 120
+    },
+    {
+      "phase": "warm_solver",
+      "case": "v381_dense",
+      "completed": 491520,
+      "seconds": 0.3183123630051286,
+      "rate": 1544143.6058582515,
+      "samples": 120
+    },
+    {
+      "phase": "warm_solver",
+      "case": "v39_structured",
+      "completed": 491520,
+      "seconds": 0.3245590639971791,
+      "rate": 1514423.8892809723,
+      "samples": 120
+    }
+  ],
+  "ratios": {
+    "cold_solver": 1.2258169946499324,
+    "warm_solver": 0.9807532690194571
+  },
+  "strata": [
+    {
+      "phase": "cold_solver",
+      "rung": 18,
+      "job": 0,
+      "ratio": 1.2567760074187566
+    },
+    {
+      "phase": "cold_solver",
+      "rung": 18,
+      "job": 1,
+      "ratio": 1.2079114766795342
+    },
+    {
+      "phase": "cold_solver",
+      "rung": 31,
+      "job": 0,
+      "ratio": 1.2144641116715624
+    },
+    {
+      "phase": "cold_solver",
+      "rung": 31,
+      "job": 1,
+      "ratio": 1.2136016315820588
+    },
+    {
+      "phase": "warm_solver",
+      "rung": 18,
+      "job": 0,
+      "ratio": 0.9848607123124385
+    },
+    {
+      "phase": "warm_solver",
+      "rung": 18,
+      "job": 1,
+      "ratio": 0.9710165171541406
+    },
+    {
+      "phase": "warm_solver",
+      "rung": 31,
+      "job": 0,
+      "ratio": 0.9380591007182728
+    },
+    {
+      "phase": "warm_solver",
+      "rung": 31,
+      "job": 1,
+      "ratio": 1.0353920617868462
+    }
+  ],
+  "independent_rates": [
+    "1082707.659698504482658005252",
+    "1327201.449496079604316228298",
+    "1544143.605858224900544778410",
+    "1514423.889280944186494621856"
+  ],
+  "warnings_resolved": {
+    "constant_hash_count": "intentional equal-work budget",
+    "constant_advisory_dimension": "bounded n=64, not L31 dense dimension",
+    "constant_hash_backend": "CPU OpenSSL, held equal",
+    "residual": "all finite measured/reused root residuals; not a formal theorem"
+  },
+  "native_receipts_verified": 32,
+  "comparison_plan": [
+    {
+      "unit": "actual SHA256d/s",
+      "grain": "pooled path/phase",
+      "population": "120 samples each path/phase across 2 rungs and 2 prefixes",
+      "finding": "Structured S6 improves cold solver throughput; warm cache aggregate is slightly lower",
+      "disposition": "chart",
+      "reason": "both phases matter, same work/time scopes"
+    },
+    {
+      "grain": "native-compute local receipts",
+      "unit": "verified receipt count",
+      "disposition": "prose",
+      "reason": "different workload; no SHA256d-equivalent comparison"
+    }
+  ]
+}

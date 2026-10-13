@@ -54,6 +54,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "governance"))
+sys.path.insert(0, str(REPO_ROOT / "chronus" / "mla1517_platform" / "python"))
 
 import dependency_graph  # noqa: E402
 import render_service_constitution as rsc  # noqa: E402

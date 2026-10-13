@@ -55,6 +55,7 @@ AGENT_PREFIXES = {
         "emulator/",
         "conformance/",
         "chronus/packages/chronos-one-igpu/",
+        "packages/chronos-one-igpu/",
     ),
     "D": (
         "turing_universal_quantum_computer/",
@@ -62,12 +63,14 @@ AGENT_PREFIXES = {
         "kellogg/",
         "aethel/",
         "lucas/",
+        "golden_quantum/",
         "tensor/",
         "proofs/",
         "cross_verification/",
         "format/",
         "standard/",
     ),
+
     "E": (
         "hyba_db/",
         "evidence/",
@@ -78,7 +81,7 @@ AGENT_PREFIXES = {
         "hyba_contracts/",
         "hyba_profiles/",
     ),
-    "F": ("salamander/", "asi/", "al_haras/", "l_hras/", "governance/"),
+    "F": ("salamander/", "asi/", "asi_validation/", "al_haras/", "l_hras/", "governance/"),
     "G": (
         "frontend/",
         "services/",
@@ -98,8 +101,10 @@ AGENT_PREFIXES = {
         "tests/",
         "bench/",
         "benchmarks/",
+        "benchmark_portfolio/",
         "eval_harness/",
         "experiments/",
+        "notebooks/",
         "reports/",
         "scripts/",
         ".github/",
@@ -108,10 +113,13 @@ AGENT_PREFIXES = {
         "docs/",
         "delegation/",
         "legacy/",
+        "legacy_implementations/",
+        "_archive_research/",
         "make/",
         "unused/",
     ),
 }
+
 
 ROOT_EXPLICIT = {
     "euclid_delegation.py": "A",
@@ -151,7 +159,7 @@ AUTO_CLASSIFICATIONS = {
     "legacy": "LEGACY_ISOLATED_FROM_PRODUCTION",
 }
 
-RESEARCH_PREFIXES = ("bench/", "benchmarks/", "eval_harness/", "experiments/")
+RESEARCH_PREFIXES = ("bench/", "benchmarks/", "eval_harness/", "experiments/", "notebooks/")
 MANUAL_CLASSIFICATIONS_PATH = "reports/DEFECT_CLASSIFICATIONS.json"
 EXCLUDED_SCAN_PATHS = {
     "reports/DEFECT_REGISTER.json",

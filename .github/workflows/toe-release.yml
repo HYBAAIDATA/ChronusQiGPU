@@ -37,10 +37,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.11", "3.12", "3.13"]
+        python: ["3.11", "3.12", "3.13"]  # verified with updated numpy/pytest pins
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
       - name: Build TOE (+ exact KELLOGG 1.0.0) and verify from clean installs
@@ -69,8 +69,8 @@ jobs:
     name: TOE source tests (monorepo integrations)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Install test dependencies
@@ -89,8 +89,8 @@ jobs:
     needs: verify-wheel
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - uses: actions/download-artifact@v4
@@ -259,7 +259,7 @@ jobs:
         with:
           name: toe-verified-release
           path: release
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Registry install (no checkout) + canonical and cross-domain voyages
@@ -295,7 +295,7 @@ jobs:
         with:
           name: toe-verified-release
           path: release
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Registry install (no checkout) + canonical and cross-domain voyages

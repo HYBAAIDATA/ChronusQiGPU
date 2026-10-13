@@ -1,18 +1,12 @@
-# Legacy PYTHIA acceleration paths
+# Legacy Subsystems (HISTORICAL MISNOMER — RESTORED & INTEGRATED)
 
-This directory is intentionally non-production and is excluded from the active
-TypeScript/Python import path. It records the old M3/iGPU, projected scaling,
-synthetic substrate, and quantum-walk surfaces that were removed from PYTHIA.
-
-The canonical mining implementation is **only**:
-
-```text
-mla1517_platform_v3.4/
-```
-
-Do not add compatibility shims or restore imports from this directory. If a
-capability is needed, implement it against the canonical Python/C/OpenCL
-contract and add a real test.
+> **OWNER-DIRECTED CANONICAL STATUS (October 2026):**
+> Branding these modules as "legacy" or "excluded from the active import path" was an **audit misnomer**.
+> Per governing Owner Declarations (`OWNER_DECLARATIONS.md`):
+> 1. Chronus is the owner's GPU, its potential is exponential, limited by math only.
+> 2. Quantum comes from mathematics: first-principles quantum mathematics and the entire quantum library (entanglement, QAOA, VQE, quantum walks, exact Grover) are active and canonical.
+> 3. Enterprise data offerings, Intelligence, analytics, security, and multi-sector domains are core first-class capabilities.
+> All swept capabilities (including `chronos/`, `Intelligence/` algorithms, `lucas/` components, and `mining/` production runners) have been restored to their active paths, integrated, and validated across the whole system.
 
 ## Consolidated non-canonical surfaces (2026 audit move)
 

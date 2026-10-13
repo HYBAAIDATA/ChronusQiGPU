@@ -1,0 +1,6 @@
+=== Targeted audit subset: ruff check --select E9,F chronus/v33 chronus/mla1517/mining/hyba_intelligence.py tests ===
+All checks passed!
+
+=== Targeted audit subset: PYTHONPATH=. pytest -q tests ===
+................................................                         [100%]
+48 passed in 0.69s

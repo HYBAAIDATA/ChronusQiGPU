@@ -4,6 +4,31 @@ Canonical runtime only. `docs/ARCHITECTURE_MANIFEST.md` and
 `docs/MLA1517_PYTHIA_CANONICAL.md` are the detailed manifests; this is the
 production boundary view.
 
+## Evidence qualification and program governance
+
+Presence is not evidence. Modules, services, workflows and documentation do not
+establish operational coverage or production readiness. Preserve domain authority;
+strengthen surrounding infrastructure; require executed, scoped evidence for readiness.
+
+[PI-01: Azure Operational Hardening](programs/PI-01-azure-operational-hardening.md)
+defines the governing qualification gates and go/no-go record.
+[ADR-PI01-001](decisions/ADR-PI01-001-hosting-platform.md) evaluates AKS suitability
+against the existing Container Apps candidate; it does not presume migration or
+transfer domain responsibility. Neither document is a current readiness certificate.
+
+Four evidence classes are distinguished:
+
+- **Observation:** source measurements with units, timing, window and provenance.
+- **Execution:** requested versus executed route, executor and linked operation identity.
+- **Outcome:** the observed response and its authority; submission is not pool acknowledgement.
+- **Attestation:** integrity/authorship under a trust policy, not proof that the payload is true.
+
+These classifications supplement rather than replace measured/computed/projected
+truth labels or existing evidence contracts. Attestations carry key identifiers, never
+private signing keys, and verification is performed at the consuming trust boundary.
+Control-plane health qualifies hosting behavior only; mining hardware, hashrate,
+pool performance and profitability need independent executed qualification.
+
 ## Runtime boundary
 
 ```text

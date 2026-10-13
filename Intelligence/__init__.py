@@ -157,6 +157,13 @@ from .autonomous_capabilities import (
     telemetry_snapshot,
     cassini_fingerprint,
 )
+from .cortex_context import CortexTopologicalEngine, CortexSpectralEngine
+from .domains import (
+    FinancialHolonomyEngine,
+    EnergyThermodynamicsEngine,
+    DefenseAssuranceEngine,
+    BiotechResonanceEngine,
+)
 from toe.poincare_golden_11d import (
     PHI,
     PSI,
@@ -265,17 +272,42 @@ from millennium.nobel_fields_intelligence import (
     MathematicalInsight,
     NobelFieldsIntelligence,
 )
-from . import asi, consciousness, self_healing
-from .consciousness import (
-    ConsciousnessEngine,
-    ConsciousnessLevel,
-    ConsciousnessStateVector,
-    EmergenceMetrics,
-    EmergenceSnapshot,
-    QuantumConsciousnessSystem,
-    QuantumPattern,
-    SchoolActivity,
-)
+from . import self_healing
+
+# asi and consciousness are internal-only subpackages protected by the
+# strict external AGI / internal ASI boundary (integrations.agi_external.boundary).
+# They are resolved lazily on attribute access so that importing client-safe
+# Intelligence modules (such as counterfactual_intelligence or pde_substrate)
+# does not poison sys.modules with forbidden internal prefixes.
+_LAZY_INTERNAL_MODULES = {"asi", "consciousness"}
+_LAZY_CONSCIOUSNESS_ATTRS = {
+    "ConsciousnessEngine",
+    "ConsciousnessLevel",
+    "ConsciousnessStateVector",
+    "EmergenceMetrics",
+    "EmergenceSnapshot",
+    "QuantumConsciousnessSystem",
+    "QuantumPattern",
+    "SchoolActivity",
+}
+
+
+def __getattr__(name: str):
+    if name in _LAZY_INTERNAL_MODULES:
+        import importlib
+
+        mod = importlib.import_module(f".{name}", __name__)
+        globals()[name] = mod
+        return mod
+    if name in _LAZY_CONSCIOUSNESS_ATTRS:
+        import importlib
+
+        mod = importlib.import_module(".consciousness", __name__)
+        val = getattr(mod, name)
+        globals()[name] = val
+        return val
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 from .self_healing import (
     AutopoieticMetaOptimizer,
     CircuitState,
@@ -553,4 +585,12 @@ __all__ = [
     "OverheadMeter",
     "container_bytes",
     "measure_alloc",
+    # Cortex topological and spectral analysis
+    "CortexTopologicalEngine",
+    "CortexSpectralEngine",
+    # Enterprise multi-sector reasoning engines
+    "FinancialHolonomyEngine",
+    "EnergyThermodynamicsEngine",
+    "DefenseAssuranceEngine",
+    "BiotechResonanceEngine",
 ]
