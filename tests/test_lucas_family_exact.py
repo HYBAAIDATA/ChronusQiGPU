@@ -85,10 +85,14 @@ def test_constant_fractional_position():
 
 
 def test_coverage_parity():
-    """Odd L_n are coprime to any power of two; even L_n share a factor of 2."""
+    """Parity of the declared ladder. Even L_n share a factor of 2 with any
+    power-of-two estate; odd L_n do not. The even rungs on this ladder are
+    12, 15 and 18.
+    """
+    even = {12, 15, 18}
     for n in RUNGS:
         L = lucas(n)
-        if n in (20, 50):
+        if n in even:
             assert L % 2 == 0
         else:
             assert L % 2 == 1
