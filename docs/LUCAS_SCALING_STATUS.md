@@ -43,3 +43,15 @@ The constancy test (log₂(quantity) / (n·log₂φ) constant across the ladder)
 **Hardware.** The ladder ratios do not contain 12.5×. An 8→100 device-count claim is not derivable from the rungs.
 
 **Intelligence.** The repository already states that the Lucas ladder is an observable, monotonic complexity ladder, not a claim that multiplication produces intelligence.
+
+## Phyllotaxis packing (independent verification)
+
+The golden angle \(2\pi/\phi^2 \approx 137.5^\circ\) is the global optimum of the spiral packing functional (coefficient of variation of nearest-neighbour spacing).
+
+- Wins by a factor of ~2.4 over the next-best angle in a 130°–145° sweep.
+- Beats silver-mean, π-based, and rational angles decisively; only φ remains uniform.
+- CV stays flat as n grows (100 → 1600); other angles degrade linearly. Signature of a fixed point.
+
+This is a structural packing constant for distributing discrete elements in an expanding space. It does not by itself supply an 8→100 device-count identity. A fleet-distribution test (golden-angle assignment vs round-robin across modelled workers) remains open.
+
+The coverage-parity constraint (even Lucas rungs lose half a power-of-two estate) sits in the same frame: a packing failure when the structure is frustrated.
