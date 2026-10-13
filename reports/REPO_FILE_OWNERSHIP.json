@@ -1,13 +1,13 @@
 {
   "counts_by_agent": {
     "A": 556,
-    "B": 62,
-    "C": 1363,
-    "D": 416,
+    "B": 63,
+    "C": 1368,
+    "D": 419,
     "E": 111,
-    "F": 180,
-    "G": 260,
-    "H": 1643
+    "F": 184,
+    "G": 263,
+    "H": 1691
   },
   "files": {
     ".agents/collide_scan.py": {
@@ -248,6 +248,13 @@
       ],
       "rule": "H:.github/"
     },
+    ".github/dependabot.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.github/"
+    },
     ".github/workflows/al-haras-evidence-gates.yml": {
       "owner": "H",
       "owners": [
@@ -256,6 +263,13 @@
       "rule": "H:.github/"
     },
     ".github/workflows/azure-package.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.github/"
+    },
+    ".github/workflows/cedr.yml": {
       "owner": "H",
       "owners": [
         "H"
@@ -277,6 +291,13 @@
       "rule": "H:.github/"
     },
     ".github/workflows/consumer-publication.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.github/"
+    },
+    ".github/workflows/container-release.yml": {
       "owner": "H",
       "owners": [
         "H"
@@ -339,6 +360,13 @@
       ],
       "rule": "H:.github/"
     },
+    ".github/workflows/hash-usage-audit.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.github/"
+    },
     ".github/workflows/kellogg-tensor.yml": {
       "owner": "H",
       "owners": [
@@ -382,6 +410,13 @@
       "rule": "H:.github/"
     },
     ".github/workflows/production-closure.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.github/"
+    },
+    ".github/workflows/production.yml": {
       "owner": "H",
       "owners": [
         "H"
@@ -1648,6 +1683,13 @@
       ],
       "rule": "A:Intelligence/"
     },
+    "LATEST_AUTHORITATIVE_RESEARCH.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "root-infrastructure-fallback"
+    },
     "LICENSE": {
       "owner": "H",
       "owners": [
@@ -2495,6 +2537,13 @@
       ],
       "rule": "F:al_haras/"
     },
+    "al_haras/cedr.py": {
+      "owner": "F",
+      "owners": [
+        "F"
+      ],
+      "rule": "F:al_haras/"
+    },
     "al_haras/claim_register.py": {
       "owner": "F",
       "owners": [
@@ -2705,7 +2754,21 @@
       ],
       "rule": "F:al_haras/"
     },
+    "al_haras/sovereign_control.py": {
+      "owner": "F",
+      "owners": [
+        "F"
+      ],
+      "rule": "F:al_haras/"
+    },
     "al_haras/sovereign_entitlements.py": {
+      "owner": "F",
+      "owners": [
+        "F"
+      ],
+      "rule": "F:al_haras/"
+    },
+    "al_haras/sovereign_exec.py": {
       "owner": "F",
       "owners": [
         "F"
@@ -3336,6 +3399,13 @@
       "rule": "C:chronus/"
     },
     "chronus/bench/chronus_igpu_evidence.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronus/"
+    },
+    "chronus/calkin_wilf.py": {
       "owner": "C",
       "owners": [
         "C"
@@ -4449,6 +4519,13 @@
       "rule": "C:chronus/"
     },
     "chronus/measurement/workload/tt.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronus/"
+    },
+    "chronus/metallic.py": {
       "owner": "C",
       "owners": [
         "C"
@@ -5856,6 +5933,13 @@
       "rule": "C:chronus/"
     },
     "chronus/mla1517_platform/python/startup_contract.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronus/"
+    },
+    "chronus/mla1517_platform/python/strict_m3_fixture.py": {
       "owner": "C",
       "owners": [
         "C"
@@ -10636,6 +10720,13 @@
       ],
       "rule": "C:chronus/"
     },
+    "chronus/pisano.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronus/"
+    },
     "chronus/production.py": {
       "owner": "C",
       "owners": [
@@ -11624,6 +11715,13 @@
       "rule": "C:chronus/"
     },
     "chronus/tools/disasm/printer.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronus/"
+    },
+    "chronus/tribonacci.py": {
       "owner": "C",
       "owners": [
         "C"
@@ -12687,6 +12785,13 @@
       ],
       "rule": "root-product-deployment"
     },
+    "docker-compose.sovereign.yml": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "root-product-deployment"
+    },
     "docker-compose.yml": {
       "owner": "G",
       "owners": [
@@ -12814,6 +12919,13 @@
       "rule": "H:docs/"
     },
     "docs/CIAAS_THREE_PLANE_SESSION_AUDIT.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/CI_EXACTNESS_READINESS_REPAIR.md": {
       "owner": "H",
       "owners": [
         "H"
@@ -12975,6 +13087,20 @@
       "rule": "H:docs/"
     },
     "docs/EXACT_LUCAS_ALGEBRA.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/EXACT_OPERATOR_CLOSURE_REVIEW.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/EXACT_SUBSTRATE_FOUNDATIONS_REVIEW.md": {
       "owner": "H",
       "owners": [
         "H"
@@ -13772,6 +13898,13 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/ci_exactness_readiness_local_validation.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/compiler.md": {
       "owner": "H",
       "owners": [
@@ -13780,6 +13913,13 @@
       "rule": "H:docs/"
     },
     "docs/conformance.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/decisions/ADR-PI01-001-hosting-platform.md": {
       "owner": "H",
       "owners": [
         "H"
@@ -14472,6 +14612,20 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/exact_operator_closure_local_validation.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/exact_substrate_foundations_local_validation.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/extraction/mla1517-core-ci.yml.template": {
       "owner": "H",
       "owners": [
@@ -14501,6 +14655,13 @@
       "rule": "H:docs/"
     },
     "docs/failure_modes.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/hash_usage_audit.md": {
       "owner": "H",
       "owners": [
         "H"
@@ -14808,6 +14969,27 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/production_environment.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/programs/PI-01-azure-operational-hardening.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/programs/PI-01-cedr-enforcement.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/provenance/1edbd5883a562b0c.json": {
       "owner": "H",
       "owners": [
@@ -14921,6 +15103,20 @@
       "rule": "H:docs/"
     },
     "docs/releases/PR16_LUCAS_SYSTEM_ELEVATION.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/reviews/PRODUCTION_READINESS_REVIEW_2026-10-12.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/reviews/SOVEREIGN_READINESS_POSITION_2026-10-12.md": {
       "owner": "H",
       "owners": [
         "H"
@@ -16832,6 +17028,13 @@
       "rule": "F:governance/"
     },
     "governance/canonical_mining_search.yaml": {
+      "owner": "F",
+      "owners": [
+        "F"
+      ],
+      "rule": "F:governance/"
+    },
+    "governance/cedr.json": {
       "owner": "F",
       "owners": [
         "F"
@@ -23348,6 +23551,13 @@
       ],
       "rule": "B:mining/"
     },
+    "mining/formal/lake-manifest.json": {
+      "owner": "B",
+      "owners": [
+        "B"
+      ],
+      "rule": "B:mining/"
+    },
     "mining/formal/lakefile.toml": {
       "owner": "B",
       "owners": [
@@ -23487,6 +23697,13 @@
         "A"
       ],
       "rule": "A:mtheory/"
+    },
+    "notebooks/exact_family_discovery.ipynb": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:notebooks/"
     },
     "observability/otel-collector.yml": {
       "owner": "G",
@@ -24217,6 +24434,13 @@
       "rule": "G:plugins/"
     },
     "plugins/pythia/.devin-plugin/plugin.json": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:plugins/"
+    },
+    "plugins/pythia/.mcp.json": {
       "owner": "G",
       "owners": [
         "G"
@@ -26785,6 +27009,13 @@
       ],
       "rule": "G:runbooks/"
     },
+    "runbooks/signed-container-release.md": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:runbooks/"
+    },
     "salamander/__init__.py": {
       "owner": "F",
       "owners": [
@@ -26933,6 +27164,13 @@
       "rule": "H:scripts/"
     },
     "scripts/build_euclid_intelligence_release.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
+    "scripts/cedr_gate.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -27093,6 +27331,13 @@
       ],
       "rule": "H:scripts/"
     },
+    "scripts/exact_conformance.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
     "scripts/gate_impl.py": {
       "owner": "H",
       "owners": [
@@ -27101,6 +27346,13 @@
       "rule": "H:scripts/"
     },
     "scripts/gate_runner.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
+    "scripts/hash_usage_audit.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -27177,6 +27429,13 @@
       ],
       "rule": "H:scripts/"
     },
+    "scripts/local_ci.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
     "scripts/m3_evidence_pack.py": {
       "owner": "H",
       "owners": [
@@ -27199,6 +27458,13 @@
       "rule": "H:scripts/"
     },
     "scripts/mutation_check.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
+    "scripts/native_stack_smoke.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -27506,6 +27772,13 @@
       ],
       "rule": "H:scripts/"
     },
+    "scripts/runtime_environment_preflight.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
     "scripts/salamander_authority_mutation.py": {
       "owner": "H",
       "owners": [
@@ -27556,6 +27829,13 @@
       "rule": "H:scripts/"
     },
     "scripts/smoke_windows.ps1": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
+    "scripts/sovereign_proof_pack.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -27668,6 +27948,13 @@
       "rule": "H:scripts/"
     },
     "scripts/verify_pure_quantum_math.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
+    "scripts/verify_release_tag.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -28535,6 +28822,20 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_cedr.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_cedr_integration.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_certificate.py": {
       "owner": "H",
       "owners": [
@@ -28543,6 +28844,34 @@
       "rule": "H:tests/"
     },
     "tests/test_chain_verification.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_chronus_calkin_wilf.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_chronus_metallic.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_chronus_pisano.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_chronus_tribonacci.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -28850,6 +29179,13 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_exact_conformance_gate.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_exact_geometry.py": {
       "owner": "H",
       "owners": [
@@ -29018,7 +29354,21 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_hash_usage_audit.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_hendrix_opencl.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_hot_path_performance_fixes.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -29131,6 +29481,13 @@
       "rule": "H:tests/"
     },
     "tests/test_import_graph.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_incremental_storage_verification.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -29313,6 +29670,13 @@
       "rule": "H:tests/"
     },
     "tests/test_m3_file_registry.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_m3_lease_reconcile_interval.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -29543,6 +29907,13 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_ovid_graph_edge_integrity.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_package_layout.py": {
       "owner": "H",
       "owners": [
@@ -29607,6 +29978,13 @@
       "rule": "H:tests/"
     },
     "tests/test_phi_vqc_intelligence_organs.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_pi01_readiness_regressions.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -29823,6 +30201,20 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_release_gate_entrypoint.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_release_workflow_regressions.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_remote_hasher.py": {
       "owner": "H",
       "owners": [
@@ -29845,6 +30237,13 @@
       "rule": "H:tests/"
     },
     "tests/test_runtime_config.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_runtime_environment_preflight.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -29928,6 +30327,13 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_signed_release_tag.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_skill_graft.py": {
       "owner": "H",
       "owners": [
@@ -29936,6 +30342,13 @@
       "rule": "H:tests/"
     },
     "tests/test_slo_runbooks_compliance.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_sovereign_control.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -30117,6 +30530,13 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_theseus_tenant_isolation.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_three_layer_runtime.py": {
       "owner": "H",
       "owners": [
@@ -30146,6 +30566,13 @@
       "rule": "H:tests/"
     },
     "tests/test_toe_cross_domain.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_toe_durable_defaults.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -31426,6 +31853,13 @@
       ],
       "rule": "D:turing_universal_quantum_computer/"
     },
+    "turing_universal_quantum_computer/formal/lake-manifest.json": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:turing_universal_quantum_computer/"
+    },
     "turing_universal_quantum_computer/formal/lakefile.toml": {
       "owner": "D",
       "owners": [
@@ -31489,6 +31923,13 @@
       ],
       "rule": "D:turing_universal_quantum_computer/"
     },
+    "turing_universal_quantum_computer/tests/test_exact_operator_contracts.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:turing_universal_quantum_computer/"
+    },
     "turing_universal_quantum_computer/tests/test_exact_state_vector.py": {
       "owner": "D",
       "owners": [
@@ -31511,6 +31952,13 @@
       "rule": "D:turing_universal_quantum_computer/"
     },
     "turing_universal_quantum_computer/tests/test_golden_quantum_core.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:turing_universal_quantum_computer/"
+    },
+    "turing_universal_quantum_computer/tests/test_grover_controller_budget.py": {
       "owner": "D",
       "owners": [
         "D"
@@ -32150,7 +32598,7 @@
   },
   "multi_owned_files": [],
   "schema_version": 1,
-  "source_sha": "81e3231e4007a73a2aa9c581404a5f9777860a73",
-  "tracked_file_count": 4591,
+  "source_sha": "4cd967b488ca17ae06cf29118310655c04de787b",
+  "tracked_file_count": 4655,
   "unowned_files": []
 }

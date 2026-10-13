@@ -100,6 +100,7 @@ AGENT_PREFIXES = {
         "benchmarks/",
         "eval_harness/",
         "experiments/",
+        "notebooks/",
         "reports/",
         "scripts/",
         ".github/",
@@ -151,7 +152,7 @@ AUTO_CLASSIFICATIONS = {
     "legacy": "LEGACY_ISOLATED_FROM_PRODUCTION",
 }
 
-RESEARCH_PREFIXES = ("bench/", "benchmarks/", "eval_harness/", "experiments/")
+RESEARCH_PREFIXES = ("bench/", "benchmarks/", "eval_harness/", "experiments/", "notebooks/")
 MANUAL_CLASSIFICATIONS_PATH = "reports/DEFECT_CLASSIFICATIONS.json"
 EXCLUDED_SCAN_PATHS = {
     "reports/DEFECT_REGISTER.json",
