@@ -6,7 +6,7 @@
     "D": 439,
     "E": 115,
     "F": 184,
-    "G": 286,
+    "G": 294,
     "H": 1813
   },
   "files": {
@@ -18497,6 +18497,20 @@
       ],
       "rule": "G:integrations/"
     },
+    "integrations/agi_external/README.md": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
+    "integrations/agi_external/__init__.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
     "integrations/attestation.py": {
       "owner": "G",
       "owners": [
@@ -18505,6 +18519,48 @@
       "rule": "G:integrations/"
     },
     "integrations/compute.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
+    "integrations/llm_gateway/__init__.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
+    "integrations/llm_gateway/capability.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
+    "integrations/llm_gateway/gateway.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
+    "integrations/llm_gateway/gateway_config.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
+    "integrations/llm_gateway/test.txt": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
+    "integrations/llm_gateway/tests/test_gateway.py": {
       "owner": "G",
       "owners": [
         "G"
@@ -37953,7 +38009,7 @@
   },
   "multi_owned_files": [],
   "schema_version": 1,
-  "source_sha": "8b3112d6d2b092c1c212ec2db6612b75b93a099e",
-  "tracked_file_count": 5420,
+  "source_sha": "8d1da3e7d5187a11e82452e943f7245106d53444",
+  "tracked_file_count": 5428,
   "unowned_files": []
 }
