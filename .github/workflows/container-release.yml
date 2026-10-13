@@ -1,0 +1,195 @@
+name: Signed container release
+
+on:
+  pull_request:
+    paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'frontend/**'
+      - 'chronus/**'
+      - 'Intelligence/**'
+      - 'turing_universal_quantum_computer/**'
+      - 'scripts/ci_install.sh'
+      - 'scripts/verify_release_tag.py'
+      - 'tests/test_release_workflow_regressions.py'
+      - 'tests/test_signed_release_tag.py'
+      - '.github/workflows/container-release.yml'
+      - '.github/workflows/consumer-publication.yml'
+      - '.github/workflows/euclid-v17-release.yml'
+      - 'pyproject.toml'
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: container-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  security:
+    uses: ./.github/workflows/dependency-audit.yml
+
+  secret-scan:
+    uses: ./.github/workflows/gitleaks.yml
+
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.12', '3.13']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install project test dependencies
+        run: |
+          python -m pip install --upgrade pip build
+          bash scripts/ci_install.sh "ml,dev,graph"
+      - name: Release boundary and offline authority regressions
+        run: >-
+          python -m pytest
+          tests/test_release_workflow_regressions.py
+          tests/test_signed_release_tag.py
+          tests/test_autonomous_supervisor_production.py
+          tests/test_native_production_routing.py
+          chronus/mla1517_platform/python/test_backend_policy.py
+          -q --junitxml=release-checks.xml
+        env:
+          PYTHONPATH: ${{ github.workspace }}/chronus/mla1517_platform/python
+      - name: Core test suite — no publication on baseline failures
+        run: python -m pytest tests/ -x -q
+        env:
+          PYTHONPATH: ${{ github.workspace }}/chronus/mla1517_platform/python
+      - name: Intelligence standalone self-test
+        run: python -X utf8 -m Intelligence.self_test
+        env:
+          PYTHONPATH: ${{ github.workspace }}/chronus/mla1517_platform/python:${{ github.workspace }}/chronus:${{ github.workspace }}
+      - name: TURING standalone test suite
+        working-directory: turing_universal_quantum_computer
+        run: python -m pytest tests -q --junitxml=standalone-release-checks.xml
+      - name: Platform behavioral suite
+        run: python -m unittest discover -s chronus/mla1517_platform/python
+      - name: Import, drift and deployment gates
+        run: |
+          python scripts/import_audit.py
+          python -m scripts.drift_sentry --verify
+          python -m scripts.deploy_sentry
+      - name: Check changed Python style
+        run: |
+          python -m black --check scripts/verify_release_tag.py tests/test_release_workflow_regressions.py tests/test_signed_release_tag.py
+          python -m flake8 scripts/verify_release_tag.py tests/test_release_workflow_regressions.py tests/test_signed_release_tag.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: container-checks-${{ matrix.python }}
+          path: |
+            release-checks.xml
+            turing_universal_quantum_computer/standalone-release-checks.xml
+          if-no-files-found: error
+
+  signed-tag:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Verify signed annotated tag, commit identity and main ancestry
+        run: python scripts/verify_release_tag.py
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  preview:
+    if: github.event_name == 'pull_request'
+    needs: [checks, security, secret-scan]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build candidate without credentials or publication
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          push: false
+          outputs: type=oci,dest=/tmp/pythia-candidate.tar
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: pythia-container-candidate
+          path: /tmp/pythia-candidate.tar
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'push'
+    needs: [checks, signed-tag, security, secret-scan]
+    environment: DOCKER_USER
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Determine canonical lowercase image identity
+        id: image
+        shell: bash
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Build and publish SBOM/provenance-bearing release
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.image.outputs.name }}:${{ github.ref_name }}
+          sbom: true
+          provenance: mode=max
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+      - name: Sign the exact published digest using GitHub OIDC
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "$IMAGE@$DIGEST"
+      - name: Retain immutable release identity
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          Path('container-release.json').write_text(json.dumps({
+              'repository': os.environ['GITHUB_REPOSITORY'],
+              'source_commit': os.environ['GITHUB_SHA'],
+              'tag': os.environ['GITHUB_REF_NAME'],
+              'image': os.environ['IMAGE'], 'digest': os.environ['DIGEST'],
+              'signed': True, 'deployed': False,
+          }, indent=2, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: signed-container-release
+          path: container-release.json
+          if-no-files-found: error

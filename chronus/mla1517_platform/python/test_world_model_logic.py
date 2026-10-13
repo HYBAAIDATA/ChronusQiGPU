@@ -351,3 +351,32 @@ def test_plan_readiness_is_clamped_and_depth_is_at_least_one():
     # Depth 0 counts as one plan of lead: 10 ms covers one of two builds.
     assert world.plan_ready_probability(0, 0.010) == pytest.approx(1.5 / 3)
     assert world.plan_ready_probability(2, 0.0) is None
+
+
+def test_route_model_constants_and_identifiability_thresholds_are_locked():
+    """Lock the measurement contracts so mutations of sample thresholds,
+    spread gate, forgetting default, or plan-latency smoothing cannot survive."""
+    model = RouteModel()
+    assert model.forgetting == 0.995
+    assert model.direct_samples == 0 and model.fit_samples == 0
+    # Direct path requires exactly 3 samples
+    model.observe(1000, 0.01, 0.004)
+    model.observe(1000, 0.01, 0.004)
+    assert not model.identifiable
+    model.observe(1000, 0.01, 0.004)
+    assert model.identifiable and model.direct_samples == 3
+    # Fit path requires 16 samples and spread*sqrt(n) >= 0.5
+    fit = RouteModel(forgetting=1.0)
+    for _ in range(15):
+        fit.observe(1000, 0.01, 0.0)
+    assert fit.fit_samples == 15 and not fit.identifiable
+    fit.observe(1000, 0.01, 0.0)
+    # With identical windows spread is 0, so still not identifiable
+    assert fit.fit_samples == 16 and not fit.identifiable
+    # Plan latency smoothing and recent window
+    world = MiningWorldModel()
+    assert world.plan_latency_recent.maxlen == 64
+    world.observe_plan_latency(0.1)
+    assert world.plan_latency_s == 0.1
+    world.observe_plan_latency(0.2)
+    assert world.plan_latency_s == pytest.approx(0.9 * 0.1 + 0.1 * 0.2)

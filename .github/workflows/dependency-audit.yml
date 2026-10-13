@@ -1,6 +1,7 @@
 name: Dependency Audit & SBOM
 
 on:
+  workflow_call:
   push:
     branches: [main]
   pull_request:
@@ -16,8 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
           cache: pip
@@ -25,15 +26,28 @@ jobs:
         run: python -m pip install --upgrade pip pip-audit
       - name: Audit Python dependencies
         run: |
-          pip-audit -r <(bash scripts/ci_install.sh "dev,ml" --dry-run 2>&1 | grep "^Would install" | sed 's/Would install //;s/ /==/g') --strict || \
-          pip-audit --strict --skip-editable
+          bash scripts/ci_install.sh "dev,ml"
+          # Freeze the complete resolved environment, not malformed dry-run output.
+          # In-tree HYBA packages have no PyPI advisory identity; their code is
+          # covered by the repository tests and secret scan instead.
+          python - <<'PY'
+          import importlib.metadata
+          from pathlib import Path
+          rows = sorted(
+              f"{d.metadata['Name']}=={d.version}"
+              for d in importlib.metadata.distributions()
+              if not d.metadata['Name'].lower().startswith('hyba-')
+          )
+          Path('audit-requirements.txt').write_text('\n'.join(rows) + '\n')
+          PY
+          pip-audit -r audit-requirements.txt --no-deps --disable-pip --strict
   npm-audit:
     name: Node dependency advisory audit
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -48,28 +62,35 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
           cache: pip
       - name: Install cyclonedx-bom
-        run: pip install cyclonedx-bom
-      - name: Generate Python SBOM (SPDX)
+        run: python -m pip install --upgrade pip cyclonedx-bom build
+      - name: Generate Python SBOM (CycloneDX)
         run: |
           mkdir -p artifacts/sbom
-          pip install --dry-run -e "./turing_universal_quantum_computer" -e ".[dev]" 2>/dev/null || true
-          cyclonedx-py requirements -o artifacts/sbom/pythia-pip.spdx.json --schema-version 1.5 || true
-      - name: Generate Node SBOM (SPDX)
+          bash scripts/ci_install.sh "dev,ml"
+          cyclonedx-py environment --output-file artifacts/sbom/pythia-pip.cdx.json
+      - name: Generate Node SBOM (CycloneDX)
         run: |
-          npm ci --prefix frontend 2>/dev/null || true
-          npx --yes @cyclonedx/cyclonedx-npm --prefix frontend --output-format json --output-file artifacts/sbom/pythia-npm.spdx.json || true
+          npm ci --prefix frontend
+          cd frontend
+          npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --output-format JSON --output-file ../artifacts/sbom/pythia-npm.cdx.json
       - name: Verify SBOM artifacts
         run: |
-          test -s artifacts/sbom/pythia-pip.spdx.json || echo "::warning::Python SBOM generation incomplete"
-          test -s artifacts/sbom/pythia-npm.spdx.json || echo "::warning::Node SBOM generation incomplete"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for name in ('pythia-pip.cdx.json', 'pythia-npm.cdx.json'):
+              document = json.loads((Path('artifacts/sbom') / name).read_text())
+              if document.get('bomFormat') != 'CycloneDX' or not document.get('components'):
+                  raise SystemExit(f'{name}: empty or invalid CycloneDX SBOM')
+          PY
       - name: Upload SBOM artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pythia-sbom
           path: artifacts/sbom/

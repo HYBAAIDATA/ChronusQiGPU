@@ -20,7 +20,7 @@ touch "$ROOT/tests/__init__.py"
 cat > "$ROOT/.env.example" <<'ENV'
 # Copy to .env locally; never commit credentials.
 MLA1517_STRATUM_USER=
-MLA1517_STRATUM_PASSWORD=
+MLA1517_STRATUM_PASSWORD="" # set locally
 MLA1517_ENABLE_LIVE_SUBMIT=0
 MLA1517_LIVE_APPROVAL_ID=
 MLA1517_GPU_BACKEND=unavailable

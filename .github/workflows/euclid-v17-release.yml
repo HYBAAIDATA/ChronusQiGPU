@@ -33,6 +33,8 @@ permissions:
 
 env:
   RC_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  REQUESTED_RC_SHA: ${{ inputs.rc_sha }}
+  REPOSITORY: ${{ github.repository }}
   CI_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
 # Explicit bash => "-eo pipefail": a failing step piped through tee must fail.
@@ -45,9 +47,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
           cache: pip
@@ -104,7 +106,7 @@ jobs:
 
       - name: Upload release evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: euclid-v17-release-evidence
           if-no-files-found: error
@@ -118,14 +120,14 @@ jobs:
     name: Freeze and verify source identity
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ env.RC_SHA }}
       - name: Require exact requested RC
         run: |
           test "$(git rev-parse HEAD)" = "$RC_SHA"
           if [ "${{ github.event_name }}" = workflow_dispatch ]; then
-            test "${{ inputs.rc_sha }}" = "${{ github.sha }}"
+            test "$REQUESTED_RC_SHA" = "$RC_SHA"
           fi
 
   installed-candidates:
@@ -137,10 +139,10 @@ jobs:
       matrix:
         python: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ env.RC_SHA }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ matrix.python }}
       - name: Build wheel + sdist; inspect, install and run v17 episodes outside the repo
@@ -151,7 +153,7 @@ jobs:
           python -m pip install --disable-pip-version-check build
           python packaging/euclid-engine/build_and_verify.py
       - name: Retain interpreter evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: euclid-candidates-${{ matrix.python }}
           path: packaging/euclid-engine/dist/
@@ -162,10 +164,10 @@ jobs:
     needs: installed-candidates
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ env.RC_SHA }}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: euclid-candidates-*
           path: candidates
@@ -203,7 +205,7 @@ jobs:
               raise SystemExit(f"{name} 1.0.0 already exists on PyPI")
           verdict = {
               "product": name, "version": "1.0.0",
-              "repository": "QuantumPhiRedux/PhiMiner",
+              "repository": os.environ["REPOSITORY"],
               "git_sha": os.environ["RC_SHA"],
               "installed_matrix": ["3.11", "3.12", "3.13"],
               "installed_smoke": canonical["installed_smoke"],
@@ -216,7 +218,7 @@ jobs:
           }
           Path("euclid-release-verdict.json").write_text(json.dumps(verdict, indent=2, sort_keys=True))
           print(json.dumps(verdict, indent=2, sort_keys=True))
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: euclid-release-verdict
           path: euclid-release-verdict.json
@@ -232,11 +234,11 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: euclid-candidates-3.12
           path: dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: euclid-release-verdict
           path: verdict
@@ -254,7 +256,7 @@ jobs:
               assert hashlib.sha256(open(f, "rb").read()).hexdigest() == v[key]["sha256"], f
               import shutil; shutil.copy(f, "upload/")
           PY
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
         with:
           packages-dir: upload/
           repository-url: https://test.pypi.org/legacy/
@@ -269,7 +271,7 @@ jobs:
       matrix:
         python: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ matrix.python }}
       - name: Registry install resolves sibling deps, then import + CLI
@@ -310,7 +312,7 @@ jobs:
               "status": "PASS",
           }
           Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: euclid-testpypi-smoke-${{ matrix.python }}
           path: receipts/receipt.json
@@ -326,15 +328,15 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: euclid-candidates-3.12
           path: dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: euclid-release-verdict
           path: verdict
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: euclid-testpypi-smoke-*
           path: receipts
@@ -358,7 +360,7 @@ jobs:
               assert hashlib.sha256(open(f, "rb").read()).hexdigest() == v[key]["sha256"], f
               shutil.copy(f, "upload/")
           PY
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
         with:
           packages-dir: upload/
 
@@ -372,7 +374,7 @@ jobs:
       matrix:
         python: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ matrix.python }}
       - name: Registry install resolves sibling deps, then import + CLI
@@ -410,7 +412,7 @@ jobs:
               "status": "PASS",
           }
           Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: euclid-pypi-smoke-${{ matrix.python }}
           path: receipts/receipt.json
@@ -425,18 +427,18 @@ jobs:
       contents: write
       actions: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ env.RC_SHA }}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: euclid-candidates-3.12
           path: dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: euclid-release-verdict
           path: verdict
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: euclid-*-smoke-*
           path: receipts
@@ -465,7 +467,7 @@ jobs:
           gh release create euclid-intelligence-v1.0.0 --target "$RC_SHA" \
             --title "hyba-euclid-intelligence 1.0.0" --notes-file release-notes.md \
             dist/*.whl dist/*.tar.gz publication.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: euclid-final-publication
           path: publication.json

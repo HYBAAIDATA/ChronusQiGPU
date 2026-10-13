@@ -126,3 +126,32 @@ def test_hashing_time_never_exceeds_the_window():
     assert snap["fractions"]["useful_hashing"] == pytest.approx(
         1.0
     )  # a sub-second wall still divides
+
+
+def test_loss_ledger_constants_and_attribution_rules_are_locked():
+    """Lock the category set, latency window, and hashing attribution rules
+    so mutations of CATEGORIES, the 256-sample cap, or kernel-vs-estimate
+    preference cannot survive."""
+    from chronus.mla1517.mining.loss_ledger import CATEGORIES
+    assert set(CATEGORIES) == {
+        "useful_hashing",
+        "stale_hashing",
+        "window_overhead",
+        "idle_no_plan",
+        "recovery",
+        "unattributed_execution",
+    }
+    world, ledger = _world(), LossLedger()
+    # Kernel time is preferred over the world-model estimate
+    ledger.observe_execution(
+        _record(hash_count=1000, elapsed_seconds=0.01, kernel_ms=4.0),
+        world,
+        started_at=0.0,
+    )
+    assert ledger.seconds["useful_hashing"] == pytest.approx(0.004)
+    assert ledger.seconds["window_overhead"] == pytest.approx(0.006)
+    # Cap is exactly 256
+    for i in range(300):
+        ledger.observe_bind(float(i))
+        ledger.observe_execution(_record(hash_count=1), world, started_at=float(i) + 0.1)
+    assert len(ledger.first_hash_latency_s) == 256

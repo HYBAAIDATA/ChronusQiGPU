@@ -1,0 +1,1615 @@
+{
+  "schema_version": "cedr/1",
+  "program": "Evidence Restoration and Operational Hardening",
+  "profiles": {
+    "pilot-operations": {
+      "required_claims": [
+        "CEDR-001",
+        "CEDR-002",
+        "CEDR-010",
+        "CEDR-011",
+        "CEDR-012",
+        "CEDR-020",
+        "CEDR-021",
+        "CEDR-022",
+        "CEDR-023",
+        "CEDR-030",
+        "CEDR-031",
+        "CEDR-032",
+        "CEDR-033",
+        "CEDR-040",
+        "CEDR-041",
+        "CEDR-042",
+        "CEDR-050",
+        "CEDR-051",
+        "CEDR-052"
+      ],
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "trust_policy": "cedr-review-policy/1",
+      "reviewers": {},
+      "max_evidence_age_seconds": null,
+      "required_checks": {
+        "CEDR-001": [
+          "required-checks-executed",
+          "assurance-gates-executed",
+          "no-bypass-audit"
+        ],
+        "CEDR-002": [
+          "pass-state",
+          "fail-state",
+          "skip-state",
+          "not-run-state"
+        ],
+        "CEDR-010": [
+          "sampled-lineage-complete",
+          "failure-lineage-preserved"
+        ],
+        "CEDR-011": [
+          "requested-executed-route-preservation"
+        ],
+        "CEDR-012": [
+          "pending-outcome",
+          "timeout-outcome",
+          "rejected-outcome",
+          "acknowledged-outcome",
+          "unknown-outcome"
+        ],
+        "CEDR-020": [
+          "secret-inventory-review"
+        ],
+        "CEDR-021": [
+          "new-credential-accepted",
+          "old-credential-denied",
+          "service-continuity"
+        ],
+        "CEDR-022": [
+          "revoked-credential-denied",
+          "expired-credential-denied"
+        ],
+        "CEDR-023": [
+          "allowed-action",
+          "forbidden-action",
+          "access-review"
+        ],
+        "CEDR-030": [
+          "outage",
+          "recovery",
+          "loss-accounting"
+        ],
+        "CEDR-031": [
+          "duplicate-replay-single-effect"
+        ],
+        "CEDR-032": [
+          "consumer-lag",
+          "overflow",
+          "backpressure-recovery"
+        ],
+        "CEDR-033": [
+          "out-of-order-delivery",
+          "ordering-assumptions-review"
+        ],
+        "CEDR-040": [
+          "operator-incident-reconstruction"
+        ],
+        "CEDR-041": [
+          "alert-delivery",
+          "responder-acknowledgement"
+        ],
+        "CEDR-042": [
+          "evidence-restore",
+          "custody-audit"
+        ],
+        "CEDR-050": [
+          "executed-rollback",
+          "measured-recovery-time"
+        ],
+        "CEDR-051": [
+          "backup-validation",
+          "configuration-restore"
+        ],
+        "CEDR-052": [
+          "named-recovery-owner",
+          "escalation-test"
+        ]
+      }
+    },
+    "mining-production": {
+      "required_claims": [
+        "CEDR-001",
+        "CEDR-002",
+        "CEDR-010",
+        "CEDR-011",
+        "CEDR-012",
+        "CEDR-020",
+        "CEDR-021",
+        "CEDR-022",
+        "CEDR-023",
+        "CEDR-030",
+        "CEDR-031",
+        "CEDR-032",
+        "CEDR-033",
+        "CEDR-040",
+        "CEDR-041",
+        "CEDR-042",
+        "CEDR-050",
+        "CEDR-051",
+        "CEDR-052",
+        "CEDR-003"
+      ],
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "trust_policy": "cedr-review-policy/1",
+      "reviewers": {},
+      "max_evidence_age_seconds": null,
+      "required_checks": {
+        "CEDR-001": [
+          "required-checks-executed",
+          "assurance-gates-executed",
+          "no-bypass-audit"
+        ],
+        "CEDR-002": [
+          "pass-state",
+          "fail-state",
+          "skip-state",
+          "not-run-state"
+        ],
+        "CEDR-010": [
+          "sampled-lineage-complete",
+          "failure-lineage-preserved"
+        ],
+        "CEDR-011": [
+          "requested-executed-route-preservation"
+        ],
+        "CEDR-012": [
+          "pending-outcome",
+          "timeout-outcome",
+          "rejected-outcome",
+          "acknowledged-outcome",
+          "unknown-outcome"
+        ],
+        "CEDR-020": [
+          "secret-inventory-review"
+        ],
+        "CEDR-021": [
+          "new-credential-accepted",
+          "old-credential-denied",
+          "service-continuity"
+        ],
+        "CEDR-022": [
+          "revoked-credential-denied",
+          "expired-credential-denied"
+        ],
+        "CEDR-023": [
+          "allowed-action",
+          "forbidden-action",
+          "access-review"
+        ],
+        "CEDR-030": [
+          "outage",
+          "recovery",
+          "loss-accounting"
+        ],
+        "CEDR-031": [
+          "duplicate-replay-single-effect"
+        ],
+        "CEDR-032": [
+          "consumer-lag",
+          "overflow",
+          "backpressure-recovery"
+        ],
+        "CEDR-033": [
+          "out-of-order-delivery",
+          "ordering-assumptions-review"
+        ],
+        "CEDR-040": [
+          "operator-incident-reconstruction"
+        ],
+        "CEDR-041": [
+          "alert-delivery",
+          "responder-acknowledgement"
+        ],
+        "CEDR-042": [
+          "evidence-restore",
+          "custody-audit"
+        ],
+        "CEDR-050": [
+          "executed-rollback",
+          "measured-recovery-time"
+        ],
+        "CEDR-051": [
+          "backup-validation",
+          "configuration-restore"
+        ],
+        "CEDR-052": [
+          "named-recovery-owner",
+          "escalation-test"
+        ],
+        "CEDR-003": [
+          "device-inventory",
+          "backend-execution",
+          "hardware-review"
+        ]
+      }
+    },
+    "azure-event-hubs": {
+      "required_claims": [
+        "CEDR-001",
+        "CEDR-002",
+        "CEDR-010",
+        "CEDR-011",
+        "CEDR-012",
+        "CEDR-020",
+        "CEDR-021",
+        "CEDR-022",
+        "CEDR-023",
+        "CEDR-030",
+        "CEDR-031",
+        "CEDR-032",
+        "CEDR-033",
+        "CEDR-040",
+        "CEDR-041",
+        "CEDR-042",
+        "CEDR-050",
+        "CEDR-051",
+        "CEDR-052",
+        "CEDR-100"
+      ],
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "trust_policy": "cedr-review-policy/1",
+      "reviewers": {},
+      "max_evidence_age_seconds": null,
+      "required_checks": {
+        "CEDR-001": [
+          "required-checks-executed",
+          "assurance-gates-executed",
+          "no-bypass-audit"
+        ],
+        "CEDR-002": [
+          "pass-state",
+          "fail-state",
+          "skip-state",
+          "not-run-state"
+        ],
+        "CEDR-010": [
+          "sampled-lineage-complete",
+          "failure-lineage-preserved"
+        ],
+        "CEDR-011": [
+          "requested-executed-route-preservation"
+        ],
+        "CEDR-012": [
+          "pending-outcome",
+          "timeout-outcome",
+          "rejected-outcome",
+          "acknowledged-outcome",
+          "unknown-outcome"
+        ],
+        "CEDR-020": [
+          "secret-inventory-review"
+        ],
+        "CEDR-021": [
+          "new-credential-accepted",
+          "old-credential-denied",
+          "service-continuity"
+        ],
+        "CEDR-022": [
+          "revoked-credential-denied",
+          "expired-credential-denied"
+        ],
+        "CEDR-023": [
+          "allowed-action",
+          "forbidden-action",
+          "access-review"
+        ],
+        "CEDR-030": [
+          "outage",
+          "recovery",
+          "loss-accounting"
+        ],
+        "CEDR-031": [
+          "duplicate-replay-single-effect"
+        ],
+        "CEDR-032": [
+          "consumer-lag",
+          "overflow",
+          "backpressure-recovery"
+        ],
+        "CEDR-033": [
+          "out-of-order-delivery",
+          "ordering-assumptions-review"
+        ],
+        "CEDR-040": [
+          "operator-incident-reconstruction"
+        ],
+        "CEDR-041": [
+          "alert-delivery",
+          "responder-acknowledgement"
+        ],
+        "CEDR-042": [
+          "evidence-restore",
+          "custody-audit"
+        ],
+        "CEDR-050": [
+          "executed-rollback",
+          "measured-recovery-time"
+        ],
+        "CEDR-051": [
+          "backup-validation",
+          "configuration-restore"
+        ],
+        "CEDR-052": [
+          "named-recovery-owner",
+          "escalation-test"
+        ],
+        "CEDR-100": [
+          "baseline-transport-gap",
+          "alternative-comparison",
+          "event-hubs-pilot",
+          "measured-improvement",
+          "verified-rollback"
+        ]
+      }
+    },
+    "azure-key-vault": {
+      "required_claims": [
+        "CEDR-001",
+        "CEDR-002",
+        "CEDR-010",
+        "CEDR-011",
+        "CEDR-012",
+        "CEDR-020",
+        "CEDR-021",
+        "CEDR-022",
+        "CEDR-023",
+        "CEDR-030",
+        "CEDR-031",
+        "CEDR-032",
+        "CEDR-033",
+        "CEDR-040",
+        "CEDR-041",
+        "CEDR-042",
+        "CEDR-050",
+        "CEDR-051",
+        "CEDR-052",
+        "CEDR-101"
+      ],
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "trust_policy": "cedr-review-policy/1",
+      "reviewers": {},
+      "max_evidence_age_seconds": null,
+      "required_checks": {
+        "CEDR-001": [
+          "required-checks-executed",
+          "assurance-gates-executed",
+          "no-bypass-audit"
+        ],
+        "CEDR-002": [
+          "pass-state",
+          "fail-state",
+          "skip-state",
+          "not-run-state"
+        ],
+        "CEDR-010": [
+          "sampled-lineage-complete",
+          "failure-lineage-preserved"
+        ],
+        "CEDR-011": [
+          "requested-executed-route-preservation"
+        ],
+        "CEDR-012": [
+          "pending-outcome",
+          "timeout-outcome",
+          "rejected-outcome",
+          "acknowledged-outcome",
+          "unknown-outcome"
+        ],
+        "CEDR-020": [
+          "secret-inventory-review"
+        ],
+        "CEDR-021": [
+          "new-credential-accepted",
+          "old-credential-denied",
+          "service-continuity"
+        ],
+        "CEDR-022": [
+          "revoked-credential-denied",
+          "expired-credential-denied"
+        ],
+        "CEDR-023": [
+          "allowed-action",
+          "forbidden-action",
+          "access-review"
+        ],
+        "CEDR-030": [
+          "outage",
+          "recovery",
+          "loss-accounting"
+        ],
+        "CEDR-031": [
+          "duplicate-replay-single-effect"
+        ],
+        "CEDR-032": [
+          "consumer-lag",
+          "overflow",
+          "backpressure-recovery"
+        ],
+        "CEDR-033": [
+          "out-of-order-delivery",
+          "ordering-assumptions-review"
+        ],
+        "CEDR-040": [
+          "operator-incident-reconstruction"
+        ],
+        "CEDR-041": [
+          "alert-delivery",
+          "responder-acknowledgement"
+        ],
+        "CEDR-042": [
+          "evidence-restore",
+          "custody-audit"
+        ],
+        "CEDR-050": [
+          "executed-rollback",
+          "measured-recovery-time"
+        ],
+        "CEDR-051": [
+          "backup-validation",
+          "configuration-restore"
+        ],
+        "CEDR-052": [
+          "named-recovery-owner",
+          "escalation-test"
+        ],
+        "CEDR-101": [
+          "baseline-identity-gap",
+          "alternative-comparison",
+          "rotation",
+          "revocation",
+          "measured-improvement",
+          "verified-rollback"
+        ]
+      }
+    },
+    "azure-aks": {
+      "required_claims": [
+        "CEDR-001",
+        "CEDR-002",
+        "CEDR-010",
+        "CEDR-011",
+        "CEDR-012",
+        "CEDR-020",
+        "CEDR-021",
+        "CEDR-022",
+        "CEDR-023",
+        "CEDR-030",
+        "CEDR-031",
+        "CEDR-032",
+        "CEDR-033",
+        "CEDR-040",
+        "CEDR-041",
+        "CEDR-042",
+        "CEDR-050",
+        "CEDR-051",
+        "CEDR-052",
+        "CEDR-102"
+      ],
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "trust_policy": "cedr-review-policy/1",
+      "reviewers": {},
+      "max_evidence_age_seconds": null,
+      "required_checks": {
+        "CEDR-001": [
+          "required-checks-executed",
+          "assurance-gates-executed",
+          "no-bypass-audit"
+        ],
+        "CEDR-002": [
+          "pass-state",
+          "fail-state",
+          "skip-state",
+          "not-run-state"
+        ],
+        "CEDR-010": [
+          "sampled-lineage-complete",
+          "failure-lineage-preserved"
+        ],
+        "CEDR-011": [
+          "requested-executed-route-preservation"
+        ],
+        "CEDR-012": [
+          "pending-outcome",
+          "timeout-outcome",
+          "rejected-outcome",
+          "acknowledged-outcome",
+          "unknown-outcome"
+        ],
+        "CEDR-020": [
+          "secret-inventory-review"
+        ],
+        "CEDR-021": [
+          "new-credential-accepted",
+          "old-credential-denied",
+          "service-continuity"
+        ],
+        "CEDR-022": [
+          "revoked-credential-denied",
+          "expired-credential-denied"
+        ],
+        "CEDR-023": [
+          "allowed-action",
+          "forbidden-action",
+          "access-review"
+        ],
+        "CEDR-030": [
+          "outage",
+          "recovery",
+          "loss-accounting"
+        ],
+        "CEDR-031": [
+          "duplicate-replay-single-effect"
+        ],
+        "CEDR-032": [
+          "consumer-lag",
+          "overflow",
+          "backpressure-recovery"
+        ],
+        "CEDR-033": [
+          "out-of-order-delivery",
+          "ordering-assumptions-review"
+        ],
+        "CEDR-040": [
+          "operator-incident-reconstruction"
+        ],
+        "CEDR-041": [
+          "alert-delivery",
+          "responder-acknowledgement"
+        ],
+        "CEDR-042": [
+          "evidence-restore",
+          "custody-audit"
+        ],
+        "CEDR-050": [
+          "executed-rollback",
+          "measured-recovery-time"
+        ],
+        "CEDR-051": [
+          "backup-validation",
+          "configuration-restore"
+        ],
+        "CEDR-052": [
+          "named-recovery-owner",
+          "escalation-test"
+        ],
+        "CEDR-102": [
+          "container-apps-baseline",
+          "operational-requirement",
+          "alternatives",
+          "aks-pilot",
+          "measured-improvement",
+          "cost-review",
+          "verified-rollback"
+        ]
+      }
+    }
+  },
+  "claims": [
+    {
+      "claim_id": "CEDR-001",
+      "title": "Trustworthy CI",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Required validation accurately represents release readiness.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-002",
+      "title": "Validation State Integrity",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "PASS, FAIL, SKIP and NOT_RUN remain distinct.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-003",
+      "title": "Hardware Qualification",
+      "owner": null,
+      "status": "UNVERIFIED",
+      "claim": "The declared hardware backend is qualified.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-010",
+      "title": "End-to-End Correlation",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Execution lineage is traceable for the frozen sample and negative controls.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-011",
+      "title": "Requested Route Preservation",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Requested and executed routes remain observable.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-012",
+      "title": "Outcome Integrity",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Submission and acknowledgement remain distinguishable.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-020",
+      "title": "Secret Inventory Completeness",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Operational secrets are inventoried with lifecycle ownership.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-021",
+      "title": "Rotation Qualification",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "New credentials activate, old credentials are rejected and service continues.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-022",
+      "title": "Revocation Qualification",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Revoked credentials cannot operate.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-023",
+      "title": "Least Privilege",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Operational identities hold reviewed minimum privileges.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-030",
+      "title": "Event Delivery Reliability",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Telemetry meets approved delivery and loss-accounting objectives.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-031",
+      "title": "Duplicate Handling",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Replayed events do not cause duplicate authoritative effects.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-032",
+      "title": "Backpressure Qualification",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Load, overflow and recovery remain bounded and predictable.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-033",
+      "title": "Ordering Assumptions",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Ordering requirements are documented and executed.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-040",
+      "title": "Incident Reconstruction",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Operators can reconstruct behavior without source inspection.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-041",
+      "title": "Alert Delivery",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Critical alerts reach accountable responders with acknowledgement.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-042",
+      "title": "Evidence Custody",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Evidence remains retrievable within its retained scope.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-050",
+      "title": "Rollback Qualification",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Rollback meets approved objectives with measured timing.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-051",
+      "title": "Configuration Recovery",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Configuration backup and restoration are demonstrated.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-052",
+      "title": "Recovery Ownership",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Named ownership and escalation are exercised.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-100",
+      "title": "Event Hubs Adoption",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Event Hubs measurably improves a demonstrated transport gap.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-101",
+      "title": "Key Vault Adoption",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "Key Vault measurably improves credential lifecycle outcomes.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    },
+    {
+      "claim_id": "CEDR-102",
+      "title": "AKS Adoption",
+      "owner": null,
+      "status": "PROPOSED",
+      "claim": "AKS justifies its benefit over the current hosting candidate.",
+      "scope": {
+        "environment": null,
+        "backend": null,
+        "hardware": null,
+        "fleet": null,
+        "tested_scenarios": null
+      },
+      "candidate": {
+        "commit_sha": null,
+        "artifact_digest": null,
+        "build_id": null
+      },
+      "evidence": {
+        "evidence_package": null,
+        "package_digest": null,
+        "execution_date": null,
+        "reviewer": null,
+        "retained_until": null
+      },
+      "limitations": {
+        "exclusions": [],
+        "assumptions": [],
+        "unverified_areas": [
+          "Qualification has not been executed for an approved candidate/scope."
+        ]
+      },
+      "decision": {
+        "decision_owner": null,
+        "decision": "cannot_promote",
+        "decision_date": null,
+        "risk_acceptance": null
+      },
+      "freshness": {
+        "last_verified": null,
+        "expiry": null
+      }
+    }
+  ]
+}

@@ -21,6 +21,7 @@ classifiers = [
 dependencies = [
     "numpy>=1.26,<3",
     "pyyaml>=6.0,<7",
+    "cryptography>=46,<51",
     "sympy>=1.12,<2",
     # The virtual quantum computer (in-tree: turing_universal_quantum_computer/)
     # is part of the miner: the Hendrix nonce order and the VQC policy audit.
