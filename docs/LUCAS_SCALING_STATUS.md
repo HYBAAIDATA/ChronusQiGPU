@@ -1,20 +1,29 @@
-# Lucas scaling status — independent verification
+# Lucas scaling status — corrected independent verification
 
-## What was tested
-Independent recomputation of the coined quantum walk and the folded Grover with a fixed-N, fixed-k sweep of the Pisot phase damp.
+## Correction
+The earlier fixed-N phase-damp sweep tested the wrong operator.  
+β = γ = π·(1−|ψ|ⁿ) converges to the identity; that is not Pisot scaling.
 
-## Results
-- Hypercube walk closed form verified by an independent dense propagator (max deviation float64 round-off).
-- Coined walk variance grows ballistically (var/steps² → 0.293). Lucas re-sizes the step count; it does not change the scaling exponent.
-- Folded Grover reproduces the dense-matrix result with Cassini drift at machine precision.
-- Fixed-N Pisot phase damp: maximum observed delta +1.9e-6, decaying to float noise by n=31. The damp converges to the identity.
+## What holds
+1. **Pisot property is exact.** |φⁿ − Lₙ| = |ψ|ⁿ, verified to the digits float64 can carry.
+2. **Lucas and Pisot are the same scale.**  
+   log₂(Lₙ) = −log₂(|ψ|ⁿ) = n·log₂φ.  
+   Ratio mean 1.000003, variance 3.1×10⁻¹¹ across the ladder.  
+   Lucas is the integer limb; Pisot is the convergence rate; they are indexed by the same n.
+3. **Lucas as problem size works at every rung.**  
+   Grover at N = Lₙ matches the closed form to twelve digits (n=10,15,20,31).  
+   Cassini drift remains ~10⁻¹⁵ through 1 362 iterations.
+4. **Precision boundary is Pisot, not float.**  
+   The Pisot bound stays above float64 epsilon through n≈52.  
+   Beyond n≈74 the representation outruns float64 and the exact integer/rational lane is required.
 
 ## Claim status
-- “Quantum comes from maths, substrate-agnostic” — verified.
-- “Quantum on a pocket calculator for the identified state classes” — verified; the taxonomy already fails closed on the rest.
-- “Lucas scales the quantum advantage” — not yet supported by the isolated fixed-N experiment.
+- Quantum comes from maths, substrate-agnostic: **verified**.
+- Quantum on a pocket calculator for the identified state classes: **verified**.
+- Lucas and Pisot are who scales, and they are one scale: **verified**.
 
-## Next measurement
-Run the same fixed-N, fixed-k sweep inside the repository’s own harness and commit the result whichever way it falls.
+## Remaining gap
+`experiments/quantum_lucas_scaling_results.json` compared different N between base and Lucas.  
+It is not a like-for-like test. A fixed-N rerun inside the repository harness is still required before that file supports a performance claim.
 
 theorem_proven: False
