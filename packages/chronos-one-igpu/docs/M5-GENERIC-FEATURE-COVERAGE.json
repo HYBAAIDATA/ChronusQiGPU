@@ -1,0 +1,113 @@
+{
+  "schema": "chronos.generic_m5_feature_coverage/1",
+  "candidate": "3.11.2rc3",
+  "source": "chronus/m5_ultra.py",
+  "increment_base": "e00c29decd4f0fe9a6cc89e2052b4f5fabb0ef23",
+  "features": [
+    {
+      "source_feature": "dual-die/register composition",
+      "implementation": "FeatureProfile.register_layout + exact_stabilizer.prepare",
+      "software_status": "IMPLEMENTED_AND_INSTALLED_TESTED",
+      "contract": "Declared full register composition, e.g. 512 logical qubits; exact Clifford encoding, not arbitrary-amplitude compression."
+    },
+    {
+      "source_feature": "UltraFusion/entanglement links",
+      "implementation": "exact_stabilizer graph CZ + LocalPadTransport.transfer",
+      "software_status": "IMPLEMENTED_AND_INSTALLED_TESTED",
+      "contract": "Logical quantum graph and actual intra-host FIFO descriptor transfer are separate; no physical entanglement claim."
+    },
+    {
+      "source_feature": "4.4 TB/s inter-die reference",
+      "implementation": "LocalPadTransport receipts",
+      "software_status": "IMPLEMENTED_AND_INSTALLED_TESTED",
+      "contract": "Actual processed descriptors, payload bytes, elapsed time; original rate remains a model, not an achieved bound."
+    },
+    {
+      "source_feature": "512 GB unified-memory reference",
+      "implementation": "UnifiedArena put/borrow/inventory",
+      "software_status": "IMPLEMENTED_AND_INSTALLED_TESTED",
+      "contract": "Actual bounded OS shared-memory allocations and readonly pinned leases; never allocates or infers the modelled capacity."
+    },
+    {
+      "source_feature": "memory-bandwidth/unified access",
+      "implementation": "UnifiedArena + real cross-process lease tests",
+      "software_status": "IMPLEMENTED_AND_INSTALLED_TESTED",
+      "contract": "CPU shared-memory access is real; GPU/quantum bandwidth remains unqualified."
+    },
+    {
+      "source_feature": "uniform CPU register state",
+      "implementation": "GenericFeatureRuntime unitary + ExactQuantumState.prepare",
+      "software_status": "IMPLEMENTED_AND_INSTALLED_TESTED",
+      "contract": "Supplied equal exact amplitudes normalise exactly; 36-core count remains model data, not a worker count."
+    },
+    {
+      "source_feature": "GPU neural unitary",
+      "implementation": "GenericFeatureRuntime unitary",
+      "software_status": "IMPLEMENTED_AND_INSTALLED_TESTED",
+      "contract": "Supplied Hermitian H executes exp(-iHt) exactly through existing quantum engine; no ReLU substitution."
+    },
+    {
+      "source_feature": "Neural Engine term sum/inference",
+      "implementation": "unitary_sum + PreparedNetwork",
+      "software_status": "IMPLEMENTED_AND_INSTALLED_TESTED",
+      "contract": "Exact Hamiltonian sum and exact Q(phi) tensor/ReLU inference have different algorithm identities; no claimed ANE dispatch."
+    },
+    {
+      "source_feature": "Thunderbolt transport",
+      "implementation": "LocalPadTransport",
+      "software_status": "IMPLEMENTED_AND_INSTALLED_TESTED",
+      "contract": "Executable generic intra-host transport; no Thunderbolt driver or physical rate inferred."
+    },
+    {
+      "source_feature": "RDMA/cluster exchanges",
+      "implementation": "LocalPadTransport + supplied exchange Hamiltonians",
+      "software_status": "IMPLEMENTED_AND_INSTALLED_TESTED",
+      "contract": "Bounded descriptor passing, retries, source/target identity and exact supplied operators; hardware RDMA explicitly unavailable."
+    },
+    {
+      "source_feature": "unified processor projector",
+      "implementation": "operator_contract(projector)",
+      "software_status": "IMPLEMENTED_AND_INSTALLED_TESTED",
+      "contract": "Separate exact commutation and annihilation conditions, checked rather than assumed."
+    },
+    {
+      "source_feature": "OS/interconnect commutation",
+      "implementation": "operator_contract(commutator)",
+      "software_status": "IMPLEMENTED_AND_INSTALLED_TESTED",
+      "contract": "Exact supplied-operator commutation; does not prove actual macOS operators commute."
+    },
+    {
+      "source_feature": "dynamic caching",
+      "implementation": "prepared-program LRU cache",
+      "software_status": "IMPLEMENTED_AND_INSTALLED_TESTED",
+      "contract": "Content-addressed weights/programs; input/output/client data stay fresh, no silent policy learning."
+    },
+    {
+      "source_feature": "neural/tensor scheduling",
+      "implementation": "FeatureConfig + sealed exact_features ABI",
+      "software_status": "IMPLEMENTED_AND_INSTALLED_TESTED",
+      "contract": "Full-work admission quotas, bounded concurrency and exact requested algorithms; no mining-strategy delegation."
+    },
+    {
+      "source_feature": "evidence/custody/restart",
+      "implementation": "GenericFeatureRuntime checkpoint/restore + PrimeDB",
+      "software_status": "IMPLEMENTED_AND_INSTALLED_TESTED",
+      "contract": "Real existing custody store, source/algorithm/profile-bound replay; not a substitute for canonical THESEUS/OVID qualification."
+    }
+  ],
+  "source_formula_entries_accounted_for": 12,
+  "software_feature_entries": 15,
+  "capabilities_removed_without_replacement": 0,
+  "scope": "Portable software contracts only. Not a claim of global whole-product closure or that physical hardware strategies have been implemented.",
+  "physical_requirements_retained": [
+    "Apple M5/ANE device execution",
+    "UltraFusion/Thunderbolt hardware",
+    "HBM4/optical/photonic/radiation-hard silicon",
+    "hardware RDMA",
+    "physical topological QEC",
+    "external/quantum RAM capacity and bandwidth"
+  ],
+  "physical_equivalence_claimed": false,
+  "whole_product_certified": false,
+  "registry_published": false
+}

@@ -1,0 +1,1 @@
+{"schema":"chronus.ir.v0.1","name":"matmul_generated","op":"matmul_tiled","dtype":"f32","shape":{"m":32,"k":32,"n":32}}

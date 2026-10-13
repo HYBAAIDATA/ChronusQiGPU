@@ -1,0 +1,42 @@
+{
+  "url": "https://app.notion.com/p/2270cdba87ec4cbab7ea2ecb23f65507",
+  "parent": {
+    "type": "dataSource",
+    "url": "collection://eff9356f-3520-4dea-a334-c21ccdc8d24a"
+  },
+  "properties": {
+    "GitHub URL": "https://github.com/QuantumPhiEnterprise/PYTHIPhiMiner/pull/67",
+    "Repository": "QuantumPhiEnterprise/PYTHIPhiMiner",
+    "Head Branch": "feat/chronus-enterprise-production-hardening-20261001",
+    "PR Number": 67,
+    "date:Updated At:start": "2026-10-02T15:09:00.000Z",
+    "date:Updated At:is_datetime": 1,
+    "State": "Merged",
+    "Base Branch": "main",
+    "date:Created At:start": "2026-10-01T17:51:00.000Z",
+    "date:Created At:is_datetime": 1,
+    "date:Closed At:start": "2026-10-02T15:09:00.000Z",
+    "date:Closed At:is_datetime": 1,
+    "Author (GitHub)": "bollingertm",
+    "Description": "\\## Summary<br /><br />Hardens Chronus for evidence-backed enterprise deployment without narrowing its architecture or forcing it into an OpenCL-only model.<br /><br />### Delivery<br />- Preserves two first-class Chronus delivery modes:<br />  - \\*\\*Embedded Chronus\\*\\* inside the customer/container environment.<br />  - \\*\\*Chronus Cloud Instance\\*\\* deployed by HYBA into the customer’s chosen cloud.<br />- No automatic cross-mode fallback or silent placement changes.<br />- Embedded delivery is substrate-neutral and can expose independently verified OpenCL, CUDA and Metal tensor execution paths.<br /><br />### Native execution<br />- Preserves the existing \\`chronus-opencl\\` tensor backend unchanged.<br />- Adds \\`chronus-cuda\\` with Chronus-owned CUDA C kernels for float32 \\`matmul\\`, \\`add\\`, \\`scale\\`, \\`kron\\`, and \\`hadamard\\`.<br />- Adds \\`chronus-metal\\` through MLX/Metal for the same tensor operation contract.<br />- Native paths are lazy, explicit and fail closed; neither silently falls back to OpenCL or CPU.<br />- Existing router priority is preserved; CUDA/Metal are additive execution substrates.<br />- Mining SHA-256d is \\*\\*not\\*\\* relabelled as CUDA/Metal: its existing OpenCL/explicit-CPU evidence boundary remains until separately implemented and verified.<br /><br />### Measurement and provenance<br />- Preserves host NumPy FLOPS and the historical physical OpenCL tensor measurement.<br />- Adds physical CUDA and Metal tensor measurement stages with independent NumPy numerical verification.<br />- Binds measurements to the physical execution-device census/fingerprint instead of conflating the logical Chronus contract identity with execution silicon.<br />- Adds tensor-specific device binding so an unrelated mining/hashrate device cannot satisfy the physical tensor acceptance gate.<br />- \\`--require-device\\` is now substrate-neutral: a verified, device-bound OpenCL, CUDA or Metal tensor path can satisfy it.<br />- Strengthens persisted evidence digest verification and durable HMAC attestation semantics.<br /><br />### Hardware acceptance<br />- Keeps the existing strict hardware gate.<br />- Runs Chronus production measurement alongside it.<br />- Requires a persistent attestation key for client-grade hardware acceptance.<br />- Uploads evidence even when a gate fails, then enforces both outcomes at the end.<br /><br />### Truth boundaries<br />- No OpenCL kernel removed or replaced.<br />- No host benchmark suppressed.<br />- No tensor operation removed.<br />- No mining execution path disabled or throttled.<br />- No CUDA/Metal capability inferred merely from device presence.<br />- No CUDA-generation-specific CuPy wheel is guessed or pinned by the generic image; CUDA deployments must supply a CuPy build compatible with their selected runtime.<br />- No physical CUDA/Metal TFLOPS claim is made until corresponding hardware produces an attested measurement.<br /><br />## Validation state<br /><br />Software contract tests cover native routing, fail-closed behavior, CUDA kernel registration, delivery-mode isolation, numerical verification and execution-device provenance.<br /><br />The repository’s \\`AL HARAS Evidence Gates\\` job is currently failing before any workflow steps/logs are exposed (the observed runs complete in only a few seconds with no step output). This is recorded as an unresolved CI runner/workflow-start condition, not treated as evidence that the Python test suite passed or failed.<br /><br />A complete file/change ledger is maintained in \\`docs/CHRONUS\\_CHANGE\\_LEDGER.md\\`.",
+    "date:Merged At:start": "2026-10-02T15:09:00.000Z",
+    "date:Merged At:is_datetime": 1,
+    "Title": "Chronus: enterprise production hardening, native GPU substrates and explicit delivery modes",
+    "url": "https://app.notion.com/p/2270cdba87ec4cbab7ea2ecb23f65507"
+  },
+  "createdBy": "user://00000000-0000-0000-0000-000000000000",
+  "lastEditedBy": "user://00000000-0000-0000-0000-000000000000",
+  "content": "",
+  "cover": null,
+  "iconMetadata": {
+    "type": "external",
+    "external": {
+      "url": "https://www.notion.so/images/eds/github/github-pull-merged-icon.png"
+    }
+  },
+  "icon": "https://www.notion.so/images/eds/github/github-pull-merged-icon.png",
+  "accessMetadata": {
+    "bucket": "private"
+  },
+  "title": "Chronus: enterprise production hardening, native GPU substrates and explicit delivery modes"
+}

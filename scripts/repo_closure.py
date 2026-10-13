@@ -55,6 +55,7 @@ AGENT_PREFIXES = {
         "emulator/",
         "conformance/",
         "chronus/packages/chronos-one-igpu/",
+        "packages/chronos-one-igpu/",
     ),
     "D": (
         "turing_universal_quantum_computer/",
