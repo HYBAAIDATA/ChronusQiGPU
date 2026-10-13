@@ -84,3 +84,23 @@ The rung may later select the memory-contract envelope. That proposal is unteste
 - Mining is the testing surface, not the product identity.
 
 `theorem_proven` remains `False`.
+
+
+## TOE placement
+
+TOE is the decision authority for lane selection. It is not a per-observation
+telemetry annotator.
+
+The Problem for lane selection is constructed in
+`chronus/mla1517/mining/toe_lane_decision.py`:
+- operators = declared M32 lane orders
+- objective = marked-state probability
+- query = (lane_order, share_yield)
+- uncertain = declared plausible range on the effect
+- reward bound only from real pool responses
+
+The machine returns ACT only when the effect is identified, REFUSED when it
+is not, and ACQUIRE_EVIDENCE when the model is contradicted. The rule-based
+chooser remains the fallback. This is not yet wired into the production
+call graph.
+
