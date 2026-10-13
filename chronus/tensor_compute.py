@@ -727,6 +727,9 @@ class ChronusTensorRuntime:
             kernel = "tensor_matmul_tiled_f32"
             group_limit, local_budget = self._launch_limits(kernel)
             global_size, local_size = _plan_matmul(m, n, group_limit, local_budget)
+            # Scale contract: nearest declared ladder stop inside the hardware bound.
+            # The tile remains a power of two. The envelope is reported, not used as a tile.
+            _ = _ladder_envelope(max(group_limit, local_budget // 4))
             tile = local_size[0]
             event = self.program.tensor_matmul_tiled_f32(
                 self.queue,
