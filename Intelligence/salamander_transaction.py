@@ -68,6 +68,16 @@ class RepairTransaction:
                 return RepairResult("REJECTED", "Symlink targets are not writable")
             if relative.parts[0] not in ("Intelligence", "core_engine", "pythagoras"):
                 return RepairResult("REJECTED", "Target is outside repair scope")
+            if (
+                "tests" in relative.parts
+                or "test" in relative.parts
+                or target.name.startswith("test_")
+                or target.name.endswith("_test.py")
+                or target.name == "conftest.py"
+            ):
+                return RepairResult(
+                    "REJECTED", "Tests and collection configuration require human review"
+                )
             if target.suffix != ".py" or not target.is_file():
                 return RepairResult("REJECTED", "Target must be an existing Python file")
             if candidate == baseline:
