@@ -13,7 +13,7 @@ jobs:
     runs-on: [self-hosted, opencl, '${{ inputs.device_id }}']
     environment: hardware-acceptance
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: {ref: '${{ inputs.commit_sha }}'}
       - id: strict_hardware
         run: MLA1517_STRICT_HARDWARE_CI=1 MLA1517_GPU_BACKEND=opencl make strict-hardware-gate
