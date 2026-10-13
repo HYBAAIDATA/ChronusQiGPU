@@ -36,8 +36,19 @@ evidence surfaces (API payload — NOT the UI panel).
 
 ## Secrets: which pool creds actually work (verified 2026-10-02)
 - `secret:repo:PHIDATA2/PYTHIA:VIABTC_USERNAME` is the literal placeholder
-  `pythia.001` → **rejected** by `startup_contract` fail-closed
-  (`MLA1517_STRATUM_USER must be a real pool worker identity, not a placeholder`).
+  `pythia.001`. Contrary to earlier revisions of this note it **passes**
+  `startup_contract.validate_worker_identity`: it is not a member of
+  `_PLACEHOLDER_WORKERS` (`account.worker`, `your_worker`, `your.worker`,
+  `worker`, `test.worker`), carries no `example.`/`changeme`/`replace_me`
+  prefix, and contains no whitespace.
+  `tests/test_startup_contract.py::test_real_worker_identity_is_preserved`
+  asserts `validate_worker_identity("PYTHIA.001") == "PYTHIA.001"`.
+  The boot gate is therefore **not** the rejector — an unregistered account
+  paired with a placeholder password is rejected by the pool itself.
+  Real boot-time rejectors remain `MLA1517_STRATUM_USER is required`,
+  `MLA1517_STRATUM_ENDPOINT ... is required`, and `ConfigConflict` when the
+  `PYTHIA_STRATUM_WORKER`/`PYTHIA_STRATUM_PASSWORD` aliases disagree with the
+  canonical `MLA1517_*` values.
   Do not use the viabtc profile for a real boot.
 - `secret:repo:PHIDATA2/PYTHIA:BRAIINS_USERNAME`/`BRAIINS_PASSWORD` pass
   validation AND the pool genuinely connects: default catalog endpoint

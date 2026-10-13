@@ -1,0 +1,35 @@
+{
+  "description": "ViaBTC MinerAgent third-party redistributables, untracked from git.",
+  "source": "ViaBTC MinerAgent official distribution (https://www.viabtc.com/ \u2014 Tools / MinerAgent)",
+  "files": {
+    "mineragent-master/linux/btc_mineragent/bin/btc_mineragent-aarch64.exe": {
+      "sha256": "b1a72e249445e4596b1eec0f35f9a44cbda89706c33a59569232954c7190642a",
+      "bytes": 7015040
+    },
+    "mineragent-master/linux/btc_mineragent/bin/btc_mineragent-x86_64.exe": {
+      "sha256": "bff4126345b9dc5a75595b8852062dee9e7fa98f3da6ec6c351775f5b1974bfb",
+      "bytes": 5518248
+    },
+    "mineragent-master/linux/ltc_mineragent/bin/ltc_mineragent-aarch64.exe": {
+      "sha256": "77424c5f1dae51c508127159ffb6b1f39e424ef756de5ec6b69d6df5aca4633c",
+      "bytes": 7018328
+    },
+    "mineragent-master/linux/ltc_mineragent/bin/ltc_mineragent-x86_64.exe": {
+      "sha256": "4781bdc2bbf43ad6c1588eb76673bc66d98d35c9e1a199f5d82ce3993e7a002e",
+      "bytes": 5521992
+    },
+    "mineragent-master/linux/zec_mineragent/bin/zec_mineragent-aarch64.exe": {
+      "sha256": "ee261d0ea02208a07d3409f308b27bfdbeb99e509846bbd89a57b17180ebc038",
+      "bytes": 7540104
+    },
+    "mineragent-master/linux/zec_mineragent/bin/zec_mineragent-x86_64.exe": {
+      "sha256": "477d12a49cebd59c2a5caeae8e3233a4ca0e5dec69e2f28ecbf9509fe48613a7",
+      "bytes": 8139512
+    },
+    "mineragent-master/windows/viabtc_mineragent_gui.exe": {
+      "sha256": "e8bd87037e0819525154bde87c63b3565222d4c686a4ddfa278b453ad65fc7ee",
+      "bytes": 26383360
+    }
+  },
+  "total_bytes": 67136584
+}

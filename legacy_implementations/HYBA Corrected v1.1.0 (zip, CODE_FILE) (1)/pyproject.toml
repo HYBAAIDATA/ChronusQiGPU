@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hyba"
+version = "1.1.0"
+description = "HYBA Infrastructure — φ-Substrate Compute Layer (Corrected)"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "hypothesis>=6.0"]
+numpy = ["numpy>=1.21"]
+
+[tool.setuptools]
+packages = ["hyba"]

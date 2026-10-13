@@ -1,0 +1,3 @@
+// Table supplied by the host and bound by artifact digest; mask uses lo/hi words.
+__kernel void chronus_zeckendorf_encode(__global const ulong*x,__constant ulong*fib,uint count,__global ulong2*out){uint j=get_global_id(0);ulong r=x[j],lo=0,hi=0;for(int i=(int)count-1;i>=1;--i)if(fib[i]<=r){uint b=i-1;if(b<64)lo|=1UL<<b;else hi|=1UL<<(b-64);r-=fib[i];}out[j]=(ulong2)(lo,hi);}
+__kernel void chronus_zeckendorf_decode(__global const ulong2*m,__constant ulong*fib,uint count,__global ulong*out){uint j=get_global_id(0);ulong2 z=m[j];ulong x=0;for(uint b=0;b<count-1;++b)if((b<64?(z.x>>b):(z.y>>(b-64)))&1UL)x+=fib[b+1];out[j]=x;}

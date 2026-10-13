@@ -163,7 +163,10 @@ class EvidenceTests(unittest.TestCase):
         self.evidence()
         with tempfile.NamedTemporaryFile() as outside:
             (self.results / "execution.txt").unlink()
-            (self.results / "execution.txt").symlink_to(outside.name)
+            try:
+                (self.results / "execution.txt").symlink_to(outside.name)
+            except OSError as exc:
+                self.skipTest(f"symlinks require elevated privilege on Windows: {exc}")
             self.assertFalse(self.report()["passed"])
 
     def test_duplicate_result_fails(self):

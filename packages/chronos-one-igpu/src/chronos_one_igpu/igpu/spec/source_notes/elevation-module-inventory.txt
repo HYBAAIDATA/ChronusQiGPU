@@ -1,0 +1,968 @@
+mtheory                           d----
+observability                     d----
+omega                             d----
+opencl                            d----
+packaging                         d----
+pci                               d----
+phi_rotation                      d----
+plugins                           d----
+proofs                            d----
+pythagoras                        d----
+python_backend                    d----
+quantum_compute_substrate         d----
+reports                           d----
+resonance_intelligence            d----
+results                           d----
+runbooks                          d----
+salamander                        d----
+schema                            d----
+scripts                           d----
+services                          d----
+standard                          d----
+tensor                            d----
+tests                             d----
+thermo                            d----
+toe                               d----
+tools                             d----
+turing_universal_quantum_computer d----
+var                               d----
+.dockerignore                     -a---
+.env                              -a---
+.env.example                      -a---
+.flake8                           -a---
+.gitattributes                    -a---
+.gitignore                        -a---
+.gitlab-ci.yml                    -a---
+.gitleaks.toml                    -a---
+.nvmrc                            -a---
+.prettierignore                   -a---
+.prettierrc.json                  -a---
+agent_policy.yml                  -a---
+AGENTS.md                         -a---
+ARCHITECTURE.md                   -a---
+artifacts_benchmark.json          -a---
+CHANGELOG.md                      -a---
+chronus-aethel-review.md          -a---
+claims.yaml                       -a---
+config.example.toml               -a---
+CONTRACTS.md                      -a---
+CONTRIBUTING.md                   -a---
+DEPLOYMENT.md                     -a---
+docker-cleanup.sh                 -a---
+docker-compose.chronus-linux.yml  -a---
+docker-compose.chronus-wsl2.yml   -a---
+docker-compose.cuda.yml           -a---
+docker-compose.hybrid.yml         -a---
+docker-compose.metal.yml          -a---
+docker-compose.override.yml       -a---
+docker-compose.pools.yml          -a---
+docker-compose.rocm.yml           -a---
+docker-compose.yml                -a---
+Dockerfile                        -a---
+Dockerfile.hybrid                 -a---
+euclid_delegation.py              -a---
+EVOLUTION.md                      -a---
+full_merged_head_run.log          -a---
+GEMINI.md                         -a---
+LICENSE                           -a---
+main.py                           -a---
+Makefile                          -a---
+nul                               -a---
+orchestrate.py                    -a---
+orcle.py                          -a---
+package.json                      -a---
+pairings.yaml                     -a---
+pyproject.toml                    -a---
+pytest_full.txt                   -a---
+README_MINING.md                  -a---
+README.md                         -a---
+requirements-lock.txt             -a---
+RESEARCH_INTAKE.md                -a---
+run_tests.py                      -a---
+seam_standard.toml                -a---
+STRICT_QUANTUM_BOUNDARY.md        -a---
+turing_core.py                    -a---
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> git remote -v; echo ---; git status -sb | head -n 5                                                                
+origin  https://github.com/QuantumPhiRedux/PhiMiner.git (fetch)
+origin  https://github.com/QuantumPhiRedux/PhiMiner.git (push)
+---
+head: The term 'head' is not recognized as a name of a cmdlet, function, script file, or executable program.
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> git remote -v
+origin  https://github.com/QuantumPhiRedux/PhiMiner.git (fetch)
+origin  https://github.com/QuantumPhiRedux/PhiMiner.git (push)
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> Get-ChildItem -Force chronos | Select-Object Name, Mode
+
+Name        Mode
+----        ----
+__pycache__ d----
+academic    d----
+__init__.py -a---
+README.md   -a---
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> Get-ChildItem -Force chronus, chronos 2>&1 | Format-Table Name, Mode, Length
+
+Name                         Mode  Length
+----                         ----  ------
+__pycache__                  d---- 
+deploy                       d---- 
+kernels                      d---- 
+measurement                  d---- 
+mla1517                      d---- 
+mla1517_platform             d---- 
+paradigm                     d---- 
+seam                         d---- 
+spec                         d---- 
+v33                          d---- 
+virtual_igpu                 d---- 
+__init__.py                  -a--- 6051
+cell600_bind.py              -a--- 1575
+CIAAS_REQUIREMENTS.md        -a--- 1605
+client.py                    -a--- 1001
+conformance.py               -a--- 33373
+CONVERGENCE_MANIFEST.json    -a--- 8182
+delivery.py                  -a--- 12148
+detect.py                    -a--- 16442
+device.py                    -a--- 12637
+engine.py                    -a--- 26086
+fabric.py                    -a--- 12061
+gpu_capabilities.py          -a--- 21725
+GPU_CAPABILITY_MANIFEST.json -a--- 2855
+gpu_reference.py             -a--- 6079
+h4_600.py                    -a--- 4407
+h4_coverage.py               -a--- 3491
+h4_group.py                  -a--- 3722
+hyba_offering.py             -a--- 10431
+mining_bridge.py             -a--- 11508
+native_hash.py               -a--- 10719
+native_tensor.py             -a--- 17773
+opencl_host.py               -a--- 26845
+PARADIGM.md                  -a--- 11258
+phi_gpu.py                   -a--- 28596
+py.typed                     -a--- 0
+readiness.py                 -a--- 12758
+README.md                    -a--- 32677
+report.py                    -a--- 2768
+runtime.py                   -a--- 6859
+spec.py                      -a--- 6639
+telemetry.py                 -a--- 38794
+tensor_compute.py            -a--- 31226
+__pycache__                  d---- 
+academic                     d---- 
+__init__.py                  -a--- 2428
+README.md                    -a--- 752
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> Get-ChildItem chronus/v33/*.py | Select-Object Name, Length | Sort-Object Name
+
+Name                       Length
+----                       ------
+__init__.py                  1703
+capability_audit.py          2736
+emp.py                      11990
+engine.py                   11698
+evolution_engine.py         11784
+gpu_render.py                6450
+hamiltonian.py               7769
+manifold.py                 10569
+phi_scaling.py              11249
+qsdl_compiler.py            25219
+qsdl_parser.py              26930
+reconstruction.py           32656
+research_reconciliation.py  22071
+research_registry.py         8776
+test_harness.py              3542
+weak_measurement.py          8981
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> p^C                                  
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> python -X utf8 -c "from chronus.readiness import audit_core_surfaces; import json; print(json.dumps([__import__('dataclasses').asdict(g) for g in audit_core_surfaces()], indent=2))"
+[
+  {
+    "name": "virtual_igpu",
+    "passed": true,
+    "detail": "chronus.virtual_igpu: RuntimeDaemon, ChronusClient, ProductMode, ExecutionPolicy"
+  },
+  {
+    "name": "mathematical_engine",
+    "passed": true,
+    "detail": "chronus.v33: ChronosEngine, M32Manifold, QSDLCompiler, HamiltonianLibrary"
+  },
+  {
+    "name": "scale_contract",
+    "passed": true,
+    "detail": "chronus.seam.scale: scale_job, compute_effective_capacity, memory_budget_bytes"
+  },
+  {
+    "name": "measurement",
+    "passed": true,
+    "detail": "chronus.measurement: MeasurementArtifact, measure_chronus, replay_artifact"
+  },
+  {
+    "name": "delivery",
+    "passed": true,
+    "detail": "chronus.delivery: probe_embedded, probe_cloud_instance, ChronusDelivery"
+  }
+]
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> python -X utf8 -c "import chronus; print('chronus OK:', chronus.__file__); import chronus.v33 as v; print('v33 version:', v.__version__); import chronus.virtual_igpu as vi; print('virtual_igpu exports:', len(vi.__all__))"
+chronus OK: C:\Users\andre\Desktop\PYTHIAPhiMiner-main\chronus\__init__.py
+v33 version: 3.3.0
+virtual_igpu exports: 21
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> 
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> </atem:invoke>
+<: The term '<' is not recognized as a name of a cmdlet, function, script file, or executable program.
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+
+[General Feedback]
+  The most similar commands are:
+    ➤ %, ?, h, r
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> </atem:function_calls>
+<: The term '<' is not recognized as a name of a cmdlet, function, script file, or executable program.
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+
+[General Feedback]
+  The most similar commands are:
+    ➤ %, ?, h, r
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> git status --short | head -n 100; echo ---BRANCH---; git branch --show-current; echo ---REV---; git rev-parse HEAD; echo 
+---LOG---; git log --oneline -5
+head: The term 'head' is not recognized as a name of a cmdlet, function, script file, or executable program.
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+---BRANCH---
+feat/kellogg-turing-products
+---REV---
+b7a68a3efa494d9517f0e3250b3d2f85d803cf1a
+---LOG---
+b7a68a3e (HEAD -> feat/kellogg-turing-products) feat(kellogg): guard cost benchmarks, widen Python floor, register new symbols
+d44b8795 chore(legal): name HYBA Software Limited as copyright holder
+33ebe2fa fix(turing): consume Kellogg, correct the surface code, add exact MPS backend
+43848911 feat(kellogg): ship Kellogg as a standalone product (kellogg-tensor 4.0.0)
+9206a492 (feat/chronus-two-mode-production-contract) fix(chronus): align GPU capabil:
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> Get-ChildItem kernels | Format-Table 
+Name,Mode,Length -AutoSize                                                          
+                               
+Name                         Mode  Length
+----                         ----  ------
+__init__.py                  -a---    268
+bitcoin_sha256d.cl           -a---  12566
+golden_ontology_transform.cl -a---   4958
+matmul_tiled.chronus.s       -a---   1665
+reduce_local.chronus.s       -a---    328
+unified_punch_kernel.cl      -a---  19980
+vector_add.chronus.s         -a---    224
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> Get-ChildItem -Force 'c:\Users\andre\Desktop\PYTHIAPhiMiner-main\kernels' | Format-Table Name,Length -AutoSize
+
+Name                         Length
+----                         ------
+__init__.py                     268
+bitcoin_sha256d.cl            12566
+golden_ontology_transform.cl   4958
+matmul_tiled.chronus.s         1665
+reduce_local.chronus.s          328
+unified_punch_kernel.cl       19980
+vector_add.chronus.s            224
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main>   Get-ChildItem -Force kernels -ErrorAction SilentlyContinue | Sort-Object Name | Format-Table Name,Length -AutoSize
+
+Name                         Length
+----                         ------
+__init__.py                     268
+bitcoin_sha256d.cl            12566
+golden_ontology_transform.cl   4958
+matmul_tiled.chronus.s         1665
+reduce_local.chronus.s          328
+unified_punch_kernel.cl       19980
+vector_add.chronus.s            224
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> Get-ChildItem -Force chronus/mla1517/mining -ErrorAction SilentlyContinue | Sort-Object Name | Format-Table Name,Length -AutoSize
+
+Name                       Length
+----                       ------
+__init__.py                  4175
+__pycache__                     1
+agentic_controller.py       28627
+backend_registry.py         23947
+cassini_seal.py              1580
+causal.py                    7762
+chain_observer.py            9305
+chooser.py                   9986
+closed_loop.py              14831
+coordinator.py             138416
+cycle_fsm.py                17499
+decision_journal.py          6167
+dispatch_algebra.py         10170
+euclid_support.py           17748
+execution_router.py         36155
+execution.py                 3058
+geodesic_nonce_planner.py    4493
+geodesic_support.py         34898
+geometry.py                 13391
+h4_600_execution.py         10307
+hashrate_governor.py         7817
+hendrix_order.py             2529
+hyba_bridge.py               4255
+hyba_intelligence.py        11037
+intelligence_controller.py  10919
+intelligence_memory.py       4888
+lane.py                      5549
+loss_ledger.py               4921
+m3_coordinator.py           12459
+nonce_lease.py              12186
+opencl_driver.py            12570
+operating_policy.py         14101
+persistence.py               6790
+poincare_11d_order.py        3198
+policy_audit.py              6674
+pool_chain.py                3591
+pow.py                       3498
+production_integration.py    9380
+production_transport.py     28122
+promotion.py                 7221
+pythia_agentic_cycle.py     19844
+pythia_authority.py         22024
+pythia_search.py            24805
+quality.py                   4075
+recovery_authority.py       10477
+recovery_effect.py           3204
+retarget_telemetry.py       11816
+scale_state.py               7174
+search_plan.py              22297
+self_healing_agent.py       15146
+self_optimizing_agent.py     9736
+session.py                  19083
+software_revision.py         1314
+solver.py                    9914
+storage_recorder.py         26275
+stratum_adapter.py          17122
+stratum_events.py            5079
+stratum_state.py            15068
+structure.py                 1938
+telemetry_history.py         5548
+toe_adapter.py               5045
+toe_capabilities.py         12574
+toe_context.py               5070
+toe_decision.py             13193
+toe_signal.py               16453
+toe_unified.py              31383
+tuning_gate.py               5433
+turing_adapter.py            4534
+verification.py              2733
+workflow.py                  4702
+world_model.py              17239
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> Get-ChildItem -Force chronus/mla1517/mining -ErrorAction SilentlyContinue | Sort-Object Name | Format-Table Name,Length -AutoSize
+
+Name                       Length
+----                       ------
+__init__.py                  4175
+__pycache__                     1
+agentic_controller.py       28627
+backend_registry.py         23947
+cassini_seal.py              1580
+causal.py                    7762
+chain_observer.py            9305
+chooser.py                   9986
+closed_loop.py              14831
+coordinator.py             138416
+cycle_fsm.py                17499
+decision_journal.py          6167
+dispatch_algebra.py         10170
+euclid_support.py           17748
+execution_router.py         36155
+execution.py                 3058
+geodesic_nonce_planner.py    4493
+geodesic_support.py         34898
+geometry.py                 13391
+h4_600_execution.py         10307
+hashrate_governor.py         7817
+hendrix_order.py             2529
+hyba_bridge.py               4255
+hyba_intelligence.py        11037
+intelligence_controller.py  10919
+intelligence_memory.py       4888
+lane.py                      5549
+loss_ledger.py               4921
+m3_coordinator.py           12459
+nonce_lease.py              12186
+opencl_driver.py            12570
+operating_policy.py         14101
+persistence.py               6790
+poincare_11d_order.py        3198
+policy_audit.py              6674
+pool_chain.py                3591
+pow.py                       3498
+production_integration.py    9380
+production_transport.py     28122
+promotion.py                 7221
+pythia_agentic_cycle.py     19844
+pythia_authority.py         22024
+pythia_search.py            24805
+quality.py                   4075
+recovery_authority.py       10477
+recovery_effect.py           3204
+retarget_telemetry.py       11816
+scale_state.py               7174
+search_plan.py              22297
+self_healing_agent.py       15146
+self_optimizing_agent.py     9736
+session.py                  19083
+software_revision.py         1314
+solver.py                    9914
+storage_recorder.py         26275
+stratum_adapter.py          17122
+stratum_events.py            5079
+stratum_state.py            15068
+structure.py                 1938
+telemetry_history.py         5548
+toe_adapter.py               5045
+toe_capabilities.py         12574
+toe_context.py               5070
+toe_decision.py             13193
+toe_signal.py               16453
+toe_unified.py              31383
+tuning_gate.py               5433
+turing_adapter.py            4534
+verification.py              2733
+workflow.py                  4702
+world_model.py              17239
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> Get-ChildItem -Force chronus/mla1517/mining | Sort-Object Name | Format-Table Name, Length -AutoSize              
+
+Name                       Length
+----                       ------
+__init__.py                  4175
+__pycache__                     1
+agentic_controller.py       28627
+backend_registry.py         23947
+cassini_seal.py              1580
+causal.py                    7762
+chain_observer.py            9305
+chooser.py                   9986
+closed_loop.py              14831
+coordinator.py             138416
+cycle_fsm.py                17499
+decision_journal.py          6167
+dispatch_algebra.py         10170
+euclid_support.py           17748
+execution_router.py         36155
+execution.py                 3058
+geodesic_nonce_planner.py    4493
+geodesic_support.py         34898
+geometry.py                 13391
+h4_600_execution.py         10307
+hashrate_governor.py         7817
+hendrix_order.py             2529
+hyba_bridge.py               4255
+hyba_intelligence.py        11037
+intelligence_controller.py  10919
+intelligence_memory.py       4888
+lane.py                      5549
+loss_ledger.py               4921
+m3_coordinator.py           12459
+nonce_lease.py              12186
+opencl_driver.py            12570
+operating_policy.py         14101
+persistence.py               6790
+poincare_11d_order.py        3198
+policy_audit.py              6674
+pool_chain.py                3591
+pow.py                       3498
+production_integration.py    9380
+production_transport.py     28122
+promotion.py                 7221
+pythia_agentic_cycle.py     19844
+pythia_authority.py         22024
+pythia_search.py            24805
+quality.py                   4075
+recovery_authority.py       10477
+recovery_effect.py           3204
+retarget_telemetry.py       11816
+scale_state.py               7174
+search_plan.py              22297
+self_healing_agent.py       15146
+self_optimizing_agent.py     9736
+session.py                  19083
+software_revision.py         1314
+solver.py                    9914
+storage_recorder.py         26275
+stratum_adapter.py          17122
+stratum_events.py            5079
+stratum_state.py            15068
+structure.py                 1938
+telemetry_history.py         5548
+toe_adapter.py               5045
+toe_capabilities.py         12574
+toe_context.py               5070
+toe_decision.py             13193
+toe_signal.py               16453
+toe_unified.py              31383
+tuning_gate.py               5433
+turing_adapter.py            4534
+verification.py              2733
+workflow.py                  4702
+world_model.py              17239
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> Get-ChildItem -Force chronus/mla1517/mining -ErrorAction SilentlyContinue | Sort-Object Name | Format-Table Name, Length 
+-AutoSize
+
+Name                       Length
+----                       ------
+__init__.py                  4175
+__pycache__                     1
+agentic_controller.py       28627
+backend_registry.py         23947
+cassini_seal.py              1580
+causal.py                    7762
+chain_observer.py            9305
+chooser.py                   9986
+closed_loop.py              14831
+coordinator.py             138416
+cycle_fsm.py                17499
+decision_journal.py          6167
+dispatch_algebra.py         10170
+euclid_support.py           17748
+execution_router.py         36155
+execution.py                 3058
+geodesic_nonce_planner.py    4493
+geodesic_support.py         34898
+geometry.py                 13391
+h4_600_execution.py         10307
+hashrate_governor.py         7817
+hendrix_order.py             2529
+hyba_bridge.py               4255
+hyba_intelligence.py        11037
+intelligence_controller.py  10919
+intelligence_memory.py       4888
+lane.py                      5549
+loss_ledger.py               4921
+m3_coordinator.py           12459
+nonce_lease.py              12186
+opencl_driver.py            12570
+operating_policy.py         14101
+persistence.py               6790
+poincare_11d_order.py        3198
+policy_audit.py              6674
+pool_chain.py                3591
+pow.py                       3498
+production_integration.py    9380
+production_transport.py     28122
+promotion.py                 7221
+pythia_agentic_cycle.py     19844
+pythia_authority.py         22024
+pythia_search.py            24805
+quality.py                   4075
+recovery_authority.py       10477
+recovery_effect.py           3204
+retarget_telemetry.py       11816
+scale_state.py               7174
+search_plan.py              22297
+self_healing_agent.py       15146
+self_optimizing_agent.py     9736
+session.py                  19083
+software_revision.py         1314
+solver.py                    9914
+storage_recorder.py         26275
+stratum_adapter.py          17122
+stratum_events.py            5079
+stratum_state.py            15068
+structure.py                 1938
+telemetry_history.py         5548
+toe_adapter.py               5045
+toe_capabilities.py         12574
+toe_context.py               5070
+toe_decision.py             13193
+toe_signal.py               16453
+toe_unified.py              31383
+tuning_gate.py               5433
+turing_adapter.py            4534
+verification.py              2733
+workflow.py                  4702
+world_model.py              17239
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> Get-ChildItem -Force chronus/mla1517/mining -ErrorAction SilentlyContinue | Sort-Object Name | Format-Table Name, Length 
+-AutoSize
+
+Name                       Length
+----                       ------
+__init__.py                  4175
+__pycache__                     1
+agentic_controller.py       28627
+backend_registry.py         23947
+cassini_seal.py              1580
+causal.py                    7762
+chain_observer.py            9305
+chooser.py                   9986
+closed_loop.py              14831
+coordinator.py             138416
+cycle_fsm.py                17499
+decision_journal.py          6167
+dispatch_algebra.py         10170
+euclid_support.py           17748
+execution_router.py         36155
+execution.py                 3058
+geodesic_nonce_planner.py    4493
+geodesic_support.py         34898
+geometry.py                 13391
+h4_600_execution.py         10307
+hashrate_governor.py         7817
+hendrix_order.py             2529
+hyba_bridge.py               4255
+hyba_intelligence.py        11037
+intelligence_controller.py  10919
+intelligence_memory.py       4888
+lane.py                      5549
+loss_ledger.py               4921
+m3_coordinator.py           12459
+nonce_lease.py              12186
+opencl_driver.py            12570
+operating_policy.py         14101
+persistence.py               6790
+poincare_11d_order.py        3198
+policy_audit.py              6674
+pool_chain.py                3591
+pow.py                       3498
+production_integration.py    9380
+production_transport.py     28122
+promotion.py                 7221
+pythia_agentic_cycle.py     19844
+pythia_authority.py         22024
+pythia_search.py            24805
+quality.py                   4075
+recovery_authority.py       10477
+recovery_effect.py           3204
+retarget_telemetry.py       11816
+scale_state.py               7174
+search_plan.py              22297
+self_healing_agent.py       15146
+self_optimizing_agent.py     9736
+session.py                  19083
+software_revision.py         1314
+solver.py                    9914
+storage_recorder.py         26275
+stratum_adapter.py          17122
+stratum_events.py            5079
+stratum_state.py            15068
+structure.py                 1938
+telemetry_history.py         5548
+toe_adapter.py               5045
+toe_capabilities.py         12574
+toe_context.py               5070
+toe_decision.py             13193
+toe_signal.py               16453
+toe_unified.py              31383
+tuning_gate.py               5433
+turing_adapter.py            4534
+verification.py              2733
+workflow.py                  4702
+world_model.py              17239
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> git --no-pager rev-parse --short HEAD                                                                              
+00bc8611
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> Get-ChildItem -Force chronus/mla1517/mining | Sort-Object Name | Format-Table Name, Length -AutoSize
+
+Name                       Length
+----                       ------
+__init__.py                  4175
+__pycache__                     1
+agentic_controller.py       28627
+backend_registry.py         23947
+cassini_seal.py              1580
+causal.py                    7762
+chain_observer.py            9305
+chooser.py                   9986
+closed_loop.py              14831
+coordinator.py             138416
+cycle_fsm.py                17499
+decision_journal.py          6167
+dispatch_algebra.py         10170
+euclid_support.py           17748
+execution_router.py         36155
+execution.py                 3058
+geodesic_nonce_planner.py    4493
+geodesic_support.py         34898
+geometry.py                 13391
+h4_600_execution.py         10307
+hashrate_governor.py         7817
+hendrix_order.py             2529
+hyba_bridge.py               4255
+hyba_intelligence.py        11037
+intelligence_controller.py  10919
+intelligence_memory.py       4888
+lane.py                      5549
+loss_ledger.py               4921
+m3_coordinator.py           12459
+nonce_lease.py              12186
+opencl_driver.py            12570
+operating_policy.py         14101
+persistence.py               6790
+poincare_11d_order.py        3198
+policy_audit.py              6674
+pool_chain.py                3591
+pow.py                       3498
+production_integration.py    9380
+production_transport.py     28122
+promotion.py                 7221
+pythia_agentic_cycle.py     19844
+pythia_authority.py         22024
+pythia_search.py            24805
+quality.py                   4075
+recovery_authority.py       10477
+recovery_effect.py           3204
+retarget_telemetry.py       11816
+scale_state.py               7174
+search_plan.py              22297
+self_healing_agent.py       15146
+self_optimizing_agent.py     9736
+session.py                  19083
+software_revision.py         1314
+solver.py                    9914
+storage_recorder.py         26275
+stratum_adapter.py          17122
+stratum_events.py            5079
+stratum_state.py            15068
+structure.py                 1938
+telemetry_history.py         5548
+toe_adapter.py               5045
+toe_capabilities.py         12574
+toe_context.py               5070
+toe_decision.py             13193
+toe_signal.py               16453
+toe_unified.py              31383
+tuning_gate.py               5433
+turing_adapter.py            4534
+verification.py              2733
+workflow.py                  4702
+world_model.py              17239
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> Get-ChildItem -Force chronus/mla1517/mining -ErrorAction SilentlyContinue | Sort-Object Name | Format-Table Name, Length 
+-AutoSize
+
+Name                       Length
+----                       ------
+__init__.py                  4175
+__pycache__                     1
+agentic_controller.py       28627
+backend_registry.py         23947
+cassini_seal.py              1580
+causal.py                    7762
+chain_observer.py            9305
+chooser.py                   9986
+closed_loop.py              14831
+coordinator.py             138416
+cycle_fsm.py                17499
+decision_journal.py          6167
+dispatch_algebra.py         10170
+euclid_support.py           17748
+execution_router.py         36155
+execution.py                 3058
+geodesic_nonce_planner.py    4493
+geodesic_support.py         34898
+geometry.py                 13391
+h4_600_execution.py         10307
+hashrate_governor.py         7817
+hendrix_order.py             2529
+hyba_bridge.py               4255
+hyba_intelligence.py        11037
+intelligence_controller.py  10919
+intelligence_memory.py       4888
+lane.py                      5549
+loss_ledger.py               4921
+m3_coordinator.py           12459
+nonce_lease.py              12186
+opencl_driver.py            12570
+operating_policy.py         14101
+persistence.py               6790
+poincare_11d_order.py        3198
+policy_audit.py              6674
+pool_chain.py                3591
+pow.py                       3498
+production_integration.py    9380
+production_transport.py     28122
+promotion.py                 7221
+pythia_agentic_cycle.py     19844
+pythia_authority.py         22024
+pythia_search.py            24805
+quality.py                   4075
+recovery_authority.py       10477
+recovery_effect.py           3204
+retarget_telemetry.py       11816
+scale_state.py               7174
+search_plan.py              22297
+self_healing_agent.py       15146
+self_optimizing_agent.py     9736
+session.py                  19083
+software_revision.py         1314
+solver.py                    9914
+storage_recorder.py         26275
+stratum_adapter.py          17122
+stratum_events.py            5079
+stratum_state.py            15068
+structure.py                 1938
+telemetry_history.py         5548
+toe_adapter.py               5045
+toe_capabilities.py         12574
+toe_context.py               5070
+toe_decision.py             13193
+toe_signal.py               16453
+toe_unified.py              31383
+tuning_gate.py               5433
+turing_adapter.py            4534
+verification.py              2733
+workflow.py                  4702
+world_model.py              17239
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> Get-ChildItem -Force chronus/mla1517/mining | Sort-Object Name | Format-Table Name,Length -AutoSize
+
+Name                       Length
+----                       ------
+__init__.py                  4175
+__pycache__                     1
+agentic_controller.py       28627
+backend_registry.py         23947
+cassini_seal.py              1580
+causal.py                    7762
+chain_observer.py            9305
+chooser.py                   9986
+closed_loop.py              14831
+coordinator.py             138416
+cycle_fsm.py                17499
+decision_journal.py          6167
+dispatch_algebra.py         10170
+euclid_support.py           17748
+execution_router.py         36155
+execution.py                 3058
+geodesic_nonce_planner.py    4493
+geodesic_support.py         34898
+geometry.py                 13391
+h4_600_execution.py         10307
+hashrate_governor.py         7817
+hendrix_order.py             2529
+hyba_bridge.py               4255
+hyba_intelligence.py        11037
+intelligence_controller.py  10919
+intelligence_memory.py       4888
+lane.py                      5549
+loss_ledger.py               4921
+m3_coordinator.py           12459
+nonce_lease.py              12186
+opencl_driver.py            12570
+operating_policy.py         14101
+persistence.py               6790
+poincare_11d_order.py        3198
+policy_audit.py              6674
+pool_chain.py                3591
+pow.py                       3498
+production_integration.py    9380
+production_transport.py     28122
+promotion.py                 7221
+pythia_agentic_cycle.py     19844
+pythia_authority.py         22024
+pythia_search.py            24805
+quality.py                   4075
+recovery_authority.py       10477
+recovery_effect.py           3204
+retarget_telemetry.py       11816
+scale_state.py               7174
+search_plan.py              22297
+self_healing_agent.py       15146
+self_optimizing_agent.py     9736
+session.py                  19083
+software_revision.py         1314
+solver.py                    9914
+storage_recorder.py         26275
+stratum_adapter.py          17122
+stratum_events.py            5079
+stratum_state.py            15068
+structure.py                 1938
+telemetry_history.py         5548
+toe_adapter.py               5045
+toe_capabilities.py         12574
+toe_context.py               5070
+toe_decision.py             13193
+toe_signal.py               16453
+toe_unified.py              31383
+tuning_gate.py               5433
+turing_adapter.py            4534
+verification.py              2733
+workflow.py                  4702
+world_model.py              17239
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> Get-ChildItem -Force chronus/mla1517/mining -ErrorAction SilentlyContinue | Sort-Object Name | Format-Table Name, Length 
+-AutoSize
+
+Name                       Length
+----                       ------
+__init__.py                  4175
+__pycache__                     1
+agentic_controller.py       28627
+backend_registry.py         23947
+cassini_seal.py              1580
+causal.py                    7762
+chain_observer.py            9305
+chooser.py                   9986
+closed_loop.py              14831
+coordinator.py             138416
+cycle_fsm.py                17499
+decision_journal.py          6167
+dispatch_algebra.py         10170
+euclid_support.py           17748
+execution_router.py         36155
+execution.py                 3058
+geodesic_nonce_planner.py    4493
+geodesic_support.py         34898
+geometry.py                 13391
+h4_600_execution.py         10307
+hashrate_governor.py         7817
+hendrix_order.py             2529
+hyba_bridge.py               4255
+hyba_intelligence.py        11037
+intelligence_controller.py  10919
+intelligence_memory.py       4888
+lane.py                      5549
+loss_ledger.py               4921
+m3_coordinator.py           12459
+nonce_lease.py              12186
+opencl_driver.py            12570
+operating_policy.py         14101
+persistence.py               6790
+poincare_11d_order.py        3198
+policy_audit.py              6674
+pool_chain.py                3591
+pow.py                       3498
+production_integration.py    9380
+production_transport.py     28122
+promotion.py                 7221
+pythia_agentic_cycle.py     19844
+pythia_authority.py         22024
+pythia_search.py            24805
+quality.py                   4075
+recovery_authority.py       10477
+recovery_effect.py           3204
+retarget_telemetry.py       11816
+scale_state.py               7174
+search_plan.py              22297
+self_healing_agent.py       15146
+self_optimizing_agent.py     9736
+session.py                  19083
+software_revision.py         1314
+solver.py                    9914
+storage_recorder.py         26275
+stratum_adapter.py          17122
+stratum_events.py            5079
+stratum_state.py            15068
+structure.py                 1938
+telemetry_history.py         5548
+toe_adapter.py               5045
+toe_capabilities.py         12574
+toe_context.py               5070
+toe_decision.py             13193
+toe_signal.py               16453
+toe_unified.py              31383
+tuning_gate.py               5433
+turing_adapter.py            4534
+verification.py              2733
+workflow.py                  4702
+world_model.py              17239
+
+PS C:\Users\andre\Desktop\PYTHIAPhiMiner-main> 
