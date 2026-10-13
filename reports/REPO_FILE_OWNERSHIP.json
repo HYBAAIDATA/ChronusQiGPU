@@ -6,7 +6,7 @@
     "D": 439,
     "E": 115,
     "F": 184,
-    "G": 294,
+    "G": 297,
     "H": 1813
   },
   "files": {
@@ -18505,6 +18505,27 @@
       "rule": "G:integrations/"
     },
     "integrations/agi_external/__init__.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
+    "integrations/agi_external/boundary.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
+    "integrations/agi_external/tests/test_boundary.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
+    "integrations/agi_external/tests/test_external_agi.py": {
       "owner": "G",
       "owners": [
         "G"
@@ -38009,7 +38030,7 @@
   },
   "multi_owned_files": [],
   "schema_version": 1,
-  "source_sha": "f74d80bd7b3e640f601ce68eb95a0fb83f356572",
-  "tracked_file_count": 5428,
+  "source_sha": "454c815490eda326624c3cc82c668efe2e4d453e",
+  "tracked_file_count": 5431,
   "unowned_files": []
 }
