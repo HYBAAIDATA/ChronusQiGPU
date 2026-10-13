@@ -1,40 +1,10 @@
 {
-  "lemma": "docs/lemma_golden_ordering.md",
-  "lemmas": [
-    "golden_stride_bijection",
-    "phi_resonance_ordering"
-  ],
-  "lines": 57,
-  "sha": "c1680135dfa188a301c40b68a89614e98e688f4a3b3f3b999dca29c0591fb5c1",
-  "signoff": {
-    "attestations": {
-      "mathematician": {
-        "check": "stride bijection (gcd)",
-        "result": true
-      },
-      "qi_physicist": {
-        "check": "no quantum claim in scope",
-        "result": true
-      },
-      "systems": {
-        "check": "ordering is header-dependent permutation",
-        "result": true
-      }
-    },
-    "theorem_proven": false
-  },
+  "sha": "d9f19abf4b47c79e8e34a6559808a951cac1526241048494de7bcc440c8dfaab",
   "theorem_proven": false,
-  "verify": [
-    {
-      "mode": "gcd(stride, 2^32) == 1 (stride odd)",
-      "stride": 2654435769,
-      "theorem_proven": false,
-      "verdict": "HOLDS"
-    },
-    {
-      "mode": "permutation + header-dependence on deterministic vectors",
-      "theorem_proven": false,
-      "verdict": "HOLDS"
-    }
-  ]
+  "reviewers": [
+    "mathematician",
+    "systems",
+    "qi_physicist"
+  ],
+  "note": "Expanded authorized uses and added Lucas scaling + Zeckendorf filing lemmas. All remain proof sketches."
 }

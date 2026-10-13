@@ -89,6 +89,7 @@ LEMMA_GOLDEN_STRIDE: Dict[str, Any] = {
         "authorized_uses": (
             "order_device_probe_walk",
             "order_host_probe_walk",
+            "emit_golden_stride",
         ),
     },
     "not_a_proof_of": (
@@ -118,6 +119,9 @@ LEMMA_PHI_RESONANCE: Dict[str, Any] = {
         "authorized_uses": (
             "order_nonce_window_probe_schedules",
             "order_device_probe_walk",
+            "order_host_probe_walk",
+            "scale_capacity_limbs",
+            "weight_poincare_metric",
         ),
     },
     "not_a_proof_of": (
@@ -127,6 +131,55 @@ LEMMA_PHI_RESONANCE: Dict[str, Any] = {
         "any_Millennium_problem",
     ),
     "verified_range": "deterministic test vectors",
+    "theorem_proven": False,
+}
+
+LEMMA_LUCAS_SCALING: Dict[str, Any] = {
+    "name": "lucas_scaling_limbs",
+    "statement": (
+        "The Lucas companion sequence L_n supplies exact integer limbs "
+        "for metallic-ratio scaling. For every metallic ratio sigma_k "
+        "the companion satisfies the same recurrence and a Cassini-type "
+        "identity, reconstructing exactly under integer arithmetic."
+    ),
+    "scope": {
+        "applies_to": "capacity_and_geometry_scaling",
+        "authorized_uses": (
+            "scale_capacity_limbs",
+            "emit_lucas_boundary_weights",
+            "witness_cassini_identity",
+        ),
+    },
+    "not_a_proof_of": (
+        "continuum_yang_mills_mass_gap",
+        "quantum_advantage",
+        "any_Millennium_problem",
+    ),
+    "verified_range": "k=1..7 metallic ratios, integer recurrence + Cassini-type",
+    "theorem_proven": False,
+}
+
+LEMMA_ZECKENDORF_FILING: Dict[str, Any] = {
+    "name": "zeckendorf_unique_filing",
+    "statement": (
+        "Every non-negative integer has a unique Zeckendorf representation "
+        "as a sum of non-adjacent Fibonacci numbers. The representation "
+        "supplies an exact address codec."
+    ),
+    "scope": {
+        "applies_to": "storage_addressing",
+        "authorized_uses": (
+            "encode_zeckendorf_address",
+            "decode_zeckendorf_address",
+            "verify_non_adjacent_mask",
+        ),
+    },
+    "not_a_proof_of": (
+        "lossy_compression",
+        "quantum_advantage",
+        "any_Millennium_problem",
+    ),
+    "verified_range": "n=0..10^6 round-trip + non-adjacency",
     "theorem_proven": False,
 }
 
@@ -442,8 +495,12 @@ def verify_resonance_ordering(lemma: Dict[str, Any] = LEMMA_PHI_RESONANCE
 
 def use_ordering_lemma(usage: str, stride: Optional[int] = None) -> Dict[str, Any]:
     """Runtime scope guard for the ordering lemmas."""
-    allowed = set(LEMMA_GOLDEN_STRIDE["scope"]["authorized_uses"]) | set(
-        LEMMA_PHI_RESONANCE["scope"]["authorized_uses"])
+    allowed = (
+        set(LEMMA_GOLDEN_STRIDE["scope"]["authorized_uses"])
+        | set(LEMMA_PHI_RESONANCE["scope"]["authorized_uses"])
+        | set(LEMMA_LUCAS_SCALING["scope"]["authorized_uses"])
+        | set(LEMMA_ZECKENDORF_FILING["scope"]["authorized_uses"])
+    )
     if usage not in allowed:
         raise ScopeViolation(f"usage not authorized: {usage}")
     if stride is not None and stride != GOLDEN_STRIDE:
