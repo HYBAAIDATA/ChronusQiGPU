@@ -29,6 +29,15 @@ intelligence is a consumer of those contracts, not their owner.
 
 ---
 
+
+## Dispatch geometry
+
+The work-group planner selects the largest power-of-two tile that fits the
+device limits and halves down. It does not start at a fixed constant and only
+descend. Lucas/Pisot remains the scale model for capacity and precision; it
+does not replace the hardware-bound tile selection. The rung may later select
+the memory-contract envelope; that proposal is untested.
+
 ## The paradigm in one card
 
 | # | Law |
