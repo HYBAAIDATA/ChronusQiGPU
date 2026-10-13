@@ -139,8 +139,9 @@ LEMMA_LUCAS_SCALING: Dict[str, Any] = {
     "statement": (
         "The Lucas companion sequence L_n supplies exact integer limbs "
         "for metallic-ratio scaling. For every metallic ratio sigma_k "
-        "the companion satisfies the same recurrence and a Cassini-type "
-        "identity, reconstructing exactly under integer arithmetic."
+        "the companion satisfies L_n = k*L_{n-1} + L_{n-2} (L_0=2, L_1=k) "
+        "and the Cassini-type identity L_n^2 - L_{n-1}*L_{n+1} = (k^2+4)*(-1)^n, "
+        "reconstructing exactly under integer arithmetic."
     ),
     "scope": {
         "applies_to": "capacity_and_geometry_scaling",
