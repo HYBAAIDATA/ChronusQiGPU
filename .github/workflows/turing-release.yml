@@ -78,7 +78,7 @@ jobs:
         run: test -n "${{ inputs.kellogg_release_run_id }}"
       - name: Consume exact KELLOGG archives, never rebuild the published dependency
         if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: kellogg-tensor-verified-release
           run-id: ${{ inputs.kellogg_release_run_id }}
@@ -129,11 +129,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: kellogg-1.0.0-release
           path: release/kellogg
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: turing-1.0.0-release
           path: release/turing
@@ -163,7 +163,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: kellogg-1.0.0-release
           path: release/kellogg
@@ -262,19 +262,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.RC_SHA }}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: kellogg-1.0.0-release
           path: evidence/kellogg
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: turing-1.0.0-release
           path: evidence/turing
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: turing-installed-*
           path: evidence/installed
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: turing-source-gate
           path: evidence/source
@@ -373,13 +373,13 @@ jobs:
       with:
         ref: ${{ env.RC_SHA }}
     - run: test -n "${{ inputs.kellogg_release_run_id }}"
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: kellogg-final-publication
         path: kellogg-final
         run-id: ${{ inputs.kellogg_release_run_id }}
         github-token: ${{ github.token }}
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: kellogg-1.0.0-release
         path: release/kellogg
@@ -419,11 +419,11 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: ${{ env.RC_SHA }}
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: turing-1.0.0-release
         path: release
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: turing-release-verdict
         path: release
@@ -465,15 +465,15 @@ jobs:
     - uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python }}
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: turing-1.0.0-release
         path: release
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: turing-release-verdict
         path: release
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: kellogg-1.0.0-release
         path: release/kellogg
@@ -494,15 +494,15 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: ${{ env.RC_SHA }}
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: turing-1.0.0-release
         path: release
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: turing-release-verdict
         path: release
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         pattern: turing-testpypi-smoke-*
         path: receipts
@@ -532,15 +532,15 @@ jobs:
     - uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python }}
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: turing-1.0.0-release
         path: release
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: turing-release-verdict
         path: release
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: kellogg-1.0.0-release
         path: release/kellogg
@@ -561,15 +561,15 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: ${{ env.RC_SHA }}
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: turing-1.0.0-release
         path: release
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: turing-release-verdict
         path: release
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         pattern: turing-pypi-smoke-*
         path: receipts
@@ -593,15 +593,15 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: ${{ env.RC_SHA }}
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: turing-1.0.0-release
         path: release
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: turing-release-verdict
         path: release
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: turing-testpypi-verified
         path: promotion
@@ -646,23 +646,23 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: ${{ env.RC_SHA }}
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: turing-1.0.0-release
         path: release
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: turing-release-verdict
         path: release
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: turing-pypi-verified
         path: final
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: turing-testpypi-verified
         path: test
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         pattern: turing-*-smoke-*
         path: execution-logs
