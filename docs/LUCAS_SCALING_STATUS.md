@@ -22,3 +22,24 @@ Lucas and Pisot share one exponent, \(n\cdot\log_2\phi\). That exponent is the s
 That any of the above reduces the iteration count of a fixed search problem.
 
 theorem_proven: False
+
+## Selective scaling (independent verification)
+
+The constancy test (log₂(quantity) / (n·log₂φ) constant across the ladder) has discriminating power.
+
+**Constant (golden-generated exponential):**
+- Lucas capacity
+- Pisot precision (ratio 0.720210)
+- Qubit state dimension 2ⁿ
+- Grover iterations √N (same ratio 0.720210)
+
+**Not constant (correctly fails):**
+- Fibonacci capacity (slow convergence)
+- Stabilizer tableau 2n²
+- Linear, bounded, and cubic controls
+
+**Lock.** Pisot precision and Grover iteration count share the ratio 0.720210. Representation precision and the iteration count of a square-root search are locked to the same golden exponent.
+
+**Hardware.** The ladder ratios do not contain 12.5×. An 8→100 device-count claim is not derivable from the rungs.
+
+**Intelligence.** The repository already states that the Lucas ladder is an observable, monotonic complexity ladder, not a claim that multiplication produces intelligence.
