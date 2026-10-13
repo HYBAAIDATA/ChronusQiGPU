@@ -104,3 +104,13 @@ is not, and ACQUIRE_EVIDENCE when the model is contradicted. The rule-based
 chooser remains the fallback. This is not yet wired into the production
 call graph.
 
+
+
+## Scale model is consulted
+
+The dispatch planner reports the nearest declared ladder stop inside the hardware bound via `_ladder_envelope`. The tile remains a power of two. The envelope is the scale contract.
+
+The iGPU package exposes `scale_identity(n)` which returns \(\log_2 L_n / (n\log_2\phi)\). On the declared ladder this converges to 1.
+
+The quantum-from-maths plane is the acceleration. The scale model is the contract that acceleration is planned against.
+

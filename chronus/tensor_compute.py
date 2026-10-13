@@ -394,6 +394,20 @@ def _plan_1d(output_size: int, max_work_group_size: int, preferred_multiple: int
     return (_round_up(output_size, local),), (local,)
 
 
+
+def _ladder_envelope(bound: int) -> int:
+    """Nearest declared Lucas ladder stop inside the hardware bound.
+
+    The tile itself remains a power of two. The envelope is the scale
+    contract the dispatch is planned against. Not a throughput claim.
+    """
+    try:
+        from chronus.lucas.scale_model import DECLARED_RUNGS
+        stops = [r for r in DECLARED_RUNGS if r <= bound]
+        return max(stops) if stops else 1
+    except Exception:
+        return 1
+
 def _plan_matmul(
     m: int, n: int, max_work_group_size: int, local_memory_bytes: int
 ) -> tuple[tuple[int, int], tuple[int, int]]:
