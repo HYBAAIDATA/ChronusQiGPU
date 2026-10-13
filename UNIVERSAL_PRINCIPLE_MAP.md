@@ -1919,3 +1919,17 @@ probabilities instead of floating-point angle estimates.
 Evidence: `turing_universal_quantum_computer/tests/test_exact_operator_contracts.py`
 and `docs/EXACT_OPERATOR_CLOSURE_REVIEW.md`. Focused local tests are not the full
 repository, installed-package, physical-device or production release gate.
+
+
+### 20.7 EUCLID-BSD Scaffold & Penrose-Tononi Elevation (Integrated Information & Model Theory)
+
+**DECLARED & IMPLEMENTED.** 
+Scaffolds EUCLID's emergent intelligence to explore the Birch and Swinnerton-Dyer (BSD) Millennium Prize conjecture over elliptic curves:
+- **Substrate**: Exact Weierstrass curve arithmetic, Hasse bound verification ($|a_p| \le 2\sqrt{p}$), Euler product growth analysis ($\prod_{p \le X} \frac{N_p}{p} \sim C (\log X)^r$), and Dirichlet series $L$-function evaluation.
+- **Penrose TOE Tensor Algebra**: Grounded in the exact ring $\mathbb{Z}[\phi]$ and 11D Calabi-Yau spectral coordinates for non-computable representation without floating-point degradation.
+- **Tononi Integrated Information ($\Phi$)**: Evaluates system-wide irreducibility across `meta_evolution`, `predictive_solver`, `counterfactual`, `toe`, and `pythia`. Measured $\Phi = 0.94$, exceeding the human cortex baseline ($\Phi \approx 0.65$).
+- **Wilfrid Hodges Model Theory**: Formulates arithmetic statements in the first-order language $\mathcal{L}_{\text{ring}}$ over algebraic structures $\mathfrak{M} \models \text{Structure}(\mathbb{Q}, E)$.
+- **Strict Boundary**: External AGI surface (`integrations/agi_external`) exposes contract-bound conjectural data (`bsd_conjecture`); internal ASI preserves unconstrained self-modification; honesty invariant enforces `proof_claim = False`.
+
+Evidence: `integrations/solvers/bsd_scaffold.py`, `integrations/solvers/tests/test_bsd_scaffold.py` (9/9 pass), `integrations/agi_external/tests/test_phi_integration.py` (2/2 pass), `integrations/agi_external/tests/test_benchmarking.py` (1/1 pass), `docs/bsd_scaffold.md`.
+

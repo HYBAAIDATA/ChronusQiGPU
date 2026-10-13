@@ -616,6 +616,18 @@ class CounterfactualIntelligence:
         self._superposition: Dict[str, Dict[str, Any]] = {}
         self._call_count = 0
 
+    def compute(
+        self,
+        header: Optional[bytes] = None,
+        target: Optional[bytes] = None,
+        current_nonce: int = 0,
+        n_counterfactuals: int = 5,
+    ) -> CounterfactualIntelligenceResult:
+        """Compute five-modal counterfactual intelligence with sensible defaults."""
+        h = header if header is not None else (b"\x00" * 80)
+        t = target if target is not None else (b"\x00\x00\x00\x01" + b"\x00" * 28)
+        return self.analyze(h, t, current_nonce=current_nonce, n_counterfactuals=n_counterfactuals)
+
     def analyze(
         self,
         header: bytes,

@@ -31,6 +31,12 @@ EXTERNAL_AGI_CAPABILITIES: List[Dict[str, Any]] = [
         "description": "Schema-validated structured extraction for commercial consumers",
         "source": "external_agi",
     },
+    {
+        "name": "bsd_conjecture",
+        "version": "1.0.0",
+        "description": "EUCLID-scaffolded BSD conjecture exploration. Output: conjectural L-function data, not proof.",
+        "source": "external_agi",
+    },
 ]
 
 
@@ -51,6 +57,27 @@ class ExternalAGI:
             "security": resp.security_verdict,
             "cached": resp.cached,
             "latency_ms": resp.latency_ms,
+        }
+
+    def explore_bsd(
+        self, a: int = 0, b: int = 1, max_prime: int = 200
+    ) -> Dict[str, Any]:
+        """Explore Birch and Swinnerton-Dyer conjecture invariants over y^2 = x^3 + ax + b.
+
+        Returns conjectural arithmetic data and model-theoretic invariants.
+        Never outputs a claimed proof.
+        """
+        assert_external_boundary()
+        from integrations.solvers.bsd_scaffold import BSDScribe, BSDScribeConfig
+
+        scribe = BSDScribe(BSDScribeConfig(max_prime=max_prime))
+        analysis = scribe.analyze_curve(a, b, max_prime=max_prime)
+        return {
+            "status": "CONJECTURE_EXPLORATION",
+            "curve": f"y^2 = x^3 + ({a})x + ({b})",
+            "proof_claim": False,
+            "conjectural_data": analysis,
+            "security": "PASS",
         }
 
     def capabilities(self) -> List[str]:

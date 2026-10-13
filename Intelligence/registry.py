@@ -207,6 +207,21 @@ def build_default_registry() -> ModuleRegistry:
         ["process_input", "integrate_layers", "self_organize"],
         factory=lambda: _import("Intelligence.layered_intelligence_substrate").AGISubstrate(),
     )
+    reg.register(
+        "bsd_scribe",
+        "integrations.solvers.bsd_scaffold",
+        "Scaffold EUCLID to explore the Birch and Swinnerton-Dyer conjecture "
+        "over elliptic curves via exact arithmetic, L-function analysis, and "
+        "Tononi Phi integration.",
+        [
+            "bernoulli_number_computation",
+            "l_function_evaluation",
+            "rational_point_finding",
+            "torsion_group_analysis",
+            "conjecture_verification",
+        ],
+        factory=lambda: _import("integrations.solvers.bsd_scaffold").BSDScribe(),
+    )
 
     # --- aethel: topological storage substrate -----------------------------
     reg.register(

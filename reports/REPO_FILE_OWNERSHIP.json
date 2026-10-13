@@ -6,8 +6,8 @@
     "D": 439,
     "E": 115,
     "F": 184,
-    "G": 297,
-    "H": 1813
+    "G": 302,
+    "H": 1814
   },
   "files": {
     ".agents/collide_scan.py": {
@@ -14276,6 +14276,13 @@
       ],
       "rule": "H:docs/"
     },
+    "docs/bsd_scaffold.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
     "docs/chronus-aethel-review.md": {
       "owner": "H",
       "owners": [
@@ -18518,6 +18525,13 @@
       ],
       "rule": "G:integrations/"
     },
+    "integrations/agi_external/tests/test_benchmarking.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
     "integrations/agi_external/tests/test_boundary.py": {
       "owner": "G",
       "owners": [
@@ -18526,6 +18540,13 @@
       "rule": "G:integrations/"
     },
     "integrations/agi_external/tests/test_external_agi.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
+    "integrations/agi_external/tests/test_phi_integration.py": {
       "owner": "G",
       "owners": [
         "G"
@@ -18589,6 +18610,27 @@
       "rule": "G:integrations/"
     },
     "integrations/mining.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
+    "integrations/solvers/__init__.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
+    "integrations/solvers/bsd_scaffold.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
+    "integrations/solvers/tests/test_bsd_scaffold.py": {
       "owner": "G",
       "owners": [
         "G"
@@ -38030,7 +38072,7 @@
   },
   "multi_owned_files": [],
   "schema_version": 1,
-  "source_sha": "454c815490eda326624c3cc82c668efe2e4d453e",
-  "tracked_file_count": 5431,
+  "source_sha": "a1909b2f3a64b0b1096a63eae9e19f70383894b4",
+  "tracked_file_count": 5437,
   "unowned_files": []
 }
