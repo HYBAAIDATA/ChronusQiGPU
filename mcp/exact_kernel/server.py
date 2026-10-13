@@ -1,21 +1,13 @@
 #!/usr/bin/env python3
-"""Production-ready MCP server exposing the exact Lucas/Cassini/Zeckendorf kernel.
+"""Exact Kernel MCP server aligned with MCP specification 2026-07-28.
+
+Stateless: no initialize handshake. Every request carries protocol version,
+clientInfo and clientCapabilities in _meta.
+Implements server/discover.
+theorem_proven remains False on all results.
 
 Usage (stdio):
   python -m mcp.exact_kernel.server
-
-Or register in Claude Desktop / Notion agent MCP config:
-{
-  "mcpServers": {
-    "exact-kernel": {
-      "command": "python",
-      "args": ["-m", "mcp.exact_kernel.server"],
-      "env": {"PYTHONPATH": "/path/to/EuclidPhiEnterprise"}
-    }
-  }
-}
-
-All tools return exact integer results plus witnesses. theorem_proven is always False.
 """
 
 from __future__ import annotations
@@ -24,33 +16,27 @@ import json
 import sys
 from typing import Any
 
-# Import from the repository substrate (PYTHONPATH must include repo root)
+PROTOCOL_VERSION = "2026-07-28"
+SERVER_INFO = {"name": "exact-kernel", "version": "0.2.0"}
+
 try:
     from chronus.lucas.core import lucas, fibonacci
-    from chronus.lucas.ladder import (
-        FULL_LADDER,
-        LUCAS_SCALE_LADDER,
-        verify_ladder,
-        ladder_capacity,
-        is_ladder_index,
-    )
+    from chronus.lucas.ladder import verify_ladder, ladder_capacity
 except ImportError as e:
     print(json.dumps({"error": f"Import failed: {e}. Set PYTHONPATH to repo root."}), file=sys.stderr)
     sys.exit(1)
 
 
 def cassini_witness(n: int) -> dict[str, Any]:
-    """Exact Cassini check: L_n^2 - 5*F_n^2 == 4*(-1)^n."""
     f = fibonacci(n)
     l = lucas(n)
     left = l * l - 5 * f * f
     right = 4 * (1 if n % 2 == 0 else -1)
-    holds = left == right
     return {
         "n": n,
         "F_n": f,
         "L_n": l,
-        "cassini_holds": holds,
+        "cassini_holds": left == right,
         "left": left,
         "right": right,
         "theorem_proven": False,
@@ -58,12 +44,10 @@ def cassini_witness(n: int) -> dict[str, Any]:
 
 
 def zeckendorf(n: int) -> dict[str, Any]:
-    """Greedy Zeckendorf representation (non-adjacent Fibonacci)."""
     if n < 0:
         raise ValueError("n must be non-negative")
     if n == 0:
         return {"n": 0, "indices": [], "non_adjacency": True, "theorem_proven": False}
-    # Build Fibonacci up to n
     fibs = [1, 2]
     while fibs[-1] <= n:
         fibs.append(fibs[-1] + fibs[-2])
@@ -71,22 +55,16 @@ def zeckendorf(n: int) -> dict[str, Any]:
     remaining = n
     for i in range(len(fibs) - 1, -1, -1):
         if fibs[i] <= remaining:
-            indices.append(i + 2)  # F_2=1, F_3=2, ...
+            indices.append(i + 2)
             remaining -= fibs[i]
             if remaining == 0:
                 break
     indices = sorted(indices)
-    non_adj = all(indices[i+1] - indices[i] >= 2 for i in range(len(indices)-1))
-    return {
-        "n": n,
-        "indices": indices,
-        "non_adjacency": non_adj,
-        "theorem_proven": False,
-    }
+    non_adj = all(indices[i + 1] - indices[i] >= 2 for i in range(len(indices) - 1))
+    return {"n": n, "indices": indices, "non_adjacency": non_adj, "theorem_proven": False}
 
 
 def largest_feasible_tile(max_size: int, alignment: int = 16) -> dict[str, Any]:
-    """Largest power-of-two tile <= max_size that is aligned."""
     if max_size < alignment:
         return {"tile": 0, "feasible": False, "theorem_proven": False}
     tile = 1
@@ -163,8 +141,12 @@ def handle_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     raise ValueError(f"Unknown tool: {name}")
 
 
+def extract_meta(params: dict[str, Any]) -> dict[str, Any]:
+    return params.get("_meta") or {}
+
+
 def main() -> None:
-    """Minimal JSON-RPC stdio MCP loop."""
+    """Stateless JSON-RPC stdio loop (MCP 2026-07-28)."""
     for line in sys.stdin:
         line = line.strip()
         if not line:
@@ -172,33 +154,52 @@ def main() -> None:
         try:
             req = json.loads(line)
             method = req.get("method")
-            params = req.get("params", {})
+            params = req.get("params") or {}
             rid = req.get("id")
+            meta = extract_meta(params)
 
-            if method == "initialize":
+            # Version check (stateless)
+            req_version = meta.get("io.modelcontextprotocol/protocolVersion")
+            if req_version and req_version != PROTOCOL_VERSION:
+                print(json.dumps({
+                    "jsonrpc": "2.0",
+                    "id": rid,
+                    "error": {
+                        "code": -32022,
+                        "message": "Unsupported protocol version",
+                        "data": {"supported": [PROTOCOL_VERSION], "requested": req_version},
+                    },
+                }), flush=True)
+                continue
+
+            if method == "server/discover":
+                result = {
+                    "protocolVersions": [PROTOCOL_VERSION],
+                    "capabilities": {"tools": {"listChanged": False}},
+                    "serverInfo": SERVER_INFO,
+                }
                 resp = {
                     "jsonrpc": "2.0",
                     "id": rid,
-                    "result": {
-                        "protocolVersion": "2024-11-05",
-                        "capabilities": {"tools": {"listChanged": False}},
-                        "serverInfo": {"name": "exact-kernel", "version": "0.1.0"},
-                    },
+                    "result": result,
+                    "_meta": {"io.modelcontextprotocol/serverInfo": SERVER_INFO},
                 }
             elif method == "tools/list":
                 resp = {
                     "jsonrpc": "2.0",
                     "id": rid,
                     "result": {"tools": [{"name": k, **v} for k, v in TOOLS.items()]},
+                    "_meta": {"io.modelcontextprotocol/serverInfo": SERVER_INFO},
                 }
             elif method == "tools/call":
                 name = params.get("name")
-                args = params.get("arguments", {})
-                result = handle_tool(name, args)
+                args = params.get("arguments") or {}
+                tool_result = handle_tool(name, args)
                 resp = {
                     "jsonrpc": "2.0",
                     "id": rid,
-                    "result": {"content": [{"type": "text", "text": json.dumps(result)}]},
+                    "result": {"content": [{"type": "text", "text": json.dumps(tool_result)}]},
+                    "_meta": {"io.modelcontextprotocol/serverInfo": SERVER_INFO},
                 }
             else:
                 resp = {
