@@ -1,13 +1,13 @@
 {
   "counts_by_agent": {
-    "A": 571,
-    "B": 63,
-    "C": 1949,
-    "D": 439,
+    "A": 629,
+    "B": 69,
+    "C": 1964,
+    "D": 479,
     "E": 115,
-    "F": 184,
-    "G": 302,
-    "H": 1814
+    "F": 188,
+    "G": 311,
+    "H": 2057
   },
   "files": {
     ".agents/collide_scan.py": {
@@ -67,6 +67,13 @@
       "rule": "H:.agents/"
     },
     ".agents/inv_dupes.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.agents/"
+    },
+    ".agents/skills/euclid-salamander-bsd/SKILL.md": {
       "owner": "H",
       "owners": [
         "H"
@@ -311,6 +318,13 @@
       ],
       "rule": "H:.github/"
     },
+    ".github/workflows/docker-build-cloud.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.github/"
+    },
     ".github/workflows/euclid-ci.yml": {
       "owner": "H",
       "owners": [
@@ -410,6 +424,13 @@
       "rule": "H:.github/"
     },
     ".github/workflows/production-closure.yml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:.github/"
+    },
+    ".github/workflows/production-runtime.yml": {
       "owner": "H",
       "owners": [
         "H"
@@ -627,6 +648,13 @@
       "rule": "A:Intelligence/"
     },
     "Intelligence/agentic_controller.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/agentic_controller_search.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -927,7 +955,63 @@
       ],
       "rule": "A:Intelligence/"
     },
+    "Intelligence/cortex_context.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
     "Intelligence/counterfactual_intelligence.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/discovery.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/domains/__init__.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/domains/biotech.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/domains/defense.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/domains/energy.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/domains/finance.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/empirical_state_controller.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -941,7 +1025,35 @@
       ],
       "rule": "A:Intelligence/"
     },
+    "Intelligence/exact_tensor_bridge.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/first_principles_quantum.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
     "Intelligence/folded_state.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/four_layer_stack.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/grover_exact_scale.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -983,6 +1095,13 @@
       ],
       "rule": "A:Intelligence/"
     },
+    "Intelligence/intent_compiler.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
     "Intelligence/layered_intelligence_substrate.py": {
       "owner": "A",
       "owners": [
@@ -1011,7 +1130,21 @@
       ],
       "rule": "A:Intelligence/"
     },
+    "Intelligence/mathematical_discovery.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
     "Intelligence/meta_evolution.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/millennium_suite.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -1026,6 +1159,20 @@
       "rule": "A:Intelligence/"
     },
     "Intelligence/mining_bridge.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/mining_bridge_ontology.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/mining_native.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -1067,7 +1214,21 @@
       ],
       "rule": "A:Intelligence/"
     },
+    "Intelligence/ontology_mining_engine.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
     "Intelligence/orchestrator.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/orchestrator_search.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -1082,6 +1243,34 @@
       "rule": "A:Intelligence/"
     },
     "Intelligence/pde_substrate.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/phi_resonance.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/plasticity_search.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/poincare_cassini_search.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/pool_aware_miner.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -1145,6 +1334,13 @@
       "rule": "A:Intelligence/"
     },
     "Intelligence/pythia_tools.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/quantum_algorithms.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -1221,7 +1417,28 @@
       ],
       "rule": "A:Intelligence/"
     },
+    "Intelligence/salamander_transaction.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/search_api.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
     "Intelligence/search_crystal.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/search_database.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -1292,6 +1509,13 @@
       "rule": "A:Intelligence/"
     },
     "Intelligence/self_test.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
+    "Intelligence/self_test_search.py": {
       "owner": "A",
       "owners": [
         "A"
@@ -1704,6 +1928,13 @@
       ],
       "rule": "A:Intelligence/"
     },
+    "Intelligence/unified_manifold_device.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:Intelligence/"
+    },
     "Intelligence/unified_punch.py": {
       "owner": "A",
       "owners": [
@@ -1766,6 +1997,895 @@
         "H"
       ],
       "rule": "root-infrastructure-fallback"
+    },
+    "_archive_research/FIXED_PROPOSAL_METHODS.py.txt": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/README.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/additional_tests/README.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/additional_tests/nonce_structure_test_harness.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/additional_tests/phi_structure_proper_tests.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/additional_tests/test_ai_api_endpoints.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/additional_tests/test_bridge_additional.test.ts": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/additional_tests/test_coinbase_and_header.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/additional_tests/test_compact_target_effective.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/additional_tests/test_final_acceptance_matrix.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/additional_tests/test_frontend_privilege_boundary.test.ts": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/additional_tests/test_governance_more.test.ts": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmark_portfolio/README.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmark_portfolio/TOPOLOGICAL_SCALING.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmark_portfolio/golden_fold_metrics.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmark_portfolio/index.html": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmark_portfolio/run_benchmarks.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmark_portfolio/run_output/PORTFOLIO_SUMMARY.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmark_portfolio/run_output/h4_600cell_benchmark.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmark_portfolio/run_output/portfolio_report.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/ai_reasoning_integrity.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/ai_weight_geometry_folding.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/baseline_compression_comparison.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/benchmark_collection.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/benchmark_results/72_6_compression_validation.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/biotech_interaction_resonance.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/cyber_topological_defense.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/finance_tail_risk_holonomy.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/fluid_dynamics_resonance.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/global_formalism_efficiency_index.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/golden_benchmark_grover.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/gpu_throughput_benchmark.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/logistics_manifold_efficiency.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/long-context-agentic.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/phi_folding_benchmark.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/production_workload_benchmarks.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/real_world_comparison_report.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/real_world_compression_benchmarks.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/reports/LIVE_MINING_FORENSIC_REPORT.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/reports/PHASE2_IMPLEMENTATION_REPORT.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/reports/oracle_search_trace.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/substrate_comparison.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/benchmarks/validate_72_6_compression.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/enhanced_agi_interface.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/enhanced_metrics_engine.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/enhanced_powerhouse_mining_system.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/enhanced_quantum_entanglement.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/enhanced_quantum_math.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/enhanced_resilience_layer.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/enhanced_time_crystal.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/frontend_integration.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/governance_explainability.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/layered_intelligence_substrate.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/multi_agent_execution_graph.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/multi_agent_intelligence.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/nobel_fields_intelligence.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/nobel_fields_quantum_entanglement.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/nobel_fields_time_crystal.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/quantum_consciousness_system.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/quantum_geometric_interface.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/quantum_metal_integration.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/unified_api_layer.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/unified_data_model.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/unified_integration_bridge.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/unified_nobel_fields_integration.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/unified_platform_engine.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/universal_predictor/__init__.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/core_engine/universal_predictor/universal_predictor.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/MANIFEST.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/TEST_RESULTS_SUMMARY.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/hyba_nature_first_tests.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/hyba_nature_first_v2.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/hyba_nature_first_v3.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/hyba_nature_first_v4.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/hyba_test_results.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/hyba_test_results_v2.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/hyba_test_results_v3.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/hyba_test_results_v4.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/hyba_test_results_v5.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/hyba_v5.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/lgt_su2_phi_resonance.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/lgt_su2_phi_resonance_original.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/patch_v3.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/patch_v4.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/phi_scaling_experiment.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/phi_scaling_experiment_fixed.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/experiments/phi_scaling_results.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/PROVENANCE.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/README.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/VERIFICATION.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/pyproject.toml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/__init__.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/coding.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/constants.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/continued_fraction.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/families/__init__.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/families/comparison.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/families/folding.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/families/hyba_math.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/families/layout.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/families/runtime.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/families/sampling.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/families/scaling.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/families/signal.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/families/stability.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/families/storing.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/families/transform.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/golden_czt.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/golden_fourier.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/golden_wavelet.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/math_identities/__init__.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/math_identities/docagne.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/math_identities/honsberger.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/math_identities/polynomials.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/matrices.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/metallic_fourier.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/registry.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/results.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/runner.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/src/golden_quantum/sequences.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/tests/test_framework.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/tests/test_gf.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/tests/test_golden_fourier_extensions.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/tests/test_hyba_math_family.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/golden_quantum_framework/tests/test_runtime.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/test_agi_penrose.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
+    },
+    "_archive_research/toe.py.txt": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:_archive_research/"
     },
     "abi/chronus1-abi.md": {
       "owner": "C",
@@ -3006,6 +4126,34 @@
       ],
       "rule": "F:asi/"
     },
+    "asi_validation/__init__.py": {
+      "owner": "F",
+      "owners": [
+        "F"
+      ],
+      "rule": "F:asi_validation/"
+    },
+    "asi_validation/domain_b.py": {
+      "owner": "F",
+      "owners": [
+        "F"
+      ],
+      "rule": "F:asi_validation/"
+    },
+    "asi_validation/protocol.py": {
+      "owner": "F",
+      "owners": [
+        "F"
+      ],
+      "rule": "F:asi_validation/"
+    },
+    "asi_validation/thermodynamics.py": {
+      "owner": "F",
+      "owners": [
+        "F"
+      ],
+      "rule": "F:asi_validation/"
+    },
     "asic/README.md": {
       "owner": "C",
       "owners": [
@@ -3062,6 +4210,62 @@
       ],
       "rule": "H:bench/"
     },
+    "benchmark_portfolio/README.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmark_portfolio/"
+    },
+    "benchmark_portfolio/TOPOLOGICAL_SCALING.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmark_portfolio/"
+    },
+    "benchmark_portfolio/golden_fold_metrics.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmark_portfolio/"
+    },
+    "benchmark_portfolio/index.html": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmark_portfolio/"
+    },
+    "benchmark_portfolio/run_benchmarks.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmark_portfolio/"
+    },
+    "benchmark_portfolio/run_output/PORTFOLIO_SUMMARY.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmark_portfolio/"
+    },
+    "benchmark_portfolio/run_output/h4_600cell_benchmark.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmark_portfolio/"
+    },
+    "benchmark_portfolio/run_output/portfolio_report.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmark_portfolio/"
+    },
     "benchmarks/__init__.py": {
       "owner": "H",
       "owners": [
@@ -3069,7 +4273,91 @@
       ],
       "rule": "H:benchmarks/"
     },
+    "benchmarks/ai_reasoning_integrity.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/ai_weight_geometry_folding.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/baseline_compression_comparison.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/benchmark_collection.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/benchmark_results/72_6_compression_validation.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/biotech_interaction_resonance.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
     "benchmarks/common.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/cyber_topological_defense.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/finance_tail_risk_holonomy.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/fluid_dynamics_resonance.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/global_formalism_efficiency_index.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/golden_benchmark_grover.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/gpu_throughput_benchmark.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -3097,7 +4385,77 @@
       ],
       "rule": "H:benchmarks/"
     },
+    "benchmarks/logistics_manifold_efficiency.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/long-context-agentic.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
     "benchmarks/lucas_pisot_scaling.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/phi_folding_benchmark.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/production_workload_benchmarks.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/real_world_comparison_report.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/real_world_compression_benchmarks.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/reports/LIVE_MINING_FORENSIC_REPORT.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/reports/PHASE2_IMPLEMENTATION_REPORT.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/reports/oracle_search_trace.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
+    "benchmarks/substrate_comparison.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -3321,6 +4679,13 @@
       ],
       "rule": "H:benchmarks/"
     },
+    "benchmarks/validate_72_6_compression.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:benchmarks/"
+    },
     "chronos/README.md": {
       "owner": "C",
       "owners": [
@@ -3336,6 +4701,111 @@
       "rule": "C:chronos/"
     },
     "chronos/academic/__init__.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronos/"
+    },
+    "chronos/academic/caltech.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronos/"
+    },
+    "chronos/academic/cambridge.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronos/"
+    },
+    "chronos/academic/cern.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronos/"
+    },
+    "chronos/academic/mit.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronos/"
+    },
+    "chronos/academic/nist.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronos/"
+    },
+    "chronos/academic/report.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronos/"
+    },
+    "chronos/academic/tensor_compression.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronos/"
+    },
+    "chronos/academic/tokyotech.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronos/"
+    },
+    "chronos/engine.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronos/"
+    },
+    "chronos/evolution_engine.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronos/"
+    },
+    "chronos/hamiltonian.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronos/"
+    },
+    "chronos/manifold.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronos/"
+    },
+    "chronos/qsdl_compiler.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronos/"
+    },
+    "chronos/reconstruction.py": {
+      "owner": "C",
+      "owners": [
+        "C"
+      ],
+      "rule": "C:chronos/"
+    },
+    "chronos/test_harness.py": {
       "owner": "C",
       "owners": [
         "C"
@@ -12834,6 +14304,181 @@
       ],
       "rule": "A:core_engine/"
     },
+    "core_engine/enhanced_agi_interface.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/enhanced_metrics_engine.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/enhanced_powerhouse_mining_system.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/enhanced_quantum_entanglement.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/enhanced_quantum_math.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/enhanced_resilience_layer.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/enhanced_time_crystal.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/frontend_integration.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/governance_explainability.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/layered_intelligence_substrate.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/multi_agent_execution_graph.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/multi_agent_intelligence.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/nobel_fields_intelligence.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/nobel_fields_quantum_entanglement.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/nobel_fields_time_crystal.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/quantum_consciousness_system.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/quantum_geometric_interface.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/quantum_metal_integration.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/unified_api_layer.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/unified_data_model.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/unified_integration_bridge.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/unified_nobel_fields_integration.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/unified_platform_engine.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/universal_predictor/__init__.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
+    "core_engine/universal_predictor/universal_predictor.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:core_engine/"
+    },
     "cross_verification/__init__.py": {
       "owner": "D",
       "owners": [
@@ -17699,6 +19344,258 @@
       ],
       "rule": "G:frontend/"
     },
+    "golden_quantum/__init__.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/coding.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/constants.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/continued_fraction.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/families/__init__.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/families/comparison.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/families/folding.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/families/hyba_math.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/families/layout.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/families/runtime.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/families/sampling.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/families/scaling.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/families/signal.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/families/stability.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/families/storing.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/families/transform.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/golden_czt.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/golden_fourier.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/golden_wavelet.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/math_identities/__init__.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/math_identities/docagne.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/math_identities/honsberger.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/math_identities/polynomials.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/matrices.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/metallic_fourier.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/registry.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/results.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/runner.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/runtime/__init__.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/runtime/delta_for.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/runtime/folds.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/runtime/integrity.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/runtime/lifting.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/runtime/memory.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/runtime/pisot.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
+    "golden_quantum/sequences.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:golden_quantum/"
+    },
     "governance/api_registry.yaml": {
       "owner": "F",
       "owners": [
@@ -18084,6 +19981,20 @@
       ],
       "rule": "G:hyba/"
     },
+    "hyba/native_kernels/__init__.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:hyba/"
+    },
+    "hyba/native_kernels/igpu_runtime.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:hyba/"
+    },
     "hyba/operating_model/__init__.py": {
       "owner": "G",
       "owners": [
@@ -18141,6 +20052,27 @@
       "rule": "G:hyba/"
     },
     "hyba/punch.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:hyba/"
+    },
+    "hyba/quantum/__init__.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:hyba/"
+    },
+    "hyba/quantum/igpu_opencl.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:hyba/"
+    },
+    "hyba/select.py": {
       "owner": "G",
       "owners": [
         "G"
@@ -18539,6 +20471,13 @@
       ],
       "rule": "G:integrations/"
     },
+    "integrations/agi_external/tests/test_exact_gap.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
     "integrations/agi_external/tests/test_external_agi.py": {
       "owner": "G",
       "owners": [
@@ -18630,7 +20569,28 @@
       ],
       "rule": "G:integrations/"
     },
+    "integrations/solvers/bsd_solver.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
     "integrations/solvers/tests/test_bsd_scaffold.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
+    "integrations/solvers/tests/test_yangmills_scaffold.py": {
+      "owner": "G",
+      "owners": [
+        "G"
+      ],
+      "rule": "G:integrations/"
+    },
+    "integrations/solvers/yangmills_scaffold.py": {
       "owner": "G",
       "owners": [
         "G"
@@ -24027,6 +25987,552 @@
       ],
       "rule": "H:legacy/"
     },
+    "legacy_implementations/HYBA Corrected v1.1.0 (zip, CODE_FILE) (1)/COMPARISON_WITH_GQF.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/HYBA Corrected v1.1.0 (zip, CODE_FILE) (1)/LICENSE": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/HYBA Corrected v1.1.0 (zip, CODE_FILE) (1)/README.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/HYBA Corrected v1.1.0 (zip, CODE_FILE) (1)/hyba/__init__.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/HYBA Corrected v1.1.0 (zip, CODE_FILE) (1)/hyba/compute.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/HYBA Corrected v1.1.0 (zip, CODE_FILE) (1)/hyba/core.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/HYBA Corrected v1.1.0 (zip, CODE_FILE) (1)/hyba/infrastructure.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/HYBA Corrected v1.1.0 (zip, CODE_FILE) (1)/hyba/invariants.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/HYBA Corrected v1.1.0 (zip, CODE_FILE) (1)/hyba/memory.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/HYBA Corrected v1.1.0 (zip, CODE_FILE) (1)/hyba/storage.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/HYBA Corrected v1.1.0 (zip, CODE_FILE) (1)/hyba/utils.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/HYBA Corrected v1.1.0 (zip, CODE_FILE) (1)/pyproject.toml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/HYBA Corrected v1.1.0 (zip, CODE_FILE) (1)/pytest.ini": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/HYBA Corrected v1.1.0 (zip, CODE_FILE) (1)/scripts/compare_with_gqf.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/HYBA Corrected v1.1.0 (zip, CODE_FILE) (1)/tests/__init__.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/HYBA Corrected v1.1.0 (zip, CODE_FILE) (1)/tests/test_hyba.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/01_mathematics/__init__.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/01_mathematics/explore_families.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/01_mathematics/golden_transform.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/02_quantum/__init__.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/02_quantum/core.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/02_quantum/pure_math.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/03_structure/__init__.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/03_structure/coherence_measurement.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/03_structure/operators.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/04_benchmarks/ablation_statistical.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/04_benchmarks/benchmark_scaled.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/04_benchmarks/run_lab.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/04_benchmarks/test_fidelity.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/04_benchmarks/test_regression.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/FOUNDATIONS.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/README.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/VERIFICATION_REPORT.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/api/README.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/api/__init__.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_golden_operator_lab_verified/hyba_golden_lab/api/quantum_api.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_security_layer_v0.1.0 (1)/hyba_security_layer/evidence/hyba_security_ipa_report.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_security_layer_v0.1.0 (1)/hyba_security_layer/hyba_security/README.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_security_layer_v0.1.0 (1)/hyba_security_layer/hyba_security/__init__.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_security_layer_v0.1.0 (1)/hyba_security_layer/hyba_security/aead.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_security_layer_v0.1.0 (1)/hyba_security_layer/hyba_security/audit_chain.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_security_layer_v0.1.0 (1)/hyba_security_layer/hyba_security/ci_claim_scan.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_security_layer_v0.1.0 (1)/hyba_security_layer/hyba_security/claims.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_security_layer_v0.1.0 (1)/hyba_security_layer/hyba_security/legacy.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_security_layer_v0.1.0 (1)/hyba_security_layer/hyba_security/production_guard.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_security_layer_v0.1.0 (1)/hyba_security_layer/tests/fixtures/known_bad_crypto.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/hyba_security_layer_v0.1.0 (1)/hyba_security_layer/tests/test_ipa_suite.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/BINARIES.manifest.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/README.en.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/README.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/README.ru.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/linux/README.en.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/linux/README.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/linux/README.ru.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/linux/btc_mineragent/conf/config.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/linux/btc_mineragent/shell/check_alive.sh": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/linux/btc_mineragent/shell/list.sh": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/linux/btc_mineragent/shell/restart.sh": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/linux/ltc_mineragent/conf/config.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/linux/ltc_mineragent/shell/check_alive.sh": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/linux/ltc_mineragent/shell/list.sh": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/linux/ltc_mineragent/shell/restart.sh": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/linux/start.sh": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/linux/update.sh": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/linux/zec_mineragent/conf/config.json": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/linux/zec_mineragent/shell/check_alive.sh": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/linux/zec_mineragent/shell/list.sh": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/linux/zec_mineragent/shell/restart.sh": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/windows/README.en.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/windows/README.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/windows/README.ru.md": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/windows/res/config_cn.png": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/windows/res/config_en.png": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/windows/res/ip.png": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/windows/res/mineragent_cn.png": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/windows/res/mineragent_en.png": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/windows/res/quit_cn.png": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
+    "legacy_implementations/mineragent-master/windows/res/quit_en.png": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:legacy_implementations/"
+    },
     "lucas/__init__.py": {
       "owner": "D",
       "owners": [
@@ -24048,6 +26554,13 @@
       ],
       "rule": "D:lucas/"
     },
+    "lucas/cassini.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:lucas/"
+    },
     "lucas/core.py": {
       "owner": "D",
       "owners": [
@@ -24062,7 +26575,28 @@
       ],
       "rule": "D:lucas/"
     },
+    "lucas/gate.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:lucas/"
+    },
     "lucas/ladder.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:lucas/"
+    },
+    "lucas/native_registry.py": {
+      "owner": "D",
+      "owners": [
+        "D"
+      ],
+      "rule": "D:lucas/"
+    },
+    "lucas/pisot.py": {
       "owner": "D",
       "owners": [
         "D"
@@ -24286,6 +26820,13 @@
       ],
       "rule": "A:millennium/"
     },
+    "millennium/exact_gap.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:millennium/"
+    },
     "millennium/grover_exact_scale.py": {
       "owner": "A",
       "owners": [
@@ -24377,6 +26918,20 @@
       ],
       "rule": "A:millennium/"
     },
+    "millennium/test_exact_gap.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:millennium/"
+    },
+    "millennium/test_exact_spectrum.py": {
+      "owner": "A",
+      "owners": [
+        "A"
+      ],
+      "rule": "A:millennium/"
+    },
     "millennium/yang_mills_data.py": {
       "owner": "A",
       "owners": [
@@ -24413,6 +26968,13 @@
       "rule": "B:mining/"
     },
     "mining/difficulty.py": {
+      "owner": "B",
+      "owners": [
+        "B"
+      ],
+      "rule": "B:mining/"
+    },
+    "mining/euclid_multarm_probe.py": {
       "owner": "B",
       "owners": [
         "B"
@@ -24468,6 +27030,20 @@
       ],
       "rule": "B:mining/"
     },
+    "mining/live_handshake.py": {
+      "owner": "B",
+      "owners": [
+        "B"
+      ],
+      "rule": "B:mining/"
+    },
+    "mining/live_mine.py": {
+      "owner": "B",
+      "owners": [
+        "B"
+      ],
+      "rule": "B:mining/"
+    },
     "mining/native_sha256d.py": {
       "owner": "B",
       "owners": [
@@ -24482,6 +27058,20 @@
       ],
       "rule": "B:mining/"
     },
+    "mining/order_counterfactual.py": {
+      "owner": "B",
+      "owners": [
+        "B"
+      ],
+      "rule": "B:mining/"
+    },
+    "mining/production_miner.py": {
+      "owner": "B",
+      "owners": [
+        "B"
+      ],
+      "rule": "B:mining/"
+    },
     "mining/public_headers.py": {
       "owner": "B",
       "owners": [
@@ -24490,6 +27080,13 @@
       "rule": "B:mining/"
     },
     "mining/remote_hasher.py": {
+      "owner": "B",
+      "owners": [
+        "B"
+      ],
+      "rule": "B:mining/"
+    },
+    "mining/resonance_probe.py": {
       "owner": "B",
       "owners": [
         "B"
@@ -31944,6 +34541,13 @@
       ],
       "rule": "H:scripts/"
     },
+    "scripts/bsd_cli.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
     "scripts/build-frontend.ps1": {
       "owner": "H",
       "owners": [
@@ -32498,6 +35102,13 @@
       "rule": "H:scripts/"
     },
     "scripts/production_preflight.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:scripts/"
+    },
+    "scripts/production_runtime_start.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -33498,6 +36109,13 @@
       ],
       "rule": "H:tests/"
     },
+    "tests/test_agi_penrose.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
     "tests/test_agi_quantum_substrates.py": {
       "owner": "H",
       "owners": [
@@ -33667,6 +36285,13 @@
       "rule": "H:tests/"
     },
     "tests/test_braiins_sv2.py": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:tests/"
+    },
+    "tests/test_bsd_solver.py": {
       "owner": "H",
       "owners": [
         "H"
@@ -38072,7 +40697,7 @@
   },
   "multi_owned_files": [],
   "schema_version": 1,
-  "source_sha": "01bae19e8ebac6a3f08dedb164b058a8437ebe0c",
-  "tracked_file_count": 5437,
+  "source_sha": "ca48a92aeb1d44fad6d6d679ac934aa1c9a75739",
+  "tracked_file_count": 5812,
   "unowned_files": []
 }

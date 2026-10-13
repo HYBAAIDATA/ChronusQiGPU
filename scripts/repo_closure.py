@@ -63,12 +63,14 @@ AGENT_PREFIXES = {
         "kellogg/",
         "aethel/",
         "lucas/",
+        "golden_quantum/",
         "tensor/",
         "proofs/",
         "cross_verification/",
         "format/",
         "standard/",
     ),
+
     "E": (
         "hyba_db/",
         "evidence/",
@@ -79,7 +81,7 @@ AGENT_PREFIXES = {
         "hyba_contracts/",
         "hyba_profiles/",
     ),
-    "F": ("salamander/", "asi/", "al_haras/", "l_hras/", "governance/"),
+    "F": ("salamander/", "asi/", "asi_validation/", "al_haras/", "l_hras/", "governance/"),
     "G": (
         "frontend/",
         "services/",
@@ -99,6 +101,7 @@ AGENT_PREFIXES = {
         "tests/",
         "bench/",
         "benchmarks/",
+        "benchmark_portfolio/",
         "eval_harness/",
         "experiments/",
         "notebooks/",
@@ -110,10 +113,13 @@ AGENT_PREFIXES = {
         "docs/",
         "delegation/",
         "legacy/",
+        "legacy_implementations/",
+        "_archive_research/",
         "make/",
         "unused/",
     ),
 }
+
 
 ROOT_EXPLICIT = {
     "euclid_delegation.py": "A",
