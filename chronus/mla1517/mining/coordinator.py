@@ -3486,7 +3486,13 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         if not self.client:
             raise ConnectionError("no active Stratum client")
         adapter = getattr(self.client, "proof_adapter", None)
-        job = getattr(adapter, "current_job", None)
+        job = getattr(adapter, "current_job", None) if adapter is not None else None
+        if job is None:
+            latest = getattr(self.client, "latest_job", None)
+            if callable(latest):
+                job = latest()
+            elif hasattr(self.client, "current_job"):
+                job = self.client.current_job
         if job is None:
             LOG.warning("dropping node %d record: no normalized Stratum job", record.node_id)
             return False
@@ -3512,18 +3518,19 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         }
 
         try:
+            target_val = getattr(job, "target", None)
             context = (
                 TOEContextBuilder()
                 .with_job(
                     {
                         "job_id": job.job_id,
-                        "prevhash": job.prevhash,
-                        "version": job.version,
-                        "nbits": job.nbits,
-                        "ntime": job.ntime,
-                        "clean_jobs": job.clean_jobs,
+                        "prevhash": getattr(job, "prevhash", None),
+                        "version": getattr(job, "version", None),
+                        "nbits": getattr(job, "nbits", None),
+                        "ntime": getattr(job, "ntime", None),
+                        "clean_jobs": getattr(job, "clean_jobs", None),
                         "target": (
-                            f"{job.target:064x}" if job.target is not None else None
+                            f"{target_val:064x}" if target_val is not None else None
                         ),
                         "protocol": getattr(
                             getattr(self.client, "endpoint", None),

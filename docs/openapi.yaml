@@ -139,6 +139,19 @@ paths:
       x-pythia-slo: slo.operator.mutation
       security:
       - OperatorBearer: []
+  /api/v1/control/session:
+    get:
+      summary: pythia.control.session
+      description: 'owner: PYTHIA | truth_class: COMMAND_ACCEPTANCE | schema: chronus.mla1517.session/1
+        | failure: 401 unauthenticated / 403 unauthorized'
+      x-pythia-api-id: pythia.control.session
+      x-pythia-truth-class: COMMAND_ACCEPTANCE
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+      security:
+      - OperatorBearer: []
   /api/v1/gpu:
     get:
       summary: pythia.gpu

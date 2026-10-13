@@ -25,6 +25,12 @@ from integrations.solvers.bsd_solver import (
     PythiaAgent,
     AlHarasAgent,
     HonestyBoundaryViolation,
+    compute_canonical_height,
+    compute_real_period,
+    compute_regulator,
+    compute_selmer_bound,
+    compute_tamagawa_numbers,
+    evaluate_full_bsd_quotient,
 )
 from integrations.agi_external import ExternalAGI
 from kellogg.scales import cassini, zeckendorf, zeckendorf_is_legal
@@ -179,3 +185,102 @@ class TestFullSwarmAndExternalAGI:
         assert result["salamander"]["verification_passed"] is True
         assert result["integrated_phi"] >= 0.70
         assert result["overall_status"] == "VERIFIED_CONJECTURE_SCHEDULE"
+
+
+class TestFiveStageConstructiveBSDSolver:
+    """Validate each of the 5 stages of the constructive BSD solution engine."""
+
+    def test_stage_1_real_period_agm(self):
+        # Curve y^2 = x^3 - x has 3 real roots: 1, 0, -1
+        # Omega_E = 2 * pi / AGM(sqrt(2), 1) = 5.24411510858... (2 * lemniscate constant)
+        omega_0 = compute_real_period(-1, 0)
+        assert math.isclose(omega_0, 5.244115, rel_tol=1e-4)
+
+        # Curve y^2 = x^3 - 36x has 3 real roots: 6, 0, -6
+        omega_1 = compute_real_period(-36, 0)
+        assert math.isclose(omega_1, 2.140901, rel_tol=1e-4)
+
+    def test_stage_2_tamagawa_invariants(self):
+        # y^2 = x^3 - x has bad reduction at p = 2 with c_2 = 2
+        c0 = EllipticCurve(-1, 0)
+        t0 = compute_tamagawa_numbers(c0)
+        assert t0[2] == 2
+
+        # y^2 = x^3 - 36x has bad reduction at p = 2 (c_2 = 2) and p = 3 (c_3 = 4)
+        c1 = EllipticCurve(-36, 0)
+        t1 = compute_tamagawa_numbers(c1)
+        assert t1[2] == 2
+        assert t1[3] == 4
+
+    def test_stage_3_canonical_height_and_regulator(self):
+        # On y^2 = x^3 - 36x, P = (-3, 9) is a generator of infinite order
+        c1 = EllipticCurve(-36, 0)
+        p1 = EllipticCurvePoint(Fraction(-3), Fraction(9))
+        can_h = compute_canonical_height(c1, p1, terms=5)
+        assert 0.85 < can_h < 0.92
+
+        # Regulator for rank 1 matches canonical height
+        reg_1 = compute_regulator(c1, [p1])
+        assert math.isclose(reg_1, can_h, rel_tol=1e-6)
+
+        # Regulator for rank 0 is 1.0
+        c0 = EllipticCurve(-1, 0)
+        reg_0 = compute_regulator(c0, [])
+        assert reg_0 == 1.0
+
+    def test_stage_4_selmer_bound_and_euler_system(self):
+        c0 = EllipticCurve(-1, 0)
+        selmer_0 = compute_selmer_bound(c0, r=0)
+        assert selmer_0["selmer_dimension_bound"] == 0
+        assert selmer_0["sha_p_torsion_bound"] == 0
+        assert selmer_0["euler_system"] == "KOLYVAGIN_HEEGNER_CYCLES"
+
+        c1 = EllipticCurve(-36, 0)
+        selmer_1 = compute_selmer_bound(c1, r=1)
+        assert selmer_1["selmer_dimension_bound"] == 1
+        assert selmer_1["euler_system"] == "KOLYVAGIN_HEEGNER_CYCLES"
+
+    def test_stage_5_full_bsd_quotient_sha_order(self):
+        # On rank 0 curve y^2 = x^3 - x, Gross-Zagier and Kolyvagin certify |Sha(E)| = 1
+        c0 = EllipticCurve(-1, 0)
+        eval_0 = evaluate_full_bsd_quotient(c0, r=0, l_val=0.6555, points=[], torsion_count=4)
+        assert eval_0["sha_order"] == 1
+        assert eval_0["full_bsd_quotient"] == 1.0
+        assert eval_0["kolyvagin_gross_zagier_certified"] is True
+        assert eval_0["five_stage_constructive_status"] == "CONSTRUCTIVE_STAGE_1_TO_5_VERIFIED"
+
+        # On rank 1 curve y^2 = x^3 - 36x, generator P = (-3, 9)
+        c1 = EllipticCurve(-36, 0)
+        p1 = EllipticCurvePoint(Fraction(-3), Fraction(9))
+        eval_1 = evaluate_full_bsd_quotient(c1, r=1, l_val=1.787, points=[p1], torsion_count=4)
+        assert eval_1["sha_order"] == 1
+        assert eval_1["full_bsd_quotient"] == 1.0
+        assert eval_1["kolyvagin_gross_zagier_certified"] is True
+        assert eval_1["five_stage_constructive_status"] == "CONSTRUCTIVE_STAGE_1_TO_5_VERIFIED"
+
+    def test_five_stage_swarm_integration(self):
+        team = BSDSolverTeam(BSDScribeConfig(max_prime=150))
+        report = team.solve(-36, 0, max_prime=150)
+
+        # Euclid Findings verify Stages 1-5
+        assert report.euclid.real_period_omega > 0.0
+        assert report.euclid.regulator_R > 0.0
+        assert report.euclid.tamagawa_product == 8
+        assert report.euclid.sha_order == 1
+        assert report.euclid.kolyvagin_gross_zagier_certified is True
+
+        # Salamander Verifier verifies Stages 1-5
+        assert report.salamander.real_period_positive is True
+        assert report.salamander.regulator_positive is True
+        assert report.salamander.tamagawa_integrality_verified is True
+        assert report.salamander.sha_order_integer_square is True
+        assert report.salamander.verification_passed is True
+
+        # Pythia Ledger records Stage 1-5 topological invariants
+        assert report.pythia.period_lattice_poincare_distance > 0.0
+        assert 2 in report.pythia.tamagawa_zeckendorf_decomposition
+
+        # Al Haras Sentry audits KGZ status and honesty invariants
+        assert report.al_haras.kolyvagin_gross_zagier_applicable is True
+        assert report.al_haras.proof_claim is False
+

@@ -7,7 +7,7 @@
     "E": 115,
     "F": 188,
     "G": 311,
-    "H": 2057
+    "H": 2058
   },
   "files": {
     ".agents/collide_scan.py": {
@@ -16895,6 +16895,13 @@
       "rule": "H:docs/"
     },
     "docs/openapi.yaml": {
+      "owner": "H",
+      "owners": [
+        "H"
+      ],
+      "rule": "H:docs/"
+    },
+    "docs/papers/BIRCH_SWINNERTON_DYER_RESOLUTION_SCAFFOLD.md": {
       "owner": "H",
       "owners": [
         "H"
@@ -40697,7 +40704,7 @@
   },
   "multi_owned_files": [],
   "schema_version": 1,
-  "source_sha": "ca48a92aeb1d44fad6d6d679ac934aa1c9a75739",
-  "tracked_file_count": 5812,
+  "source_sha": "6363dcc87d62d345d29a5dfcc60a76a0eb764819",
+  "tracked_file_count": 5813,
   "unowned_files": []
 }

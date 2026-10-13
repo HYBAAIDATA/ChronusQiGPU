@@ -30,7 +30,9 @@ from typing import Any, Callable
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _PLATFORM_DIR = Path(__file__).resolve().parent
-for _p in (str(_PLATFORM_DIR), str(_REPO_ROOT)):
+_CHRONOS_IGPU = _REPO_ROOT / "packages" / "chronos-one-igpu" / "src"
+_PYTHIA_CONSUMER = _REPO_ROOT / "packages" / "pythia-consumer" / "src"
+for _p in (str(_PLATFORM_DIR), str(_REPO_ROOT), str(_CHRONOS_IGPU), str(_PYTHIA_CONSUMER)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 

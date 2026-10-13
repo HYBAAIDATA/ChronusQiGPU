@@ -215,6 +215,11 @@ apis:
     dependencies:
       - pythia.runtime_config_file
       - pythia.boot_audit
+  pythia.control.session:
+    capability: report server-authenticated principal for session
+    criticality: R4
+    dependencies:
+      - pythia.boot_audit
   pythia.system.map:
     capability: forensic map of the composed subsystem fabric
     criticality: R4

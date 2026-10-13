@@ -366,6 +366,45 @@ objectives); `tests/test_service_constitution.py` enforces it.
 | Deprecation | CANONICAL |
 | Tests | `tests/test_production_api_contract.py`, `chronus/mla1517_platform/python/test_control_auth.py` |
 
+### `pythia.control.session` — PYTHIA
+
+**Routes**
+
+- `GET /api/v1/control/session`
+
+| Field | Value |
+| --- | --- |
+| Capability | report server-authenticated principal for session |
+| Interface | HTTP_OPERATOR |
+| Implementation | `chronus/mla1517_platform/python/control_api.py::_control_session` |
+| Consumers | frontend |
+| Authority | PYTHIA |
+| Reliability tier | R4 |
+| Lifecycle | STABLE |
+| SLO | `slo.projection.read` |
+| Auth | OPERATOR_PRINCIPAL |
+| Authorisation authority | PYTHIA |
+| Truth class | COMMAND_ACCEPTANCE |
+| Request | none |
+| Response | {schema_version, ok, principal_id, role, source, generated_at} |
+| Timeout | immediate |
+| Idempotency | read-only |
+| Retry | freely retryable |
+| Failure semantics | 401 unauthenticated / 403 unauthorized |
+| Availability semantics | reflects authenticated principal identity |
+| Fallback policy | refusal never echoes bearer tokens; never infers identity locally |
+| Dependencies | `pythia.boot_audit` |
+| Security classification | OPERATOR_AUTHENTICATED |
+| Observability | audit_trail |
+| Compatibility window | compatible within declared schema |
+| Support owner | PYTHIA |
+| Runtime evidence | LOCAL_HTTP_E2E_EXECUTED |
+| Side effects | none |
+| Custody | append-only audit event control_session or control_session_refused |
+| Stability | stable |
+| Deprecation | CANONICAL |
+| Tests | `tests/test_production_api_contract.py`, `chronus/mla1517_platform/python/test_control_auth.py` |
+
 ### `pythia.system.map` — PYTHIA
 
 **Routes**

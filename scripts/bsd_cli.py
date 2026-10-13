@@ -79,6 +79,14 @@ def cmd_team(args: argparse.Namespace) -> int:
     print(f"  CMI Compliant:        {report.al_haras.cmi_protocol_compliant}")
     print(f"  Attestation Seal:     {report.al_haras.attestation_seal[:16]}...")
 
+    print("\n[5] FIVE-STAGE CONSTRUCTIVE BSD INVARIANTS:")
+    print(f"  Stage 1 (AGM Real Period Omega_E):   {report.euclid.real_period_omega:.6f}")
+    print(f"  Stage 2 (Tamagawa Invariants prod cp): {report.euclid.tamagawa_product} {report.euclid.tamagawa_numbers}")
+    print(f"  Stage 3 (Regulator R_E):               {report.euclid.regulator_R:.6f}")
+    print(f"  Stage 4 (Euler System Descent):        {'Kolyvagin Certified' if report.euclid.kolyvagin_gross_zagier_certified else 'Golden Diagonal Scaffold'}")
+    print(f"  Stage 5 (Tate-Shafarevich |Sha(E)|):   {report.euclid.sha_order} (Analytic Quotient = {report.euclid.full_bsd_quotient})")
+    print(f"  Constructive Theorem Status:           {report.euclid.five_stage_constructive_status}")
+
     print("\n" + "-" * 70)
     print(f"Integrated Information Phi: {report.integrated_phi:.4f} (Target >= 0.70)")
     print(f"Execution Latency:          {report.execution_latency_ms:.2f} ms")
@@ -101,24 +109,27 @@ def cmd_sweep(args: argparse.Namespace) -> int:
         ("y^2 = x^3 - 432x", -432, 0, 2),
     ]
 
-    print("=" * 75)
-    print("CANONICAL BENCHMARK CURVE SWEEP — BSD MULTI-AGENT SWARM")
-    print(f"{'Curve':<20} | {'Known r':<7} | {'Slope':<8} | {'Est r':<6} | {'Hasse':<6} | {'Phi':<6}")
-    print("-" * 75)
+    print("=" * 90)
+    print("CANONICAL BENCHMARK CURVE SWEEP — BSD MULTI-AGENT SWARM (5-STAGE CONSTRUCTIVE ENGINE)")
+    print(f"{'Curve':<18} | {'r':<2} | {'Omega_E':<8} | {'R_E':<8} | {'prod cp':<7} | {'|Sha|':<5} | {'Slope':<7} | {'Status':<16}")
+    print("-" * 90)
 
     team = BSDSolverTeam(BSDScribeConfig(max_prime=args.max_prime))
 
     for label, a, b, known_r in benchmarks:
         report = team.solve(a, b, max_prime=args.max_prime)
-        hasse_str = "PASS" if report.salamander.hasse_all_satisfied else "FAIL"
+        status_label = "KGZ Certified" if report.euclid.kolyvagin_gross_zagier_certified else "5-Stage Scaffold"
         print(
-            f"{label:<20} | {known_r:<7} | "
-            f"{report.euclid.empirical_rank_slope:<8.4f} | "
-            f"{report.euclid.conjectural_rank:<6} | "
-            f"{hasse_str:<6} | {report.integrated_phi:<6.4f}"
+            f"{label:<18} | {known_r:<2} | "
+            f"{report.euclid.real_period_omega:<8.4f} | "
+            f"{report.euclid.regulator_R:<8.4f} | "
+            f"{report.euclid.tamagawa_product:<7} | "
+            f"{report.euclid.sha_order:<5} | "
+            f"{report.euclid.empirical_rank_slope:<7.3f} | "
+            f"{status_label:<16}"
         )
 
-    print("=" * 75)
+    print("=" * 90)
     print("Note on rank-2 curve y^2 = x^3 - 432x (est r=0 with slope < 0):")
     print("  Known limitation of finite-prime (p <= 200) regression. Local character oscillations")
     print("  and bad reduction dominate at small primes; true rank requires algebraic 2-descent.")

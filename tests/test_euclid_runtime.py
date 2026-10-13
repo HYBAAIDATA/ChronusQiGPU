@@ -25,20 +25,23 @@ class EuclidRuntimeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "checkpoint.json"
             runtime = EuclidRuntime(creator_id="andre", state_dir=directory)
-            runtime.kairos.open_session("andre", Role.CREATOR)
-            runtime.kairos.create_world("kairos", {"phase": 0})
-            runtime.kairos.dispatch({
-                "schema": "kairos.command/1", "world_id": "kairos",
-                "op": "set", "key": "phase", "value": 1,
-            })
-            runtime.kairos.save(path)
-            restored = runtime.kairos.restore(path)
-            self.assertTrue(restored.replay_verify())
-            payload = json.loads(path.read_text())
-            payload["worlds"]["kairos"]["state"]["phase"] = 2
-            path.write_text(json.dumps(payload))
-            with self.assertRaises(ValueError):
-                runtime.kairos.restore(path)
+            try:
+                runtime.kairos.open_session("andre", Role.CREATOR)
+                runtime.kairos.create_world("kairos", {"phase": 0})
+                runtime.kairos.dispatch({
+                    "schema": "kairos.command/1", "world_id": "kairos",
+                    "op": "set", "key": "phase", "value": 1,
+                })
+                runtime.kairos.save(path)
+                restored = runtime.kairos.restore(path)
+                self.assertTrue(restored.replay_verify())
+                payload = json.loads(path.read_text())
+                payload["worlds"]["kairos"]["state"]["phase"] = 2
+                path.write_text(json.dumps(payload))
+                with self.assertRaises(ValueError):
+                    runtime.kairos.restore(path)
+            finally:
+                runtime.close()
 
     def test_single_session_and_observer_fail_closed(self):
         runtime = EuclidRuntime(creator_id="andre", state_dir="unused")
