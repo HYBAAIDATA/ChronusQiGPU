@@ -71,3 +71,18 @@ The golden stride \(0x9E3779B9 = 3^2 \times 7 \times 11 \times 17 \times 331 \ti
 A golden-stride assignment over \(D\) devices is a bijection only when \(\gcd(\text{stride}, D) = 1\).  
 D = 9 (odd) fails because it shares the factor 3. D = 12 reaches only 4 of 12 devices.  
 Parity is a special case of coprimality. Any scheduler using the stride must assert the gcd condition.
+
+## Three-test boundary (settled)
+
+| Test | Domain | Result |
+|------|--------|--------|
+| Phyllotaxis | Continuous, expanding (radius = c·√k) | φ optimal by ~2.4× |
+| Equal-item fleet | Discrete, fixed D, exact multiple | Round-robin exact; φ strictly worse |
+| Heterogeneous fleet | Discrete, fixed D, varying capacity | Capacity-weighted dominant by ~2 orders on CV; φ worse |
+
+The packing advantage lives in continuous expanding spaces. It does not transfer to discrete modular assignment. Where the domain is a fixed partition, it is already exact or already has a correct optimal rule.
+
+### Coprimality guard (operational)
+Golden stride \(0x9E3779B9 = 3^2 \times 7 \times 11 \times 17 \times 331 \times 359\).  
+Bijection over \(D\) devices only when \(\gcd(\text{stride}, D) = 1\).  
+Parity is a special case of coprimality. Any scheduler using the stride must assert the gcd condition or it silently starves devices.
