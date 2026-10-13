@@ -1,0 +1,80 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schema/2024-11-05/server.json",
+  "name": "pythia-cognitive-os",
+  "version": "0.1.0",
+  "description": "Disciplined reasoning and execution layer. Context retention, evidence discipline, anti-hallucination controls, mastery-level coding behavior. MCP is transport only. Intelligence remains inside the repository.",
+  "transport": "stdio",
+  "capabilities": {
+    "tools": true,
+    "resources": true,
+    "prompts": true
+  },
+  "tools": [
+    {
+      "name": "session_start",
+      "description": "Initialize a session. Mandatory skills activated. Working context snapshot recorded. Proof of context loaded is required before any claim.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "session_id": {"type": "string"},
+          "mandatory_skills": {"type": "array", "items": {"type": "string"}}
+        },
+        "required": ["session_id"]
+      }
+    },
+    {
+      "name": "evidence_verify",
+      "description": "Verify that claimed evidence exists and matches its digest. Boolean-only evidence is rejected. Unknown equals unavailable.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "subject": {"type": "string"},
+          "digest": {"type": "string"},
+          "producer": {"type": "string"}
+        },
+        "required": ["subject", "digest"]
+      }
+    },
+    {
+      "name": "completion_gate",
+      "description": "Refuse completion unless context is loaded, evidence is retrieved, verification is executed, and tests pass. No claim without verification. No completion without tests.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "context_loaded": {"type": "boolean"},
+          "evidence_retrieved": {"type": "boolean"},
+          "verification_executed": {"type": "boolean"},
+          "tests_passed": {"type": "boolean"},
+          "touches_canonical": {"type": "boolean"},
+          "owner_approval_recorded": {"type": "boolean"}
+        },
+        "required": ["context_loaded", "evidence_retrieved", "verification_executed", "tests_passed"]
+      }
+    },
+    {
+      "name": "owner_approval",
+      "description": "Record an owner approval gate. Owner decision overrides interpretation. Required for canonical writes.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "subject": {"type": "string"},
+          "owner": {"type": "string"},
+          "approved": {"type": "boolean"}
+        },
+        "required": ["subject", "owner", "approved"]
+      }
+    }
+  ],
+  "trust": {
+    "no_claim_without_verification": true,
+    "no_completion_without_tests": true,
+    "unknown_equals_unavailable": true,
+    "owner_overrides_interpretation": true,
+    "tool_access_bounded_and_auditable": true,
+    "no_secret_leakage": true,
+    "mcp_is_transport_only": true
+  },
+  "skills": [
+    "master-coder"
+  ]
+}
