@@ -13,6 +13,7 @@ import json
 import math
 from collections import Counter
 from dataclasses import replace
+from enum import Enum
 from typing import Any, Mapping, Sequence
 
 from kellogg.quantum_tensor import QuantumState
@@ -427,6 +428,51 @@ class V16SkillSearchAdapter:
         )
 
 
+class TaskVerificationVerdict(str, Enum):
+    UNAVAILABLE = "unavailable"
+    VERIFIED_FAILURE = "verified_failure"
+    VERIFIED_SUCCESS = "verified_success"
+    UNVERIFIED = "unverified"
+
+
+def verify_task_evidence(
+    action: str,
+    payload: Mapping[str, Any],
+    evidence: Mapping[str, Any],
+) -> tuple[bool, TaskVerificationVerdict]:
+    if not evidence:
+        return False, TaskVerificationVerdict.UNAVAILABLE
+
+    # If focused_tests evidence is present, evaluate execution result
+    if "focused_tests" in evidence:
+        tests = evidence["focused_tests"]
+        if isinstance(tests, dict):
+            if tests.get("available") is False:
+                return False, TaskVerificationVerdict.UNAVAILABLE
+            if "returncode" in tests:
+                rc = tests["returncode"]
+                if rc == 0:
+                    return True, TaskVerificationVerdict.VERIFIED_SUCCESS
+                return False, TaskVerificationVerdict.VERIFIED_FAILURE
+
+    # If import_audit evidence is present
+    if "import_audit" in evidence:
+        audit = evidence["import_audit"]
+        action_str = str(action).lower()
+        goal_str = str(payload.get("goal", "")).lower()
+        is_audit_task = "audit" in action_str or "audit" in goal_str
+        if is_audit_task:
+            if isinstance(audit, dict):
+                findings = audit.get("finding_count")
+                if findings == 0:
+                    return True, TaskVerificationVerdict.VERIFIED_SUCCESS
+                return False, TaskVerificationVerdict.VERIFIED_FAILURE
+        else:
+            return False, TaskVerificationVerdict.UNVERIFIED
+
+    return False, TaskVerificationVerdict.UNAVAILABLE
+
+
 class RepositoryIntelligenceExecutor:
     """Read-only repository organ; source mutation remains outside cognition."""
 
@@ -450,10 +496,12 @@ class RepositoryIntelligenceExecutor:
         observation = summary
         if payload.get("kind") == "intervention":
             observation = self.intervention_observation(str(action), evidence)
+        goal_met, verdict = verify_task_evidence(action, payload, evidence)
         result = {
             "observation": observation,
             "evidence_summary": summary,
-            "goal_met": findings == 0 if findings is not None else bool(evidence),
+            "goal_met": goal_met,
+            "verification_verdict": verdict.value,
             "task_id": report.get("task_id"),
             "governed": True,
             "mutation_performed": False,
@@ -591,5 +639,7 @@ __all__ = [
     "TOECognitivePlanner",
     "TOEMetaController",
     "TOEWorldModelAdapter",
+    "TaskVerificationVerdict",
     "V16SkillSearchAdapter",
+    "verify_task_evidence",
 ]

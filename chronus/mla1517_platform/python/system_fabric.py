@@ -764,14 +764,19 @@ def euclid_cognition_status() -> dict[str, Any]:
 
 
 def euclid_cognition_solve(
-    problem_id: str,
-    goal: str,
+    problem_id: str = "",
+    goal: str = "",
     *,
+    mode: str = "legacy",
+    family: str = "",
+    seed: int = 0,
+    test_code: str = "",
     problem_class: str = "repository-wiring",
     structure: tuple[str, ...] = (),
     observations: tuple[str, ...] = (),
     strategy: str = "",
     initial_code: str = "",
+    **kwargs: Any,
 ) -> dict[str, Any]:
     """Run one real cognition episode through the EUCLID composition root.
 
@@ -785,6 +790,97 @@ def euclid_cognition_solve(
     failed result.  Nothing is ever fabricated to look like successful
     reasoning.
     """
+    if mode == "adaptive":
+        runtime = euclid_cognition()
+        if runtime is None:
+            return {
+                "schema": "pythia.euclid.cognition.solve/1",
+                "available": False,
+                "failure": "runtime_unavailable",
+                "reason": _EUCLID["error"] or "cognition runtime not constructed",
+            }
+        if getattr(runtime, "adaptive", None) is None:
+            runtime.compose_adaptive_intelligence()
+
+        from euclid.runtime import EuclidRuntime
+
+        if initial_code and test_code:
+            from euclid.cognition.software_tasks import create_software_task
+            from euclid.cognition.worlds import WorldExecutor
+            task_id = problem_id or "software-task"
+            spec, world = create_software_task(task_id, code=initial_code, test_code=test_code)
+            exec_result = runtime.solve_task(spec, WorldExecutor(world), seed=seed)
+            solved = bool(exec_result.solved)
+            transitions = getattr(getattr(exec_result, "state", None), "transitions", [])
+            reachability = {
+                comp: runtime.reachability.stage(comp).value
+                for comp in EuclidRuntime.ADAPTIVE_COMPONENTS
+                if runtime.reachability.stage(comp) is not None
+            }
+            return {
+                "schema": "pythia.euclid.cognition.solve/1",
+                "available": True,
+                "mode": "adaptive",
+                "problem_id": task_id,
+                "solved": solved,
+                "outcome": "solved" if solved else "unsolved",
+                "reachability": reachability,
+                "transitions": [
+                    {
+                        "sequence": getattr(t, "sequence", i),
+                        "phase": getattr(t, "phase", ""),
+                        "summary": getattr(t, "summary", ""),
+                        "digest": getattr(t, "digest", ""),
+                    }
+                    for i, t in enumerate(transitions)
+                ],
+                "cost": getattr(exec_result, "cost", world.cost),
+                "probes": world.probes_used,
+                "submissions": world.submissions_used,
+            }
+
+        if family:
+            from euclid.cognition.worlds import MechanismWorld, WorldExecutor, generate_task
+            spec, truth = generate_task(family, seed=seed, partition="evaluation")
+            world = MechanismWorld(spec, truth, seed=seed)
+            exec_result = runtime.solve_task(spec, WorldExecutor(world), seed=seed)
+            solved = bool(exec_result.solved)
+            transitions = getattr(getattr(exec_result, "state", None), "transitions", [])
+            reachability = {
+                comp: runtime.reachability.stage(comp).value
+                for comp in EuclidRuntime.ADAPTIVE_COMPONENTS
+                if runtime.reachability.stage(comp) is not None
+            }
+            return {
+                "schema": "pythia.euclid.cognition.solve/1",
+                "available": True,
+                "mode": "adaptive",
+                "family": family,
+                "problem_id": spec.task_id,
+                "solved": solved,
+                "outcome": "solved" if solved else "unsolved",
+                "reachability": reachability,
+                "transitions": [
+                    {
+                        "sequence": getattr(t, "sequence", i),
+                        "phase": getattr(t, "phase", ""),
+                        "summary": getattr(t, "summary", ""),
+                        "digest": getattr(t, "digest", ""),
+                    }
+                    for i, t in enumerate(transitions)
+                ],
+                "cost": getattr(exec_result, "cost", world.cost),
+                "probes": world.probes_used,
+                "submissions": world.submissions_used,
+            }
+
+        return {
+            "schema": "pythia.euclid.cognition.solve/1",
+            "available": False,
+            "failure": "invalid_request",
+            "reason": "adaptive mode requires family or (initial_code and test_code)",
+        }
+
     if not problem_id or not goal:
         return {
             "schema": "pythia.euclid.cognition.solve/1",

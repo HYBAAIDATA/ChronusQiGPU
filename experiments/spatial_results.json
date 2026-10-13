@@ -1,0 +1,65 @@
+[
+  {
+    "n_items": 400,
+    "n_devices": 8,
+    "cv": 0.29832867780352595,
+    "max_load": 66,
+    "min_load": 26
+  },
+  {
+    "n_items": 1600,
+    "n_devices": 8,
+    "cv": 0.28298630708923,
+    "max_load": 266,
+    "min_load": 104
+  },
+  {
+    "n_items": 6400,
+    "n_devices": 8,
+    "cv": 0.2840025032900238,
+    "max_load": 1056,
+    "min_load": 414
+  },
+  {
+    "n_items": 400,
+    "n_devices": 16,
+    "cv": 0.2253885533916929,
+    "max_load": 34,
+    "min_load": 13
+  },
+  {
+    "n_items": 1600,
+    "n_devices": 16,
+    "cv": 0.2162463872530591,
+    "max_load": 130,
+    "min_load": 52
+  },
+  {
+    "n_items": 6400,
+    "n_devices": 16,
+    "cv": 0.21978505124325448,
+    "max_load": 521,
+    "min_load": 201
+  },
+  {
+    "n_items": 400,
+    "n_devices": 32,
+    "cv": 0.20493901531919195,
+    "max_load": 17,
+    "min_load": 6
+  },
+  {
+    "n_items": 1600,
+    "n_devices": 32,
+    "cv": 0.1845941494197473,
+    "max_load": 68,
+    "min_load": 25
+  },
+  {
+    "n_items": 6400,
+    "n_devices": 32,
+    "cv": 0.17698428602562433,
+    "max_load": 261,
+    "min_load": 95
+  }
+]

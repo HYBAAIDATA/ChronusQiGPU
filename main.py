@@ -8,13 +8,24 @@ device/coordinator requirements are present.
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parent
 _CANONICAL_PYTHON = _PROJECT_ROOT / "chronus/mla1517_platform" / "python"
-if str(_CANONICAL_PYTHON) not in sys.path:
-    sys.path.insert(0, str(_CANONICAL_PYTHON))
+_CHRONOS_IGPU = _PROJECT_ROOT / "packages" / "chronos-one-igpu" / "src"
+_PYTHIA_CONSUMER = _PROJECT_ROOT / "packages" / "pythia-consumer" / "src"
+for _p in [str(_PROJECT_ROOT), str(_CANONICAL_PYTHON), str(_CHRONOS_IGPU), str(_PYTHIA_CONSUMER)]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+_existing_pp = os.environ.get("PYTHONPATH", "")
+_pp_parts = _existing_pp.split(os.pathsep) if _existing_pp else []
+for _p in [str(_CHRONOS_IGPU), str(_PYTHIA_CONSUMER), str(_CANONICAL_PYTHON), str(_PROJECT_ROOT)]:
+    if _p not in _pp_parts:
+        _pp_parts.insert(0, _p)
+os.environ["PYTHONPATH"] = os.pathsep.join(_pp_parts)
 
 # Sovereign deployments (HYBA_SOVEREIGN_MODE=private|air_gapped) install the
 # AL HARAS egress/ingestion/storage boundary before any service code loads;

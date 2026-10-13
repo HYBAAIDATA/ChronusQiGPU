@@ -1,0 +1,1 @@
+{"schema":"chronus.ir.v0.1","name":"vector_add_generated","op":"vector_add","dtype":"f32","shape":{"n":1024}}

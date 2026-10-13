@@ -1,0 +1,81 @@
+# Public naming is approved; first-public version target is 1.0.0.
+# Existing development/research version retained pending publication reconciliation.
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hyba-chronos-mathematics"
+version = "3.3.0"
+description = "Chronos GPU -- mathematical quantum graphics engine (Chronos v3.3 maths: manifold, QSDL, Hamiltonian, evolution, ray-traced reconstruction, theory domains)."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+authors = [{ name = "HYBA Software Limited" }]
+keywords = [
+    "graphics",
+    "hamiltonian",
+    "manifold",
+    "qsdl",
+    "ray-tracing",
+    "quantum-from-maths",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Graphics :: 3D Rendering",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    # Import never requires OpenCL/CUDA/Metal; numpy is the only hard dependency.
+    "numpy>=1.26,<3",
+]
+
+[project.optional-dependencies]
+# The documented GPU substrate lane (fail-closed; explicit request that cannot
+# bind raises RenderBackendUnavailable -- never a silent CPU substitution).
+gpu = [
+    "cupy>=13.0",
+]
+dev = [
+    "pytest>=7.4,<10",
+    "black>=24.0,<27",
+    "flake8>=7.0,<8",
+]
+
+[project.urls]
+Homepage = "https://github.com/QuantumPhiRedux/PhiMiner"
+
+[tool.setuptools]
+# The wheel ships chronus/__init__.py (PEP 562 lazy exports) plus the v33
+# Chronos maths subtree only; every product-plane attribute the __init__
+# re-exports resolves to a module outside this boundary and fails honestly
+# with ModuleNotFoundError on access.
+include-package-data = false
+
+[tool.setuptools.packages.find]
+# Scaffolding note: run from the monorepo root this finds the packages below;
+# the CI wheel build (packaging/README.md verification protocol) is the
+# authority for the shipped contents.
+include = [
+    "chronus",
+    "chronus.v33",
+    "chronus.v33.academic",
+    "chronus.v33.benchmarks",
+    "chronus.v33.compression",
+    "chronus.v33.control",
+    "chronus.v33.environment",
+    "chronus.v33.fields",
+    "chronus.v33.graphics",
+    "chronus.v33.memory",
+    "chronus.v33.theory",
+    "chronus.v33.examples",
+]
+
+[tool.setuptools.package-data]
+"chronus.v33" = ["CAPABILITY_MANIFEST.json", "docs/*.md", "benchmarks/*.json"]

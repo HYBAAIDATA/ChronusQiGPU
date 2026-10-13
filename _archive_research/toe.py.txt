@@ -1,0 +1,1857 @@
+import pandas as pd 
+
+import numpy as np 
+
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier 
+
+from sklearn.model_selection import cross_val_score, train_test_split, RandomizedSearchCV 
+
+from sklearn.preprocessing import StandardScaler 
+
+from sklearn.impute import SimpleImputer 
+
+from xgboost import XGBClassifier 
+
+from lightgbm import LGBMClassifier 
+
+import tensorflow as tf 
+
+from datetime import datetime 
+
+import logging 
+
+import joblib 
+
+import os 
+
+from statsmodels.tsa.seasonal import seasonal_decompose 
+
+from sklearn.feature_extraction.text import TfidfVectorizer 
+
+from nltk.sentiment import SentimentIntensityAnalyzer 
+
+from skopt import BayesSearchCV 
+
+from skopt.space import Real, Integer 
+
+from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score 
+
+from lime.lime_tabular import LimeTabularExplainer 
+
+ 
+
+class PredictiveEngine: 
+    """ 
+    Enhanced predictive engine for employee churn prediction with the following improvements: 
+    - Type hints and docstrings for better code clarity 
+    - Improved error handling and logging 
+    - Memory optimization for large datasets 
+    - Better model persistence strategy 
+    - Enhanced feature engineering pipeline 
+    """ 
+
+ 
+
+def __init__(self, config: dict = None): 
+
+    """ 
+
+    Initialize the predictive engine with configuration. 
+
+     
+
+    Args: 
+
+        config (dict): Configuration dictionary with model parameters 
+
+    """ 
+
+    self.config = config if config else self._default_config() 
+
+    self._validate_config() 
+
+    self._initialize_components() 
+
+    self.models = self._load_or_train_models() 
+
+ 
+
+def _validate_config(self) -> None: 
+
+    """Validate configuration parameters""" 
+
+    required_keys = ['model_names', 'model_dir', 'n_estimators', 'max_depth'] 
+
+    missing_keys = [key for key in required_keys if key not in self.config] 
+
+    if missing_keys: 
+
+        raise ValueError(f"Missing required config keys: {missing_keys}") 
+
+ 
+
+def _initialize_components(self) -> None: 
+
+    """Initialize all component objects with error handling""" 
+
+    try: 
+
+        self.scaler = StandardScaler() 
+
+        self.imputer = SimpleImputer(strategy=self.config.get('imputation_strategy', 'median')) 
+
+        self.sentiment_analyzer = SentimentIntensityAnalyzer() 
+
+        self.tfidf_vectorizer = TfidfVectorizer( 
+
+            max_features=self.config.get('max_tfidf_features', 100), 
+
+            stop_words='english' 
+
+        ) 
+
+        self.feature_engineering_methods = {} 
+
+    except Exception as e: 
+
+        logging.error(f"Component initialization failed: {e}") 
+
+        raise 
+
+ 
+
+def predict_churn_risk(self, data: pd.DataFrame) -> dict: 
+
+    """ 
+
+    Predict employee churn risk using ensemble approach. 
+
+     
+
+    Args: 
+
+        data (pd.DataFrame): Employee data with required features 
+
+         
+
+    Returns: 
+
+        dict: Risk profile with predictions and explanations 
+
+    """ 
+
+    try: 
+
+        # Input validation 
+
+        if not isinstance(data, pd.DataFrame): 
+
+            raise ValueError("Input must be a pandas DataFrame") 
+
+             
+
+        # Process data in chunks if large 
+
+        if len(data) > 10000: 
+
+            return self._process_large_dataset(data) 
+
+             
+
+        # Extract and preprocess features 
+
+        processed_data = self._preprocess_data(data) 
+
+        indicators = self._extract_risk_indicators(processed_data) 
+
+         
+
+        # Generate predictions 
+
+        ensemble_predictions = self._ensemble_predict(indicators) 
+
+         
+
+        # Generate final risk profile 
+
+        risk_profile = self._generate_risk_profile(ensemble_predictions, indicators) 
+
+         
+
+        return risk_profile 
+
+         
+
+    except Exception as e: 
+
+        logging.error(f"Churn prediction failed: {e}") 
+
+        raise 
+
+ 
+
+def _process_large_dataset(self, data: pd.DataFrame) -> dict: 
+
+    """Process large datasets in chunks to optimize memory usage""" 
+
+    chunk_size = 5000 
+
+    predictions = [] 
+
+     
+
+    for i in range(0, len(data), chunk_size): 
+
+        chunk = data.iloc[i:i + chunk_size] 
+
+        chunk_prediction = self._process_chunk(chunk) 
+
+        predictions.append(chunk_prediction) 
+
+         
+
+    return self._aggregate_predictions(predictions) 
+
+ 
+
+def _extract_risk_indicators(self, data: pd.DataFrame) -> dict: 
+
+    """ 
+
+    Extract key risk indicators from employee data with improved feature engineering. 
+
+     
+
+    New features added: 
+
+    - Relative performance metrics 
+
+    - Time-based engagement patterns 
+
+    - Communication sentiment analysis 
+
+    - Career progression velocity 
+
+    """ 
+
+    try: 
+
+        indicators = { 
+
+            'performance_metrics': self._extract_performance_metrics(data), 
+
+            'behavioral_metrics': self._extract_behavioral_metrics(data), 
+
+            'engagement_metrics': self._extract_engagement_metrics(data), 
+
+            'career_metrics': self._extract_career_metrics(data), 
+
+            'external_metrics': self._extract_external_metrics(data) 
+
+        } 
+
+         
+
+        # Apply custom feature engineering 
+
+        for method_name, method in self.feature_engineering_methods.items(): 
+
+            indicators[method_name] = method(data) 
+
+             
+
+        return indicators 
+
+         
+
+    except Exception as e: 
+
+        logging.error(f"Feature extraction failed: {e}") 
+
+        raise 
+
+ 
+
+def _extract_performance_metrics(self, data: pd.DataFrame) -> dict: 
+
+    """Extract enhanced performance metrics with trends and patterns""" 
+
+    metrics = {} 
+
+     
+
+    if 'performance_score' in data.columns: 
+
+        metrics['trend'] = self._calculate_trend(data['performance_score']) 
+
+        metrics['volatility'] = self._calculate_volatility(data['performance_score']) 
+
+        metrics['relative_performance'] = self._calculate_relative_performance(data) 
+
+         
+
+    return metrics 
+
+ 
+
+# Additional helper methods and class implementation continue... 
+
+ Use code with caution. 
+
+def _extract_behavioral_metrics(self, data: pd.DataFrame) -> dict: 
+
+        """Extract enhanced behavioral metrics focusing on time and patterns""" 
+
+        metrics = {} 
+
+         
+
+        if 'login_time' in data.columns: 
+
+            metrics['login_frequency'] = self._calculate_login_frequency(data['login_time']) 
+
+            metrics['login_variability'] = self._calculate_login_variability(data['login_time']) 
+
+             
+
+        if 'communication_text' in data.columns: 
+
+            metrics['communication_sentiment'] = self._analyze_text_sentiment(data['communication_text']) 
+
+             
+
+        return metrics 
+
+ 
+
+    def _extract_engagement_metrics(self, data: pd.DataFrame) -> dict: 
+
+        """Extract engagement metrics with survey insights""" 
+
+        metrics = {} 
+
+         
+
+        if 'survey_text' in data.columns: 
+
+            metrics['survey_sentiment'] = self._analyze_text_sentiment(data['survey_text']) 
+
+            metrics['survey_engagement'] = self._analyze_text_engagement(data['survey_text']) 
+
+             
+
+        if 'participation_rate' in data.columns: 
+
+            metrics['participation_rate'] = self._analyze_participation(data['participation_rate']) 
+
+         
+
+        return metrics 
+
+ 
+
+    def _extract_career_metrics(self, data: pd.DataFrame) -> dict: 
+
+        """Extract metrics related to career growth and aspirations""" 
+
+        metrics = {} 
+
+         
+
+        if 'promotion_history' in data.columns: 
+
+            metrics['promotion_velocity'] = self._analyze_promotion_velocity(data['promotion_history']) 
+
+         
+
+        if 'skill_level' in data.columns: 
+
+            metrics['skill_growth'] = self._analyze_skill_development(data['skill_level']) 
+
+             
+
+        if 'compensation_ratio' in data.columns: 
+
+          metrics['compensation_ratio'] = self._analyze_compensation(data['compensation_ratio']) 
+
+         
+
+        return metrics 
+
+ 
+
+    def _extract_external_metrics(self, data: pd.DataFrame) -> dict: 
+
+        """Extract external factors like market conditions and industry trends""" 
+
+        metrics = {} 
+
+        
+
+        if 'market_condition' in data.columns: 
+
+           metrics['market_condition'] = self._analyze_market(data['market_condition']) 
+
+             
+
+        if 'industry_trend' in data.columns: 
+
+           metrics['industry_trend'] = self._analyze_industry(data['industry_trend']) 
+
+             
+
+        if 'competitor_activity' in data.columns: 
+
+            metrics['competitor_activity'] = self._analyze_competitors(data['competitor_activity']) 
+
+         
+
+        return metrics 
+
+         
+
+    def _preprocess_data(self, data: pd.DataFrame) -> pd.DataFrame: 
+
+        """Preprocess employee data to handle missing values""" 
+
+        try: 
+
+            processed_data = data.copy() 
+
+             
+
+            #Impute missing values 
+
+            processed_data[processed_data.select_dtypes(include=np.number).columns] = self.imputer.fit_transform(processed_data.select_dtypes(include=np.number)) 
+
+             
+
+            return processed_data 
+
+        except Exception as e: 
+
+            logging.error(f"Data preprocessing failed: {e}") 
+
+            raise 
+
+ 
+
+    def _ensemble_predict(self, indicators: dict) -> dict: 
+
+        """Ensemble prediction using configured models with weighted or voting system""" 
+
+        try: 
+
+            if self.config.get('ensemble_selection_method', 'weighted_average') == 'weighted_average': 
+
+                 return self._weight_predictions(indicators) 
+
+            else: 
+
+              return self._voting_predictions(indicators) 
+
+        except Exception as e: 
+
+            logging.error(f"Ensemble prediction failed: {e}") 
+
+            raise 
+
+     
+
+    def _weight_predictions(self, indicators: dict) -> dict: 
+
+      """Weight predictions based on model performance using cross validation.""" 
+
+      try: 
+
+        predictions = {} 
+
+        input_features = self._prepare_input_features(indicators) 
+
+        
+
+        for model_name, model in self.models.items(): 
+
+             
+
+             X, y = self._generate_synthetic_data() 
+
+             scores = cross_val_score(model, X, y, cv=self.config['cv_folds'], scoring='f1') 
+
+             avg_score = np.mean(scores) 
+
+             scaled_features = self.scaler.transform(input_features.reshape(1, -1))  # Scale the data 
+
+             y_pred = model.predict_proba(scaled_features)[:, 1]  # Get probability 
+
+             predictions[model_name] = { 
+
+                  'score': y_pred[0], 
+
+                  'confidence': self._calculate_model_confidence(y_pred[0]), 
+
+                  'weight': avg_score 
+
+               } 
+
+        return predictions 
+
+      except Exception as e: 
+
+            logging.error(f"Error during weighting of predictions: {e}") 
+
+            raise 
+
+    
+
+    def _voting_predictions(self, indicators: dict) -> dict: 
+
+      """Generates predictions using a voting system between multiple models""" 
+
+      try: 
+
+        predictions = {} 
+
+        input_features = self._prepare_input_features(indicators) 
+
+        scaled_features = self.scaler.transform(input_features.reshape(1, -1))  # Scale the data 
+
+ 
+
+        votes = [] 
+
+        for model_name, model in self.models.items(): 
+
+            y_pred = model.predict(scaled_features) 
+
+            votes.append(y_pred[0]) 
+
+         
+
+        #Simple Voting - count number of trues and falses 
+
+        true_votes = np.count_nonzero(votes) 
+
+        false_votes = len(votes) - true_votes 
+
+         
+
+        # Assign probability based on which vote was higher 
+
+        if true_votes > false_votes: 
+
+           probability = 1 
+
+        elif true_votes < false_votes: 
+
+           probability = 0 
+
+        else: 
+
+          probability = 0.5 # If no clear majority 
+
+             
+
+        for model_name, model in self.models.items(): 
+
+              y_pred = model.predict_proba(scaled_features)[:, 1] #get score from each model 
+
+              predictions[model_name] = { 
+
+                 'score': y_pred[0], 
+
+                 'confidence': self._calculate_model_confidence(y_pred[0]), 
+
+                  'weight': 1 
+
+              } 
+
+        predictions['voting_probability'] = probability #Include the voting probability 
+
+        return predictions 
+
+      except Exception as e: 
+
+           logging.error(f"Error during voting of predictions: {e}") 
+
+           raise 
+
+     
+
+    def _generate_risk_profile(self, predictions: dict, indicators: dict) -> dict: 
+
+       """Generate detailed risk profile with confidence score and explanations""" 
+
+       try: 
+
+         risk_profile = { 
+
+             'risk_score': self._calculate_risk_score(predictions), 
+
+             'confidence_level': self._calculate_confidence(predictions), 
+
+              'key_factors': self._identify_key_factors(indicators), 
+
+              'recommended_actions': self._generate_recommendations(indicators), 
+
+               'time_sensitivity': self._assess_time_sensitivity(indicators), 
+
+               'risk_trajectory': self._predict_risk_trajectory(indicators), 
+
+              'model_predictions': predictions,  # Include all model specific predictions 
+
+              'feature_importances': self._get_feature_importance(self.models.get(self.config.get('selected_model', 'rf')), list(self._calculate_factor_weights(indicators).keys())) if self.config.get('selected_model') else None, 
+
+              'lime_explanations': self._get_lime_explanations(indicators) 
+
+           } 
+
+         return risk_profile 
+
+       except Exception as e: 
+
+         logging.error(f"Error generating risk profile: {e}") 
+
+         raise 
+
+   
+
+    def _calculate_risk_score(self, predictions: dict) -> dict: 
+
+         """Calculate final risk score with confidence interval""" 
+
+         try: 
+
+            if self.config.get('ensemble_selection_method', 'weighted_average') == 'weighted_average': 
+
+                 weighted_score = np.mean([p['score'] * p['weight'] for p in predictions.values()]) if isinstance(predictions, dict) else np.mean(predictions) 
+
+                 confidence = np.std([p['score'] for p in predictions.values()]) if isinstance(predictions, dict) else np.std(predictions) 
+
+            elif self.config.get('ensemble_selection_method') == 'voting': 
+
+                weighted_score = predictions['voting_probability'] 
+
+                confidence = 0 #Not applicable for voting system 
+
+ 
+
+            return { 
+
+                'score': weighted_score, 
+
+                'confidence_interval': confidence, 
+
+                'probability': self._calculate_probability(weighted_score) 
+
+              } 
+
+         except Exception as e: 
+
+            logging.error(f"Error calculating risk score: {e}") 
+
+            raise 
+
+         
+
+    def _identify_key_factors(self, indicators: dict) -> list: 
+
+        """Identify top contributing factors to risk""" 
+
+        try: 
+
+           factor_weights = self._calculate_factor_weights(indicators) 
+
+           return sorted(factor_weights.items(), key=lambda x: x[1], reverse=True)[:5] 
+
+        except Exception as e: 
+
+           logging.error(f"Error identifying key factors: {e}") 
+
+           raise 
+
+ 
+
+    def _generate_recommendations(self, indicators: dict) -> dict: 
+
+         """Generate personalized retention recommendations""" 
+
+         try: 
+
+           risk_factors = self._identify_key_factors(indicators) 
+
+           return { 
+
+                'immediate_actions': self._get_immediate_actions(risk_factors), 
+
+                'long_term_strategies': self._get_long_term_strategies(risk_factors), 
+
+               'manager_recommendations': self._get_manager_recommendations(risk_factors) 
+
+            } 
+
+         except Exception as e: 
+
+            logging.error(f"Error generating recommendations: {e}") 
+
+            raise 
+
+         
+
+    def _predict_risk_trajectory(self, indicators: dict) -> dict: 
+
+      """Predict risk trajectory over next 3-6 months""" 
+
+      try: 
+
+        current_trend = self._analyze_trend(indicators) 
+
+        future_predictions = self._forecast_risk(indicators) 
+
+        return { 
+
+          'current_trajectory': current_trend, 
+
+           'forecast': future_predictions, 
+
+            'intervention_points': self._identify_intervention_points(future_predictions) 
+
+           } 
+
+      except Exception as e: 
+
+          logging.error(f"Error predicting risk trajectory: {e}") 
+
+          raise 
+
+ 
+
+    def _calculate_confidence(self, predictions: dict) -> float: 
+
+         """Calculate prediction confidence level""" 
+
+         try: 
+
+           model_scores = [p['confidence'] for p in predictions.values()] 
+
+           agreement_score = self._calculate_model_agreement(predictions) 
+
+           data_quality_score = self._assess_data_quality() 
+
+           confidence = ( 
+
+               np.mean(model_scores) * 0.4 +  # Model confidence 
+
+               agreement_score * 0.4 +        # Model agreement 
+
+               data_quality_score * 0.2       # Data quality 
+
+           ) 
+
+           return confidence 
+
+         except Exception as e: 
+
+            logging.error(f"Error calculating confidence: {e}") 
+
+            raise 
+
+     
+
+    def _weight_predictions(self, predictions: dict) -> dict: 
+
+        """Weight predictions based on model performance""" 
+
+        try: 
+
+            weighted_predictions = {} 
+
+            for model_name, pred in predictions.items(): 
+
+               model = self.models[model_name] 
+
+               X, y = self._generate_synthetic_data() # Generate validation data 
+
+               scores = cross_val_score(model, X, y, cv=self.config['cv_folds'], scoring='f1') # Get cross-validated scores 
+
+               avg_score = np.mean(scores) 
+
+               weighted_predictions[model_name] = { 
+
+                    'score': pred['score'], 
+
+                    'confidence': pred['confidence'], 
+
+                    'weight': avg_score 
+
+                 } 
+
+            return weighted_predictions 
+
+        except Exception as e: 
+
+           logging.error(f"Error weighting predictions: {e}") 
+
+           raise 
+
+         
+
+    def _assess_data_quality(self) -> float: 
+
+        """Assess quality and completeness of input data""" 
+
+        return 0.85  # Example score 
+
+     
+
+    def _calculate_model_agreement(self, predictions: dict) -> float: 
+
+        """Calculate agreement level between different models""" 
+
+        # Placeholder 
+
+        return 0.90  # Example score 
+
+     
+
+    def _analyze_trend(self, indicators: dict) -> dict: 
+
+         """Analyze current risk trend""" 
+
+        # Placeholder 
+
+         return {'trend': 'increasing', 'rate': 0.15} 
+
+     
+
+    def _forecast_risk(self, indicators: dict) -> dict: 
+
+        """Forecast future risk levels""" 
+
+        # Placeholder 
+
+        return {'3_month': 0.75, '6_month': 0.85} 
+
+ 
+
+    def _identify_intervention_points(self, predictions: dict) -> list: 
+
+       """Identify optimal intervention points""" 
+
+        # Placeholder 
+
+       return [ 
+
+            {'time': '2_weeks', 'action': 'manager_meeting'}, 
+
+            {'time': '1_month', 'action': 'compensation_review'} 
+
+        ] 
+
+     
+
+    def _calculate_probability(self, score: float) -> float: 
+
+        """Calculate a probability from a score""" 
+
+        try: 
+
+           return 1 / (1 + np.exp(-score)) 
+
+        except Exception as e: 
+
+            logging.error(f"Error calculating probability: {e}") 
+
+            raise 
+
+    
+
+    def _calculate_factor_weights(self, indicators: dict) -> dict: 
+
+        """Calculate weights for factors""" 
+
+        try: 
+
+           return { 
+
+                'performance_metrics': self.config.get('performance_weight', 0.30), 
+
+                'behavioral_metrics': self.config.get('behavioral_weight', 0.25), 
+
+               'engagement_metrics': self.config.get('engagement_weight', 0.20), 
+
+               'career_metrics': self.config.get('career_weight', 0.15), 
+
+               'external_metrics': self.config.get('external_weight', 0.10) 
+
+           } 
+
+        except Exception as e: 
+
+          logging.error(f"Error calculating factor weights: {e}") 
+
+          raise 
+
+ 
+
+    def _get_immediate_actions(self, risk_factors: list) -> list: 
+
+       """Generates immediate retention actions""" 
+
+        # Placeholder 
+
+       return ['Check-in with manager', 'Review project workload'] 
+
+    
+
+    def _get_long_term_strategies(self, risk_factors: list) -> list: 
+
+         """Generates long-term retention strategies""" 
+
+        # Placeholder 
+
+         return ['Career development planning', 'Skill development workshop'] 
+
+    
+
+    def _get_manager_recommendations(self, risk_factors: list) -> list: 
+
+        """Generates recommendations for managers""" 
+
+        # Placeholder 
+
+        return ['Schedule meeting with employee', 'Ask about workload'] 
+
+   
+
+    def _predict_with_model(self, model, indicators: dict) -> dict: 
+
+        """Predict using a given model and normalized data""" 
+
+        try: 
+
+           input_features = self._prepare_input_features(indicators) # Generate input features 
+
+           scaled_features = self.scaler.transform(input_features.reshape(1, -1)) # Scale the data 
+
+           y_pred = model.predict_proba(scaled_features)[:, 1] # get probability 
+
+           return { 
+
+               'score': y_pred[0], 
+
+               'confidence': self._calculate_model_confidence(y_pred[0]) #Placeholder confidence 
+
+           } 
+
+        except Exception as e: 
+
+            logging.error(f"Error predicting with model: {e}") 
+
+            raise 
+
+     
+
+    def _calculate_model_confidence(self, prediction: float) -> float: 
+
+        """Calculates the confidence of a model output (example).""" 
+
+        # Placeholder implementation to return a fixed value 
+
+        return 0.90  # This is just an example 
+
+ 
+
+    def _prepare_input_features(self, indicators: dict) -> np.ndarray: 
+
+        """Concatenate all extracted indicators into a numpy array""" 
+
+        try: 
+
+            feature_list = [] 
+
+            for key, value in indicators.items(): 
+
+                if isinstance(value, dict): 
+
+                    feature_list.extend(value.values()) 
+
+                elif isinstance(value, list): 
+
+                    feature_list.extend(value) 
+
+                elif isinstance(value, str): 
+
+                     feature_list.append(self._analyze_text_sentiment(value)) 
+
+                elif isinstance(value, np.ndarray): 
+
+                     feature_list.extend(value.flatten()) 
+
+                elif not np.isnan(value): 
+
+                     feature_list.append(value) 
+
+            return np.array(feature_list, dtype = float) 
+
+        except Exception as e: 
+
+            logging.error(f"Error preparing input features: {e}") 
+
+            raise 
+
+     
+
+    def _analyze_text_sentiment(self, text: str) -> float: 
+
+        """Analyzes the sentiment of input text.""" 
+
+        try: 
+
+            if not isinstance(text, str): 
+
+                return 0 
+
+            scores = self.sentiment_analyzer.polarity_scores(text) 
+
+            return scores['compound'] 
+
+        except Exception as e: 
+
+            logging.error(f"Error analyzing text sentiment: {e}") 
+
+            return 0 
+
+ 
+
+    def _analyze_performance_trend(self, data: pd.DataFrame) -> dict: 
+
+        """Analyze employee performance trends (placeholder)""" 
+
+        try: 
+
+           if isinstance(data, pd.DataFrame) and 'performance_score' in data.columns and 'date' in data.columns: 
+
+                data['date'] = pd.to_datetime(data['date']) #Convert to datetime 
+
+                data = data.sort_values(by = 'date') 
+
+                # Moving Average 
+
+                ma = data['performance_score'].rolling(window=3, min_periods=1).mean() 
+
+                # Exponential Smoothing 
+
+                ewma = data['performance_score'].ewm(span=3, min_periods=1).mean() 
+
+                # Seasonal Decomposition 
+
+                if len(data) > 10: 
+
+                    decomposition = seasonal_decompose(data['performance_score'], model='additive', period=5, extrapolate_trend='freq') 
+
+                    trend = decomposition.trend.fillna(method='bfill').mean() #Take mean of the trend component 
+
+                else: 
+
+                  trend = data['performance_score'].diff().mean() 
+
+                return {'ma': ma.iloc[-1] if not ma.empty else 0, 'ewma': ewma.iloc[-1] if not ewma.empty else 0, 'trend': trend if not np.isnan(trend) else 0} 
+
+           return np.nan 
+
+        except Exception as e: 
+
+           logging.error(f"Error in _analyze_performance_trend: {e}") 
+
+           raise 
+
+     
+
+    def _analyze_text_engagement(self, text: str) -> float: 
+
+        """Analyzes text for engagement signals (placeholder)""" 
+
+        # Placeholder 
+
+        return 0.7 
+
+ 
+
+    def _analyze_login_patterns(self, data: pd.DataFrame) -> int: 
+
+        """Analyze employee login patterns (placeholder)""" 
+
+        try: 
+
+            # Placeholder 
+
+            return np.random.randint(0, 5) 
+
+        except Exception as e: 
+
+           logging.error(f"Error in _analyze_login_patterns: {e}") 
+
+           raise 
+
+    
+
+    def _analyze_survey_responses(self, data: pd.DataFrame) -> np.ndarray: 
+
+        """Analyzes employee survey responses (placeholder)""" 
+
+        try: 
+
+           if isinstance(data, pd.DataFrame) and 'survey_text' in data.columns: 
+
+                text_features = self._process_text_data(data['survey_text']) 
+
+                return text_features 
+
+           return np.nan 
+
+        except Exception as e: 
+
+          logging.error(f"Error in _analyze_survey_responses: {e}") 
+
+          raise 
+
+     
+
+    def _analyze_goal_completion(self, data) -> float: 
+
+         """Analyzes the level of goal completion""" 
+
+         try: 
+
+            return np.random.rand() 
+
+         except Exception as e: 
+
+            logging.error(f"Error in _analyze_goal_completion: {e}") 
+
+            raise 
+
+     
+
+    def _analyze_peer_comparison(self, data) -> float: 
+
+        """Analyzes the performance relative to peers""" 
+
+        try: 
+
+           return np.random.rand() 
+
+        except Exception as e: 
+
+            logging.error(f"Error in _analyze_peer_comparison: {e}") 
+
+            raise 
+
+     
+
+    def _analyze_communication(self, data) -> float: 
+
+         """Analyzes communication patterns""" 
+
+         try: 
+
+           return np.random.rand() 
+
+         except Exception as e: 
+
+           logging.error(f"Error in _analyze_communication: {e}") 
+
+           raise 
+
+     
+
+    def _analyze_attendance(self, data) -> float: 
+
+       """Analyzes meeting attendance""" 
+
+       try: 
+
+         return np.random.rand() 
+
+       except Exception as e: 
+
+         logging.error(f"Error in _analyze_attendance: {e}") 
+
+         raise 
+
+     
+
+    def _analyze_work_hours(self, data) -> float: 
+
+        """Analyzes changes in work hours""" 
+
+        try: 
+
+          return np.random.rand() 
+
+        except Exception as e: 
+
+            logging.error(f"Error in _analyze_work_hours: {e}") 
+
+            raise 
+
+     
+
+    def _analyze_participation(self, data) -> float: 
+
+        """Analyzes participation in projects""" 
+
+        try: 
+
+           return np.random.rand() 
+
+        except Exception as e: 
+
+           logging.error(f"Error in _analyze_participation: {e}") 
+
+           raise 
+
+     
+
+    def _analyze_feedback(self, data) -> float: 
+
+       """Analyzes feedback sentiment""" 
+
+       try: 
+
+           return np.random.rand() 
+
+       except Exception as e: 
+
+           logging.error(f"Error in _analyze_feedback: {e}") 
+
+           raise 
+
+     
+
+    def _analyze_promotions(self, data) -> float: 
+
+       """Analyzes the history of promotions""" 
+
+       try: 
+
+         return np.random.rand() 
+
+       except Exception as e: 
+
+          logging.error(f"Error in _analyze_promotions: {e}") 
+
+          raise 
+
+    
+
+    def _analyze_skill_development(self, data) -> float: 
+
+       """Analyzes skill development activity""" 
+
+       try: 
+
+         return np.random.rand() 
+
+       except Exception as e: 
+
+          logging.error(f"Error in _analyze_skill_development: {e}") 
+
+          raise 
+
+     
+
+    def _analyze_compensation(self, data) -> float: 
+
+        """Analyzes compensation ratios""" 
+
+        try: 
+
+          return np.random.rand() 
+
+        except Exception as e: 
+
+           logging.error(f"Error in _analyze_compensation: {e}") 
+
+           raise 
+
+ 
+
+    def _analyze_market(self, data) -> float: 
+
+        """Analyzes market conditions""" 
+
+        try: 
+
+           return np.random.rand() 
+
+        except Exception as e: 
+
+           logging.error(f"Error in _analyze_market: {e}") 
+
+           raise 
+
+ 
+
+    def _analyze_industry(self, data) -> float: 
+
+       """Analyzes industry trends""" 
+
+       try: 
+
+           return np.random.rand() 
+
+       except Exception as e: 
+
+         logging.error(f"Error in _analyze_industry: {e}") 
+
+         raise 
+
+ 
+
+    def _analyze_competitors(self, data) -> float: 
+
+         """Analyzes competitor activity""" 
+
+         try: 
+
+           return np.random.rand() 
+
+         except Exception as e: 
+
+           logging.error(f"Error in _analyze_competitors: {e}") 
+
+           raise 
+
+ 
+
+    def _profile_model(self, model, data: np.ndarray) -> None: 
+
+        """Profiles the model using tf profiler""" 
+
+        try: 
+
+           logdir = "logs/profile/" + datetime.now().strftime("%Y%m%d-%H%M%S") 
+
+           with tf.profiler.experimental.Profile(logdir): 
+
+                _ = model.predict_proba(self.scaler.transform(data)) 
+
+           logging.info(f"Profiling results saved to {logdir}") 
+
+        except Exception as e: 
+
+           logging.error(f"Error profiling model: {e}") 
+
+           raise 
+
+     
+
+    def _get_feature_importance(self, model, feature_names: list) -> dict: 
+
+         """Extracts feature importances for the given model""" 
+
+         try: 
+
+           if isinstance(model, RandomForestClassifier): 
+
+              return dict(zip(feature_names, model.feature_importances_)) 
+
+           elif isinstance(model, XGBClassifier): 
+
+             return dict(zip(feature_names, model.feature_importances_)) 
+
+           elif isinstance(model, LGBMClassifier): 
+
+                return dict(zip(feature_names, model.feature_importances_)) 
+
+           elif isinstance(model, GradientBoostingClassifier): 
+
+                return dict(zip(feature_names, model.feature_importances_)) 
+
+           else: 
+
+             raise ValueError("Model not supported for feature importance.") 
+
+         except Exception as e: 
+
+           logging.error(f"Error extracting feature importance: {e}") 
+
+           raise 
+
+        
+
+    def _benchmark_model(self, model, X_test: np.ndarray, y_test: np.ndarray, model_name: str) -> dict: 
+
+        """Benchmarks model performance on a holdout set.""" 
+
+        try: 
+
+           y_pred = model.predict(X_test) 
+
+           f1 = f1_score(y_test, y_pred) 
+
+           precision = precision_score(y_test, y_pred) 
+
+           recall = recall_score(y_test, y_pred) 
+
+           accuracy = accuracy_score(y_test, y_pred) 
+
+           logging.info(f"Benchmarking Results for {model_name}: F1 = {f1}, Precision = {precision}, Recall = {recall}, Accuracy = {accuracy}") 
+
+           return {'f1': f1, 'precision': precision, 'recall': recall, 'accuracy': accuracy} 
+
+        except Exception as e: 
+
+            logging.error(f"Error benchmarking model: {e}") 
+
+            raise 
+
+     
+
+    def cleanup(self) -> None: 
+
+        """Releases memory occupied by models.""" 
+
+        try: 
+
+           logging.info("Cleaning up model memory...") 
+
+           tf.keras.backend.clear_session() 
+
+           import gc 
+
+           gc.collect() 
+
+        except Exception as e: 
+
+           logging.error(f"Error during model cleanup: {e}") 
+
+           raise 
+
+Use code with caution. 
+
+Python 
+
+67.5s 
+
+please continue 
+
+ 
+
+import unittest 
+
+ 
+
+class TestPredictiveEngine(unittest.TestCase): 
+
+     
+
+    def setUp(self): 
+
+       self.config = { 
+
+           'model_names': ['rf', 'xgb', 'lgbm', 'gb'], 
+
+            'model_dir': 'test_models/', 
+
+           'n_estimators': 10, 
+
+           'max_depth': 5, 
+
+           'learning_rate': 0.01, 
+
+             'test_size': 0.2, 
+
+             'cv_folds': 2, 
+
+            'performance_weight': 0.30, 
+
+           'behavioral_weight': 0.25, 
+
+            'engagement_weight': 0.20, 
+
+           'career_weight': 0.15, 
+
+            'external_weight': 0.10, 
+
+             'feature_dim': 10, 
+
+             'max_tfidf_features': 10, 
+
+            'selected_model': 'rf', 
+
+             'optimization_iterations': 2, 
+
+            'optimization_folds': 2, 
+
+            'optimization_method': 'bayes', 
+
+            'imputation_strategy': 'median', 
+
+             'ensemble_selection_method': 'weighted_average' 
+
+       } 
+
+       self.engine = PredictiveEngine(config=self.config) 
+
+       
+
+       # Generate some synthetic data for testing 
+
+       num_samples = 10 
+
+       num_features = self.config['feature_dim'] 
+
+       self.test_data = np.random.rand(num_samples, num_features) 
+
+       
+
+       self.test_data_timeseries = pd.DataFrame( 
+
+         {'date': pd.to_datetime(['2023-01-01', '2023-02-01', '2023-03-01', '2023-04-01', '2023-05-01', '2023-06-01', '2023-07-01', '2023-08-01', '2023-09-01', '2023-10-01']), 
+
+           'performance_score': np.random.rand(10) 
+
+          }) 
+
+ 
+
+       self.test_text_data = pd.DataFrame( 
+
+            {'survey_text': ['This is a great place to work', 'I am not feeling well', 'I am feeling good', 'This project is difficult', 'I hate the system']}) 
+
+    
+
+       self.test_data_missing = pd.DataFrame({ 
+
+            'performance_score': [np.nan, 0.8, 0.7, 0.9, 0.6, 0.7, 0.8, 0.9, 0.8, 0.7], 
+
+             'login_time': [1, 2, np.nan, 4, 5, 6, np.nan, 8, 9, 10], 
+
+             'survey_text': ["This is a great place to work", np.nan, "I am feeling good", "This project is difficult", "I hate the system", "I like work", "Its OK here", "Everything sucks", "I want to leave", "All is well"] 
+
+          }) 
+
+ 
+
+    def tearDown(self): 
+
+        # Clean up any model files after testing 
+
+        if os.path.exists(self.config['model_dir']): 
+
+            import shutil 
+
+            shutil.rmtree(self.config['model_dir']) 
+
+             
+
+    def test_predictive_engine_instantiation(self): 
+
+        """Test instantiation of the PredictiveEngine class.""" 
+
+        with self.subTest("Test Class Instantiation"): 
+
+           self.assertIsInstance(self.engine, PredictiveEngine) 
+
+     
+
+    def test_predict_churn_risk(self): 
+
+        """Test the predict_churn_risk method returns a valid output""" 
+
+        with self.subTest("Test Churn Risk Prediction"): 
+
+            risk_profile = self.engine.predict_churn_risk(self.test_data) 
+
+            self.assertIsInstance(risk_profile, dict) 
+
+            self.assertIn('risk_score', risk_profile) 
+
+            self.assertIn('confidence_level', risk_profile) 
+
+ 
+
+    def test_model_training_and_loading(self): 
+
+        """Tests model training and persistence""" 
+
+        with self.subTest("Test Model Training and Loading"): 
+
+          # Ensure models are being trained when path doesn't exist, and loaded when they do 
+
+           engine = PredictiveEngine(self.config) 
+
+           self.assertIsInstance(engine.models, dict) 
+
+           self.assertEqual(len(engine.models), len(self.config['model_names'])) 
+
+       
+
+          # Test loading logic 
+
+           engine_second = PredictiveEngine(self.config) 
+
+           self.assertIsInstance(engine_second.models, dict) 
+
+           self.assertEqual(len(engine_second.models), len(self.config['model_names'])) 
+
+       
+
+            # Ensure it loads without error 
+
+           engine_third = PredictiveEngine(self.config) 
+
+           self.assertIsInstance(engine_third.models, dict) 
+
+           self.assertEqual(len(engine_third.models), len(self.config['model_names'])) 
+
+       
+
+    def test_feature_engineering(self): 
+
+        """Tests that the method allows for custom feature engineering""" 
+
+        with self.subTest("Test Custom Feature Engineering"): 
+
+            def custom_feature_method(data): 
+
+                return data.mean() 
+
+             
+
+            self.engine.add_feature_engineering('custom_feature', custom_feature_method) 
+
+            risk_profile = self.engine.predict_churn_risk(self.test_data) 
+
+            self.assertIn('custom_feature', risk_profile['key_factors']) 
+
+     
+
+    def test_analyze_performance_trend(self): 
+
+        """Tests the analyze performance trend method with time series data""" 
+
+        with self.subTest("Test Time Series Analysis"): 
+
+          trend = self.engine._analyze_performance_trend(self.test_data_timeseries) 
+
+          self.assertIsInstance(trend, dict) 
+
+          self.assertIn('ma', trend) 
+
+          self.assertIn('ewma', trend) 
+
+          self.assertIn('trend', trend) 
+
+ 
+
+    def test_analyze_survey_responses(self): 
+
+        """Tests the analyze survey response method with text data""" 
+
+        with self.subTest("Test Text Analysis"): 
+
+           features = self.engine._analyze_survey_responses(self.test_text_data) 
+
+           self.assertIsInstance(features, np.ndarray) 
+
+ 
+
+    def test_model_predictions(self): 
+
+        """Tests that model predictions are being returned in the profile""" 
+
+        with self.subTest("Test Model Predictions"): 
+
+          risk_profile = self.engine.predict_churn_risk(self.test_data) 
+
+          self.assertIn('model_predictions', risk_profile) 
+
+          self.assertIsInstance(risk_profile['model_predictions'], dict) 
+
+ 
+
+    def test_dynamic_data_handling(self): 
+
+       """Tests that missing data is being correctly handled""" 
+
+       with self.subTest("Test Missing Data Imputation"): 
+
+          risk_profile = self.engine.predict_churn_risk(self.test_data_missing) 
+
+          self.assertIsInstance(risk_profile, dict) 
+
+          self.assertIn('risk_score', risk_profile) 
+
+ 
+
+    def test_exception_handling(self): 
+
+      """Tests that exception handling is working correctly""" 
+
+      with self.subTest("Test Exception for Model Name"): 
+
+            with self.assertRaises(ValueError): 
+
+                 self.engine._get_model_by_name("wrong_model") 
+
+        
+
+      with self.subTest("Test Exception for feature extraction"): 
+
+            with self.assertRaises(Exception):  # Exception in feature extraction 
+
+                 self.engine._extract_risk_indicators("bad data") 
+
+          
+
+      with self.subTest("Test Exception for Training Method"): 
+
+          with self.assertRaises(Exception): # Exception in training 
+
+             self.engine._train_model("wrong_model") 
+
+ 
+
+      with self.subTest("Test Exception for Time Series"): 
+
+            with self.assertRaises(Exception):  # Testing if missing features are handled 
+
+                data = pd.DataFrame({'login_time': [1, 2, 3]}) 
+
+                self.engine._analyze_performance_trend(data)  # Missing performance column 
+
+        
+
+      with self.subTest("Test Exception for Text Data"): 
+
+            with self.assertRaises(Exception):  #Testing if text analysis throws an error with non-text data 
+
+               self.engine._analyze_survey_responses(np.random.rand(10,10)) 
+
+ 
+
+if __name__ == '__main__': 
+
+    # Example usage 
+
+   config = { 
+
+          'model_names': ['rf', 'xgb', 'lgbm', 'gb'], 
+
+         'model_dir': 'models/', 
+
+         'n_estimators': 100, 
+
+         'max_depth': 8, 
+
+         'learning_rate': 0.005, 
+
+           'test_size': 0.2, 
+
+           'cv_folds': 3, 
+
+           'performance_weight': 0.30, 
+
+           'behavioral_weight': 0.25, 
+
+           'engagement_weight': 0.20, 
+
+           'career_weight': 0.15, 
+
+         'external_weight': 0.10, 
+
+           'feature_dim': 10, 
+
+            'max_tfidf_features': 100, 
+
+            'selected_model': 'rf', 
+
+             'optimization_iterations': 3, 
+
+             'optimization_folds': 2, 
+
+              'optimization_method': 'bayes', 
+
+            'imputation_strategy': 'median', 
+
+            'ensemble_selection_method': 'weighted_average' 
+
+       } 
+
+ 
+
+    engine = PredictiveEngine(config = config) 
+
+     
+
+    # Generate some data 
+
+    data = pd.DataFrame({ 
+
+        'performance_score': np.random.rand(10), 
+
+        'date': pd.to_datetime(['2023-01-01', '2023-02-01', '2023-03-01', '2023-04-01', '2023-05-01', '2023-06-01', '2023-07-01', '2023-08-01', '2023-09-01', '2023-10-01']), 
+
+        'survey_text': ["This is a great place to work", "I am not feeling well", "I am feeling good", "This project is difficult", "I hate the system", "I like work", "Its OK here", "Everything sucks", "I want to leave", "All is well"] 
+
+     }) 
+
+     
+
+    def custom_feature_method(data): 
+
+      return data.sum() 
+
+     
+
+    engine.add_feature_engineering('custom_feature', custom_feature_method) 
+
+     
+
+    # Predict churn risk 
+
+    risk_profile = engine.predict_churn_risk(data) 
+
+    print(f"\nRisk Profile: {risk_profile}") 
+
+     
+
+    #Model Profiling 
+
+    input_data = engine._prepare_input_features(engine._extract_risk_indicators(data)) 
+
+    engine._profile_model(engine._get_model_by_name('rf'), input_data.reshape(1,-1)) 
+
+    
+
+    # Model Explainability 
+
+    best_model_name = sorted(risk_profile['model_predictions'], key=lambda x: risk_profile['model_predictions'][x]['score'])[-1] # Get name of model with the highest score 
+
+    best_model = engine.models[best_model_name] # Get model itself 
+
+    feature_names = list(engine._calculate_factor_weights(engine._extract_risk_indicators(data)).keys()) 
+
+    feature_importance = engine._get_feature_importance(best_model, feature_names) 
+
+    print("\nFeature Importances: ", feature_importance) 
+
+     
+
+    unittest.main(argv=['first-arg-is-ignored'], exit=False) 
+
+    engine.cleanup() #Clean up memory. 
+
+ 
+
+Test  
+
+
+
+ 
+
+ 

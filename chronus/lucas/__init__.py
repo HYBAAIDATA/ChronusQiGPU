@@ -37,3 +37,5 @@ __all__ = [
 ]
 
 THEOREM_PROVEN = False
+
+from .scale_model import capacity_bits, scale_ratio, stride_is_bijective, assert_stride_bijective

@@ -1,0 +1,23 @@
+{
+  "experiment": "golden_angle_packing",
+  "description": "Coefficient of variation of nearest-neighbour spacing for spiral packing. Lower CV is more uniform.",
+  "sweep_130_to_145": {
+    "rank_1": {"angle_deg": 137.5, "cv": 0.017923, "label": "golden"},
+    "rank_2": {"angle_deg": 139.5, "cv": 0.042418},
+    "note": "Golden angle wins by factor ~2.4 over next-best."
+  },
+  "comparisons": {
+    "golden": {"cv": 0.018480, "spokes": 101, "uniform": true},
+    "silver_mean": {"cv": 0.041711, "spokes": 101, "uniform": false},
+    "pi_based_137": {"cv": 0.135719, "spokes": 101, "uniform": false},
+    "rational_360_13": {"cv": 0.468160, "spokes": 13, "uniform": false}
+  },
+  "convergence": {
+    "note": "Golden CV stays flat with n; arbitrary angles degrade linearly.",
+    "phi_advantage_at_1600": 0.978
+  },
+  "interpretation": "The golden angle is the global optimum of the packing functional for discrete elements in an expanding space. It is a structural packing constant, not a decorative multiplier.",
+  "coverage_parity_link": "Even Lucas rungs lose half a power-of-two estate; this is a packing failure analogous to rational angles producing few spokes.",
+  "hardware_bridge": "not_yet_tested",
+  "theorem_proven": false
+}

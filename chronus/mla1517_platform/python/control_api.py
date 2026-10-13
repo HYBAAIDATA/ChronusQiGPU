@@ -33,6 +33,14 @@ from urllib.parse import parse_qs
 from urllib.parse import unquote
 from urllib.parse import urlparse
 
+_PLATFORM_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = _PLATFORM_DIR.parents[2]
+_CHRONOS_IGPU = _REPO_ROOT / "packages" / "chronos-one-igpu" / "src"
+_PYTHIA_CONSUMER = _REPO_ROOT / "packages" / "pythia-consumer" / "src"
+for _p in (str(_PLATFORM_DIR), str(_REPO_ROOT), str(_CHRONOS_IGPU), str(_PYTHIA_CONSUMER)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 import runtime_config
 import system_fabric
 import autonomous_supervisor
@@ -167,43 +175,144 @@ _REQUEST_STATS = _RequestStats()
 # Idempotency-Key on a POST/PUT replays the recorded outcome inside the
 # retention window instead of re-executing the mutation. Unknown-outcome
 # retries remain impossible — a key is recorded only after the handler
-# answered, and records expire.
-_IDEMPOTENCY_RECORDS: "dict[str, tuple[float, int, dict]]" = {}
+@dataclass
+class _IdempotencyRecord:
+    created_at: float
+    status: int | None
+    payload: dict[str, Any] | None
+    body_hash: str
+    tenant: str
+    path: str
+
+
+_IDEMPOTENCY_RECORDS: dict[str, _IdempotencyRecord] = {}
 _IDEMPOTENCY_GUARD = threading.Lock()
 _IDEMPOTENCY_TTL_S = 300.0
 _IDEMPOTENCY_MAX = 512
+
+
+def _composite_idempotency_key(
+    key: str, tenant: str, actor: str, method: str, path: str
+) -> str:
+    raw = f"{tenant}|{actor}|{method.upper()}|{path}|{key}"
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _hash_body(body: Any) -> str:
+    try:
+        data = json.dumps(body, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    except Exception:
+        data = str(body).encode("utf-8")
+    return hashlib.sha256(data).hexdigest()
+
+
+def _idempotency_reserve(
+    key: str, tenant: str, actor: str, method: str, path: str, body: dict
+) -> tuple[str, tuple[int, dict] | None]:
+    comp_key = _composite_idempotency_key(key, tenant, actor, method, path)
+    body_h = _hash_body(body)
+    now = time.monotonic()
+    with _IDEMPOTENCY_GUARD:
+        stale = [
+            k for k, rec in _IDEMPOTENCY_RECORDS.items()
+            if now - rec.created_at > _IDEMPOTENCY_TTL_S
+        ]
+        for k in stale:
+            del _IDEMPOTENCY_RECORDS[k]
+
+        entry = _IDEMPOTENCY_RECORDS.get(comp_key)
+        if entry is not None:
+            if entry.body_hash != body_h:
+                conflict_payload = {
+                    "ok": False,
+                    "failure_class": "IDEMPOTENCY_CONFLICT",
+                    "error": "Idempotency key payload mismatch",
+                }
+                return comp_key, (HTTPStatus.CONFLICT, conflict_payload)
+            if entry.status is None:
+                in_flight_payload = {
+                    "ok": False,
+                    "failure_class": "IDEMPOTENCY_IN_FLIGHT",
+                    "error": "Concurrent request with idempotency key currently in-flight",
+                }
+                return comp_key, (HTTPStatus.CONFLICT, in_flight_payload)
+            return comp_key, (int(entry.status), dict(entry.payload or {}))
+
+        while len(_IDEMPOTENCY_RECORDS) >= _IDEMPOTENCY_MAX:
+            _IDEMPOTENCY_RECORDS.pop(next(iter(_IDEMPOTENCY_RECORDS)))
+
+        _IDEMPOTENCY_RECORDS[comp_key] = _IdempotencyRecord(
+            created_at=now,
+            status=None,
+            payload=None,
+            body_hash=body_h,
+            tenant=tenant,
+            path=path,
+        )
+        return comp_key, None
 
 
 def _idempotency_lookup(key: str) -> tuple[int, dict] | None:
     now = time.monotonic()
     with _IDEMPOTENCY_GUARD:
         entry = _IDEMPOTENCY_RECORDS.get(key)
-        if entry is None:
+        if entry is None or entry.status is None:
             return None
-        at, status, payload = entry
-        if now - at > _IDEMPOTENCY_TTL_S:
+        if now - entry.created_at > _IDEMPOTENCY_TTL_S:
             del _IDEMPOTENCY_RECORDS[key]
             return None
-        return status, dict(payload)
+        return entry.status, dict(entry.payload or {})
 
 
-def _idempotency_store(key: str, status: int, payload: dict) -> None:
+def _idempotency_store(
+    key: str,
+    status: int,
+    payload: dict,
+    composite_key: str | None = None,
+    body: dict | None = None,
+) -> None:
     now = time.monotonic()
+    comp_key = composite_key or key
+    body_h = _hash_body(body) if body is not None else ""
     with _IDEMPOTENCY_GUARD:
         stale = [
-            k for k, (at, _s, _p) in _IDEMPOTENCY_RECORDS.items() if now - at > _IDEMPOTENCY_TTL_S
+            k for k, rec in _IDEMPOTENCY_RECORDS.items()
+            if now - rec.created_at > _IDEMPOTENCY_TTL_S
         ]
         for k in stale:
             del _IDEMPOTENCY_RECORDS[k]
-        while len(_IDEMPOTENCY_RECORDS) >= _IDEMPOTENCY_MAX:
+        while len(_IDEMPOTENCY_RECORDS) >= _IDEMPOTENCY_MAX and comp_key not in _IDEMPOTENCY_RECORDS:
             _IDEMPOTENCY_RECORDS.pop(next(iter(_IDEMPOTENCY_RECORDS)))
-        _IDEMPOTENCY_RECORDS[key] = (now, int(status), dict(payload))
+
+        entry = _IDEMPOTENCY_RECORDS.get(comp_key)
+        if entry is not None:
+            entry.created_at = now
+            entry.status = int(status)
+            entry.payload = dict(payload)
+            if body_h:
+                entry.body_hash = body_h
+        else:
+            _IDEMPOTENCY_RECORDS[comp_key] = _IdempotencyRecord(
+                created_at=now,
+                status=int(status),
+                payload=dict(payload),
+                body_hash=body_h,
+                tenant="",
+                path="",
+            )
+
+
+def _idempotency_release(composite_key: str) -> None:
+    with _IDEMPOTENCY_GUARD:
+        entry = _IDEMPOTENCY_RECORDS.get(composite_key)
+        if entry is not None and entry.status is None:
+            del _IDEMPOTENCY_RECORDS[composite_key]
 
 
 def _idempotency_key(headers: Any) -> str:
     """A sane caller-supplied Idempotency-Key, else ''. Malformed keys are
     ignored rather than trusted."""
-    key = (headers.get("Idempotency-Key") or "").strip()
+    key = (headers.get("Idempotency-Key") or headers.get("X-Idempotency-Key") or "").strip()
     return key if _REQUEST_ID_RE.fullmatch(key) else ""
 
 
@@ -562,9 +671,16 @@ class ControlPlane:
         elif handle.record.state == "restarting":
             handle.record.transition("starting", self.audit, "respawn_worker")
         handle.record.attempts_total += 1
-        handle.record.attempts_window = len(handle.restarts)
         env = os.environ.copy()
-        env.setdefault("PYTHONPATH", str(self.python_root))
+        python_root = str(self.python_root)
+        repo_root = str(self.python_root.parents[2])
+        existing_pp = env.get("PYTHONPATH", "")
+        parts = [python_root, repo_root]
+        if existing_pp:
+            for p in existing_pp.split(os.pathsep):
+                if p and p not in parts:
+                    parts.append(p)
+        env["PYTHONPATH"] = os.pathsep.join(parts)
         # Workers inherit the service's stdout/stderr so a container log
         # shows why a worker exited; the restart budget still bounds it.
         # Sovereign deployments run every worker inside the same AL HARAS
@@ -2150,6 +2266,26 @@ def _repo_engineer_ask(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]
 
 def _euclid_cognition_solve(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
     """Execute one real EUCLID cognition episode and return its trace."""
+    mode = str(body.get("mode", "legacy")).lower()
+    if mode == "adaptive":
+        family = str(body.get("family", "")).strip()
+        seed = int(body.get("seed", 0))
+        problem_id = str(body.get("problem_id", "")).strip()
+        initial_code = str(body.get("initial_code", ""))
+        test_code = str(body.get("test_code", ""))
+
+        result = system_fabric.euclid_cognition_solve(
+            mode="adaptive",
+            family=family,
+            seed=seed,
+            problem_id=problem_id,
+            initial_code=initial_code,
+            test_code=test_code,
+        )
+        if not result.get("available"):
+            return HTTPStatus.BAD_REQUEST, {"ok": False, **result}
+        return HTTPStatus.OK, {"ok": True, **result}
+
     problem_id = body.get("problem_id")
     goal = body.get("goal")
     if not isinstance(problem_id, str) or not problem_id.strip():
@@ -2172,8 +2308,9 @@ def _euclid_cognition_solve(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str,
         return tuple(str(item)[:200] for item in raw[:limit])
 
     result = system_fabric.euclid_cognition_solve(
-        problem_id.strip(),
-        goal.strip(),
+        problem_id=problem_id.strip(),
+        goal=goal.strip(),
+        mode=mode,
         problem_class=str(body.get("problem_class") or "repository-wiring")[:120],
         structure=_str_tuple("structure"),
         observations=_str_tuple("observations"),
@@ -2880,16 +3017,24 @@ class _Handler(BaseHTTPRequestHandler):
             if not self._guardian_preflight(parsed.path, body):
                 return
         idem = _idempotency_key(self.headers)
+        comp_key: str | None = None
         if idem:
-            replay = _idempotency_lookup(idem)
+            tenant = self.headers.get("X-HYBA-Tenant") or self.headers.get("X-Tenant-Id") or "default"
+            actor = self.headers.get("X-HYBA-Actor") or self.headers.get("X-Actor-Id") or "anonymous"
+            comp_key, replay = _idempotency_reserve(idem, tenant, actor, "POST", parsed.path, body)
             if replay is not None:
                 status, payload = replay
+                if status == HTTPStatus.CONFLICT:
+                    self._json(status, payload)
+                    return
                 payload["idempotent_replay"] = True
                 self._json(status, payload)
                 return
         try:
             status, payload = handler(body)
         except ValueError as exc:
+            if comp_key:
+                _idempotency_release(comp_key)
             self._json(
                 HTTPStatus.BAD_REQUEST,
                 {
@@ -2900,6 +3045,8 @@ class _Handler(BaseHTTPRequestHandler):
             )
             return
         except Exception as exc:
+            if comp_key:
+                _idempotency_release(comp_key)
             self._json(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
                 {
@@ -2910,7 +3057,7 @@ class _Handler(BaseHTTPRequestHandler):
             )
             return
         if idem and isinstance(payload, dict):
-            _idempotency_store(idem, int(status), payload)
+            _idempotency_store(idem, int(status), payload, composite_key=comp_key, body=body)
         self._json(status, payload)
 
     def do_PUT(self) -> None:  # noqa: N802
@@ -2930,16 +3077,27 @@ class _Handler(BaseHTTPRequestHandler):
             self._json(status, {"error": err})
             return
         idem = _idempotency_key(self.headers)
+        comp_key: str | None = None
         if idem:
-            replay = _idempotency_lookup(idem)
+            tenant = self.headers.get("X-HYBA-Tenant") or self.headers.get("X-Tenant-Id") or "default"
+            actor = self.headers.get("X-HYBA-Actor") or self.headers.get("X-Actor-Id") or "anonymous"
+            comp_key, replay = _idempotency_reserve(idem, tenant, actor, "PUT", parsed.path, body)
             if replay is not None:
                 status, payload = replay
+                if status == HTTPStatus.CONFLICT:
+                    self._json(status, payload)
+                    return
                 payload["idempotent_replay"] = True
                 self._json(status, payload)
                 return
-        status, payload = _config_put(body)
+        try:
+            status, payload = _config_put(body)
+        except Exception:
+            if comp_key:
+                _idempotency_release(comp_key)
+            raise
         if idem and isinstance(payload, dict):
-            _idempotency_store(idem, int(status), payload)
+            _idempotency_store(idem, int(status), payload, composite_key=comp_key, body=body)
         self._json(status, payload)
 
     def log_message(self, format: str, *args: Any) -> None:

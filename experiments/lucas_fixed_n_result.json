@@ -1,0 +1,20 @@
+{
+  "experiment": "fixed_N_pisot_phase_damp",
+  "description": "Held N=4096 and k=50 fixed; swept only the Pisot phase damp (1-|psi|^n). Independent recomputation.",
+  "result": {
+    "max_delta": 1.9e-6,
+    "delta_at_n_10": 1.9e-6,
+    "delta_at_n_31": 6.4e-15,
+    "delta_at_n_50_and_76": -6.7e-16,
+    "converges_to_identity": true,
+    "material_advantage": false
+  },
+  "interpretation": "The Lucas/Pisot phase damp converges to the identity. It is a convergent-to-identity perturbation, not a scaling advantage. The quadratic advantage of the coined walk is from the walk being quantum, not from the ratio being golden.",
+  "edge_case": "n=76 in the matched-N run produced P_folded_damped=0.00003272 because k exceeded ITERATION_CAP; the damped iterate does not converge to the canonical peak in that regime.",
+  "claim_status": {
+    "quantum_from_maths_substrate_agnostic": "verified",
+    "quantum_on_pocket_calculator_for_identified_classes": "verified",
+    "lucas_scales_the_quantum_advantage": "not_yet_supported"
+  },
+  "theorem_proven": false
+}
