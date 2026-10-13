@@ -43,6 +43,8 @@ from kellogg.substrate import (
     QPhi,
     beta_expansion_value,
     cassini_step,
+    cat_map_orbit_topology,
+    cat_map_period,
     lucas_cassini,
     lucas_wind,
     parry_admissible,
@@ -296,6 +298,39 @@ def test_beta_expansion_is_exact_and_admissible():
 
 def test_dual_frame_is_the_true_dual():
     assert dual_frame_is_dual()
+
+
+def test_cat_map_orbit_topology_decomposes_the_discrete_torus():
+    from toe.topology import StateTopology
+
+    res = cat_map_orbit_topology(10)
+    assert isinstance(res["topology"], StateTopology)
+    assert res["state_count"] == 100
+    assert res["orbit_count"] == len(res["cycle_lengths"])
+    assert sum(res["cycle_lengths"]) == 100
+    assert res["pisano_period"] == cat_map_period(10) == 60
+    assert res["divides_period"]
+    assert all(res["pisano_period"] % n == 0 for n in res["cycle_lengths"])
+    assert (0, 0) in res["fixed_points"]
+    topo = res["topology"]
+    assert topo.reachable((0, 0)) == {(0, 0)}  # R fixes the origin
+    assert topo.boundary_states() == []  # R is a bijection: in- and out-edges everywhere
+    assert topo.articulation_points() == []  # disjoint cycles: no bottlenecks
+
+    fixed = cat_map_orbit_topology(1)
+    assert fixed["cycle_lengths"] == [1] and fixed["divides_period"]
+
+    with pytest.raises(ValueError):
+        cat_map_orbit_topology(0)
+
+
+def test_cat_map_orbits_at_frame_modulus_32_divide_the_pisano_period():
+    res = cat_map_orbit_topology(32)
+    assert res["state_count"] == 1024
+    assert sum(res["cycle_lengths"]) == 1024
+    assert res["pisano_period"] == 48
+    assert res["divides_period"]
+    assert res["fixed_points"] == [(0, 0)]
 
 
 # -- channels, Hamiltonians, Fisher ------------------------------------------------------

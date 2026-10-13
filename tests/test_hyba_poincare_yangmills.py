@@ -59,7 +59,8 @@ class HybaPoincareYangMillsTests(unittest.TestCase):
         self.assertAlmostEqual(self.report["gap"], 1.0 / (2.0 * PHI * PHI), places=6)
         self.assertAlmostEqual(self.report["gap"], (3.0 - math.sqrt(5.0)) / 4.0, places=6)
         self.assertGreater(self.report["gap"], 0.0)
-        # chi(g)/d on the gap irrep is phi/2 = (1 + sqrt(5))/4, recognized, not typed in.
+        # chi(g)/d on the gap irrep is phi/2 = (1 + sqrt(5))/4, derived from the
+        # class algebra and verified exactly — not recognized, not typed in.
         self.assertEqual(self.report["gap_algebraic"], {"p": 1, "q": 1, "k": 4})
         multiplicities = sorted(level["multiplicity"] for level in self.report["levels"])
         self.assertEqual(multiplicities, sorted(d * d for d in self.report["dims"]))

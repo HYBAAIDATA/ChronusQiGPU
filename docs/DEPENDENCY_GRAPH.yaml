@@ -134,6 +134,10 @@ nodes:
     owner: PYTHIA
     criticality: R4
     interface: HTTP_OPERATOR
+  pythia.control.session:
+    owner: PYTHIA
+    criticality: R4
+    interface: HTTP_OPERATOR
   pythia.gpu:
     owner: CHRONUS
     criticality: R4
@@ -386,6 +390,9 @@ edges:
   to: pythia.runtime_config_file
   kind: api
 - from: pythia.config.update
+  to: pythia.boot_audit
+  kind: api
+- from: pythia.control.session
   to: pythia.boot_audit
   kind: api
 - from: pythia.gpu

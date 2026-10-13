@@ -3,7 +3,12 @@
 import argparse
 import json
 import os
-from pathlib import Path
+import sys
+from pathlib import Path, PurePosixPath
+
+_PLATFORM_DIR = Path(__file__).resolve().parent.parent / "chronus" / "mla1517_platform" / "python"
+if str(_PLATFORM_DIR) not in sys.path:
+    sys.path.insert(0, str(_PLATFORM_DIR))
 
 from startup_contract import StartupConfigError, validate_worker_identity
 
@@ -49,7 +54,7 @@ def evaluate(env):
             except ValueError:
                 valid = False
         if name in PATHS and valid:
-            valid = Path(value).is_absolute()
+            valid = Path(value).is_absolute() or PurePosixPath(value).is_absolute()
         check(name, valid)
     check("PYTHIA_POOLS", env.get("PYTHIA_POOLS") == "viabtc,braiins")
     check("PYTHIA_POOL_PROFILE", env.get("PYTHIA_POOL_PROFILE") == "viabtc")

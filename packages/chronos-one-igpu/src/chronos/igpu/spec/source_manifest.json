@@ -1,0 +1,233 @@
+{
+  "schema": "chronos_standalone_sources_v2",
+  "review_date": "2026-10-07",
+  "scope": "Standalone implementation of the attached v3.4 baseline, reviewed relevant Notion specifications and supplied notes. No repository work or repository source dependency.",
+  "source_policy": "Pages are specification inputs. A PR title/state records provenance, not source import or merge status of this standalone distribution.",
+  "sources": [
+    {
+      "url": "https://app.notion.com/p/4c570b8df65342089342464e2d12f11e",
+      "title": "Golden Quantum Search Framework \u2014 Formal Verification & Benchmarking Package",
+      "state": "page",
+      "use": "Golden Quantum module/class inventory, executable math interfaces and historical suite provenance"
+    },
+    {
+      "url": "https://app.notion.com/p/449671c29bc14fd1a3c1509696f6a0dc",
+      "title": "Golden Quantum Framework: Architecture & Evolution",
+      "state": "page",
+      "use": "Independent iGPU, optional host composition, capability routing, partitions and evidence"
+    },
+    {
+      "url": "https://app.notion.com/p/c79745a4c61e4210933751d9931e1f65",
+      "title": "Golden Quantum \u2014 Research Advancement & Institutional Validation Roadmap",
+      "state": "page",
+      "use": "Benchmark budgets, equal-work controls and deployment checks"
+    },
+    {
+      "url": "https://app.notion.com/p/cbf3cbd3cb764b66a8798ba45da76dc6",
+      "title": "PYTHIA Mining-First Wiring Checklist",
+      "state": "page",
+      "use": "Default S1\u2013S6 solve-first with F1\u2013F3 fallback and target authority"
+    },
+    {
+      "url": "https://app.notion.com/p/20b5c5f70ad347afa294831fc2d11dc9",
+      "title": "PYTHIA Production Cut Plan \u2014 P0/P1/P2 Fixes Applied",
+      "state": "page",
+      "use": "Actual counters, configuration, non-root deployment, shutdown"
+    },
+    {
+      "url": "https://app.notion.com/p/dcae4ac6af404ac08cba81c24fd955f2",
+      "title": "feat: integrate audited Golden Quantum research framework",
+      "state": "closed_unmerged_pr",
+      "use": "Bounded finite math, exact digest authority and quotas"
+    },
+    {
+      "url": "https://app.notion.com/p/c4a55c294db54fd883df6d86b0af0120",
+      "title": "Build canonical Chronus Virtual iGPU runtime",
+      "state": "merged_pr",
+      "use": "Versioned standalone ABI, tenant admission and receipts"
+    },
+    {
+      "url": "https://app.notion.com/p/8adb993db02248f28834ddc4665fba00",
+      "title": "chronus: close post-#94 iGPU findings \u2014 alias gating, iGPU classification, kernel launch bounds",
+      "state": "merged_pr",
+      "use": "iGPU identity classification and kernel launch bounds"
+    },
+    {
+      "url": "https://app.notion.com/p/e8445dcc18634837a90bf854f4faf082",
+      "title": "chronus/measurement: 11-layer iGPU tech-stack measurement \u2014 attested, replayable, nothing fabricated",
+      "state": "merged_pr",
+      "use": "Elapsed work evidence, replay and explicit unknown sensor fields"
+    },
+    {
+      "url": "https://app.notion.com/p/5829ab5530104d54a653589d6b3d56f1",
+      "title": "Implement measured tensor, iGPU/GPU and ASIC runtime boundary",
+      "state": "merged_pr",
+      "use": "Tensor APIs and unchanged certified nonce coverage"
+    },
+    {
+      "url": "https://app.notion.com/p/a2a875e3a1ac48bf9d690324b9ed17af",
+      "title": "fix(pythia): restore canonical mining authority and full intelligence arsenal",
+      "state": "closed_unmerged_pr",
+      "use": "Authority/context retained; standalone virtual ABI is not represented as the original Chronus-1 binary ISA"
+    },
+    {
+      "url": "https://app.notion.com/p/76422392396e4a6cae6cfc0b7bbfe5cc",
+      "title": "Port quantum_compute_substrate v0.4.2 \u2014 PULVINI + 1000-qubit MPS + X-Infinity tensor",
+      "state": "merged_pr",
+      "use": "Exact pair folding/selective unfolding plus baseline MPS retained; encoding explicitly specified"
+    },
+    {
+      "url": "https://app.notion.com/p/30e4c84b11844b418461a92c326b3492",
+      "title": "audit: quantum truth, tensor safety, and real QPU boundary",
+      "state": "closed_unmerged_pr",
+      "use": "Hermitian/unitary checks and opt-in lossy MPS admission"
+    },
+    {
+      "url": "https://app.notion.com/p/146747594c0a4ff98161301722c98341",
+      "title": "feat(chronus): establish executable QX command contract",
+      "state": "draft_pr",
+      "use": "Executable standalone QX commands, descriptors and barriers"
+    },
+    {
+      "url": "https://app.notion.com/p/27dcb49a329c4118a5840cfde99c0faa",
+      "title": "Consolidate July Geodesic Tensor capabilities into Chronus/Tensor",
+      "state": "merged_pr",
+      "use": "One owning facade, bounded tensor APIs and partial unfolding"
+    },
+    {
+      "url": "https://app.notion.com/p/8efcce1164d24cdbaa4685c7d8d6164e",
+      "title": "Standalone enterprise deployment",
+      "state": "reviewed_page",
+      "use": "Independent product packaging and service",
+      "title_note": "Descriptive source label; see original page for its complete title."
+    },
+    {
+      "url": "https://app.notion.com/p/3f3411d7e25c449db0087d32ba47f3f0",
+      "title": "Lucas-scaled iGPU execution windows",
+      "state": "reviewed_page",
+      "use": "N_eff=base_items*L_n, declared ladder, domain clamp",
+      "title_note": "Descriptive source label; see original page for its complete title."
+    },
+    {
+      "url": "https://app.notion.com/p/94d69172a55b4b4896a6d3f8e4ad100a",
+      "title": "Native iGPU contract",
+      "state": "reviewed_page",
+      "use": "Logical device independent of physical host; lane-aligned dispatch",
+      "title_note": "Descriptive source label; see original page for its complete title."
+    },
+    {
+      "url": "https://app.notion.com/p/b7dbabf8d788497487b3572ac8cd2e92",
+      "title": "SuperGPU composition and routing",
+      "state": "reviewed_page",
+      "use": "Single-owner compose/route/execute",
+      "title_note": "Descriptive source label; see original page for its complete title."
+    },
+    {
+      "url": "https://app.notion.com/p/146c9259c8fc414480791539fd09d8b0",
+      "title": "Certified MLA object and retrieval contract",
+      "state": "reviewed_page",
+      "use": "Exact/folded/projection/proof/executable views, address and durable object custody",
+      "title_note": "Descriptive source label; see original page for its complete title."
+    },
+    {
+      "url": "https://app.notion.com/p/0ba827811a9d4665873f8669c42f9550",
+      "title": "Precise Lucas datapath",
+      "state": "reviewed_page",
+      "use": "Multi-limb kernel, host exact verification",
+      "title_note": "Descriptive source label; see original page for its complete title."
+    },
+    {
+      "url": "https://app.notion.com/p/387ee3624e6b4b788bf1f720fae65d8e",
+      "title": "Mathematical intrinsics and type domains",
+      "state": "reviewed_page",
+      "use": "Integer/rational exactness separate from floating views",
+      "title_note": "Descriptive source label; see original page for its complete title."
+    },
+    {
+      "url": "https://app.notion.com/p/bdca92422aaf46b4b712cf037a14a510",
+      "title": "Portable measured control planner",
+      "state": "reviewed_page",
+      "use": "Measured genetic promotion, bounded pipelines and execution evidence",
+      "title_note": "Descriptive source label; see original page for its complete title."
+    },
+    {
+      "url": "https://app.notion.com/p/8d32df49925d4ce69156788d361022a2",
+      "title": "Integrate Chronus substrate across CPU, GPU, ASIC and Super ASIC mining",
+      "state": "reviewed_page",
+      "use": "Accelerator-portable candidate preservation, sealed search input/output and unchanged host SHA256d authority."
+    }
+  ],
+  "current_directive": "All relevant functionality is mandatory implementation scope; preserve source titles and provenance, do not treat research/experimental wording as an exclusion.",
+  "supplied_notes": {
+    "directory": "docs/source_notes",
+    "integrity_manifest": "docs/source_notes/MANIFEST.json",
+    "preservation": "Unedited user-supplied markup retained, including earlier and corrected scaling statements."
+  },
+  "public_sources": [
+    {
+      "url": "https://developer.apple.com/videos/play/wwdc2025/315/",
+      "use": "Published MLX unified-memory execution, GPU streams and explicit lazy materialisation."
+    },
+    {
+      "url": "https://developer.apple.com/documentation/coreml/mlcomputeunits",
+      "use": "Declared Core ML permitted compute-unit policies, no assumed per-layer Neural Engine execution."
+    },
+    {
+      "organization": "NIST",
+      "url": "https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.180-4.pdf",
+      "technique": "SHA256 compression, padding and chaining state",
+      "code": "igpu/native/sha256d_native.c"
+    },
+    {
+      "organization": "NVIDIA",
+      "url": "https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html",
+      "technique": "Asynchronous scheduling with bounded completion boundaries",
+      "code": "igpu/asic_mining.py MiningFarm",
+      "scope": "Portable CPU queue implementation, not CUDA execution"
+    },
+    {
+      "organization": "OpenXLA",
+      "url": "https://openxla.org/xla/tf2xla",
+      "technique": "Fused stages avoiding intermediate materialisation",
+      "code": "igpu/native/sha256d_native.c scan_batch",
+      "scope": "Original SHA/target fusion implementation, not an XLA backend"
+    },
+    {
+      "organization": "AWS",
+      "url": "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs",
+      "technique": "Stable request identity and duplicate coalescing",
+      "code": "igpu/virtual_abi.py execute_once"
+    },
+    {
+      "organization": "Microsoft",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/retry",
+      "technique": "Retry safety after uncertain execution",
+      "code": "igpu/virtual_abi.py execute_once"
+    },
+    {
+      "organization": "Apple",
+      "url": "https://developer.apple.com/videos/play/wwdc2025/315/",
+      "technique": "Explicit materialisation and unified-memory framework binding",
+      "code": "igpu/apple.py",
+      "scope": "Existing optional v3.7 binding retained"
+    }
+  ],
+  "version": "3.9.0",
+  "v3.9_reviewed_sources": [
+    {
+      "url": "https://app.notion.com/p/d0bb23ec3dc841d5a4bc523d6cc29cc7",
+      "title": "Integrate complete July Chronus v3.3 and HYBA mining intelligence",
+      "use": "membership and original authority, no source import claimed"
+    },
+    {
+      "url": "https://app.notion.com/p/72bb3f3e1521400d8df31ed0b542226e",
+      "title": "Activate Chronus on Intel integrated GPUs",
+      "use": "fail-closed device identity, bounded launch, profiling and target qualification"
+    },
+    {
+      "url": "https://app.notion.com/p/bbf9b08a7515458aa6d1ebc5ef5b29e3",
+      "title": "Activate measured closed-loop healing and optimisation",
+      "use": "negative measurements retained; bounded measured promotion/recovery requirements carried forward, no canonical coordinator source port claimed"
+    }
+  ]
+}

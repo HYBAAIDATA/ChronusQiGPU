@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "golden-quantum-framework"
+version = "1.0.0"
+description = "The Golden Quantum Framework — 8 φ-based mathematical families, each tested for its computational purpose"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "HYBA"}]
+keywords = ["golden-ratio", "fibonacci", "lucas", "zeckendorf", "cassini", "quantum", "mathematics"]
+# numpy is NOT in the upstream v1.0 metadata. It is required by the in-repo
+# extensions (golden_fourier, golden_czt, golden_wavelet, metallic_fourier),
+# which are additions to the imported framework -- see PROVENANCE.md.
+dependencies = [
+    "numpy>=1.24",
+]
+
+[project.scripts]
+gqf = "golden_quantum.runner:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"

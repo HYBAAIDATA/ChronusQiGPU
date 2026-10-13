@@ -54,9 +54,10 @@ def check(root=ROOT):
         if row['canonical_manifest'] not in paths:
             errors.append('canonical manifest not owned: '+name)
         for rel in paths:
-            if rel in covered:
+            rel_norm = rel.replace('\\', '/')
+            if rel_norm in covered:
                 errors.append('manifest counted twice: '+rel)
-            covered.add(rel)
+            covered.add(rel_norm)
             p = root/rel
             if not p.is_file():
                 errors.append('missing manifest: '+rel)
@@ -82,7 +83,7 @@ def check(root=ROOT):
                 if version not in ('1.0.0', 'DYNAMIC'):
                     version_actions.append({'distribution': name, 'development_version': version,
                                             'first_public_target': '1.0.0'})
-    discovered = {str(p.relative_to(root)) for p in root.rglob('pyproject.toml')
+    discovered = {p.relative_to(root).as_posix() for p in root.rglob('pyproject.toml')
                   if not (set(p.relative_to(root).parts) & IGNORE)}
     if discovered != covered:
         errors.append('manifest coverage mismatch: '+repr(sorted(discovered ^ covered)))

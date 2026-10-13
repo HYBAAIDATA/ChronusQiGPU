@@ -1,0 +1,144 @@
+{
+  "schema": "chronos_m5_exact_expansion_review/1",
+  "increment_base_revision": "ba2e893748ef4d706e52005acd0e030b68937ac7",
+  "candidate": "3.11.2rc2",
+  "scope": "Locally reconstructed review tree and scoped installed-package checks, not a complete current-head product certification. CI must rebuild complete checkout.",
+  "variants": {
+    "native": {
+      "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+      "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+      "source_revision": "UNAVAILABLE",
+      "worktree_state": "UNKNOWN",
+      "canonical_model_sha256": "fcbd06487dc62eb9ca0ff886c80da181a77e41cf7f515144b0188659712bfa44",
+      "wheel": {
+        "name": "chronos_one_igpu-3.11.2rc2-cp313-cp313-linux_x86_64.whl",
+        "sha256": "a91efca89a34ed4547b1fe7eb7c70e041d06bd295c87455550f0b556187a4a54"
+      },
+      "sdist": {
+        "name": "chronos_one_igpu-3.11.2rc2.tar.gz",
+        "sha256": "bf02953d070d35fc143b3a729bdc1768a3cbf8d16926a765008502c658ea39af"
+      },
+      "sdist_rebuilt_wheel_sha256": "034b5520aa8f8ecbf44237593defc30615f86a0ae6dce7cb2ec980ca30d9b7f9",
+      "wheel_tests": {
+        "junit_sha256": "5ff4e60364532afc75206525c148965fa3a526c7ed105f60631639c92e6a51c5",
+        "results": [
+          {
+            "errors": "0",
+            "failures": "0",
+            "skipped": "0",
+            "tests": "77"
+          }
+        ]
+      },
+      "sdist_tests": {
+        "junit_sha256": "932b27e06e6c577d586d14890b4c5269a3224212bbe0e4d90e00db4d33680c9d",
+        "results": [
+          {
+            "errors": "0",
+            "failures": "0",
+            "skipped": "0",
+            "tests": "77"
+          }
+        ]
+      },
+      "package_checks_passed": true,
+      "verification_report_sha256": "e416cb2cbe9a67f39560b824846a4b3126864433d7553afdfc9fbb2b65a3d987",
+      "source_inventory_sha256": "9a4fc4a9a1359391d5dde138a52fb6f269e97b368c419688bc88b98b065f619c",
+      "standalone_regression": {
+        "results": [
+          {
+            "name": "pytest",
+            "errors": "0",
+            "failures": "0",
+            "skipped": "0",
+            "tests": "42",
+            "time": "1.551",
+            "timestamp": "2026-10-08T20:40:51.949448+00:00",
+            "hostname": "7e9196d6-09b"
+          }
+        ],
+        "junit_sha256": "4a17edd177cfa930203ee44bdb7800af7a2f142aa05122263c535daf24c88591",
+        "monorepo_only_tests_deselected": 7
+      }
+    },
+    "portable": {
+      "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+      "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+      "source_revision": "UNAVAILABLE",
+      "worktree_state": "UNKNOWN",
+      "canonical_model_sha256": "fcbd06487dc62eb9ca0ff886c80da181a77e41cf7f515144b0188659712bfa44",
+      "wheel": {
+        "name": "chronos_one_igpu-3.11.2rc2-py3-none-any.whl",
+        "sha256": "6ef23e5289cd3c4ab40aeed278ef8fd45bb6e17605868a1399eee95f73bc8a16"
+      },
+      "sdist": {
+        "name": "chronos_one_igpu-3.11.2rc2.tar.gz",
+        "sha256": "2e9c78788234ecdaf3e4f8a435aeaf1633921ae02b6ca57a4078f9ac3b00e7ef"
+      },
+      "sdist_rebuilt_wheel_sha256": "3bc824abbac591e77bf2dd644b43e02f7986656b089e3b827b35a7cc01908cb9",
+      "wheel_tests": {
+        "junit_sha256": "f30de291653bbf3a0253736461ceba2aef5e5b543068b2e890edf2e5c1f71900",
+        "results": [
+          {
+            "errors": "0",
+            "failures": "0",
+            "skipped": "0",
+            "tests": "77"
+          }
+        ]
+      },
+      "sdist_tests": {
+        "junit_sha256": "170698d15d8d792406f7e72f0175125dce35aa6a168b58490822e621404fe4c6",
+        "results": [
+          {
+            "errors": "0",
+            "failures": "0",
+            "skipped": "0",
+            "tests": "77"
+          }
+        ]
+      },
+      "package_checks_passed": true,
+      "verification_report_sha256": "65ced4afc676eae56e373c6724255b965ca595b95c6d5019b1188d197c5df297",
+      "source_inventory_sha256": "9a4fc4a9a1359391d5dde138a52fb6f269e97b368c419688bc88b98b065f619c",
+      "standalone_regression": {
+        "results": [
+          {
+            "name": "pytest",
+            "errors": "0",
+            "failures": "0",
+            "skipped": "0",
+            "tests": "42",
+            "time": "1.537",
+            "timestamp": "2026-10-08T20:40:54.293669+00:00",
+            "hostname": "7e9196d6-09b"
+          }
+        ],
+        "junit_sha256": "ac7dbb1c33b01d73633493579fef58fabaa6bd6e2996ffd151d35e0eb230b727",
+        "monorepo_only_tests_deselected": 7
+      }
+    }
+  },
+  "production_certified": false,
+  "published": false,
+  "ci_execution_verified": false,
+  "physical_gpu_execution_claimed": false,
+  "physical_quantum_execution_claimed": false,
+  "notion_contract_source": "https://app.notion.com/p/77b43c289fc64ce58fc65ac53a43f6f7",
+  "cases": {
+    "focused_unique_cases_per_install": 77,
+    "installed_paths": 4,
+    "standalone_regression_cases_per_variant": 42,
+    "monorepo_only_cases_deselected": 7,
+    "whole_product_result": "NOT_CERTIFIED"
+  },
+  "new_capabilities": [
+    "exact M5 GHZ gate algebra",
+    "exact topology-linked cluster gate algebra",
+    "exact Born probabilities and independent closed-form verification",
+    "algorithm/module/model/topology/source-bound replay",
+    "backend-neutral bounded independently verified exact batch interface",
+    "physical-operation rejection for unqualified adapters"
+  ],
+  "claim_boundary": "Exact finite quantum mathematics executed symbolically on CPU. One qubit per pad, max ten; not the full modelled Hilbert register, QPU/physical entanglement, silicon expansion, hashrate uplift, pool acceptance or competitor evidence."
+}

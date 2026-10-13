@@ -1,0 +1,1 @@
+{"schema":"chronus.ir.v0.1","name":"reduce_sum_generated","op":"reduce_sum_local","dtype":"f32","shape":{"n":256}}

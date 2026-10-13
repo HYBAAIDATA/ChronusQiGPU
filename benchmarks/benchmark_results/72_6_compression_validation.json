@@ -1,0 +1,108 @@
+{
+  "claim": "72.6% working-set reduction claim validated with \u03c6\u00b2 = 2.618\u00d7 depth-2 folding",
+  "validated": true,
+  "total_tests": 8,
+  "passed": 8,
+  "pass_rate": 1.0,
+  "avg_working_set_ratio": 2.618821208086386,
+  "avg_net_compression_ratio": 1.1979058899274433,
+  "max_reconstruction_error": 2.411213558151978e-06,
+  "results": [
+    {
+      "test_name": "LLM KV-cache (small)",
+      "original_size": 1024,
+      "folded_size": 391,
+      "working_set_ratio": 2.6189258312020463,
+      "working_set_reduction_pct": 61.81640625,
+      "net_compression_ratio": 1.1642978965321205,
+      "net_reduction_pct": 14.111328125,
+      "reconstruction_error": 6.479090084798848e-07,
+      "lossless": false,
+      "meets_72_6_target": true
+    },
+    {
+      "test_name": "LLM KV-cache (medium)",
+      "original_size": 4096,
+      "folded_size": 1564,
+      "working_set_ratio": 2.6189258312020463,
+      "working_set_reduction_pct": 61.81640625,
+      "net_compression_ratio": 1.1797235023041475,
+      "net_reduction_pct": 15.234375,
+      "reconstruction_error": 1.17403728271292e-06,
+      "lossless": false,
+      "meets_72_6_target": true
+    },
+    {
+      "test_name": "LLM KV-cache (large)",
+      "original_size": 16384,
+      "folded_size": 6258,
+      "working_set_ratio": 2.6180888462767657,
+      "working_set_reduction_pct": 61.80419921875,
+      "net_compression_ratio": 1.1814994095748037,
+      "net_reduction_pct": 15.361785888671875,
+      "reconstruction_error": 2.411213558151978e-06,
+      "lossless": false,
+      "meets_72_6_target": true
+    },
+    {
+      "test_name": "Quantum state (small)",
+      "original_size": 1024,
+      "folded_size": 391,
+      "working_set_ratio": 2.6189258312020463,
+      "working_set_reduction_pct": 61.81640625,
+      "net_compression_ratio": 0.7447611255057048,
+      "net_reduction_pct": -34.271240234375,
+      "reconstruction_error": 8.518981319408476e-15,
+      "lossless": true,
+      "meets_72_6_target": true
+    },
+    {
+      "test_name": "Quantum state (medium)",
+      "original_size": 4096,
+      "folded_size": 1564,
+      "working_set_ratio": 2.6189258312020463,
+      "working_set_reduction_pct": 61.81640625,
+      "net_compression_ratio": 0.7459564054407831,
+      "net_reduction_pct": -34.05609130859375,
+      "reconstruction_error": 1.6488146200963916e-14,
+      "lossless": true,
+      "meets_72_6_target": true
+    },
+    {
+      "test_name": "Structured data",
+      "original_size": 4096,
+      "folded_size": 1564,
+      "working_set_ratio": 2.6189258312020463,
+      "working_set_reduction_pct": 61.81640625,
+      "net_compression_ratio": 1.4070766059773274,
+      "net_reduction_pct": 28.9306640625,
+      "reconstruction_error": 5.161007836166309e-07,
+      "lossless": false,
+      "meets_72_6_target": true
+    },
+    {
+      "test_name": "Sparse data",
+      "original_size": 4096,
+      "folded_size": 1564,
+      "working_set_ratio": 2.6189258312020463,
+      "working_set_reduction_pct": 61.81640625,
+      "net_compression_ratio": 1.9817357121257937,
+      "net_reduction_pct": 49.5391845703125,
+      "reconstruction_error": 3.8727102263136264e-07,
+      "lossless": false,
+      "meets_72_6_target": true
+    },
+    {
+      "test_name": "High entropy",
+      "original_size": 4096,
+      "folded_size": 1564,
+      "working_set_ratio": 2.6189258312020463,
+      "working_set_reduction_pct": 61.81640625,
+      "net_compression_ratio": 1.1781964619588667,
+      "net_reduction_pct": 15.12451171875,
+      "reconstruction_error": 1.529092690807814e-06,
+      "lossless": false,
+      "meets_72_6_target": true
+    }
+  ]
+}

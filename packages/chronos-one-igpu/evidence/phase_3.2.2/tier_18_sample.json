@@ -1,0 +1,646 @@
+{
+  "classification": "MEASURED",
+  "execution_mode": "sparse",
+  "records": [
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        0,
+        1
+      ],
+      "following": 1,
+      "pipeline_depth": 6,
+      "pisot": [
+        false,
+        false
+      ],
+      "previous": 4294967295,
+      "prime_address": 2,
+      "rung": 0,
+      "value": 2,
+      "working_width": 32,
+      "zeckendorf_mask": 0
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        1,
+        1
+      ],
+      "following": 3,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        false
+      ],
+      "previous": 2,
+      "prime_address": 3,
+      "rung": 1,
+      "value": 1,
+      "working_width": 32,
+      "zeckendorf_mask": 1
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        1,
+        2
+      ],
+      "following": 4,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 1,
+      "prime_address": 5,
+      "rung": 2,
+      "value": 3,
+      "working_width": 32,
+      "zeckendorf_mask": 2
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        2,
+        3
+      ],
+      "following": 7,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 3,
+      "prime_address": 7,
+      "rung": 3,
+      "value": 4,
+      "working_width": 32,
+      "zeckendorf_mask": 4
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        3,
+        5
+      ],
+      "following": 11,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 4,
+      "prime_address": 11,
+      "rung": 4,
+      "value": 7,
+      "working_width": 32,
+      "zeckendorf_mask": 5
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        5,
+        8
+      ],
+      "following": 18,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 7,
+      "prime_address": 13,
+      "rung": 5,
+      "value": 11,
+      "working_width": 32,
+      "zeckendorf_mask": 8
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        8,
+        13
+      ],
+      "following": 29,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 11,
+      "prime_address": 17,
+      "rung": 6,
+      "value": 18,
+      "working_width": 32,
+      "zeckendorf_mask": 9
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        13,
+        21
+      ],
+      "following": 47,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 18,
+      "prime_address": 19,
+      "rung": 7,
+      "value": 29,
+      "working_width": 32,
+      "zeckendorf_mask": 10
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        21,
+        34
+      ],
+      "following": 76,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 29,
+      "prime_address": 23,
+      "rung": 8,
+      "value": 47,
+      "working_width": 32,
+      "zeckendorf_mask": 16
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        34,
+        55
+      ],
+      "following": 123,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 47,
+      "prime_address": 29,
+      "rung": 9,
+      "value": 76,
+      "working_width": 32,
+      "zeckendorf_mask": 17
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        55,
+        89
+      ],
+      "following": 199,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 76,
+      "prime_address": 31,
+      "rung": 10,
+      "value": 123,
+      "working_width": 32,
+      "zeckendorf_mask": 18
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        89,
+        144
+      ],
+      "following": 322,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 123,
+      "prime_address": 37,
+      "rung": 11,
+      "value": 199,
+      "working_width": 32,
+      "zeckendorf_mask": 20
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        144,
+        233
+      ],
+      "following": 521,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 199,
+      "prime_address": 41,
+      "rung": 12,
+      "value": 322,
+      "working_width": 32,
+      "zeckendorf_mask": 21
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        233,
+        377
+      ],
+      "following": 843,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 322,
+      "prime_address": 43,
+      "rung": 13,
+      "value": 521,
+      "working_width": 32,
+      "zeckendorf_mask": 32
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        377,
+        610
+      ],
+      "following": 1364,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 521,
+      "prime_address": 47,
+      "rung": 14,
+      "value": 843,
+      "working_width": 32,
+      "zeckendorf_mask": 33
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        610,
+        987
+      ],
+      "following": 2207,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 843,
+      "prime_address": 53,
+      "rung": 15,
+      "value": 1364,
+      "working_width": 32,
+      "zeckendorf_mask": 34
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        987,
+        1597
+      ],
+      "following": 3571,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 1364,
+      "prime_address": 59,
+      "rung": 16,
+      "value": 2207,
+      "working_width": 32,
+      "zeckendorf_mask": 36
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        1597,
+        2584
+      ],
+      "following": 5778,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 2207,
+      "prime_address": 61,
+      "rung": 17,
+      "value": 3571,
+      "working_width": 32,
+      "zeckendorf_mask": 37
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        2584,
+        4181
+      ],
+      "following": 9349,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 3571,
+      "prime_address": 67,
+      "rung": 18,
+      "value": 5778,
+      "working_width": 32,
+      "zeckendorf_mask": 40
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        4181,
+        6765
+      ],
+      "following": 15127,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 5778,
+      "prime_address": 71,
+      "rung": 19,
+      "value": 9349,
+      "working_width": 32,
+      "zeckendorf_mask": 41
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        6765,
+        10946
+      ],
+      "following": 24476,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 9349,
+      "prime_address": 73,
+      "rung": 20,
+      "value": 15127,
+      "working_width": 32,
+      "zeckendorf_mask": 42
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        10946,
+        17711
+      ],
+      "following": 39603,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 15127,
+      "prime_address": 79,
+      "rung": 21,
+      "value": 24476,
+      "working_width": 32,
+      "zeckendorf_mask": 64
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        17711,
+        28657
+      ],
+      "following": 64079,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 24476,
+      "prime_address": 83,
+      "rung": 22,
+      "value": 39603,
+      "working_width": 32,
+      "zeckendorf_mask": 65
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        28657,
+        46368
+      ],
+      "following": 103682,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 39603,
+      "prime_address": 89,
+      "rung": 23,
+      "value": 64079,
+      "working_width": 32,
+      "zeckendorf_mask": 66
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        46368,
+        75025
+      ],
+      "following": 167761,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 64079,
+      "prime_address": 97,
+      "rung": 24,
+      "value": 103682,
+      "working_width": 32,
+      "zeckendorf_mask": 68
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        75025,
+        121393
+      ],
+      "following": 271443,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 103682,
+      "prime_address": 101,
+      "rung": 25,
+      "value": 167761,
+      "working_width": 32,
+      "zeckendorf_mask": 69
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        121393,
+        196418
+      ],
+      "following": 439204,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 167761,
+      "prime_address": 103,
+      "rung": 26,
+      "value": 271443,
+      "working_width": 32,
+      "zeckendorf_mask": 72
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        196418,
+        317811
+      ],
+      "following": 710647,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 271443,
+      "prime_address": 107,
+      "rung": 27,
+      "value": 439204,
+      "working_width": 32,
+      "zeckendorf_mask": 73
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        317811,
+        514229
+      ],
+      "following": 1149851,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 439204,
+      "prime_address": 109,
+      "rung": 28,
+      "value": 710647,
+      "working_width": 32,
+      "zeckendorf_mask": 74
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        514229,
+        832040
+      ],
+      "following": 1860498,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 710647,
+      "prime_address": 113,
+      "rung": 29,
+      "value": 1149851,
+      "working_width": 32,
+      "zeckendorf_mask": 80
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        832040,
+        1346269
+      ],
+      "following": 3010349,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 1149851,
+      "prime_address": 127,
+      "rung": 30,
+      "value": 1860498,
+      "working_width": 32,
+      "zeckendorf_mask": 81
+    },
+    {
+      "backend": "sparse-reference",
+      "cassini_pass": true,
+      "fold": [
+        1346269,
+        2178309
+      ],
+      "following": 4870847,
+      "pipeline_depth": 6,
+      "pisot": [
+        true,
+        true
+      ],
+      "previous": 1860498,
+      "prime_address": 131,
+      "rung": 31,
+      "value": 3010349,
+      "working_width": 32,
+      "zeckendorf_mask": 82
+    }
+  ]
+}

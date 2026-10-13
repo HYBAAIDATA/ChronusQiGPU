@@ -119,3 +119,5 @@ __all__ = [
     "probe_riemann",
     "probe_yang_mills",
 ]
+
+from .discrete.phi_resonance import r_phi, phi_norm_ratio, construct_T_tensor
