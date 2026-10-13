@@ -1,0 +1,36 @@
+{
+  "mcp_spec_version": "1.0",
+  "name": "pythia",
+  "version": "0.4.2",
+  "description": "Pythia Devin augmentation plugin packaged for MCP consumption: delivers EUCLID aptitude (session-wide Intelligence skills + plugin skills), session/start and stop gates, and evidence pack validation.",
+  "author": { "name": "HYBA Software Limited" },
+  "connectors": [
+    {
+      "name": "notion",
+      "type": "Notion",
+      "description": "Optional Notion-based MCP connector for canonical pages / knowledge access. Configure `url` and auth via environment variables or MCP secrets.",
+      "config": {
+        "url": "https://app.notion.com/", 
+        "catalog_id": "", 
+        "auth": {
+          "method": "env",
+          "env_client_id": "NOTION_CLIENT_ID",
+          "env_client_secret": "NOTION_CLIENT_SECRET",
+          "env_token": "NOTION_ACCESS_TOKEN"
+        }
+      }
+    }
+  ],
+  "entrypoints": {
+    "session_start": "plugins/pythia/scripts/session_start.py",
+    "stop_gate": "plugins/pythia/scripts/stop_gate.py"
+  },
+  "files": [
+    "plugins/pythia/scripts/session_start.py",
+    "plugins/pythia/scripts/stop_gate.py",
+    "plugins/pythia/scripts/plugin_status.py",
+    "plugins/pythia/skills/",
+    "Intelligence/skills/"
+  ],
+  "notes": "This file is a minimal MCP metadata template — fill connector config and secrets in mcp_config.json or via MCP server when registering. Do not commit secrets into the repository."
+}
