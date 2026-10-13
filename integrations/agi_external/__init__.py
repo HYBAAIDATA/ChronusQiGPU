@@ -1,8 +1,7 @@
 """External AGI surface.
 
 Offered to clients. Contract-bound, ledgered, and gated by AL HARAS.
-ASI internals (Intelligence/asi, full regenerative runtime, self-modification)
-are never imported or exposed here.
+ASI internals are withheld by an import-time boundary check.
 """
 
 from __future__ import annotations
@@ -10,8 +9,8 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 from integrations.llm_gateway import LLMGateway, GatewayRequest, CAPABILITY as GATEWAY_CAP
+from integrations.agi_external.boundary import assert_external_boundary
 
-# Capabilities offered externally. ASI is absent by construction.
 EXTERNAL_AGI_CAPABILITIES: List[Dict[str, Any]] = [
     GATEWAY_CAP,
     {
@@ -36,12 +35,14 @@ EXTERNAL_AGI_CAPABILITIES: List[Dict[str, Any]] = [
 
 
 class ExternalAGI:
-    """Client-facing AGI. No path to ASI."""
+    """Client-facing AGI. Boundary checked on every call."""
 
     def __init__(self) -> None:
+        assert_external_boundary()
         self.gateway = LLMGateway()
 
     def reason(self, prompt: str, client_id: str = "external") -> Dict[str, Any]:
+        assert_external_boundary()
         req = GatewayRequest(prompt=prompt, client_id=client_id, rag_enabled=True, cache_enabled=True)
         resp = self.gateway.process(req)
         return {
