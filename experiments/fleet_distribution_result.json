@@ -1,0 +1,13 @@
+{
+  "experiment": "golden_angle_fleet_distribution",
+  "description": "Assign N work items to D devices. Golden: floor(i*phi) % D. Round-robin: i % D.",
+  "result": {
+    "round_robin_perfectly_balanced": true,
+    "golden_cv_range": [0.0032, 0.0212],
+    "golden_max_load_ratio_vs_rr": [1.0056, 1.024],
+    "golden_beats_round_robin_on_balance": false
+  },
+  "interpretation": "On a uniform discrete assignment, round-robin is exactly balanced by construction. Golden-angle assignment is close (CV < 0.03) but does not improve on perfect balance. The packing advantage of the golden angle appears in continuous expanding spaces (phyllotaxis), not in this modular discrete assignment.",
+  "next_construction": "A continuous or expanding work domain (growing number of devices, non-uniform item sizes, or spatial embedding) is required before a packing advantage can appear.",
+  "theorem_proven": false
+}
