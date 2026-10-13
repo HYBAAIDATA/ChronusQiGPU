@@ -1,0 +1,104 @@
+{
+  "task_id": "QS-REVIEW-20261013",
+  "repository": "PhiEnterprise1/EuclidPhiEnterprise",
+  "baseline_sha": "6688e83c22d36dc16dfd5516e9e7d81959c84438",
+  "branch": "fix/exact-subregister-contracts-20261013",
+  "head_sha": "recorded in final PR handoff; not self-embedded",
+  "changed_files": [
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/hilbert.py",
+    "turing_universal_quantum_computer/tests/test_exact_subregister_contracts.py",
+    "docs/EXACT_SUBREGISTER_REVIEW.md",
+    "docs/exact_subregister_local_validation.json"
+  ],
+  "source_sha256": {
+    "turing_universal_quantum_computer/hilbert.py": "e7ebb9cf72b55baf93d68aede52872ecb4a7a8b279b51d904439f74bf0a2559d",
+    "turing_universal_quantum_computer/quantum_library.py": "06a4ae52634655a11921a18f33d1f3321b966d4b0e78b27e811e27aec826ba41",
+    "turing_universal_quantum_computer/quantum_walk.py": "52b89109723ecae36e4bf477740931a8ca0ee4b37b2b9d6771bd526c84cdd338",
+    "turing_universal_quantum_computer/stabilizer.py": "a797ffb00561a6db4344bfe1de8cd72784dc76b097b530a39e63a783085ab69d"
+  },
+  "new_test_sha256": "96d73421dc4b546913178fc2f10ca006a894af8fd37c70179a9ae0eca6f6d98d",
+  "environment": {
+    "python": "3.13.14",
+    "sympy": "1.14.0",
+    "pytest": "9.1.1",
+    "black": "26.10.1"
+  },
+  "scope": "Retrieved real source modules in isolated namespace; real package __init__, full checkout/conftests, backend registry/custody and installed artifacts excluded. No numerical substitute. Allocation guards used only in refusal tests.",
+  "commands": [
+    {
+      "cwd": "/data/substrate-review/baseline",
+      "command": "PYTHONPATH=. ../venv/bin/python -m pytest --confcutdir=tests tests/test_exact_subregister_contracts.py -q --tb=short",
+      "exit_code": 1,
+      "summary": "35 failed, 25 passed"
+    },
+    {
+      "cwd": "/data/substrate-review/patched",
+      "command": "PYTHONPATH=. ../venv/bin/python -m pytest --confcutdir=tests tests/test_exact_subregister_contracts.py tests/test_exact_operator_contracts.py tests/test_quantum_library.py -k 'not lanes_report and not execute_ops' -q --tb=short",
+      "exit_code": 0,
+      "summary": "122 passed, 3 deselected"
+    },
+    {
+      "cwd": "/data/substrate-review/{baseline,patched}",
+      "command": "PYTHONPATH=. timeout 30 ../venv/bin/python -m pytest --confcutdir=tests tests/test_quantum_library.py::test_qpe_nondyadic_phase_is_exact_not_float -q --tb=short",
+      "exit_codes": [
+        0,
+        0
+      ],
+      "summary": "1 passed on baseline and patch"
+    },
+    {
+      "cwd": "/data/substrate-review/patched",
+      "command": "../venv/bin/python -m black --line-length 100 --check tests/test_exact_subregister_contracts.py",
+      "exit_code": 0
+    },
+    {
+      "cwd": "/data/substrate-review/patched",
+      "command": "../venv/bin/python -m compileall -q turing_universal_quantum_computer/hilbert.py tests/test_exact_subregister_contracts.py",
+      "exit_code": 0
+    },
+    {
+      "cwd": "/data/substrate-review/patched",
+      "command": "PYTHONPATH=. ../venv/bin/python -O -c 'import turing_universal_quantum_computer.hilbert as h\\nr=h.QuantumRegister(2,max_amplitudes=2);before=dict(r.amplitudes)\\nfor operation in [lambda:h.qft(r,[0,0]),lambda:h.qft(r,[0,1]),lambda:h.fourier_matrix(True),lambda:h.QSqrt(root=2.9),lambda:h.reduced_density_matrix(r,[0,0])]:\\n try: operation()\\n except (TypeError,ValueError,IndexError,MemoryError): pass\\n else: raise RuntimeError(\"invalid request passed under optimization\")\\nif r.amplitudes != before: raise RuntimeError(\"refusal mutated the register\")\\nprint(\"Optimization-independent subregister refusal: pass\")\\n'",
+      "exit_code": 0
+    },
+    {
+      "cwd": "/data/substrate-review/patched",
+      "command": "../venv/bin/python -c 'import ast,pathlib\\ntext=pathlib.Path(\"turing_universal_quantum_computer/hilbert.py\").read_text()\\nnames={\"fourier_matrix\",\"qft\",\"reduced_density_matrix\",\"_subregister_qubits\",\"_matrix_budget\",\"_fourier_scale\"}\\nfor node in ast.parse(text).body:\\n if isinstance(node,ast.FunctionDef) and node.name in names:\\n  if any(isinstance(x,ast.Constant) and type(x.value) is float for x in ast.walk(node)):raise RuntimeError(\"float literal\")\\nprint(\"Exact operator float-literal check: pass\")\\n'",
+      "exit_code": 0
+    }
+  ],
+  "deselected_tests": [
+    "test_lanes_report_live_backends",
+    "test_execute_ops_selects_exact_lane_for_clifford",
+    "test_execute_ops_refuses_unknown_gate"
+  ],
+  "unexecuted_gates": [
+    "full package init",
+    "registry/certificate/custody replay",
+    "repository and TUQC suites",
+    "frontend",
+    "installed artifacts",
+    "CI",
+    "flake8/repository Black",
+    "security",
+    "drift/import/deploy gates",
+    "device benchmarks",
+    "production qualification"
+  ],
+  "non_acceptance_experiments": [
+    {
+      "description": "Experimental global zero normalization variant failed a small nonbinary Fourier check before correction, then a combined run was interrupted; global zero changes were discarded.",
+      "status": "superseded; no pass claim"
+    }
+  ],
+  "residual_counterexamples": {
+    "vqe_nonhermitian_energy": "I for repeated-qubit XY term",
+    "qaoa_endpoint_coercion": "[(0.9,1)] becomes [(0,1)]"
+  },
+  "authority": "human independent engineering/security review and production approval required; not self-certified",
+  "connector_write_limit": {
+    "first_batch_status": "rejected before execution",
+    "reason": "MCP input request confirmation exceeded 65536 bytes",
+    "canonical_map_update": "not persisted; requires approved patch-capable executor"
+  }
+}
