@@ -24,16 +24,16 @@
       "bytes": 5334
     },
     "Intelligence/self_healing/self_repair.py": {
-      "sha256": "cdcce8a2a8e7ef95533daf6c2be827f73559d6b12a7bf62e2b108cc9a55232a3",
-      "bytes": 56845
+      "sha256": "a5603da4e659d083b825161fd1d776a4587c022a796ef757802cc1e5bd62eb89",
+      "bytes": 55993
     },
     "tests/test_salamander_agentic.py": {
       "sha256": "df03382ccaebb5945ea0a290d647b04684ef0bcadb56647a8cac39c06557ef50",
       "bytes": 13031
     },
     "tests/test_salamander_repair_boundary.py": {
-      "sha256": "5875f4af902795ae1f5e4567ace9b83541d6d15d785f8258ecd5e57273c66367",
-      "bytes": 12412
+      "sha256": "c6d8a4db4b0e24090f40ab02d086aebfe7984bb61483286fddf1142ab9cda7f2",
+      "bytes": 13391
     }
   },
   "validation": [
@@ -41,15 +41,15 @@
       "command": "/data/salamander-venv/bin/python -m pytest tests/test_salamander_repair_boundary.py -q --tb=short",
       "cwd": "/data/salamander-baseline-run",
       "exit_code": 1,
-      "result": "35 failed, 1 passed",
+      "result": "36 failed, 1 passed",
       "log": "baseline-final.log",
-      "interpretation": "7 behavioural gate counterexamples; 28 failures require the newly introduced validator API, not 28 independently reproduced runtime defects"
+      "interpretation": "8 behavioural gate counterexamples; 28 failures require the newly introduced validator API, not 28 independently reproduced runtime defects"
     },
     {
       "command": "/data/salamander-venv/bin/python -m pytest tests/test_salamander_repair_boundary.py tests/test_existing_compatibility_local.py -q",
       "cwd": "/data/salamander-work",
       "exit_code": 0,
-      "result": "50 passed: 36 new parameterized cases plus 14 selected existing cases",
+      "result": "51 passed: 37 new parameterized cases plus 14 selected existing cases",
       "log": "patched-final.log"
     },
     {

@@ -6,7 +6,7 @@ Task SALAMANDER-HEAL-20261013. Repository PhiEnterprise1/EuclidPhiEnterprise, ma
 
 ## Reproduced defects and changes
 
-The agentic optimizer wrote live source before running a callback or shell command. A callback returning True, 1 or a nonempty string authorized publication. A shell command could create a marker and authorize a candidate without any bound test evidence. The resonance optimizer directly mutated the live file and treated its structural score as success. The separate self-repair entry point accepted an auto-apply flag and an unrelated passing test as sufficient to change source.
+The agentic optimizer wrote live source before running a callback or shell command. A callback returning True, 1 or a nonempty string authorized publication. A shell command could create a marker and authorize a candidate without any bound test evidence. The resonance optimizer directly mutated the live file and treated its structural score as success. The separate self-repair entry point accepted an auto-apply flag and an unrelated passing test as sufficient to change source. Dependency proposal generation also appended requirements before any approval; it is now read-only.
 
 Both repair entry points now delegate to the existing RepairTransaction primitive. Baseline and candidate bytes remain separate until a host-supplied validator returns exact digest-bound, nonempty, isolated regression evidence. Without that validator, source is unchanged. Legacy command/callback arguments are rejected, not executed. An auto-apply flag alone cannot authorize a write. The live resonance-mutator bypass is blocked; independently generated candidates can still enter the transaction gate.
 
@@ -16,9 +16,9 @@ The self-repair cycle can receive a host-configured validator. Default CLI and e
 
 ## Observed validation
 
-36 new parameterized gate cases on the baseline: 35 failed, 1 passed (exit 1). Seven are behavioral bypass counterexamples; the other 28 enforce the new validator API, so they are not 28 independent runtime defects.
+37 new parameterized gate cases on the baseline: 36 failed, 1 passed (exit 1). Eight are behavioral bypass counterexamples; the other 28 enforce the new validator API, so they are not 28 independent runtime defects.
 
-Patched: 36 new cases plus 14 selected existing cases passed, 50 total (exit 0). Black check at line length 100, Flake8 with repository-applicable ignores, Ruff E9/F and compileall each exited 0. Exact commands, tool versions and source hashes are in salamander_repair_admission_validation.json.
+Patched: 37 new cases plus 14 selected existing cases passed, 51 total (exit 0). Black check at line length 100, Flake8 with repository-applicable ignores, Ruff E9/F and compileall each exited 0. Exact commands, tool versions and source hashes are in salamander_repair_admission_validation.json.
 
 Real retrieved original modules were tested in an isolated namespace. Full package initialization, actual conftests and installed artifacts were excluded. The 14 compatibility cases retain original test bodies, apart from the three deliberate admission-contract corrections. Production-directory scans and engine-dependent cases were not executed.
 
