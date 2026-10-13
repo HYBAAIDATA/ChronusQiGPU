@@ -58,13 +58,24 @@
     },
     {
       "cwd": "/data/substrate-review/patched",
-      "command": "PYTHONPATH=. ../venv/bin/python -O -c 'import turing_universal_quantum_computer.hilbert as h\\nr=h.QuantumRegister(2,max_amplitudes=2);before=dict(r.amplitudes)\\nfor operation in [lambda:h.qft(r,[0,0]),lambda:h.qft(r,[0,1]),lambda:h.fourier_matrix(True),lambda:h.QSqrt(root=2.9),lambda:h.reduced_density_matrix(r,[0,0])]:\\n try: operation()\\n except (TypeError,ValueError,IndexError,MemoryError): pass\\n else: raise RuntimeError(\"invalid request passed under optimization\")\\nif r.amplitudes != before: raise RuntimeError(\"refusal mutated the register\")\\nprint(\"Optimization-independent subregister refusal: pass\")\\n'",
-      "exit_code": 0
+      "command": "PYTHONPATH=. ../venv/bin/python -O -c 'import turing_universal_quantum_computer.hilbert as h\nr=h.QuantumRegister(2,max_amplitudes=2);before=dict(r.amplitudes)\nfor operation in [lambda:h.qft(r,[0,0]),lambda:h.qft(r,[0,1]),lambda:h.fourier_matrix(True),lambda:h.QSqrt(root=2.9),lambda:h.reduced_density_matrix(r,[0,0])]:\n try: operation()\n except (TypeError,ValueError,IndexError,MemoryError): pass\n else: raise RuntimeError(\"invalid request passed under optimization\")\nif r.amplitudes != before: raise RuntimeError(\"refusal mutated the register\")\nprint(\"Optimization-independent subregister refusal: pass\")\n'",
+      "exit_code": 0,
+      "argv": [
+        "../venv/bin/python",
+        "-O",
+        "-c",
+        "import turing_universal_quantum_computer.hilbert as h\nr=h.QuantumRegister(2,max_amplitudes=2);before=dict(r.amplitudes)\nfor operation in [lambda:h.qft(r,[0,0]),lambda:h.qft(r,[0,1]),lambda:h.fourier_matrix(True),lambda:h.QSqrt(root=2.9),lambda:h.reduced_density_matrix(r,[0,0])]:\n try: operation()\n except (TypeError,ValueError,IndexError,MemoryError): pass\n else: raise RuntimeError(\"invalid request passed under optimization\")\nif r.amplitudes != before: raise RuntimeError(\"refusal mutated the register\")\nprint(\"Optimization-independent subregister refusal: pass\")\n"
+      ]
     },
     {
       "cwd": "/data/substrate-review/patched",
-      "command": "../venv/bin/python -c 'import ast,pathlib\\ntext=pathlib.Path(\"turing_universal_quantum_computer/hilbert.py\").read_text()\\nnames={\"fourier_matrix\",\"qft\",\"reduced_density_matrix\",\"_subregister_qubits\",\"_matrix_budget\",\"_fourier_scale\"}\\nfor node in ast.parse(text).body:\\n if isinstance(node,ast.FunctionDef) and node.name in names:\\n  if any(isinstance(x,ast.Constant) and type(x.value) is float for x in ast.walk(node)):raise RuntimeError(\"float literal\")\\nprint(\"Exact operator float-literal check: pass\")\\n'",
-      "exit_code": 0
+      "command": "../venv/bin/python -c 'import ast,pathlib\ntext=pathlib.Path(\"turing_universal_quantum_computer/hilbert.py\").read_text()\nnames={\"fourier_matrix\",\"qft\",\"reduced_density_matrix\",\"_subregister_qubits\",\"_matrix_budget\",\"_fourier_scale\"}\nfor node in ast.parse(text).body:\n if isinstance(node,ast.FunctionDef) and node.name in names:\n  if any(isinstance(x,ast.Constant) and type(x.value) is float for x in ast.walk(node)):raise RuntimeError(\"float literal\")\nprint(\"Exact operator float-literal check: pass\")\n'",
+      "exit_code": 0,
+      "argv": [
+        "../venv/bin/python",
+        "-c",
+        "import ast,pathlib\ntext=pathlib.Path(\"turing_universal_quantum_computer/hilbert.py\").read_text()\nnames={\"fourier_matrix\",\"qft\",\"reduced_density_matrix\",\"_subregister_qubits\",\"_matrix_budget\",\"_fourier_scale\"}\nfor node in ast.parse(text).body:\n if isinstance(node,ast.FunctionDef) and node.name in names:\n  if any(isinstance(x,ast.Constant) and type(x.value) is float for x in ast.walk(node)):raise RuntimeError(\"float literal\")\nprint(\"Exact operator float-literal check: pass\")\n"
+      ]
     }
   ],
   "deselected_tests": [
@@ -78,7 +89,7 @@
     "repository and TUQC suites",
     "frontend",
     "installed artifacts",
-    "CI",
+    "CI check-run evidence unavailable: GitHub returned HTTP 403 Resource not accessible by personal access token",
     "flake8/repository Black",
     "security",
     "drift/import/deploy gates",
