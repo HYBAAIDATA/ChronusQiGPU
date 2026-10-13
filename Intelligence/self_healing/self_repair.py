@@ -687,39 +687,9 @@ def _find_requirements_txt(repo_root: Path) -> Path:
     return repo_root / "requirements.txt"
 
 
-def _add_requirements_dep(repo_root: Path, dep_line: str) -> Tuple[bool, str]:
-    req_path = _find_requirements_txt(repo_root)
-    if not req_path.exists():
-        return False, f"{req_path} not found"
-    text = req_path.read_text(encoding="utf-8")
-    pkg = dep_line.split("=")[0].split(">")[0].split("<")[0].strip().lower()
-    if pkg in text.lower():
-        return True, f"{dep_line} already present"
-    with open(req_path, "a", encoding="utf-8") as f:
-        f.write(f"\n{dep_line}\n")
-    return True, f"added {dep_line} to {req_path}"
-
-
-def _pip_install(dep_line: str) -> Tuple[bool, str]:
-    try:
-        proc = subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--quiet", dep_line],
-            capture_output=True,
-            text=True,
-            timeout=180,
-        )
-        if proc.returncode == 0:
-            return True, f"pip installed {dep_line}"
-        return False, f"pip install failed for {dep_line}: {proc.stderr[-500:]}"
-    except subprocess.TimeoutExpired:
-        return False, f"pip install timed out for {dep_line}"
-    except Exception as exc:  # noqa: BLE001
-        return False, f"pip install raised {type(exc).__name__}: {exc}"
-
-
 def _propose_dependency_fix(cf: ClassifiedFailure, repo_root: Path) -> Optional[LLMRepairOutcome]:
     """If a missing module maps to a known PyPI dep, propose adding it to
-    requirements.txt and installing it."""
+    requirements.txt without changing the repository or environment."""
     text = f"{cf.failure.message}\n{cf.failure.traceback_text}"
     module_name = None
     m = _MISSING_MODULE_RE.search(text)
@@ -736,16 +706,22 @@ def _propose_dependency_fix(cf: ClassifiedFailure, repo_root: Path) -> Optional[
         return None
     req_path = _find_requirements_txt(repo_root)
     rel = _rel_target(repo_root, req_path)
-    added, note = _add_requirements_dep(repo_root, dep_line)
-    if not added:
+    if not req_path.is_file():
         return LLMRepairOutcome(
             available=False,
-            reason=f"Missing module '{module_name}' maps to {dep_line}, but {note}. No patch applied.",
+            reason=f"Missing dependency '{module_name}'; no requirements file found.",
         )
-    new_content = req_path.read_text(encoding="utf-8")
+    original = req_path.read_text(encoding="utf-8")
+    pkg = dep_line.split("=")[0].split(">")[0].split("<")[0].strip().lower()
+    if pkg in original.lower():
+        return LLMRepairOutcome(
+            available=False,
+            reason=f"Dependency {dep_line} is already declared; investigate the environment.",
+        )
+    new_content = original + ("" if original.endswith("\n") else "\n") + dep_line + "\n"
     return LLMRepairOutcome(
         available=True,
-        diagnosis=f"Missing module '{module_name}' maps to known dependency {dep_line}. {note}.",
+        diagnosis=f"Missing module '{module_name}' maps to {dep_line}; human-reviewed dependency proposal only.",
         proposed_file_content=new_content,
         target_file=rel,
         raw_response="rule_based_dependency_fix",
