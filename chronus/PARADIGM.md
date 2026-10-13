@@ -71,7 +71,7 @@ The rung may later select the memory-contract envelope. That proposal is unteste
 | Plane | Where Lucas/Pisot is structural | Where it is not |
 |-------|---------------------------------|-----------------|
 | KELLOGG | \(\mathbb{Z}[\phi]\) ring; exact sign without floats; `_drift_step` without materialising \(L_m\) as float | — |
-| TURING | Folded Grover Cassini witness; `fib(6)` FIFO; `PISOT_EXACT_N = 76` derived; backend admission before execution | `phi_vqc` Clifford skeleton does not enter the ranking path |
+| TURING | Folded Grover Cassini witness; `fib(6)` FIFO; `PISOT_EXACT_N = 76` derived; backend admission before execution | `phi_vqc` Clifford skeleton is capability-demonstration only |
 | CHRONUS | Dual-mode contract; digest-bound evidence gates; exact state-vector algebra; seam scale envelope | Dispatch tile size (hardware-bound, power-of-two) |
 
 ---
