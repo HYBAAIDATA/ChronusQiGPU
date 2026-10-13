@@ -1,0 +1,28 @@
+{
+  "version": "1.0",
+  "connectors": {
+    "notion": {
+      "type": "notion",
+      "enabled": false,
+      "auth": {
+        "method": "env",
+        "env_client_id": "NOTION_CLIENT_ID",
+        "env_client_secret": "NOTION_CLIENT_SECRET",
+        "env_token": "NOTION_ACCESS_TOKEN"
+      },
+      "notes": "Fill via MCP secrets or environment. Never commit real tokens."
+    },
+    "storage": {
+      "type": "object_storage",
+      "enabled": false,
+      "provider": "s3|gcs|azure",
+      "bucket": "",
+      "notes": "Optional for evidence pack upload."
+    }
+  },
+  "owner_approval": {
+    "required_for": ["canonical_promotion", "production_release"],
+    "contact": "@EuclidUltimaPhi"
+  },
+  "notes": "Template only. Do not commit secrets. theorem_proven remains False."
+}
