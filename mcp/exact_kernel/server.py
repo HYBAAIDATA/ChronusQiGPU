@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
-"""Exact Kernel MCP server aligned with MCP specification 2026-07-28.
+"""Exact Kernel MCP server aligned with the standard MCP initialize handshake.
 
-Stateless: no initialize handshake. Every request carries protocol version,
-clientInfo and clientCapabilities in _meta.
-Implements server/discover.
-theorem_proven remains False on all results.
-
-Usage (stdio):
-  python -m mcp.exact_kernel.server
+The server keeps backward-compatible support for stateless metadata-driven
+requests but implements the real initialize handshake used by MCP clients.
 """
 
 from __future__ import annotations
@@ -16,8 +11,9 @@ import json
 import sys
 from typing import Any
 
-PROTOCOL_VERSION = "2026-07-28"
-SERVER_INFO = {"name": "exact-kernel", "version": "0.2.0"}
+PROTOCOL_VERSION = "2024-11-05"
+SERVER_INFO = {"name": "exact-kernel", "version": "0.2.1"}
+STANDARD_PROTOCOL_VERSIONS = {PROTOCOL_VERSION}
 
 try:
     from chronus.lucas.core import lucas, fibonacci
@@ -25,6 +21,27 @@ try:
 except ImportError as e:
     print(json.dumps({"error": f"Import failed: {e}. Set PYTHONPATH to repo root."}), file=sys.stderr)
     sys.exit(1)
+
+
+def _supports_protocol(version: Any) -> bool:
+    return str(version) in STANDARD_PROTOCOL_VERSIONS if version is not None else True
+
+
+def initialize_response(request_id: Any) -> dict[str, Any]:
+    return {
+        "jsonrpc": "2.0",
+        "id": request_id,
+        "result": {
+            "protocolVersion": PROTOCOL_VERSION,
+            "capabilities": {
+                "tools": {"listChanged": False},
+                "resources": {"subscribe": False},
+                "prompts": {},
+            },
+            "serverInfo": SERVER_INFO,
+        },
+        "_meta": {"io.modelcontextprotocol/serverInfo": SERVER_INFO},
+    }
 
 
 def cassini_witness(n: int) -> dict[str, Any]:
@@ -47,11 +64,11 @@ def zeckendorf(n: int) -> dict[str, Any]:
     if n < 0:
         raise ValueError("n must be non-negative")
     if n == 0:
-        return {"n": 0, "indices": [], "non_adjacency": True, "theorem_proven": False}
+        return {"n": 0, "indices": [], "non_adjacency": True, "valid": True, "theorem_proven": False}
     fibs = [1, 2]
     while fibs[-1] <= n:
         fibs.append(fibs[-1] + fibs[-2])
-    indices = []
+    indices: list[int] = []
     remaining = n
     for i in range(len(fibs) - 1, -1, -1):
         if fibs[i] <= remaining:
@@ -61,22 +78,65 @@ def zeckendorf(n: int) -> dict[str, Any]:
                 break
     indices = sorted(indices)
     non_adj = all(indices[i + 1] - indices[i] >= 2 for i in range(len(indices) - 1))
-    return {"n": n, "indices": indices, "non_adjacency": non_adj, "theorem_proven": False}
+    if not non_adj:
+        raise ValueError(
+            f"Zeckendorf certificate failed for n={n}: adjacent indices observed in representation {indices}"
+        )
+    return {"n": n, "indices": indices, "non_adjacency": True, "valid": True, "theorem_proven": False}
 
 
 def largest_feasible_tile(max_size: int, alignment: int = 16) -> dict[str, Any]:
     if max_size < alignment:
-        return {"tile": 0, "feasible": False, "theorem_proven": False}
-    tile = 1
-    while (tile << 1) <= max_size and (tile << 1) % alignment == 0:
-        tile <<= 1
+        return {
+            "tile": None,
+            "feasible": False,
+            "max_size": max_size,
+            "alignment": alignment,
+            "reason": "max_size is smaller than the required alignment",
+            "theorem_proven": False,
+        }
+    candidate = 1 << (max_size.bit_length() - 1)
+    while candidate > 0:
+        if candidate % alignment == 0:
+            return {
+                "tile": candidate,
+                "feasible": True,
+                "max_size": max_size,
+                "alignment": alignment,
+                "theorem_proven": False,
+            }
+        candidate >>= 1
     return {
-        "tile": tile,
-        "feasible": True,
+        "tile": None,
+        "feasible": False,
         "max_size": max_size,
         "alignment": alignment,
+        "reason": "no power-of-two tile is compatible with the alignment",
         "theorem_proven": False,
     }
+
+
+def _tool_result(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    if name == "lucas":
+        n = int(arguments["n"])
+        return {"L_n": lucas(n), **cassini_witness(n)}
+    if name == "fibonacci":
+        n = int(arguments["n"])
+        return {"F_n": fibonacci(n), "theorem_proven": False}
+    if name == "cassini":
+        return cassini_witness(int(arguments["n"]))
+    if name == "zeckendorf":
+        return zeckendorf(int(arguments["n"]))
+    if name == "ladder_verify":
+        return verify_ladder()
+    if name == "ladder_capacity":
+        return {"capacity": ladder_capacity(int(arguments["bound"])), "theorem_proven": False}
+    if name == "largest_feasible_tile":
+        return largest_feasible_tile(
+            int(arguments["max_size"]),
+            int(arguments.get("alignment", 16)),
+        )
+    raise ValueError(f"Unknown tool: {name}")
 
 
 TOOLS = {
@@ -118,56 +178,37 @@ TOOLS = {
 }
 
 
-def handle_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-    if name == "lucas":
-        n = int(arguments["n"])
-        return {"L_n": lucas(n), **cassini_witness(n)}
-    if name == "fibonacci":
-        n = int(arguments["n"])
-        return {"F_n": fibonacci(n), "theorem_proven": False}
-    if name == "cassini":
-        return cassini_witness(int(arguments["n"]))
-    if name == "zeckendorf":
-        return zeckendorf(int(arguments["n"]))
-    if name == "ladder_verify":
-        return verify_ladder()
-    if name == "ladder_capacity":
-        return {"capacity": ladder_capacity(int(arguments["bound"])), "theorem_proven": False}
-    if name == "largest_feasible_tile":
-        return largest_feasible_tile(
-            int(arguments["max_size"]),
-            int(arguments.get("alignment", 16)),
-        )
-    raise ValueError(f"Unknown tool: {name}")
-
-
-def extract_meta(params: dict[str, Any]) -> dict[str, Any]:
-    return params.get("_meta") or {}
+def _extract_meta(params: dict[str, Any]) -> dict[str, Any]:
+    return params.get("_meta") if isinstance(params, dict) else {}
 
 
 def main() -> None:
-    """Stateless JSON-RPC stdio loop (MCP 2026-07-28)."""
     for line in sys.stdin:
         line = line.strip()
         if not line:
             continue
+        rid: Any = None
         try:
             req = json.loads(line)
             method = req.get("method")
             params = req.get("params") or {}
             rid = req.get("id")
-            meta = extract_meta(params)
+            meta = _extract_meta(params)
+            version = meta.get("io.modelcontextprotocol/protocolVersion")
 
-            # Version check (stateless)
-            req_version = meta.get("io.modelcontextprotocol/protocolVersion")
-            if req_version and req_version != PROTOCOL_VERSION:
+            if method == "initialize":
+                resp = initialize_response(rid)
+                print(json.dumps(resp), flush=True)
+                continue
+
+            if version is not None and not _supports_protocol(version):
                 print(json.dumps({
                     "jsonrpc": "2.0",
                     "id": rid,
                     "error": {
                         "code": -32022,
                         "message": "Unsupported protocol version",
-                        "data": {"supported": [PROTOCOL_VERSION], "requested": req_version},
+                        "data": {"supported": [PROTOCOL_VERSION], "requested": version},
                     },
                 }), flush=True)
                 continue
@@ -194,13 +235,15 @@ def main() -> None:
             elif method == "tools/call":
                 name = params.get("name")
                 args = params.get("arguments") or {}
-                tool_result = handle_tool(name, args)
+                tool_result = _tool_result(name, args)
                 resp = {
                     "jsonrpc": "2.0",
                     "id": rid,
                     "result": {"content": [{"type": "text", "text": json.dumps(tool_result)}]},
                     "_meta": {"io.modelcontextprotocol/serverInfo": SERVER_INFO},
                 }
+            elif method == "notifications/initialized":
+                resp = {"jsonrpc": "2.0", "method": "notifications/initialized", "id": rid}
             else:
                 resp = {
                     "jsonrpc": "2.0",
@@ -211,7 +254,7 @@ def main() -> None:
         except Exception as exc:
             err = {
                 "jsonrpc": "2.0",
-                "id": rid if "rid" in locals() else None,
+                "id": rid,
                 "error": {"code": -32000, "message": str(exc)},
             }
             print(json.dumps(err), flush=True)
