@@ -1,23 +1,39 @@
 """Birch and Swinnerton-Dyer (BSD) Multi-Agent Collaborative Solver.
 
-This module implements a 4-agent collaborative team designed to explore,
-verify, ledger, and sentry-audit the Birch and Swinnerton-Dyer conjecture:
+This module implements a 4-agent software collaborative pipeline designed to explore,
+verify, ledger, and sentry-audit Birch and Swinnerton-Dyer (BSD) invariants on elliptic curves:
 
-1. EUCLID      — Lead Algebraic Geometer & Conjectural Reasoner.
+1. EUCLID      — Lead Conjectural Reasoner.
                  Computes Weierstrass invariants, Frobenius traces a_p,
-                 Euler product growth, empirical rank slope, and Hodges sentences.
+                 Euler product growth, empirical rank slope, and Hodges sentence schemas.
 2. SALAMANDER  — Autonomic Invariant Verifier & Self-Healer.
-                 Verifies Hasse bounds (|a_p| <= 2 sqrt(p)), Mazur torsion bounds,
-                 Nagell-Lutz integrality, and self-healing telemetry.
+                 Verifies Hasse bounds (|a_p| <= 2 sqrt(p)) at primes of good reduction,
+                 Nagell-Lutz integrality on integral models, and Mazur torsion bounds.
 3. PYTHIA      — Topological Memory & Zeckendorf Certifier.
                  Encodes Frobenius traces into canonical Zeckendorf Fibonacci representations,
-                 computes Cassini unimodular invariants, and generates Poincaré hyperbolic embeddings.
+                 verifies Cassini unimodular identities, and generates Poincaré disk embeddings.
 4. AL HARAS    — Clay Mathematics Institute Claim Honesty Sentry & Boundary Auditor.
                  Enforces proof_claim == False, rejects false proof assertions,
                  and cryptographically seals the analysis report.
 
-Governed by OWNER_DECLARATIONS.md (D5: Zeckendorf folds, Fibonacci/Cassini stores;
-D6: Quantum from maths, exact algebra; D8: Whole-system integration) and AGENTS.md.
+MATHEMATICAL AND REPRESENTATION DISCLOSURES:
+- EXACT ALGEBRAIC DOMAIN:
+  * Rational point group E(Q) arithmetic operates strictly over fractions.Fraction.
+  * Point counting traces a_p, discriminant Delta, and torsion orders are exact integers.
+  * Zeckendorf Fibonacci partitions and Cassini identities operate in Z[phi] / Z (zero float drift).
+- OBSERVATIONAL / PROJECTION DOMAIN:
+  * Prime counting complexity is O(p log p) via character sum over F_p (not Schoof O(log^8 p)).
+  * Euler product partials P(X), logarithmic regressions, and slopes use IEEE 754 64-bit floats.
+  * Small-prime truncations (X <= 200) are exploratory heuristics; for high-conductor or high-rank
+    curves (e.g. y^2 = x^3 - 432x), small-prime oscillation may yield anomalous or negative slopes.
+    Rigorous rank certification requires algebraic 2-descent or Selmer groups, not regression alone.
+  * Hodges sentences are meta-language predicate schemas over Structure(Q, E_arithmetic), not atomic
+    sentences of the pure first-order ring language L_ring = {0, 1, +, *, =}.
+  * Integrated Phi is a subsystem activation covariance determinant ratio / mutual information proxy;
+    it measures multi-agent cross-layer coupling and makes NO claim of biological consciousness.
+  * SHA-256 seals certify report data integrity and tamper-evidence, not external mathematical truth.
+
+Governed by OWNER_DECLARATIONS.md (D5, D6, D8), UNIVERSAL_PRINCIPLE_MAP.md, and AGENTS.md.
 """
 
 from __future__ import annotations
@@ -232,7 +248,11 @@ class EuclidAgent:
             product_series_x.append(log_log_p)
             product_series_y.append(log_prod)
 
-        # Regress log(P(X)) vs log(log(X))
+        # Finite-prime regression: P(X) ~ C (log X)^r holds asymptotically as X -> infinity.
+        # Note on truncation limitation: for small bounds (max_prime <= 300), curves with
+        # higher conductor/rank (e.g. y^2 = x^3 - 432x) experience local oscillatory effects
+        # from bad primes and character sums, yielding empirical slopes that may diverge or become
+        # negative. True rank determination requires algebraic 2-descent or Selmer groups.
         empirical_rank = 0.0
         r_squared = 0.0
         if len(product_series_x) >= 5:
@@ -245,12 +265,14 @@ class EuclidAgent:
             r_squared = 1.0 - (ss_res / ss_tot) if ss_tot > 1e-12 else 1.0
             empirical_rank = float(slope)
 
-        # Nearest integer rank estimate
+        # Nearest integer rank estimate (bounded below by 0)
         conjectural_rank = max(0, int(round(empirical_rank)))
 
         l_val = self.scribe.l_function_partial(a, b, s=1.0 + 0j, terms=120)
         l_prime = self.scribe.l_function_derivative_s1(a, b, terms=120)
 
+        # Hodges model-theoretic sentence: represented as an interpreted meta-language schema
+        # over Structure(Q, E_arithmetic), rather than an atomic sentence of bare L_ring.
         sentence = (
             f"forall x, y in Q [ (y^2 = x^3 + ({a})*x + ({b})) -> "
             f"rank(E(Q)) == ord_{{s=1}}(L(E, s)) ]"
@@ -483,7 +505,10 @@ class BSDSolverTeam:
         # Stage 4: AL HARAS Honesty Sentry
         al_haras_attest = self.al_haras.audit(euclid_findings, salamander_verif, pythia_entry)
 
-        # Compute Tononi Integrated Information Phi across the 4 agents
+        # Subsystem activation covariance proxy for multi-agent integrated information (Phi).
+        # Evaluates the determinant ratio of the joint covariance vs marginal covariance
+        # across the 4 agents' state vectors to measure cross-agent coupling.
+        # Disclosed as an architectural coordination proxy; makes no claim of biological consciousness.
         activations = {
             "euclid": {
                 "slope": euclid_findings.empirical_rank_slope,
@@ -507,6 +532,7 @@ class BSDSolverTeam:
             },
         }
         phi = integrate_information(activations)
+
 
         total_ms = (time.perf_counter() - t_start) * 1000.0
 

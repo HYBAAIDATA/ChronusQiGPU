@@ -55,29 +55,32 @@ This skill orchestrates a specialized 4-agent collaborative team to explore and 
                        └───────────────────────────────┘
 ```
 
-### Team Roster & Roles
+### Team Architecture & Algorithmic Scopes
 
-1. **EUCLID** (Lead Algebraic Geometer & Conjectural Reasoner):
-   - Constructs Weierstrass curve $E: y^2 = x^3 + ax + b$ and computes discriminant $\Delta = -16(4a^3 + 27b^2)$ and $j$-invariant.
-   - Computes Frobenius point counting $\#E(\mathbb{F}_p) = p + 1 + \sum_{x \in \mathbb{F}_p} \left(\frac{x^3 + ax + b}{p}\right)$ and trace $a_p = p + 1 - \#E(\mathbb{F}_p)$.
-   - Evaluates Euler product partials $P(X) = \prod_{p \le X, p \nmid \Delta} \frac{N_p}{p}$ and computes empirical rank slope $\alpha \approx \frac{\log P(X)}{\log \log X}$.
-   - Evaluates truncated $L$-series $L(E, 1)$ and numerical derivative $L'(E, 1)$.
-   - Generates Wilfrid Hodges model-theoretic sentences in $\mathcal{L}_{\text{ring}}$.
+The pipeline operates as an orchestrated 4-agent software workflow implementing techniques across 10 mathematical domains:
+
+1. **EUCLID** (Lead Conjectural Reasoner):
+   - Constructs Weierstrass curve $E: y^2 = x^3 + ax + b$ with exact rational arithmetic over $\mathbb{Q}$.
+   - Computes Frobenius point counting $\#E(\mathbb{F}_p) = p + 1 + \sum_{x \in \mathbb{F}_p} \left(\frac{x^3 + ax + b}{p}\right)$ via $O(p \log p)$ character summation.
+   - Evaluates Euler product partials $P(X) = \prod_{p \le X, p \nmid \Delta} \frac{N_p}{p}$ and computes empirical rank slope $\alpha \approx \frac{\log P(X)}{\log \log X}$ via linear regression.
+   - *Limitation note:* For small bounds ($X \le 200$), character oscillations on high-conductor curves (e.g. $y^2 = x^3 - 432x$) can yield distorted or negative empirical slopes. True rank certification requires algebraic 2-descent or Selmer groups.
+   - Formulates Wilfrid Hodges model-theoretic sentence schemas over $\operatorname{Structure}(\mathbb{Q}, E_{\text{arithmetic}})$.
 
 2. **SALAMANDER** (Autonomic Invariant Verifier & Self-Healer):
-   - Verifies Hasse's Theorem: $|a_p| \le 2\sqrt{p}$ across all evaluated primes.
-   - Verifies Mazur's Torsion Bound: $|E(\mathbb{Q})_{\text{tors}}| \in \{1..10, 12, 16\}$ using Nagell-Lutz theorem search.
-   - Verifies Nagell-Lutz integrality: $y^2 \mid \Delta$ for non-2-torsion integer coordinates.
-   - Monitors execution latency and autonomously self-heals numerical precision anomalies.
+   - Verifies Hasse's Theorem: $|a_p| \le 2\sqrt{p}$ strictly at primes of good reduction ($p \nmid \Delta$).
+   - Verifies Mazur's Torsion Bound: $|E(\mathbb{Q})_{\text{tors}}| \in \{1..10, 12, 16\}$ within a bounded integer search box.
+   - Verifies Nagell-Lutz integrality: $x, y \in \mathbb{Z}$ and $y^2 \mid \Delta$ for non-2-torsion integer points on integral models.
+   - Monitors telemetry and enforces self-healing execution integrity.
 
 3. **PYTHIA** (Topological Memory & Zeckendorf Certifier):
-   - Encodes Frobenius sequence $\{a_p\}$ into canonical Zeckendorf non-adjacent Fibonacci index representations ($\forall i, j \in I_p: |i - j| \ge 2$).
-   - Verifies Cassini unimodular identity $F_{n-1}F_{n+1} - F_n^2 = (-1)^n$.
-   - Embeds Frobenius points into Poincaré hyperbolic disk coordinates $\mathbb{D} \subset \mathbb{C}$.
-   - Computes Sato-Tate distribution angle entropy and SHA-256 state signature.
+   - Encodes Frobenius traces $\{|a_p|\}$ into canonical Zeckendorf non-adjacent Fibonacci index representations ($\forall i, j \in I_p: |i - j| \ge 2$) in $\mathbb{Z}[\phi]$.
+   - Verifies Cassini unimodular identity $F_{n-1}F_{n+1} - F_n^2 = (-1)^n$ identically in $\mathbb{Z}$.
+   - Embeds Frobenius points into Poincaré hyperbolic disk coordinates $\mathbb{D} \subset \mathbb{C}$ ($u^2 + v^2 < 1$).
+   - Computes Sato-Tate distribution angle entropy and SHA-256 state integrity signature.
 
 4. **AL HARAS** (Clay Mathematics Institute Claim Honesty Sentry):
    - Strictly enforces the Clay Mathematics Institute boundary protocol.
+
    - Hard invariant: `proof_claim = False`, `claim_status = "CONJECTURE_EXPLORATION"`.
    - Scans output corpus to prohibit false claims of full proof.
    - Issues cryptographically sealed attestation certificate.

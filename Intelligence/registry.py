@@ -527,7 +527,6 @@ def build_default_registry() -> ModuleRegistry:
     return reg
 
 
-
 def _import(path: str):
     return importlib.import_module(path)
 

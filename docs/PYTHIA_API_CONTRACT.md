@@ -488,6 +488,7 @@ objectives); `tests/test_service_constitution.py` enforces it.
 **Routes**
 
 - `GET /api/v1/intelligence/status`
+- `GET /api/v1/intelligence/cognition/status`
 
 | Field | Value |
 | --- | --- |
@@ -503,7 +504,7 @@ objectives); `tests/test_service_constitution.py` enforces it.
 | Authorisation authority | none |
 | Truth class | RUNTIME_OBSERVATION |
 | Request | none |
-| Response | runner status {state, last_result, ...} |
+| Response | intelligence status with first-class euclid_cognition projection; cognition/status returns pythia.euclid.cognition/1 directly |
 | Timeout | immediate |
 | Idempotency | read-only |
 | Retry | freely retryable |
@@ -2126,7 +2127,7 @@ objectives); `tests/test_service_constitution.py` enforces it.
 | Custody | re-derived exact verification is the evidence |
 | Stability | stable |
 | Deprecation | CANONICAL |
-| Tests | `chronus/mla1517_platform/python/test_remote_gpu.py`, `tests/test_chronus_delivery.py`, `tests/test_remote_hasher.py` |
+| Tests | `chronus/mla1517_platform/python/test_remote_gpu.py`, `chronus/tests/test_chronus_delivery.py`, `tests/test_remote_hasher.py` |
 
 ## File and artifact contracts
 

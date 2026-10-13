@@ -119,8 +119,12 @@ def cmd_sweep(args: argparse.Namespace) -> int:
         )
 
     print("=" * 75)
+    print("Note on rank-2 curve y^2 = x^3 - 432x (est r=0 with slope < 0):")
+    print("  Known limitation of finite-prime (p <= 200) regression. Local character oscillations")
+    print("  and bad reduction dominate at small primes; true rank requires algebraic 2-descent.")
     print("All curves verified under AL HARAS honesty invariant (proof_claim=False).")
     return 0
+
 
 
 def cmd_explore(args: argparse.Namespace) -> int:
