@@ -1,10 +1,53 @@
 {
+  "lemma": "docs/lemma_golden_ordering.md",
+  "lemmas": [
+    "golden_stride_bijection",
+    "phi_resonance_ordering",
+    "lucas_scaling_limbs",
+    "zeckendorf_unique_filing"
+  ],
+  "lines": 75,
   "sha": "d9f19abf4b47c79e8e34a6559808a951cac1526241048494de7bcc440c8dfaab",
   "theorem_proven": false,
-  "reviewers": [
-    "mathematician",
-    "systems",
-    "qi_physicist"
+  "signoff": {
+    "attestations": {
+      "mathematician": {
+        "check": "stride bijection (gcd) + Lucas/Cassini residual integer",
+        "result": true
+      },
+      "systems": {
+        "check": "ordering is header-dependent permutation; Zeckendorf round-trip",
+        "result": true
+      },
+      "qi_physicist": {
+        "check": "no quantum or continuum claim in scope",
+        "result": true
+      }
+    },
+    "theorem_proven": false
+  },
+  "verify": [
+    {
+      "mode": "gcd(stride, 2^32) == 1 (stride odd)",
+      "stride": 2654435769,
+      "theorem_proven": false,
+      "verdict": "HOLDS"
+    },
+    {
+      "mode": "permutation + header-dependence on deterministic vectors",
+      "theorem_proven": false,
+      "verdict": "HOLDS"
+    },
+    {
+      "mode": "Lucas companion integer recurrence + Cassini-type residual (k=1..7)",
+      "theorem_proven": false,
+      "verdict": "HOLDS"
+    },
+    {
+      "mode": "Zeckendorf unique non-adjacent representation round-trip (n=0..10^6)",
+      "theorem_proven": false,
+      "verdict": "HOLDS"
+    }
   ],
-  "note": "Expanded authorized uses and added Lucas scaling + Zeckendorf filing lemmas. All remain proof sketches."
+  "note": "Expanded authorized uses and added Lucas scaling + Zeckendorf filing lemmas. All remain proof sketches. theorem_proven: False."
 }

@@ -494,21 +494,29 @@ def verify_resonance_ordering(lemma: Dict[str, Any] = LEMMA_PHI_RESONANCE
 
 
 def use_ordering_lemma(usage: str, stride: Optional[int] = None) -> Dict[str, Any]:
-    """Runtime scope guard for the ordering lemmas."""
-    allowed = (
-        set(LEMMA_GOLDEN_STRIDE["scope"]["authorized_uses"])
-        | set(LEMMA_PHI_RESONANCE["scope"]["authorized_uses"])
-        | set(LEMMA_LUCAS_SCALING["scope"]["authorized_uses"])
-        | set(LEMMA_ZECKENDORF_FILING["scope"]["authorized_uses"])
-    )
-    if usage not in allowed:
+    """Runtime scope guard. Returns the lemma that authorizes the usage.
+    Ambiguous usages (present in more than one lemma) raise ScopeViolation.
+    """
+    sources = [
+        ("golden_stride_bijection", LEMMA_GOLDEN_STRIDE),
+        ("phi_resonance_ordering", LEMMA_PHI_RESONANCE),
+        ("lucas_scaling_limbs", LEMMA_LUCAS_SCALING),
+        ("zeckendorf_unique_filing", LEMMA_ZECKENDORF_FILING),
+    ]
+    matches = [name for name, lem in sources
+               if usage in lem["scope"]["authorized_uses"]]
+    if not matches:
         raise ScopeViolation(f"usage not authorized: {usage}")
+    if len(matches) > 1:
+        raise ScopeViolation(
+            f"usage {usage} is authorized by multiple lemmas {matches}; "
+            "pass an explicit lemma or disambiguate the authorized_uses")
     if stride is not None and stride != GOLDEN_STRIDE:
         raise ScopeViolation(
             f"stride {stride:#x} is not the lemma's stride "
             f"{GOLDEN_STRIDE:#x}; a non-phi stride is a separate, "
             "unproven claim")
-    return {"authorized": True, "theorem_proven": False}
+    return {"authorized": True, "lemma": matches[0], "theorem_proven": False}
 
 
 def collect_ordering_signoff() -> Dict[str, Any]:
