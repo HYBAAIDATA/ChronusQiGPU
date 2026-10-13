@@ -242,6 +242,33 @@ constitutions:
   version: pythia.runtime_config/1
   deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
     change requires a new schema_version plus a deprecation window
+- api_id: pythia.control.session
+  capability: report server-authenticated principal for session
+  authority: PYTHIA
+  interface: HTTP_OPERATOR
+  consumer:
+  - frontend
+  schema:
+    request: none
+    response: '{schema_version, ok, principal_id, role, source, generated_at}'
+    version: chronus.mla1517.session/1
+  dependency:
+  - pythia.boot_audit
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: 401 unauthenticated / 403 unauthorized
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id001
+  version: chronus.mla1517.session/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
 - api_id: pythia.system.map
   capability: forensic map of the composed subsystem fabric
   authority: PYTHIA

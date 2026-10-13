@@ -1,0 +1,144 @@
+{
+  "schema": "chronos_m5_local_review/1",
+  "reviewed_base_revision": "c63ff4d7e9d25135b8e2ca17f84da6714d23d5b7",
+  "candidate": "3.11.2rc1",
+  "scope": "Local reconstructed review tree using retained source material plus MCP-loaded pinned main files. Not a verified complete checkout or current-head whole-product qualification.",
+  "variants": {
+    "native": {
+      "variant": "native",
+      "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+      "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+      "source_revision": "UNAVAILABLE",
+      "worktree_state": "UNKNOWN",
+      "canonical_model_sha256": "fcbd06487dc62eb9ca0ff886c80da181a77e41cf7f515144b0188659712bfa44",
+      "wheel": {
+        "name": "chronos_one_igpu-3.11.2rc1-cp313-cp313-linux_x86_64.whl",
+        "sha256": "3392b07967831dab1972fb20cb75efe4487a85edac2ae4536fc25ba5ceca4ce7"
+      },
+      "sdist": {
+        "name": "chronos_one_igpu-3.11.2rc1.tar.gz",
+        "sha256": "0e757d0d1e479b32eaab207aa3e4561f0f237a68d9491cffd03df92fc76d5273"
+      },
+      "sdist_rebuilt_wheel_sha256": "272dc7f6247c5f4e2ce310d8f4e62cc384bf51337d8891579073cd2794c9934f",
+      "wheel_tests": {
+        "junit_sha256": "2a4a879e3aa099dce1c0478457f6f34967b2768b3d80260ce5764039cb654bbf",
+        "results": [
+          {
+            "errors": "0",
+            "failures": "0",
+            "skipped": "0",
+            "tests": "49"
+          }
+        ]
+      },
+      "sdist_tests": {
+        "junit_sha256": "5d1e12832e0ecdbe87de8908edddd529c6b9d5c4fd43b9b9754bbf9f10a0b952",
+        "results": [
+          {
+            "errors": "0",
+            "failures": "0",
+            "skipped": "0",
+            "tests": "49"
+          }
+        ]
+      },
+      "package_checks_passed": true,
+      "publishable": false,
+      "production_certified": false,
+      "published": false,
+      "verification_report_sha256": "d95a542bead839cc094cc476ac855647467bf52a2fcc9372965eeabc12dae8a5",
+      "source_inventory_sha256": "7d2b2b9c28285aa320ee2f3e2e77f89352d7bdc1c245dec1585b2c88f0f80f75",
+      "standalone_regression": {
+        "tests": [
+          {
+            "name": "pytest",
+            "errors": "0",
+            "failures": "0",
+            "skipped": "0",
+            "tests": "42",
+            "time": "1.520",
+            "timestamp": "2026-10-08T20:28:51.983641+00:00",
+            "hostname": "7e9196d6-09b"
+          }
+        ],
+        "junit_sha256": "582a5ca64c96d0f34f8630dc292dc4a495fa88d980ab517392705e41c457d91b",
+        "monorepo_only_cases_deselected": 7
+      }
+    },
+    "portable": {
+      "variant": "portable",
+      "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+      "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+      "source_revision": "UNAVAILABLE",
+      "worktree_state": "UNKNOWN",
+      "canonical_model_sha256": "fcbd06487dc62eb9ca0ff886c80da181a77e41cf7f515144b0188659712bfa44",
+      "wheel": {
+        "name": "chronos_one_igpu-3.11.2rc1-py3-none-any.whl",
+        "sha256": "33f13092fbb263c4960407817703f2a8aacfefe210f4cda51fff0eff0e0c0b89"
+      },
+      "sdist": {
+        "name": "chronos_one_igpu-3.11.2rc1.tar.gz",
+        "sha256": "01100cddfcde4c0dd73de19dc400e5bf0da2c983ef2a53722e451cd4b142f41c"
+      },
+      "sdist_rebuilt_wheel_sha256": "74631c7fd5ab9a31e6153a8ad7614339d443f2bfa537e706165983b0dcd4da29",
+      "wheel_tests": {
+        "junit_sha256": "a58cf5287a75fcf995101aaf288a05e90ea75ac6f9ab703e8e4f7c190e4ff16f",
+        "results": [
+          {
+            "errors": "0",
+            "failures": "0",
+            "skipped": "0",
+            "tests": "49"
+          }
+        ]
+      },
+      "sdist_tests": {
+        "junit_sha256": "addc0a904f2420f5d670f2cecf8efba74a26ef5a3a82ef416f4035f5672068e0",
+        "results": [
+          {
+            "errors": "0",
+            "failures": "0",
+            "skipped": "0",
+            "tests": "49"
+          }
+        ]
+      },
+      "package_checks_passed": true,
+      "publishable": false,
+      "production_certified": false,
+      "published": false,
+      "verification_report_sha256": "a48f005e997b60cdcfce32e80a32188c80ccaf63fd5b1874f037c58c63ad72f6",
+      "source_inventory_sha256": "7d2b2b9c28285aa320ee2f3e2e77f89352d7bdc1c245dec1585b2c88f0f80f75",
+      "standalone_regression": {
+        "tests": [
+          {
+            "name": "pytest",
+            "errors": "0",
+            "failures": "0",
+            "skipped": "0",
+            "tests": "42",
+            "time": "1.605",
+            "timestamp": "2026-10-08T20:28:54.320142+00:00",
+            "hostname": "7e9196d6-09b"
+          }
+        ],
+        "junit_sha256": "c4172b1c8112e6d652149aa7d022b3832f493eadbe8a3f78b3aebecc49054e5f",
+        "monorepo_only_cases_deselected": 7
+      }
+    }
+  },
+  "focused_cases_per_install": 49,
+  "install_paths": [
+    "native wheel",
+    "portable wheel",
+    "native sdist-rebuilt wheel",
+    "portable sdist-rebuilt wheel"
+  ],
+  "standalone_regression_cases_per_variant": 42,
+  "initial_regression_failure": "7 monorepo-only tests failed because standalone wheel correctly excludes chronus and mining. Those seven are explicitly deselected only for standalone regressions; no monorepo result is claimed.",
+  "ci": "NOT_EXECUTED_BY_THIS_LOCAL_REVIEW; new workflow requires actual GitHub execution",
+  "target_hardware": "NOT_EXECUTED",
+  "whole_product_production_ready": false,
+  "registry_published": false,
+  "artifact_policy": "Review artifacts are not an authorised registry release. Rebuild from the PR checkout in CI; do not reuse these digests as current-head production evidence."
+}

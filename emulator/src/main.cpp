@@ -1,0 +1,26 @@
+#include "chronus1/cp.h"
+#include "chronus1/loader.h"
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
+using namespace chronus1;
+static std::array<uint32_t,3> dims(const std::string&s){std::array<uint32_t,3>d{1,1,1};std::stringstream ss(s);std::string p;for(int i=0;i<3&&std::getline(ss,p,',');i++)d[i]=std::stoul(p);return d;}
+int main(int argc,char**argv){try{
+ std::string path;Dispatch d;size_t mem=1<<20;uint32_t dump=0,words=0;std::vector<std::pair<std::string,uint32_t>>uploads;
+ for(int i=1;i<argc;i++){std::string a=argv[i];
+  if(a=="--load"&&++i<argc)path=argv[i];else if(a=="--global"&&++i<argc)d.global=dims(argv[i]);else if(a=="--local"&&++i<argc)d.local=dims(argv[i]);else if(a=="--memory"&&++i<argc)mem=std::stoull(argv[i]);else if(a=="--budget"&&++i<argc)d.instruction_budget=std::stoull(argv[i]);
+  else if(a=="--dump"&&++i<argc){std::string v=argv[i];auto c=v.find(':');if(c==std::string::npos)throw std::runtime_error("--dump expects address:words");dump=std::stoul(v.substr(0,c),nullptr,0);words=std::stoul(v.substr(c+1),nullptr,0);}
+  else if(a=="--upload"&&++i<argc){std::string v=argv[i];auto at=v.rfind('@');if(at==std::string::npos)throw std::runtime_error("--upload expects file@address");uploads.push_back({v.substr(0,at),std::stoul(v.substr(at+1),nullptr,0)});}
+  else throw std::runtime_error("usage: chronus-emu --load file [--global x,y,z] [--local x,y,z] [--memory bytes] [--budget n] [--upload file@addr] [--dump addr:words]");
+ }
+ if(path.empty()) throw std::runtime_error("--load is required");
+ Emulator e(load_binary(path),mem);
+ for(auto&u:uploads){std::ifstream f(u.first,std::ios::binary);if(!f)throw std::runtime_error("cannot open upload");std::vector<char>b((std::istreambuf_iterator<char>(f)),{});e.global_memory().write_bytes(u.second,b.data(),b.size());}
+ CommandProcessor cp;cp.submit({d});auto s=cp.run_one(e);
+ std::cout<<"{\"status\":\"ok\",\"lane_instructions\":"<<s.lane_instructions<<",\"scheduler_steps\":"<<s.scheduler_steps<<",\"work_groups\":"<<s.work_groups<<",\"trace_hash\":\""<<std::hex<<s.trace_hash<<std::dec<<"\",\"dump\":[";
+ for(uint32_t i=0;i<words;i++){if(i)std::cout<<',';std::cout<<e.global_memory().read32(uint64_t(dump)+4ull*i);}std::cout<<"]}\n";return 0;
+ }catch(const Trap&e){std::cerr<<"Chronus trap: "<<e.what()<<"\n";return 2;}catch(const std::exception&e){std::cerr<<e.what()<<"\n";return 1;}}

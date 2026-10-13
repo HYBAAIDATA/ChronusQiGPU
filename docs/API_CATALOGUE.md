@@ -2,7 +2,7 @@
 
 Generated from `governance/api_registry.yaml` + `governance/service_fabric.yaml` by `governance/render_service_fabric.py`. Do not edit by hand.
 
-Schema `pythia.api_registry/2` — 60 interfaces, every one
+Schema `pythia.api_registry/2` — 61 interfaces, every one
 carrying the §2 constitution fields: capability, canonical authority,
 consumer, contract, dependencies, reliability tier, SLO, timeout,
 retry, idempotency, fallback, security classification, custody,
@@ -87,6 +87,7 @@ _loss of R4 must not corrupt R0-R2 semantics_
 | `legacy.api_health` | PYTHIA | LEGACY | LEGACY | `slo.projection.read` | older monitors |
 | `pythia.audit.tail` | PYTHIA | HTTP_OPERATOR | STABLE | `slo.projection.read` | frontend TelemetryPanel |
 | `pythia.config.read` | PYTHIA | HTTP_OPERATOR | STABLE | `slo.projection.read` | frontend RuntimeControlPanel, frontend SystemFabricPanel |
+| `pythia.control.session` | PYTHIA | HTTP_OPERATOR | STABLE | `slo.projection.read` | frontend |
 | `pythia.gpu` | CHRONUS | HTTP_OPERATOR | STABLE | `slo.projection.read` | operator-console |
 | `pythia.hardware.status` | CHRONUS | HTTP_OPERATOR | STABLE | `slo.projection.read` | operator-console |
 | `pythia.health` | PYTHIA | HTTP_PUBLIC | STABLE | `slo.projection.read` | operator-console, load-balancer |

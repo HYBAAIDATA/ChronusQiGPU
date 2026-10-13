@@ -97,8 +97,16 @@ def atomic_write(path: Path, payload: Mapping[str, Any]) -> None:
             handle.write(canonical_json(payload))
             handle.flush()
             os.fsync(handle.fileno())
-        os.replace(temporary, path)
-        os.chmod(path, 0o600)
+        for attempt in range(6):
+            try:
+                os.replace(temporary, path)
+                break
+            except (PermissionError, OSError):
+                if attempt == 5:
+                    raise
+                time.sleep(0.02 * (attempt + 1))
+        if os.name != "nt":
+            os.chmod(path, 0o600)
     except Exception:
         try:
             os.close(fd)

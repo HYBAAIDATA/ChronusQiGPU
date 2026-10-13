@@ -1,0 +1,45 @@
+{
+  "classification": "MODELED",
+  "tiers": [
+    {
+      "bit_length": 13,
+      "dense_feasible": false,
+      "dense_matrix_elements": 33385284,
+      "exponent": 18,
+      "lucas_value": 5778,
+      "status": "PLANNER_ONLY"
+    },
+    {
+      "bit_length": 14,
+      "dense_feasible": false,
+      "dense_matrix_elements": 228826129,
+      "exponent": 20,
+      "lucas_value": 15127,
+      "status": "PLANNER_ONLY"
+    },
+    {
+      "bit_length": 22,
+      "dense_feasible": false,
+      "dense_matrix_elements": 9062201101801,
+      "exponent": 31,
+      "lucas_value": 3010349,
+      "status": "PLANNER_ONLY"
+    },
+    {
+      "bit_length": 35,
+      "dense_feasible": false,
+      "dense_matrix_elements": 792070839848372253129,
+      "exponent": 50,
+      "lucas_value": 28143753123,
+      "status": "PLANNER_ONLY"
+    },
+    {
+      "bit_length": 53,
+      "dense_feasible": false,
+      "dense_matrix_elements": 58360810951903047633608127919249,
+      "exponent": 76,
+      "lucas_value": 7639424778862807,
+      "status": "PLANNER_ONLY"
+    }
+  ]
+}

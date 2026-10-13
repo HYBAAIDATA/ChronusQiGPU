@@ -18,7 +18,10 @@ Run: python -m millennium.hyba_poincare_yangmills
 """
 
 import math
+
 import numpy as np
+
+from kellogg.substrate import QPhi
 
 # Honest boundary. A positive eigenvalue of this finite model is not a
 # continuum existence proof.
@@ -293,14 +296,41 @@ def class_multiplication(elist, classes):
     return c
 
 
-def recognize_q5(x, tol=1e-8):
-    """Recognize float x as (p + q*sqrt5)/k with small integers (p, q, k)."""
-    for k in range(1, 25):
-        for p in range(-40, 41):
-            for q in range(-40, 41):
-                if abs((p + q * SQRT5) / k - x) < tol:
-                    return (p, q, k)
+def qphi_float(v):
+    """Q(phi) value as float — display and cross-check only, never an input."""
+    return v.a + v.b * PHI
+
+
+def conjecture_qphi(x, tol=1e-6):
+    """Conjecture a float as a + b*phi with small integers a, b.
+
+    Characters of 2I lie in Z[phi], the ring of integers of Q(sqrt 5).
+    The float only proposes: ``exact_spectrum`` accepts a conjecture only
+    after the exact class algebra and column orthogonality hold.
+    """
+    for b in range(-6, 7):
+        for a in range(-9, 10):
+            if abs((a + b * PHI) - x) < tol:
+                return QPhi(a, b)
     return None
+
+
+def qphi_pqk(v):
+    """a + b*phi as reduced (p, q, k): the value is (p + q*sqrt5)/k."""
+    a, b = v.a, v.b
+    den = a.denominator * b.denominator // math.gcd(a.denominator, b.denominator)
+    A, B = int(a * den), int(b * den)
+    p, q, k = 2 * A + B, B, 2 * den
+    g = math.gcd(math.gcd(abs(p), abs(q)), k)
+    return (p // g, q // g, k // g)
+
+
+def edge_class_index(classes):
+    """The 600-cell edge class: exact real part (1 + sqrt5)/4 = phi/2."""
+    found = [i for i, cls in enumerate(classes) if any(e[0] == (1, 1) for e in cls)]
+    if len(found) != 1:
+        raise ArithmeticError(f"edge class with real part (1+sqrt5)/4 not unique: {found}")
+    return found[0]
 
 
 def q5_str(a):
@@ -346,6 +376,80 @@ def character_table(elist, classes, sizes):
         for i in range(k):
             chi[rho][i] = dims[rho] * omegas[i][rho] / sizes[i]
     return chi, dims, omegas
+
+
+def exact_spectrum(elist, classes, sizes, sclass=None):
+    """Full character table and Laplace levels of 2I as exact Q(sqrt 5) values.
+
+    The float eigendecomposition only conjectures the character values; each
+    conjecture is accepted only if the exact identities hold:
+      chi_rho(g_id) = d_rho,
+      sum_i |C_i| chi_rho(g_i) chi_sigma(g_i) = delta_rho_sigma |G|,
+      omega_i omega_j = sum_l c_ijl omega_l  with omega_i = |C_i| chi_i / d_rho.
+    No float tolerance appears on the reported path.
+    """
+    if sclass is None:
+        sclass = edge_class_index(classes)
+    k = len(classes)
+    G = len(elist)
+    chi_f, dims_f, _ = character_table(elist, classes, sizes)
+    chi = []
+    for rho in range(k):
+        row = []
+        for i in range(k):
+            v = conjecture_qphi(float(chi_f[rho][i]))
+            if v is None:
+                raise ArithmeticError(
+                    f"character value not in Z[phi]: rho={rho} class={i} value={chi_f[rho][i]}"
+                )
+            row.append(v)
+        chi.append(row)
+    dims = [int(round(d)) for d in dims_f]
+    idc = [i for i, cls in enumerate(classes) if IDENTITY in cls]
+    if len(idc) != 1 or sizes[idc[0]] != 1:
+        raise ArithmeticError(f"identity class not unique: {idc}")
+    for rho in range(k):
+        if chi[rho][idc[0]] != QPhi(dims[rho], 0):
+            raise ArithmeticError(
+                f"chi_rho(identity) != d_rho: rho={rho} chi={chi[rho][idc[0]]} d={dims[rho]}"
+            )
+        for sig in range(k):
+            s = QPhi(0, 0)
+            for i in range(k):
+                s = s + sizes[i] * chi[rho][i] * chi[sig][i]
+            want = QPhi(G, 0) if rho == sig else QPhi(0, 0)
+            if s != want:
+                raise ArithmeticError(f"column orthogonality failed: rho={rho} sig={sig} -> {s}")
+    c = class_multiplication(elist, classes)
+    omegas = [[sizes[i] * chi[rho][i] / dims[rho] for i in range(k)] for rho in range(k)]
+    for rho in range(k):
+        for i in range(k):
+            for j in range(k):
+                lhs = omegas[rho][i] * omegas[rho][j]
+                rhs = QPhi(0, 0)
+                for l in range(k):
+                    n = int(c[i][j][l])
+                    if n:
+                        rhs = rhs + n * omegas[rho][l]
+                if lhs != rhs:
+                    raise ArithmeticError(f"class algebra failed: rho={rho} i={i} j={j}")
+    one = QPhi(1, 0)
+    levels = []
+    for rho in range(k):
+        ratio = chi[rho][sclass] / dims[rho]
+        lam = one - ratio
+        levels.append(
+            {
+                "irrep": rho,
+                "dimension": dims[rho],
+                "multiplicity": dims[rho] * dims[rho],
+                "character_over_dim": qphi_pqk(ratio),
+                "eigenvalue": qphi_pqk(lam),
+                "eigenvalue_float": qphi_float(lam),
+                "lambda_qphi": lam,
+            }
+        )
+    return {"chi": chi, "dims": dims, "edge_class": sclass, "levels": levels}
 
 
 # =============================================================================
@@ -486,11 +590,7 @@ def run(verbose=True):
     # --- 7. exact eigenvalues from the character table ------------------------
     _emit(verbose, "\n[7] EXACT EIGENVALUES (lambda_rho = 1 - chi_rho(g)/d_rho, g a 600-cell edge)")
     reps = [next(iter(cls)) for cls in classes]
-    sclass = None
-    for i, r in enumerate(reps):
-        if abs(to_float4(r)[0] - PHI / 2) < 1e-6:
-            sclass = i
-            break
+    sclass = edge_class_index(classes)
     edge_rep = reps[sclass]
     edge_order = element_order(edge_rep)
     _emit(
@@ -501,30 +601,28 @@ def run(verbose=True):
         verbose,
         "    their images in SO(3) are 5-fold; the order-5 class has real part 1/(2 phi) and is not an edge",
     )
-    exact = []
-    for rho in range(9):
-        d = dims_r[rho]
-        val = chi[rho][sclass] / d  # = chi_rho(g)/d_rho
-        lam = 1.0 - val
-        rec = recognize_q5(val)
-        exact.append((d, lam, rec))
+    spectrum = exact_spectrum(elist, classes, sizes, sclass)
+    exact = [
+        (lv["dimension"], lv["eigenvalue_float"], lv["character_over_dim"])
+        for lv in spectrum["levels"]
+    ]
     for d, lam, rec in exact:
-        if rec:
-            _emit(verbose, f"      d = {d:>2}   lambda = {lam:.8f}  =  1 - {q5_str(rec)}")
-        else:
-            _emit(verbose, f"      d = {d:>2}   lambda = {lam:.8f}")
+        _emit(verbose, f"      d = {d:>2}   lambda = {lam:.8f}  =  1 - {q5_str(rec)}")
 
     # --- 8. Yang-Mills gauge-invariant Hamiltonian + mass gap -----------------
     _emit(verbose, "\n[8] YANG-MILLS HAMILTONIAN ON THE GAUGE GROUP (SU(2) contains 2I)")
     _emit(verbose, "    gauge-invariant Hilbert space = class functions on 2I (dim 9)")
     _emit(verbose, "    H_YM = group Laplacian restricted to gauge-invariant states")
     gap = float(ev[ev > 1e-9][0]) - float(ev[0])
-    gap_rec = recognize_q5(1.0 - gap)  # recognize chi/d = phi/2
+    positive = [lv for lv in spectrum["levels"] if lv["lambda_qphi"].sign() > 0]
+    if not positive:
+        raise RuntimeError("exact spectrum has no positive level")
+    gap_level = min(positive, key=lambda lv: lv["lambda_qphi"])
+    gap_rec = gap_level["character_over_dim"]
+    if abs(gap - gap_level["eigenvalue_float"]) > 1e-6:
+        raise RuntimeError(f"measured gap {gap} != exact level {gap_level['eigenvalue_float']}")
     _emit(verbose, f"    MASS GAP Delta = lambda_1 - lambda_0 = {gap:.8f}")
-    if gap_rec:
-        _emit(
-            verbose, f"    exact form : Delta = 1 - {q5_str(gap_rec)}  =  1 - phi/2 = 1/(2 phi^2)"
-        )
+    _emit(verbose, f"    exact form : Delta = 1 - {q5_str(gap_rec)}  =  1 - phi/2 = 1/(2 phi^2)")
     _emit(verbose, f"    Delta > 0 : {gap > 0}")
     _emit(verbose, f"    Delta * |2I| = {gap * 120:.4f}  (scale check - the gap is a genuine")
     _emit(verbose, "    eigenvalue difference of the quantum-group operator, computed)")

@@ -1,0 +1,44 @@
+{
+  "schema": "chronos_integration_validation_v1",
+  "input_archive_sha256": "406a6b499ecee14a93e172ce274ae92c69381953cabadbd69903d326cc55642d",
+  "version": "3.5.0",
+  "baseline_tests": 40,
+  "final_tests": {
+    "tests": 125,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "test_command": "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 PYTHONPATH=src python -m pytest -q",
+  "wheel_sha256": "41373dceb3d7aa1a40952ca214635d7cb5a44a146000ebff4492786c0cc40b32",
+  "wheel_smoke": {
+    "wheel_import": "PASS",
+    "version": "3.5.0",
+    "source_count": 15,
+    "plan_packaged": true,
+    "facade_smoke": "PASS"
+  },
+  "demo": {
+    "backend": "cpu_reference",
+    "search_evaluations": 43,
+    "genesis_verified": true,
+    "scan_sha256d_evaluations": 1,
+    "verification_sha256d_evaluations": 1,
+    "elapsed_seconds": 0.0028999979999753123,
+    "path": [
+      "S1_fold_transform",
+      "S2_prime_checkpoint",
+      "S3_coherence",
+      "S4_mandelbrot",
+      "S5_infinity_fold",
+      "S6_chronos_solver",
+      "F3_classical_remainder"
+    ],
+    "pool_accepted": null,
+    "network_submitted": false,
+    "evidence_replay": true,
+    "evidence_events": 6,
+    "checkpoint_restart_restore": true
+  },
+  "scope": "Standalone CPU-reference implementation, not original Golden Quantum source parity, canonical repository deployment, physical GPU evidence or live pool acceptance"
+}

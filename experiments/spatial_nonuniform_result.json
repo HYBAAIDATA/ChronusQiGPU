@@ -1,0 +1,16 @@
+{
+  "experiment": "vogel_nonuniform_item_sizes",
+  "description": "Heavy-tailed item sizes (Pareto 1.5). Vogel placement. Nearest-seed vs least-loaded.",
+  "observation": {
+    "geo_cv_range": [0.23, 0.67],
+    "cap_cv_range": [0.01, 0.35],
+    "max_load_ratio_approaches_1": true,
+    "at_6400_items_32_devices": {
+      "geo_cv": 0.394,
+      "cap_cv": 0.351,
+      "max_ratio": 1.04
+    }
+  },
+  "note": "At larger item counts and device counts the geometric nearest-seed maximum load approaches the capacity-weighted maximum (ratio 1.04 at 6400/32). The gap narrows. Not a dismissal.",
+  "theorem_proven": false
+}

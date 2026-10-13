@@ -1,0 +1,24 @@
+name: Lean modular proofs
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  modular-proofs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install hash-pinned Lean 4.19.0
+        run: |
+          curl --fail --location https://releases.lean-lang.org/lean4/v4.19.0/lean-4.19.0-linux.tar.zst -o /tmp/lean.tar.zst
+          echo "6fe3ce97a58f44e2b3567d455b994eacec5bfe9ae7774f2a573444480ba813fe  /tmp/lean.tar.zst" | sha256sum --check
+          tar --zstd -xf /tmp/lean.tar.zst -C /tmp
+      - name: Compile without proof placeholders
+        env:
+          LEAN_BIN: /tmp/lean-4.19.0-linux/bin/lean
+        run: python scripts/check_formal_proofs.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lean-modular-proof-receipts
+          path: validation/v3.10.0-lean.*
