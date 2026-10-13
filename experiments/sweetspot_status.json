@@ -1,0 +1,19 @@
+{
+  "status": "searching",
+  "constructions_tested": [
+    "fixed modular golden vs round-robin",
+    "non-uniform capacity golden vs weighted",
+    "expanding fleet golden fractional vs least-loaded"
+  ],
+  "phyllotaxis_packing": {
+    "verified": true,
+    "golden_angle_optimal": true,
+    "cv_advantage": "~2.4x over next-best in sweep"
+  },
+  "device_utilisation_bridge": {
+    "found": false,
+    "note": "No discrete device-assignment construction tested so far transfers the continuous packing advantage. Capacity-aware scheduling dominates modular golden assignment."
+  },
+  "next": "Different embedding required (spatial, continuous radius, or non-uniform item sizes in an expanding domain).",
+  "theorem_proven": false
+}
