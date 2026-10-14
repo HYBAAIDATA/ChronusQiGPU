@@ -37,7 +37,8 @@ _PLATFORM_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _PLATFORM_DIR.parents[2]
 _CHRONOS_IGPU = _REPO_ROOT / "packages" / "chronos-one-igpu" / "src"
 _PYTHIA_CONSUMER = _REPO_ROOT / "packages" / "pythia-consumer" / "src"
-for _p in (str(_PLATFORM_DIR), str(_REPO_ROOT), str(_CHRONOS_IGPU), str(_PYTHIA_CONSUMER)):
+_TURING = _REPO_ROOT / "turing_universal_quantum_computer"
+for _p in (str(_PLATFORM_DIR), str(_REPO_ROOT), str(_CHRONOS_IGPU), str(_PYTHIA_CONSUMER), str(_TURING)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
