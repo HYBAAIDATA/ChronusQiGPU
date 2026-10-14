@@ -981,6 +981,14 @@ class SalamanderEngine:
         if skill_name == "codebase-healing":
             auto_heal = kwargs.get("auto_heal", False)
             return self.agentic_heal(auto_heal=auto_heal)
+        elif skill_name == "repository-review":
+            if skill_name not in self.skills:
+                raise KeyError("repository-review is not equipped")
+            from .repository_review import review_repository
+
+            # Only this trusted native adapter is executable. Skill documents
+            # cannot nominate callables, grant permissions or activate schedules.
+            return review_repository(**kwargs)
         elif skill_name in self.skills:
             # Other skills are guidance, not code: hand back what to follow
             # (and where it came from) rather than claim an execution.
