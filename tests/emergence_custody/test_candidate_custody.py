@@ -109,43 +109,63 @@ class SnapshotTests(unittest.TestCase):
 
 
 class ServiceRefusalTests(unittest.TestCase):
+    """Migrated from simulation markers to actual native execution and signed custody."""
     def setUp(self):
+        from euclid.emergence.substrate import engine
+        from euclid.emergence.trusted_core.measured import RegisteredSubstrate
+        from euclid.emergence.trusted_core.receipts import QualificationReceiptIssuer
         self.c = candidate()
-        self.a, self.b = executors()
-        temp = tempfile.TemporaryDirectory()
-        self.addCleanup(temp.cleanup)
+        self.c.discovery_envelope = DiscoveryEnvelope(10, 0, 1)
+        self.c.claimed_behavior_signature = 'lucas_step'
+        self.c.reproduction_steps = ReproductionProtocol('native', (42,), 'manifest', engine.environment_hash(),
+            ('accumulator',), steps=({'action':'init_state','args':{'accumulator':1}},) +
+            tuple({'action':'lucas_step'} for _ in range(8)) +
+            ({'action':'assert_observables','expected':{'accumulator':55}},))
+        self.ka, self.kb = Ed25519PrivateKey.generate(), Ed25519PrivateKey.generate()
+        self.a = StandardSyncExecutor(SubstrateProperties('sync',1,'atomic','cpu',sandbox_id='a'), signing_key=self.ka)
+        self.b = AsyncIsolatedExecutor(SubstrateProperties('worker',10,'batch','cpu',sandbox_id='b'), signing_key=self.kb)
+        bindings = {e.substrate_id: RegisteredSubstrate(e.properties, k.public_key(), e.backend,
+            engine.artifact_hash(), engine.environment_hash(), 'manifest') for e,k in ((self.a,self.ka),(self.b,self.kb))}
+        temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
         self.key = Ed25519PrivateKey.generate()
         authorization = QualificationAuthorization(
             trusted_signers={("local-test-issuer", "local-contract-test"): self.key.public_key()},
             audience="custody-test", replay_path=Path(temp.name)/"replay.sqlite")
-        self.service = EmergentQualificationService(authorization=authorization)
+        issuer = QualificationReceiptIssuer(signing_key=Ed25519PrivateKey.generate(),issuer='eqs',audience='admit')
+        self.service = EmergentQualificationService(authorization=authorization,
+            registered_substrates=bindings, receipt_issuer=issuer)
         self.token = GovernanceToken.issue("local-contract-test", self.key, issuer="local-test-issuer",
             audience="custody-test", candidate_fingerprint=self.c.compute_fingerprint())
 
-    def run_service(self):
-        return self.service.qualify(self.c, self.a, self.b, self.token)
+    def run_service(self, **changes):
+        return self.service.qualify(self.c, self.a, self.b, self.token, **changes)
 
     def assert_refused(self, result, reason):
         self.assertIsInstance(result, RejectedQualification)
         self.assertIn(reason, result.reason)
         self.assertFalse(self.service.is_qualified('custody-c'))
 
-    def test_builtin_reproduction_marked_simulated(self):
+    def test_builtin_reproduction_requires_real_measurement(self):
         for executor in (self.a, self.b):
             result = executor.reproduce(self.c.reproduction_steps)
-            self.assertEqual('SIMULATED', result.details['execution_kind'])
+            self.assertEqual('MEASURED', result.details['execution_kind'])
+            self.assertTrue(result.observed)
+            self.assertEqual(55,result.details['trials'][0]['state']['accumulator'])
 
-    def test_stress_explicitly_does_not_invoke_executor(self):
+    def test_stress_really_invokes_executor(self):
         _, details = stress_test(self.c, self.c.discovery_envelope.scale_margin(1.5), self.a)
-        self.assertEqual('SIMULATED', details['execution_kind'])
-        self.assertFalse(details['executor_invoked'])
+        self.assertEqual('MEASURED', details['execution_kind'])
+        self.assertTrue(details['executor_invoked'])
+        self.assertEqual(8,details['execution']['details']['repetitions'])
 
-    def test_actual_service_refuses_builtin_simulations(self):
-        self.assert_refused(self.run_service(), 'lacks measured reproduction')
+    def test_actual_service_refuses_unregistered_results(self):
+        from euclid.emergence.trusted_core.measured import MeasuredEvidenceVerifier
+        self.service.evidence_verifier = MeasuredEvidenceVerifier()
+        self.assert_refused(self.run_service(), 'unregistered substrate')
 
     def test_refusal_preserves_local_snapshot_custody(self):
         expected = self.c.compute_fingerprint()
-        result = self.run_service()
+        result = self.run_service(post_qualification_window=())
         entries = self.service.journal.get_entries()
         self.assertEqual(['QUALIFICATION_INPUT_SNAPSHOT', 'REJECT'], [e.action for e in entries])
         self.assertEqual(expected, entries[0].details['candidate_fingerprint'])
@@ -160,60 +180,44 @@ class ServiceRefusalTests(unittest.TestCase):
 
     def test_executor_protocol_mutation_refused_before_second_executor(self):
         original = self.a.reproduce
-        def mutate(protocol):
-            result = original(protocol)
-            protocol.steps[0]['args']['path'] = 'swapped'
+        def mutate(protocol, **kwargs):
+            result = original(protocol, **kwargs)
+            protocol.steps[0]['args']['accumulator'] = 2
             return result
         with patch.object(self.a, 'reproduce', mutate), patch.object(self.b, 'reproduce') as second:
             self.assert_refused(self.run_service(), 'changed during qualification')
             second.assert_not_called()
-        self.assertEqual('allowed', self.c.reproduction_steps.steps[0]['args']['path'])
+        self.assertEqual(1, self.c.reproduction_steps.steps[0]['args']['accumulator'])
 
     def test_source_mutation_refused_before_second_executor(self):
         original = self.a.reproduce
-        def mutate(protocol):
-            result = original(protocol)
+        def mutate(protocol, **kwargs):
+            result = original(protocol, **kwargs)
             self.c.metadata['custody']['origin'] = 'replaced'
             return result
         with patch.object(self.a, 'reproduce', mutate), patch.object(self.b, 'reproduce') as second:
             self.assert_refused(self.run_service(), 'changed during qualification')
             second.assert_not_called()
 
-    def test_claimed_measurement_cannot_bypass_simulated_stress(self):
-        # Contract double only: a self-reported marker is NOT authenticated evidence.
-        def claimed(executor):
-            original = executor.reproduce
-            def run(protocol):
-                result = original(protocol)
-                result.details['execution_kind'] = 'MEASURED'
-                return result
-            return run
-        with patch.object(self.a, 'reproduce', claimed(self.a)), patch.object(self.b, 'reproduce', claimed(self.b)):
-            self.assert_refused(self.run_service(), 'lacks measured executor stress')
+    def test_claimed_measurement_marker_cannot_bypass_signature(self):
+        original = self.a.reproduce
+        def forge(protocol, **kwargs):
+            result = original(protocol, **kwargs)
+            result.details['execution_kind'] = 'SIMULATED'
+            return result
+        with patch.object(self.a, 'reproduce', forge):
+            self.assert_refused(self.run_service(), 'lacks measured reproduction')
 
     def test_gate_two_mutation_rejected(self):
-        def mutate(candidate, envelope, executor):
+        def mutate(candidate, envelope, executor, **kwargs):
+            result = stress_test(candidate, envelope, executor, **kwargs)
             candidate.discovery_envelope.parameter_bounds['x'] = (0, 99)
-            return True, {"execution_kind": "MEASURED"}
-        self._exercise_later_gate(mutate, 'changed during qualification')
+            return result
+        with patch('euclid.emergence.trusted_core.qualification_service.stress_test', mutate):
+            self.assert_refused(self.run_service(), 'changed during qualification')
 
-    def test_missing_gate_three_window_is_not_pass(self):
-        self._exercise_later_gate(lambda **kw: (True, {"execution_kind": "MEASURED"}),
-                                  'requires a nonempty observation window')
-
-    def _exercise_later_gate(self, stress, reason):
-        # Deliberate contract doubles reach otherwise unavailable later branches.
-        # No successful qualification or independent measurement is asserted.
-        def claimed(executor):
-            original = executor.reproduce
-            def run(protocol):
-                result = original(protocol)
-                result.details['execution_kind'] = 'MEASURED'
-                return result
-            return run
-        with patch.object(self.a, 'reproduce', claimed(self.a)), patch.object(self.b, 'reproduce', claimed(self.b)), \
-             patch('euclid.emergence.trusted_core.qualification_service.stress_test', stress):
-            self.assert_refused(self.run_service(), reason)
+    def test_explicit_empty_gate_three_window_is_not_pass(self):
+        self.assert_refused(self.run_service(post_qualification_window=()), 'complete authenticated current window')
 
 
 if __name__ == '__main__':

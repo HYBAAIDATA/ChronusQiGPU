@@ -6,6 +6,20 @@
 
 ---
 
+## [Unreleased] — Measured native EQS execution and signed result receipts
+
+- Removed simulated reproduction/failure toggles and fixed stability/echoed observations.
+- Added stateful native action execution, actual fresh-process backend, output trajectories,
+  measured latency, explicit registered public-key provenance and challenge verification.
+- Implemented real ceil(N*1.5) stress/compute checks and authenticated current-window entropy
+  monitoring; explicitly retain untested envelope/production/independent assurance boundaries.
+- Added separate candidate/gate/audience-bound Ed25519 result receipts with local durable
+  single-use consumption, active-receipt revocation checks and no implicit signing authority.
+- Preserved PR75 authorization and native adapter contracts; default absent case window uses
+  current measured runs. Actual PR74 canonical integration remains a required verification.
+- 85 scoped tests pass both normally and optimized; compilation/tabnanny pass. Full pytest
+  unavailable. See docs/PHILOS_MEASURED_EQS.md and retained validation logs/hashes.
+
 ## [Unreleased] — Scoped external authorization and canonical owner binding
 
 - Removed default/private signing authority from EQS. External Ed25519 issuance,

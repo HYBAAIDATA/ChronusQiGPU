@@ -34,6 +34,9 @@ class QualifiedEmergent:
     gate_2_stress_envelope: dict[str, Any] = field(default_factory=dict)
     certification_token: str = ""
     governance_signature: str = ""
+    qualification_receipt: str = ""
+    gate_3_monitoring: dict[str, Any] = field(default_factory=dict)
+    gates_digest: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -46,6 +49,9 @@ class QualifiedEmergent:
             "gate_2_stress_envelope": self.gate_2_stress_envelope,
             "certification_token": self.certification_token,
             "governance_signature": self.governance_signature,
+            "qualification_receipt": self.qualification_receipt,
+            "gate_3_monitoring": self.gate_3_monitoring,
+            "gates_digest": self.gates_digest,
         }
 
 

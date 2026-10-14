@@ -36,7 +36,7 @@ def make_test_candidate(noise_tolerance=0.5, latency=10.0, compute_sec=0.5):
     )
 
 
-def test_gate1_simulated_reproduction_rejected_despite_distinct_metadata(authorize_candidate):
+def test_gate1_unregistered_reproduction_rejected_despite_distinct_metadata(authorize_candidate):
     candidate = make_test_candidate()
     service, token = authorize_candidate(candidate)
 
@@ -108,12 +108,12 @@ def test_gate2_stress_envelope_rejection(authorize_candidate):
     outcome = service.qualify(candidate, exec_a, exec_b, governance_token=token)
     assert outcome.status == QualificationStatus.REJECTED
     assert "lacks measured reproduction" in outcome.reason
-    # The legacy stress heuristic is tested as a simulation, not as executed stress evidence.
+    # No key/provider: actual invocation fails closed rather than simulating survival.
     from euclid.emergence.trusted_core.stress import stress_test
-    passed, details = stress_test(candidate, candidate.discovery_envelope.scale_margin(2.0), exec_a)
+    passed, details = stress_test(candidate, candidate.discovery_envelope.scale_margin(2.0), exec_a, margin=2.0)
     assert not passed
-    assert details["execution_kind"] == "SIMULATED"
-    assert not details["executor_invoked"]
+    assert details["execution_kind"] == "UNAVAILABLE"
+    assert details["executor_invoked"]
 
 
 def test_divergence_suspension_remains_available_without_synthetic_qualification(authorize_candidate):
