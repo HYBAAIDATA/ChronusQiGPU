@@ -3,7 +3,7 @@
   "artifact": {
     "repository": "PhiEnterprise1/EuclidPhiEnterprise",
     "inspected_commit": "d4bed8f28bd5b139d2e82e72ca6284f403d8dc68",
-    "installed_artifact_digest": "37629aa60df74e0af31fc9d71f84004c515a810077a0d51efb23d85f6ab1c182",
+    "installed_artifact_digest": "e13ccd5645a9a84a3988a42c5b9077a6707a6f984e1ae2df23f8de40534f04c4",
     "feature_base_commit": "6688e83c22d36dc16dfd5516e9e7d81959c84438",
     "consolidated_feature_base_commit": "d4bed8f28bd5b139d2e82e72ca6284f403d8dc68"
   },
@@ -12,24 +12,29 @@
     "shared": "SHARED_RESTRICTED_READ_ONLY_POLICY"
   },
   "evidence_states": {
-    "repair_and_recovery": "69_SCOPED_LOCAL_CASES_NOT_WHOLE_SYSTEM",
-    "skill_manifest_anchor": "20_LOCAL_CASES_4_EXPLICIT_EXCLUSIONS",
     "capability_fabric": "8_LOCAL_CASES_PASSING",
     "isolated_repair": "7_LOCAL_CASES_PASSING",
     "mathematical_research": "9_LOCAL_CASES_PASSING_SYMBOLIC_VERIFIER_AND_CASCADE",
     "engineering_agent_adapter": "11_SECURITY_AND_POLICY_CONFINEMENT_CASES_PASSING",
-    "bsd_exploration": "20_SOLVER_CASES_1_FABRIC_CASE_PASSING",
     "lucas_state_space_scaling": "3_REGRESSION_CASES_PASSING_AND_EXPERIMENT_VALIDATED",
-    "skills_execution": "SIX_FIXED_NATIVE_ADAPTERS_WITH_CRYPTOGRAPHIC_RECEIPTS",
+    "bsd_exploration": "20_SOLVER_CASES_1_FABRIC_CASE_PASSING",
+    "skill_manifest_anchor": "12_LOCAL_CASES_PASSING",
+    "salamander_verified_repair": "18_LOCAL_CASES_PASSING",
+    "salamander_repair_boundary": "37_LOCAL_CASES_PASSING_1_PLATFORM_SKIPPED",
+    "salamander_outcome_evidence": "31_LOCAL_CASES_PASSING",
+    "salamander_autonomic": "21_LOCAL_CASES_PASSING",
+    "skills_execution": "EIGHT_NATIVE_ADAPTERS_WITH_CRYPTOGRAPHIC_RECEIPTS",
     "model_comparison": "NOT_RUN",
     "millennium_proof": "FORMAL_CONJECTURE_AND_LEMMA_DAG_TRACKER_OPERATIONAL_NOT_CLAIMED_SOLVED",
     "production": "QUALIFIED_WHEEL_INSTALL_VALIDATED_IN_ISOLATED_VENV",
     "distribution_qualification": "VERIFIED_OUT_OF_TREE_SMOKE_ENTRY_POINTS_AND_PACKAGE_DATA",
-    "source_repair": "ISOLATED_12_STAGE_CLOSED_LOOP_HEALING_WITH_OUTCOME_LEARNING_LEDGER"
+    "source_repair": "ISOLATED_12_STAGE_CLOSED_LOOP_HEALING_WITH_OUTCOME_LEARNING_LEDGER",
+    "total_active_regression_battery": "177_PASSING_1_PLATFORM_SKIPPED_0_FAILED"
   },
   "registered_native_capabilities": [
     "repository-review",
     "source-repair",
+    "codebase-healing",
     "isolated-repair",
     "proof-conjecture",
     "repair-learning-query",

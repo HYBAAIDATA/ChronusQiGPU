@@ -1,11 +1,11 @@
 {
   "qualification": "DISTRIBUTION_AND_CLEAN_INSTALL",
   "status": "PASSED",
-  "timestamp": 1791980859.0161095,
-  "duration_seconds": 161.68,
+  "timestamp": 1791983395.5823379,
+  "duration_seconds": 119.01,
   "wheel_filename": "hyba_pythia_mining-1.0.0-py3-none-any.whl",
-  "wheel_sha256": "37629aa60df74e0af31fc9d71f84004c515a810077a0d51efb23d85f6ab1c182",
-  "wheel_size_bytes": 4930664,
+  "wheel_sha256": "e13ccd5645a9a84a3988a42c5b9077a6707a6f984e1ae2df23f8de40534f04c4",
+  "wheel_size_bytes": 5203035,
   "checks_passed": [
     "isolated_virtualenv_creation",
     "wheel_clean_install",

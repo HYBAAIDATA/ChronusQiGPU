@@ -256,9 +256,13 @@ def test_salamander_engine_capability_fabric_integration() -> None:
     manifests = engine.capability_registry.list_capabilities()
     cap_ids = {m.capability_id for m in manifests}
     assert "repository-review" in cap_ids
+    assert "source-repair" in cap_ids
+    assert "codebase-healing" in cap_ids
     assert "isolated-repair" in cap_ids
     assert "proof-conjecture" in cap_ids
     assert "repair-learning-query" in cap_ids
+    assert "bsd-exploration" in cap_ids
+    assert "external-agent-boundary" in cap_ids
 
     # Query learning ledger capability via direct execute_capability
     res, receipt = engine.execute_capability(
@@ -281,8 +285,11 @@ def test_salamander_engine_capability_fabric_integration() -> None:
     assert "repository-review" in shared_caps
     assert "proof-conjecture" in shared_caps
     assert "repair-learning-query" in shared_caps
+    assert "bsd-exploration" in shared_caps
+    assert "external-agent-boundary" in shared_caps
     assert "isolated-repair" not in shared_caps
     assert "source-repair" not in shared_caps
+    assert "codebase-healing" not in shared_caps
 
     # Attempting to execute isolated-repair under SHARED_RESTRICTED raises AuthorizationDenied
     with pytest.raises(AuthorizationDenied, match="not permitted under execution profile 'shared'"):

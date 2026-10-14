@@ -99,6 +99,8 @@ review_skill = skills_res.joinpath("repository-review", "SKILL.md")
 assert review_skill.is_file(), "repository-review SKILL.md missing in package data"
 bsd_skill = skills_res.joinpath("bsd-exploration", "SKILL.md")
 assert bsd_skill.is_file(), "bsd-exploration SKILL.md missing in package data"
+ext_skill = skills_res.joinpath("external-agent-boundary", "SKILL.md")
+assert ext_skill.is_file(), "external-agent-boundary SKILL.md missing in package data"
 print("[venv] Skills package data verified")
 
 reports_res = importlib.resources.files("reports")
@@ -115,6 +117,7 @@ equipped = list(engine.skills.keys())
 print(f"[venv] Equipped skills: {equipped}")
 assert "repository-review" in equipped
 assert "bsd-exploration" in equipped
+assert "external-agent-boundary" in equipped
 
 # 4. Safe read-only capability execution: bsd-exploration
 res, receipt = engine.execute_capability(
