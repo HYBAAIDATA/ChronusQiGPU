@@ -333,3 +333,135 @@ qualification**. Exact commands, source hashes and local outputs are appended
 to `docs/salamander_consolidation_validation.json`; the existing capability
 manifest is the machine-readable current ledger. No competing root ledger was
 created: `CAPABILITY-LEDGER.md` was absent from this PR's pinned base.
+
+
+## 2026-10-14 — Constituent execution and delegated-authority follow-up
+
+This section supersedes earlier current-state counts and the statement that both
+constituent boundary paths were entirely unwired. **Frontier-agent and PHILOS are
+parts of EUCLID.** Production readiness remains the target; a stand-in is an
+explicit migration aid, not the final production architecture or assurance.
+
+Starting review heads: PR74 `29b016c2a1dec377f55cd8f86f271089c5eae527`, PR75
+`a41cc1a186bd3460366e6e3fcf55529ec51f7b73`. PR69's unchanged frontier owner is
+`370be998286dd8aadc7a9bccb9f397559f2cc791`. All 41 `chronus/agent` source files
+reconstructed from connector patches match that head's live Git blob hashes.
+No branches were merged/rebased/cherry-picked. Cross-branch local composition is
+compatibility evidence, not an already unified deployable branch or wheel.
+
+### Canonical consumer integration map
+
+| Consumer | Actual path / ownership | Current evidence |
+| --- | --- | --- |
+| Native conjecture + repository review | Existing `bind_intelligence` -> AL HARAS -> creator rights/Delegator -> shared fabric -> actual handler | 48 canonical regressions normal and optimized; two native capabilities, not all eight |
+| EUCLID frontier-agent | Host `euclid.frontier_integration.bind_frontier` -> same `dispatch_specialist` -> `FrontierSpecialist` -> existing `FrontierAgent.run` / operational loop | Real temporary-file action; STOP/WAIT, kill, budget/deadline refusal, native grants, signed scope, observation and verification remain checked |
+| EUCLID PHILOS | PR75 host `euclid.emergence.integration.bind_philos` -> same canonical boundary -> existing `EmergentQualificationService.qualify` | 11 actual-owner integration/refusal tests; simulated evidence remains REJECTED |
+| Full Salamander/skills, six remaining native capabilities, production learning consumers | Earlier map and ownership still apply | Not established as end-to-end production integrations |
+
+New owner adapters do NOT create a parallel registry, learner, memory store,
+reward authority or runtime. Optional *imports* defer unavailable dependencies;
+they do not reduce either constituent's declared architectural scope. Frontier
+and PHILOS bindings must be explicitly configured by the host. Binding grants no
+rights, entitlement, signer, model, trust promotion or qualification.
+`register_specialist(..., authority=Authority.PROPOSE/MUTATE_WORLD)` now describes
+the actual owner rather than labelling every specialist read-only. This metadata
+is not an OS guard: actual security remains AL HARAS, creator-scoped grants and
+the owner's enforced controls. Default READ_ONLY registration remains compatible.
+
+Host approves native `FrontierCase(objective, cognition, plan)` values and an
+actual configured agent. Requests contain only `operation=run` and `case_id`;
+clients cannot supply executables, plans, providers or signers. Cases are detached
+and fully digested; an SQLite single-use record is consumed before invoking the
+agent, survives restart and prevents an automatic duplicate attempt. Failure
+never refunds that case. New attempts require explicit new host-approved cases.
+This is local idempotency custody, not distributed exactly-once semantics or
+rollback of already performed effects. Existing budgeted loop retries remain
+inside the one native run and its shared budget.
+
+### Supplied permissive stand-ins (explicit operator delegation)
+
+`euclid.operator_development.OperatorDevelopmentGuards` supplies real
+`execute`/`rollback` callback ports requested by the operator. Instantiate it with
+`profile="operator-development"`, a named `delegated_by`, an explicit tuple of
+`(actual_adapter, exact_ActionRequest)` bindings, durable `HashChainAudit`, and
+the host's monotonic frontier clock. Pass its bound methods to the existing
+`FrontierAgent` constructor; no production defaults or guards were weakened.
+
+```python
+ports = OperatorDevelopmentGuards(
+    profile="operator-development", delegated_by=operator_identity,
+    approved=((adapter, request),), audit=operator_audit, clock=clock,
+)
+# Existing actual owner construction, including all native authority/verification
+# parameters, is retained:
+# FrontierAgent(..., execution_guard=ports.execute, rollback_guard=ports.rollback)
+bind_frontier(runtime, agent, cases={"approved-change": FrontierCase(objective, cognition, plan)})
+# Host must separately grant the creator-scoped frontier.request dispatch right
+# and obtain a valid AL HARAS entitlement. Binding itself grants neither.
+```
+
+These stand-ins are permissive **within the operator's exact delegated scopes**:
+they invoke the real adapter rather than return a success placeholder. They audit
+before effects, require native execution receipts, reject false-success mappings,
+validate declared returned costs and check deadlines after return. Revocation
+blocks new actions but permits budgeted recovery; the real loop must observe and
+verify rollback. They do not invent independent reviewers or return fabricated
+qualification. Local tests use private random host signers and local observations:
+they exercise authorization and verification contracts, not independent assurance.
+
+Known limits are explicit: cooperative/post-return deadlines, adapter-reported
+resource use, no forced cancellation, hard memory limit, OS/process sandbox,
+independent metering or mid-flight revocation. A late/over-budget return may have
+already caused effects and is surfaced as failure, not pretended away. Production
+must configure the external execution/isolation/metering controls appropriate to
+its owner and deployment; do not relabel these stand-ins as such controls.
+
+### Security fixes and verification
+
+- Reproduced a host-configured absolute organ identifier escaping the designated
+  Intelligence audit subdirectory. Both Intelligence and new owner bindings now
+  require path-free ASCII identifiers of 1–64 characters before file creation.
+  This is a configuration/path bug, not a claim of remote arbitrary-code execution.
+- PHILOS's public default signing authority is removed on PR75. Verifier stores
+  only allowlisted external Ed25519 public keys; candidate/audience/issuer/officer/
+  operation/time/nonce are signed; durable SQLite replay admission is mandatory.
+  This authenticates invocation, not a successful result or independent certificate.
+- Actual checks: **48 canonical + 19 authorization + 23 custody + 11 PHILOS
+  runtime + 14 frontier/operator = 115 tests passed**, with zero failures/errors/
+  skips, and the same **115 under Python -O**. These are separate suites, not the
+  historical frontier test count. Compileall and tabnanny also returned 0.
+- New paths use genuine package initializers, AL HARAS, rights, native services,
+  SQLite/JSONL and temporary Linux files. Unit/negative-contract tests retain
+  explicitly scoped doubles; canonical runtime/handler composition is not mocked.
+- Joint tests require PR69 owner code plus PR74/PR75 changes. On a branch missing
+  that prerequisite the relevant tests explicitly SKIP; a skip is NOT integration
+  success. Normal and optimized joint runs here had zero skips.
+
+Exact invocations, environment, verbatim output, source hashes and pinned-owner
+verification are appended to existing `docs/salamander_consolidation_validation.json`.
+Existing capability manifest is updated; upstream skill source locks are unchanged
+because no upstream skill content/catalogue/license was changed. Local logs and
+hashes are not signed or independent execution attestation.
+
+### Remaining production-readiness gates
+
+The two constituent boundary paths now have local execution/refusal evidence;
+that is NOT complete ubiquitous Intelligence or successful PHILOS qualification.
+Real measured PHILOS reproduction/stress, detection attestation, full observation
+windows/source and executor bindings, independent T5 assurance, actual Lucas/drift
+enforcement, all native consumers, full Salamander lifecycle, Windows behavior,
+security scanning, authoritative CI/reviews and installed-artifact tests remain
+open. PHILOS invocation signatures must not be represented as signatures over a
+qualification result. Native request/evidence records can include scoped signed
+authorizations; protect those host state stores and their retention/access.
+
+The earlier standalone packaging omission and unavailable build tools remain
+unfixed/unverified; no wheel or clean installation was successfully tested. No
+pytest/full regression, scanner or formatter/linter pass is claimed. Same-process
+Python allowlists and protected local SQLite/JSONL state are not an OS trust
+boundary, network replay consensus or backup-rollback resistance. Preserve OVID
+state custody, THESEUS projections, EUCLID learning/reward authority, Salamander
+experience/deployment ownership and Chronus execution; no alternate learning
+store/authority was introduced. No mining/pool/protected protocol changes or live
+operations were performed. **Draft technical review; merge/release/production
+qualification remain blocked.**

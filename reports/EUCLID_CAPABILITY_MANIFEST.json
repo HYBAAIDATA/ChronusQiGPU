@@ -115,7 +115,7 @@
       "bsd-exploration",
       "external-agent-boundary"
     ],
-    "new_regressions": 46,
+    "new_regressions": 48,
     "normal_exit": 0,
     "optimized_exit": 0,
     "independently_qualified": false,
@@ -125,14 +125,17 @@
       "Intelligence/capability_fabric.py": "034e9054d47691040bf0f2b10a3a3afd254f1d1ae27c5893987f09c3421b8c69",
       "Intelligence/proof_capability.py": "80d1f9693d1343e56f871512978bc5827a559de1ad3b9db3d61214d60268280e",
       "Intelligence/salamander.py": "43d8abb3ee3e4471d50fdcf2fddffc29d8234a9abe77d7e539d24ae4c1bceb2e",
-      "euclid/intelligence_bridge.py": "2d414e90246bb606ddb3b937ba26fb2396119cf32a0863fe8a415121f1f57c4e",
-      "euclid/runtime.py": "f3fe83e5bb58c01f64eada21ed381758961939afd7b0149fe40829ef97f924a1",
+      "euclid/intelligence_bridge.py": "09b3ffcdf451fb6e0424473e8dba9b3452a3afa9e768e7ade33c0f4c0a661601",
+      "euclid/runtime.py": "f7e17bcef26c0f3dcbc2ece9b6c7f447e6c23d1aef7f501d7f7bd8fe14a6613d",
       "tests/intelligence_consolidation/test_canonical_bridge.py": "dec9734dd1eddb37c44bb88f2e62334ce06676d4a5cce0583537af432c1f423f",
       "Intelligence/repository_review_capability.py": "fbb9dd65a611fbc2681c435878d87bf9538ced6255b4526dd30eaa13fe200829",
-      "tests/intelligence_consolidation/test_execution_custody.py": "76f65bacca7914e067915281c24b5e4120049f069c8c8527b9112ab62a663ddd"
+      "tests/intelligence_consolidation/test_execution_custody.py": "061d4747e2160cdbae4e2b3175caf2a34f2167cddd4240ec07c833940ea6f9be",
+      "euclid/operator_development.py": "22378db9c963183d6081d67fe4e07e936796a66155287ffb4942555cf3d50c95",
+      "euclid/frontier_integration.py": "6d063c660b3df9fbbe27f6b3c4bbdb2e33dc045b6eed6d9aa0b8026819174fb9",
+      "tests/operator_development/test_operator_development.py": "dba65a3507f8e83d08776270f60da9265ef0e66a9376e0c69ce5494f399f5d6f"
     },
-    "evidence": "docs/salamander_consolidation_validation.json#euclid_unification_execution_review",
-    "external_mutation_boundary": "Not implemented by this bridge; such execution refused pending owner-enforced controls",
+    "evidence": "docs/salamander_consolidation_validation.json#euclid_constituent_execution_authority_review",
+    "external_mutation_boundary": "Read-only Intelligence fabric remains read-only. Explicit frontier owner binding reaches real operational controls; operator-development ports are cooperative stand-ins, not production isolation.",
     "skill_source_lock": "Unchanged: no imported skill snapshot, catalogue, license, or upstream digest changed",
     "philos_originals": "Separate branch emergence-track/phi-2, original contracts published at 1b653442140e38bd732ed09da344540ed4b81f3e; reconstructed PR73 must not replace originals",
     "security_follow_up": {
@@ -147,8 +150,8 @@
       "evidence": "docs/salamander_consolidation_validation.json#registration_admission_race_review",
       "revocation_limit": "No retroactive cancellation of already admitted in-flight work; no OS/process isolation or external kill/revocation claim"
     },
-    "inspected_parent_commit": "0dadfc6a3600864521a7ace7a685668ba547f001",
-    "total_new_cases_this_follow_up": 13,
+    "inspected_parent_commit": "29b016c2a1dec377f55cd8f86f271089c5eae527",
+    "total_new_cases_this_follow_up": 2,
     "source_lock": "pinned SKILL_SOURCE_LOCK inspected, unchanged; no upstream skill catalog/license/digest modified",
     "single_native_registration_owners": [
       "Intelligence/proof_capability.py",
@@ -169,7 +172,43 @@
       "euclid-engine packaging excludes and explicitly forbids Intelligence",
       "Salamander product package does not ship uppercase Intelligence",
       "setuptools/wheel/build unavailable; incomplete source snapshot; no clean install tested"
-    ]
+    ],
+    "constituent_integrations": {
+      "frontier-agent": {
+        "entry_point": "euclid.frontier_integration.bind_frontier -> EuclidRuntime.dispatch_specialist -> FrontierSpecialist.handle -> actual FrontierAgent.run",
+        "owner_commit": "370be998286dd8aadc7a9bccb9f397559f2cc791",
+        "canonical_authority": "MUTATE_WORLD (metadata), AL HARAS and explicit creator rights, native loop permissions/signed scope/budgets remain enforced",
+        "verified_path": "temporary local file action through explicitly selected operator-development execution/rollback stand-ins",
+        "tests": 14,
+        "normal_exit": 0,
+        "optimized_exit": 0,
+        "packaged": false,
+        "CI_verified": false,
+        "production_qualified": false,
+        "additional_verified_controls": [
+          "STOP",
+          "WAIT",
+          "kill",
+          "budget exhaustion",
+          "deadline",
+          "single-use case refusal"
+        ]
+      },
+      "PHILOS": {
+        "entry_point": "euclid.emergence.integration.bind_philos -> EuclidRuntime.dispatch_specialist -> actual EQS.qualify",
+        "owner_review_branch": "fix/philos-candidate-custody-20261014",
+        "canonical_authority": "PROPOSE; separately scoped Ed25519 authorization required",
+        "verified_path": "native simulated-evidence REFUSAL, not successful measured qualification",
+        "tests": 11,
+        "normal_exit": 0,
+        "optimized_exit": 0,
+        "packaged": false,
+        "CI_verified": false,
+        "production_qualified": false
+      }
+    },
+    "constituent_boundary_paths_locally_verified": true,
+    "operator_standins": "euclid/operator_development.py; explicit profile/host adapter + exact request allowlist + durable before-effect audit, no implicit default, no signer or qualification authority"
   },
   "initial_bridge_review_at_563c480a": {
     "base_commit": "b1d51bc8dbaab2bac28574bf89a8f01e03266932",
@@ -268,5 +307,85 @@
       "evidence": "docs/salamander_consolidation_validation.json#registration_admission_race_review",
       "revocation_limit": "No retroactive cancellation of already admitted in-flight work; no OS/process isolation or external kill/revocation claim"
     }
+  },
+  "review_at_29b016c2": {
+    "base_commit": "b1d51bc8dbaab2bac28574bf89a8f01e03266932",
+    "entry_point": "EuclidRuntime.bind_intelligence -> dispatch_specialist",
+    "path": [
+      "ALHaras.evaluate",
+      "RightsLedger / Delegator.dispatch",
+      "IntelligenceSpecialist.handle",
+      "CapabilityRegistry.dispatch",
+      "native conjecture tracker handler",
+      "local receipt / audit"
+    ],
+    "single_native_registration_owner": "Intelligence/proof_capability.py",
+    "canonical_native_path_verified": [
+      "proof-conjecture",
+      "repository-review"
+    ],
+    "not_verified_through_canonical_bridge": [
+      "source-repair",
+      "codebase-healing",
+      "isolated-repair",
+      "repair-learning-query",
+      "bsd-exploration",
+      "external-agent-boundary"
+    ],
+    "new_regressions": 46,
+    "normal_exit": 0,
+    "optimized_exit": 0,
+    "independently_qualified": false,
+    "whole_system_consolidation_complete": false,
+    "capability_source_sha256": {
+      "Intelligence/__init__.py": "15a2301f4c9064d1eea169a761ec4dd87519111f56d2a4634c4878550c671606",
+      "Intelligence/capability_fabric.py": "034e9054d47691040bf0f2b10a3a3afd254f1d1ae27c5893987f09c3421b8c69",
+      "Intelligence/proof_capability.py": "80d1f9693d1343e56f871512978bc5827a559de1ad3b9db3d61214d60268280e",
+      "Intelligence/salamander.py": "43d8abb3ee3e4471d50fdcf2fddffc29d8234a9abe77d7e539d24ae4c1bceb2e",
+      "euclid/intelligence_bridge.py": "2d414e90246bb606ddb3b937ba26fb2396119cf32a0863fe8a415121f1f57c4e",
+      "euclid/runtime.py": "f3fe83e5bb58c01f64eada21ed381758961939afd7b0149fe40829ef97f924a1",
+      "tests/intelligence_consolidation/test_canonical_bridge.py": "dec9734dd1eddb37c44bb88f2e62334ce06676d4a5cce0583537af432c1f423f",
+      "Intelligence/repository_review_capability.py": "fbb9dd65a611fbc2681c435878d87bf9538ced6255b4526dd30eaa13fe200829",
+      "tests/intelligence_consolidation/test_execution_custody.py": "76f65bacca7914e067915281c24b5e4120049f069c8c8527b9112ab62a663ddd"
+    },
+    "evidence": "docs/salamander_consolidation_validation.json#euclid_unification_execution_review",
+    "external_mutation_boundary": "Not implemented by this bridge; such execution refused pending owner-enforced controls",
+    "skill_source_lock": "Unchanged: no imported skill snapshot, catalogue, license, or upstream digest changed",
+    "philos_originals": "Separate branch emergence-track/phi-2, original contracts published at 1b653442140e38bd732ed09da344540ed4b81f3e; reconstructed PR73 must not replace originals",
+    "security_follow_up": {
+      "base_commit": "563c480af6309083ca14cc9f7ffe01f9666538c4",
+      "defect": "Bridge admission/dispatch registration TOCTOU; replacement mutating handler inherited earlier read-only admission",
+      "reproduced": true,
+      "reproduction_effect": "unauthorized temporary-file write through canonical runtime with real Guardian and registry",
+      "fix": "Atomic contract/handler snapshot under registration lock; bridge admission applied again to detached copy of that exact dispatch snapshot",
+      "tests_normal_passed": 33,
+      "tests_optimized_passed": 33,
+      "independently_qualified": false,
+      "evidence": "docs/salamander_consolidation_validation.json#registration_admission_race_review",
+      "revocation_limit": "No retroactive cancellation of already admitted in-flight work; no OS/process isolation or external kill/revocation claim"
+    },
+    "inspected_parent_commit": "0dadfc6a3600864521a7ace7a685668ba547f001",
+    "total_new_cases_this_follow_up": 13,
+    "source_lock": "pinned SKILL_SOURCE_LOCK inspected, unchanged; no upstream skill catalog/license/digest modified",
+    "single_native_registration_owners": [
+      "Intelligence/proof_capability.py",
+      "Intelligence/repository_review_capability.py"
+    ],
+    "EUCLID_components": [
+      "frontier-agent",
+      "PHILOS"
+    ],
+    "component_runtime_integration_complete": false,
+    "full_salamander_constructor_verified": false,
+    "installed_artifact_verified": false,
+    "CI_verified": false,
+    "production_qualified": false,
+    "catalog": "IntelligenceSpecialist.catalog describes binding, not authority or qualification",
+    "durable_audit": "existing HashChainAudit implementation, admission and completion writes required",
+    "packaging_blockers": [
+      "euclid-engine packaging excludes and explicitly forbids Intelligence",
+      "Salamander product package does not ship uppercase Intelligence",
+      "setuptools/wheel/build unavailable; incomplete source snapshot; no clean install tested"
+    ]
   }
 }

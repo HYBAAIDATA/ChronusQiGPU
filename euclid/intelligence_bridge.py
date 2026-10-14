@@ -6,6 +6,8 @@ execution boundary and are refused by this in-process read-only integration.
 """
 from __future__ import annotations
 
+import re
+
 from typing import Mapping
 
 from Intelligence.capability_fabric import (
@@ -101,8 +103,8 @@ def bind_intelligence(runtime, registry, *, profile, capabilities, organ_id="int
         raise TypeError("canonical EuclidRuntime is required")
     if runtime._closed:
         raise RuntimeError("runtime is closed")
-    if not isinstance(organ_id, str) or not organ_id or "." in organ_id:
-        raise ValueError("organ_id must be a non-empty undotted identifier")
+    if type(organ_id) is not str or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", organ_id) is None:
+        raise ValueError("organ_id must be a bounded path-free identifier")
     from al_haras import HashChainAudit
     audit = HashChainAudit(runtime.state_dir / "intelligence" / (organ_id + ".jsonl"))
     specialist = IntelligenceSpecialist(registry, profile=profile, capabilities=capabilities,

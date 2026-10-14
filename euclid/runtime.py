@@ -774,12 +774,15 @@ class EuclidRuntime:
         implementation: Any,
         *,
         operations: Any = None,
+        authority: Authority = Authority.READ_ONLY,
     ) -> None:
         """Expose a specialist without transferring its domain authority.
 
         ``operations`` declares which request operations the organ admits;
         it is what self-directed routing selects on. An organ that declares
         none can still be dispatched by name but is never routed to."""
+        if type(authority) is not Authority:
+            raise TypeError("explicit Authority value required; binding grants no rights")
         if hasattr(implementation, "handle"):
             handler = implementation.handle
         elif hasattr(implementation, "execute"):
@@ -793,7 +796,7 @@ class EuclidRuntime:
             Organ(
                 organ_id,
                 frozenset({capability}),
-                Authority.READ_ONLY,
+                authority,
                 lambda request, _handler=handler: _handler(request),
             )
         )

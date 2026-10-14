@@ -175,6 +175,23 @@ class CanonicalCustodyIntegration(unittest.TestCase):
         self.assertEqual(len(binding["manifest_digest"]), 64)
         self.assertIn("not_closure_or_external_state", binding["handler_binding_scope"])
 
+    def test_binding_rejects_absolute_and_path_like_audit_identifiers(self):
+        escaped = self.root / "escaped"
+        for organ_id in (str(escaped), "nested/name", "nested\\name", "x"*65):
+            with self.subTest(organ_id=organ_id), self.assertRaises(ValueError):
+                self.runtime.bind_intelligence(self.registry, profile=ExecutionProfile.INTERNAL_RESEARCH,
+                                              capabilities=["proof-conjecture"], organ_id=organ_id)
+        self.assertFalse(escaped.with_suffix(".jsonl").exists())
+
+    def test_specialist_authority_is_explicit_without_creating_rights(self):
+        from euclid.contracts import Authority
+        self.runtime.register_specialist("proposal-owner", lambda request: {},
+                                         operations=("propose",), authority=Authority.PROPOSE)
+        self.assertIs(self.runtime.registry.get("proposal-owner").authority, Authority.PROPOSE)
+        self.assertFalse(self.runtime.rights.permits("owner","proposal-owner","proposal-owner.request","dispatch"))
+        with self.assertRaises(TypeError):
+            self.runtime.register_specialist("invalid-owner",lambda request: {},authority="propose")
+
     def test_unconfigured_review_is_disabled(self):
         from Intelligence.repository_review_capability import register_repository_review_capability
         register_repository_review_capability(self.registry, repo_root=self.root)

@@ -481,5 +481,740 @@
       "unchanged_review_dependency_sha256": "bd087f1cb4628f41acbcbe8977aa7f2a7c9bcddfca80e52afa461f89f9fa181c",
       "initial_replay_limitation": "First reconstructed-source replay had 5 import errors because the older selective snapshot lacked the unchanged repository_review.py dependency. Add the already pinned PR74 native dependency; then both remote replays pass. No implementation replaced by doubles."
     }
+  },
+  "euclid_constituent_execution_authority_review": {
+    "starting_heads": {
+      "PR74": "29b016c2a1dec377f55cd8f86f271089c5eae527",
+      "PR75": "a41cc1a186bd3460366e6e3fcf55529ec51f7b73",
+      "PR69_owner": "370be998286dd8aadc7a9bccb9f397559f2cc791"
+    },
+    "environment": {
+      "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+      "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+      "source": "selective connector-pinned source, not a full git checkout"
+    },
+    "disposition": "DRAFT_TECHNICAL_REVIEW_NOT_MERGE_RELEASE_OR_PRODUCTION_QUALIFIED",
+    "source_sha256": {
+      "euclid/runtime.py": "f7e17bcef26c0f3dcbc2ece9b6c7f447e6c23d1aef7f501d7f7bd8fe14a6613d",
+      "euclid/intelligence_bridge.py": "09b3ffcdf451fb6e0424473e8dba9b3452a3afa9e768e7ade33c0f4c0a661601",
+      "euclid/operator_development.py": "22378db9c963183d6081d67fe4e07e936796a66155287ffb4942555cf3d50c95",
+      "euclid/frontier_integration.py": "6d063c660b3df9fbbe27f6b3c4bbdb2e33dc045b6eed6d9aa0b8026819174fb9",
+      "tests/intelligence_consolidation/test_execution_custody.py": "061d4747e2160cdbae4e2b3175caf2a34f2167cddd4240ec07c833940ea6f9be",
+      "tests/operator_development/test_operator_development.py": "dba65a3507f8e83d08776270f60da9265ef0e66a9376e0c69ce5494f399f5d6f"
+    },
+    "philos_compatibility_sha256": {
+      "euclid/emergence/trusted_core/access_control.py": "d24ee0afb522485e870c93a6dda3b6984006ee1a62f630ab44ab15daabc5fb91",
+      "euclid/emergence/trusted_core/qualification_service.py": "ec5bf9ee69148b2e174e0ec8ca5be33f8adaf6ae01cb22aef015a8ea87ee91c3",
+      "euclid/emergence/trusted_core/__init__.py": "7f2c4d29a9b3869982f9269213f972a59e1826f2392ecfcf00582305b5b82181",
+      "euclid/emergence/__init__.py": "8f4cad998a4a8ee06c9096c85f9107cd781ebd4dcfa8e3e8daf04d93780a5135",
+      "euclid/emergence/integration.py": "b3b71b9bc5d1051f8bcf717066b43f010356e46d327b95d55e99a3181e9ae5ae",
+      "euclid/emergence/folding/recursive_folding.py": "15cc30163f0caa00ce8b339b811d5e5c493344cd7da8f60339ffba79a5c2d69f",
+      "tests/emergence/conftest.py": "4e365b7e6d87d6f4e3fc9a66c0763f48ff2479d3b5855d91636ae5a80c44cd73",
+      "tests/emergence/test_phi2_e2e_integration.py": "c6c3ae58831dded62c21d7b5f04f2b5b790a9cba5eacfbb9d04eff252c33b856",
+      "tests/emergence/test_qualification_gates.py": "ac43c8049dc4943376875e09025ec1275b5c913efa901ab2f4f9f33084e52ba2",
+      "tests/emergence/test_recursive_folding.py": "386103f8ca23a10c5e41a41205374185ec2cc21a06b9d8e96eda05cbae8e4c5d",
+      "tests/emergence/test_security_boundaries.py": "6d30f511b0ea6e3df6dc9f407b45a1c37d06fda66761908ce1e12f8ca7417eab",
+      "tests/emergence_custody/test_candidate_custody.py": "c67b52c6e6e874c10367b7708a8ab4af64b0382cb2538c1cbf8a13ef6cd2eef3",
+      "tests/emergence_authorization/test_authorization.py": "eab1007c9ba9dcdcc2f9999a19b3cd5b7359076b2b63c06b44a8c50118376d57",
+      "tests/emergence_runtime/test_canonical_philos.py": "2303053be4a07b1722e8f81c286374770db931144feebe4873edb05ff0b3ff65"
+    },
+    "frontier_owner_git_blob_verification": {
+      "head": "370be998286dd8aadc7a9bccb9f397559f2cc791",
+      "matched": [
+        "__init__.py",
+        "_contracts.py",
+        "abstraction.py",
+        "alignment.py",
+        "anti_goodhart.py",
+        "assurance.py",
+        "audit.py",
+        "capabilities.py",
+        "capability_creation.py",
+        "characterisation.py",
+        "cognition.py",
+        "control.py",
+        "counterfactual.py",
+        "decomposition.py",
+        "elevation.py",
+        "epistemic.py",
+        "evaluation.py",
+        "goal.py",
+        "honesty.py",
+        "hypothesis.py",
+        "identity.py",
+        "main.py",
+        "memory.py",
+        "metacognition.py",
+        "multi_agent.py",
+        "operational_loop.py",
+        "perception.py",
+        "permissions.py",
+        "qualification_loop.py",
+        "reliability.py",
+        "representation.py",
+        "resources.py",
+        "robustness.py",
+        "safety.py",
+        "search.py",
+        "security.py",
+        "strategy.py",
+        "trust.py",
+        "value.py",
+        "verification.py",
+        "world_model.py"
+      ],
+      "mismatched": []
+    },
+    "tests": [
+      {
+        "name": "canonical",
+        "optimized": false,
+        "command": [
+          "/usr/local/bin/python",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "/data/euclid_philos_authority/canonical_source/tests/intelligence_consolidation",
+          "-v"
+        ],
+        "cwd": "/data/euclid_philos_authority",
+        "PYTHONPATH": "/data/euclid_philos_authority/canonical_source",
+        "exit_code": 0,
+        "test_count": 48,
+        "expected": 48,
+        "log_sha256": "c61bd0a4f8b1977f871c35f069ad93178be7b13090929ae8fda60c2f6552e796",
+        "output": "test_binding_does_not_create_rights (test_canonical_bridge.CanonicalBridgeIntegration.test_binding_does_not_create_rights) ... ok\ntest_closed_runtime (test_canonical_bridge.CanonicalBridgeIntegration.test_closed_runtime) ... ok\ntest_creator_rights_revocation_blocks_dispatch (test_canonical_bridge.CanonicalBridgeIntegration.test_creator_rights_revocation_blocks_dispatch) ... ok\ntest_experiment_is_not_proof (test_canonical_bridge.CanonicalBridgeIntegration.test_experiment_is_not_proof) ... ok\ntest_guardian_absence_refuses_even_with_rights (test_canonical_bridge.CanonicalBridgeIntegration.test_guardian_absence_refuses_even_with_rights) ... ok\ntest_invalid_expired_tampered_and_wrong_tenant_tokens_no_handler (test_canonical_bridge.CanonicalBridgeIntegration.test_invalid_expired_tampered_and_wrong_tenant_tokens_no_handler) ... ok\ntest_missing_conjecture_is_not_success (test_canonical_bridge.CanonicalBridgeIntegration.test_missing_conjecture_is_not_success) ... ok\ntest_mutation_capability_binding_denied (test_canonical_bridge.CanonicalBridgeIntegration.test_mutation_capability_binding_denied) ... ok\ntest_profile_injection_refused_before_dispatch (test_canonical_bridge.CanonicalBridgeIntegration.test_profile_injection_refused_before_dispatch) ... ok\ntest_real_native_registration_dispatch_result_and_audit (test_canonical_bridge.CanonicalBridgeIntegration.test_real_native_registration_dispatch_result_and_audit) ... ok\ntest_registry_change_after_admission_cannot_execute_mutating_handler (test_canonical_bridge.CanonicalBridgeIntegration.test_registry_change_after_admission_cannot_execute_mutating_handler)\nReal concurrent registry replacement at the bridge/dispatch boundary. ... ok\ntest_unregistration_and_permission_change_fail_closed (test_canonical_bridge.CanonicalBridgeIntegration.test_unregistration_and_permission_change_fail_closed) ... ok\ntest_admission_callback_cannot_weaken_the_execution_schema (test_canonical_bridge.FabricRegression.test_admission_callback_cannot_weaken_the_execution_schema) ... ok\ntest_audit_is_detached (test_canonical_bridge.FabricRegression.test_audit_is_detached) ... ok\ntest_bad_profile_no_handler (test_canonical_bridge.FabricRegression.test_bad_profile_no_handler) ... ok\ntest_dispatch_uses_the_admitted_handler_snapshot (test_canonical_bridge.FabricRegression.test_dispatch_uses_the_admitted_handler_snapshot) ... ok\ntest_failure_shapes_never_success (test_canonical_bridge.FabricRegression.test_failure_shapes_never_success) ... ok\ntest_findings_limit (test_canonical_bridge.FabricRegression.test_findings_limit) ... ok\ntest_input_envelope_before_handler (test_canonical_bridge.FabricRegression.test_input_envelope_before_handler) ... ok\ntest_invalid_budget (test_canonical_bridge.FabricRegression.test_invalid_budget) ... ok\ntest_invalid_inputs_no_execution (test_canonical_bridge.FabricRegression.test_invalid_inputs_no_execution) ... ok\ntest_invalid_schema_fails_at_registration (test_canonical_bridge.FabricRegression.test_invalid_schema_fails_at_registration) ... ok\ntest_manifest_is_snapshot (test_canonical_bridge.FabricRegression.test_manifest_is_snapshot) ... ok\ntest_native_failure_dataclass_not_success (test_canonical_bridge.FabricRegression.test_native_failure_dataclass_not_success) ... ok\ntest_nonfinite_output_not_success (test_canonical_bridge.FabricRegression.test_nonfinite_output_not_success) ... ok\ntest_output_validation (test_canonical_bridge.FabricRegression.test_output_validation) ... ok\ntest_permission_contract_types (test_canonical_bridge.FabricRegression.test_permission_contract_types) ... ok\ntest_receipt_discloses_enforcement_limits (test_canonical_bridge.FabricRegression.test_receipt_discloses_enforcement_limits) ... ok\ntest_shared_code_execution_denied_before_handler (test_canonical_bridge.FabricRegression.test_shared_code_execution_denied_before_handler) ... ok\ntest_simulation_and_unverified_are_distinct (test_canonical_bridge.FabricRegression.test_simulation_and_unverified_are_distinct) ... ok\ntest_unknown_and_disabled_audited (test_canonical_bridge.FabricRegression.test_unknown_and_disabled_audited) ... ok\ntest_leaf_import_does_not_initialize_engines (test_canonical_bridge.ImportCompositionRegression.test_leaf_import_does_not_initialize_engines) ... ok\ntest_unknown_export_is_honest (test_canonical_bridge.ImportCompositionRegression.test_unknown_export_is_honest) ... ok\ntest_actual_source_bound_review_from_canonical_runtime (test_execution_custody.CanonicalCustodyIntegration.test_actual_source_bound_review_from_canonical_runtime) ... ok\ntest_binding_rejects_absolute_and_path_like_audit_identifiers (test_execution_custody.CanonicalCustodyIntegration.test_binding_rejects_absolute_and_path_like_audit_identifiers) ... ok\ntest_catalog_schema_is_detached_and_does_not_grant_authority (test_execution_custody.CanonicalCustodyIntegration.test_catalog_schema_is_detached_and_does_not_grant_authority) ... ok\ntest_changed_source_and_symlink_are_refused (test_execution_custody.CanonicalCustodyIntegration.test_changed_source_and_symlink_are_refused) ... ok\ntest_durable_native_execution_chain_survives_reopen (test_execution_custody.CanonicalCustodyIntegration.test_durable_native_execution_chain_survives_reopen) ... ok\ntest_guardian_observation_mutation_cannot_change_dispatched_request (test_execution_custody.CanonicalCustodyIntegration.test_guardian_observation_mutation_cannot_change_dispatched_request) ... ok\ntest_receipt_and_admission_share_local_handler_binding (test_execution_custody.CanonicalCustodyIntegration.test_receipt_and_admission_share_local_handler_binding) ... ok\ntest_specialist_authority_is_explicit_without_creating_rights (test_execution_custody.CanonicalCustodyIntegration.test_specialist_authority_is_explicit_without_creating_rights) ... ok\ntest_unapproved_client_policy_and_root_are_refused (test_execution_custody.CanonicalCustodyIntegration.test_unapproved_client_policy_and_root_are_refused) ... ok\ntest_unconfigured_review_is_disabled (test_execution_custody.CanonicalCustodyIntegration.test_unconfigured_review_is_disabled) ... ok\ntest_admission_audit_failure_prevents_real_file_effect (test_execution_custody.DispatchCustodyRegression.test_admission_audit_failure_prevents_real_file_effect) ... ok\ntest_completion_audit_failure_does_not_return_success_or_claim_rollback (test_execution_custody.DispatchCustodyRegression.test_completion_audit_failure_does_not_return_success_or_claim_rollback) ... ok\ntest_handler_mutation_does_not_rewrite_admitted_input_receipt (test_execution_custody.DispatchCustodyRegression.test_handler_mutation_does_not_rewrite_admitted_input_receipt) ... ok\ntest_lossy_json_inputs_refused_without_handler (test_execution_custody.DispatchCustodyRegression.test_lossy_json_inputs_refused_without_handler) ... ok\ntest_non_json_output_is_not_verified_success (test_execution_custody.DispatchCustodyRegression.test_non_json_output_is_not_verified_success) ... ok\n\n----------------------------------------------------------------------\nRan 48 tests in 0.218s\n\nOK\n"
+      },
+      {
+        "name": "canonical",
+        "optimized": true,
+        "command": [
+          "/usr/local/bin/python",
+          "-O",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "/data/euclid_philos_authority/canonical_source/tests/intelligence_consolidation",
+          "-v"
+        ],
+        "cwd": "/data/euclid_philos_authority",
+        "PYTHONPATH": "/data/euclid_philos_authority/canonical_source",
+        "exit_code": 0,
+        "test_count": 48,
+        "expected": 48,
+        "log_sha256": "1bae1fbdcf77bd2e7b5d26dca328f0630a51841dc1af19184dfa0823863f20af",
+        "output": "test_binding_does_not_create_rights (test_canonical_bridge.CanonicalBridgeIntegration.test_binding_does_not_create_rights) ... ok\ntest_closed_runtime (test_canonical_bridge.CanonicalBridgeIntegration.test_closed_runtime) ... ok\ntest_creator_rights_revocation_blocks_dispatch (test_canonical_bridge.CanonicalBridgeIntegration.test_creator_rights_revocation_blocks_dispatch) ... ok\ntest_experiment_is_not_proof (test_canonical_bridge.CanonicalBridgeIntegration.test_experiment_is_not_proof) ... ok\ntest_guardian_absence_refuses_even_with_rights (test_canonical_bridge.CanonicalBridgeIntegration.test_guardian_absence_refuses_even_with_rights) ... ok\ntest_invalid_expired_tampered_and_wrong_tenant_tokens_no_handler (test_canonical_bridge.CanonicalBridgeIntegration.test_invalid_expired_tampered_and_wrong_tenant_tokens_no_handler) ... ok\ntest_missing_conjecture_is_not_success (test_canonical_bridge.CanonicalBridgeIntegration.test_missing_conjecture_is_not_success) ... ok\ntest_mutation_capability_binding_denied (test_canonical_bridge.CanonicalBridgeIntegration.test_mutation_capability_binding_denied) ... ok\ntest_profile_injection_refused_before_dispatch (test_canonical_bridge.CanonicalBridgeIntegration.test_profile_injection_refused_before_dispatch) ... ok\ntest_real_native_registration_dispatch_result_and_audit (test_canonical_bridge.CanonicalBridgeIntegration.test_real_native_registration_dispatch_result_and_audit) ... ok\ntest_registry_change_after_admission_cannot_execute_mutating_handler (test_canonical_bridge.CanonicalBridgeIntegration.test_registry_change_after_admission_cannot_execute_mutating_handler)\nReal concurrent registry replacement at the bridge/dispatch boundary. ... ok\ntest_unregistration_and_permission_change_fail_closed (test_canonical_bridge.CanonicalBridgeIntegration.test_unregistration_and_permission_change_fail_closed) ... ok\ntest_admission_callback_cannot_weaken_the_execution_schema (test_canonical_bridge.FabricRegression.test_admission_callback_cannot_weaken_the_execution_schema) ... ok\ntest_audit_is_detached (test_canonical_bridge.FabricRegression.test_audit_is_detached) ... ok\ntest_bad_profile_no_handler (test_canonical_bridge.FabricRegression.test_bad_profile_no_handler) ... ok\ntest_dispatch_uses_the_admitted_handler_snapshot (test_canonical_bridge.FabricRegression.test_dispatch_uses_the_admitted_handler_snapshot) ... ok\ntest_failure_shapes_never_success (test_canonical_bridge.FabricRegression.test_failure_shapes_never_success) ... ok\ntest_findings_limit (test_canonical_bridge.FabricRegression.test_findings_limit) ... ok\ntest_input_envelope_before_handler (test_canonical_bridge.FabricRegression.test_input_envelope_before_handler) ... ok\ntest_invalid_budget (test_canonical_bridge.FabricRegression.test_invalid_budget) ... ok\ntest_invalid_inputs_no_execution (test_canonical_bridge.FabricRegression.test_invalid_inputs_no_execution) ... ok\ntest_invalid_schema_fails_at_registration (test_canonical_bridge.FabricRegression.test_invalid_schema_fails_at_registration) ... ok\ntest_manifest_is_snapshot (test_canonical_bridge.FabricRegression.test_manifest_is_snapshot) ... ok\ntest_native_failure_dataclass_not_success (test_canonical_bridge.FabricRegression.test_native_failure_dataclass_not_success) ... ok\ntest_nonfinite_output_not_success (test_canonical_bridge.FabricRegression.test_nonfinite_output_not_success) ... ok\ntest_output_validation (test_canonical_bridge.FabricRegression.test_output_validation) ... ok\ntest_permission_contract_types (test_canonical_bridge.FabricRegression.test_permission_contract_types) ... ok\ntest_receipt_discloses_enforcement_limits (test_canonical_bridge.FabricRegression.test_receipt_discloses_enforcement_limits) ... ok\ntest_shared_code_execution_denied_before_handler (test_canonical_bridge.FabricRegression.test_shared_code_execution_denied_before_handler) ... ok\ntest_simulation_and_unverified_are_distinct (test_canonical_bridge.FabricRegression.test_simulation_and_unverified_are_distinct) ... ok\ntest_unknown_and_disabled_audited (test_canonical_bridge.FabricRegression.test_unknown_and_disabled_audited) ... ok\ntest_leaf_import_does_not_initialize_engines (test_canonical_bridge.ImportCompositionRegression.test_leaf_import_does_not_initialize_engines) ... ok\ntest_unknown_export_is_honest (test_canonical_bridge.ImportCompositionRegression.test_unknown_export_is_honest) ... ok\ntest_actual_source_bound_review_from_canonical_runtime (test_execution_custody.CanonicalCustodyIntegration.test_actual_source_bound_review_from_canonical_runtime) ... ok\ntest_binding_rejects_absolute_and_path_like_audit_identifiers (test_execution_custody.CanonicalCustodyIntegration.test_binding_rejects_absolute_and_path_like_audit_identifiers) ... ok\ntest_catalog_schema_is_detached_and_does_not_grant_authority (test_execution_custody.CanonicalCustodyIntegration.test_catalog_schema_is_detached_and_does_not_grant_authority) ... ok\ntest_changed_source_and_symlink_are_refused (test_execution_custody.CanonicalCustodyIntegration.test_changed_source_and_symlink_are_refused) ... ok\ntest_durable_native_execution_chain_survives_reopen (test_execution_custody.CanonicalCustodyIntegration.test_durable_native_execution_chain_survives_reopen) ... ok\ntest_guardian_observation_mutation_cannot_change_dispatched_request (test_execution_custody.CanonicalCustodyIntegration.test_guardian_observation_mutation_cannot_change_dispatched_request) ... ok\ntest_receipt_and_admission_share_local_handler_binding (test_execution_custody.CanonicalCustodyIntegration.test_receipt_and_admission_share_local_handler_binding) ... ok\ntest_specialist_authority_is_explicit_without_creating_rights (test_execution_custody.CanonicalCustodyIntegration.test_specialist_authority_is_explicit_without_creating_rights) ... ok\ntest_unapproved_client_policy_and_root_are_refused (test_execution_custody.CanonicalCustodyIntegration.test_unapproved_client_policy_and_root_are_refused) ... ok\ntest_unconfigured_review_is_disabled (test_execution_custody.CanonicalCustodyIntegration.test_unconfigured_review_is_disabled) ... ok\ntest_admission_audit_failure_prevents_real_file_effect (test_execution_custody.DispatchCustodyRegression.test_admission_audit_failure_prevents_real_file_effect) ... ok\ntest_completion_audit_failure_does_not_return_success_or_claim_rollback (test_execution_custody.DispatchCustodyRegression.test_completion_audit_failure_does_not_return_success_or_claim_rollback) ... ok\ntest_handler_mutation_does_not_rewrite_admitted_input_receipt (test_execution_custody.DispatchCustodyRegression.test_handler_mutation_does_not_rewrite_admitted_input_receipt) ... ok\ntest_lossy_json_inputs_refused_without_handler (test_execution_custody.DispatchCustodyRegression.test_lossy_json_inputs_refused_without_handler) ... ok\ntest_non_json_output_is_not_verified_success (test_execution_custody.DispatchCustodyRegression.test_non_json_output_is_not_verified_success) ... ok\n\n----------------------------------------------------------------------\nRan 48 tests in 0.229s\n\nOK\n"
+      },
+      {
+        "name": "authorization",
+        "optimized": false,
+        "command": [
+          "/usr/local/bin/python",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "/data/euclid_philos_authority/source/tests/emergence_authorization",
+          "-v"
+        ],
+        "cwd": "/data/euclid_philos_authority",
+        "PYTHONPATH": "/data/euclid_philos_authority/source",
+        "exit_code": 0,
+        "test_count": 19,
+        "expected": 19,
+        "log_sha256": "3242a17a869e6c808706c022d7ab99c1c454cacd476e2c8686790062327a7f61",
+        "output": "test_all_security_fields_are_signed (test_authorization.AuthorizationTests.test_all_security_fields_are_signed) ... ok\ntest_concurrent_verifiers_admit_exactly_once (test_authorization.AuthorizationTests.test_concurrent_verifiers_admit_exactly_once) ... ok\ntest_expired_token_refused (test_authorization.AuthorizationTests.test_expired_token_refused) ... ok\ntest_full_ledger_refuses_without_evicting_live_authorization (test_authorization.AuthorizationTests.test_full_ledger_refuses_without_evicting_live_authorization) ... ok\ntest_host_key_mapping_is_detached_and_revocation_refuses (test_authorization.AuthorizationTests.test_host_key_mapping_is_detached_and_revocation_refuses) ... ok\ntest_invalid_margin_and_configuration_fail_closed (test_authorization.AuthorizationTests.test_invalid_margin_and_configuration_fail_closed) ... ok\ntest_ledger_cannot_be_rebound_to_other_audience (test_authorization.AuthorizationTests.test_ledger_cannot_be_rebound_to_other_audience) ... ok\ntest_no_default_authority_or_signing_secret (test_authorization.AuthorizationTests.test_no_default_authority_or_signing_secret) ... ok\ntest_nonfinite_bool_and_excessive_issue_lifetimes_refused (test_authorization.AuthorizationTests.test_nonfinite_bool_and_excessive_issue_lifetimes_refused) ... ok\ntest_persisted_clock_rollback_refused (test_authorization.AuthorizationTests.test_persisted_clock_rollback_refused) ... ok\ntest_protocol_mutation_and_cross_candidate_token_refused (test_authorization.AuthorizationTests.test_protocol_mutation_and_cross_candidate_token_refused) ... ok\ntest_public_key_cannot_issue (test_authorization.AuthorizationTests.test_public_key_cannot_issue) ... ok\ntest_same_token_refused_across_verifier_restarts (test_authorization.AuthorizationTests.test_same_token_refused_across_verifier_restarts) ... ok\ntest_self_signed_unknown_issuer_or_officer_refused (test_authorization.AuthorizationTests.test_self_signed_unknown_issuer_or_officer_refused) ... ok\ntest_service_consumes_authorization_even_when_simulation_refused (test_authorization.AuthorizationTests.test_service_consumes_authorization_even_when_simulation_refused) ... ok\ntest_signed_time_and_operation_constraints_are_enforced (test_authorization.AuthorizationTests.test_signed_time_and_operation_constraints_are_enforced) ... ok\ntest_unavailable_replay_ledger_refuses (test_authorization.AuthorizationTests.test_unavailable_replay_ledger_refuses) ... ok\ntest_valid_authorization_does_not_qualify (test_authorization.AuthorizationTests.test_valid_authorization_does_not_qualify) ... ok\ntest_wrong_key_and_tampered_signature_refused (test_authorization.AuthorizationTests.test_wrong_key_and_tampered_signature_refused) ... ok\n\n----------------------------------------------------------------------\nRan 19 tests in 0.074s\n\nOK\n"
+      },
+      {
+        "name": "authorization",
+        "optimized": true,
+        "command": [
+          "/usr/local/bin/python",
+          "-O",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "/data/euclid_philos_authority/source/tests/emergence_authorization",
+          "-v"
+        ],
+        "cwd": "/data/euclid_philos_authority",
+        "PYTHONPATH": "/data/euclid_philos_authority/source",
+        "exit_code": 0,
+        "test_count": 19,
+        "expected": 19,
+        "log_sha256": "84e95da81a1e897332c323224fecf6f0530ab49f57e958a8643f943c9f60048b",
+        "output": "test_all_security_fields_are_signed (test_authorization.AuthorizationTests.test_all_security_fields_are_signed) ... ok\ntest_concurrent_verifiers_admit_exactly_once (test_authorization.AuthorizationTests.test_concurrent_verifiers_admit_exactly_once) ... ok\ntest_expired_token_refused (test_authorization.AuthorizationTests.test_expired_token_refused) ... ok\ntest_full_ledger_refuses_without_evicting_live_authorization (test_authorization.AuthorizationTests.test_full_ledger_refuses_without_evicting_live_authorization) ... ok\ntest_host_key_mapping_is_detached_and_revocation_refuses (test_authorization.AuthorizationTests.test_host_key_mapping_is_detached_and_revocation_refuses) ... ok\ntest_invalid_margin_and_configuration_fail_closed (test_authorization.AuthorizationTests.test_invalid_margin_and_configuration_fail_closed) ... ok\ntest_ledger_cannot_be_rebound_to_other_audience (test_authorization.AuthorizationTests.test_ledger_cannot_be_rebound_to_other_audience) ... ok\ntest_no_default_authority_or_signing_secret (test_authorization.AuthorizationTests.test_no_default_authority_or_signing_secret) ... ok\ntest_nonfinite_bool_and_excessive_issue_lifetimes_refused (test_authorization.AuthorizationTests.test_nonfinite_bool_and_excessive_issue_lifetimes_refused) ... ok\ntest_persisted_clock_rollback_refused (test_authorization.AuthorizationTests.test_persisted_clock_rollback_refused) ... ok\ntest_protocol_mutation_and_cross_candidate_token_refused (test_authorization.AuthorizationTests.test_protocol_mutation_and_cross_candidate_token_refused) ... ok\ntest_public_key_cannot_issue (test_authorization.AuthorizationTests.test_public_key_cannot_issue) ... ok\ntest_same_token_refused_across_verifier_restarts (test_authorization.AuthorizationTests.test_same_token_refused_across_verifier_restarts) ... ok\ntest_self_signed_unknown_issuer_or_officer_refused (test_authorization.AuthorizationTests.test_self_signed_unknown_issuer_or_officer_refused) ... ok\ntest_service_consumes_authorization_even_when_simulation_refused (test_authorization.AuthorizationTests.test_service_consumes_authorization_even_when_simulation_refused) ... ok\ntest_signed_time_and_operation_constraints_are_enforced (test_authorization.AuthorizationTests.test_signed_time_and_operation_constraints_are_enforced) ... ok\ntest_unavailable_replay_ledger_refuses (test_authorization.AuthorizationTests.test_unavailable_replay_ledger_refuses) ... ok\ntest_valid_authorization_does_not_qualify (test_authorization.AuthorizationTests.test_valid_authorization_does_not_qualify) ... ok\ntest_wrong_key_and_tampered_signature_refused (test_authorization.AuthorizationTests.test_wrong_key_and_tampered_signature_refused) ... ok\n\n----------------------------------------------------------------------\nRan 19 tests in 0.077s\n\nOK\n"
+      },
+      {
+        "name": "custody",
+        "optimized": false,
+        "command": [
+          "/usr/local/bin/python",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "/data/euclid_philos_authority/source/tests/emergence_custody",
+          "-v"
+        ],
+        "cwd": "/data/euclid_philos_authority",
+        "PYTHONPATH": "/data/euclid_philos_authority/source",
+        "exit_code": 0,
+        "test_count": 23,
+        "expected": 23,
+        "log_sha256": "168ff3ad974d3dcd61dab0aec6915b0ddfeb75d765aacfeedf3e737ecc44a56d",
+        "output": "test_actual_service_refuses_builtin_simulations (test_candidate_custody.ServiceRefusalTests.test_actual_service_refuses_builtin_simulations) ... ok\ntest_builtin_reproduction_marked_simulated (test_candidate_custody.ServiceRefusalTests.test_builtin_reproduction_marked_simulated) ... ok\ntest_claimed_measurement_cannot_bypass_simulated_stress (test_candidate_custody.ServiceRefusalTests.test_claimed_measurement_cannot_bypass_simulated_stress) ... ok\ntest_executor_protocol_mutation_refused_before_second_executor (test_candidate_custody.ServiceRefusalTests.test_executor_protocol_mutation_refused_before_second_executor) ... ok\ntest_gate_two_mutation_rejected (test_candidate_custody.ServiceRefusalTests.test_gate_two_mutation_rejected) ... ok\ntest_missing_authority_refused_before_execution (test_candidate_custody.ServiceRefusalTests.test_missing_authority_refused_before_execution) ... ok\ntest_missing_gate_three_window_is_not_pass (test_candidate_custody.ServiceRefusalTests.test_missing_gate_three_window_is_not_pass) ... ok\ntest_refusal_preserves_local_snapshot_custody (test_candidate_custody.ServiceRefusalTests.test_refusal_preserves_local_snapshot_custody) ... ok\ntest_source_mutation_refused_before_second_executor (test_candidate_custody.ServiceRefusalTests.test_source_mutation_refused_before_second_executor) ... ok\ntest_stress_explicitly_does_not_invoke_executor (test_candidate_custody.ServiceRefusalTests.test_stress_explicitly_does_not_invoke_executor) ... ok\ntest_baseline_metrics_bound (test_candidate_custody.SnapshotTests.test_baseline_metrics_bound) ... ok\ntest_envelope_bounds_bound (test_candidate_custody.SnapshotTests.test_envelope_bounds_bound) ... ok\ntest_metadata_bound (test_candidate_custody.SnapshotTests.test_metadata_bound) ... ok\ntest_nan_rejected (test_candidate_custody.SnapshotTests.test_nan_rejected) ... ok\ntest_nested_protocol_arguments_bound (test_candidate_custody.SnapshotTests.test_nested_protocol_arguments_bound) ... ok\ntest_non_json_rejected (test_candidate_custody.SnapshotTests.test_non_json_rejected) ... ok\ntest_observable_order_bound (test_candidate_custody.SnapshotTests.test_observable_order_bound) ... ok\ntest_protocol_steps_bound (test_candidate_custody.SnapshotTests.test_protocol_steps_bound) ... ok\ntest_snapshot_fields_frozen (test_candidate_custody.SnapshotTests.test_snapshot_fields_frozen) ... ok\ntest_snapshot_roundtrip (test_candidate_custody.SnapshotTests.test_snapshot_roundtrip) ... ok\ntest_source_none_empty_and_root_distinct (test_candidate_custody.SnapshotTests.test_source_none_empty_and_root_distinct) ... ok\ntest_to_dict_detached_steps (test_candidate_custody.SnapshotTests.test_to_dict_detached_steps) ... ok\ntest_views_do_not_share_nested_state (test_candidate_custody.SnapshotTests.test_views_do_not_share_nested_state) ... ok\n\n----------------------------------------------------------------------\nRan 23 tests in 0.066s\n\nOK\n"
+      },
+      {
+        "name": "custody",
+        "optimized": true,
+        "command": [
+          "/usr/local/bin/python",
+          "-O",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "/data/euclid_philos_authority/source/tests/emergence_custody",
+          "-v"
+        ],
+        "cwd": "/data/euclid_philos_authority",
+        "PYTHONPATH": "/data/euclid_philos_authority/source",
+        "exit_code": 0,
+        "test_count": 23,
+        "expected": 23,
+        "log_sha256": "0f1e6776471556a51e9a1f1cda2f65b5da07580a05385bd50e8925f1f6def990",
+        "output": "test_actual_service_refuses_builtin_simulations (test_candidate_custody.ServiceRefusalTests.test_actual_service_refuses_builtin_simulations) ... ok\ntest_builtin_reproduction_marked_simulated (test_candidate_custody.ServiceRefusalTests.test_builtin_reproduction_marked_simulated) ... ok\ntest_claimed_measurement_cannot_bypass_simulated_stress (test_candidate_custody.ServiceRefusalTests.test_claimed_measurement_cannot_bypass_simulated_stress) ... ok\ntest_executor_protocol_mutation_refused_before_second_executor (test_candidate_custody.ServiceRefusalTests.test_executor_protocol_mutation_refused_before_second_executor) ... ok\ntest_gate_two_mutation_rejected (test_candidate_custody.ServiceRefusalTests.test_gate_two_mutation_rejected) ... ok\ntest_missing_authority_refused_before_execution (test_candidate_custody.ServiceRefusalTests.test_missing_authority_refused_before_execution) ... ok\ntest_missing_gate_three_window_is_not_pass (test_candidate_custody.ServiceRefusalTests.test_missing_gate_three_window_is_not_pass) ... ok\ntest_refusal_preserves_local_snapshot_custody (test_candidate_custody.ServiceRefusalTests.test_refusal_preserves_local_snapshot_custody) ... ok\ntest_source_mutation_refused_before_second_executor (test_candidate_custody.ServiceRefusalTests.test_source_mutation_refused_before_second_executor) ... ok\ntest_stress_explicitly_does_not_invoke_executor (test_candidate_custody.ServiceRefusalTests.test_stress_explicitly_does_not_invoke_executor) ... ok\ntest_baseline_metrics_bound (test_candidate_custody.SnapshotTests.test_baseline_metrics_bound) ... ok\ntest_envelope_bounds_bound (test_candidate_custody.SnapshotTests.test_envelope_bounds_bound) ... ok\ntest_metadata_bound (test_candidate_custody.SnapshotTests.test_metadata_bound) ... ok\ntest_nan_rejected (test_candidate_custody.SnapshotTests.test_nan_rejected) ... ok\ntest_nested_protocol_arguments_bound (test_candidate_custody.SnapshotTests.test_nested_protocol_arguments_bound) ... ok\ntest_non_json_rejected (test_candidate_custody.SnapshotTests.test_non_json_rejected) ... ok\ntest_observable_order_bound (test_candidate_custody.SnapshotTests.test_observable_order_bound) ... ok\ntest_protocol_steps_bound (test_candidate_custody.SnapshotTests.test_protocol_steps_bound) ... ok\ntest_snapshot_fields_frozen (test_candidate_custody.SnapshotTests.test_snapshot_fields_frozen) ... ok\ntest_snapshot_roundtrip (test_candidate_custody.SnapshotTests.test_snapshot_roundtrip) ... ok\ntest_source_none_empty_and_root_distinct (test_candidate_custody.SnapshotTests.test_source_none_empty_and_root_distinct) ... ok\ntest_to_dict_detached_steps (test_candidate_custody.SnapshotTests.test_to_dict_detached_steps) ... ok\ntest_views_do_not_share_nested_state (test_candidate_custody.SnapshotTests.test_views_do_not_share_nested_state) ... ok\n\n----------------------------------------------------------------------\nRan 23 tests in 0.062s\n\nOK\n"
+      },
+      {
+        "name": "philos_runtime",
+        "optimized": false,
+        "command": [
+          "/usr/local/bin/python",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "/data/euclid_philos_authority/joint_source/tests/emergence_runtime",
+          "-v"
+        ],
+        "cwd": "/data/euclid_philos_authority",
+        "PYTHONPATH": "/data/euclid_philos_authority/joint_source",
+        "exit_code": 0,
+        "test_count": 11,
+        "expected": 11,
+        "log_sha256": "1a2a1bc4c564cd69664039167792ed89d1571bc7ab9ac32a6a6efe3774bf20db",
+        "output": "test_admission_audit_failure_prevents_authorization_consumption (test_canonical_philos.CanonicalPhilosTests.test_admission_audit_failure_prevents_authorization_consumption) ... ok\ntest_binding_does_not_grant_dispatch_or_signing_authority (test_canonical_philos.CanonicalPhilosTests.test_binding_does_not_grant_dispatch_or_signing_authority) ... ok\ntest_case_snapshot_detaches_original_and_host_mapping (test_canonical_philos.CanonicalPhilosTests.test_case_snapshot_detaches_original_and_host_mapping) ... ok\ntest_client_cannot_choose_executor_or_unapproved_case (test_canonical_philos.CanonicalPhilosTests.test_client_cannot_choose_executor_or_unapproved_case) ... ok\ntest_invalid_signature_and_replay_cannot_qualify (test_canonical_philos.CanonicalPhilosTests.test_invalid_signature_and_replay_cannot_qualify) ... ok\ntest_missing_guardian_blocks_before_token_consumption (test_canonical_philos.CanonicalPhilosTests.test_missing_guardian_blocks_before_token_consumption) ... ok\ntest_new_binding_does_not_install_creator_dispatch_rights (test_canonical_philos.CanonicalPhilosTests.test_new_binding_does_not_install_creator_dispatch_rights) ... ok\ntest_one_use_token_is_consumed_on_simulation_refusal (test_canonical_philos.CanonicalPhilosTests.test_one_use_token_is_consumed_on_simulation_refusal) ... ok\ntest_real_entry_point_invokes_native_service_and_refuses_simulation (test_canonical_philos.CanonicalPhilosTests.test_real_entry_point_invokes_native_service_and_refuses_simulation) ... ok\ntest_revoked_creator_rights_block_before_token_consumption (test_canonical_philos.CanonicalPhilosTests.test_revoked_creator_rights_block_before_token_consumption) ... ok\ntest_unapproved_case_is_refused (test_canonical_philos.CanonicalPhilosTests.test_unapproved_case_is_refused) ... ok\n\n----------------------------------------------------------------------\nRan 11 tests in 0.152s\n\nOK\n"
+      },
+      {
+        "name": "philos_runtime",
+        "optimized": true,
+        "command": [
+          "/usr/local/bin/python",
+          "-O",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "/data/euclid_philos_authority/joint_source/tests/emergence_runtime",
+          "-v"
+        ],
+        "cwd": "/data/euclid_philos_authority",
+        "PYTHONPATH": "/data/euclid_philos_authority/joint_source",
+        "exit_code": 0,
+        "test_count": 11,
+        "expected": 11,
+        "log_sha256": "8d2b4fb8dc60d52475919b79179cae6d8b73a4c03cc43e35a74553483d47b4a4",
+        "output": "test_admission_audit_failure_prevents_authorization_consumption (test_canonical_philos.CanonicalPhilosTests.test_admission_audit_failure_prevents_authorization_consumption) ... ok\ntest_binding_does_not_grant_dispatch_or_signing_authority (test_canonical_philos.CanonicalPhilosTests.test_binding_does_not_grant_dispatch_or_signing_authority) ... ok\ntest_case_snapshot_detaches_original_and_host_mapping (test_canonical_philos.CanonicalPhilosTests.test_case_snapshot_detaches_original_and_host_mapping) ... ok\ntest_client_cannot_choose_executor_or_unapproved_case (test_canonical_philos.CanonicalPhilosTests.test_client_cannot_choose_executor_or_unapproved_case) ... ok\ntest_invalid_signature_and_replay_cannot_qualify (test_canonical_philos.CanonicalPhilosTests.test_invalid_signature_and_replay_cannot_qualify) ... ok\ntest_missing_guardian_blocks_before_token_consumption (test_canonical_philos.CanonicalPhilosTests.test_missing_guardian_blocks_before_token_consumption) ... ok\ntest_new_binding_does_not_install_creator_dispatch_rights (test_canonical_philos.CanonicalPhilosTests.test_new_binding_does_not_install_creator_dispatch_rights) ... ok\ntest_one_use_token_is_consumed_on_simulation_refusal (test_canonical_philos.CanonicalPhilosTests.test_one_use_token_is_consumed_on_simulation_refusal) ... ok\ntest_real_entry_point_invokes_native_service_and_refuses_simulation (test_canonical_philos.CanonicalPhilosTests.test_real_entry_point_invokes_native_service_and_refuses_simulation) ... ok\ntest_revoked_creator_rights_block_before_token_consumption (test_canonical_philos.CanonicalPhilosTests.test_revoked_creator_rights_block_before_token_consumption) ... ok\ntest_unapproved_case_is_refused (test_canonical_philos.CanonicalPhilosTests.test_unapproved_case_is_refused) ... ok\n\n----------------------------------------------------------------------\nRan 11 tests in 0.145s\n\nOK\n"
+      },
+      {
+        "name": "frontier_operator",
+        "optimized": false,
+        "command": [
+          "/usr/local/bin/python",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "/data/euclid_philos_authority/joint_source/tests/operator_development",
+          "-v"
+        ],
+        "cwd": "/data/euclid_philos_authority",
+        "PYTHONPATH": "/data/euclid_philos_authority/joint_source",
+        "exit_code": 0,
+        "test_count": 14,
+        "expected": 14,
+        "log_sha256": "2589252d685cce43f7d2e38e12a790191134adcafcb956d71942c1bb9487e503",
+        "output": "test_actual_frontier_loop_uses_ports_and_observes_file (test_operator_development.OperatorDevelopmentTests.test_actual_frontier_loop_uses_ports_and_observes_file) ... ok\ntest_admission_audit_failure_prevents_execution (test_operator_development.OperatorDevelopmentTests.test_admission_audit_failure_prevents_execution) ... ok\ntest_canonical_frontier_budget_exhaustion_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_budget_exhaustion_has_no_file_effect) ... ok\ntest_canonical_frontier_deadline_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_deadline_has_no_file_effect) ... ok\ntest_canonical_frontier_kill_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_kill_has_no_file_effect) ... ok\ntest_canonical_frontier_stop_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_stop_has_no_file_effect) ... ok\ntest_canonical_frontier_wait_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_wait_has_no_file_effect) ... ok\ntest_expired_and_missing_budget_no_effect (test_operator_development.OperatorDevelopmentTests.test_expired_and_missing_budget_no_effect) ... ok\ntest_false_success_and_over_budget_receipts_refused (test_operator_development.OperatorDevelopmentTests.test_false_success_and_over_budget_receipts_refused) ... ok\ntest_late_return_is_failure_not_rollback_claim (test_operator_development.OperatorDevelopmentTests.test_late_return_is_failure_not_rollback_claim) ... ok\ntest_no_implicit_production_or_unnamed_delegation (test_operator_development.OperatorDevelopmentTests.test_no_implicit_production_or_unnamed_delegation) ... ok\ntest_real_execution_and_recovery_ports (test_operator_development.OperatorDevelopmentTests.test_real_execution_and_recovery_ports) ... ok\ntest_revocation_blocks_new_work_but_allows_recovery (test_operator_development.OperatorDevelopmentTests.test_revocation_blocks_new_work_but_allows_recovery) ... ok\ntest_wrong_scope_and_unapproved_adapter_no_effect (test_operator_development.OperatorDevelopmentTests.test_wrong_scope_and_unapproved_adapter_no_effect) ... ok\n\n----------------------------------------------------------------------\nRan 14 tests in 0.141s\n\nOK\n"
+      },
+      {
+        "name": "frontier_operator",
+        "optimized": true,
+        "command": [
+          "/usr/local/bin/python",
+          "-O",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "/data/euclid_philos_authority/joint_source/tests/operator_development",
+          "-v"
+        ],
+        "cwd": "/data/euclid_philos_authority",
+        "PYTHONPATH": "/data/euclid_philos_authority/joint_source",
+        "exit_code": 0,
+        "test_count": 14,
+        "expected": 14,
+        "log_sha256": "29e6bc0f848e6fdc1094b1829e850c12f6cd3164e43107571c2761fce43ccf9e",
+        "output": "test_actual_frontier_loop_uses_ports_and_observes_file (test_operator_development.OperatorDevelopmentTests.test_actual_frontier_loop_uses_ports_and_observes_file) ... ok\ntest_admission_audit_failure_prevents_execution (test_operator_development.OperatorDevelopmentTests.test_admission_audit_failure_prevents_execution) ... ok\ntest_canonical_frontier_budget_exhaustion_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_budget_exhaustion_has_no_file_effect) ... ok\ntest_canonical_frontier_deadline_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_deadline_has_no_file_effect) ... ok\ntest_canonical_frontier_kill_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_kill_has_no_file_effect) ... ok\ntest_canonical_frontier_stop_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_stop_has_no_file_effect) ... ok\ntest_canonical_frontier_wait_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_wait_has_no_file_effect) ... ok\ntest_expired_and_missing_budget_no_effect (test_operator_development.OperatorDevelopmentTests.test_expired_and_missing_budget_no_effect) ... ok\ntest_false_success_and_over_budget_receipts_refused (test_operator_development.OperatorDevelopmentTests.test_false_success_and_over_budget_receipts_refused) ... ok\ntest_late_return_is_failure_not_rollback_claim (test_operator_development.OperatorDevelopmentTests.test_late_return_is_failure_not_rollback_claim) ... ok\ntest_no_implicit_production_or_unnamed_delegation (test_operator_development.OperatorDevelopmentTests.test_no_implicit_production_or_unnamed_delegation) ... ok\ntest_real_execution_and_recovery_ports (test_operator_development.OperatorDevelopmentTests.test_real_execution_and_recovery_ports) ... ok\ntest_revocation_blocks_new_work_but_allows_recovery (test_operator_development.OperatorDevelopmentTests.test_revocation_blocks_new_work_but_allows_recovery) ... ok\ntest_wrong_scope_and_unapproved_adapter_no_effect (test_operator_development.OperatorDevelopmentTests.test_wrong_scope_and_unapproved_adapter_no_effect) ... ok\n\n----------------------------------------------------------------------\nRan 14 tests in 0.156s\n\nOK\n"
+      },
+      {
+        "name": "compileall",
+        "command": [
+          "/usr/local/bin/python",
+          "-m",
+          "compileall",
+          "-q",
+          "source/euclid/emergence",
+          "source/tests/emergence",
+          "source/tests/emergence_authorization",
+          "source/tests/emergence_runtime",
+          "source/tests/emergence_custody",
+          "canonical_source/euclid",
+          "canonical_source/tests/intelligence_consolidation",
+          "canonical_source/tests/operator_development"
+        ],
+        "exit_code": 0,
+        "output": ""
+      },
+      {
+        "name": "tabnanny",
+        "command": [
+          "/usr/local/bin/python",
+          "-m",
+          "tabnanny",
+          "source/euclid/emergence"
+        ],
+        "exit_code": 0,
+        "output": ""
+      },
+      {
+        "name": "tabnanny",
+        "command": [
+          "/usr/local/bin/python",
+          "-m",
+          "tabnanny",
+          "canonical_source/euclid"
+        ],
+        "exit_code": 0,
+        "output": ""
+      },
+      {
+        "name": "tabnanny",
+        "command": [
+          "/usr/local/bin/python",
+          "-m",
+          "tabnanny",
+          "source/tests/emergence_authorization"
+        ],
+        "exit_code": 0,
+        "output": ""
+      },
+      {
+        "name": "tabnanny",
+        "command": [
+          "/usr/local/bin/python",
+          "-m",
+          "tabnanny",
+          "source/tests/emergence_runtime"
+        ],
+        "exit_code": 0,
+        "output": ""
+      },
+      {
+        "name": "tabnanny",
+        "command": [
+          "/usr/local/bin/python",
+          "-m",
+          "tabnanny",
+          "canonical_source/tests/operator_development"
+        ],
+        "exit_code": 0,
+        "output": ""
+      }
+    ],
+    "normal_unique_tests": 115,
+    "optimized_test_executions": 115,
+    "execution_custody": "Local unsigned logs and hashes; not independent attestation. Private authorization keys generated in temporary tests, never committed.",
+    "joint_source": "Explicit compatibility assembly: PR74 current changes + PR75 PHILOS changes + PR69 exact frontier owner. Genuine package initializers and owners; NOT a merged branch, installed artifact or full repository checkout.",
+    "unavailable": [
+      "pytest original suites",
+      "Black/Ruff/Flake8/security scanners",
+      "clean wheel build/install (setuptools/wheel/build missing; known packaging omissions)",
+      "Windows",
+      "full Salamander lifecycle",
+      "independent T5 qualification",
+      "Lucas qualification",
+      "production drift/merge gate validation",
+      "authoritative CI and reviews"
+    ],
+    "source_only_whitespace_check": {
+      "actual_invocations": [
+        {
+          "owner": "canonical",
+          "path": "euclid/runtime.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/euclid_unification/remote_verified/euclid/runtime.py",
+            "/data/euclid_philos_authority/canonical_source/euclid/runtime.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "canonical",
+          "path": "euclid/intelligence_bridge.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/euclid_unification/remote_verified/euclid/intelligence_bridge.py",
+            "/data/euclid_philos_authority/canonical_source/euclid/intelligence_bridge.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "canonical",
+          "path": "euclid/operator_development.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/dev/null",
+            "/data/euclid_philos_authority/canonical_source/euclid/operator_development.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "canonical",
+          "path": "euclid/frontier_integration.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/dev/null",
+            "/data/euclid_philos_authority/canonical_source/euclid/frontier_integration.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "canonical",
+          "path": "tests/intelligence_consolidation/test_execution_custody.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/euclid_unification/remote_verified/tests/intelligence_consolidation/test_execution_custody.py",
+            "/data/euclid_philos_authority/canonical_source/tests/intelligence_consolidation/test_execution_custody.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "canonical",
+          "path": "tests/operator_development/test_operator_development.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/dev/null",
+            "/data/euclid_philos_authority/canonical_source/tests/operator_development/test_operator_development.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "canonical",
+          "path": "docs/INTELLIGENCE_CAPABILITY_OWNERSHIP.md",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/euclid_unification/remote_verified/docs/INTELLIGENCE_CAPABILITY_OWNERSHIP.md",
+            "/data/euclid_philos_authority/canonical_source/docs/INTELLIGENCE_CAPABILITY_OWNERSHIP.md"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "canonical",
+          "path": "docs/salamander_consolidation_validation.json",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/euclid_unification/remote_verified/docs/salamander_consolidation_validation.json",
+            "/data/euclid_philos_authority/canonical_source/docs/salamander_consolidation_validation.json"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "canonical",
+          "path": "reports/EUCLID_CAPABILITY_MANIFEST.json",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/euclid_unification/remote_verified/reports/EUCLID_CAPABILITY_MANIFEST.json",
+            "/data/euclid_philos_authority/canonical_source/reports/EUCLID_CAPABILITY_MANIFEST.json"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "philos",
+          "path": "euclid/emergence/trusted_core/access_control.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/philos_custody_review/remote_verified/euclid/emergence/trusted_core/access_control.py",
+            "/data/euclid_philos_authority/source/euclid/emergence/trusted_core/access_control.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "philos",
+          "path": "euclid/emergence/trusted_core/qualification_service.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/philos_custody_review/remote_verified/euclid/emergence/trusted_core/qualification_service.py",
+            "/data/euclid_philos_authority/source/euclid/emergence/trusted_core/qualification_service.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "philos",
+          "path": "euclid/emergence/trusted_core/__init__.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/philos_custody_review/remote_verified/euclid/emergence/trusted_core/__init__.py",
+            "/data/euclid_philos_authority/source/euclid/emergence/trusted_core/__init__.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "philos",
+          "path": "euclid/emergence/__init__.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/philos_custody_review/remote_verified/euclid/emergence/__init__.py",
+            "/data/euclid_philos_authority/source/euclid/emergence/__init__.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "philos",
+          "path": "euclid/emergence/integration.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/dev/null",
+            "/data/euclid_philos_authority/source/euclid/emergence/integration.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "philos",
+          "path": "euclid/emergence/folding/recursive_folding.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/philos_custody_review/remote_verified/euclid/emergence/folding/recursive_folding.py",
+            "/data/euclid_philos_authority/source/euclid/emergence/folding/recursive_folding.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "philos",
+          "path": "tests/emergence/conftest.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/dev/null",
+            "/data/euclid_philos_authority/source/tests/emergence/conftest.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "philos",
+          "path": "tests/emergence/test_phi2_e2e_integration.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/philos_custody_review/remote_verified/tests/emergence/test_phi2_e2e_integration.py",
+            "/data/euclid_philos_authority/source/tests/emergence/test_phi2_e2e_integration.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "philos",
+          "path": "tests/emergence/test_qualification_gates.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/philos_custody_review/remote_verified/tests/emergence/test_qualification_gates.py",
+            "/data/euclid_philos_authority/source/tests/emergence/test_qualification_gates.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "philos",
+          "path": "tests/emergence/test_recursive_folding.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/philos_custody_review/remote_verified/tests/emergence/test_recursive_folding.py",
+            "/data/euclid_philos_authority/source/tests/emergence/test_recursive_folding.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "philos",
+          "path": "tests/emergence/test_security_boundaries.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/philos_custody_review/remote_verified/tests/emergence/test_security_boundaries.py",
+            "/data/euclid_philos_authority/source/tests/emergence/test_security_boundaries.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "philos",
+          "path": "tests/emergence_custody/test_candidate_custody.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/philos_custody_review/remote_verified/tests/emergence_custody/test_candidate_custody.py",
+            "/data/euclid_philos_authority/source/tests/emergence_custody/test_candidate_custody.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "philos",
+          "path": "tests/emergence_authorization/test_authorization.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/dev/null",
+            "/data/euclid_philos_authority/source/tests/emergence_authorization/test_authorization.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "philos",
+          "path": "tests/emergence_runtime/test_canonical_philos.py",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/dev/null",
+            "/data/euclid_philos_authority/source/tests/emergence_runtime/test_canonical_philos.py"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "philos",
+          "path": "CAPABILITY-LEDGER.md",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/philos_custody_review/remote_verified/CAPABILITY-LEDGER.md",
+            "/data/euclid_philos_authority/source/CAPABILITY-LEDGER.md"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        },
+        {
+          "owner": "philos",
+          "path": "EMERGENCE-TRACK-CHANGELOG.md",
+          "command": [
+            "git",
+            "diff",
+            "--no-index",
+            "--check",
+            "/data/philos_custody_review/remote_verified/EMERGENCE-TRACK-CHANGELOG.md",
+            "/data/euclid_philos_authority/source/EMERGENCE-TRACK-CHANGELOG.md"
+          ],
+          "exit_code": 1,
+          "diagnostics": ""
+        }
+      ],
+      "result": "No diagnostics; exit 1 denotes changed no-index files, not a git working tree check"
+    }
   }
 }
