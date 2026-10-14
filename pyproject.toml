@@ -158,6 +158,7 @@ exclude = '''
   | models
   | logs
   | legacy
+  | external
   | \.venv
   | venv
 )/
