@@ -465,3 +465,15 @@ experience/deployment ownership and Chronus execution; no alternate learning
 store/authority was introduced. No mining/pool/protected protocol changes or live
 operations were performed. **Draft technical review; merge/release/production
 qualification remain blocked.**
+
+### Pushed source verification
+
+Implementation heads: PR74 `4a0488cb0a481185e7f6174a41aebb7178ae3872` and PR75
+`81c8c4ef178aae8f349262cbe6c53b1222cb106d`. All 9 + 16 changed files were
+reconstructed from complete remote commit patches and matched intended bytes.
+The remote-derived compatibility source passed the same **115 normal and 115
+optimized** tests, with zero failures/errors/skips. This remains cross-branch
+source compatibility evidence, not an installed-artifact or merged-branch test.
+Combined GitHub status for both code heads: pending with zero status entries;
+that is not CI approval. Exact remote commands/output and hashes are appended
+to the existing consolidation validation record.
