@@ -26,6 +26,10 @@ class TelemetryKeyManager:
 
     def generate_key_for_signer(self, signer_identity: str, key_id: Optional[str] = None) -> str:
         """Generate a new Ed25519 key pair for a given signer identity."""
+        if not isinstance(signer_identity, str) or not signer_identity.strip():
+            raise ValueError("non-empty signer identity is required")
+        if key_id is not None and (not key_id or key_id in self._key_metadata):
+            raise ValueError("key identifier must be non-empty and unique")
         private_key = ed25519.Ed25519PrivateKey.generate()
         public_key = private_key.public_key()
         
@@ -68,6 +72,9 @@ class TelemetryKeyManager:
         if self._key_metadata[kid].get("revoked", False):
             raise PermissionError(f"Key {kid} is revoked")
 
+        if self._key_metadata[kid]["signer_identity"] != signer_identity:
+            raise PermissionError("key is not owned by the requested signer identity")
+
         canonical_bytes = record.canonical_json().encode("utf-8")
         payload_digest = hashlib.sha256(canonical_bytes).hexdigest()
 
@@ -94,6 +101,11 @@ class TelemetryKeyManager:
         if kid not in self._public_keys:
             return False
         if self._key_metadata[kid].get("revoked", False):
+            return False
+
+        metadata = self._key_metadata[kid]
+        if (signature_info.signer_identity != metadata["signer_identity"]
+                or signature_info.algorithm != metadata["algorithm"]):
             return False
 
         # Verify digest first
