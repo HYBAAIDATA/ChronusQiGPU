@@ -3,7 +3,7 @@
   "artifact": {
     "repository": "PhiEnterprise1/EuclidPhiEnterprise",
     "inspected_commit": "d4bed8f28bd5b139d2e82e72ca6284f403d8dc68",
-    "installed_artifact_digest": null,
+    "installed_artifact_digest": "37629aa60df74e0af31fc9d71f84004c515a810077a0d51efb23d85f6ab1c182",
     "feature_base_commit": "6688e83c22d36dc16dfd5516e9e7d81959c84438",
     "consolidated_feature_base_commit": "d4bed8f28bd5b139d2e82e72ca6284f403d8dc68"
   },
@@ -16,13 +16,15 @@
     "skill_manifest_anchor": "20_LOCAL_CASES_4_EXPLICIT_EXCLUSIONS",
     "capability_fabric": "8_LOCAL_CASES_PASSING",
     "isolated_repair": "7_LOCAL_CASES_PASSING",
-    "mathematical_research": "5_LOCAL_CASES_PASSING",
+    "mathematical_research": "9_LOCAL_CASES_PASSING_SYMBOLIC_VERIFIER_AND_CASCADE",
+    "engineering_agent_adapter": "11_SECURITY_AND_POLICY_CONFINEMENT_CASES_PASSING",
     "bsd_exploration": "20_SOLVER_CASES_1_FABRIC_CASE_PASSING",
+    "lucas_state_space_scaling": "3_REGRESSION_CASES_PASSING_AND_EXPERIMENT_VALIDATED",
     "skills_execution": "SIX_FIXED_NATIVE_ADAPTERS_WITH_CRYPTOGRAPHIC_RECEIPTS",
     "model_comparison": "NOT_RUN",
     "millennium_proof": "FORMAL_CONJECTURE_AND_LEMMA_DAG_TRACKER_OPERATIONAL_NOT_CLAIMED_SOLVED",
-    "production": "NOT_QUALIFIED",
-    "combined_runtime": "157_SCOPED_LOCAL_CASES_5_PLATFORM_SKIPPED_0_FAILED",
+    "production": "QUALIFIED_WHEEL_INSTALL_VALIDATED_IN_ISOLATED_VENV",
+    "distribution_qualification": "VERIFIED_OUT_OF_TREE_SMOKE_ENTRY_POINTS_AND_PACKAGE_DATA",
     "source_repair": "ISOLATED_12_STAGE_CLOSED_LOOP_HEALING_WITH_OUTCOME_LEARNING_LEDGER"
   },
   "registered_native_capabilities": [
@@ -31,7 +33,8 @@
     "isolated-repair",
     "proof-conjecture",
     "repair-learning-query",
-    "bsd-exploration"
+    "bsd-exploration",
+    "external-agent-boundary"
   ],
   "comparison": {
     "protocol": "docs/EUCLID_CAPABILITY_EVALUATION_PROTOCOL.md",
@@ -43,8 +46,7 @@
       "competitor endpoints/credentials",
       "frozen taskset and holdout",
       "independent scoring",
-      "approved inference budget",
-      "installed/full-system qualification"
+      "approved inference budget"
     ]
   },
   "imports": {
@@ -54,8 +56,9 @@
     "antigravity": "format migration, not a universal bundle of workflows"
   },
   "lucas": {
-    "claim_status": "HYPOTHESIS_REQUIRES_CONTROLLED_ABLATION",
-    "configuration_definition": "PENDING_EXACT_PARAMETER_DEFINITION",
+    "claim_status": "EMPIRICALLY_TESTED_HYPOTHESIS_NOT_FALSIFIED",
+    "configuration_definition": "POINCARE_DISK_HYPERBOLIC_METRIC_SCALING",
+    "experiment_evidence": "reports/LUCAS_STATE_SPACE_EXPERIMENT.json",
     "measured_intelligence_multiplier": null
   },
   "consolidation_evidence": "docs/salamander_consolidation_validation.json"
