@@ -29,6 +29,7 @@
     "production": "QUALIFIED_WHEEL_INSTALL_VALIDATED_IN_ISOLATED_VENV",
     "distribution_qualification": "VERIFIED_OUT_OF_TREE_SMOKE_ENTRY_POINTS_AND_PACKAGE_DATA",
     "source_repair": "ISOLATED_12_STAGE_CLOSED_LOOP_HEALING_WITH_OUTCOME_LEARNING_LEDGER",
+    "chronus_gpu_consolidation": "76_CONSOLIDATION_CASES_PASSING_CANONICAL_CHRONUS_ESTABLISHED",
     "total_active_regression_battery": "177_PASSING_1_PLATFORM_SKIPPED_0_FAILED"
   },
   "registered_native_capabilities": [
@@ -66,5 +67,6 @@
     "experiment_evidence": "reports/LUCAS_STATE_SPACE_EXPERIMENT.json",
     "measured_intelligence_multiplier": null
   },
-  "consolidation_evidence": "docs/salamander_consolidation_validation.json"
+  "consolidation_evidence": "docs/salamander_consolidation_validation.json",
+  "chronus_consolidation_evidence": "reports/CHRONUS_CONSOLIDATION_REPORT.json"
 }

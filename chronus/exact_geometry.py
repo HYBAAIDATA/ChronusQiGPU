@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from fractions import Fraction
 from functools import lru_cache, total_ordering
 from itertools import combinations, permutations, product
-from chronos_one_igpu.family_algebra import PhiElement as Q, PHI
+from chronus.family_algebra import PhiElement as Q, PHI
 
 ZERO, ONE = Q(), Q(1)
 WEIGHTS = tuple(PHI ** (-i - 1) for i in range(11))

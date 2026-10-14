@@ -43,7 +43,7 @@ def _simulated_grover_walk(n: int):
 
 def test_grover_index_formula_matches_simulated_walk(tmp_path, monkeypatch):
     # Explicit numerical reference fixture; never production evidence or approval.
-    from chronos_one_igpu.reference_contract import reference_execution
+    from chronus.reference_contract import reference_execution
 
     approval = tmp_path / "reference-approval.json"
     approval.write_text(
@@ -111,7 +111,7 @@ def test_model_arm_small_run_parity():
 def test_numerical_reference_fixture_never_unlocks_production():
     import pytest
     from mining.search import GroverStyleSearch
-    from chronos_one_igpu.reference_contract import ReferenceUnavailable
+    from chronus.reference_contract import ReferenceUnavailable
 
     with pytest.raises(ReferenceUnavailable):
         GroverStyleSearch.optimal_iterations(64)

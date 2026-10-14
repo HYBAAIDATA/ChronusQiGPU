@@ -33,9 +33,9 @@ REPO = HERE.parent.parent
 BUNDLED = {
     "aethel": (REPO / "aethel", "hyba-theseus-storage"),
     "hyba_db": (REPO / "hyba_db", "hyba-ovid-data-organisation"),
-    "chronos_one_igpu": (
-        REPO / "chronus" / "packages" / "chronos-one-igpu" / "src" / "chronos_one_igpu",
-        "hyba-chronos-one-igpu",
+    "chronus": (
+        REPO / "chronus",
+        "hyba-chronus-igpu",
     ),
 }
 

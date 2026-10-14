@@ -6,7 +6,7 @@ import time
 
 import pytest
 
-from chronos_one_igpu.reference_contract import reference_execution
+from chronus.reference_contract import reference_execution
 from chronus.mla1517.mining.geodesic_support import (
     chronus_fabric_execution_state_for,
     chronus_fabric_state_for,
