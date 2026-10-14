@@ -1265,6 +1265,83 @@ class SalamanderEngine:
                 adapter_fn=_bsd_exploration_adapter,
             )
 
+        # 8. external-agent-boundary (Provider-neutral external engineering-agent evaluation)
+        if not self.capability_registry.get_manifest("external-agent-boundary"):
+            def _external_agent_adapter(**kwargs: Any) -> Any:
+                from Intelligence.engineering_agent_adapter import (
+                    ExternalAgentBoundary,
+                    ExternalAgentTask,
+                    UntrustedCandidatePatch,
+                    ProviderMetadata,
+                    AgentExecutionPolicy,
+                )
+                task_dict = kwargs["task"]
+                candidate_dict = kwargs["candidate"]
+                policy_dict = task_dict.get("policy", {})
+
+                policy = AgentExecutionPolicy(
+                    allowed_repo_relative_roots=tuple(policy_dict.get("allowed_repo_relative_roots", ("chronus/", "docs/"))),
+                    allow_network=bool(policy_dict.get("allow_network", False)),
+                    allow_subprocess=bool(policy_dict.get("allow_subprocess", False)),
+                    max_patch_bytes=int(policy_dict.get("max_patch_bytes", 131072)),
+                    max_files_modified=int(policy_dict.get("max_files_modified", 5)),
+                    require_syntax_check=bool(policy_dict.get("require_syntax_check", True)),
+                    require_isolated_validation=bool(policy_dict.get("require_isolated_validation", True)),
+                )
+                task = ExternalAgentTask(
+                    task_id=task_dict["task_id"],
+                    task_type=task_dict.get("task_type", "code_patch"),
+                    instruction=task_dict.get("instruction", ""),
+                    context_files=task_dict.get("context_files", {}),
+                    policy=policy,
+                )
+                prov = candidate_dict["provider"]
+                provider = ProviderMetadata(
+                    provider_id=prov["provider_id"],
+                    model_name=prov["model_name"],
+                    model_version=prov["model_version"],
+                )
+                candidate = UntrustedCandidatePatch(
+                    task_id=candidate_dict["task_id"],
+                    provider=provider,
+                    proposed_files=candidate_dict["proposed_files"],
+                    raw_response=candidate_dict.get("raw_response", ""),
+                    claimed_success=bool(candidate_dict.get("claimed_success", False)),
+                )
+                boundary = ExternalAgentBoundary(repo_root=self.repo_root)
+                verdict, reasons, receipt = boundary.evaluate_and_confine(task, candidate)
+                return {
+                    "verdict": verdict.value,
+                    "reasons": reasons,
+                    "receipt": receipt.as_dict(),
+                }
+
+            self.capability_registry.register(
+                CapabilityManifest(
+                    capability_id="external-agent-boundary",
+                    version="1.0.0",
+                    source_provenance="Intelligence/engineering_agent_adapter.py",
+                    description="Policy-gated provider-neutral evaluation of untrusted external engineering agents",
+                    permissions=CapabilityPermissions(
+                        can_read_repository=True,
+                        can_write_repository=False,
+                        allowed_profiles=(
+                            ExecutionProfile.INTERNAL_RESEARCH,
+                            ExecutionProfile.SHARED_RESTRICTED,
+                        ),
+                    ),
+                    resource_budget=ResourceBudget(
+                        max_runtime_seconds=30.0,
+                    ),
+                    supported_operations=("evaluate_and_confine",),
+                    determinism=DeterminismClass.DETERMINISTIC,
+                    side_effects=SideEffectClass.READ_ONLY,
+                    verification_strategy="untrusted_candidate_confinement",
+                    input_schema={"required": ["task", "candidate"]},
+                ),
+                adapter_fn=_external_agent_adapter,
+            )
+
     def load_skills(self) -> Dict[str, Any]:
         """Reload available skills into Salamander's semantic runtime."""
         from .skill_loader import load_skills
@@ -1535,6 +1612,7 @@ __all__ = [
     "KNOWN_FAULT_TYPES",
     "lucas",
     "fibonacci",
+    "main",
 ]
 
 
@@ -1552,3 +1630,56 @@ def lucas_bound(n: int = 10) -> dict:
     result = _lucas_get("trace_kernel")(np.array([[1, 1], [1, 0]], dtype=object), n)
     result["module"] = __name__
     return result
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    """CLI entry point for Salamander autonomic intelligence."""
+    import argparse
+    parser = argparse.ArgumentParser(prog="salamander", description="Salamander Autonomic Intelligence CLI")
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
+
+    # status
+    subparsers.add_parser("status", help="Print Salamander engine status and active profile")
+
+    # capabilities
+    cap_parser = subparsers.add_parser("capabilities", help="List registered capabilities")
+    cap_parser.add_argument("--profile", choices=["internal", "shared"], default="internal")
+
+    # bsd
+    bsd_parser = subparsers.add_parser("bsd", help="Run read-only BSD exploration")
+    bsd_parser.add_argument("--a", type=int, required=True, help="Weierstrass coefficient a")
+    bsd_parser.add_argument("--b", type=int, required=True, help="Weierstrass coefficient b")
+    bsd_parser.add_argument("--max-prime", type=int, default=100, help="Maximum prime bound")
+
+    args = parser.parse_args(argv)
+    if not args.command:
+        parser.print_help()
+        return 0
+
+    engine = SalamanderEngine()
+    if args.command == "status":
+        st = engine.status()
+        print(f"Salamander Engine Status [Profile: {engine.profile.value}]:")
+        for k, v in st.items():
+            print(f"  {k}: {v}")
+        return 0
+
+    elif args.command == "capabilities":
+        from .capability_fabric import ExecutionProfile
+        p = ExecutionProfile(args.profile)
+        caps = engine.capability_registry.list_capabilities(profile=p)
+        print(f"Registered Capabilities [Profile: {p.value}]:")
+        for c in caps:
+            print(f"  - {c.capability_id} (v{c.version}): {c.description}")
+        return 0
+
+    elif args.command == "bsd":
+        rep, receipt = engine.execute_capability("bsd-exploration", a=args.a, b=args.b, max_prime=args.max_prime)
+        print(f"BSD Report: {rep['curve']}")
+        print(f"  Discriminant: {rep['discriminant']}")
+        print(f"  Conjectural Rank: {rep['conjectural_rank']}")
+        print(f"  Proof Claim: {rep['proof_claim']} (CMI Boundary Sealed)")
+        print(f"  Receipt ID: {receipt.receipt_id} [Status: {receipt.status}]")
+        return 0
+
+    return 0
