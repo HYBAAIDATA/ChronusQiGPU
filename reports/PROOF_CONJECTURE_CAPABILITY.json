@@ -1,0 +1,23 @@
+{
+  "schema": "euclid.native-capability/1",
+  "id": "proof-conjecture",
+  "adapter": "Intelligence.mathematical_research.MathematicalProofTracker",
+  "dispatcher": "Intelligence.salamander.SalamanderEngine.execute_capability",
+  "profile": "HOST_APPROVED_READ_ONLY",
+  "evidence": "tests/test_mathematical_research.py",
+  "scope": "Formal conjecture representation, lemma dependency DAG tracking, strict separation of numerical experimentation from formal proofs",
+  "state": "SCOPED_LOCAL_DISPATCH_TESTED_NOT_FULL_ENGINE_QUALIFIED",
+  "external_provider_calls": false,
+  "schedules_enabled": false,
+  "writes_enabled": false,
+  "repair_or_release_authority": false,
+  "model_superiority": null,
+  "agi_asi_certification": null,
+  "source_hashes": {
+    "Intelligence/salamander.py": "d4a340bfd6754617abe2d4a2ce8681810a1f8bffb5764db44d326a6ad486a397",
+    "Intelligence/capability_fabric.py": "ef835e01a5fd1f4be15ef82dfeca6d3c75b3210ec9a86d69f430c8807ba28df1",
+    "Intelligence/mathematical_research.py": "f97c16eb52d47c3ec47107a91bb1b57de06826da1771e8312e1fa3588c17c4ca",
+    "Intelligence/skills/proof-conjecture/SKILL.md": "c3ec643d7a6b619858506a49a051e2a6cd6b158e1ce205bd25828f35d6da822f",
+    "tests/test_mathematical_research.py": "544c01c33de6e6d27465ddd93fce4d42a2477bc60af186464668c86a37d03fe2"
+  }
+}

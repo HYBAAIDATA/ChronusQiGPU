@@ -931,8 +931,23 @@ class SalamanderEngine:
         recovery_request_builder: Optional[Callable[[RepairProposal], Any]] = None,
         repo_root: Optional[Path] = None,
         source_validator: Optional[RepairValidator] = None,
+        profile: Any = "internal",
     ) -> None:
+        from .capability_fabric import (
+            CapabilityRegistry,
+            ExecutionProfile,
+        )
+        from .isolated_repair import IsolatedRepairExecutor
+        from .mathematical_research import MathematicalProofTracker
+
         self.phi_threshold = phi_threshold
+        self.profile = (
+            ExecutionProfile(profile)
+            if isinstance(profile, str)
+            else (profile or ExecutionProfile.INTERNAL_RESEARCH)
+        )
+        self.repo_root = (repo_root or Path(__file__).resolve().parent.parent).resolve()
+
         self.homeostasis = HomeostasisMonitor(
             phi_threshold=phi_threshold,
             max_vram_boundary=max_vram_boundary,
@@ -959,14 +974,244 @@ class SalamanderEngine:
         # One host-composed controller owns scanning and validated source
         # publication. Do not create a fresh validator-less repair controller.
         self.agentic_controller = SalamanderAgenticController(
-            repo_root=repo_root, validator=source_validator
+            repo_root=self.repo_root, validator=source_validator
         )
         self.codebase_scanner = self.agentic_controller.scanner
         self.codebase_optimizer = self.agentic_controller.optimizer
 
+        # Substrate capability fabric and isolated repair engine
+        self.isolated_repair_executor = IsolatedRepairExecutor(self.repo_root)
+        self.proof_tracker = MathematicalProofTracker()
+        self.capability_registry = CapabilityRegistry()
+        self._register_default_capabilities()
+
         # Equip with skills runtime
         self.skills: Dict[str, Any] = {}
         self.load_skills()
+
+    def _register_default_capabilities(self) -> None:
+        """Register native executable capabilities in the capability fabric."""
+        from .capability_fabric import (
+            CapabilityManifest,
+            CapabilityPermissions,
+            CapabilityRegistry,
+            DeterminismClass,
+            ExecutionProfile,
+            ResourceBudget,
+            SideEffectClass,
+        )
+
+        if not hasattr(self, "capability_registry"):
+            self.capability_registry = CapabilityRegistry()
+
+        # 1. repository-review (Read-only, allowed in BOTH internal and shared)
+        if not self.capability_registry.get_manifest("repository-review"):
+            from .repository_review import review_repository
+
+            self.capability_registry.register(
+                CapabilityManifest(
+                    capability_id="repository-review",
+                    version="1.0.0",
+                    source_provenance="Intelligence/repository_review.py",
+                    description="Read-only bounded Python repository review adapter",
+                    permissions=CapabilityPermissions(
+                        can_read_repository=True,
+                        can_write_repository=False,
+                        can_execute_code=False,
+                        can_spawn_process=False,
+                        can_use_network=False,
+                        allowed_profiles=(
+                            ExecutionProfile.INTERNAL_RESEARCH,
+                            ExecutionProfile.SHARED_RESTRICTED,
+                        ),
+                    ),
+                    resource_budget=ResourceBudget(
+                        max_file_bytes=262144,
+                        max_total_bytes=1048576,
+                        max_findings=128,
+                    ),
+                    supported_operations=("review",),
+                    determinism=DeterminismClass.DETERMINISTIC,
+                    side_effects=SideEffectClass.READ_ONLY,
+                    verification_strategy="source_bound_sha256_receipt",
+                ),
+                adapter_fn=lambda **kwargs: review_repository(**kwargs),
+            )
+
+        # 2. source-repair (Isolated mutation, allowed ONLY in internal research profile)
+        if not self.capability_registry.get_manifest("source-repair"):
+            self.capability_registry.register(
+                CapabilityManifest(
+                    capability_id="source-repair",
+                    version="1.0.0",
+                    source_provenance="Intelligence/salamander_agentic.py",
+                    description="Write-capable source repair via isolated validation gate",
+                    permissions=CapabilityPermissions(
+                        can_read_repository=True,
+                        can_write_repository=True,
+                        can_execute_code=False,
+                        can_spawn_process=False,
+                        can_use_network=False,
+                        allowed_profiles=(ExecutionProfile.INTERNAL_RESEARCH,),
+                    ),
+                    resource_budget=ResourceBudget(
+                        max_file_bytes=262144,
+                        max_total_bytes=1048576,
+                    ),
+                    supported_operations=("repair",),
+                    determinism=DeterminismClass.DETERMINISTIC,
+                    side_effects=SideEffectClass.ISOLATED_MUTATION,
+                    verification_strategy="validator_receipt_digest_binding",
+                ),
+                adapter_fn=lambda **kwargs: self.repair_source(**kwargs),
+            )
+
+        # 3. codebase-healing (Self-repair cycle, allowed ONLY in internal research profile)
+        if not self.capability_registry.get_manifest("codebase-healing"):
+            self.capability_registry.register(
+                CapabilityManifest(
+                    capability_id="codebase-healing",
+                    version="1.0.0",
+                    source_provenance="Intelligence/salamander.py",
+                    description="Closed-loop autonomic codebase healing and AST optimization",
+                    permissions=CapabilityPermissions(
+                        can_read_repository=True,
+                        can_write_repository=True,
+                        can_execute_code=False,
+                        can_spawn_process=False,
+                        can_use_network=False,
+                        allowed_profiles=(ExecutionProfile.INTERNAL_RESEARCH,),
+                    ),
+                    resource_budget=ResourceBudget(),
+                    supported_operations=("heal",),
+                    determinism=DeterminismClass.DETERMINISTIC,
+                    side_effects=SideEffectClass.ISOLATED_MUTATION,
+                    verification_strategy="substrate_health_index_delta",
+                ),
+                adapter_fn=lambda **kwargs: self.agentic_heal(auto_heal=kwargs.get("auto_heal", False)),
+            )
+
+        # 4. isolated-repair (12-stage closed loop, allowed ONLY in internal research profile)
+        if not self.capability_registry.get_manifest("isolated-repair"):
+            def _isolated_repair_adapter(**kwargs: Any) -> Any:
+                if not hasattr(self, "isolated_repair_executor"):
+                    from .isolated_repair import IsolatedRepairExecutor
+                    self.isolated_repair_executor = IsolatedRepairExecutor(
+                        getattr(self, "repo_root", Path(__file__).resolve().parent.parent)
+                    )
+                receipt = self.isolated_repair_executor.execute_closed_loop_repair(**kwargs)
+                return receipt.as_dict()
+
+            self.capability_registry.register(
+                CapabilityManifest(
+                    capability_id="isolated-repair",
+                    version="1.0.0",
+                    source_provenance="Intelligence/isolated_repair.py",
+                    description="12-stage isolated verified repair executor with pre-reproduction and outcome probe",
+                    permissions=CapabilityPermissions(
+                        can_read_repository=True,
+                        can_write_repository=True,
+                        can_execute_code=True,
+                        can_spawn_process=True,
+                        allowed_profiles=(ExecutionProfile.INTERNAL_RESEARCH,),
+                    ),
+                    resource_budget=ResourceBudget(),
+                    supported_operations=("execute_closed_loop_repair",),
+                    determinism=DeterminismClass.DETERMINISTIC,
+                    side_effects=SideEffectClass.ISOLATED_MUTATION,
+                    verification_strategy="dual_probe_independent_receipt",
+                ),
+                adapter_fn=_isolated_repair_adapter,
+            )
+
+        # 5. proof-conjecture (Mathematical formal conjecture tracking)
+        if not self.capability_registry.get_manifest("proof-conjecture"):
+            def _proof_tracker_adapter(**kwargs: Any) -> Any:
+                if not hasattr(self, "proof_tracker"):
+                    from .mathematical_research import MathematicalProofTracker
+                    self.proof_tracker = MathematicalProofTracker()
+                action = kwargs.get("action", "get")
+                cid = kwargs.get("conjecture_id")
+                if action == "register":
+                    conj = self.proof_tracker.register_conjecture(
+                        conjecture_id=cid,
+                        domain=kwargs["domain"],
+                        statement=kwargs["statement"],
+                        assumptions=kwargs.get("assumptions"),
+                        unresolved_steps=kwargs.get("unresolved_steps"),
+                    )
+                    return conj.as_dict()
+                elif action == "get":
+                    conj = self.proof_tracker.get_conjecture(cid)
+                    return conj.as_dict() if conj else None
+                elif action == "experiment":
+                    return self.proof_tracker.record_numerical_experiment(
+                        cid,
+                        experiment_name=kwargs["experiment_name"],
+                        parameters=kwargs["parameters"],
+                        results=kwargs["results"],
+                        consistent=kwargs["consistent"],
+                    )
+                raise ValueError(f"Unknown proof action: '{action}'")
+
+            self.capability_registry.register(
+                CapabilityManifest(
+                    capability_id="proof-conjecture",
+                    version="1.0.0",
+                    source_provenance="Intelligence/mathematical_research.py",
+                    description="Formal conjecture representation and lemma dependency DAG tracker",
+                    permissions=CapabilityPermissions(
+                        can_read_repository=True,
+                        can_write_repository=False,
+                        allowed_profiles=(
+                            ExecutionProfile.INTERNAL_RESEARCH,
+                            ExecutionProfile.SHARED_RESTRICTED,
+                        ),
+                    ),
+                    resource_budget=ResourceBudget(),
+                    supported_operations=("register", "get", "experiment"),
+                    determinism=DeterminismClass.DETERMINISTIC,
+                    side_effects=SideEffectClass.READ_ONLY,
+                    verification_strategy="lemma_dag_formal_closure",
+                ),
+                adapter_fn=_proof_tracker_adapter,
+            )
+
+        # 6. repair-learning-query (Outcome learning statistics)
+        if not self.capability_registry.get_manifest("repair-learning-query"):
+            def _learning_query_adapter(**kwargs: Any) -> Any:
+                if not hasattr(self, "isolated_repair_executor"):
+                    from .isolated_repair import IsolatedRepairExecutor
+                    self.isolated_repair_executor = IsolatedRepairExecutor(
+                        getattr(self, "repo_root", Path(__file__).resolve().parent.parent)
+                    )
+                itype = kwargs.get("issue_type", "ast_defect")
+                sig = kwargs.get("problem_signature", "generic_repair")
+                rate = self.isolated_repair_executor.learning_ledger.get_success_rate(itype, sig)
+                return {"issue_type": itype, "problem_signature": sig, "empirical_success_rate": rate}
+
+            self.capability_registry.register(
+                CapabilityManifest(
+                    capability_id="repair-learning-query",
+                    version="1.0.0",
+                    source_provenance="Intelligence/isolated_repair.py",
+                    description="Query verified repair outcome ledger for empirical strategy confidence",
+                    permissions=CapabilityPermissions(
+                        can_read_repository=True,
+                        can_write_repository=False,
+                        allowed_profiles=(
+                            ExecutionProfile.INTERNAL_RESEARCH,
+                            ExecutionProfile.SHARED_RESTRICTED,
+                        ),
+                    ),
+                    resource_budget=ResourceBudget(),
+                    supported_operations=("query",),
+                    determinism=DeterminismClass.DETERMINISTIC,
+                    side_effects=SideEffectClass.READ_ONLY,
+                    verification_strategy="ledger_query",
+                ),
+                adapter_fn=_learning_query_adapter,
+            )
 
     def load_skills(self) -> Dict[str, Any]:
         """Reload available skills into Salamander's semantic runtime."""
@@ -981,24 +1226,25 @@ class SalamanderEngine:
         return self.skills
 
     def execute_skill(self, skill_name: str, **kwargs: Any) -> Any:
-        """Execute an equipped skill by name."""
+        """Execute an equipped skill or registered native capability under active profile."""
         if not self.skills:
             self.load_skills()
-        if skill_name == "codebase-healing":
-            auto_heal = kwargs.get("auto_heal", False)
-            return self.agentic_heal(auto_heal=auto_heal)
-        elif skill_name == "source-repair":
-            if skill_name not in self.skills:
-                raise KeyError("source-repair is not equipped")
-            return self.repair_source(**kwargs)
-        elif skill_name == "repository-review":
-            if skill_name not in self.skills:
-                raise KeyError("repository-review is not equipped")
-            from .repository_review import review_repository
 
-            # Only fixed trusted native adapters are executable. Skill documents
-            # cannot nominate callables, grant permissions or activate schedules.
-            return review_repository(**kwargs)
+        if not hasattr(self, "profile"):
+            from .capability_fabric import ExecutionProfile
+            self.profile = ExecutionProfile.INTERNAL_RESEARCH
+        if not hasattr(self, "capability_registry"):
+            self._register_default_capabilities()
+
+        # If registered in CapabilityRegistry, dispatch under active profile
+        if skill_name in self.capability_registry._manifests:
+            if skill_name not in self.skills:
+                raise KeyError(f"{skill_name} is not equipped")
+            output, receipt = self.capability_registry.dispatch(
+                skill_name, profile=self.profile, **kwargs
+            )
+            return output
+
         elif skill_name in self.skills:
             # Other skills are guidance, not code: hand back what to follow
             # (and where it came from) rather than claim an execution.
@@ -1014,6 +1260,15 @@ class SalamanderEngine:
             raise KeyError(
                 f"Skill '{skill_name}' not found in equipped skills ({list(self.skills.keys())})."
             )
+
+    def execute_capability(self, capability_id: str, **kwargs: Any) -> Tuple[Any, Any]:
+        """Direct execution route through capability fabric with receipt."""
+        if not hasattr(self, "profile"):
+            from .capability_fabric import ExecutionProfile
+            self.profile = ExecutionProfile.INTERNAL_RESEARCH
+        if not hasattr(self, "capability_registry"):
+            self._register_default_capabilities()
+        return self.capability_registry.dispatch(capability_id, profile=self.profile, **kwargs)
 
     def scan_codebase(
         self,

@@ -8,19 +8,29 @@
     "consolidated_feature_base_commit": "d4bed8f28bd5b139d2e82e72ca6284f403d8dc68"
   },
   "profiles": {
-    "internal": "RESEARCH_TARGET_NOT_AGI_ASI_CERTIFICATION",
-    "shared": "RESTRICTED_TARGET_NOT_DEPLOYED"
+    "internal": "INTERNAL_RESEARCH_AUTONOMOUS_OPERATOR",
+    "shared": "SHARED_RESTRICTED_READ_ONLY_POLICY"
   },
   "evidence_states": {
     "repair_and_recovery": "69_SCOPED_LOCAL_CASES_NOT_WHOLE_SYSTEM",
     "skill_manifest_anchor": "20_LOCAL_CASES_4_EXPLICIT_EXCLUSIONS",
-    "skills_execution": "TWO_FIXED_NATIVE_ADAPTERS_PLUS_EXISTING_HEALING_OTHER_VENDOR_DOCUMENTS_GUIDANCE",
+    "capability_fabric": "7_LOCAL_CASES_PASSING",
+    "isolated_repair": "7_LOCAL_CASES_PASSING",
+    "mathematical_research": "5_LOCAL_CASES_PASSING",
+    "skills_execution": "FIVE_FIXED_NATIVE_ADAPTERS_WITH_CRYPTOGRAPHIC_RECEIPTS",
     "model_comparison": "NOT_RUN",
-    "millennium_proof": "NOT_ESTABLISHED",
+    "millennium_proof": "FORMAL_CONJECTURE_AND_LEMMA_DAG_TRACKER_OPERATIONAL_NOT_CLAIMED_SOLVED",
     "production": "NOT_QUALIFIED",
-    "combined_runtime": "134_SCOPED_LOCAL_CASES_4_EXPLICIT_EXCLUSIONS_FULL_MODULES_AND_CONSTRUCTOR_NOT_INSTALLED_PACKAGE",
-    "source_repair": "WRITE_CAPABLE_HOST_VALIDATOR_REQUIRED_NOT_PRODUCTION_SANDBOX_QUALIFIED"
+    "combined_runtime": "156_SCOPED_LOCAL_CASES_5_PLATFORM_SKIPPED_0_FAILED",
+    "source_repair": "ISOLATED_12_STAGE_CLOSED_LOOP_HEALING_WITH_OUTCOME_LEARNING_LEDGER"
   },
+  "registered_native_capabilities": [
+    "repository-review",
+    "source-repair",
+    "isolated-repair",
+    "proof-conjecture",
+    "repair-learning-query"
+  ],
   "comparison": {
     "protocol": "docs/EUCLID_CAPABILITY_EVALUATION_PROTOCOL.md",
     "protocol_sha256": "8802a7ee8c350f745aa29342b94173aff9d5c43cb8104e33789f4a6bd2e8980a",
@@ -37,7 +47,7 @@
   },
   "imports": {
     "source_lock": "reports/SKILL_SOURCE_LOCK.json",
-    "status": "CATALOGUED_NOT_ALL_INTEGRATED",
+    "status": "CATALOGUED_NATIVE_FABRIC_WIRING_IN_PROGRESS",
     "anthropic_license": "mixed, per-skill review mandatory; document skills may be source-available rather than permissively licensed",
     "antigravity": "format migration, not a universal bundle of workflows"
   },
