@@ -23,11 +23,11 @@
     "salamander_repair_boundary": "37_LOCAL_CASES_PASSING_1_PLATFORM_SKIPPED",
     "salamander_outcome_evidence": "31_LOCAL_CASES_PASSING",
     "salamander_autonomic": "21_LOCAL_CASES_PASSING",
-    "skills_execution": "EIGHT_NATIVE_ADAPTERS_WITH_CRYPTOGRAPHIC_RECEIPTS",
+    "skills_execution": "EIGHT_DECLARED_NATIVE_ADAPTERS_LOCAL_HASH_RECEIPTS_NOT_INDEPENDENT_ATTESTATION",
     "model_comparison": "NOT_RUN",
     "millennium_proof": "FORMAL_CONJECTURE_AND_LEMMA_DAG_TRACKER_OPERATIONAL_NOT_CLAIMED_SOLVED",
-    "production": "QUALIFIED_WHEEL_INSTALL_VALIDATED_IN_ISOLATED_VENV",
-    "distribution_qualification": "VERIFIED_OUT_OF_TREE_SMOKE_ENTRY_POINTS_AND_PACKAGE_DATA",
+    "production": "NOT_REQUALIFIED_FOR_THIS_REVISION",
+    "distribution_qualification": "NOT_REPRODUCED_FOR_THIS_REVISION",
     "source_repair": "ISOLATED_12_STAGE_CLOSED_LOOP_HEALING_WITH_OUTCOME_LEARNING_LEDGER",
     "chronus_gpu_consolidation": "76_CONSOLIDATION_CASES_PASSING_CANONICAL_CHRONUS_ESTABLISHED",
     "total_active_regression_battery": "177_PASSING_1_PLATFORM_SKIPPED_0_FAILED"
@@ -68,5 +68,70 @@
     "measured_intelligence_multiplier": null
   },
   "consolidation_evidence": "docs/salamander_consolidation_validation.json",
-  "chronus_consolidation_evidence": "reports/CHRONUS_CONSOLIDATION_REPORT.json"
+  "chronus_consolidation_evidence": "reports/CHRONUS_CONSOLIDATION_REPORT.json",
+  "historical_evidence_states": {
+    "capability_fabric": "8_LOCAL_CASES_PASSING",
+    "isolated_repair": "7_LOCAL_CASES_PASSING",
+    "mathematical_research": "9_LOCAL_CASES_PASSING_SYMBOLIC_VERIFIER_AND_CASCADE",
+    "engineering_agent_adapter": "11_SECURITY_AND_POLICY_CONFINEMENT_CASES_PASSING",
+    "lucas_state_space_scaling": "3_REGRESSION_CASES_PASSING_AND_EXPERIMENT_VALIDATED",
+    "bsd_exploration": "20_SOLVER_CASES_1_FABRIC_CASE_PASSING",
+    "skill_manifest_anchor": "12_LOCAL_CASES_PASSING",
+    "salamander_verified_repair": "18_LOCAL_CASES_PASSING",
+    "salamander_repair_boundary": "37_LOCAL_CASES_PASSING_1_PLATFORM_SKIPPED",
+    "salamander_outcome_evidence": "31_LOCAL_CASES_PASSING",
+    "salamander_autonomic": "21_LOCAL_CASES_PASSING",
+    "skills_execution": "EIGHT_NATIVE_ADAPTERS_WITH_CRYPTOGRAPHIC_RECEIPTS",
+    "model_comparison": "NOT_RUN",
+    "millennium_proof": "FORMAL_CONJECTURE_AND_LEMMA_DAG_TRACKER_OPERATIONAL_NOT_CLAIMED_SOLVED",
+    "production": "QUALIFIED_WHEEL_INSTALL_VALIDATED_IN_ISOLATED_VENV",
+    "distribution_qualification": "VERIFIED_OUT_OF_TREE_SMOKE_ENTRY_POINTS_AND_PACKAGE_DATA",
+    "source_repair": "ISOLATED_12_STAGE_CLOSED_LOOP_HEALING_WITH_OUTCOME_LEARNING_LEDGER",
+    "chronus_gpu_consolidation": "76_CONSOLIDATION_CASES_PASSING_CANONICAL_CHRONUS_ESTABLISHED",
+    "total_active_regression_battery": "177_PASSING_1_PLATFORM_SKIPPED_0_FAILED"
+  },
+  "evidence_states_scope": "Historical reported results, not reproduced or transferred to this revision.",
+  "current_integration_review": {
+    "base_commit": "b1d51bc8dbaab2bac28574bf89a8f01e03266932",
+    "entry_point": "EuclidRuntime.bind_intelligence -> dispatch_specialist",
+    "path": [
+      "ALHaras.evaluate",
+      "RightsLedger / Delegator.dispatch",
+      "IntelligenceSpecialist.handle",
+      "CapabilityRegistry.dispatch",
+      "native conjecture tracker handler",
+      "local receipt / audit"
+    ],
+    "single_native_registration_owner": "Intelligence/proof_capability.py",
+    "canonical_native_path_verified": [
+      "proof-conjecture"
+    ],
+    "not_verified_through_canonical_bridge": [
+      "repository-review",
+      "source-repair",
+      "codebase-healing",
+      "isolated-repair",
+      "repair-learning-query",
+      "bsd-exploration",
+      "external-agent-boundary"
+    ],
+    "new_regressions": 30,
+    "normal_exit": 0,
+    "optimized_exit": 0,
+    "independently_qualified": false,
+    "whole_system_consolidation_complete": false,
+    "capability_source_sha256": {
+      "Intelligence/__init__.py": "15a2301f4c9064d1eea169a761ec4dd87519111f56d2a4634c4878550c671606",
+      "Intelligence/capability_fabric.py": "efc7bc91c54bc405c32479697a89985fb42fe3950306a4ff2fe1cdd8b1395c02",
+      "Intelligence/proof_capability.py": "80d1f9693d1343e56f871512978bc5827a559de1ad3b9db3d61214d60268280e",
+      "Intelligence/salamander.py": "4506b5da50e542c4d3123334f5b23f1aa2a06f4e44bb243018cce18a54672ba8",
+      "euclid/intelligence_bridge.py": "6af6199bc92257df1b18d2cc0bd4d260da33e3faf163deea49272ecaa58945b9",
+      "euclid/runtime.py": "98d0597547b1b111be4ed330d603444c1f04e0b909303a1bcfa87dd018e9d5bc",
+      "tests/intelligence_consolidation/test_canonical_bridge.py": "06bfddf1283db96505c2e148dd9b010a8a78bdfcfe24122326a602ae0c6b264e"
+    },
+    "evidence": "docs/salamander_consolidation_validation.json#canonical_intelligence_bridge_review",
+    "external_mutation_boundary": "Not implemented by this bridge; such execution refused pending owner-enforced controls",
+    "skill_source_lock": "Unchanged: no imported skill snapshot, catalogue, license, or upstream digest changed",
+    "philos_originals": "Separate branch emergence-track/phi-2, original contracts published at 1b653442140e38bd732ed09da344540ed4b81f3e; reconstructed PR73 must not replace originals"
+  }
 }

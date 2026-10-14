@@ -335,6 +335,17 @@ class EuclidRuntime:
                 detail=dict(detail or {}),
             )
 
+    def bind_intelligence(self, registry, *, profile, capabilities, organ_id="intelligence"):
+        """Bind existing Intelligence handlers; authorization remains explicit.
+
+        This composition does not install a guardian, issue entitlements, grant
+        rights, create a learner or enable external/mutating execution.
+        """
+        from .intelligence_bridge import bind_intelligence
+
+        return bind_intelligence(self, registry, profile=profile,
+                                 capabilities=capabilities, organ_id=organ_id)
+
     def dispatch_specialist(
         self,
         organ_id: str,
@@ -406,9 +417,17 @@ class EuclidRuntime:
                 organ_id, f"{organ_id}.request", request, confident=True, safe=True
             )
         except PermissionError as exc:
+            self.evidence.append("specialist-refused", {
+                "organ": organ_id, "operation": operation, "error_type": type(exc).__name__,
+            })
             return {"allowed": False, "organ": organ_id, "operation": operation,
                     "governance": governance, "vetoed": str(exc),
                     "health": self.registry.get(organ_id).health.value}
+        except Exception as exc:
+            self.evidence.append("specialist-failed", {
+                "organ": organ_id, "operation": operation, "error_type": type(exc).__name__,
+            })
+            raise
         component = self.ORGANISM_SPECIALISTS.get(organ_id, (f"{organ_id}.organ",))[0]
         self._advance(component, ReachabilityStage.OUTCOME_OBSERVED, episode,
                       {"operation": operation})

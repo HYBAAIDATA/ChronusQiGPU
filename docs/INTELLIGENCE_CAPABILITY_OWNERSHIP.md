@@ -17,7 +17,8 @@
 | **PYTHIA** | Predictive Guidance & Knowledge Memory | Manifold search strategy, learned plan generation, prime memory and PVSNP store, active learning replaying measured outcomes, and RAG over structured historical state. |
 | **CHRONUS** | Hardware Substrate Acceleration | Heterogeneous GPU/iGPU OpenCL acceleration, tile/ladder kernel dispatch, ISA emulation, ASIC protocol adapter, and physical execution latency profiling. |
 | **TURING** | Exact Mathematical & Quantum Foundations | Exact algebraic arithmetic ($Z[\phi]$, Lucas sequences, Binet, Cassini), complex Hilbert space linear algebra, group character decomposition, and exact amplitude rotation. |
-| **OVID & THESEUS** | Storage Isolation & Causal Provenance | Tenant admission, causal Pearl receipts, HMAC cryptographic provenance, replay verification, and durable storage recovery. |
+| **OVID** | Authoritative Durable Custody | Enduring authoritative storage, state and representation custody; successor to `aethel`. |
+| **THESEUS** | Rebuildable Projections | Database, query, index, graph, ontology and lineage projections; successor to `hyba_db`. Rebuildable from OVID, never its authority source. |
 | **HENDRIX** | Resonant Search & Mining Traversal | Geodesic 32-face frame orientation, coprime step traversal, and non-redundant search manifold routing. |
 
 ---
@@ -66,3 +67,81 @@ External patterns (such as multi-agent collaboration, tool integration, and prom
 ## 3. The Euclid Fallback Invariant
 
 > **Rule**: If a new capability, tool, pattern, or recipe is introduced and cannot be unambiguously claimed by AL HARAS (Security), SALAMANDER (Self-Healing/Optimization), PYTHIA (Memory/Learning), CHRONUS (Hardware), TURING (Math/Quantum), or OVID/THESEUS (Storage/Provenance), it **MUST** be placed under `euclid/` or `Intelligence/` under the direct stewardship of **EUCLID** (Agent A).
+
+
+## 4. Canonical Intelligence bridge review — 2026-10-14
+
+This revision adds an explicit interface, not an alternative runtime or learner.
+`EuclidRuntime.bind_intelligence(existing_registry, profile=..., capabilities=...)`
+registers an Intelligence specialist without installing a guardian, issuing an
+entitlement, granting rights or creating another registry, learner or memory root.
+A host can supply the existing `SalamanderEngine.capability_registry`; its full
+constructor/skill composition was not executed in this selective-source review.
+
+The verified minimal native research composition uses the same registration
+function now called by Salamander, `register_proof_capability(registry, tracker)`.
+The real canonical call path is:
+
+```text
+EuclidRuntime.dispatch_specialist
+  -> AL HARAS Guardian (entitlement, tenant, actor and operation policy)
+  -> creator-scoped RightsLedger + Delegator gates
+  -> IntelligenceSpecialist (fixed profile and explicit capability allowlist)
+  -> existing CapabilityRegistry (schema, permission and envelope checks)
+  -> native MathematicalProofTracker register/get/experiment handler
+  -> local hash-bound receipt, fabric audit, EUCLID evidence and Guardian audit
+```
+
+Registration is not authorization. The host must configure AL HARAS policy for
+`intelligence.proof-conjecture`, supply an entitled token and explicitly grant
+`intelligence.request` dispatch rights. No defaults grant those permissions.
+Existing specialism authority remains with its owners. The bridge refuses
+external/mutating permissions until owner-enforced execution controls exist;
+that is an implementation/evidence limitation, not a scope reduction.
+
+### Implemented and locally verified subset
+
+- Public leaf imports no longer initialize unrelated Intelligence engines;
+  exports resolve from their actual owners, with missing dependencies visible.
+- Shared profile denies code-execution permission before invoking a handler.
+- Supported input/output schema constraints are enforced; unsupported schema
+  keywords reject registration rather than being silently ignored.
+- Failure/refusal dictionaries and native repair-result dataclasses are not
+  SUCCESS. Simulation, guidance and unverified outcomes remain distinguishable.
+- Missing/disabled capability requests and handler failures are audited.
+- Registered manifests and returned audit records are detached snapshots.
+- Numerical conjecture experiments remain evidence, not proof; absent conjectures
+  fail rather than returning a successful null result.
+- The canonical runtime records specialist refusal/failure events without
+  converting them into observed successful executions.
+
+### Evidence boundary and remaining work
+
+Thirty new unittest cases passed normally and under Python `-O` on Linux/Python
+3.13.14. Tests use real package imports, canonical runtime, SQLite, Guardian
+policy/HMAC validation, registry, native tracker, filesystem JSONL and hash-chain
+verification. Local randomly generated test entitlement keys are not external
+trust anchors or independent certification. Adversarial fabric unit handlers
+are explicitly test contracts; they are not advertised production executors.
+
+`proof-conjecture` is the one native-handler path exercised end-to-end here.
+The other seven advertised native capabilities are not verified through this
+bridge. Full Salamander construction, installed artifacts, the existing pytest
+battery, Windows filesystem/reparse behavior, T5 external assurance, Lucas
+TIER-15/TIER-20, production drift-gate integration and required CI gates remain
+unverified or blocked. There is no whole-system completion or merge-readiness
+claim. No provider, pool, mining, network or production operations were launched.
+
+The registry observes duration **after return**; it does not preempt handlers or
+enforce OS/process isolation, memory limits or protected filesystem operations.
+Its local hashes are not signatures, immutable/WORM storage or independent
+execution proof. Legacy callable/path arguments have string-projected digests,
+not authenticated object/state bindings. The canonical bridge accepts JSON
+arguments only and refuses external-effect capabilities. Registered manifests
+still require owner review; permission flags alone do not create OS isolation.
+
+The existing source lock is unchanged because no graft or upstream skill bytes
+changed. Original PHILOS contracts at `1b653442` are separate; do not merge the
+reconstructed PR73 models over them. PR66 -> PR68 -> PR69 -> PR71 is unchanged;
+this review targets the elevation branch and does not authorize merging that
+stack, installing a production signer or changing assurance gates.

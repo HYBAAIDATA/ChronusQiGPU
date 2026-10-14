@@ -1124,58 +1124,14 @@ class SalamanderEngine:
                 adapter_fn=_isolated_repair_adapter,
             )
 
-        # 5. proof-conjecture (Mathematical formal conjecture tracking)
+        # 5. Single native registration owner, shared with minimal research composition.
         if not self.capability_registry.get_manifest("proof-conjecture"):
-            def _proof_tracker_adapter(**kwargs: Any) -> Any:
-                if not hasattr(self, "proof_tracker"):
-                    from .mathematical_research import MathematicalProofTracker
-                    self.proof_tracker = MathematicalProofTracker()
-                action = kwargs.get("action", "get")
-                cid = kwargs.get("conjecture_id")
-                if action == "register":
-                    conj = self.proof_tracker.register_conjecture(
-                        conjecture_id=cid,
-                        domain=kwargs["domain"],
-                        statement=kwargs["statement"],
-                        assumptions=kwargs.get("assumptions"),
-                        unresolved_steps=kwargs.get("unresolved_steps"),
-                    )
-                    return conj.as_dict()
-                elif action == "get":
-                    conj = self.proof_tracker.get_conjecture(cid)
-                    return conj.as_dict() if conj else None
-                elif action == "experiment":
-                    return self.proof_tracker.record_numerical_experiment(
-                        cid,
-                        experiment_name=kwargs["experiment_name"],
-                        parameters=kwargs["parameters"],
-                        results=kwargs["results"],
-                        consistent=kwargs["consistent"],
-                    )
-                raise ValueError(f"Unknown proof action: '{action}'")
+            from .proof_capability import register_proof_capability
 
-            self.capability_registry.register(
-                CapabilityManifest(
-                    capability_id="proof-conjecture",
-                    version="1.0.0",
-                    source_provenance="Intelligence/mathematical_research.py",
-                    description="Formal conjecture representation and lemma dependency DAG tracker",
-                    permissions=CapabilityPermissions(
-                        can_read_repository=True,
-                        can_write_repository=False,
-                        allowed_profiles=(
-                            ExecutionProfile.INTERNAL_RESEARCH,
-                            ExecutionProfile.SHARED_RESTRICTED,
-                        ),
-                    ),
-                    resource_budget=ResourceBudget(),
-                    supported_operations=("register", "get", "experiment"),
-                    determinism=DeterminismClass.DETERMINISTIC,
-                    side_effects=SideEffectClass.READ_ONLY,
-                    verification_strategy="lemma_dag_formal_closure",
-                ),
-                adapter_fn=_proof_tracker_adapter,
-            )
+            if not hasattr(self, "proof_tracker"):
+                from .mathematical_research import MathematicalProofTracker
+                self.proof_tracker = MathematicalProofTracker()
+            register_proof_capability(self.capability_registry, self.proof_tracker)
 
         # 6. repair-learning-query (Outcome learning statistics)
         if not self.capability_registry.get_manifest("repair-learning-query"):
