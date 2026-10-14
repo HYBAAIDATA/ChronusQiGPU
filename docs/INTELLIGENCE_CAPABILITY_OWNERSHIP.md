@@ -169,3 +169,167 @@ Salamander constructor, existing pytest/installed-artifact/Windows validation,
 the other native capability paths and independent assurance remain unverified;
 this selective-source snapshot is not a complete repository execution environment.
 The PR remains draft and not merge-ready.
+
+## 5. Current EUCLID unification execution review (supersedes earlier counts)
+
+### Identity and canonical architecture
+
+**The frontier-agent and PHILOS are constituent parts of EUCLID.** Separate
+review branches preserve implementation and qualification boundaries; they do
+not make these components separate products or optional architectural add-ons.
+Their missing runtime integration remains missing implementation/evidence, not
+an owner scope reduction.
+
+The supported governed entry point remains `euclid.EuclidRuntime`; no new
+runtime, registry owner, learner, reward authority or memory root was introduced.
+The capability fabric resolves executable handlers; `Intelligence.registry` is
+an import/provenance inventory and the EUCLID organ registry routes specialists.
+These are distinct roles, not interchangeable evidence of handler execution.
+
+```text
+host: existing CapabilityRegistry + existing native owner(s)
+  -> register_proof_capability(registry, existing_tracker)
+  -> register_repository_review_capability(registry, repo_root=host_root,
+                                           approved_policies=host_policies)
+  -> runtime.bind_intelligence(registry, profile=explicit_profile,
+                               capabilities=explicit_allowlist)
+caller -> runtime.dispatch_specialist
+  -> detached request -> AL HARAS entitlement/operation/tenant/actor decision
+  -> creator-scoped RightsLedger / Delegator
+  -> IntelligenceSpecialist admission against atomic manifest/handler snapshot
+  -> exact JSON input snapshot + schema/profile/byte-envelope validation
+  -> existing HashChainAudit durable admission append (must succeed)
+  -> actual registered handler -> exact JSON output + schema/status validation
+  -> receipt + durable completion append (must succeed before returning success)
+  -> EUCLID delegation result/evidence -> caller
+```
+
+Guardian observations are detached from the request eventually dispatched.
+The handler receives a separate JSON value from the one hashed as admitted
+input. A handler changing its input cannot rewrite the input digest or mutate
+the caller's nested data. JSON boundary values reject non-string nested keys,
+tuples, custom objects, cycles and non-finite numbers rather than coercing them.
+Trusted legacy direct-fabric calls remain a compatibility path, **not** proof
+of governed EUCLID authorization, durable audit, or authenticated input binding.
+
+### Host-approved repository review API and migration
+
+```python
+from pathlib import Path
+from Intelligence.capability_fabric import CapabilityRegistry, ExecutionProfile
+from Intelligence.repository_review import ReviewPolicy
+from Intelligence.repository_review_capability import register_repository_review_capability
+
+registry = CapabilityRegistry()
+# Host computes/approves this digest independently of the caller's request.
+policy = ReviewPolicy((("example.py", approved_sha256),))
+register_repository_review_capability(
+    registry, repo_root=Path(host_repository), approved_policies={"review-1": policy})
+specialist = runtime.bind_intelligence(
+    registry, profile=ExecutionProfile.SHARED_RESTRICTED,
+    capabilities=["repository-review"], organ_id="review")
+# Separately configure AL HARAS policy/entitlement and creator grant for
+# review.repository-review and review.request. Binding grants neither.
+result = runtime.dispatch_specialist(
+    "review", {"operation": "repository-review", "arguments": {"review_id": "review-1"}},
+    tenant_id=tenant_id, actor=actor, subscription_token=subscription_token)
+```
+
+`SalamanderEngine(..., repository_review_policies={...})` calls the **same**
+registration owner. Without approved policies repository review is disabled.
+The fabric capability's old arbitrary `repo_root`/Python `policy` arguments are
+not supported by version 1.1.0: migrate callers to host-approved identifiers.
+The low-level `review_repository(repo_root=..., policy=...)` function remains
+available for explicit trusted host use; it does not provide runtime authority.
+Full Salamander construction/skills have NOT been executed in this review.
+
+`specialist.catalog()` describes the explicit host binding and current schema,
+version and availability. Availability is not entitlement, creator rights,
+execution evidence or qualification. Missing/disabled/replaced unsafe manifests
+are reported unavailable. The catalog returns detached schemas.
+
+### Consumer and capability integration matrix
+
+| Consumer/capability | Real implementation / route | Current evidence and remaining work |
+| --- | --- | --- |
+| Canonical proof-conjecture | runtime -> shared proof registration -> existing MathematicalProofTracker | Integrated and locally verified register/get/experiment; numerical evidence is not formal proof |
+| Canonical repository-review | runtime -> shared review registration -> existing source-bound review_repository | Integrated and locally verified on real Linux temporary files; approved policy, source changes, symlinks and refusal paths tested |
+| Salamander composition | existing constructor calls shared proof and review registration owners | Source wiring implemented; full constructor, skills and operational consumers not locally verified |
+| source-repair | existing owner handler; mutating/external permissions refused by this bridge | Canonical execution boundary and end-to-end evidence incomplete |
+| codebase-healing | existing owner handler; mutating execution refused by this bridge | Canonical execution boundary and end-to-end evidence incomplete |
+| isolated-repair | existing owner executor; subprocess/mutation permissions refused by this bridge | Full real repair/recovery and Windows boundary evidence incomplete |
+| repair-learning-query | existing repair outcome ledger adapter | Not exercised through canonical runtime; does not create a second learner |
+| bsd-exploration | existing solver integration | Not verified through canonical runtime; finite rank experiments and heuristic quantities must not be reported as general BSD certification |
+| external-agent-boundary | existing external integration owner | Not exercised/qualified through canonical runtime; external authority and controls not established |
+| Skills / CLI / module inventory | existing loader, entry points and import inventory | Complete consumer migration and installed dispatch evidence missing; imports are not execution |
+| EUCLID frontier-agent | PR68/69 owner interfaces and operational/qualification work | Constituent EUCLID capability; not connected or tested by this PR's current elevation snapshot; budget/STOP/WAIT/drift integration remains incomplete |
+| EUCLID PHILOS | original emergence track + PR75 candidate custody work | Constituent EUCLID capability; current base lacks that track; measured reproduction/stress and canonical integration remain incomplete. No synthetic qualification promotion |
+
+The earlier seven-unverified count is now **six** among the eight named native
+capabilities for this minimal canonical composition. This does not establish
+that every applicable supported consumer uses the canonical contract.
+
+### Security and evidence custody
+
+- Reproduced old handler-input mutation rewriting receipt input, and a Guardian
+  observer mutating the request ultimately executed. Both now have regressions.
+- Admission/completion/failure share an execution identifier. Receipt side-effect
+  metadata binds the admitted manifest digest and local Python handler code
+  fingerprint. The fingerprint does not bind closure/global/external state,
+  establish trusted hardware, authenticate a signer or prove independent execution.
+- Capability audit reuses the existing AL HARAS `HashChainAudit` implementation
+  under the runtime state directory. It is a local hash chain, not OVID durable
+  custody integration, a signature, WORM storage or independent certification.
+- Admission-audit failure prevents handler execution. Completion-audit failure
+  propagates failure, even if the handler already ran: no automatic rollback or
+  exactly-once claim. Failed failure-audit writes are noted on the raised error.
+- Runtime-duration enforcement remains post-return; no hard deadline, preemption,
+  process isolation, memory ceiling or in-flight revocation guarantee was added.
+- External/mutating execution still needs its owner's enforced controls. No
+  protocol, mining, pool, acceptance or cryptographic boundary was changed.
+- Targeted GitHub secret scanning was attempted but refused because Advanced
+  Security is not enabled. No security-scanner pass or independent sign-off.
+
+### Packaging and publication readiness
+
+Inspection of the existing packaging found a concrete blocker:
+`packaging/euclid-engine/build_and_verify.py` stages only `euclid`,
+`hyba_substrate`, and `resonance_intelligence`, and explicitly forbids
+`Intelligence` in the wheel. Its pyproject likewise excludes `Intelligence`.
+The Salamander product package includes `salamander`/`al_haras`, not the
+uppercase `Intelligence` package. Therefore the optional canonical bridge is
+not established as usable from that standalone EUCLID artifact. This review
+does not paper over the gap with an invented wheel or copied runtime alias.
+
+The supported build entry point remains:
+`python packaging/euclid-engine/build_and_verify.py` in a complete checkout
+with its declared build tools, sibling products and dependency access. The
+existing script removes stale artifacts and resolves dependencies; it was
+inspected but NOT run here. An offline root build attempt using
+`python -m pip wheel --no-index --no-deps --no-build-isolation --wheel-dir ... .`
+failed with exit 2 because setuptools is absent. `build`, wheel and pytest are
+also absent; the source snapshot is incomplete. No clean-installed artifact,
+supported-platform matrix, reproducible release or publication readiness claim.
+Do not publish, release, deploy or merge from these local results.
+
+### Release criteria and disposition
+
+| Criterion | Disposition |
+| --- | --- |
+| Real canonical schema/auth/handler/result path | PASS for two native capability paths only |
+| Admission/completion audit and input snapshot regressions | PASS locally on Linux/Python 3.13.14 |
+| All supported consumers / six remaining native handlers | INCOMPLETE |
+| Frontier-agent and PHILOS constituent runtime integration | INCOMPLETE |
+| Full Salamander lifecycle and skill composition | NOT EXECUTED |
+| Original pytest/full regression, lint and optimized checks | 46 unittest cases pass normally and under -O; pytest/lint tools unavailable |
+| Built package / clean install / installed API execution | BLOCKED by missing build tools, incomplete snapshot and identified package omission |
+| Windows filesystem/reparse/process evidence | NOT EXECUTED |
+| Security scanning / independent T5 assurance / production drift and Lucas gates | OPEN; no qualification advance |
+| Required authoritative CI and reviews | NOT established; keep draft and merge blocked |
+
+Current disposition: **focused implementation ready for technical review, not
+whole-system consolidation, merge readiness, release candidate or production
+qualification**. Exact commands, source hashes and local outputs are appended
+to `docs/salamander_consolidation_validation.json`; the existing capability
+manifest is the machine-readable current ledger. No competing root ledger was
+created: `CAPABILITY-LEDGER.md` was absent from this PR's pinned base.

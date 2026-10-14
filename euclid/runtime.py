@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import os
 import threading
@@ -362,6 +363,9 @@ class EuclidRuntime:
         never converted into a fabricated result."""
         if self._closed:
             raise RuntimeError("runtime is closed")
+        # Detach caller-owned nested data before authorization. The guardian
+        # receives its own observation, not a mutable dispatch authority handle.
+        request = copy.deepcopy(dict(request))
         if getattr(self, "guardian", None) is None:
             # Creator-scoped grants are necessary but are not a substitute
             # for the security owner's authorisation of specialist effects.
@@ -389,7 +393,7 @@ class EuclidRuntime:
                     tenant_id=tenant_id,
                     operation=operation,
                     resource=organ_id,
-                    payload=dict(request),
+                    payload=copy.deepcopy(dict(request)),
                     actor=actor,
                 ),
                 subscription_token=subscription_token or "",

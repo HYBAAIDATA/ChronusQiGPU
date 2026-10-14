@@ -932,6 +932,7 @@ class SalamanderEngine:
         repo_root: Optional[Path] = None,
         source_validator: Optional[RepairValidator] = None,
         profile: Any = "internal",
+        repository_review_policies: Any = None,
     ) -> None:
         from .capability_fabric import (
             CapabilityRegistry,
@@ -947,6 +948,7 @@ class SalamanderEngine:
             else (profile or ExecutionProfile.INTERNAL_RESEARCH)
         )
         self.repo_root = (repo_root or Path(__file__).resolve().parent.parent).resolve()
+        self.repository_review_policies = repository_review_policies
 
         self.homeostasis = HomeostasisMonitor(
             phi_threshold=phi_threshold,
@@ -1004,38 +1006,13 @@ class SalamanderEngine:
         if not hasattr(self, "capability_registry"):
             self.capability_registry = CapabilityRegistry()
 
-        # 1. repository-review (Read-only, allowed in BOTH internal and shared)
+        # 1. Shared native review owner. No policies means unavailable, not
+        # permission for callers to choose arbitrary roots or source manifests.
         if not self.capability_registry.get_manifest("repository-review"):
-            from .repository_review import review_repository
-
-            self.capability_registry.register(
-                CapabilityManifest(
-                    capability_id="repository-review",
-                    version="1.0.0",
-                    source_provenance="Intelligence/repository_review.py",
-                    description="Read-only bounded Python repository review adapter",
-                    permissions=CapabilityPermissions(
-                        can_read_repository=True,
-                        can_write_repository=False,
-                        can_execute_code=False,
-                        can_spawn_process=False,
-                        can_use_network=False,
-                        allowed_profiles=(
-                            ExecutionProfile.INTERNAL_RESEARCH,
-                            ExecutionProfile.SHARED_RESTRICTED,
-                        ),
-                    ),
-                    resource_budget=ResourceBudget(
-                        max_file_bytes=262144,
-                        max_total_bytes=1048576,
-                        max_findings=128,
-                    ),
-                    supported_operations=("review",),
-                    determinism=DeterminismClass.DETERMINISTIC,
-                    side_effects=SideEffectClass.READ_ONLY,
-                    verification_strategy="source_bound_sha256_receipt",
-                ),
-                adapter_fn=lambda **kwargs: review_repository(**kwargs),
+            from .repository_review_capability import register_repository_review_capability
+            register_repository_review_capability(
+                self.capability_registry, repo_root=self.repo_root,
+                approved_policies=getattr(self, "repository_review_policies", None),
             )
 
         # 2. source-repair (Isolated mutation, allowed ONLY in internal research profile)

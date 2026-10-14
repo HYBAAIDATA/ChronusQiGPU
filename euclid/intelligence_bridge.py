@@ -6,18 +6,17 @@ execution boundary and are refused by this in-process read-only integration.
 """
 from __future__ import annotations
 
-import json
 from typing import Mapping
 
 from Intelligence.capability_fabric import (
-    AuthorizationDenied, CapabilityRegistry, ExecutionProfile, SideEffectClass,
+    AuthorizationDenied, CapabilityRegistry, ExecutionProfile, SideEffectClass, snapshot_json,
 )
 
 
 class IntelligenceSpecialist:
     """Dispatch the configured registry; never accept caller-supplied profiles."""
 
-    def __init__(self, registry, *, profile, capabilities):
+    def __init__(self, registry, *, profile, capabilities, audit_sink=None):
         if not isinstance(registry, CapabilityRegistry):
             raise TypeError("existing CapabilityRegistry is required")
         if not isinstance(profile, ExecutionProfile):
@@ -25,6 +24,7 @@ class IntelligenceSpecialist:
         names = tuple(capabilities)
         if not names or len(set(names)) != len(names) or any(not isinstance(x, str) or not x for x in names):
             raise ValueError("distinct capability identifiers are required")
+        self.audit_sink = audit_sink
         self.registry = registry
         self.profile = profile
         self.capabilities = frozenset(names)
@@ -45,6 +45,24 @@ class IntelligenceSpecialist:
                 or not permissions.is_permitted_for(self.profile)):
             raise AuthorizationDenied("capability requires a separately enforced execution boundary")
 
+    def catalog(self):
+        """Describe this host binding, never infer qualification from registration."""
+        rows = []
+        for name in sorted(self.capabilities):
+            manifest = self.registry.get_manifest(name)
+            try:
+                self._admit(name, manifest)
+                available, reason = True, "BOUND_REQUIRES_RUNTIME_AUTHORIZATION"
+            except AuthorizationDenied as exc:
+                available, reason = False, str(exc)
+            rows.append({"capability_id": name, "available": available,
+                         "version": manifest.version if manifest else None,
+                         "profile": self.profile.value, "reason": reason,
+                         "input_schema": manifest.input_schema if manifest else None,
+                         "output_schema": manifest.output_schema if manifest else None,
+                         "independently_qualified": False})
+        return rows
+
     def handle(self, request: Mapping):
         if set(request) - {"operation", "arguments"}:
             raise ValueError("unexpected Intelligence request fields")
@@ -56,12 +74,12 @@ class IntelligenceSpecialist:
             raise TypeError("arguments must be a JSON object")
         # No callbacks, provider handles or filesystem object stringification at
         # the governed boundary. Authorization sees the same JSON request.
-        json.dumps(arguments, allow_nan=False)
+        arguments = snapshot_json(arguments)
         self._admit(name)  # Preserve explicit refusal for missing/disabled bindings.
         # Recheck admission against the atomic contract/handler pair used by
         # dispatch, not an earlier live lookup that can race with registration.
         output, receipt = self.registry.dispatch(
-            name, profile=self.profile,
+            name, profile=self.profile, _strict_json=True, _audit_sink=self.audit_sink,
             _manifest_admission=lambda manifest: self._admit(name, manifest),
             **arguments,
         )
@@ -85,7 +103,10 @@ def bind_intelligence(runtime, registry, *, profile, capabilities, organ_id="int
         raise RuntimeError("runtime is closed")
     if not isinstance(organ_id, str) or not organ_id or "." in organ_id:
         raise ValueError("organ_id must be a non-empty undotted identifier")
-    specialist = IntelligenceSpecialist(registry, profile=profile, capabilities=capabilities)
+    from al_haras import HashChainAudit
+    audit = HashChainAudit(runtime.state_dir / "intelligence" / (organ_id + ".jsonl"))
+    specialist = IntelligenceSpecialist(registry, profile=profile, capabilities=capabilities,
+                                       audit_sink=audit.append)
     runtime.register_specialist(organ_id, specialist, operations=specialist.capabilities)
     runtime.evidence.append("intelligence-registry-bound", {
         "organ": organ_id, "profile": profile.value,

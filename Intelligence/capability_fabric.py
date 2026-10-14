@@ -11,7 +11,9 @@ Extensible capability execution architecture:
 from __future__ import annotations
 
 import copy
+import os
 import math
+import marshal
 import hashlib
 import json
 import time
@@ -19,6 +21,38 @@ from dataclasses import asdict, dataclass, field, is_dataclass
 from enum import Enum
 from threading import RLock
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+
+
+def snapshot_json(value: Any) -> Any:
+    """Detach exact JSON values; reject lossy coercion at governed boundaries.
+
+    This is a value snapshot, not process isolation or independent attestation.
+    """
+    def check(item, active):
+        if type(item) in (str, int, bool, type(None)):
+            return
+        if type(item) is float:
+            if not math.isfinite(item):
+                raise TypeError("finite JSON numbers required")
+            return
+        if type(item) not in (dict, list):
+            raise TypeError("exact JSON values required")
+        if id(item) in active:
+            raise TypeError("cyclic JSON input")
+        active.add(id(item))
+        try:
+            if type(item) is dict:
+                if any(type(key) is not str for key in item):
+                    raise TypeError("JSON object keys must be strings")
+                children = item.values()
+            else:
+                children = item
+            for child in children:
+                check(child, active)
+        finally:
+            active.remove(id(item))
+    check(value, set())
+    return json.loads(json.dumps(value, allow_nan=False))
 
 
 class ExecutionProfile(str, Enum):
@@ -409,6 +443,8 @@ class CapabilityRegistry:
         *,
         profile: ExecutionProfile,
         _manifest_admission: Optional[Callable[[CapabilityManifest], None]] = None,
+        _strict_json: bool = False,
+        _audit_sink: Optional[Callable[[Dict[str, Any]], Any]] = None,
         **kwargs: Any,
     ) -> Tuple[Any, CapabilityExecutionReceipt]:
         """Execute a capability under an explicit profile and produce a deterministic receipt.
@@ -422,7 +458,21 @@ class CapabilityRegistry:
             manifest = copy.deepcopy(self._manifests.get(capability_id))
             adapter = self._adapters.get(capability_id)
         start_time = time.perf_counter()
+        admitted_inputs = kwargs
+        execution_id = hashlib.sha256(os.urandom(32)).hexdigest()
+        handler_code = getattr(adapter, "__code__", None)
+        binding = {"execution_id": execution_id,
+                   "manifest_digest": _digest_data(asdict(manifest)) if manifest else None,
+                   "handler_name": getattr(adapter, "__qualname__", None),
+                   "handler_code_digest": hashlib.sha256(marshal.dumps(handler_code)).hexdigest()
+                       if handler_code is not None else None,
+                   "handler_binding_scope": "local_python_code_not_closure_or_external_state"}
         try:
+            if _strict_json:
+                admitted_inputs = snapshot_json(kwargs)
+                kwargs = snapshot_json(admitted_inputs)
+            if _audit_sink is not None and not callable(_audit_sink):
+                raise TypeError("audit sink must be callable")
             if not isinstance(profile, ExecutionProfile):
                 raise AuthorizationDenied("explicit ExecutionProfile is required")
             if manifest is None:
@@ -449,6 +499,14 @@ class CapabilityRegistry:
             if len(json.dumps(kwargs, default=str, allow_nan=False).encode()) > manifest.resource_budget.max_total_bytes:
                 raise CapabilityExecutionError("input byte envelope exceeded")
 
+            # Durable admission precedes any handler effect. Failure here refuses
+            # execution; failure after execution cannot promise rollback.
+            if _audit_sink is not None:
+                _audit_sink({"kind": "capability-admitted", "execution_id": execution_id,
+                    "capability_id": capability_id, "version": manifest.version,
+                    "profile": profile.value, "input_digest": _digest_data(admitted_inputs),
+                    "binding": binding})
+
             # 3. Execution with duration capture
             output = adapter(**kwargs)
             duration = time.perf_counter() - start_time
@@ -457,6 +515,8 @@ class CapabilityRegistry:
                     f"Capability '{capability_id}' exceeded runtime budget: "
                     f"{duration:.2f}s > {manifest.resource_budget.max_runtime_seconds}s"
                 )
+            if _strict_json:
+                output = snapshot_json(output)
             _validate_schema(output, manifest.output_schema, "outputs")
             status = _execution_status(output)
             if len(json.dumps(output, default=str, allow_nan=False).encode()) > manifest.resource_budget.max_total_bytes:
@@ -469,19 +529,24 @@ class CapabilityRegistry:
                 raise CapabilityExecutionError("malformed findings or findings budget exceeded")
             side_effects = {"class": manifest.side_effects.value,
                 "runtime_enforcement": "post-return", "memory_enforced": False,
-                "process_isolated": False}
+                "process_isolated": False, "execution_binding": binding}
 
             receipt = CapabilityExecutionReceipt.create(
                 capability_id=capability_id,
                 version=manifest.version,
                 profile=profile.value,
-                inputs=kwargs,
+                inputs=admitted_inputs,
                 outputs=output,
                 status=status,
                 duration_seconds=round(duration, 4),
                 findings=findings,
                 side_effects=side_effects,
             )
+            if _audit_sink is not None:
+                _audit_sink({"kind": "capability-completed", "execution_id": execution_id,
+                    "capability_id": capability_id, "status": status,
+                    "receipt_sha256": receipt.receipt_sha256,
+                    "input_digest": receipt.input_digest, "output_digest": receipt.output_digest})
             self._audit_log.append(copy.deepcopy(receipt))
             return output, receipt
 
@@ -491,12 +556,19 @@ class CapabilityRegistry:
                 capability_id=capability_id,
                 version=manifest.version if manifest else "unregistered",
                 profile=profile.value if isinstance(profile, ExecutionProfile) else "invalid",
-                inputs=kwargs,
+                inputs=admitted_inputs,
                 outputs={"error": str(exc), "error_type": type(exc).__name__},
                 status="FAILED",
                 duration_seconds=round(duration, 4),
             )
             self._audit_log.append(copy.deepcopy(receipt))
+            if callable(_audit_sink):
+                try:
+                    _audit_sink({"kind": "capability-failed", "execution_id": execution_id,
+                        "capability_id": capability_id, "error_type": type(exc).__name__,
+                        "receipt_sha256": receipt.receipt_sha256})
+                except Exception as audit_exc:
+                    exc.add_note("durable failure audit unavailable: " + type(audit_exc).__name__)
             raise
 
     def get_audit_log(self) -> List[CapabilityExecutionReceipt]:
