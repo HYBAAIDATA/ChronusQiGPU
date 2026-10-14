@@ -541,6 +541,36 @@
     "notion_custody": "100 complete linked pages; 82 unique attachment byte streams retrieved locally; 34 posterity manifest members verified and losslessly mirrored via base64, not all binaries mirrored or active capabilities integrated.",
     "learning_workstream": "PR77 099d40ae96578f5d1eb20d8605a260d9141965c2 inventoried but not merged or rerun; no parallel learner/state root introduced",
     "repair_recovery": "Injected synchronous custody failure after actual publication restores and reads back baseline; observed third-party change preserved and explicit uncertain-state exception returned. Not crash-atomic, distributed or OS isolation assurance.",
-    "production_qualified": false
+    "production_qualified": false,
+    "pushed_source_follow_up": {
+      "starting_head": "1e96468063d7a5895d01f7b6db0009f07fead859",
+      "implementation_commit": "8c7ffcd3d097e03ed1316213e924266570a3b04f",
+      "research_commits": [
+        "e34dc53b366766ffbc6712ee9114a7949136d3d5",
+        "302118e47d28bf9ece24d92fd352dfcdd0886279",
+        "b6350bcc2259050e3e67c12ca265574c3c6a38a9",
+        "f3b2d15dc65ab3aab9324e55ccc0a506d94cb3c4"
+      ],
+      "combined_status_at_tested_head": {
+        "sha": "f3b2d15dc65ab3aab9324e55ccc0a506d94cb3c4",
+        "state": "pending",
+        "total_count": 0,
+        "statuses": []
+      },
+      "reviews_at_tested_head": [],
+      "readiness": "TECHNICAL_REVIEW_ONLY_NOT_MERGE_RELEASE_OR_PRODUCTION_QUALIFIED",
+      "outstanding": [
+        "Five native capabilities not verified through canonical bridge",
+        "Full Salamander/skills/creative/Kairos/learning/custody composition and all supported consumers",
+        "Reconcile separate PR77 actual learning changes and evaluate prior archived organs without activating old identity",
+        "Official artifact dependency closure omits Intelligence; build toolchain/full checkout/clean installed artifact unavailable",
+        "Windows filesystem and production repair/process/cancellation/rollback assurance",
+        "Measured PHILOS reproduction/stress and independent T5 assurance, Lucas/drift enforcement",
+        "Mandatory CI/security checks and closed-core IP/license review",
+        "Not all recovered binary attachments mirrored into Git; cross-linked Notion pages outside root child closure not exhaustively reconciled",
+        "Matched prior-generation/held-out external benchmarks before claiming superiority"
+      ]
+    },
+    "remote_files_matched": 126
   }
 }

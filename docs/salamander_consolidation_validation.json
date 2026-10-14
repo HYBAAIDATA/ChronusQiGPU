@@ -1984,6 +1984,1066 @@
     "CI_verified": false,
     "installed_artifact_verified": false,
     "full_Salamander_initialization_verified": false,
-    "production_qualified": false
+    "production_qualified": false,
+    "pushed_source_follow_up": {
+      "starting_branch": "fix/canonical-intelligence-bridge-20261014",
+      "starting_head": "1e96468063d7a5895d01f7b6db0009f07fead859",
+      "implementation_commit": "8c7ffcd3d097e03ed1316213e924266570a3b04f",
+      "research_commits": [
+        "e34dc53b366766ffbc6712ee9114a7949136d3d5",
+        "302118e47d28bf9ece24d92fd352dfcdd0886279",
+        "b6350bcc2259050e3e67c12ca265574c3c6a38a9",
+        "f3b2d15dc65ab3aab9324e55ccc0a506d94cb3c4"
+      ],
+      "pushed_byte_verification": {
+        "pushed_head": "f3b2d15dc65ab3aab9324e55ccc0a506d94cb3c4",
+        "files_matched": 126,
+        "missing": [],
+        "mismatched": [],
+        "records": [
+          {
+            "path": "Intelligence/capability_fabric.py",
+            "verified_by": "Complete remote implementation patch reconstructed against pinned parent",
+            "sha256": "edb8e224b935f25fc0de296f2408a37f64899eec01046a29f67b0d75a401cb3f"
+          },
+          {
+            "path": "Intelligence/isolated_repair.py",
+            "verified_by": "Complete remote implementation patch reconstructed against pinned parent",
+            "sha256": "ebc3d871c47be7875cb1a0cf1ec13bfb407083ae40e7e811eeb94a132f552793"
+          },
+          {
+            "path": "Intelligence/repair_learning_capability.py",
+            "verified_by": "Complete remote implementation patch reconstructed against pinned parent",
+            "sha256": "1c0c1a241274235a573469f3d5aae417d4f8ca46b4b66ecb2b0857624ef9b241"
+          },
+          {
+            "path": "Intelligence/salamander.py",
+            "verified_by": "Complete remote implementation patch reconstructed against pinned parent",
+            "sha256": "8c26122ec53df6a874c9317c5ad6799e04b8d9e6a77cec6b17101c25d8f3552f"
+          },
+          {
+            "path": "docs/INTELLIGENCE_CAPABILITY_OWNERSHIP.md",
+            "verified_by": "Complete remote implementation patch reconstructed against pinned parent",
+            "sha256": "8cca25442a41a97524b2c1a91960b7b3f457dbd4db39e4b30a6cd864e6fb277a"
+          },
+          {
+            "path": "docs/salamander_consolidation_validation.json",
+            "verified_by": "Complete remote implementation patch reconstructed against pinned parent",
+            "sha256": "201c7ae544b966b08057a8160ea4ad333040187c1812e90503bbc38bc2f2e3fe"
+          },
+          {
+            "path": "reports/EUCLID_CAPABILITY_MANIFEST.json",
+            "verified_by": "Complete remote implementation patch reconstructed against pinned parent",
+            "sha256": "942dc2a04a1a49399fdfc3f407937abfd48c936793f4406f5841414b8a6555ee"
+          },
+          {
+            "path": "scripts/reproduce_repair_outcome_invariants.py",
+            "verified_by": "Complete remote implementation patch reconstructed against pinned parent",
+            "sha256": "f70884addfcc7803318b5506a2e19bdc5565954730c685ffc5785a8d1069429d"
+          },
+          {
+            "path": "scripts/verify_euclid_research_archive.py",
+            "verified_by": "Complete remote implementation patch reconstructed against pinned parent",
+            "sha256": "c8981f3097767136a7209f00cf5c0a2a78aaefebb67bf307208bb1190704fa1f"
+          },
+          {
+            "path": "tests/intelligence_consolidation/test_repair_outcome_integration.py",
+            "verified_by": "Complete remote implementation patch reconstructed against pinned parent",
+            "sha256": "706471dd00b9076cdf099f79a0debfc2d6f75ba1f1305a8054c4c5db44479091"
+          },
+          {
+            "path": "docs/research_archive/README.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "25dfc88dc0e10b69ac3636157cfc81d8f29cfbc9",
+            "sha256": "009bb64d0761edcd7a96d84fb819df6dbe659867008fa7c6aeff2739ec556c71"
+          },
+          {
+            "path": "docs/research_archive/inventory.json",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "86b4f65585d29c75068ea0da38dafb30c7edf93d",
+            "sha256": "62a1a3a8fff2c7fdb01c77d2f0014251c6486fe60711a71c76fb2b210e722520"
+          },
+          {
+            "path": "docs/research_archive/artifacts/EUCLID_POSTERITY_RESEARCH_ARCHIVE_20260718.zip.base64.txt",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "79fe344090f69d219c74bf85d48e1f27b8742676",
+            "sha256": "26ed9e4e9d3de37efe1df135103d487f5da24ffd4a7965898f53009e0badb800"
+          },
+          {
+            "path": "docs/research_archive/artifacts/__init__.py.source.txt",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "7f4d3bbccf4978c33189dff1d6f619145fdeb32a",
+            "sha256": "9be1bc506fa2ff18904c73a32d1372ea91c41cd848c646f5a1db81a61c2901ad"
+          },
+          {
+            "path": "docs/research_archive/artifacts/agi_attribute_evaluator.py.source.txt",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "d30cf729df5e0595fb484545b6917e0dcec55efd",
+            "sha256": "17a10abf0ac290b7146296a7ce63f09f635c47b1ccfc6d88434a9126d2b3c156"
+          },
+          {
+            "path": "docs/research_archive/artifacts/asi_attribute_evaluator.py.source.txt",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "20d3751de3bdb55c60fc00eb06ecac4fb51ba5ad",
+            "sha256": "cc9b5bccaeb76c7de4b988b0088ec92325e2be6a6ec720cea0549007ac26b379"
+          },
+          {
+            "path": "docs/research_archive/artifacts/emergence_experiment.py.source.txt",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "0092e93605db933ce22e0185690daf0105e33758",
+            "sha256": "2ac55d8686457c980ff66ddc336f6bdf3716e25aeef97bfc69b0e897b3fcd194"
+          },
+          {
+            "path": "docs/research_archive/artifacts/euclid_experience_superlearner.py.source.txt",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "c1e01426e496e88d68c807a23cf11ab955a2bc77",
+            "sha256": "9d59d8c2db983972157ed030bcb78d220933dee5340991b98910f669f54175b0"
+          },
+          {
+            "path": "docs/research_archive/artifacts/euclid_learning_system.py.source.txt",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "270f5d584b5b6bd3c396b3e7a241a8fb329bb254",
+            "sha256": "f089bf5129906702f451dae2c57ca80bfefcb58ba65ed41180c92ecfad253914"
+          },
+          {
+            "path": "docs/research_archive/artifacts/memory_preservation.py.source.txt",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "c880fbeb962259b893b7836bb3b7e28b2b7672e7",
+            "sha256": "708558327977d9cae16522e494076c45335be25d823b7b300ace6602e79afbcb"
+          },
+          {
+            "path": "docs/research_archive/artifacts/organism_coherence.py.source.txt",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "8571b21fe0bf5bb569c9258577b211f040cd246c",
+            "sha256": "dee3061efc58430f1e0750507480caa60242bf2228f5b035e899fa79f99c1e4d"
+          },
+          {
+            "path": "docs/research_archive/artifacts/posterity_inventory.json",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "96a91b58f0482241aff78cc2c14c7e10450412de",
+            "sha256": "5272c5a24044b86daf69f2b32f5db085743fc4feac6168b90f2affdc91b72fda"
+          },
+          {
+            "path": "docs/research_archive/artifacts/retrieval_inventory.json",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "91acdd875ac46b063820ced4864fc66401b375d4",
+            "sha256": "15785058c8b1356c53d03696ee967a350e0ae5709451b00b110be3a0e6a6355a"
+          },
+          {
+            "path": "docs/research_archive/artifacts/safe_self_modification.py.source.txt",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "85d4e3b23edaec9812da51f36eb49d21bbea80c9",
+            "sha256": "5e551a03cbd68f809fad2b264b681a1a04326f121e3dfee4a6c1867bf7c8615c"
+          },
+          {
+            "path": "docs/research_archive/artifacts/world_system_model.py.source.txt",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "66663a2e4a894538ccf05f16c7f73ffda90598ac",
+            "sha256": "c57d6f60a1aaf9256da59532d90b9fb91b1e7264914e780bdca461ce65075e33"
+          },
+          {
+            "path": "docs/research_archive/notes/047301c2d99943fa9359b0dbf5979c02.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "f7e48597fd69d648bac2d6b92db7adcbfa02026a",
+            "sha256": "d2d47ac9ea3178c58b096e9478758220edb2444d666c2d74cc5bbe13116b0e5f"
+          },
+          {
+            "path": "docs/research_archive/notes/08fb41632f5b480a8016625413b647a8.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "e6cb49814365fb6fa1f7ceb32053765420903fb9",
+            "sha256": "f5fa4146ed0a96058f6530fd717193761bcaff857e849ef2069bbd7536fa9d1c"
+          },
+          {
+            "path": "docs/research_archive/notes/098146219a28491e85a15d9303a7a3ca.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "8fa0fa80b3daa0f94a1b121e834c7ac73e0135dd",
+            "sha256": "b7d16647f1801c6e62e36283a4033fa34176a1c414495e5e3ca08a5bab7bab71"
+          },
+          {
+            "path": "docs/research_archive/notes/0e83b14c11b54c3f90a1dc49fe5b566d.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "04175a37a91fb9dcac15036e902c6773c10c7d4b",
+            "sha256": "cb99eea7c96276d38c09dc8f00671dd44e955b231ccb9c17ae823386a428638b"
+          },
+          {
+            "path": "docs/research_archive/notes/15c3121cccf24206a9bc747e516901d0.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "6b2e09e97f760b58c322f91a7f325f30b224b8c7",
+            "sha256": "d24d117ecfb12895c8b94214749deddaa8ee29945b974a0bef6aa8a0fe9d8262"
+          },
+          {
+            "path": "docs/research_archive/notes/1993e69eb2594269bf1b28cb9e53da84.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "15fcf970efc4e71b07220b3a0677d2909b83fb93",
+            "sha256": "8d9a22a8d89649ef99b57b7a4e6cf1762cfaf759c547d983a2271f7ce44277b0"
+          },
+          {
+            "path": "docs/research_archive/notes/1aa24823d574417c81f51b5ba13990ed.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "1aee9f11b6387914e315483d694458bc961f11c9",
+            "sha256": "eb3d0c0b26e81e0cf94a11ce9219cd54f89ab258ded0dd5e8ae4871784c600ad"
+          },
+          {
+            "path": "docs/research_archive/notes/1ad64f80ed974833b4c756b3ce5ffbc9.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "ba860d889fc625a2718d0881475e31267611fd74",
+            "sha256": "f3274f59818578b6cddd934b3f06193265ffd9a0f013cfa0239a3d9fa34d169d"
+          },
+          {
+            "path": "docs/research_archive/notes/1bb848ab426941e6822cede1247c6d0a.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "e7e0270d03e8ca53ee30df6274c3dbcfddc1f4f0",
+            "sha256": "22ae0113a99c625c4e1f7ed06ed6a90a47ff05e7463c3aca25cc5e185c5faf2a"
+          },
+          {
+            "path": "docs/research_archive/notes/1e47398b2fed4e29918d10d02480f102.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "e23504837f90290a682193fb9a5a33b157f82229",
+            "sha256": "0114375c85c19c7a037eafe8798a70f73d27a08c150ea7d20d69b8cfa66d59e0"
+          },
+          {
+            "path": "docs/research_archive/notes/1e5702e9d6dd4519b93e01e3c183b3c1.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "6c983a5cb6cc97cf33c799a4834211f4d416df17",
+            "sha256": "01752b0a065ba388eed4dd3e2558f864b495b8f2bf1ae2a6b1b304d5e808e939"
+          },
+          {
+            "path": "docs/research_archive/notes/1fb64c306b44437a8fa1d32df5e56e71.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "58d39b1e5a080027e3270126f6500a144ca0e6cb",
+            "sha256": "19946c2f44cf0bd01f513cf340b0e4325ab0d125ba1e79deef8f33e5c9ea934f"
+          },
+          {
+            "path": "docs/research_archive/notes/24e053afe0854fc1a38188028dbed32e.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "0e2aa504132922d4b9866dd827364a18634d173d",
+            "sha256": "cae77c192b3f5a22d948901e0b3a297edb8000db23b473a6c572f0958b45e1f5"
+          },
+          {
+            "path": "docs/research_archive/notes/2539733ebb7848c9a84ae4e3d7429822.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "c1cbcaa23bc2794a4de6d8763d8f0722ce0de703",
+            "sha256": "a5c3d0360c088efc6f678a326d5c46982c1ffc1044060fba9bcdd97e40133243"
+          },
+          {
+            "path": "docs/research_archive/notes/259d08a1250d47aca3dad66ee06a843d.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "fe4995dd79a54ae288e0e146c75683b3d4daae2f",
+            "sha256": "4c1145be57d57e0a7f84eb01562c5fdcff6aac138ff40dcefc4f12df6ca6f054"
+          },
+          {
+            "path": "docs/research_archive/notes/27bbc78a988d45888ef3ccc4a966dea1.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "7c619cb7f47a61100c4443082332ef59fc8512fe",
+            "sha256": "3fc3f9e1a26495d47e6fb5f33344791f84aef165fa3ca3650acb10772fac8cf2"
+          },
+          {
+            "path": "docs/research_archive/notes/28b53d2b2ec34a0194a39f66482c0abb.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "971f7b3c6cdafd457c7a374e8ed3c26d83e5423c",
+            "sha256": "0836da904578398b6f4b97630f8bd89d320307a0e365b4a4f74e015aff3cdd3d"
+          },
+          {
+            "path": "docs/research_archive/notes/2b64b0199ee14ebc8ed3eac7d981aaba.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "5c07cc53b4a64229a3f3a494a93d2a9c85626954",
+            "sha256": "c048e06956008b37a94da3dab66a7a0998179bcf0763629234d8de4ee3fd286e"
+          },
+          {
+            "path": "docs/research_archive/notes/2c901d4522fc49279f2e20254b615319.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "846976051ab43f6f875b5b521cf2bad65c676572",
+            "sha256": "27eb739a1f707504a53f23a381dba66e5411c5484444569813a3e6e93ec99be2"
+          },
+          {
+            "path": "docs/research_archive/notes/2e042b52e99e428195f31050ed5c5219.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "f40ed4957da17615b9badb680889f066f67aef78",
+            "sha256": "7b466084cb11f9532e64901fd6bfeacef6d8f6af2fc95ff62eed61facdd03f23"
+          },
+          {
+            "path": "docs/research_archive/notes/2ecabc7aa03148e9b8b9be96c3cfc89b.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "f64f16b84502e529081b9387b19c7c82c75bc535",
+            "sha256": "fcdab0c09781d71918257bd9e76337c456be604ddbef93073452a0ff6853bcd1"
+          },
+          {
+            "path": "docs/research_archive/notes/330d5851372e461d9bdfedbb18ed5276.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "03e95153e6e8dae72ff3f58ee4e6a239293f7894",
+            "sha256": "967aed6987fd433e86711529bb2c8c82f258fb42e1b9cb4c59626d07805e0139"
+          },
+          {
+            "path": "docs/research_archive/notes/334295bceed94cf1b63a3f2d0e133aef.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "4e81ed442a4abe15859a75f14690432146b2de21",
+            "sha256": "da2faca748b3a0a2cf87b9974fcabb7e6c9058b37bca29e1d96b2725b371142b"
+          },
+          {
+            "path": "docs/research_archive/notes/35a07f39d6614ce9beba37dd87e6cc73.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "8ca5dcef63c3b0b8b1a67276593bae63aedb0d97",
+            "sha256": "24577ab2e75f5513194415718baead3e00ce68de1be8fc48c8273e9439cfe855"
+          },
+          {
+            "path": "docs/research_archive/notes/37cf0c9869df423bbf57b0fd1ef34b2c.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "e2af6252bd4e0ce175ef9ca772af5aec91f4e5c2",
+            "sha256": "9ebdee40a7861808ef382b0e42aac8d2b3c58479f1b4169596843bc68eae1bd3"
+          },
+          {
+            "path": "docs/research_archive/notes/38e4cdc889b049c4966eb11598e50301.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "d33c614b1758a76f5d7fa0d2d75008405c1320cc",
+            "sha256": "1df01fd2c51cf5e0fe60e3be91d82da87aa5e9730ba0e36a6f46f55086012df9"
+          },
+          {
+            "path": "docs/research_archive/notes/39dbcc6fa499804296a8c26faee3ed9f.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "3df83cdc564176ada64bc9cbc98e3195cf9ed2ca",
+            "sha256": "fd0470d313a628502da6aa7fd7d6d24470a623fb3c8f29505c8e2de3f716d9b1"
+          },
+          {
+            "path": "docs/research_archive/notes/3b297cfe8de84f29847707837f9559fc.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "bb5b38c398bf7bc258515dae8370881ee95c109f",
+            "sha256": "ef43b2527010deef00698230f13767b01ef717bcd512ea5430a46a6b18b27789"
+          },
+          {
+            "path": "docs/research_archive/notes/3c1fa98a65b64ef5b95f5f6787a54b3a.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "78ca87ed8733fffa935bc8b271bbf19589dd8274",
+            "sha256": "1e1a52786bab309c31e2a2487d6df8f0bfc1ba53ea2fb302291bd506c7f01a56"
+          },
+          {
+            "path": "docs/research_archive/notes/3cfee27664174a2697e1edf17be637b2.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "c11c12923433b407c71dfd4092784d7a761c9db4",
+            "sha256": "48a5c1cabd5f1771f816036127f30d123f3d8a6dd6d19e46fbadcaba4623a8d8"
+          },
+          {
+            "path": "docs/research_archive/notes/3d7ec1d0ebdb4b30ba461a328f5abc39.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "df66a9144aceb0400d17110870482e60de7b2e29",
+            "sha256": "c7d6b2cf7068a83abd7a6892a611e25404ad136ac996196bd0a8faaf435c01aa"
+          },
+          {
+            "path": "docs/research_archive/notes/3e14dd365bfb4123a17f88baa7e81c38.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "efa76cb3e4ced928765b955899e1cf2d50a07d81",
+            "sha256": "5d2fc0c91ee7651264b1d9cf7ff43705389c06bfdfc55928eb4a3d60380d69ca"
+          },
+          {
+            "path": "docs/research_archive/notes/3fbf2c3ad65b48b9b00ea5487df2bd93.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "10e5f20b9c528a99187ce3cd29ebf95e9c27fba1",
+            "sha256": "bd5e1bbf1ade7c92fff83c6174cb2ea85ecdd168798f0447a76b625d9a75c21c"
+          },
+          {
+            "path": "docs/research_archive/notes/43f1f47d5bab46c69ac076d6e234e5d1.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "d5fa4e3f5b95d4e1df1a53303b8039f2fca24c05",
+            "sha256": "4293ad621421203fd0168cad172e966a9506914b632c27ace0a14da5493e63eb"
+          },
+          {
+            "path": "docs/research_archive/notes/46de063e428c4f8390b779f6f8855460.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "e32a6b00e59b0af4a3401fe9b77fd4540cb650b3",
+            "sha256": "a0b67e056afd4657d58cedcbc2885cf8442a5f317a345dd8cae5bd5cac2c04ac"
+          },
+          {
+            "path": "docs/research_archive/notes/46f56529e750463b8d880166c80a7e78.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "cfc8529fce9ff7d542ba52ea623b8468594c7e30",
+            "sha256": "f79f7cdfbc0af43de124af51ec1824763811251e9c53a28eeb6265a7fb405f71"
+          },
+          {
+            "path": "docs/research_archive/notes/4cda54cea5554042848aabb51cb04c68.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "92f06abe115757a07101cd54e218858e12784e1d",
+            "sha256": "0a56f926065f38c8ae89c69e3ad28dd8a6344032b995895c254c9ea0bd2bd9e9"
+          },
+          {
+            "path": "docs/research_archive/notes/4e6ea82e3f3647b9acec0566495f987b.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "4b7a8a4bafe3346a254c5e9ba1b19a2e354032d7",
+            "sha256": "c71d8ffca523dec0a4a94ea23c7d091df3c86db2482ee2ece0d5f3078a4e8d53"
+          },
+          {
+            "path": "docs/research_archive/notes/5042b803b58a4b5fb2fa245c9ec92410.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "6b4a12cad9d0057357ed9554724683f7b08bd5e1",
+            "sha256": "1a06d1a412c4665be6030415242177e64fd3e5d1fa89687e310c1983ac262bb2"
+          },
+          {
+            "path": "docs/research_archive/notes/51ad7dcf517b4e36a76d5af25e272a05.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "e0dc010cdd64e7f865317b8997648fc2bfa6fdf5",
+            "sha256": "2718c49d84cea466d894e9aac3102811221313a0089a0467ce6fa5724adfe0a4"
+          },
+          {
+            "path": "docs/research_archive/notes/53b6d4ca11304f228e9b487b1f4683c3.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "a771ef0af979e936216573e7b2992a423641f464",
+            "sha256": "d90ff441e231695654c32fca81e6cf2ceb3c0748417a43487031cd2601e92a6f"
+          },
+          {
+            "path": "docs/research_archive/notes/585d16ab68ed4162aab9c6859fc2098f.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "142694d8e44f1ee1920899ae7c7c0f554a6d3136",
+            "sha256": "3a9fe20157e5f87d6ad575ba30d1e4ba8c1a32642c77e4ecab8a8d1d4bd9986f"
+          },
+          {
+            "path": "docs/research_archive/notes/5f064bbd7fa84ea09d3abafd3b6e6742.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "2f31791826c86b81a411cccedcfecc8dd483dc90",
+            "sha256": "643cf5891a6a4f3d77e0ce3eb66a43ae06be356fca8dd6490a93b6de62e63e62"
+          },
+          {
+            "path": "docs/research_archive/notes/60bf7315e8194bfdb4a968c2eac6efab.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "d2feb342b684048fc028e96a6ba3129559841a08",
+            "sha256": "d5846763a292ac5e3ea98859432e08505333c4d07edb737ac3ddaad9ac32d8ad"
+          },
+          {
+            "path": "docs/research_archive/notes/614e009d3ff44c5f855183ecbccbe93b.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "3c9f1c51ebb0ef18d0ea4bc87c05b2d6055ceee8",
+            "sha256": "13fff3243d1a2941e3de1026f81943fa6b796d88b69003d8c9662955c4d4b34a"
+          },
+          {
+            "path": "docs/research_archive/notes/61fb1335b2664aabad6b4a6caa972c11.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "7cce10d4a5a91b0f1bdff03b5cb7a335b8bdc566",
+            "sha256": "b1febc794ffe944890d55dccd27568f51e6179d9025b0c22b88cbd1c479baa3f"
+          },
+          {
+            "path": "docs/research_archive/notes/62c927e6758f4f0285d81470b492f6a7.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "ecaa00413d4e5124274db17e4ff031ec0dab09ab",
+            "sha256": "cb696901b3bf817993891b6d1cf3f00d4dc02d2a475b5a554545dab81c90c09b"
+          },
+          {
+            "path": "docs/research_archive/notes/6582444017bd4d1bab8cead27c840d28.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "ff6638265b208cfd042ed1b4042eeacd982b5bb5",
+            "sha256": "2a5e83f9afaa3af06d5b0dd819aae4e05b832f080538c8d4906a96b42252349c"
+          },
+          {
+            "path": "docs/research_archive/notes/66fa30a0dc50466998444b444dff25d3.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "ca3efa84602218099bd90b71d22d5b69d39af152",
+            "sha256": "0d3f54aace3966042541f59fe65752b9d9a9105acb072e86b54e8385676c5088"
+          },
+          {
+            "path": "docs/research_archive/notes/6b78e6e89aaf4747bc0e99cf31ee4bd2.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "3b3a020d01283711eb1cea186a11885f4a34f0a0",
+            "sha256": "e4ecd40487f183396aabfbd4f7cb975f53fbeeb514c3fe4d840421216fd4f2a0"
+          },
+          {
+            "path": "docs/research_archive/notes/6bcf3e275c1449bd87e6f85f1474e4b4.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "17384f2af9a1aeecd9b82ad96b417a6ef719ebfa",
+            "sha256": "2f8e348a07ad12e7a14977822b03101fe8a7ec3a531111938991ff05c5b5bffa"
+          },
+          {
+            "path": "docs/research_archive/notes/6c0bbde40e8b41eeba9cedb15d5bcb9b.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "6bb6e4754a342a170ec7afdbade054bed092c1ff",
+            "sha256": "5303145b501f1cfe1907dea05f6e61d7218054bacace798101e8441ffcc530b4"
+          },
+          {
+            "path": "docs/research_archive/notes/725fd6152eb04acca0cb5d1a654720be.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "905cf8e5d990a9eb2f46e9245a41c866d37ef47e",
+            "sha256": "5125d852fa4ea5205431a88ab2c933f1f4aee1813db375eb415136ef7e3886c9"
+          },
+          {
+            "path": "docs/research_archive/notes/74d12114b6754e25a73523f7fe42c76f.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "31e4c64ed9aad78b10a5ddb5b4df6269b449b31c",
+            "sha256": "1a72c2e0f22720cf6012cb5fe62ca11216babe6b20ac8c9787adcffad92601a6"
+          },
+          {
+            "path": "docs/research_archive/notes/7763e2edb28c4d31b927a4550bfef0ac.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "1eba9eb1753a6a2e6d95fa1859130888188a85e1",
+            "sha256": "d0fb94dd738cfcbeed87b835942586dd58ae0d740e0e700f31066217c26200fb"
+          },
+          {
+            "path": "docs/research_archive/notes/7c56ce1e4b8d4a6f84076377e4008be5.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "3e6258496ef4bc521afa9c11eddaeca583908c2f",
+            "sha256": "b23217a2527986441a41132b6aac3e7b26504646e07341d1d11e4da62c4bcd02"
+          },
+          {
+            "path": "docs/research_archive/notes/7c5aa25272b04258b8c0b76e954f87c5.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "3325bfc2e2efa72ef5bbee34760fcc67051bf0cc",
+            "sha256": "67bb758bd37df3c1b1de6fb71528fb2904d5ea344148892107171bd243f2877c"
+          },
+          {
+            "path": "docs/research_archive/notes/81147026b539421c97c99fde6cbf23fa.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "62beee44a8e496d92a8ee1611a6e27a38d81885e",
+            "sha256": "ab251f4d722cd36fcaf7f03e0699adb48bfba1dcc9705e70aadd50e0fa06d064"
+          },
+          {
+            "path": "docs/research_archive/notes/81c0666dd7cf43ebabfc3e6291fbb507.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "7eee608aa353537adb445f37f12c13a539e1dadb",
+            "sha256": "a786a99ca962ebf4f95c739b965e2eca4599f9210fd06ce99102846e04b1eb50"
+          },
+          {
+            "path": "docs/research_archive/notes/8fa068f25b364ad7ae54c3de4be455a3.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "24c4b4a29d2b8463d4bc0853e7236bb251dafaed",
+            "sha256": "4d3ee19c4ec4b1f6ade1e02ec25575b8be586bfb96e18d925c884fab1e1d81ac"
+          },
+          {
+            "path": "docs/research_archive/notes/8fb2b73e8a314dbea468be18f2c3cfa7.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "9639ac33a66cc3430468deb7730a03320a3d3594",
+            "sha256": "9de25fcefe3830c939134b3076604e75f500611001619e8337f3a37cf470e28c"
+          },
+          {
+            "path": "docs/research_archive/notes/8fb4e47b8f084abeb113366602056c29.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "1fa09c4ca55a236a4563bbe7686f1350405fcd02",
+            "sha256": "315497d71969b513cff2309de45365d68ac0ed7c2c86db3f53a915bedd50574c"
+          },
+          {
+            "path": "docs/research_archive/notes/92210715bf5847378c79d63b8f011571.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "40d6384404ea82fda2ec55b3ec9fd87481f33c86",
+            "sha256": "ae1c5eb94d0c4ab21c2034127ec149822fde2413fe352ce1a4926631075a30f4"
+          },
+          {
+            "path": "docs/research_archive/notes/93ea6e90011a4b2fbd2a16cc9e4c4c89.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "9b67df54ae43bc56c5c780c661e85d55aacf77c0",
+            "sha256": "fb07627fef3c7d22e1988fff0545bce4ece8b245bcf0a51d2d061a342399a092"
+          },
+          {
+            "path": "docs/research_archive/notes/93f597b13fca40e79874f8ce78d08f95.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "6d0bb257b41dcee3802f56fef22532902abc4fca",
+            "sha256": "6d00e86a3bce15a58555c51e4577d90bc7e32b53c00d082c60a581be39e98f8a"
+          },
+          {
+            "path": "docs/research_archive/notes/9536b31029364e57b60a7248579f25a0.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "d91d24a2df7015c5071850523e545fab92dd9586",
+            "sha256": "e9a4da9345b45fa61696e3ba04f7e1291ab1f041486bcccfc25e4b2562b94889"
+          },
+          {
+            "path": "docs/research_archive/notes/9798f6a8bfb24bb2bc1f74ddb2875060.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "514f5ecb612f96673b2aad26e25a0bfa5a62c435",
+            "sha256": "1ad5ac72a5729fdac93f6f8b24debee575743e434b5fef25493a3cb38c575cfa"
+          },
+          {
+            "path": "docs/research_archive/notes/981ad7efc636485987ba950ff070f9e4.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "1b4548de4e458022e1a40ef10e76867705043496",
+            "sha256": "ed8cd51d6846ed6894f3f5ef2fd13c0d4e52b3f2f67e2c1643b535d3df370ef3"
+          },
+          {
+            "path": "docs/research_archive/notes/9a32c65b3fd94f118b328e338510b263.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "f7beacb1920a54c56a37b04c99e15aa916852f4e",
+            "sha256": "cb659809a769ae44a0b67fee8208b3a9cc040ad168eda043464b00968acd8b51"
+          },
+          {
+            "path": "docs/research_archive/notes/a4955666990e48eba278762b1cd025b6.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "ffcd3ab4b23454a1632c1f098cf3f7e41ac4c44d",
+            "sha256": "9f498ef12319294ae4f077a328508214c2c14d18695577a678e0f68416f860a0"
+          },
+          {
+            "path": "docs/research_archive/notes/a51328f83a1344db92cfb0920afae11d.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "90303652348e224ad5d10e39abfc1f5c290e46fc",
+            "sha256": "161a7bc6d552de191fd07d4454067f90fd75c7767ed1d63e476be12704a5502d"
+          },
+          {
+            "path": "docs/research_archive/notes/a7752fe8f3a34477a2c7ed81874eb31b.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "f6f40184cc50865c93e2474033f2a1a9e765fc72",
+            "sha256": "7e486d19828aee0878ff048685837919d3debf6d58269456b9db7ed70940e86e"
+          },
+          {
+            "path": "docs/research_archive/notes/a89e1ba61d834120b1247b3000e9f966.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "26bee8f17a0c58f81a63a6b13e74cf8951e97894",
+            "sha256": "e36cb638890fc9898a8919177fa9dba3fa861eb50e33cbfa6dd2acbd71d782a4"
+          },
+          {
+            "path": "docs/research_archive/notes/ac615fb71caa4facb9622fbc47293335.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "aaeb983f2d4e89d3d52092a6f089892c474c6827",
+            "sha256": "a7af015d72cb172221a1fc5e63287b915985d7cfc296eb7a5aed9501100eacb2"
+          },
+          {
+            "path": "docs/research_archive/notes/ae0367ace0734991ac3d36b85f6fb219.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "835ff57740c61eec2c21b4635f8ae6c04d8954d1",
+            "sha256": "006aa18211602adbf50be70ef27023e1bdb6b46f79bf38dd1f640ebd45b5bb65"
+          },
+          {
+            "path": "docs/research_archive/notes/b107feaf9116444b93eeed99bc6790bf.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "b0937949f140fd52c0487f9c3140a1bca59dfe7c",
+            "sha256": "04c21bb4a58cc2832010351112c50e12f4ec5aa8cc771b82610a1e6d475931d7"
+          },
+          {
+            "path": "docs/research_archive/notes/b4eb0eb1bfbf44b18964eb992106ebf0.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "0a3c9d0a933978585d322fcbe2ea646b4906fbb4",
+            "sha256": "1d3b68e313d5c6e37c76ccc39f1fa1234ddbc4de58f00556c75974c2c3eeadac"
+          },
+          {
+            "path": "docs/research_archive/notes/be3c2c541ed74102a84e808344d33ae3.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "9cdacb62398beb1d051f42df8d74373e8de862e1",
+            "sha256": "354680c686dc9d6b11debdcc88e5132b384ae23df5d9b05dd0ec3b501499c59c"
+          },
+          {
+            "path": "docs/research_archive/notes/c11728df10604d93b8388b8ea99f50f5.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "96493966026da7576f6dac08100a57686938bcc8",
+            "sha256": "f4506b4aef6d6b72be5b60be2c6f6a12bc0d5a46703010b84ccf27ce13b6a46a"
+          },
+          {
+            "path": "docs/research_archive/notes/c51c25912154402a909bd6e713b2f581.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "71cc170ab3407bb87a7dcc48b348075c001163cb",
+            "sha256": "46353da1d63cec4a52540f16d93417530e7935e1b0b151fd0a53e2e7734f3c7a"
+          },
+          {
+            "path": "docs/research_archive/notes/ca54ab1928554773a0d02941df4614f1.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "d9a5d8a56ed4f39f0b036ef9316ec3051679feb4",
+            "sha256": "508da2cc82e0c86c8e466e298300bec3f7128d9052a2c07e881f15a8c132b863"
+          },
+          {
+            "path": "docs/research_archive/notes/cdf7e66eb5d54af2b308091881f58f56.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "39944275181ae163ed3d43a4e7d710bf5eb4f5e4",
+            "sha256": "25d9b60799a4b2b93a0ca83ccba346ec1846d1054f128a674da027cc11df675b"
+          },
+          {
+            "path": "docs/research_archive/notes/cf58aec6388a4a0cbfb9aa381df84541.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "1af1a21388f485c7fe35987016a6113e9223d6f7",
+            "sha256": "336863c79b537efc10b092c86d5f57996db8ea89fbbd38149d7a8b018ffb8be3"
+          },
+          {
+            "path": "docs/research_archive/notes/d3261d7eaf344a16b11f02eebff4a581.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "cabb2236dfac0959b318c09a80a81a7c1b36a58e",
+            "sha256": "6eca93eb2bfe28548b9ffbfd0370c19a1b24f908bc9ce55a03d37a2927f78716"
+          },
+          {
+            "path": "docs/research_archive/notes/d418e9374453459c924cf99c19fbd242.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "cea41942258ac617a411022e7e377934e7b1829b",
+            "sha256": "40c7fca5efa4f9ad03cac41f9416db379ae94883a046ac4335cf4551dc6b2c58"
+          },
+          {
+            "path": "docs/research_archive/notes/d5a93b121b5d43bfac65ba1e7de0eee8.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "404743e3d687d8439fb12bea58078b466f3f3154",
+            "sha256": "31cf4fff91e6d7c5ed72b85a76d0a630f27c99ad65d1c0a84bf6af5e639a14c2"
+          },
+          {
+            "path": "docs/research_archive/notes/d9eed332fad14702aaac9f087f3829b9.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "ac2b550d049945a106f6eba2410fdcf3fb8d3f83",
+            "sha256": "fed65ced3af89a8f4f1d3fb153aba03eb0c03c77ed8d242e530322cb2899e4ce"
+          },
+          {
+            "path": "docs/research_archive/notes/dd7d4a11224f4248b8736aecfb1dc63c.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "1b94db88bb0071b1be31c9923765700d525618ed",
+            "sha256": "df1ff3bce951098abdbda16c7ab753dbcfc9d9f2d7c5a50b236048e3d1f095fc"
+          },
+          {
+            "path": "docs/research_archive/notes/de5e046821df410b8d4fb14ee7a37c3a.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "51c60e3d519f18381dba518c9eb78dfe4134cc61",
+            "sha256": "7122086d794a84c96380d3c48e861a672b34ecb6124b1150cbd2392a7b58b779"
+          },
+          {
+            "path": "docs/research_archive/notes/df3bf01909ba4fd3b6a6c38582600da0.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "9e63b7740352bc2f4c2519fda296e4927e28e81d",
+            "sha256": "1d5e54c9cf03cdab7402388298d1ca59d3217ccaa34bc2dc34d127cc6513f3d5"
+          },
+          {
+            "path": "docs/research_archive/notes/e015c39be6d44f3bbddbdbdafa450f67.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "4f71f0e50182f4bc86e517918d68f574b7b81d41",
+            "sha256": "d02db1cbaf42d62a426db2e7ea184757f7009d1651e118a246d333adf0a7f3b3"
+          },
+          {
+            "path": "docs/research_archive/notes/e788538c78694c9c980511140e4c5e25.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "a545e97088fee49d1818fa6f05251fe9da2bbe30",
+            "sha256": "dc6d267914e263287bf2564a6c76d482e6b7373b4d53166b3a1b953a630ba7bc"
+          },
+          {
+            "path": "docs/research_archive/notes/eb7dcdd58075485a8b32f95d8a62fcd5.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "7c623d48c3d39c12ce35bed7e21fa0ef946f2482",
+            "sha256": "632cade17c7e5160bcd9dbda7b6820c03c2fa1ce2ca85e632dd459e1de9c3c77"
+          },
+          {
+            "path": "docs/research_archive/notes/ee9591af4ef84bc1a3d748c4286ec2a3.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "70b9dc44f1cf21449aef6ca16a79db00671884e3",
+            "sha256": "e80bf40db96b10ccb95f946fb56d446f1b31b5bfa1d03059fbb702fad93de868"
+          },
+          {
+            "path": "docs/research_archive/notes/eea083b7691c47178d972f94cb696d6c.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "73e8b41405f6bfe02a5e061291c48a6ccd4ca670",
+            "sha256": "768a7d9eeaec49d1256930947845b040b3e502487de134a0369c65c03f290a58"
+          },
+          {
+            "path": "docs/research_archive/notes/f0a40f0991424afc82f8688a8fe14785.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "6e374174539e046014609fd196d50a8505f8a488",
+            "sha256": "795203019d3518e65b267c339d9bc98cb6e959433af5a98c58bf81a9288f3a8a"
+          },
+          {
+            "path": "docs/research_archive/notes/f197e12be5b14872b3ea3e208652b20e.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "b3f5eb32bbce3a06683f19a47502a50faa96993d",
+            "sha256": "b541f5bdd8a2d8a02dab0858b54697927571f24bac649a1771043ac19d43ace2"
+          },
+          {
+            "path": "docs/research_archive/notes/f23ba6295dce4697b3312038e442e40e.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "231f31a30a145e456b51d3e651feb20175415ef2",
+            "sha256": "2b2de94a1fa4aaece13f4b1bccc3ed0b9fb253466eac343270cd99fb03650e29"
+          },
+          {
+            "path": "docs/research_archive/notes/f2d526c96f6c40d6a962b06021ec17f6.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "68889d1de4125ca95b453e67fd7a14f1046d3c7d",
+            "sha256": "59560334e7c8386359796e024a291c61a9cc4ee295968a0aa43510b285c84c34"
+          },
+          {
+            "path": "docs/research_archive/notes/fa7b7e4c02084c33a74d459127560af8.md",
+            "verified_by": "Pinned remote directory Git blob SHA1 matches full intended bytes",
+            "git_blob": "9cbfc26b9064414540be6d6472c4e236e32e8d0a",
+            "sha256": "70e141ed5f163711b32e8113ae20e0f4f2f1a9c58665e5864842d4121cb13df1"
+          },
+          {
+            "path": "docs/EUCLID_NOTION_RECONCILIATION_20261014.md",
+            "verified_by": "Full pinned remote page content",
+            "sha256": "ea7baa1609ffd9bc7f56c16eff3b16eca9e138945c0af4551233fdbb7da6c1be"
+          }
+        ]
+      },
+      "pushed_source_checks": {
+        "environment": {
+          "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+          "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+          "scope": "Selective connector-pinned joint source of PR74/PR75/PR69, not merged/full checkout or installed artifact"
+        },
+        "inspected_heads": {
+          "PR74": "1e96468063d7a5895d01f7b6db0009f07fead859",
+          "PR75": "81c8c4ef178aae8f349262cbe6c53b1222cb106d",
+          "PR69": "370be998286dd8aadc7a9bccb9f397559f2cc791",
+          "PR77_separate_not_in_joint_tests": "099d40ae96578f5d1eb20d8605a260d9141965c2"
+        },
+        "changed_source_sha256": {
+          "Intelligence/isolated_repair.py": "ebc3d871c47be7875cb1a0cf1ec13bfb407083ae40e7e811eeb94a132f552793",
+          "Intelligence/repair_learning_capability.py": "1c0c1a241274235a573469f3d5aae417d4f8ca46b4b66ecb2b0857624ef9b241",
+          "Intelligence/salamander.py": "8c26122ec53df6a874c9317c5ad6799e04b8d9e6a77cec6b17101c25d8f3552f",
+          "Intelligence/capability_fabric.py": "edb8e224b935f25fc0de296f2408a37f64899eec01046a29f67b0d75a401cb3f",
+          "tests/intelligence_consolidation/test_repair_outcome_integration.py": "706471dd00b9076cdf099f79a0debfc2d6f75ba1f1305a8054c4c5db44479091",
+          "scripts/verify_euclid_research_archive.py": "c8981f3097767136a7209f00cf5c0a2a78aaefebb67bf307208bb1190704fa1f",
+          "scripts/reproduce_repair_outcome_invariants.py": "f70884addfcc7803318b5506a2e19bdc5565954730c685ffc5785a8d1069429d"
+        },
+        "unavailable_tools": [
+          "pytest",
+          "setuptools",
+          "wheel",
+          "build",
+          "black",
+          "ruff",
+          "flake8"
+        ],
+        "checks": [
+          {
+            "name": "intelligence_consolidation",
+            "command": [
+              "/usr/local/bin/python",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "/data/intelligence_readiness/remote_verified/tests/intelligence_consolidation",
+              "-v"
+            ],
+            "cwd": "outside-source validation workspace",
+            "exit_code": 0,
+            "log_sha256": "5e02527443c2295bafae8b59b8c222878863d9a6b8ddc11dac22b4ab9fcded24",
+            "output": "test_binding_does_not_create_rights (test_canonical_bridge.CanonicalBridgeIntegration.test_binding_does_not_create_rights) ... ok\ntest_closed_runtime (test_canonical_bridge.CanonicalBridgeIntegration.test_closed_runtime) ... ok\ntest_creator_rights_revocation_blocks_dispatch (test_canonical_bridge.CanonicalBridgeIntegration.test_creator_rights_revocation_blocks_dispatch) ... ok\ntest_experiment_is_not_proof (test_canonical_bridge.CanonicalBridgeIntegration.test_experiment_is_not_proof) ... ok\ntest_guardian_absence_refuses_even_with_rights (test_canonical_bridge.CanonicalBridgeIntegration.test_guardian_absence_refuses_even_with_rights) ... ok\ntest_invalid_expired_tampered_and_wrong_tenant_tokens_no_handler (test_canonical_bridge.CanonicalBridgeIntegration.test_invalid_expired_tampered_and_wrong_tenant_tokens_no_handler) ... ok\ntest_missing_conjecture_is_not_success (test_canonical_bridge.CanonicalBridgeIntegration.test_missing_conjecture_is_not_success) ... ok\ntest_mutation_capability_binding_denied (test_canonical_bridge.CanonicalBridgeIntegration.test_mutation_capability_binding_denied) ... ok\ntest_profile_injection_refused_before_dispatch (test_canonical_bridge.CanonicalBridgeIntegration.test_profile_injection_refused_before_dispatch) ... ok\ntest_real_native_registration_dispatch_result_and_audit (test_canonical_bridge.CanonicalBridgeIntegration.test_real_native_registration_dispatch_result_and_audit) ... ok\ntest_registry_change_after_admission_cannot_execute_mutating_handler (test_canonical_bridge.CanonicalBridgeIntegration.test_registry_change_after_admission_cannot_execute_mutating_handler)\nReal concurrent registry replacement at the bridge/dispatch boundary. ... ok\ntest_unregistration_and_permission_change_fail_closed (test_canonical_bridge.CanonicalBridgeIntegration.test_unregistration_and_permission_change_fail_closed) ... ok\ntest_admission_callback_cannot_weaken_the_execution_schema (test_canonical_bridge.FabricRegression.test_admission_callback_cannot_weaken_the_execution_schema) ... ok\ntest_audit_is_detached (test_canonical_bridge.FabricRegression.test_audit_is_detached) ... ok\ntest_bad_profile_no_handler (test_canonical_bridge.FabricRegression.test_bad_profile_no_handler) ... ok\ntest_dispatch_uses_the_admitted_handler_snapshot (test_canonical_bridge.FabricRegression.test_dispatch_uses_the_admitted_handler_snapshot) ... ok\ntest_failure_shapes_never_success (test_canonical_bridge.FabricRegression.test_failure_shapes_never_success) ... ok\ntest_findings_limit (test_canonical_bridge.FabricRegression.test_findings_limit) ... ok\ntest_input_envelope_before_handler (test_canonical_bridge.FabricRegression.test_input_envelope_before_handler) ... ok\ntest_invalid_budget (test_canonical_bridge.FabricRegression.test_invalid_budget) ... ok\ntest_invalid_inputs_no_execution (test_canonical_bridge.FabricRegression.test_invalid_inputs_no_execution) ... ok\ntest_invalid_schema_fails_at_registration (test_canonical_bridge.FabricRegression.test_invalid_schema_fails_at_registration) ... ok\ntest_manifest_is_snapshot (test_canonical_bridge.FabricRegression.test_manifest_is_snapshot) ... ok\ntest_native_failure_dataclass_not_success (test_canonical_bridge.FabricRegression.test_native_failure_dataclass_not_success) ... ok\ntest_nonfinite_output_not_success (test_canonical_bridge.FabricRegression.test_nonfinite_output_not_success) ... ok\ntest_output_validation (test_canonical_bridge.FabricRegression.test_output_validation) ... ok\ntest_permission_contract_types (test_canonical_bridge.FabricRegression.test_permission_contract_types) ... ok\ntest_receipt_discloses_enforcement_limits (test_canonical_bridge.FabricRegression.test_receipt_discloses_enforcement_limits) ... ok\ntest_shared_code_execution_denied_before_handler (test_canonical_bridge.FabricRegression.test_shared_code_execution_denied_before_handler) ... ok\ntest_simulation_and_unverified_are_distinct (test_canonical_bridge.FabricRegression.test_simulation_and_unverified_are_distinct) ... ok\ntest_unknown_and_disabled_audited (test_canonical_bridge.FabricRegression.test_unknown_and_disabled_audited) ... ok\ntest_leaf_import_does_not_initialize_engines (test_canonical_bridge.ImportCompositionRegression.test_leaf_import_does_not_initialize_engines) ... ok\ntest_unknown_export_is_honest (test_canonical_bridge.ImportCompositionRegression.test_unknown_export_is_honest) ... ok\ntest_actual_source_bound_review_from_canonical_runtime (test_execution_custody.CanonicalCustodyIntegration.test_actual_source_bound_review_from_canonical_runtime) ... ok\ntest_binding_rejects_absolute_and_path_like_audit_identifiers (test_execution_custody.CanonicalCustodyIntegration.test_binding_rejects_absolute_and_path_like_audit_identifiers) ... ok\ntest_catalog_schema_is_detached_and_does_not_grant_authority (test_execution_custody.CanonicalCustodyIntegration.test_catalog_schema_is_detached_and_does_not_grant_authority) ... ok\ntest_changed_source_and_symlink_are_refused (test_execution_custody.CanonicalCustodyIntegration.test_changed_source_and_symlink_are_refused) ... ok\ntest_durable_native_execution_chain_survives_reopen (test_execution_custody.CanonicalCustodyIntegration.test_durable_native_execution_chain_survives_reopen) ... ok\ntest_guardian_observation_mutation_cannot_change_dispatched_request (test_execution_custody.CanonicalCustodyIntegration.test_guardian_observation_mutation_cannot_change_dispatched_request) ... ok\ntest_receipt_and_admission_share_local_handler_binding (test_execution_custody.CanonicalCustodyIntegration.test_receipt_and_admission_share_local_handler_binding) ... ok\ntest_specialist_authority_is_explicit_without_creating_rights (test_execution_custody.CanonicalCustodyIntegration.test_specialist_authority_is_explicit_without_creating_rights) ... ok\ntest_unapproved_client_policy_and_root_are_refused (test_execution_custody.CanonicalCustodyIntegration.test_unapproved_client_policy_and_root_are_refused) ... ok\ntest_unconfigured_review_is_disabled (test_execution_custody.CanonicalCustodyIntegration.test_unconfigured_review_is_disabled) ... ok\ntest_admission_audit_failure_prevents_real_file_effect (test_execution_custody.DispatchCustodyRegression.test_admission_audit_failure_prevents_real_file_effect) ... ok\ntest_completion_audit_failure_does_not_return_success_or_claim_rollback (test_execution_custody.DispatchCustodyRegression.test_completion_audit_failure_does_not_return_success_or_claim_rollback) ... ok\ntest_handler_mutation_does_not_rewrite_admitted_input_receipt (test_execution_custody.DispatchCustodyRegression.test_handler_mutation_does_not_rewrite_admitted_input_receipt) ... ok\ntest_lossy_json_inputs_refused_without_handler (test_execution_custody.DispatchCustodyRegression.test_lossy_json_inputs_refused_without_handler) ... ok\ntest_non_json_output_is_not_verified_success (test_execution_custody.DispatchCustodyRegression.test_non_json_output_is_not_verified_success) ... ok\ntest_duplicate_registration_refused (test_repair_outcome_integration.CanonicalRepairQuery.test_duplicate_registration_refused) ... ok\ntest_malformed_request_not_accepted (test_repair_outcome_integration.CanonicalRepairQuery.test_malformed_request_not_accepted) ... ok\ntest_nullable_schema_rejects_bad_rate_outputs (test_repair_outcome_integration.CanonicalRepairQuery.test_nullable_schema_rejects_bad_rate_outputs) ... ok\ntest_observed_outcomes_survive_restore_and_canonical_dispatch (test_repair_outcome_integration.CanonicalRepairQuery.test_observed_outcomes_survive_restore_and_canonical_dispatch) ... ok\ntest_real_query_has_no_executor_or_implicit_write (test_repair_outcome_integration.CanonicalRepairQuery.test_real_query_has_no_executor_or_implicit_write) ... ok\ntest_revoked_rights_do_not_reach_handler (test_repair_outcome_integration.CanonicalRepairQuery.test_revoked_rights_do_not_reach_handler) ... ok\ntest_corrupt_file_fails_without_erasing_current_state (test_repair_outcome_integration.LedgerRegression.test_corrupt_file_fails_without_erasing_current_state) ... ok\ntest_custody_failure_preserves_observed_third_party_change (test_repair_outcome_integration.LedgerRegression.test_custody_failure_preserves_observed_third_party_change) ... ok\ntest_duplicate_record_identity_rejected (test_repair_outcome_integration.LedgerRegression.test_duplicate_record_identity_rejected) ... ok\ntest_empty_population_is_not_empirical_half_success (test_repair_outcome_integration.LedgerRegression.test_empty_population_is_not_empirical_half_success) ... ok\ntest_explicit_empty_authority_stays_empty (test_repair_outcome_integration.LedgerRegression.test_explicit_empty_authority_stays_empty) ... ok\ntest_explicit_host_authorization_still_executes_real_local_repair (test_repair_outcome_integration.LedgerRegression.test_explicit_host_authorization_still_executes_real_local_repair) ... ok\ntest_failed_outcome_retained_and_not_committed (test_repair_outcome_integration.LedgerRegression.test_failed_outcome_retained_and_not_committed) ... ok\ntest_invalid_committed_evidence_refused (test_repair_outcome_integration.LedgerRegression.test_invalid_committed_evidence_refused) ... ok\ntest_outcome_storage_failure_recovers_actual_published_source (test_repair_outcome_integration.LedgerRegression.test_outcome_storage_failure_recovers_actual_published_source) ... ok\ntest_public_default_token_has_no_authority_and_is_not_logged (test_repair_outcome_integration.LedgerRegression.test_public_default_token_has_no_authority_and_is_not_logged) ... ok\ntest_repeated_load_does_not_inflate_counts (test_repair_outcome_integration.LedgerRegression.test_repeated_load_does_not_inflate_counts) ... ok\ntest_storage_failure_is_not_acknowledged (test_repair_outcome_integration.LedgerRegression.test_storage_failure_is_not_acknowledged) ... ok\ntest_strategy_key_cannot_collide_via_colons (test_repair_outcome_integration.LedgerRegression.test_strategy_key_cannot_collide_via_colons) ... ok\n\n----------------------------------------------------------------------\nRan 67 tests in 0.426s\n\nOK\n"
+          },
+          {
+            "name": "intelligence_consolidation_O",
+            "command": [
+              "/usr/local/bin/python",
+              "-O",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "/data/intelligence_readiness/remote_verified/tests/intelligence_consolidation",
+              "-v"
+            ],
+            "cwd": "outside-source validation workspace",
+            "exit_code": 0,
+            "log_sha256": "40817e686f345905259eff4a841f7718db0588e7a392cf1662d40f15fe5aed50",
+            "output": "test_binding_does_not_create_rights (test_canonical_bridge.CanonicalBridgeIntegration.test_binding_does_not_create_rights) ... ok\ntest_closed_runtime (test_canonical_bridge.CanonicalBridgeIntegration.test_closed_runtime) ... ok\ntest_creator_rights_revocation_blocks_dispatch (test_canonical_bridge.CanonicalBridgeIntegration.test_creator_rights_revocation_blocks_dispatch) ... ok\ntest_experiment_is_not_proof (test_canonical_bridge.CanonicalBridgeIntegration.test_experiment_is_not_proof) ... ok\ntest_guardian_absence_refuses_even_with_rights (test_canonical_bridge.CanonicalBridgeIntegration.test_guardian_absence_refuses_even_with_rights) ... ok\ntest_invalid_expired_tampered_and_wrong_tenant_tokens_no_handler (test_canonical_bridge.CanonicalBridgeIntegration.test_invalid_expired_tampered_and_wrong_tenant_tokens_no_handler) ... ok\ntest_missing_conjecture_is_not_success (test_canonical_bridge.CanonicalBridgeIntegration.test_missing_conjecture_is_not_success) ... ok\ntest_mutation_capability_binding_denied (test_canonical_bridge.CanonicalBridgeIntegration.test_mutation_capability_binding_denied) ... ok\ntest_profile_injection_refused_before_dispatch (test_canonical_bridge.CanonicalBridgeIntegration.test_profile_injection_refused_before_dispatch) ... ok\ntest_real_native_registration_dispatch_result_and_audit (test_canonical_bridge.CanonicalBridgeIntegration.test_real_native_registration_dispatch_result_and_audit) ... ok\ntest_registry_change_after_admission_cannot_execute_mutating_handler (test_canonical_bridge.CanonicalBridgeIntegration.test_registry_change_after_admission_cannot_execute_mutating_handler)\nReal concurrent registry replacement at the bridge/dispatch boundary. ... ok\ntest_unregistration_and_permission_change_fail_closed (test_canonical_bridge.CanonicalBridgeIntegration.test_unregistration_and_permission_change_fail_closed) ... ok\ntest_admission_callback_cannot_weaken_the_execution_schema (test_canonical_bridge.FabricRegression.test_admission_callback_cannot_weaken_the_execution_schema) ... ok\ntest_audit_is_detached (test_canonical_bridge.FabricRegression.test_audit_is_detached) ... ok\ntest_bad_profile_no_handler (test_canonical_bridge.FabricRegression.test_bad_profile_no_handler) ... ok\ntest_dispatch_uses_the_admitted_handler_snapshot (test_canonical_bridge.FabricRegression.test_dispatch_uses_the_admitted_handler_snapshot) ... ok\ntest_failure_shapes_never_success (test_canonical_bridge.FabricRegression.test_failure_shapes_never_success) ... ok\ntest_findings_limit (test_canonical_bridge.FabricRegression.test_findings_limit) ... ok\ntest_input_envelope_before_handler (test_canonical_bridge.FabricRegression.test_input_envelope_before_handler) ... ok\ntest_invalid_budget (test_canonical_bridge.FabricRegression.test_invalid_budget) ... ok\ntest_invalid_inputs_no_execution (test_canonical_bridge.FabricRegression.test_invalid_inputs_no_execution) ... ok\ntest_invalid_schema_fails_at_registration (test_canonical_bridge.FabricRegression.test_invalid_schema_fails_at_registration) ... ok\ntest_manifest_is_snapshot (test_canonical_bridge.FabricRegression.test_manifest_is_snapshot) ... ok\ntest_native_failure_dataclass_not_success (test_canonical_bridge.FabricRegression.test_native_failure_dataclass_not_success) ... ok\ntest_nonfinite_output_not_success (test_canonical_bridge.FabricRegression.test_nonfinite_output_not_success) ... ok\ntest_output_validation (test_canonical_bridge.FabricRegression.test_output_validation) ... ok\ntest_permission_contract_types (test_canonical_bridge.FabricRegression.test_permission_contract_types) ... ok\ntest_receipt_discloses_enforcement_limits (test_canonical_bridge.FabricRegression.test_receipt_discloses_enforcement_limits) ... ok\ntest_shared_code_execution_denied_before_handler (test_canonical_bridge.FabricRegression.test_shared_code_execution_denied_before_handler) ... ok\ntest_simulation_and_unverified_are_distinct (test_canonical_bridge.FabricRegression.test_simulation_and_unverified_are_distinct) ... ok\ntest_unknown_and_disabled_audited (test_canonical_bridge.FabricRegression.test_unknown_and_disabled_audited) ... ok\ntest_leaf_import_does_not_initialize_engines (test_canonical_bridge.ImportCompositionRegression.test_leaf_import_does_not_initialize_engines) ... ok\ntest_unknown_export_is_honest (test_canonical_bridge.ImportCompositionRegression.test_unknown_export_is_honest) ... ok\ntest_actual_source_bound_review_from_canonical_runtime (test_execution_custody.CanonicalCustodyIntegration.test_actual_source_bound_review_from_canonical_runtime) ... ok\ntest_binding_rejects_absolute_and_path_like_audit_identifiers (test_execution_custody.CanonicalCustodyIntegration.test_binding_rejects_absolute_and_path_like_audit_identifiers) ... ok\ntest_catalog_schema_is_detached_and_does_not_grant_authority (test_execution_custody.CanonicalCustodyIntegration.test_catalog_schema_is_detached_and_does_not_grant_authority) ... ok\ntest_changed_source_and_symlink_are_refused (test_execution_custody.CanonicalCustodyIntegration.test_changed_source_and_symlink_are_refused) ... ok\ntest_durable_native_execution_chain_survives_reopen (test_execution_custody.CanonicalCustodyIntegration.test_durable_native_execution_chain_survives_reopen) ... ok\ntest_guardian_observation_mutation_cannot_change_dispatched_request (test_execution_custody.CanonicalCustodyIntegration.test_guardian_observation_mutation_cannot_change_dispatched_request) ... ok\ntest_receipt_and_admission_share_local_handler_binding (test_execution_custody.CanonicalCustodyIntegration.test_receipt_and_admission_share_local_handler_binding) ... ok\ntest_specialist_authority_is_explicit_without_creating_rights (test_execution_custody.CanonicalCustodyIntegration.test_specialist_authority_is_explicit_without_creating_rights) ... ok\ntest_unapproved_client_policy_and_root_are_refused (test_execution_custody.CanonicalCustodyIntegration.test_unapproved_client_policy_and_root_are_refused) ... ok\ntest_unconfigured_review_is_disabled (test_execution_custody.CanonicalCustodyIntegration.test_unconfigured_review_is_disabled) ... ok\ntest_admission_audit_failure_prevents_real_file_effect (test_execution_custody.DispatchCustodyRegression.test_admission_audit_failure_prevents_real_file_effect) ... ok\ntest_completion_audit_failure_does_not_return_success_or_claim_rollback (test_execution_custody.DispatchCustodyRegression.test_completion_audit_failure_does_not_return_success_or_claim_rollback) ... ok\ntest_handler_mutation_does_not_rewrite_admitted_input_receipt (test_execution_custody.DispatchCustodyRegression.test_handler_mutation_does_not_rewrite_admitted_input_receipt) ... ok\ntest_lossy_json_inputs_refused_without_handler (test_execution_custody.DispatchCustodyRegression.test_lossy_json_inputs_refused_without_handler) ... ok\ntest_non_json_output_is_not_verified_success (test_execution_custody.DispatchCustodyRegression.test_non_json_output_is_not_verified_success) ... ok\ntest_duplicate_registration_refused (test_repair_outcome_integration.CanonicalRepairQuery.test_duplicate_registration_refused) ... ok\ntest_malformed_request_not_accepted (test_repair_outcome_integration.CanonicalRepairQuery.test_malformed_request_not_accepted) ... ok\ntest_nullable_schema_rejects_bad_rate_outputs (test_repair_outcome_integration.CanonicalRepairQuery.test_nullable_schema_rejects_bad_rate_outputs) ... ok\ntest_observed_outcomes_survive_restore_and_canonical_dispatch (test_repair_outcome_integration.CanonicalRepairQuery.test_observed_outcomes_survive_restore_and_canonical_dispatch) ... ok\ntest_real_query_has_no_executor_or_implicit_write (test_repair_outcome_integration.CanonicalRepairQuery.test_real_query_has_no_executor_or_implicit_write) ... ok\ntest_revoked_rights_do_not_reach_handler (test_repair_outcome_integration.CanonicalRepairQuery.test_revoked_rights_do_not_reach_handler) ... ok\ntest_corrupt_file_fails_without_erasing_current_state (test_repair_outcome_integration.LedgerRegression.test_corrupt_file_fails_without_erasing_current_state) ... ok\ntest_custody_failure_preserves_observed_third_party_change (test_repair_outcome_integration.LedgerRegression.test_custody_failure_preserves_observed_third_party_change) ... ok\ntest_duplicate_record_identity_rejected (test_repair_outcome_integration.LedgerRegression.test_duplicate_record_identity_rejected) ... ok\ntest_empty_population_is_not_empirical_half_success (test_repair_outcome_integration.LedgerRegression.test_empty_population_is_not_empirical_half_success) ... ok\ntest_explicit_empty_authority_stays_empty (test_repair_outcome_integration.LedgerRegression.test_explicit_empty_authority_stays_empty) ... ok\ntest_explicit_host_authorization_still_executes_real_local_repair (test_repair_outcome_integration.LedgerRegression.test_explicit_host_authorization_still_executes_real_local_repair) ... ok\ntest_failed_outcome_retained_and_not_committed (test_repair_outcome_integration.LedgerRegression.test_failed_outcome_retained_and_not_committed) ... ok\ntest_invalid_committed_evidence_refused (test_repair_outcome_integration.LedgerRegression.test_invalid_committed_evidence_refused) ... ok\ntest_outcome_storage_failure_recovers_actual_published_source (test_repair_outcome_integration.LedgerRegression.test_outcome_storage_failure_recovers_actual_published_source) ... ok\ntest_public_default_token_has_no_authority_and_is_not_logged (test_repair_outcome_integration.LedgerRegression.test_public_default_token_has_no_authority_and_is_not_logged) ... ok\ntest_repeated_load_does_not_inflate_counts (test_repair_outcome_integration.LedgerRegression.test_repeated_load_does_not_inflate_counts) ... ok\ntest_storage_failure_is_not_acknowledged (test_repair_outcome_integration.LedgerRegression.test_storage_failure_is_not_acknowledged) ... ok\ntest_strategy_key_cannot_collide_via_colons (test_repair_outcome_integration.LedgerRegression.test_strategy_key_cannot_collide_via_colons) ... ok\n\n----------------------------------------------------------------------\nRan 67 tests in 0.359s\n\nOK\n"
+          },
+          {
+            "name": "emergence_authorization",
+            "command": [
+              "/usr/local/bin/python",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "/data/intelligence_readiness/remote_verified/tests/emergence_authorization",
+              "-v"
+            ],
+            "cwd": "outside-source validation workspace",
+            "exit_code": 0,
+            "log_sha256": "6483cdbfa38057bd62f818db0b3ade7b6addde4903d382906bf84bcf64130749",
+            "output": "test_all_security_fields_are_signed (test_authorization.AuthorizationTests.test_all_security_fields_are_signed) ... ok\ntest_concurrent_verifiers_admit_exactly_once (test_authorization.AuthorizationTests.test_concurrent_verifiers_admit_exactly_once) ... ok\ntest_expired_token_refused (test_authorization.AuthorizationTests.test_expired_token_refused) ... ok\ntest_full_ledger_refuses_without_evicting_live_authorization (test_authorization.AuthorizationTests.test_full_ledger_refuses_without_evicting_live_authorization) ... ok\ntest_host_key_mapping_is_detached_and_revocation_refuses (test_authorization.AuthorizationTests.test_host_key_mapping_is_detached_and_revocation_refuses) ... ok\ntest_invalid_margin_and_configuration_fail_closed (test_authorization.AuthorizationTests.test_invalid_margin_and_configuration_fail_closed) ... ok\ntest_ledger_cannot_be_rebound_to_other_audience (test_authorization.AuthorizationTests.test_ledger_cannot_be_rebound_to_other_audience) ... ok\ntest_no_default_authority_or_signing_secret (test_authorization.AuthorizationTests.test_no_default_authority_or_signing_secret) ... ok\ntest_nonfinite_bool_and_excessive_issue_lifetimes_refused (test_authorization.AuthorizationTests.test_nonfinite_bool_and_excessive_issue_lifetimes_refused) ... ok\ntest_persisted_clock_rollback_refused (test_authorization.AuthorizationTests.test_persisted_clock_rollback_refused) ... ok\ntest_protocol_mutation_and_cross_candidate_token_refused (test_authorization.AuthorizationTests.test_protocol_mutation_and_cross_candidate_token_refused) ... ok\ntest_public_key_cannot_issue (test_authorization.AuthorizationTests.test_public_key_cannot_issue) ... ok\ntest_same_token_refused_across_verifier_restarts (test_authorization.AuthorizationTests.test_same_token_refused_across_verifier_restarts) ... ok\ntest_self_signed_unknown_issuer_or_officer_refused (test_authorization.AuthorizationTests.test_self_signed_unknown_issuer_or_officer_refused) ... ok\ntest_service_consumes_authorization_even_when_simulation_refused (test_authorization.AuthorizationTests.test_service_consumes_authorization_even_when_simulation_refused) ... ok\ntest_signed_time_and_operation_constraints_are_enforced (test_authorization.AuthorizationTests.test_signed_time_and_operation_constraints_are_enforced) ... ok\ntest_unavailable_replay_ledger_refuses (test_authorization.AuthorizationTests.test_unavailable_replay_ledger_refuses) ... ok\ntest_valid_authorization_does_not_qualify (test_authorization.AuthorizationTests.test_valid_authorization_does_not_qualify) ... ok\ntest_wrong_key_and_tampered_signature_refused (test_authorization.AuthorizationTests.test_wrong_key_and_tampered_signature_refused) ... ok\n\n----------------------------------------------------------------------\nRan 19 tests in 0.095s\n\nOK\n"
+          },
+          {
+            "name": "emergence_authorization_O",
+            "command": [
+              "/usr/local/bin/python",
+              "-O",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "/data/intelligence_readiness/remote_verified/tests/emergence_authorization",
+              "-v"
+            ],
+            "cwd": "outside-source validation workspace",
+            "exit_code": 0,
+            "log_sha256": "12244ad35d43779fae203eaacaf747955c3f96e1d14c4b6f3220b199dd52a3c8",
+            "output": "test_all_security_fields_are_signed (test_authorization.AuthorizationTests.test_all_security_fields_are_signed) ... ok\ntest_concurrent_verifiers_admit_exactly_once (test_authorization.AuthorizationTests.test_concurrent_verifiers_admit_exactly_once) ... ok\ntest_expired_token_refused (test_authorization.AuthorizationTests.test_expired_token_refused) ... ok\ntest_full_ledger_refuses_without_evicting_live_authorization (test_authorization.AuthorizationTests.test_full_ledger_refuses_without_evicting_live_authorization) ... ok\ntest_host_key_mapping_is_detached_and_revocation_refuses (test_authorization.AuthorizationTests.test_host_key_mapping_is_detached_and_revocation_refuses) ... ok\ntest_invalid_margin_and_configuration_fail_closed (test_authorization.AuthorizationTests.test_invalid_margin_and_configuration_fail_closed) ... ok\ntest_ledger_cannot_be_rebound_to_other_audience (test_authorization.AuthorizationTests.test_ledger_cannot_be_rebound_to_other_audience) ... ok\ntest_no_default_authority_or_signing_secret (test_authorization.AuthorizationTests.test_no_default_authority_or_signing_secret) ... ok\ntest_nonfinite_bool_and_excessive_issue_lifetimes_refused (test_authorization.AuthorizationTests.test_nonfinite_bool_and_excessive_issue_lifetimes_refused) ... ok\ntest_persisted_clock_rollback_refused (test_authorization.AuthorizationTests.test_persisted_clock_rollback_refused) ... ok\ntest_protocol_mutation_and_cross_candidate_token_refused (test_authorization.AuthorizationTests.test_protocol_mutation_and_cross_candidate_token_refused) ... ok\ntest_public_key_cannot_issue (test_authorization.AuthorizationTests.test_public_key_cannot_issue) ... ok\ntest_same_token_refused_across_verifier_restarts (test_authorization.AuthorizationTests.test_same_token_refused_across_verifier_restarts) ... ok\ntest_self_signed_unknown_issuer_or_officer_refused (test_authorization.AuthorizationTests.test_self_signed_unknown_issuer_or_officer_refused) ... ok\ntest_service_consumes_authorization_even_when_simulation_refused (test_authorization.AuthorizationTests.test_service_consumes_authorization_even_when_simulation_refused) ... ok\ntest_signed_time_and_operation_constraints_are_enforced (test_authorization.AuthorizationTests.test_signed_time_and_operation_constraints_are_enforced) ... ok\ntest_unavailable_replay_ledger_refuses (test_authorization.AuthorizationTests.test_unavailable_replay_ledger_refuses) ... ok\ntest_valid_authorization_does_not_qualify (test_authorization.AuthorizationTests.test_valid_authorization_does_not_qualify) ... ok\ntest_wrong_key_and_tampered_signature_refused (test_authorization.AuthorizationTests.test_wrong_key_and_tampered_signature_refused) ... ok\n\n----------------------------------------------------------------------\nRan 19 tests in 0.091s\n\nOK\n"
+          },
+          {
+            "name": "emergence_custody",
+            "command": [
+              "/usr/local/bin/python",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "/data/intelligence_readiness/remote_verified/tests/emergence_custody",
+              "-v"
+            ],
+            "cwd": "outside-source validation workspace",
+            "exit_code": 0,
+            "log_sha256": "a3540870751175041a0b02d0419f112a532091888a3562a5e2a532bde45e6d16",
+            "output": "test_actual_service_refuses_builtin_simulations (test_candidate_custody.ServiceRefusalTests.test_actual_service_refuses_builtin_simulations) ... ok\ntest_builtin_reproduction_marked_simulated (test_candidate_custody.ServiceRefusalTests.test_builtin_reproduction_marked_simulated) ... ok\ntest_claimed_measurement_cannot_bypass_simulated_stress (test_candidate_custody.ServiceRefusalTests.test_claimed_measurement_cannot_bypass_simulated_stress) ... ok\ntest_executor_protocol_mutation_refused_before_second_executor (test_candidate_custody.ServiceRefusalTests.test_executor_protocol_mutation_refused_before_second_executor) ... ok\ntest_gate_two_mutation_rejected (test_candidate_custody.ServiceRefusalTests.test_gate_two_mutation_rejected) ... ok\ntest_missing_authority_refused_before_execution (test_candidate_custody.ServiceRefusalTests.test_missing_authority_refused_before_execution) ... ok\ntest_missing_gate_three_window_is_not_pass (test_candidate_custody.ServiceRefusalTests.test_missing_gate_three_window_is_not_pass) ... ok\ntest_refusal_preserves_local_snapshot_custody (test_candidate_custody.ServiceRefusalTests.test_refusal_preserves_local_snapshot_custody) ... ok\ntest_source_mutation_refused_before_second_executor (test_candidate_custody.ServiceRefusalTests.test_source_mutation_refused_before_second_executor) ... ok\ntest_stress_explicitly_does_not_invoke_executor (test_candidate_custody.ServiceRefusalTests.test_stress_explicitly_does_not_invoke_executor) ... ok\ntest_baseline_metrics_bound (test_candidate_custody.SnapshotTests.test_baseline_metrics_bound) ... ok\ntest_envelope_bounds_bound (test_candidate_custody.SnapshotTests.test_envelope_bounds_bound) ... ok\ntest_metadata_bound (test_candidate_custody.SnapshotTests.test_metadata_bound) ... ok\ntest_nan_rejected (test_candidate_custody.SnapshotTests.test_nan_rejected) ... ok\ntest_nested_protocol_arguments_bound (test_candidate_custody.SnapshotTests.test_nested_protocol_arguments_bound) ... ok\ntest_non_json_rejected (test_candidate_custody.SnapshotTests.test_non_json_rejected) ... ok\ntest_observable_order_bound (test_candidate_custody.SnapshotTests.test_observable_order_bound) ... ok\ntest_protocol_steps_bound (test_candidate_custody.SnapshotTests.test_protocol_steps_bound) ... ok\ntest_snapshot_fields_frozen (test_candidate_custody.SnapshotTests.test_snapshot_fields_frozen) ... ok\ntest_snapshot_roundtrip (test_candidate_custody.SnapshotTests.test_snapshot_roundtrip) ... ok\ntest_source_none_empty_and_root_distinct (test_candidate_custody.SnapshotTests.test_source_none_empty_and_root_distinct) ... ok\ntest_to_dict_detached_steps (test_candidate_custody.SnapshotTests.test_to_dict_detached_steps) ... ok\ntest_views_do_not_share_nested_state (test_candidate_custody.SnapshotTests.test_views_do_not_share_nested_state) ... ok\n\n----------------------------------------------------------------------\nRan 23 tests in 0.076s\n\nOK\n"
+          },
+          {
+            "name": "emergence_custody_O",
+            "command": [
+              "/usr/local/bin/python",
+              "-O",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "/data/intelligence_readiness/remote_verified/tests/emergence_custody",
+              "-v"
+            ],
+            "cwd": "outside-source validation workspace",
+            "exit_code": 0,
+            "log_sha256": "31d159cc8d4fbedb1289257cbd98823e6e3d6649504a58d567bf0d4e7daec940",
+            "output": "test_actual_service_refuses_builtin_simulations (test_candidate_custody.ServiceRefusalTests.test_actual_service_refuses_builtin_simulations) ... ok\ntest_builtin_reproduction_marked_simulated (test_candidate_custody.ServiceRefusalTests.test_builtin_reproduction_marked_simulated) ... ok\ntest_claimed_measurement_cannot_bypass_simulated_stress (test_candidate_custody.ServiceRefusalTests.test_claimed_measurement_cannot_bypass_simulated_stress) ... ok\ntest_executor_protocol_mutation_refused_before_second_executor (test_candidate_custody.ServiceRefusalTests.test_executor_protocol_mutation_refused_before_second_executor) ... ok\ntest_gate_two_mutation_rejected (test_candidate_custody.ServiceRefusalTests.test_gate_two_mutation_rejected) ... ok\ntest_missing_authority_refused_before_execution (test_candidate_custody.ServiceRefusalTests.test_missing_authority_refused_before_execution) ... ok\ntest_missing_gate_three_window_is_not_pass (test_candidate_custody.ServiceRefusalTests.test_missing_gate_three_window_is_not_pass) ... ok\ntest_refusal_preserves_local_snapshot_custody (test_candidate_custody.ServiceRefusalTests.test_refusal_preserves_local_snapshot_custody) ... ok\ntest_source_mutation_refused_before_second_executor (test_candidate_custody.ServiceRefusalTests.test_source_mutation_refused_before_second_executor) ... ok\ntest_stress_explicitly_does_not_invoke_executor (test_candidate_custody.ServiceRefusalTests.test_stress_explicitly_does_not_invoke_executor) ... ok\ntest_baseline_metrics_bound (test_candidate_custody.SnapshotTests.test_baseline_metrics_bound) ... ok\ntest_envelope_bounds_bound (test_candidate_custody.SnapshotTests.test_envelope_bounds_bound) ... ok\ntest_metadata_bound (test_candidate_custody.SnapshotTests.test_metadata_bound) ... ok\ntest_nan_rejected (test_candidate_custody.SnapshotTests.test_nan_rejected) ... ok\ntest_nested_protocol_arguments_bound (test_candidate_custody.SnapshotTests.test_nested_protocol_arguments_bound) ... ok\ntest_non_json_rejected (test_candidate_custody.SnapshotTests.test_non_json_rejected) ... ok\ntest_observable_order_bound (test_candidate_custody.SnapshotTests.test_observable_order_bound) ... ok\ntest_protocol_steps_bound (test_candidate_custody.SnapshotTests.test_protocol_steps_bound) ... ok\ntest_snapshot_fields_frozen (test_candidate_custody.SnapshotTests.test_snapshot_fields_frozen) ... ok\ntest_snapshot_roundtrip (test_candidate_custody.SnapshotTests.test_snapshot_roundtrip) ... ok\ntest_source_none_empty_and_root_distinct (test_candidate_custody.SnapshotTests.test_source_none_empty_and_root_distinct) ... ok\ntest_to_dict_detached_steps (test_candidate_custody.SnapshotTests.test_to_dict_detached_steps) ... ok\ntest_views_do_not_share_nested_state (test_candidate_custody.SnapshotTests.test_views_do_not_share_nested_state) ... ok\n\n----------------------------------------------------------------------\nRan 23 tests in 0.119s\n\nOK\n"
+          },
+          {
+            "name": "emergence_runtime",
+            "command": [
+              "/usr/local/bin/python",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "/data/intelligence_readiness/remote_verified/tests/emergence_runtime",
+              "-v"
+            ],
+            "cwd": "outside-source validation workspace",
+            "exit_code": 0,
+            "log_sha256": "c36921042b17ae35e81dd7cf4802bfb6785ab8b83714f75b70a702bbc96dbc2c",
+            "output": "test_admission_audit_failure_prevents_authorization_consumption (test_canonical_philos.CanonicalPhilosTests.test_admission_audit_failure_prevents_authorization_consumption) ... ok\ntest_binding_does_not_grant_dispatch_or_signing_authority (test_canonical_philos.CanonicalPhilosTests.test_binding_does_not_grant_dispatch_or_signing_authority) ... ok\ntest_case_snapshot_detaches_original_and_host_mapping (test_canonical_philos.CanonicalPhilosTests.test_case_snapshot_detaches_original_and_host_mapping) ... ok\ntest_client_cannot_choose_executor_or_unapproved_case (test_canonical_philos.CanonicalPhilosTests.test_client_cannot_choose_executor_or_unapproved_case) ... ok\ntest_invalid_signature_and_replay_cannot_qualify (test_canonical_philos.CanonicalPhilosTests.test_invalid_signature_and_replay_cannot_qualify) ... ok\ntest_missing_guardian_blocks_before_token_consumption (test_canonical_philos.CanonicalPhilosTests.test_missing_guardian_blocks_before_token_consumption) ... ok\ntest_new_binding_does_not_install_creator_dispatch_rights (test_canonical_philos.CanonicalPhilosTests.test_new_binding_does_not_install_creator_dispatch_rights) ... ok\ntest_one_use_token_is_consumed_on_simulation_refusal (test_canonical_philos.CanonicalPhilosTests.test_one_use_token_is_consumed_on_simulation_refusal) ... ok\ntest_real_entry_point_invokes_native_service_and_refuses_simulation (test_canonical_philos.CanonicalPhilosTests.test_real_entry_point_invokes_native_service_and_refuses_simulation) ... ok\ntest_revoked_creator_rights_block_before_token_consumption (test_canonical_philos.CanonicalPhilosTests.test_revoked_creator_rights_block_before_token_consumption) ... ok\ntest_unapproved_case_is_refused (test_canonical_philos.CanonicalPhilosTests.test_unapproved_case_is_refused) ... ok\n\n----------------------------------------------------------------------\nRan 11 tests in 0.166s\n\nOK\n"
+          },
+          {
+            "name": "emergence_runtime_O",
+            "command": [
+              "/usr/local/bin/python",
+              "-O",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "/data/intelligence_readiness/remote_verified/tests/emergence_runtime",
+              "-v"
+            ],
+            "cwd": "outside-source validation workspace",
+            "exit_code": 0,
+            "log_sha256": "cb0bf710a632735d75064fdc93585e925632c28ff29b787b0d6e2081cfbb3d34",
+            "output": "test_admission_audit_failure_prevents_authorization_consumption (test_canonical_philos.CanonicalPhilosTests.test_admission_audit_failure_prevents_authorization_consumption) ... ok\ntest_binding_does_not_grant_dispatch_or_signing_authority (test_canonical_philos.CanonicalPhilosTests.test_binding_does_not_grant_dispatch_or_signing_authority) ... ok\ntest_case_snapshot_detaches_original_and_host_mapping (test_canonical_philos.CanonicalPhilosTests.test_case_snapshot_detaches_original_and_host_mapping) ... ok\ntest_client_cannot_choose_executor_or_unapproved_case (test_canonical_philos.CanonicalPhilosTests.test_client_cannot_choose_executor_or_unapproved_case) ... ok\ntest_invalid_signature_and_replay_cannot_qualify (test_canonical_philos.CanonicalPhilosTests.test_invalid_signature_and_replay_cannot_qualify) ... ok\ntest_missing_guardian_blocks_before_token_consumption (test_canonical_philos.CanonicalPhilosTests.test_missing_guardian_blocks_before_token_consumption) ... ok\ntest_new_binding_does_not_install_creator_dispatch_rights (test_canonical_philos.CanonicalPhilosTests.test_new_binding_does_not_install_creator_dispatch_rights) ... ok\ntest_one_use_token_is_consumed_on_simulation_refusal (test_canonical_philos.CanonicalPhilosTests.test_one_use_token_is_consumed_on_simulation_refusal) ... ok\ntest_real_entry_point_invokes_native_service_and_refuses_simulation (test_canonical_philos.CanonicalPhilosTests.test_real_entry_point_invokes_native_service_and_refuses_simulation) ... ok\ntest_revoked_creator_rights_block_before_token_consumption (test_canonical_philos.CanonicalPhilosTests.test_revoked_creator_rights_block_before_token_consumption) ... ok\ntest_unapproved_case_is_refused (test_canonical_philos.CanonicalPhilosTests.test_unapproved_case_is_refused) ... ok\n\n----------------------------------------------------------------------\nRan 11 tests in 0.162s\n\nOK\n"
+          },
+          {
+            "name": "operator_development",
+            "command": [
+              "/usr/local/bin/python",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "/data/intelligence_readiness/remote_verified/tests/operator_development",
+              "-v"
+            ],
+            "cwd": "outside-source validation workspace",
+            "exit_code": 0,
+            "log_sha256": "c7b2cec71d333cf565499186a93c99b8cd905bc82122b7aac1c02f3c7e3caf71",
+            "output": "test_actual_frontier_loop_uses_ports_and_observes_file (test_operator_development.OperatorDevelopmentTests.test_actual_frontier_loop_uses_ports_and_observes_file) ... ok\ntest_admission_audit_failure_prevents_execution (test_operator_development.OperatorDevelopmentTests.test_admission_audit_failure_prevents_execution) ... ok\ntest_canonical_frontier_budget_exhaustion_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_budget_exhaustion_has_no_file_effect) ... ok\ntest_canonical_frontier_deadline_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_deadline_has_no_file_effect) ... ok\ntest_canonical_frontier_kill_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_kill_has_no_file_effect) ... ok\ntest_canonical_frontier_stop_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_stop_has_no_file_effect) ... ok\ntest_canonical_frontier_wait_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_wait_has_no_file_effect) ... ok\ntest_expired_and_missing_budget_no_effect (test_operator_development.OperatorDevelopmentTests.test_expired_and_missing_budget_no_effect) ... ok\ntest_false_success_and_over_budget_receipts_refused (test_operator_development.OperatorDevelopmentTests.test_false_success_and_over_budget_receipts_refused) ... ok\ntest_late_return_is_failure_not_rollback_claim (test_operator_development.OperatorDevelopmentTests.test_late_return_is_failure_not_rollback_claim) ... ok\ntest_no_implicit_production_or_unnamed_delegation (test_operator_development.OperatorDevelopmentTests.test_no_implicit_production_or_unnamed_delegation) ... ok\ntest_real_execution_and_recovery_ports (test_operator_development.OperatorDevelopmentTests.test_real_execution_and_recovery_ports) ... ok\ntest_revocation_blocks_new_work_but_allows_recovery (test_operator_development.OperatorDevelopmentTests.test_revocation_blocks_new_work_but_allows_recovery) ... ok\ntest_wrong_scope_and_unapproved_adapter_no_effect (test_operator_development.OperatorDevelopmentTests.test_wrong_scope_and_unapproved_adapter_no_effect) ... ok\n\n----------------------------------------------------------------------\nRan 14 tests in 0.206s\n\nOK\n"
+          },
+          {
+            "name": "operator_development_O",
+            "command": [
+              "/usr/local/bin/python",
+              "-O",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "/data/intelligence_readiness/remote_verified/tests/operator_development",
+              "-v"
+            ],
+            "cwd": "outside-source validation workspace",
+            "exit_code": 0,
+            "log_sha256": "08bd51bac56232e243e8e72e0ffe5b058f708f7ebd2752f4906e122415c92898",
+            "output": "test_actual_frontier_loop_uses_ports_and_observes_file (test_operator_development.OperatorDevelopmentTests.test_actual_frontier_loop_uses_ports_and_observes_file) ... ok\ntest_admission_audit_failure_prevents_execution (test_operator_development.OperatorDevelopmentTests.test_admission_audit_failure_prevents_execution) ... ok\ntest_canonical_frontier_budget_exhaustion_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_budget_exhaustion_has_no_file_effect) ... ok\ntest_canonical_frontier_deadline_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_deadline_has_no_file_effect) ... ok\ntest_canonical_frontier_kill_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_kill_has_no_file_effect) ... ok\ntest_canonical_frontier_stop_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_stop_has_no_file_effect) ... ok\ntest_canonical_frontier_wait_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_wait_has_no_file_effect) ... ok\ntest_expired_and_missing_budget_no_effect (test_operator_development.OperatorDevelopmentTests.test_expired_and_missing_budget_no_effect) ... ok\ntest_false_success_and_over_budget_receipts_refused (test_operator_development.OperatorDevelopmentTests.test_false_success_and_over_budget_receipts_refused) ... ok\ntest_late_return_is_failure_not_rollback_claim (test_operator_development.OperatorDevelopmentTests.test_late_return_is_failure_not_rollback_claim) ... ok\ntest_no_implicit_production_or_unnamed_delegation (test_operator_development.OperatorDevelopmentTests.test_no_implicit_production_or_unnamed_delegation) ... ok\ntest_real_execution_and_recovery_ports (test_operator_development.OperatorDevelopmentTests.test_real_execution_and_recovery_ports) ... ok\ntest_revocation_blocks_new_work_but_allows_recovery (test_operator_development.OperatorDevelopmentTests.test_revocation_blocks_new_work_but_allows_recovery) ... ok\ntest_wrong_scope_and_unapproved_adapter_no_effect (test_operator_development.OperatorDevelopmentTests.test_wrong_scope_and_unapproved_adapter_no_effect) ... ok\n\n----------------------------------------------------------------------\nRan 14 tests in 0.186s\n\nOK\n"
+          },
+          {
+            "name": "archive",
+            "command": [
+              "/usr/local/bin/python",
+              "/data/intelligence_readiness/remote_verified/scripts/verify_euclid_research_archive.py"
+            ],
+            "cwd": "outside-source validation workspace",
+            "exit_code": 0,
+            "log_sha256": "84a26582ebeb1a9fbb983a0dcce54c6f09a4aed91c664be892b9babe0c523ba2",
+            "output": "{\n  \"scope\": \"LOCAL_ARCHIVAL_INTEGRITY_NOT_RUNTIME_OR_INDEPENDENT_QUALIFICATION\",\n  \"page_count\": 100,\n  \"unresolved_child_pages\": 0,\n  \"attachment_references\": 91,\n  \"manifest_entries_verified\": 34,\n  \"archive_sha256\": \"b2e31ad8af27f81d30a1371b1010ee8bb25e0df99199bd5f4eb27d0ddfb0ce5e\",\n  \"all_workspace_sources_reconciled\": false,\n  \"all_attachments_recovered\": false,\n  \"historical_memory_loaded\": false\n}\n"
+          },
+          {
+            "name": "archive_O",
+            "command": [
+              "/usr/local/bin/python",
+              "-O",
+              "/data/intelligence_readiness/remote_verified/scripts/verify_euclid_research_archive.py"
+            ],
+            "cwd": "outside-source validation workspace",
+            "exit_code": 0,
+            "log_sha256": "84a26582ebeb1a9fbb983a0dcce54c6f09a4aed91c664be892b9babe0c523ba2",
+            "output": "{\n  \"scope\": \"LOCAL_ARCHIVAL_INTEGRITY_NOT_RUNTIME_OR_INDEPENDENT_QUALIFICATION\",\n  \"page_count\": 100,\n  \"unresolved_child_pages\": 0,\n  \"attachment_references\": 91,\n  \"manifest_entries_verified\": 34,\n  \"archive_sha256\": \"b2e31ad8af27f81d30a1371b1010ee8bb25e0df99199bd5f4eb27d0ddfb0ce5e\",\n  \"all_workspace_sources_reconciled\": false,\n  \"all_attachments_recovered\": false,\n  \"historical_memory_loaded\": false\n}\n"
+          },
+          {
+            "name": "compile",
+            "command": [
+              "/usr/local/bin/python",
+              "-m",
+              "py_compile",
+              "/data/intelligence_readiness/remote_verified/Intelligence/isolated_repair.py",
+              "/data/intelligence_readiness/remote_verified/Intelligence/repair_learning_capability.py",
+              "/data/intelligence_readiness/remote_verified/Intelligence/salamander.py",
+              "/data/intelligence_readiness/remote_verified/Intelligence/capability_fabric.py",
+              "/data/intelligence_readiness/remote_verified/tests/intelligence_consolidation/test_repair_outcome_integration.py",
+              "/data/intelligence_readiness/remote_verified/scripts/verify_euclid_research_archive.py",
+              "/data/intelligence_readiness/remote_verified/scripts/reproduce_repair_outcome_invariants.py"
+            ],
+            "cwd": "outside-source validation workspace",
+            "exit_code": 0,
+            "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "output": ""
+          },
+          {
+            "name": "tabnanny",
+            "command": [
+              "/usr/local/bin/python",
+              "-m",
+              "tabnanny",
+              "/data/intelligence_readiness/remote_verified/Intelligence"
+            ],
+            "cwd": "outside-source validation workspace",
+            "exit_code": 0,
+            "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "output": ""
+          }
+        ]
+      },
+      "prepush_review": {
+        "secret_pattern_hits": [],
+        "python_trailing_whitespace": [],
+        "diff_checks": [
+          {
+            "path": "Intelligence/isolated_repair.py",
+            "exit_code": 1,
+            "output": ""
+          },
+          {
+            "path": "Intelligence/salamander.py",
+            "exit_code": 1,
+            "output": ""
+          },
+          {
+            "path": "Intelligence/capability_fabric.py",
+            "exit_code": 1,
+            "output": ""
+          }
+        ],
+        "scope": "Narrow pattern scan, not Gitleaks or independent security review"
+      },
+      "combined_status_at_tested_head": {
+        "sha": "f3b2d15dc65ab3aab9324e55ccc0a506d94cb3c4",
+        "state": "pending",
+        "total_count": 0,
+        "statuses": []
+      },
+      "reviews_at_tested_head": [],
+      "check_run_access": "Previously restricted; not asserted to pass from absent details",
+      "readiness": "TECHNICAL_REVIEW_ONLY_NOT_MERGE_RELEASE_OR_PRODUCTION_QUALIFIED",
+      "outstanding": [
+        "Five native capabilities not verified through canonical bridge",
+        "Full Salamander/skills/creative/Kairos/learning/custody composition and all supported consumers",
+        "Reconcile separate PR77 actual learning changes and evaluate prior archived organs without activating old identity",
+        "Official artifact dependency closure omits Intelligence; build toolchain/full checkout/clean installed artifact unavailable",
+        "Windows filesystem and production repair/process/cancellation/rollback assurance",
+        "Measured PHILOS reproduction/stress and independent T5 assurance, Lucas/drift enforcement",
+        "Mandatory CI/security checks and closed-core IP/license review",
+        "Not all recovered binary attachments mirrored into Git; cross-linked Notion pages outside root child closure not exhaustively reconciled",
+        "Matched prior-generation/held-out external benchmarks before claiming superiority"
+      ],
+      "prohibited_actions_performed": false
+    }
   }
 }
