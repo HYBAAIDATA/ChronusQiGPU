@@ -1,0 +1,22 @@
+{
+  "schema": "euclid.native-capability/1",
+  "id": "bsd-exploration",
+  "adapter": "integrations.solvers.bsd_solver.BSDSolverTeam.solve",
+  "dispatcher": "Intelligence.salamander.SalamanderEngine.execute_capability",
+  "profile": "HOST_APPROVED_READ_ONLY",
+  "evidence": "tests/test_bsd_solver.py",
+  "scope": "Birch and Swinnerton-Dyer multi-agent collaborative pipeline: Weierstrass invariants, Frobenius point counting, Hasse bounds, Mazur bounds, Zeckendorf certificates, Poincaré disk embeddings, and Clay Mathematics Institute claim honesty boundaries (proof_claim == False)",
+  "state": "SCOPED_LOCAL_DISPATCH_TESTED_NOT_FULL_ENGINE_QUALIFIED",
+  "external_provider_calls": false,
+  "schedules_enabled": false,
+  "writes_enabled": false,
+  "repair_or_release_authority": false,
+  "model_superiority": null,
+  "agi_asi_certification": null,
+  "source_hashes": {
+    "Intelligence/salamander.py": "a08b136b1178cb0770aaa4ed28fb796d8c35dc7276e9f7c2453d707bb5f8d30a",
+    "integrations/solvers/bsd_solver.py": "04abfb1c9739fc7a11abf1bbc30bb0c6d8c519b383b5935d758e1f73463b30a2",
+    "Intelligence/skills/bsd-exploration/SKILL.md": "27305325408cccf8107e4258abd2185b16a963506ed475e62f259868266aa48e",
+    "tests/test_bsd_solver.py": "228cb619275be721473268579fc9da722c0b4ec74a9db99cf28dbbe3a846c483"
+  }
+}

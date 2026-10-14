@@ -1213,6 +1213,58 @@ class SalamanderEngine:
                 adapter_fn=_learning_query_adapter,
             )
 
+        # 7. bsd-exploration (Birch & Swinnerton-Dyer collaborative multi-agent swarm)
+        if not self.capability_registry.get_manifest("bsd-exploration"):
+            def _bsd_exploration_adapter(**kwargs: Any) -> Any:
+                from integrations.solvers.bsd_solver import BSDSolverTeam
+                a = int(kwargs["a"])
+                b = int(kwargs["b"])
+                max_prime = int(kwargs.get("max_prime", 100))
+                team = BSDSolverTeam()
+                report = team.solve(a, b, max_prime=max_prime)
+                return {
+                    "curve": report.curve,
+                    "a": report.a,
+                    "b": report.b,
+                    "discriminant": report.euclid.discriminant,
+                    "conjectural_rank": report.euclid.conjectural_rank,
+                    "empirical_rank_slope": report.euclid.empirical_rank_slope,
+                    "hasse_all_satisfied": report.salamander.hasse_all_satisfied,
+                    "mazur_bound_satisfied": report.salamander.mazur_bound_satisfied,
+                    "torsion_points_found": report.salamander.torsion_points_found,
+                    "cassini_invariants_valid": report.pythia.cassini_invariants_valid,
+                    "cmi_protocol_compliant": report.al_haras.cmi_protocol_compliant,
+                    "proof_claim": report.al_haras.proof_claim,  # ALWAYS False
+                    "integrated_phi": report.integrated_phi,
+                    "overall_status": report.overall_status,
+                }
+
+            self.capability_registry.register(
+                CapabilityManifest(
+                    capability_id="bsd-exploration",
+                    version="1.0.0",
+                    source_provenance="integrations/solvers/bsd_solver.py",
+                    description="Birch and Swinnerton-Dyer multi-agent collaborative solver (Euclid, Salamander, Pythia, Al Haras)",
+                    permissions=CapabilityPermissions(
+                        can_read_repository=True,
+                        can_write_repository=False,
+                        allowed_profiles=(
+                            ExecutionProfile.INTERNAL_RESEARCH,
+                            ExecutionProfile.SHARED_RESTRICTED,
+                        ),
+                    ),
+                    resource_budget=ResourceBudget(
+                        max_runtime_seconds=60.0,
+                    ),
+                    supported_operations=("solve",),
+                    determinism=DeterminismClass.DETERMINISTIC,
+                    side_effects=SideEffectClass.READ_ONLY,
+                    verification_strategy="cmi_claim_honesty_boundary",
+                    input_schema={"required": ["a", "b"]},
+                ),
+                adapter_fn=_bsd_exploration_adapter,
+            )
+
     def load_skills(self) -> Dict[str, Any]:
         """Reload available skills into Salamander's semantic runtime."""
         from .skill_loader import load_skills

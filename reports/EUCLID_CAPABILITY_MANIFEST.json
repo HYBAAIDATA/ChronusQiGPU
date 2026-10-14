@@ -14,14 +14,15 @@
   "evidence_states": {
     "repair_and_recovery": "69_SCOPED_LOCAL_CASES_NOT_WHOLE_SYSTEM",
     "skill_manifest_anchor": "20_LOCAL_CASES_4_EXPLICIT_EXCLUSIONS",
-    "capability_fabric": "7_LOCAL_CASES_PASSING",
+    "capability_fabric": "8_LOCAL_CASES_PASSING",
     "isolated_repair": "7_LOCAL_CASES_PASSING",
     "mathematical_research": "5_LOCAL_CASES_PASSING",
-    "skills_execution": "FIVE_FIXED_NATIVE_ADAPTERS_WITH_CRYPTOGRAPHIC_RECEIPTS",
+    "bsd_exploration": "20_SOLVER_CASES_1_FABRIC_CASE_PASSING",
+    "skills_execution": "SIX_FIXED_NATIVE_ADAPTERS_WITH_CRYPTOGRAPHIC_RECEIPTS",
     "model_comparison": "NOT_RUN",
     "millennium_proof": "FORMAL_CONJECTURE_AND_LEMMA_DAG_TRACKER_OPERATIONAL_NOT_CLAIMED_SOLVED",
     "production": "NOT_QUALIFIED",
-    "combined_runtime": "156_SCOPED_LOCAL_CASES_5_PLATFORM_SKIPPED_0_FAILED",
+    "combined_runtime": "157_SCOPED_LOCAL_CASES_5_PLATFORM_SKIPPED_0_FAILED",
     "source_repair": "ISOLATED_12_STAGE_CLOSED_LOOP_HEALING_WITH_OUTCOME_LEARNING_LEDGER"
   },
   "registered_native_capabilities": [
@@ -29,7 +30,8 @@
     "source-repair",
     "isolated-repair",
     "proof-conjecture",
-    "repair-learning-query"
+    "repair-learning-query",
+    "bsd-exploration"
   ],
   "comparison": {
     "protocol": "docs/EUCLID_CAPABILITY_EVALUATION_PROTOCOL.md",

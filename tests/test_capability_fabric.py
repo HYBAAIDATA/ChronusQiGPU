@@ -294,3 +294,47 @@ def test_salamander_engine_capability_fabric_integration() -> None:
             validator_fn=lambda b, c, p: True,
             authorization_token="INTERNAL_RESEARCH_AUTONOMOUS_OPERATOR",
         )
+
+
+def test_salamander_bsd_exploration_capability() -> None:
+    """bsd-exploration capability executes via fabric and enforces CMI honesty bounds."""
+    engine = SalamanderEngine()
+    assert "bsd-exploration" in {m.capability_id for m in engine.capability_registry.list_capabilities()}
+
+    # Execute under INTERNAL_RESEARCH
+    report, receipt = engine.execute_capability(
+        "bsd-exploration",
+        a=0,
+        b=-1,
+        max_prime=30,
+    )
+
+    assert report["curve"] == "y^2 = x^3 + (0)x + (-1)"
+    assert report["proof_claim"] is False  # Strict Section 12 CMI boundary invariant
+    assert report["cmi_protocol_compliant"] is True
+    assert report["hasse_all_satisfied"] is True
+    assert receipt.status == "SUCCESS"
+    assert receipt.capability_id == "bsd-exploration"
+    assert len(receipt.receipt_sha256) == 64
+
+    # Execute under SHARED_RESTRICTED (permitted since bsd-exploration is read-only)
+    engine.profile = ExecutionProfile.SHARED_RESTRICTED
+    shared_caps = {
+        m.capability_id
+        for m in engine.capability_registry.list_capabilities(profile=engine.profile)
+    }
+    assert "bsd-exploration" in shared_caps
+
+    report_shared, receipt_shared = engine.execute_capability(
+        "bsd-exploration",
+        a=0,
+        b=-1,
+        max_prime=20,
+    )
+    assert report_shared["proof_claim"] is False
+    assert receipt_shared.status == "SUCCESS"
+    assert receipt_shared.profile == "shared"
+
+    # Schema enforcement: missing 'b' raises TypeError
+    with pytest.raises(TypeError, match="missing required argument: 'b'"):
+        engine.execute_capability("bsd-exploration", a=0)
