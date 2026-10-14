@@ -1,0 +1,64 @@
+{
+  "trace": [
+    {
+      "items": 500,
+      "devices": 8,
+      "golden_cv": 0.6610052949863564,
+      "weighted_cv": 0.2
+    },
+    {
+      "items": 1000,
+      "devices": 16,
+      "golden_cv": 0.925686772077899,
+      "weighted_cv": 0.6
+    },
+    {
+      "items": 1500,
+      "devices": 16,
+      "golden_cv": 0.6181434569202632,
+      "weighted_cv": 0.06677324813626088
+    },
+    {
+      "items": 2000,
+      "devices": 16,
+      "golden_cv": 0.46328393021990305,
+      "weighted_cv": 0.0
+    },
+    {
+      "items": 2500,
+      "devices": 32,
+      "golden_cv": 0.9569217313866375,
+      "weighted_cv": 0.6000127998634696
+    },
+    {
+      "items": 3000,
+      "devices": 32,
+      "golden_cv": 0.7971460203612496,
+      "weighted_cv": 0.3333546659840437
+    },
+    {
+      "items": 3500,
+      "devices": 32,
+      "golden_cv": 0.6833244067776002,
+      "weighted_cv": 0.14288456879593403
+    },
+    {
+      "items": 4000,
+      "devices": 32,
+      "golden_cv": 0.5979598648738894,
+      "weighted_cv": 0.0
+    },
+    {
+      "items": 4500,
+      "devices": 64,
+      "golden_cv": 1.164266313771345,
+      "weighted_cv": 0.7777930157237477
+    },
+    {
+      "items": 5000,
+      "devices": 64,
+      "golden_cv": 1.0476310801040603,
+      "weighted_cv": 0.6000127998634696
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "schema": "euclid.salamander-consolidation/1",
+  "base_commit": "d4bed8f28bd5b139d2e82e72ca6284f403d8dc68",
+  "prior_wiring_head": "eed2f497cac2340dd702baa62b26cc2797767508",
+  "incorporated_pr67_head": "714eb3b192fb0d83131fc369f1d21763922fe09d",
+  "consolidation": "PR67 importer guards, tests, catalogues and manifests copied byte-for-byte except capability-manifest update; PR66 ancestor retained; PR68 native read/write dispatch and host composition",
+  "source_hashes": {
+    "Intelligence/salamander.py": "b4bafd522003acc0a46471b32d0c9c291c27ec3f0a7506e2a93f576c2f311db9",
+    "Intelligence/autonomous_capabilities.py": "3b1d2c57d2bef45562816e645ad72b72b380975d81b72d17589f872765c2c7c4",
+    "Intelligence/skills/source-repair/SKILL.md": "d9251afa4dc4824777f7bab31b6e09be83ad6d9b29e94287c3e46bc83bc0441a",
+    "tests/test_salamander_host_composition.py": "7e305829e03b6391005391a1818d78841b9d862a1dadcd3c456b5d38751b411a",
+    "Intelligence/skill_graft.py": "422a34c3a515fa7b449440f921bc5a2ec2a72352f0b05f14d4204de378f0a08d",
+    "tests/test_skill_graft.py": "86d26a49dd4a93c6653370e3e6b28f5b30368dfc1717a3a1f2818e64dbd5f80d",
+    "tests/test_skill_manifest_anchor.py": "65c926ff9b47c673ebd16f2ce18ec8289fb31c6632de6ef18029ed71f73cdbf8"
+  },
+  "validation": {
+    "combined_result": "134 passed, 4 explicitly deselected",
+    "command": "/data/salamander-venv/bin/python full_module_harness.py tests/test_repository_review.py tests/test_salamander_host_composition.py tests/test_skill_manifest_anchor.py tests/test_skill_graft.py tests/test_salamander_repair_boundary.py tests/test_salamander_verified_repair.py tests/test_existing_compatibility_local.py -q --tb=short -k 'not repository_grafts and not repairs_with and not hands_back and not taken_one_at_a_time'",
+    "working_directory": "/data/wiring-work",
+    "exit": 0,
+    "scope": "Full Salamander/autonomy/scanner/loader module bodies and actual engine constructor; canonical Cassini arithmetic via narrow owning-module import. Namespace package wrappers still exclude package initializers, actual repository conftest and installed artifacts. No method extraction in this run. Positive source-publication tests use explicitly labelled receipt contract doubles and real fixture file publication: not actual isolated regression execution or sandbox qualification.",
+    "baseline_full_module_run": "35 passed, 2 failed due retrieved snapshot missing broad Aethel facade dependencies; not a claim that the full repository lacks them",
+    "checks": {
+      "black_changed_Salamander_graft_host_tests": 0,
+      "ruff_E9_F_changed_sources": 0,
+      "compileall_changed_sources": 0
+    },
+    "log_sha256": {
+      "combined-engine-tests.log": "3909a60155ca4c698601593b3bcfa95777247c2a8cdc7969e23ee90e84216af3",
+      "consolidation-black.log": "45a468fa6205768496f23f1716ebb7575e9b723449d2099b88bf2afef60b721f",
+      "consolidation-ruff.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    }
+  },
+  "merge_evidence": {
+    "PR66_head": "d4bed8f28bd5b139d2e82e72ca6284f403d8dc68",
+    "PR68_previous_head": "eed2f497cac2340dd702baa62b26cc2797767508",
+    "context": "chronus/mla1517/gates",
+    "state": "failure",
+    "description": "Incomplete or invalid mandatory assurance evidence",
+    "source": "GitHub combined commit-status API",
+    "new_consolidated_head": "NOT_YET_CHECKED"
+  },
+  "namespace_probe": {
+    "command": "unshare -Urnm true",
+    "exit": 0,
+    "claim": "Namespace availability only; not an implemented/audited production source validator"
+  },
+  "unfinished": [
+    "installed artifact/full package initialization and full-repository qualification",
+    "real isolated source-regression validator and host release authorization",
+    "all vendor-specific executable adapters/cloud accounts/SDK dependencies",
+    "byte-preserving large claude-api graft via authenticated executor",
+    "detailed CI gate artifacts unavailable through current connector; check reads previously403",
+    "scientific competitor benchmark and independently reviewed Millennium proof"
+  ]
+}

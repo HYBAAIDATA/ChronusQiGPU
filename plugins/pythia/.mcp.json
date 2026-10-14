@@ -1,8 +1,8 @@
 {
   "mcp_spec_version": "1.0",
   "name": "pythia",
-  "version": "0.4.2",
-  "description": "Pythia Devin augmentation plugin packaged for MCP consumption: delivers EUCLID aptitude (session-wide Intelligence skills + plugin skills), session/start and stop gates, and evidence pack validation.",
+  "version": "0.4.3",
+  "description": "Pythia Devin augmentation plugin packaged for MCP consumption: delivers EUCLID aptitude (session-wide Intelligence skills + plugin skills), session/start and stop gates, evidence pack validation, and the exact mathematical kernel MCP server.",
   "author": { "name": "HYBA Software Limited" },
   "connectors": [
     {
@@ -21,6 +21,17 @@
       }
     }
   ],
+  "servers": [
+    {
+      "name": "exact-kernel",
+      "command": "python",
+      "args": ["-m", "mcp.exact_kernel.server"],
+      "description": "Exact Lucas/Cassini/Zeckendorf kernel. theorem_proven remains False. Certificate-carrying tools only.",
+      "env": {
+        "PYTHONPATH": "${REPO_ROOT}"
+      }
+    }
+  ],
   "entrypoints": {
     "session_start": "plugins/pythia/scripts/session_start.py",
     "stop_gate": "plugins/pythia/scripts/stop_gate.py"
@@ -30,7 +41,8 @@
     "plugins/pythia/scripts/stop_gate.py",
     "plugins/pythia/scripts/plugin_status.py",
     "plugins/pythia/skills/",
-    "Intelligence/skills/"
+    "Intelligence/skills/",
+    "mcp/exact_kernel/"
   ],
-  "notes": "This file is a minimal MCP metadata template — fill connector config and secrets in mcp_config.json or via MCP server when registering. Do not commit secrets into the repository."
+  "notes": "This file is a minimal MCP metadata template — fill connector config and secrets in mcp_config.json or via MCP server when registering. Do not commit secrets into the repository. exact-kernel server requires PYTHONPATH pointing at the repository root."
 }

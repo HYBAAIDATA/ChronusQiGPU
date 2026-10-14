@@ -1,0 +1,29 @@
+{
+  "schema": "euclid.native-capability/1",
+  "id": "repository-review",
+  "adapter": "Intelligence.repository_review.review_repository",
+  "dispatcher": "Intelligence.salamander.SalamanderEngine.execute_skill",
+  "profile": "HOST_APPROVED_READ_ONLY",
+  "evidence": "docs/repository_review_local_validation.json",
+  "scope": "approved Python path/hash manifest, maximum64files, 256KiB/file,1MiBtotal,128findings",
+  "state": "SCOPED_LOCAL_DISPATCH_TESTED_NOT_FULL_ENGINE_QUALIFIED",
+  "external_provider_calls": false,
+  "schedules_enabled": false,
+  "writes_enabled": false,
+  "repair_or_release_authority": false,
+  "model_superiority": null,
+  "agi_asi_certification": null,
+  "upstream_pattern": {
+    "repo": "https://github.com/anthropics/claude-cookbooks",
+    "commit": "39cd5a7a3a29a73e7391e17b7644c51f34a6aaa1",
+    "path": "claude_agent_sdk/scheduled_repository_reviewer/scheduled_review.py",
+    "status": "NATIVE_COUNTERPART_NOT_CLAUDE_SDK_INTEGRATION",
+    "copied_upstream_code": false
+  },
+  "source_hashes": {
+    "Intelligence/salamander.py": "7c468d0bf7cb49ae081b4783034a9445f3b7d2685a177e5e9bdbb8b30ea4d778",
+    "Intelligence/repository_review.py": "59006619b153cbe791fc041ee0cd936d98b8e39e57996adf44890641130483aa",
+    "Intelligence/skills/repository-review/SKILL.md": "e1a6aa91249a9c9c205ae32164d646db6dd48bc9bb1d53ccf6d5ed1465a2e648",
+    "tests/test_repository_review.py": "92dcf36d9ee58019f3d2d981e48c41488bf777e91a85f9ae8f23e8517639da14"
+  }
+}

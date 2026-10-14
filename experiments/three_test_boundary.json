@@ -1,0 +1,30 @@
+{
+  "boundary": "The packing advantage of the golden angle is real in continuous expanding spaces (phyllotaxis). It does not transfer to a discrete modular assignment of equal-sized items to a fixed device count, because that assignment is already exact in the uniform case and already has a correct optimal rule in the capacity-varied case.",
+  "tests": [
+    {
+      "name": "phyllotaxis",
+      "domain": "continuous expanding (radius = c*sqrt(k))",
+      "result": "phi optimal by ~2.4x"
+    },
+    {
+      "name": "equal_item_fleet",
+      "domain": "discrete fixed D, exact multiple",
+      "result": "round-robin exact; golden-angle strictly worse"
+    },
+    {
+      "name": "heterogeneous_fleet",
+      "domain": "discrete fixed D, varying capacity",
+      "result": "capacity-weighted dominant by ~2 orders on CV; golden-angle worse"
+    }
+  ],
+  "coprimality_guard": {
+    "stride": "0x9E3779B9",
+    "factors": "3^2 * 7 * 11 * 17 * 331 * 359",
+    "condition": "gcd(stride, D) == 1 required for bijection",
+    "examples": {
+      "D=9": "fails (factor 3), reaches 3/9",
+      "D=12": "fails, reaches 4/12, load ratio ~2068:1"
+    }
+  },
+  "theorem_proven": false
+}

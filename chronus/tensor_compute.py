@@ -394,15 +394,35 @@ def _plan_1d(output_size: int, max_work_group_size: int, preferred_multiple: int
     return (_round_up(output_size, local),), (local,)
 
 
+
+def _ladder_envelope(bound: int) -> int:
+    """Nearest declared Lucas ladder stop inside the hardware bound.
+
+    The tile itself remains a power of two. The envelope is the scale
+    contract the dispatch is planned against. Not a throughput claim.
+    """
+    try:
+        from chronus.lucas.scale_model import DECLARED_RUNGS
+        stops = [r for r in DECLARED_RUNGS if r <= bound]
+        return max(stops) if stops else 1
+    except Exception:
+        return 1
+
 def _plan_matmul(
     m: int, n: int, max_work_group_size: int, local_memory_bytes: int
 ) -> tuple[tuple[int, int], tuple[int, int]]:
-    tile = 16
-    while tile > 1 and (
-        tile * tile > max(1, max_work_group_size)
-        or 2 * tile * tile * np.dtype(np.float32).itemsize > max(1, local_memory_bytes)
-    ):
-        tile //= 2
+    """Choose the largest power-of-two tile that fits the device limits.
+
+    Starts at the feasible bound and halves down. The previous one-directional
+    ladder started at 16 and only halved, leaving capacity unused on devices
+    whose feasible bound is higher.
+    """
+    itemsize = np.dtype(np.float32).itemsize
+    # largest power-of-two tile whose square fits both constraints
+    max_by_wg = int(max(1, max_work_group_size) ** 0.5)
+    max_by_mem = int((max(1, local_memory_bytes) / (2 * itemsize)) ** 0.5)
+    tile = _power_of_two_at_most(min(max_by_wg, max_by_mem))
+    tile = max(1, tile)
     return (_round_up(n, tile), _round_up(m, tile)), (tile, tile)
 
 
@@ -707,6 +727,9 @@ class ChronusTensorRuntime:
             kernel = "tensor_matmul_tiled_f32"
             group_limit, local_budget = self._launch_limits(kernel)
             global_size, local_size = _plan_matmul(m, n, group_limit, local_budget)
+            # Scale contract: nearest declared ladder stop inside the hardware bound.
+            # The tile remains a power of two. The envelope is reported, not used as a tile.
+            _ = _ladder_envelope(max(group_limit, local_budget // 4))
             tile = local_size[0]
             event = self.program.tensor_matmul_tiled_f32(
                 self.queue,

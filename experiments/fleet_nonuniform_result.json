@@ -1,0 +1,21 @@
+{
+  "experiment": "golden_angle_nonuniform_fleet",
+  "description": "Devices have heterogeneous capacities (mean 1). Work items equal-sized.",
+  "methods": {
+    "golden": "floor(i*phi) % D (ignores capacity)",
+    "round_robin": "i % D",
+    "capacity_weighted": "assign next item to lowest load/capacity"
+  },
+  "result": {
+    "capacity_weighted_best": true,
+    "golden_vs_round_robin": "similar_cv",
+    "golden_beats_capacity_weighted": false,
+    "typical_cv": {
+      "golden": 0.29,
+      "round_robin": 0.29,
+      "capacity_weighted": 0.003
+    }
+  },
+  "interpretation": "On non-uniform device capacities, capacity-weighted assignment dominates. Golden-angle modular assignment does not improve on round-robin and is far from the capacity-aware optimum. The phyllotaxis packing advantage does not transfer to this discrete heterogeneous-capacity assignment.",
+  "theorem_proven": false
+}

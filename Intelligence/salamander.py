@@ -73,6 +73,10 @@ from .salamander_agentic import (
     CodebaseDiagnostic,
     CodebaseIssueType,
 )
+from pathlib import Path
+
+from .salamander_transaction import RepairValidator
+
 from .autonomous_capabilities import (
     AutonomySupervisor,
     CassiniCycleLedger,
@@ -226,10 +230,23 @@ class SelfRepairEngine:
     Stage 5 -- Verification: the repair is verified by re-checking the metric.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        control_plane: Any = None,
+        request_builder: Optional[Callable[[RepairProposal], Any]] = None,
+    ) -> None:
         self._proposals: List[RepairProposal] = []
         self._repair_count = 0
         self._success_count = 0
+        self._control_plane = control_plane
+        self._request_builder = request_builder
+        self._issued: Dict[str, Tuple[Any, ...]] = {}
+        self._verified: Dict[str, Any] = {}
+
+    @staticmethod
+    def _proposal_signature(proposal: RepairProposal) -> Tuple[Any, ...]:
+        return (proposal.target, proposal.issue_type, proposal.proposed_action, proposal.is_safe)
 
     def diagnose(
         self,
@@ -270,29 +287,99 @@ class SelfRepairEngine:
             is_safe=safe,
         )
         self._proposals.append(proposal)
+        self._issued[proposal_id] = self._proposal_signature(proposal)
         return proposal
 
     def apply_repair(self, proposal: RepairProposal) -> bool:
-        """Apply a repair proposal (with approval gate)."""
-        if not proposal.is_safe:
-            logger.warning("Repair proposal %s is not safe, skipping", proposal.proposal_id)
+        """Dispatch only registered AL HARAS-authorized, verified recovery.
+
+        A safe diagnosis is a proposal, not an actuator or proof. With no
+        configured canonical control plane and request builder, nothing is
+        applied. Source repairs belong to the separate RepairTransaction gate.
+        """
+        if (
+            not any(item is proposal for item in self._proposals)
+            or proposal.proposal_id in self._verified
+            or self._issued.get(proposal.proposal_id) != self._proposal_signature(proposal)
+            or proposal.is_safe is not True
+            or proposal.target == "unknown"
+        ):
             return False
+        proposal.applied = False
+        if self._control_plane is None or not callable(self._request_builder):
+            return False
+        from salamander.control_plane import AutonomicControlPlane
+        from salamander.models import ActionKind, ActionRequest
+
+        if type(self._control_plane) is not AutonomicControlPlane:
+            return False
+        allowed_kind = {
+            "timeout": ActionKind.THROTTLE,
+            "memory_error": ActionKind.THROTTLE,
+            "numerical_drift": ActionKind.REPLAN,
+            "circuit_open": ActionKind.HALF_OPEN_PROBE,
+        }.get(proposal.issue_type)
+        try:
+            request = self._request_builder(proposal)
+            if self._issued.get(proposal.proposal_id) != self._proposal_signature(proposal):
+                return False
+            if (
+                not isinstance(request, ActionRequest)
+                or request.action_id != proposal.proposal_id
+                or request.target != proposal.target
+                or request.kind is not allowed_kind
+            ):
+                return False
+            result = self._control_plane.execute(request)
+            ledger = self._control_plane.ledger
+            if (
+                result.action_id != proposal.proposal_id
+                or result.status != "VERIFIED"
+                or result.verified is not True
+                or not result.before_ref
+                or not result.after_ref
+                or ledger.verify() is not True
+            ):
+                return False
+            records = {r["evidence_sha256"]: r for r in ledger.records}
+            before = records.get(result.before_ref, {})
+            after = records.get(result.after_ref, {})
+            if (
+                before.get("kind") != "action-proposed"
+                or before.get("payload", {}).get("action_id") != proposal.proposal_id
+                or before.get("payload", {}).get("target") != proposal.target
+                or after.get("kind") != "action-independent-verification"
+                or after.get("payload", {}).get("verified") is not True
+                or not after.get("payload", {}).get("evidence_ref")
+            ):
+                return False
+        except Exception as exc:
+            logger.warning("Recovery unavailable or unverified: %s", type(exc).__name__)
+            return False
+        self._verified[proposal.proposal_id] = result
         proposal.applied = True
-        self._success_count += 1
+        self._success_count = len(self._verified)
         return True
 
     def status(self) -> Dict[str, Any]:
         return {
             "total_repairs": self._repair_count,
-            "successful_repairs": self._success_count,
-            "pending_proposals": len([p for p in self._proposals if not p.applied]),
+            "successful_repairs": len(self._verified),
+            "pending_proposals": len(
+                [p for p in self._proposals if p.proposal_id not in self._verified]
+            ),
             "proposals": [
                 {
                     "id": p.proposal_id,
                     "target": p.target,
                     "issue": p.issue_type,
                     "action": p.proposed_action,
-                    "applied": p.applied,
+                    "applied": p.proposal_id in self._verified,
+                    "verification_ref": (
+                        self._verified[p.proposal_id].after_ref
+                        if p.proposal_id in self._verified
+                        else None
+                    ),
                 }
                 for p in self._proposals[-10:]
             ],
@@ -572,10 +659,6 @@ class SalamanderPoincareAllocationManager:
         self._next_logical_index: int = 1
         self._bucket_allocations: Dict[int, int] = {p: 0 for p in PRIME_BUCKETS}
 
-    @property
-    def allocated_slots_count(self) -> int:
-        return len(self._slots)
-
     def _route_slot(self, routing_int: int) -> Tuple[int, int, int]:
         """Resolve a Zeckendorf prime-bucket slot and linear-probe on collision."""
         slot_address, max_k = resolve_zeckendorf_slot(routing_int)
@@ -843,6 +926,11 @@ class SalamanderEngine:
         phi_threshold: float = PHI,
         max_vram_boundary: float = 0.85,
         max_error_rate: float = 0.1,
+        *,
+        recovery_control_plane: Any = None,
+        recovery_request_builder: Optional[Callable[[RepairProposal], Any]] = None,
+        repo_root: Optional[Path] = None,
+        source_validator: Optional[RepairValidator] = None,
     ) -> None:
         self.phi_threshold = phi_threshold
         self.homeostasis = HomeostasisMonitor(
@@ -850,7 +938,9 @@ class SalamanderEngine:
             max_vram_boundary=max_vram_boundary,
             max_error_rate=max_error_rate,
         )
-        self.self_repair = SelfRepairEngine()
+        self.self_repair = SelfRepairEngine(
+            control_plane=recovery_control_plane, request_builder=recovery_request_builder
+        )
         self.circuit_breaker = CircuitBreaker()
         self.scaler = LucasIntelligenceScaler()
         self.allocation_manager = SalamanderPoincareAllocationManager()
@@ -866,28 +956,28 @@ class SalamanderEngine:
         )
 
         # Agentic codebase scanner and autonomous optimizer
-        from .salamander_agentic import SalamanderCodebaseScanner, SalamanderAgenticOptimizer
-
-        self.codebase_scanner = SalamanderCodebaseScanner()
-        self.codebase_optimizer = SalamanderAgenticOptimizer()
+        # One host-composed controller owns scanning and validated source
+        # publication. Do not create a fresh validator-less repair controller.
+        self.agentic_controller = SalamanderAgenticController(
+            repo_root=repo_root, validator=source_validator
+        )
+        self.codebase_scanner = self.agentic_controller.scanner
+        self.codebase_optimizer = self.agentic_controller.optimizer
 
         # Equip with skills runtime
         self.skills: Dict[str, Any] = {}
-        try:
-            from .skill_loader import load_skills
-
-            self.skills = load_skills()
-        except Exception:
-            pass
+        self.load_skills()
 
     def load_skills(self) -> Dict[str, Any]:
         """Reload available skills into Salamander's semantic runtime."""
-        try:
-            from .skill_loader import load_skills
+        from .skill_loader import load_skills
 
-            self.skills = load_skills()
-        except Exception:
-            pass
+        # An unavailable loader is a visible integration failure, not a
+        # successfully initialized intelligence with silently missing skills.
+        loaded = load_skills()
+        if not isinstance(loaded, dict):
+            raise TypeError("Skill loader must return an equipped-skill mapping")
+        self.skills = loaded
         return self.skills
 
     def execute_skill(self, skill_name: str, **kwargs: Any) -> Any:
@@ -897,6 +987,18 @@ class SalamanderEngine:
         if skill_name == "codebase-healing":
             auto_heal = kwargs.get("auto_heal", False)
             return self.agentic_heal(auto_heal=auto_heal)
+        elif skill_name == "source-repair":
+            if skill_name not in self.skills:
+                raise KeyError("source-repair is not equipped")
+            return self.repair_source(**kwargs)
+        elif skill_name == "repository-review":
+            if skill_name not in self.skills:
+                raise KeyError("repository-review is not equipped")
+            from .repository_review import review_repository
+
+            # Only fixed trusted native adapters are executable. Skill documents
+            # cannot nominate callables, grant permissions or activate schedules.
+            return review_repository(**kwargs)
         elif skill_name in self.skills:
             # Other skills are guidance, not code: hand back what to follow
             # (and where it came from) rather than claim an execution.
@@ -922,10 +1024,25 @@ class SalamanderEngine:
 
     def agentic_heal(self, auto_heal: bool = False) -> Dict[str, Any]:
         """Run autonomous agentic audit and self-healing cycle."""
-        from .salamander_agentic import SalamanderAgenticController
+        return self.agentic_controller.run_autonomic_cycle(auto_heal=auto_heal)
 
-        controller = SalamanderAgenticController()
-        return controller.run_autonomic_cycle(auto_heal=auto_heal)
+    def repair_source(
+        self, *, target_file: Path, replacement: str, target_snippet: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Publish a source candidate only through the configured validation gate.
+
+        This is a write-capable adapter. No document, callable, command or
+        auto-heal flag grants authority or substitutes for regression evidence.
+        """
+        committed, reason = self.codebase_optimizer.apply_repair_sandboxed(
+            target_file=target_file, replacement=replacement, target_snippet=target_snippet
+        )
+        return {
+            "skill": "source-repair",
+            "status": "COMMITTED" if committed else "NOT_COMMITTED",
+            "committed": committed,
+            "reason": reason,
+        }
 
     def substrate_health_index(self) -> float:
         """Return the current Substrate Health Index (SHI)."""
