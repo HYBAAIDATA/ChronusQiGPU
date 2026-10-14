@@ -114,3 +114,6 @@ results/
 # Chronus Virtual iGPU default embedded store
 .chronus-virtual-igpu/
 local-ci/
+
+# Re-include PHILOS Python contracts hidden by broad models/ ignore
+!euclid/emergence/models/
