@@ -31,8 +31,9 @@ class IntelligenceSpecialist:
         for name in names:
             self._admit(name)
 
-    def _admit(self, name):
-        manifest = self.registry.get_manifest(name)
+    def _admit(self, name, manifest=None):
+        if manifest is None:
+            manifest = self.registry.get_manifest(name)
         if manifest is None or not manifest.enabled:
             raise AuthorizationDenied("capability missing or disabled")
         permissions = manifest.permissions
@@ -56,8 +57,14 @@ class IntelligenceSpecialist:
         # No callbacks, provider handles or filesystem object stringification at
         # the governed boundary. Authorization sees the same JSON request.
         json.dumps(arguments, allow_nan=False)
-        self._admit(name)  # Recheck live registration, enablement and permissions.
-        output, receipt = self.registry.dispatch(name, profile=self.profile, **arguments)
+        self._admit(name)  # Preserve explicit refusal for missing/disabled bindings.
+        # Recheck admission against the atomic contract/handler pair used by
+        # dispatch, not an earlier live lookup that can race with registration.
+        output, receipt = self.registry.dispatch(
+            name, profile=self.profile,
+            _manifest_admission=lambda manifest: self._admit(name, manifest),
+            **arguments,
+        )
         return {"executed": receipt.status == "SUCCESS", "status": receipt.status,
                 "capability_id": name, "output": output, "receipt": receipt.as_dict(),
                 "independently_qualified": False}

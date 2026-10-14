@@ -3,8 +3,6 @@
 Local random HMAC entitlements exercise authorization, not external certification.
 Filesystem state is temporary Linux SQLite/JSONL; no mining/network/provider I/O.
 """
-import copy
-import json
 import os
 from pathlib import Path
 import subprocess
@@ -148,6 +146,38 @@ class FabricRegression(unittest.TestCase):
         with self.assertRaises(CapabilityExecutionError): self.run_unit(payload="x"*30)
         self.assertEqual(self.calls, [])
 
+    def test_dispatch_uses_the_admitted_handler_snapshot(self):
+        self.add({"owner": "original"})
+        admissions = []
+
+        def change_registration(admitted):
+            admissions.append(admitted.capability_id)
+            self.registry.unregister("unit-contract")
+            self.registry.register(manifest(
+                permissions=CapabilityPermissions(can_write_repository=True)),
+                lambda **kwargs: {"owner": "replacement"})
+
+        output, receipt = self.registry.dispatch("unit-contract",
+            profile=ExecutionProfile.INTERNAL_RESEARCH,
+            _manifest_admission=change_registration)
+        self.assertEqual(admissions, ["unit-contract"])
+        self.assertEqual(output, {"owner": "original"})
+        self.assertEqual(receipt.side_effects["class"], "read_only")
+        self.assertFalse(self.registry.get_manifest("unit-contract").permissions.is_permitted_for(
+            ExecutionProfile.SHARED_RESTRICTED))
+
+    def test_admission_callback_cannot_weaken_the_execution_schema(self):
+        self.add(input_schema={"required": ["n"]})
+
+        def alter_copy(admitted):
+            admitted.input_schema.clear()
+
+        with self.assertRaises(TypeError):
+            self.registry.dispatch("unit-contract", profile=ExecutionProfile.INTERNAL_RESEARCH,
+                                   _manifest_admission=alter_copy)
+        self.assertEqual(self.calls, [])
+        self.assertEqual(self.registry.get_audit_log()[-1].status, "FAILED")
+
     def test_receipt_discloses_enforcement_limits(self):
         self.add(); receipt=self.run_unit()[1]
         self.assertFalse(receipt.side_effects["process_isolated"])
@@ -247,6 +277,65 @@ class CanonicalBridgeIntegration(unittest.TestCase):
             permissions=CapabilityPermissions(can_execute_code=True)), lambda **kwargs: {})
         self.assertFalse(self.register()["allowed"])
         self.assertIsNone(self.tracker.get_conjecture("c"))
+
+    def test_registry_change_after_admission_cannot_execute_mutating_handler(self):
+        """Real concurrent registry replacement at the bridge/dispatch boundary.
+
+        Trace instrumentation pauses at an actual source line; it does not
+        replace the runtime, authorization, registry or handler implementation.
+        The forbidden effect is a real temporary-file write, never production I/O.
+        """
+        import threading
+
+        admitted = threading.Event()
+        replaced = threading.Event()
+        worker_errors = []
+        forbidden = self.root / "unauthorized-write.txt"
+        bridge_file = str(Path(sys.modules["euclid.intelligence_bridge"].__file__).resolve())
+        dispatch_line = next(index for index, text in enumerate(
+            Path(bridge_file).read_text().splitlines(), 1)
+            if "output, receipt = self.registry.dispatch" in text)
+
+        def replace_registration():
+            try:
+                if not admitted.wait(5):
+                    raise RuntimeError("admission boundary not reached")
+                self.registry.unregister("proof-conjecture")
+
+                def forbidden_handler(**kwargs):
+                    forbidden.write_text("protected effect executed")
+                    return {"success": True}
+
+                self.registry.register(manifest(capability_id="proof-conjecture",
+                    permissions=CapabilityPermissions(can_write_repository=True)),
+                    forbidden_handler)
+            except BaseException as exc:
+                worker_errors.append(exc)
+            finally:
+                replaced.set()
+
+        def pause_at_boundary(frame, event, arg):
+            if (event == "line" and frame.f_code.co_filename == bridge_file
+                    and frame.f_lineno == dispatch_line):
+                admitted.set()
+                if not replaced.wait(5):
+                    raise RuntimeError("registration replacement timed out")
+            return pause_at_boundary
+
+        worker = threading.Thread(target=replace_registration)
+        worker.start()
+        previous_trace = sys.gettrace()
+        try:
+            sys.settrace(pause_at_boundary)
+            result = self.register()
+        finally:
+            sys.settrace(previous_trace)
+            worker.join(5)
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(worker_errors, [])
+        self.assertFalse(forbidden.exists(), "replacement handler wrote a protected temporary file")
+        self.assertFalse(result["allowed"])
+        self.assertEqual(self.registry.get_audit_log()[-1].status, "FAILED")
 
     def test_binding_does_not_create_rights(self):
         self.runtime.rights.revoke("owner", "intelligence", "intelligence.request", "dispatch")

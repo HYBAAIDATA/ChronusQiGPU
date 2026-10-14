@@ -17,6 +17,7 @@ import json
 import time
 from dataclasses import asdict, dataclass, field, is_dataclass
 from enum import Enum
+from threading import RLock
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 
@@ -337,78 +338,89 @@ class CapabilityRegistry:
         self._manifests: Dict[str, CapabilityManifest] = {}
         self._adapters: Dict[str, Callable[..., Any]] = {}
         self._audit_log: List[CapabilityExecutionReceipt] = []
+        self._registration_lock = RLock()
 
     def register(
         self, manifest: CapabilityManifest, adapter_fn: Callable[..., Any]
     ) -> None:
         """Register a native capability adapter bound to its manifest."""
-        if not callable(adapter_fn):
-            raise CapabilityRegistrationError(
-                f"Adapter for {manifest.capability_id} must be callable"
-            )
-        if manifest.capability_id in self._manifests:
-            raise CapabilityRegistrationError(
-                f"Capability '{manifest.capability_id}' is already registered"
-            )
-        if not isinstance(manifest.permissions, CapabilityPermissions):
-            raise CapabilityRegistrationError("permissions contract is required")
-        for name, value in asdict(manifest.permissions).items():
-            if name != "allowed_profiles" and type(value) is not bool:
-                raise CapabilityRegistrationError("permission flags must be boolean")
-        profiles = manifest.permissions.allowed_profiles
-        if (not isinstance(profiles, tuple) or not profiles
-                or any(not isinstance(x, ExecutionProfile) for x in profiles)):
-            raise CapabilityRegistrationError("allowed_profiles must name explicit profiles")
-        if not isinstance(manifest.resource_budget, ResourceBudget):
-            raise CapabilityRegistrationError("resource budget is required")
-        if (not isinstance(manifest.supported_operations, tuple)
-                or not manifest.supported_operations
-                or any(not isinstance(x, str) or not x for x in manifest.supported_operations)
-                or len(set(manifest.supported_operations)) != len(manifest.supported_operations)):
-            raise CapabilityRegistrationError("distinct supported operations are required")
-        if not isinstance(manifest.side_effects, SideEffectClass):
-            raise CapabilityRegistrationError("side-effect contract is required")
-        _check_schema(manifest.input_schema)
-        _check_schema(manifest.output_schema)
-        self._manifests[manifest.capability_id] = copy.deepcopy(manifest)
-        self._adapters[manifest.capability_id] = adapter_fn
+        with self._registration_lock:
+            if not callable(adapter_fn):
+                raise CapabilityRegistrationError(
+                    f"Adapter for {manifest.capability_id} must be callable"
+                )
+            if manifest.capability_id in self._manifests:
+                raise CapabilityRegistrationError(
+                    f"Capability '{manifest.capability_id}' is already registered"
+                )
+            if not isinstance(manifest.permissions, CapabilityPermissions):
+                raise CapabilityRegistrationError("permissions contract is required")
+            for name, value in asdict(manifest.permissions).items():
+                if name != "allowed_profiles" and type(value) is not bool:
+                    raise CapabilityRegistrationError("permission flags must be boolean")
+            profiles = manifest.permissions.allowed_profiles
+            if (not isinstance(profiles, tuple) or not profiles
+                    or any(not isinstance(x, ExecutionProfile) for x in profiles)):
+                raise CapabilityRegistrationError("allowed_profiles must name explicit profiles")
+            if not isinstance(manifest.resource_budget, ResourceBudget):
+                raise CapabilityRegistrationError("resource budget is required")
+            if (not isinstance(manifest.supported_operations, tuple)
+                    or not manifest.supported_operations
+                    or any(not isinstance(x, str) or not x for x in manifest.supported_operations)
+                    or len(set(manifest.supported_operations)) != len(manifest.supported_operations)):
+                raise CapabilityRegistrationError("distinct supported operations are required")
+            if not isinstance(manifest.side_effects, SideEffectClass):
+                raise CapabilityRegistrationError("side-effect contract is required")
+            _check_schema(manifest.input_schema)
+            _check_schema(manifest.output_schema)
+            self._manifests[manifest.capability_id] = copy.deepcopy(manifest)
+            self._adapters[manifest.capability_id] = adapter_fn
 
     def unregister(self, capability_id: str) -> bool:
         """Unregister a capability."""
-        if capability_id in self._manifests:
-            del self._manifests[capability_id]
-            del self._adapters[capability_id]
-            return True
-        return False
+        with self._registration_lock:
+            if capability_id in self._manifests:
+                del self._manifests[capability_id]
+                del self._adapters[capability_id]
+                return True
+            return False
 
     def get_manifest(self, capability_id: str) -> Optional[CapabilityManifest]:
-        return copy.deepcopy(self._manifests.get(capability_id))
+        with self._registration_lock:
+            return copy.deepcopy(self._manifests.get(capability_id))
 
     def list_capabilities(
         self, profile: Optional[ExecutionProfile] = None
     ) -> List[CapabilityManifest]:
         """List active capabilities filtered optionally by profile authorization."""
-        res = []
-        for manifest in self._manifests.values():
-            if not manifest.enabled:
-                continue
-            if profile is not None and not manifest.permissions.is_permitted_for(profile):
-                continue
-            res.append(copy.deepcopy(manifest))
-        return res
+        with self._registration_lock:
+            res = []
+            for manifest in self._manifests.values():
+                if not manifest.enabled:
+                    continue
+                if profile is not None and not manifest.permissions.is_permitted_for(profile):
+                    continue
+                res.append(copy.deepcopy(manifest))
+            return res
 
     def dispatch(
         self,
         capability_id: str,
         *,
         profile: ExecutionProfile,
+        _manifest_admission: Optional[Callable[[CapabilityManifest], None]] = None,
         **kwargs: Any,
     ) -> Tuple[Any, CapabilityExecutionReceipt]:
         """Execute a capability under an explicit profile and produce a deterministic receipt.
 
         Authorization checks fail-closed before invoking the adapter.
         """
-        manifest = self._manifests.get(capability_id)
+        # Pair the exact contract with its handler while registration is locked.
+        # Execute outside the lock: this is an admission snapshot, not OS
+        # isolation or retroactive cancellation of already admitted execution.
+        with self._registration_lock:
+            manifest = copy.deepcopy(self._manifests.get(capability_id))
+            adapter = self._adapters.get(capability_id)
         start_time = time.perf_counter()
         try:
             if not isinstance(profile, ExecutionProfile):
@@ -423,13 +435,21 @@ class CapabilityRegistry:
                     f"Capability '{capability_id}' is not permitted under execution profile '{profile.value}'"
                 )
 
+            if adapter is None:
+                raise CapabilityExecutionError("registered capability handler is unavailable")
+            if _manifest_admission is not None:
+                if not callable(_manifest_admission):
+                    raise TypeError("manifest admission policy must be callable")
+                # The policy sees a detached copy and cannot change the contract
+                # used for schema validation, budgets, receipts or this handler.
+                _manifest_admission(copy.deepcopy(manifest))
+
             # Validate before protected side effects; reserve the declared input envelope.
             _validate_schema(kwargs, manifest.input_schema, "inputs")
             if len(json.dumps(kwargs, default=str, allow_nan=False).encode()) > manifest.resource_budget.max_total_bytes:
                 raise CapabilityExecutionError("input byte envelope exceeded")
 
             # 3. Execution with duration capture
-            adapter = self._adapters[capability_id]
             output = adapter(**kwargs)
             duration = time.perf_counter() - start_time
             if duration > manifest.resource_budget.max_runtime_seconds:

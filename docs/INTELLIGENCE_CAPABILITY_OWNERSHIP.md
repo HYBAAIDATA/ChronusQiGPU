@@ -145,3 +145,27 @@ changed. Original PHILOS contracts at `1b653442` are separate; do not merge the
 reconstructed PR73 models over them. PR66 -> PR68 -> PR69 -> PR71 is unchanged;
 this review targets the elevation branch and does not authorize merging that
 stack, installing a production signer or changing assurance gates.
+
+
+### Security follow-up: atomic registry admission
+
+Review of PR74 at `563c480a` reproduced a registration/admission race: after
+read-only admission, concurrent registry replacement could execute a newly
+mutating handler under the earlier authorization. The bounded regression
+confirmed a real unauthorized write inside a temporary directory; no production
+filesystem, network, provider, pool or mining action was exercised.
+
+Registry registration, removal and discovery now serialize contract/handler
+updates. Dispatch captures the exact contract/handler pair together, and the
+bridge re-applies its read-only policy to a detached copy of that same contract
+before execution. Mutating a policy callback's copy cannot weaken validation.
+Dispatch executes the admitted handler snapshot, not a later replacement.
+This is internal admission consistency, **not** OS isolation or retroactive
+revocation/cancellation of already admitted execution.
+
+The expanded focused suite passed **33 tests normally and under Python -O**.
+Initial 30-test evidence remains preserved for its original revision. Full
+Salamander constructor, existing pytest/installed-artifact/Windows validation,
+the other native capability paths and independent assurance remain unverified;
+this selective-source snapshot is not a complete repository execution environment.
+The PR remains draft and not merge-ready.
