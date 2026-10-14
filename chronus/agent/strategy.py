@@ -208,7 +208,7 @@ def select_reasoning_strategy(
     verify_statistics,
     now,
     ledger,
-    achieved_assurance=AssuranceLevel.NONE
+    achieved_assurance=AssuranceLevel.NONE,
 ):
     """Gate before ranking. Calibration records are signed by external qualification.
 

@@ -35,7 +35,7 @@ def select(task, ledger, *, authority=TrustLevel.ASSIST, registry=None, statisti
 def characterisation(task, **changes):
     return replace(
         TaskCharacterisation(task.key, F(0), F(0), "REVERSIBLE", "LOCAL", 100, (), (), F(1)),
-        **changes
+        **changes,
     )
 
 

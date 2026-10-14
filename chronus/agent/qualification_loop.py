@@ -67,7 +67,7 @@ class QualificationService:
         governance_signer,
         max_evaluation_age,
         transfer_quorum,
-        metric_freeze_book
+        metric_freeze_book,
     ):
         self.identity, self.task, self.trust, self.ledger = identity, task, trust, ledger
         self.thresholds, self.evaluator_keys, self.verifier_keys = (
@@ -200,7 +200,7 @@ class QualificationService:
         now,
         expires_at,
         minimum_success,
-        max_ece
+        max_ece,
     ):
         """Signed strategy standings: no ordinary episode can clear quarantine."""
         from .strategy import StrategyTrackRecord, ReasoningStrategy

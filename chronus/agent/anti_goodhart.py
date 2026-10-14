@@ -70,7 +70,7 @@ def anti_goodhart_review(
     expires_at,
     gate_metrics=(),
     cycle=0,
-    metric_version=""
+    metric_version="",
 ):
     integer(cycle)
     ratio(drift_threshold)

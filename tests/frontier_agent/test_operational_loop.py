@@ -124,3 +124,40 @@ def test_recovery_budget_reserved_before_any_write(wired):
     r.budgets = BudgetMeter(BudgetSet(1, 1, 1, 1, 1))
     out = r.run(o, c, p)
     assert out.stop == Stop.BUDGET_EXHAUSTED and not a.executions
+
+
+def test_rollback_receipt_verification_e2e(wired):
+    """E2E test: failing iteration triggers rollback, verifying pre-action state restored with receipts compared (6.6)."""
+    import hashlib
+    import json
+
+    r, o, c, p, a = wired
+
+    # Record baseline state and cryptographic digest
+    pre_text = a.path.read_text()
+    pre_digest = hashlib.sha256(pre_text.encode()).hexdigest()
+
+    # Force verification failure to trigger rollback
+    a.fail = True
+
+    out = r.run(o, c, p)
+
+    assert out.stop == Stop.CONFIDENCE_INSUFFICIENT
+    assert out.rollback_verified is True
+    # Verify disk content is restored
+    assert a.path.read_text() == pre_text
+
+    # Verify audit trail contains rollback receipts that are cryptographically verified
+    rollback_events = []
+    for ev in r.audit._events:
+        data = json.loads(ev.body)
+        if data.get("event_type") == "rollback_executed":
+            rollback_events.append(data.get("payload", {}))
+
+    assert len(rollback_events) >= 1
+    for ev_data in rollback_events:
+        assert ev_data["verified"] is True
+
+    # Receipts compared, not assumed: cryptographic content digest before mutation vs after rollback
+    post_receipt = hashlib.sha256(a.checkpoint()).hexdigest()
+    assert pre_digest == post_receipt

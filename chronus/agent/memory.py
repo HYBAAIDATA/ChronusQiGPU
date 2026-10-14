@@ -136,7 +136,7 @@ class LongHorizonMemory:
         *,
         now,
         calibration=None,
-        verify_calibration=None
+        verify_calibration=None,
     ):
         from .world_model import adjudicate_contradiction
 

@@ -355,6 +355,51 @@
       "status": "bounded_contract_implemented_and_locally_tested",
       "model_competence_demonstrated": false,
       "production_qualified": false
+    },
+    {
+      "module": "chronus.agent.t5_qualification_e2e",
+      "source": "chronus/agent/qualification_loop.py",
+      "tests": "tests/frontier_agent/test_t5_qualification_e2e.py",
+      "test_cases": 1,
+      "status": "bounded_contract_implemented_and_locally_tested",
+      "model_competence_demonstrated": false,
+      "production_qualified": false
+    },
+    {
+      "module": "chronus.agent.iteration_counter_and_budget",
+      "source": "chronus/agent/operational_loop.py",
+      "tests": "tests/frontier_agent/test_iteration_counter_and_budget.py",
+      "test_cases": 4,
+      "status": "bounded_contract_implemented_and_locally_tested",
+      "model_competence_demonstrated": false,
+      "production_qualified": false
+    },
+    {
+      "module": "chronus.agent.claim_guard_linter",
+      "source": "scripts/claim_guard_linter.py",
+      "tests": "tests/frontier_agent/test_claim_guard_linter.py",
+      "test_cases": 7,
+      "status": "bounded_contract_implemented_and_locally_tested",
+      "model_competence_demonstrated": false,
+      "production_qualified": false
+    },
+    {
+      "module": "chronus.agent.production_drift_gate",
+      "source": "scripts/assert_production_drift_gate.py",
+      "tests": "tests/frontier_agent/test_production_drift_gate.py",
+      "test_cases": 3,
+      "status": "bounded_contract_implemented_and_locally_tested",
+      "model_competence_demonstrated": false,
+      "production_qualified": false
+    },
+    {
+      "module": "chronus.agent.intelligence_init_smoke",
+      "source": "Intelligence/registry.py",
+      "tests": "tests/frontier_agent/test_intelligence_init_smoke.py",
+      "test_cases": 1,
+      "status": "bounded_contract_implemented_and_locally_tested",
+      "model_competence_demonstrated": false,
+      "production_qualified": false
     }
   ],
   "integration": {

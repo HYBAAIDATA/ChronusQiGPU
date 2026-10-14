@@ -29,7 +29,7 @@ def initialise_cognition(
     statistics,
     verify_statistics,
     now,
-    ledger
+    ledger,
 ):
     representation = represent_problem(
         objective, context, extractor=extractor, confidence_floor=confidence_floor

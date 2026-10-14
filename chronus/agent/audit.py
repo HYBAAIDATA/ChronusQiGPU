@@ -81,9 +81,8 @@ class AuditLedger:
                 + b"\n"
             )
             if self.path is not None:
-                fd = os.open(
-                    self.path, os.O_WRONLY | os.O_APPEND | os.O_CREAT | os.O_NOFOLLOW, 0o600
-                )
+                nofollow = getattr(os, "O_NOFOLLOW", 0)
+                fd = os.open(self.path, os.O_WRONLY | os.O_APPEND | os.O_CREAT | nofollow, 0o600)
                 try:
                     with os.fdopen(fd, "ab", closefd=False) as stream:
                         stream.write(line)
