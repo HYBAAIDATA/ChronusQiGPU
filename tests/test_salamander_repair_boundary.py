@@ -152,7 +152,10 @@ def test_repair_scope_excludes_authority_and_tests(source, tmp_path, location):
     target = paths[location]
     target.parent.mkdir(parents=True, exist_ok=True)
     if location == "symlink":
-        target.symlink_to(source)
+        try:
+            target.symlink_to(source)
+        except OSError:
+            pytest.skip("Symlink creation requires privilege on Windows")
     else:
         target.write_bytes(BASELINE)
     validator = UnitVerdict(source)
