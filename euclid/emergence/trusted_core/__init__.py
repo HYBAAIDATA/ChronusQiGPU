@@ -3,6 +3,7 @@
 from .access_control import (
     CallerBoundaryGuard,
     GovernanceToken,
+    QualificationAuthorization,
     InvalidGovernanceTokenError,
     UnauthorizedOperationalLoopCallError,
 )
@@ -14,6 +15,7 @@ from .qualification_service import EmergentQualificationService
 __all__ = [
     "CallerBoundaryGuard",
     "GovernanceToken",
+    "QualificationAuthorization",
     "InvalidGovernanceTokenError",
     "UnauthorizedOperationalLoopCallError",
     "stress_test",

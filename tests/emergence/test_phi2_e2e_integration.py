@@ -1,4 +1,4 @@
-"""End-to-end integration test for the Philos (Phi-2) cognitive architecture and EQS pipeline."""
+"""Simulated research-pipeline contract; not independent qualification evidence."""
 
 import pytest
 from euclid.emergence.models.condensation import ColonyConfig, CondensationEvent
@@ -15,11 +15,10 @@ from euclid.emergence.condensation.condensation_monitor import CondensationMonit
 from euclid.emergence.condensation.governance import ConsortiumGovernance
 
 
-def test_philos_phi2_full_condensation_pipeline():
+def test_philos_phi2_full_condensation_pipeline(authorize_candidate):
     # 1. Initialize Substrate Registry and Trusted Core EQS
     registry = SubstrateRegistry()
     eq_service = EmergentQualificationService()
-    gov_token = GovernanceToken.issue("assurance_officer_primary", eq_service.governance_secret_key)
 
     # 2. Register distinct substrate variants
     sid_sync = registry.register(
@@ -53,6 +52,9 @@ def test_philos_phi2_full_condensation_pipeline():
     # 4. Recursive Folding (Phi mechanism) with budgeted recursion
     top_colony = cultivated_population.colonies[0]
     folding = RecursiveFolding(eq_service=eq_service)
+    proposal = folding.prepare_candidate(top_colony, 1)
+    eq_service, gov_token = authorize_candidate(proposal)
+    folding = RecursiveFolding(eq_service=eq_service)
     fold_outcomes = list(folding.fold(
         agent=top_colony,
         depth=1,
@@ -61,6 +63,8 @@ def test_philos_phi2_full_condensation_pipeline():
         governance_token=gov_token,
     ))
     assert len(fold_outcomes) > 0
+    assert not eq_service.is_qualified(proposal.candidate_id)
+    assert all(outcome.status.value == "REJECTED" for outcome in fold_outcomes)
 
     # 5. Condensation Monitor: watch telemetry stream
     monitor = CondensationMonitor(
@@ -90,7 +94,7 @@ def test_philos_phi2_full_condensation_pipeline():
         event=condensation_event,
         reviewers=["dr_turing", "prof_neumann", "dr_shannon"],
         reviewer_votes=[True, True, True],
-        notes="Verified multi-substrate phase-transition without Goodhart metric gaming",
+        notes="Simulated research pipeline; no independent confirmation",
     )
 
     assert verdict.confirmed is True

@@ -42,6 +42,7 @@ from .analyzer import EmergenceAnalyzer
 from .trusted_core import (
     EmergentQualificationService,
     GovernanceToken,
+    QualificationAuthorization,
     CallerBoundaryGuard,
     DivergenceMonitor,
     ImmutableEmergenceJournal,
@@ -88,6 +89,7 @@ __all__ = [
     "EmergenceAnalyzer",
     "EmergentQualificationService",
     "GovernanceToken",
+    "QualificationAuthorization",
     "CallerBoundaryGuard",
     "DivergenceMonitor",
     "ImmutableEmergenceJournal",

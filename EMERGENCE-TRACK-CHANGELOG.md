@@ -6,6 +6,21 @@
 
 ---
 
+## [Unreleased] — Scoped external authorization and canonical owner binding
+
+- Removed default/private signing authority from EQS. External Ed25519 issuance,
+  explicit public-key trust, full candidate/audience/principal/time/nonce binding
+  and transactional persistent single-use replay admission; legacy tokens invalidate.
+- Added the actual PHILOS owner adapter for canonical EUCLID/AL HARAS dispatch;
+  host-approved frozen cases and native outcomes, no rights/signer/model installed.
+- Exposed existing recursive candidate preparation for external scoped approval;
+  migrated local test callers without reinstating synthetic qualification.
+- 19 authorization + 23 custody + 11 joint canonical tests pass normally and under
+  -O (53 each, zero failures/errors/skips). Joint canonical tests require PR74.
+  Legacy pytest migrations compiled only; pytest/build/CI/platform limits persist.
+- Existing ledger contains security migration, exact commands/hashes and limits.
+  No measured successful qualification, independent assurance or production claim.
+
 ## [Unreleased] — Full-payload custody and synthetic-evidence refusal
 
 - Bound protocol steps and all candidate fields using explicitly versioned v3 hashes; old digests invalidate.

@@ -36,10 +36,9 @@ def make_test_candidate(noise_tolerance=0.5, latency=10.0, compute_sec=0.5):
     )
 
 
-def test_gate1_simulated_reproduction_rejected_despite_distinct_metadata():
-    service = EmergentQualificationService()
+def test_gate1_simulated_reproduction_rejected_despite_distinct_metadata(authorize_candidate):
     candidate = make_test_candidate()
-    token = GovernanceToken.issue("officer_alpha", service.governance_secret_key)
+    service, token = authorize_candidate(candidate)
 
     prop_a = SubstrateProperties(
         executor_type="sync_vm",
@@ -65,10 +64,9 @@ def test_gate1_simulated_reproduction_rejected_despite_distinct_metadata():
     assert "lacks measured reproduction" in outcome.reason
 
 
-def test_gate1_rejects_identical_substrates():
-    service = EmergentQualificationService()
+def test_gate1_rejects_identical_substrates(authorize_candidate):
     candidate = make_test_candidate()
-    token = GovernanceToken.issue("officer_alpha", service.governance_secret_key)
+    service, token = authorize_candidate(candidate)
 
     prop_same = SubstrateProperties(
         executor_type="sync_vm",
@@ -85,10 +83,9 @@ def test_gate1_rejects_identical_substrates():
     assert outcome.status == QualificationStatus.REJECTED
 
 
-def test_gate2_stress_envelope_rejection():
-    service = EmergentQualificationService(margin=2.0)
+def test_gate2_stress_envelope_rejection(authorize_candidate):
     candidate = make_test_candidate(noise_tolerance=0.95, latency=3000.0)
-    token = GovernanceToken.issue("officer_alpha", service.governance_secret_key)
+    service, token = authorize_candidate(candidate, margin=2.0)
 
     prop_a = SubstrateProperties(
         executor_type="sync_vm",
@@ -119,10 +116,9 @@ def test_gate2_stress_envelope_rejection():
     assert not details["executor_invoked"]
 
 
-def test_divergence_suspension_remains_available_without_synthetic_qualification():
-    service = EmergentQualificationService()
+def test_divergence_suspension_remains_available_without_synthetic_qualification(authorize_candidate):
     candidate = make_test_candidate()
-    token = GovernanceToken.issue("officer_alpha", service.governance_secret_key)
+    service, token = authorize_candidate(candidate)
 
     prop_a = SubstrateProperties(
         executor_type="sync_vm",

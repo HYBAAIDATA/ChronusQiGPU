@@ -32,9 +32,8 @@ def test_frozen_max_fold_tampering_and_budgeting():
         RecursiveFolding(eq_service=service, max_fold=999, max_fold_signature="tampered_sig")
 
 
-def test_recursive_folding_execution_and_qualification_routing():
+def test_recursive_folding_execution_and_qualification_routing(authorize_candidate):
     service = EmergentQualificationService()
-    token = GovernanceToken.issue("assurance_officer", service.governance_secret_key)
     folding = RecursiveFolding(eq_service=service)
 
     prop_a = SubstrateProperties("sync", 5.0, "atomic", "vm", sandbox_id="box_a")
@@ -44,7 +43,11 @@ def test_recursive_folding_execution_and_qualification_routing():
 
     agent = MockReflectiveAgent()
 
-    # Run folding recursion starting at depth 1
+    proposal = folding.prepare_candidate(agent, 1)
+    service, token = authorize_candidate(proposal)
+    folding = RecursiveFolding(eq_service=service)
+
+    # Explicit candidate-bound authorization; simulated reproduction must refuse.
     outcomes = list(folding.fold(
         agent=agent,
         depth=1,
@@ -57,4 +60,5 @@ def test_recursive_folding_execution_and_qualification_routing():
     assert len(outcomes) > 0
     assert len(outcomes) <= FROZEN_MAX_FOLD
     for outcome in outcomes:
-        assert outcome.status in (QualificationStatus.QUALIFIED, QualificationStatus.REJECTED)
+        assert outcome.status == QualificationStatus.REJECTED
+        assert not service.is_qualified(proposal.candidate_id)

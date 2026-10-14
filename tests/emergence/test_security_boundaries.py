@@ -21,10 +21,9 @@ class SimulatedOperationalLoop:
         return service.qualify(candidate, exec_a, exec_b, governance_token=token)
 
 
-def test_loop_caller_forbidden_runtime():
+def test_loop_caller_forbidden_runtime(authorize_candidate):
     service = EmergentQualificationService()
     loop = SimulatedOperationalLoop()
-    token = GovernanceToken.issue("officer", service.governance_secret_key)
 
     candidate = EmergentCandidate(
         candidate_id="cand_rogue_01",
@@ -35,6 +34,7 @@ def test_loop_caller_forbidden_runtime():
         claimed_behavior_signature="self_promoted_power",
     )
 
+    service, token = authorize_candidate(candidate)
     prop = SubstrateProperties("sync", 5.0, "atomic", "vm")
     exec_a = StandardSyncExecutor(prop)
     exec_b = AsyncIsolatedExecutor(prop)

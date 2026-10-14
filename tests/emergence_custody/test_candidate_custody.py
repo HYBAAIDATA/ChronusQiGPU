@@ -1,5 +1,8 @@
 """Custody unit/adversarial contract tests, not independent qualification."""
 import dataclasses
+import tempfile
+from pathlib import Path
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 import unittest
 from unittest.mock import patch
 
@@ -10,7 +13,7 @@ from euclid.emergence.models.qualification import RejectedQualification
 from euclid.emergence.models.substrate import SubstrateProperties
 from euclid.emergence.substrate.executors import StandardSyncExecutor, AsyncIsolatedExecutor
 from euclid.emergence.trusted_core.custody import CandidateSnapshot, CandidateCustodyError
-from euclid.emergence.trusted_core.access_control import GovernanceToken, InvalidGovernanceTokenError
+from euclid.emergence.trusted_core.access_control import GovernanceToken, InvalidGovernanceTokenError, QualificationAuthorization
 from euclid.emergence.trusted_core.qualification_service import EmergentQualificationService
 from euclid.emergence.trusted_core.stress import stress_test
 
@@ -109,9 +112,15 @@ class ServiceRefusalTests(unittest.TestCase):
     def setUp(self):
         self.c = candidate()
         self.a, self.b = executors()
-        self.key = 'test-only-custody-secret'
-        self.service = EmergentQualificationService(governance_secret_key=self.key)
-        self.token = GovernanceToken.issue('local-contract-test', self.key)
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.key = Ed25519PrivateKey.generate()
+        authorization = QualificationAuthorization(
+            trusted_signers={("local-test-issuer", "local-contract-test"): self.key.public_key()},
+            audience="custody-test", replay_path=Path(temp.name)/"replay.sqlite")
+        self.service = EmergentQualificationService(authorization=authorization)
+        self.token = GovernanceToken.issue("local-contract-test", self.key, issuer="local-test-issuer",
+            audience="custody-test", candidate_fingerprint=self.c.compute_fingerprint())
 
     def run_service(self):
         return self.service.qualify(self.c, self.a, self.b, self.token)

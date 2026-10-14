@@ -110,3 +110,130 @@ Historical **29 passed / 92%** remains a prior agent's reported result, not repr
 | `euclid/emergence/trusted_core/stress.py` | `3b4d35f083c728986b717cfc311f6493ab5e5b091e5ea308bea64b86a5a2f20f` |
 | `tests/emergence_custody/test_candidate_custody.py` | `d2a15131827e3cf2f57f6b0b6a9c151bc8074a375ad6e035b8f950e2f9450707` |
 | `tests/emergence/test_qualification_gates.py` | `405df47aa5324a7597590739f04afe3749e96e474ceb51e54c6c324ccad9faa9` |
+
+
+## 2026-10-14 — External authorization and canonical EUCLID integration
+
+**Supersedes the earlier open-default-secret statement and unwired-boundary
+statement, not the remaining qualification blockers.** Starting head:
+`a41cc1a186bd3460366e6e3fcf55529ec51f7b73`. This PR remains separate from PR74
+and the #66 -> #68 -> #69 -> #71 chain; no blind merge or history rewriting.
+
+### Reproduced security defects and implemented controls
+
+Before this change a public default service secret could issue accepted tokens;
+changing issuer and using a NaN expiry were accepted, and tokens had no durable
+single-use admission. The service no longer has a default signing secret, accepts
+no legacy `governance_secret_key`, and holds no private issuing key. Default
+construction deliberately refuses qualification until the host configures
+`QualificationAuthorization` with explicit `(issuer, officer) -> Ed25519PublicKey`
+bindings, audience and a protected persistent replay path.
+
+`GovernanceToken.issue(officer_id, external_private_key, issuer=..., audience=...,
+candidate_fingerprint=..., now=..., ttl_seconds=...)` is the external host/officer
+issuance API. All security fields, operation, schema and random nonce are signed;
+lifetime is an integer 1–300 seconds. `token_digest` retains the old field NAME
+but now stores a full Ed25519 signature, not a hash or HMAC. Legacy unscoped tokens
+and old constructors intentionally invalidate; do not restore an unsafe fallback.
+Public verification alone is not authorization: `authorize` verifies and consumes
+the nonce transactionally with SQLite BEGIN IMMEDIATE before executor invocation.
+Replay is refused across verifier instances, threads and restart; no refund on
+rejected evaluation, no eviction of live entries on capacity exhaustion. Persisted
+audience/high-water clock detects context substitution and clock rollback.
+
+Trust rotation/revocation is explicit host configuration replacement, retaining
+the same replay ledger. Keep the issuer private key outside the operational actor
+and service process in production. The Python call-stack guard is diagnostic
+only. Host-controlled code, trust mapping and protected storage remain trust
+assumptions. Constructor symlink refusal/chmod are not Windows ACL, hostile-parent
+path-race, malicious-process or OS isolation proofs. Local SQLite is not OVID
+custody integration, distributed replay consensus or backup rollback protection.
+
+### Actual constituent runtime integration
+
+`euclid.emergence.integration.bind_philos(runtime, service, cases=...)` binds the
+real EQS owner to the existing canonical EUCLID runtime. It requires PR74's
+explicit-authority runtime revision and a configured AL HARAS Guardian. It
+creates no rights, signer, entitlement, model or qualification. Host-approved
+`QualificationCase.capture(candidate, executor_A, executor_B,
+observation_window=...)` freezes the full candidate/protocol; client JSON selects
+only an approved case and supplies a scoped external governance token. AL HARAS
+and creator-scoped delegation run before the owner; the owner verifies that
+single-use token before reproduction. The specialist is declared PROPOSE, not
+mislabelled as a read-only fabric handler or given operational promotion power.
+
+Canonical admission/completion/failure auditing reuses AL HARAS HashChainAudit;
+admission persistence failure prevents token consumption and execution. Completion
+failure cannot undo effects and propagates a failure. The native REJECTED or
+SUSPENDED status is returned as such; `independently_qualified` is always false.
+Native canonical evidence can retain request data, including scoped tokens;
+protect host state access and retention. Invocation signatures are NOT signatures
+over successful qualification results or independent certification. Existing
+`QualifiedEmergent.governance_signature` is a legacy invocation-signature field;
+it must not be used as independent result attestation.
+
+Original model classes are preserved. `RecursiveFolding.prepare_candidate` exposes
+the existing candidate proposal for external approval; no parallel learner/model
+is created. Every new candidate/depth requires a fresh, candidate-bound one-use
+authorization. Reusing the old token for a subsequent depth refuses; no automatic
+minting or unbudgeted retry was introduced. Existing MAX_FOLD hash/salt is not an
+independent signature. Generated self-model traces remain simulations.
+
+### Executed local evidence (Linux / Python 3.13.14)
+
+| Exact command within the relevant source root | Normal | `python -O` |
+| --- | --- | --- |
+| `python -m unittest discover -s tests/emergence_authorization -v` | 19 passed, exit 0 | 19 passed, exit 0 |
+| `python -m unittest discover -s tests/emergence_custody -v` | 23 passed, exit 0 | 23 passed, exit 0 |
+| `python -m unittest discover -s tests/emergence_runtime -v` (explicit joint PR74/PR75 source) | 11 passed, exit 0 | 11 passed, exit 0 |
+
+All three runs in both modes had zero failures/errors/skips. The eleven actual
+canonical tests use genuine runtime, AL HARAS, creator rights, Ed25519, SQLite,
+JSONL, EQS and built-in executors. They establish real owner invocation and honest
+SIMULATED-evidence refusal, not successful qualification. On this PR's standalone
+old runtime, the cross-branch test suite explicitly SKIPS pending PR74; that is a
+dependency, not a passing production path. No alias runtime or namespace shim.
+
+The prior 23 custody tests preserve their assertions and use externally generated
+local private test keys. The original pytest callers use a shared local fixture;
+qualification and PHILOS simulated-pipeline tests require REJECTED, not QUALIFIED.
+They were compiled but NOT run: pytest remains unavailable. No synthetic cohort,
+local key or test reviewer becomes independent assurance. Original 29/92% is still
+historical reported provenance, not a reproduced total. Compileall/tabnanny exit 0.
+Exact joint commands/logs and all changed-source SHA256 values are retained in
+PR74's existing consolidation-validation artifact; it is local unsigned evidence.
+
+### Current readiness and blockers
+
+Implemented: scoped public-key authorization/replay and native owner adapter.
+Integrated/locally verified: canonical EUCLID -> actual EQS -> simulated-evidence
+REFUSAL in the explicitly assembled PR74/PR75 compatibility source. NOT established:
+merged/package availability, CI verification or production qualification.
+
+Real measured reproduction/stress and authenticated executor/environment/artifact
+bindings remain absent. A classification marker alone is not measured evidence;
+current stress still refuses qualification. Initial detection custody, independent
+substrates/observation windows, T5 assurance, platform tests, installed package,
+full Salamander/pytest regressions and mandatory CI/security/reviews remain open.
+Do not weaken those gates or relabel a stand-in as certification. Production
+readiness is the objective; this is a reviewable security/integration advance,
+not completion, merge approval or authorization for release/deployment/live work.
+
+### Current local source integrity (not a signature)
+
+| Source / test | SHA-256 |
+| --- | --- |
+| `euclid/emergence/trusted_core/access_control.py` | `d24ee0afb522485e870c93a6dda3b6984006ee1a62f630ab44ab15daabc5fb91` |
+| `euclid/emergence/trusted_core/qualification_service.py` | `ec5bf9ee69148b2e174e0ec8ca5be33f8adaf6ae01cb22aef015a8ea87ee91c3` |
+| `euclid/emergence/trusted_core/__init__.py` | `7f2c4d29a9b3869982f9269213f972a59e1826f2392ecfcf00582305b5b82181` |
+| `euclid/emergence/__init__.py` | `8f4cad998a4a8ee06c9096c85f9107cd781ebd4dcfa8e3e8daf04d93780a5135` |
+| `euclid/emergence/integration.py` | `b3b71b9bc5d1051f8bcf717066b43f010356e46d327b95d55e99a3181e9ae5ae` |
+| `euclid/emergence/folding/recursive_folding.py` | `15cc30163f0caa00ce8b339b811d5e5c493344cd7da8f60339ffba79a5c2d69f` |
+| `tests/emergence/conftest.py` | `4e365b7e6d87d6f4e3fc9a66c0763f48ff2479d3b5855d91636ae5a80c44cd73` |
+| `tests/emergence/test_phi2_e2e_integration.py` | `c6c3ae58831dded62c21d7b5f04f2b5b790a9cba5eacfbb9d04eff252c33b856` |
+| `tests/emergence/test_qualification_gates.py` | `ac43c8049dc4943376875e09025ec1275b5c913efa901ab2f4f9f33084e52ba2` |
+| `tests/emergence/test_recursive_folding.py` | `386103f8ca23a10c5e41a41205374185ec2cc21a06b9d8e96eda05cbae8e4c5d` |
+| `tests/emergence/test_security_boundaries.py` | `6d30f511b0ea6e3df6dc9f407b45a1c37d06fda66761908ce1e12f8ca7417eab` |
+| `tests/emergence_custody/test_candidate_custody.py` | `c67b52c6e6e874c10367b7708a8ab4af64b0382cb2538c1cbf8a13ef6cd2eef3` |
+| `tests/emergence_authorization/test_authorization.py` | `eab1007c9ba9dcdcc2f9999a19b3cd5b7359076b2b63c06b44a8c50118376d57` |
+| `tests/emergence_runtime/test_canonical_philos.py` | `2303053be4a07b1722e8f81c286374770db931144feebe4873edb05ff0b3ff65` |

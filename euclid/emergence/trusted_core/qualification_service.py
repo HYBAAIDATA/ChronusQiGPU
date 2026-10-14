@@ -19,6 +19,7 @@ from ..substrate.isolation import SubstrateIndependenceVerifier
 from .access_control import (
     CallerBoundaryGuard,
     GovernanceToken,
+    QualificationAuthorization,
     InvalidGovernanceTokenError,
     UnauthorizedOperationalLoopCallError,
 )
@@ -39,12 +40,17 @@ class EmergentQualificationService:
 
     def __init__(
         self,
-        governance_secret_key: str = "euclid_trusted_core_secret_key",
+        authorization: Optional[QualificationAuthorization] = None,
         journal: Optional[ImmutableEmergenceJournal] = None,
         divergence_monitor: Optional[DivergenceMonitor] = None,
         margin: float = DEFAULT_MARGIN,
     ):
-        self.governance_secret_key = governance_secret_key
+        if authorization is not None and not isinstance(authorization, QualificationAuthorization):
+            raise TypeError("host-configured QualificationAuthorization required")
+        import math
+        if type(margin) not in (int, float) or not math.isfinite(margin) or margin < self.DEFAULT_MARGIN:
+            raise ValueError("finite stress margin of at least 1.5 required")
+        self.authorization = authorization
         self.journal = journal or ImmutableEmergenceJournal()
         self.monitor = divergence_monitor or DivergenceMonitor()
         self.margin = margin
@@ -65,14 +71,22 @@ class EmergentQualificationService:
         CallerBoundaryGuard.assert_trusted_caller()
 
         # Capability-Based Access Control Verification
-        if governance_token is None or not governance_token.verify(self.governance_secret_key):
-            raise InvalidGovernanceTokenError("Valid GovernanceToken required to invoke EmergentQualificationService.")
+        if type(governance_token) is not GovernanceToken or self.authorization is None:
+            raise InvalidGovernanceTokenError("Explicit trusted public-key authorization required; no default authority.")
 
         original_candidate = candidate
         snapshot = None
         try:
             snapshot = CandidateSnapshot.capture(candidate)
             candidate = snapshot.materialize()
+            try:
+                self.authorization.authorize(governance_token, candidate_fingerprint=snapshot.fingerprint)
+            except InvalidGovernanceTokenError:
+                self.journal.append("AUTHORIZATION_REFUSED", candidate.candidate_id, {
+                    "candidate_fingerprint": snapshot.fingerprint,
+                    "reason": "invalid_scope_trust_time_or_replay",
+                })
+                raise
             self.journal.append("QUALIFICATION_INPUT_SNAPSHOT", candidate.candidate_id, {
                 "candidate_fingerprint": snapshot.fingerprint,
                 "protocol_hash": candidate.reproduction_steps.compute_protocol_hash(),

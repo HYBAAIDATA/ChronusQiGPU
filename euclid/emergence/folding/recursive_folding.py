@@ -72,20 +72,16 @@ class RecursiveFolding:
             return agent.behavior_at(depth)
         return [f"model_action_d{depth}_step_{i}" for i in range(2 + depth)]
 
-    def fold(
-        self,
-        agent: Any,
-        depth: int,
-        executor_A: BaseExecutor,
-        executor_B: BaseExecutor,
-        governance_token: GovernanceToken,
-        prior_manifest: Optional[CapabilityManifest] = None,
-        current_substrate: str = "sub_folding_core",
-    ) -> Generator[QualificationOutcome, None, None]:
-        """Execute recursive fold step and yield qualification outcomes."""
-        if depth > self.max_fold:
-            return
+    def prepare_candidate(self, agent: Any, depth: int, *,
+                          prior_manifest: Optional[CapabilityManifest] = None,
+                          current_substrate: str = "sub_folding_core") -> Optional[EmergentCandidate]:
+        """Form a proposal for external review/signing; never issue authority.
 
+        Existing reflective fallback behavior remains a simulation, not measured
+        emergence. Each depth needs its own candidate-bound authorization.
+        """
+        if type(depth) is not int or not 1 <= depth <= self.max_fold:
+            raise ValueError("depth outside frozen fold budget")
         manifest = prior_manifest or CapabilityManifest(
             declared_actions=frozenset(["navigate", "fetch_data"]),
         )
@@ -100,8 +96,6 @@ class RecursiveFolding:
             manifest=manifest,
         )
 
-        qualified_so_far: Optional[QualifiedEmergent] = None
-
         # 3. If unattributed, route candidate to EQS
         if novelty_n.unattributed:
             protocol = ReproductionProtocol(
@@ -112,7 +106,7 @@ class RecursiveFolding:
                 required_observables=tuple(sorted(list(novelty_n.unattributed))),
                 statistical_tolerance=0.90,
             )
-            candidate = EmergentCandidate(
+            return EmergentCandidate(
                 candidate_id=f"cand_fold_d{depth}_{int(hashlib.sha256(str(model_n).encode()).hexdigest()[:8], 16)}",
                 capability_name=f"recursive_fold_depth_{depth}",
                 discovery_substrate_id=current_substrate,
@@ -122,6 +116,27 @@ class RecursiveFolding:
                 source=f"fold(depth={depth-1})+model_{depth}",
             )
 
+        return None
+
+    def fold(
+        self,
+        agent: Any,
+        depth: int,
+        executor_A: BaseExecutor,
+        executor_B: BaseExecutor,
+        governance_token: GovernanceToken,
+        prior_manifest: Optional[CapabilityManifest] = None,
+        current_substrate: str = "sub_folding_core",
+    ) -> Generator[QualificationOutcome, None, None]:
+        """Execute recursive fold step and yield qualification outcomes."""
+        if depth > self.max_fold:
+            return
+
+        manifest = prior_manifest or CapabilityManifest(declared_actions=frozenset(["navigate", "fetch_data"]))
+        qualified_so_far: Optional[QualifiedEmergent] = None
+        candidate = self.prepare_candidate(agent, depth, prior_manifest=manifest,
+                                           current_substrate=current_substrate)
+        if candidate is not None:
             # Route through EQS - loop CANNOT self-certify
             outcome = self.eq_service.qualify(
                 candidate=candidate,
