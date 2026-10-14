@@ -16,7 +16,7 @@ from ..models.substrate import SubstrateProperties, SubstrateExecutionResult
 
 @dataclass
 class ReproductionEvidence:
-    """Immutable evidence artifact produced by an executor during reproduction."""
+    """Mutable executor result; signed_journal_hash is a legacy hash, not a signature."""
     observed: bool
     executor_id: str
     substrate_id: str
@@ -101,7 +101,7 @@ class StandardSyncExecutor(BaseExecutor):
             observed_behaviors=sorted(observed_behaviors),
             signed_journal_hash=journal_hash,
             execution_metrics={"latency_ms": self.properties.observation_latency, "success_rate": repro_rate},
-            details={"variant": "standard_sync", "seed_count": total_trials},
+            details={"execution_kind": "SIMULATED", "variant": "standard_sync", "seed_count": total_trials},
         )
 
     def execute_run(
@@ -153,7 +153,7 @@ class StandardSyncExecutor(BaseExecutor):
 
 
 class AsyncIsolatedExecutor(BaseExecutor):
-    """Substrate Variant B: Asynchronous containerized execution with latency jitter & batched actions."""
+    """Synchronous simulation fixture; does not create a container or enforce isolation."""
 
     def __init__(
         self,
@@ -186,7 +186,7 @@ class AsyncIsolatedExecutor(BaseExecutor):
                 "latency_ms": self.properties.observation_latency * 1.15,
                 "success_rate": repro_rate,
             },
-            details={"variant": "async_isolated", "jitter_applied": True},
+            details={"execution_kind": "SIMULATED", "variant": "async_isolated", "jitter_applied": True},
         )
 
     def execute_run(

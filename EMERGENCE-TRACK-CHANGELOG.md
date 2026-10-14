@@ -1,10 +1,18 @@
 # Euclid Emergence Track & Philos (Phi-2) Changelog
-**Status**: ENFORCED BINDING IMPLEMENTATION CONTRACT  
+**Status**: PARTIAL REMEDIATION — QUALIFICATION BLOCKED  
 **Branch**: `emergence-track/phi-2`  
 **Base Commit**: `5c608b09`  
-**Test Suite**: 29 passed in 2.53s (92% statement coverage across 1,556 statements)  
+**Historical reported suite**: 29 passed in 2.53s (92% statement coverage across 1,556 statements); not reproduced for this patch  
 
 ---
+
+## [Unreleased] — Full-payload custody and synthetic-evidence refusal
+
+- Bound protocol steps and all candidate fields using explicitly versioned v3 hashes; old digests invalidate.
+- Captured detached service-entry snapshots, checked callback/original views at gate boundaries, retained local audit fingerprints and refused observed mutations.
+- Marked built-in reproduction and stress as simulations; refused synthetic qualification and missing Gate 3 evidence. No measured execution provider or independent detection attestation has been implemented.
+- Migrated legacy positive simulation expectations to refusal; added 23 targeted unittest regressions, all passing normally and under `-O`. Compilation and tabnanny passed. Original pytest suite could not run because pytest is unavailable.
+- Historical "CLOSED & VERIFIED" entries below are preserved reports, not current readiness statements. See the dated correction in `CAPABILITY-LEDGER.md` for limits, hash inventory and remaining blockers.
 
 ## [2.0.0] - 2026-10-14 — Emergence Track & Philos Architecture
 

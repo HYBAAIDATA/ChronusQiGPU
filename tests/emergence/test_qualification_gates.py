@@ -36,7 +36,7 @@ def make_test_candidate(noise_tolerance=0.5, latency=10.0, compute_sec=0.5):
     )
 
 
-def test_gate1_reproduction_passes_on_independent_substrates():
+def test_gate1_simulated_reproduction_rejected_despite_distinct_metadata():
     service = EmergentQualificationService()
     candidate = make_test_candidate()
     token = GovernanceToken.issue("officer_alpha", service.governance_secret_key)
@@ -60,9 +60,9 @@ def test_gate1_reproduction_passes_on_independent_substrates():
     exec_b = AsyncIsolatedExecutor(prop_b)
 
     outcome = service.qualify(candidate, exec_a, exec_b, governance_token=token)
-    assert outcome.status == QualificationStatus.QUALIFIED
-    assert service.is_qualified(candidate.candidate_id)
-    assert outcome.certification_token != ""
+    assert outcome.status == QualificationStatus.REJECTED
+    assert not service.is_qualified(candidate.candidate_id)
+    assert "lacks measured reproduction" in outcome.reason
 
 
 def test_gate1_rejects_identical_substrates():
@@ -110,10 +110,16 @@ def test_gate2_stress_envelope_rejection():
 
     outcome = service.qualify(candidate, exec_a, exec_b, governance_token=token)
     assert outcome.status == QualificationStatus.REJECTED
-    assert outcome.reason == "fails outside discovery conditions"
+    assert "lacks measured reproduction" in outcome.reason
+    # The legacy stress heuristic is tested as a simulation, not as executed stress evidence.
+    from euclid.emergence.trusted_core.stress import stress_test
+    passed, details = stress_test(candidate, candidate.discovery_envelope.scale_margin(2.0), exec_a)
+    assert not passed
+    assert details["execution_kind"] == "SIMULATED"
+    assert not details["executor_invoked"]
 
 
-def test_gate3_post_qualification_divergence_suspension():
+def test_divergence_suspension_remains_available_without_synthetic_qualification():
     service = EmergentQualificationService()
     candidate = make_test_candidate()
     token = GovernanceToken.issue("officer_alpha", service.governance_secret_key)
@@ -137,7 +143,9 @@ def test_gate3_post_qualification_divergence_suspension():
     exec_b = AsyncIsolatedExecutor(prop_b)
 
     outcome = service.qualify(candidate, exec_a, exec_b, governance_token=token)
-    assert outcome.status == QualificationStatus.QUALIFIED
+    assert outcome.status == QualificationStatus.REJECTED
+    assert "lacks measured reproduction" in outcome.reason
+    assert not service.is_qualified(candidate.candidate_id)
 
     divergent_window = [
         TelemetryRecord(
