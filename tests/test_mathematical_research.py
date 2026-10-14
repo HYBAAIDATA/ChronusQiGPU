@@ -14,11 +14,15 @@ from __future__ import annotations
 import pytest
 
 from Intelligence.mathematical_research import (
+    AcyclicDAGVerifier,
     ConjectureStatus,
     FormalConjecture,
     Lemma,
     MathematicalProofTracker,
     ProofDAGError,
+    StepClassification,
+    SympySymbolicVerifier,
+    VerificationStatus,
 )
 
 
@@ -174,3 +178,153 @@ def test_counterexample_falsification() -> None:
     assert conj is not None
     assert conj.status == ConjectureStatus.COUNTEREXAMPLE_FOUND
     assert len(conj.counterexamples) == 1
+
+
+def test_sympy_symbolic_verifier_success() -> None:
+    """SympySymbolicVerifier verifies algebraic, golden-ratio, and boolean identities."""
+    verifier = SympySymbolicVerifier()
+
+    # 1. Algebraic identity
+    res1 = verifier.verify_statement("(x + y)**2 == x**2 + 2*x*y + y**2")
+    assert res1.status == VerificationStatus.VERIFIED
+    assert res1.is_verified is True
+    assert res1.evidence_or_certificate["simplified_diff"] == "0"
+    assert len(res1.digest) == 64
+
+    # 2. Golden ratio identity: phi^2 - phi - 1 = 0
+    res2 = verifier.verify_statement("phi**2 - phi - 1 == 0")
+    assert res2.status == VerificationStatus.VERIFIED
+    assert res2.is_verified is True
+
+    # 3. Trigonometric identity: sin(x)**2 + cos(x)**2 == 1
+    res3 = verifier.verify_statement("sin(x)**2 + cos(x)**2 == 1")
+    assert res3.status == VerificationStatus.VERIFIED
+    assert res3.is_verified is True
+
+
+def test_sympy_symbolic_verifier_fail_closed() -> None:
+    """SympySymbolicVerifier fails closed on invalid identities or unparseable input."""
+    verifier = SympySymbolicVerifier()
+
+    # Refuted identity
+    res1 = verifier.verify_statement("(x + y)**2 == x**2 + y**2")
+    assert res1.status == VerificationStatus.REFUTED
+    assert res1.is_verified is False
+    assert "diff =" in res1.error_message
+
+    # Unsupported / unparseable natural language string
+    res2 = verifier.verify_statement("This is a philosophical theorem about numbers")
+    assert res2.status == VerificationStatus.UNSUPPORTED
+    assert res2.is_verified is False
+
+
+def test_verify_lemma_with_backend_in_tracker() -> None:
+    """Tracker integrates backend verification and updates lemma classification."""
+    tracker = MathematicalProofTracker()
+    tracker.register_conjecture(
+        conjecture_id="BINOMIAL-SQUARE",
+        domain="algebra",
+        statement="(a + b)**2 = a**2 + 2*a*b + b**2",
+    )
+
+    lemma = Lemma(
+        lemma_id="L-BINOMIAL",
+        statement="(a + b)**2 == a**2 + 2*a*b + b**2",
+        assumptions=("a, b in R",),
+        dependencies=(),
+        provenance="algebraic_expansion",
+    )
+    tracker.add_lemma("BINOMIAL-SQUARE", lemma)
+
+    # Initially unverified
+    conj = tracker.get_conjecture("BINOMIAL-SQUARE")
+    assert conj.status == ConjectureStatus.CONJECTURED
+    assert conj.lemmas[0].is_verified is False
+
+    # Verify with SymPy backend
+    res = tracker.verify_lemma_with_backend(
+        conjecture_id="BINOMIAL-SQUARE",
+        lemma_id="L-BINOMIAL",
+        backend_identity="sympy_symbolic_verifier",
+    )
+    assert res.status == VerificationStatus.VERIFIED
+    assert res.is_verified is True
+
+    # After verification, lemma is MACHINE_VERIFIED_LEMMA and conjecture is FORMALLY_VERIFIED
+    updated_lemma = tracker.get_conjecture("BINOMIAL-SQUARE").lemmas[0]
+    assert updated_lemma.is_verified is True
+    assert updated_lemma.classification == StepClassification.MACHINE_VERIFIED_LEMMA
+    assert updated_lemma.verification_receipt == res.digest
+    assert tracker.get_conjecture("BINOMIAL-SQUARE").status == ConjectureStatus.FORMALLY_VERIFIED
+
+
+def test_lemma_invalidation_cascade() -> None:
+    """Modifying or revoking a lemma cascades invalidation to all downstream dependencies."""
+    tracker = MathematicalProofTracker()
+    tracker.register_conjecture(
+        conjecture_id="CASCADE-CONJ",
+        domain="logic",
+        statement="L0 implies L1 implies L2",
+    )
+
+    # Build chain: L0 -> L1 -> L2
+    tracker.add_lemma(
+        "CASCADE-CONJ",
+        Lemma(
+            lemma_id="L0",
+            statement="phi**2 - phi - 1 == 0",
+            assumptions=(),
+            dependencies=(),
+            provenance="definition",
+        ),
+    )
+    tracker.add_lemma(
+        "CASCADE-CONJ",
+        Lemma(
+            lemma_id="L1",
+            statement="phi**2 == phi + 1",
+            assumptions=(),
+            dependencies=("L0",),
+            provenance="rearrangement",
+        ),
+    )
+    tracker.add_lemma(
+        "CASCADE-CONJ",
+        Lemma(
+            lemma_id="L2",
+            statement="phi**3 == 2*phi + 1",
+            assumptions=(),
+            dependencies=("L1",),
+            provenance="multiplication_by_phi",
+        ),
+    )
+
+    # Verify all 3 lemmas with SymPy
+    for lid in ["L0", "L1", "L2"]:
+        res = tracker.verify_lemma_with_backend("CASCADE-CONJ", lid, "sympy_symbolic_verifier")
+        assert res.is_verified is True
+
+    assert tracker.get_conjecture("CASCADE-CONJ").status == ConjectureStatus.FORMALLY_VERIFIED
+
+    # Invalidate root lemma L0
+    invalidated = tracker.invalidate_lemma(
+        "CASCADE-CONJ",
+        "L0",
+        reason="Axiom premise under dispute",
+    )
+
+    # Must cascade to L0, L1, and L2!
+    assert "L0" in invalidated
+    assert "L1" in invalidated
+    assert "L2" in invalidated
+    assert len(invalidated) == 3
+
+    # All lemmas are now unverified
+    conj = tracker.get_conjecture("CASCADE-CONJ")
+    for l in conj.lemmas:
+        assert l.is_verified is False
+        assert l.classification == StepClassification.UNRESOLVED_PROOF
+        assert l.verification_receipt is None
+
+    # Conjecture is demoted from FORMALLY_VERIFIED back to CONJECTURED
+    assert conj.status == ConjectureStatus.CONJECTURED
