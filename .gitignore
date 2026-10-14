@@ -19,6 +19,7 @@ venv/
 artifacts/
 .coverage
 .pytest_cache/
+.pytest_tmp/
 # Host shim build artifacts (compiled from host/mla1517_mmio_win32.c /
 # host/mla1517_mmio.c during setup — not source)
 *.dll
