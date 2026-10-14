@@ -276,7 +276,7 @@ class PythiaLearning:
     def learn(
         self,
         pattern: np.ndarray,
-        mining_success: bool = False,
+        mining_success: Optional[bool] = False,
         pattern_id: Optional[int] = None,
     ) -> int:
         """Learn one pattern through neural adaptation + cell fate mapping.
@@ -301,11 +301,14 @@ class PythiaLearning:
             h = hashlib.sha256(p.tobytes()).digest()
             pattern_id = int.from_bytes(h[:4], "big")
 
-        evidence = self._evidence.setdefault(pattern_id, [0, 0])
-        evidence[0] += 1
-        evidence[1] += int(bool(mining_success))
-        self._totals[0] += 1
-        self._totals[1] += int(bool(mining_success))
+        # None means no mining outcome was measured. Such patterns may teach
+        # synaptic structure but must not become artificial mining failures.
+        if mining_success is not None:
+            evidence = self._evidence.setdefault(pattern_id, [0, 0])
+            evidence[0] += 1
+            evidence[1] += int(bool(mining_success))
+            self._totals[0] += 1
+            self._totals[1] += int(bool(mining_success))
 
         # 3. Store in short-term memory with activation count.
         for entry in self._short_term:
@@ -502,6 +505,8 @@ class PythiaLearning:
             "sleep_cycle": self._sleep_cycle,
             "emergence_signal": self._emergence_signal,
             "activation_history": self._activation_history.tolist(),
+            "evidence": {str(k): list(v) for k, v in self._evidence.items()},
+            "evidence_totals": list(self._totals),
             "short_term": [
                 {
                     "pattern_id": e["pattern_id"],
@@ -530,9 +535,18 @@ class PythiaLearning:
         """Restore the learning substrate from a :meth:`to_snapshot` snapshot."""
         if not isinstance(snap, dict) or snap.get("version") != 1:
             raise ValueError("unsupported learning snapshot format")
+        # Preflight persisted fate statistics before mutating live state.
+        evidence = {int(k): [int(x) for x in v] for k, v in snap.get("evidence", {}).items()}
+        totals = [int(x) for x in snap.get("evidence_totals", [0, 0])]
+        if (len(totals) != 2 or any(len(v) != 2 or not 0 <= v[1] <= v[0] for v in evidence.values())
+                or totals != [sum(v[i] for v in evidence.values()) for i in range(2)]):
+            raise ValueError("inconsistent learning evidence statistics")
         n = int(snap.get("n_units", self.n))
         if n != self.n:
             raise ValueError(f"snapshot n_units={n} does not match substrate n_units={self.n}")
+        self._evidence = evidence
+        self._totals = totals
+        self._evidence_continuity = "evidence" in snap and "evidence_totals" in snap
         self.weights = np.asarray(snap.get("weights", self.weights.tolist()), dtype=float)
         self._sleep_cycle = int(snap.get("sleep_cycle", 0))
         self._emergence_signal = float(snap.get("emergence_signal", 0.0))
@@ -562,11 +576,21 @@ class PythiaLearning:
             for m in snap.get("long_term", [])
         ]
 
+        if not self._evidence_continuity:
+            # Old snapshots did not retain the statistics that justified fate.
+            # Keep the memories, but do not inherit unsupported success truth.
+            for memory in self._long_term:
+                memory.cell_fate = "somatic"
+            self._emergence_signal = 0.0
+
     # -- 9. Status -------------------------------------------------------
 
     def status(self) -> Dict[str, Any]:
         return {
             "n_units": self.n,
+            "evidence_continuity": getattr(self, "_evidence_continuity", True),
+            "measured_activations": self._totals[0],
+            "measured_successes": self._totals[1],
             "short_term_memories": len(self._short_term),
             "long_term_memories": len(self._long_term),
             "germ_line": sum(1 for m in self._long_term if m.cell_fate == "germ_line"),
