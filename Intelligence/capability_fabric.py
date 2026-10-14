@@ -175,8 +175,12 @@ def _check_schema(schema, depth=0):
         raise CapabilityRegistrationError("schema must be a bounded object")
     if set(schema) - _SCHEMA_KEYS:
         raise CapabilityRegistrationError("unsupported schema keyword")
-    if "type" in schema and schema["type"] not in _TYPES:
-        raise CapabilityRegistrationError("unsupported schema type")
+    if "type" in schema:
+        declared = schema["type"]
+        kinds = declared if type(declared) is list else [declared]
+        if (not kinds or any(type(k) is not str or k not in _TYPES for k in kinds)
+                or len(kinds) != len(set(kinds))):
+            raise CapabilityRegistrationError("unsupported schema type")
     props = schema.get("properties", {})
     if not isinstance(props, dict) or any(not isinstance(k, str) for k in props):
         raise CapabilityRegistrationError("schema properties must be named")
@@ -209,7 +213,8 @@ def _validate_schema(value, schema, path="value"):
         "string": isinstance(value, str), "integer": type(value) is int,
         "number": type(value) in (int, float) and math.isfinite(value),
         "boolean": type(value) is bool, "null": value is None}
-    if kind is not None and not matches[kind]:
+    kinds = kind if type(kind) is list else [kind]
+    if kind is not None and not any(matches[k] for k in kinds):
         raise TypeError(f"{path} must be {kind}")
     if "enum" in schema and not any(type(value) is type(x) and value == x for x in schema["enum"]):
         raise TypeError(f"{path} is not an allowed value")

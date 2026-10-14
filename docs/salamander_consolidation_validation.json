@@ -1590,5 +1590,400 @@
       },
       "interpretation": "No CI pass established; check-run scope restriction unresolved."
     }
+  },
+  "production_readiness_research_repair_review": {
+    "inspected_parent_commit": "1e96468063d7a5895d01f7b6db0009f07fead859",
+    "classification": "LOCALLY_VERIFIED_SELECTIVE_JOINT_SOURCE_NOT_PRODUCTION_QUALIFIED",
+    "environment_and_commands": {
+      "environment": {
+        "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+        "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+        "scope": "Selective connector-pinned joint source of PR74/PR75/PR69, not merged/full checkout or installed artifact"
+      },
+      "inspected_heads": {
+        "PR74": "1e96468063d7a5895d01f7b6db0009f07fead859",
+        "PR75": "81c8c4ef178aae8f349262cbe6c53b1222cb106d",
+        "PR69": "370be998286dd8aadc7a9bccb9f397559f2cc791",
+        "PR77_separate_not_in_joint_tests": "099d40ae96578f5d1eb20d8605a260d9141965c2"
+      },
+      "changed_source_sha256": {
+        "Intelligence/isolated_repair.py": "ebc3d871c47be7875cb1a0cf1ec13bfb407083ae40e7e811eeb94a132f552793",
+        "Intelligence/repair_learning_capability.py": "1c0c1a241274235a573469f3d5aae417d4f8ca46b4b66ecb2b0857624ef9b241",
+        "Intelligence/salamander.py": "8c26122ec53df6a874c9317c5ad6799e04b8d9e6a77cec6b17101c25d8f3552f",
+        "Intelligence/capability_fabric.py": "edb8e224b935f25fc0de296f2408a37f64899eec01046a29f67b0d75a401cb3f",
+        "tests/intelligence_consolidation/test_repair_outcome_integration.py": "706471dd00b9076cdf099f79a0debfc2d6f75ba1f1305a8054c4c5db44479091",
+        "scripts/verify_euclid_research_archive.py": "c8981f3097767136a7209f00cf5c0a2a78aaefebb67bf307208bb1190704fa1f",
+        "scripts/reproduce_repair_outcome_invariants.py": "f70884addfcc7803318b5506a2e19bdc5565954730c685ffc5785a8d1069429d"
+      },
+      "unavailable_tools": [
+        "pytest",
+        "setuptools",
+        "wheel",
+        "build",
+        "black",
+        "ruff",
+        "flake8"
+      ],
+      "checks": [
+        {
+          "name": "intelligence_consolidation",
+          "command": [
+            "/usr/local/bin/python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "/data/intelligence_readiness/source/tests/intelligence_consolidation",
+            "-v"
+          ],
+          "cwd": "outside-source validation workspace",
+          "exit_code": 0,
+          "log_sha256": "f8b34ff77736a94df8031bdcc7ac3ce9a2141e814c7080588dad5d495fe04061",
+          "output": "test_binding_does_not_create_rights (test_canonical_bridge.CanonicalBridgeIntegration.test_binding_does_not_create_rights) ... ok\ntest_closed_runtime (test_canonical_bridge.CanonicalBridgeIntegration.test_closed_runtime) ... ok\ntest_creator_rights_revocation_blocks_dispatch (test_canonical_bridge.CanonicalBridgeIntegration.test_creator_rights_revocation_blocks_dispatch) ... ok\ntest_experiment_is_not_proof (test_canonical_bridge.CanonicalBridgeIntegration.test_experiment_is_not_proof) ... ok\ntest_guardian_absence_refuses_even_with_rights (test_canonical_bridge.CanonicalBridgeIntegration.test_guardian_absence_refuses_even_with_rights) ... ok\ntest_invalid_expired_tampered_and_wrong_tenant_tokens_no_handler (test_canonical_bridge.CanonicalBridgeIntegration.test_invalid_expired_tampered_and_wrong_tenant_tokens_no_handler) ... ok\ntest_missing_conjecture_is_not_success (test_canonical_bridge.CanonicalBridgeIntegration.test_missing_conjecture_is_not_success) ... ok\ntest_mutation_capability_binding_denied (test_canonical_bridge.CanonicalBridgeIntegration.test_mutation_capability_binding_denied) ... ok\ntest_profile_injection_refused_before_dispatch (test_canonical_bridge.CanonicalBridgeIntegration.test_profile_injection_refused_before_dispatch) ... ok\ntest_real_native_registration_dispatch_result_and_audit (test_canonical_bridge.CanonicalBridgeIntegration.test_real_native_registration_dispatch_result_and_audit) ... ok\ntest_registry_change_after_admission_cannot_execute_mutating_handler (test_canonical_bridge.CanonicalBridgeIntegration.test_registry_change_after_admission_cannot_execute_mutating_handler)\nReal concurrent registry replacement at the bridge/dispatch boundary. ... ok\ntest_unregistration_and_permission_change_fail_closed (test_canonical_bridge.CanonicalBridgeIntegration.test_unregistration_and_permission_change_fail_closed) ... ok\ntest_admission_callback_cannot_weaken_the_execution_schema (test_canonical_bridge.FabricRegression.test_admission_callback_cannot_weaken_the_execution_schema) ... ok\ntest_audit_is_detached (test_canonical_bridge.FabricRegression.test_audit_is_detached) ... ok\ntest_bad_profile_no_handler (test_canonical_bridge.FabricRegression.test_bad_profile_no_handler) ... ok\ntest_dispatch_uses_the_admitted_handler_snapshot (test_canonical_bridge.FabricRegression.test_dispatch_uses_the_admitted_handler_snapshot) ... ok\ntest_failure_shapes_never_success (test_canonical_bridge.FabricRegression.test_failure_shapes_never_success) ... ok\ntest_findings_limit (test_canonical_bridge.FabricRegression.test_findings_limit) ... ok\ntest_input_envelope_before_handler (test_canonical_bridge.FabricRegression.test_input_envelope_before_handler) ... ok\ntest_invalid_budget (test_canonical_bridge.FabricRegression.test_invalid_budget) ... ok\ntest_invalid_inputs_no_execution (test_canonical_bridge.FabricRegression.test_invalid_inputs_no_execution) ... ok\ntest_invalid_schema_fails_at_registration (test_canonical_bridge.FabricRegression.test_invalid_schema_fails_at_registration) ... ok\ntest_manifest_is_snapshot (test_canonical_bridge.FabricRegression.test_manifest_is_snapshot) ... ok\ntest_native_failure_dataclass_not_success (test_canonical_bridge.FabricRegression.test_native_failure_dataclass_not_success) ... ok\ntest_nonfinite_output_not_success (test_canonical_bridge.FabricRegression.test_nonfinite_output_not_success) ... ok\ntest_output_validation (test_canonical_bridge.FabricRegression.test_output_validation) ... ok\ntest_permission_contract_types (test_canonical_bridge.FabricRegression.test_permission_contract_types) ... ok\ntest_receipt_discloses_enforcement_limits (test_canonical_bridge.FabricRegression.test_receipt_discloses_enforcement_limits) ... ok\ntest_shared_code_execution_denied_before_handler (test_canonical_bridge.FabricRegression.test_shared_code_execution_denied_before_handler) ... ok\ntest_simulation_and_unverified_are_distinct (test_canonical_bridge.FabricRegression.test_simulation_and_unverified_are_distinct) ... ok\ntest_unknown_and_disabled_audited (test_canonical_bridge.FabricRegression.test_unknown_and_disabled_audited) ... ok\ntest_leaf_import_does_not_initialize_engines (test_canonical_bridge.ImportCompositionRegression.test_leaf_import_does_not_initialize_engines) ... ok\ntest_unknown_export_is_honest (test_canonical_bridge.ImportCompositionRegression.test_unknown_export_is_honest) ... ok\ntest_actual_source_bound_review_from_canonical_runtime (test_execution_custody.CanonicalCustodyIntegration.test_actual_source_bound_review_from_canonical_runtime) ... ok\ntest_binding_rejects_absolute_and_path_like_audit_identifiers (test_execution_custody.CanonicalCustodyIntegration.test_binding_rejects_absolute_and_path_like_audit_identifiers) ... ok\ntest_catalog_schema_is_detached_and_does_not_grant_authority (test_execution_custody.CanonicalCustodyIntegration.test_catalog_schema_is_detached_and_does_not_grant_authority) ... ok\ntest_changed_source_and_symlink_are_refused (test_execution_custody.CanonicalCustodyIntegration.test_changed_source_and_symlink_are_refused) ... ok\ntest_durable_native_execution_chain_survives_reopen (test_execution_custody.CanonicalCustodyIntegration.test_durable_native_execution_chain_survives_reopen) ... ok\ntest_guardian_observation_mutation_cannot_change_dispatched_request (test_execution_custody.CanonicalCustodyIntegration.test_guardian_observation_mutation_cannot_change_dispatched_request) ... ok\ntest_receipt_and_admission_share_local_handler_binding (test_execution_custody.CanonicalCustodyIntegration.test_receipt_and_admission_share_local_handler_binding) ... ok\ntest_specialist_authority_is_explicit_without_creating_rights (test_execution_custody.CanonicalCustodyIntegration.test_specialist_authority_is_explicit_without_creating_rights) ... ok\ntest_unapproved_client_policy_and_root_are_refused (test_execution_custody.CanonicalCustodyIntegration.test_unapproved_client_policy_and_root_are_refused) ... ok\ntest_unconfigured_review_is_disabled (test_execution_custody.CanonicalCustodyIntegration.test_unconfigured_review_is_disabled) ... ok\ntest_admission_audit_failure_prevents_real_file_effect (test_execution_custody.DispatchCustodyRegression.test_admission_audit_failure_prevents_real_file_effect) ... ok\ntest_completion_audit_failure_does_not_return_success_or_claim_rollback (test_execution_custody.DispatchCustodyRegression.test_completion_audit_failure_does_not_return_success_or_claim_rollback) ... ok\ntest_handler_mutation_does_not_rewrite_admitted_input_receipt (test_execution_custody.DispatchCustodyRegression.test_handler_mutation_does_not_rewrite_admitted_input_receipt) ... ok\ntest_lossy_json_inputs_refused_without_handler (test_execution_custody.DispatchCustodyRegression.test_lossy_json_inputs_refused_without_handler) ... ok\ntest_non_json_output_is_not_verified_success (test_execution_custody.DispatchCustodyRegression.test_non_json_output_is_not_verified_success) ... ok\ntest_duplicate_registration_refused (test_repair_outcome_integration.CanonicalRepairQuery.test_duplicate_registration_refused) ... ok\ntest_malformed_request_not_accepted (test_repair_outcome_integration.CanonicalRepairQuery.test_malformed_request_not_accepted) ... ok\ntest_nullable_schema_rejects_bad_rate_outputs (test_repair_outcome_integration.CanonicalRepairQuery.test_nullable_schema_rejects_bad_rate_outputs) ... ok\ntest_observed_outcomes_survive_restore_and_canonical_dispatch (test_repair_outcome_integration.CanonicalRepairQuery.test_observed_outcomes_survive_restore_and_canonical_dispatch) ... ok\ntest_real_query_has_no_executor_or_implicit_write (test_repair_outcome_integration.CanonicalRepairQuery.test_real_query_has_no_executor_or_implicit_write) ... ok\ntest_revoked_rights_do_not_reach_handler (test_repair_outcome_integration.CanonicalRepairQuery.test_revoked_rights_do_not_reach_handler) ... ok\ntest_corrupt_file_fails_without_erasing_current_state (test_repair_outcome_integration.LedgerRegression.test_corrupt_file_fails_without_erasing_current_state) ... ok\ntest_custody_failure_preserves_observed_third_party_change (test_repair_outcome_integration.LedgerRegression.test_custody_failure_preserves_observed_third_party_change) ... ok\ntest_duplicate_record_identity_rejected (test_repair_outcome_integration.LedgerRegression.test_duplicate_record_identity_rejected) ... ok\ntest_empty_population_is_not_empirical_half_success (test_repair_outcome_integration.LedgerRegression.test_empty_population_is_not_empirical_half_success) ... ok\ntest_explicit_empty_authority_stays_empty (test_repair_outcome_integration.LedgerRegression.test_explicit_empty_authority_stays_empty) ... ok\ntest_explicit_host_authorization_still_executes_real_local_repair (test_repair_outcome_integration.LedgerRegression.test_explicit_host_authorization_still_executes_real_local_repair) ... ok\ntest_failed_outcome_retained_and_not_committed (test_repair_outcome_integration.LedgerRegression.test_failed_outcome_retained_and_not_committed) ... ok\ntest_invalid_committed_evidence_refused (test_repair_outcome_integration.LedgerRegression.test_invalid_committed_evidence_refused) ... ok\ntest_outcome_storage_failure_recovers_actual_published_source (test_repair_outcome_integration.LedgerRegression.test_outcome_storage_failure_recovers_actual_published_source) ... ok\ntest_public_default_token_has_no_authority_and_is_not_logged (test_repair_outcome_integration.LedgerRegression.test_public_default_token_has_no_authority_and_is_not_logged) ... ok\ntest_repeated_load_does_not_inflate_counts (test_repair_outcome_integration.LedgerRegression.test_repeated_load_does_not_inflate_counts) ... ok\ntest_storage_failure_is_not_acknowledged (test_repair_outcome_integration.LedgerRegression.test_storage_failure_is_not_acknowledged) ... ok\ntest_strategy_key_cannot_collide_via_colons (test_repair_outcome_integration.LedgerRegression.test_strategy_key_cannot_collide_via_colons) ... ok\n\n----------------------------------------------------------------------\nRan 67 tests in 0.408s\n\nOK\n"
+        },
+        {
+          "name": "intelligence_consolidation_O",
+          "command": [
+            "/usr/local/bin/python",
+            "-O",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "/data/intelligence_readiness/source/tests/intelligence_consolidation",
+            "-v"
+          ],
+          "cwd": "outside-source validation workspace",
+          "exit_code": 0,
+          "log_sha256": "705831506158ed0780e6f2823e5b63eed54278952bc91544b9e1dfe825399b34",
+          "output": "test_binding_does_not_create_rights (test_canonical_bridge.CanonicalBridgeIntegration.test_binding_does_not_create_rights) ... ok\ntest_closed_runtime (test_canonical_bridge.CanonicalBridgeIntegration.test_closed_runtime) ... ok\ntest_creator_rights_revocation_blocks_dispatch (test_canonical_bridge.CanonicalBridgeIntegration.test_creator_rights_revocation_blocks_dispatch) ... ok\ntest_experiment_is_not_proof (test_canonical_bridge.CanonicalBridgeIntegration.test_experiment_is_not_proof) ... ok\ntest_guardian_absence_refuses_even_with_rights (test_canonical_bridge.CanonicalBridgeIntegration.test_guardian_absence_refuses_even_with_rights) ... ok\ntest_invalid_expired_tampered_and_wrong_tenant_tokens_no_handler (test_canonical_bridge.CanonicalBridgeIntegration.test_invalid_expired_tampered_and_wrong_tenant_tokens_no_handler) ... ok\ntest_missing_conjecture_is_not_success (test_canonical_bridge.CanonicalBridgeIntegration.test_missing_conjecture_is_not_success) ... ok\ntest_mutation_capability_binding_denied (test_canonical_bridge.CanonicalBridgeIntegration.test_mutation_capability_binding_denied) ... ok\ntest_profile_injection_refused_before_dispatch (test_canonical_bridge.CanonicalBridgeIntegration.test_profile_injection_refused_before_dispatch) ... ok\ntest_real_native_registration_dispatch_result_and_audit (test_canonical_bridge.CanonicalBridgeIntegration.test_real_native_registration_dispatch_result_and_audit) ... ok\ntest_registry_change_after_admission_cannot_execute_mutating_handler (test_canonical_bridge.CanonicalBridgeIntegration.test_registry_change_after_admission_cannot_execute_mutating_handler)\nReal concurrent registry replacement at the bridge/dispatch boundary. ... ok\ntest_unregistration_and_permission_change_fail_closed (test_canonical_bridge.CanonicalBridgeIntegration.test_unregistration_and_permission_change_fail_closed) ... ok\ntest_admission_callback_cannot_weaken_the_execution_schema (test_canonical_bridge.FabricRegression.test_admission_callback_cannot_weaken_the_execution_schema) ... ok\ntest_audit_is_detached (test_canonical_bridge.FabricRegression.test_audit_is_detached) ... ok\ntest_bad_profile_no_handler (test_canonical_bridge.FabricRegression.test_bad_profile_no_handler) ... ok\ntest_dispatch_uses_the_admitted_handler_snapshot (test_canonical_bridge.FabricRegression.test_dispatch_uses_the_admitted_handler_snapshot) ... ok\ntest_failure_shapes_never_success (test_canonical_bridge.FabricRegression.test_failure_shapes_never_success) ... ok\ntest_findings_limit (test_canonical_bridge.FabricRegression.test_findings_limit) ... ok\ntest_input_envelope_before_handler (test_canonical_bridge.FabricRegression.test_input_envelope_before_handler) ... ok\ntest_invalid_budget (test_canonical_bridge.FabricRegression.test_invalid_budget) ... ok\ntest_invalid_inputs_no_execution (test_canonical_bridge.FabricRegression.test_invalid_inputs_no_execution) ... ok\ntest_invalid_schema_fails_at_registration (test_canonical_bridge.FabricRegression.test_invalid_schema_fails_at_registration) ... ok\ntest_manifest_is_snapshot (test_canonical_bridge.FabricRegression.test_manifest_is_snapshot) ... ok\ntest_native_failure_dataclass_not_success (test_canonical_bridge.FabricRegression.test_native_failure_dataclass_not_success) ... ok\ntest_nonfinite_output_not_success (test_canonical_bridge.FabricRegression.test_nonfinite_output_not_success) ... ok\ntest_output_validation (test_canonical_bridge.FabricRegression.test_output_validation) ... ok\ntest_permission_contract_types (test_canonical_bridge.FabricRegression.test_permission_contract_types) ... ok\ntest_receipt_discloses_enforcement_limits (test_canonical_bridge.FabricRegression.test_receipt_discloses_enforcement_limits) ... ok\ntest_shared_code_execution_denied_before_handler (test_canonical_bridge.FabricRegression.test_shared_code_execution_denied_before_handler) ... ok\ntest_simulation_and_unverified_are_distinct (test_canonical_bridge.FabricRegression.test_simulation_and_unverified_are_distinct) ... ok\ntest_unknown_and_disabled_audited (test_canonical_bridge.FabricRegression.test_unknown_and_disabled_audited) ... ok\ntest_leaf_import_does_not_initialize_engines (test_canonical_bridge.ImportCompositionRegression.test_leaf_import_does_not_initialize_engines) ... ok\ntest_unknown_export_is_honest (test_canonical_bridge.ImportCompositionRegression.test_unknown_export_is_honest) ... ok\ntest_actual_source_bound_review_from_canonical_runtime (test_execution_custody.CanonicalCustodyIntegration.test_actual_source_bound_review_from_canonical_runtime) ... ok\ntest_binding_rejects_absolute_and_path_like_audit_identifiers (test_execution_custody.CanonicalCustodyIntegration.test_binding_rejects_absolute_and_path_like_audit_identifiers) ... ok\ntest_catalog_schema_is_detached_and_does_not_grant_authority (test_execution_custody.CanonicalCustodyIntegration.test_catalog_schema_is_detached_and_does_not_grant_authority) ... ok\ntest_changed_source_and_symlink_are_refused (test_execution_custody.CanonicalCustodyIntegration.test_changed_source_and_symlink_are_refused) ... ok\ntest_durable_native_execution_chain_survives_reopen (test_execution_custody.CanonicalCustodyIntegration.test_durable_native_execution_chain_survives_reopen) ... ok\ntest_guardian_observation_mutation_cannot_change_dispatched_request (test_execution_custody.CanonicalCustodyIntegration.test_guardian_observation_mutation_cannot_change_dispatched_request) ... ok\ntest_receipt_and_admission_share_local_handler_binding (test_execution_custody.CanonicalCustodyIntegration.test_receipt_and_admission_share_local_handler_binding) ... ok\ntest_specialist_authority_is_explicit_without_creating_rights (test_execution_custody.CanonicalCustodyIntegration.test_specialist_authority_is_explicit_without_creating_rights) ... ok\ntest_unapproved_client_policy_and_root_are_refused (test_execution_custody.CanonicalCustodyIntegration.test_unapproved_client_policy_and_root_are_refused) ... ok\ntest_unconfigured_review_is_disabled (test_execution_custody.CanonicalCustodyIntegration.test_unconfigured_review_is_disabled) ... ok\ntest_admission_audit_failure_prevents_real_file_effect (test_execution_custody.DispatchCustodyRegression.test_admission_audit_failure_prevents_real_file_effect) ... ok\ntest_completion_audit_failure_does_not_return_success_or_claim_rollback (test_execution_custody.DispatchCustodyRegression.test_completion_audit_failure_does_not_return_success_or_claim_rollback) ... ok\ntest_handler_mutation_does_not_rewrite_admitted_input_receipt (test_execution_custody.DispatchCustodyRegression.test_handler_mutation_does_not_rewrite_admitted_input_receipt) ... ok\ntest_lossy_json_inputs_refused_without_handler (test_execution_custody.DispatchCustodyRegression.test_lossy_json_inputs_refused_without_handler) ... ok\ntest_non_json_output_is_not_verified_success (test_execution_custody.DispatchCustodyRegression.test_non_json_output_is_not_verified_success) ... ok\ntest_duplicate_registration_refused (test_repair_outcome_integration.CanonicalRepairQuery.test_duplicate_registration_refused) ... ok\ntest_malformed_request_not_accepted (test_repair_outcome_integration.CanonicalRepairQuery.test_malformed_request_not_accepted) ... ok\ntest_nullable_schema_rejects_bad_rate_outputs (test_repair_outcome_integration.CanonicalRepairQuery.test_nullable_schema_rejects_bad_rate_outputs) ... ok\ntest_observed_outcomes_survive_restore_and_canonical_dispatch (test_repair_outcome_integration.CanonicalRepairQuery.test_observed_outcomes_survive_restore_and_canonical_dispatch) ... ok\ntest_real_query_has_no_executor_or_implicit_write (test_repair_outcome_integration.CanonicalRepairQuery.test_real_query_has_no_executor_or_implicit_write) ... ok\ntest_revoked_rights_do_not_reach_handler (test_repair_outcome_integration.CanonicalRepairQuery.test_revoked_rights_do_not_reach_handler) ... ok\ntest_corrupt_file_fails_without_erasing_current_state (test_repair_outcome_integration.LedgerRegression.test_corrupt_file_fails_without_erasing_current_state) ... ok\ntest_custody_failure_preserves_observed_third_party_change (test_repair_outcome_integration.LedgerRegression.test_custody_failure_preserves_observed_third_party_change) ... ok\ntest_duplicate_record_identity_rejected (test_repair_outcome_integration.LedgerRegression.test_duplicate_record_identity_rejected) ... ok\ntest_empty_population_is_not_empirical_half_success (test_repair_outcome_integration.LedgerRegression.test_empty_population_is_not_empirical_half_success) ... ok\ntest_explicit_empty_authority_stays_empty (test_repair_outcome_integration.LedgerRegression.test_explicit_empty_authority_stays_empty) ... ok\ntest_explicit_host_authorization_still_executes_real_local_repair (test_repair_outcome_integration.LedgerRegression.test_explicit_host_authorization_still_executes_real_local_repair) ... ok\ntest_failed_outcome_retained_and_not_committed (test_repair_outcome_integration.LedgerRegression.test_failed_outcome_retained_and_not_committed) ... ok\ntest_invalid_committed_evidence_refused (test_repair_outcome_integration.LedgerRegression.test_invalid_committed_evidence_refused) ... ok\ntest_outcome_storage_failure_recovers_actual_published_source (test_repair_outcome_integration.LedgerRegression.test_outcome_storage_failure_recovers_actual_published_source) ... ok\ntest_public_default_token_has_no_authority_and_is_not_logged (test_repair_outcome_integration.LedgerRegression.test_public_default_token_has_no_authority_and_is_not_logged) ... ok\ntest_repeated_load_does_not_inflate_counts (test_repair_outcome_integration.LedgerRegression.test_repeated_load_does_not_inflate_counts) ... ok\ntest_storage_failure_is_not_acknowledged (test_repair_outcome_integration.LedgerRegression.test_storage_failure_is_not_acknowledged) ... ok\ntest_strategy_key_cannot_collide_via_colons (test_repair_outcome_integration.LedgerRegression.test_strategy_key_cannot_collide_via_colons) ... ok\n\n----------------------------------------------------------------------\nRan 67 tests in 0.463s\n\nOK\n"
+        },
+        {
+          "name": "emergence_authorization",
+          "command": [
+            "/usr/local/bin/python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "/data/intelligence_readiness/source/tests/emergence_authorization",
+            "-v"
+          ],
+          "cwd": "outside-source validation workspace",
+          "exit_code": 0,
+          "log_sha256": "1a66fcafb57bbdb0a2b96484db43c1d7d232ba0d19944d2c90de216ba84650f3",
+          "output": "test_all_security_fields_are_signed (test_authorization.AuthorizationTests.test_all_security_fields_are_signed) ... ok\ntest_concurrent_verifiers_admit_exactly_once (test_authorization.AuthorizationTests.test_concurrent_verifiers_admit_exactly_once) ... ok\ntest_expired_token_refused (test_authorization.AuthorizationTests.test_expired_token_refused) ... ok\ntest_full_ledger_refuses_without_evicting_live_authorization (test_authorization.AuthorizationTests.test_full_ledger_refuses_without_evicting_live_authorization) ... ok\ntest_host_key_mapping_is_detached_and_revocation_refuses (test_authorization.AuthorizationTests.test_host_key_mapping_is_detached_and_revocation_refuses) ... ok\ntest_invalid_margin_and_configuration_fail_closed (test_authorization.AuthorizationTests.test_invalid_margin_and_configuration_fail_closed) ... ok\ntest_ledger_cannot_be_rebound_to_other_audience (test_authorization.AuthorizationTests.test_ledger_cannot_be_rebound_to_other_audience) ... ok\ntest_no_default_authority_or_signing_secret (test_authorization.AuthorizationTests.test_no_default_authority_or_signing_secret) ... ok\ntest_nonfinite_bool_and_excessive_issue_lifetimes_refused (test_authorization.AuthorizationTests.test_nonfinite_bool_and_excessive_issue_lifetimes_refused) ... ok\ntest_persisted_clock_rollback_refused (test_authorization.AuthorizationTests.test_persisted_clock_rollback_refused) ... ok\ntest_protocol_mutation_and_cross_candidate_token_refused (test_authorization.AuthorizationTests.test_protocol_mutation_and_cross_candidate_token_refused) ... ok\ntest_public_key_cannot_issue (test_authorization.AuthorizationTests.test_public_key_cannot_issue) ... ok\ntest_same_token_refused_across_verifier_restarts (test_authorization.AuthorizationTests.test_same_token_refused_across_verifier_restarts) ... ok\ntest_self_signed_unknown_issuer_or_officer_refused (test_authorization.AuthorizationTests.test_self_signed_unknown_issuer_or_officer_refused) ... ok\ntest_service_consumes_authorization_even_when_simulation_refused (test_authorization.AuthorizationTests.test_service_consumes_authorization_even_when_simulation_refused) ... ok\ntest_signed_time_and_operation_constraints_are_enforced (test_authorization.AuthorizationTests.test_signed_time_and_operation_constraints_are_enforced) ... ok\ntest_unavailable_replay_ledger_refuses (test_authorization.AuthorizationTests.test_unavailable_replay_ledger_refuses) ... ok\ntest_valid_authorization_does_not_qualify (test_authorization.AuthorizationTests.test_valid_authorization_does_not_qualify) ... ok\ntest_wrong_key_and_tampered_signature_refused (test_authorization.AuthorizationTests.test_wrong_key_and_tampered_signature_refused) ... ok\n\n----------------------------------------------------------------------\nRan 19 tests in 0.089s\n\nOK\n"
+        },
+        {
+          "name": "emergence_authorization_O",
+          "command": [
+            "/usr/local/bin/python",
+            "-O",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "/data/intelligence_readiness/source/tests/emergence_authorization",
+            "-v"
+          ],
+          "cwd": "outside-source validation workspace",
+          "exit_code": 0,
+          "log_sha256": "fd150dc6913f126ee2a01f580e1a8364428a322212896105bf5a05c8e72e9f5b",
+          "output": "test_all_security_fields_are_signed (test_authorization.AuthorizationTests.test_all_security_fields_are_signed) ... ok\ntest_concurrent_verifiers_admit_exactly_once (test_authorization.AuthorizationTests.test_concurrent_verifiers_admit_exactly_once) ... ok\ntest_expired_token_refused (test_authorization.AuthorizationTests.test_expired_token_refused) ... ok\ntest_full_ledger_refuses_without_evicting_live_authorization (test_authorization.AuthorizationTests.test_full_ledger_refuses_without_evicting_live_authorization) ... ok\ntest_host_key_mapping_is_detached_and_revocation_refuses (test_authorization.AuthorizationTests.test_host_key_mapping_is_detached_and_revocation_refuses) ... ok\ntest_invalid_margin_and_configuration_fail_closed (test_authorization.AuthorizationTests.test_invalid_margin_and_configuration_fail_closed) ... ok\ntest_ledger_cannot_be_rebound_to_other_audience (test_authorization.AuthorizationTests.test_ledger_cannot_be_rebound_to_other_audience) ... ok\ntest_no_default_authority_or_signing_secret (test_authorization.AuthorizationTests.test_no_default_authority_or_signing_secret) ... ok\ntest_nonfinite_bool_and_excessive_issue_lifetimes_refused (test_authorization.AuthorizationTests.test_nonfinite_bool_and_excessive_issue_lifetimes_refused) ... ok\ntest_persisted_clock_rollback_refused (test_authorization.AuthorizationTests.test_persisted_clock_rollback_refused) ... ok\ntest_protocol_mutation_and_cross_candidate_token_refused (test_authorization.AuthorizationTests.test_protocol_mutation_and_cross_candidate_token_refused) ... ok\ntest_public_key_cannot_issue (test_authorization.AuthorizationTests.test_public_key_cannot_issue) ... ok\ntest_same_token_refused_across_verifier_restarts (test_authorization.AuthorizationTests.test_same_token_refused_across_verifier_restarts) ... ok\ntest_self_signed_unknown_issuer_or_officer_refused (test_authorization.AuthorizationTests.test_self_signed_unknown_issuer_or_officer_refused) ... ok\ntest_service_consumes_authorization_even_when_simulation_refused (test_authorization.AuthorizationTests.test_service_consumes_authorization_even_when_simulation_refused) ... ok\ntest_signed_time_and_operation_constraints_are_enforced (test_authorization.AuthorizationTests.test_signed_time_and_operation_constraints_are_enforced) ... ok\ntest_unavailable_replay_ledger_refuses (test_authorization.AuthorizationTests.test_unavailable_replay_ledger_refuses) ... ok\ntest_valid_authorization_does_not_qualify (test_authorization.AuthorizationTests.test_valid_authorization_does_not_qualify) ... ok\ntest_wrong_key_and_tampered_signature_refused (test_authorization.AuthorizationTests.test_wrong_key_and_tampered_signature_refused) ... ok\n\n----------------------------------------------------------------------\nRan 19 tests in 0.083s\n\nOK\n"
+        },
+        {
+          "name": "emergence_custody",
+          "command": [
+            "/usr/local/bin/python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "/data/intelligence_readiness/source/tests/emergence_custody",
+            "-v"
+          ],
+          "cwd": "outside-source validation workspace",
+          "exit_code": 0,
+          "log_sha256": "3c24c17c16f32036817c4675357a32b499196ce75b7b37029aa0fa9fe292635f",
+          "output": "test_actual_service_refuses_builtin_simulations (test_candidate_custody.ServiceRefusalTests.test_actual_service_refuses_builtin_simulations) ... ok\ntest_builtin_reproduction_marked_simulated (test_candidate_custody.ServiceRefusalTests.test_builtin_reproduction_marked_simulated) ... ok\ntest_claimed_measurement_cannot_bypass_simulated_stress (test_candidate_custody.ServiceRefusalTests.test_claimed_measurement_cannot_bypass_simulated_stress) ... ok\ntest_executor_protocol_mutation_refused_before_second_executor (test_candidate_custody.ServiceRefusalTests.test_executor_protocol_mutation_refused_before_second_executor) ... ok\ntest_gate_two_mutation_rejected (test_candidate_custody.ServiceRefusalTests.test_gate_two_mutation_rejected) ... ok\ntest_missing_authority_refused_before_execution (test_candidate_custody.ServiceRefusalTests.test_missing_authority_refused_before_execution) ... ok\ntest_missing_gate_three_window_is_not_pass (test_candidate_custody.ServiceRefusalTests.test_missing_gate_three_window_is_not_pass) ... ok\ntest_refusal_preserves_local_snapshot_custody (test_candidate_custody.ServiceRefusalTests.test_refusal_preserves_local_snapshot_custody) ... ok\ntest_source_mutation_refused_before_second_executor (test_candidate_custody.ServiceRefusalTests.test_source_mutation_refused_before_second_executor) ... ok\ntest_stress_explicitly_does_not_invoke_executor (test_candidate_custody.ServiceRefusalTests.test_stress_explicitly_does_not_invoke_executor) ... ok\ntest_baseline_metrics_bound (test_candidate_custody.SnapshotTests.test_baseline_metrics_bound) ... ok\ntest_envelope_bounds_bound (test_candidate_custody.SnapshotTests.test_envelope_bounds_bound) ... ok\ntest_metadata_bound (test_candidate_custody.SnapshotTests.test_metadata_bound) ... ok\ntest_nan_rejected (test_candidate_custody.SnapshotTests.test_nan_rejected) ... ok\ntest_nested_protocol_arguments_bound (test_candidate_custody.SnapshotTests.test_nested_protocol_arguments_bound) ... ok\ntest_non_json_rejected (test_candidate_custody.SnapshotTests.test_non_json_rejected) ... ok\ntest_observable_order_bound (test_candidate_custody.SnapshotTests.test_observable_order_bound) ... ok\ntest_protocol_steps_bound (test_candidate_custody.SnapshotTests.test_protocol_steps_bound) ... ok\ntest_snapshot_fields_frozen (test_candidate_custody.SnapshotTests.test_snapshot_fields_frozen) ... ok\ntest_snapshot_roundtrip (test_candidate_custody.SnapshotTests.test_snapshot_roundtrip) ... ok\ntest_source_none_empty_and_root_distinct (test_candidate_custody.SnapshotTests.test_source_none_empty_and_root_distinct) ... ok\ntest_to_dict_detached_steps (test_candidate_custody.SnapshotTests.test_to_dict_detached_steps) ... ok\ntest_views_do_not_share_nested_state (test_candidate_custody.SnapshotTests.test_views_do_not_share_nested_state) ... ok\n\n----------------------------------------------------------------------\nRan 23 tests in 0.087s\n\nOK\n"
+        },
+        {
+          "name": "emergence_custody_O",
+          "command": [
+            "/usr/local/bin/python",
+            "-O",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "/data/intelligence_readiness/source/tests/emergence_custody",
+            "-v"
+          ],
+          "cwd": "outside-source validation workspace",
+          "exit_code": 0,
+          "log_sha256": "d3a5f5541f1dbd3835946bc521bff9c6f819d9b691e3bf543b0b082afd9da653",
+          "output": "test_actual_service_refuses_builtin_simulations (test_candidate_custody.ServiceRefusalTests.test_actual_service_refuses_builtin_simulations) ... ok\ntest_builtin_reproduction_marked_simulated (test_candidate_custody.ServiceRefusalTests.test_builtin_reproduction_marked_simulated) ... ok\ntest_claimed_measurement_cannot_bypass_simulated_stress (test_candidate_custody.ServiceRefusalTests.test_claimed_measurement_cannot_bypass_simulated_stress) ... ok\ntest_executor_protocol_mutation_refused_before_second_executor (test_candidate_custody.ServiceRefusalTests.test_executor_protocol_mutation_refused_before_second_executor) ... ok\ntest_gate_two_mutation_rejected (test_candidate_custody.ServiceRefusalTests.test_gate_two_mutation_rejected) ... ok\ntest_missing_authority_refused_before_execution (test_candidate_custody.ServiceRefusalTests.test_missing_authority_refused_before_execution) ... ok\ntest_missing_gate_three_window_is_not_pass (test_candidate_custody.ServiceRefusalTests.test_missing_gate_three_window_is_not_pass) ... ok\ntest_refusal_preserves_local_snapshot_custody (test_candidate_custody.ServiceRefusalTests.test_refusal_preserves_local_snapshot_custody) ... ok\ntest_source_mutation_refused_before_second_executor (test_candidate_custody.ServiceRefusalTests.test_source_mutation_refused_before_second_executor) ... ok\ntest_stress_explicitly_does_not_invoke_executor (test_candidate_custody.ServiceRefusalTests.test_stress_explicitly_does_not_invoke_executor) ... ok\ntest_baseline_metrics_bound (test_candidate_custody.SnapshotTests.test_baseline_metrics_bound) ... ok\ntest_envelope_bounds_bound (test_candidate_custody.SnapshotTests.test_envelope_bounds_bound) ... ok\ntest_metadata_bound (test_candidate_custody.SnapshotTests.test_metadata_bound) ... ok\ntest_nan_rejected (test_candidate_custody.SnapshotTests.test_nan_rejected) ... ok\ntest_nested_protocol_arguments_bound (test_candidate_custody.SnapshotTests.test_nested_protocol_arguments_bound) ... ok\ntest_non_json_rejected (test_candidate_custody.SnapshotTests.test_non_json_rejected) ... ok\ntest_observable_order_bound (test_candidate_custody.SnapshotTests.test_observable_order_bound) ... ok\ntest_protocol_steps_bound (test_candidate_custody.SnapshotTests.test_protocol_steps_bound) ... ok\ntest_snapshot_fields_frozen (test_candidate_custody.SnapshotTests.test_snapshot_fields_frozen) ... ok\ntest_snapshot_roundtrip (test_candidate_custody.SnapshotTests.test_snapshot_roundtrip) ... ok\ntest_source_none_empty_and_root_distinct (test_candidate_custody.SnapshotTests.test_source_none_empty_and_root_distinct) ... ok\ntest_to_dict_detached_steps (test_candidate_custody.SnapshotTests.test_to_dict_detached_steps) ... ok\ntest_views_do_not_share_nested_state (test_candidate_custody.SnapshotTests.test_views_do_not_share_nested_state) ... ok\n\n----------------------------------------------------------------------\nRan 23 tests in 0.099s\n\nOK\n"
+        },
+        {
+          "name": "emergence_runtime",
+          "command": [
+            "/usr/local/bin/python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "/data/intelligence_readiness/source/tests/emergence_runtime",
+            "-v"
+          ],
+          "cwd": "outside-source validation workspace",
+          "exit_code": 0,
+          "log_sha256": "0f55fd6844aa22261d90acb2fa75d373ba5897384057aeb55b68196fb4c57306",
+          "output": "test_admission_audit_failure_prevents_authorization_consumption (test_canonical_philos.CanonicalPhilosTests.test_admission_audit_failure_prevents_authorization_consumption) ... ok\ntest_binding_does_not_grant_dispatch_or_signing_authority (test_canonical_philos.CanonicalPhilosTests.test_binding_does_not_grant_dispatch_or_signing_authority) ... ok\ntest_case_snapshot_detaches_original_and_host_mapping (test_canonical_philos.CanonicalPhilosTests.test_case_snapshot_detaches_original_and_host_mapping) ... ok\ntest_client_cannot_choose_executor_or_unapproved_case (test_canonical_philos.CanonicalPhilosTests.test_client_cannot_choose_executor_or_unapproved_case) ... ok\ntest_invalid_signature_and_replay_cannot_qualify (test_canonical_philos.CanonicalPhilosTests.test_invalid_signature_and_replay_cannot_qualify) ... ok\ntest_missing_guardian_blocks_before_token_consumption (test_canonical_philos.CanonicalPhilosTests.test_missing_guardian_blocks_before_token_consumption) ... ok\ntest_new_binding_does_not_install_creator_dispatch_rights (test_canonical_philos.CanonicalPhilosTests.test_new_binding_does_not_install_creator_dispatch_rights) ... ok\ntest_one_use_token_is_consumed_on_simulation_refusal (test_canonical_philos.CanonicalPhilosTests.test_one_use_token_is_consumed_on_simulation_refusal) ... ok\ntest_real_entry_point_invokes_native_service_and_refuses_simulation (test_canonical_philos.CanonicalPhilosTests.test_real_entry_point_invokes_native_service_and_refuses_simulation) ... ok\ntest_revoked_creator_rights_block_before_token_consumption (test_canonical_philos.CanonicalPhilosTests.test_revoked_creator_rights_block_before_token_consumption) ... ok\ntest_unapproved_case_is_refused (test_canonical_philos.CanonicalPhilosTests.test_unapproved_case_is_refused) ... ok\n\n----------------------------------------------------------------------\nRan 11 tests in 0.195s\n\nOK\n"
+        },
+        {
+          "name": "emergence_runtime_O",
+          "command": [
+            "/usr/local/bin/python",
+            "-O",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "/data/intelligence_readiness/source/tests/emergence_runtime",
+            "-v"
+          ],
+          "cwd": "outside-source validation workspace",
+          "exit_code": 0,
+          "log_sha256": "770a185f129f2fea7bccf19f30c25c26062363f008d209c384e02727144bedfa",
+          "output": "test_admission_audit_failure_prevents_authorization_consumption (test_canonical_philos.CanonicalPhilosTests.test_admission_audit_failure_prevents_authorization_consumption) ... ok\ntest_binding_does_not_grant_dispatch_or_signing_authority (test_canonical_philos.CanonicalPhilosTests.test_binding_does_not_grant_dispatch_or_signing_authority) ... ok\ntest_case_snapshot_detaches_original_and_host_mapping (test_canonical_philos.CanonicalPhilosTests.test_case_snapshot_detaches_original_and_host_mapping) ... ok\ntest_client_cannot_choose_executor_or_unapproved_case (test_canonical_philos.CanonicalPhilosTests.test_client_cannot_choose_executor_or_unapproved_case) ... ok\ntest_invalid_signature_and_replay_cannot_qualify (test_canonical_philos.CanonicalPhilosTests.test_invalid_signature_and_replay_cannot_qualify) ... ok\ntest_missing_guardian_blocks_before_token_consumption (test_canonical_philos.CanonicalPhilosTests.test_missing_guardian_blocks_before_token_consumption) ... ok\ntest_new_binding_does_not_install_creator_dispatch_rights (test_canonical_philos.CanonicalPhilosTests.test_new_binding_does_not_install_creator_dispatch_rights) ... ok\ntest_one_use_token_is_consumed_on_simulation_refusal (test_canonical_philos.CanonicalPhilosTests.test_one_use_token_is_consumed_on_simulation_refusal) ... ok\ntest_real_entry_point_invokes_native_service_and_refuses_simulation (test_canonical_philos.CanonicalPhilosTests.test_real_entry_point_invokes_native_service_and_refuses_simulation) ... ok\ntest_revoked_creator_rights_block_before_token_consumption (test_canonical_philos.CanonicalPhilosTests.test_revoked_creator_rights_block_before_token_consumption) ... ok\ntest_unapproved_case_is_refused (test_canonical_philos.CanonicalPhilosTests.test_unapproved_case_is_refused) ... ok\n\n----------------------------------------------------------------------\nRan 11 tests in 0.187s\n\nOK\n"
+        },
+        {
+          "name": "operator_development",
+          "command": [
+            "/usr/local/bin/python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "/data/intelligence_readiness/source/tests/operator_development",
+            "-v"
+          ],
+          "cwd": "outside-source validation workspace",
+          "exit_code": 0,
+          "log_sha256": "aff0a3cd9857a26481d91123f1795d99491ab5d2414270ee4967426e2b3bde38",
+          "output": "test_actual_frontier_loop_uses_ports_and_observes_file (test_operator_development.OperatorDevelopmentTests.test_actual_frontier_loop_uses_ports_and_observes_file) ... ok\ntest_admission_audit_failure_prevents_execution (test_operator_development.OperatorDevelopmentTests.test_admission_audit_failure_prevents_execution) ... ok\ntest_canonical_frontier_budget_exhaustion_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_budget_exhaustion_has_no_file_effect) ... ok\ntest_canonical_frontier_deadline_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_deadline_has_no_file_effect) ... ok\ntest_canonical_frontier_kill_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_kill_has_no_file_effect) ... ok\ntest_canonical_frontier_stop_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_stop_has_no_file_effect) ... ok\ntest_canonical_frontier_wait_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_wait_has_no_file_effect) ... ok\ntest_expired_and_missing_budget_no_effect (test_operator_development.OperatorDevelopmentTests.test_expired_and_missing_budget_no_effect) ... ok\ntest_false_success_and_over_budget_receipts_refused (test_operator_development.OperatorDevelopmentTests.test_false_success_and_over_budget_receipts_refused) ... ok\ntest_late_return_is_failure_not_rollback_claim (test_operator_development.OperatorDevelopmentTests.test_late_return_is_failure_not_rollback_claim) ... ok\ntest_no_implicit_production_or_unnamed_delegation (test_operator_development.OperatorDevelopmentTests.test_no_implicit_production_or_unnamed_delegation) ... ok\ntest_real_execution_and_recovery_ports (test_operator_development.OperatorDevelopmentTests.test_real_execution_and_recovery_ports) ... ok\ntest_revocation_blocks_new_work_but_allows_recovery (test_operator_development.OperatorDevelopmentTests.test_revocation_blocks_new_work_but_allows_recovery) ... ok\ntest_wrong_scope_and_unapproved_adapter_no_effect (test_operator_development.OperatorDevelopmentTests.test_wrong_scope_and_unapproved_adapter_no_effect) ... ok\n\n----------------------------------------------------------------------\nRan 14 tests in 0.180s\n\nOK\n"
+        },
+        {
+          "name": "operator_development_O",
+          "command": [
+            "/usr/local/bin/python",
+            "-O",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "/data/intelligence_readiness/source/tests/operator_development",
+            "-v"
+          ],
+          "cwd": "outside-source validation workspace",
+          "exit_code": 0,
+          "log_sha256": "2c16432696e3c5cdcd8955411cc566835e8916a0afe661a9e7e3050dfab32793",
+          "output": "test_actual_frontier_loop_uses_ports_and_observes_file (test_operator_development.OperatorDevelopmentTests.test_actual_frontier_loop_uses_ports_and_observes_file) ... ok\ntest_admission_audit_failure_prevents_execution (test_operator_development.OperatorDevelopmentTests.test_admission_audit_failure_prevents_execution) ... ok\ntest_canonical_frontier_budget_exhaustion_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_budget_exhaustion_has_no_file_effect) ... ok\ntest_canonical_frontier_deadline_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_deadline_has_no_file_effect) ... ok\ntest_canonical_frontier_kill_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_kill_has_no_file_effect) ... ok\ntest_canonical_frontier_stop_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_stop_has_no_file_effect) ... ok\ntest_canonical_frontier_wait_has_no_file_effect (test_operator_development.OperatorDevelopmentTests.test_canonical_frontier_wait_has_no_file_effect) ... ok\ntest_expired_and_missing_budget_no_effect (test_operator_development.OperatorDevelopmentTests.test_expired_and_missing_budget_no_effect) ... ok\ntest_false_success_and_over_budget_receipts_refused (test_operator_development.OperatorDevelopmentTests.test_false_success_and_over_budget_receipts_refused) ... ok\ntest_late_return_is_failure_not_rollback_claim (test_operator_development.OperatorDevelopmentTests.test_late_return_is_failure_not_rollback_claim) ... ok\ntest_no_implicit_production_or_unnamed_delegation (test_operator_development.OperatorDevelopmentTests.test_no_implicit_production_or_unnamed_delegation) ... ok\ntest_real_execution_and_recovery_ports (test_operator_development.OperatorDevelopmentTests.test_real_execution_and_recovery_ports) ... ok\ntest_revocation_blocks_new_work_but_allows_recovery (test_operator_development.OperatorDevelopmentTests.test_revocation_blocks_new_work_but_allows_recovery) ... ok\ntest_wrong_scope_and_unapproved_adapter_no_effect (test_operator_development.OperatorDevelopmentTests.test_wrong_scope_and_unapproved_adapter_no_effect) ... ok\n\n----------------------------------------------------------------------\nRan 14 tests in 0.219s\n\nOK\n"
+        },
+        {
+          "name": "archive",
+          "command": [
+            "/usr/local/bin/python",
+            "/data/intelligence_readiness/source/scripts/verify_euclid_research_archive.py"
+          ],
+          "cwd": "outside-source validation workspace",
+          "exit_code": 0,
+          "log_sha256": "84a26582ebeb1a9fbb983a0dcce54c6f09a4aed91c664be892b9babe0c523ba2",
+          "output": "{\n  \"scope\": \"LOCAL_ARCHIVAL_INTEGRITY_NOT_RUNTIME_OR_INDEPENDENT_QUALIFICATION\",\n  \"page_count\": 100,\n  \"unresolved_child_pages\": 0,\n  \"attachment_references\": 91,\n  \"manifest_entries_verified\": 34,\n  \"archive_sha256\": \"b2e31ad8af27f81d30a1371b1010ee8bb25e0df99199bd5f4eb27d0ddfb0ce5e\",\n  \"all_workspace_sources_reconciled\": false,\n  \"all_attachments_recovered\": false,\n  \"historical_memory_loaded\": false\n}\n"
+        },
+        {
+          "name": "archive_O",
+          "command": [
+            "/usr/local/bin/python",
+            "-O",
+            "/data/intelligence_readiness/source/scripts/verify_euclid_research_archive.py"
+          ],
+          "cwd": "outside-source validation workspace",
+          "exit_code": 0,
+          "log_sha256": "84a26582ebeb1a9fbb983a0dcce54c6f09a4aed91c664be892b9babe0c523ba2",
+          "output": "{\n  \"scope\": \"LOCAL_ARCHIVAL_INTEGRITY_NOT_RUNTIME_OR_INDEPENDENT_QUALIFICATION\",\n  \"page_count\": 100,\n  \"unresolved_child_pages\": 0,\n  \"attachment_references\": 91,\n  \"manifest_entries_verified\": 34,\n  \"archive_sha256\": \"b2e31ad8af27f81d30a1371b1010ee8bb25e0df99199bd5f4eb27d0ddfb0ce5e\",\n  \"all_workspace_sources_reconciled\": false,\n  \"all_attachments_recovered\": false,\n  \"historical_memory_loaded\": false\n}\n"
+        },
+        {
+          "name": "compile",
+          "command": [
+            "/usr/local/bin/python",
+            "-m",
+            "py_compile",
+            "/data/intelligence_readiness/source/Intelligence/isolated_repair.py",
+            "/data/intelligence_readiness/source/Intelligence/repair_learning_capability.py",
+            "/data/intelligence_readiness/source/Intelligence/salamander.py",
+            "/data/intelligence_readiness/source/Intelligence/capability_fabric.py",
+            "/data/intelligence_readiness/source/tests/intelligence_consolidation/test_repair_outcome_integration.py",
+            "/data/intelligence_readiness/source/scripts/verify_euclid_research_archive.py",
+            "/data/intelligence_readiness/source/scripts/reproduce_repair_outcome_invariants.py"
+          ],
+          "cwd": "outside-source validation workspace",
+          "exit_code": 0,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "output": ""
+        },
+        {
+          "name": "tabnanny",
+          "command": [
+            "/usr/local/bin/python",
+            "-m",
+            "tabnanny",
+            "/data/intelligence_readiness/source/Intelligence"
+          ],
+          "cwd": "outside-source validation workspace",
+          "exit_code": 0,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "output": ""
+        }
+      ]
+    },
+    "baseline_reproduction": {
+      "source": "/data/euclid_philos_authority/remote_verified/Intelligence/isolated_repair.py",
+      "checks": [
+        {
+          "invariant": "repeated_load_does_not_reweight_population",
+          "actual": 0.75,
+          "expected": 0.5,
+          "passed": false
+        },
+        {
+          "invariant": "persistence_failure_is_not_acknowledged",
+          "passed": false
+        },
+        {
+          "invariant": "committed_requires_recorded_validation",
+          "passed": false
+        },
+        {
+          "invariant": "corrupt_ledger_not_silently_accepted",
+          "passed": false
+        },
+        {
+          "invariant": "no_public_default_repair_authority",
+          "actual": "COMMITTED",
+          "passed": false
+        },
+        {
+          "invariant": "authorization_token_not_echoed",
+          "passed": true
+        }
+      ],
+      "passed": 1,
+      "failed": 5
+    },
+    "patched_reproduction": {
+      "source": "/data/intelligence_readiness/source/Intelligence/isolated_repair.py",
+      "checks": [
+        {
+          "invariant": "repeated_load_does_not_reweight_population",
+          "actual": 0.5,
+          "expected": 0.5,
+          "passed": true
+        },
+        {
+          "invariant": "persistence_failure_is_not_acknowledged",
+          "passed": true
+        },
+        {
+          "invariant": "committed_requires_recorded_validation",
+          "passed": true
+        },
+        {
+          "invariant": "corrupt_ledger_not_silently_accepted",
+          "passed": true
+        },
+        {
+          "invariant": "no_public_default_repair_authority",
+          "actual": "REJECTED_UNAUTHORIZED",
+          "passed": true
+        },
+        {
+          "invariant": "authorization_token_not_echoed",
+          "passed": true
+        }
+      ],
+      "passed": 6,
+      "failed": 0
+    },
+    "archive_verification": {
+      "scope": "LOCAL_ARCHIVAL_INTEGRITY_NOT_RUNTIME_OR_INDEPENDENT_QUALIFICATION",
+      "page_count": 100,
+      "unresolved_child_pages": 0,
+      "attachment_references": 91,
+      "manifest_entries_verified": 34,
+      "archive_sha256": "b2e31ad8af27f81d30a1371b1010ee8bb25e0df99199bd5f4eb27d0ddfb0ce5e",
+      "all_workspace_sources_reconciled": false,
+      "all_attachments_recovered": false,
+      "historical_memory_loaded": false
+    },
+    "pytest_preflight": {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "pytest",
+        "tests/frontier_agent"
+      ],
+      "cwd": "selective source tree",
+      "exit_code": 1,
+      "output": "/usr/local/bin/python: No module named pytest\n",
+      "classification": "BLOCKED_DEPENDENCY_NOT_TEST_FAILURE"
+    },
+    "build_preflight": {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "build",
+        "--sdist"
+      ],
+      "cwd": "selective source tree",
+      "exit_code": 1,
+      "output": "/usr/local/bin/python: No module named build\n",
+      "classification": "BLOCKED_DEPENDENCY_AND_INCOMPLETE_CHECKOUT_NOT_PACKAGE_VALIDATION"
+    },
+    "normal_tests": 134,
+    "optimized_tests": 134,
+    "tests_by_suite": {
+      "intelligence_consolidation": 67,
+      "intelligence_consolidation_O": 67,
+      "emergence_authorization": 19,
+      "emergence_authorization_O": 19,
+      "emergence_custody": 23,
+      "emergence_custody_O": 23,
+      "emergence_runtime": 11,
+      "emergence_runtime_O": 11,
+      "operator_development": 14,
+      "operator_development_O": 14
+    },
+    "new_canonical_regressions": 19,
+    "native_canonical_paths_verified": [
+      "proof-conjecture",
+      "repository-review",
+      "repair-learning-query"
+    ],
+    "remaining_native_paths_not_verified": [
+      "source-repair",
+      "codebase-healing",
+      "isolated-repair",
+      "bsd-exploration",
+      "external-agent-boundary"
+    ],
+    "repair_recovery": "Injected synchronous custody failure after actual publication restores and reads back baseline; observed third-party change preserved and explicit uncertain-state exception returned. Not crash-atomic, distributed or OS isolation assurance.",
+    "notion_custody": "100 complete linked pages; 82 unique attachment byte streams retrieved locally; 34 posterity manifest members verified and losslessly mirrored via base64, not all binaries mirrored or active capabilities integrated.",
+    "learning_workstream": "PR77 099d40ae96578f5d1eb20d8605a260d9141965c2 inventoried but not merged or rerun; no parallel learner/state root introduced",
+    "skill_source_lock": "Unchanged: no imported skill catalog, source snapshot, upstream digest or license changed",
+    "CI_verified": false,
+    "installed_artifact_verified": false,
+    "full_Salamander_initialization_verified": false,
+    "production_qualified": false
   }
 }

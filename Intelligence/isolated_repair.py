@@ -21,10 +21,12 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import math
 import os
 import shutil
 import tempfile
 import time
+import threading
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
@@ -40,6 +42,16 @@ class DefectReproductionError(ValueError):
 
 class RepairValidationError(RuntimeError):
     """Raised when candidate fails independent outcome probe or regression validator."""
+
+
+class RepairEvidencePersistenceError(RepairValidationError):
+    """Outcome custody failed; source_restored is observation, not crash atomicity."""
+
+    def __init__(self, *, source_restored: bool) -> None:
+        self.source_restored = source_restored
+        super().__init__("Repair evidence persistence failed; " + (
+            "baseline restored and read back" if source_restored else
+            "source state uncertain: operator reconciliation required; do not retry"))
 
 
 @dataclass(frozen=True)
@@ -89,10 +101,11 @@ class RepairLearningLedger:
     """Records real repair outcomes to improve future repair ranking and prevent repeated mistakes."""
 
     def __init__(self, storage_path: Optional[Path] = None) -> None:
-        self.storage_path = storage_path
+        self.storage_path = Path(storage_path) if storage_path is not None else None
+        self._lock = threading.RLock()
         self._records: List[LearningOutcomeRecord] = []
-        self._strategy_success_counts: Dict[str, int] = {}
-        self._strategy_total_counts: Dict[str, int] = {}
+        self._strategy_success_counts: Dict[Tuple[str, str], int] = {}
+        self._strategy_total_counts: Dict[Tuple[str, str], int] = {}
 
     def record_outcome(
         self,
@@ -130,52 +143,118 @@ class RepairLearningLedger:
             duration_seconds=duration_seconds,
             confidence_delta=confidence_delta,
         )
-        self._records.append(record)
-
-        # Update empirical strategy counts
-        key = f"{issue_type}:{problem_signature}"
-        self._strategy_total_counts[key] = self._strategy_total_counts.get(key, 0) + 1
-        if success:
-            self._strategy_success_counts[key] = self._strategy_success_counts.get(key, 0) + 1
-
-        if self.storage_path:
-            try:
-                self.save()
-            except Exception:
-                pass
-
+        self._validate_record(record)
+        with self._lock:
+            # Do not acknowledge a durable write that failed. Persist the proposed
+            # snapshot before making it visible to readers of this instance.
+            proposed = [*self._records, record]
+            if self.storage_path is not None:
+                self._persist(proposed)
+            self._records = proposed
+            self._recount()
         return record
 
+    def _recount(self) -> None:
+        self._strategy_success_counts = {}
+        self._strategy_total_counts = {}
+        for record in self._records:
+            key = (record.issue_type, record.problem_signature)
+            self._strategy_total_counts[key] = self._strategy_total_counts.get(key, 0) + 1
+            if record.status == "COMMITTED":
+                self._strategy_success_counts[key] = self._strategy_success_counts.get(key, 0) + 1
+
+    @staticmethod
+    def _validate_record(record: LearningOutcomeRecord) -> None:
+        for name in ("record_id", "problem_signature", "issue_type", "target_path", "status"):
+            value = getattr(record, name)
+            if type(value) is not str or not value:
+                raise ValueError("repair outcome requires nonempty " + name)
+        for name in ("baseline_sha256", "candidate_sha256"):
+            if type(getattr(record, name)) is not str:
+                raise ValueError("repair artifact digests must be strings")
+        for name in ("pre_probe_reproduced", "post_probe_cleared", "validator_passed"):
+            if type(getattr(record, name)) is not bool:
+                raise ValueError("repair evidence flags must be booleans")
+        for name in ("timestamp", "duration_seconds", "confidence_delta"):
+            value = getattr(record, name)
+            if type(value) not in (int, float) or not math.isfinite(value):
+                raise ValueError("repair outcome requires finite " + name)
+        if record.duration_seconds < 0:
+            raise ValueError("repair duration cannot be negative")
+        if record.status == "COMMITTED" and not (
+            record.pre_probe_reproduced and record.post_probe_cleared and record.validator_passed
+        ):
+            raise ValueError("committed outcome requires all recorded verification flags")
+
+    def outcome_statistics(self, issue_type: str, problem_signature: str) -> Dict[str, Any]:
+        """Observation-only statistics; not reward authority or certification.
+
+        COMMITTED flags are locally recorded assertions, not independently
+        authenticated evidence. An empty population has no empirical rate.
+        """
+        with self._lock:
+            key = (issue_type, problem_signature)
+            total = self._strategy_total_counts.get(key, 0)
+            successes = self._strategy_success_counts.get(key, 0)
+            return {"issue_type": issue_type, "problem_signature": problem_signature,
+                    "sample_count": total, "committed_count": successes,
+                    "empirical_success_rate": successes / total if total else None,
+                    "evidence_class": "LOCAL_REPAIR_OUTCOMES" if total else "NO_OBSERVATIONS",
+                    "independently_qualified": False}
+
     def get_success_rate(self, issue_type: str, problem_signature: str) -> float:
-        """Return empirical historical success rate in [0.0, 1.0]."""
-        key = f"{issue_type}:{problem_signature}"
-        total = self._strategy_total_counts.get(key, 0)
-        if total == 0:
-            return 0.5  # Neutral prior
-        return self._strategy_success_counts.get(key, 0) / total
+        """Legacy ranking API: 0.5 is an unobserved prior, not an empirical rate.
+
+        New callers should use outcome_statistics() to distinguish no evidence.
+        """
+        rate = self.outcome_statistics(issue_type, problem_signature)["empirical_success_rate"]
+        return 0.5 if rate is None else rate
+
+    def _persist(self, records: List[LearningOutcomeRecord]) -> None:
+        """Atomic local snapshot replacement; single writer process per path.
+
+        No cross-process locking, signature, rollback protection or OVID custody
+        is implied by this compatibility ledger. It is not a second learner.
+        """
+        path = self.storage_path
+        if path is None:
+            return
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                             prefix=".repair-outcomes-", delete=False) as handle:
+                temporary = Path(handle.name)
+                json.dump([r.as_dict() for r in records], handle, indent=2, allow_nan=False)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary, path)
+        finally:
+            if temporary is not None and temporary.exists():
+                temporary.unlink()
 
     def save(self) -> None:
-        if not self.storage_path:
-            return
-        self.storage_path.parent.mkdir(parents=True, exist_ok=True)
-        data = [r.as_dict() for r in self._records]
-        self.storage_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        with self._lock:
+            self._persist(self._records)
 
     def load(self) -> None:
-        if not self.storage_path or not self.storage_path.exists():
-            return
-        try:
+        """Validate completely before replacing state; repeated loads are idempotent."""
+        with self._lock:
+            if self.storage_path is None or not self.storage_path.exists():
+                return
             raw = json.loads(self.storage_path.read_text(encoding="utf-8"))
-            self._records = [LearningOutcomeRecord(**item) for item in raw]
-            for r in self._records:
-                key = f"{r.issue_type}:{r.problem_signature}"
-                self._strategy_total_counts[key] = self._strategy_total_counts.get(key, 0) + 1
-                if r.status == "COMMITTED":
-                    self._strategy_success_counts[key] = (
-                        self._strategy_success_counts.get(key, 0) + 1
-                    )
-        except Exception:
-            pass
+            if type(raw) is not list:
+                raise ValueError("repair ledger must be a JSON array")
+            proposed = [LearningOutcomeRecord(**item) for item in raw]
+            ids = set()
+            for record in proposed:
+                self._validate_record(record)
+                if record.record_id in ids:
+                    raise ValueError("duplicate repair outcome identity")
+                ids.add(record.record_id)
+            self._records = proposed
+            self._recount()
+
 
 
 class IsolatedRepairExecutor:
@@ -189,8 +268,17 @@ class IsolatedRepairExecutor:
         authorized_tokens: Optional[Sequence[str]] = None,
     ) -> None:
         self.repo_root = repo_root.resolve()
-        self.learning_ledger = learning_ledger or RepairLearningLedger()
-        self.authorized_tokens = set(authorized_tokens or ["INTERNAL_RESEARCH_AUTONOMOUS_OPERATOR"])
+        if learning_ledger is not None and not isinstance(learning_ledger, RepairLearningLedger):
+            raise TypeError("existing RepairLearningLedger required")
+        self.learning_ledger = learning_ledger if learning_ledger is not None else RepairLearningLedger()
+        # Explicit host configuration only. A public default string is not authority.
+        supplied = () if authorized_tokens is None else authorized_tokens
+        if isinstance(supplied, (str, bytes)):
+            raise ValueError("authorized_tokens must be a collection, not a token string")
+        supplied = tuple(supplied)
+        if any(type(t) is not str or not t for t in supplied):
+            raise ValueError("authorized_tokens must contain explicit nonempty host tokens")
+        self.authorized_tokens = frozenset(supplied)
         self._attempt_history: List[RepairAttemptReceipt] = []
 
     def _is_scope_permitted(self, target_file: Path) -> bool:
@@ -255,7 +343,7 @@ class IsolatedRepairExecutor:
                 post_probe=False,
                 val_passed=False,
                 duration=duration,
-                reason=f"Invalid authorization token '{authorization_token}'",
+                reason="Repair authorization denied",
                 issue_type=issue_type,
                 signature=problem_signature,
             )
@@ -441,21 +529,47 @@ class IsolatedRepairExecutor:
                     signature=problem_signature,
                 )
 
-        # Step 11: Success Receipt and Learning Record
+        # Step 11: Do not acknowledge publication without its outcome custody.
+        # This is best-effort synchronous recovery, not a cross-owner crash
+        # transaction or an OS/process boundary.
         duration = time.perf_counter() - start_time
-        return self._record_attempt(
-            target_file=str(target),
-            baseline_sha=baseline_sha,
-            candidate_sha=candidate_sha,
-            status="COMMITTED",
-            pre_probe=True,
-            post_probe=True,
-            val_passed=True,
-            duration=duration,
-            reason="Closed-loop verified: reproduced on baseline, cleared in sandbox, passed validator, published atomically",
-            issue_type=issue_type,
-            signature=problem_signature,
-        )
+        try:
+            return self._record_attempt(
+                target_file=str(target),
+                baseline_sha=baseline_sha,
+                candidate_sha=candidate_sha,
+                status="COMMITTED",
+                pre_probe=True,
+                post_probe=True,
+                val_passed=True,
+                duration=duration,
+                reason="Closed-loop verified: reproduced on baseline, cleared in sandbox, passed validator, published atomically",
+                issue_type=issue_type,
+                signature=problem_signature,
+            )
+        except Exception as evidence_error:
+            restored = False
+            rollback_path = None
+            try:
+                # Never intentionally overwrite an observed third-party change.
+                if hashlib.sha256(target.read_bytes()).hexdigest() == candidate_sha:
+                    with tempfile.NamedTemporaryFile(dir=target.parent, prefix=".repair-recovery-",
+                                                     delete=False) as recovery:
+                        rollback_path = Path(recovery.name)
+                        recovery.write(baseline_bytes)
+                        recovery.flush()
+                        os.fsync(recovery.fileno())
+                    os.replace(rollback_path, target)
+                    restored = hashlib.sha256(target.read_bytes()).hexdigest() == baseline_sha
+            except Exception:
+                restored = False
+            finally:
+                if rollback_path is not None and rollback_path.exists():
+                    try:
+                        rollback_path.unlink()
+                    except OSError:
+                        pass
+            raise RepairEvidencePersistenceError(source_restored=restored) from evidence_error
 
     def _record_attempt(
         self,
@@ -508,8 +622,7 @@ class IsolatedRepairExecutor:
             reason=reason,
             receipt_sha256=receipt_sha256,
         )
-        self._attempt_history.append(receipt)
-
+        # A local success history must not precede the required ledger write.
         # Update learning ledger with honest outcome
         self.learning_ledger.record_outcome(
             problem_signature=signature,
@@ -524,6 +637,7 @@ class IsolatedRepairExecutor:
             duration_seconds=round(duration, 4),
         )
 
+        self._attempt_history.append(receipt)
         return receipt
 
     def get_history(self) -> List[RepairAttemptReceipt]:
@@ -534,6 +648,7 @@ __all__ = [
     "RepairAuthorizationError",
     "DefectReproductionError",
     "RepairValidationError",
+    "RepairEvidencePersistenceError",
     "RepairAttemptReceipt",
     "LearningOutcomeRecord",
     "RepairLearningLedger",

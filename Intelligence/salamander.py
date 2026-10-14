@@ -933,6 +933,8 @@ class SalamanderEngine:
         source_validator: Optional[RepairValidator] = None,
         profile: Any = "internal",
         repository_review_policies: Any = None,
+        repair_learning_ledger: Any = None,
+        repair_authorized_tokens: Optional[Sequence[str]] = None,
     ) -> None:
         from .capability_fabric import (
             CapabilityRegistry,
@@ -982,7 +984,10 @@ class SalamanderEngine:
         self.codebase_optimizer = self.agentic_controller.optimizer
 
         # Substrate capability fabric and isolated repair engine
-        self.isolated_repair_executor = IsolatedRepairExecutor(self.repo_root)
+        self.isolated_repair_executor = IsolatedRepairExecutor(
+            self.repo_root, learning_ledger=repair_learning_ledger,
+            authorized_tokens=repair_authorized_tokens,
+        )
         self.proof_tracker = MathematicalProofTracker()
         self.capability_registry = CapabilityRegistry()
         self._register_default_capabilities()
@@ -1074,7 +1079,8 @@ class SalamanderEngine:
                 if not hasattr(self, "isolated_repair_executor"):
                     from .isolated_repair import IsolatedRepairExecutor
                     self.isolated_repair_executor = IsolatedRepairExecutor(
-                        getattr(self, "repo_root", Path(__file__).resolve().parent.parent)
+                        getattr(self, "repo_root", Path(__file__).resolve().parent.parent),
+                        learning_ledger=getattr(self, "repair_learning_ledger", None),
                     )
                 receipt = self.isolated_repair_executor.execute_closed_loop_repair(**kwargs)
                 return receipt.as_dict()
@@ -1110,41 +1116,18 @@ class SalamanderEngine:
                 self.proof_tracker = MathematicalProofTracker()
             register_proof_capability(self.capability_registry, self.proof_tracker)
 
-        # 6. repair-learning-query (Outcome learning statistics)
+        # 6. Shared observation-only ledger query; never initialize a repair
+        # executor merely to answer a read-only request.
         if not self.capability_registry.get_manifest("repair-learning-query"):
-            def _learning_query_adapter(**kwargs: Any) -> Any:
-                if not hasattr(self, "isolated_repair_executor"):
-                    from .isolated_repair import IsolatedRepairExecutor
-                    self.isolated_repair_executor = IsolatedRepairExecutor(
-                        getattr(self, "repo_root", Path(__file__).resolve().parent.parent)
-                    )
-                itype = kwargs.get("issue_type", "ast_defect")
-                sig = kwargs.get("problem_signature", "generic_repair")
-                rate = self.isolated_repair_executor.learning_ledger.get_success_rate(itype, sig)
-                return {"issue_type": itype, "problem_signature": sig, "empirical_success_rate": rate}
+            from .repair_learning_capability import register_repair_learning_capability
+            from .isolated_repair import RepairLearningLedger
 
-            self.capability_registry.register(
-                CapabilityManifest(
-                    capability_id="repair-learning-query",
-                    version="1.0.0",
-                    source_provenance="Intelligence/isolated_repair.py",
-                    description="Query verified repair outcome ledger for empirical strategy confidence",
-                    permissions=CapabilityPermissions(
-                        can_read_repository=True,
-                        can_write_repository=False,
-                        allowed_profiles=(
-                            ExecutionProfile.INTERNAL_RESEARCH,
-                            ExecutionProfile.SHARED_RESTRICTED,
-                        ),
-                    ),
-                    resource_budget=ResourceBudget(),
-                    supported_operations=("query",),
-                    determinism=DeterminismClass.DETERMINISTIC,
-                    side_effects=SideEffectClass.READ_ONLY,
-                    verification_strategy="ledger_query",
-                ),
-                adapter_fn=_learning_query_adapter,
-            )
+            executor = getattr(self, "isolated_repair_executor", None)
+            ledger = executor.learning_ledger if executor is not None else getattr(self, "repair_learning_ledger", None)
+            if ledger is None:
+                ledger = RepairLearningLedger()
+            self.repair_learning_ledger = ledger
+            register_repair_learning_capability(self.capability_registry, ledger)
 
         # 7. bsd-exploration (Birch & Swinnerton-Dyer collaborative multi-agent swarm)
         if not self.capability_registry.get_manifest("bsd-exploration"):

@@ -477,3 +477,133 @@ source compatibility evidence, not an installed-artifact or merged-branch test.
 Combined GitHub status for both code heads: pending with zero status entries;
 that is not CI approval. Exact remote commands/output and hashes are appended
 to the existing consolidation validation record.
+
+
+## Production-readiness continuation — research custody and repair outcomes
+
+Current additional native canonical path: `repair-learning-query` through
+`Intelligence/repair_learning_capability.py`, shared by Salamander registration
+and explicit canonical composition. The host supplies the existing ledger;
+queries do not initialize an executor or write a ledger. Its schema-bound output
+includes sample/committed counts, nullable empirical success rate, evidence class
+and independently_qualified=false. Empty data is NO_OBSERVATIONS, not empirical
+0.5. The legacy `get_success_rate` retains its documented neutral ranking prior.
+This is an observation adapter, not another learner or reward/trust authority.
+
+The existing ledger now loads idempotently, validates before replacing state,
+rejects duplicate outcome IDs/invalid committed flags, uses collision-free tuple
+strategy keys, and publishes atomic local snapshots before acknowledging a new
+record. Corruption and persistence failures are not swallowed. The process-local
+lock is not cross-process writer coordination, rollback-resistant custody or an
+OVID replacement. Host owns persistence, single-writer configuration and review.
+
+Repair authorization migration: no implicit PUBLIC/INTERNAL token. Configure
+`IsolatedRepairExecutor(..., authorized_tokens=[host_owned_value])` explicitly,
+or supply `repair_authorized_tokens` and an existing `repair_learning_ledger`
+to SalamanderEngine. None and empty lists deny every repair. A token is a trusted
+host compatibility allowlist, not cryptographically authenticated delegated scope;
+never expose it to untrusted model input. Denial no longer logs the supplied
+credential. Direct clients must migrate; preserving a public default is unsafe.
+
+Synchronous outcome-custody failure after actual publication now triggers bounded
+baseline restoration/readback where the observed source still matches this
+candidate. It does not intentionally overwrite an observed independent writer.
+`RepairEvidencePersistenceError.source_restored` distinguishes observed recovery
+from uncertain source requiring operator reconciliation; there is no successful
+receipt or false COMMITTED history on failure. No automatic retry of uncertain
+outcomes. Race-free hostile filesystem/process isolation and crash-atomic
+source-plus-ledger transactions are NOT established. The read-only canonical
+bridge still refuses source mutation and grants no repair authority.
+
+Research preservation now has a reproducible 100-page child closure, source and
+export hashes, stable attachment pointers and the original manifest-verified
+posterity archive. See `docs/research_archive/README.md` and the preserved earlier
+reconciliation map. All 82 referenced unique artifacts were retrieved to the
+research workspace; only the separately reviewed posterity binary is losslessly
+mirrored in this branch. Prior state stays archival/curriculum material, not
+current semantic memory. PR77's existing governed-learning/PYTHIA work remains
+separately owned and unmerged, not duplicated here.
+
+Three of eight native capabilities have canonical local integration evidence:
+proof-conjecture, repository-review and repair-learning-query. Five remain
+unverified through this path. Frontier-agent/PHILOS are EUCLID constituents whose
+existing explicit adapters are regression-tested in a joint selective source
+composition, not a merged production package. Full Salamander/skills/creative/
+learning/Kairos/custody composition and all supported consumers remain open.
+
+The authoritative exact commands, source hashes, raw output, baseline failures,
+normal/optimized counts and unavailable-tool attempts are appended to the
+existing `salamander_consolidation_validation.json`; older evidence is retained.
+No full checkout, installed wheel, Windows, independent T5/PHILOS qualification,
+Lucas/drift enforcement, full pytest, lint/security CI or scientific superiority
+claim follows from those local tests. Existing package definitions omit uppercase
+Intelligence; do not bypass their boundary checks or silently change the current
+permissive-license declarations. Product dependency closure and closed-core IP
+review are release blockers. Preserve physical/cryogenic scope and the goal of
+surpassing all prior versions through matched, measured and independently reviewed
+capability—not imported score claims. **Technical review only; release blocked.**
+
+
+## Production-readiness continuation — research custody and repair outcomes
+
+Current additional native canonical path: `repair-learning-query` through
+`Intelligence/repair_learning_capability.py`, shared by Salamander registration
+and explicit canonical composition. The host supplies the existing ledger;
+queries do not initialize an executor or write a ledger. Its schema-bound output
+includes sample/committed counts, nullable empirical success rate, evidence class
+and independently_qualified=false. Empty data is NO_OBSERVATIONS, not empirical
+0.5. The legacy `get_success_rate` retains its documented neutral ranking prior.
+This is an observation adapter, not another learner or reward/trust authority.
+
+The existing ledger now loads idempotently, validates before replacing state,
+rejects duplicate outcome IDs/invalid committed flags, uses collision-free tuple
+strategy keys, and publishes atomic local snapshots before acknowledging a new
+record. Corruption and persistence failures are not swallowed. The process-local
+lock is not cross-process writer coordination, rollback-resistant custody or an
+OVID replacement. Host owns persistence, single-writer configuration and review.
+
+Repair authorization migration: no implicit PUBLIC/INTERNAL token. Configure
+`IsolatedRepairExecutor(..., authorized_tokens=[host_owned_value])` explicitly,
+or supply `repair_authorized_tokens` and an existing `repair_learning_ledger`
+to SalamanderEngine. None and empty lists deny every repair. A token is a trusted
+host compatibility allowlist, not cryptographically authenticated delegated scope;
+never expose it to untrusted model input. Denial no longer logs the supplied
+credential. Direct clients must migrate; preserving a public default is unsafe.
+
+Synchronous outcome-custody failure after actual publication now triggers bounded
+baseline restoration/readback where the observed source still matches this
+candidate. It does not intentionally overwrite an observed independent writer.
+`RepairEvidencePersistenceError.source_restored` distinguishes observed recovery
+from uncertain source requiring operator reconciliation; there is no successful
+receipt or false COMMITTED history on failure. No automatic retry of uncertain
+outcomes. Race-free hostile filesystem/process isolation and crash-atomic
+source-plus-ledger transactions are NOT established. The read-only canonical
+bridge still refuses source mutation and grants no repair authority.
+
+Research preservation now has a reproducible 100-page child closure, source and
+export hashes, stable attachment pointers and the original manifest-verified
+posterity archive. See `docs/research_archive/README.md` and the preserved earlier
+reconciliation map. All 82 referenced unique artifacts were retrieved to the
+research workspace; only the separately reviewed posterity binary is losslessly
+mirrored in this branch. Prior state stays archival/curriculum material, not
+current semantic memory. PR77's existing governed-learning/PYTHIA work remains
+separately owned and unmerged, not duplicated here.
+
+Three of eight native capabilities have canonical local integration evidence:
+proof-conjecture, repository-review and repair-learning-query. Five remain
+unverified through this path. Frontier-agent/PHILOS are EUCLID constituents whose
+existing explicit adapters are regression-tested in a joint selective source
+composition, not a merged production package. Full Salamander/skills/creative/
+learning/Kairos/custody composition and all supported consumers remain open.
+
+The authoritative exact commands, source hashes, raw output, baseline failures,
+normal/optimized counts and unavailable-tool attempts are appended to the
+existing `salamander_consolidation_validation.json`; older evidence is retained.
+No full checkout, installed wheel, Windows, independent T5/PHILOS qualification,
+Lucas/drift enforcement, full pytest, lint/security CI or scientific superiority
+claim follows from those local tests. Existing package definitions omit uppercase
+Intelligence; do not bypass their boundary checks or silently change the current
+permissive-license declarations. Product dependency closure and closed-core IP
+review are release blockers. Preserve physical/cryogenic scope and the goal of
+surpassing all prior versions through matched, measured and independently reviewed
+capability—not imported score claims. **Technical review only; release blocked.**
