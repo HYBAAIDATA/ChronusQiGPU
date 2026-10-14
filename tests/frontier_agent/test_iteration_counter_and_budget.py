@@ -2,7 +2,6 @@
 
 from dataclasses import replace
 from fractions import Fraction as F
-import pytest
 from chronus.agent.control import (
     Action,
     Plan,

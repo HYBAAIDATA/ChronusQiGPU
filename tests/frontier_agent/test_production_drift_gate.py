@@ -1,6 +1,5 @@
 """Tests for double-vs-real drift gate and traceability (item 6.2)."""
 
-import pytest
 from scripts.assert_production_drift_gate import (
     audit_contract_double,
     check_production_merge_blocker,

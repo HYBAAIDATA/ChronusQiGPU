@@ -20,13 +20,11 @@ def test_quarantine_no_governance_mutation(wired):
 def test_kill_halts_mid_iteration_and_state_is_recoverable(wired):
     """Assert kill control halts a mid-iteration run and state is verified restored (6.4)."""
     r, o, c, p, a = wired
-    from dataclasses import replace
     from fractions import Fraction as F
     from chronus.agent.control import (
         Action,
         Plan,
         ControlPolicy,
-        ExecutionReceipt,
     )
     from chronus.agent.permissions import ActionRequest, ActionKind, PermissionTuple
     from chronus.agent.value import Value

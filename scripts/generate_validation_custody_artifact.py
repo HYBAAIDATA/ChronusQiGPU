@@ -105,7 +105,9 @@ def generate_custody_artifact() -> Path:
 
     # Git environment hash
     try:
-        git_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=str(_ROOT), text=True).strip()
+        git_sha = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=str(_ROOT), text=True
+        ).strip()
     except Exception:
         git_sha = "unknown"
 
@@ -136,7 +138,9 @@ def generate_custody_artifact() -> Path:
     }
 
     # Canonical serialization and HMAC signature for custody verification
-    canonical_body = json.dumps(artifact_body, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    canonical_body = json.dumps(artifact_body, sort_keys=True, separators=(",", ":")).encode(
+        "utf-8"
+    )
     signer_key = b"euclid-validation-custody-salt-20261014"
     signature = hmac.new(signer_key, canonical_body, hashlib.sha256).hexdigest()
 

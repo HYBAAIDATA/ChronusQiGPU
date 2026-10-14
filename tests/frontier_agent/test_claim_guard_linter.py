@@ -1,8 +1,7 @@
 """Tests for claim guard documentation linter enforcing no-claims clause (6.5)."""
 
-import pytest
 from pathlib import Path
-from scripts.claim_guard_linter import check_content, lint_file, lint_docs
+from scripts.claim_guard_linter import check_content, lint_file
 
 
 def test_claim_guard_rejects_agi_claim():

@@ -3,7 +3,6 @@
 from dataclasses import replace
 from fractions import Fraction as F
 import hashlib
-import pytest
 from chronus.agent.identity import AgentIdentity, LifecycleState
 from chronus.agent.capabilities import TaskClass, RiskTier, Capability, CapabilitySet
 from chronus.agent.audit import AuditLedger, MACSigner

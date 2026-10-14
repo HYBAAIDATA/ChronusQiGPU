@@ -1,8 +1,8 @@
 {
   "custody": {
-    "signature": "01a09d5802561714f36f486c7ad37409819dd46cb64d01f420f45f4081918bbd",
+    "signature": "65dd364685e7ef97e1e2b1cbc484f96447f3ed1736eb6f761b3abcc7d4a753d5",
     "signature_scheme": "HMAC-SHA256",
-    "signed_at": "2026-10-14T15:23:56.717020+00:00",
+    "signed_at": "2026-10-14T15:30:13.903583+00:00",
     "signer_identity": "euclid-validation-custody-authority"
   },
   "payload": {
@@ -22,9 +22,9 @@
         ],
         "cwd": "C:\\Users\\leonn\\OneDrive\\Desktop\\PhiEnterprise-main",
         "exit_code": 0,
-        "log_sha256": "e414925104f426795f2c0c863560716059623c1f25d7c2401e0e38dc859e95a6",
-        "output_tail": "........................................................................ [ 56%]\n.......................................................                  [100%]\n127 passed in 8.80s\n",
-        "started_at": "2026-10-14T15:23:56.717020+00:00"
+        "log_sha256": "2f007e7de7b0ecd0b774a240340c2b57d6c71804391a4b165245fc9e7abd8f4f",
+        "output_tail": "........................................................................ [ 56%]\n.......................................................                  [100%]\n127 passed in 8.54s\n",
+        "started_at": "2026-10-14T15:30:13.903583+00:00"
       },
       {
         "argv": [
@@ -44,7 +44,7 @@
         "exit_code": 0,
         "log_sha256": "d6678431e6f2afe94016ef1e52d8b144581eeb57e2c6888721b3cfd9c4ddd23a",
         "output_tail": "All done! \\u2728 \\U0001f370 \\u2728\n89 files would be left unchanged.\n",
-        "started_at": "2026-10-14T15:24:07.313574+00:00"
+        "started_at": "2026-10-14T15:30:24.007605+00:00"
       },
       {
         "argv": [
@@ -63,7 +63,7 @@
         "exit_code": 0,
         "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "output_tail": "",
-        "started_at": "2026-10-14T15:24:08.010645+00:00"
+        "started_at": "2026-10-14T15:30:24.605238+00:00"
       },
       {
         "argv": [
@@ -75,7 +75,7 @@
         "exit_code": 0,
         "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "output_tail": "",
-        "started_at": "2026-10-14T15:24:08.241813+00:00"
+        "started_at": "2026-10-14T15:30:24.861944+00:00"
       },
       {
         "argv": [
@@ -86,17 +86,17 @@
         "exit_code": 0,
         "log_sha256": "82d64a5dd2a42b4b92de2eab059c8e15579940b5de1fed0c342f04f176f9216b",
         "output_tail": "[PASS] Contract double traceability and TODO-gates verified.\n",
-        "started_at": "2026-10-14T15:24:09.690977+00:00"
+        "started_at": "2026-10-14T15:30:26.253541+00:00"
       }
     ],
     "environment": {
-      "file_hashes_digest": "065375683a11f19c9c99dd43aa63f7383a947224363ce308c7ca481383086713",
-      "git_head": "5c608b09bad8dd5d3bc29e0388bcf6ff148d3870",
+      "file_hashes_digest": "ab467a2addae531b63e848b0264f0ffcbf416fbe1ad62b388f9d5e5c99461c95",
+      "git_head": "5e4a2f7effa25115848f0a81b2109241d88a77a5",
       "platform": "Windows-11-10.0.26200-SP0",
       "processor": "AMD64 Family 23 Model 160 Stepping 0, AuthenticAMD",
       "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
     },
-    "generated_at": "2026-10-14T15:23:56.717020+00:00",
+    "generated_at": "2026-10-14T15:30:13.903583+00:00",
     "restrictions": [
       "no_merge",
       "no_release",
@@ -148,7 +148,7 @@
       "chronus/agent/world_model.py": "8ac7ced3ba2d03018b386a773a6f1079d5b1d0bf8059f638296d9ffe5384f19f",
       "scripts/assert_production_drift_gate.py": "fe50d06542c9c462f0aa5d11741e3fbee146f3f837e49efcde202bcc657357ec",
       "scripts/claim_guard_linter.py": "b3fbb5bea9570a3591ef78909557421cbc11eef544aae7d14f6e46e408005360",
-      "scripts/lucas_qualification_harness.py": "4aa05a5775ca22b5d805fe10fc07a47397f898b95ab0fdacb6f496f654b0d8ac",
+      "scripts/lucas_qualification_harness.py": "42ad55aba4275faa41a62cae2cd21b24fbeda49d3ebf42de8bd534897018cd76",
       "tests/frontier_agent/conftest.py": "8fd0a1b5ef08a0c4442b1771caaddc96cb3ab12b12d238e0cf47e2e9d82b7f0c",
       "tests/frontier_agent/test_abstraction.py": "3721663d40135c8686162f004a5ef75cc5080a06f306caf2297135fd0f8819c1",
       "tests/frontier_agent/test_alignment.py": "015b5481b7e43c5f5ae55c34342082c4d3a05dc072fe52a29b08ff8951bc383a",
@@ -158,7 +158,7 @@
       "tests/frontier_agent/test_capabilities.py": "24034b97612f6c3be4b2fccabfcc99f7419dd0c26d15e652ccc9fab2444d731b",
       "tests/frontier_agent/test_capability_creation.py": "90ce821134b54cb0265766a5ef6c0aef0c39cc3d882837546fdef335d726741f",
       "tests/frontier_agent/test_characterisation.py": "35e3160bf0badca4aba474218384192ece75547824cbc44702886c779c395a30",
-      "tests/frontier_agent/test_claim_guard_linter.py": "3bbede68a44d1138fa2cd6d8303c06a330642c97b10c27e90775a300496fedb2",
+      "tests/frontier_agent/test_claim_guard_linter.py": "9fcfc885d8da751d1d8e408daae44988ec36255201c7097e8d08cf7a14ddc737",
       "tests/frontier_agent/test_cognition.py": "35b5e4a64a59cdfe10f435e5f633d1d5419d40f93b3678e2979c2a391fe19e96",
       "tests/frontier_agent/test_control.py": "e278216df40d6a43fc1a33f8489c533d55abb59092a10bc52e480d0bc35ea570",
       "tests/frontier_agent/test_counterfactual.py": "61c1ab0527beab50ab722b1bf68fbc445e415fae9a65402e19096c8334602dc1",
@@ -170,8 +170,8 @@
       "tests/frontier_agent/test_honesty.py": "4e047d9f964c119337a25b2c7db5584149ddb10e0082d1392dd9042e260fef10",
       "tests/frontier_agent/test_hypothesis.py": "1879be7b69fb8efb8f58d6f26865a7006e1d8d8c1d53097001bdc140ca7d7ab3",
       "tests/frontier_agent/test_identity.py": "6b6c949f184f130816eb0bfddf7467797882dc778dfe44ea909048f2544a4c43",
-      "tests/frontier_agent/test_intelligence_init_smoke.py": "9f801038799f81caa22fcb5ee3176ce627cb0e5bd5aaba94b88ab414bee69cd7",
-      "tests/frontier_agent/test_iteration_counter_and_budget.py": "53da352b7d166e011e9772d30e0eacc5b1e4968e0adae7ad1ef6df88b259db98",
+      "tests/frontier_agent/test_intelligence_init_smoke.py": "09d5fbfeef0928087161b36a925e8d45b16f512404f44d568e220c4d35cb53f6",
+      "tests/frontier_agent/test_iteration_counter_and_budget.py": "d238a66c553d00e508d87e1a8f1fedfadba0e4c07d16a511a1107f34e792c6ba",
       "tests/frontier_agent/test_main.py": "6a6dc660b3e7c2023a03a16901928608ff35d52d6efab48c741111be09edbc4a",
       "tests/frontier_agent/test_memory.py": "b72e2fa4d100afc00188c66fcf61d6dee5f7faa7c298ecd3a8d5b329ba0ae0ef",
       "tests/frontier_agent/test_metacognition.py": "cd92adc82002ed90259a6fdf8c7b1f276f72f0a07027e02081664e59094b9bf8",
@@ -179,17 +179,17 @@
       "tests/frontier_agent/test_operational_loop.py": "2f4f0aa2025c091e19e1a881f4837460f90610f044eb31e4e004dc821c2bfe09",
       "tests/frontier_agent/test_perception.py": "bb87fc0f8978ec09ed8fb09e926e4d9e79b8f2b1bb5225b5f8420abe938e6488",
       "tests/frontier_agent/test_permissions.py": "ab4e0752c3fe8d590b96f2bbdc46593005b07a2eef1738553bfc34925ba9825a",
-      "tests/frontier_agent/test_production_drift_gate.py": "291a914ac91557d4bebd5a977da94d7067345a4fa70554859647a32888dd1ccc",
+      "tests/frontier_agent/test_production_drift_gate.py": "93b37c9a15919a8b73a99edde2c492ca21c38a0845582a60c796f7d00898e75a",
       "tests/frontier_agent/test_qualification_loop.py": "d0f233941eeff11de779db6f06c70f5c9665c66ce08bc0a88616d0813a09f839",
       "tests/frontier_agent/test_reliability.py": "6f3c86ebd76d825f17d32727f4ef5493d7e4ac1dd077b2d3a58f6cffaa9f20ff",
       "tests/frontier_agent/test_representation.py": "9ddaddb9e546b915be835e5d1e371ffcff5c90decf4fd87e43546d6d960b148f",
       "tests/frontier_agent/test_resources.py": "79d0b54ea19c07722ada943647c791e8eaedc8a54e2f86d820691aded602f217",
       "tests/frontier_agent/test_robustness.py": "c22648d38388c2998afa2cdb1bea7fff83dae72dd23cf1ed9615ebfa9305e754",
-      "tests/frontier_agent/test_safety.py": "ef83f57727d11dc646ea086dc70670d6eafc6df8eb332c6360c80ca9414233a3",
+      "tests/frontier_agent/test_safety.py": "962411292035d21aed148121281252ee69cf1c88a8d9c88cddb12ac1276a366a",
       "tests/frontier_agent/test_search.py": "997329730edda1f4b3456417a8e4be4ab344f5ac49c16122ac71ca670885fadb",
       "tests/frontier_agent/test_security.py": "b5774923b0fe215825ffcc19816038170fa25e18f0339d10ff56ad517c7ac77b",
       "tests/frontier_agent/test_strategy.py": "4ea6945025f70d7ebfe06eacadc924bca93123b02ada0e995706e7bdb885f30c",
-      "tests/frontier_agent/test_t5_qualification_e2e.py": "07189142b9465bfe7088dc3cb07ae23ddb230a9f3bff275d87e504e7c42fd0dc",
+      "tests/frontier_agent/test_t5_qualification_e2e.py": "d1d7b739113462c50a95df36dc9a854b5f447637d9f3c9c0b013b4821338a921",
       "tests/frontier_agent/test_trust.py": "9a1ea1fc12ccf81b76f860626256726925b7527e07c3b2dea9117d1b682f11e5",
       "tests/frontier_agent/test_value.py": "8db57768ded1a1ef53c2cdb21fc5e62d34e6c9d8d33062ec860dc07008b49244",
       "tests/frontier_agent/test_verification.py": "acfeb6aef12a5a8ab9b44cf0cd43fdb8bf08f55c0e547c0ef0688438b74fb9e9",
