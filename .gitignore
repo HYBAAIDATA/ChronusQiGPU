@@ -45,6 +45,10 @@ chronus/mla1517_platform/results/
 
 # PredictiveEngine trained-model artifacts (toe.engine persists here)
 models/
+# PHILOS Python data contracts are source, not trained-model artifacts.
+!/euclid/emergence/models/
+/euclid/emergence/models/*
+!/euclid/emergence/models/*.py
 
 # scratch build/output dir
 .tmp_build/
