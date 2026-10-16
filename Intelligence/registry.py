@@ -121,6 +121,32 @@ class ModuleRegistry:
         self._order.append(name)
         return entry
 
+    def configure_frontier_agent(self, agent):
+        """Bind an explicitly host-configured Euclid runtime, never invent authority.
+
+        The same cached instance is exposed through instantiate_all() to the
+        orchestrator. No provider/guard/signer default is constructed here.
+        """
+        from chronus.agent.main import FrontierAgent
+
+        if not isinstance(agent, FrontierAgent):
+            raise TypeError("explicit FrontierAgent runtime required")
+        entry = self.get("euclid_frontier_agent")
+        if entry is None or not entry.loaded:
+            raise RuntimeError("frontier module is not registered/loaded")
+        if entry.instance is not None and entry.instance is not agent:
+            raise RuntimeError("stop and reconfigure the host before replacing its runtime")
+        entry.instance = agent
+        entry.factory = lambda: agent
+        return agent
+
+    def run_frontier_task(self, objective, cognition, plan):
+        """Use the retained runtime; unconfigured is unavailable, not an answer."""
+        entry = self.get("euclid_frontier_agent")
+        if entry is None or entry.instance is None:
+            raise RuntimeError("frontier host runtime has not been configured")
+        return entry.instance.run(objective, cognition, plan)
+
     # -- introspection ----------------------------------------------------
 
     def names(self) -> List[str]:
@@ -179,6 +205,22 @@ def build_default_registry() -> ModuleRegistry:
     docstring *claims*.
     """
     reg = ModuleRegistry()
+    reg.register(
+        "euclid_frontier_agent",
+        "chronus.agent",
+        "Five-plane agent control contracts: bounded cognitive primitives, "
+        "explicit host adapters, scoped writes, verification/rollback, and a separate "
+        "signed qualification service. Registration is not benchmark competence; "
+        "requires host configuration and external execution isolation.",
+        [
+            "governed_tasks",
+            "bounded_search",
+            "strategy_selection",
+            "evidence_adjudication",
+            "qualified_capability_admission",
+            "decision_provenance",
+        ],
+    )
 
     # --- AGI substrate & quantum math (consolidated into Intelligence) ---
     reg.register(
