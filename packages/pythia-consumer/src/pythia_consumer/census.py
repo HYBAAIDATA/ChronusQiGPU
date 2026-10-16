@@ -39,7 +39,6 @@ _LARGE_MEMORY_GIB = 96
 # detected via installed distribution metadata plus module importability —
 # reported as facts, never stubbed.
 _PRODUCTS = (
-    ("hyba-chronos-one-igpu", ("chronos_one_igpu",), "iGPU compute fabric"),
     ("hyba-chronus-igpu", ("chronus", "lucas"), "CHRONUS execution"),
     ("hyba-theseus-storage", ("aethel",), "custody/storage"),
     ("hyba-ovid-data-organisation", ("hyba_db",), "data organisation"),

@@ -88,7 +88,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ env.RC_SHA }}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: storage-candidates-*
           path: candidates
@@ -171,11 +171,11 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: storage-candidates-3.12
           path: dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: storage-release-verdicts
           path: verdicts
@@ -262,11 +262,11 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: storage-candidates-3.12
           path: dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: storage-release-verdicts
           path: verdicts
@@ -363,15 +363,15 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: storage-candidates-3.12
           path: dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: storage-release-verdicts
           path: verdicts
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: theseus-testpypi-smoke-*
           path: receipts
@@ -462,15 +462,15 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: storage-candidates-3.12
           path: dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: storage-release-verdicts
           path: verdicts
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: ovid-testpypi-smoke-*
           path: receipts
@@ -571,15 +571,15 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ env.RC_SHA }}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: storage-candidates-3.12
           path: dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: storage-release-verdicts
           path: verdicts
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: "*-smoke-*"
           path: receipts

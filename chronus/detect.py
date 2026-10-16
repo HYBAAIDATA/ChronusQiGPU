@@ -133,7 +133,7 @@ class DetectedDevice:
     vendor: str
     is_gpu: bool
     is_integrated: bool
-    integrated_reason: str
+    integrated_reason: str = ""
     type_bits: int = 0
     platform: str = ""
     driver_version: str = ""
@@ -166,6 +166,45 @@ class DetectedDevice:
             "identity": [self.identity[0], self.identity[1]],
         }
 
+    def to_chronus_device(self) -> Any:
+        from .domain import ChronusDevice, ChronusDeviceType, ChronusBackend, ChronusMemory, ChronusCapabilities
+        backend_map = {
+            "cuda": ChronusBackend.CUDA,
+            "metal": ChronusBackend.METAL,
+            "opencl": ChronusBackend.OPENCL,
+            "rocm": ChronusBackend.ROCM,
+            "chronus": ChronusBackend.SOFTWARE,
+            "software": ChronusBackend.SOFTWARE,
+        }
+        dev_type = (
+            ChronusDeviceType.INTEGRATED_GPU if self.is_integrated
+            else (ChronusDeviceType.DISCRETE_GPU if self.is_gpu else ChronusDeviceType.CPU)
+        )
+        return ChronusDevice(
+            id=f"{self.backend}:{self.name}",
+            name=self.name,
+            vendor=self.vendor,
+            device_type=dev_type,
+            backend=backend_map.get(self.backend.lower(), ChronusBackend.OPENCL),
+            memory=ChronusMemory(
+                total_bytes=512 * 1024 * 1024 if self.is_integrated else 1024 * 1024 * 1024,
+                is_unified=self.is_integrated,
+                memory_type="UMA" if self.is_integrated else "VRAM",
+            ),
+            capabilities=ChronusCapabilities(
+                has_unified_memory=self.is_integrated,
+                is_integrated=self.is_integrated,
+                compute_units=8 if self.is_integrated else 16,
+            ),
+            is_integrated=self.is_integrated,
+            is_gpu=self.is_gpu,
+            integrated_reason=self.integrated_reason,
+            platform=self.platform,
+            driver_version=self.driver_version,
+            version=self.version,
+            raw_device=self,
+        )
+
 
 @dataclass
 class DetectionReport:
@@ -177,6 +216,9 @@ class DetectionReport:
 
     def default(self) -> Optional["DetectedDevice"]:
         return default_device(self.devices)
+
+    def chronus_devices(self) -> List[Any]:
+        return [d.to_chronus_device() for d in self.devices]
 
     def as_dict(self) -> Dict[str, Any]:
         chosen = self.default()
@@ -432,6 +474,68 @@ def default_device(devices: Optional[Sequence[DetectedDevice]] = None) -> Option
     return None
 
 
+def to_chronus_device(d: DetectedDevice) -> Any:
+    """Map a DetectedDevice to the canonical ChronusDevice domain model."""
+    from .domain import (
+        ChronusBackend,
+        ChronusCapabilities,
+        ChronusDevice,
+        ChronusDeviceType,
+        ChronusMemory,
+    )
+
+    backend_str = (d.backend or "").lower()
+    if backend_str == "cuda":
+        backend = ChronusBackend.CUDA
+    elif backend_str == "metal":
+        backend = ChronusBackend.METAL
+    elif backend_str == "opencl":
+        backend = ChronusBackend.OPENCL
+    elif backend_str == "chronus":
+        backend = ChronusBackend.CHRONUS
+    else:
+        backend = ChronusBackend.CPU
+
+    if d.is_integrated:
+        dev_type = ChronusDeviceType.INTEGRATED_GPU
+    elif d.is_gpu:
+        dev_type = ChronusDeviceType.DISCRETE_GPU
+    elif d.backend == "chronus":
+        dev_type = ChronusDeviceType.CHRONUS_NATIVE
+    else:
+        dev_type = ChronusDeviceType.CPU
+
+    mem = ChronusMemory(
+        is_unified=d.is_integrated,
+        memory_type="UMA" if d.is_integrated else "VRAM",
+    )
+    caps = ChronusCapabilities(
+        is_integrated=d.is_integrated,
+        has_unified_memory=d.is_integrated,
+    )
+    dev_id = f"{d.backend}:{d.vendor}:{d.name}".replace(" ", "_")
+    return ChronusDevice(
+        id=dev_id,
+        name=d.name,
+        vendor=d.vendor,
+        device_type=dev_type,
+        backend=backend,
+        memory=mem,
+        capabilities=caps,
+        is_integrated=d.is_integrated,
+        is_gpu=d.is_gpu,
+        integrated_reason=d.integrated_reason or "",
+        platform=d.platform,
+        driver_version=d.driver_version,
+    )
+
+
+def chronus_devices() -> List[Any]:
+    """Authoritative discovery returning canonical ChronusDevice representations."""
+    report = detect_all()
+    return [to_chronus_device(d) for d in report.devices]
+
+
 __all__ = [
     "INTEGRATED_VENDORS",
     "DetectionReport",
@@ -447,4 +551,6 @@ __all__ = [
     "host_unified_memory",
     "normalize_name",
     "normalize_vendor",
+    "to_chronus_device",
+    "chronus_devices",
 ]

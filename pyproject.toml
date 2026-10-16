@@ -27,8 +27,6 @@ dependencies = [
     # is part of the miner: the Hendrix nonce order and the VQC policy audit.
     # Install it beside this package: pip install ./turing_universal_quantum_computer .
     "hyba-turing-vqc>=1.0",
-    # The resident Chronus iGPU execution contract (in-tree: chronus/packages/chronos-one-igpu/)
-    "hyba-chronos-one-igpu>=1.0",
     # KELLOGG tensor substrate ships as its own distribution (packaging/kellogg-tensor/);
     # the umbrella must not vendor it — RECORD overlap is a release blocker.
     "hyba-kellogg-tensor>=1.0",
@@ -38,10 +36,12 @@ dependencies = [
 pythia = "main:main"
 pythia-api = "control_api:main"
 pythia-mine = "mining_runtime:main"
-pythia-gpu-readiness = "gpu.readiness:main"
+pythia-gpu-readiness = "chronus.readiness:main"
 chronus-readiness = "chronus.readiness:main"
 pythia-storage-db-gate = "hyba_db.production_gate:main"
 pythagoras-v12 = "pythagoras.run_pythagoras:main"
+salamander = "Intelligence.salamander:main"
+bsd-cli = "scripts.bsd_cli:main"
 
 [project.optional-dependencies]
 hardware = [
@@ -85,8 +85,8 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 include-package-data = false
-package-dir = {"" = "chronus/mla1517_platform/python", "euclid" = "euclid", "Intelligence" = "Intelligence", "mining" = "mining", "aethel" = "aethel", "gpu" = "gpu", "hyba" = "hyba", "toe" = "toe", "kellogg" = "kellogg", "python_backend" = "python_backend", "al_haras" = "al_haras", "chronus" = "chronus", "chronos" = "chronus/chronos", "quantum_compute_substrate" = "quantum_compute_substrate", "l_hras" = "l_hras", "lucas" = "chronus/lucas", "millennium" = "millennium", "tensor" = "tensor", "hyba_profiles" = "hyba_profiles", "hyba_contracts" = "hyba_contracts", "hyba_services" = "hyba_services", "salamander" = "salamander", "hyba_db" = "hyba_db", "hyba_substrate" = "hyba_substrate", "conformance" = "conformance", "pythagoras" = "pythagoras", "compiler" = "chronus/compiler", "format" = "chronus/format", "tools" = "chronus/tools", "kernels" = "kernels", "isa" = "chronus/isa", "manifests" = "manifests", "artifacts" = "artifacts"}
-packages = ["euclid", "euclid.core", "euclid.search", "euclid.discovery", "euclid.transfer", "euclid.validation", "euclid.geometry", "euclid.surrogate", "euclid.agents", "euclid.enterprise", "euclid.benchmarks", "euclid.tests", "euclid.cognition", "euclid.cognition.worlds", "euclid.cognition.integrated", "euclid.cognition.research", "Intelligence", "mining", "lucas", "millennium", "aethel", "gpu", "gpu.backends", "hyba", "hyba.hybrid", "hyba.math_ir", "hyba.operating_model", "toe", "toe.intelligences", "toe.unified", "kellogg", "python_backend", "python_backend.pythia_mining", "python_backend.mathematical_foundation", "python_backend.hyba", "python_backend.hyba.runtime", "python_backend.core_modules", "al_haras", "chronus", "chronus.virtual_igpu", "chronus.measurement", "chronus.measurement.attestation", "chronus.measurement.efficiency", "chronus.measurement.profiling", "chronus.measurement.roofline", "chronus.measurement.stability", "chronus.measurement.store", "chronus.measurement.system", "chronus.measurement.topology", "chronus.measurement.workload", "chronus.paradigm", "chronos", "chronos.academic", "quantum_compute_substrate", "chronus.seam", "chronus.mla1517", "chronus.mla1517.mining", "chronus.v33", "chronus.v33.academic", "chronus.v33.compression", "chronus.v33.control", "chronus.v33.environment", "chronus.v33.fields", "chronus.v33.graphics", "chronus.v33.memory", "chronus.v33.theory", "chronus.v33.benchmarks", "chronus.v33.examples", "l_hras", "l_hras.foundations", "l_hras.experimental", "l_hras.experimental.blueprint", "l_hras.experimental.blueprint.core", "l_hras.experimental.blueprint.substrate", "l_hras.experimental.blueprint.fold", "l_hras.experimental.blueprint.intelligences", "l_hras.experimental.blueprint.modes", "l_hras.experimental.blueprint.modules", "l_hras.experimental.blueprint.layers", "l_hras.experimental.blueprint.floor", "l_hras.experimental.blueprint.aethel", "l_hras.experimental.blueprint.guardian", "l_hras.experimental.blueprint.mining", "l_hras.experimental.blueprint.security", "l_hras.experimental.blueprint.asic", "l_hras.experimental.blueprint.blueprint_tests", "tensor", "tensor.backends", "hyba_profiles", "hyba_contracts", "hyba_services", "salamander", "hyba_db", "hyba_substrate", "aethel.enterprise", "conformance", "conformance.generators", "conformance.tests", "pythagoras", "pythagoras.agents", "pythagoras.benchmarks", "pythagoras.core", "pythagoras.domains", "pythagoras.engine", "pythagoras.enterprise", "pythagoras.experiments", "pythagoras.integration", "pythagoras.tests", "Intelligence.asi", "Intelligence.consciousness", "Intelligence.self_healing", "Intelligence.tests", "quantum_compute_substrate.applications", "quantum_compute_substrate.cathedral", "quantum_compute_substrate.hardware_codesign", "quantum_compute_substrate.interop", "quantum_compute_substrate.phi_infinity_tensor", "quantum_compute_substrate.post_quantum", "quantum_compute_substrate.pulvini", "quantum_compute_substrate.quantum_2026", "quantum_compute_substrate.scaling_study", "quantum_compute_substrate.tests", "quantum_compute_substrate.visualization", "quantum_compute_substrate.quantum_2026.classics", "euclid.curriculum", "euclid.organ_adapters", "toe.adapters", "compiler", "compiler.geometry", "format", "tools", "tools.asm", "tools.disasm", "kernels", "isa", "manifests", "artifacts.pythia_training"]
+package-dir = {"" = "chronus/mla1517_platform/python", "euclid" = "euclid", "Intelligence" = "Intelligence", "mining" = "mining", "aethel" = "aethel", "hyba" = "hyba", "toe" = "toe", "kellogg" = "kellogg", "python_backend" = "python_backend", "al_haras" = "al_haras", "chronus" = "chronus", "quantum_compute_substrate" = "quantum_compute_substrate", "l_hras" = "l_hras", "lucas" = "chronus/lucas", "millennium" = "millennium", "tensor" = "tensor", "hyba_profiles" = "hyba_profiles", "hyba_contracts" = "hyba_contracts", "hyba_services" = "hyba_services", "salamander" = "salamander", "hyba_db" = "hyba_db", "hyba_substrate" = "hyba_substrate", "conformance" = "conformance", "pythagoras" = "pythagoras", "compiler" = "chronus/compiler", "format" = "chronus/format", "tools" = "chronus/tools", "kernels" = "kernels", "isa" = "chronus/isa", "manifests" = "manifests", "artifacts" = "artifacts", "integrations" = "integrations", "scripts" = "scripts", "reports" = "reports"}
+packages = ["euclid", "euclid.core", "euclid.search", "euclid.discovery", "euclid.transfer", "euclid.validation", "euclid.geometry", "euclid.surrogate", "euclid.agents", "euclid.enterprise", "euclid.benchmarks", "euclid.tests", "euclid.cognition", "euclid.cognition.worlds", "euclid.cognition.integrated", "euclid.cognition.research", "Intelligence", "Intelligence.skills", "Intelligence.domains", "integrations", "integrations.agi_external", "integrations.llm_gateway", "integrations.solvers", "reports", "mining", "lucas", "millennium", "millennium.discrete", "aethel", "hyba", "hyba.hybrid", "hyba.math_ir", "hyba.operating_model", "toe", "toe.intelligences", "toe.unified", "kellogg", "python_backend", "python_backend.pythia_mining", "python_backend.mathematical_foundation", "python_backend.hyba", "python_backend.hyba.runtime", "python_backend.core_modules", "al_haras", "chronus", "chronus.virtual_igpu", "chronus.measurement", "chronus.measurement.attestation", "chronus.measurement.efficiency", "chronus.measurement.profiling", "chronus.measurement.roofline", "chronus.measurement.stability", "chronus.measurement.store", "chronus.measurement.system", "chronus.measurement.topology", "chronus.measurement.workload", "chronus.paradigm", "chronus.igpu", "chronus.igpu.native", "chronus.igpu.spec", "chronus.golden_quantum", "chronus.adapters", "chronus.theory", "chronus.academic", "quantum_compute_substrate", "chronus.seam", "chronus.mla1517", "chronus.mla1517.mining", "chronus.v33", "chronus.v33.academic", "chronus.v33.compression", "chronus.v33.control", "chronus.v33.environment", "chronus.v33.fields", "chronus.v33.graphics", "chronus.v33.memory", "chronus.v33.theory", "chronus.v33.benchmarks", "chronus.v33.examples", "l_hras", "l_hras.foundations", "l_hras.experimental", "l_hras.experimental.blueprint", "l_hras.experimental.blueprint.core", "l_hras.experimental.blueprint.substrate", "l_hras.experimental.blueprint.fold", "l_hras.experimental.blueprint.intelligences", "l_hras.experimental.blueprint.modes", "l_hras.experimental.blueprint.modules", "l_hras.experimental.blueprint.layers", "l_hras.experimental.blueprint.floor", "l_hras.experimental.blueprint.aethel", "l_hras.experimental.blueprint.guardian", "l_hras.experimental.blueprint.mining", "l_hras.experimental.blueprint.security", "l_hras.experimental.blueprint.asic", "l_hras.experimental.blueprint.blueprint_tests", "tensor", "tensor.backends", "hyba_profiles", "hyba_contracts", "hyba_services", "salamander", "hyba_db", "hyba_substrate", "aethel.enterprise", "conformance", "conformance.generators", "conformance.tests", "pythagoras", "pythagoras.agents", "pythagoras.benchmarks", "pythagoras.core", "pythagoras.domains", "pythagoras.engine", "pythagoras.enterprise", "pythagoras.experiments", "pythagoras.integration", "pythagoras.tests", "Intelligence.asi", "Intelligence.consciousness", "Intelligence.self_healing", "Intelligence.tests", "quantum_compute_substrate.applications", "quantum_compute_substrate.cathedral", "quantum_compute_substrate.hardware_codesign", "quantum_compute_substrate.interop", "quantum_compute_substrate.phi_infinity_tensor", "quantum_compute_substrate.post_quantum", "quantum_compute_substrate.pulvini", "quantum_compute_substrate.quantum_2026", "quantum_compute_substrate.scaling_study", "quantum_compute_substrate.tests", "quantum_compute_substrate.visualization", "quantum_compute_substrate.quantum_2026.classics", "euclid.curriculum", "euclid.organ_adapters", "toe.adapters", "compiler", "compiler.geometry", "format", "tools", "tools.asm", "tools.disasm", "kernels", "isa", "manifests", "artifacts.pythia_training"]
 py-modules = [
     "al_haras_pythia",
     "autonomous_supervisor",
@@ -119,11 +119,12 @@ py-modules = [
 ]
 
 [tool.setuptools.package-data]
+Intelligence = ["py.typed", "skills/**/SKILL.md", "skills/**/PROVENANCE.json", "skills/**/*.json"]
+reports = ["*.json", "*.md"]
 "chronus.mla1517" = ["seeds/*.yaml"]
 aethel = ["py.typed", "*.md", "capabilities.json"]
-gpu = ["py.typed", "README.md", "BLUEPRINT_AUDIT.md"]
 chronus = ["py.typed", "README.md", "GPU_CAPABILITY_MANIFEST.json", "CONVERGENCE_MANIFEST.json", "kernels/*.cl", "deploy/*.yml", "spec/*.json"]
-chronos = ["README.md"]
+"chronus.igpu" = ["kernels/*.cl", "kernels/*.h", "spec/*.json", "spec/*.md"]
 "chronus.v33" = ["CAPABILITY_MANIFEST.json", "docs/*.md", "benchmarks/*.json"]
 hyba_db = ["CAPABILITY_MANIFEST.json"]
 tensor = ["py.typed", "README.md", "CAPABILITY_MANIFEST.md"]
@@ -142,6 +143,7 @@ manifests = ["*.json", "*.yaml", "*.key.README", "chronus105/*.json", "chronus10
 
 [tool.pytest.ini_options]
 testpaths = ["chronus/mla1517_platform/python", "tests"]
+addopts = "-p no:cacheprovider -p no:hypothesis --basetemp=.pytest_tmp"
 
 [tool.black]
 line-length = 100
@@ -158,6 +160,7 @@ exclude = '''
   | models
   | logs
   | legacy
+  | external
   | \.venv
   | venv
 )/

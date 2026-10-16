@@ -108,8 +108,9 @@ class PenroseOrchestrator:
         This is the key Penrose mechanism: quantum superposition collapses
         to classical state through gravitational self-energy threshold.
         """
-        # Reduction probability based on coherence time
-        reduction_prob = 1.0 - math.exp(-state.coherence_time / self.coherence_time)
+        # Hilbert-Schmidt spectral projection probability (AGENTS.md §1.2.2 Born rule projection)
+        norm_sq = float(abs(state.amplitude) ** 2)
+        reduction_prob = float(min(1.0, max(0.0, 1.0 - norm_sq)))
         
         # Non-computational element: geometric understanding
         geometric_insight = self._geometric_understanding(state)

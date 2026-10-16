@@ -1,0 +1,137 @@
+{
+  "experiment_name": "LUCAS_STATE_SPACE_METRIC_SCALING",
+  "timestamp": 1791981373.287821,
+  "protocol_specification": {
+    "state_representation": "2D Poincare disk D^2 = {z in C : |z| < 1}",
+    "dimensions": 2,
+    "scaling_variable": "Lucas index n in [10, 12, 15, 18, 20, 31, 50]",
+    "parameter_ranges": {
+      "rungs": [
+        10,
+        12,
+        15,
+        18,
+        20,
+        31,
+        50
+      ],
+      "k_steps": 500,
+      "n_trials": 10
+    },
+    "baseline": "Uniform i.i.d. pseudorandom phase walk on D^2",
+    "complexity_metric": "Geodesic path length on hyperbolic manifold",
+    "memory_metric": "tracemalloc peak bytes",
+    "numerical_tolerance": {
+      "eps": 1e-09,
+      "delta": 1e-06
+    },
+    "expected_relationship": "Hyperbolic distance scales monotonically with Lucas index n; memory remains O(K)",
+    "falsification_condition": "Falsified if distance is non-monotonic or memory grows super-linearly"
+  },
+  "theorems_and_proven_results": [
+    "Binet formula: L_n = phi^n + (-phi)^(-n)",
+    "Asymptotic ratio: lim_{n->inf} L_{n+1} / L_n = phi",
+    "Poincare disk metric ds^2 = 4(dx^2 + dy^2)/(1 - x^2 - y^2)^2 is invariant under SU(1,1)"
+  ],
+  "analytic_bounds": [
+    "L_n <= phi^n + 1 for all positive n",
+    "Maximal 2D grid entropy on 16x16 partition: S_max = log2(256) = 8.0 bits",
+    "Hyperbolic radius r_n < 1.0 strictly holds for all real L_n >= 0"
+  ],
+  "measured_results": {
+    "rungs": [
+      {
+        "rung_n": 10,
+        "lucas_value": 123,
+        "mean_hyperbolic_distance": 1278.1622,
+        "mean_grid_entropy_bits": 5.115,
+        "mean_peak_memory_bytes": 22463,
+        "mean_duration_seconds": 0.006009,
+        "samples_count": 10
+      },
+      {
+        "rung_n": 12,
+        "lucas_value": 322,
+        "mean_hyperbolic_distance": 1371.5545,
+        "mean_grid_entropy_bits": 4.9765,
+        "mean_peak_memory_bytes": 22410,
+        "mean_duration_seconds": 0.005492,
+        "samples_count": 10
+      },
+      {
+        "rung_n": 15,
+        "lucas_value": 1364,
+        "mean_hyperbolic_distance": 1487.7419,
+        "mean_grid_entropy_bits": 5.3511,
+        "mean_peak_memory_bytes": 22403,
+        "mean_duration_seconds": 0.005492,
+        "samples_count": 10
+      },
+      {
+        "rung_n": 18,
+        "lucas_value": 5778,
+        "mean_hyperbolic_distance": 1583.6289,
+        "mean_grid_entropy_bits": 5.2581,
+        "mean_peak_memory_bytes": 22403,
+        "mean_duration_seconds": 0.005223,
+        "samples_count": 10
+      },
+      {
+        "rung_n": 20,
+        "lucas_value": 15127,
+        "mean_hyperbolic_distance": 1639.2933,
+        "mean_grid_entropy_bits": 5.3429,
+        "mean_peak_memory_bytes": 22403,
+        "mean_duration_seconds": 0.006655,
+        "samples_count": 10
+      },
+      {
+        "rung_n": 31,
+        "lucas_value": 3010349,
+        "mean_hyperbolic_distance": 1871.8464,
+        "mean_grid_entropy_bits": 5.377,
+        "mean_peak_memory_bytes": 22403,
+        "mean_duration_seconds": 0.006002,
+        "samples_count": 10
+      },
+      {
+        "rung_n": 50,
+        "lucas_value": 28143753123,
+        "mean_hyperbolic_distance": 2125.7552,
+        "mean_grid_entropy_bits": 5.3228,
+        "mean_peak_memory_bytes": 22407,
+        "mean_duration_seconds": 0.005898,
+        "samples_count": 10
+      }
+    ],
+    "baseline": {
+      "k_steps": 500,
+      "mean_hyperbolic_distance": 1315.155,
+      "mean_grid_entropy_bits": 7.2943,
+      "mean_peak_memory_bytes": 25262
+    }
+  },
+  "hypotheses": [
+    {
+      "hypothesis_id": "H-LUCAS-METRIC-SCALING",
+      "statement": "State-space geodesic distance on D^2 under Lucas scaling exhibits monotonic expansion with bounded memory footprint",
+      "falsification_verdict": "NOT_FALSIFIED",
+      "evidence_status": "EMPIRICAL_MEASUREMENT_VALIDATED"
+    }
+  ],
+  "falsification_evaluation": {
+    "condition_a_distance_monotonicity": {
+      "passed": true,
+      "details": "Hyperbolic distance sequence: [1278.1622, 1371.5545, 1487.7419, 1583.6289, 1639.2933, 1871.8464, 2125.7552]"
+    },
+    "condition_b_entropy_structuring": {
+      "passed": true,
+      "details": "Lucas entropy: 5.3228 vs baseline: 7.2943"
+    },
+    "condition_c_memory_linearity": {
+      "passed": true,
+      "details": "Memory ratio n=50 / n=10: 1.0x"
+    },
+    "overall_hypothesis_falsified": false
+  }
+}

@@ -1,0 +1,143 @@
+{
+  "schema": "philos.reconstructed-contract-validation/1",
+  "evidence_class": "UNSIGNED_LOCAL_EXECUTION",
+  "baseline": "1d4b495b3081258908b6e7ec4d18299d64d5e970",
+  "review_parent": "7d212bff426f97bcc6d84126a8e81bbde4db2add",
+  "source_provenance": "Seven model modules newly reconstructed from pinned consumers, not recovered originals. Source-domain hashes are newly versioned; no compatibility with unpublished historical payload hashes is asserted.",
+  "environment": {
+    "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+    "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+    "cryptography": "50.0.2",
+    "workspace_kind": "connector-fetched selective source snapshot, not a complete git checkout",
+    "cwd": "/data/philos_reconstruction/source"
+  },
+  "commands": [
+    {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests/emergence_contracts",
+        "-v"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_actual_public_package (test_reconstructed_contracts.Contracts.test_actual_public_package) ... ok\ntest_actual_runtime_initialization_remains_separate (test_reconstructed_contracts.Contracts.test_actual_runtime_initialization_remains_separate) ... ok\ntest_actual_telemetry_to_stream (test_reconstructed_contracts.Contracts.test_actual_telemetry_to_stream) ... ok\ntest_bounded_synthetic_colony_and_breeding (test_reconstructed_contracts.Contracts.test_bounded_synthetic_colony_and_breeding) ... ok\ntest_bounded_synthetic_harness (test_reconstructed_contracts.Contracts.test_bounded_synthetic_harness) ... ok\ntest_candidate_supports_actual_folding_source (test_reconstructed_contracts.Contracts.test_candidate_supports_actual_folding_source) ... ok\ntest_cross_process_hash_seed_stability (test_reconstructed_contracts.Contracts.test_cross_process_hash_seed_stability) ... ok\ntest_envelope_expansion_explicit_semantics (test_reconstructed_contracts.Contracts.test_envelope_expansion_explicit_semantics) ... ok\ntest_event_and_adjudication_contract (test_reconstructed_contracts.Contracts.test_event_and_adjudication_contract) ... ok\ntest_invalid_bounds_and_protocol (test_reconstructed_contracts.Contracts.test_invalid_bounds_and_protocol) ... ok\ntest_iteration_and_seed_types (test_reconstructed_contracts.Contracts.test_iteration_and_seed_types) ... ok\ntest_manifest_normalizes_caller_mutation (test_reconstructed_contracts.Contracts.test_manifest_normalizes_caller_mutation) ... ok\ntest_manifest_semantic_binding (test_reconstructed_contracts.Contracts.test_manifest_semantic_binding) ... ok\ntest_nonfinite_payload_rejected (test_reconstructed_contracts.Contracts.test_nonfinite_payload_rejected) ... ok\ntest_novelty_and_divergence_consumers (test_reconstructed_contracts.Contracts.test_novelty_and_divergence_consumers) ... ok\ntest_outcomes_serialize_distinctly (test_reconstructed_contracts.Contracts.test_outcomes_serialize_distinctly) ... ok\ntest_payload_remains_float64_boundary (test_reconstructed_contracts.Contracts.test_payload_remains_float64_boundary) ... ok\ntest_qualification_refuses_missing_authority (test_reconstructed_contracts.Contracts.test_qualification_refuses_missing_authority) ... ok\ntest_record_hash_not_recursively_bound (test_reconstructed_contracts.Contracts.test_record_hash_not_recursively_bound) ... ok\ntest_run_hash_binds_full_records (test_reconstructed_contracts.Contracts.test_run_hash_binds_full_records) ... ok\ntest_run_rejects_identity_mismatch (test_reconstructed_contracts.Contracts.test_run_rejects_identity_mismatch) ... ok\ntest_signature_tamper_and_revocation (test_reconstructed_contracts.Contracts.test_signature_tamper_and_revocation) ... ok\ntest_substrate_identity_binds_description (test_reconstructed_contracts.Contracts.test_substrate_identity_binds_description) ... ok\ntest_telemetry_binds_novelty_and_invariants (test_reconstructed_contracts.Contracts.test_telemetry_binds_novelty_and_invariants) ... ok\ntest_telemetry_snapshot_immutable (test_reconstructed_contracts.Contracts.test_telemetry_snapshot_immutable) ... ok\ntest_explicit_key_cannot_sign_as_other_identity (test_reconstructed_contracts.SecurityRegressions.test_explicit_key_cannot_sign_as_other_identity) ... ok\ntest_frozen_ceiling_rejects_recomputed_public_salt_mac (test_reconstructed_contracts.SecurityRegressions.test_frozen_ceiling_rejects_recomputed_public_salt_mac) ... ok\ntest_key_identifier_cannot_be_overwritten (test_reconstructed_contracts.SecurityRegressions.test_key_identifier_cannot_be_overwritten) ... ok\ntest_signature_identity_cannot_be_relabelled (test_reconstructed_contracts.SecurityRegressions.test_signature_identity_cannot_be_relabelled) ... ok\n\n----------------------------------------------------------------------\nRan 29 tests in 0.290s\n\nOK\n"
+    },
+    {
+      "command": [
+        "/usr/local/bin/python",
+        "-O",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests/emergence_contracts",
+        "-v"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_actual_public_package (test_reconstructed_contracts.Contracts.test_actual_public_package) ... ok\ntest_actual_runtime_initialization_remains_separate (test_reconstructed_contracts.Contracts.test_actual_runtime_initialization_remains_separate) ... ok\ntest_actual_telemetry_to_stream (test_reconstructed_contracts.Contracts.test_actual_telemetry_to_stream) ... ok\ntest_bounded_synthetic_colony_and_breeding (test_reconstructed_contracts.Contracts.test_bounded_synthetic_colony_and_breeding) ... ok\ntest_bounded_synthetic_harness (test_reconstructed_contracts.Contracts.test_bounded_synthetic_harness) ... ok\ntest_candidate_supports_actual_folding_source (test_reconstructed_contracts.Contracts.test_candidate_supports_actual_folding_source) ... ok\ntest_cross_process_hash_seed_stability (test_reconstructed_contracts.Contracts.test_cross_process_hash_seed_stability) ... ok\ntest_envelope_expansion_explicit_semantics (test_reconstructed_contracts.Contracts.test_envelope_expansion_explicit_semantics) ... ok\ntest_event_and_adjudication_contract (test_reconstructed_contracts.Contracts.test_event_and_adjudication_contract) ... ok\ntest_invalid_bounds_and_protocol (test_reconstructed_contracts.Contracts.test_invalid_bounds_and_protocol) ... ok\ntest_iteration_and_seed_types (test_reconstructed_contracts.Contracts.test_iteration_and_seed_types) ... ok\ntest_manifest_normalizes_caller_mutation (test_reconstructed_contracts.Contracts.test_manifest_normalizes_caller_mutation) ... ok\ntest_manifest_semantic_binding (test_reconstructed_contracts.Contracts.test_manifest_semantic_binding) ... ok\ntest_nonfinite_payload_rejected (test_reconstructed_contracts.Contracts.test_nonfinite_payload_rejected) ... ok\ntest_novelty_and_divergence_consumers (test_reconstructed_contracts.Contracts.test_novelty_and_divergence_consumers) ... ok\ntest_outcomes_serialize_distinctly (test_reconstructed_contracts.Contracts.test_outcomes_serialize_distinctly) ... ok\ntest_payload_remains_float64_boundary (test_reconstructed_contracts.Contracts.test_payload_remains_float64_boundary) ... ok\ntest_qualification_refuses_missing_authority (test_reconstructed_contracts.Contracts.test_qualification_refuses_missing_authority) ... ok\ntest_record_hash_not_recursively_bound (test_reconstructed_contracts.Contracts.test_record_hash_not_recursively_bound) ... ok\ntest_run_hash_binds_full_records (test_reconstructed_contracts.Contracts.test_run_hash_binds_full_records) ... ok\ntest_run_rejects_identity_mismatch (test_reconstructed_contracts.Contracts.test_run_rejects_identity_mismatch) ... ok\ntest_signature_tamper_and_revocation (test_reconstructed_contracts.Contracts.test_signature_tamper_and_revocation) ... ok\ntest_substrate_identity_binds_description (test_reconstructed_contracts.Contracts.test_substrate_identity_binds_description) ... ok\ntest_telemetry_binds_novelty_and_invariants (test_reconstructed_contracts.Contracts.test_telemetry_binds_novelty_and_invariants) ... ok\ntest_telemetry_snapshot_immutable (test_reconstructed_contracts.Contracts.test_telemetry_snapshot_immutable) ... ok\ntest_explicit_key_cannot_sign_as_other_identity (test_reconstructed_contracts.SecurityRegressions.test_explicit_key_cannot_sign_as_other_identity) ... ok\ntest_frozen_ceiling_rejects_recomputed_public_salt_mac (test_reconstructed_contracts.SecurityRegressions.test_frozen_ceiling_rejects_recomputed_public_salt_mac) ... ok\ntest_key_identifier_cannot_be_overwritten (test_reconstructed_contracts.SecurityRegressions.test_key_identifier_cannot_be_overwritten) ... ok\ntest_signature_identity_cannot_be_relabelled (test_reconstructed_contracts.SecurityRegressions.test_signature_identity_cannot_be_relabelled) ... ok\n\n----------------------------------------------------------------------\nRan 29 tests in 0.266s\n\nOK\n"
+    },
+    {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests/source_tracking",
+        "-v"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) ... ok\ntest_model_artifacts_and_package_cache_stay_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_model_artifacts_and_package_cache_stay_ignored) ... ok\ntest_normal_git_add_tracks_all_contract_probes_without_force (test_emergence_model_tracking.EmergenceModelTrackingTests.test_normal_git_add_tracks_all_contract_probes_without_force) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.027s\n\nOK\n"
+    },
+    {
+      "command": [
+        "/usr/local/bin/python",
+        "-O",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests/source_tracking",
+        "-v"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) ... ok\ntest_model_artifacts_and_package_cache_stay_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_model_artifacts_and_package_cache_stay_ignored) ... ok\ntest_normal_git_add_tracks_all_contract_probes_without_force (test_emergence_model_tracking.EmergenceModelTrackingTests.test_normal_git_add_tracks_all_contract_probes_without_force) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.028s\n\nOK\n"
+    },
+    {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "compileall",
+        "-q",
+        "euclid/emergence",
+        "tests/emergence_contracts",
+        "tests/source_tracking"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "tabnanny",
+        "euclid/emergence/models"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "pytest",
+        "tests/emergence",
+        "-q"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "/usr/local/bin/python: No module named pytest\n"
+    }
+  ],
+  "baseline_observations": {
+    "import_exit_code": 1,
+    "import_output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    import euclid; print(\"genuine EUCLID import passed\"); import euclid.emergence\n                                                          ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/data/philos_reconstruction/source/euclid/emergence/__init__.py\", line 5, in <module>\n    from .models import (\n    ...<16 lines>...\n    )\nModuleNotFoundError: No module named 'euclid.emergence.models'\ngenuine EUCLID import passed\n",
+    "before_security_fixes": {
+      "test_count": 28,
+      "failures": 4,
+      "errors": 0,
+      "output": "test_actual_public_package (test_reconstructed_contracts.Contracts.test_actual_public_package) ... ok\ntest_actual_telemetry_to_stream (test_reconstructed_contracts.Contracts.test_actual_telemetry_to_stream) ... ok\ntest_bounded_synthetic_colony_and_breeding (test_reconstructed_contracts.Contracts.test_bounded_synthetic_colony_and_breeding) ... ok\ntest_bounded_synthetic_harness (test_reconstructed_contracts.Contracts.test_bounded_synthetic_harness) ... ok\ntest_candidate_supports_actual_folding_source (test_reconstructed_contracts.Contracts.test_candidate_supports_actual_folding_source) ... ok\ntest_cross_process_hash_seed_stability (test_reconstructed_contracts.Contracts.test_cross_process_hash_seed_stability) ... ok\ntest_envelope_expansion_explicit_semantics (test_reconstructed_contracts.Contracts.test_envelope_expansion_explicit_semantics) ... ok\ntest_event_and_adjudication_contract (test_reconstructed_contracts.Contracts.test_event_and_adjudication_contract) ... ok\ntest_invalid_bounds_and_protocol (test_reconstructed_contracts.Contracts.test_invalid_bounds_and_protocol) ... ok\ntest_iteration_and_seed_types (test_reconstructed_contracts.Contracts.test_iteration_and_seed_types) ... ok\ntest_manifest_normalizes_caller_mutation (test_reconstructed_contracts.Contracts.test_manifest_normalizes_caller_mutation) ... ok\ntest_manifest_semantic_binding (test_reconstructed_contracts.Contracts.test_manifest_semantic_binding) ... ok\ntest_nonfinite_payload_rejected (test_reconstructed_contracts.Contracts.test_nonfinite_payload_rejected) ... ok\ntest_novelty_and_divergence_consumers (test_reconstructed_contracts.Contracts.test_novelty_and_divergence_consumers) ... ok\ntest_outcomes_serialize_distinctly (test_reconstructed_contracts.Contracts.test_outcomes_serialize_distinctly) ... ok\ntest_payload_remains_float64_boundary (test_reconstructed_contracts.Contracts.test_payload_remains_float64_boundary) ... ok\ntest_qualification_refuses_missing_authority (test_reconstructed_contracts.Contracts.test_qualification_refuses_missing_authority) ... ok\ntest_record_hash_not_recursively_bound (test_reconstructed_contracts.Contracts.test_record_hash_not_recursively_bound) ... ok\ntest_run_hash_binds_full_records (test_reconstructed_contracts.Contracts.test_run_hash_binds_full_records) ... ok\ntest_run_rejects_identity_mismatch (test_reconstructed_contracts.Contracts.test_run_rejects_identity_mismatch) ... ok\ntest_signature_tamper_and_revocation (test_reconstructed_contracts.Contracts.test_signature_tamper_and_revocation) ... ok\ntest_substrate_identity_binds_description (test_reconstructed_contracts.Contracts.test_substrate_identity_binds_description) ... ok\ntest_telemetry_binds_novelty_and_invariants (test_reconstructed_contracts.Contracts.test_telemetry_binds_novelty_and_invariants) ... ok\ntest_telemetry_snapshot_immutable (test_reconstructed_contracts.Contracts.test_telemetry_snapshot_immutable) ... ok\ntest_explicit_key_cannot_sign_as_other_identity (test_reconstructed_contracts.SecurityRegressions.test_explicit_key_cannot_sign_as_other_identity) ... FAIL\ntest_frozen_ceiling_rejects_recomputed_public_salt_mac (test_reconstructed_contracts.SecurityRegressions.test_frozen_ceiling_rejects_recomputed_public_salt_mac) ... FAIL\ntest_key_identifier_cannot_be_overwritten (test_reconstructed_contracts.SecurityRegressions.test_key_identifier_cannot_be_overwritten) ... FAIL\ntest_signature_identity_cannot_be_relabelled (test_reconstructed_contracts.SecurityRegressions.test_signature_identity_cannot_be_relabelled) ... FAIL\n\n======================================================================\nFAIL: test_explicit_key_cannot_sign_as_other_identity (test_reconstructed_contracts.SecurityRegressions.test_explicit_key_cannot_sign_as_other_identity)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/data/philos_reconstruction/source/tests/emergence_contracts/test_reconstructed_contracts.py\", line 241, in test_explicit_key_cannot_sign_as_other_identity\n    with self.assertRaises(PermissionError):\n         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\nAssertionError: PermissionError not raised\n\n======================================================================\nFAIL: test_frozen_ceiling_rejects_recomputed_public_salt_mac (test_reconstructed_contracts.SecurityRegressions.test_frozen_ceiling_rejects_recomputed_public_salt_mac)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/data/philos_reconstruction/source/tests/emergence_contracts/test_reconstructed_contracts.py\", line 229, in test_frozen_ceiling_rejects_recomputed_public_salt_mac\n    self.assertFalse(verify_frozen_max_fold(999, forged))\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: True is not false\n\n======================================================================\nFAIL: test_key_identifier_cannot_be_overwritten (test_reconstructed_contracts.SecurityRegressions.test_key_identifier_cannot_be_overwritten)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/data/philos_reconstruction/source/tests/emergence_contracts/test_reconstructed_contracts.py\", line 247, in test_key_identifier_cannot_be_overwritten\n    with self.assertRaises(ValueError):\n         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^\nAssertionError: ValueError not raised\n\n======================================================================\nFAIL: test_signature_identity_cannot_be_relabelled (test_reconstructed_contracts.SecurityRegressions.test_signature_identity_cannot_be_relabelled)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/data/philos_reconstruction/source/tests/emergence_contracts/test_reconstructed_contracts.py\", line 235, in test_signature_identity_cannot_be_relabelled\n    self.assertFalse(km.verify_signature(r, dataclasses.replace(sig, signer_identity=\"mallory\")))\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: True is not false\n\n----------------------------------------------------------------------\nRan 28 tests in 0.288s\n\nFAILED (failures=4)\n",
+      "note": "Contracts already reconstructed; 4 security failures against unchanged original crypto/folding implementations, not 28 baseline defects."
+    }
+  },
+  "tested_source_sha256": {
+    "euclid/emergence/models/__init__.py": "02d7c34216dde6536f7d6e2743291b95e1c65dd56f043fca3437006ac2a2e8b3",
+    "euclid/emergence/models/candidate.py": "dc0c18eeddfd50d68bcd64420ef7ec24af99ed111d64a4436d561ad1ef209bbb",
+    "euclid/emergence/models/condensation.py": "f430f7377c2f488a4381dc08ea8ab2550010857818e82074c95b77647449bf38",
+    "euclid/emergence/models/manifest.py": "62217259ee4ef8e6d98eefcac46a659f05a6027307e1a57d259a09278d01c03f",
+    "euclid/emergence/models/qualification.py": "1a77d6bc23130da052de58af2b7755b1fcddff7a12f09e55be5b9d22bf594a2a",
+    "euclid/emergence/models/substrate.py": "e264e1da926492f8a3c71a63879d5b3fdf533ba5b65cd26e39c730aa45c398a1",
+    "euclid/emergence/models/telemetry.py": "ea630029ac6dc9c10f01638935bb7f7e918be3c459010dff65932d62099048e8",
+    "euclid/emergence/telemetry/crypto.py": "f24314f4d1f95a1a950a86c9e04a6a44e602ab32ec84e76d1b096f38506c1f6d",
+    "euclid/emergence/folding/recursive_folding.py": "a8103c3e523caadbdb92881a0fd682c2ff982eb71ec0b547c1f5a8b2ab32add3",
+    "tests/emergence_contracts/test_reconstructed_contracts.py": "cbfa4f0e6c8fd816455c066a0f1302839e77384eea7fc8d84ecfc36b7074e070"
+  },
+  "limits": [
+    "Original tests/emergence pytest suite could not run: pytest is absent. New 29 unittest regressions are different tests, not reproduction of historical 29/92% coverage.",
+    "No complete checkout, installed wheel, Windows, frontier suite, Lucas Tier15/Tier20 qualification, CI, lint tool or secret scanner acceptance.",
+    "Real EuclidRuntime initialization/close tested; canonical Intelligence/PHILOS bridge and feedback closure not implemented by this patch.",
+    "Bounded 3-step harness and 12-step colony are synthetic plumbing tests, not measured emergence, container isolation or qualification.",
+    "Public default governance secret, simulated reproduction/stress, skip-empty divergence window, and unauthenticated reviewer identities remain blockers.",
+    "Local key ownership checks are not external trust anchors; timestamp metadata is not cryptographically authenticated by the current signature protocol.",
+    "No claim of independent assurance, immutability against a process owner, model weights or inference backend recovery."
+  ]
+}

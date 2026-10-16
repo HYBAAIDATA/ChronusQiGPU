@@ -91,16 +91,20 @@ class EuclidLearningSystem:
   if claim_id not in self.claims: raise ValueError("unknown claim")
   ek=EvidenceKind(kind); ids=tuple(str(x) for x in event_ids); known={e.event_id for e in self.events}
   if any(x not in known for x in ids): raise ValueError("unknown event evidence")
+  if ek in (EvidenceKind.EXTERNAL_COMPARISON,EvidenceKind.OPERATOR_REVIEW) and (not operator_approved or not str(reference_id or "").strip()): raise ValueError("external comparison and operator review require approval and an evidence reference")
   evidence=ClaimEvidence("evidence-"+uuid.uuid4().hex,ek.value,bool(passed),ids,self._nonempty(issuer,"issuer"),reference_id,bool(operator_approved),time.time(),str(notes)); claim=self.claims[claim_id]; claim.evidence.append(evidence)
   if not passed:
    claim.stage=ClaimStage.REFUTED.value; claim.confidence=0.0; claim.contradictions.append(evidence.evidence_id)
-  else:
+  elif not claim.contradictions:
    passed_kinds={EvidenceKind(x.kind) for x in claim.evidence if x.passed}
-   if EvidenceKind.EXTERNAL_COMPARISON in passed_kinds: claim.stage=ClaimStage.EXTERNALLY_COMPARED.value
-   elif EvidenceKind.ADVERSARIAL_TEST in passed_kinds: claim.stage=ClaimStage.ADVERSARIALLY_TESTED.value
-   elif EvidenceKind.INTERNAL_REPRODUCTION in passed_kinds: claim.stage=ClaimStage.INTERNALLY_REPRODUCED.value
+   internal_ok=EvidenceKind.INTERNAL_REPRODUCTION in passed_kinds
+   adversarial_ok=internal_ok and EvidenceKind.ADVERSARIAL_TEST in passed_kinds
+   external_ok=adversarial_ok and EvidenceKind.EXTERNAL_COMPARISON in passed_kinds
+   if external_ok: claim.stage=ClaimStage.EXTERNALLY_COMPARED.value
+   elif adversarial_ok: claim.stage=ClaimStage.ADVERSARIALLY_TESTED.value
+   elif internal_ok: claim.stage=ClaimStage.INTERNALLY_REPRODUCED.value
    operator_ok=any(x.passed and x.kind==EvidenceKind.OPERATOR_REVIEW.value and x.operator_approved for x in claim.evidence)
-   if EvidenceKind.EXTERNAL_COMPARISON in passed_kinds and operator_ok: claim.stage=ClaimStage.PROVISIONALLY_TRUSTED.value
+   if external_ok and operator_ok: claim.stage=ClaimStage.PROVISIONALLY_TRUSTED.value
    claim.confidence=min(0.99,0.2*sum(1 for x in claim.evidence if x.passed)+(0.25 if operator_ok else 0.0))
   if persist:self._checkpoint()
   return evidence

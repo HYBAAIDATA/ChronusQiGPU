@@ -53,6 +53,12 @@ EXCLUDE = (
     "build/",
     "node_modules/",
     "PYTHIA-main/",
+    # Vendored third-party workshop tree (aws-samples/sample-saas-multi-agents-
+    # workshop). Flat sibling imports (import ops_context, from log_agent import
+    # ...) and a lab-generated constants.py do not resolve on the consolidated
+    # import graph; excluded as a standalone vendored tree (same rule as
+    # PYTHIA-main/). See external/README.md.
+    "external/",
     # Preserved standalone package: carries its own src/chronos namespace and
     # is not part of the consolidated import graph (same rule as PYTHIA-main/).
     "chronus/packages/chronos-one-igpu/",

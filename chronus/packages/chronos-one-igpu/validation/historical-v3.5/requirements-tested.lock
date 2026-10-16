@@ -1,9 +1,0 @@
-# Captured Python 3.13 test/build environment; not a universal runtime platform lock.
-numpy==2.5.3
-pytest==9.1.1
-setuptools==84.0.0
-wheel==0.48.0
-pluggy==1.6.0
-iniconfig==2.3.1
-pygments==2.21.0
-packaging==26.3

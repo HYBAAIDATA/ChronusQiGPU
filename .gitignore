@@ -19,6 +19,7 @@ venv/
 artifacts/
 .coverage
 .pytest_cache/
+.pytest_tmp/
 # Host shim build artifacts (compiled from host/mla1517_mmio_win32.c /
 # host/mla1517_mmio.c during setup — not source)
 *.dll
@@ -45,6 +46,10 @@ chronus/mla1517_platform/results/
 
 # PredictiveEngine trained-model artifacts (toe.engine persists here)
 models/
+# PHILOS Python data contracts are source, not trained-model artifacts.
+!/euclid/emergence/models/
+/euclid/emergence/models/*
+!/euclid/emergence/models/*.py
 
 # scratch build/output dir
 .tmp_build/
@@ -105,6 +110,16 @@ smoke-artifacts/
 # Lean 4 build output
 proofs/lean/.lake/
 
+# --- Vendored workshop: external/sample-saas-multi-agents-workshop ----------
+# The repo-wide rules above (data/, *.zip, *.log) would otherwise drop this
+# vendored tree's sample inputs. Re-include them narrowly so the workshop stays
+# self-contained. Provenance: upstream aws-samples/sample-saas-multi-agents-
+# workshop @ 559fc55e6abfc79cd854ba35af30a7215d19f53e (MIT-0). See external/README.md.
+!external/sample-saas-multi-agents-workshop/data/
+!external/sample-saas-multi-agents-workshop/data/**
+!external/sample-saas-multi-agents-workshop/**/*.zip
+!external/sample-saas-multi-agents-workshop/**/*.log
+
 # assurance-gate result artifacts (make gates / scripts/gate_runner.py)
 results/
 
@@ -114,3 +129,6 @@ results/
 # Chronus Virtual iGPU default embedded store
 .chronus-virtual-igpu/
 local-ci/
+
+# Re-include PHILOS Python contracts hidden by broad models/ ignore
+!euclid/emergence/models/

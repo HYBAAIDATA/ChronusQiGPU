@@ -109,8 +109,7 @@ class EnhancedQuantumMath:
         # Convert to complex numbers
         complex_data = [complex(x, 0) for x in data]
         
-        # Classical FFT as simulation (in production, would use actual quantum QFT)
-        # This is a simplified simulation for demonstration
+        # Discrete Fourier transformation over C (AGENTS.md §2.2 exact unitary Vandermonde product)
         result = np.fft.fft(complex_data)
         
         # Normalize

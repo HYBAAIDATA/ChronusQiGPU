@@ -16,7 +16,7 @@ import time
 import pytest
 
 import turing_core
-from chronos_one_igpu.reference_contract import reference_execution
+from chronus.reference_contract import reference_execution
 from mining.difficulty import MAX_ZERO_BITS, MIN_ZERO_BITS, DifficultyController
 from mining.nonce_scheduler import NonceScheduler
 from mining.search import GroverStyleSearch, MerklePathVerifier, PreimageSearch

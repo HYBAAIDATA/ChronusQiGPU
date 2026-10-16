@@ -1,0 +1,120 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: phienterprise
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: igpu-operator
+  namespace: phienterprise
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: igpu-operator-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: igpu-operator-binding
+subjects:
+  - kind: ServiceAccount
+    name: igpu-operator
+    namespace: phienterprise
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: igpu-operator-role
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: igpu-core
+  namespace: phienterprise
+spec:
+  serviceName: igpu-core
+  replicas: 1
+  selector:
+    matchLabels:
+      app: igpu-core
+  template:
+    metadata:
+      labels:
+        app: igpu-core
+    spec:
+      serviceAccountName: igpu-operator
+      containers:
+        - name: igpu-core
+          image: phienterprise/igpu-core:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: AETHEL_STORE
+              value: "/var/lib/phienterprise/aethel"
+            - name: IGPU_MODE
+              value: "cold_tier"
+            - name: HYPERSCALER_MODE
+              value: "true"
+          volumeMounts:
+            - name: aethel-data
+              mountPath: /var/lib/phienterprise/aethel
+            - name: config
+              mountPath: /etc/phienterprise
+      volumes:
+        - name: config
+          configMap:
+            name: igpu-core-config
+        - name: aethel-data
+          persistentVolumeClaim:
+            claimName: igpu-core-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: igpu-core-data
+  namespace: phienterprise
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: igpu-core-config
+  namespace: phienterprise
+data:
+  app.yaml: |
+    mode: cold_tier
+    data_layer: toe.unified.data_layer
+    intelligence_layer: toe.bridge
+    storage_layer: aethel
+    evidence_gate: strict
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: igpu-core
+  namespace: phienterprise
+spec:
+  type: ClusterIP
+  selector:
+    app: igpu-core
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

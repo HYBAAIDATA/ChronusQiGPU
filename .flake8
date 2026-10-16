@@ -25,6 +25,9 @@ exclude =
     build,
     legacy,
     PYTHIA-main,
+    # vendored third-party workshop tree (aws-samples/sample-saas-multi-agents-
+    # workshop); kept byte-exact for provenance. See external/README.md.
+    external,
     # vendored skill grafts, kept byte-exact (Intelligence/skill_graft.py)
     Intelligence/skills
 per-file-ignores =

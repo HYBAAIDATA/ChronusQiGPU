@@ -16,13 +16,14 @@ _PROJECT_ROOT = Path(__file__).resolve().parent
 _CANONICAL_PYTHON = _PROJECT_ROOT / "chronus/mla1517_platform" / "python"
 _CHRONOS_IGPU = _PROJECT_ROOT / "packages" / "chronos-one-igpu" / "src"
 _PYTHIA_CONSUMER = _PROJECT_ROOT / "packages" / "pythia-consumer" / "src"
-for _p in [str(_PROJECT_ROOT), str(_CANONICAL_PYTHON), str(_CHRONOS_IGPU), str(_PYTHIA_CONSUMER)]:
+_TURING = _PROJECT_ROOT / "turing_universal_quantum_computer"
+for _p in [str(_PROJECT_ROOT), str(_CANONICAL_PYTHON), str(_CHRONOS_IGPU), str(_PYTHIA_CONSUMER), str(_TURING)]:
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
 _existing_pp = os.environ.get("PYTHONPATH", "")
 _pp_parts = _existing_pp.split(os.pathsep) if _existing_pp else []
-for _p in [str(_CHRONOS_IGPU), str(_PYTHIA_CONSUMER), str(_CANONICAL_PYTHON), str(_PROJECT_ROOT)]:
+for _p in [str(_CHRONOS_IGPU), str(_PYTHIA_CONSUMER), str(_CANONICAL_PYTHON), str(_PROJECT_ROOT), str(_TURING)]:
     if _p not in _pp_parts:
         _pp_parts.insert(0, _p)
 os.environ["PYTHONPATH"] = os.pathsep.join(_pp_parts)

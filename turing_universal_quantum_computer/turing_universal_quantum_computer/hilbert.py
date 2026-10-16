@@ -365,7 +365,7 @@ class QSqrt:
     def __init__(self, q=0, s=0, root=2):
         self.q = _frac(q)
         self.s = _frac(s)
-        self.root = int(root)
+        self.root = _integer(root, "root", 1)
 
     def _scalar_eq(self, other):
         f = _frac(other)
@@ -377,6 +377,9 @@ class QSqrt:
     def __eq__(self, other):
         if isinstance(other, QSqrt):
             if self.root == other.root:
+                r = math.isqrt(self.root)
+                if r * r == self.root:
+                    return self.q + self.s * r == other.q + other.s * r
                 return self.q == other.q and self.s == other.s
             return self.to_sympy() == other.to_sympy()
         if isinstance(other, (int, Fraction, sp.Rational)):
@@ -762,6 +765,8 @@ class QuantumRegister:
         This IS the measurement output per the mathematical postulate
         (AGENTS.md section 1.2.1); no sampling is involved.
         """
+        if include_zeros and self.dim > self.max_amplitudes:
+            raise MemoryError("dense Born distribution exceeds the amplitude budget")
         out = {}
         if include_zeros:
             items = ((i, self.amplitudes.get(i, EC_ZERO)) for i in range(self.dim))
@@ -899,62 +904,91 @@ def verify_unitary(U) -> bool:
 # ---------------------------------------------------------------------------
 
 
-def fourier_matrix(m: int, inverse: bool = False):
-    """Exact DFT matrix F[j][k] = omega^{jk}/sqrt(m), omega = e^{2 pi i / m}.
+def _subregister_qubits(register: QuantumRegister, qubits):
+    positions = tuple(register._require_qubit(q) for q in qubits)
+    if len(set(positions)) != len(positions):
+        raise ValueError("subregister qubits must be unique")
+    return tuple(sorted(positions))
 
-    For m in {1, 2, 4, 8} all entries lie in Q(zeta_8) and are
-    ``ExactComplex``.  For other m the entries are exact sympy
-    cyclotomics exp(2 pi i jk / m) / sqrt(m).
-    """
+
+def _matrix_budget(dimension: int, max_entries: int) -> None:
+    max_entries = _integer(max_entries, "max_entries", 1)
+    if dimension * dimension > max_entries:
+        raise MemoryError("exact matrix exceeds the declared entry budget")
+
+
+def _fourier_scale(m: int):
     if m in (1, 2, 4, 8):
-        scale = {
+        return {
             1: EC_ONE,
             2: EC_INV_SQRT2,
             4: ExactComplex(Fraction(1, 2)),
             8: ExactComplex(0, Fraction(1, 4)),
         }[m]
-        mat = []
-        for j in range(m):
-            row = []
-            for k in range(m):
-                w = _phase_factor(Fraction((j * k) % m, m))
-                if inverse:
-                    w = w.conjugate()
-                row.append(w * scale)
-            mat.append(row)
-        return mat
-    sign = -1 if inverse else 1
-    omega = sp.exp(sign * 2 * sp.pi * sp.I / m)
-    rt = sp.sqrt(m)
-    return [[omega ** (j * k) / rt for k in range(m)] for j in range(m)]
+    return 1 / sp.sqrt(m)
 
 
-def qft(register: QuantumRegister, qubits, inverse: bool = False):
-    """Exact QFT on the subregister spanned by ``qubits`` (bit positions).
+def fourier_matrix(m: int, inverse: bool = False, *, max_entries: int = 1 << 20):
+    """Exact DFT matrix F[j][k] = exp(+-2*pi*i*j*k/m)/sqrt(m).
 
-    For every fixed assignment of the remaining environment qubits, the
-    M = 2^|qubits| amplitude subvector is multiplied by the exact Fourier
-    matrix F_M (see ``fourier_matrix``).  Subregisters of size <= 3 stay
-    inside Q(zeta_8); larger ones produce exact sympy cyclotomics.
+    Admit a positive exact integer dimension and a Boolean direction. Matrix
+    storage is bounded by ``max_entries`` before construction. Dimensions
+    1, 2, 4, 8 use Q(zeta_8); others use exact cyclotomics with sqrt(m).
     """
-    qubits = tuple(sorted(qubits))
+    m = _integer(m, "m", 1)
+    if type(inverse) is not bool:
+        raise TypeError("inverse must be a Boolean")
+    _matrix_budget(m, max_entries)
+    scale = _fourier_scale(m)
+    sign = -1 if inverse else 1
+
+    def coefficient(j, k):
+        factor = _phase_factor(Fraction(sign * j * k, m))
+        if not isinstance(factor, ExactComplex):
+            factor = sp.expand_complex(factor)
+        return _e_mul(factor, scale)
+
+    return [[coefficient(j, k) for k in range(m)] for j in range(m)]
+
+
+def qft(register: QuantumRegister, qubits, inverse: bool = False, *, max_terms: int = 1 << 20):
+    """Exact Fourier action on a validated subregister, committed atomically.
+
+    Bit positions are unique exact integers in the register, canonically
+    sorted. M=2**len(qubits); the conservative output bound is M times the
+    occupied environment-sector count. Refuse if it exceeds max_amplitudes,
+    or M times input support exceeds max_terms. No M-by-M matrix is stored.
+    The same exact Fourier coefficients are contracted against sparse input
+    amplitudes; larger fields are exact sympy cyclotomic extensions.
+    """
+    qubits = _subregister_qubits(register, qubits)
+    if type(inverse) is not bool:
+        raise TypeError("inverse must be a Boolean")
+    max_terms = _integer(max_terms, "max_terms", 1)
     m = 1 << len(qubits)
+    if m * len(register.amplitudes) > max_terms:
+        raise MemoryError("QFT exceeds the declared contraction-term budget")
     env_qubits = tuple(q for q in range(register.n_qubits) if q not in qubits)
-    F = fourier_matrix(m, inverse=inverse)
 
     groups = {}
     for i, a in register.amplitudes.items():
         e = _pack_bits(i, env_qubits)
         groups.setdefault(e, {})[_pack_bits(i, qubits)] = a
+    if m * len(groups) > register.max_amplitudes:
+        raise MemoryError("QFT output exceeds the declared amplitude budget")
 
+    scale = _fourier_scale(m)
+    sign = -1 if inverse else 1
     new_amps = {}
     for e, vec in groups.items():
         e_bits = _scatter_bits(e, env_qubits)
         for k in range(m):
             acc = EC_ZERO
-            for j in range(m):
-                if j in vec:
-                    acc = _e_add(acc, _e_mul(F[k][j], vec[j]))
+            for j, amplitude in vec.items():
+                factor = _e_mul(_phase_factor(Fraction(sign * k * j, m)), scale)
+                acc = _e_add(acc, _e_mul(factor, amplitude))
+            if m > 8 and not isinstance(acc, ExactComplex):
+                acc = sp.simplify(sp.expand_complex(acc))
             if not _e_is_zero(acc):
                 new_amps[e_bits | _scatter_bits(k, qubits)] = acc
     register.amplitudes = new_amps
@@ -1155,13 +1189,17 @@ class GroverExact:
 # ---------------------------------------------------------------------------
 
 
-def reduced_density_matrix(register: QuantumRegister, subsystem):
+def reduced_density_matrix(register: QuantumRegister, subsystem, *, max_entries: int = 1 << 20):
     """Exact reduced density matrix rho_A = Tr_env |psi><psi|.
 
     ``subsystem`` is the list of qubits retained.  Returns a sympy Matrix
     with exact entries (ExactComplex amplitudes are converted exactly).
+    Positions must be unique exact integers in the register. The empty
+    subsystem is allowed. Refuse before allocation when 4**len(subsystem)
+    exceeds max_entries; this entry bound does not bound symbolic bit cost.
     """
-    subsystem = tuple(sorted(subsystem))
+    subsystem = _subregister_qubits(register, subsystem)
+    _matrix_budget(1 << len(subsystem), max_entries)
     env_qubits = tuple(q for q in range(register.n_qubits) if q not in subsystem)
     d = 1 << len(subsystem)
     groups = {}

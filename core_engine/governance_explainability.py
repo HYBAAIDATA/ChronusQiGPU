@@ -289,9 +289,10 @@ class ExplainabilityEngine:
         """Generate attention-based explanation"""
         # Simplified attention simulation
         attention_weights = {}
-        
-        for key, value in input_data.items():
-            attention_weights[key] = 0.1 + (hash(key) % 100) / 1000.0
+        num_keys = len(input_data)
+        uniform_weight = 1.0 / max(1, num_keys)
+        for key in input_data:
+            attention_weights[key] = uniform_weight
         
         return {
             'method': 'attention',
