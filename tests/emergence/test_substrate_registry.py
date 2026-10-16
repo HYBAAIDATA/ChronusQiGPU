@@ -91,14 +91,8 @@ def test_differential_experiment():
         ),
     ]
 
-    comparison = registry.differential_experiment(
-        architecture=architecture,
-        task_suite=tasks,
-        substrate_variants=variants,
-        tiers=[30],
-    )
-
-    assert comparison["substrate_count"] == 2
-    assert "divergence_index" in comparison
-    assert len(comparison["tested_substrates"]) == 2
-    assert "emergent_tool" in comparison["invariant_behaviors"]
+    # A decision-only fixture has no observation provider; no synthetic evidence.
+    with pytest.raises(TypeError, match="real decide/act/observe"):
+        registry.differential_experiment(
+            architecture=architecture, task_suite=tasks,
+            substrate_variants=variants, tiers=[30])

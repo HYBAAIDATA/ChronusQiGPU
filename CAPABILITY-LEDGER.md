@@ -237,3 +237,33 @@ not completion, merge approval or authorization for release/deployment/live work
 | `tests/emergence_custody/test_candidate_custody.py` | `c67b52c6e6e874c10367b7708a8ab4af64b0382cb2538c1cbf8a13ef6cd2eef3` |
 | `tests/emergence_authorization/test_authorization.py` | `eab1007c9ba9dcdcc2f9999a19b3cd5b7359076b2b63c06b44a8c50118376d57` |
 | `tests/emergence_runtime/test_canonical_philos.py` | `2303053be4a07b1722e8f81c286374770db931144feebe4873edb05ff0b3ff65` |
+
+
+## 2026-10-14 — Measured EQS implementation (stacked follow-up to PR75)
+
+Supersedes the earlier absence of any measured reproduction/stress provider **for the
+implemented native action path only**; historical evidence/limits remain preserved.
+The current review branch is `feat/philos-measured-eqs-20261014`, based on PR75
+`81c8c4ef178aae8f349262cbe6c53b1222cb106d`. No merge/deployment.
+
+- Actual state transitions, in-process + fresh interpreter worker, observed outputs,
+  repeated-output trajectory stability and elapsed measurements replace simulated reproduction.
+- Host-registered distinct Ed25519 substrate keys bind full signed run evidence to fresh
+  challenges, candidate/protocol/manifest/environment/artifact/property bindings.
+- Real >=1.5x repetition stress and compute-time checks; signed current action telemetry
+  entropy tripwires; independent hardware/whole-envelope/production monitoring remain unverified.
+- Explicit signed result receipts, separate from invocation authorization, provide public-key
+  verification, candidate/gate/audience/time binding and local transactional one-use admission.
+  Suspension invalidates active receipts; missing qualification state after restart refuses.
+- 85 scoped tests pass normally and under `python -O`: 43 measured + 19 authorization +
+  23 custody. Zero failures/errors/skips. No success-path mocks. Original pytest unavailable.
+- Compatibility: original model constructors/qualify/native outcome contracts preserved;
+  default absent adapter window now requests verified current-run telemetry. PR74 joint
+  canonical runtime, installed package, Windows, full pytest and mandatory CI were not rerun.
+
+Configuration, precise tested/untested axes, authority limits and migration are recorded in
+`docs/PHILOS_MEASURED_EQS.md`. Exact commands/logs/hash inventory: `docs/philos_measured_validation.json`
+and `docs/philos_measured_test_output.txt`. Local host custody is not independent attestation.
+Initial detection custody, malicious-host/device assurance, full envelope stress, arbitrary
+architecture worker adapter, durable qualification-state restoration, downstream production
+promotion wiring and OVID integration remain missing/unverified, not out-of-scope verdicts.
