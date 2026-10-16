@@ -26,6 +26,10 @@ from .trusted_core.qualification_service import EmergentQualificationService
 class QualificationCase:
     """Host-approved immutable candidate snapshot and explicit executor bindings.
 
+    An absent pre-recorded window requests telemetry from this invocation's signed
+    measured runs. A supplied window must match those runs exactly; arbitrary
+    historical telemetry cannot certify a new execution.
+
     Executor implementations remain trusted host references. This is not OS
     isolation, initial detection attestation or a measured-evidence credential.
     """
@@ -83,7 +87,8 @@ class PhilosSpecialist:
                            "case_id": request["case_id"], "candidate_fingerprint": fingerprint})
         try:
             outcome = self.service.qualify(case.candidate.materialize(),case.executor_A,case.executor_B,
-                governance_token=token,post_qualification_window=copy.deepcopy(case.observation_window))
+                governance_token=token,post_qualification_window=(
+                    copy.deepcopy(case.observation_window) if case.observation_window else None))
             if type(outcome) not in (QualifiedEmergent, RejectedQualification, SuspendedQualification):
                 raise TypeError("unknown native qualification outcome")
             result = {"status": outcome.status.value, "qualified": type(outcome) is QualifiedEmergent,

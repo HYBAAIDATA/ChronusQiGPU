@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 import hashlib
+import secrets
+import math
 import time
 from typing import Optional, Sequence, Union, Tuple, Dict, Any
 
@@ -24,6 +26,10 @@ from .access_control import (
     UnauthorizedOperationalLoopCallError,
 )
 from .stress import stress_test
+from .measured import MeasuredEvidenceVerifier
+from .receipts import QualificationReceiptIssuer
+from ..substrate.executors import ReproductionEvidence
+from ..substrate import engine
 from .custody import CandidateSnapshot, CandidateCustodyError
 from .monitor import DivergenceMonitor
 from .journal import ImmutableEmergenceJournal
@@ -44,12 +50,21 @@ class EmergentQualificationService:
         journal: Optional[ImmutableEmergenceJournal] = None,
         divergence_monitor: Optional[DivergenceMonitor] = None,
         margin: float = DEFAULT_MARGIN,
+        registered_substrates=None,
+        receipt_issuer: Optional[QualificationReceiptIssuer] = None,
+        entropy_tripwire: float = 0.85,
     ):
         if authorization is not None and not isinstance(authorization, QualificationAuthorization):
             raise TypeError("host-configured QualificationAuthorization required")
         import math
         if type(margin) not in (int, float) or not math.isfinite(margin) or margin < self.DEFAULT_MARGIN:
             raise ValueError("finite stress margin of at least 1.5 required")
+        if not engine.finite_number(entropy_tripwire) or not 0 <= entropy_tripwire <= 0.85:
+            raise ValueError("finite normalized entropy tripwire <=0.85 required")
+        if receipt_issuer is not None and type(receipt_issuer) is not QualificationReceiptIssuer:
+            raise TypeError("explicit host qualification receipt issuer required")
+        self.evidence_verifier = MeasuredEvidenceVerifier(registered_substrates)
+        self.receipt_issuer, self.entropy_tripwire = receipt_issuer, entropy_tripwire
         self.authorization = authorization
         self.journal = journal or ImmutableEmergenceJournal()
         self.monitor = divergence_monitor or DivergenceMonitor()
@@ -93,6 +108,8 @@ class EmergentQualificationService:
                 "custody_scope": "local_service_entry_only",
                 "independent_attestation": False,
             })
+            if not all(isinstance(e, BaseExecutor) for e in (executor_A, executor_B)):
+                raise CandidateCustodyError("INSUFFICIENT_SUBSTRATE_DIVERSITY: two registered executors required")
             # Substrate independence verification between executor_A and executor_B
             is_independent, isolation_violations = SubstrateIndependenceVerifier.verify_isolation(
                 executor_A.properties,
@@ -105,23 +122,37 @@ class EmergentQualificationService:
                     candidate_id=candidate.candidate_id,
                     capability_name=candidate.capability_name,
                     gate_failed="Gate 1 (Substrate Independence Prerequisite)",
-                    reason=f"Executors violate independence criteria: {'; '.join(isolation_violations)}",
+                    reason=f"INSUFFICIENT_SUBSTRATE_DIVERSITY: Executors violate independence criteria: {'; '.join(isolation_violations)}",
                     evidence={"isolation_violations": isolation_violations},
                 )
                 self.journal.append("REJECT", candidate.candidate_id, verdict.to_dict())
                 return verdict
 
-            # Gate 1 — Reproduction by TWO INDEPENDENT executors
+            # Registry keys are supplied by the host, never learned from an evidence payload.
+            registry = self.evidence_verifier.registrations
+            if any(e.substrate_id not in registry for e in (executor_A, executor_B)):
+                raise CandidateCustodyError("lacks measured reproduction: unregistered substrate")
+            if registry[executor_A.substrate_id].backend == registry[executor_B.substrate_id].backend:
+                raise CandidateCustodyError("INSUFFICIENT_SUBSTRATE_DIVERSITY: distinct measured backends required")
+            if self.receipt_issuer is None:
+                raise CandidateCustodyError("explicit qualification receipt signer unavailable")
+            challenge_A, challenge_B = secrets.token_hex(32), secrets.token_hex(32)
             view_A = snapshot.materialize()
-            r1 = executor_A.reproduce(view_A.reproduction_steps)
+            r1 = executor_A.reproduce(view_A.reproduction_steps, challenge=challenge_A, candidate_fingerprint=snapshot.fingerprint)
             snapshot.verify(view_A)
             snapshot.verify(original_candidate)
             view_B = snapshot.materialize()
-            r2 = executor_B.reproduce(view_B.reproduction_steps)
+            r2 = executor_B.reproduce(view_B.reproduction_steps, challenge=challenge_B, candidate_fingerprint=snapshot.fingerprint)
             snapshot.verify(view_B)
             snapshot.verify(original_candidate)
-            if any(r.details.get("execution_kind") != "MEASURED" for r in (r1, r2)):
-                raise CandidateCustodyError("Gate 1 lacks measured reproduction evidence; simulation is not qualification")
+            r1, window_A = self.evidence_verifier.verify(r1, candidate.reproduction_steps,
+                fingerprint=snapshot.fingerprint, challenge=challenge_A)
+            r2, window_B = self.evidence_verifier.verify(r2, candidate.reproduction_steps,
+                fingerprint=snapshot.fingerprint, challenge=challenge_B)
+            if r1.substrate_id != executor_A.substrate_id or r2.substrate_id != executor_B.substrate_id:
+                raise CandidateCustodyError('INSUFFICIENT_SUBSTRATE_DIVERSITY: returned substrate identity mismatch')
+            if any(r.execution_metrics['stability'] < 0.70 for r in (r1, r2)):
+                raise CandidateCustodyError("UNSTABLE_EXECUTION: output trajectory stability below 0.70")
 
             if not (r1.observed and r2.observed):
                 rejection_reason = "not substrate-independent"
@@ -147,16 +178,32 @@ class EmergentQualificationService:
 
             # Gate 2 — Stress envelope WIDER than discovery envelope
             expanded_envelope = candidate.discovery_envelope.scale_margin(self.margin)
+            stress_challenge = secrets.token_hex(32)
             stress_passed, stress_details = stress_test(
                 candidate=candidate,
                 envelope=expanded_envelope,
                 executor=executor_A,
+                margin=self.margin,
+                challenge=stress_challenge,
             )
 
             snapshot.verify(candidate)
             snapshot.verify(original_candidate)
             if stress_details.get("execution_kind") != "MEASURED":
                 raise CandidateCustodyError("Gate 2 lacks measured executor stress evidence")
+
+            stress_execution, _ = self.evidence_verifier.verify(
+                ReproductionEvidence(**stress_details['execution']), candidate.reproduction_steps,
+                fingerprint=snapshot.fingerprint, challenge=stress_challenge, factor=self.margin,
+                envelope=expanded_envelope.to_dict())
+            if stress_execution.substrate_id != executor_A.substrate_id:
+                raise CandidateCustodyError('stress substrate identity mismatch')
+            stress_passed = (stress_passed and stress_execution.observed
+                and stress_execution.execution_metrics['stability'] >= 0.70
+                and engine.finite_number(expanded_envelope.compute_budget_sec)
+                and expanded_envelope.compute_budget_sec > 0
+                and all(t['duration_ms'] / 1000 <= expanded_envelope.compute_budget_sec
+                        for t in stress_execution.details['trials']))
 
             if not stress_passed:
                 verdict = RejectedQualification(
@@ -169,27 +216,34 @@ class EmergentQualificationService:
                 self.journal.append("REJECT", candidate.candidate_id, verdict.to_dict())
                 return verdict
 
-            # A missing window is unverified, not an implicit pass.
-            if not post_qualification_window:
+            # Gate 3 consumes complete telemetry signed with the current challenge-bound runs.
+            # This is the qualification-run window, not a claim of production monitoring.
+            measured_window = window_A + window_B
+            if not measured_window:
                 raise CandidateCustodyError("Gate 3 requires a nonempty observation window")
-
-            # Gate 3 — Divergence check
-            if post_qualification_window is not None and len(post_qualification_window) > 0:
-                divergence_detected, div_report = self.monitor.divergence_detected(
-                    candidate=candidate,
-                    window=post_qualification_window,
-                )
-                snapshot.verify(candidate)
-                snapshot.verify(original_candidate)
-                if divergence_detected:
-                    suspended_verdict = self.suspend(candidate, div_report)
-                    return suspended_verdict
-
+            if post_qualification_window is not None:
+                if ([r.compute_digest() for r in post_qualification_window] !=
+                        [r.compute_digest() for r in measured_window]):
+                    raise CandidateCustodyError("Gate 3 supplied window is not the complete authenticated current window")
+            for result in (r1, r2):
+                if result.execution_metrics['entropy'] > self.entropy_tripwire:
+                    return self.suspend(candidate, {'divergence_metric': 'telemetry_entropy_tripwire',
+                        'divergence_value': result.execution_metrics['entropy'],
+                        'threshold': self.entropy_tripwire, 'reason': 'TRIPWIRE_BREACH'})
+            from collections import Counter
+            declared_action_profile = dict(Counter(s['action'] for s in candidate.reproduction_steps.steps))
+            divergence_detected, div_report = self.monitor.divergence_detected(
+                candidate=candidate, window=measured_window, baseline_profile=declared_action_profile)
+            if divergence_detected:
+                return self.suspend(candidate, div_report)
             snapshot.verify(candidate)
             snapshot.verify(original_candidate)
             # All gates passed: Issue qualification certificate
-            cert_payload = f"CERT:{candidate.candidate_id}:{time.time()}:{r1.signed_journal_hash}:{r2.signed_journal_hash}"
-            cert_token = hashlib.sha256(cert_payload.encode("utf-8")).hexdigest()
+            gate_artifacts = {'gate_1': [r1.to_dict(), r2.to_dict()], 'gate_2': stress_details,
+                'gate_3': {'window_digests': [r.compute_digest() for r in measured_window],
+                           'divergence': div_report, 'entropy_limit': self.entropy_tripwire}}
+            receipt = self.receipt_issuer.issue(candidate, gate_artifacts)
+            cert_token = receipt.encode()
 
             qualified = QualifiedEmergent(
                 candidate_id=candidate.candidate_id,
@@ -201,13 +255,18 @@ class EmergentQualificationService:
                 },
                 gate_2_stress_envelope=stress_details,
                 certification_token=cert_token,
-                governance_signature=governance_token.token_digest,
+                governance_signature=receipt.signature,
+                qualification_receipt=cert_token,
+                gate_3_monitoring=gate_artifacts['gate_3'],
+                gates_digest=receipt.gates_digest,
             )
 
-            self._qualified_candidates[candidate.candidate_id] = qualified
             self.journal.append("QUALIFY", candidate.candidate_id, qualified.to_dict())
+            self._qualified_candidates[candidate.candidate_id] = qualified
             return qualified
-        except (CandidateCustodyError, TypeError, ValueError) as exc:
+        except InvalidGovernanceTokenError:
+            raise
+        except (CandidateCustodyError, TypeError, ValueError, KeyError, OSError) as exc:
             verdict = RejectedQualification(
                 candidate_id=candidate.candidate_id,
                 capability_name=candidate.capability_name,
@@ -265,3 +324,8 @@ class EmergentQualificationService:
 
     def is_qualified(self, candidate_id: str) -> bool:
         return candidate_id in self._qualified_candidates
+
+    def is_receipt_active(self, receipt) -> bool:
+        """Host admission hook; restart/missing qualification state fails closed."""
+        qualified = self._qualified_candidates.get(receipt.candidate_id)
+        return (qualified is not None and qualified.qualification_receipt == receipt.encode())
