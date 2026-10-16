@@ -1,0 +1,24 @@
+include LICENSE README.md pyproject.toml setup.py Dockerfile compose.yaml config.example.toml requirements-tested.lock
+recursive-include src *.py *.cl *.c *.json *.md *.txt
+recursive-include tests *.py *.md
+recursive-include docs *.md *.json *.txt *.patch
+recursive-include benchmarks *.py *.json
+recursive-include validation *.json *.xml *.txt
+recursive-include native *
+recursive-include examples *.py
+recursive-include .github *.yml
+recursive-include scripts *.py
+exclude ARCHIVE_MANIFEST.json
+prune build
+prune dist
+global-exclude __pycache__ *.py[cod] *.egg-info
+
+# Detached evidence envelope binds built distributions; avoid circular inclusion.
+exclude validation/EVIDENCE_INDEX-v3.8.1.json
+
+exclude validation/EVIDENCE_INDEX-v3.9.0.json
+
+recursive-include proofs *.lean *.md
+exclude validation/EVIDENCE_INDEX-v3.10.0.json
+
+global-exclude *.so *.pyd

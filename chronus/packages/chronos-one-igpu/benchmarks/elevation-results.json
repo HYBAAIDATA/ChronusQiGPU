@@ -1,0 +1,704 @@
+{
+  "schema": "chronos_elevation_benchmark_v1",
+  "scope": "One host, finite public genesis-block window, equal completed hashes per schedule; not pool or network throughput",
+  "environment": {
+    "python": "3.13.14",
+    "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+    "docker_available": false
+  },
+  "corpus": {
+    "genesis_header_hex": "0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a29ab5f49ffff001d1dac2b7c",
+    "known_hash": "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+    "size": 256,
+    "runs": 5,
+    "seed": 20261007,
+    "target_controls": [
+      "genesis_protocol",
+      "zero_no_success"
+    ]
+  },
+  "samples": [
+    {
+      "repeat": 0,
+      "schedule": "lucas_residue",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0006586299996342859,
+      "hashrate": 388685.60518371133,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 0,
+      "schedule": "lucas_residue",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0006355979999170813,
+      "hashrate": 402770.304553188,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 0,
+      "schedule": "sequential",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005227900001045782,
+      "hashrate": 489680.36869257275,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 0,
+      "schedule": "sequential",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005243159998826741,
+      "hashrate": 488255.1744697568,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 0,
+      "schedule": "folded_witness",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0018747990002339066,
+      "hashrate": 136547.9712588179,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 0,
+      "schedule": "folded_witness",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0018257860001540394,
+      "hashrate": 140213.58471277662,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 0,
+      "schedule": "golden_stride",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005408109996096755,
+      "hashrate": 473363.153088168,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 0,
+      "schedule": "golden_stride",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005499379999491794,
+      "hashrate": 465507.02083445294,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 1,
+      "schedule": "folded_witness",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0017351719998259796,
+      "hashrate": 147535.80626339882,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 1,
+      "schedule": "folded_witness",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0017291469998781395,
+      "hashrate": 148049.8766258979,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 1,
+      "schedule": "golden_stride",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005336240001270198,
+      "hashrate": 479738.54238014726,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 1,
+      "schedule": "golden_stride",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005343010002434312,
+      "hashrate": 479130.67705911957,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 1,
+      "schedule": "sequential",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005107669999233622,
+      "hashrate": 501207.00835882395,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 1,
+      "schedule": "sequential",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005085640000288549,
+      "hashrate": 503378.1392026865,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 1,
+      "schedule": "lucas_residue",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0006201300002430798,
+      "hashrate": 412816.6673111325,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 1,
+      "schedule": "lucas_residue",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0006079419999878155,
+      "hashrate": 421092.80162438325,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 2,
+      "schedule": "lucas_residue",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0006112040000516572,
+      "hashrate": 418845.4263688779,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 2,
+      "schedule": "lucas_residue",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0006069300002309319,
+      "hashrate": 421794.9350050156,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 2,
+      "schedule": "sequential",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005095839997011353,
+      "hashrate": 502370.5613797545,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 2,
+      "schedule": "sequential",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005097009998280555,
+      "hashrate": 502255.2439299904,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 2,
+      "schedule": "folded_witness",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0017461610000282235,
+      "hashrate": 146607.32887509355,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 2,
+      "schedule": "folded_witness",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.00173376000020653,
+      "hashrate": 147655.9615918608,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 2,
+      "schedule": "golden_stride",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005522019996533345,
+      "hashrate": 463598.46606986865,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 2,
+      "schedule": "golden_stride",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005466479997267015,
+      "hashrate": 468308.6741888529,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 3,
+      "schedule": "golden_stride",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.000748413000110304,
+      "hashrate": 342057.1261619851,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 3,
+      "schedule": "golden_stride",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005451399997582485,
+      "hashrate": 469604.1385947234,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 3,
+      "schedule": "folded_witness",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0018031290001090383,
+      "hashrate": 141975.42160573052,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 3,
+      "schedule": "folded_witness",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0017407340001227567,
+      "hashrate": 147064.3992602815,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 3,
+      "schedule": "sequential",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005271789996186271,
+      "hashrate": 485603.5619499184,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 3,
+      "schedule": "sequential",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005229109997344494,
+      "hashrate": 489567.058505185,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 3,
+      "schedule": "lucas_residue",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0006773189998057205,
+      "hashrate": 377960.75419917353,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 3,
+      "schedule": "lucas_residue",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.00061817499999961,
+      "hashrate": 414122.21458351036,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 4,
+      "schedule": "sequential",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005273740002849081,
+      "hashrate": 485424.006230301,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 4,
+      "schedule": "sequential",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005290069998409308,
+      "hashrate": 483925.5436638412,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 4,
+      "schedule": "lucas_residue",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0006324099999801547,
+      "hashrate": 404800.68311385554,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 4,
+      "schedule": "lucas_residue",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0006144799999674433,
+      "hashrate": 416612.4202798521,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 4,
+      "schedule": "golden_stride",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005436719998215267,
+      "hashrate": 470872.1436528608,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 4,
+      "schedule": "golden_stride",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0005595550001089578,
+      "hashrate": 457506.41125564266,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 4,
+      "schedule": "folded_witness",
+      "corpus": "genesis_protocol",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.001760826999998244,
+      "hashrate": 145386.2304475427,
+      "valid_nonces": [
+        2083236893
+      ],
+      "setup_and_partial_unfold_in_timing": true
+    },
+    {
+      "repeat": 4,
+      "schedule": "folded_witness",
+      "corpus": "no_success_control",
+      "completed_sha256d": 256,
+      "elapsed_seconds": 0.0017392019999533659,
+      "hashrate": 147193.9429731936,
+      "valid_nonces": [],
+      "setup_and_partial_unfold_in_timing": true
+    }
+  ],
+  "summary": [
+    {
+      "schedule": "sequential",
+      "completed_sha256d": 2560,
+      "elapsed_seconds": 0.005192192998947576,
+      "aggregate_hashrate": 493047.9280178714,
+      "median_hashrate": 489623.7135988789,
+      "valid_candidates": 5
+    },
+    {
+      "schedule": "golden_stride",
+      "completed_sha256d": 2560,
+      "elapsed_seconds": 0.005654303999108379,
+      "aggregate_hashrate": 452752.45200889156,
+      "median_hashrate": 468956.40639178816,
+      "valid_candidates": 5
+    },
+    {
+      "schedule": "lucas_residue",
+      "completed_sha256d": 2560,
+      "elapsed_seconds": 0.00628281799981778,
+      "aggregate_hashrate": 407460.473958381,
+      "median_hashrate": 413469.4409473214,
+      "valid_candidates": 5
+    },
+    {
+      "schedule": "folded_witness",
+      "completed_sha256d": 2560,
+      "elapsed_seconds": 0.017688717000510223,
+      "aggregate_hashrate": 144725.02442806665,
+      "median_hashrate": 146835.86406768754,
+      "valid_candidates": 5
+    }
+  ],
+  "baseline": "sequential",
+  "negative_results": [
+    "golden_stride",
+    "lucas_residue",
+    "folded_witness"
+  ],
+  "folding": {
+    "operations": 1000,
+    "elapsed_seconds": 0.008805765000033716,
+    "measured_folds_per_second": 113561.96764235375,
+    "backend": "cpu_reference",
+    "certificate_roundtrip": true,
+    "norm_error_bound": 1e-12
+  },
+  "cache": {
+    "budget_bytes": 100000000000,
+    "image_bytes": 4000000000,
+    "used_cache_bytes": 22664,
+    "remaining_bytes": 95999977336,
+    "payload_bytes_per_witness": 1250,
+    "packed_record_bytes": 1290,
+    "payload_only_upper_bound": 76799981,
+    "packed_upper_bound_before_index_metadata": 74418587,
+    "index_and_metadata_included_in_enforcement": true,
+    "capacity_is_not_executed_work": true
+  },
+  "lucas_plan": {
+    "base_items": 256,
+    "scale_index": 15,
+    "start": 0,
+    "lanes": 8,
+    "address_limit": 4294967296,
+    "logical_device": "chronos_igpu",
+    "lucas_factor": 1364,
+    "effective_items": 349184,
+    "tile_items": 1360,
+    "streamed": true,
+    "physical_throughput_multiplier": null
+  },
+  "genetic_observation_results": [
+    {
+      "promoted": false,
+      "reason": "minimum observation window"
+    },
+    {
+      "promoted": false,
+      "reason": "minimum observation window"
+    },
+    {
+      "promoted": true,
+      "champion": {
+        "scale_index": 15,
+        "lanes": 4,
+        "generation": 1,
+        "measured_items_per_second": 427045.42614315735,
+        "samples": 3
+      }
+    }
+  ],
+  "physical_opencl": {
+    "status": "NOT_RUN",
+    "reason": "OpenCL overlay unavailable: No module named 'pyopencl'"
+  },
+  "scaling": {
+    "schema": "chronos_scaling_evidence_v1",
+    "checks": {
+      "SCALE1": null,
+      "SCALE2": null,
+      "SCALE3": {
+        "native": true,
+        "physical_overlay": false,
+        "temporal_pipeline": true
+      },
+      "SCALE4": {
+        "representation_dimension_exponent": 10000,
+        "ratio_expression": "2^10000/10000",
+        "hash_equivalence_established": false,
+        "used_as_hashrate_multiplier": false
+      },
+      "SCALE5": false,
+      "SCALE6": true,
+      "SCALE7": true,
+      "SCALE8": true,
+      "SCALE9": true,
+      "SCALE10": true
+    },
+    "completed_sha256d_hashes": 10240,
+    "elapsed_seconds": 0.03481803199838396,
+    "measured_hashrate": 294100.4822005815,
+    "floor_hps": 10000000000000000000,
+    "floor_met": false,
+    "storage_budget_bytes": 100000000000,
+    "image_bytes": null,
+    "cache_bytes": 22664,
+    "conditions": "The supplied notes are retained; represented dimension is not an execution counter. SCALE8 requires an externally retained trusted chain head."
+  },
+  "paradigm": {
+    "lemma": {
+      "passed": true,
+      "identity": "golden_stride_bijection",
+      "theorem_proven": false,
+      "cases": 9
+    },
+    "systems": {
+      "passed": true,
+      "abi": "virtual_igpu_v1",
+      "backend": "cpu_reference",
+      "receipt_digest": "7445b26097d1712aeeb36e2be894101901e739b5ea8a740ce968afc149c5cbf0"
+    },
+    "measurement": {
+      "passed": true,
+      "rows": [
+        {
+          "schedule": "sequential",
+          "samples": [
+            {
+              "completed_hashes": 128,
+              "elapsed_seconds": 0.000300634999803151,
+              "hashrate": 425765.46338188,
+              "verified": false
+            },
+            {
+              "completed_hashes": 128,
+              "elapsed_seconds": 0.0002575720000095316,
+              "hashrate": 496948.4260527669,
+              "verified": false
+            },
+            {
+              "completed_hashes": 128,
+              "elapsed_seconds": 0.0002731730000959942,
+              "hashrate": 468567.5376227527,
+              "verified": false
+            }
+          ],
+          "mean_hashrate": 463760.4756857999
+        },
+        {
+          "schedule": "golden_stride",
+          "samples": [
+            {
+              "completed_hashes": 128,
+              "elapsed_seconds": 0.0002647749997777282,
+              "hashrate": 483429.32719272096,
+              "verified": false
+            },
+            {
+              "completed_hashes": 128,
+              "elapsed_seconds": 0.0002631779998409911,
+              "hashrate": 486362.84217273485,
+              "verified": false
+            },
+            {
+              "completed_hashes": 128,
+              "elapsed_seconds": 0.00025797800026339246,
+              "hashrate": 496166.33925882645,
+              "verified": false
+            }
+          ],
+          "mean_hashrate": 488652.8362080941
+        },
+        {
+          "schedule": "lucas_residue",
+          "samples": [
+            {
+              "completed_hashes": 128,
+              "elapsed_seconds": 0.00027206200002183323,
+              "hashrate": 470480.99326524057,
+              "verified": false
+            },
+            {
+              "completed_hashes": 128,
+              "elapsed_seconds": 0.00025970900014726794,
+              "hashrate": 492859.31533915893,
+              "verified": false
+            },
+            {
+              "completed_hashes": 128,
+              "elapsed_seconds": 0.0002569260000200302,
+              "hashrate": 498197.92465542996,
+              "verified": false
+            }
+          ],
+          "mean_hashrate": 487179.4110866098
+        }
+      ],
+      "baseline": "sequential",
+      "negative_results": [],
+      "measurement": "executed_sha256d_only",
+      "represented_state_multiplier_used": false,
+      "hardware_qualification": false
+    },
+    "honesty": {
+      "passed": true,
+      "cases": {
+        "tamper": true,
+        "quota": true,
+        "liar_hardware_root": true
+      }
+    },
+    "passed": true
+  },
+  "claims": {
+    "folded_predictive_advantage_demonstrated": false,
+    "represented_dimension_as_hashes": false,
+    "pool_accepted_shares": null,
+    "power_measured": false,
+    "docker_image_size_measured": false
+  }
+}

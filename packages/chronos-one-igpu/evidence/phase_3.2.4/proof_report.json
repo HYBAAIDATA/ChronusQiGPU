@@ -1,0 +1,6 @@
+{
+  "lean_binary": null,
+  "reason": "Lean 4 is not installed; no theorem is represented as proved.",
+  "status": "BLOCKED",
+  "theorems": []
+}

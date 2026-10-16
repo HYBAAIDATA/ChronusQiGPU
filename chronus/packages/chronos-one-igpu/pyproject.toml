@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=77.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# Owner-approved publication convention: hyba-<system>-<capability>.
+# `chronos-gpu` is occupied on PyPI by an unrelated project; the Python
+# import package remains chronos_one_igpu. First public release is 1.0.0
+# (owner decision 2026-10-07); internal 3.x history is not the public version.
+name = "hyba-chronos-one-igpu"
+version = "1.0.0"
+description = "Standalone Chronos ONE iGPU — Golden Quantum and Lucas-scaled compute fabric"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "HYBA Software Limited"}]
+requires-python = ">=3.10"
+dependencies = ["numpy>=2.1,<3", "sympy>=1.14,<2"]
+classifiers = ["Programming Language :: Python :: 3", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13", "Topic :: Scientific/Engineering :: Mathematics"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["chronos_one_igpu*"]
+
+[tool.setuptools.package-data]
+chronos_one_igpu = ["igpu/spec/*.json", "igpu/spec/*.md", "igpu/kernels/*.cl", "igpu/spec/source_notes/*.txt", "igpu/spec/source_notes/*.json", "igpu/native/*.c"]
+
+[project.optional-dependencies]
+opencl = ["pyopencl>=2025.1"]
+apple = ["mlx>=0.25; platform_system == 'Darwin' and platform_machine == 'arm64'", "coremltools>=8.3; platform_system == 'Darwin'"]
+dev = ["pytest>=8,<10", "build>=1.2,<2", "twine>=6,<7"]
+
+[project.scripts]
+chronos-igpu = "chronos_one_igpu.release_cli:main"
+chronos-igpu-service = "chronos_one_igpu.igpu.service:main"
+
+[project.urls]
+Homepage = "https://github.com/QuantumPhiRedux/PhiMiner"
+Issues = "https://github.com/QuantumPhiRedux/PhiMiner/issues"

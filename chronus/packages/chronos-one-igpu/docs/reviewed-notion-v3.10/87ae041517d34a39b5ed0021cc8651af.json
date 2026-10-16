@@ -1,0 +1,42 @@
+{
+  "url": "https://app.notion.com/p/87ae041517d34a39b5ed0021cc8651af",
+  "parent": {
+    "type": "dataSource",
+    "url": "collection://eff9356f-3520-4dea-a334-c21ccdc8d24a"
+  },
+  "properties": {
+    "GitHub URL": "https://github.com/QuantumPhiEnterprise/PYTHIPhiMiner/pull/32",
+    "Repository": "QuantumPhiEnterprise/PYTHIPhiMiner",
+    "Head Branch": "chore/package-igpu-l-hras",
+    "PR Number": 32,
+    "date:Updated At:start": "2026-09-30T23:48:00.000Z",
+    "date:Updated At:is_datetime": 1,
+    "State": "Merged",
+    "Base Branch": "main",
+    "date:Created At:start": "2026-09-30T11:40:00.000Z",
+    "date:Created At:is_datetime": 1,
+    "date:Closed At:start": "2026-09-30T23:47:00.000Z",
+    "date:Closed At:is_datetime": 1,
+    "Author (GitHub)": "bollingertm",
+    "Description": "\\## Outcome<br />Repository-wide mining hardening across iGPU, tensor compute, VQC, manifolds, traversal, SHA-256d, ASIC boundaries, provenance and release gates.<br /><br />## Implemented<br />- canonical \\`gpu\\` package with lazy backend, fleet, tensor, VQC and manifold facades<br />- deterministic matrix/vector, QFI, Grover/Hendrix and SHA-256d references<br />- integrated measured tensor/GPU/ASIC runtime from PR #29<br />- exact-permutation tensor advice; advice cannot mutate certified nonce work<br />- measured H/s and TFLOPs remain separate<br />- fixed hybrid accounting so unavailable counters never imply work was executed<br />- packaged \\`hyba\\`, \\`hyba.hybrid\\`, \\`hyba.math\\_ir\\` and \\`hyba.operating\\_model\\`<br />- implemented OpenCL manifold punch \\`0x15\\` with CPU parity and explicit backend evidence<br />- repaired the OpenCL fallback-source initialization bug<br />- implemented exact mining traversal references for Lucas, Pisot permutation, Cassini affine stepping, Morton ordering and Korobov lattice points<br />- wired every traversal kernel through the seam instead of returning placeholder data<br />- reject uint32 nonce windows that wrap and could repeat work<br />- fail-closed VQC access and canonical Aethel manifold facade<br />- \\`pythia-gpu-readiness\\` software/external-evidence gates<br />- production provenance validation rejecting placeholders<br />- corrected stale unified-manifold documentation and classification<br />- expanded regression tests and implementation audit<br /><br />## Claim boundary<br />Only protocol-valid SHA-256d hashes actually executed per measured wall time count as H/s. TFLOPs, folds, quantum dimensions, tensor scores, swarm size and genetic policy do not multiply hashrate.<br /><br />## Remaining mining release blockers<br />These require infrastructure or physical systems and cannot be fabricated in code:<br />1. Target iGPU/discrete-GPU OpenCL conformance, including punch \\`0x15\\` and traversal parity.<br />2. Physical ASIC protocol test.<br />3. Real hardware job, host verification, pool submission and pool acknowledgement.<br />4. Post-human-merge production provenance.<br />5. Built-image and cache-size measurement.<br /><br />## Non-blocking follow-up<br />- PR #30 governance-contract review<br />- reversible/uncompute and ZK kernels (outside the mining consensus path; fail closed)<br />- final staged backend source migration<br />- optional 32-face legacy ordering-device promotion<br /><br />## Validation<br />- focused reference, tensor accounting, traversal completeness, nonce-window, CPU manifold-punch parity, readiness and packaging checks passed<br />- Python compilation and TOML/script registration passed<br />- changed Python files pass line-length checks<br />- local credential-pattern scan found no findings<br />- GitHub Advanced Security secret scanning is unavailable<br /><br />The software mining path is implemented and fail-closed. PR #32 remains open until CI and the five external evidence gates complete.",
+    "date:Merged At:start": "2026-09-30T23:47:00.000Z",
+    "date:Merged At:is_datetime": 1,
+    "Title": "Integrate GPU, tensor, VQC, manifold and L-HRAS package boundaries",
+    "url": "https://app.notion.com/p/87ae041517d34a39b5ed0021cc8651af"
+  },
+  "createdBy": "user://00000000-0000-0000-0000-000000000000",
+  "lastEditedBy": "user://00000000-0000-0000-0000-000000000000",
+  "content": "",
+  "cover": null,
+  "iconMetadata": {
+    "type": "external",
+    "external": {
+      "url": "https://www.notion.so/images/eds/github/github-pull-merged-icon.png"
+    }
+  },
+  "icon": "https://www.notion.so/images/eds/github/github-pull-merged-icon.png",
+  "accessMetadata": {
+    "bucket": "private"
+  },
+  "title": "Integrate GPU, tensor, VQC, manifold and L-HRAS package boundaries"
+}
