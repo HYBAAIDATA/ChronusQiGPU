@@ -25,7 +25,15 @@ FROZEN_MAX_FOLD_SIGNATURE: str = hmac.new(
 
 
 def verify_frozen_max_fold(max_fold: int, signature: str) -> bool:
-    """Ensure the recursion ceiling has not been tampered with or modified at runtime."""
+    """Enforce the declared ceiling; the public-salt MAC is not authority.
+
+    A recomputed public checksum must never authorize a different ceiling.
+    This is an in-process invariant, not protection from arbitrary code execution.
+    """
+    if type(max_fold) is not int or max_fold != FROZEN_MAX_FOLD:
+        return False
+    if not isinstance(signature, str):
+        return False
     expected = hmac.new(
         _FROZEN_SALT.encode("utf-8"),
         f"MAX_FOLD={max_fold}".encode("utf-8"),
