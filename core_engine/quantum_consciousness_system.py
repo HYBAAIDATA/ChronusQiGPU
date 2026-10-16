@@ -125,22 +125,18 @@ class QuantumConsciousnessSystem:
         return evolution_record
     
     def _compute_coherence(self, amplitude: np.ndarray) -> float:
-        """Compute quantum coherence using φ-correlation."""
+        """Compute quantum coherence using exact l1-norm over density matrix (AGENTS.md §1.2.1)."""
         if len(amplitude) < 2:
             return 1.0
-        
-        # Compute pairwise correlations
-        correlations = []
-        for i in range(len(amplitude) - 1):
-            corr = abs(amplitude[i] - amplitude[i+1] * PHI)
-            correlations.append(corr)
-        
-        # Normalize to [0, 1]
-        max_corr = max(correlations) if correlations else 1.0
-        avg_corr = sum(correlations) / len(correlations) if correlations else 0.0
-        coherence = 1.0 - (avg_corr / max_corr if max_corr > 0 else 0.0)
-        
-        return coherence
+        norm = np.linalg.norm(amplitude)
+        if norm > 0:
+            psi = amplitude / norm
+            rho = np.outer(psi, np.conj(psi))
+            off_diagonal_sum = float(np.sum(np.abs(rho)) - np.sum(np.abs(np.diag(rho))))
+            dim = len(amplitude)
+            max_off = dim - 1.0 if dim > 1 else 1.0
+            return float(min(1.0, max(0.0, off_diagonal_sum / max_off)))
+        return 1.0
     
     def _compute_entanglement(self, amplitude: np.ndarray, phase: np.ndarray) -> float:
         """Compute entanglement degree using phase correlations."""

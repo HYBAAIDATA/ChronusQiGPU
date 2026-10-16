@@ -6,7 +6,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from gpu.reference import (
+from chronus.reference import (
     cassini_step,
     grover_hendrix_iterate,
     grover_iterate,

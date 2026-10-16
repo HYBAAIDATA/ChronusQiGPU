@@ -7,9 +7,9 @@ import pytest
 
 from test_resident_hendrix import GENESIS, issue
 from chronus.resident_hendrix import ResidentHendrix, seal
-from chronos_one_igpu import OneIGPU
-from chronos_one_igpu.adapters.base import DispatchError, BackendAbsent
-from chronos_one_igpu.igpu.execution_identity import verify_receipt
+from chronus.one_igpu import OneIGPU
+from chronus.adapters.base import DispatchError, BackendAbsent
+from chronus.igpu.execution_identity import verify_receipt
 
 
 @pytest.fixture
@@ -37,7 +37,7 @@ def test_positive_old_api_resolves_to_bound_replacement(actual_execution):
         r["implementation_digest"]
         == plan.as_dict()["execution_contract"]["implementation_digest"]
     )
-    assert r["implementation_module"] == "chronos_one_igpu.igpu.hendrix_execution"
+    assert r["implementation_module"] == "chronus.igpu.hendrix_execution"
     assert r["fallback_used"] is False and r["fallback_reason"] is None
 
 
@@ -45,9 +45,9 @@ def test_positive_old_api_resolves_to_bound_replacement(actual_execution):
     "replacement", ["disabled", "numerical", "heuristic", "simulation"]
 )
 def test_live_operator_substitution_fails_before_hashing(monkeypatch, replacement):
-    from chronos_one_igpu.igpu.resident_hendrix import ResidentHendrix as Live
-    from chronos_one_igpu.engine import ChronosEngine
-    from chronos_one_igpu.golden_quantum import (
+    from chronus.igpu.resident_hendrix import ResidentHendrix as Live
+    from chronus.v33.engine import ChronosEngine
+    from chronus.golden_quantum import (
         MathematicalQuantumState,
         GoldenQuantumComputer,
     )

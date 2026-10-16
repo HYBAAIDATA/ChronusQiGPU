@@ -1,8 +1,0 @@
-{
-  "backend": "cpu-exact-reference",
-  "classification": "MEASURED",
-  "cpu_records": 4,
-  "formal_proof": "BLOCKED",
-  "opencl": "BLOCKED",
-  "sparse_sample_records": 32
-}
