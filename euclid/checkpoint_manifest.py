@@ -15,6 +15,7 @@ from typing import Any, Mapping, Sequence
 
 from .contracts import canonical_json, domain_hash
 from .evidence import load_json
+from .manifest_integrity import require_sha256, validate_manifest_envelope
 from hyba_substrate.memory_preservation import verified_atomic_json_write
 
 MANIFEST_SCHEMA = "euclid.checkpoint-manifest/1"
@@ -138,20 +139,7 @@ def write_manifest(
 
 def load_manifest(path: str | Path) -> dict[str, Any]:
     """Load a manifest and verify schema plus seal; fail closed otherwise."""
-    payload = load_json(Path(path))
-    if not isinstance(payload, dict):
-        raise ValueError("checkpoint manifest is not a JSON object")
-    if payload.get("schema") != MANIFEST_SCHEMA:
-        raise ValueError("unsupported checkpoint manifest schema")
-    body = {key: value for key, value in payload.items() if key != "seal"}
-    if payload.get("seal") != domain_hash(
-        "euclid.checkpoint-manifest.seal.v1", body
-    ):
-        raise ValueError("checkpoint manifest seal mismatch")
-    for section in ("task", "learner", "dataset", "dedup", "evidence"):
-        if not isinstance(payload.get(section), Mapping):
-            raise ValueError(f"checkpoint manifest section {section!r} missing")
-    return dict(payload)
+    return validate_manifest_envelope(load_json(Path(path)))
 
 
 def verify_manifest(
@@ -160,33 +148,38 @@ def verify_manifest(
     learner_checkpoint_path: str | Path | None = None,
     evidence_path: str | Path | None = None,
 ) -> dict[str, Any]:
-    """Verify a loaded manifest against on-disk artefacts.
+    """Verify the envelope and artifact commitments on every entry path.
 
-    Recomputes the learner checkpoint hash and (optionally) the evidence
-    report hash.  Any mismatch, missing artefact or schema drift raises
-    ``ValueError`` so a corrupted handoff cannot reach deployment.
+    A valid seal is integrity evidence, not publisher authentication or
+    promotion approval. This function does not grant deployment authority.
     """
-    if manifest.get("schema") != MANIFEST_SCHEMA:
-        raise ValueError("unsupported checkpoint manifest schema")
-    learner = dict(manifest.get("learner") or {})
+    manifest = validate_manifest_envelope(manifest)
+    learner = dict(manifest["learner"])
     checkpoint = learner_checkpoint_path or learner.get("checkpoint_path")
     if not checkpoint:
         raise ValueError("manifest records no learner checkpoint path")
     checkpoint_path = Path(str(checkpoint))
+    recorded_hash = require_sha256(learner.get("state_hash"), field="learner state_hash")
     if not checkpoint_path.is_file():
         raise ValueError(f"learner checkpoint missing: {checkpoint_path}")
-    recorded_hash = str(learner.get("state_hash") or "")
     actual_hash = sha256_file(checkpoint_path)
     if recorded_hash != actual_hash:
         raise ValueError("learner checkpoint hash differs from manifest")
-    evidence = dict(manifest.get("evidence") or {})
-    if evidence_path is not None:
-        evidence_file = Path(evidence_path)
+    evidence = dict(manifest["evidence"])
+    selected_evidence = evidence_path if evidence_path is not None else evidence.get("report_path")
+    evidence_verified = False
+    if selected_evidence is not None:
+        recorded_evidence = require_sha256(
+            evidence.get("report_sha256"), field="evidence report_sha256"
+        )
+        evidence_file = Path(selected_evidence)
         if not evidence_file.is_file():
             raise ValueError(f"training evidence missing: {evidence_file}")
-        recorded_evidence = str(evidence.get("report_sha256") or "")
-        if recorded_evidence and recorded_evidence != sha256_file(evidence_file):
+        if recorded_evidence != sha256_file(evidence_file):
             raise ValueError("training evidence hash differs from manifest")
+        evidence_verified = True
+    elif evidence.get("report_sha256"):
+        raise ValueError("manifest records an evidence hash without an evidence path")
     return {
         "schema": "euclid.checkpoint-manifest.verification/1",
         "valid": True,
@@ -195,6 +188,7 @@ def verify_manifest(
         "source_revision": manifest.get("source_revision"),
         "policy_version": manifest.get("policy_version"),
         "task_id": (manifest.get("task") or {}).get("task_id"),
+        "evidence_verified": evidence_verified,
     }
 
 
