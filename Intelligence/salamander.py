@@ -73,6 +73,10 @@ from .salamander_agentic import (
     CodebaseDiagnostic,
     CodebaseIssueType,
 )
+from pathlib import Path
+
+from .salamander_transaction import RepairValidator
+
 from .autonomous_capabilities import (
     AutonomySupervisor,
     CassiniCycleLedger,
@@ -925,6 +929,8 @@ class SalamanderEngine:
         *,
         recovery_control_plane: Any = None,
         recovery_request_builder: Optional[Callable[[RepairProposal], Any]] = None,
+        repo_root: Optional[Path] = None,
+        source_validator: Optional[RepairValidator] = None,
     ) -> None:
         self.phi_threshold = phi_threshold
         self.homeostasis = HomeostasisMonitor(
@@ -950,28 +956,28 @@ class SalamanderEngine:
         )
 
         # Agentic codebase scanner and autonomous optimizer
-        from .salamander_agentic import SalamanderCodebaseScanner, SalamanderAgenticOptimizer
-
-        self.codebase_scanner = SalamanderCodebaseScanner()
-        self.codebase_optimizer = SalamanderAgenticOptimizer()
+        # One host-composed controller owns scanning and validated source
+        # publication. Do not create a fresh validator-less repair controller.
+        self.agentic_controller = SalamanderAgenticController(
+            repo_root=repo_root, validator=source_validator
+        )
+        self.codebase_scanner = self.agentic_controller.scanner
+        self.codebase_optimizer = self.agentic_controller.optimizer
 
         # Equip with skills runtime
         self.skills: Dict[str, Any] = {}
-        try:
-            from .skill_loader import load_skills
-
-            self.skills = load_skills()
-        except Exception:
-            pass
+        self.load_skills()
 
     def load_skills(self) -> Dict[str, Any]:
         """Reload available skills into Salamander's semantic runtime."""
-        try:
-            from .skill_loader import load_skills
+        from .skill_loader import load_skills
 
-            self.skills = load_skills()
-        except Exception:
-            pass
+        # An unavailable loader is a visible integration failure, not a
+        # successfully initialized intelligence with silently missing skills.
+        loaded = load_skills()
+        if not isinstance(loaded, dict):
+            raise TypeError("Skill loader must return an equipped-skill mapping")
+        self.skills = loaded
         return self.skills
 
     def execute_skill(self, skill_name: str, **kwargs: Any) -> Any:
@@ -981,6 +987,18 @@ class SalamanderEngine:
         if skill_name == "codebase-healing":
             auto_heal = kwargs.get("auto_heal", False)
             return self.agentic_heal(auto_heal=auto_heal)
+        elif skill_name == "source-repair":
+            if skill_name not in self.skills:
+                raise KeyError("source-repair is not equipped")
+            return self.repair_source(**kwargs)
+        elif skill_name == "repository-review":
+            if skill_name not in self.skills:
+                raise KeyError("repository-review is not equipped")
+            from .repository_review import review_repository
+
+            # Only fixed trusted native adapters are executable. Skill documents
+            # cannot nominate callables, grant permissions or activate schedules.
+            return review_repository(**kwargs)
         elif skill_name in self.skills:
             # Other skills are guidance, not code: hand back what to follow
             # (and where it came from) rather than claim an execution.
@@ -1006,10 +1024,25 @@ class SalamanderEngine:
 
     def agentic_heal(self, auto_heal: bool = False) -> Dict[str, Any]:
         """Run autonomous agentic audit and self-healing cycle."""
-        from .salamander_agentic import SalamanderAgenticController
+        return self.agentic_controller.run_autonomic_cycle(auto_heal=auto_heal)
 
-        controller = SalamanderAgenticController()
-        return controller.run_autonomic_cycle(auto_heal=auto_heal)
+    def repair_source(
+        self, *, target_file: Path, replacement: str, target_snippet: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Publish a source candidate only through the configured validation gate.
+
+        This is a write-capable adapter. No document, callable, command or
+        auto-heal flag grants authority or substitutes for regression evidence.
+        """
+        committed, reason = self.codebase_optimizer.apply_repair_sandboxed(
+            target_file=target_file, replacement=replacement, target_snippet=target_snippet
+        )
+        return {
+            "skill": "source-repair",
+            "status": "COMMITTED" if committed else "NOT_COMMITTED",
+            "committed": committed,
+            "reason": reason,
+        }
 
     def substrate_health_index(self) -> float:
         """Return the current Substrate Health Index (SHI)."""

@@ -1,0 +1,59 @@
+{
+  "schema": "euclid.skill-anchor-validation/1",
+  "baseline": "d4bed8f28bd5b139d2e82e72ca6284f403d8dc68",
+  "new_tests_baseline": "6 failed, 6 passed; one failure requires new manifest-anchor API, remaining failures are behaviour/shape/metadata refusal defects",
+  "patched": "20 passed, 4 explicitly deselected",
+  "commands": [
+    {
+      "command": "python -m pytest tests/test_skill_manifest_anchor.py -q --tb=short",
+      "source": "original skill_graft.py",
+      "exit": 1
+    },
+    {
+      "command": "python -m pytest tests/test_skill_manifest_anchor.py tests/test_skill_graft.py -q --tb=short -k 'not repository_grafts and not repairs_with and not hands_back and not taken_one_at_a_time'",
+      "source": "patched",
+      "exit": 0
+    }
+  ],
+  "scope": "Actual standalone skill_graft and skill_loader modules; original _born and quantum_tensor import code present; namespace-package harness excludes package initialization. Local git repositories are fixtures. No semantic seeding, SDK execution, provider calls or installed-package tests. Seven upstream bundles reconstructed from pinned public git objects only, not claimed as actual repository contents.",
+  "excluded": [
+    "repository graft/full checkout verification",
+    "knowledge fabric publication",
+    "self-repair prompt integration against actual repository",
+    "full SalamanderEngine guidance execution"
+  ],
+  "clone_state": "six public snapshots cloned without checkout/hooks/submodules/execution; unauthenticated Euclid clone failed 128, reads continued via existing MCP access; no credentials requested or exposed",
+  "pins": {
+    "systematic-debugging": "73d73dc86425069fbf9f695d353aa4e5fbf0f902a42385c62b7b55c22be7e3c9",
+    "verification-before-completion": "a005bb5f1501f47ff8b1c2e2d050deb2fedd7a1aec3a9c5978bcc92b2e0b778f",
+    "test-driven-development": "7a628692de93ea6c5de3ca5e1fe6619ff35ab178da9095562975252b376a180c",
+    "receiving-code-review": "d975e8b2abc7a095655a1be7872b04a056ceec5705f291f1bf0ec6f0e5b4cb90",
+    "webapp-testing": "bc1118b73ac37deda9b644a81b1b73d09cbc670b1f3d6e2a367ca50d654f6e74",
+    "skill-creator": "93f87f5cc232f663134f6268499a2b0f5936fadc3f06ad00a5ec6c0930403146",
+    "claude-api": "e6db57e530804f00592749e73fa15f1f405ab6624db6f2e75d8ce5e3bdd5ee34"
+  },
+  "claude_api_not_written": "bundle 1,175,805 bytes / 70 files exceeds safe connector file payload limits",
+  "merging": "PR66 blocked/draft with no reviews and check reads403; no merge attempt bypassing gates",
+  "working_directory": "/data/salamander-work",
+  "python_executable": "/data/salamander-venv/bin/python",
+  "python_version": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+  "feature_base_commit": "6688e83c22d36dc16dfd5516e9e7d81959c84438",
+  "changed_source_hashes": {
+    "Intelligence/skill_graft.py": "422a34c3a515fa7b449440f921bc5a2ec2a72352f0b05f14d4204de378f0a08d",
+    "tests/test_skill_graft.py": "86d26a49dd4a93c6653370e3e6b28f5b30368dfc1717a3a1f2818e64dbd5f80d",
+    "tests/test_skill_manifest_anchor.py": "65c926ff9b47c673ebd16f2ce18ec8289fb31c6632de6ef18029ed71f73cdbf8"
+  },
+  "validation_logs": {
+    "anchor-baseline.log": "4e58acba2799c4e2f3ec905c8eb85a65c3d2cc850e6d936d660077d413f83c69",
+    "graft-patched.log": "91e44430e6102ffd1cb58c61690a8abcc830d8e58966fa7bb1cf699a41d6fa1e",
+    "black.log": "45a468fa6205768496f23f1716ebb7575e9b723449d2099b88bf2afef60b721f",
+    "flake8.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "ruff.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+  },
+  "additional_checks": {
+    "black_line_length_100": 0,
+    "flake8_changed_files_repository_ignores": 0,
+    "ruff_E9_F": 0,
+    "compileall": 0
+  }
+}

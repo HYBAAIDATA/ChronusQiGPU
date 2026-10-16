@@ -1,0 +1,50 @@
+{
+  "schema": "euclid.capability-manifest/1",
+  "artifact": {
+    "repository": "PhiEnterprise1/EuclidPhiEnterprise",
+    "inspected_commit": "d4bed8f28bd5b139d2e82e72ca6284f403d8dc68",
+    "installed_artifact_digest": null,
+    "feature_base_commit": "6688e83c22d36dc16dfd5516e9e7d81959c84438",
+    "consolidated_feature_base_commit": "d4bed8f28bd5b139d2e82e72ca6284f403d8dc68"
+  },
+  "profiles": {
+    "internal": "RESEARCH_TARGET_NOT_AGI_ASI_CERTIFICATION",
+    "shared": "RESTRICTED_TARGET_NOT_DEPLOYED"
+  },
+  "evidence_states": {
+    "repair_and_recovery": "69_SCOPED_LOCAL_CASES_NOT_WHOLE_SYSTEM",
+    "skill_manifest_anchor": "20_LOCAL_CASES_4_EXPLICIT_EXCLUSIONS",
+    "skills_execution": "TWO_FIXED_NATIVE_ADAPTERS_PLUS_EXISTING_HEALING_OTHER_VENDOR_DOCUMENTS_GUIDANCE",
+    "model_comparison": "NOT_RUN",
+    "millennium_proof": "NOT_ESTABLISHED",
+    "production": "NOT_QUALIFIED",
+    "combined_runtime": "134_SCOPED_LOCAL_CASES_4_EXPLICIT_EXCLUSIONS_FULL_MODULES_AND_CONSTRUCTOR_NOT_INSTALLED_PACKAGE",
+    "source_repair": "WRITE_CAPABLE_HOST_VALIDATOR_REQUIRED_NOT_PRODUCTION_SANDBOX_QUALIFIED"
+  },
+  "comparison": {
+    "protocol": "docs/EUCLID_CAPABILITY_EVALUATION_PROTOCOL.md",
+    "protocol_sha256": "8802a7ee8c350f745aa29342b94173aff9d5c43cb8104e33789f4a6bd2e8980a",
+    "runs": [],
+    "leader": null,
+    "superiority_claim": null,
+    "unavailable": [
+      "competitor endpoints/credentials",
+      "frozen taskset and holdout",
+      "independent scoring",
+      "approved inference budget",
+      "installed/full-system qualification"
+    ]
+  },
+  "imports": {
+    "source_lock": "reports/SKILL_SOURCE_LOCK.json",
+    "status": "CATALOGUED_NOT_ALL_INTEGRATED",
+    "anthropic_license": "mixed, per-skill review mandatory; document skills may be source-available rather than permissively licensed",
+    "antigravity": "format migration, not a universal bundle of workflows"
+  },
+  "lucas": {
+    "claim_status": "HYPOTHESIS_REQUIRES_CONTROLLED_ABLATION",
+    "configuration_definition": "PENDING_EXACT_PARAMETER_DEFINITION",
+    "measured_intelligence_multiplier": null
+  },
+  "consolidation_evidence": "docs/salamander_consolidation_validation.json"
+}

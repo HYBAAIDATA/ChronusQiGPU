@@ -1,0 +1,78 @@
+{
+  "schema": "euclid.skill-source-lock/1",
+  "euclid_inspected_head": "d4bed8f28bd5b139d2e82e72ca6284f403d8dc68",
+  "sources": [
+    {
+      "repo": "https://github.com/anthropics/claude-cookbooks",
+      "commit": "39cd5a7a3a29a73e7391e17b7644c51f34a6aaa1",
+      "catalog": "reports/skill_sources/anthropics--claude-cookbooks.json",
+      "catalog_sha256": "deed747233ca7a55e964e7ed6818b191bd3bb5031f0714106baa20bbf1a37f2e",
+      "classification": "UPSTREAM_SOURCE",
+      "status": "SOURCE_SNAPSHOT_ONLY_NOT_EXECUTABLE_CAPABILITY",
+      "root_license_hashes": {
+        "LICENSE": "d7a04bf11ce24a7b79cd44b4a78dcc9971eaeb3b565821de437e0ecb7723e634"
+      }
+    },
+    {
+      "repo": "https://github.com/anthropics/skills",
+      "commit": "dbd4588f9e1033efb41dad4bef2f7947c8993d44",
+      "catalog": "reports/skill_sources/anthropics--skills.json",
+      "catalog_sha256": "2d4c23228ff8b412cdf6e1ee6bbc065f199ea0faa7a019e0fdfc876c59f73f87",
+      "classification": "UPSTREAM_SOURCE",
+      "status": "SOURCE_SNAPSHOT_ONLY_NOT_EXECUTABLE_CAPABILITY",
+      "root_license_hashes": {}
+    },
+    {
+      "repo": "https://github.com/microsoft/skills",
+      "commit": "fc164ba1d7a0c10377dbcc1c9ac07253b9329fdb",
+      "catalog": "reports/skill_sources/microsoft--skills.json",
+      "catalog_sha256": "d8240c78a1fbbddcde0125bdadb0071db21a884e5ed1ec8baeb18ef9dc99efe6",
+      "classification": "UPSTREAM_SOURCE",
+      "status": "SOURCE_SNAPSHOT_ONLY_NOT_EXECUTABLE_CAPABILITY",
+      "root_license_hashes": {
+        "LICENSE": "d9a1b1e30d633d5732ea18e3cba9538d293ebc53e1a9e4e96ab739e0c5c4f1cb"
+      }
+    },
+    {
+      "repo": "https://github.com/google-gemini/gemini-cli",
+      "commit": "42c51822084ac25cd5d97ac0023822c5235f88c8",
+      "catalog": "reports/skill_sources/google-gemini--gemini-cli.json",
+      "catalog_sha256": "4135d49820fface515bbd9f3bc8e7ea4b12a34c3fbdfbff90d9ae3c638f81b59",
+      "classification": "UPSTREAM_SOURCE",
+      "status": "SOURCE_SNAPSHOT_ONLY_NOT_EXECUTABLE_CAPABILITY",
+      "root_license_hashes": {
+        "LICENSE": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
+      }
+    },
+    {
+      "repo": "https://github.com/obra/superpowers",
+      "commit": "bb92a77741419a4ab5f06e711a283343f1ada0c3",
+      "catalog": "reports/skill_sources/obra--superpowers.json",
+      "catalog_sha256": "762ed5d0065d57473519d62d2631c093026a73cdd0d251be4204530a9e168500",
+      "classification": "UPSTREAM_SOURCE",
+      "status": "SOURCE_SNAPSHOT_ONLY_NOT_EXECUTABLE_CAPABILITY",
+      "root_license_hashes": {
+        "LICENSE": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400"
+      }
+    },
+    {
+      "repo": "https://github.com/github/awesome-copilot",
+      "commit": "f25421d3f1b8b3bb217f78a7c0567cf7ec117cd8",
+      "catalog": "reports/skill_sources/github--awesome-copilot.json",
+      "catalog_sha256": "a25a43f58e4ec4c77fdf26b55914e55487fbbd377011a080cd8276ababfe3d2f",
+      "classification": "COMMUNITY_CATALOG",
+      "status": "SOURCE_SNAPSHOT_ONLY_NOT_EXECUTABLE_CAPABILITY",
+      "root_license_hashes": {
+        "LICENSE": "e32449d23085399adc1222f7a17408b730550258e51627c153cb108ca9955823"
+      }
+    }
+  ],
+  "antigravity": {
+    "source": "https://antigravity.google/docs/migration/workflows-to-skills/",
+    "status": "FORMAT_DOCUMENTATION_ONLY_NO_UNIVERSAL_WORKFLOW_REPOSITORY_IDENTIFIED",
+    "activation": false
+  },
+  "existing_grafts": "6 provenance records observed via MCP; raw repository skill files not fully replayed",
+  "claude_api": "7th planned graft reconstructed and anchored offline; NOT persisted to repository; 70 files, some exceed connector payload limits",
+  "superiority": "NOT_EVALUATED"
+}
