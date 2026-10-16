@@ -1,7 +1,7 @@
 """Candidate and envelope models for emergent behavior qualification."""
 
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 import hashlib
 import json
 from typing import Any, Optional
@@ -52,16 +52,10 @@ class ReproductionProtocol:
     steps: tuple[dict[str, Any], ...] = field(default_factory=tuple)
 
     def compute_protocol_hash(self) -> str:
-        payload = {
-            "task_signature": self.task_signature,
-            "seed_suite": list(self.seed_suite),
-            "manifest_hash": self.manifest_hash,
-            "environment_snapshot_hash": self.environment_snapshot_hash,
-            "required_observables": sorted(list(self.required_observables)),
-            "statistical_tolerance": self.statistical_tolerance,
-        }
+        # Versioned full-payload binding: executable steps and observable order matter.
+        payload = {"hash_schema": "eqs-protocol-v3", **asdict(self)}
         return hashlib.sha256(
-            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+            json.dumps(payload, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
         ).hexdigest()
 
     def to_dict(self) -> dict[str, Any]:
@@ -74,6 +68,7 @@ class ReproductionProtocol:
             "required_observables": list(self.required_observables),
             "statistical_tolerance": self.statistical_tolerance,
             "step_count": len(self.steps),
+            "steps": asdict(self)["steps"],
         }
 
 
@@ -91,16 +86,8 @@ class EmergentCandidate:
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def compute_fingerprint(self) -> str:
-        payload = {
-            "candidate_id": self.candidate_id,
-            "capability_name": self.capability_name,
-            "discovery_substrate_id": self.discovery_substrate_id,
-            "discovery_envelope": self.discovery_envelope.to_dict(),
-            "reproduction_protocol_hash": self.reproduction_steps.compute_protocol_hash(),
-            "claimed_behavior_signature": self.claimed_behavior_signature,
-            "baseline_metrics": sorted(self.baseline_metrics.items()),
-            "source": self.source or "root",
-        }
+        # Invalidate old fingerprints deliberately; no omitted execution or custody fields.
+        payload = {"hash_schema": "eqs-candidate-v3", **asdict(self)}
         return hashlib.sha256(
-            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+            json.dumps(payload, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
         ).hexdigest()

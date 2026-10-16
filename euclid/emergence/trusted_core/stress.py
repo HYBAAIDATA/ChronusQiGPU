@@ -45,6 +45,8 @@ def stress_test(
 
     passed = len(failure_reasons) == 0
     details = {
+        "execution_kind": "SIMULATED",
+        "executor_invoked": False,
         "candidate_id": candidate.candidate_id,
         "expanded_envelope": envelope.to_dict(),
         "stress_metrics": stress_metrics,
