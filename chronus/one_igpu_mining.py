@@ -26,7 +26,7 @@ class ChronusOneIGPUHasher:
         self.last_batch_evidence = None
 
     def grind_target_hendrix_plan(self, header, target_be, artifact, position, count):
-        from chronos_one_igpu.igpu.execution_identity import verify_contract,verify_receipt
+        from chronus.igpu.execution_identity import verify_contract, verify_receipt
         verify_contract(artifact["execution_contract"],self.igpu)
         result = self.igpu.execute_hendrix(
             artifact,

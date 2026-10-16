@@ -130,6 +130,54 @@ def _findings(data: bytes, path: str) -> list[dict[str, Any]]:
     return sorted(findings, key=lambda f: (f["line"], f["code"]))
 
 
+def _read_file_windows(root: Path, path: str, limit: int) -> bytes:
+    if not root.is_dir():
+        raise ReviewRejected("review root is not an existing directory")
+    st = os.lstat(root)
+    if stat.S_ISLNK(st.st_mode) or (
+        getattr(st, "st_file_attributes", 0) & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+    ):
+        raise ReviewRejected("symlink root rejected")
+    parts = tuple(path.split("/"))
+    curr = root
+    for part in parts[:-1]:
+        curr = curr / part
+        st = os.lstat(curr)
+        if stat.S_ISLNK(st.st_mode) or (
+            getattr(st, "st_file_attributes", 0)
+            & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+        ):
+            raise ReviewRejected("symlink in path rejected")
+        if not stat.S_ISDIR(st.st_mode):
+            raise ReviewRejected("parent is not a directory")
+    file_path = curr / parts[-1]
+    st = os.lstat(file_path)
+    if stat.S_ISLNK(st.st_mode) or (
+        getattr(st, "st_file_attributes", 0) & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+    ):
+        raise ReviewRejected("symlink file rejected")
+    if not stat.S_ISREG(st.st_mode) or st.st_size > limit:
+        raise ReviewRejected("nonregular or oversized review input")
+    try:
+        file_path.resolve().relative_to(root.resolve())
+    except ValueError as exc:
+        raise ReviewRejected("path escapes repository root") from exc
+    fd = os.open(str(file_path), os.O_RDONLY | getattr(os, "O_BINARY", 0))
+    with os.fdopen(fd, "rb") as handle:
+        before = os.fstat(handle.fileno())
+        if not stat.S_ISREG(before.st_mode) or before.st_size > limit:
+            raise ReviewRejected("nonregular or oversized review input")
+        data = handle.read(limit + 1)
+        after = os.fstat(handle.fileno())
+        if len(data) > limit or (before.st_size, before.st_mtime_ns, before.st_ctime_ns) != (
+            after.st_size,
+            after.st_mtime_ns,
+            after.st_ctime_ns,
+        ):
+            raise ReviewRejected("review input exceeded its bound or changed during reading")
+        return data
+
+
 def review_repository(*, repo_root: str | Path, policy: ReviewPolicy) -> dict[str, Any]:
     """Read only declared bytes and return deterministic source-bound evidence.
 
@@ -139,27 +187,48 @@ def review_repository(*, repo_root: str | Path, policy: ReviewPolicy) -> dict[st
     """
     if type(policy) is not ReviewPolicy:
         raise ReviewRejected("an explicit ReviewPolicy is required")
-    if not all(hasattr(os, name) for name in ("O_NOFOLLOW", "O_DIRECTORY", "O_NONBLOCK")):
+    has_posix_descriptors = all(
+        hasattr(os, name) for name in ("O_NOFOLLOW", "O_DIRECTORY", "O_NONBLOCK")
+    ) and (os.open in getattr(os, "supports_dir_fd", set()))
+    is_windows = os.name == "nt"
+    if not has_posix_descriptors and not is_windows:
         raise ReviewRejected("host lacks required no-follow descriptor support")
-    if os.open not in os.supports_dir_fd:
-        raise ReviewRejected("host lacks descriptor-relative traversal")
     if not isinstance(repo_root, (str, Path)) or not str(repo_root):
         raise ReviewRejected("explicit repository root required")
     root = Path(repo_root).absolute()
     if ".." in root.parts:
         raise ReviewRejected("repository root cannot contain parent traversal")
+    records = []
+    total = 0
+    count = 0
     try:
-        start = os.open(root.anchor, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-        try:
-            root_fd = _directory_fd(tuple(root.parts[1:]), start)
-        finally:
-            os.close(start)
-        records = []
-        total = 0
-        count = 0
-        try:
+        if has_posix_descriptors:
+            start = os.open(root.anchor, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            try:
+                root_fd = _directory_fd(tuple(root.parts[1:]), start)
+            finally:
+                os.close(start)
+            try:
+                for path, expected in sorted(policy.expected_files):
+                    data = _read_file(root_fd, path, policy.max_file_bytes)
+                    total += len(data)
+                    if total > policy.max_total_bytes:
+                        raise ReviewRejected("total review byte budget exceeded")
+                    actual = hashlib.sha256(data).hexdigest()
+                    if actual != expected:
+                        raise ReviewRejected("review input does not match approved manifest")
+                    findings = _findings(data, path)
+                    count += len(findings)
+                    if count > policy.max_findings:
+                        raise ReviewRejected("finding budget exceeded; no partial receipt")
+                    records.append(
+                        {"path": path, "sha256": actual, "bytes": len(data), "findings": findings}
+                    )
+            finally:
+                os.close(root_fd)
+        else:
             for path, expected in sorted(policy.expected_files):
-                data = _read_file(root_fd, path, policy.max_file_bytes)
+                data = _read_file_windows(root, path, policy.max_file_bytes)
                 total += len(data)
                 if total > policy.max_total_bytes:
                     raise ReviewRejected("total review byte budget exceeded")
@@ -173,8 +242,6 @@ def review_repository(*, repo_root: str | Path, policy: ReviewPolicy) -> dict[st
                 records.append(
                     {"path": path, "sha256": actual, "bytes": len(data), "findings": findings}
                 )
-        finally:
-            os.close(root_fd)
     except OSError as exc:
         # No absolute paths or source text in externally returned errors.
         raise ReviewRejected("review path is missing, unsafe or unreadable") from exc

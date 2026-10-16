@@ -138,19 +138,24 @@ def test_symlinks_are_refused(tmp_path, kind):
     root = tmp_path / "scope"
     root.mkdir()
     path = "a.py"
-    if kind == "file":
-        (root / path).symlink_to(real / path)
-    elif kind == "parent":
-        (root / "nested").symlink_to(real, target_is_directory=True)
-        path = "nested/a.py"
-    else:
-        root.rmdir()
-        root.symlink_to(real, target_is_directory=True)
+    try:
+        if kind == "file":
+            (root / path).symlink_to(real / path)
+        elif kind == "parent":
+            (root / "nested").symlink_to(real, target_is_directory=True)
+            path = "nested/a.py"
+        else:
+            root.rmdir()
+            root.symlink_to(real, target_is_directory=True)
+    except OSError:
+        pytest.skip("Symlink creation requires privilege on Windows")
     with pytest.raises(ReviewRejected):
         review_repository(repo_root=root, policy=policy_for({path: b"x=1"}))
 
 
 def test_fifo_does_not_block_or_get_read(tmp_path):
+    if not hasattr(os, "mkfifo"):
+        pytest.skip("FIFO creation requires os.mkfifo")
     os.mkfifo(tmp_path / "a.py")
     with pytest.raises(ReviewRejected, match="nonregular"):
         review_repository(repo_root=tmp_path, policy=policy_for({"a.py": b""}))

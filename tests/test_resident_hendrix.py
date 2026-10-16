@@ -186,7 +186,7 @@ def test_hilbert_is_explicitly_selected_or_declined():
 
 
 def test_actual_one_igpu_hashing_negative_control_and_receipt():
-    from chronos_one_igpu import OneIGPU
+    from chronus.one_igpu import OneIGPU
 
     p, a = issue()
     with OneIGPU() as g:
@@ -211,7 +211,7 @@ def test_actual_one_igpu_hashing_negative_control_and_receipt():
 
 
 def test_actual_genesis_pow_and_independent_host_verification():
-    from chronos_one_igpu import OneIGPU
+    from chronus.one_igpu import OneIGPU
 
     target = int("00000000ffff" + "00" * 26, 16).to_bytes(32, "big")
     p, a = issue(1, 2083236893, target=target)
@@ -230,8 +230,8 @@ def test_actual_genesis_pow_and_independent_host_verification():
 
 
 def test_stale_job_runs_no_work():
-    from chronos_one_igpu import OneIGPU
-    from chronos_one_igpu.adapters.base import DispatchError
+    from chronus.one_igpu import OneIGPU
+    from chronus.adapters.base import DispatchError
 
     _, a = issue()
     with OneIGPU() as g:
@@ -257,7 +257,7 @@ def test_explicit_lane_binds_by_real_self_check():
 def test_canonical_dual_is_actual_face_centroid_construction_and_m32_equivalent():
     import itertools
     import turing_core
-    from chronos_one_igpu.manifold import build_m32
+    from chronus.manifold import build_m32
 
     vertices = np.asarray(turing_core.generate_icosahedron_vertices())
     distances = np.linalg.norm(vertices[:, None, :] - vertices[None, :, :], axis=2)
@@ -286,7 +286,7 @@ def test_canonical_dual_is_actual_face_centroid_construction_and_m32_equivalent(
 
 
 def test_production_router_executes_resident_plan_and_preserves_receipt_identity():
-    from chronos_one_igpu import OneIGPU
+    from chronus.one_igpu import OneIGPU
     from chronus.mla1517.mining.resident_router import ProductionExecutionRouter
     from chronus.mla1517.mining.search_plan import NonceLease, EvidenceClass
 
@@ -315,7 +315,7 @@ def test_production_router_executes_resident_plan_and_preserves_receipt_identity
 
 
 def test_production_router_stale_and_foreign_bounds_are_refused():
-    from chronos_one_igpu import OneIGPU
+    from chronus.one_igpu import OneIGPU
     from chronus.mla1517.mining.resident_router import ProductionExecutionRouter
     from chronus.mla1517.mining.search_plan import NonceLease
 
@@ -334,7 +334,7 @@ def test_production_router_stale_and_foreign_bounds_are_refused():
 
 
 def test_production_router_real_genesis_candidate_is_independently_verified():
-    from chronos_one_igpu import OneIGPU
+    from chronus.one_igpu import OneIGPU
     from chronus.mla1517.mining.resident_router import ProductionExecutionRouter
 
     target = (0xFFFF << (8 * (0x1D - 3))).to_bytes(32, "big")
@@ -355,7 +355,7 @@ def reference_scan(header, target, start, count):
 
 
 def test_executor_cannot_compile_its_own_plan_or_accept_outside_candidate():
-    from chronos_one_igpu import OneIGPU
+    from chronus.one_igpu import OneIGPU
     from chronus.mla1517.mining.resident_router import ProductionExecutionRouter
 
     p, a = issue()

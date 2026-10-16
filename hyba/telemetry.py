@@ -1,19 +1,30 @@
-"""HYBA iGPU telemetry — re-export of the dispatch collector."""
+"""HYBA iGPU telemetry — re-export of the canonical Chronus telemetry collector."""
 
 from __future__ import annotations
 
-from Intelligence.igpu_telemetry import (
-    IGpuTelemetryCollector,
-    attach_igpu_telemetry,
-    get_last_igpu_telemetry,
-    igpu_telemetry_hook,
-    reset_igpu_telemetry,
+from chronus.telemetry import (
+    ChronusTelemetry,
+    ChronusTelemetry as IGpuTelemetryCollector,
+    attach_to_host,
+    attach_to_host as attach_igpu_telemetry,
+    attach_to_host as igpu_telemetry_hook,
+    get_telemetry,
+    get_telemetry as get_last_igpu_telemetry,
+    reset_telemetry,
+    reset_telemetry as reset_igpu_telemetry,
 )
 
+EUCLID_CHRONUS_TELEMETRY = "EUCLID_CHRONUS_TELEMETRY"
+
 __all__ = [
+    "ChronusTelemetry",
+    "EUCLID_CHRONUS_TELEMETRY",
     "IGpuTelemetryCollector",
     "attach_igpu_telemetry",
+    "attach_to_host",
     "get_last_igpu_telemetry",
+    "get_telemetry",
     "igpu_telemetry_hook",
     "reset_igpu_telemetry",
+    "reset_telemetry",
 ]

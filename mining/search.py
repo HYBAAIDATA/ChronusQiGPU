@@ -20,7 +20,7 @@ Lucas pool:
 
 from __future__ import annotations
 
-from chronos_one_igpu.reference_contract import require_reference, reference_only, require_production_context
+from chronus.reference_contract import require_reference, reference_only, require_production_context
 import math
 import struct
 from typing import Any, Dict, List, Optional

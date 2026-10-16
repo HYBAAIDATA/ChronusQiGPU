@@ -98,7 +98,8 @@ class ExperienceSuperlearner:
             number = float(value)
             if not math.isfinite(number) or not 0 <= number <= 1:
                 raise ValueError(f"{name} must be finite and in [0,1]")
-        if planning_steps < 0 or curiosity_weight < 0:
+        if (planning_steps < 0 or int(planning_steps) != planning_steps
+            or not math.isfinite(float(curiosity_weight)) or curiosity_weight < 0):
             raise ValueError("planning_steps and curiosity_weight must be nonnegative")
         self.state_path = str(Path(state_path).resolve()) if state_path else None
         self.learning_system = learning_system
@@ -227,6 +228,13 @@ class ExperienceSuperlearner:
 
     def select_action(self, task_id: str, state: Any, *, explore: bool = True) -> str:
         state_key = self._state_key(state)
+        if not explore:
+            if task_id not in self.tasks:
+                raise ValueError("unknown task")
+            q = self.q_values.get(self._pair_key(task_id, state_key),
+                                  {a: 0.0 for a in self.tasks[task_id].actions})
+            best = max(q.values())
+            return min(a for a, v in q.items() if abs(v - best) <= 1e-15)
         q, visits = self._ensure_state(task_id, state_key)
         if explore and self._rng.random() < self.epsilon:
             return self._rng.choice(list(q))
@@ -249,8 +257,9 @@ class ExperienceSuperlearner:
         if task_id not in self.tasks or action not in self.tasks[task_id].actions:
             raise ValueError("unknown task or action")
         reward_value = float(reward)
-        if not math.isfinite(reward_value):
-            raise ValueError("reward must be finite")
+        task = self.tasks[task_id]
+        if not math.isfinite(reward_value) or not task.reward_min <= reward_value <= task.reward_max:
+            raise ValueError("reward must be finite and inside the task reward range")
         state_key, next_key = self._state_key(state), self._state_key(next_state)
         q, visits = self._ensure_state(task_id, state_key)
         next_q, _ = self._ensure_state(task_id, next_key)
@@ -474,6 +483,7 @@ class ExperienceSuperlearner:
                 "human_data_used": self.human_data_used,
             },
             "tasks": {k: asdict(v) for k, v in self.tasks.items()},
+            "rng_state": self._rng.getstate(),
             "q_values": self.q_values,
             "action_visits": self.action_visits,
             "world_model": {k: asdict(v) for k, v in self.world_model.items()},
@@ -509,7 +519,14 @@ class ExperienceSuperlearner:
         self.curiosity_weight = float(config["curiosity_weight"])
         self.seed = int(config["seed"])
         self._rng = random.Random(self.seed)
-        self.tasks = {k: ExperienceTask(**v) for k, v in payload.get("tasks", {}).items()}
+        if "rng_state" in payload:
+            def tuples(value):
+                return tuple(tuples(x) for x in value) if isinstance(value, list) else value
+            self._rng.setstate(tuples(payload["rng_state"]))
+        self.tasks = {
+            k: ExperienceTask(**{**v, "actions": tuple(v["actions"])})
+            for k, v in payload.get("tasks", {}).items()
+        }
         self.q_values = {
             k: {a: float(v) for a, v in row.items()}
             for k, row in payload.get("q_values", {}).items()

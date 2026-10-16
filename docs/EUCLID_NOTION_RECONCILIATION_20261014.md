@@ -1,3 +1,73 @@
+# Current migration addendum — production-readiness continuation
+
+The historical PR70 record below is preserved verbatim after this addendum; it
+was not present on PR74's elevation base. Its original Git blob is
+`f21efbc1ae31c9dcadd1cb57855615170b516674` at
+`ace9f7d0563c64a4f8f0e32564ea519807c3d639`. Older availability/status findings
+are dated observations, not the current state. No legacy implementation is
+silently transplanted by retaining that record.
+
+## Current verified progress
+
+- PR74 was inspected at `1e96468063d7a5895d01f7b6db0009f07fead859`;
+  PR75 at `81c8c4ef178aae8f349262cbe6c53b1222cb106d`. Both remain separate draft
+  review branches. EUCLID includes frontier-agent and PHILOS.
+- The canonical runtime already executes native proof-conjecture/repository-review
+  and explicit constituent adapters in bounded local integration tests. The new
+  shared repair-learning-query owner adds a third native read-only path through
+  EuclidRuntime -> AL HARAS -> creator rights -> Delegator -> IntelligenceSpecialist
+  -> CapabilityRegistry -> actual host RepairLearningLedger -> validated output/audit.
+- Repair-ledger load no longer inflates counts; tuple strategy keys prevent colon
+  collisions; persistence/corruption/invalid committed flags fail rather than
+  silently passing. Empty observations yield a null empirical rate, while the
+  explicitly labelled legacy ranking prior remains 0.5 for compatibility.
+- The publicly known repair token is no longer default authority. None/empty
+  host authorization is deny-all; denial does not echo a supplied credential.
+  Explicitly configured host tokens still permit the real temporary-file repair
+  lifecycle in local tests. This compatibility allowlist is not independent
+  authorization, OS isolation, a signed scope, or production qualification.
+- Recovered and retained the 100-page child closure and a lossless original
+  posterity archive with all 34 original manifest entries verified. Exact scope,
+  sanitization, hashes, historical source comparisons and remaining attachment
+  work are in `docs/research_archive/`. This is not an exhaustive workspace audit
+  or proof all former capabilities are now integrated.
+- PR77 at `099d40ae96578f5d1eb20d8605a260d9141965c2` is a distinct governed
+  learning/PYTHIA/restart workstream, based on main. Its changes were inventoried
+  but not merged or independently rerun here. Preserve its owner and source
+  provenance; do not confuse it with similarly numbered mining-repository PRs.
+
+## Release gates still open
+
+The explicit joint-source local tests do not constitute a merged/full checkout,
+Windows validation, full Salamander/skills initialization, installed package,
+CI approval, external T5 assurance, measured PHILOS qualification, or scientific
+superiority over earlier EUCLIDs. The official euclid-engine artifact excludes
+Intelligence and forbids it at the product boundary; the Salamander artifact ships
+lowercase salamander/al_haras, not uppercase Intelligence. Resolve the product's
+actual dependency closure and closed-core license decision, then build/test the
+real wheel from sdist. Do not defeat the boundary check or invent a wheel.
+
+Repair-source mutation remains refused by the read-only canonical bridge.
+The low-level temporary-workspace executor still needs production scope/race,
+symlink/reparse, subprocess, independent verifier, crash/recovery and platform
+assurance; its local record is not OVID custody. On synchronous ledger failure after source publication, recovery attempts an
+atomic baseline replacement and reads it back; a tested observed third-party
+change is not overwritten. Failure raises RepairEvidencePersistenceError with
+an explicit source_restored observation, not a successful receipt or false
+COMMITTED history. A failed/unsafe recovery requires operator reconciliation;
+no crash/distributed/multi-owner transaction atomicity is established. Never
+auto-retry an uncertain outcome.
+
+Source present, integrated, locally verified, CI verified and production qualified
+remain separate classifications. Complete all remaining mapped consumers,
+learning/creative/Kairos/custody composition, package/security/device/CI gates and
+matched prior-generation evaluations before claiming ubiquitous production
+readiness or demonstrated superiority. Scope and ambition are preserved.
+
+---
+
+## Historical PR70 research reconciliation (unaltered)
+
 # EUCLID research-to-repository reconciliation — 14 October 2026
 
 HYBA | EUCLID — internal engineering/laboratory record

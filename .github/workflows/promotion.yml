@@ -108,7 +108,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with: {ref: '${{ inputs.commit_sha }}'}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with: {name: promotion-gate-results, path: results}
       - run: python scripts/collect_approvals.py --subsystem "$SUBSYSTEM" --target "$TARGET" --commit "$CANDIDATE_COMMIT" --authors "$AUTHORS"
         env:
@@ -126,14 +126,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with: {ref: '${{ inputs.commit_sha }}'}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with: {name: promotion-gate-results, path: results}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with: {name: promotion-approvals, path: results/approvals}
       - uses: actions/setup-python@v7
         with: {python-version: '3.12'}
       - run: python -m pip install 'cryptography>=46,<51'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with: {name: promotion-candidate, path: dist}
       - name: Enforce scoped CEDR before issuing any promotion receipt
         env:

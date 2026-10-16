@@ -1,7 +1,0 @@
-{
-  "wheel_import": "PASS",
-  "version": "3.5.0",
-  "source_count": 15,
-  "plan_packaged": true,
-  "facade_smoke": "PASS"
-}

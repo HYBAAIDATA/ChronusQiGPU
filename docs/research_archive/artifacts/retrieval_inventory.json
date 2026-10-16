@@ -1,0 +1,2567 @@
+{
+  "scope": "Original artifacts retrieved into the retained research workspace, not all mirrored into Git or executed; selected source hashes are discovery evidence only",
+  "unique_artifacts": 82,
+  "retrieved": 82,
+  "repository_mirror": "Only the separately verified posterity ZIP and review copies are losslessly mirrored in this tranche",
+  "artifacts": [
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260718_2158.zip",
+      "pages": [
+        "39dbcc6fa499804296a8c26faee3ed9f"
+      ],
+      "local_filename": "cdfadb424ae58a8d__EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260718_2158.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 13303586,
+      "sha256": "b13381ec1888cd50fee43f4a0f444443d1f9ccc6ea09555cb960ab2146f50ffd"
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260718_2158.zip.sha256",
+      "pages": [
+        "39dbcc6fa499804296a8c26faee3ed9f"
+      ],
+      "local_filename": "ac0f1f7c7abf405b__EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260718_2158.zip.sha256",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 118,
+      "sha256": "5b023a870bc304dca32448eb5d6f9aff8e6d05e2abb11cf73e1793d466e36839"
+    },
+    {
+      "name": "EUCLID_RELEASE_CONTROLS_20260718.zip",
+      "pages": [
+        "39dbcc6fa499804296a8c26faee3ed9f"
+      ],
+      "local_filename": "47eebfa269c88dbf__EUCLID_RELEASE_CONTROLS_20260718.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 10340,
+      "sha256": "c2fd36371907019d7b621a725ca899c374b35fc9912432fcdc507037ecf55001"
+    },
+    {
+      "name": "orch_or_consciousness_tests.zip",
+      "pages": [
+        "39dbcc6fa499804296a8c26faee3ed9f"
+      ],
+      "local_filename": "d29a23da20f6b00e__orch_or_consciousness_tests.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 22180,
+      "sha256": "ecac3684f66504d0a0fbb75697a42f885425590a81a9890fe17c27e88575a19d"
+    },
+    {
+      "name": "EUCLID_LEARNING_SYSTEM_20260718.zip",
+      "pages": [
+        "3cfee27664174a2697e1edf17be637b2",
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "local_filename": "e7c25a73f5a6e6cf__EUCLID_LEARNING_SYSTEM_20260718.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 134091,
+      "sha256": "006354801602c005d9e59ad5e9d45f550878a71186f227e730eabb5fd4dbcfc7"
+    },
+    {
+      "name": "EUCLID_LEARNING_SYSTEM_20260718.zip.sha256",
+      "pages": [
+        "3cfee27664174a2697e1edf17be637b2",
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "local_filename": "0a26fab43865e45e__EUCLID_LEARNING_SYSTEM_20260718.zip.sha256",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 102,
+      "sha256": "15933663a68799ea14dab4a201d75d57d6fe9d70b17387350b0f3683da3acc2b"
+    },
+    {
+      "name": "euclid_learning_state.json",
+      "pages": [
+        "3cfee27664174a2697e1edf17be637b2",
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "local_filename": "bd196a6cc9344b09__euclid_learning_state.json",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 12814,
+      "sha256": "53850ecfde99caf141003813ffd32606ee6adff7c9570ccbb6b917e40b281d67"
+    },
+    {
+      "name": "euclid_learning_evidence_report.json",
+      "pages": [
+        "3cfee27664174a2697e1edf17be637b2",
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "local_filename": "9e8865d3e98eef25__euclid_learning_evidence_report.json",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 4024,
+      "sha256": "0890404febe3a464383a453c8f979904728e4d1a345947b4c54d45a18bb6822e"
+    },
+    {
+      "name": "euclid_learning_architecture.json",
+      "pages": [
+        "3cfee27664174a2697e1edf17be637b2",
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "local_filename": "458a6162f7af6e14__euclid_learning_architecture.json",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 4321,
+      "sha256": "7f96fa9f51e273a4646c7d9ac96d1ca8aa395a41a9eb8c71bdc949071ef23566"
+    },
+    {
+      "name": "euclid_learning_validation.json",
+      "pages": [
+        "3cfee27664174a2697e1edf17be637b2",
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "local_filename": "e1f4b671c176214a__euclid_learning_validation.json",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 2111,
+      "sha256": "74711d2689e32a446ccac266fa5e5066202b45bd5540c95801482586837c837b"
+    },
+    {
+      "name": "EUCLID_LEARNING_SYSTEM_SEAL.txt",
+      "pages": [
+        "3cfee27664174a2697e1edf17be637b2",
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "local_filename": "441aa2c66f5631ad__EUCLID_LEARNING_SYSTEM_SEAL.txt",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 503,
+      "sha256": "cfeab2d1fdfc4f274ce6238da6c340a9f0552b12431e46d8d73acde2510331a6"
+    },
+    {
+      "name": "EUCLID_FIRST_DAY_MATHEMATICAL_LAB_20260718.zip",
+      "pages": [
+        "62c927e6758f4f0285d81470b492f6a7"
+      ],
+      "local_filename": "c780abbd9c124a81__EUCLID_FIRST_DAY_MATHEMATICAL_LAB_20260718.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 8429,
+      "sha256": "89962d2286024bfd24a6c178ad1a8f424284b15b2dbc959166cbf07840202f74"
+    },
+    {
+      "name": "EUCLID_FIRST_DAY_MATHEMATICAL_LAB_20260718.zip.sha256",
+      "pages": [
+        "62c927e6758f4f0285d81470b492f6a7"
+      ],
+      "local_filename": "ddd976a890e25696__EUCLID_FIRST_DAY_MATHEMATICAL_LAB_20260718.zip.sha256",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 119,
+      "sha256": "d57a0c9fdb70f98541d4b199c467ef065104d1144785220f8d90069f44310121"
+    },
+    {
+      "name": "EUCLID_POSTERITY_RESEARCH_ARCHIVE_20260718.zip",
+      "pages": [
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "local_filename": "622c617860556e89__EUCLID_POSTERITY_RESEARCH_ARCHIVE_20260718.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 185504,
+      "sha256": "b2e31ad8af27f81d30a1371b1010ee8bb25e0df99199bd5f4eb27d0ddfb0ce5e"
+    },
+    {
+      "name": "EUCLID_POSTERITY_RESEARCH_ARCHIVE_20260718.zip.sha256",
+      "pages": [
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "local_filename": "b7b69056e0d49c6e__EUCLID_POSTERITY_RESEARCH_ARCHIVE_20260718.zip.sha256",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 113,
+      "sha256": "5f2f9a1ec6066ba97f1bf591d54ef8a652127878195acce7c26f47919a53a1aa"
+    },
+    {
+      "name": "POSTERITY_MANIFEST.json",
+      "pages": [
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "local_filename": "28a0de34326114bd__POSTERITY_MANIFEST.json",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 9259,
+      "sha256": "00db0b6a57cf6e2aff55182a75e8369d44374d946b27da9369dd4301da636c72"
+    },
+    {
+      "name": "euclid_posterity_validation.json",
+      "pages": [
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "local_filename": "b5ca6cafd1bd67ed__euclid_posterity_validation.json",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 873,
+      "sha256": "8db052e62668a446a07c24a8fd37e17d9cbee0d522252b498a66682448e98b21"
+    },
+    {
+      "name": "euclid_posterity_source_hashes.json",
+      "pages": [
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "local_filename": "0d61a7a0765485b3__euclid_posterity_source_hashes.json",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 3947,
+      "sha256": "de6da919d73fd4531b4797435f95cf9956670ce73891dd74c303d7ef8f8121c7"
+    },
+    {
+      "name": "RESEARCH_CHRONICLE.md",
+      "pages": [
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "local_filename": "22ed00231401b126__RESEARCH_CHRONICLE.md",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 3054,
+      "sha256": "7455b92ee253abb9efaec0cfdba32e7f5278f3d5c638ef32deffb192d1875429"
+    },
+    {
+      "name": "REPRODUCTION_GUIDE.md",
+      "pages": [
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "local_filename": "0ee251abfd9467ef__REPRODUCTION_GUIDE.md",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 677,
+      "sha256": "eb286a12f69427a5564c0de88e632c34e3d13ff4798c4e3d699b044be855b494"
+    },
+    {
+      "name": "pulvini_v3_enterprise_production_20260724.zip",
+      "pages": [
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "local_filename": "8059e6e3e9a43e42__pulvini_v3_enterprise_production_20260724.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 597652,
+      "sha256": "00b79a99c01e88a4e02d458a76c2bea3af1f7cc0c7b1af3be43e0193a8bd038a"
+    },
+    {
+      "name": "pulvini_v3_phases_11_13_14_20260724.zip",
+      "pages": [
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "local_filename": "affd99ac798e60f1__pulvini_v3_phases_11_13_14_20260724.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 730713,
+      "sha256": "ee0f91b1985f557633514277fa5c87dfed355612c56167f7b2114d8260ce529f"
+    },
+    {
+      "name": "EUCLID_INTERACTIVE_IMPLEMENTATION_V2_20260718.zip",
+      "pages": [
+        "a7752fe8f3a34477a2c7ed81874eb31b"
+      ],
+      "local_filename": "9fe5fc44c19da514__EUCLID_INTERACTIVE_IMPLEMENTATION_V2_20260718.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 35659,
+      "sha256": "1b05d1b4642664bf17a85d5486e3c43603a1a5050c4b52969f94c1f97fe22cc7"
+    },
+    {
+      "name": "EUCLID_INTERACTIVE_MODALITY_IMPLEMENTATION_20260718.zip",
+      "pages": [
+        "a7752fe8f3a34477a2c7ed81874eb31b"
+      ],
+      "local_filename": "b6697035ec2dd304__EUCLID_INTERACTIVE_MODALITY_IMPLEMENTATION_20260718.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 26707,
+      "sha256": "b6f19d125e4e1af09ba2a5735e9932c21144adee44025d5b35d8216f8b0fc796"
+    },
+    {
+      "name": "KAIROS.zip",
+      "pages": [
+        "8fb2b73e8a314dbea468be18f2c3cfa7"
+      ],
+      "local_filename": "df4193e7a6891795__KAIROS.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 10376,
+      "sha256": "2dbe0e6685ac6093626e9f1720347179b243965801207e5937f6ae4581ce1fbf"
+    },
+    {
+      "name": "KAIROS_LOCAL_TRANSPORT.zip",
+      "pages": [
+        "27bbc78a988d45888ef3ccc4a966dea1"
+      ],
+      "local_filename": "ae5d26170dd2db1d__KAIROS_LOCAL_TRANSPORT.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 13614,
+      "sha256": "fbb14666f2cbf3cfca6458a25eeb2da4b3843ae19fbd120709bd8635a4f886fd"
+    },
+    {
+      "name": "KAIROS_RUNTIME_CONTROL_PLANE.zip",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "d78a32eff1d71fe9__KAIROS_RUNTIME_CONTROL_PLANE.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 11868,
+      "sha256": "de4e0e87654a1e46fa0acfaa58c7038ac67ac0f683159d89e29a26675631173c"
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0021.zip",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "3e8119b83fed1668__EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0021.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 11971996,
+      "sha256": "ad4e4d86a3610a84341d7976b19460debb54b62b91cc511e90265895789d9db9"
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0021.zip.sha256",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "9aa742cdf1e8a678__EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0021.zip.sha256",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 118,
+      "sha256": "0055846e1b2e166ded6b6e4507f3a8871668a5343ab2a13dc953aa2274926ed1"
+    },
+    {
+      "name": "kairos_control_plane_manifest_20260719.json",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "78234b3dbe99600b__kairos_control_plane_manifest_20260719.json",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 1865,
+      "sha256": "84f03575fb0a91e2e9a5cefe4e59b2d1e529018cdfb000b404a7acb902c20dd3"
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0021R1.zip",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "d8b76bdf0691f65f__EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0021R1.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 11972434,
+      "sha256": "0e0cf2fa5d98fc0bb79e8374de13e5521112ebaba68e8dde818f0e2d6c7baf5e"
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0021R1.zip.sha256",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "89543f49978789b7__EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0021R1.zip.sha256",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 120,
+      "sha256": "0bf5e56d94207df2eb35ffe5e4e6401d2970262dc42740686dfa63c50285ac3d"
+    },
+    {
+      "name": "kairos_control_plane_manifest_20260719.json",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "b61e5c091aa76f26__kairos_control_plane_manifest_20260719.json",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 1865,
+      "sha256": "f1d5c6a398adb09e6adb6f1961617ce36cc39dd1ca0077a4f15329c37362bf67"
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0028.zip",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "567b4f26f0bc61c6__EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0028.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 11982323,
+      "sha256": "cd3b2fedeff1f5e7f215627b9c24715f4fb1fc228cf6585cf38a463932db2dfc"
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0028.zip.sha256",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "a3bd0aced1f3feee__EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0028.zip.sha256",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 118,
+      "sha256": "9b888d28f612bba5a3f53e8bae348b8da4cee8d83acef0e2f1b02d731133bdc3"
+    },
+    {
+      "name": "kairos_execution_layer_manifest_20260719.json",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "3222ec8b2d3bb984__kairos_execution_layer_manifest_20260719.json",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 2213,
+      "sha256": "8af3095321b0b1d4e4361168d81f3f04e6495fae3edb6513cb9cf60a0b060ec9"
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0031.zip",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "5d9a8735d867957c__EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0031.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 11992780,
+      "sha256": "59bd4479dae8782a0b31caff8616b0ec7ba7d96023cd10df23bf11e0befc4652"
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0031.zip.sha256",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "a251f2e7fdc62453__EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0031.zip.sha256",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 118,
+      "sha256": "3148f70ee6fd4495c09358c073c2715d5bbdc5681adcb7936aa9136c6c3603f3"
+    },
+    {
+      "name": "kairos_mining_lab_service_manifest_20260719.json",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "e053e876436d0861__kairos_mining_lab_service_manifest_20260719.json",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 2334,
+      "sha256": "6323bfce9a878fd7d222d339d70efca923da6a8df76bc62b97174683c1009ee7"
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0038.zip",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "ee28b0c9e6f22edd__EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0038.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 12000758,
+      "sha256": "119ea90087cbb491bba4ecd73579b10c22f1617302c94cdcce0cada3fd5fafd0"
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0038.zip.sha256",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "70d0ee45786ba5d6__EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0038.zip.sha256",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 118,
+      "sha256": "2b0367a993db9174a2329314dbb4cf8cd540b05dff84460a730c06ebd7d98786"
+    },
+    {
+      "name": "millennium_math_world_manifest_20260719.json",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "527d06df1dc1f25a__millennium_math_world_manifest_20260719.json",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 984,
+      "sha256": "195e082cdd60d030db51e3d8bf5d871a61d8baf44be4b8d393e612ac9e22ba25"
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0047.zip",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "d8829cedbdc90edf__EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0047.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 12009201,
+      "sha256": "72ca27e4e93483112164b3f806378c6baf79e7b15d59298919393015581aaa37"
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0047.zip.sha256",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "f9fcf077223b784e__EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0047.zip.sha256",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 118,
+      "sha256": "357c817f55ff9a30b89481126107c23af5bbca71844d7c9fa7b300649363014d"
+    },
+    {
+      "name": "kairos_mining_reasoning_manifest_20260719.json",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "a78340ab3e1de3b0__kairos_mining_reasoning_manifest_20260719.json",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 1155,
+      "sha256": "40d1bb4beb8e692ce1333bffa6c2126b51b141680104439ab8badd03b84c5e84"
+    },
+    {
+      "name": "EUCLID_REPOSITORY_CHECKPOINT_20260719_0129.zip",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "b5b2506fbeeb620e__EUCLID_REPOSITORY_CHECKPOINT_20260719_0129.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 12012654,
+      "sha256": "a21b1070640abf22c020dba483518aafac12941c7c2de066e22cbf5ebd5a4246"
+    },
+    {
+      "name": "EUCLID_REPOSITORY_CHECKPOINT_20260719_0129.zip.sha256",
+      "pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "local_filename": "78fda10c619ebdfd__EUCLID_REPOSITORY_CHECKPOINT_20260719_0129.zip.sha256",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 113,
+      "sha256": "42689f3b328ea28bee5cc1e91259e1d37cbbaede3c9f9149919316ae636dd9e8"
+    },
+    {
+      "name": "KAIROS_PROVIDER_GATEWAY.zip",
+      "pages": [
+        "c51c25912154402a909bd6e713b2f581"
+      ],
+      "local_filename": "5f586accbdb34c92__KAIROS_PROVIDER_GATEWAY.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 12948,
+      "sha256": "5031ed615c1bd0a99236a69c18ac02a8024c1a9666e0d28852e816f5c4596191"
+    },
+    {
+      "name": "KAIROS_RIGHTS_LEDGER.zip",
+      "pages": [
+        "fa7b7e4c02084c33a74d459127560af8"
+      ],
+      "local_filename": "59ca4640ae79ac58__KAIROS_RIGHTS_LEDGER.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 10017,
+      "sha256": "3249aa7e43074ff21cb45523a830bbfb491f957442e6d7045613e2e3c6616f60"
+    },
+    {
+      "name": "KAIROS_OBSERVABILITY.zip",
+      "pages": [
+        "2c901d4522fc49279f2e20254b615319"
+      ],
+      "local_filename": "1fdb760a509799dd__KAIROS_OBSERVABILITY.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 9935,
+      "sha256": "1dbc43af2999c3c3de73f56e4f9d3791e608477f45564bd377a5b63555a84f0d"
+    },
+    {
+      "name": "KAIROS_CANONICAL_SPEC_DELTA.zip",
+      "pages": [
+        "ca54ab1928554773a0d02941df4614f1"
+      ],
+      "local_filename": "4a43b4b4d503f02e__KAIROS_CANONICAL_SPEC_DELTA.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 7248,
+      "sha256": "67d238d142e28cd412b35a75a95fcafd534f289a0a12790100c1f3fda1de60ae"
+    },
+    {
+      "name": "KAIROS_INTEGRATED_TELEMETRY.zip",
+      "pages": [
+        "dd7d4a11224f4248b8736aecfb1dc63c"
+      ],
+      "local_filename": "2ffcd33e754bb00a__KAIROS_INTEGRATED_TELEMETRY.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 7436,
+      "sha256": "8fa04e041cfc3f6e011c1f7bba75077459e94daa8d9f75e2454b0331652066be"
+    },
+    {
+      "name": "KAIROS_FOLD.zip",
+      "pages": [
+        "be3c2c541ed74102a84e808344d33ae3"
+      ],
+      "local_filename": "8df4ef5cdec5f3ed__KAIROS_FOLD.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 3988,
+      "sha256": "c0364a99a569010bf8ee4613a5fe02581fb4b4bd1eeeea9639c7f4de89a61f9a"
+    },
+    {
+      "name": "KAIROS_FOLD_RUNTIME.zip",
+      "pages": [
+        "1993e69eb2594269bf1b28cb9e53da84"
+      ],
+      "local_filename": "7e5d940e36104f8f__KAIROS_FOLD_RUNTIME.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 7256,
+      "sha256": "4c7e47044567399fc1fce7f9aaa81f9fbd184bcfe7af3a6a9f2ddc66e745ca5b"
+    },
+    {
+      "name": "KAIROS_RECOVERY.zip",
+      "pages": [
+        "66fa30a0dc50466998444b444dff25d3"
+      ],
+      "local_filename": "ee713d41f256ad8c__KAIROS_RECOVERY.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 14299,
+      "sha256": "80c1cdf1261a2689cb7635fc1dba94248cdfe7e1bb66b0e44acb5380e7470320"
+    },
+    {
+      "name": "KAIROS_JOURNEY.zip",
+      "pages": [
+        "ae0367ace0734991ac3d36b85f6fb219"
+      ],
+      "local_filename": "bfd81763426de9f1__KAIROS_JOURNEY.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 4072,
+      "sha256": "396158054e3a9b13d2b937ccbc98bcb764d73ae52883508d0844a3d71ad8d954"
+    },
+    {
+      "name": "KAIROS_RUNTIME_JOURNEY.zip",
+      "pages": [
+        "24e053afe0854fc1a38188028dbed32e"
+      ],
+      "local_filename": "d249e2238afd5f3f__KAIROS_RUNTIME_JOURNEY.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 6003,
+      "sha256": "e02dc61da17efb935c2f215da02eb5cc9a72d7ea9eded70e132b6150dd5fdf61"
+    },
+    {
+      "name": "KAIROS_ADVANCED_JOURNEY.zip",
+      "pages": [
+        "51ad7dcf517b4e36a76d5af25e272a05"
+      ],
+      "local_filename": "08ccc1093f48d226__KAIROS_ADVANCED_JOURNEY.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 5013,
+      "sha256": "5522f8aa5ecea89846615f43cfafb5a0b606164155feb418ea2e2bc50620e35e"
+    },
+    {
+      "name": "KAIROS_COMPLETE_JOURNEY.zip",
+      "pages": [
+        "3b297cfe8de84f29847707837f9559fc"
+      ],
+      "local_filename": "79fcdfcb0d78125c__KAIROS_COMPLETE_JOURNEY.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 5933,
+      "sha256": "413ba1c21512e83e41f80b091efc2cc1e2ca1fa70716d63135841b1015b3f023"
+    },
+    {
+      "name": "KAIROS_RUNTIME_FOLD.zip",
+      "pages": [
+        "d3261d7eaf344a16b11f02eebff4a581"
+      ],
+      "local_filename": "57268e7156b5182a__KAIROS_RUNTIME_FOLD.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 5746,
+      "sha256": "7846cf68a40391543128717793fc109eb416f4547fe02679ea5cffd6a75d8ac4"
+    },
+    {
+      "name": "midas_backend_final.zip",
+      "pages": [
+        "eea083b7691c47178d972f94cb696d6c"
+      ],
+      "local_filename": "bf10fdbfc17db9e5__midas_backend_final.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 45519222,
+      "sha256": "0223fcdccd7c9f87dad2f4808c62a0054e7db641d52ffe5e6cd6fc5e0c6e45a9"
+    },
+    {
+      "name": "EUCLID_COMBINED.zip",
+      "pages": [
+        "a4955666990e48eba278762b1cd025b6"
+      ],
+      "local_filename": "b9f52a8dc9c186bf__EUCLID_COMBINED.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 11716460,
+      "sha256": "bb05182fedf8f6ac53b0dd15b18547a71bb5a6dc4645cfdb5c3505b2cfa2b72b"
+    },
+    {
+      "name": "EUCLID_FINAL_COMBINED.zip",
+      "pages": [
+        "9a32c65b3fd94f118b328e338510b263"
+      ],
+      "local_filename": "3ed62c0bda727f3c__EUCLID_FINAL_COMBINED.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 3522212,
+      "sha256": "19596a08cec74ffab9c849d52c461f0c8befe0f9099f0d002dd63000a2ec2b8f"
+    },
+    {
+      "name": "EUCLID_PROD_MORNING_RECOVERY_COMPLETE_20260719.zip",
+      "pages": [
+        "585d16ab68ed4162aab9c6859fc2098f"
+      ],
+      "local_filename": "ade93a47dd652a5d__EUCLID_PROD_MORNING_RECOVERY_COMPLETE_20260719.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 27706220,
+      "sha256": "30d3ddde94238b4cbb4fbb0b299775fed0b90c414669275379cab08186371229"
+    },
+    {
+      "name": "EUCLID_PROD_MORNING_RECOVERY_COMPLETE_20260719.zip.sha256",
+      "pages": [
+        "585d16ab68ed4162aab9c6859fc2098f"
+      ],
+      "local_filename": "8170256999c977da__EUCLID_PROD_MORNING_RECOVERY_COMPLETE_20260719.zip.sha256",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 123,
+      "sha256": "455a7bfc22aeb9828cf690c15634af1bd7869b717035f759d1e023f1b6b4e20a"
+    },
+    {
+      "name": "EUCLID_PROD_GOLDEN_RATIO_ELEVATION_20260719.zip",
+      "pages": [
+        "3c1fa98a65b64ef5b95f5f6787a54b3a"
+      ],
+      "local_filename": "f1423e3d65d41fc7__EUCLID_PROD_GOLDEN_RATIO_ELEVATION_20260719.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 27722218,
+      "sha256": "7dae964b8065f0c6fb2e63f720e8321b06c304669eb0c2e6d74f01a9b7e5e8a5"
+    },
+    {
+      "name": "EUCLID_PROD_GOLDEN_RATIO_ELEVATION_20260719.zip.sha256",
+      "pages": [
+        "3c1fa98a65b64ef5b95f5f6787a54b3a"
+      ],
+      "local_filename": "2142124f7f3c0362__EUCLID_PROD_GOLDEN_RATIO_ELEVATION_20260719.zip.sha256",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 120,
+      "sha256": "ad5b8b46105cfcf87df4861fe2848cf67a2485bef88d1efe8ea49fccf809ed43"
+    },
+    {
+      "name": "EUCLID_GOLDEN_RATIO_ELEVATION_FORENSIC_20260719.md",
+      "pages": [
+        "3c1fa98a65b64ef5b95f5f6787a54b3a"
+      ],
+      "local_filename": "7553324b460f8415__EUCLID_GOLDEN_RATIO_ELEVATION_FORENSIC_20260719.md",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 4574,
+      "sha256": "da545a6e09dbb178318efdda8eaf985d467586f038670db26897eff3353bf7d8"
+    },
+    {
+      "name": "golden_ratio_elevation_validation.json",
+      "pages": [
+        "3c1fa98a65b64ef5b95f5f6787a54b3a"
+      ],
+      "local_filename": "43701c0f5d146e2a__golden_ratio_elevation_validation.json",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 1692,
+      "sha256": "0d40965be3172c6d0ad65f1c857901c23b593574d5a2273a77fd8c7b55375c44"
+    },
+    {
+      "name": "EUCLID2_AGENTIC_MINING_FLOW_V0.1.0.zip",
+      "pages": [
+        "1fb64c306b44437a8fa1d32df5e56e71"
+      ],
+      "local_filename": "7379a7d1b5e0fa46__EUCLID2_AGENTIC_MINING_FLOW_V0.1.0.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 17619,
+      "sha256": "407450a4cb28b69b4e74a068406875cbbf21678f6fe7228739b1568cb31906af"
+    },
+    {
+      "name": "EUCLID2_AGENTIC_MINING_FLOW_V0.1.0.zip.sha256",
+      "pages": [
+        "1fb64c306b44437a8fa1d32df5e56e71"
+      ],
+      "local_filename": "a20442db85523fb9__EUCLID2_AGENTIC_MINING_FLOW_V0.1.0.zip.sha256",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 105,
+      "sha256": "c3503b60bd1b7a1145945002760b4d2db6135e752aec02ead74919cc12301311"
+    },
+    {
+      "name": "EUCLID2_DIRECT_VOICE_CHAT_ROOM_V0.1.0.zip",
+      "pages": [
+        "1fb64c306b44437a8fa1d32df5e56e71"
+      ],
+      "local_filename": "c8bf435479b8cfa2__EUCLID2_DIRECT_VOICE_CHAT_ROOM_V0.1.0.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 22078,
+      "sha256": "0b3b1f3db834f9bd728f47d28febf19c465605124f44adec78fc8bd49a57a2c3"
+    },
+    {
+      "name": "EUCLID2_DIRECT_VOICE_CHAT_ROOM_V0.1.0.zip.sha256",
+      "pages": [
+        "1fb64c306b44437a8fa1d32df5e56e71"
+      ],
+      "local_filename": "cb992ff2432abb74__EUCLID2_DIRECT_VOICE_CHAT_ROOM_V0.1.0.zip.sha256",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 108,
+      "sha256": "0ee5627f414c7b01fb7b3cdd590db5126396959c646c7019377d0d9aa72aa4e6"
+    },
+    {
+      "name": "midas_backend_braiins_default.zip",
+      "pages": [
+        "1fb64c306b44437a8fa1d32df5e56e71",
+        "1fb64c306b44437a8fa1d32df5e56e71"
+      ],
+      "local_filename": "7e8d0251c21eb5c8__midas_backend_braiins_default.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 45518204,
+      "sha256": "882a0302c67db89cc4a319971d10ef0470eaa4c2d73792ca40503fa57c19f32f"
+    },
+    {
+      "name": "midas_backend_quantum_doctrine_fix.zip",
+      "pages": [
+        "1fb64c306b44437a8fa1d32df5e56e71"
+      ],
+      "local_filename": "9fa297870c22037e__midas_backend_quantum_doctrine_fix.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 45519222,
+      "sha256": "e5a6707e37c8468d347a62a8414e95e40cfb34d8a94c8100bd0a5eb07208b1c8"
+    },
+    {
+      "name": "08a7226b-85e3-4853-98ed-6fffb39065e9.zip",
+      "pages": [
+        "3e14dd365bfb4123a17f88baa7e81c38",
+        "ac615fb71caa4facb9622fbc47293335"
+      ],
+      "local_filename": "b7dbb5872ea87ba3__08a7226b-85e3-4853-98ed-6fffb39065e9.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 165946,
+      "sha256": "2c803c49f37392183c6d3dba27c4eb9526ef25889565f919c81ca6eeca943497"
+    },
+    {
+      "name": "hyba_style_system.html",
+      "pages": [
+        "8fa068f25b364ad7ae54c3de4be455a3"
+      ],
+      "local_filename": "ed7ee8c83a68edbe__hyba_style_system.html",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 51639,
+      "sha256": "ef6bf203b3c8a470148fe48cc441e5b710190dbbb760b4b1c0020c7eafe978d3"
+    },
+    {
+      "name": "hyba_e5.zip",
+      "pages": [
+        "7763e2edb28c4d31b927a4550bfef0ac"
+      ],
+      "local_filename": "d5507f772cc31d69__hyba_e5.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 931626,
+      "sha256": "c42cc4aee5445bd4b1ad69764f2da3e0a97e308fdfdc1c4b49f315fc3f1dda82"
+    },
+    {
+      "name": "chronos-completed.zip",
+      "pages": [
+        "6c0bbde40e8b41eeba9cedb15d5bcb9b"
+      ],
+      "local_filename": "c2f67f0ea8517632__chronos-completed.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 48348,
+      "sha256": "149e9981975a81ac15837e6757620347b3e3f8783206cd10eba33f18ff10fb33"
+    },
+    {
+      "name": "chronos-completed.zip",
+      "pages": [
+        "6c0bbde40e8b41eeba9cedb15d5bcb9b"
+      ],
+      "local_filename": "fe575fa5e6fb1c2d__chronos-completed.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 68717,
+      "sha256": "37387ea896ebbafe7cd799dea0108c5331257f9f53a1042358777d3638ca2c91"
+    },
+    {
+      "name": "chronos-completed.zip",
+      "pages": [
+        "6c0bbde40e8b41eeba9cedb15d5bcb9b"
+      ],
+      "local_filename": "fd5dbc55b87f7563__chronos-completed.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 22426,
+      "sha256": "805a823c0f2327d1f096c2539faa2596af288392dc5de5afed2e4c981dec54e7"
+    },
+    {
+      "name": "chronos-completed.zip",
+      "pages": [
+        "6c0bbde40e8b41eeba9cedb15d5bcb9b"
+      ],
+      "local_filename": "29f1c28c9fb718d3__chronos-completed.zip",
+      "status": "RETRIEVED_NOT_EXECUTED",
+      "bytes": 104305,
+      "sha256": "91686f49a0020756c29f75672bc5acbbb20b4298e724eea0627a8857ccb24b71"
+    }
+  ],
+  "selected_archive_inventories": [
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260718_2158.zip",
+      "archive_sha256": "b13381ec1888cd50fee43f4a0f444443d1f9ccc6ea09555cb960ab2146f50ffd",
+      "source_pages": [
+        "39dbcc6fa499804296a8c26faee3ed9f"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "repository/euclid/creative_substrate.py",
+          "bytes": 52800,
+          "sha256": "a6ea5f5a8a7b4e090c1e1e63e9f63dbd25ef61b3fb7a87c07c3d0b475f27c757",
+          "git_blob_sha1": "8e66efbd4e46d96c2d19e6ff923f1e8b0ce15cd4"
+        },
+        {
+          "path": "repository/euclid/organism_cns.py",
+          "bytes": 11371,
+          "sha256": "530a246b05f819faa407c9f0720eae6ecc823dd71d6ceff52909b43c739a1bbb",
+          "git_blob_sha1": "3f0efdf21669ebc34d26c55a7f5597a13685d00b"
+        },
+        {
+          "path": "repository/hyba_substrate/agi_attribute_evaluator.py",
+          "bytes": 13307,
+          "sha256": "17a10abf0ac290b7146296a7ce63f09f635c47b1ccfc6d88434a9126d2b3c156",
+          "git_blob_sha1": "d30cf729df5e0595fb484545b6917e0dcec55efd"
+        },
+        {
+          "path": "repository/hyba_substrate/asi_attribute_evaluator.py",
+          "bytes": 13978,
+          "sha256": "cc9b5bccaeb76c7de4b988b0088ec92325e2be6a6ec720cea0549007ac26b379",
+          "git_blob_sha1": "20d3751de3bdb55c60fc00eb06ecac4fb51ba5ad"
+        },
+        {
+          "path": "repository/hyba_substrate/euclid_experience_superlearner.py",
+          "bytes": 20446,
+          "sha256": "9d59d8c2db983972157ed030bcb78d220933dee5340991b98910f669f54175b0",
+          "git_blob_sha1": "c1e01426e496e88d68c807a23cf11ab955a2bc77"
+        },
+        {
+          "path": "repository/hyba_substrate/euclid_learning_system.py",
+          "bytes": 27066,
+          "sha256": "f089bf5129906702f451dae2c57ca80bfefcb58ba65ed41180c92ecfad253914",
+          "git_blob_sha1": "270f5d584b5b6bd3c396b3e7a241a8fb329bb254"
+        },
+        {
+          "path": "repository/hyba_substrate/memory_preservation.py",
+          "bytes": 18780,
+          "sha256": "708558327977d9cae16522e494076c45335be25d823b7b300ace6602e79afbcb",
+          "git_blob_sha1": "c880fbeb962259b893b7836bb3b7e28b2b7672e7"
+        },
+        {
+          "path": "repository/hyba_substrate/organism_cns.py",
+          "bytes": 32212,
+          "sha256": "97361b9cd6a790dd765e0e73582b305207787a48cfedfd758302702635ade0ea",
+          "git_blob_sha1": "4571f09347a62147fa37073af067a03f8867f5a1"
+        },
+        {
+          "path": "repository/hyba_substrate/organism_coherence.py",
+          "bytes": 4308,
+          "sha256": "dee3061efc58430f1e0750507480caa60242bf2228f5b035e899fa79f99c1e4d",
+          "git_blob_sha1": "8571b21fe0bf5bb569c9258577b211f040cd246c"
+        },
+        {
+          "path": "repository/hyba_substrate/safe_self_modification.py",
+          "bytes": 10264,
+          "sha256": "5e551a03cbd68f809fad2b264b681a1a04326f121e3dfee4a6c1867bf7c8615c",
+          "git_blob_sha1": "85d4e3b23edaec9812da51f36eb49d21bbea80c9"
+        },
+        {
+          "path": "repository/hyba_substrate/world_system_model.py",
+          "bytes": 5410,
+          "sha256": "c57d6f60a1aaf9256da59532d90b9fb91b1e7264914e780bdca461ce65075e33",
+          "git_blob_sha1": "66663a2e4a894538ccf05f16c7f73ffda90598ac"
+        }
+      ],
+      "member_count": 1424,
+      "declared_uncompressed_bytes": 25262612
+    },
+    {
+      "name": "EUCLID_RELEASE_CONTROLS_20260718.zip",
+      "archive_sha256": "c2fd36371907019d7b621a725ca899c374b35fc9912432fcdc507037ecf55001",
+      "source_pages": [
+        "39dbcc6fa499804296a8c26faee3ed9f"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 16,
+      "declared_uncompressed_bytes": 12240
+    },
+    {
+      "name": "orch_or_consciousness_tests.zip",
+      "archive_sha256": "ecac3684f66504d0a0fbb75697a42f885425590a81a9890fe17c27e88575a19d",
+      "source_pages": [
+        "39dbcc6fa499804296a8c26faee3ed9f"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 2,
+      "declared_uncompressed_bytes": 84777
+    },
+    {
+      "name": "EUCLID_LEARNING_SYSTEM_20260718.zip",
+      "archive_sha256": "006354801602c005d9e59ad5e9d45f550878a71186f227e730eabb5fd4dbcfc7",
+      "source_pages": [
+        "3cfee27664174a2697e1edf17be637b2",
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "EUCLID_LEARNING_SYSTEM_20260718/implementation/euclid_learning_system.py",
+          "bytes": 27066,
+          "sha256": "f089bf5129906702f451dae2c57ca80bfefcb58ba65ed41180c92ecfad253914",
+          "git_blob_sha1": "270f5d584b5b6bd3c396b3e7a241a8fb329bb254"
+        },
+        {
+          "path": "EUCLID_LEARNING_SYSTEM_20260718/implementation/memory_preservation.py",
+          "bytes": 18780,
+          "sha256": "708558327977d9cae16522e494076c45335be25d823b7b300ace6602e79afbcb",
+          "git_blob_sha1": "c880fbeb962259b893b7836bb3b7e28b2b7672e7"
+        }
+      ],
+      "member_count": 130,
+      "declared_uncompressed_bytes": 204730
+    },
+    {
+      "name": "EUCLID_FIRST_DAY_MATHEMATICAL_LAB_20260718.zip",
+      "archive_sha256": "89962d2286024bfd24a6c178ad1a8f424284b15b2dbc959166cbf07840202f74",
+      "source_pages": [
+        "62c927e6758f4f0285d81470b492f6a7"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 2,
+      "declared_uncompressed_bytes": 34087
+    },
+    {
+      "name": "EUCLID_POSTERITY_RESEARCH_ARCHIVE_20260718.zip",
+      "archive_sha256": "b2e31ad8af27f81d30a1371b1010ee8bb25e0df99199bd5f4eb27d0ddfb0ce5e",
+      "source_pages": [
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "EUCLID_POSTERITY_20260718/source/agi_attribute_evaluator.py",
+          "bytes": 13307,
+          "sha256": "17a10abf0ac290b7146296a7ce63f09f635c47b1ccfc6d88434a9126d2b3c156",
+          "git_blob_sha1": "d30cf729df5e0595fb484545b6917e0dcec55efd"
+        },
+        {
+          "path": "EUCLID_POSTERITY_20260718/source/asi_attribute_evaluator.py",
+          "bytes": 13978,
+          "sha256": "cc9b5bccaeb76c7de4b988b0088ec92325e2be6a6ec720cea0549007ac26b379",
+          "git_blob_sha1": "20d3751de3bdb55c60fc00eb06ecac4fb51ba5ad"
+        },
+        {
+          "path": "EUCLID_POSTERITY_20260718/source/euclid_experience_superlearner.py",
+          "bytes": 20446,
+          "sha256": "9d59d8c2db983972157ed030bcb78d220933dee5340991b98910f669f54175b0",
+          "git_blob_sha1": "c1e01426e496e88d68c807a23cf11ab955a2bc77"
+        },
+        {
+          "path": "EUCLID_POSTERITY_20260718/source/euclid_learning_system.py",
+          "bytes": 27066,
+          "sha256": "f089bf5129906702f451dae2c57ca80bfefcb58ba65ed41180c92ecfad253914",
+          "git_blob_sha1": "270f5d584b5b6bd3c396b3e7a241a8fb329bb254"
+        },
+        {
+          "path": "EUCLID_POSTERITY_20260718/source/memory_preservation.py",
+          "bytes": 18780,
+          "sha256": "708558327977d9cae16522e494076c45335be25d823b7b300ace6602e79afbcb",
+          "git_blob_sha1": "c880fbeb962259b893b7836bb3b7e28b2b7672e7"
+        },
+        {
+          "path": "EUCLID_POSTERITY_20260718/source/organism_coherence.py",
+          "bytes": 4308,
+          "sha256": "dee3061efc58430f1e0750507480caa60242bf2228f5b035e899fa79f99c1e4d",
+          "git_blob_sha1": "8571b21fe0bf5bb569c9258577b211f040cd246c"
+        },
+        {
+          "path": "EUCLID_POSTERITY_20260718/source/safe_self_modification.py",
+          "bytes": 10264,
+          "sha256": "5e551a03cbd68f809fad2b264b681a1a04326f121e3dfee4a6c1867bf7c8615c",
+          "git_blob_sha1": "85d4e3b23edaec9812da51f36eb49d21bbea80c9"
+        },
+        {
+          "path": "EUCLID_POSTERITY_20260718/source/world_system_model.py",
+          "bytes": 5410,
+          "sha256": "c57d6f60a1aaf9256da59532d90b9fb91b1e7264914e780bdca461ce65075e33",
+          "git_blob_sha1": "66663a2e4a894538ccf05f16c7f73ffda90598ac"
+        }
+      ],
+      "member_count": 35,
+      "declared_uncompressed_bytes": 363907
+    },
+    {
+      "name": "pulvini_v3_enterprise_production_20260724.zip",
+      "archive_sha256": "00b79a99c01e88a4e02d458a76c2bea3af1f7cc0c7b1af3be43e0193a8bd038a",
+      "source_pages": [
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 122,
+      "declared_uncompressed_bytes": 1221542
+    },
+    {
+      "name": "pulvini_v3_phases_11_13_14_20260724.zip",
+      "archive_sha256": "ee0f91b1985f557633514277fa5c87dfed355612c56167f7b2114d8260ce529f",
+      "source_pages": [
+        "2539733ebb7848c9a84ae4e3d7429822"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 160,
+      "declared_uncompressed_bytes": 1696311
+    },
+    {
+      "name": "EUCLID_INTERACTIVE_IMPLEMENTATION_V2_20260718.zip",
+      "archive_sha256": "1b05d1b4642664bf17a85d5486e3c43603a1a5050c4b52969f94c1f97fe22cc7",
+      "source_pages": [
+        "a7752fe8f3a34477a2c7ed81874eb31b"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid/creative_substrate.py",
+          "bytes": 54958,
+          "sha256": "5478428311bbd9b227c5aa4e51e2887b6735aca96ec420500066572a34774a57",
+          "git_blob_sha1": "1662640458f9a755a1cacda9f85ee5625bbde811"
+        },
+        {
+          "path": "euclid/organism_cns.py",
+          "bytes": 12441,
+          "sha256": "21ace1ee4d39f2fbf53f300baf3daeb70325b863d3b9c19d9abeb3bbbf664ed8",
+          "git_blob_sha1": "1cbf755f6bdd1ca075fa61936eef90bafceab17b"
+        }
+      ],
+      "member_count": 16,
+      "declared_uncompressed_bytes": 112021
+    },
+    {
+      "name": "EUCLID_INTERACTIVE_MODALITY_IMPLEMENTATION_20260718.zip",
+      "archive_sha256": "b6f19d125e4e1af09ba2a5735e9932c21144adee44025d5b35d8216f8b0fc796",
+      "source_pages": [
+        "a7752fe8f3a34477a2c7ed81874eb31b"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid/creative_substrate.py",
+          "bytes": 54958,
+          "sha256": "5478428311bbd9b227c5aa4e51e2887b6735aca96ec420500066572a34774a57",
+          "git_blob_sha1": "1662640458f9a755a1cacda9f85ee5625bbde811"
+        }
+      ],
+      "member_count": 13,
+      "declared_uncompressed_bytes": 86653
+    },
+    {
+      "name": "KAIROS.zip",
+      "archive_sha256": "2dbe0e6685ac6093626e9f1720347179b243965801207e5937f6ae4581ce1fbf",
+      "source_pages": [
+        "8fb2b73e8a314dbea468be18f2c3cfa7"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 12,
+      "declared_uncompressed_bytes": 19699
+    },
+    {
+      "name": "KAIROS_LOCAL_TRANSPORT.zip",
+      "archive_sha256": "fbb14666f2cbf3cfca6458a25eeb2da4b3843ae19fbd120709bd8635a4f886fd",
+      "source_pages": [
+        "27bbc78a988d45888ef3ccc4a966dea1"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid/kairos_runtime.py",
+          "bytes": 3775,
+          "sha256": "0ea8e9409caa770ef82397e13c3cc5b14ac0dbd36530dac8884f6964baab9d1a",
+          "git_blob_sha1": "574fd46fed29dda95350860a7e364f58ab1c131e"
+        }
+      ],
+      "member_count": 14,
+      "declared_uncompressed_bytes": 27271
+    },
+    {
+      "name": "KAIROS_RUNTIME_CONTROL_PLANE.zip",
+      "archive_sha256": "de4e0e87654a1e46fa0acfaa58c7038ac67ac0f683159d89e29a26675631173c",
+      "source_pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid/kairos_runtime.py",
+          "bytes": 3775,
+          "sha256": "0ea8e9409caa770ef82397e13c3cc5b14ac0dbd36530dac8884f6964baab9d1a",
+          "git_blob_sha1": "574fd46fed29dda95350860a7e364f58ab1c131e"
+        }
+      ],
+      "member_count": 13,
+      "declared_uncompressed_bytes": 23766
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0021.zip",
+      "archive_sha256": "ad4e4d86a3610a84341d7976b19460debb54b62b91cc511e90265895789d9db9",
+      "source_pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid/creative_substrate.py",
+          "bytes": 52800,
+          "sha256": "a6ea5f5a8a7b4e090c1e1e63e9f63dbd25ef61b3fb7a87c07c3d0b475f27c757",
+          "git_blob_sha1": "8e66efbd4e46d96c2d19e6ff923f1e8b0ce15cd4"
+        },
+        {
+          "path": "euclid/kairos_runtime.py",
+          "bytes": 16905,
+          "sha256": "7a0f7f953be1ff0bf034b32affd98b18d2b04ccf00e7c487ece1f481c40faf4d",
+          "git_blob_sha1": "12e021405d8bb0a47b9d16aaf268934ceba7a824"
+        },
+        {
+          "path": "euclid/organism_cns.py",
+          "bytes": 11371,
+          "sha256": "530a246b05f819faa407c9f0720eae6ecc823dd71d6ceff52909b43c739a1bbb",
+          "git_blob_sha1": "3f0efdf21669ebc34d26c55a7f5597a13685d00b"
+        },
+        {
+          "path": "hyba_substrate/agi_attribute_evaluator.py",
+          "bytes": 13307,
+          "sha256": "17a10abf0ac290b7146296a7ce63f09f635c47b1ccfc6d88434a9126d2b3c156",
+          "git_blob_sha1": "d30cf729df5e0595fb484545b6917e0dcec55efd"
+        },
+        {
+          "path": "hyba_substrate/asi_attribute_evaluator.py",
+          "bytes": 13978,
+          "sha256": "cc9b5bccaeb76c7de4b988b0088ec92325e2be6a6ec720cea0549007ac26b379",
+          "git_blob_sha1": "20d3751de3bdb55c60fc00eb06ecac4fb51ba5ad"
+        },
+        {
+          "path": "hyba_substrate/euclid_experience_superlearner.py",
+          "bytes": 20446,
+          "sha256": "9d59d8c2db983972157ed030bcb78d220933dee5340991b98910f669f54175b0",
+          "git_blob_sha1": "c1e01426e496e88d68c807a23cf11ab955a2bc77"
+        },
+        {
+          "path": "hyba_substrate/euclid_learning_system.py",
+          "bytes": 27066,
+          "sha256": "f089bf5129906702f451dae2c57ca80bfefcb58ba65ed41180c92ecfad253914",
+          "git_blob_sha1": "270f5d584b5b6bd3c396b3e7a241a8fb329bb254"
+        },
+        {
+          "path": "hyba_substrate/memory_preservation.py",
+          "bytes": 18780,
+          "sha256": "708558327977d9cae16522e494076c45335be25d823b7b300ace6602e79afbcb",
+          "git_blob_sha1": "c880fbeb962259b893b7836bb3b7e28b2b7672e7"
+        },
+        {
+          "path": "hyba_substrate/organism_cns.py",
+          "bytes": 32212,
+          "sha256": "97361b9cd6a790dd765e0e73582b305207787a48cfedfd758302702635ade0ea",
+          "git_blob_sha1": "4571f09347a62147fa37073af067a03f8867f5a1"
+        },
+        {
+          "path": "hyba_substrate/organism_coherence.py",
+          "bytes": 4308,
+          "sha256": "dee3061efc58430f1e0750507480caa60242bf2228f5b035e899fa79f99c1e4d",
+          "git_blob_sha1": "8571b21fe0bf5bb569c9258577b211f040cd246c"
+        },
+        {
+          "path": "hyba_substrate/safe_self_modification.py",
+          "bytes": 10264,
+          "sha256": "5e551a03cbd68f809fad2b264b681a1a04326f121e3dfee4a6c1867bf7c8615c",
+          "git_blob_sha1": "85d4e3b23edaec9812da51f36eb49d21bbea80c9"
+        },
+        {
+          "path": "hyba_substrate/world_system_model.py",
+          "bytes": 5410,
+          "sha256": "c57d6f60a1aaf9256da59532d90b9fb91b1e7264914e780bdca461ce65075e33",
+          "git_blob_sha1": "66663a2e4a894538ccf05f16c7f73ffda90598ac"
+        }
+      ],
+      "member_count": 972,
+      "declared_uncompressed_bytes": 20604074
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0021R1.zip",
+      "archive_sha256": "0e0cf2fa5d98fc0bb79e8374de13e5521112ebaba68e8dde818f0e2d6c7baf5e",
+      "source_pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid/creative_substrate.py",
+          "bytes": 52800,
+          "sha256": "a6ea5f5a8a7b4e090c1e1e63e9f63dbd25ef61b3fb7a87c07c3d0b475f27c757",
+          "git_blob_sha1": "8e66efbd4e46d96c2d19e6ff923f1e8b0ce15cd4"
+        },
+        {
+          "path": "euclid/kairos_runtime.py",
+          "bytes": 18049,
+          "sha256": "9fc761c8514e8bd46cde45b77fb3759e25ae9770418697b2d1b2ded36c128d36",
+          "git_blob_sha1": "e053d0b767ba24333391049b462adedd72d6c62d"
+        },
+        {
+          "path": "euclid/organism_cns.py",
+          "bytes": 11371,
+          "sha256": "530a246b05f819faa407c9f0720eae6ecc823dd71d6ceff52909b43c739a1bbb",
+          "git_blob_sha1": "3f0efdf21669ebc34d26c55a7f5597a13685d00b"
+        },
+        {
+          "path": "hyba_substrate/agi_attribute_evaluator.py",
+          "bytes": 13307,
+          "sha256": "17a10abf0ac290b7146296a7ce63f09f635c47b1ccfc6d88434a9126d2b3c156",
+          "git_blob_sha1": "d30cf729df5e0595fb484545b6917e0dcec55efd"
+        },
+        {
+          "path": "hyba_substrate/asi_attribute_evaluator.py",
+          "bytes": 13978,
+          "sha256": "cc9b5bccaeb76c7de4b988b0088ec92325e2be6a6ec720cea0549007ac26b379",
+          "git_blob_sha1": "20d3751de3bdb55c60fc00eb06ecac4fb51ba5ad"
+        },
+        {
+          "path": "hyba_substrate/euclid_experience_superlearner.py",
+          "bytes": 20446,
+          "sha256": "9d59d8c2db983972157ed030bcb78d220933dee5340991b98910f669f54175b0",
+          "git_blob_sha1": "c1e01426e496e88d68c807a23cf11ab955a2bc77"
+        },
+        {
+          "path": "hyba_substrate/euclid_learning_system.py",
+          "bytes": 27066,
+          "sha256": "f089bf5129906702f451dae2c57ca80bfefcb58ba65ed41180c92ecfad253914",
+          "git_blob_sha1": "270f5d584b5b6bd3c396b3e7a241a8fb329bb254"
+        },
+        {
+          "path": "hyba_substrate/memory_preservation.py",
+          "bytes": 18780,
+          "sha256": "708558327977d9cae16522e494076c45335be25d823b7b300ace6602e79afbcb",
+          "git_blob_sha1": "c880fbeb962259b893b7836bb3b7e28b2b7672e7"
+        },
+        {
+          "path": "hyba_substrate/organism_cns.py",
+          "bytes": 32212,
+          "sha256": "97361b9cd6a790dd765e0e73582b305207787a48cfedfd758302702635ade0ea",
+          "git_blob_sha1": "4571f09347a62147fa37073af067a03f8867f5a1"
+        },
+        {
+          "path": "hyba_substrate/organism_coherence.py",
+          "bytes": 4308,
+          "sha256": "dee3061efc58430f1e0750507480caa60242bf2228f5b035e899fa79f99c1e4d",
+          "git_blob_sha1": "8571b21fe0bf5bb569c9258577b211f040cd246c"
+        },
+        {
+          "path": "hyba_substrate/safe_self_modification.py",
+          "bytes": 10264,
+          "sha256": "5e551a03cbd68f809fad2b264b681a1a04326f121e3dfee4a6c1867bf7c8615c",
+          "git_blob_sha1": "85d4e3b23edaec9812da51f36eb49d21bbea80c9"
+        },
+        {
+          "path": "hyba_substrate/world_system_model.py",
+          "bytes": 5410,
+          "sha256": "c57d6f60a1aaf9256da59532d90b9fb91b1e7264914e780bdca461ce65075e33",
+          "git_blob_sha1": "66663a2e4a894538ccf05f16c7f73ffda90598ac"
+        }
+      ],
+      "member_count": 972,
+      "declared_uncompressed_bytes": 20606507
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0028.zip",
+      "archive_sha256": "cd3b2fedeff1f5e7f215627b9c24715f4fb1fc228cf6585cf38a463932db2dfc",
+      "source_pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid/creative_substrate.py",
+          "bytes": 52800,
+          "sha256": "a6ea5f5a8a7b4e090c1e1e63e9f63dbd25ef61b3fb7a87c07c3d0b475f27c757",
+          "git_blob_sha1": "8e66efbd4e46d96c2d19e6ff923f1e8b0ce15cd4"
+        },
+        {
+          "path": "euclid/kairos_runtime.py",
+          "bytes": 18049,
+          "sha256": "9fc761c8514e8bd46cde45b77fb3759e25ae9770418697b2d1b2ded36c128d36",
+          "git_blob_sha1": "e053d0b767ba24333391049b462adedd72d6c62d"
+        },
+        {
+          "path": "euclid/organism_cns.py",
+          "bytes": 11371,
+          "sha256": "530a246b05f819faa407c9f0720eae6ecc823dd71d6ceff52909b43c739a1bbb",
+          "git_blob_sha1": "3f0efdf21669ebc34d26c55a7f5597a13685d00b"
+        },
+        {
+          "path": "hyba_substrate/agi_attribute_evaluator.py",
+          "bytes": 13307,
+          "sha256": "17a10abf0ac290b7146296a7ce63f09f635c47b1ccfc6d88434a9126d2b3c156",
+          "git_blob_sha1": "d30cf729df5e0595fb484545b6917e0dcec55efd"
+        },
+        {
+          "path": "hyba_substrate/asi_attribute_evaluator.py",
+          "bytes": 13978,
+          "sha256": "cc9b5bccaeb76c7de4b988b0088ec92325e2be6a6ec720cea0549007ac26b379",
+          "git_blob_sha1": "20d3751de3bdb55c60fc00eb06ecac4fb51ba5ad"
+        },
+        {
+          "path": "hyba_substrate/euclid_experience_superlearner.py",
+          "bytes": 20446,
+          "sha256": "9d59d8c2db983972157ed030bcb78d220933dee5340991b98910f669f54175b0",
+          "git_blob_sha1": "c1e01426e496e88d68c807a23cf11ab955a2bc77"
+        },
+        {
+          "path": "hyba_substrate/euclid_learning_system.py",
+          "bytes": 27066,
+          "sha256": "f089bf5129906702f451dae2c57ca80bfefcb58ba65ed41180c92ecfad253914",
+          "git_blob_sha1": "270f5d584b5b6bd3c396b3e7a241a8fb329bb254"
+        },
+        {
+          "path": "hyba_substrate/memory_preservation.py",
+          "bytes": 18780,
+          "sha256": "708558327977d9cae16522e494076c45335be25d823b7b300ace6602e79afbcb",
+          "git_blob_sha1": "c880fbeb962259b893b7836bb3b7e28b2b7672e7"
+        },
+        {
+          "path": "hyba_substrate/organism_cns.py",
+          "bytes": 32212,
+          "sha256": "97361b9cd6a790dd765e0e73582b305207787a48cfedfd758302702635ade0ea",
+          "git_blob_sha1": "4571f09347a62147fa37073af067a03f8867f5a1"
+        },
+        {
+          "path": "hyba_substrate/organism_coherence.py",
+          "bytes": 4308,
+          "sha256": "dee3061efc58430f1e0750507480caa60242bf2228f5b035e899fa79f99c1e4d",
+          "git_blob_sha1": "8571b21fe0bf5bb569c9258577b211f040cd246c"
+        },
+        {
+          "path": "hyba_substrate/safe_self_modification.py",
+          "bytes": 10264,
+          "sha256": "5e551a03cbd68f809fad2b264b681a1a04326f121e3dfee4a6c1867bf7c8615c",
+          "git_blob_sha1": "85d4e3b23edaec9812da51f36eb49d21bbea80c9"
+        },
+        {
+          "path": "hyba_substrate/world_system_model.py",
+          "bytes": 5410,
+          "sha256": "c57d6f60a1aaf9256da59532d90b9fb91b1e7264914e780bdca461ce65075e33",
+          "git_blob_sha1": "66663a2e4a894538ccf05f16c7f73ffda90598ac"
+        }
+      ],
+      "member_count": 978,
+      "declared_uncompressed_bytes": 20634263
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0031.zip",
+      "archive_sha256": "59bd4479dae8782a0b31caff8616b0ec7ba7d96023cd10df23bf11e0befc4652",
+      "source_pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid/creative_substrate.py",
+          "bytes": 52800,
+          "sha256": "a6ea5f5a8a7b4e090c1e1e63e9f63dbd25ef61b3fb7a87c07c3d0b475f27c757",
+          "git_blob_sha1": "8e66efbd4e46d96c2d19e6ff923f1e8b0ce15cd4"
+        },
+        {
+          "path": "euclid/kairos_runtime.py",
+          "bytes": 18049,
+          "sha256": "9fc761c8514e8bd46cde45b77fb3759e25ae9770418697b2d1b2ded36c128d36",
+          "git_blob_sha1": "e053d0b767ba24333391049b462adedd72d6c62d"
+        },
+        {
+          "path": "euclid/organism_cns.py",
+          "bytes": 11371,
+          "sha256": "530a246b05f819faa407c9f0720eae6ecc823dd71d6ceff52909b43c739a1bbb",
+          "git_blob_sha1": "3f0efdf21669ebc34d26c55a7f5597a13685d00b"
+        },
+        {
+          "path": "hyba_substrate/agi_attribute_evaluator.py",
+          "bytes": 13307,
+          "sha256": "17a10abf0ac290b7146296a7ce63f09f635c47b1ccfc6d88434a9126d2b3c156",
+          "git_blob_sha1": "d30cf729df5e0595fb484545b6917e0dcec55efd"
+        },
+        {
+          "path": "hyba_substrate/asi_attribute_evaluator.py",
+          "bytes": 13978,
+          "sha256": "cc9b5bccaeb76c7de4b988b0088ec92325e2be6a6ec720cea0549007ac26b379",
+          "git_blob_sha1": "20d3751de3bdb55c60fc00eb06ecac4fb51ba5ad"
+        },
+        {
+          "path": "hyba_substrate/euclid_experience_superlearner.py",
+          "bytes": 20446,
+          "sha256": "9d59d8c2db983972157ed030bcb78d220933dee5340991b98910f669f54175b0",
+          "git_blob_sha1": "c1e01426e496e88d68c807a23cf11ab955a2bc77"
+        },
+        {
+          "path": "hyba_substrate/euclid_learning_system.py",
+          "bytes": 27066,
+          "sha256": "f089bf5129906702f451dae2c57ca80bfefcb58ba65ed41180c92ecfad253914",
+          "git_blob_sha1": "270f5d584b5b6bd3c396b3e7a241a8fb329bb254"
+        },
+        {
+          "path": "hyba_substrate/memory_preservation.py",
+          "bytes": 18780,
+          "sha256": "708558327977d9cae16522e494076c45335be25d823b7b300ace6602e79afbcb",
+          "git_blob_sha1": "c880fbeb962259b893b7836bb3b7e28b2b7672e7"
+        },
+        {
+          "path": "hyba_substrate/organism_cns.py",
+          "bytes": 32212,
+          "sha256": "97361b9cd6a790dd765e0e73582b305207787a48cfedfd758302702635ade0ea",
+          "git_blob_sha1": "4571f09347a62147fa37073af067a03f8867f5a1"
+        },
+        {
+          "path": "hyba_substrate/organism_coherence.py",
+          "bytes": 4308,
+          "sha256": "dee3061efc58430f1e0750507480caa60242bf2228f5b035e899fa79f99c1e4d",
+          "git_blob_sha1": "8571b21fe0bf5bb569c9258577b211f040cd246c"
+        },
+        {
+          "path": "hyba_substrate/safe_self_modification.py",
+          "bytes": 10264,
+          "sha256": "5e551a03cbd68f809fad2b264b681a1a04326f121e3dfee4a6c1867bf7c8615c",
+          "git_blob_sha1": "85d4e3b23edaec9812da51f36eb49d21bbea80c9"
+        },
+        {
+          "path": "hyba_substrate/world_system_model.py",
+          "bytes": 5410,
+          "sha256": "c57d6f60a1aaf9256da59532d90b9fb91b1e7264914e780bdca461ce65075e33",
+          "git_blob_sha1": "66663a2e4a894538ccf05f16c7f73ffda90598ac"
+        }
+      ],
+      "member_count": 984,
+      "declared_uncompressed_bytes": 20664053
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0038.zip",
+      "archive_sha256": "119ea90087cbb491bba4ecd73579b10c22f1617302c94cdcce0cada3fd5fafd0",
+      "source_pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid/creative_substrate.py",
+          "bytes": 52800,
+          "sha256": "a6ea5f5a8a7b4e090c1e1e63e9f63dbd25ef61b3fb7a87c07c3d0b475f27c757",
+          "git_blob_sha1": "8e66efbd4e46d96c2d19e6ff923f1e8b0ce15cd4"
+        },
+        {
+          "path": "euclid/kairos_runtime.py",
+          "bytes": 18049,
+          "sha256": "9fc761c8514e8bd46cde45b77fb3759e25ae9770418697b2d1b2ded36c128d36",
+          "git_blob_sha1": "e053d0b767ba24333391049b462adedd72d6c62d"
+        },
+        {
+          "path": "euclid/organism_cns.py",
+          "bytes": 11371,
+          "sha256": "530a246b05f819faa407c9f0720eae6ecc823dd71d6ceff52909b43c739a1bbb",
+          "git_blob_sha1": "3f0efdf21669ebc34d26c55a7f5597a13685d00b"
+        },
+        {
+          "path": "hyba_substrate/agi_attribute_evaluator.py",
+          "bytes": 13307,
+          "sha256": "17a10abf0ac290b7146296a7ce63f09f635c47b1ccfc6d88434a9126d2b3c156",
+          "git_blob_sha1": "d30cf729df5e0595fb484545b6917e0dcec55efd"
+        },
+        {
+          "path": "hyba_substrate/asi_attribute_evaluator.py",
+          "bytes": 13978,
+          "sha256": "cc9b5bccaeb76c7de4b988b0088ec92325e2be6a6ec720cea0549007ac26b379",
+          "git_blob_sha1": "20d3751de3bdb55c60fc00eb06ecac4fb51ba5ad"
+        },
+        {
+          "path": "hyba_substrate/euclid_experience_superlearner.py",
+          "bytes": 20446,
+          "sha256": "9d59d8c2db983972157ed030bcb78d220933dee5340991b98910f669f54175b0",
+          "git_blob_sha1": "c1e01426e496e88d68c807a23cf11ab955a2bc77"
+        },
+        {
+          "path": "hyba_substrate/euclid_learning_system.py",
+          "bytes": 27066,
+          "sha256": "f089bf5129906702f451dae2c57ca80bfefcb58ba65ed41180c92ecfad253914",
+          "git_blob_sha1": "270f5d584b5b6bd3c396b3e7a241a8fb329bb254"
+        },
+        {
+          "path": "hyba_substrate/memory_preservation.py",
+          "bytes": 18780,
+          "sha256": "708558327977d9cae16522e494076c45335be25d823b7b300ace6602e79afbcb",
+          "git_blob_sha1": "c880fbeb962259b893b7836bb3b7e28b2b7672e7"
+        },
+        {
+          "path": "hyba_substrate/organism_cns.py",
+          "bytes": 32212,
+          "sha256": "97361b9cd6a790dd765e0e73582b305207787a48cfedfd758302702635ade0ea",
+          "git_blob_sha1": "4571f09347a62147fa37073af067a03f8867f5a1"
+        },
+        {
+          "path": "hyba_substrate/organism_coherence.py",
+          "bytes": 4308,
+          "sha256": "dee3061efc58430f1e0750507480caa60242bf2228f5b035e899fa79f99c1e4d",
+          "git_blob_sha1": "8571b21fe0bf5bb569c9258577b211f040cd246c"
+        },
+        {
+          "path": "hyba_substrate/safe_self_modification.py",
+          "bytes": 10264,
+          "sha256": "5e551a03cbd68f809fad2b264b681a1a04326f121e3dfee4a6c1867bf7c8615c",
+          "git_blob_sha1": "85d4e3b23edaec9812da51f36eb49d21bbea80c9"
+        },
+        {
+          "path": "hyba_substrate/world_system_model.py",
+          "bytes": 5410,
+          "sha256": "c57d6f60a1aaf9256da59532d90b9fb91b1e7264914e780bdca461ce65075e33",
+          "git_blob_sha1": "66663a2e4a894538ccf05f16c7f73ffda90598ac"
+        }
+      ],
+      "member_count": 990,
+      "declared_uncompressed_bytes": 20685067
+    },
+    {
+      "name": "EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0047.zip",
+      "archive_sha256": "72ca27e4e93483112164b3f806378c6baf79e7b15d59298919393015581aaa37",
+      "source_pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid/creative_substrate.py",
+          "bytes": 52800,
+          "sha256": "a6ea5f5a8a7b4e090c1e1e63e9f63dbd25ef61b3fb7a87c07c3d0b475f27c757",
+          "git_blob_sha1": "8e66efbd4e46d96c2d19e6ff923f1e8b0ce15cd4"
+        },
+        {
+          "path": "euclid/kairos_runtime.py",
+          "bytes": 18049,
+          "sha256": "9fc761c8514e8bd46cde45b77fb3759e25ae9770418697b2d1b2ded36c128d36",
+          "git_blob_sha1": "e053d0b767ba24333391049b462adedd72d6c62d"
+        },
+        {
+          "path": "euclid/organism_cns.py",
+          "bytes": 11371,
+          "sha256": "530a246b05f819faa407c9f0720eae6ecc823dd71d6ceff52909b43c739a1bbb",
+          "git_blob_sha1": "3f0efdf21669ebc34d26c55a7f5597a13685d00b"
+        },
+        {
+          "path": "hyba_substrate/agi_attribute_evaluator.py",
+          "bytes": 13307,
+          "sha256": "17a10abf0ac290b7146296a7ce63f09f635c47b1ccfc6d88434a9126d2b3c156",
+          "git_blob_sha1": "d30cf729df5e0595fb484545b6917e0dcec55efd"
+        },
+        {
+          "path": "hyba_substrate/asi_attribute_evaluator.py",
+          "bytes": 13978,
+          "sha256": "cc9b5bccaeb76c7de4b988b0088ec92325e2be6a6ec720cea0549007ac26b379",
+          "git_blob_sha1": "20d3751de3bdb55c60fc00eb06ecac4fb51ba5ad"
+        },
+        {
+          "path": "hyba_substrate/euclid_experience_superlearner.py",
+          "bytes": 20446,
+          "sha256": "9d59d8c2db983972157ed030bcb78d220933dee5340991b98910f669f54175b0",
+          "git_blob_sha1": "c1e01426e496e88d68c807a23cf11ab955a2bc77"
+        },
+        {
+          "path": "hyba_substrate/euclid_learning_system.py",
+          "bytes": 27066,
+          "sha256": "f089bf5129906702f451dae2c57ca80bfefcb58ba65ed41180c92ecfad253914",
+          "git_blob_sha1": "270f5d584b5b6bd3c396b3e7a241a8fb329bb254"
+        },
+        {
+          "path": "hyba_substrate/memory_preservation.py",
+          "bytes": 18780,
+          "sha256": "708558327977d9cae16522e494076c45335be25d823b7b300ace6602e79afbcb",
+          "git_blob_sha1": "c880fbeb962259b893b7836bb3b7e28b2b7672e7"
+        },
+        {
+          "path": "hyba_substrate/organism_cns.py",
+          "bytes": 32212,
+          "sha256": "97361b9cd6a790dd765e0e73582b305207787a48cfedfd758302702635ade0ea",
+          "git_blob_sha1": "4571f09347a62147fa37073af067a03f8867f5a1"
+        },
+        {
+          "path": "hyba_substrate/organism_coherence.py",
+          "bytes": 4308,
+          "sha256": "dee3061efc58430f1e0750507480caa60242bf2228f5b035e899fa79f99c1e4d",
+          "git_blob_sha1": "8571b21fe0bf5bb569c9258577b211f040cd246c"
+        },
+        {
+          "path": "hyba_substrate/safe_self_modification.py",
+          "bytes": 10264,
+          "sha256": "5e551a03cbd68f809fad2b264b681a1a04326f121e3dfee4a6c1867bf7c8615c",
+          "git_blob_sha1": "85d4e3b23edaec9812da51f36eb49d21bbea80c9"
+        },
+        {
+          "path": "hyba_substrate/world_system_model.py",
+          "bytes": 5410,
+          "sha256": "c57d6f60a1aaf9256da59532d90b9fb91b1e7264914e780bdca461ce65075e33",
+          "git_blob_sha1": "66663a2e4a894538ccf05f16c7f73ffda90598ac"
+        }
+      ],
+      "member_count": 996,
+      "declared_uncompressed_bytes": 20707815
+    },
+    {
+      "name": "EUCLID_REPOSITORY_CHECKPOINT_20260719_0129.zip",
+      "archive_sha256": "a21b1070640abf22c020dba483518aafac12941c7c2de066e22cbf5ebd5a4246",
+      "source_pages": [
+        "a51328f83a1344db92cfb0920afae11d"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid/creative_substrate.py",
+          "bytes": 52800,
+          "sha256": "a6ea5f5a8a7b4e090c1e1e63e9f63dbd25ef61b3fb7a87c07c3d0b475f27c757",
+          "git_blob_sha1": "8e66efbd4e46d96c2d19e6ff923f1e8b0ce15cd4"
+        },
+        {
+          "path": "euclid/kairos_runtime.py",
+          "bytes": 18049,
+          "sha256": "9fc761c8514e8bd46cde45b77fb3759e25ae9770418697b2d1b2ded36c128d36",
+          "git_blob_sha1": "e053d0b767ba24333391049b462adedd72d6c62d"
+        },
+        {
+          "path": "euclid/organism_cns.py",
+          "bytes": 11371,
+          "sha256": "530a246b05f819faa407c9f0720eae6ecc823dd71d6ceff52909b43c739a1bbb",
+          "git_blob_sha1": "3f0efdf21669ebc34d26c55a7f5597a13685d00b"
+        },
+        {
+          "path": "hyba_substrate/agi_attribute_evaluator.py",
+          "bytes": 13307,
+          "sha256": "17a10abf0ac290b7146296a7ce63f09f635c47b1ccfc6d88434a9126d2b3c156",
+          "git_blob_sha1": "d30cf729df5e0595fb484545b6917e0dcec55efd"
+        },
+        {
+          "path": "hyba_substrate/asi_attribute_evaluator.py",
+          "bytes": 13978,
+          "sha256": "cc9b5bccaeb76c7de4b988b0088ec92325e2be6a6ec720cea0549007ac26b379",
+          "git_blob_sha1": "20d3751de3bdb55c60fc00eb06ecac4fb51ba5ad"
+        },
+        {
+          "path": "hyba_substrate/euclid_experience_superlearner.py",
+          "bytes": 20446,
+          "sha256": "9d59d8c2db983972157ed030bcb78d220933dee5340991b98910f669f54175b0",
+          "git_blob_sha1": "c1e01426e496e88d68c807a23cf11ab955a2bc77"
+        },
+        {
+          "path": "hyba_substrate/euclid_learning_system.py",
+          "bytes": 27066,
+          "sha256": "f089bf5129906702f451dae2c57ca80bfefcb58ba65ed41180c92ecfad253914",
+          "git_blob_sha1": "270f5d584b5b6bd3c396b3e7a241a8fb329bb254"
+        },
+        {
+          "path": "hyba_substrate/memory_preservation.py",
+          "bytes": 18780,
+          "sha256": "708558327977d9cae16522e494076c45335be25d823b7b300ace6602e79afbcb",
+          "git_blob_sha1": "c880fbeb962259b893b7836bb3b7e28b2b7672e7"
+        },
+        {
+          "path": "hyba_substrate/organism_cns.py",
+          "bytes": 32212,
+          "sha256": "97361b9cd6a790dd765e0e73582b305207787a48cfedfd758302702635ade0ea",
+          "git_blob_sha1": "4571f09347a62147fa37073af067a03f8867f5a1"
+        },
+        {
+          "path": "hyba_substrate/organism_coherence.py",
+          "bytes": 4308,
+          "sha256": "dee3061efc58430f1e0750507480caa60242bf2228f5b035e899fa79f99c1e4d",
+          "git_blob_sha1": "8571b21fe0bf5bb569c9258577b211f040cd246c"
+        },
+        {
+          "path": "hyba_substrate/safe_self_modification.py",
+          "bytes": 10264,
+          "sha256": "5e551a03cbd68f809fad2b264b681a1a04326f121e3dfee4a6c1867bf7c8615c",
+          "git_blob_sha1": "85d4e3b23edaec9812da51f36eb49d21bbea80c9"
+        },
+        {
+          "path": "hyba_substrate/world_system_model.py",
+          "bytes": 5410,
+          "sha256": "c57d6f60a1aaf9256da59532d90b9fb91b1e7264914e780bdca461ce65075e33",
+          "git_blob_sha1": "66663a2e4a894538ccf05f16c7f73ffda90598ac"
+        }
+      ],
+      "member_count": 1001,
+      "declared_uncompressed_bytes": 20713494
+    },
+    {
+      "name": "KAIROS_PROVIDER_GATEWAY.zip",
+      "archive_sha256": "5031ed615c1bd0a99236a69c18ac02a8024c1a9666e0d28852e816f5c4596191",
+      "source_pages": [
+        "c51c25912154402a909bd6e713b2f581"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid/kairos_runtime.py",
+          "bytes": 3775,
+          "sha256": "0ea8e9409caa770ef82397e13c3cc5b14ac0dbd36530dac8884f6964baab9d1a",
+          "git_blob_sha1": "574fd46fed29dda95350860a7e364f58ab1c131e"
+        }
+      ],
+      "member_count": 15,
+      "declared_uncompressed_bytes": 25809
+    },
+    {
+      "name": "KAIROS_RIGHTS_LEDGER.zip",
+      "archive_sha256": "3249aa7e43074ff21cb45523a830bbfb491f957442e6d7045613e2e3c6616f60",
+      "source_pages": [
+        "fa7b7e4c02084c33a74d459127560af8"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 13,
+      "declared_uncompressed_bytes": 19608
+    },
+    {
+      "name": "KAIROS_OBSERVABILITY.zip",
+      "archive_sha256": "1dbc43af2999c3c3de73f56e4f9d3791e608477f45564bd377a5b63555a84f0d",
+      "source_pages": [
+        "2c901d4522fc49279f2e20254b615319"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 13,
+      "declared_uncompressed_bytes": 19135
+    },
+    {
+      "name": "KAIROS_CANONICAL_SPEC_DELTA.zip",
+      "archive_sha256": "67d238d142e28cd412b35a75a95fcafd534f289a0a12790100c1f3fda1de60ae",
+      "source_pages": [
+        "ca54ab1928554773a0d02941df4614f1"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 10,
+      "declared_uncompressed_bytes": 13180
+    },
+    {
+      "name": "KAIROS_INTEGRATED_TELEMETRY.zip",
+      "archive_sha256": "8fa04e041cfc3f6e011c1f7bba75077459e94daa8d9f75e2454b0331652066be",
+      "source_pages": [
+        "dd7d4a11224f4248b8736aecfb1dc63c"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 10,
+      "declared_uncompressed_bytes": 13888
+    },
+    {
+      "name": "KAIROS_FOLD.zip",
+      "archive_sha256": "c0364a99a569010bf8ee4613a5fe02581fb4b4bd1eeeea9639c7f4de89a61f9a",
+      "source_pages": [
+        "be3c2c541ed74102a84e808344d33ae3"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 9,
+      "declared_uncompressed_bytes": 6361
+    },
+    {
+      "name": "KAIROS_FOLD_RUNTIME.zip",
+      "archive_sha256": "4c7e47044567399fc1fce7f9aaa81f9fbd184bcfe7af3a6a9f2ddc66e745ca5b",
+      "source_pages": [
+        "1993e69eb2594269bf1b28cb9e53da84"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 10,
+      "declared_uncompressed_bytes": 13774
+    },
+    {
+      "name": "KAIROS_RECOVERY.zip",
+      "archive_sha256": "80c1cdf1261a2689cb7635fc1dba94248cdfe7e1bb66b0e44acb5380e7470320",
+      "source_pages": [
+        "66fa30a0dc50466998444b444dff25d3"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid/kairos_runtime.py",
+          "bytes": 3775,
+          "sha256": "0ea8e9409caa770ef82397e13c3cc5b14ac0dbd36530dac8884f6964baab9d1a",
+          "git_blob_sha1": "574fd46fed29dda95350860a7e364f58ab1c131e"
+        }
+      ],
+      "member_count": 15,
+      "declared_uncompressed_bytes": 28893
+    },
+    {
+      "name": "KAIROS_JOURNEY.zip",
+      "archive_sha256": "396158054e3a9b13d2b937ccbc98bcb764d73ae52883508d0844a3d71ad8d954",
+      "source_pages": [
+        "ae0367ace0734991ac3d36b85f6fb219"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 9,
+      "declared_uncompressed_bytes": 6444
+    },
+    {
+      "name": "KAIROS_RUNTIME_JOURNEY.zip",
+      "archive_sha256": "e02dc61da17efb935c2f215da02eb5cc9a72d7ea9eded70e132b6150dd5fdf61",
+      "source_pages": [
+        "24e053afe0854fc1a38188028dbed32e"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid/kairos_runtime.py",
+          "bytes": 3937,
+          "sha256": "a49dc2755075ff7cbb6a9d18a62724af535e2fe28f7dbc3da698ec00ae3d56d3",
+          "git_blob_sha1": "52ef40e4070b66a100cbeb6ea0bceadd312f197f"
+        }
+      ],
+      "member_count": 10,
+      "declared_uncompressed_bytes": 10902
+    },
+    {
+      "name": "KAIROS_ADVANCED_JOURNEY.zip",
+      "archive_sha256": "5522f8aa5ecea89846615f43cfafb5a0b606164155feb418ea2e2bc50620e35e",
+      "source_pages": [
+        "51ad7dcf517b4e36a76d5af25e272a05"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid/kairos_runtime.py",
+          "bytes": 4076,
+          "sha256": "270e67cb3448b51aa205bcf217eea48e6e27e3828699d0dc3c54d757b003c162",
+          "git_blob_sha1": "f937b7dcbd19432fbbcfe8d26d56f7081c3869b7"
+        }
+      ],
+      "member_count": 7,
+      "declared_uncompressed_bytes": 9984
+    },
+    {
+      "name": "KAIROS_COMPLETE_JOURNEY.zip",
+      "archive_sha256": "413ba1c21512e83e41f80b091efc2cc1e2ca1fa70716d63135841b1015b3f023",
+      "source_pages": [
+        "3b297cfe8de84f29847707837f9559fc"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid/kairos_runtime.py",
+          "bytes": 4915,
+          "sha256": "704decdc4dc67740903212e8eeb3fc5d30d42d079b0976c44e0fa009bf9918f1",
+          "git_blob_sha1": "a52065e68e217b3e5fcd4db4f610e645def508ae"
+        }
+      ],
+      "member_count": 9,
+      "declared_uncompressed_bytes": 11415
+    },
+    {
+      "name": "KAIROS_RUNTIME_FOLD.zip",
+      "archive_sha256": "7846cf68a40391543128717793fc109eb416f4547fe02679ea5cffd6a75d8ac4",
+      "source_pages": [
+        "d3261d7eaf344a16b11f02eebff4a581"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid/kairos_runtime.py",
+          "bytes": 4576,
+          "sha256": "db5283e18f61aa838d52bf35fbad0ea2863886bcad2181e8ca1fc09e1de53cdf",
+          "git_blob_sha1": "7613b817b346fa7f6e917c486a5424e2f9d38cc9"
+        }
+      ],
+      "member_count": 9,
+      "declared_uncompressed_bytes": 10964
+    },
+    {
+      "name": "midas_backend_final.zip",
+      "archive_sha256": "0223fcdccd7c9f87dad2f4808c62a0054e7db641d52ffe5e6cd6fc5e0c6e45a9",
+      "source_pages": [
+        "eea083b7691c47178d972f94cb696d6c"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "midas_backend/midas_backend/euclid/creative_substrate.py",
+          "bytes": 52800,
+          "sha256": "a6ea5f5a8a7b4e090c1e1e63e9f63dbd25ef61b3fb7a87c07c3d0b475f27c757",
+          "git_blob_sha1": "8e66efbd4e46d96c2d19e6ff923f1e8b0ce15cd4"
+        },
+        {
+          "path": "midas_backend/midas_backend/euclid/delegation.py",
+          "bytes": 32148,
+          "sha256": "2211ec580cd35b61e171f83d441c0d864c3fe7c5746be2cd8df507beae9c60ba",
+          "git_blob_sha1": "774b48b70693ace3b6e0ae77266b7a272d22eecd"
+        },
+        {
+          "path": "midas_backend/midas_backend/euclid/federation.py",
+          "bytes": 25601,
+          "sha256": "f14e41d6b2924b6da2e42b79ba666839d7269d7a8bd14c621a8369f511e188ff",
+          "git_blob_sha1": "c8ee294ea63f6c8b76c067c4cb1cd0d08e9814b4"
+        },
+        {
+          "path": "midas_backend/midas_backend/euclid/kairos_runtime.py",
+          "bytes": 18048,
+          "sha256": "6177b1324e4d02a12881bc14fd78a6f33f575afb78828355d95aefce4a7a7824",
+          "git_blob_sha1": "2c239fb15c1b32fa195ed18c7c52bff91d5f0dfa"
+        },
+        {
+          "path": "midas_backend/midas_backend/euclid/organism_cns.py",
+          "bytes": 11425,
+          "sha256": "cc443e08ae5d8e546c8ae3dc2a9d1eabe8252677947b1482b7498e7a4e5f9eef",
+          "git_blob_sha1": "0c6379ff9526644da50e9652c185d4f7dc9f6ca2"
+        },
+        {
+          "path": "midas_backend/midas_backend/euclid_morning/delegation.py",
+          "bytes": 1469,
+          "sha256": "1f984312585ecb80832b3c72c922674d9d0d7dc919e971405611511201d5f292",
+          "git_blob_sha1": "aa497983705fccd07e1385b7ce224e364ff811e0"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/agi_attribute_evaluator.py",
+          "bytes": 13307,
+          "sha256": "17a10abf0ac290b7146296a7ce63f09f635c47b1ccfc6d88434a9126d2b3c156",
+          "git_blob_sha1": "d30cf729df5e0595fb484545b6917e0dcec55efd"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/asi_attribute_evaluator.py",
+          "bytes": 14022,
+          "sha256": "867c6a6fdc9bc485f6c38582256c49382d18414298f02f0c295e3235dfe03b7c",
+          "git_blob_sha1": "b95f16910bc45adfa840573f6c06f99eb58a7989"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/euclid_experience_superlearner.py",
+          "bytes": 20446,
+          "sha256": "9d59d8c2db983972157ed030bcb78d220933dee5340991b98910f669f54175b0",
+          "git_blob_sha1": "c1e01426e496e88d68c807a23cf11ab955a2bc77"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/euclid_learning_system.py",
+          "bytes": 27066,
+          "sha256": "f089bf5129906702f451dae2c57ca80bfefcb58ba65ed41180c92ecfad253914",
+          "git_blob_sha1": "270f5d584b5b6bd3c396b3e7a241a8fb329bb254"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/memory_preservation.py",
+          "bytes": 18781,
+          "sha256": "74cb95a0e90b48d6e010b9fea84cd8b89356eda35d635f30123046463276ec77",
+          "git_blob_sha1": "1bae9b07e0f08bca488a063fea23b84aa02ba070"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/organism_cns.py",
+          "bytes": 32244,
+          "sha256": "09eca761991cc98a83c2ba35564995791ad45298d503e0c46cdfb6b0ba0eddfd",
+          "git_blob_sha1": "681683ab0633731cd4eea921270edc074d27823f"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/organism_coherence.py",
+          "bytes": 4308,
+          "sha256": "dee3061efc58430f1e0750507480caa60242bf2228f5b035e899fa79f99c1e4d",
+          "git_blob_sha1": "8571b21fe0bf5bb569c9258577b211f040cd246c"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/safe_self_modification.py",
+          "bytes": 10268,
+          "sha256": "fc9a73235b2ee2dabdd388fd4eaa3648f10b808ed67204c037949b97e345a5dc",
+          "git_blob_sha1": "54a98504d0fd31f18933d221a198f489cf4eacce"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/world_system_model.py",
+          "bytes": 5420,
+          "sha256": "09435048399f783408f44a7d5f6bfe3acf45f1e6a61d208d1b8c1f3aca9f4c92",
+          "git_blob_sha1": "cee9c764add75ab04ed2050ebded3b5554422972"
+        }
+      ],
+      "member_count": 12313,
+      "declared_uncompressed_bytes": 130055324
+    },
+    {
+      "name": "EUCLID_COMBINED.zip",
+      "archive_sha256": "bb05182fedf8f6ac53b0dd15b18547a71bb5a6dc4645cfdb5c3505b2cfa2b72b",
+      "source_pages": [
+        "a4955666990e48eba278762b1cd025b6"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid_combined/midas_backend/hyba_substrate/organism_cns.py",
+          "bytes": 32212,
+          "sha256": "97361b9cd6a790dd765e0e73582b305207787a48cfedfd758302702635ade0ea",
+          "git_blob_sha1": "4571f09347a62147fa37073af067a03f8867f5a1"
+        }
+      ],
+      "member_count": 961,
+      "declared_uncompressed_bytes": 19679380
+    },
+    {
+      "name": "EUCLID_FINAL_COMBINED.zip",
+      "archive_sha256": "19596a08cec74ffab9c849d52c461f0c8befe0f9099f0d002dd63000a2ec2b8f",
+      "source_pages": [
+        "9a32c65b3fd94f118b328e338510b263"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "euclid_final/euclid_morning/delegation.py",
+          "bytes": 1467,
+          "sha256": "89188ce642fcca22f83ff4498c7725a50df141faac7ddaf607f1e1ec770a7f63",
+          "git_blob_sha1": "57666037d7b1a95d1cc00016f8907ef0e5d9b4b5"
+        }
+      ],
+      "member_count": 1278,
+      "declared_uncompressed_bytes": 13000865
+    },
+    {
+      "name": "EUCLID_PROD_MORNING_RECOVERY_COMPLETE_20260719.zip",
+      "archive_sha256": "30d3ddde94238b4cbb4fbb0b299775fed0b90c414669275379cab08186371229",
+      "source_pages": [
+        "585d16ab68ed4162aab9c6859fc2098f"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "EUCLID_PROD-main/euclid/delegation.py",
+          "bytes": 32149,
+          "sha256": "76ecf5a6e3abf68dd45b3031dcd7b0e859d813a3b5f2b24c2125d57f30443013",
+          "git_blob_sha1": "47a4b9264c3f5201eea610f57cb31505e838ae9d"
+        },
+        {
+          "path": "EUCLID_PROD-main/euclid/creative_substrate.py",
+          "bytes": 52800,
+          "sha256": "a6ea5f5a8a7b4e090c1e1e63e9f63dbd25ef61b3fb7a87c07c3d0b475f27c757",
+          "git_blob_sha1": "8e66efbd4e46d96c2d19e6ff923f1e8b0ce15cd4"
+        },
+        {
+          "path": "EUCLID_PROD-main/euclid/organism_cns.py",
+          "bytes": 11371,
+          "sha256": "530a246b05f819faa407c9f0720eae6ecc823dd71d6ceff52909b43c739a1bbb",
+          "git_blob_sha1": "3f0efdf21669ebc34d26c55a7f5597a13685d00b"
+        },
+        {
+          "path": "EUCLID_PROD-main/euclid/federation.py",
+          "bytes": 25601,
+          "sha256": "f14e41d6b2924b6da2e42b79ba666839d7269d7a8bd14c621a8369f511e188ff",
+          "git_blob_sha1": "c8ee294ea63f6c8b76c067c4cb1cd0d08e9814b4"
+        },
+        {
+          "path": "EUCLID_PROD-main/euclid/kairos_runtime.py",
+          "bytes": 18049,
+          "sha256": "9fc761c8514e8bd46cde45b77fb3759e25ae9770418697b2d1b2ded36c128d36",
+          "git_blob_sha1": "e053d0b767ba24333391049b462adedd72d6c62d"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/memory_preservation.py",
+          "bytes": 18780,
+          "sha256": "708558327977d9cae16522e494076c45335be25d823b7b300ace6602e79afbcb",
+          "git_blob_sha1": "c880fbeb962259b893b7836bb3b7e28b2b7672e7"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/organism_cns.py",
+          "bytes": 32212,
+          "sha256": "97361b9cd6a790dd765e0e73582b305207787a48cfedfd758302702635ade0ea",
+          "git_blob_sha1": "4571f09347a62147fa37073af067a03f8867f5a1"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/agi_attribute_evaluator.py",
+          "bytes": 13307,
+          "sha256": "17a10abf0ac290b7146296a7ce63f09f635c47b1ccfc6d88434a9126d2b3c156",
+          "git_blob_sha1": "d30cf729df5e0595fb484545b6917e0dcec55efd"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/asi_attribute_evaluator.py",
+          "bytes": 13978,
+          "sha256": "cc9b5bccaeb76c7de4b988b0088ec92325e2be6a6ec720cea0549007ac26b379",
+          "git_blob_sha1": "20d3751de3bdb55c60fc00eb06ecac4fb51ba5ad"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/euclid_experience_superlearner.py",
+          "bytes": 20446,
+          "sha256": "9d59d8c2db983972157ed030bcb78d220933dee5340991b98910f669f54175b0",
+          "git_blob_sha1": "c1e01426e496e88d68c807a23cf11ab955a2bc77"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/euclid_learning_system.py",
+          "bytes": 27066,
+          "sha256": "f089bf5129906702f451dae2c57ca80bfefcb58ba65ed41180c92ecfad253914",
+          "git_blob_sha1": "270f5d584b5b6bd3c396b3e7a241a8fb329bb254"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/organism_coherence.py",
+          "bytes": 4308,
+          "sha256": "dee3061efc58430f1e0750507480caa60242bf2228f5b035e899fa79f99c1e4d",
+          "git_blob_sha1": "8571b21fe0bf5bb569c9258577b211f040cd246c"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/safe_self_modification.py",
+          "bytes": 10264,
+          "sha256": "5e551a03cbd68f809fad2b264b681a1a04326f121e3dfee4a6c1867bf7c8615c",
+          "git_blob_sha1": "85d4e3b23edaec9812da51f36eb49d21bbea80c9"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/world_system_model.py",
+          "bytes": 5410,
+          "sha256": "c57d6f60a1aaf9256da59532d90b9fb91b1e7264914e780bdca461ce65075e33",
+          "git_blob_sha1": "66663a2e4a894538ccf05f16c7f73ffda90598ac"
+        },
+        {
+          "path": "EUCLID_PROD-main/midas_backend/hyba_substrate/organism_cns.py",
+          "bytes": 32212,
+          "sha256": "97361b9cd6a790dd765e0e73582b305207787a48cfedfd758302702635ade0ea",
+          "git_blob_sha1": "4571f09347a62147fa37073af067a03f8867f5a1"
+        },
+        {
+          "path": "EUCLID_PROD-main/euclid_morning/delegation.py",
+          "bytes": 1467,
+          "sha256": "89188ce642fcca22f83ff4498c7725a50df141faac7ddaf607f1e1ec770a7f63",
+          "git_blob_sha1": "57666037d7b1a95d1cc00016f8907ef0e5d9b4b5"
+        }
+      ],
+      "member_count": 3458,
+      "declared_uncompressed_bytes": 54597386
+    },
+    {
+      "name": "EUCLID_PROD_GOLDEN_RATIO_ELEVATION_20260719.zip",
+      "archive_sha256": "7dae964b8065f0c6fb2e63f720e8321b06c304669eb0c2e6d74f01a9b7e5e8a5",
+      "source_pages": [
+        "3c1fa98a65b64ef5b95f5f6787a54b3a"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "EUCLID_PROD-main/euclid/delegation.py",
+          "bytes": 32149,
+          "sha256": "76ecf5a6e3abf68dd45b3031dcd7b0e859d813a3b5f2b24c2125d57f30443013",
+          "git_blob_sha1": "47a4b9264c3f5201eea610f57cb31505e838ae9d"
+        },
+        {
+          "path": "EUCLID_PROD-main/euclid/creative_substrate.py",
+          "bytes": 52800,
+          "sha256": "a6ea5f5a8a7b4e090c1e1e63e9f63dbd25ef61b3fb7a87c07c3d0b475f27c757",
+          "git_blob_sha1": "8e66efbd4e46d96c2d19e6ff923f1e8b0ce15cd4"
+        },
+        {
+          "path": "EUCLID_PROD-main/euclid/organism_cns.py",
+          "bytes": 11371,
+          "sha256": "530a246b05f819faa407c9f0720eae6ecc823dd71d6ceff52909b43c739a1bbb",
+          "git_blob_sha1": "3f0efdf21669ebc34d26c55a7f5597a13685d00b"
+        },
+        {
+          "path": "EUCLID_PROD-main/euclid/federation.py",
+          "bytes": 25601,
+          "sha256": "f14e41d6b2924b6da2e42b79ba666839d7269d7a8bd14c621a8369f511e188ff",
+          "git_blob_sha1": "c8ee294ea63f6c8b76c067c4cb1cd0d08e9814b4"
+        },
+        {
+          "path": "EUCLID_PROD-main/euclid/kairos_runtime.py",
+          "bytes": 18049,
+          "sha256": "9fc761c8514e8bd46cde45b77fb3759e25ae9770418697b2d1b2ded36c128d36",
+          "git_blob_sha1": "e053d0b767ba24333391049b462adedd72d6c62d"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/memory_preservation.py",
+          "bytes": 18780,
+          "sha256": "708558327977d9cae16522e494076c45335be25d823b7b300ace6602e79afbcb",
+          "git_blob_sha1": "c880fbeb962259b893b7836bb3b7e28b2b7672e7"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/organism_cns.py",
+          "bytes": 32212,
+          "sha256": "97361b9cd6a790dd765e0e73582b305207787a48cfedfd758302702635ade0ea",
+          "git_blob_sha1": "4571f09347a62147fa37073af067a03f8867f5a1"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/agi_attribute_evaluator.py",
+          "bytes": 13307,
+          "sha256": "17a10abf0ac290b7146296a7ce63f09f635c47b1ccfc6d88434a9126d2b3c156",
+          "git_blob_sha1": "d30cf729df5e0595fb484545b6917e0dcec55efd"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/asi_attribute_evaluator.py",
+          "bytes": 13978,
+          "sha256": "cc9b5bccaeb76c7de4b988b0088ec92325e2be6a6ec720cea0549007ac26b379",
+          "git_blob_sha1": "20d3751de3bdb55c60fc00eb06ecac4fb51ba5ad"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/euclid_experience_superlearner.py",
+          "bytes": 20446,
+          "sha256": "9d59d8c2db983972157ed030bcb78d220933dee5340991b98910f669f54175b0",
+          "git_blob_sha1": "c1e01426e496e88d68c807a23cf11ab955a2bc77"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/euclid_learning_system.py",
+          "bytes": 27066,
+          "sha256": "f089bf5129906702f451dae2c57ca80bfefcb58ba65ed41180c92ecfad253914",
+          "git_blob_sha1": "270f5d584b5b6bd3c396b3e7a241a8fb329bb254"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/organism_coherence.py",
+          "bytes": 4308,
+          "sha256": "dee3061efc58430f1e0750507480caa60242bf2228f5b035e899fa79f99c1e4d",
+          "git_blob_sha1": "8571b21fe0bf5bb569c9258577b211f040cd246c"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/safe_self_modification.py",
+          "bytes": 10264,
+          "sha256": "5e551a03cbd68f809fad2b264b681a1a04326f121e3dfee4a6c1867bf7c8615c",
+          "git_blob_sha1": "85d4e3b23edaec9812da51f36eb49d21bbea80c9"
+        },
+        {
+          "path": "EUCLID_PROD-main/hyba_substrate/world_system_model.py",
+          "bytes": 5410,
+          "sha256": "c57d6f60a1aaf9256da59532d90b9fb91b1e7264914e780bdca461ce65075e33",
+          "git_blob_sha1": "66663a2e4a894538ccf05f16c7f73ffda90598ac"
+        },
+        {
+          "path": "EUCLID_PROD-main/midas_backend/hyba_substrate/organism_cns.py",
+          "bytes": 32212,
+          "sha256": "97361b9cd6a790dd765e0e73582b305207787a48cfedfd758302702635ade0ea",
+          "git_blob_sha1": "4571f09347a62147fa37073af067a03f8867f5a1"
+        },
+        {
+          "path": "EUCLID_PROD-main/euclid_morning/delegation.py",
+          "bytes": 1467,
+          "sha256": "89188ce642fcca22f83ff4498c7725a50df141faac7ddaf607f1e1ec770a7f63",
+          "git_blob_sha1": "57666037d7b1a95d1cc00016f8907ef0e5d9b4b5"
+        }
+      ],
+      "member_count": 3462,
+      "declared_uncompressed_bytes": 54639640
+    },
+    {
+      "name": "EUCLID2_AGENTIC_MINING_FLOW_V0.1.0.zip",
+      "archive_sha256": "407450a4cb28b69b4e74a068406875cbbf21678f6fe7228739b1568cb31906af",
+      "source_pages": [
+        "1fb64c306b44437a8fa1d32df5e56e71"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 18,
+      "declared_uncompressed_bytes": 37741
+    },
+    {
+      "name": "EUCLID2_DIRECT_VOICE_CHAT_ROOM_V0.1.0.zip",
+      "archive_sha256": "0b3b1f3db834f9bd728f47d28febf19c465605124f44adec78fc8bd49a57a2c3",
+      "source_pages": [
+        "1fb64c306b44437a8fa1d32df5e56e71"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 20,
+      "declared_uncompressed_bytes": 48634
+    },
+    {
+      "name": "midas_backend_braiins_default.zip",
+      "archive_sha256": "882a0302c67db89cc4a319971d10ef0470eaa4c2d73792ca40503fa57c19f32f",
+      "source_pages": [
+        "1fb64c306b44437a8fa1d32df5e56e71",
+        "1fb64c306b44437a8fa1d32df5e56e71"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "midas_backend/midas_backend/euclid/creative_substrate.py",
+          "bytes": 52800,
+          "sha256": "a6ea5f5a8a7b4e090c1e1e63e9f63dbd25ef61b3fb7a87c07c3d0b475f27c757",
+          "git_blob_sha1": "8e66efbd4e46d96c2d19e6ff923f1e8b0ce15cd4"
+        },
+        {
+          "path": "midas_backend/midas_backend/euclid/delegation.py",
+          "bytes": 32148,
+          "sha256": "2211ec580cd35b61e171f83d441c0d864c3fe7c5746be2cd8df507beae9c60ba",
+          "git_blob_sha1": "774b48b70693ace3b6e0ae77266b7a272d22eecd"
+        },
+        {
+          "path": "midas_backend/midas_backend/euclid/federation.py",
+          "bytes": 25601,
+          "sha256": "f14e41d6b2924b6da2e42b79ba666839d7269d7a8bd14c621a8369f511e188ff",
+          "git_blob_sha1": "c8ee294ea63f6c8b76c067c4cb1cd0d08e9814b4"
+        },
+        {
+          "path": "midas_backend/midas_backend/euclid/kairos_runtime.py",
+          "bytes": 18048,
+          "sha256": "6177b1324e4d02a12881bc14fd78a6f33f575afb78828355d95aefce4a7a7824",
+          "git_blob_sha1": "2c239fb15c1b32fa195ed18c7c52bff91d5f0dfa"
+        },
+        {
+          "path": "midas_backend/midas_backend/euclid/organism_cns.py",
+          "bytes": 11425,
+          "sha256": "cc443e08ae5d8e546c8ae3dc2a9d1eabe8252677947b1482b7498e7a4e5f9eef",
+          "git_blob_sha1": "0c6379ff9526644da50e9652c185d4f7dc9f6ca2"
+        },
+        {
+          "path": "midas_backend/midas_backend/euclid_morning/delegation.py",
+          "bytes": 1469,
+          "sha256": "1f984312585ecb80832b3c72c922674d9d0d7dc919e971405611511201d5f292",
+          "git_blob_sha1": "aa497983705fccd07e1385b7ce224e364ff811e0"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/agi_attribute_evaluator.py",
+          "bytes": 13307,
+          "sha256": "17a10abf0ac290b7146296a7ce63f09f635c47b1ccfc6d88434a9126d2b3c156",
+          "git_blob_sha1": "d30cf729df5e0595fb484545b6917e0dcec55efd"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/asi_attribute_evaluator.py",
+          "bytes": 14022,
+          "sha256": "867c6a6fdc9bc485f6c38582256c49382d18414298f02f0c295e3235dfe03b7c",
+          "git_blob_sha1": "b95f16910bc45adfa840573f6c06f99eb58a7989"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/euclid_experience_superlearner.py",
+          "bytes": 20446,
+          "sha256": "9d59d8c2db983972157ed030bcb78d220933dee5340991b98910f669f54175b0",
+          "git_blob_sha1": "c1e01426e496e88d68c807a23cf11ab955a2bc77"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/euclid_learning_system.py",
+          "bytes": 27066,
+          "sha256": "f089bf5129906702f451dae2c57ca80bfefcb58ba65ed41180c92ecfad253914",
+          "git_blob_sha1": "270f5d584b5b6bd3c396b3e7a241a8fb329bb254"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/memory_preservation.py",
+          "bytes": 18781,
+          "sha256": "74cb95a0e90b48d6e010b9fea84cd8b89356eda35d635f30123046463276ec77",
+          "git_blob_sha1": "1bae9b07e0f08bca488a063fea23b84aa02ba070"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/organism_cns.py",
+          "bytes": 32244,
+          "sha256": "09eca761991cc98a83c2ba35564995791ad45298d503e0c46cdfb6b0ba0eddfd",
+          "git_blob_sha1": "681683ab0633731cd4eea921270edc074d27823f"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/organism_coherence.py",
+          "bytes": 4308,
+          "sha256": "dee3061efc58430f1e0750507480caa60242bf2228f5b035e899fa79f99c1e4d",
+          "git_blob_sha1": "8571b21fe0bf5bb569c9258577b211f040cd246c"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/safe_self_modification.py",
+          "bytes": 10268,
+          "sha256": "fc9a73235b2ee2dabdd388fd4eaa3648f10b808ed67204c037949b97e345a5dc",
+          "git_blob_sha1": "54a98504d0fd31f18933d221a198f489cf4eacce"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/world_system_model.py",
+          "bytes": 5420,
+          "sha256": "09435048399f783408f44a7d5f6bfe3acf45f1e6a61d208d1b8c1f3aca9f4c92",
+          "git_blob_sha1": "cee9c764add75ab04ed2050ebded3b5554422972"
+        }
+      ],
+      "member_count": 12313,
+      "declared_uncompressed_bytes": 130052136
+    },
+    {
+      "name": "midas_backend_quantum_doctrine_fix.zip",
+      "archive_sha256": "e5a6707e37c8468d347a62a8414e95e40cfb34d8a94c8100bd0a5eb07208b1c8",
+      "source_pages": [
+        "1fb64c306b44437a8fa1d32df5e56e71"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [
+        {
+          "path": "midas_backend/midas_backend/euclid/creative_substrate.py",
+          "bytes": 52800,
+          "sha256": "a6ea5f5a8a7b4e090c1e1e63e9f63dbd25ef61b3fb7a87c07c3d0b475f27c757",
+          "git_blob_sha1": "8e66efbd4e46d96c2d19e6ff923f1e8b0ce15cd4"
+        },
+        {
+          "path": "midas_backend/midas_backend/euclid/delegation.py",
+          "bytes": 32148,
+          "sha256": "2211ec580cd35b61e171f83d441c0d864c3fe7c5746be2cd8df507beae9c60ba",
+          "git_blob_sha1": "774b48b70693ace3b6e0ae77266b7a272d22eecd"
+        },
+        {
+          "path": "midas_backend/midas_backend/euclid/federation.py",
+          "bytes": 25601,
+          "sha256": "f14e41d6b2924b6da2e42b79ba666839d7269d7a8bd14c621a8369f511e188ff",
+          "git_blob_sha1": "c8ee294ea63f6c8b76c067c4cb1cd0d08e9814b4"
+        },
+        {
+          "path": "midas_backend/midas_backend/euclid/kairos_runtime.py",
+          "bytes": 18048,
+          "sha256": "6177b1324e4d02a12881bc14fd78a6f33f575afb78828355d95aefce4a7a7824",
+          "git_blob_sha1": "2c239fb15c1b32fa195ed18c7c52bff91d5f0dfa"
+        },
+        {
+          "path": "midas_backend/midas_backend/euclid/organism_cns.py",
+          "bytes": 11425,
+          "sha256": "cc443e08ae5d8e546c8ae3dc2a9d1eabe8252677947b1482b7498e7a4e5f9eef",
+          "git_blob_sha1": "0c6379ff9526644da50e9652c185d4f7dc9f6ca2"
+        },
+        {
+          "path": "midas_backend/midas_backend/euclid_morning/delegation.py",
+          "bytes": 1469,
+          "sha256": "1f984312585ecb80832b3c72c922674d9d0d7dc919e971405611511201d5f292",
+          "git_blob_sha1": "aa497983705fccd07e1385b7ce224e364ff811e0"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/agi_attribute_evaluator.py",
+          "bytes": 13307,
+          "sha256": "17a10abf0ac290b7146296a7ce63f09f635c47b1ccfc6d88434a9126d2b3c156",
+          "git_blob_sha1": "d30cf729df5e0595fb484545b6917e0dcec55efd"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/asi_attribute_evaluator.py",
+          "bytes": 14022,
+          "sha256": "867c6a6fdc9bc485f6c38582256c49382d18414298f02f0c295e3235dfe03b7c",
+          "git_blob_sha1": "b95f16910bc45adfa840573f6c06f99eb58a7989"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/euclid_experience_superlearner.py",
+          "bytes": 20446,
+          "sha256": "9d59d8c2db983972157ed030bcb78d220933dee5340991b98910f669f54175b0",
+          "git_blob_sha1": "c1e01426e496e88d68c807a23cf11ab955a2bc77"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/euclid_learning_system.py",
+          "bytes": 27066,
+          "sha256": "f089bf5129906702f451dae2c57ca80bfefcb58ba65ed41180c92ecfad253914",
+          "git_blob_sha1": "270f5d584b5b6bd3c396b3e7a241a8fb329bb254"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/memory_preservation.py",
+          "bytes": 18781,
+          "sha256": "74cb95a0e90b48d6e010b9fea84cd8b89356eda35d635f30123046463276ec77",
+          "git_blob_sha1": "1bae9b07e0f08bca488a063fea23b84aa02ba070"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/organism_cns.py",
+          "bytes": 32244,
+          "sha256": "09eca761991cc98a83c2ba35564995791ad45298d503e0c46cdfb6b0ba0eddfd",
+          "git_blob_sha1": "681683ab0633731cd4eea921270edc074d27823f"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/organism_coherence.py",
+          "bytes": 4308,
+          "sha256": "dee3061efc58430f1e0750507480caa60242bf2228f5b035e899fa79f99c1e4d",
+          "git_blob_sha1": "8571b21fe0bf5bb569c9258577b211f040cd246c"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/safe_self_modification.py",
+          "bytes": 10268,
+          "sha256": "fc9a73235b2ee2dabdd388fd4eaa3648f10b808ed67204c037949b97e345a5dc",
+          "git_blob_sha1": "54a98504d0fd31f18933d221a198f489cf4eacce"
+        },
+        {
+          "path": "midas_backend/midas_backend/hyba_substrate/world_system_model.py",
+          "bytes": 5420,
+          "sha256": "09435048399f783408f44a7d5f6bfe3acf45f1e6a61d208d1b8c1f3aca9f4c92",
+          "git_blob_sha1": "cee9c764add75ab04ed2050ebded3b5554422972"
+        }
+      ],
+      "member_count": 12313,
+      "declared_uncompressed_bytes": 130055324
+    },
+    {
+      "name": "08a7226b-85e3-4853-98ed-6fffb39065e9.zip",
+      "archive_sha256": "2c803c49f37392183c6d3dba27c4eb9526ef25889565f919c81ca6eeca943497",
+      "source_pages": [
+        "3e14dd365bfb4123a17f88baa7e81c38",
+        "ac615fb71caa4facb9622fbc47293335"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 92,
+      "declared_uncompressed_bytes": 412544
+    },
+    {
+      "name": "hyba_e5.zip",
+      "archive_sha256": "c42cc4aee5445bd4b1ad69764f2da3e0a97e308fdfdc1c4b49f315fc3f1dda82",
+      "source_pages": [
+        "7763e2edb28c4d31b927a4550bfef0ac"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 388,
+      "declared_uncompressed_bytes": 3185121
+    },
+    {
+      "name": "chronos-completed.zip",
+      "archive_sha256": "149e9981975a81ac15837e6757620347b3e3f8783206cd10eba33f18ff10fb33",
+      "source_pages": [
+        "6c0bbde40e8b41eeba9cedb15d5bcb9b"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 37,
+      "declared_uncompressed_bytes": 97187
+    },
+    {
+      "name": "chronos-completed.zip",
+      "archive_sha256": "37387ea896ebbafe7cd799dea0108c5331257f9f53a1042358777d3638ca2c91",
+      "source_pages": [
+        "6c0bbde40e8b41eeba9cedb15d5bcb9b"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 50,
+      "declared_uncompressed_bytes": 144742
+    },
+    {
+      "name": "chronos-completed.zip",
+      "archive_sha256": "805a823c0f2327d1f096c2539faa2596af288392dc5de5afed2e4c981dec54e7",
+      "source_pages": [
+        "6c0bbde40e8b41eeba9cedb15d5bcb9b"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 24,
+      "declared_uncompressed_bytes": 39914
+    },
+    {
+      "name": "chronos-completed.zip",
+      "archive_sha256": "91686f49a0020756c29f75672bc5acbbb20b4298e724eea0627a8857ccb24b71",
+      "source_pages": [
+        "6c0bbde40e8b41eeba9cedb15d5bcb9b"
+      ],
+      "untrusted_member_paths": [],
+      "selected_source_members": [],
+      "member_count": 57,
+      "declared_uncompressed_bytes": 247450
+    }
+  ]
+}

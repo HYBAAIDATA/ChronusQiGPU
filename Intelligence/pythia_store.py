@@ -43,6 +43,10 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
+from hyba_substrate.memory_preservation import (
+    canonical_json_bytes, sha256_bytes, verified_atomic_json_write,
+)
+
 from .pythia_learning import PythiaLearning
 from .pythia_memory import PythiaMemorySystem
 from kellogg.quantum_tensor import Complex, QuantumState, encode_data_to_state
@@ -592,6 +596,7 @@ class PythiaStore:
         self.curator = PythiaCurator(memory, pythia, self.qudits, self.journal)
         self.autosave_every = max(1, int(autosave_every))
         self._since_save = 0
+        self._snapshot_integrity = "new"
         enabled = os.getenv("PYTHIA_STRUCTURE_BOOTSTRAP", "true").strip().lower() not in {
             "0",
             "false",
@@ -649,10 +654,9 @@ class PythiaStore:
             "learning": self.pythia.to_snapshot(),
             "qudits": self.qudits.to_snapshot(),
         }
-        self.snapshot_path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = self.snapshot_path.with_suffix(".json.tmp")
-        tmp.write_text(json.dumps(snap, default=str), encoding="utf-8")
-        os.replace(tmp, self.snapshot_path)
+        snap["seal"] = sha256_bytes(canonical_json_bytes(snap))
+        verified_atomic_json_write(self.snapshot_path.resolve(), snap)
+        self._snapshot_integrity = "sealed"
         self._since_save = 0
         logger.info("PYTHIA store saved: %s", self.snapshot_path)
         return self.snapshot_path
@@ -692,6 +696,10 @@ class PythiaStore:
         if self.snapshot_path.is_file():
             try:
                 snap = json.loads(self.snapshot_path.read_text(encoding="utf-8"))
+                seal = snap.pop("seal", None)
+                if seal is not None and seal != sha256_bytes(canonical_json_bytes(snap)):
+                    raise ValueError("PYTHIA snapshot seal mismatch")
+                self._snapshot_integrity = "sealed" if seal is not None else "legacy-unsealed"
                 self.memory.load_snapshot(snap.get("memory", {}))
                 self.pythia.load_snapshot(snap.get("learning", {}))
                 self.qudits.load_snapshot(snap.get("qudits", {}))
@@ -712,7 +720,7 @@ class PythiaStore:
                     raise RuntimeError(
                         "PYTHIA default snapshot is unreadable; refusing to overwrite it during structural bootstrap"
                     ) from e
-                return False
+                raise ValueError("PYTHIA snapshot is unreadable; refusing silent state reset") from e
 
         self._bootstrap_structure_training()
         return loaded
@@ -731,6 +739,7 @@ class PythiaStore:
             "journal_entries": self.journal.count(),
             "qudits": self.qudits.status(),
             "snapshot_exists": self.snapshot_path.is_file(),
+            "snapshot_integrity": self._snapshot_integrity,
             "autosave_every": self.autosave_every,
             "structure_training": dict(self._structure_training),
         }
