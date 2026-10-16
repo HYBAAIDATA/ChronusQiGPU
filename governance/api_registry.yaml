@@ -355,6 +355,44 @@ apis:
     lifecycle: STABLE
     tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_control_auth.py]
 
+  - api_id: pythia.control.session
+    owner: PYTHIA
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_control_session
+    consumers: [frontend]
+    transport: HTTP
+    method: GET
+    path: /api/v1/control/session
+    routes: ["GET /api/v1/control/session"]
+    request_schema: none
+    response_schema: '{schema_version, ok, principal_id, role, source, generated_at}'
+    schema_version: chronus.mla1517.session/1
+    authentication_class: OPERATOR_PRINCIPAL
+    authorisation_authority: PYTHIA
+    truth_class: COMMAND_ACCEPTANCE
+    side_effects: none
+    custody_requirement: append-only audit event control_session or control_session_refused
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: 401 unauthenticated / 403 unauthorized
+    availability_semantics: reflects authenticated principal identity
+    stability: stable
+    deprecation_state: CANONICAL
+    capability: 'report server-authenticated principal for session'
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: [pythia.boot_audit]
+    slo: slo.projection.read
+    fallback_policy: 'refusal never echoes bearer tokens; never infers identity locally'
+    security_classification: OPERATOR_AUTHENTICATED
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
+    tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_control_auth.py]
+
   - api_id: pythia.system.map
     owner: PYTHIA
     interface_type: HTTP_OPERATOR

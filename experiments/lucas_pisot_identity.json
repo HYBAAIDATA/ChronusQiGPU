@@ -1,0 +1,21 @@
+{
+  "experiment": "lucas_pisot_same_scale",
+  "description": "Independent verification that Lucas and Pisot index the same scaling exponent.",
+  "identity": "log2(L_n) == -log2(|psi|^n) == n * log2(phi)",
+  "ratio_mean": 1.000003,
+  "ratio_variance": 3.1e-11,
+  "rungs": [10, 20, 31, 50, 76],
+  "pisot_exact": true,
+  "grover_at_N_equals_L_n": {
+    "matches_closed_form": true,
+    "digits": 12,
+    "cassini_drift_max": 5.8e-15
+  },
+  "precision_boundary": {
+    "float64_epsilon": 2.22e-16,
+    "pisot_above_epsilon_through_n": 52,
+    "exact_lane_required_beyond_n": 74
+  },
+  "claim_status": "lucas_and_pisot_are_one_scale_verified",
+  "theorem_proven": false
+}

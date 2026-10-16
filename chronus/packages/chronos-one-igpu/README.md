@@ -356,3 +356,6 @@ not external accepted shares. Registry status remains **NOT PUBLISHED**.
 
 Historical documentation is preserved in
 `docs/HISTORY-README-through-v3.11.1.md`; it is not the current release contract.
+
+## Enterprise surface
+Mining is the testing surface. See `docs/IGPU_ENTERPRISE_SURFACE.md`.

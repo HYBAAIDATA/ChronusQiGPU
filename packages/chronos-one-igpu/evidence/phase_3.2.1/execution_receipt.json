@@ -1,0 +1,13 @@
+{
+  "backend": "cpu-exact-reference",
+  "backend_kind": "cpu",
+  "device_id": "c646c1478100230020e16c40d8297635aff0e32f6d75d70cdd7257bfc1b39ab6",
+  "kernel_digest": "d2882343927cf46198d92ce47681973dc323b5181f87373108b4d6d93115bfd0",
+  "latency_cycles": null,
+  "measured": true,
+  "pipeline_spec": "d2882343927cf46198d92ce47681973dc323b5181f87373108b4d6d93115bfd0",
+  "power_watts": null,
+  "signature": null,
+  "throughput_rps": 4152.806675058888,
+  "timestamp": "2026-10-07T10:32:05.035076+00:00"
+}

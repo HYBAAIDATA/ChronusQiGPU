@@ -1,0 +1,222 @@
+{
+  "total": 24,
+  "passed": 19,
+  "failed": 5,
+  "pass_rate": "79.2%",
+  "results": [
+    {
+      "scenario": "1.1",
+      "test": "Cassini det(M^n) = (-1)^n for n=1..200",
+      "status": "PASS",
+      "details": "All 200 values match exactly"
+    },
+    {
+      "scenario": "1.2",
+      "test": "Volume preservation |det(M^n)| = 1 for n=1..200",
+      "status": "PASS",
+      "details": "Guaranteed by Cassini"
+    },
+    {
+      "scenario": "1.3",
+      "test": "Pisot convergence |\u03c6^n - L_n| = \u03c6^(-n)",
+      "status": "PASS",
+      "details": "Ratio \u2248 1.0 for all tested n (5..100). Example: n=15, error=7.33e-04, expected=7.33e-04, ratio=1.000000000000"
+    },
+    {
+      "scenario": "1.4",
+      "test": "Binet exactness F(n) = (\u03c6^n - \u03c8^n)/\u221a5",
+      "status": "PASS",
+      "details": "Exact match for n=0..1000"
+    },
+    {
+      "scenario": "1.5",
+      "test": "Matrix power law M^a \u00b7 M^b = M^(a+b)",
+      "status": "PASS",
+      "details": "Verified for 7 pairs"
+    },
+    {
+      "scenario": "1.6",
+      "test": "Trace identity tr(M^n) = L_n for n=1..100",
+      "status": "PASS",
+      "details": "All 100 values match exactly"
+    },
+    {
+      "scenario": "2.1",
+      "test": "Lossless reconstruction (structured data, n=15)",
+      "status": "PASS",
+      "details": "Max reconstruction error: 2.76e-10"
+    },
+    {
+      "scenario": "2.2",
+      "test": "Lossless reconstruction (random data, n=15)",
+      "status": "PASS",
+      "details": "Max reconstruction error: 4.34e-10"
+    },
+    {
+      "scenario": "2.3",
+      "test": "Coherence amplification of \u03c6-aligned data \u2248 \u03c6^15",
+      "status": "FAIL",
+      "details": "Measured amplification: 2206.9995, \u03c6^15 = 1364.0007, ratio: 1.618034"
+    },
+    {
+      "scenario": "2.4",
+      "test": "Noise suppression of \u03c8-aligned data \u2248 |\u03c8|^15",
+      "status": "PASS",
+      "details": "Measured amplitude: 7.331374e-04, |\u03c8|^15 = 7.331374e-04"
+    },
+    {
+      "scenario": "2.5",
+      "test": "Separation ratio \u03c6^n / |\u03c8|^n = \u03c6^(2n) for n=15",
+      "status": "PASS",
+      "details": "Measured: 1860498.0000, Expected \u03c6^30: 1860498.0000"
+    },
+    {
+      "scenario": "3.1",
+      "test": "Shannon entropy on 1D projection (structured vs random)",
+      "status": "FAIL",
+      "details": "H_struct=0.0000 bits, H_random=3.5350 bits, max=5.0000. \u0394 = 3.5350 bits (Shannon sees both as ~uniform)"
+    },
+    {
+      "scenario": "3.2",
+      "test": "von Neumann entropy on 32D density matrix (structured vs random)",
+      "status": "PASS",
+      "details": "S_struct=0.023638, S_random=4.992515. Structured is 0.0047x random (lower = more coherent)"
+    },
+    {
+      "scenario": "3.3",
+      "test": "Quantum Fisher Information (structured vs random)",
+      "status": "FAIL",
+      "details": "QFI_struct=1.291291, QFI_random=7.564923. Ratio: 0.1707x (higher = more distinguishable)"
+    },
+    {
+      "scenario": "4.1",
+      "test": "Coherence gate on Fibonacci ratio data",
+      "status": "PASS",
+      "details": "Mean coherence: 0.956636 (Fibonacci ratios converge to \u03c6, high coherence expected)"
+    },
+    {
+      "scenario": "4.2",
+      "test": "Coherence gate on random data",
+      "status": "FAIL",
+      "details": "Mean coherence: 0.807644 (random values, low coherence expected)"
+    },
+    {
+      "scenario": "4.3",
+      "test": "Coherence gate discrimination ratio (structured/random)",
+      "status": "FAIL",
+      "details": "Discrimination ratio: 1.18x"
+    },
+    {
+      "scenario": "5.1",
+      "test": "Yang-Mills mass gap: script formula vs repo formula",
+      "status": "PASS",
+      "details": "Script: \u0394 = 2.769873e-07 (\u03bb\u2082\u00d7(2\u03c0/\u03c6)\u2074/(2\u00b3\u00b2-1)). Repo: \u0394 = 1.381966 (3-\u03c6). Alt: 2-1/\u03c6 = 1.381966. These differ by 1.381966e+00."
+    },
+    {
+      "scenario": "5.2",
+      "test": "Fibonacci zeta function: zeros on Re(s) = 1/2?",
+      "status": "PASS",
+      "details": "Min |\u03b6_F(0.5+it)| = 0.495328 at t=13.6. First pole at t=13.0570 (s=0.5+i13.0570 is near a pole, not a zero). The function has poles, not zeros, on Re(s)=0."
+    },
+    {
+      "scenario": "5.3",
+      "test": "P vs NP: \u03c6-time O(\u03c6^n) vs polynomial O(n\u00b3)",
+      "status": "PASS",
+      "details": "\u03c6^n overtakes n\u00b3 at n=1. At n=30: \u03c6^30=1860498, 2^30=1073741824, 30\u00b3=27000. \u03c6^n is exponential (slower than poly) but faster than 2^n by factor 577x."
+    },
+    {
+      "scenario": "5.4",
+      "test": "Navier-Stokes: unimodular volume preservation |det(M^n)| = 1",
+      "status": "PASS",
+      "details": "Verified for n=1..500. |det| = 1 exactly (integer arithmetic). Volume is preserved under M_\u03c6^n."
+    },
+    {
+      "scenario": "5.5",
+      "test": "BSD: Cassini identity F_{n-1}\u00b7F_{n+1} - F_n\u00b2 = (-1)^n",
+      "status": "PASS",
+      "details": "Identity verified for n=1..50. Note: this is a quadratic (degree 2) Diophantine relation, not an elliptic curve (degree 3: y\u00b2 = x\u00b3 + ax + b). The connection to BSD requires further construction."
+    },
+    {
+      "scenario": "5.6",
+      "test": "Hodge: symplectic determinant invariant det(M_\u03c6) = -1",
+      "status": "PASS",
+      "details": "det(M_\u03c6) = -1, det(M_\u03c6^T) = -1 (symmetric). det(M_\u03c6\u00b2) = 1. The symplectic 2-form \u03c9 is preserved. Note: this is a 2\u00d72 matrix invariant, not a proof of the Hodge conjecture for algebraic varieties."
+    },
+    {
+      "scenario": "6.1",
+      "test": "Pisot collapse is exponential (\u03c6^(-n) rate)",
+      "status": "PASS",
+      "details": "Each doubling of n adds ~log2(\u03c6\u00b2)\u22481.39 bits of precision. At n=100, error \u2248 \u03c6^(-100) \u2248 1.26e-21."
+    }
+  ],
+  "pisot_data": [
+    [
+      5,
+      0.09016994374947424,
+      0.09016994374947424,
+      1.0
+    ],
+    [
+      10,
+      0.008130618755783348,
+      0.008130618755783348,
+      1.0
+    ],
+    [
+      15,
+      0.0007331374358574048,
+      0.0007331374358574048,
+      1.0
+    ],
+    [
+      20,
+      6.610696135189596e-05,
+      6.610696135189596e-05,
+      1.0
+    ],
+    [
+      30,
+      5.374904998555703e-07,
+      5.374904998555703e-07,
+      1.0
+    ],
+    [
+      50,
+      3.553186370096343e-11,
+      3.553186370096343e-11,
+      1.0
+    ],
+    [
+      100,
+      1.262513338063843e-21,
+      1.262513338063843e-21,
+      1.0
+    ]
+  ],
+  "yang_mills": {
+    "script_formula": 2.7698729735980936e-07,
+    "repo_formula": 1.381966011250105,
+    "alt_formula": 1.381966011250105
+  },
+  "fib_zeta": {
+    "min_abs_on_critical_line": 0.4953283749452819,
+    "best_t": 13.600000000000001,
+    "first_pole_t": 13.057005210545986
+  },
+  "coherence": {
+    "structured": 0.9566358138096667,
+    "random": 0.8076441572966485,
+    "discrimination_ratio": 1.1844768579911775
+  },
+  "shannon_vs_vonneumann": {
+    "H_struct_1d": 0.0,
+    "H_rand_1d": 3.535021291829771,
+    "S_struct_32d": 0.023638433169082963,
+    "S_rand_32d": 4.992514763112981
+  },
+  "qfi": {
+    "QFI_struct": 1.2912908278438797,
+    "QFI_rand": 7.564923063388399,
+    "ratio": 0.1706945089888989
+  }
+}

@@ -93,8 +93,23 @@ class EmergenceMetrics:
 
     def record_event(self, event: Any) -> float:
         """Record an event and return the emergence delta."""
+        if len(self._events) >= self._window_size:
+            evicted = self._events.popleft()
+            ev_school = evicted.source.value if hasattr(evicted.source, "value") else str(evicted.source)
+            if ev_school in self._school_activities:
+                act = self._school_activities[ev_school]
+                act.events = max(0, act.events - 1)
+                ev_type = getattr(getattr(evicted, "event_type", None), "value", str(getattr(evicted, "event_type", "")))
+                if ev_type == "feedback_loop":
+                    self._feedback_loops = max(0, self._feedback_loops - 1)
+                    act.feedback_loops = max(0, act.feedback_loops - 1)
+                elif ev_type == "healing_proposal":
+                    act.healing_proposals = max(0, act.healing_proposals - 1)
+                if hasattr(evicted, "topic") and "error" in str(evicted.topic):
+                    act.error_count = max(0, act.error_count - 1)
+
         self._events.append(event)
-        self._total_events += 1
+        self._total_events = len(self._events)
 
         school = event.source.value if hasattr(event.source, "value") else str(event.source)
         if school not in self._school_activities:
@@ -105,10 +120,11 @@ class EmergenceMetrics:
         activity.last_value = time.time()
         activity.activity_log.append(event.timestamp)
 
-        if hasattr(event, "event_type") and event.event_type.value == "feedback_loop":
+        ev_type = getattr(getattr(event, "event_type", None), "value", str(getattr(event, "event_type", "")))
+        if ev_type == "feedback_loop":
             self._feedback_loops += 1
             activity.feedback_loops += 1
-        if hasattr(event, "event_type") and event.event_type.value == "healing_proposal":
+        elif ev_type == "healing_proposal":
             activity.healing_proposals += 1
         if hasattr(event, "topic") and "error" in str(event.topic):
             activity.error_count += 1
@@ -120,40 +136,57 @@ class EmergenceMetrics:
         return self._last_delta
 
     def _calculate_coherence(self) -> float:
-        if self._total_events == 0:
+        if not self._events or self._total_events == 0:
             return 0.0
         feedback_ratio = self._feedback_loops / max(self._total_events, 1)
         active_schools = sum(1 for a in self._school_activities.values() if a.events > 0)
-        school_coverage = active_schools / len(self._school_activities)
+        school_coverage = active_schools / max(len(self._school_activities), 1)
         if feedback_ratio == 0 or school_coverage == 0:
             return 0.0
-        return math.sqrt(feedback_ratio * school_coverage)
+        return min(1.0, max(0.0, math.sqrt(feedback_ratio * school_coverage)))
 
     def _calculate_integration(self) -> float:
-        if not self._events:
+        if not self._events or len(self._events) < 2:
             return 0.0
-        total_events = sum(a.events for a in self._school_activities.values())
-        if total_events == 0:
+        n = len(self._events)
+        school_counts: dict[str, int] = {}
+        type_counts: dict[str, int] = {}
+        joint_counts: dict[tuple[str, str], int] = {}
+
+        for ev in self._events:
+            s = ev.source.value if hasattr(ev.source, "value") else str(ev.source)
+            t = getattr(getattr(ev, "event_type", None), "value", str(getattr(ev, "event_type", "")))
+            school_counts[s] = school_counts.get(s, 0) + 1
+            type_counts[t] = type_counts.get(t, 0) + 1
+            joint_counts[(s, t)] = joint_counts.get((s, t), 0) + 1
+
+        h_s = self._shannon_entropy(list(school_counts.values()))
+        h_t = self._shannon_entropy(list(type_counts.values()))
+        if h_s <= 0.0 or h_t <= 0.0:
             return 0.0
-        system_entropy = self._shannon_entropy([a.events for a in self._school_activities.values()])
-        parts_entropy = 0.0
-        for activity in self._school_activities.values():
-            if activity.events > 0:
-                rate = activity.events / total_events
-                if 0 < rate < 1:
-                    parts_entropy += -rate * math.log2(rate)
-        if system_entropy == 0:
-            return 0.0
-        phi = max(0.0, system_entropy - parts_entropy)
-        max_phi = math.log2(len(self._school_activities))
-        return phi / max_phi if max_phi > 0 else 0.0
+
+        mi = 0.0
+        for (s, t), count in joint_counts.items():
+            p_joint = count / n
+            p_s = school_counts[s] / n
+            p_t = type_counts[t] / n
+            if p_joint > 0 and p_s > 0 and p_t > 0:
+                mi += p_joint * math.log2(p_joint / (p_s * p_t))
+
+        mi = max(0.0, mi)
+        denom = math.sqrt(h_s * h_t)
+        return min(1.0, max(0.0, mi / denom)) if denom > 0 else 0.0
 
     def _calculate_differentiation(self) -> float:
-        activities = [a.events for a in self._school_activities.values()]
+        activities = [a.events for a in self._school_activities.values() if a.events > 0]
         total = sum(activities)
-        if total == 0:
+        if total == 0 or len(activities) <= 1:
             return 0.0
-        return self._shannon_entropy(activities)
+        entropy = self._shannon_entropy(activities)
+        norm = math.log2(len(self._school_activities))
+        if norm <= 0:
+            return 0.0
+        return min(1.0, max(0.0, entropy / norm))
 
     def _shannon_entropy(self, values: List[int]) -> float:
         total = sum(values)

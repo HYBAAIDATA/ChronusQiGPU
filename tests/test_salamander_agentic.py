@@ -152,8 +152,8 @@ def test_salamander_optimizer_proposes_exact_repairs():
         assert "verification_test" in proposal
 
 
-def test_salamander_optimizer_sandboxed_rollback_on_failure(tmp_path):
-    """Verify zero-trust sandboxed execution performs atomic rollback on test failure."""
+def test_salamander_optimizer_rejects_callback_before_writing(tmp_path):
+    """An in-process callback cannot authorize a live source write."""
     target_file = tmp_path / "module.py"
     original_text = "def compute():\n    return 42\n"
     target_file.write_text(original_text, encoding="utf-8")
@@ -173,15 +173,15 @@ def test_salamander_optimizer_sandboxed_rollback_on_failure(tmp_path):
     )
 
     assert success is False
-    assert "Rollback executed" in msg
+    assert "cannot authorize" in msg
     # Production file must remain completely uncorrupted
     assert target_file.read_text(encoding="utf-8") == original_text
     # Backup file must be cleaned up
     assert not target_file.with_suffix(".py.bak").exists()
 
 
-def test_salamander_optimizer_sandboxed_success(tmp_path):
-    """Verify zero-trust sandboxed execution commits when test passes."""
+def test_salamander_optimizer_rejects_passing_callback(tmp_path):
+    """A True callback is not independently isolated regression evidence."""
     target_file = tmp_path / "module.py"
     original_text = "def compute():\n    return 42\n"
     target_file.write_text(original_text, encoding="utf-8")
@@ -199,8 +199,9 @@ def test_salamander_optimizer_sandboxed_success(tmp_path):
         test_callable=passing_test,
     )
 
-    assert success is True
-    assert target_file.read_text(encoding="utf-8") == good_replacement
+    assert success is False
+    assert "cannot authorize" in msg
+    assert target_file.read_text(encoding="utf-8") == original_text
     assert not target_file.with_suffix(".py.bak").exists()
 
 
@@ -277,7 +278,7 @@ def test_a_repair_without_verification_is_never_applied(tmp_path):
     assert not target_file.with_suffix(".py.bak").exists()
 
 
-def test_the_verification_command_decides_commit_or_rollback(tmp_path):
+def test_legacy_verification_commands_cannot_authorize_repairs(tmp_path):
     target_file = tmp_path / "module.py"
     original_text = "def compute():\n    return 42\n"
     target_file.write_text(original_text, encoding="utf-8")
@@ -298,8 +299,8 @@ def test_the_verification_command_decides_commit_or_rollback(tmp_path):
     success, _ = passing.apply_repair_sandboxed(
         target_file=target_file, replacement=replacement, test_cmd=passing.verify_cmd
     )
-    assert success is True
-    assert target_file.read_text(encoding="utf-8") == replacement
+    assert success is False
+    assert target_file.read_text(encoding="utf-8") == original_text
 
 
 def test_the_codebase_healing_skill_is_opt_in(monkeypatch):

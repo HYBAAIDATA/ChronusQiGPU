@@ -226,10 +226,23 @@ class SelfRepairEngine:
     Stage 5 -- Verification: the repair is verified by re-checking the metric.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        control_plane: Any = None,
+        request_builder: Optional[Callable[[RepairProposal], Any]] = None,
+    ) -> None:
         self._proposals: List[RepairProposal] = []
         self._repair_count = 0
         self._success_count = 0
+        self._control_plane = control_plane
+        self._request_builder = request_builder
+        self._issued: Dict[str, Tuple[Any, ...]] = {}
+        self._verified: Dict[str, Any] = {}
+
+    @staticmethod
+    def _proposal_signature(proposal: RepairProposal) -> Tuple[Any, ...]:
+        return (proposal.target, proposal.issue_type, proposal.proposed_action, proposal.is_safe)
 
     def diagnose(
         self,
@@ -270,29 +283,99 @@ class SelfRepairEngine:
             is_safe=safe,
         )
         self._proposals.append(proposal)
+        self._issued[proposal_id] = self._proposal_signature(proposal)
         return proposal
 
     def apply_repair(self, proposal: RepairProposal) -> bool:
-        """Apply a repair proposal (with approval gate)."""
-        if not proposal.is_safe:
-            logger.warning("Repair proposal %s is not safe, skipping", proposal.proposal_id)
+        """Dispatch only registered AL HARAS-authorized, verified recovery.
+
+        A safe diagnosis is a proposal, not an actuator or proof. With no
+        configured canonical control plane and request builder, nothing is
+        applied. Source repairs belong to the separate RepairTransaction gate.
+        """
+        if (
+            not any(item is proposal for item in self._proposals)
+            or proposal.proposal_id in self._verified
+            or self._issued.get(proposal.proposal_id) != self._proposal_signature(proposal)
+            or proposal.is_safe is not True
+            or proposal.target == "unknown"
+        ):
             return False
+        proposal.applied = False
+        if self._control_plane is None or not callable(self._request_builder):
+            return False
+        from salamander.control_plane import AutonomicControlPlane
+        from salamander.models import ActionKind, ActionRequest
+
+        if type(self._control_plane) is not AutonomicControlPlane:
+            return False
+        allowed_kind = {
+            "timeout": ActionKind.THROTTLE,
+            "memory_error": ActionKind.THROTTLE,
+            "numerical_drift": ActionKind.REPLAN,
+            "circuit_open": ActionKind.HALF_OPEN_PROBE,
+        }.get(proposal.issue_type)
+        try:
+            request = self._request_builder(proposal)
+            if self._issued.get(proposal.proposal_id) != self._proposal_signature(proposal):
+                return False
+            if (
+                not isinstance(request, ActionRequest)
+                or request.action_id != proposal.proposal_id
+                or request.target != proposal.target
+                or request.kind is not allowed_kind
+            ):
+                return False
+            result = self._control_plane.execute(request)
+            ledger = self._control_plane.ledger
+            if (
+                result.action_id != proposal.proposal_id
+                or result.status != "VERIFIED"
+                or result.verified is not True
+                or not result.before_ref
+                or not result.after_ref
+                or ledger.verify() is not True
+            ):
+                return False
+            records = {r["evidence_sha256"]: r for r in ledger.records}
+            before = records.get(result.before_ref, {})
+            after = records.get(result.after_ref, {})
+            if (
+                before.get("kind") != "action-proposed"
+                or before.get("payload", {}).get("action_id") != proposal.proposal_id
+                or before.get("payload", {}).get("target") != proposal.target
+                or after.get("kind") != "action-independent-verification"
+                or after.get("payload", {}).get("verified") is not True
+                or not after.get("payload", {}).get("evidence_ref")
+            ):
+                return False
+        except Exception as exc:
+            logger.warning("Recovery unavailable or unverified: %s", type(exc).__name__)
+            return False
+        self._verified[proposal.proposal_id] = result
         proposal.applied = True
-        self._success_count += 1
+        self._success_count = len(self._verified)
         return True
 
     def status(self) -> Dict[str, Any]:
         return {
             "total_repairs": self._repair_count,
-            "successful_repairs": self._success_count,
-            "pending_proposals": len([p for p in self._proposals if not p.applied]),
+            "successful_repairs": len(self._verified),
+            "pending_proposals": len(
+                [p for p in self._proposals if p.proposal_id not in self._verified]
+            ),
             "proposals": [
                 {
                     "id": p.proposal_id,
                     "target": p.target,
                     "issue": p.issue_type,
                     "action": p.proposed_action,
-                    "applied": p.applied,
+                    "applied": p.proposal_id in self._verified,
+                    "verification_ref": (
+                        self._verified[p.proposal_id].after_ref
+                        if p.proposal_id in self._verified
+                        else None
+                    ),
                 }
                 for p in self._proposals[-10:]
             ],
@@ -572,10 +655,6 @@ class SalamanderPoincareAllocationManager:
         self._next_logical_index: int = 1
         self._bucket_allocations: Dict[int, int] = {p: 0 for p in PRIME_BUCKETS}
 
-    @property
-    def allocated_slots_count(self) -> int:
-        return len(self._slots)
-
     def _route_slot(self, routing_int: int) -> Tuple[int, int, int]:
         """Resolve a Zeckendorf prime-bucket slot and linear-probe on collision."""
         slot_address, max_k = resolve_zeckendorf_slot(routing_int)
@@ -843,6 +922,9 @@ class SalamanderEngine:
         phi_threshold: float = PHI,
         max_vram_boundary: float = 0.85,
         max_error_rate: float = 0.1,
+        *,
+        recovery_control_plane: Any = None,
+        recovery_request_builder: Optional[Callable[[RepairProposal], Any]] = None,
     ) -> None:
         self.phi_threshold = phi_threshold
         self.homeostasis = HomeostasisMonitor(
@@ -850,7 +932,9 @@ class SalamanderEngine:
             max_vram_boundary=max_vram_boundary,
             max_error_rate=max_error_rate,
         )
-        self.self_repair = SelfRepairEngine()
+        self.self_repair = SelfRepairEngine(
+            control_plane=recovery_control_plane, request_builder=recovery_request_builder
+        )
         self.circuit_breaker = CircuitBreaker()
         self.scaler = LucasIntelligenceScaler()
         self.allocation_manager = SalamanderPoincareAllocationManager()

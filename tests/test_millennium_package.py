@@ -36,6 +36,7 @@ _PACKAGE_FILES = (
     "poincare_golden_11d.py",
     "hyba_poincare_yangmills.py",
     "hyba_golden_mass_gap.py",
+    "exact_gap.py",
     "millennium_reasoning_service.py",
     "sl5_millennium_bridge.py",
     "clay_checklist.py",

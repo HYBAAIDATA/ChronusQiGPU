@@ -139,6 +139,19 @@ paths:
       x-pythia-slo: slo.operator.mutation
       security:
       - OperatorBearer: []
+  /api/v1/control/session:
+    get:
+      summary: pythia.control.session
+      description: 'owner: PYTHIA | truth_class: COMMAND_ACCEPTANCE | schema: chronus.mla1517.session/1
+        | failure: 401 unauthenticated / 403 unauthorized'
+      x-pythia-api-id: pythia.control.session
+      x-pythia-truth-class: COMMAND_ACCEPTANCE
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+      security:
+      - OperatorBearer: []
   /api/v1/gpu:
     get:
       summary: pythia.gpu
@@ -199,16 +212,6 @@ paths:
       x-pythia-slo: slo.specialist
       security:
       - OperatorBearer: []
-  /api/v1/intelligence/cognition/status:
-    get:
-      summary: pythia.intelligence.status
-      description: 'owner: EUCLID | truth_class: RUNTIME_OBSERVATION | schema: pythia.euclid.cognition/1 | direct first-class cognition capability, integrity, reachability and open-gate projection'
-      x-pythia-api-id: pythia.intelligence.status
-      x-pythia-truth-class: RUNTIME_OBSERVATION
-      x-pythia-deprecation-state: CANONICAL
-      x-pythia-reliability-tier: R4
-      x-pythia-lifecycle: STABLE
-      x-pythia-slo: slo.projection.read
   /api/v1/intelligence/cognition/solve:
     post:
       summary: pythia.intelligence.cognition_solve
@@ -223,6 +226,17 @@ paths:
       x-pythia-slo: slo.specialist
       security:
       - OperatorBearer: []
+  /api/v1/intelligence/cognition/status:
+    get:
+      summary: pythia.intelligence.status
+      description: 'owner: EUCLID | truth_class: RUNTIME_OBSERVATION | schema: pythia.runner/1
+        | failure: unavailable intelligence reports unavailable'
+      x-pythia-api-id: pythia.intelligence.status
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
   /api/v1/intelligence/engineer/ask:
     post:
       summary: pythia.intelligence.engineer

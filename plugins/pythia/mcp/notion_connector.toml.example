@@ -1,0 +1,15 @@
+# Notion connector configuration template.
+# Secrets are environment variables only. Never commit tokens.
+
+[notion]
+database_id = ""
+# NOTION_API_KEY is read from the environment. Do not place it here.
+
+[evidence]
+require_digest = true
+reject_boolean_only = true
+timezone_aware_timestamps = true
+
+[boundaries]
+no_secret_leakage = true
+owner_approval_required_for_canonical_writes = true

@@ -1,0 +1,9 @@
+Processing ./dist/chronos_gpu-3.7.0.tar.gz
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: chronos-gpu
+  Building wheel for chronos-gpu (pyproject.toml): started
+  Building wheel for chronos-gpu (pyproject.toml): finished with status 'done'
+  Created wheel for chronos-gpu: filename=chronos_gpu-3.7.0-py3-none-any.whl size=180325 sha256=cb5307344347ae9a485c7fea5ae595fefebcd7a56ed958dd14e17e2c208fae1c
+  Stored in directory: /home/vercel-sandbox/.cache/pip/wheels/a0/9c/2b/8640187deeac75b7c17e5cb3ba68fd9f4e0e913ae82eeb8e28
+Successfully built chronos-gpu

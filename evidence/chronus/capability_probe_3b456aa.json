@@ -1,0 +1,249 @@
+{
+  "schema": "chronus.capability_probe/1",
+  "generated_at_unix": 1791316829,
+  "host": {
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "logical_cpus": 4,
+    "memory_gb": 15.7,
+    "python": "3.13.16",
+    "platform": "Linux-6.18.44-fc-v70-x86_64-with-glibc2.39",
+    "git_head": "3b456aaf3edf44aa2342817184884f3bd8387f2d",
+    "gpu_runtimes": {
+      "pyopencl": "absent",
+      "cupy": "absent",
+      "mlx": "absent",
+      "torch": "absent"
+    },
+    "physical_device_observed": false
+  },
+  "real_data": {
+    "genesis_h0": {
+      "block_hash": "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+      "bits": "0x1d00ffff",
+      "nonce": 2083236893
+    },
+    "block_h1": {
+      "block_hash": "00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048",
+      "bits": "0x1d00ffff",
+      "nonce": 2573394689
+    },
+    "block_h125552": {
+      "block_hash": "00000000000000001e8d6829a8a21adc5d38d0a473b144b6765798e61f98bd1d",
+      "bits": "0x1a44b9f2",
+      "nonce": 2504433986
+    }
+  },
+  "adapters_available": [
+    "cpu-emulator"
+  ],
+  "sha256d_real_blocks": [
+    {
+      "block": "genesis_h0",
+      "published_hash": "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+      "bits": "0x1d00ffff",
+      "real_nonce": 2083236893,
+      "found_nonce": 2083236893,
+      "found_hash_display": "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+      "nonces_checked": 1501,
+      "reproduces_real_block": true,
+      "control_plane_verdict": "match",
+      "wall_s": 0.0045
+    },
+    {
+      "block": "block_h1",
+      "published_hash": "00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048",
+      "bits": "0x1d00ffff",
+      "real_nonce": 2573394689,
+      "found_nonce": 2573394689,
+      "found_hash_display": "00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048",
+      "nonces_checked": 1501,
+      "reproduces_real_block": true,
+      "control_plane_verdict": "match",
+      "wall_s": 0.0041
+    },
+    {
+      "block": "block_h125552",
+      "published_hash": "00000000000000001e8d6829a8a21adc5d38d0a473b144b6765798e61f98bd1d",
+      "bits": "0x1a44b9f2",
+      "real_nonce": 2504433986,
+      "found_nonce": 2504433986,
+      "found_hash_display": "00000000000000001e8d6829a8a21adc5d38d0a473b144b6765798e61f98bd1d",
+      "nonces_checked": 1501,
+      "reproduces_real_block": true,
+      "control_plane_verdict": "match",
+      "wall_s": 0.0038
+    }
+  ],
+  "sha256d_throughput": {
+    "chronus_submit_path": [
+      {
+        "nonces": 100000,
+        "wall_s": 0.221,
+        "verified_hashes_per_s": 451651,
+        "verification": "match"
+      },
+      {
+        "nonces": 500000,
+        "wall_s": 1.154,
+        "verified_hashes_per_s": 433107,
+        "verification": "match"
+      },
+      {
+        "nonces": 1000000,
+        "wall_s": 2.211,
+        "verified_hashes_per_s": 452235,
+        "verification": "match"
+      }
+    ],
+    "raw_hashlib_single_core_hashes_per_s": 1149850
+  },
+  "production_route_real_blocks": [
+    {
+      "block": "genesis_h0",
+      "window": 1200,
+      "route": "chronus_batch",
+      "evidence_class": "SOFTWARE_VERIFIED",
+      "completion_state": "EARLY_WINNER",
+      "candidate_nonce": 2083236893,
+      "is_the_real_block_nonce": true,
+      "candidate_host_verified": true,
+      "hashes_before_hit": 1192,
+      "wall_s": 0.043
+    },
+    {
+      "block": "block_h1",
+      "window": 1200,
+      "route": "chronus_batch",
+      "evidence_class": "SOFTWARE_VERIFIED",
+      "completion_state": "EARLY_WINNER",
+      "candidate_nonce": 2573394689,
+      "is_the_real_block_nonce": true,
+      "candidate_host_verified": true,
+      "hashes_before_hit": 1132,
+      "wall_s": 0.019
+    },
+    {
+      "block": "block_h125552",
+      "window": 1200,
+      "route": "chronus_batch",
+      "evidence_class": "SOFTWARE_VERIFIED",
+      "completion_state": "EARLY_WINNER",
+      "candidate_nonce": 2504433986,
+      "is_the_real_block_nonce": true,
+      "candidate_host_verified": true,
+      "hashes_before_hit": 67,
+      "wall_s": 0.015
+    }
+  ],
+  "workload_kinds": {
+    "lucas_transform": {
+      "n": 10000,
+      "status": "ok",
+      "verification": "match",
+      "wall_ms": 3.27
+    },
+    "pisot_transform": {
+      "n": 10000,
+      "status": "ok",
+      "verification": "match",
+      "wall_ms": 4.73
+    },
+    "phi_transform": {
+      "n": 1474,
+      "status": "ok",
+      "verification": "match",
+      "wall_ms": 0.72
+    },
+    "fold_real_bytes": {
+      "input_bytes": 24594,
+      "status": "ok",
+      "engine": "aethel.encoding.fold",
+      "folded_bytes": 110474,
+      "ratio": 4.4919,
+      "verification": "match",
+      "wall_ms": 49.77,
+      "unfold_status": "ok",
+      "roundtrip_exact": true
+    },
+    "store_retrieve": {
+      "store_status": "ok",
+      "object_id_present": true
+    },
+    "tensor_matmul_synthetic_float64": [
+      {
+        "n": 64,
+        "status": "ok",
+        "verification": "match",
+        "max_abs_err_vs_numpy": 0.0,
+        "wall_ms": 39.16,
+        "end_to_end_gflops": 0.0134
+      },
+      {
+        "n": 256,
+        "status": "ok",
+        "verification": "match",
+        "max_abs_err_vs_numpy": 0.0,
+        "wall_ms": 261.27,
+        "end_to_end_gflops": 0.1284
+      },
+      {
+        "n": 512,
+        "status": "ok",
+        "verification": "match",
+        "max_abs_err_vs_numpy": 0.0,
+        "wall_ms": 1044.53,
+        "end_to_end_gflops": 0.257
+      }
+    ],
+    "cgemv_128_synthetic_complex128": {
+      "status": "ok",
+      "verification": "match",
+      "wall_ms": 23.63
+    }
+  },
+  "runtime_guarantees": {
+    "probe_workload_latency_ms": {
+      "n": 200,
+      "median": 0.589,
+      "p95": 0.899
+    },
+    "receipt_identity_binding_ok": true,
+    "evidence_ledger_records_reloaded": 216,
+    "theseus_custody_commit_ms": {
+      "n": 20,
+      "median": 11.38
+    }
+  },
+  "builtin_measurement_harness": {
+    "stages_available": {
+      "topology.memory": true,
+      "topology.compute": true,
+      "topology.cache": true,
+      "topology.interconnect": true,
+      "profiling.timeline": true,
+      "roofline.bandwidth": true,
+      "roofline.compute": true,
+      "roofline.model": true,
+      "workloads.hashrate": true,
+      "workloads.tensor": true,
+      "workloads.mps": true,
+      "workloads.tt": true,
+      "workloads.mpo": true,
+      "efficiency.power": false,
+      "efficiency.thermal": false,
+      "efficiency.energy": false,
+      "efficiency.ppw": false,
+      "stability.stress": true,
+      "stability.throttle": true,
+      "stability.regression": true,
+      "artifact.replay": true
+    }
+  },
+  "claims_not_made": [
+    "physical GPU/accelerator execution or performance (none present on this host)",
+    "hardware-rooted attestation",
+    "multi-core or fleet throughput (single process, single adapter)",
+    "pool acknowledgement / accepted share",
+    "the governed 1e19 H/s engineering ceiling"
+  ]
+}

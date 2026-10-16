@@ -1,0 +1,112 @@
+{
+  "isa": "chronus1",
+  "version": {
+    "major": 1,
+    "minor": 0
+  },
+  "instruction_width_bits": 32,
+  "endianness": "little",
+  "warp_lanes": 32,
+  "registers": {
+    "general": 32,
+    "predicate_masks": 4,
+    "zero": "R0",
+    "stack_pointer": "R31",
+    "pc": "implicit"
+  },
+  "memory": {
+    "global_address_bits": 32,
+    "local_bytes_per_cu": 65536,
+    "alignment_bytes": 4
+  },
+  "opcodes": {
+    "NOP": 0,
+    "MOV": 1,
+    "MOVI": 2,
+    "ADD": 3,
+    "SUB": 4,
+    "MUL": 5,
+    "FMA": 6,
+    "LOAD": 8,
+    "STORE": 9,
+    "LLOAD": 10,
+    "LSTORE": 11,
+    "BARRIER": 12,
+    "BRA": 16,
+    "BRAZ": 17,
+    "BRANZ": 18,
+    "GET_GID": 24,
+    "GET_LID": 25,
+    "GET_GSIZE": 26,
+    "GET_LSIZE": 27,
+    "EXIT": 63
+  },
+  "formats": [
+    "R",
+    "I",
+    "M",
+    "B",
+    "S"
+  ],
+  "barrier_scopes": {
+    "execution": 0,
+    "local": 1,
+    "global": 2,
+    "local_global": 3
+  },
+  "trap_on_reserved_opcode": true,
+  "silent_host_fallback": false,
+  "binary_format": {
+    "magic": "CHRN",
+    "header_bytes": 32,
+    "fields": [
+      {
+        "offset": 0,
+        "size": 4,
+        "name": "magic"
+      },
+      {
+        "offset": 4,
+        "size": 2,
+        "name": "major"
+      },
+      {
+        "offset": 6,
+        "size": 2,
+        "name": "minor"
+      },
+      {
+        "offset": 8,
+        "size": 4,
+        "name": "flags"
+      },
+      {
+        "offset": 12,
+        "size": 4,
+        "name": "entry"
+      },
+      {
+        "offset": 16,
+        "size": 4,
+        "name": "code_words"
+      },
+      {
+        "offset": 20,
+        "size": 4,
+        "name": "required_global_bytes"
+      },
+      {
+        "offset": 24,
+        "size": 4,
+        "name": "code_crc32"
+      },
+      {
+        "offset": 28,
+        "size": 4,
+        "name": "metadata_bytes"
+      }
+    ],
+    "code_endianness": "little",
+    "v1_metadata_bytes": 0
+  }
+}

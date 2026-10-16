@@ -16,6 +16,30 @@
 > transfers PYTHIA's final SearchPlan authority, or weakens SHA256d/target proof
 > semantics is not authorised without explicit written repository-owner approval.
 
+
+## Deterministic hashrate — solving, not searching
+
+Lucas scales every limb. Floating ASIC features (`hyba/hybrid/asic_solver.py`,
+`hyba/hybrid/super_asic.py`, the Chronus iGPU ASIC adjacency path) are brought
+into the same composition as the resident Hendrix walk and the Lucas-metallic
+operators.
+
+- **Solving, not searching.** The accept predicate remains SHA-256d ≤ target.
+  The schedule is a deterministic bijection (golden stride or Hendrix coprime
+  stride) over the leased window. Every nonce is visited exactly once; there is
+  no probabilistic probe.
+- **Hashrate is measured, not declared.** The floor is 10 EH/s once physical
+  ASIC channels are bound and the self-check passes. Until a device reports
+  `silicon_status()["device_run"] == PASS`, the hashrate figure is
+  `NOT_RUN`. No module self-declares SUCCESS.
+- **Composition.** `SuperAsicHasher` partitions windows by measured throughput
+  across bound ASIC, GPU and remote agents. The aggregate is the sum of
+  attested device rates; it is never assumed.
+
+See `docs/CANONICAL_PYTHIA_SEARCH_DOCTRINE.md` for the governing search
+contract and `hyba/operating_model/lemma.py` for the authorised Lucas and
+Zeckendorf scopes.
+
 **PYTHIA is HYBA's operational mining product.** Its singular function is to run the mining system, obtain honest device and pool measurements, sustain HYBA, and support Enterprise's route to market. Enterprise PRIME-DB, storage, treasury, and customer-product implementation are separate products and are not imported into PYTHIA.
 
 ## Intelligence-first composition

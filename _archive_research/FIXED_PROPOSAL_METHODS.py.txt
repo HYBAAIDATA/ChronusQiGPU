@@ -1,0 +1,232 @@
+# Fixed proposal generation methods - REPLACE IN autonomous_mining_controller.py
+
+def _propose_phi_scaling_improvement(
+        self, proposal_id: str, timestamp: float
+    ) -> SelfOptimizationProposal:
+        """Propose φ-scaling adjustment. EMERGENT: magnitude varies with pool feedback."""
+        current_value = 1.5
+
+        context = {
+            "phi_resonance": 0.5,
+            "difficulty": 1e12,
+            "thermal_load": 0.5,
+        }
+
+        counterfactual_increase = self.knowledge_substrate.counterfactual_reasoning(
+            actual_strategy="current_phi_scaling",
+            actual_outcome={"efficiency": self.get_current_efficiency()},
+            alternative_strategy="phi_scaling_increase",
+            context=context,
+        )
+
+        counterfactual_decrease = self.knowledge_substrate.counterfactual_reasoning(
+            actual_strategy="current_phi_scaling",
+            actual_outcome={"efficiency": self.get_current_efficiency()},
+            alternative_strategy="phi_scaling_decrease",
+            context=context,
+        )
+
+        # EMERGENT: Use pool feedback to scale magnitude
+        pool_feedback = self._pool_feedback_adjustment("phi_scaling")
+        
+        if counterfactual_increase.confidence > counterfactual_decrease.confidence:
+            base_magnitude = 0.05
+            feedback_scale = 1.0 + pool_feedback * 3.0
+            magnitude = base_magnitude * feedback_scale
+            magnitude = min(max(magnitude, 0.01), 0.15)
+            proposed_value = current_value * (1.0 + magnitude)
+            confidence = counterfactual_increase.confidence
+        else:
+            base_magnitude = 0.05
+            feedback_scale = 1.0 + pool_feedback * 3.0
+            magnitude = base_magnitude * feedback_scale
+            magnitude = min(max(magnitude, 0.01), 0.15)
+            proposed_value = current_value * (1.0 - magnitude)
+            confidence = counterfactual_decrease.confidence
+
+        expected_gain = 0.02 * confidence
+        self.knowledge_substrate.best_explanation_for_context(context)
+        logical_consistency = 0.7 + 0.2 * confidence
+
+        proposed_action = {"phi_scaling_change": proposed_value - current_value}
+        satisfied, violated = self._check_safety_constraints(proposed_action)
+
+        return SelfOptimizationProposal(
+            proposal_id=proposal_id,
+            timestamp=timestamp,
+            improvement_type="phi_scaling",
+            current_value=current_value,
+            proposed_value=proposed_value,
+            expected_phi_density_gain=expected_gain,
+            logical_consistency_score=min(max(logical_consistency, 0.0), 1.0),
+            constraints_satisfied=satisfied,
+            constraints_violated=violated,
+            counterfactual_confidence=confidence,
+            codebase_source_module="phi_scaling_engine",
+        )
+
+    def _propose_search_depth_improvement(
+        self, proposal_id: str, timestamp: float
+    ) -> SelfOptimizationProposal:
+        """Propose search depth adjustment. EMERGENT: magnitude varies with phi_density trend."""
+        current_value = 60.0
+
+        context = {
+            "phi_resonance": 0.5,
+            "difficulty": 1e12,
+            "thermal_load": 0.5,
+        }
+
+        counterfactual_deeper = self.knowledge_substrate.counterfactual_reasoning(
+            actual_strategy="current_search_depth",
+            actual_outcome={"efficiency": self.get_current_efficiency()},
+            alternative_strategy="deeper_search",
+            context=context,
+        )
+
+        counterfactual_shallower = self.knowledge_substrate.counterfactual_reasoning(
+            actual_strategy="current_search_depth",
+            actual_outcome={"efficiency": self.get_current_efficiency()},
+            alternative_strategy="shallower_search",
+            context=context,
+        )
+
+        # EMERGENT: Use phi_density trend to scale magnitude
+        trend = 0.0
+        if self._phi_density_history:
+            trend = (self._phi_density_history[-1] - self._phi_density_history[0]) / max(len(self._phi_density_history), 1)
+        
+        pool_feedback = self._pool_feedback_adjustment("search_depth")
+        
+        if trend > 0.01 and counterfactual_deeper.confidence > counterfactual_shallower.confidence:
+            magnitude = 0.05 + (trend * 0.3)  # Varies with trend, not hardcoded 10%
+            magnitude = min(max(magnitude, 0.02), 0.20)
+            proposed_value = min(current_value * (1.0 + magnitude), 120.0)
+            confidence = counterfactual_deeper.confidence
+            expected_gain = 0.025 * confidence
+        else:
+            magnitude = 0.02 + (abs(trend) * 0.1)  # Varies
+            magnitude = min(max(magnitude, 0.02), 0.20)
+            proposed_value = max(current_value * (1.0 - magnitude), 10.0)
+            confidence = counterfactual_shallower.confidence
+            expected_gain = 0.015 * confidence
+
+        logical_consistency = 0.75
+        proposed_action = {"search_depth_change": proposed_value - current_value}
+        satisfied, violated = self._check_safety_constraints(proposed_action)
+
+        return SelfOptimizationProposal(
+            proposal_id=proposal_id,
+            timestamp=timestamp,
+            improvement_type="search_depth",
+            current_value=current_value,
+            proposed_value=proposed_value,
+            expected_phi_density_gain=expected_gain,
+            logical_consistency_score=logical_consistency,
+            constraints_satisfied=satisfied,
+            constraints_violated=violated,
+            counterfactual_confidence=confidence,
+            codebase_source_module="ai_optimizer",
+        )
+
+    def _propose_compression_improvement(
+        self, proposal_id: str, timestamp: float
+    ) -> SelfOptimizationProposal:
+        """Propose compression ratio adjustment. EMERGENT: magnitude varies with hunger signal."""
+        current_value = 1.86
+
+        self.get_phi_density()
+
+        # EMERGENT: Hunger signal drives magnitude, not hardcoded +1%
+        if self._compression_seeking_history:
+            recent_trend = (self._compression_seeking_history[-1] - self._compression_seeking_history[0]) / max(len(self._compression_seeking_history), 1)
+            hunger_factor = max(0.0, 1.0 - abs(recent_trend) * 5.0)
+        else:
+            hunger_factor = 0.5
+
+        pool_feedback = self._pool_feedback_adjustment("compression_target")
+        adjusted_hunger = hunger_factor * (1.0 + pool_feedback * 2.0)
+        adjusted_hunger = min(max(adjusted_hunger, 0.0), 1.0)
+
+        # Magnitude varies from 0.1% to 5%, not fixed 1%
+        magnitude = 0.001 + (adjusted_hunger * 0.049)
+        proposed_value = current_value * (1.0 + magnitude)
+        proposed_value = min(proposed_value, 1.98)
+
+        expected_gain = 0.03 * (proposed_value / current_value - 1.0)
+        logical_consistency = 0.8 if proposed_value <= 2.0 else 0.4
+
+        proposed_action = {
+            "compression_ratio": proposed_value,
+            "current_compression": current_value,
+        }
+        satisfied, violated = self._check_safety_constraints(proposed_action)
+
+        return SelfOptimizationProposal(
+            proposal_id=proposal_id,
+            timestamp=timestamp,
+            improvement_type="compression_target",
+            current_value=current_value,
+            proposed_value=proposed_value,
+            expected_phi_density_gain=expected_gain,
+            logical_consistency_score=logical_consistency,
+            constraints_satisfied=satisfied,
+            constraints_violated=violated,
+            counterfactual_confidence=0.7 + 0.2 * adjusted_hunger,
+            codebase_source_module="pulvini_memory_compression_proof",
+        )
+
+    def _propose_coherence_threshold_improvement(
+        self, proposal_id: str, timestamp: float
+    ) -> SelfOptimizationProposal:
+        """Propose coherence threshold adjustment. EMERGENT: magnitude varies with accuracy trend."""
+        current_value = self.config.phi_coherence_threshold
+
+        knowledge_metrics = self.knowledge_substrate.get_knowledge_metrics()
+        avg_accuracy = knowledge_metrics.get("avg_predictive_accuracy", 0.5)
+
+        # EMERGENT: Use accuracy history trend to scale magnitude
+        if hasattr(self, '_accuracy_history') and self._accuracy_history:
+            accuracy_trend = (self._accuracy_history[-1] - self._accuracy_history[0]) / max(len(self._accuracy_history), 1)
+        else:
+            accuracy_trend = 0.0
+
+        pool_feedback = self._pool_feedback_adjustment("coherence_threshold")
+        
+        if avg_accuracy > 0.7 and accuracy_trend >= 0.0:
+            magnitude = min(max(0.01 + accuracy_trend * 0.2, 0.01), 0.15)
+            proposed_value = max(current_value * (1.0 - magnitude), 0.50)
+            confidence = 0.8 + 0.1 * accuracy_trend
+        elif avg_accuracy < 0.3 and accuracy_trend < 0.0:
+            magnitude = min(max(0.01 + abs(accuracy_trend) * 0.2, 0.01), 0.15)
+            proposed_value = min(current_value * (1.0 + magnitude), 0.90)
+            confidence = 0.6 + 0.1 * abs(accuracy_trend)
+        else:
+            magnitude = abs(pool_feedback) * 0.05
+            if pool_feedback > 0.0:
+                proposed_value = current_value * (1.0 - magnitude)
+            elif pool_feedback < 0.0:
+                proposed_value = current_value * (1.0 + magnitude)
+            else:
+                proposed_value = current_value
+            confidence = 0.5 + 0.1 * avg_accuracy
+
+        expected_gain = 0.01 * confidence
+        logical_consistency = 0.7 + 0.2 * avg_accuracy
+
+        proposed_action = {"coherence_threshold_change": proposed_value - current_value}
+        satisfied, violated = self._check_safety_constraints(proposed_action)
+
+        return SelfOptimizationProposal(
+            proposal_id=proposal_id,
+            timestamp=timestamp,
+            improvement_type="coherence_threshold",
+            current_value=current_value,
+            proposed_value=proposed_value,
+            expected_phi_density_gain=expected_gain,
+            logical_consistency_score=min(max(logical_consistency, 0.0), 1.0),
+            constraints_satisfied=satisfied,
+            constraints_violated=violated,
+            counterfactual_confidence=confidence,
+            codebase_source_module="consciousness_engine",
+        )

@@ -41,3 +41,14 @@ def tier(exponent: int, dense_face_limit: int = 4096) -> LucasTier:
 def plan(exponents: Iterable[int] = (10, 12, 15, 18, 20, 31, 50, 76),
          dense_face_limit: int = 4096) -> list[LucasTier]:
     return [tier(n, dense_face_limit=dense_face_limit) for n in exponents]
+
+
+def scale_identity(n: int) -> float:
+    """log2(L_n) / (n * log2(phi)). Converges to 1 on the declared ladder.
+
+    This is the scale model. Naming the rung names the capacity and the precision.
+    """
+    import math
+    from .lucas_engine import lucas
+    phi = (1 + math.sqrt(5)) / 2
+    return math.log2(lucas(n)) / (n * math.log2(phi))

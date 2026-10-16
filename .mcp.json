@@ -1,0 +1,40 @@
+{
+  "mcp_spec_version": "1.0",
+  "name": "Euclid_MCP",
+  "version": "0.4.3",
+  "description": "Top-level MCP manifest for EuclidQuantumPhi/EuclidPhiEnterprise. Provides server registration hints for local agent hosts.",
+  "servers": [
+    {
+      "name": "exact-kernel",
+      "command": "python",
+      "args": ["-m", "mcp.exact_kernel.server"],
+      "env": { "PYTHONPATH": "${REPO_ROOT}" },
+      "description": "Exact kernel (stable) — recommended for internal Notion agents"
+    },
+    {
+      "name": "cogito",
+      "command": "python",
+      "args": ["-m", "mcp.cogito.server"],
+      "env": { "PYTHONPATH": "${REPO_ROOT}" },
+      "description": "Cogito capability surface (experimental) — use for internal review only"
+    }
+  ],
+  "connectors": [
+    {
+      "name": "notion",
+      "type": "Notion",
+      "description": "Optional Notion-based MCP connector for canonical pages / knowledge access. Configure `url` and auth via environment variables or MCP secrets.",
+      "config": {
+        "url": "https://app.notion.com/",
+        "catalog_id": "",
+        "auth": {
+          "method": "env",
+          "env_client_id": "NOTION_CLIENT_ID",
+          "env_client_secret": "NOTION_CLIENT_SECRET",
+          "env_token": "NOTION_ACCESS_TOKEN"
+        }
+      }
+    }
+  ],
+  "notes": "This top-level .mcp.json is intended for internal agent registration. Replace ${REPO_ROOT} with the absolute filesystem path where the repository is checked out on the agent host. exact-kernel is stable; cogito is experimental."
+}

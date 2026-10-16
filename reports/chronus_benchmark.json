@@ -1,0 +1,190 @@
+{
+  "benchmark": "chronus_fabric",
+  "corpus": {
+    "kind": "synthetic",
+    "headers": 4,
+    "seed": 1398100039
+  },
+  "nonce_space": 2048,
+  "inventory": {
+    "devices": [
+      {
+        "name": "mla1517_rtl",
+        "vendor": "",
+        "backend": "rtl",
+        "type": "rtl",
+        "capabilities": {
+          "truth_class": "design",
+          "rtl_files": 6
+        }
+      },
+      {
+        "name": "legacy_rtl",
+        "vendor": "",
+        "backend": "rtl",
+        "type": "rtl",
+        "capabilities": {
+          "truth_class": "design",
+          "rtl_files": 8
+        }
+      },
+      {
+        "name": "CPU (hashlib)",
+        "vendor": "Intel64 Family 6 Model 207 Stepping 2, GenuineIntel",
+        "backend": "cpu",
+        "type": "cpu",
+        "compute_units": 8,
+        "capabilities": {
+          "exact_math": true,
+          "hashlib_sha256d": true,
+          "numpy": true
+        }
+      }
+    ],
+    "errors": {
+      "opencl": "LogicError: clGetPlatformIDs failed: PLATFORM_NOT_FOUND_KHR"
+    },
+    "detected_at": 1790484668.173756
+  },
+  "composed": {
+    "name": "hyba-super-gpu",
+    "compute_units": 8,
+    "global_mem_mb": 0,
+    "device_count": 3,
+    "capability_map": {
+      "truth_class": "mla1517_rtl",
+      "rtl_files": "mla1517_rtl",
+      "exact_math": "CPU (hashlib)",
+      "hashlib_sha256d": "CPU (hashlib)",
+      "numpy": "CPU (hashlib)"
+    },
+    "devices": [
+      {
+        "name": "mla1517_rtl",
+        "vendor": "",
+        "backend": "rtl",
+        "type": "rtl",
+        "capabilities": {
+          "truth_class": "design",
+          "rtl_files": 6
+        }
+      },
+      {
+        "name": "legacy_rtl",
+        "vendor": "",
+        "backend": "rtl",
+        "type": "rtl",
+        "capabilities": {
+          "truth_class": "design",
+          "rtl_files": 8
+        }
+      },
+      {
+        "name": "CPU (hashlib)",
+        "vendor": "Intel64 Family 6 Model 207 Stepping 2, GenuineIntel",
+        "backend": "cpu",
+        "type": "cpu",
+        "compute_units": 8,
+        "capabilities": {
+          "exact_math": true,
+          "hashlib_sha256d": true,
+          "numpy": true
+        }
+      }
+    ],
+    "errors": {
+      "opencl": "LogicError: clGetPlatformIDs failed: PLATFORM_NOT_FOUND_KHR"
+    }
+  },
+  "per_device": [
+    {
+      "measured": true,
+      "hashes": 8192,
+      "wall_s": 0.012359199999991688,
+      "hashes_per_s": 662826.0728854222,
+      "backend": "cpu",
+      "device": "CPU (hashlib)"
+    }
+  ],
+  "aggregate": {
+    "measured": false,
+    "reason": "fewer than 2 runnable devices"
+  },
+  "best_single": {
+    "measured": true,
+    "hashes": 8192,
+    "wall_s": 0.012359199999991688,
+    "hashes_per_s": 662826.0728854222,
+    "backend": "cpu",
+    "device": "CPU (hashlib)"
+  },
+  "partition_efficiency": null,
+  "composed_ops": {
+    "cnormsq": {
+      "measured": false,
+      "truth_class": "cpu_reference",
+      "backend": "cpu",
+      "device": "CPU (hashlib)",
+      "measured_ns": 55400,
+      "attestation": {
+        "op": "cnormsq",
+        "backend": "cpu",
+        "device_name": "CPU (hashlib)",
+        "measured_ns": 55400,
+        "clock_source": "perf_counter",
+        "truth_class": "cpu_reference",
+        "issued_ns": 5779868214700,
+        "capability_used": "numpy",
+        "lucas_rung": 50,
+        "chunk_size": 2050,
+        "workgroup_size": 1
+      }
+    },
+    "lucas_pisot_scale": {
+      "measured": false,
+      "truth_class": "unconfigured",
+      "backend": "cpu",
+      "device": "CPU (hashlib)",
+      "measured_ns": 7000,
+      "attestation": {
+        "op": "lucas_pisot_scale",
+        "backend": "cpu",
+        "device_name": "CPU (hashlib)",
+        "measured_ns": 7000,
+        "clock_source": "perf_counter",
+        "truth_class": "unconfigured",
+        "issued_ns": 5779868255600,
+        "capability_used": "exact_math"
+      }
+    },
+    "sha256d_scan": {
+      "measured": false,
+      "truth_class": "cpu_reference",
+      "backend": "cpu",
+      "device": "CPU (hashlib)",
+      "measured_ns": 371300,
+      "attestation": {
+        "op": "sha256d_scan",
+        "backend": "cpu",
+        "device_name": "CPU (hashlib)",
+        "measured_ns": 371300,
+        "clock_source": "perf_counter",
+        "truth_class": "cpu_reference",
+        "issued_ns": 5779868658600,
+        "capability_used": "hashlib_sha256d",
+        "lucas_rung": 50,
+        "chunk_size": 2050,
+        "workgroup_size": 1
+      }
+    }
+  },
+  "attestation_summary": {
+    "total": 0,
+    "by_op": {},
+    "by_truth_class": {}
+  },
+  "verdict": {
+    "measured_gpu_present": false,
+    "aggregate_measured": false
+  }
+}

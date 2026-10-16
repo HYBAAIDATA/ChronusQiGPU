@@ -47,7 +47,7 @@ jobs:
     name: Freeze and verify source identity
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         ref: ${{ env.RC_SHA }}
     - name: Require exact requested RC
@@ -60,7 +60,7 @@ jobs:
     needs: preflight
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.RC_SHA }}
       - uses: actions/setup-python@v7
@@ -95,7 +95,7 @@ jobs:
     needs: kellogg-prerequisite
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.RC_SHA }}
       - uses: actions/setup-python@v7
@@ -122,7 +122,7 @@ jobs:
       matrix:
         python: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.RC_SHA }}
       - uses: actions/setup-python@v7
@@ -156,7 +156,7 @@ jobs:
     needs: [kellogg-prerequisite, preflight]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.RC_SHA }}
       - uses: actions/setup-python@v7
@@ -241,7 +241,7 @@ jobs:
     needs: preflight
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.RC_SHA }}
       - uses: leanprover/lean-action@v1
@@ -259,7 +259,7 @@ jobs:
     needs: [kellogg-prerequisite, build-turing, verify-installed, source-gate, formal]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.RC_SHA }}
       - uses: actions/download-artifact@v8
@@ -369,7 +369,7 @@ jobs:
       contents: read
       actions: read
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         ref: ${{ env.RC_SHA }}
     - run: test -n "${{ inputs.kellogg_release_run_id }}"
@@ -416,7 +416,7 @@ jobs:
       contents: read
       id-token: write
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         ref: ${{ env.RC_SHA }}
     - uses: actions/download-artifact@v8
@@ -459,7 +459,7 @@ jobs:
         - '3.12'
         - '3.13'
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         ref: ${{ env.RC_SHA }}
     - uses: actions/setup-python@v7
@@ -491,7 +491,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.publish != 'none'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         ref: ${{ env.RC_SHA }}
     - uses: actions/download-artifact@v8
@@ -526,7 +526,7 @@ jobs:
         - '3.12'
         - '3.13'
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         ref: ${{ env.RC_SHA }}
     - uses: actions/setup-python@v7
@@ -558,7 +558,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         ref: ${{ env.RC_SHA }}
     - uses: actions/download-artifact@v8
@@ -590,7 +590,7 @@ jobs:
       contents: read
       id-token: write
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         ref: ${{ env.RC_SHA }}
     - uses: actions/download-artifact@v8
@@ -643,7 +643,7 @@ jobs:
       contents: write
       actions: read
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         ref: ${{ env.RC_SHA }}
     - uses: actions/download-artifact@v8

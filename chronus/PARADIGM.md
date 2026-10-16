@@ -1,7 +1,6 @@
 # Chronus iGPU Paradigm
 
-**Home of the HYBA software-defined quantum-from-maths GPU and accelerated execution plane.**  
-Old M3 paths were the test bed. This tree is where the Chronus runtime stack lives.
+**Home of the HYBA software-defined quantum-from-maths GPU and accelerated execution plane.**
 
 License posture for claims: MIT · Python 3.10+ · Veritas Integritas · **Rule 7: Strict Honest Measurement** · 11D substrate active.
 
@@ -24,8 +23,32 @@ substrate- and hardware-agnostic: a CPU, iGPU, GPU or future accelerator may hos
 Chronus run without becoming the Chronus product identity. Turing is the independent
 HYBA Virtual Quantum Computer (VQC). Turing may use Chronus for authorised substrate
 execution, but neither system owns or replaces the other.
-Lucas/Pisot provides mathematical structure and scale contracts where actually implemented;
-intelligence is a consumer of those contracts, not their owner.
+
+Lucas/Pisot is the execution scale model of the whole system, including Chronus itself.
+It is not a budget or sizing convention and not an assignment rule.
+
+---
+
+## Dual-mode product contract
+
+The system is not dependent on silicon.
+
+| Mode | Description |
+|------|-------------|
+| Native | Chronus is a GPU in its own right. Exact \(\mathbb{Q}(\phi)\) geometry and Lucas/Pisot scale contracts execute on ordinary host arithmetic. No physical device is required. |
+| Climb | When a host GPU is bound, Chronus scales it. Silicon status is PASS only when the bound device executed the named operation. Without a device the status remains NOT_RUN; native mode continues. |
+
+Mining is the testing surface. Enterprise and hyperscaler workloads carry their own accept predicates. The execution plane does not invent them.
+
+---
+
+## Dispatch geometry
+
+The work-group planner selects the largest power-of-two tile that fits the device limits and halves down. It does not start at a fixed constant and only descend.
+
+Lucas/Pisot remains the scale model for capacity and precision. It does not replace hardware-bound tile selection. A Lucas-indexed tile ladder is inadmissible: no Lucas value in range is a power of two, and the local-memory path requires power-of-two sizes.
+
+The rung may later select the memory-contract envelope. That proposal is untested.
 
 ---
 
@@ -38,201 +61,56 @@ intelligence is a consumer of those contracts, not their owner.
 | 3 | **Lucas/Pisot can structure scale** — memory budgets, batches, search windows, workers and other domains only where the implemented contract uses them. |
 | 4 | Folded working representations must prove exactness/reconstruction and include all metadata in claimed density gains. |
 | 5 | Speed claims come from measured reductions in work, movement, latency or convergence — never from the Lucas/Pisot name alone. |
-| 6 | **Native Chronus GPU**: Chronus is the GPU itself; **host-GPU augmentation**: Chronus enters and scales/extends the customer's certified GPU/accelerator stack. |
-| 7 | Effective capacity is **maths-bounded** (`L_n` ratio envelope), not SKU fantasy. |
-| 8 | **This repository is domicile**; M3 was a historical proof bed. |
-| 9 | Evidence gates govern every product/research claim. |
-| 10 | One execution contract can target multiple substrates without pretending they are equivalent. |
+| 6 | Native mode is complete without a host accelerator. Absence of a certified lane does not demote native Chronus. |
+| 7 | Effective capacity is a maths-bounded envelope, not a throughput claim. Ladder stop is not TH/s. Hardware presence is not hardware execution. |
 
 ---
 
-## Two mathematical structures, one governed scale contract
+## Structural placement
 
-```text
-LUCAS  (resource / integer dimension)
-  L_n = exact integer
-  may size and partition: workers, batches, memory budgets,
-  thread slices, search windows and parallel lanes
-  → resource schedule follows explicit ladder stops
-
-PISOT / φ  (convergence / sequence dimension)
-  φ > 1, |ψ| < 1
-  may provide useful discrepancy/convergence/recurrence structure
-  → any claimed advantage remains algorithm- and benchmark-specific
-
-TOGETHER
-  rung/index contracts may be consumed by Chronus, Turing or other HYBA domains
-  when the relevant implementation explicitly uses them
-```
-
-Canonical Chronus offering policy: `chronus/seam/scale.py`.
-
-The repository root `claims.yaml` is the release authority. In particular, the existing
-refutation of generic **Lucas/Pisot quantum speedup** and prohibition on generic
-**exponential speedup** remain binding. A narrower algorithm-specific benefit may still be
-established, but it requires its own proof/benchmark/evidence chain.
+| Plane | Where Lucas/Pisot is structural | Where it is not |
+|-------|---------------------------------|-----------------|
+| KELLOGG | \(\mathbb{Z}[\phi]\) ring; exact sign without floats; `_drift_step` without materialising \(L_m\) as float | — |
+| TURING | Folded Grover Cassini witness; `fib(6)` FIFO; `PISOT_EXACT_N = 76` derived; backend admission before execution | `phi_vqc` Clifford skeleton is capability-demonstration only |
+| CHRONUS | Dual-mode contract; digest-bound evidence gates; exact state-vector algebra; seam scale envelope | Dispatch tile size (hardware-bound, power-of-two) |
 
 ---
 
-## Folded working form · measured execution
+## What is not claimed
 
-| Axis | Mechanism | Required evidence |
-|------|-----------|-------------------|
-| Representation | PULVINI / approved fold representation | exactness, metadata-inclusive size, reconstruction cost, downstream effect |
-| Search | Geodesic / other structured search where applicable | correctness, preprocessing, query/update cost, scaling curve |
-| Execution | Chronus dispatch / device binding | actual substrate, useful work, correctness, latency/throughput |
-| Scale | Lucas/Pisot contracts where implemented | explicit algorithmic role plus measured effect |
+- No hashrate figure is declared.
+- No continuum Yang–Mills mass gap is claimed.
+- No quantum advantage is claimed.
+- Mining is the testing surface, not the product identity.
 
-**Folded form = working form** is valuable only when consumers can operate on that form
-without silently re-materialising the raw state or weakening semantics. Benchmark both the
-representation and the downstream computation.
+`theorem_proven` remains `False`.
 
----
 
-## Independent fabric **or** scale your stack
+## TOE placement
 
-| Mode | Meaning |
-|------|---------|
-| **Native Chronus GPU** | Chronus Virtual iGPU + mathematical engine: ABI, runtime, scheduling, memory, verification and evidence execute without requiring a host GPU. |
-| **Host-GPU augmentation** | Chronus enters a customer CUDA / OpenCL / Metal / XPU stack: probe → negotiate → bind → execute → verify → evidence, extending/scaling that host. |
+TOE is the decision authority for lane selection. It is not a per-observation
+telemetry annotator.
 
-One Chronus product; multiple execution substrates. No silent substitution and no
-backend may become the product identity.
+The Problem for lane selection is constructed in
+`chronus/mla1517/mining/toe_lane_decision.py`:
+- operators = declared M32 lane orders
+- objective = marked-state probability
+- query = (lane_order, share_yield)
+- uncertain = declared plausible range on the effect
+- reward bound only from real pool responses
 
----
+The machine returns ACT only when the effect is identified, REFUSED when it
+is not, and ACQUIRE_EVIDENCE when the model is contradicted. The rule-based
+chooser remains the fallback. This is not yet wired into the production
+call graph.
 
-## Effective capacity (Rule 7)
 
-Physical inventory stays physical. The scale contract may publish a **logical work
-envelope**, never a fake device count and never a hashrate.
 
-```text
-effective envelope ≈ physical_units × L_n / L_ref
-physical_units       = real census (cards, tiles, or negotiated units)
-L_n                  = Lucas value at ladder stop n
-L_ref                = reference rung (see chronus.seam.scale)
-```
+## Scale model is consulted
 
-API:
+The dispatch planner reports the nearest declared ladder stop inside the hardware bound via `_ladder_envelope`. The tile remains a power of two. The envelope is the scale contract.
 
-```python
-from chronus.seam.scale import compute_effective_capacity, effective_capacity
+The iGPU package exposes `scale_identity(n)` which returns \(\log_2 L_n / (n\log_2\phi)\). On the declared ladder this converges to 1.
 
-cap = compute_effective_capacity(physical_units=80, ladder_index=15)
-effective_capacity(80, ladder_index=15)
-```
+The quantum-from-maths plane is the acceleration. The scale model is the contract that acceleration is planned against.
 
-### M3 witness class (historical test bed)
-
-On the M3 research path, a physical inventory on the order of **80** GPUs was operated
-under the scale contract with a logical/effective scheduling envelope in an **~800-class**
-band. That is a historical scale-contract witness, not a claim that 80 physical devices
-became 800 physical devices and not a throughput number.
-
-Rule 7 fences:
-
-- ladder stop ≠ advertised TH/s or pool hashrate;
-- `work_items` / batch size ≠ measured throughput;
-- `effective` ≠ physical GPU count;
-- hardware presence ≠ hardware execution;
-- measured dispatches are measured; projections remain labelled projections;
-- unavailable hardware remains unavailable.
-
-See `RULE7_NOTE` and `EffectiveCapacity` in `chronus/seam/scale.py`.
-
----
-
-## Where the stack lives
-
-```text
-EUCLID / TOE / PYTHIA / TURING / enterprise workloads
-        │
-        │ governed compute request
-        ▼
-┌────────────────────── CHRONUS ────────────────────────────────┐
-│ software-defined GPU · heterogeneous execution · Virtual iGPU │
-│ routing · binding · topology · telemetry · provenance         │
-│ seam/scale.py → offering-level resource policy                │
-└──────────────────────────┬────────────────────────────────────┘
-                           │
-          ┌────────────────┼─────────────────┐
-          ▼                ▼                 ▼
-         CPU              iGPU              GPU
-                                            │
-                                 future FPGA / ASIC / cloud
-
-TURING is a separate VQC that may use Chronus for authorised substrate execution.
-OVID owns representation transformation.
-THESEUS owns durable custody/continuity/recovery.
-PULVINI and Geodesic retain separately attributable representation/search roles.
-AL HARAS governs; Salamander heals/optimises within bounded authority.
-```
-
-**Chronus owns:** route, device policy, substrate binding, resident execution,
-Virtual iGPU, topology-aware scheduling, telemetry, dispatch provenance and attestation.
-
-**Turing owns:** the VQC execution model, quantum/VQC algorithms and VQC results. Turing
-may call Chronus for an underlying classical/device execution path; Chronus does not
-rename, wrap or absorb Turing.
-
-**External ops boundary:** live pool protocols, worker credentials, reward and accounting
-workflows remain outside Chronus unless an approved integration contract explicitly wires
-them.
-
----
-
-## Five cooperating surfaces, clear ownership
-
-| Surface | Role in this paradigm |
-|--------|------------------------|
-| **PULVINI** | Fold/representation mechanisms where exactness is established |
-| **Geodesic/Search** | Structured search/indexing; does not become custody |
-| **Chronus** | Heterogeneous execution and acceleration |
-| **OVID** | Transformation / metamorphosis of representations |
-| **THESEUS** | Durable custody, integrity, continuity and recovery |
-
-AL HARAS provides governance/evidence gates. Salamander provides bounded health and
-optimisation. EUCLID remains the intelligence authority. These roles cooperate; they do
-not become skins over one hidden owner.
-
----
-
-## Benchmark posture
-
-Chronus does not need an artificial single competitor.
-
-For each capability, benchmark against the strongest semantically comparable reference:
-
-- direct CPU/device execution without Chronus;
-- CUDA / ROCm / oneAPI / OpenCL / Metal-class native runtimes;
-- production raster/ray/path-tracing reference engines for rendering;
-- NumPy/BLAS and device tensor libraries for tensor workloads;
-- raw state plus exact compressors such as zstd/gzip for representation claims;
-- brute-force/tree/index/ANN controls for search when semantics match;
-- frozen SHA256d reference execution for mining kernels;
-- conventional virtual-GPU/device-sharing approaches for Virtual iGPU overhead/isolation.
-
-The canonical comparator framework and evidence rules live in `chronus/README.md`.
-
----
-
-## Doctrine
-
-```text
-RAW-STATE TAX          → reduce only when evidence shows less work/movement
-LUCAS / PISOT          → mathematical structure, not generic speedup
-CHRONUS                → heterogeneous execution / Virtual iGPU home
-TURING                  → independent VQC; may use Chronus execution
-OVID                    → transformation
-THESEUS                 → durable custody
-PULVINI                 → fold/representation
-GEODESIC                → search/index structure
-NATIVE CHRONUS GPU      → Chronus is the GPU; no host GPU prerequisite
-HOST-GPU AUGMENTATION   → same Chronus contract scales/extends customer hardware
-EFFECTIVE CAPACITY      → L_n envelope, Rule 7 safe
-MEASURED EVIDENCE       → required before promotion
-```
-
-When in doubt: read `chronus/README.md`, `chronus/seam/scale.py` and the root
-`claims.yaml`. Prefer a smaller proved statement over a larger unevidenced one — then
-build the evidence required to make the larger statement true.

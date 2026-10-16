@@ -1,0 +1,15 @@
+{
+  "artifact": "nonce_sunflower_analysis",
+  "description": "Golden-angle / sunflower distribution test on winning nonces. Compare nearest-neighbour angular spacing against uniform null and synthetic sunflower control.",
+  "input": "artifacts/pythia_training/real_nonces_200.csv",
+  "n": 0,
+  "golden_angle_deg": 137.507764,
+  "mean_nearest_angular_spacing_rad": null,
+  "uniform_null_mean_spacing_rad": null,
+  "synthetic_sunflower_mean_spacing_rad": null,
+  "delta_vs_uniform": null,
+  "delta_vs_synthetic": null,
+  "note": "Populate by running scripts/analyze_nonce_sunflower.py. Existing 200-row corpus is underpowered; larger verified corpus recommended. theorem_proven remains False.",
+  "theorem_proven": false,
+  "status": "TEMPLATE — not yet computed"
+}

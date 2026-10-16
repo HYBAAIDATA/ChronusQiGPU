@@ -1,0 +1,24 @@
+{
+  "experiment": "fleet_distribution_reconciled",
+  "formulations": {
+    "A_equal_items_exact_multiple": {
+      "round_robin_cv": 0.0,
+      "note": "Perfect by construction when N is a multiple of D. Nothing can beat it."
+    },
+    "B_variable_durations": {
+      "note": "Round-robin and golden-angle comparable. Golden-angle better in 1 of 8 configurations tested (D=12, N=4096, ~9%). Not a transferable advantage."
+    }
+  },
+  "boundary": "The packing advantage of the golden angle is real in continuous expanding spaces (phyllotaxis). It does not appear in a simple modular assignment of equal-sized items to a fixed device count, because that assignment is already exact and the golden angle has nothing to repair. A packing advantage requires a growing device count, non-uniform item sizes, or a spatial embedding.",
+  "coprimality_guard": {
+    "stride": "0x9E3779B9",
+    "factorisation": "3^2 * 7 * 11 * 17 * 331 * 359",
+    "governing_condition": "gcd(stride, D) == 1",
+    "examples": {
+      "D=9": "fails (factor 3), reaches 3/9 devices",
+      "D=12": "fails, reaches 4/12 devices, load ratio ~2068:1"
+    },
+    "note": "Parity is a special case of coprimality. Any scheduler using the golden stride must assert gcd(stride, D) == 1."
+  },
+  "theorem_proven": false
+}

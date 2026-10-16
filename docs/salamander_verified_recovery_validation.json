@@ -1,0 +1,44 @@
+{
+  "task": "SALAMANDER-HEAL-20261013 recovery continuation",
+  "slice_baseline": "873e56da50a3ccdc5ead1e649796607743017a73",
+  "baseline_results": {
+    "command": "python -m pytest tests/test_salamander_verified_repair.py -q --tb=short",
+    "cwd": "/data/salamander-work with original salamander.py restored",
+    "exit": 1,
+    "failed": 18,
+    "interpretation": "4 behavioral/structural cases, 14 cases for new composition API; initial harness lost dataclass decorators, was corrected, and both baseline/patch rerun"
+  },
+  "patched_results": {
+    "command": "python -m pytest tests/test_salamander_verified_repair.py tests/test_salamander_repair_boundary.py tests/test_existing_compatibility_local.py -q",
+    "cwd": "/data/salamander-work",
+    "exit": 0,
+    "passed": 69,
+    "composition": "18 recovery cases, 37 admission cases, 14 selected compatibility cases"
+  },
+  "checks": {
+    "black --check --line-length 100": 0,
+    "flake8 with loaded applicable repo ignores": 0,
+    "ruff check --select E9,F": 0,
+    "compileall": 0
+  },
+  "scope": "Original RepairProposal/SelfRepairEngine class source bodies and decorators extracted by AST from actual module; actual unmodified canonical control_plane/models/authority and AL HARAS audit/entitlements/guardian/models executed. Package initializers, full SalamanderEngine imports and actual conftests excluded. Positive actuator is a real bounded in-memory unit batch-size change and distinct registered postcondition reader; token uses test-only key, never production credentials.",
+  "limitations": [
+    "No full engine composition test",
+    "No live production actuator",
+    "No canonical Theseus custody",
+    "No production sandbox qualification",
+    "No AGI/ASI attainment or Millennium theorem proof",
+    "No deployed shared-build profile"
+  ],
+  "source_sha256": {
+    "Intelligence/salamander.py": "6a7adb6f060e8a3aca1721ecc197a6dd03a817b454d86e2bbabde191b3f332c0",
+    "tests/test_salamander_verified_repair.py": "8083967d7dac0981f4622f7b1fac819ea5638139f05a123740abb363d9d0d4bc",
+    "salamander/models.py": "f5bd2a5c0ceab2a800f771e5bfc655821b875119814c37d992eab7c174a70aa6",
+    "salamander/control_plane.py": "a2e387d4c10c2f00d3c2fae69a3beeaafbf22b2eb89a2563b113eec7dc5a9568",
+    "salamander/authority.py": "f56a5995f807738d5560b684d335e3aa8af615c03132a6fe75dae1c49d1a446e",
+    "al_haras/audit.py": "e9b400fe7b7e0096acc18c2a5aaf238d29f406476a1987c8a91bd5fd3e48fb5c",
+    "al_haras/entitlements.py": "03ee0c80b7bec8a8932ea7ac900dc64125b06c1bee7870a596eda1e9c6129fcf",
+    "al_haras/guardian.py": "310a5f7db012a6e8210b6bf2b53e5ee61f6f80bc7e5e51f1ae08398ee7a227fb",
+    "al_haras/models.py": "170190cd2d1c67e4e6e34cb9008c5d7fa26e67663101c138ddf16ef06e661cb9"
+  }
+}

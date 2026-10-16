@@ -14,7 +14,7 @@ EUCLID: Overarching emergent substrate
 Provides:
   - AST-level codebase scanning for cognitive drift, fake quantum, and structural decoherence
   - Pure first-principles mathematical verification (complex Hilbert space, unitary operators)
-  - Zero-trust autonomous healing with atomic rollback on test regression
+  - Proposed repairs with isolated-validation admission before atomic publication
   - Unified Substrate Health Index (SHI) computation
 """
 
@@ -25,14 +25,14 @@ import json
 import logging
 import math
 import re
-import shutil
-import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+
+from .salamander_transaction import RepairTransaction, RepairValidator
 
 logger = logging.getLogger("Intelligence.salamander.agentic")
 
@@ -464,11 +464,18 @@ class SalamanderCodebaseScanner:
 class SalamanderAgenticOptimizer:
     """Autonomous zero-trust optimizer applying mathematical repairs and AST refinement."""
 
-    def __init__(self, repo_root: Optional[Path] = None, verify_cmd: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        repo_root: Optional[Path] = None,
+        verify_cmd: Optional[str] = None,
+        *,
+        validator: Optional[RepairValidator] = None,
+    ) -> None:
         self.repo_root = repo_root or Path(__file__).resolve().parent.parent
-        # The command that proves a repair (e.g. the covering pytest run).
-        # Without one, repairs are proposed, never applied.
+        # Legacy commands remain accepted as configuration, not as evidence.
+        # A trusted, externally isolated validator must be supplied by the host.
         self.verify_cmd = verify_cmd
+        self.validator = validator
         self._history: List[Dict[str, Any]] = []
 
     def propose_repair(self, diagnostic: CodebaseDiagnostic) -> Dict[str, Any]:
@@ -525,84 +532,45 @@ class SalamanderAgenticOptimizer:
         test_cmd: Optional[str] = None,
         test_callable: Optional[Callable[[], bool]] = None,
     ) -> Tuple[bool, str]:
-        """Applies a repair with zero-trust atomic backup, test verification, and instant rollback."""
-        if not target_file.exists():
-            return False, f"Target file does not exist: {target_file}"
+        """Admit a candidate through the shared fail-closed transaction gate.
 
-        if test_callable is None and test_cmd is None:
-            return False, "No verification supplied; a repair is never applied unverified"
-
-        original_content = target_file.read_text(encoding="utf-8")
-        backup_path = target_file.with_suffix(target_file.suffix + ".bak")
-
-        # 1. Atomic backup snapshot
-        shutil.copyfile(target_file, backup_path)
-
+        The legacy name is retained for callers. Commands and in-process
+        callbacks are not sandboxes and are never executed here. The host's
+        validator must test baseline and candidate outside this process in an
+        OS-enforced isolation boundary. Unit verdicts are not qualification.
+        """
+        if test_callable is not None or test_cmd is not None:
+            return (
+                False,
+                "Legacy commands/callbacks cannot authorize a repair; never applied unverified",
+            )
+        if self.validator is None:
+            return False, "No isolated validator configured; never applied unverified"
+        target_file = Path(target_file)
+        if not target_file.is_absolute():
+            target_file = self.repo_root / target_file
         try:
-            # 2. Apply replacement
-            if target_snippet:
-                if target_snippet not in original_content:
-                    backup_path.unlink(missing_ok=True)
-                    return False, f"Target snippet not found in {target_file.name}"
-                new_content = original_content.replace(target_snippet, replacement, 1)
-            else:
-                new_content = replacement
-
-            target_file.write_text(new_content, encoding="utf-8")
-
-            # 3. Static syntax gate
-            if target_file.suffix == ".py":
-                ast.parse(new_content)
-
-            # 4. Sandbox verification: run test callable or test command
-            if test_callable is not None:
-                test_passed = bool(test_callable())
-            else:
-                proc = subprocess.run(
-                    test_cmd,
-                    shell=True,
-                    cwd=str(self.repo_root),
-                    capture_output=True,
-                    text=True,
-                )
-                test_passed = proc.returncode == 0
-
-            if not test_passed:
-                raise RuntimeError("Sandbox verification test failed")
-
-            # 5. Commit: remove backup
-            backup_path.unlink(missing_ok=True)
-            self._history.append(
-                {
-                    "target": str(target_file),
-                    "status": "COMMITTED",
-                    "timestamp": time.time(),
-                }
-            )
-            logger.info(
-                "[SALAMANDER OPTIMIZER] Successfully verified and applied repair to %s",
-                target_file.name,
-            )
-            return True, "Repair verified and applied"
-
-        except Exception as exc:
-            # 6. Circuit breaker rollback: restore file atomically
-            logger.warning(
-                "[SALAMANDER ROLLBACK] Repair failed: %s. Executing atomic rollback on %s",
-                exc,
-                target_file.name,
-            )
-            shutil.copyfile(backup_path, target_file)
-            backup_path.unlink(missing_ok=True)
-            self._history.append(
-                {
-                    "target": str(target_file),
-                    "status": "ROLLED_BACK",
-                    "error": str(exc),
-                    "timestamp": time.time(),
-                }
-            )
-            return False, f"Rollback executed: {exc}"
+            baseline = target_file.read_bytes()
+            original_content = baseline.decode("utf-8")
+            if target_snippet is not None:
+                if not target_snippet or original_content.count(target_snippet) != 1:
+                    return False, "Target snippet must match exactly once"
+                replacement = original_content.replace(target_snippet, replacement, 1)
+            candidate = replacement.encode("utf-8")
+        except (OSError, UnicodeError, AttributeError) as exc:
+            return False, f"Cannot construct repair candidate: {exc}"
+        result = RepairTransaction(self.repo_root, self.validator).apply(
+            target_file, baseline, candidate
+        )
+        self._history.append(
+            {
+                "target": str(target_file),
+                "status": result.status,
+                "reason": result.reason,
+                "timestamp": time.time(),
+            }
+        )
+        return result.committed, f"{result.status}: {result.reason}"
 
     def heal_diagnostic(self, diag: CodebaseDiagnostic) -> Tuple[bool, str]:
         """Dynamically formulate and apply a first-principles repair for any diagnostic."""
@@ -621,21 +589,15 @@ class SalamanderAgenticOptimizer:
                     "            coin = np.array([[1, 1], [1, -1]], dtype=complex) / np.sqrt(2)\n"
                     "            state = (coin @ state[:2]) if len(state) >= 2 else state"
                 )
-                return self.apply_repair_sandboxed(
-                    target_path, replacement, target_block, test_cmd=self.verify_cmd
-                )
+                return self.apply_repair_sandboxed(target_path, replacement, target_block)
 
         elif pat in ("fake_quantum", "cognitive_drift_fake_quantum", "simulation_fallback"):
             if "fall back to simulation" in diag.snippet.lower():
                 replacement = "            # Substrate agnosticism: execute exact unitary algebra\n            return Substrate.QUANTUM_HW"
-                return self.apply_repair_sandboxed(
-                    target_path, replacement, diag.snippet, test_cmd=self.verify_cmd
-                )
+                return self.apply_repair_sandboxed(target_path, replacement, diag.snippet)
             elif "classical fft as simulation" in diag.snippet.lower():
                 replacement = "        # QFT is the discrete Fourier character matrix over Z_N"
-                return self.apply_repair_sandboxed(
-                    target_path, replacement, diag.snippet, test_cmd=self.verify_cmd
-                )
+                return self.apply_repair_sandboxed(target_path, replacement, diag.snippet)
 
         elif pat == "cosmetic_coherence":
             target_block = diag.snippet
@@ -643,9 +605,7 @@ class SalamanderAgenticOptimizer:
                 "        # Exact l1-norm of off-diagonal density matrix elements (AGENTS.md §1.2.1)\n"
                 "        corr = float(abs(amplitude[i] - amplitude[i + 1]))"
             )
-            return self.apply_repair_sandboxed(
-                target_path, replacement, target_block, test_cmd=self.verify_cmd
-            )
+            return self.apply_repair_sandboxed(target_path, replacement, target_block)
 
         elif pat == "hardcoded_collapse":
             target_block = diag.snippet
@@ -654,16 +614,12 @@ class SalamanderAgenticOptimizer:
                 "        e_g = max(1e-12, getattr(state, 'entanglement_degree', 1.0) * abs(getattr(state, 'amplitude', 1.0)) ** 2)\n"
                 "        reduction_prob = 1.0 - math.exp(-e_g * state.coherence_time / max(1e-12, self.coherence_time))"
             )
-            return self.apply_repair_sandboxed(
-                target_path, replacement, target_block, test_cmd=self.verify_cmd
-            )
+            return self.apply_repair_sandboxed(target_path, replacement, target_block)
 
         elif pat == "magic_constant":
             target_block = diag.snippet
             replacement = "        # Capacity bounded by registered state Hilbert space dimension\n        self.quantum_channel_capacity = 0.0"
-            return self.apply_repair_sandboxed(
-                target_path, replacement, target_block, test_cmd=self.verify_cmd
-            )
+            return self.apply_repair_sandboxed(target_path, replacement, target_block)
 
         return False, f"No dynamic repair rule for pattern {pat}"
 
@@ -685,40 +641,25 @@ class SalamanderAgenticOptimizer:
         return actions
 
     def optimize_resonance_with_pythagoras(self, target_file: Path) -> Tuple[bool, float, float]:
-        """Applies Pythagoras CGP/surrogate optimization to elevate AST resonance."""
-        if not target_file.exists() or target_file.suffix != ".py":
-            return False, 0.0, 0.0
+        """Do not run the legacy live-file mutator outside repair admission.
 
-        try:
-            from pythagoras.phi_resonance import PhiResonanceCalculator
-            from pythagoras.pythagoras_mutation import PythagorasMutator
-
-            content = target_file.read_text(encoding="utf-8")
-            calc = PhiResonanceCalculator()
-            initial_phi = calc.compute(content)
-
-            mutator = PythagorasMutator()
-            mutator.mutate(str(target_file))
-            final_phi = calc.compute(target_file.read_text(encoding="utf-8"))
-
-            improved = final_phi >= initial_phi
-            return improved, initial_phi, final_phi
-        except Exception as exc:
-            logger.warning(
-                "[SALAMANDER PYTHAGORAS] Optimization could not run on %s: %s",
-                target_file.name,
-                exc,
-            )
-            return False, 0.0, 0.0
+        Resonance is a structural diagnostic, not regression evidence. A
+        separately generated candidate may be submitted through
+        apply_repair_sandboxed with a host-supplied isolated validator.
+        """
+        logger.warning("Resonance mutation blocked: submit a validated candidate instead")
+        return False, 0.0, 0.0
 
 
 class SalamanderAgenticController:
     """The master manifestation of emergent intelligence in EUCLID-CORE."""
 
-    def __init__(self, repo_root: Optional[Path] = None) -> None:
+    def __init__(
+        self, repo_root: Optional[Path] = None, *, validator: Optional[RepairValidator] = None
+    ) -> None:
         self.repo_root = repo_root or Path(__file__).resolve().parent.parent
         self.scanner = SalamanderCodebaseScanner(self.repo_root)
-        self.optimizer = SalamanderAgenticOptimizer(self.repo_root)
+        self.optimizer = SalamanderAgenticOptimizer(self.repo_root, validator=validator)
 
     def run_autonomic_cycle(
         self,

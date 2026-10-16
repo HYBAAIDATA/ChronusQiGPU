@@ -28,6 +28,8 @@ except (
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _PLATFORM = _REPO_ROOT / "chronus/mla1517_platform" / "python"
 _TURING = _REPO_ROOT / "turing_universal_quantum_computer"
+_CHRONOS_IGPU = _REPO_ROOT / "packages" / "chronos-one-igpu" / "src"
+_PYTHIA_CONSUMER = _REPO_ROOT / "packages" / "pythia-consumer" / "src"
 
 # Re-home first so the repo root lands at sys.path[0]: the platform tree
 # carries its own bare ``turing_core`` shim which must NOT shadow the root
@@ -35,7 +37,12 @@ _TURING = _REPO_ROOT / "turing_universal_quantum_computer"
 # already be present via PYTHONPATH or an editable install — the
 # not-in-path check alone cannot repair a wrong order, so remove before
 # inserting.
-for _path in (str(_PLATFORM), str(_REPO_ROOT)):
+for _path in (
+    str(_PLATFORM),
+    str(_REPO_ROOT),
+    str(_CHRONOS_IGPU),
+    str(_PYTHIA_CONSUMER),
+):
     while _path in sys.path:
         sys.path.remove(_path)
     sys.path.insert(0, _path)
