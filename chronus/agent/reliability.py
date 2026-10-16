@@ -187,5 +187,5 @@ def measure_reliability(task_class: TaskClass, trials: tuple[Trial, ...], *, shi
                 for cohort, rows in (("primary", trials), ("shifted", shifted or ()))
                 for t in rows
             )
-        ).hexdigest()
+        ).hexdigest(),
     )

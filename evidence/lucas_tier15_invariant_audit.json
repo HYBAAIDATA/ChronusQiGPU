@@ -1,0 +1,31 @@
+{
+  "tier": "TIER-15",
+  "lucas_target": 1364,
+  "completed_iterations": 1364,
+  "status": "PASS",
+  "invariants": {
+    "budgets_holding": true,
+    "zero_budget_escapes": true,
+    "counters_holding": true,
+    "permissions_holding": true,
+    "rollback_verified_count": 3,
+    "kill_controls_holding": true,
+    "audit_ledger_events_count": 17767
+  },
+  "performance": {
+    "wall_duration_seconds": 10.473,
+    "cpu_duration_seconds": 10.297,
+    "per_iteration_ms": 7.678
+  },
+  "tier_20_capacity_projection": {
+    "tier_20_target": 15127,
+    "status": "UNIMPLEMENTED",
+    "blocking_reasons": [
+      "FrontierAgent in-memory learning queue limit is 10,000 items (ContractError: learning evidence queue full)",
+      "Live process single-node execution of 15,127 sandboxed filesystem writes exceeds synchronous single-test timeout",
+      "Requires multi-process or batched evidence archival harness before live execution"
+    ],
+    "projected_wall_duration_seconds": 116.14,
+    "projected_compute_budget_required": 62508
+  }
+}

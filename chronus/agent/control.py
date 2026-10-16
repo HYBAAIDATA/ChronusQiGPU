@@ -95,6 +95,7 @@ class Outcome:
     effects: tuple
     audit_id: str
     rollback_verified: bool
+    counter: int = 0
 
     @property
     def recovery_stop(self):

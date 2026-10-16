@@ -70,7 +70,7 @@ def characterise(
     remaining_budget,
     meta_report,
     *,
-    minimum_interpretations
+    minimum_interpretations,
 ):
     integer(minimum_interpretations, minimum=2)
     integer(remaining_budget)
@@ -158,7 +158,7 @@ def predict_success(
     sample_size,
     similarity,
     shrinkage_strength,
-    recency
+    recency,
 ):
     for x in (prior, observed_rate, observed_lower_bound, similarity, recency):
         ratio(x)

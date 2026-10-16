@@ -35,6 +35,7 @@ def _observe(adapter, runtime, policy):
 def operational_loop(runtime, objective, cognition, plan):
     policy = plan.policy
     iterations, effects, checkpoints = 0, [], []
+    successful_iterations = 0
     verification = None
 
     def finish(stop, reason, *, rollback=False):
@@ -79,6 +80,7 @@ def operational_loop(runtime, objective, cognition, plan):
                 "stop": stop,
                 "reason": reason,
                 "iterations": iterations,
+                "counter": successful_iterations,
                 "effects_count": len(effects),
                 "effects_digest": hashlib.sha256(
                     b"\n".join(canonical(e) for e in effects)
@@ -88,7 +90,14 @@ def operational_loop(runtime, objective, cognition, plan):
             now=runtime.clock(),
         )
         outcome = Outcome(
-            stop, reason, iterations, verification, tuple(effects), event.digest, restored
+            stop,
+            reason,
+            iterations,
+            verification,
+            tuple(effects),
+            event.digest,
+            restored,
+            counter=successful_iterations,
         )
         runtime.record_evidence(outcome)
         return outcome
@@ -246,6 +255,7 @@ def operational_loop(runtime, objective, cognition, plan):
                     and not post.confounded
                 ):
                     success = True
+                    successful_iterations += 1
                     break
                 runtime.audit.append(
                     "verification_failed",

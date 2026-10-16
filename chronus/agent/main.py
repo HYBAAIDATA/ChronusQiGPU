@@ -25,7 +25,7 @@ class FrontierAgent:
         execution_guard,
         rollback_guard,
         clock,
-        lifecycle=LifecycleState.DRAFT
+        lifecycle=LifecycleState.DRAFT,
     ):
         self.identity, self.task_class = identity, task_class
         self.capabilities, self.permissions, self.budgets = capabilities, permissions, budgets
@@ -46,6 +46,7 @@ class FrontierAgent:
         self.objective_verification_provider = objective_verification_provider
         self.clock, self.lifecycle = clock, lifecycle
         self._learning_queue = []
+        self._iteration_counter = 0
         audit.append(
             "agent_boot",
             {"identity": identity, "task_class": task_class, "lifecycle": lifecycle},
@@ -56,6 +57,14 @@ class FrontierAgent:
     def learning_queue(self):
         return tuple(self._learning_queue)
 
+    @property
+    def iteration_counter(self):
+        return self._iteration_counter
+
+    @property
+    def counter(self):
+        return self._iteration_counter
+
     def record_evidence(self, outcome):
         if len(self._learning_queue) >= 10000:
             raise ContractError("learning evidence queue full; host must archive")
@@ -65,7 +74,9 @@ class FrontierAgent:
         if len(self._learning_queue) >= 10000:
             raise ContractError("archive evidence before accepting more tasks")
         infer_real_objective(objective, self.audit, now=self.clock())
-        return operational_loop(self, objective, cognition, plan)
+        outcome = operational_loop(self, objective, cognition, plan)
+        self._iteration_counter += outcome.counter
+        return outcome
 
 
 def frontier_main(agent, objective, cognition, plan):

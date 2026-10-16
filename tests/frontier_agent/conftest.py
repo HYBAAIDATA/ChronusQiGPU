@@ -155,7 +155,17 @@ def qualification(identity, task, ledger):
 
 
 class FileAdapter:
-    """Real isolated-temp-directory writes/observations, not a production sandbox."""
+    """Real isolated-temp-directory writes/observations, not a production sandbox.
+
+    CONTRACT DOUBLE:
+    Stands in for production component: chronus.capabilities.storage.ProductionStorageAdapter
+    Traceability: chronus/capabilities/storage.py
+    TODO-GATE: Production-path execution requires certified OS sandbox and external resource limits.
+    """
+
+    __contract_double__ = True
+    __production_target__ = "chronus.capabilities.storage.ProductionStorageAdapter"
+    __todo_gate__ = "TODO-GATE: production path requires certified external container sandbox"
 
     def __init__(self, path):
         self.path = path

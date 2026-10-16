@@ -126,7 +126,7 @@ class WorldModel:
         *,
         now,
         calibration=None,
-        verify_calibration=None
+        verify_calibration=None,
     ):
         new, old = self._facts[new_id], self._facts[old_id]
         if new.proposition != old.proposition or new.value == old.value:
