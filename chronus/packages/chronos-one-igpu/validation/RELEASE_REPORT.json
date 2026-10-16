@@ -1,0 +1,54 @@
+{
+  "release": "3.10.0",
+  "tests": {
+    "tests": 371,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 371
+  },
+  "preservation": {
+    "original_python_modules": 52,
+    "byte_identical": 48,
+    "original_lucas_engine_unchanged": true,
+    "original_chronos_engine_unchanged": true
+  },
+  "installed_native_wheel": "PASS",
+  "installed_universal_wheel": "PASS",
+  "sdist_rebuild": "PASS",
+  "distribution_metadata": "PASS",
+  "formal": {
+    "status": "PASS",
+    "compiler": "Lean (version 4.19.0, x86_64-unknown-linux-gnu, commit 6caaee842e94, Release)",
+    "source_sha256": "b3eba8b134ba12447f68957169eb26d0f07f5da5ae305d7bf621b4e06f9d6073",
+    "compiler_exit_code": 0,
+    "compiler_output": "/data/igpu-resident-elevation/chronos-completed/proofs/lean/Projection.lean:13:29: warning: unused variable `hm`\nnote: this linter can be disabled with `set_option linter.unusedVariables false`\n/data/igpu-resident-elevation/chronos-completed/proofs/lean/Projection.lean:62:44: warning: unused variable `hb`\nnote: this linter can be disabled with `set_option linter.unusedVariables false`\n'Chronos.unfold_fold' depends on axioms: [propext, Quot.sound]\n'Chronos.projection_surjection' depends on axioms: [propext]\n'Chronos.fiber_unique' depends on axioms: [propext]\n'Chronos.fold_unfold' depends on axioms: [propext, Quot.sound]\n'Chronos.fold_injective' depends on axioms: [propext, Quot.sound]\n",
+    "theorems": [
+      "bounded modular Q-step closure",
+      "undo(step(p))=p",
+      "step(undo(p))=p",
+      "unfold(fold(p))=p",
+      "fold(unfold(p))=p",
+      "fold injectivity",
+      "constructive low-coordinate surjection",
+      "fiber coordinate uniqueness"
+    ],
+    "trusted_axioms": [
+      "propext",
+      "Quot.sound"
+    ],
+    "scope": "generic modular coordinate recurrence and constructive fiber coordinates; not a compiled proof of fast-doubling implementation equivalence, total fiber cardinality, SHA256 uniformity or consensus security",
+    "all_T1_T10_proven": false
+  },
+  "projection_evidence": "validation/v3.10.0-projection.json",
+  "feedback_audit": "docs/FEEDBACK_AUDIT-v3.10.json",
+  "new_performance_measurement": null,
+  "historical_measurements": "preserved with original comparisons; no new/compounded gain claimed",
+  "target_hardware_qualification": "NOT_RUN_NO_TARGET",
+  "registry_publication": "NOT_PERFORMED_DESTINATION_AUTHORIZATION_REQUIRED",
+  "consensus_deployment_allowed": false,
+  "all_feedback_completed": false,
+  "fully_production_qualified": false,
+  "external_commit_sha": null,
+  "external_ci_run": null
+}

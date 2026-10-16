@@ -230,6 +230,10 @@ _EXPORTS = {
     'SchoolActivity': ('.consciousness', 'SchoolActivity'),
     'PHI_INVERSE': ('toe.poincare_golden_11d', 'PHI_INVERSE'),
     'METALLIC_MEANS': ('toe.poincare_golden_11d', 'METALLIC_MEANS'),
+    'physics': ('.physics', None),
+    'cognition': ('.cognition', None),
+    'gatekeeper': ('.gatekeeper', None),
+    'UnifiedIntelligenceGatekeeper': ('.gatekeeper', 'UnifiedIntelligenceGatekeeper'),
 }
 _ORCHESTRATOR = None
 _ORCHESTRATOR_LOCK = RLock()
@@ -497,4 +501,9 @@ __all__ = [
     "EnergyThermodynamicsEngine",
     "DefenseAssuranceEngine",
     "BiotechResonanceEngine",
+    # Unified intelligence subdomains & gatekeeper
+    "physics",
+    "cognition",
+    "gatekeeper",
+    "UnifiedIntelligenceGatekeeper",
 ]

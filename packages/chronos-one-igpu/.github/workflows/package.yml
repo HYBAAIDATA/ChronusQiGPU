@@ -1,0 +1,30 @@
+name: Standalone package validation
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  core-and-package:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ["3.10", "3.11", "3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install -e .[dev]
+      - run: python -m pytest -q --junitxml=validation/ci-junit.xml
+      - run: python -m build
+      - run: python -m twine check dist/*
+      - run: chronos-igpu doctor
+      - run: python scripts/seal_ci_evidence.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chronos-${{ matrix.os }}-${{ matrix.python }}
+          path: |
+            dist/*
+            validation/ci-junit.xml
+            validation/ci-evidence.json

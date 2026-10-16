@@ -1,0 +1,41 @@
+{
+  "release": "3.8.1",
+  "python": "3.13.14",
+  "tests": {
+    "passed": 272,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 60.12
+  },
+  "core_preservation": {
+    "original": 52,
+    "unchanged": 48,
+    "removed": 0,
+    "lucas_engine": "UNCHANGED",
+    "ChronosEngine": "UNCHANGED"
+  },
+  "installed_native_wheel": "PASS",
+  "installed_universal_wheel": "PASS",
+  "source_rebuild": "PASS",
+  "distribution_metadata": "TWINE_PASS",
+  "measurement": {
+    "warm_ratio_to_frozen_v38": 1.3828231400645932,
+    "samples_per_path": 120,
+    "rungs": [
+      18,
+      31
+    ],
+    "nonce_budget": 4096,
+    "scope": "CPU/OpenSSL same-host warm deterministic dense solve reuse; not sparse/GPU/ASIC/pool"
+  },
+  "cold_observations": "RECORDED_SEPARATELY",
+  "historical_portable_C_tests": "46 passed in v3.8; C source unchanged in v3.8.1",
+  "commit_sha": null,
+  "ci_run": null,
+  "provenance_reason": "Standalone source snapshot and local executed regression, no authoritative repository commit or remote CI run",
+  "lean_formalization": "BLOCKED_NO_PROVED_THEOREMS",
+  "target_hardware": "NOT_RUN",
+  "registry_upload": "NOT_PERFORMED",
+  "remaining_work": "docs/DETERMINISTIC_ELEVATION.md and docs/IMPLEMENTATION_STATUS.json"
+}

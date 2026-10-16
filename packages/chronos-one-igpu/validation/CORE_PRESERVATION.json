@@ -1,0 +1,326 @@
+{
+  "release": "3.8.0",
+  "original_source_files": 52,
+  "unchanged": 48,
+  "removed": 0,
+  "modified": [
+    "__init__.py",
+    "igpu/__init__.py",
+    "igpu/facade.py",
+    "igpu/host.py"
+  ],
+  "files": [
+    {
+      "path": "__init__.py",
+      "original_sha256": "914dc1cf21bf1a5ae16c0c93f071eed65142d8437bb3a4ddd2ccc51e521cccae",
+      "current_sha256": "0153a9d41e1e71be68e42387bf4515c76f51d72ea2b5d711c290c503e181ad1f",
+      "unchanged": false
+    },
+    {
+      "path": "academic/__init__.py",
+      "original_sha256": "eac2dfcfa8ae580e5b5b849160d4a42f8f0cfb69d2843f6867bf3c4a4ecaffb3",
+      "current_sha256": "eac2dfcfa8ae580e5b5b849160d4a42f8f0cfb69d2843f6867bf3c4a4ecaffb3",
+      "unchanged": true
+    },
+    {
+      "path": "academic/caltech.py",
+      "original_sha256": "38ed3f68f563808bf6706bc015cc7542521b413a6925301fcd1477c7924b8ae7",
+      "current_sha256": "38ed3f68f563808bf6706bc015cc7542521b413a6925301fcd1477c7924b8ae7",
+      "unchanged": true
+    },
+    {
+      "path": "academic/cambridge.py",
+      "original_sha256": "7ef9ab0fe35724a01d85fec7c0fb19d1fe1e584a1a9570b9d5646aa07613f5b0",
+      "current_sha256": "7ef9ab0fe35724a01d85fec7c0fb19d1fe1e584a1a9570b9d5646aa07613f5b0",
+      "unchanged": true
+    },
+    {
+      "path": "academic/cern.py",
+      "original_sha256": "b0f1d93f203ad592ff49bd5f5784c3297ecd43e05968e0da5a049edc7e566a5e",
+      "current_sha256": "b0f1d93f203ad592ff49bd5f5784c3297ecd43e05968e0da5a049edc7e566a5e",
+      "unchanged": true
+    },
+    {
+      "path": "academic/mit.py",
+      "original_sha256": "098a9d0cebb15d58babd078f5f798de2dd23dccb43020112386936b81464eb33",
+      "current_sha256": "098a9d0cebb15d58babd078f5f798de2dd23dccb43020112386936b81464eb33",
+      "unchanged": true
+    },
+    {
+      "path": "academic/nist.py",
+      "original_sha256": "dac1e15dc0d0d229f63ba56d87ffa645c08523c9e89f81662d793abca13c6912",
+      "current_sha256": "dac1e15dc0d0d229f63ba56d87ffa645c08523c9e89f81662d793abca13c6912",
+      "unchanged": true
+    },
+    {
+      "path": "academic/report.py",
+      "original_sha256": "df564b0ac0d9d025a251c7cab45b9a02eb0b947c937404ab249e5a11ded223c9",
+      "current_sha256": "df564b0ac0d9d025a251c7cab45b9a02eb0b947c937404ab249e5a11ded223c9",
+      "unchanged": true
+    },
+    {
+      "path": "academic/tensor_compression.py",
+      "original_sha256": "7ffe4e55f7046d6e43e307645b09acb02193bcfcd482defb9ff438098c5e7ba6",
+      "current_sha256": "7ffe4e55f7046d6e43e307645b09acb02193bcfcd482defb9ff438098c5e7ba6",
+      "unchanged": true
+    },
+    {
+      "path": "academic/tokyotech.py",
+      "original_sha256": "bc4a627714c6bde14df271493b1a3bc9f7b4113302b8dbac35c3d272ed00541b",
+      "current_sha256": "bc4a627714c6bde14df271493b1a3bc9f7b4113302b8dbac35c3d272ed00541b",
+      "unchanged": true
+    },
+    {
+      "path": "adapters/__init__.py",
+      "original_sha256": "9765ada895dd28dbf0cf5b3a43470f487c06501bbfb39e030589f37361e8d825",
+      "current_sha256": "9765ada895dd28dbf0cf5b3a43470f487c06501bbfb39e030589f37361e8d825",
+      "unchanged": true
+    },
+    {
+      "path": "adapters/base.py",
+      "original_sha256": "27e4cc30bb807b004538f57ebdb44bbb8f4a6fc1ea87ad5eac45ae88268d295e",
+      "current_sha256": "27e4cc30bb807b004538f57ebdb44bbb8f4a6fc1ea87ad5eac45ae88268d295e",
+      "unchanged": true
+    },
+    {
+      "path": "adapters/cpu.py",
+      "original_sha256": "19cf69871234653732b5aeef05b314328f28b94512d7719572b6a874d5095291",
+      "current_sha256": "19cf69871234653732b5aeef05b314328f28b94512d7719572b6a874d5095291",
+      "unchanged": true
+    },
+    {
+      "path": "adapters/opencl.py",
+      "original_sha256": "f9d70f77c481493ff07142c7c8d5b9580bd7d913539162580ea14dbd3c2c2311",
+      "current_sha256": "f9d70f77c481493ff07142c7c8d5b9580bd7d913539162580ea14dbd3c2c2311",
+      "unchanged": true
+    },
+    {
+      "path": "adapters/registry.py",
+      "original_sha256": "4bb51ad3987231034a44b1837ad01e330b588544005fa2e36b02b22c2345512f",
+      "current_sha256": "4bb51ad3987231034a44b1837ad01e330b588544005fa2e36b02b22c2345512f",
+      "unchanged": true
+    },
+    {
+      "path": "certificate.py",
+      "original_sha256": "02267668acda124d51361f26098a1efe724a321ab3a64ef6d4b4b1698b92b7f7",
+      "current_sha256": "02267668acda124d51361f26098a1efe724a321ab3a64ef6d4b4b1698b92b7f7",
+      "unchanged": true
+    },
+    {
+      "path": "core_hash.py",
+      "original_sha256": "7d4230ba4ac5250fcc226278187dc359d31c6f40b40fe41fae22553c4d9f75f2",
+      "current_sha256": "7d4230ba4ac5250fcc226278187dc359d31c6f40b40fe41fae22553c4d9f75f2",
+      "unchanged": true
+    },
+    {
+      "path": "engine.py",
+      "original_sha256": "2216a08236bed3d49c0618152cb951fc547b6d125bfb50fbb7fa58a0886766d0",
+      "current_sha256": "2216a08236bed3d49c0618152cb951fc547b6d125bfb50fbb7fa58a0886766d0",
+      "unchanged": true
+    },
+    {
+      "path": "evidence.py",
+      "original_sha256": "cd76b51aa5baf983050b0fbae01c5d2dc6580fa338002448d242333e570a2a36",
+      "current_sha256": "cd76b51aa5baf983050b0fbae01c5d2dc6580fa338002448d242333e570a2a36",
+      "unchanged": true
+    },
+    {
+      "path": "evolution_engine.py",
+      "original_sha256": "18d15d6771f7f28de2de1b9f9f8b55e72fa9d71a8db5d13d42387bdb5cc62a70",
+      "current_sha256": "18d15d6771f7f28de2de1b9f9f8b55e72fa9d71a8db5d13d42387bdb5cc62a70",
+      "unchanged": true
+    },
+    {
+      "path": "hamiltonian.py",
+      "original_sha256": "46b9b5b4b21b3382ff0d0256405ac556effc3d2f481dad41256f209e2f59a376",
+      "current_sha256": "46b9b5b4b21b3382ff0d0256405ac556effc3d2f481dad41256f209e2f59a376",
+      "unchanged": true
+    },
+    {
+      "path": "igpu/__init__.py",
+      "original_sha256": "cd14c3baab9dad3dce5a28bb41495765435f93457e56281df4e193dfe0b5232d",
+      "current_sha256": "ee2df4ab2990db690f644754df7cd84377c9ad753dd34e0650431138101da7f1",
+      "unchanged": false
+    },
+    {
+      "path": "igpu/core.py",
+      "original_sha256": "3b85c7e5decafb298f9f854c00d012d965ba75833e261e9796516401f346718d",
+      "current_sha256": "3b85c7e5decafb298f9f854c00d012d965ba75833e261e9796516401f346718d",
+      "unchanged": true
+    },
+    {
+      "path": "igpu/extended_algebra.py",
+      "original_sha256": "3eccf81bde8e21fc5aad0696adda77f49faa3ea6218aef446f223bc6540e9981",
+      "current_sha256": "3eccf81bde8e21fc5aad0696adda77f49faa3ea6218aef446f223bc6540e9981",
+      "unchanged": true
+    },
+    {
+      "path": "igpu/facade.py",
+      "original_sha256": "8b652d44d443107fa0033d03fe1e8023e17ba24c2c71bc324235918a33124d83",
+      "current_sha256": "f9907ef2ca690694a7b0653e87eccfc30cdd0f26478d824d21ce3696303d0cff",
+      "unchanged": false
+    },
+    {
+      "path": "igpu/host.py",
+      "original_sha256": "22e144f9f8e0019455babaceaf440fed4c3f7c1a3e5ee7d86f9bf327f319db26",
+      "current_sha256": "9e7106cf2504a851d67e0491ce477380fc8f60a423d60e2936fee233a179899e",
+      "unchanged": false
+    },
+    {
+      "path": "igpu/objects.py",
+      "original_sha256": "4c148ecac571823e5ae906c8deb15ace02b2ac3ac66690b70311aeae706dcce7",
+      "current_sha256": "4c148ecac571823e5ae906c8deb15ace02b2ac3ac66690b70311aeae706dcce7",
+      "unchanged": true
+    },
+    {
+      "path": "igpu/store.py",
+      "original_sha256": "0bf4790d9579aaf5741f174336246dffd0a3c99750027dcf4a9409523aa307a7",
+      "current_sha256": "0bf4790d9579aaf5741f174336246dffd0a3c99750027dcf4a9409523aa307a7",
+      "unchanged": true
+    },
+    {
+      "path": "lucas_datapath.py",
+      "original_sha256": "46e79da9ef5f0455f4a6d947f9e137e54f4fdb79ddf70e86544154fa4eb2b15f",
+      "current_sha256": "46e79da9ef5f0455f4a6d947f9e137e54f4fdb79ddf70e86544154fa4eb2b15f",
+      "unchanged": true
+    },
+    {
+      "path": "lucas_engine.py",
+      "original_sha256": "120c91784b6e32c25b2255576d8d9e4044d538d051df070ba79ed745067b9ae6",
+      "current_sha256": "120c91784b6e32c25b2255576d8d9e4044d538d051df070ba79ed745067b9ae6",
+      "unchanged": true
+    },
+    {
+      "path": "lucas_runtime.py",
+      "original_sha256": "e3b91f33c4136cdb75897ee1e2b65343e62e6da33affdfdfce1216a3a6999c19",
+      "current_sha256": "e3b91f33c4136cdb75897ee1e2b65343e62e6da33affdfdfce1216a3a6999c19",
+      "unchanged": true
+    },
+    {
+      "path": "lucas_scaling.py",
+      "original_sha256": "184f456bc74956ba4b329584e3614c29d3eae6fba6891637caf2562c8ac9114e",
+      "current_sha256": "184f456bc74956ba4b329584e3614c29d3eae6fba6891637caf2562c8ac9114e",
+      "unchanged": true
+    },
+    {
+      "path": "manifold.py",
+      "original_sha256": "01a4e417cac7e2b9958bb3794223520c67400d3fc413dd33dc7628acf231e18b",
+      "current_sha256": "01a4e417cac7e2b9958bb3794223520c67400d3fc413dd33dc7628acf231e18b",
+      "unchanged": true
+    },
+    {
+      "path": "phi_scaling.py",
+      "original_sha256": "99add7e0b1457f56579f506898f4f62df1d6928dd45de0a722a6d3701f7412e4",
+      "current_sha256": "99add7e0b1457f56579f506898f4f62df1d6928dd45de0a722a6d3701f7412e4",
+      "unchanged": true
+    },
+    {
+      "path": "pool.py",
+      "original_sha256": "758bdb505ed4f3a25923b27a2093edb2c06f1c5c7e3f873d6ae7d1b4ac9985c7",
+      "current_sha256": "758bdb505ed4f3a25923b27a2093edb2c06f1c5c7e3f873d6ae7d1b4ac9985c7",
+      "unchanged": true
+    },
+    {
+      "path": "qsdl_compiler.py",
+      "original_sha256": "3afc1cdc74da288385b905bd0d45079996a51037bb7d0371fa82c5a89d7c839a",
+      "current_sha256": "3afc1cdc74da288385b905bd0d45079996a51037bb7d0371fa82c5a89d7c839a",
+      "unchanged": true
+    },
+    {
+      "path": "qsdl_parser.py",
+      "original_sha256": "86dd6f29da513e23d0ce32ba0b8a122b05adae5cdd45ded0cad20f09e8bba585",
+      "current_sha256": "86dd6f29da513e23d0ce32ba0b8a122b05adae5cdd45ded0cad20f09e8bba585",
+      "unchanged": true
+    },
+    {
+      "path": "reconstruction.py",
+      "original_sha256": "0541516766dbd2cf51e56684d01ff853c713b77616fdffaf13d4ad197a978003",
+      "current_sha256": "0541516766dbd2cf51e56684d01ff853c713b77616fdffaf13d4ad197a978003",
+      "unchanged": true
+    },
+    {
+      "path": "sparse.py",
+      "original_sha256": "49b130363d9931a98b773ed2c9e77ece2848be00605486cdbb5fa73054ee48c6",
+      "current_sha256": "49b130363d9931a98b773ed2c9e77ece2848be00605486cdbb5fa73054ee48c6",
+      "unchanged": true
+    },
+    {
+      "path": "test_harness.py",
+      "original_sha256": "448fea227cf3b3df674cc691c3bd8341a908b849437ddda328afa2d2dc8b8e47",
+      "current_sha256": "448fea227cf3b3df674cc691c3bd8341a908b849437ddda328afa2d2dc8b8e47",
+      "unchanged": true
+    },
+    {
+      "path": "theory/__init__.py",
+      "original_sha256": "92f1f43b05512cc72319e368fe0ef9b8d11d20b9dae3b29cdc8d780996f2dea8",
+      "current_sha256": "92f1f43b05512cc72319e368fe0ef9b8d11d20b9dae3b29cdc8d780996f2dea8",
+      "unchanged": true
+    },
+    {
+      "path": "theory/anyons.py",
+      "original_sha256": "6f04ff8d82e1f958fcbe5282b882343d4143f6ce895a3d2e5569212457fa6220",
+      "current_sha256": "6f04ff8d82e1f958fcbe5282b882343d4143f6ce895a3d2e5569212457fa6220",
+      "unchanged": true
+    },
+    {
+      "path": "theory/chemistry.py",
+      "original_sha256": "e44835b93ce8c75f5ae34db6fbe6c905675cbe0359a208cf43275c77407ddec4",
+      "current_sha256": "e44835b93ce8c75f5ae34db6fbe6c905675cbe0359a208cf43275c77407ddec4",
+      "unchanged": true
+    },
+    {
+      "path": "theory/control.py",
+      "original_sha256": "a27ed5e31c38b929a96763c1125d7b62b66cd57a05f10b03112ce8ef66f0c19e",
+      "current_sha256": "a27ed5e31c38b929a96763c1125d7b62b66cd57a05f10b03112ce8ef66f0c19e",
+      "unchanged": true
+    },
+    {
+      "path": "theory/cryogenics.py",
+      "original_sha256": "2652c008021fcad8948ca4052616a186e7cc7fd3d596f57957d043d4b555dc08",
+      "current_sha256": "2652c008021fcad8948ca4052616a186e7cc7fd3d596f57957d043d4b555dc08",
+      "unchanged": true
+    },
+    {
+      "path": "theory/error_correction.py",
+      "original_sha256": "5c1bc69e833eeba21641b9763b0ebe83c1ecb5030582bc4c9aa720ca6626205f",
+      "current_sha256": "5c1bc69e833eeba21641b9763b0ebe83c1ecb5030582bc4c9aa720ca6626205f",
+      "unchanged": true
+    },
+    {
+      "path": "theory/metrology.py",
+      "original_sha256": "4dc6dcd75bcfc128ff8b551a34ca8d62cd104669c9843eee621450447782a947",
+      "current_sha256": "4dc6dcd75bcfc128ff8b551a34ca8d62cd104669c9843eee621450447782a947",
+      "unchanged": true
+    },
+    {
+      "path": "theory/oscillator_array.py",
+      "original_sha256": "1f2dc08ba1e461324927a9c7cec7dcd38c97e3b48cf7ef895f62974cdcfd6993",
+      "current_sha256": "1f2dc08ba1e461324927a9c7cec7dcd38c97e3b48cf7ef895f62974cdcfd6993",
+      "unchanged": true
+    },
+    {
+      "path": "theory/photonics.py",
+      "original_sha256": "cfe6898b5ebcaf6e9ab68b4b65ab53c491a913d92bf813eca901cf3672fc2942",
+      "current_sha256": "cfe6898b5ebcaf6e9ab68b4b65ab53c491a913d92bf813eca901cf3672fc2942",
+      "unchanged": true
+    },
+    {
+      "path": "theory/qcd.py",
+      "original_sha256": "11f0578796ae5e33a0e5cde0a7f82d6dc979fd4373bcb06e7d7971e2c83b131d",
+      "current_sha256": "11f0578796ae5e33a0e5cde0a7f82d6dc979fd4373bcb06e7d7971e2c83b131d",
+      "unchanged": true
+    },
+    {
+      "path": "theory/report.py",
+      "original_sha256": "871616a6e3b5103e9ad765cba5440348cbbf8cc467e12ba7e809df26914a9573",
+      "current_sha256": "871616a6e3b5103e9ad765cba5440348cbbf8cc467e12ba7e809df26914a9573",
+      "unchanged": true
+    },
+    {
+      "path": "theory/superconductivity.py",
+      "original_sha256": "3f67b94e424d5851365c253bbfbd3228f3682468094dafdf71a7de9190723bc7",
+      "current_sha256": "3f67b94e424d5851365c253bbfbd3228f3682468094dafdf71a7de9190723bc7",
+      "unchanged": true
+    }
+  ]
+}
