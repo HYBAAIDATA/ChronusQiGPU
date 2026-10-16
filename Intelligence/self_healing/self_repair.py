@@ -35,11 +35,10 @@ claims:
       IntelligenceMemoryDB.record_self_repair_proposal() as
       'pending_review' BEFORE any file is touched. Nothing is applied unless
       HYBA_SELF_REPAIR_AUTO_APPLY=true is explicitly set. Even then, a patch
-      is applied, the SPECIFIC failing test is immediately rerun to confirm
-      it now passes, and if it does not, the change is reverted and the
-      failed attempt is logged honestly via VeritasLedger (which itself
-      refuses to record a SUCCESS status without verified test evidence —
-      see hyba/salamander/veritas_ledger.py).
+      a host-supplied isolated validator must bind baseline and candidate
+      regression evidence before atomic publication. No validator means no
+      source change. Local pytest subprocesses are not a sandbox. Tests and
+      targets outside the shared transaction scope require human review.
 
   Stage 5 — Trigger:
       `run_self_repair_cycle()` is the callable entry point. It is wired as
@@ -67,6 +66,8 @@ import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+from Intelligence.salamander_transaction import RepairTransaction, RepairValidator, source_digest
 
 # ---------------------------------------------------------------------------
 # Classification categories
@@ -686,39 +687,9 @@ def _find_requirements_txt(repo_root: Path) -> Path:
     return repo_root / "requirements.txt"
 
 
-def _add_requirements_dep(repo_root: Path, dep_line: str) -> Tuple[bool, str]:
-    req_path = _find_requirements_txt(repo_root)
-    if not req_path.exists():
-        return False, f"{req_path} not found"
-    text = req_path.read_text(encoding="utf-8")
-    pkg = dep_line.split("=")[0].split(">")[0].split("<")[0].strip().lower()
-    if pkg in text.lower():
-        return True, f"{dep_line} already present"
-    with open(req_path, "a", encoding="utf-8") as f:
-        f.write(f"\n{dep_line}\n")
-    return True, f"added {dep_line} to {req_path}"
-
-
-def _pip_install(dep_line: str) -> Tuple[bool, str]:
-    try:
-        proc = subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--quiet", dep_line],
-            capture_output=True,
-            text=True,
-            timeout=180,
-        )
-        if proc.returncode == 0:
-            return True, f"pip installed {dep_line}"
-        return False, f"pip install failed for {dep_line}: {proc.stderr[-500:]}"
-    except subprocess.TimeoutExpired:
-        return False, f"pip install timed out for {dep_line}"
-    except Exception as exc:  # noqa: BLE001
-        return False, f"pip install raised {type(exc).__name__}: {exc}"
-
-
 def _propose_dependency_fix(cf: ClassifiedFailure, repo_root: Path) -> Optional[LLMRepairOutcome]:
     """If a missing module maps to a known PyPI dep, propose adding it to
-    requirements.txt and installing it."""
+    requirements.txt without changing the repository or environment."""
     text = f"{cf.failure.message}\n{cf.failure.traceback_text}"
     module_name = None
     m = _MISSING_MODULE_RE.search(text)
@@ -735,16 +706,22 @@ def _propose_dependency_fix(cf: ClassifiedFailure, repo_root: Path) -> Optional[
         return None
     req_path = _find_requirements_txt(repo_root)
     rel = _rel_target(repo_root, req_path)
-    added, note = _add_requirements_dep(repo_root, dep_line)
-    if not added:
+    if not req_path.is_file():
         return LLMRepairOutcome(
             available=False,
-            reason=f"Missing module '{module_name}' maps to {dep_line}, but {note}. No patch applied.",
+            reason=f"Missing dependency '{module_name}'; no requirements file found.",
         )
-    new_content = req_path.read_text(encoding="utf-8")
+    original = req_path.read_text(encoding="utf-8")
+    pkg = dep_line.split("=")[0].split(">")[0].split("<")[0].strip().lower()
+    if pkg in original.lower():
+        return LLMRepairOutcome(
+            available=False,
+            reason=f"Dependency {dep_line} is already declared; investigate the environment.",
+        )
+    new_content = original + ("" if original.endswith("\n") else "\n") + dep_line + "\n"
     return LLMRepairOutcome(
         available=True,
-        diagnosis=f"Missing module '{module_name}' maps to known dependency {dep_line}. {note}.",
+        diagnosis=f"Missing module '{module_name}' maps to {dep_line}; human-reviewed dependency proposal only.",
         proposed_file_content=new_content,
         target_file=rel,
         raw_response="rule_based_dependency_fix",
@@ -1211,152 +1188,76 @@ def apply_and_verify(
     python_backend_dir: Path,
     memory_db: Optional[Any] = None,
     test_timeout_s: int = 180,
+    *,
+    validator: Optional[RepairValidator] = None,
 ) -> ApplyResult:
-    """The ONLY function in this module that can modify a source file, and
-    only when HYBA_SELF_REPAIR_AUTO_APPLY=true is explicitly set. Even then:
-      1. Apply the proposed content.
-      2. Immediately rerun the SPECIFIC failing test.
-      3. If it now passes: log SUCCESS to VeritasLedger (which itself
-         refuses to record SUCCESS without verified test evidence) and mark
-         the proposal 'applied'.
-      4. If it does not pass, or the rerun errors: revert the file to its
-         original content, log the failed attempt honestly, and mark the
-         proposal 'reverted'. A broken, unverified "fix" is never left in
-         place.
+    """Publish only through the shared isolated-validation transaction.
+
+    Auto-apply remains opt-in, but a flag is not regression evidence. Local
+    pytest execution is diagnosis, not a sandbox. The host must configure an
+    externally isolated validator; candidates never run in the live tree.
+    test_timeout_s is retained for API compatibility; validator resource
+    limits belong to the trusted executor, not to candidate-controlled code.
     """
+
+    def report(status: str, message: str) -> None:
+        if memory_db is not None:
+            memory_db.update_self_repair_proposal_status(proposal.id, status, message)
+
     auto_apply = os.environ.get(ENV_AUTO_APPLY, "false").strip().lower() in ("1", "true", "yes")
     if not auto_apply:
-        if memory_db is not None:
-            memory_db.update_self_repair_proposal_status(
-                proposal.id,
-                "pending_review",
-                f"Auto-apply disabled ({ENV_AUTO_APPLY}=false); awaiting human review.",
-            )
-        return ApplyResult(
-            applied=False,
-            verified=False,
-            reverted=False,
-            message=(
-                f"Auto-apply disabled ({ENV_AUTO_APPLY}=false, the default). Proposal {proposal.id} "
-                "recorded for human review only — no file was touched."
-            ),
-        )
-
+        message = f"Auto-apply disabled ({ENV_AUTO_APPLY}=false); awaiting human review."
+        report("pending_review", message)
+        return ApplyResult(False, False, False, message)
     if not proposal.proposed_content or not proposal.target_file:
-        msg = f"Proposal {proposal.id} has no proposed patch to apply (diagnostic-only)."
-        if memory_db is not None:
-            memory_db.update_self_repair_proposal_status(proposal.id, "pending_review", msg)
-        return ApplyResult(applied=False, verified=False, reverted=False, message=msg)
-
-    # Tests are the specification: a heal changes code to meet them. A patch
-    # that edits a test (wider tolerances, relaxed assertions) turns the rerun
-    # green by construction, so it never applies without a human.
+        message = f"Proposal {proposal.id} has no proposed patch to apply (diagnostic-only)."
+        report("pending_review", message)
+        return ApplyResult(False, False, False, message)
     if _is_test_file(proposal.target_file):
-        msg = (
-            f"Proposal {proposal.id} edits {proposal.target_file}, a test; changes to the "
-            "specification always wait for human review."
+        message = (
+            f"Proposal {proposal.id} edits a test; specification changes require human review."
         )
-        if memory_db is not None:
-            memory_db.update_self_repair_proposal_status(proposal.id, "pending_review", msg)
-        return ApplyResult(applied=False, verified=False, reverted=False, message=msg)
-
-    target_path = repo_root / "python_backend" / proposal.target_file
-    if not target_path.exists():
-        target_path = repo_root / proposal.target_file
-    if not target_path.exists():
-        msg = f"Target file '{proposal.target_file}' does not exist; cannot apply."
-        if memory_db is not None:
-            memory_db.update_self_repair_proposal_status(proposal.id, "rejected", msg)
-        return ApplyResult(applied=False, verified=False, reverted=False, message=msg)
-
-    original_content = target_path.read_text(encoding="utf-8")
-    ledger = _veritas_ledger(python_backend_dir)
-
-    target_path.write_text(proposal.proposed_content, encoding="utf-8")
-
-    # Dependency fixes: if we patched requirements.txt, also install the added
-    # package(s) so the verification run can actually import them.
-    install_note = ""
-    if proposal.target_file.endswith("requirements.txt"):
-        new_lines = [ln.strip() for ln in proposal.proposed_content.splitlines()]
-        old_lines = [ln.strip() for ln in original_content.splitlines()]
-        added = [ln for ln in new_lines if ln and ln not in old_lines]
-        for dep_line in added:
-            ok, note = _pip_install(dep_line)
-            install_note += f" [{dep_line}: {note}]"
-
+        report("pending_review", message)
+        return ApplyResult(False, False, False, message)
+    if validator is None:
+        message = "No isolated regression validator configured; source was not changed."
+        report("pending_review", message)
+        return ApplyResult(False, False, False, message)
+    root = repo_root.resolve()
+    target = root / "python_backend" / proposal.target_file
+    if not target.exists():
+        target = root / proposal.target_file
     try:
-        args = [
-            sys.executable,
-            "-m",
-            "pytest",
-            proposal.test_node_id,
-            "-q",
-            "--tb=short",
-            "-p",
-            "no:cacheprovider",
-        ]
-        try:
-            import pytest_cov  # noqa: F401
-
-            args.append("--no-cov")
-        except ModuleNotFoundError:
-            pass
-        proc = subprocess.run(
-            args,
-            cwd=str(python_backend_dir),
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=test_timeout_s,
-        )
-        test_passed = proc.returncode == 0
-        stdout_tail = proc.stdout[-2000:]
-    except subprocess.TimeoutExpired:
-        test_passed = False
-        stdout_tail = "(verification run timed out)"
-    except Exception as exc:  # noqa: BLE001
-        test_passed = False
-        stdout_tail = f"(verification run raised {type(exc).__name__}: {exc})"
-
-    if test_passed:
-        ledger.record_action(
-            "self_repair_apply",
-            "SUCCESS",
-            {
-                "test_passed": True,
-                "test_node_id": proposal.test_node_id,
-                "proposal_id": proposal.id,
-            },
-        )
-        if memory_db is not None:
-            memory_db.update_self_repair_proposal_status(
-                proposal.id, "applied", f"Verified: {proposal.test_node_id} passes after the patch."
-            )
-        return ApplyResult(
-            applied=True,
-            verified=True,
-            reverted=False,
-            message=f"Patch applied and verified: {proposal.test_node_id} now passes.{install_note}",
-        )
-
-    # Verification failed — revert immediately. Never leave an unverified change in place.
-    target_path.write_text(original_content, encoding="utf-8")
-    ledger.record_action(
-        "self_repair_apply",
-        "REVERTED",
-        {
-            "test_passed": False,
-            "test_node_id": proposal.test_node_id,
-            "proposal_id": proposal.id,
-            "stdout_tail": stdout_tail,
-        },
-    )
-    note = f"Patch applied but {proposal.test_node_id} still failed after the change; reverted. Output tail: {stdout_tail[-500:]}"
-    if memory_db is not None:
-        memory_db.update_self_repair_proposal_status(proposal.id, "reverted", note)
-    return ApplyResult(applied=True, verified=False, reverted=True, message=note)
+        baseline = target.read_bytes()
+        candidate = proposal.proposed_content.encode("utf-8")
+        # Refuse mutation if the local audit store cannot even be opened.
+        ledger = _veritas_ledger(python_backend_dir)
+    except Exception as exc:
+        message = f"Repair preparation failed: {type(exc).__name__}: {exc}"
+        report("rejected", message)
+        return ApplyResult(False, False, False, message)
+    result = RepairTransaction(root, validator).apply(target, baseline, candidate)
+    if not result.committed:
+        message = f"{result.status}: {result.reason}; candidate was not published."
+        report("rejected", message)
+        return ApplyResult(False, False, False, message)
+    evidence = {
+        "test_passed": True,
+        "proposal_id": proposal.id,
+        "test_node_id": proposal.test_node_id,
+        "baseline_sha256": source_digest(baseline),
+        "candidate_sha256": source_digest(candidate),
+        "scope": "HOST_VALIDATOR_REGRESSION_ONLY_NOT_PRODUCTION_APPROVAL",
+    }
+    message = f"{result.status}: {result.reason}; not production approval."
+    try:
+        ledger.record_action("self_repair_apply", "SUCCESS", evidence)
+        report("applied", message)
+    except Exception as exc:
+        # Publication already committed. Do not overwrite an intervening edit
+        # with a fake rollback or pretend audit persistence was successful.
+        message += f" Audit persistence unavailable: {type(exc).__name__}: {exc}"
+    return ApplyResult(True, True, False, message)
 
 
 # ---------------------------------------------------------------------------
@@ -1423,11 +1324,13 @@ def run_self_repair_cycle(
     max_flaky_checks: int = 3,
     attempt_llm_for_unclassified: bool = True,
     diagnosis_timeout_s: int = 900,
+    *,
+    validator: Optional[RepairValidator] = None,
 ) -> SelfRepairCycleReport:
     """The callable entry point for the whole cycle: run the real test
     suite, classify real failures, optionally consult the LLM-assisted path
     for the unclassified remainder, persist every proposal, and — only if
-    HYBA_SELF_REPAIR_AUTO_APPLY=true — attempt a verified apply/revert.
+    HYBA_SELF_REPAIR_AUTO_APPLY=true — attempt validated atomic publication.
 
     Safe to call with no arguments: repo_root defaults to this repository,
     and with no env vars set this performs diagnosis + classification +
@@ -1469,7 +1372,9 @@ def run_self_repair_cycle(
             repair_outcome = propose_llm_repair(cf, repo_root)
         proposal = create_proposal(cf, session_id, llm_outcome=repair_outcome, memory_db=memory_db)
         proposals.append(proposal)
-        result = apply_and_verify(proposal, repo_root, python_backend_dir, memory_db=memory_db)
+        result = apply_and_verify(
+            proposal, repo_root, python_backend_dir, memory_db=memory_db, validator=validator
+        )
         apply_results.append(result)
 
     return SelfRepairCycleReport(

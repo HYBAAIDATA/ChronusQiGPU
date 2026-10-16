@@ -1,0 +1,104 @@
+{
+  "task_id": "SALAMANDER-HEAL-20261013",
+  "repository": "PhiEnterprise1/EuclidPhiEnterprise",
+  "baseline_sha": "6688e83c22d36dc16dfd5516e9e7d81959c84438",
+  "scope": "Actual retrieved modules in an isolated namespace package; not whole checkout or installed package",
+  "environment": {
+    "python": "3.13.14",
+    "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+    "venv": "/data/salamander-venv"
+  },
+  "tools": {
+    "pytest": "pytest 9.1.1",
+    "black": "black, 26.10.1 (compiled: yes)\nPython (CPython) 3.13.14",
+    "flake8": "7.4.1 (mccabe: 0.7.0, pycodestyle: 2.15.0, pyflakes: 4.0.3) CPython 3.13.14 on\nLinux",
+    "ruff": "ruff 0.17.0"
+  },
+  "files": {
+    "Intelligence/salamander_agentic.py": {
+      "sha256": "902e396e701d8306147aca64008f767cb2bc39e02c3d07d1e949d98893afc53d",
+      "bytes": 32347
+    },
+    "Intelligence/salamander_transaction.py": {
+      "sha256": "e82d02dd8396d8d0391c2e682f02012a16943c5d597e8680caaf00d3a6693f5e",
+      "bytes": 5334
+    },
+    "Intelligence/self_healing/self_repair.py": {
+      "sha256": "a5603da4e659d083b825161fd1d776a4587c022a796ef757802cc1e5bd62eb89",
+      "bytes": 55993
+    },
+    "tests/test_salamander_agentic.py": {
+      "sha256": "df03382ccaebb5945ea0a290d647b04684ef0bcadb56647a8cac39c06557ef50",
+      "bytes": 13031
+    },
+    "tests/test_salamander_repair_boundary.py": {
+      "sha256": "c6d8a4db4b0e24090f40ab02d086aebfe7984bb61483286fddf1142ab9cda7f2",
+      "bytes": 13391
+    }
+  },
+  "validation": [
+    {
+      "command": "/data/salamander-venv/bin/python -m pytest tests/test_salamander_repair_boundary.py -q --tb=short",
+      "cwd": "/data/salamander-baseline-run",
+      "exit_code": 1,
+      "result": "36 failed, 1 passed",
+      "log": "baseline-final.log",
+      "interpretation": "8 behavioural gate counterexamples; 28 failures require the newly introduced validator API, not 28 independently reproduced runtime defects"
+    },
+    {
+      "command": "/data/salamander-venv/bin/python -m pytest tests/test_salamander_repair_boundary.py tests/test_existing_compatibility_local.py -q",
+      "cwd": "/data/salamander-work",
+      "exit_code": 0,
+      "result": "51 passed: 37 new parameterized cases plus 14 selected existing cases",
+      "log": "patched-final.log"
+    },
+    {
+      "command": "black --check --line-length 100 Intelligence/salamander_agentic.py Intelligence/salamander_transaction.py Intelligence/self_healing/self_repair.py tests/test_salamander_agentic.py tests/test_salamander_repair_boundary.py",
+      "cwd": "/data/salamander-work",
+      "exit_code": 0,
+      "log": "black-final.log"
+    },
+    {
+      "command": "flake8 --max-line-length 100 --extend-ignore E203,W503,E501,E402,F811,E741 Intelligence/salamander_agentic.py Intelligence/salamander_transaction.py Intelligence/self_healing/self_repair.py tests/test_salamander_agentic.py tests/test_salamander_repair_boundary.py",
+      "cwd": "/data/salamander-work",
+      "exit_code": 0,
+      "log": "flake8.log",
+      "note": "matches loaded repository ignores applicable to these files"
+    },
+    {
+      "command": "ruff check --select E9,F Intelligence/salamander_agentic.py Intelligence/salamander_transaction.py Intelligence/self_healing/self_repair.py tests/test_salamander_agentic.py tests/test_salamander_repair_boundary.py",
+      "cwd": "/data/salamander-work",
+      "exit_code": 0,
+      "log": "ruff.log"
+    },
+    {
+      "command": "python -m compileall -q Intelligence/salamander_agentic.py Intelligence/salamander_transaction.py Intelligence/self_healing/self_repair.py tests/test_salamander_agentic.py tests/test_salamander_repair_boundary.py",
+      "cwd": "/data/salamander-work",
+      "exit_code": 0
+    }
+  ],
+  "fixtures": "UnitVerdict is a test double for the trusted validator contract. It does not execute code or prove OS sandbox isolation. The mutator and audit-failure fixtures inject controlled failures only.",
+  "compatibility": "14 existing test bodies selected by AST from the real test file. Only 3 obsolete tests changed: callbacks/commands now must be rejected instead of authorizing writes. Other selected bodies unchanged. Local package initializer and production conftests excluded; selection retained with evidence bundle.",
+  "unexecuted": [
+    "full package initialization",
+    "actual repository conftests",
+    "full existing test_salamander_agentic.py",
+    "whole repository suite",
+    "installed wheels/sdists",
+    "real externally isolated RepairValidator",
+    "AL HARAS per-change approval integration",
+    "canonical Theseus evidence custody",
+    "CI check runs",
+    "security audit",
+    "hardware benchmarks",
+    "deployment",
+    "mining"
+  ],
+  "limitations": [
+    "single-file cooperating-writer transaction only",
+    "validator trust is established by host configuration, not by a boolean returned by untrusted candidate code",
+    "post-commit local audit-save failure is reported but source/evidence are not one atomic transaction",
+    "readiness requires independent human approval of fixed artifact"
+  ],
+  "safety": "No main push, merge, release, publication, deployment, pool connection, mining, external LLM call or auto-apply enabling. Protected consensus paths unchanged."
+}
