@@ -28,8 +28,6 @@ def test_combined_surface_is_shipped_in_installed_distribution():
     package_data = setuptools["package-data"]
 
     required_packages = {
-        "chronos",
-        "chronos.academic",
         "chronus.v33",
         "chronus.v33.academic",
         "chronus.v33.compression",
@@ -46,9 +44,3 @@ def test_combined_surface_is_shipped_in_installed_distribution():
     assert "CAPABILITY_MANIFEST.json" in package_data["chronus.v33"]
     assert "docs/*.md" in package_data["chronus.v33"]
     assert "benchmarks/*.json" in package_data["chronus.v33"]
-
-
-def test_deprecated_facade_exposes_the_completeness_gate():
-    import chronos
-
-    assert chronos.audit_capability_surface is audit_capability_surface

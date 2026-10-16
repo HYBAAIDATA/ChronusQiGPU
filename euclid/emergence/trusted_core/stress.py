@@ -1,55 +1,29 @@
-"""Stress testing suite for evaluating candidates outside their discovery envelope."""
-
+"""Measured repetition-load stress; no random survival probabilities or asserted envelope coverage."""
 from __future__ import annotations
-import random
-from typing import Tuple, Dict, Any, Optional
-
-from ..models.candidate import EmergentCandidate, DiscoveryEnvelope
-from ..substrate.executors import BaseExecutor
+import secrets
+from ..substrate import engine
 
 
-def stress_test(
-    candidate: EmergentCandidate,
-    envelope: DiscoveryEnvelope,
-    executor: Optional[BaseExecutor] = None,
-    noise_injection_steps: int = 10,
-) -> Tuple[bool, Dict[str, Any]]:
-    failure_reasons = []
-    stress_metrics = {}
-
-    effective_latency = envelope.max_observation_latency
-    stress_metrics["tested_latency_ms"] = effective_latency
-    if effective_latency > 5000.0:
-        failure_reasons.append(f"Latency stress threshold exceeded: {effective_latency}ms")
-
-    noise_tested = envelope.noise_tolerance
-    stress_metrics["tested_noise_tolerance"] = noise_tested
-    simulated_survivals = 0
-
-    rng = random.Random(candidate.candidate_id.__hash__() & 0xFFFFFFFF)
-    for _ in range(noise_injection_steps):
-        perturbation = rng.uniform(0.0, noise_tested)
-        if perturbation <= 0.80 or rng.random() > (perturbation - 0.70):
-            simulated_survivals += 1
-
-    survival_rate = simulated_survivals / max(1, noise_injection_steps)
-    stress_metrics["noise_survival_rate"] = survival_rate
-    if survival_rate < 0.70:
-        failure_reasons.append(
-            f"Noise resilience collapsed under expanded envelope (survival={survival_rate:.2f} < 0.70)"
-        )
-
-    stress_metrics["compute_budget_sec"] = envelope.compute_budget_sec
-    if envelope.compute_budget_sec <= 0.001:
-        failure_reasons.append("Unrealistically compressed compute budget under margin expansion")
-
-    passed = len(failure_reasons) == 0
-    details = {
-        "candidate_id": candidate.candidate_id,
-        "expanded_envelope": envelope.to_dict(),
-        "stress_metrics": stress_metrics,
-        "failure_reasons": failure_reasons,
-        "passed": passed,
-    }
-
-    return passed, details
+def stress_test(candidate, envelope, executor=None, noise_injection_steps=10, *,
+                margin=1.5, challenge=None):
+    if executor is None:
+        return False, {'execution_kind': 'UNAVAILABLE', 'executor_invoked': False,
+                       'failure_reasons': ['measured executor required']}
+    if not engine.finite_number(margin) or margin < 1.5:
+        raise ValueError('stress margin >=1.5 required')
+    expected = candidate.discovery_envelope.scale_margin(margin).to_dict()
+    if envelope.to_dict() != expected:
+        raise ValueError('expanded envelope mismatch')
+    result = executor.reproduce(candidate.reproduction_steps, challenge=challenge or secrets.token_hex(32),
+        stress_factor=margin, candidate_fingerprint=candidate.compute_fingerprint(), expanded_envelope=expected)
+    passed = result.observed
+    # Actual CPU elapsed per trial must also fit the expanded decision budget.
+    trials = result.details.get('trials', [])
+    if (not engine.finite_number(envelope.compute_budget_sec) or envelope.compute_budget_sec <= 0
+            or not trials or any(t['duration_ms'] / 1000 > envelope.compute_budget_sec for t in trials)):
+        passed = False
+    return passed, {'execution_kind': result.details['execution_kind'], 'executor_invoked': True,
+        'candidate_id': candidate.candidate_id, 'expanded_envelope': expected,
+        'tested_margin': margin, 'stress_axes': ['repetition_count', 'elapsed_compute_budget'],
+        'untested_axes': ['noise_injection', 'observation_latency', 'parameter_bound_corners'],
+        'execution': result.to_dict(), 'passed': passed}

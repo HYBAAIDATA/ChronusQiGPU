@@ -1,39 +1,17 @@
-"""CHRONUS production-readiness contract.
+"""Production-readiness gates for the heterogeneous compute stack."""
 
-Owner-approved product model:
-1. native_chronus_gpu — CHRONUS is the software-defined GPU itself. Its quantum-
-   from-maths execution contract is substrate-agnostic and does not require a
-   physical host GPU;
-2. host_gpu_augmentation — CHRONUS may bind into a certified host GPU/accelerator
-   to extend or scale that host. Certification is lane-specific and must never
-   gate native Chronus.
-
-This module keeps core-product readiness separate from per-accelerator readiness.
-It consumes digest-bound evidence references; booleans alone are not accepted as
-production evidence.
-"""
 from __future__ import annotations
 
-import argparse
-from dataclasses import asdict, dataclass, field
-from datetime import datetime
 import importlib
 import json
-from pathlib import Path
 import re
-from typing import Any, Mapping, Sequence
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
+from typing import Any, Mapping
 
-from .virtual_igpu.abi import ExecutionPolicy, ProductMode
+from chronus.provenance import ProvenanceError, validate_provenance
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-
-NATIVE_CHRONUS_MODE = ProductMode.NATIVE_CHRONUS_GPU.value
-HOST_GPU_AUGMENTATION_MODE = ProductMode.HOST_GPU_AUGMENTATION.value
-
-# Backward-compatible constant names for callers that imported readiness
-# before product mode and backend-selection policy were separated.
-CORE_MODE = NATIVE_CHRONUS_MODE
-ACCELERATOR_MODE = HOST_GPU_AUGMENTATION_MODE
 
 
 @dataclass(frozen=True)
@@ -44,8 +22,8 @@ class Gate:
 
 
 @dataclass(frozen=True)
-class EvidenceRef:
-    """Digest-bound reference to an executed artifact."""
+class EvidenceReceipt:
+    """Digest-bound reference to externally produced release evidence."""
 
     kind: str
     artifact_sha256: str
@@ -56,79 +34,53 @@ class EvidenceRef:
 
 
 @dataclass(frozen=True)
-class CoreProductionEvidence:
-    """Evidence required to declare native CHRONUS production-ready."""
+class ProductionEvidence:
+    """Evidence inputs for the five release gates; booleans are never evidence."""
 
-    software_execution: EvidenceRef | Mapping[str, Any] | None = None
-    independent_verification: EvidenceRef | Mapping[str, Any] | None = None
-    receipt_identity: EvidenceRef | Mapping[str, Any] | None = None
-    custody_restart: EvidenceRef | Mapping[str, Any] | None = None
-    clean_install: EvidenceRef | Mapping[str, Any] | None = None
-    full_suite: EvidenceRef | Mapping[str, Any] | None = None
-
-
-@dataclass(frozen=True)
-class AcceleratorCertification:
-    """Certification for one physical accelerator lane.
-
-    The artifact must bind the actual backend/device and demonstrate execution +
-    correctness. This is deliberately independent of core product readiness.
-    """
-
-    backend: str
-    device_id: str
-    artifact_sha256: str
-    observed_at: str
-    subject: str
-    producer: str
-    execution_observed: bool
-    correctness_verified: bool
-    metadata: Mapping[str, Any] = field(default_factory=dict)
+    opencl_conformance: EvidenceReceipt | Mapping[str, Any] | None = None
+    asic_protocol: EvidenceReceipt | Mapping[str, Any] | None = None
+    pool_acknowledgement: EvidenceReceipt | Mapping[str, Any] | None = None
+    provenance_valid: Mapping[str, Any] | None = None
+    container_measured: EvidenceReceipt | Mapping[str, Any] | None = None
 
 
-_CORE_SURFACES: dict[str, tuple[str, tuple[str, ...]]] = {
-    "virtual_igpu": (
-        "chronus.virtual_igpu",
-        ("RuntimeDaemon", "ChronusClient", "ProductMode", "ExecutionPolicy"),
+_SOFTWARE_SURFACES: dict[str, tuple[str, tuple[str, ...]]] = {
+    "tensor": (
+        "hyba.hybrid.tensor_advisor",
+        ("WindowRanker", "apply_tensor_advice"),
     ),
-    "mathematical_engine": (
-        "chronus.v33",
-        ("ChronosEngine", "M32Manifold", "QSDLCompiler", "HamiltonianLibrary"),
+    "performance_accounting": (
+        "hyba.hybrid.performance",
+        ("LayerSample", "PerformanceReport"),
     ),
-    "scale_contract": (
-        "chronus.seam.scale",
-        ("scale_job", "compute_effective_capacity", "memory_budget_bytes"),
+    "virtual_quantum_computer": (
+        "turing_universal_quantum_computer",
+        ("TenThousandQubitSystem", "QuantumRegister"),
     ),
-    "measurement": (
-        "chronus.measurement",
-        ("MeasurementArtifact", "measure_chronus", "replay_artifact"),
+    "manifold": (
+        "aethel.manifold",
+        ("PrimeStorageManifold", "GeodesicNavigator"),
     ),
-    "delivery": (
-        "chronus.delivery",
-        ("probe_embedded", "probe_cloud_instance", "ChronusDelivery"),
+    "sha256d": (
+        "chronus.reference",
+        (
+            "sha256d_scan",
+            "sha256d_verify",
+            "sha256_midstate",
+            "sha256d_merkle",
+        ),
+    ),
+    "chronus_seam": (
+        "chronus.seam.types",
+        ("KernelName", "KERNEL_CLASS"),
     ),
 }
 
 
-_EXPECTED_EVIDENCE_KINDS = {
-    "software_execution": "chronus_software_execution",
-    "independent_verification": "chronus_independent_verification",
-    "receipt_identity": "chronus_receipt_identity",
-    "custody_restart": "chronus_custody_restart",
-    "clean_install": "chronus_clean_install",
-    "full_suite": "chronus_full_suite",
-}
-
-
-def audit_core_surfaces() -> tuple[Gate, ...]:
-    """Import the owner-approved mature capability surfaces.
-
-    This is a source/package audit only. It is intentionally not treated as
-    executed production evidence.
-    """
-
+def audit_software_surfaces() -> tuple[Gate, ...]:
+    """Import every canonical surface and verify its required public symbols."""
     gates: list[Gate] = []
-    for name, (module_name, symbols) in _CORE_SURFACES.items():
+    for name, (module_name, symbols) in _SOFTWARE_SURFACES.items():
         try:
             module = importlib.import_module(module_name)
             missing = [symbol for symbol in symbols if not hasattr(module, symbol)]
@@ -136,211 +88,109 @@ def audit_core_surfaces() -> tuple[Gate, ...]:
             gates.append(Gate(name, False, f"{type(exc).__name__}: {exc}"))
             continue
         if missing:
-            gates.append(Gate(name, False, "missing symbols: " + ", ".join(missing)))
+            gates.append(Gate(name, False, f"missing symbols: {', '.join(missing)}"))
         else:
-            gates.append(Gate(name, True, f"{module_name}: " + ", ".join(symbols)))
+            gates.append(Gate(name, True, f"{module_name}: {', '.join(symbols)}"))
     return tuple(gates)
 
 
-def _coerce_ref(value: EvidenceRef | Mapping[str, Any] | None) -> EvidenceRef | None:
+_REQUIRED_EXTERNAL = {
+    "opencl_conformance": "opencl_conformance",
+    "asic_protocol": "asic_protocol",
+    "pool_acknowledgement": "pool_acknowledgement",
+    "container_measured": "container_measurement",
+}
+
+
+def _receipt_gate(name: str, value: Any) -> Gate:
+    expected_kind = _REQUIRED_EXTERNAL[name]
     if value is None:
-        return None
-    if isinstance(value, EvidenceRef):
-        return value
-    if not isinstance(value, Mapping):
-        return None
+        return Gate(name, False, "required external evidence")
+    if isinstance(value, bool):
+        return Gate(name, False, "boolean assertions are not evidence")
     try:
-        return EvidenceRef(**dict(value))
+        receipt = value if isinstance(value, EvidenceReceipt) else EvidenceReceipt(**dict(value))
     except (TypeError, ValueError):
-        return None
-
-
-def _validate_timestamp(value: str) -> bool:
-    try:
-        stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except (AttributeError, TypeError, ValueError):
-        return False
-    return stamp.tzinfo is not None
-
-
-def _evidence_gate(name: str, value: EvidenceRef | Mapping[str, Any] | None) -> Gate:
-    expected_kind = _EXPECTED_EVIDENCE_KINDS[name]
-    ref = _coerce_ref(value)
-    if ref is None:
-        return Gate(name, False, "required executed evidence artifact")
-    problems: list[str] = []
-    if ref.kind != expected_kind:
+        return Gate(name, False, "invalid evidence receipt")
+    problems = []
+    if receipt.kind != expected_kind:
         problems.append(f"kind must be {expected_kind!r}")
-    if not _SHA256.fullmatch(ref.artifact_sha256):
+    if not _SHA256.fullmatch(receipt.artifact_sha256):
         problems.append("artifact_sha256 must be a lowercase SHA-256 digest")
-    if not _validate_timestamp(ref.observed_at):
-        problems.append("observed_at must be timezone-aware ISO-8601")
-    if not ref.subject.strip():
+    if not receipt.subject.strip():
         problems.append("subject is required")
-    if not ref.producer.strip():
+    if not receipt.producer.strip():
         problems.append("producer is required")
-    if not isinstance(ref.metadata, Mapping):
+    try:
+        stamp = datetime.fromisoformat(receipt.observed_at.replace("Z", "+00:00"))
+        if stamp.tzinfo is None or stamp.utcoffset() != timezone.utc.utcoffset(stamp):
+            problems.append("observed_at must be an RFC3339 UTC timestamp")
+    except (AttributeError, TypeError, ValueError):
+        problems.append("observed_at must be an RFC3339 UTC timestamp")
+    if not isinstance(receipt.metadata, Mapping):
         problems.append("metadata must be a mapping")
     if problems:
         return Gate(name, False, "; ".join(problems))
-    return Gate(
-        name,
-        True,
-        f"{ref.subject} artifact_sha256={ref.artifact_sha256}",
-    )
+    return Gate(name, True, f"verified receipt kind={receipt.kind} subject={receipt.subject} artifact_sha256={receipt.artifact_sha256}")
 
 
-def _coerce_core(
-    evidence: CoreProductionEvidence | Mapping[str, Any] | None,
-) -> CoreProductionEvidence:
+def _provenance_gate(value: Any) -> Gate:
+    if value is None:
+        return Gate("provenance_valid", False, "required post-merge provenance record")
+    if isinstance(value, bool):
+        return Gate("provenance_valid", False, "boolean assertions are not evidence")
+    if not isinstance(value, Mapping):
+        return Gate("provenance_valid", False, "provenance evidence must be a mapping")
+    try:
+        normalized = validate_provenance(value, production=True)
+    except ProvenanceError as exc:
+        return Gate("provenance_valid", False, f"invalid provenance: {exc}")
+    return Gate("provenance_valid", True, f"validated production provenance repo_sha={normalized['repo_sha']} human_merge_sha={normalized['human_merge_sha']}")
+
+
+def _coerce_evidence(evidence: ProductionEvidence | Mapping[str, Any] | None) -> ProductionEvidence:
     if evidence is None:
-        return CoreProductionEvidence()
-    if isinstance(evidence, CoreProductionEvidence):
+        return ProductionEvidence()
+    if isinstance(evidence, ProductionEvidence):
         return evidence
     if not isinstance(evidence, Mapping):
-        raise TypeError("core evidence must be a mapping or CoreProductionEvidence")
-    return CoreProductionEvidence(
-        **{
-            name: evidence.get(name)
-            for name in CoreProductionEvidence.__dataclass_fields__
-        }
-    )
-
-
-def _accelerator_gate(
-    cert: AcceleratorCertification | Mapping[str, Any],
-) -> dict[str, Any]:
-    if not isinstance(cert, AcceleratorCertification):
-        cert = AcceleratorCertification(**dict(cert))
-    problems: list[str] = []
-    if not cert.backend.strip():
-        problems.append("backend is required")
-    if not cert.device_id.strip():
-        problems.append("device_id is required")
-    if not _SHA256.fullmatch(cert.artifact_sha256):
-        problems.append("artifact_sha256 must be a lowercase SHA-256 digest")
-    if not _validate_timestamp(cert.observed_at):
-        problems.append("observed_at must be timezone-aware ISO-8601")
-    if not cert.subject.strip() or not cert.producer.strip():
-        problems.append("subject and producer are required")
-    if not cert.execution_observed:
-        problems.append("physical execution was not observed")
-    if not cert.correctness_verified:
-        problems.append("correctness was not independently verified")
-    return {
-        "backend": cert.backend,
-        "device_id": cert.device_id,
-        "ready": not problems,
-        "detail": "; ".join(problems) if problems else "device-bound execution certified",
-        "artifact_sha256": cert.artifact_sha256,
-    }
+        raise TypeError("evidence must be ProductionEvidence, a mapping, or None")
+    return ProductionEvidence(**{name: evidence.get(name) for name in ProductionEvidence.__dataclass_fields__})
 
 
 def production_readiness(
-    evidence: CoreProductionEvidence | Mapping[str, Any] | None = None,
-    *,
-    accelerator_certifications: Sequence[
-        AcceleratorCertification | Mapping[str, Any]
-    ] = (),
+    evidence: ProductionEvidence | Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Evaluate CHRONUS readiness without turning GPU evidence into a core gate.
+    """Return a fail-closed readiness report.
 
-    Native CHRONUS can be production-ready with zero host-GPU certifications.
-    A host-GPU augmentation lane becomes production-ready only after its own
-    device-bound certification artifact satisfies the lane gate.
+    Software availability and external physical evidence are separate gates.
+    Missing evidence remains visible and can never be inferred from imports.
     """
-
-    core_evidence = _coerce_core(evidence)
-    source_gates = audit_core_surfaces()
-    evidence_gates = tuple(
-        _evidence_gate(name, getattr(core_evidence, name))
-        for name in CoreProductionEvidence.__dataclass_fields__
+    physical = _coerce_evidence(evidence)
+    software = audit_software_surfaces()
+    physical_gates = (
+        _receipt_gate("opencl_conformance", physical.opencl_conformance),
+        _receipt_gate("asic_protocol", physical.asic_protocol),
+        _receipt_gate("pool_acknowledgement", physical.pool_acknowledgement),
+        _provenance_gate(physical.provenance_valid),
+        _receipt_gate("container_measured", physical.container_measured),
     )
-    core_ready = all(g.passed for g in (*source_gates, *evidence_gates))
-
-    accelerator_lanes = [
-        _accelerator_gate(cert) for cert in accelerator_certifications
-    ]
-    accelerator_ready = any(lane["ready"] for lane in accelerator_lanes)
-
-    modes = {
-        CORE_MODE: {
-            "ready": core_ready,
-            "execution_policy": ExecutionPolicy.STANDALONE_SOFTWARE.value,
-            "requires_physical_gpu": False,
-            "identity": (
-                "Chronus is the software-defined GPU; the executing host substrate "
-                "does not define the product."
-            ),
-            "gates": [asdict(g) for g in (*source_gates, *evidence_gates)],
-        },
-        ACCELERATOR_MODE: {
-            "ready": core_ready and accelerator_ready,
-            "execution_policy": ExecutionPolicy.PREFERRED_ACCELERATOR.value,
-            "requires_physical_gpu": True,
-            "lanes": accelerator_lanes,
-            "identity": (
-                "Chronus augments/scales a certified host GPU or accelerator; "
-                "this mode is additive to native Chronus."
-            ),
-            "note": (
-                "host-accelerator certification is additive; failure or absence "
-                "of a physical lane does not demote native CHRONUS"
-            ),
-        },
-    }
-
-    ready_modes = [name for name, status in modes.items() if status["ready"]]
+    all_gates = (*software, *physical_gates)
     return {
-        "product": "Chronus",
-        "production_ready": core_ready,
-        "core_production_ready": core_ready,
-        "ready_modes": ready_modes,
-        "modes": modes,
+        "production_ready": all(gate.passed for gate in all_gates),
+        "software_ready": all(gate.passed for gate in software),
+        "gates": [asdict(gate) for gate in all_gates],
         "claim_boundary": (
-            "CHRONUS is a substrate-agnostic software-defined GPU. Native product "
-            "identity/readiness does not depend on a host GPU. Host-GPU augmentation "
-            "and other device-specific claims require their own device-bound "
-            "execution and correctness evidence."
+            "software imports do not prove hardware execution, ASIC availability, "
+            "pool acceptance, provenance, container size, or hashrate"
         ),
     }
 
 
 def main() -> int:
-    """CLI for evidence-bound CHRONUS production-readiness evaluation."""
-
-    parser = argparse.ArgumentParser(
-        description=(
-            "Evaluate native CHRONUS readiness separately from optional "
-            "host-GPU/accelerator augmentation certifications."
-        )
-    )
-    parser.add_argument(
-        "--evidence",
-        help="JSON file containing CoreProductionEvidence fields",
-    )
-    parser.add_argument(
-        "--accelerators",
-        help="JSON file containing a list of AcceleratorCertification records",
-    )
-    args = parser.parse_args()
-
-    evidence = None
-    if args.evidence:
-        evidence = json.loads(Path(args.evidence).read_text(encoding="utf-8"))
-    accelerator_certifications = ()
-    if args.accelerators:
-        raw = json.loads(Path(args.accelerators).read_text(encoding="utf-8"))
-        if not isinstance(raw, list):
-            raise SystemExit("--accelerators must contain a JSON list")
-        accelerator_certifications = raw
-
-    report = production_readiness(
-        evidence,
-        accelerator_certifications=accelerator_certifications,
-    )
+    report = production_readiness()
     print(json.dumps(report, indent=2, sort_keys=True))
-    return 0 if report["production_ready"] else 2
+    return 0 if report["production_ready"] else 1
 
 
 if __name__ == "__main__":
@@ -348,15 +198,9 @@ if __name__ == "__main__":
 
 
 __all__ = [
-    "ACCELERATOR_MODE",
-    "CORE_MODE",
-    "HOST_GPU_AUGMENTATION_MODE",
-    "NATIVE_CHRONUS_MODE",
-    "AcceleratorCertification",
-    "CoreProductionEvidence",
-    "EvidenceRef",
+    "EvidenceReceipt",
     "Gate",
-    "audit_core_surfaces",
+    "ProductionEvidence",
+    "audit_software_surfaces",
     "production_readiness",
-    "main",
 ]

@@ -1,0 +1,22 @@
+{
+  "qualification": "DISTRIBUTION_AND_CLEAN_INSTALL",
+  "status": "PASSED",
+  "timestamp": 1791983395.5823379,
+  "duration_seconds": 119.01,
+  "wheel_filename": "hyba_pythia_mining-1.0.0-py3-none-any.whl",
+  "wheel_sha256": "e13ccd5645a9a84a3988a42c5b9077a6707a6f984e1ae2df23f8de40534f04c4",
+  "wheel_size_bytes": 5203035,
+  "checks_passed": [
+    "isolated_virtualenv_creation",
+    "wheel_clean_install",
+    "out_of_tree_module_import",
+    "skills_package_data_integrity",
+    "reports_package_data_integrity",
+    "salamander_engine_clean_init",
+    "clean_bsd_exploration_dispatch",
+    "clean_external_agent_boundary_dispatch",
+    "cli_entry_point_salamander_status",
+    "cli_entry_point_salamander_capabilities_profile_policy",
+    "cli_entry_point_salamander_bsd_cmi_sealed"
+  ]
+}

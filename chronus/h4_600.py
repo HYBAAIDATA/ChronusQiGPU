@@ -8,13 +8,13 @@ NON-PRODUCTION FP64 REFERENCE.
 
 Retained for tests, research lineage, and FP64 consumers only. It is NOT on
 the canonical production route: production geometry, planning and execution
-run through chronus/exact_geometry.py (exact Q(phi) H4/600-cell via chronos_one_igpu.family_algebra), which computes in exact Q(phi) rational arithmetic.
+run through chronus/exact_geometry.py (exact Q(phi) H4/600-cell via chronus.family_algebra), which computes in exact Q(phi) rational arithmetic.
 Nothing here produces certificates, evidence, or mining decisions.
 """
 
 from __future__ import annotations
 
-from chronos_one_igpu.reference_contract import require_reference, reference_only, require_production_context
+from chronus.reference_contract import require_reference, reference_only, require_production_context
 import itertools
 import math
 from typing import List, Sequence, Tuple

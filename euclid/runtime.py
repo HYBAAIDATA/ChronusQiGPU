@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import os
 import threading
@@ -30,6 +31,7 @@ class EuclidRuntime:
         experience_learner: Any | None = None,
         memory_database: MemoryDatabase | None = None,
         cognition: Any | None = None,
+        governed_learning: Any | None = None,
     ) -> None:
         self.creator_id = creator_id
         self._closed = False
@@ -53,11 +55,18 @@ class EuclidRuntime:
         self.ADAPTIVE_KNOWLEDGE_KIND = "euclid.adaptive-knowledge." + domain_hash(
             "euclid.adaptive-owner.v1", {"creator_id": creator_id}
         )
+        if governed_learning is None:
+            from hyba_substrate.euclid_learning_system import EuclidLearningSystem
+
+            governed_learning = EuclidLearningSystem(
+                self.state_dir / "governed_learning.json"
+            )
         self.learning = LearningService(
             pythia=pythia,
             memory=memory,
             store=store,
             experience_learner=experience_learner,
+            governed_learning=governed_learning,
             memory_database=database,
             evidence=self.evidence,
             replay_journal_path=self.state_dir / "replay_journal.json",
@@ -136,6 +145,23 @@ class EuclidRuntime:
         for organ_id, implementation in dict(specialists or {}).items():
             runtime.register_specialist(organ_id, implementation)
         return runtime
+
+    def training_pipeline(self, *, mission_id: str, provenance: str) -> Any:
+        """One training boundary over the same learner used by this runtime."""
+        if self._closed:
+            raise RuntimeError("runtime is closed")
+        from .training_pipeline import TrainingPipeline
+
+        learner = self.learning.experience_learner
+        if learner is None:
+            raise RuntimeError("runtime has no experience learner; use production()")
+        return TrainingPipeline(learner, self.learning,
+                                mission_id=mission_id, provenance=provenance)
+
+    def consolidate_learning(self, *, replay_limit: int = 64) -> dict[str, Any]:
+        if self._closed:
+            raise RuntimeError("runtime is closed")
+        return self.learning.consolidate(replay_limit=replay_limit)
 
     # Specialist organs composed under EUCLID: organ id -> (reachability
     # component, adapter factory, read-only health probe request, declared
@@ -335,6 +361,17 @@ class EuclidRuntime:
                 detail=dict(detail or {}),
             )
 
+    def bind_intelligence(self, registry, *, profile, capabilities, organ_id="intelligence"):
+        """Bind existing Intelligence handlers; authorization remains explicit.
+
+        This composition does not install a guardian, issue entitlements, grant
+        rights, create a learner or enable external/mutating execution.
+        """
+        from .intelligence_bridge import bind_intelligence
+
+        return bind_intelligence(self, registry, profile=profile,
+                                 capabilities=capabilities, organ_id=organ_id)
+
     def dispatch_specialist(
         self,
         organ_id: str,
@@ -351,6 +388,9 @@ class EuclidRuntime:
         never converted into a fabricated result."""
         if self._closed:
             raise RuntimeError("runtime is closed")
+        # Detach caller-owned nested data before authorization. The guardian
+        # receives its own observation, not a mutable dispatch authority handle.
+        request = copy.deepcopy(dict(request))
         if getattr(self, "guardian", None) is None:
             # Creator-scoped grants are necessary but are not a substitute
             # for the security owner's authorisation of specialist effects.
@@ -378,7 +418,7 @@ class EuclidRuntime:
                     tenant_id=tenant_id,
                     operation=operation,
                     resource=organ_id,
-                    payload=dict(request),
+                    payload=copy.deepcopy(dict(request)),
                     actor=actor,
                 ),
                 subscription_token=subscription_token or "",
@@ -406,9 +446,17 @@ class EuclidRuntime:
                 organ_id, f"{organ_id}.request", request, confident=True, safe=True
             )
         except PermissionError as exc:
+            self.evidence.append("specialist-refused", {
+                "organ": organ_id, "operation": operation, "error_type": type(exc).__name__,
+            })
             return {"allowed": False, "organ": organ_id, "operation": operation,
                     "governance": governance, "vetoed": str(exc),
                     "health": self.registry.get(organ_id).health.value}
+        except Exception as exc:
+            self.evidence.append("specialist-failed", {
+                "organ": organ_id, "operation": operation, "error_type": type(exc).__name__,
+            })
+            raise
         component = self.ORGANISM_SPECIALISTS.get(organ_id, (f"{organ_id}.organ",))[0]
         self._advance(component, ReachabilityStage.OUTCOME_OBSERVED, episode,
                       {"operation": operation})
@@ -751,12 +799,15 @@ class EuclidRuntime:
         implementation: Any,
         *,
         operations: Any = None,
+        authority: Authority = Authority.READ_ONLY,
     ) -> None:
         """Expose a specialist without transferring its domain authority.
 
         ``operations`` declares which request operations the organ admits;
         it is what self-directed routing selects on. An organ that declares
         none can still be dispatched by name but is never routed to."""
+        if type(authority) is not Authority:
+            raise TypeError("explicit Authority value required; binding grants no rights")
         if hasattr(implementation, "handle"):
             handler = implementation.handle
         elif hasattr(implementation, "execute"):
@@ -770,7 +821,7 @@ class EuclidRuntime:
             Organ(
                 organ_id,
                 frozenset({capability}),
-                Authority.READ_ONLY,
+                authority,
                 lambda request, _handler=handler: _handler(request),
             )
         )

@@ -3,6 +3,7 @@
 from .isolation import SubstrateIndependenceVerifier
 from .executors import (
     BaseExecutor,
+    RealSubstrateExecutor,
     StandardSyncExecutor,
     AsyncIsolatedExecutor,
     ReproductionEvidence,
@@ -13,6 +14,7 @@ from .registry import SubstrateRegistry, compare_capability_profiles
 __all__ = [
     "SubstrateIndependenceVerifier",
     "BaseExecutor",
+    "RealSubstrateExecutor",
     "StandardSyncExecutor",
     "AsyncIsolatedExecutor",
     "ReproductionEvidence",

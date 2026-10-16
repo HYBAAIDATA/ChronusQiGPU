@@ -6,6 +6,43 @@
 
 ---
 
+## [Unreleased] — Measured native EQS execution and signed result receipts
+
+- Removed simulated reproduction/failure toggles and fixed stability/echoed observations.
+- Added stateful native action execution, actual fresh-process backend, output trajectories,
+  measured latency, explicit registered public-key provenance and challenge verification.
+- Implemented real ceil(N*1.5) stress/compute checks and authenticated current-window entropy
+  monitoring; explicitly retain untested envelope/production/independent assurance boundaries.
+- Added separate candidate/gate/audience-bound Ed25519 result receipts with local durable
+  single-use consumption, active-receipt revocation checks and no implicit signing authority.
+- Preserved PR75 authorization and native adapter contracts; default absent case window uses
+  current measured runs. Actual PR74 canonical integration remains a required verification.
+- 85 scoped tests pass both normally and optimized; compilation/tabnanny pass. Full pytest
+  unavailable. See docs/PHILOS_MEASURED_EQS.md and retained validation logs/hashes.
+
+## [Unreleased] — Scoped external authorization and canonical owner binding
+
+- Removed default/private signing authority from EQS. External Ed25519 issuance,
+  explicit public-key trust, full candidate/audience/principal/time/nonce binding
+  and transactional persistent single-use replay admission; legacy tokens invalidate.
+- Added the actual PHILOS owner adapter for canonical EUCLID/AL HARAS dispatch;
+  host-approved frozen cases and native outcomes, no rights/signer/model installed.
+- Exposed existing recursive candidate preparation for external scoped approval;
+  migrated local test callers without reinstating synthetic qualification.
+- 19 authorization + 23 custody + 11 joint canonical tests pass normally and under
+  -O (53 each, zero failures/errors/skips). Joint canonical tests require PR74.
+  Legacy pytest migrations compiled only; pytest/build/CI/platform limits persist.
+- Existing ledger contains security migration, exact commands/hashes and limits.
+  No measured successful qualification, independent assurance or production claim.
+
+## [Unreleased] — Full-payload custody and synthetic-evidence refusal
+
+- Bound protocol steps and all candidate fields using explicitly versioned v3 hashes; old digests invalidate.
+- Captured detached service-entry snapshots, checked callback/original views at gate boundaries, retained local audit fingerprints and refused observed mutations.
+- Marked built-in reproduction and stress as simulations; refused synthetic qualification and missing Gate 3 evidence. No measured execution provider or independent detection attestation has been implemented.
+- Migrated legacy positive simulation expectations to refusal; added 23 targeted unittest regressions, all passing normally and under `-O`. Compilation and tabnanny passed. Original pytest suite could not run because pytest is unavailable.
+- Historical "CLOSED & VERIFIED" entries below are preserved reports, not current readiness statements. See the dated correction in `CAPABILITY-LEDGER.md` for limits, hash inventory and remaining blockers.
+
 ## [2.0.0] - 2026-10-14 — Emergence Track & Philos Architecture
 
 ### Item 1: Discovery & Workspace Anchor

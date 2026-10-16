@@ -1,0 +1,303 @@
+{
+  "archive_sha256": "b2e31ad8af27f81d30a1371b1010ee8bb25e0df99199bd5f4eb27d0ddfb0ce5e",
+  "archive_bytes": 185504,
+  "encoding": "RFC4648 base64 with whitespace; decode then verify archive_sha256 before opening",
+  "transport_path": "docs/research_archive/artifacts/EUCLID_POSTERITY_RESEARCH_ARCHIVE_20260718.zip.base64.txt",
+  "source_page": "https://app.notion.com/p/2539733ebb7848c9a84ae4e3d7429822",
+  "manifest_sha256": "00db0b6a57cf6e2aff55182a75e8369d44374d946b27da9369dd4301da636c72",
+  "manifest_entries_verified": 34,
+  "zip_members": 35,
+  "secret_scan": "Reviewed supported secret patterns in every member, including nested ZIP; no hits. Not a full security certification.",
+  "members": [
+    {
+      "member": "REPRODUCTION_GUIDE.md",
+      "sha256": "eb286a12f69427a5564c0de88e632c34e3d13ff4798c4e3d699b044be855b494",
+      "bytes": 677,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "RESEARCH_CHRONICLE.md",
+      "sha256": "7455b92ee253abb9efaec0cfdba32e7f5278f3d5c638ef32deffb192d1875429",
+      "bytes": 3054,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "artifacts/EUCLID_LEARNING_SYSTEM_20260718.zip",
+      "sha256": "006354801602c005d9e59ad5e9d45f550878a71186f227e730eabb5fd4dbcfc7",
+      "bytes": 134091,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "artifacts/EUCLID_LEARNING_SYSTEM_20260718.zip.sha256",
+      "sha256": "15933663a68799ea14dab4a201d75d57d6fe9d70b17387350b0f3683da3acc2b",
+      "bytes": 102,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "artifacts/EUCLID_LEARNING_SYSTEM_SEAL.txt",
+      "sha256": "cfeab2d1fdfc4f274ce6238da6c340a9f0552b12431e46d8d73acde2510331a6",
+      "bytes": 503,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "artifacts/euclid_learning_architecture.json",
+      "sha256": "7f96fa9f51e273a4646c7d9ac96d1ca8aa395a41a9eb8c71bdc949071ef23566",
+      "bytes": 4321,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "artifacts/euclid_learning_architecture.json.sha256",
+      "sha256": "214e2a2d04e21f4c51c2e56a9a5f2e8181933cd3ed2c9c35d02f9c59fd02f210",
+      "bytes": 72,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "artifacts/euclid_learning_evidence_report.json",
+      "sha256": "0890404febe3a464383a453c8f979904728e4d1a345947b4c54d45a18bb6822e",
+      "bytes": 4024,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "artifacts/euclid_learning_evidence_report.json.sha256",
+      "sha256": "5a95cec553cdf3e231c26d37bbb37480bc8f9f6aa1acfbccbbddb9d8d7ff2e84",
+      "bytes": 72,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "artifacts/euclid_learning_state.json",
+      "sha256": "53850ecfde99caf141003813ffd32606ee6adff7c9570ccbb6b917e40b281d67",
+      "bytes": 12814,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "artifacts/euclid_learning_state.json.sha256",
+      "sha256": "4283bd361d2639ab538e0f9a5a876686ef02f3905a013fb229208ecec69ee5bc",
+      "bytes": 72,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "artifacts/euclid_learning_validation.json",
+      "sha256": "74711d2689e32a446ccac266fa5e5066202b45bd5540c95801482586837c837b",
+      "bytes": 2111,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "artifacts/euclid_learning_validation.json.sha256",
+      "sha256": "dc56bb36446395052dd23f94eb505590c628ef901fa3d107f309655c3f65ee69",
+      "bytes": 72,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "artifacts/euclid_posterity_source_hashes.json",
+      "sha256": "de6da919d73fd4531b4797435f95cf9956670ce73891dd74c303d7ef8f8121c7",
+      "bytes": 3947,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "artifacts/euclid_posterity_validation.json",
+      "sha256": "8db052e62668a446a07c24a8fd37e17d9cbee0d522252b498a66682448e98b21",
+      "bytes": 873,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "artifacts/euclid_posterity_vault_verification.json",
+      "sha256": "8c354f9d1521d345c3912023e59a3477150ae6979f195d8cb0fe4ab02b6c84ad",
+      "bytes": 496,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "scripts/run_euclid_experience_benchmark.py",
+      "sha256": "ff470f2df020def412d16852c5168dd0a554e3203d592861424c752b4f6bfbd3",
+      "bytes": 3646,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "scripts/run_euclid_learning_baseline.py",
+      "sha256": "4192df7ff8fb4407d00df247262c675a699cac48083f40627dad22d8899dddcf",
+      "bytes": 9204,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "source/__init__.py",
+      "sha256": "9be1bc506fa2ff18904c73a32d1372ea91c41cd848c646f5a1db81a61c2901ad",
+      "bytes": 7746,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY",
+      "git_blob": "7f4d3bbccf4978c33189dff1d6f619145fdeb32a",
+      "current_candidate": "hyba_substrate/__init__.py",
+      "current_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "byte_identical_at_inspected_head": false,
+      "review_copy": "docs/research_archive/artifacts/__init__.py.source.txt"
+    },
+    {
+      "member": "source/agi_attribute_evaluator.py",
+      "sha256": "17a10abf0ac290b7146296a7ce63f09f635c47b1ccfc6d88434a9126d2b3c156",
+      "bytes": 13307,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY",
+      "git_blob": "d30cf729df5e0595fb484545b6917e0dcec55efd",
+      "current_candidate": "hyba_substrate/agi_attribute_evaluator.py",
+      "current_blob": null,
+      "byte_identical_at_inspected_head": false,
+      "review_copy": "docs/research_archive/artifacts/agi_attribute_evaluator.py.source.txt"
+    },
+    {
+      "member": "source/asi_attribute_evaluator.py",
+      "sha256": "cc9b5bccaeb76c7de4b988b0088ec92325e2be6a6ec720cea0549007ac26b379",
+      "bytes": 13978,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY",
+      "git_blob": "20d3751de3bdb55c60fc00eb06ecac4fb51ba5ad",
+      "current_candidate": "hyba_substrate/asi_attribute_evaluator.py",
+      "current_blob": null,
+      "byte_identical_at_inspected_head": false,
+      "review_copy": "docs/research_archive/artifacts/asi_attribute_evaluator.py.source.txt"
+    },
+    {
+      "member": "source/emergence_experiment.py",
+      "sha256": "2ac55d8686457c980ff66ddc336f6bdf3716e25aeef97bfc69b0e897b3fcd194",
+      "bytes": 7024,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY",
+      "git_blob": "0092e93605db933ce22e0185690daf0105e33758",
+      "current_candidate": "hyba_substrate/emergence_experiment.py",
+      "current_blob": "0092e93605db933ce22e0185690daf0105e33758",
+      "byte_identical_at_inspected_head": true,
+      "review_copy": "docs/research_archive/artifacts/emergence_experiment.py.source.txt"
+    },
+    {
+      "member": "source/euclid_experience_superlearner.py",
+      "sha256": "9d59d8c2db983972157ed030bcb78d220933dee5340991b98910f669f54175b0",
+      "bytes": 20446,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY",
+      "git_blob": "c1e01426e496e88d68c807a23cf11ab955a2bc77",
+      "current_candidate": "hyba_substrate/euclid_experience_superlearner.py",
+      "current_blob": "063bc97fecee030d32fc7c7d018735af23212445",
+      "byte_identical_at_inspected_head": false,
+      "review_copy": "docs/research_archive/artifacts/euclid_experience_superlearner.py.source.txt"
+    },
+    {
+      "member": "source/euclid_learning_system.py",
+      "sha256": "f089bf5129906702f451dae2c57ca80bfefcb58ba65ed41180c92ecfad253914",
+      "bytes": 27066,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY",
+      "git_blob": "270f5d584b5b6bd3c396b3e7a241a8fb329bb254",
+      "current_candidate": "hyba_substrate/euclid_learning_system.py",
+      "current_blob": "8ac0a6a263e2f2eaa7f8754f3bcd7aa0c8176e64",
+      "byte_identical_at_inspected_head": false,
+      "review_copy": "docs/research_archive/artifacts/euclid_learning_system.py.source.txt"
+    },
+    {
+      "member": "source/memory_preservation.py",
+      "sha256": "708558327977d9cae16522e494076c45335be25d823b7b300ace6602e79afbcb",
+      "bytes": 18780,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY",
+      "git_blob": "c880fbeb962259b893b7836bb3b7e28b2b7672e7",
+      "current_candidate": "hyba_substrate/memory_preservation.py",
+      "current_blob": "8018c932160f33ce27b5d338bd3102be721b945e",
+      "byte_identical_at_inspected_head": false,
+      "review_copy": "docs/research_archive/artifacts/memory_preservation.py.source.txt"
+    },
+    {
+      "member": "source/organism_coherence.py",
+      "sha256": "dee3061efc58430f1e0750507480caa60242bf2228f5b035e899fa79f99c1e4d",
+      "bytes": 4308,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY",
+      "git_blob": "8571b21fe0bf5bb569c9258577b211f040cd246c",
+      "current_candidate": "hyba_substrate/organism_coherence.py",
+      "current_blob": "8571b21fe0bf5bb569c9258577b211f040cd246c",
+      "byte_identical_at_inspected_head": true,
+      "review_copy": "docs/research_archive/artifacts/organism_coherence.py.source.txt"
+    },
+    {
+      "member": "source/safe_self_modification.py",
+      "sha256": "5e551a03cbd68f809fad2b264b681a1a04326f121e3dfee4a6c1867bf7c8615c",
+      "bytes": 10264,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY",
+      "git_blob": "85d4e3b23edaec9812da51f36eb49d21bbea80c9",
+      "current_candidate": "hyba_substrate/safe_self_modification.py",
+      "current_blob": "85d4e3b23edaec9812da51f36eb49d21bbea80c9",
+      "byte_identical_at_inspected_head": true,
+      "review_copy": "docs/research_archive/artifacts/safe_self_modification.py.source.txt"
+    },
+    {
+      "member": "source/world_system_model.py",
+      "sha256": "c57d6f60a1aaf9256da59532d90b9fb91b1e7264914e780bdca461ce65075e33",
+      "bytes": 5410,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY",
+      "git_blob": "66663a2e4a894538ccf05f16c7f73ffda90598ac",
+      "current_candidate": "hyba_substrate/world_system_model.py",
+      "current_blob": "66663a2e4a894538ccf05f16c7f73ffda90598ac",
+      "byte_identical_at_inspected_head": true,
+      "review_copy": "docs/research_archive/artifacts/world_system_model.py.source.txt"
+    },
+    {
+      "member": "tests/test_euclid_experience_superlearner.py",
+      "sha256": "67e026443784df7a827bd5fe28aa083fafb0d64214d12fbe8d5deff3ca6c1225",
+      "bytes": 5257,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "tests/test_euclid_learning_system.py",
+      "sha256": "b011c81abab56efd60c2cf53a4788393146499e164e68fb0e340aece482842c8",
+      "bytes": 9589,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "tests/test_memory_preservation.py",
+      "sha256": "39879273a526fd411145fd81af6695c6491d5c07dead9c301616230e5de894df",
+      "bytes": 6872,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "validation_logs/euclid_posterity_harness.log",
+      "sha256": "8b2635a90d7b1b4931133b84f30e569b81f2c4fba59d79fd40e50d8ad8071392",
+      "bytes": 1574,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "validation_logs/euclid_posterity_readiness.log",
+      "sha256": "e01496ded658ace9ec5a013ee139a2ba07bbc26e5df8a43c2c0a1a01f1dfa289",
+      "bytes": 6078,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    },
+    {
+      "member": "validation_logs/euclid_posterity_regression.log",
+      "sha256": "71e76ec85d43e0c4fa7a126a9d2aaa0f2fe18afe2f92a77f499c27ab1bdc7fd1",
+      "bytes": 16798,
+      "historical_manifest_verified": true,
+      "classification": "ARCHIVAL_NOT_ACTIVE_RUNTIME_OR_CURRENT_MEMORY"
+    }
+  ],
+  "current_comparison_commit": "1e96468063d7a5895d01f7b6db0009f07fead859",
+  "restored_to_active_memory": false
+}

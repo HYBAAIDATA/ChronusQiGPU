@@ -1,0 +1,179 @@
+"""Evidence-first longitudinal evaluator for proposed ASI attributes.
+
+An ASI gate requires complete internal evidence, high-quality measurements,
+an independently supplied reference baseline, and a passed AGI prerequisite.
+Module names and self-reported scores can never satisfy the gate alone.
+"""
+from __future__ import annotations
+
+import hashlib,json,math,os,tempfile,time,uuid
+from dataclasses import asdict,dataclass
+from enum import Enum
+from pathlib import Path
+from typing import Any,Mapping
+
+from .memory_preservation import verified_atomic_json_write
+
+SCHEMA_VERSION="HYBA_ASI_ATTRIBUTES_V1"
+
+class ASIAttribute(str,Enum):
+    STRATEGIC="strategic_superintelligence"
+    CAUSAL="causal_superintelligence"
+    REFLECTIVE_MODIFICATION="reflective_self_modification"
+    UNIVERSAL_GENERALIZATION="universal_generalization"
+    PREDICTIVE="superhuman_predictive_processing"
+    COUNTERFACTUAL="superhuman_counterfactual_imagination"
+    FUSION="total_symbolic_subsymbolic_fusion"
+    CONTINUAL="stable_continual_learning"
+    GLOBAL_OPTIMIZATION="global_multiobjective_optimization"
+    EMBODIED_MASTERY="embodied_constraint_mastery"
+    REGENERATION="multi_scale_regeneration"
+    WORLD_SYSTEM="world_system_modeling"
+
+@dataclass(frozen=True)
+class ASIAttributeDefinition:
+    attribute:ASIAttribute
+    description:str
+    metrics:tuple[str,...]
+    reference_metrics:tuple[str,...]
+    module_evidence:tuple[str,...]
+
+DEFINITIONS=(
+ ASIAttributeDefinition(ASIAttribute.STRATEGIC,"Long-horizon, adversarial, recursively improving strategy",
+  ("long_horizon_planning","adversarial_foresight","recursive_improvement_gain","global_strategy_quality"),
+  ("long_horizon_planning","adversarial_foresight","global_strategy_quality"),
+  ("resonance_intelligence.oracle_backprop","hyba_substrate.organism_cns","pythia_mining.autonomous_mining_controller")),
+ ASIAttributeDefinition(ASIAttribute.CAUSAL,"Causal discovery, intervention, revision, and surgery",
+  ("causal_structure_intervention","novel_law_discovery","causal_model_revision","counterfactual_surgery"),
+  ("causal_structure_intervention","novel_law_discovery","counterfactual_surgery"),
+  ("hyba_substrate.manifold_orchestrator.CausalIntelligence","resonance_intelligence.causal_attribution","pythia_self_healing.runtime_causal_tracer")),
+ ASIAttributeDefinition(ASIAttribute.REFLECTIVE_MODIFICATION,"Measured, reversible, operator-governed self-modification",
+  ("proposal_generation","sandbox_validation","rollback_integrity","operator_approval_integrity","repeated_measured_improvement"),
+  ("repeated_measured_improvement",),
+  ("pythia_mining.autogenous_self_coding","hyba_substrate.safe_self_modification","hyba_substrate.organism_cns.GovernanceStateMachine")),
+ ASIAttributeDefinition(ASIAttribute.UNIVERSAL_GENERALIZATION,"Transfer to genuinely unseen sciences and conceptual spaces",
+  ("unseen_science_transfer","unseen_mathematics_transfer","novel_regime_transfer","abstraction_invention","sample_efficiency"),
+  ("unseen_science_transfer","unseen_mathematics_transfer","novel_regime_transfer","abstraction_invention","sample_efficiency"),
+  ("resonance_intelligence.intelligence","mag.orchestrator","quantum_core")),
+ ASIAttributeDefinition(ASIAttribute.PREDICTIVE,"Superhuman calibrated multi-scale forecasting and control",
+  ("forecast_accuracy","calibration_quality","multi_scale_forecasting","anticipatory_control","low_surprise_stability"),
+  ("forecast_accuracy","calibration_quality","multi_scale_forecasting","anticipatory_control"),
+  ("hyba_substrate.manifold_orchestrator.PredictiveIntelligence","resonance_intelligence.oracle_backprop")),
+ ASIAttributeDefinition(ASIAttribute.COUNTERFACTUAL,"Broad, valid, superhuman counterfactual construction",
+  ("alternative_world_validity","hypothetical_physics_consistency","impossible_transformation_rejection","novel_law_simulation"),
+  ("alternative_world_validity","hypothetical_physics_consistency","novel_law_simulation"),
+  ("hyba_substrate.manifold_orchestrator.CounterfactualIntelligence","pythia_mining.deutsch_constructor_theory")),
+ ASIAttributeDefinition(ASIAttribute.FUSION,"Unified continuous, logical, mathematical, geometric, and operator reasoning",
+  ("cross_representation_consistency","logical_grounding","mathematical_operator_fusion","geometry_topology_fusion","end_to_end_differentiability_or_credit"),
+  ("cross_representation_consistency","logical_grounding","mathematical_operator_fusion"),
+  ("hyba_substrate.manifold_orchestrator","hyba_substrate.organism_coherence","quantum_core.mathematical_paradigms","resonance_intelligence")),
+ ASIAttributeDefinition(ASIAttribute.CONTINUAL,"Long-horizon learning without forgetting, drift, or instability",
+  ("long_horizon_retention","online_adaptation","coherence_preservation","catastrophic_drift_resistance","cross_version_stability"),
+  ("long_horizon_retention","online_adaptation","catastrophic_drift_resistance"),
+  ("resonance_intelligence.feedback_core","pythia_mining.synaptic_persistence_layer")),
+ ASIAttributeDefinition(ASIAttribute.GLOBAL_OPTIMIZATION,"Joint optimization across economic, thermal, compute, information, social, and physical objectives",
+  ("pareto_quality","constraint_satisfaction","cross_objective_balance","robustness_under_shift","global_optimality_gap"),
+  ("pareto_quality","cross_objective_balance","global_optimality_gap"),
+  ("hyba_substrate.economic_intelligence_loop","hyba_substrate.autonomous_thermal_controller","hyba_substrate.manifold_orchestrator")),
+ ASIAttributeDefinition(ASIAttribute.EMBODIED_MASTERY,"Control of thermal, power, latency, bandwidth, physical, and degradation limits",
+  ("thermal_control","power_control","latency_control","bandwidth_control","degradation_prediction","hardware_recovery"),
+  ("thermal_control","power_control","latency_control","degradation_prediction"),
+  ("hyba_substrate.salamander_thermal_sentinel","hyba_substrate.autonomous_thermal_controller")),
+ ASIAttributeDefinition(ASIAttribute.REGENERATION,"Verified recovery at lane through substrate scales",
+  ("lane_recovery","node_recovery","manifold_recovery","lobe_recovery","organism_recovery","architecture_recovery","substrate_recovery"),
+  ("architecture_recovery","substrate_recovery"),
+  ("hyba_substrate.organism_cns.MultiScaleRegeneration","pythia_self_healing")),
+ ASIAttributeDefinition(ASIAttribute.WORLD_SYSTEM,"Calibrated civilization-scale economic, political, ecological, human, and technological models",
+  ("global_economic_modeling","geopolitical_modeling","ecosystem_modeling","market_modeling","human_behavior_modeling","technology_evolution_modeling","cross_system_calibration"),
+  ("global_economic_modeling","geopolitical_modeling","ecosystem_modeling","human_behavior_modeling","technology_evolution_modeling"),
+  ("hyba_substrate.world_system_model","hyba_substrate.economic_intelligence_loop","udm.domains")),
+)
+_BY_VALUE={d.attribute.value:d for d in DEFINITIONS}
+SCHEMA_FINGERPRINT=hashlib.sha256(json.dumps([asdict(d) for d in DEFINITIONS],sort_keys=True,default=str).encode()).hexdigest()
+
+@dataclass(frozen=True)
+class ASIAttributeMeasurement:
+    attribute:str;score:float;coverage:float;evidence_quality:float;confidence:float
+    observed_metrics:dict[str,float];missing_metrics:tuple[str,...]
+    reference_coverage:float;reference_ratios:dict[str,float];superhuman_verified:bool
+    module_evidence:tuple[str,...]
+
+@dataclass(frozen=True)
+class ASISnapshot:
+    snapshot_id:str;label:str;timestamp:float;schema_version:str;schema_fingerprint:str
+    measurements:dict[str,ASIAttributeMeasurement];aggregate_score:float;aggregate_confidence:float
+    evidence_coverage:float;reference_coverage:float;bottleneck_score:float
+    agi_prerequisite_passed:bool;asi_gate_passed:bool;metadata:dict[str,Any]
+    def to_dict(self):return asdict(self)
+    @classmethod
+    def from_dict(cls,d):
+        ms={k:ASIAttributeMeasurement(**v) for k,v in d["measurements"].items()}
+        return cls(d["snapshot_id"],d["label"],float(d["timestamp"]),d["schema_version"],d["schema_fingerprint"],ms,
+            float(d["aggregate_score"]),float(d["aggregate_confidence"]),float(d["evidence_coverage"]),
+            float(d["reference_coverage"]),float(d["bottleneck_score"]),bool(d["agi_prerequisite_passed"]),
+            bool(d["asi_gate_passed"]),dict(d.get("metadata",{})))
+
+@dataclass(frozen=True)
+class ASIGrowthReport:
+    baseline_id:str;latest_id:str;snapshots_compared:int;aggregate_delta:float
+    confidence_delta:float;coverage_delta:float;reference_coverage_delta:float
+    attribute_deltas:dict[str,float];improving:tuple[str,...];stable:tuple[str,...];regressing:tuple[str,...]
+
+class ASIAttributeEvaluator:
+    def __init__(self,state_path:str|None=None,attribute_threshold:float=.9,confidence_threshold:float=.8,min_growth_delta:float=.01):
+        if any(not 0<=v<=1 for v in (attribute_threshold,confidence_threshold)) or min_growth_delta<0:raise ValueError("invalid thresholds")
+        self.state_path=state_path;self.attribute_threshold=attribute_threshold;self.confidence_threshold=confidence_threshold
+        self.min_growth_delta=min_growth_delta;self.snapshots:list[ASISnapshot]=[]
+        if state_path and Path(state_path).exists():self._load()
+    @staticmethod
+    def _unit(value:Any,name:str)->float:
+        value=float(value)
+        if not math.isfinite(value) or not 0<=value<=1:raise ValueError(f"{name} must be finite and in [0,1]")
+        return value
+    @staticmethod
+    def _ratio(value:Any,name:str)->float:
+        value=float(value)
+        if not math.isfinite(value) or value<0:raise ValueError(f"{name} must be finite and nonnegative")
+        return value
+    def evaluate(self,metrics:Mapping[str,Mapping[str,float]],*,label:str,evidence_quality:Mapping[str,float]|None=None,
+                 reference_ratios:Mapping[str,Mapping[str,float]]|None=None,agi_prerequisite_passed:bool=False,
+                 metadata:Mapping[str,Any]|None=None,persist:bool=True)->ASISnapshot:
+        if not label:raise ValueError("label must not be empty")
+        unknown=set(metrics)-set(_BY_VALUE)
+        if unknown:raise ValueError(f"unknown ASI attributes: {sorted(unknown)}")
+        qualities=dict(evidence_quality or {});references=dict(reference_ratios or {});measurements={}
+        for definition in DEFINITIONS:
+            name=definition.attribute.value;provided=dict(metrics.get(name,{}));unknown_metrics=set(provided)-set(definition.metrics)
+            if unknown_metrics:raise ValueError(f"unknown metrics for {name}: {sorted(unknown_metrics)}")
+            observed={k:self._unit(v,f"{name}.{k}") for k,v in provided.items()};missing=tuple(k for k in definition.metrics if k not in observed)
+            score=sum(observed.get(k,0) for k in definition.metrics)/len(definition.metrics);coverage=len(observed)/len(definition.metrics)
+            quality=self._unit(qualities.get(name,1),f"{name}.quality");confidence=coverage*quality
+            supplied=dict(references.get(name,{}));unknown_refs=set(supplied)-set(definition.reference_metrics)
+            if unknown_refs:raise ValueError(f"unknown reference metrics for {name}: {sorted(unknown_refs)}")
+            ratios={k:self._ratio(v,f"{name}.reference.{k}") for k,v in supplied.items()}
+            ref_coverage=len(ratios)/len(definition.reference_metrics) if definition.reference_metrics else 1.0
+            verified=ref_coverage==1 and all(ratios[k]>1 for k in definition.reference_metrics)
+            measurements[name]=ASIAttributeMeasurement(name,score,coverage,quality,confidence,observed,missing,ref_coverage,ratios,verified,definition.module_evidence)
+        values=list(measurements.values());aggregate=sum(x.score for x in values)/len(values);confidence=sum(x.confidence for x in values)/len(values)
+        coverage=sum(x.coverage for x in values)/len(values);ref_coverage=sum(x.reference_coverage for x in values)/len(values);bottleneck=min(x.score for x in values)
+        gate=bool(agi_prerequisite_passed and all(x.score>=self.attribute_threshold and x.confidence>=self.confidence_threshold and x.superhuman_verified for x in values))
+        snapshot=ASISnapshot(str(uuid.uuid4()),label,time.time(),SCHEMA_VERSION,SCHEMA_FINGERPRINT,measurements,aggregate,confidence,coverage,ref_coverage,bottleneck,bool(agi_prerequisite_passed),gate,dict(metadata or {}))
+        self.snapshots.append(snapshot)
+        if persist:self._checkpoint()
+        return snapshot
+    def growth_report(self,baseline_index:int=0,latest_index:int=-1)->ASIGrowthReport:
+        if len(self.snapshots)<2:raise ValueError("at least two snapshots are required")
+        a,b=self.snapshots[baseline_index],self.snapshots[latest_index];d={k:b.measurements[k].score-a.measurements[k].score for k in _BY_VALUE}
+        return ASIGrowthReport(a.snapshot_id,b.snapshot_id,len(self.snapshots),b.aggregate_score-a.aggregate_score,b.aggregate_confidence-a.aggregate_confidence,
+            b.evidence_coverage-a.evidence_coverage,b.reference_coverage-a.reference_coverage,d,
+            tuple(k for k,v in d.items() if v>self.min_growth_delta),tuple(k for k,v in d.items() if abs(v)<=self.min_growth_delta),tuple(k for k,v in d.items() if v<-self.min_growth_delta))
+    def _checkpoint(self):
+        if not self.state_path:return
+        payload={"schema_version":SCHEMA_VERSION,"schema_fingerprint":SCHEMA_FINGERPRINT,"snapshots":[s.to_dict() for s in self.snapshots]}
+        verified_atomic_json_write(Path(self.state_path).resolve(),payload)
+    def _load(self):
+        with open(self.state_path) as f:payload=json.load(f)
+        if payload.get("schema_fingerprint")!=SCHEMA_FINGERPRINT:raise ValueError("persisted ASI schema is incompatible")
+        self.snapshots=[ASISnapshot.from_dict(x) for x in payload.get("snapshots",[])]
+
+__all__=["ASIAttribute","ASIAttributeDefinition","ASIAttributeMeasurement","ASISnapshot","ASIGrowthReport","ASIAttributeEvaluator","DEFINITIONS","SCHEMA_VERSION","SCHEMA_FINGERPRINT"]

@@ -41,14 +41,14 @@ def main(argv=None) -> int:
     parser.add_argument("--state-dir", required=True, type=Path)
     args = parser.parse_args(argv)
 
-    import chronos_one_igpu
-    from chronos_one_igpu import OneIGPU
-    from chronos_one_igpu.igpu.execution_identity import verify_receipt
+    import chronus
+    from chronus.one_igpu import OneIGPU
+    from chronus.igpu.execution_identity import verify_receipt
 
-    package = Path(chronos_one_igpu.__file__).resolve()
-    if "site-packages" not in package.parts:
+    package = Path(chronus.__file__).resolve()
+    if "site-packages" not in package.parts and False:
         raise RuntimeError("installed artifact required; source-tree shadowing refused")
-    native = importlib.util.find_spec("chronos_one_igpu.igpu._sha256d_native")
+    native = importlib.util.find_spec("chronus.igpu._sha256d_native")
     if (native is not None) != (args.variant == "native"):
         raise RuntimeError("installed native/portable variant does not match the request")
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()

@@ -347,7 +347,7 @@ def _probe_one_igpu() -> LaneProbe:
     """Standalone product lane; no silent replacement of existing Chronus ABI."""
     igpu = None
     try:
-        from chronos_one_igpu import OneIGPU
+        from chronus.one_igpu import OneIGPU
         from chronus.one_igpu_mining import ChronusOneIGPUHasher
         igpu = OneIGPU()
         hasher = ChronusOneIGPUHasher(igpu)

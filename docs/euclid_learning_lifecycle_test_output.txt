@@ -1,0 +1,307 @@
+=== learning_baseline_test.log ===
+test_bad_pattern_rejected_before_any_mutation (test_euclid_learning_lifecycle.LearningLifecycleTests.test_bad_pattern_rejected_before_any_mutation) ... ok
+test_closed_runtime_rejects_new_training_and_consolidation (test_euclid_learning_lifecycle.LearningLifecycleTests.test_closed_runtime_rejects_new_training_and_consolidation) ... ERROR
+test_curriculum_and_consolidation_reachable (test_euclid_learning_lifecycle.LearningLifecycleTests.test_curriculum_and_consolidation_reachable) ... ERROR
+test_duplicate_rejected_before_all_engines (test_euclid_learning_lifecycle.LearningLifecycleTests.test_duplicate_rejected_before_all_engines) ... FAIL
+test_evaluation_does_not_mutate_or_explore (test_euclid_learning_lifecycle.LearningLifecycleTests.test_evaluation_does_not_mutate_or_explore) ... FAIL
+test_external_claim_cannot_self_award_or_skip_ladder (test_euclid_learning_lifecycle.LearningLifecycleTests.test_external_claim_cannot_self_award_or_skip_ladder) ... ERROR
+test_failure_leaves_durable_pending_reconciliation (test_euclid_learning_lifecycle.LearningLifecycleTests.test_failure_leaves_durable_pending_reconciliation) ... FAIL
+test_measured_mining_failure_is_retained (test_euclid_learning_lifecycle.LearningLifecycleTests.test_measured_mining_failure_is_retained) ... FAIL
+test_measured_mining_success_requires_explicit_boolean (test_euclid_learning_lifecycle.LearningLifecycleTests.test_measured_mining_success_requires_explicit_boolean) ... FAIL
+test_missing_pattern_does_not_teach_hash_features (test_euclid_learning_lifecycle.LearningLifecycleTests.test_missing_pattern_does_not_teach_hash_features) ... ok
+test_observation_never_applies_unverified_reward (test_euclid_learning_lifecycle.LearningLifecycleTests.test_observation_never_applies_unverified_reward) ... ERROR
+test_production_composes_learning_with_cognition_isolated (test_euclid_learning_lifecycle.LearningLifecycleTests.test_production_composes_learning_with_cognition_isolated) ... ERROR
+test_pythia_statistics_tamper_rejected (test_euclid_learning_lifecycle.LearningLifecycleTests.test_pythia_statistics_tamper_rejected) ... FAIL
+test_real_cross_process_restart_retains_lineage (test_euclid_learning_lifecycle.LearningLifecycleTests.test_real_cross_process_restart_retains_lineage) ... FAIL
+test_refuted_claim_remains_refuted (test_euclid_learning_lifecycle.LearningLifecycleTests.test_refuted_claim_remains_refuted) ... FAIL
+test_repeated_training_runs_have_distinct_replay_namespaces (test_euclid_learning_lifecycle.LearningLifecycleTests.test_repeated_training_runs_have_distinct_replay_namespaces) ... ERROR
+test_reward_range_rejected_without_transition (test_euclid_learning_lifecycle.LearningLifecycleTests.test_reward_range_rejected_without_transition) ... FAIL
+test_rng_and_task_contract_survive_checkpoint (test_euclid_learning_lifecycle.LearningLifecycleTests.test_rng_and_task_contract_survive_checkpoint) ... FAIL
+test_runtime_attaches_one_governed_ledger (test_euclid_learning_lifecycle.LearningLifecycleTests.test_runtime_attaches_one_governed_ledger) ... ERROR
+test_store_corruption_fails_closed (test_euclid_learning_lifecycle.LearningLifecycleTests.test_store_corruption_fails_closed) ... ERROR
+test_store_restart_retains_all_fate_statistics (test_euclid_learning_lifecycle.LearningLifecycleTests.test_store_restart_retains_all_fate_statistics) ... FAIL
+test_synthetic_mining_success_is_not_pool_truth (test_euclid_learning_lifecycle.LearningLifecycleTests.test_synthetic_mining_success_is_not_pool_truth) ... ok
+test_training_checkpoint_manifest_matches_runtime_learner (test_euclid_learning_lifecycle.LearningLifecycleTests.test_training_checkpoint_manifest_matches_runtime_learner) ... ERROR
+
+======================================================================
+ERROR: test_closed_runtime_rejects_new_training_and_consolidation (test_euclid_learning_lifecycle.LearningLifecycleTests.test_closed_runtime_rejects_new_training_and_consolidation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 258, in test_closed_runtime_rejects_new_training_and_consolidation
+    with self.assertRaises(RuntimeError): rt.training_pipeline(mission_id='m', provenance='test')
+                                          ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'EuclidRuntime' object has no attribute 'training_pipeline'
+
+======================================================================
+ERROR: test_curriculum_and_consolidation_reachable (test_euclid_learning_lifecycle.LearningLifecycleTests.test_curriculum_and_consolidation_reachable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 139, in test_curriculum_and_consolidation_reachable
+    self.assertEqual(len(rt.learning.curriculum()['experience']), 1)
+                         ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'LearningService' object has no attribute 'curriculum'
+
+======================================================================
+ERROR: test_external_claim_cannot_self_award_or_skip_ladder (test_euclid_learning_lifecycle.LearningLifecycleTests.test_external_claim_cannot_self_award_or_skip_ladder)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 235, in test_external_claim_cannot_self_award_or_skip_ladder
+    rt = self.compose(); g = rt.learning.governed_learning
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'LearningService' object has no attribute 'governed_learning'
+
+======================================================================
+ERROR: test_observation_never_applies_unverified_reward (test_euclid_learning_lifecycle.LearningLifecycleTests.test_observation_never_applies_unverified_reward)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 82, in test_observation_never_applies_unverified_reward
+    self.assertEqual(len(rt.learning.governed_learning.events), 1)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'LearningService' object has no attribute 'governed_learning'
+
+======================================================================
+ERROR: test_production_composes_learning_with_cognition_isolated (test_euclid_learning_lifecycle.LearningLifecycleTests.test_production_composes_learning_with_cognition_isolated)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 62, in test_production_composes_learning_with_cognition_isolated
+    self.assertIs(rt.learning.governed_learning, rt.learning.experience_learner.learning_system)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'LearningService' object has no attribute 'governed_learning'
+
+======================================================================
+ERROR: test_repeated_training_runs_have_distinct_replay_namespaces (test_euclid_learning_lifecycle.LearningLifecycleTests.test_repeated_training_runs_have_distinct_replay_namespaces)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 202, in test_repeated_training_runs_have_distinct_replay_namespaces
+    rt = self.compose(); pipeline = rt.training_pipeline(mission_id='m', provenance='test')
+                                    ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'EuclidRuntime' object has no attribute 'training_pipeline'
+
+======================================================================
+ERROR: test_runtime_attaches_one_governed_ledger (test_euclid_learning_lifecycle.LearningLifecycleTests.test_runtime_attaches_one_governed_ledger)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 68, in test_runtime_attaches_one_governed_ledger
+    self.assertIs(rt.learning.governed_learning, rt.learning.experience_learner.learning_system)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'LearningService' object has no attribute 'governed_learning'
+
+======================================================================
+ERROR: test_store_corruption_fails_closed (test_euclid_learning_lifecycle.LearningLifecycleTests.test_store_corruption_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 160, in test_store_corruption_fails_closed
+    snap = json.loads(path.read_text()); snap['learning']['sleep_cycle'] += 1
+                      ~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.13/pathlib/_local.py", line 546, in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.13/pathlib/_abc.py", line 632, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.13/pathlib/_local.py", line 537, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmp_5zq_kz3/pythia/memory_snapshot.json'
+
+======================================================================
+ERROR: test_training_checkpoint_manifest_matches_runtime_learner (test_euclid_learning_lifecycle.LearningLifecycleTests.test_training_checkpoint_manifest_matches_runtime_learner)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 187, in test_training_checkpoint_manifest_matches_runtime_learner
+    pipeline = rt.training_pipeline(mission_id='mission', provenance='synthetic-control-v1')
+               ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'EuclidRuntime' object has no attribute 'training_pipeline'
+
+======================================================================
+FAIL: test_duplicate_rejected_before_all_engines (test_euclid_learning_lifecycle.LearningLifecycleTests.test_duplicate_rejected_before_all_engines)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 122, in test_duplicate_rejected_before_all_engines
+    self.assertEqual(len(rt.learning.memory.episodic.events()), 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_evaluation_does_not_mutate_or_explore (test_euclid_learning_lifecycle.LearningLifecycleTests.test_evaluation_does_not_mutate_or_explore)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 214, in test_evaluation_does_not_mutate_or_explore
+    self.assertEqual(learner._payload(), before)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'sch[399 chars]s': {'["t","{\\"unseen\\":true}"]': {'a': 0.0,[164 chars]: []} != {'sch[399 chars]s': {}, 'action_visits': {}, 'world_model': {}[66 chars]: []}
+Diff is 890 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_failure_leaves_durable_pending_reconciliation (test_euclid_learning_lifecycle.LearningLifecycleTests.test_failure_leaves_durable_pending_reconciliation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 128, in test_failure_leaves_durable_pending_reconciliation
+    with self.assertRaises(OSError): rt.learning.record(event)
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: OSError not raised
+
+======================================================================
+FAIL: test_measured_mining_failure_is_retained (test_euclid_learning_lifecycle.LearningLifecycleTests.test_measured_mining_failure_is_retained)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 102, in test_measured_mining_failure_is_retained
+    self.assertEqual(rt.learning.pythia._totals, [1, 0])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [0, 0] != [1, 0]
+
+First differing element 0:
+0
+1
+
+- [0, 0]
+?  ^
+
++ [1, 0]
+?  ^
+
+
+======================================================================
+FAIL: test_measured_mining_success_requires_explicit_boolean (test_euclid_learning_lifecycle.LearningLifecycleTests.test_measured_mining_success_requires_explicit_boolean)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 96, in test_measured_mining_success_requires_explicit_boolean
+    self.assertEqual(rt.learning.pythia._totals, [1, 1])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [0, 0] != [1, 1]
+
+First differing element 0:
+0
+1
+
+- [0, 0]
++ [1, 1]
+
+======================================================================
+FAIL: test_pythia_statistics_tamper_rejected (test_euclid_learning_lifecycle.LearningLifecycleTests.test_pythia_statistics_tamper_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 254, in test_pythia_statistics_tamper_rejected
+    with self.assertRaises(ValueError): pythia.load_snapshot(snap)
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_real_cross_process_restart_retains_lineage (test_euclid_learning_lifecycle.LearningLifecycleTests.test_real_cross_process_restart_retains_lineage)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 183, in test_real_cross_process_restart_retains_lineage
+    self.assertEqual(json.loads(result.stdout), {'transitions':1,'events':1,'episodes':1,'totals':[0,0]})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'transitions': 1, 'events': 0, 'episodes': 0, 'totals': [0, 0]} != {'transitions': 1, 'events': 1, 'episodes': 1, 'totals': [0, 0]}
+- {'episodes': 0, 'events': 0, 'totals': [0, 0], 'transitions': 1}
+?              ^            ^
+
++ {'episodes': 1, 'events': 1, 'totals': [0, 0], 'transitions': 1}
+?              ^            ^
+
+
+======================================================================
+FAIL: test_refuted_claim_remains_refuted (test_euclid_learning_lifecycle.LearningLifecycleTests.test_refuted_claim_remains_refuted)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 248, in test_refuted_claim_remains_refuted
+    self.assertEqual(c.stage, ClaimStage.REFUTED.value)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'internally_reproduced' != 'refuted'
+- internally_reproduced
++ refuted
+
+
+======================================================================
+FAIL: test_reward_range_rejected_without_transition (test_euclid_learning_lifecycle.LearningLifecycleTests.test_reward_range_rejected_without_transition)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 231, in test_reward_range_rejected_without_transition
+    with self.assertRaises(ValueError): learner.observe('t', {}, 'a', 2.0, {})
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_rng_and_task_contract_survive_checkpoint (test_euclid_learning_lifecycle.LearningLifecycleTests.test_rng_and_task_contract_survive_checkpoint)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 223, in test_rng_and_task_contract_survive_checkpoint
+    self.assertEqual(restored.tasks['task'].actions, ('a','b'))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ['a', 'b'] != ('a', 'b')
+
+======================================================================
+FAIL: test_store_restart_retains_all_fate_statistics (test_euclid_learning_lifecycle.LearningLifecycleTests.test_store_restart_retains_all_fate_statistics)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/learning_baseline/tests/test_euclid_learning_lifecycle.py", line 150, in test_store_restart_retains_all_fate_statistics
+    self.assertEqual(restarted.learning.pythia._totals, [1, 1])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [0, 0] != [1, 1]
+
+First differing element 0:
+0
+1
+
+- [0, 0]
++ [1, 1]
+
+----------------------------------------------------------------------
+Ran 23 tests in 0.252s
+
+FAILED (failures=11, errors=9)
+
+
+=== learning_test.log ===
+test_bad_pattern_rejected_before_any_mutation (test_euclid_learning_lifecycle.LearningLifecycleTests.test_bad_pattern_rejected_before_any_mutation) ... ok
+test_closed_runtime_rejects_new_training_and_consolidation (test_euclid_learning_lifecycle.LearningLifecycleTests.test_closed_runtime_rejects_new_training_and_consolidation) ... ok
+test_curriculum_and_consolidation_reachable (test_euclid_learning_lifecycle.LearningLifecycleTests.test_curriculum_and_consolidation_reachable) ... ok
+test_duplicate_rejected_before_all_engines (test_euclid_learning_lifecycle.LearningLifecycleTests.test_duplicate_rejected_before_all_engines) ... ok
+test_evaluation_does_not_mutate_or_explore (test_euclid_learning_lifecycle.LearningLifecycleTests.test_evaluation_does_not_mutate_or_explore) ... ok
+test_external_claim_cannot_self_award_or_skip_ladder (test_euclid_learning_lifecycle.LearningLifecycleTests.test_external_claim_cannot_self_award_or_skip_ladder) ... ok
+test_failure_leaves_durable_pending_reconciliation (test_euclid_learning_lifecycle.LearningLifecycleTests.test_failure_leaves_durable_pending_reconciliation) ... ok
+test_measured_mining_failure_is_retained (test_euclid_learning_lifecycle.LearningLifecycleTests.test_measured_mining_failure_is_retained) ... ok
+test_measured_mining_success_requires_explicit_boolean (test_euclid_learning_lifecycle.LearningLifecycleTests.test_measured_mining_success_requires_explicit_boolean) ... ok
+test_missing_pattern_does_not_teach_hash_features (test_euclid_learning_lifecycle.LearningLifecycleTests.test_missing_pattern_does_not_teach_hash_features) ... ok
+test_observation_never_applies_unverified_reward (test_euclid_learning_lifecycle.LearningLifecycleTests.test_observation_never_applies_unverified_reward) ... ok
+test_production_composes_learning_with_cognition_isolated (test_euclid_learning_lifecycle.LearningLifecycleTests.test_production_composes_learning_with_cognition_isolated) ... ok
+test_pythia_statistics_tamper_rejected (test_euclid_learning_lifecycle.LearningLifecycleTests.test_pythia_statistics_tamper_rejected) ... ok
+test_real_cross_process_restart_retains_lineage (test_euclid_learning_lifecycle.LearningLifecycleTests.test_real_cross_process_restart_retains_lineage) ... ok
+test_refuted_claim_remains_refuted (test_euclid_learning_lifecycle.LearningLifecycleTests.test_refuted_claim_remains_refuted) ... ok
+test_repeated_training_runs_have_distinct_replay_namespaces (test_euclid_learning_lifecycle.LearningLifecycleTests.test_repeated_training_runs_have_distinct_replay_namespaces) ... ok
+test_reward_range_rejected_without_transition (test_euclid_learning_lifecycle.LearningLifecycleTests.test_reward_range_rejected_without_transition) ... ok
+test_rng_and_task_contract_survive_checkpoint (test_euclid_learning_lifecycle.LearningLifecycleTests.test_rng_and_task_contract_survive_checkpoint) ... ok
+test_runtime_attaches_one_governed_ledger (test_euclid_learning_lifecycle.LearningLifecycleTests.test_runtime_attaches_one_governed_ledger) ... ok
+test_store_corruption_fails_closed (test_euclid_learning_lifecycle.LearningLifecycleTests.test_store_corruption_fails_closed) ... Failed to load PYTHIA store snapshot: PYTHIA snapshot seal mismatch
+ok
+test_store_restart_retains_all_fate_statistics (test_euclid_learning_lifecycle.LearningLifecycleTests.test_store_restart_retains_all_fate_statistics) ... ok
+test_synthetic_mining_success_is_not_pool_truth (test_euclid_learning_lifecycle.LearningLifecycleTests.test_synthetic_mining_success_is_not_pool_truth) ... ok
+test_training_checkpoint_manifest_matches_runtime_learner (test_euclid_learning_lifecycle.LearningLifecycleTests.test_training_checkpoint_manifest_matches_runtime_learner) ... ok
+
+----------------------------------------------------------------------
+Ran 23 tests in 2.372s
+
+OK
+
+
+=== learning_regression.log ===
+test_mining_dataset_partitions_are_disjoint_by_lineage (test_euclid_training_readiness.PartitionContractTests.test_mining_dataset_partitions_are_disjoint_by_lineage) ... ok
+test_rejects_duplicate_case_id_across_partitions (test_euclid_training_readiness.PartitionContractTests.test_rejects_duplicate_case_id_across_partitions) ... ok
+test_rejects_identical_declared_record_across_partitions (test_euclid_training_readiness.PartitionContractTests.test_rejects_identical_declared_record_across_partitions) ... ok
+test_rejects_shared_lineage_across_partitions (test_euclid_training_readiness.PartitionContractTests.test_rejects_shared_lineage_across_partitions) ... ok
+test_rejects_shared_session_and_seed_across_partitions (test_euclid_training_readiness.PartitionContractTests.test_rejects_shared_session_and_seed_across_partitions) ... ok
+test_rejects_out_of_range_and_non_finite_reward (test_euclid_training_readiness.ContractValidationTests.test_rejects_out_of_range_and_non_finite_reward) ... ok
+test_rejects_unregistered_action_selection (test_euclid_training_readiness.ContractValidationTests.test_rejects_unregistered_action_selection) ... ok
+test_requires_two_unique_actions (test_euclid_training_readiness.ContractValidationTests.test_requires_two_unique_actions) ... ok
+test_service_learner_must_be_the_pipeline_learner (test_euclid_training_readiness.ContractValidationTests.test_service_learner_must_be_the_pipeline_learner) ... ok
+test_replay_journal_tamper_fails_closed (test_euclid_training_readiness.DurableReplayTests.test_replay_journal_tamper_fails_closed) ... ok
+test_replay_rejected_after_restart_without_learner_mutation (test_euclid_training_readiness.DurableReplayTests.test_replay_rejected_after_restart_without_learner_mutation) ... ok
+test_replay_state_reports_durable_protection (test_euclid_training_readiness.DurableReplayTests.test_replay_state_reports_durable_protection) ... ok
+test_experience_superlearner_train_checkpoint_restore (test_euclid_training_readiness.RealLearnerIntegrationTests.test_experience_superlearner_train_checkpoint_restore) ... ok
+test_manifest_sealed_and_fail_closed_on_corruption (test_euclid_training_readiness.RealLearnerIntegrationTests.test_manifest_sealed_and_fail_closed_on_corruption) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.764s
+
+OK

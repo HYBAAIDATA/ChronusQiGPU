@@ -1,365 +1,269 @@
-"""EUCLID-CORE Intelligence package.
+"""Public Intelligence exports, resolved from their canonical owners on demand.
 
-This is the central intelligence layer of the repo. It wires together every
-intelligence module that was added to the project — the AGI substrates
-(formerly ``core_engine``), the five TOE intelligences (consumed from the
-``toe`` package), the consciousness measurement modules, the Salamander
-self-healing / self-optimising autonomy plane, the ``asi`` attribute
-framework, the ``quantum_cuda`` iGPU / Turing accelerator, and the
-``experiments`` golden-transform test programme — and exposes them as a
-single mining-front-and-centre orchestrator.
-
-Design intent
--------------
-The repo's thesis is that intelligence can *emerge from complexity*. This
-package introduces that complexity (the layered AGI substrate, the
-gauge-invariant distributed training, the spectral / topological context, the
-exact Q[√5] quantum-math accelerator) in one place, and then offers a
-falsifiable test for whether intelligence actually emerged from it.
-
-The orchestrator does **not** fabricate intelligence. Every capability
-reports an honest confidence: when the underlying substrate cannot service a
-request the confidence is 0.0, so downstream callers can distinguish a real
-result from a placeholder.
-
-Public surface
---------------
-- :class:`IntelligenceOrchestrator` — the central mining intelligence layer.
-- :func:`get_intelligence` — process-wide singleton accessor.
-- :func:`wire_intelligence_into_mining` — attach intelligence to the Pythia
-  mining engine so every mining step is intelligence-guided.
-- :func:`run_intelligence_self_test` — falsifiable emergence test.
+Importing a leaf contract must not initialize mining, hardware, learning,
+self-healing or unrelated optional engines. Missing dependencies raise their
+original import error when the corresponding surface is requested. Importability
+is not capability reachability, execution, qualification or startup acceptance.
 """
-
 from __future__ import annotations
 
-import logging
-import os
-import sys
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from importlib import import_module
+from threading import RLock
 
-# Ensure the project root is importable for turing_core / core_engine / src.
-_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if _PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, _PROJECT_ROOT)
-
-logger = logging.getLogger("Intelligence")
-
-from .registry import ModuleRegistry
-from .orchestrator import IntelligenceOrchestrator, MiningIntelligenceResult
-from .mining_bridge import (
-    wire_intelligence_into_mining,
-    unwire_intelligence_from_mining,
-)
-from .self_test import run_intelligence_self_test
-from .pythia_learning import PythiaLearning, LearningResult, LearnedPattern
-from .pythia_memory import (
-    PythiaMemorySystem,
-    WorkingMemory,
-    EpisodicMemory,
-    SemanticMemory,
-    ArchivalMemory,
-    CognitiveScaffolding,
-    SocraticFeedbackLoop,
-    MetaCognitiveReflection,
-)
-from .agentic_controller import (
-    AgenticController,
-    PolyhedralMapping,
-    SolverType,
-    LandscapeType,
-)
-from .lucas_scales import (
-    LucasScaleProfile,
-    LucasScaleLevel,
-    build_lucas_scale_profile,
-    multiscale_coherence_probe,
-    LUCAS_SCALE_LADDER,
-    SCALE_ORDER,
-)
-from .safety_constraints import (
-    SafetyController,
-    MiningState,
-    HashrateCapEnforcer,
-    ConsecutiveBlockGuard,
-)
-from .predictive_solver import PredictiveSolver, PredictionResult
-from .counterfactual_intelligence import (
-    CounterfactualIntelligence,
-    IntelligenceModality,
-    Manifold11D,
-    project_to_11d,
-)
-from .hardware_config import (
-    HardwareProfile,
-    detect_hardware_profile,
-    get_hardware_profile,
-    reset_hardware_profile,
-)
-from .pythia_knowledge import seed_memory as seed_pythia_knowledge, KNOWLEDGE_FACTS
-from .pythia_tools import seed_tool_knowledge, get_tool_summary, PythiaTool, TOOLS
-from .skill_loader import (
-    seed_skill_knowledge,
-    get_skill_summary,
-    PythiaSkill,
-    discover_skills,
-)
-from .requirements import AGIASIRequirements, RequirementsReport, SchoolVerdict
-from .pde_substrate import (
-    PenroseOrchOR,
-    IntegratedInformation,
-    GlobalWorkspace,
-    FreeEnergyPrinciple,
-)
-from toe.bridge import (
-    TOEBridge,
-    TOEStateTomography,
-    TOETrajectoryPrediction,
-    TOECausalAnalysis,
-    CausalLadderResult,
-    create_toe_bridge,
-)
-from toe.causal_ladder import (
-    CausalGraph,
-    StructuralCausalModel,
-    infer_causal_graph,
-    do_operator,
-    counterfactual_query,
-    identify_backdoor,
-    identify_frontdoor,
-)
-from .salamander import (
-    SalamanderEngine,
-    HomeostasisMonitor,
-    HomeostasisReport,
-    SelfRepairEngine,
-    RepairProposal,
-    CircuitBreaker,
-    LucasIntelligenceScaler,
-    LucasScaleResult,
-    AllocationSlot,
-    SalamanderPoincareAllocationManager,
-    AllocationManager,
-    SelfHealingLoop,
-    FaultRecord,
-    AutonomySupervisor,
-    CassiniCycleLedger,
-    KNOWN_FAULT_TYPES,
-)
-from .autonomous_capabilities import (
-    CuopMeter,
-    CuopReading,
-    CuopLearner,
-    SelfOptimisingLoop,
-    ValidityLearner,
-    CoolDownController,
-    telemetry_snapshot,
-    cassini_fingerprint,
-)
-from .cortex_context import CortexTopologicalEngine, CortexSpectralEngine
-from .domains import (
-    FinancialHolonomyEngine,
-    EnergyThermodynamicsEngine,
-    DefenseAssuranceEngine,
-    BiotechResonanceEngine,
-)
-from toe.poincare_golden_11d import (
-    PHI,
-    PSI,
-    INV_PHI,
-    PHI_SQ,
-    PHI_POWERS,
-    LUCAS_TABLE,
-    FIB_TABLE,
-    PRIME_BUCKETS,
-    compute_poincare_norm_sq,
-    poincare_golden_distance,
-    fold_poincare_11d_vector,
-    unfold_poincare_11d_vector,
-    ZeckendorfCertificate,
-    compute_zeckendorf_certificate,
-    generate_zeckendorf_decoupling_mask,
-    resolve_zeckendorf_slot,
-    encode_zeckendorf,
-    beatty_partition,
-    cassini_unimodular_det,
-    get_metallic_mean,
-)
-from .orchestrator import (
-    UniversalPassportToken,
-    DecisionGateViolationError,
-    verify_passport_hard_gate,
-)
-from kellogg.quantum_tensor import (
-    Complex,
-    ComplexMatrix,
-    QuantumState,
-    Observables,
-    quantum_fisher_information,
-    encode_data_to_state,
-    state_tomography,
-    path_integral_propagate,
-    trajectory_forecast,
-    causal_factor_ranking,
-    born_probabilities,
-    density_matrix_purity,
-    decoherence_measure,
-    model_agreement_from_ensemble,
-    project_to_32_face,
-    effective_subspace_dimension,
-)
-from .backend_binding import (
-    BackendBinder,
-    BackendDetector,
-    BackendType,
-    BoundBackend,
-    GPUUnavailableError,
-    get_compute_backend,
-    reset_compute_backend,
-)
-from .neural_plasticity import (
-    NeuralPlasticity,
-    PlasticSynapse,
-    PlasticityEvent,
-)
-from .neural_plasticity_integration import PlasticUnifiedRuntime
-from .neural_plasticity_quantum import QuantumPlasticity
-from .apple_features import (
-    AppleSiliconDetector,
-    AppleSiliconInfo,
-    AppleNeuralEngine,
-    AppleMetal,
-    AppleAccelerate,
-    AppleUnifiedMemory,
-    AppleSiliconRuntime,
-)
-from .apple_plasticity import ApplePlasticity
-from .pvsnp_memory import (
-    LucasQuantumMemory,
-    UnlimitedQuantumStore,
-    PVsNPMemoryProof,
-    PVsNPGPU,
-    QuantumGPU,
-)
-from .prime_memory import (
-    PrimeMemory,
-    ExponentialPrimeStore,
-    QuantumPrimeMemory,
-)
-
-# Consolidated intelligence modules (moved in from core_engine / legacy).
-from .agi_substrate import (
-    AGICapability,
-    AGIDegradationMode,
-    AGIRequest,
-    AGIResponse,
-    AGITelemetry,
-    CanonicalAGISubstrate,
-    create_canonical_agi_substrate,
-)
-from .layered_intelligence_substrate import (
-    AGISubstrate,
-    IntelligenceLayer,
-    IntelligenceState,
-)
-
-# Nobel/Fields intelligence is canonical in millennium/ (deterministic
-# probes, evidence-classed results). The older divergent copy here was
-# retired; the names are re-exported for API compatibility.
-from millennium.nobel_fields_intelligence import (
-    MathematicalDomain,
-    MathematicalInsight,
-    NobelFieldsIntelligence,
-)
-from . import self_healing
-
-# asi and consciousness are internal-only subpackages protected by the
-# strict external AGI / internal ASI boundary (integrations.agi_external.boundary).
-# They are resolved lazily on attribute access so that importing client-safe
-# Intelligence modules (such as counterfactual_intelligence or pde_substrate)
-# does not poison sys.modules with forbidden internal prefixes.
-_LAZY_INTERNAL_MODULES = {"asi", "consciousness"}
-_LAZY_CONSCIOUSNESS_ATTRS = {
-    "ConsciousnessEngine",
-    "ConsciousnessLevel",
-    "ConsciousnessStateVector",
-    "EmergenceMetrics",
-    "EmergenceSnapshot",
-    "QuantumConsciousnessSystem",
-    "QuantumPattern",
-    "SchoolActivity",
+_EXPORTS = {
+    'ModuleRegistry': ('.registry', 'ModuleRegistry'),
+    'IntelligenceOrchestrator': ('.orchestrator', 'IntelligenceOrchestrator'),
+    'MiningIntelligenceResult': ('.orchestrator', 'MiningIntelligenceResult'),
+    'wire_intelligence_into_mining': ('.mining_bridge', 'wire_intelligence_into_mining'),
+    'unwire_intelligence_from_mining': ('.mining_bridge', 'unwire_intelligence_from_mining'),
+    'run_intelligence_self_test': ('.self_test', 'run_intelligence_self_test'),
+    'PythiaLearning': ('.pythia_learning', 'PythiaLearning'),
+    'LearningResult': ('.pythia_learning', 'LearningResult'),
+    'LearnedPattern': ('.pythia_learning', 'LearnedPattern'),
+    'PythiaMemorySystem': ('.pythia_memory', 'PythiaMemorySystem'),
+    'WorkingMemory': ('.pythia_memory', 'WorkingMemory'),
+    'EpisodicMemory': ('.pythia_memory', 'EpisodicMemory'),
+    'SemanticMemory': ('.pythia_memory', 'SemanticMemory'),
+    'ArchivalMemory': ('.pythia_memory', 'ArchivalMemory'),
+    'CognitiveScaffolding': ('.pythia_memory', 'CognitiveScaffolding'),
+    'SocraticFeedbackLoop': ('.pythia_memory', 'SocraticFeedbackLoop'),
+    'MetaCognitiveReflection': ('.pythia_memory', 'MetaCognitiveReflection'),
+    'AgenticController': ('.agentic_controller', 'AgenticController'),
+    'PolyhedralMapping': ('.agentic_controller', 'PolyhedralMapping'),
+    'SolverType': ('.agentic_controller', 'SolverType'),
+    'LandscapeType': ('.agentic_controller', 'LandscapeType'),
+    'LucasScaleProfile': ('.lucas_scales', 'LucasScaleProfile'),
+    'LucasScaleLevel': ('.lucas_scales', 'LucasScaleLevel'),
+    'build_lucas_scale_profile': ('.lucas_scales', 'build_lucas_scale_profile'),
+    'multiscale_coherence_probe': ('.lucas_scales', 'multiscale_coherence_probe'),
+    'LUCAS_SCALE_LADDER': ('.lucas_scales', 'LUCAS_SCALE_LADDER'),
+    'SCALE_ORDER': ('.lucas_scales', 'SCALE_ORDER'),
+    'SafetyController': ('.safety_constraints', 'SafetyController'),
+    'MiningState': ('.safety_constraints', 'MiningState'),
+    'HashrateCapEnforcer': ('.safety_constraints', 'HashrateCapEnforcer'),
+    'ConsecutiveBlockGuard': ('.safety_constraints', 'ConsecutiveBlockGuard'),
+    'PredictiveSolver': ('.predictive_solver', 'PredictiveSolver'),
+    'PredictionResult': ('.predictive_solver', 'PredictionResult'),
+    'CounterfactualIntelligence': ('.counterfactual_intelligence', 'CounterfactualIntelligence'),
+    'IntelligenceModality': ('.counterfactual_intelligence', 'IntelligenceModality'),
+    'Manifold11D': ('.counterfactual_intelligence', 'Manifold11D'),
+    'project_to_11d': ('.counterfactual_intelligence', 'project_to_11d'),
+    'HardwareProfile': ('.hardware_config', 'HardwareProfile'),
+    'detect_hardware_profile': ('.hardware_config', 'detect_hardware_profile'),
+    'get_hardware_profile': ('.hardware_config', 'get_hardware_profile'),
+    'reset_hardware_profile': ('.hardware_config', 'reset_hardware_profile'),
+    'seed_pythia_knowledge': ('.pythia_knowledge', 'seed_memory'),
+    'KNOWLEDGE_FACTS': ('.pythia_knowledge', 'KNOWLEDGE_FACTS'),
+    'seed_tool_knowledge': ('.pythia_tools', 'seed_tool_knowledge'),
+    'get_tool_summary': ('.pythia_tools', 'get_tool_summary'),
+    'PythiaTool': ('.pythia_tools', 'PythiaTool'),
+    'TOOLS': ('.pythia_tools', 'TOOLS'),
+    'seed_skill_knowledge': ('.skill_loader', 'seed_skill_knowledge'),
+    'get_skill_summary': ('.skill_loader', 'get_skill_summary'),
+    'PythiaSkill': ('.skill_loader', 'PythiaSkill'),
+    'discover_skills': ('.skill_loader', 'discover_skills'),
+    'AGIASIRequirements': ('.requirements', 'AGIASIRequirements'),
+    'RequirementsReport': ('.requirements', 'RequirementsReport'),
+    'SchoolVerdict': ('.requirements', 'SchoolVerdict'),
+    'PenroseOrchOR': ('.pde_substrate', 'PenroseOrchOR'),
+    'IntegratedInformation': ('.pde_substrate', 'IntegratedInformation'),
+    'GlobalWorkspace': ('.pde_substrate', 'GlobalWorkspace'),
+    'FreeEnergyPrinciple': ('.pde_substrate', 'FreeEnergyPrinciple'),
+    'TOEBridge': ('toe.bridge', 'TOEBridge'),
+    'TOEStateTomography': ('toe.bridge', 'TOEStateTomography'),
+    'TOETrajectoryPrediction': ('toe.bridge', 'TOETrajectoryPrediction'),
+    'TOECausalAnalysis': ('toe.bridge', 'TOECausalAnalysis'),
+    'CausalLadderResult': ('toe.bridge', 'CausalLadderResult'),
+    'create_toe_bridge': ('toe.bridge', 'create_toe_bridge'),
+    'CausalGraph': ('toe.causal_ladder', 'CausalGraph'),
+    'StructuralCausalModel': ('toe.causal_ladder', 'StructuralCausalModel'),
+    'infer_causal_graph': ('toe.causal_ladder', 'infer_causal_graph'),
+    'do_operator': ('toe.causal_ladder', 'do_operator'),
+    'counterfactual_query': ('toe.causal_ladder', 'counterfactual_query'),
+    'identify_backdoor': ('toe.causal_ladder', 'identify_backdoor'),
+    'identify_frontdoor': ('toe.causal_ladder', 'identify_frontdoor'),
+    'SalamanderEngine': ('.salamander', 'SalamanderEngine'),
+    'HomeostasisMonitor': ('.salamander', 'HomeostasisMonitor'),
+    'HomeostasisReport': ('.salamander', 'HomeostasisReport'),
+    'SelfRepairEngine': ('.salamander', 'SelfRepairEngine'),
+    'RepairProposal': ('.salamander', 'RepairProposal'),
+    'CircuitBreaker': ('.salamander', 'CircuitBreaker'),
+    'LucasIntelligenceScaler': ('.salamander', 'LucasIntelligenceScaler'),
+    'LucasScaleResult': ('.salamander', 'LucasScaleResult'),
+    'AllocationSlot': ('.salamander', 'AllocationSlot'),
+    'SalamanderPoincareAllocationManager': ('.salamander', 'SalamanderPoincareAllocationManager'),
+    'AllocationManager': ('.salamander', 'AllocationManager'),
+    'SelfHealingLoop': ('.salamander', 'SelfHealingLoop'),
+    'FaultRecord': ('.salamander', 'FaultRecord'),
+    'AutonomySupervisor': ('.salamander', 'AutonomySupervisor'),
+    'CassiniCycleLedger': ('.salamander', 'CassiniCycleLedger'),
+    'KNOWN_FAULT_TYPES': ('.salamander', 'KNOWN_FAULT_TYPES'),
+    'CuopMeter': ('.autonomous_capabilities', 'CuopMeter'),
+    'CuopReading': ('.autonomous_capabilities', 'CuopReading'),
+    'CuopLearner': ('.autonomous_capabilities', 'CuopLearner'),
+    'SelfOptimisingLoop': ('.autonomous_capabilities', 'SelfOptimisingLoop'),
+    'ValidityLearner': ('.autonomous_capabilities', 'ValidityLearner'),
+    'CoolDownController': ('.autonomous_capabilities', 'CoolDownController'),
+    'telemetry_snapshot': ('.autonomous_capabilities', 'telemetry_snapshot'),
+    'cassini_fingerprint': ('.autonomous_capabilities', 'cassini_fingerprint'),
+    'CortexTopologicalEngine': ('.cortex_context', 'CortexTopologicalEngine'),
+    'CortexSpectralEngine': ('.cortex_context', 'CortexSpectralEngine'),
+    'FinancialHolonomyEngine': ('.domains', 'FinancialHolonomyEngine'),
+    'EnergyThermodynamicsEngine': ('.domains', 'EnergyThermodynamicsEngine'),
+    'DefenseAssuranceEngine': ('.domains', 'DefenseAssuranceEngine'),
+    'BiotechResonanceEngine': ('.domains', 'BiotechResonanceEngine'),
+    'PHI': ('toe.poincare_golden_11d', 'PHI'),
+    'PSI': ('toe.poincare_golden_11d', 'PSI'),
+    'INV_PHI': ('toe.poincare_golden_11d', 'INV_PHI'),
+    'PHI_SQ': ('toe.poincare_golden_11d', 'PHI_SQ'),
+    'PHI_POWERS': ('toe.poincare_golden_11d', 'PHI_POWERS'),
+    'LUCAS_TABLE': ('toe.poincare_golden_11d', 'LUCAS_TABLE'),
+    'FIB_TABLE': ('toe.poincare_golden_11d', 'FIB_TABLE'),
+    'PRIME_BUCKETS': ('toe.poincare_golden_11d', 'PRIME_BUCKETS'),
+    'compute_poincare_norm_sq': ('toe.poincare_golden_11d', 'compute_poincare_norm_sq'),
+    'poincare_golden_distance': ('toe.poincare_golden_11d', 'poincare_golden_distance'),
+    'fold_poincare_11d_vector': ('toe.poincare_golden_11d', 'fold_poincare_11d_vector'),
+    'unfold_poincare_11d_vector': ('toe.poincare_golden_11d', 'unfold_poincare_11d_vector'),
+    'ZeckendorfCertificate': ('toe.poincare_golden_11d', 'ZeckendorfCertificate'),
+    'compute_zeckendorf_certificate': ('toe.poincare_golden_11d', 'compute_zeckendorf_certificate'),
+    'generate_zeckendorf_decoupling_mask': ('toe.poincare_golden_11d', 'generate_zeckendorf_decoupling_mask'),
+    'resolve_zeckendorf_slot': ('toe.poincare_golden_11d', 'resolve_zeckendorf_slot'),
+    'encode_zeckendorf': ('toe.poincare_golden_11d', 'encode_zeckendorf'),
+    'beatty_partition': ('toe.poincare_golden_11d', 'beatty_partition'),
+    'cassini_unimodular_det': ('toe.poincare_golden_11d', 'cassini_unimodular_det'),
+    'get_metallic_mean': ('toe.poincare_golden_11d', 'get_metallic_mean'),
+    'UniversalPassportToken': ('.orchestrator', 'UniversalPassportToken'),
+    'DecisionGateViolationError': ('.orchestrator', 'DecisionGateViolationError'),
+    'verify_passport_hard_gate': ('.orchestrator', 'verify_passport_hard_gate'),
+    'Complex': ('kellogg.quantum_tensor', 'Complex'),
+    'ComplexMatrix': ('kellogg.quantum_tensor', 'ComplexMatrix'),
+    'QuantumState': ('kellogg.quantum_tensor', 'QuantumState'),
+    'Observables': ('kellogg.quantum_tensor', 'Observables'),
+    'quantum_fisher_information': ('kellogg.quantum_tensor', 'quantum_fisher_information'),
+    'encode_data_to_state': ('kellogg.quantum_tensor', 'encode_data_to_state'),
+    'state_tomography': ('kellogg.quantum_tensor', 'state_tomography'),
+    'path_integral_propagate': ('kellogg.quantum_tensor', 'path_integral_propagate'),
+    'trajectory_forecast': ('kellogg.quantum_tensor', 'trajectory_forecast'),
+    'causal_factor_ranking': ('kellogg.quantum_tensor', 'causal_factor_ranking'),
+    'born_probabilities': ('kellogg.quantum_tensor', 'born_probabilities'),
+    'density_matrix_purity': ('kellogg.quantum_tensor', 'density_matrix_purity'),
+    'decoherence_measure': ('kellogg.quantum_tensor', 'decoherence_measure'),
+    'model_agreement_from_ensemble': ('kellogg.quantum_tensor', 'model_agreement_from_ensemble'),
+    'project_to_32_face': ('kellogg.quantum_tensor', 'project_to_32_face'),
+    'effective_subspace_dimension': ('kellogg.quantum_tensor', 'effective_subspace_dimension'),
+    'BackendBinder': ('.backend_binding', 'BackendBinder'),
+    'BackendDetector': ('.backend_binding', 'BackendDetector'),
+    'BackendType': ('.backend_binding', 'BackendType'),
+    'BoundBackend': ('.backend_binding', 'BoundBackend'),
+    'GPUUnavailableError': ('.backend_binding', 'GPUUnavailableError'),
+    'get_compute_backend': ('.backend_binding', 'get_compute_backend'),
+    'reset_compute_backend': ('.backend_binding', 'reset_compute_backend'),
+    'NeuralPlasticity': ('.neural_plasticity', 'NeuralPlasticity'),
+    'PlasticSynapse': ('.neural_plasticity', 'PlasticSynapse'),
+    'PlasticityEvent': ('.neural_plasticity', 'PlasticityEvent'),
+    'PlasticUnifiedRuntime': ('.neural_plasticity_integration', 'PlasticUnifiedRuntime'),
+    'QuantumPlasticity': ('.neural_plasticity_quantum', 'QuantumPlasticity'),
+    'AppleSiliconDetector': ('.apple_features', 'AppleSiliconDetector'),
+    'AppleSiliconInfo': ('.apple_features', 'AppleSiliconInfo'),
+    'AppleNeuralEngine': ('.apple_features', 'AppleNeuralEngine'),
+    'AppleMetal': ('.apple_features', 'AppleMetal'),
+    'AppleAccelerate': ('.apple_features', 'AppleAccelerate'),
+    'AppleUnifiedMemory': ('.apple_features', 'AppleUnifiedMemory'),
+    'AppleSiliconRuntime': ('.apple_features', 'AppleSiliconRuntime'),
+    'ApplePlasticity': ('.apple_plasticity', 'ApplePlasticity'),
+    'LucasQuantumMemory': ('.pvsnp_memory', 'LucasQuantumMemory'),
+    'UnlimitedQuantumStore': ('.pvsnp_memory', 'UnlimitedQuantumStore'),
+    'PVsNPMemoryProof': ('.pvsnp_memory', 'PVsNPMemoryProof'),
+    'PVsNPGPU': ('.pvsnp_memory', 'PVsNPGPU'),
+    'QuantumGPU': ('.pvsnp_memory', 'QuantumGPU'),
+    'PrimeMemory': ('.prime_memory', 'PrimeMemory'),
+    'ExponentialPrimeStore': ('.prime_memory', 'ExponentialPrimeStore'),
+    'QuantumPrimeMemory': ('.prime_memory', 'QuantumPrimeMemory'),
+    'AGICapability': ('.agi_substrate', 'AGICapability'),
+    'AGIDegradationMode': ('.agi_substrate', 'AGIDegradationMode'),
+    'AGIRequest': ('.agi_substrate', 'AGIRequest'),
+    'AGIResponse': ('.agi_substrate', 'AGIResponse'),
+    'AGITelemetry': ('.agi_substrate', 'AGITelemetry'),
+    'CanonicalAGISubstrate': ('.agi_substrate', 'CanonicalAGISubstrate'),
+    'create_canonical_agi_substrate': ('.agi_substrate', 'create_canonical_agi_substrate'),
+    'AGISubstrate': ('.layered_intelligence_substrate', 'AGISubstrate'),
+    'IntelligenceLayer': ('.layered_intelligence_substrate', 'IntelligenceLayer'),
+    'IntelligenceState': ('.layered_intelligence_substrate', 'IntelligenceState'),
+    'MathematicalDomain': ('millennium.nobel_fields_intelligence', 'MathematicalDomain'),
+    'MathematicalInsight': ('millennium.nobel_fields_intelligence', 'MathematicalInsight'),
+    'NobelFieldsIntelligence': ('millennium.nobel_fields_intelligence', 'NobelFieldsIntelligence'),
+    'self_healing': ('.self_healing', None),
+    'AutopoieticMetaOptimizer': ('.self_healing', 'AutopoieticMetaOptimizer'),
+    'CircuitState': ('.self_healing', 'CircuitState'),
+    'LedgerLoadError': ('.self_healing', 'LedgerLoadError'),
+    'SalamanderFailureBus': ('.self_healing', 'SalamanderFailureBus'),
+    'SalamanderHardwareSmoother': ('.self_healing', 'SalamanderHardwareSmoother'),
+    'SalamanderWiringInspector': ('.self_healing', 'SalamanderWiringInspector'),
+    'SalamanderZeroTrustGovernor': ('.self_healing', 'SalamanderZeroTrustGovernor'),
+    'SelfRepairCycleReport': ('.self_healing', 'SelfRepairCycleReport'),
+    'StartupSelfHealingState': ('.self_healing', 'StartupSelfHealingState'),
+    'TuningRecommendation': ('.self_healing', 'TuningRecommendation'),
+    'VeritasLedger': ('.self_healing', 'VeritasLedger'),
+    'get_startup_self_healing_state': ('.self_healing', 'get_startup_self_healing_state'),
+    'run_self_repair_cycle': ('.self_healing', 'run_self_repair_cycle'),
+    'start_startup_self_healing': ('.self_healing', 'start_startup_self_healing'),
+    'AddressSpace': ('aethel', 'AddressSpace'),
+    'AethelQueue': ('aethel', 'AethelQueue'),
+    'CassiniLedger': ('aethel', 'CassiniLedger'),
+    'FibonacciAddress': ('aethel', 'FibonacciAddress'),
+    'LedgerEntry': ('aethel', 'LedgerEntry'),
+    'PrimeStorageManifold': ('aethel', 'PrimeStorageManifold'),
+    'UnifiedSubstrate': ('aethel', 'UnifiedSubstrate'),
+    'OpCost': ('aethel.costs', 'OpCost'),
+    'OverheadMeter': ('aethel.costs', 'OverheadMeter'),
+    'container_bytes': ('aethel.costs', 'container_bytes'),
+    'measure_alloc': ('aethel.costs', 'measure_alloc'),
+    'asi': ('.asi', None),
+    'consciousness': ('.consciousness', None),
+    'ConsciousnessEngine': ('.consciousness', 'ConsciousnessEngine'),
+    'ConsciousnessLevel': ('.consciousness', 'ConsciousnessLevel'),
+    'ConsciousnessStateVector': ('.consciousness', 'ConsciousnessStateVector'),
+    'EmergenceMetrics': ('.consciousness', 'EmergenceMetrics'),
+    'EmergenceSnapshot': ('.consciousness', 'EmergenceSnapshot'),
+    'QuantumConsciousnessSystem': ('.consciousness', 'QuantumConsciousnessSystem'),
+    'QuantumPattern': ('.consciousness', 'QuantumPattern'),
+    'SchoolActivity': ('.consciousness', 'SchoolActivity'),
+    'PHI_INVERSE': ('toe.poincare_golden_11d', 'PHI_INVERSE'),
+    'METALLIC_MEANS': ('toe.poincare_golden_11d', 'METALLIC_MEANS'),
 }
+_ORCHESTRATOR = None
+_ORCHESTRATOR_LOCK = RLock()
 
 
-def __getattr__(name: str):
-    if name in _LAZY_INTERNAL_MODULES:
-        import importlib
-
-        mod = importlib.import_module(f".{name}", __name__)
-        globals()[name] = mod
-        return mod
-    if name in _LAZY_CONSCIOUSNESS_ATTRS:
-        import importlib
-
-        mod = importlib.import_module(".consciousness", __name__)
-        val = getattr(mod, name)
-        globals()[name] = val
-        return val
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-from .self_healing import (
-    AutopoieticMetaOptimizer,
-    CircuitState,
-    LedgerLoadError,
-    SalamanderFailureBus,
-    SalamanderHardwareSmoother,
-    SalamanderWiringInspector,
-    SalamanderZeroTrustGovernor,
-    SelfRepairCycleReport,
-    StartupSelfHealingState,
-    TuningRecommendation,
-    VeritasLedger,
-    get_startup_self_healing_state,
-    run_self_repair_cycle,
-    start_startup_self_healing,
-)
-
-# Aethel topological storage substrate — wired in with measured CPU/memory
-# overhead accounting (aethel.costs). aethel's reverse imports into this
-# package (pathfinder, search_crystal) are lazy, so eager import is safe.
-from aethel import (
-    AddressSpace,
-    AethelQueue,
-    CassiniLedger,
-    FibonacciAddress,
-    LedgerEntry,
-    PrimeStorageManifold,
-    UnifiedSubstrate,
-)
-from aethel.costs import (
-    OpCost,
-    OverheadMeter,
-    container_bytes,
-    measure_alloc,
-)
-
-# Process-wide singleton.
-_ORCHESTRATOR: Optional[IntelligenceOrchestrator] = None
+def __getattr__(name):
+    target = _EXPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module, attribute = target
+    owner = import_module(module, __name__)
+    value = owner if attribute is None else getattr(owner, attribute)
+    globals()[name] = value
+    return value
 
 
-def get_intelligence() -> IntelligenceOrchestrator:
-    """Return the process-wide :class:`IntelligenceOrchestrator` singleton."""
+def __dir__():
+    return sorted(set(globals()) | set(__all__))
+
+
+def get_intelligence():
+    """Explicitly initialize the existing orchestrator singleton."""
     global _ORCHESTRATOR
-    if _ORCHESTRATOR is None:
-        _ORCHESTRATOR = IntelligenceOrchestrator()
-    return _ORCHESTRATOR
+    with _ORCHESTRATOR_LOCK:
+        if _ORCHESTRATOR is None:
+            from .orchestrator import IntelligenceOrchestrator
+            _ORCHESTRATOR = IntelligenceOrchestrator()
+        return _ORCHESTRATOR
 
 
-def reset_intelligence() -> None:
-    """Drop the singleton (mainly for tests)."""
+def reset_intelligence():
     global _ORCHESTRATOR
-    _ORCHESTRATOR = None
+    with _ORCHESTRATOR_LOCK:
+        _ORCHESTRATOR = None
 
 
 __all__ = [

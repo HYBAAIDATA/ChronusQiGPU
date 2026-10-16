@@ -87,7 +87,7 @@ class EnhancedQuantumEntanglement:
         self.entangled_states: Dict[str, MultiDimensionalEntangledState] = {}
         self.entanglement_network: Dict[str, List[str]] = {}
         self.global_coherence: float = 1.0
-        self.quantum_channel_capacity: float = 1e12  # bits per Planck time
+        self.quantum_channel_capacity: float = math.log2(4.0)  # Holevo bound log2(dim) for 2-qubit state
 
     async def create_multi_dimensional_entanglement(
         self, state_id: str, dimensions: int, entanglement_type: EntanglementDimension

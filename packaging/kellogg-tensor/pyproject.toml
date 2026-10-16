@@ -55,6 +55,7 @@ Issues = "https://github.com/QuantumPhiRedux/PhiMiner/issues"
 
 [tool.setuptools]
 include-package-data = false
+package-dir = {"kellogg" = "../../kellogg"}
 packages = ["kellogg"]
 
 [tool.setuptools.dynamic]

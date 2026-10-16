@@ -1,55 +1,62 @@
-"""Reconstructed substrate descriptions. Declared isolation is not OS enforcement."""
+"""Substrate data models for indexing, isolation, and differential experimentation."""
+
 from __future__ import annotations
 from dataclasses import dataclass, field
-from .manifest import count, digest, finite, names, plain
-from .telemetry import TelemetryRecord
+import hashlib
+import json
+from typing import Any, Optional
 
 
 @dataclass(frozen=True)
 class SubstrateProperties:
+    """Hardware, execution environment, and temporal properties defining a substrate."""
     executor_type: str
-    observation_latency: float
-    action_granularity: str
-    compute_substrate: str
+    observation_latency: float  # In milliseconds
+    action_granularity: str    # e.g., 'atomic', 'compositional', 'reflective'
+    compute_substrate: str     # e.g., 'vm_x86_64', 'container_arm64', 'baremetal'
     memory_limit_mb: int = 4096
     rng_source: str = "urandom"
-    sandbox_id: str | None = None
-    complexity_axis_tags: tuple[str, ...] = ()
+    sandbox_id: Optional[str] = None
+    complexity_axis_tags: tuple[str, ...] = field(default_factory=tuple)
 
-    def __post_init__(self):
-        names((self.executor_type, self.action_granularity, self.compute_substrate, self.rng_source), "substrate properties")
-        finite(self.observation_latency, "observation_latency")
-        count(self.memory_limit_mb, "memory_limit_mb")
-        if self.memory_limit_mb == 0:
-            raise ValueError("memory_limit_mb must be positive")
-        object.__setattr__(self, "complexity_axis_tags", names(self.complexity_axis_tags, "tags"))
+    def canonical_json(self) -> str:
+        payload = {
+            "executor_type": self.executor_type,
+            "observation_latency": round(self.observation_latency, 4),
+            "action_granularity": self.action_granularity,
+            "compute_substrate": self.compute_substrate,
+            "memory_limit_mb": self.memory_limit_mb,
+            "rng_source": self.rng_source,
+            "sandbox_id": self.sandbox_id or "default",
+            "complexity_axis_tags": sorted(list(self.complexity_axis_tags)),
+        }
+        return json.dumps(payload, sort_keys=True, separators=(",", ":"))
 
-    def to_dict(self):
-        return plain(self)
-
-    def compute_id(self):
-        return digest("philos.reconstructed.substrate.v1", self)
+    def compute_id(self) -> str:
+        """Derive a deterministic substrate ID from canonical properties."""
+        digest = hashlib.sha256(self.canonical_json().encode("utf-8")).hexdigest()[:12]
+        return f"sub_{self.executor_type}_{digest}"
 
 
 @dataclass
 class SubstrateExecutionResult:
+    """Result of executing an architecture/task suite on a specific substrate."""
     substrate_id: str
     properties: SubstrateProperties
     iterations_completed: int
-    capability_profile: dict[str, float] = field(default_factory=dict)
-    telemetry_records: list[TelemetryRecord] = field(default_factory=list)
+    capability_profile: dict[str, float]
+    telemetry_records: list[Any] = field(default_factory=list)
     novel_behaviors_observed: list[str] = field(default_factory=list)
+    repetition_rates: dict[str, float] = field(default_factory=dict)
     run_hash: str = ""
 
-    def __post_init__(self):
-        count(self.iterations_completed, "iterations_completed")
-        if self.substrate_id != self.properties.compute_id():
-            raise ValueError("substrate identity does not match properties")
-
-    def to_dict(self):
-        return plain(self)
-
-    def compute_run_hash(self):
-        payload = self.to_dict()
-        payload.pop("run_hash")
-        return digest("philos.reconstructed.run.v1", payload)
+    def compute_run_hash(self) -> str:
+        summary = {
+            "substrate_id": self.substrate_id,
+            "iterations_completed": self.iterations_completed,
+            "capability_profile": sorted(self.capability_profile.items()),
+            "novel_behaviors": sorted(self.novel_behaviors_observed),
+        }
+        return hashlib.sha256(
+            json.dumps(summary, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()

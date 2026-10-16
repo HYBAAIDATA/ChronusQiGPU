@@ -10,7 +10,7 @@ with M32, sequential, or another traversal.
 
 from __future__ import annotations
 
-from chronos_one_igpu.reference_contract import require_reference, reference_only, require_production_context
+from chronus.reference_contract import require_reference, reference_only, require_production_context
 from functools import lru_cache
 from typing import Any, List, Optional, Tuple
 

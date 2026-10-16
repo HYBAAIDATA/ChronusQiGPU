@@ -1,0 +1,241 @@
+"""Longitudinal evaluator for twelve general-intelligence capability attributes.
+
+This is an evidence framework, not an AGI declaration.  It distinguishes
+implemented surfaces, measured capability, evidence quality, and comparable
+longitudinal growth under a fixed schema.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import os
+import tempfile
+import time
+import uuid
+from dataclasses import asdict, dataclass
+from enum import Enum
+from pathlib import Path
+from typing import Any, Mapping
+
+from .memory_preservation import verified_atomic_json_write
+
+SCHEMA_VERSION = "HYBA_AGI_ATTRIBUTES_V1"
+
+
+class AGIAttribute(str, Enum):
+    GENERALIZATION = "generalization_across_domains"
+    CAUSAL_REASONING = "causal_reasoning"
+    COUNTERFACTUAL_IMAGINATION = "counterfactual_imagination"
+    PREDICTIVE_PROCESSING = "predictive_processing_active_inference"
+    CONTINUAL_LEARNING = "continual_learning"
+    SELF_MODELING = "self_modeling_introspection"
+    GOAL_FORMATION = "goal_formation_self_steering"
+    EMBODIED_CONSTRAINTS = "embodied_constraints_awareness"
+    ROBUSTNESS_REGENERATION = "robustness_regeneration"
+    SOCIAL_ECONOMIC = "social_economic_modeling"
+    SYMBOLIC_SUBSYMBOLIC = "symbolic_subsymbolic_integration"
+    WORLD_MODEL_GROUNDING = "world_model_grounding"
+
+
+@dataclass(frozen=True)
+class AttributeDefinition:
+    attribute: AGIAttribute
+    description: str
+    metrics: tuple[str, ...]
+    module_evidence: tuple[str, ...]
+
+
+DEFINITIONS: tuple[AttributeDefinition, ...] = (
+    AttributeDefinition(AGIAttribute.GENERALIZATION,"Transfer and abstraction across domains",
+        ("cross_domain_transfer","out_of_distribution_success","abstraction_reuse"),
+        ("resonance_intelligence.intelligence","hyba_substrate.manifold_orchestrator","mag.orchestrator")),
+    AttributeDefinition(AGIAttribute.CAUSAL_REASONING,"Interventions, causal graphs, and stable attribution",
+        ("intervention_accuracy","causal_graph_fidelity","causal_attribution_stability"),
+        ("hyba_substrate.manifold_orchestrator.CausalIntelligence","resonance_intelligence.causal_attribution")),
+    AttributeDefinition(AGIAttribute.COUNTERFACTUAL_IMAGINATION,"Safe evaluation of non-actual alternatives",
+        ("scenario_validity","constraint_compliance","outcome_ranking_accuracy"),
+        ("hyba_substrate.manifold_orchestrator.CounterfactualIntelligence","resonance_intelligence.oracle_backprop")),
+    AttributeDefinition(AGIAttribute.PREDICTIVE_PROCESSING,"Forecasting, calibration, and surprise reduction",
+        ("forecast_accuracy","calibration_quality","surprise_reduction"),
+        ("hyba_substrate.manifold_orchestrator.PredictiveIntelligence","resonance_intelligence.oracle_backprop")),
+    AttributeDefinition(AGIAttribute.CONTINUAL_LEARNING,"Online adaptation with retained prior capability",
+        ("online_learning_gain","retention","adaptation_stability"),
+        ("resonance_intelligence.feedback_core","pythia_mining.mining_learning_signal")),
+    AttributeDefinition(AGIAttribute.SELF_MODELING,"Uncertainty, disagreement, and self-correction",
+        ("uncertainty_calibration","disagreement_detection","self_correction_success"),
+        ("resonance_intelligence.meta_intelligence","pythia_self_healing.c3_self_state_calibration")),
+    AttributeDefinition(AGIAttribute.GOAL_FORMATION,"Planning, goal completion, and reprioritization",
+        ("goal_completion","planning_horizon_quality","reprioritization_quality"),
+        ("hyba_substrate.organism_cns.GovernanceStateMachine","resonance_intelligence.oracle_backprop")),
+    AttributeDefinition(AGIAttribute.EMBODIED_CONSTRAINTS,"Thermal, power, latency, and resource limits",
+        ("thermal_compliance","power_efficiency","latency_compliance","resource_efficiency"),
+        ("hyba_substrate.salamander_thermal_sentinel","hyba_substrate.autonomous_thermal_controller")),
+    AttributeDefinition(AGIAttribute.ROBUSTNESS_REGENERATION,"Fault detection, repair, and invariant recovery",
+        ("fault_detection","repair_success","recovery_time_score","invariant_preservation"),
+        ("hyba_substrate.organism_cns.MultiScaleRegeneration","pythia_self_healing")),
+    AttributeDefinition(AGIAttribute.SOCIAL_ECONOMIC,"Incentives, markets, cooperation, and competition",
+        ("incentive_model_accuracy","market_response_quality","cooperation_outcome"),
+        ("hyba_substrate.economic_intelligence_loop","udm.domains")),
+    AttributeDefinition(AGIAttribute.SYMBOLIC_SUBSYMBOLIC,"Consistency between continuous and rule-based representations",
+        ("neuro_symbolic_consistency","rule_grounding","representation_bridge"),
+        ("hyba_substrate.manifold_orchestrator","quantum_core.mathematical_paradigms")),
+    AttributeDefinition(AGIAttribute.WORLD_MODEL_GROUNDING,"External telemetry, feedback, and outcome alignment",
+        ("telemetry_freshness","sensor_validity","prediction_outcome_alignment","feedback_closure"),
+        ("hyba_substrate.telemetry_listener","hyba_substrate.organism_cns","resonance_intelligence.feedback_core")),
+)
+
+_DEFINITION_BY_VALUE={definition.attribute.value:definition for definition in DEFINITIONS}
+_SCHEMA_PAYLOAD=[{"attribute":d.attribute.value,"metrics":d.metrics,"modules":d.module_evidence} for d in DEFINITIONS]
+SCHEMA_FINGERPRINT=hashlib.sha256(json.dumps(_SCHEMA_PAYLOAD,sort_keys=True).encode()).hexdigest()
+
+
+@dataclass(frozen=True)
+class AttributeMeasurement:
+    attribute:str
+    score:float
+    coverage:float
+    evidence_quality:float
+    confidence:float
+    observed_metrics:dict[str,float]
+    missing_metrics:tuple[str,...]
+    module_evidence:tuple[str,...]
+
+
+@dataclass(frozen=True)
+class CapabilitySnapshot:
+    snapshot_id:str
+    label:str
+    timestamp:float
+    schema_version:str
+    schema_fingerprint:str
+    measurements:dict[str,AttributeMeasurement]
+    aggregate_score:float
+    aggregate_confidence:float
+    evidence_coverage:float
+    bottleneck_score:float
+    necessary_attribute_gate_passed:bool
+    metadata:dict[str,Any]
+
+    def to_dict(self)->dict[str,Any]:
+        result=asdict(self)
+        return result
+
+    @classmethod
+    def from_dict(cls,data:Mapping[str,Any])->"CapabilitySnapshot":
+        measurements={name:AttributeMeasurement(**value) for name,value in data["measurements"].items()}
+        return cls(snapshot_id=str(data["snapshot_id"]),label=str(data["label"]),timestamp=float(data["timestamp"]),
+            schema_version=str(data["schema_version"]),schema_fingerprint=str(data["schema_fingerprint"]),
+            measurements=measurements,aggregate_score=float(data["aggregate_score"]),
+            aggregate_confidence=float(data["aggregate_confidence"]),evidence_coverage=float(data["evidence_coverage"]),
+            bottleneck_score=float(data["bottleneck_score"]),
+            necessary_attribute_gate_passed=bool(data["necessary_attribute_gate_passed"]),
+            metadata=dict(data.get("metadata",{})))
+
+
+@dataclass(frozen=True)
+class GrowthReport:
+    baseline_id:str
+    latest_id:str
+    snapshots_compared:int
+    aggregate_delta:float
+    confidence_delta:float
+    coverage_delta:float
+    attribute_deltas:dict[str,float]
+    attribute_slopes:dict[str,float]
+    improving:tuple[str,...]
+    stable:tuple[str,...]
+    regressing:tuple[str,...]
+
+
+class AGIAttributeEvaluator:
+    """Evaluate and persist comparable snapshots under a fixed metric schema."""
+
+    def __init__(self,state_path:str|None=None,attribute_threshold:float=.7,
+                 confidence_threshold:float=.7,min_growth_delta:float=.01):
+        for value in (attribute_threshold,confidence_threshold):
+            if not 0<=value<=1:raise ValueError("thresholds must be in [0,1]")
+        if min_growth_delta<0:raise ValueError("min_growth_delta must be nonnegative")
+        self.state_path=state_path;self.attribute_threshold=float(attribute_threshold)
+        self.confidence_threshold=float(confidence_threshold);self.min_growth_delta=float(min_growth_delta)
+        self.snapshots:list[CapabilitySnapshot]=[]
+        if state_path and Path(state_path).exists():self._load()
+
+    @staticmethod
+    def _validate_score(value:Any,name:str)->float:
+        score=float(value)
+        if not math.isfinite(score) or not 0<=score<=1:raise ValueError(f"{name} must be finite and in [0,1]")
+        return score
+
+    def evaluate(self,metrics:Mapping[str,Mapping[str,float]],*,label:str,
+                 evidence_quality:Mapping[str,float]|None=None,metadata:Mapping[str,Any]|None=None,
+                 persist:bool=True)->CapabilitySnapshot:
+        if not label:raise ValueError("label must not be empty")
+        unknown_attributes=set(metrics)-set(_DEFINITION_BY_VALUE)
+        if unknown_attributes:raise ValueError(f"unknown attributes: {sorted(unknown_attributes)}")
+        quality_map=dict(evidence_quality or {});measurements={}
+        for definition in DEFINITIONS:
+            name=definition.attribute.value;provided=dict(metrics.get(name,{}))
+            unknown_metrics=set(provided)-set(definition.metrics)
+            if unknown_metrics:raise ValueError(f"unknown metrics for {name}: {sorted(unknown_metrics)}")
+            observed={metric:self._validate_score(value,f"{name}.{metric}") for metric,value in provided.items()}
+            # Fixed equal weights; missing evidence contributes zero rather than disappearing.
+            score=sum(observed.get(metric,0.0) for metric in definition.metrics)/len(definition.metrics)
+            coverage=len(observed)/len(definition.metrics)
+            quality=self._validate_score(quality_map.get(name,1.0),f"{name}.evidence_quality")
+            confidence=coverage*quality
+            missing=tuple(metric for metric in definition.metrics if metric not in observed)
+            measurements[name]=AttributeMeasurement(name,score,coverage,quality,confidence,observed,missing,
+                                                     definition.module_evidence)
+        values=list(measurements.values());aggregate=sum(item.score for item in values)/len(values)
+        aggregate_confidence=sum(item.confidence for item in values)/len(values)
+        coverage=sum(item.coverage for item in values)/len(values);bottleneck=min(item.score for item in values)
+        gate=all(item.score>=self.attribute_threshold and item.confidence>=self.confidence_threshold
+                 for item in values)
+        snapshot=CapabilitySnapshot(str(uuid.uuid4()),label,time.time(),SCHEMA_VERSION,SCHEMA_FINGERPRINT,
+            measurements,aggregate,aggregate_confidence,coverage,bottleneck,gate,dict(metadata or {}))
+        self.snapshots.append(snapshot)
+        if persist:self._checkpoint()
+        return snapshot
+
+    def growth_report(self,baseline_index:int=0,latest_index:int=-1)->GrowthReport:
+        if len(self.snapshots)<2:raise ValueError("at least two snapshots are required")
+        baseline=self.snapshots[baseline_index];latest=self.snapshots[latest_index]
+        if baseline.schema_fingerprint!=latest.schema_fingerprint:raise ValueError("snapshots use different schemas")
+        deltas={name:latest.measurements[name].score-baseline.measurements[name].score for name in _DEFINITION_BY_VALUE}
+        slopes={name:self._slope([snapshot.measurements[name].score for snapshot in self.snapshots])
+                for name in _DEFINITION_BY_VALUE}
+        improving=tuple(name for name,value in deltas.items() if value>self.min_growth_delta)
+        regressing=tuple(name for name,value in deltas.items() if value<-self.min_growth_delta)
+        stable=tuple(name for name,value in deltas.items() if abs(value)<=self.min_growth_delta)
+        return GrowthReport(baseline.snapshot_id,latest.snapshot_id,len(self.snapshots),
+            latest.aggregate_score-baseline.aggregate_score,
+            latest.aggregate_confidence-baseline.aggregate_confidence,
+            latest.evidence_coverage-baseline.evidence_coverage,deltas,slopes,improving,stable,regressing)
+
+    @staticmethod
+    def _slope(values:list[float])->float:
+        if len(values)<2:return 0.0
+        x_mean=(len(values)-1)/2;y_mean=sum(values)/len(values)
+        denominator=sum((index-x_mean)**2 for index in range(len(values)))
+        return sum((index-x_mean)*(value-y_mean) for index,value in enumerate(values))/denominator if denominator else 0.0
+
+    def _checkpoint(self)->None:
+        if not self.state_path:return
+        payload={"schema_version":SCHEMA_VERSION,"schema_fingerprint":SCHEMA_FINGERPRINT,
+                 "snapshots":[snapshot.to_dict() for snapshot in self.snapshots]}
+        verified_atomic_json_write(Path(self.state_path).resolve(),payload)
+
+    def _load(self)->None:
+        with open(self.state_path,encoding="utf-8") as handle:payload=json.load(handle)
+        if payload.get("schema_fingerprint")!=SCHEMA_FINGERPRINT:
+            raise ValueError("persisted AGI attribute schema is incompatible")
+        self.snapshots=[CapabilitySnapshot.from_dict(item) for item in payload.get("snapshots",[])]
+
+    def clear(self,persist:bool=True)->None:
+        self.snapshots.clear()
+        if persist:self._checkpoint()
+
+
+__all__=["AGIAttribute","AttributeDefinition","AttributeMeasurement","CapabilitySnapshot",
+         "GrowthReport","AGIAttributeEvaluator","DEFINITIONS","SCHEMA_VERSION","SCHEMA_FINGERPRINT"]
