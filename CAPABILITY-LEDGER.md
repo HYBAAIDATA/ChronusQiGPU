@@ -27,7 +27,7 @@ The repository `PhiEnterprise-main` was confirmed as the canonical Euclid codeba
 
 ## 2. Capability Registry & Manifest Baseline
 
-| Capability / Subsystem | Path / Contract | Gate Classification | Custody Status | Verified By Test |
+| Capability / Subsystem | Path / Contract | Gate Classification | Custody Status | Historical Test Reference (not rerun here) |
 | :--- | :--- | :--- | :--- | :--- |
 | **AgentTelemetry** | `euclid.emergence.telemetry` | Strict Per-Iteration Signatures | Substrate-Indexed | `test_agent_telemetry.py` |
 | **detect_novelty** | `euclid.emergence.telemetry.novelty` | Unattributed Policy Filter | Dynamic Manifest | `test_agent_telemetry.py` |
@@ -35,9 +35,9 @@ The repository `PhiEnterprise-main` was confirmed as the canonical Euclid codeba
 | **EmergenceAnalyzer** | `euclid.emergence.analyzer` | Non-linear Criticality Scan | Verbatim / Anti-Smoothing | `test_emergence_analyzer.py` |
 | **EmergentQualificationService** | `euclid.emergence.trusted_core.qualification_service` | Trusted Core 3-Gate Pipeline | Non-Callable by Loop | `test_qualification_gates.py` |
 | **CallerBoundaryGuard** | `euclid.emergence.trusted_core.access_control` | Call-Stack Boundary Enforcer | Runtime Guard | `test_security_boundaries.py` |
-| **GovernanceToken** | `euclid.emergence.trusted_core.access_control` | Capability-Based Auth Token | HMAC-SHA256 Signed | `test_security_boundaries.py` |
+| **GovernanceToken** | `euclid.emergence.trusted_core.access_control` | Capability-Based Auth Token | Shared-key HMAC; public default key remains unsafe | `test_security_boundaries.py` |
 | **CondensationCultivator** | `euclid.emergence.cultivator.cultivator` | Diversity / Anti-Goodhart | Generation Monitored | `test_cultivator.py` |
-| **RecursiveFolding (Φ)** | `euclid.emergence.folding.recursive_folding` | Budgeted Self-Model Recursion | Frozen `MAX_FOLD=3` Signed | `test_recursive_folding.py` |
+| **RecursiveFolding (Φ)** | `euclid.emergence.folding.recursive_folding` | Budgeted Self-Model Recursion | Exact `MAX_FOLD=3` check; public MAC is not authority | `test_recursive_folding.py` |
 | **CondensationMonitor** | `euclid.emergence.condensation.condensation_monitor` | Multi-Substrate Phase Crossing | Verbatim Journaled | `test_condensation_monitor_and_governance.py` |
 | **ConsortiumGovernance** | `euclid.emergence.condensation.governance` | 3-Independent Reviewer Quorum | Anti-Gaming Filter | `test_condensation_monitor_and_governance.py` |
 
