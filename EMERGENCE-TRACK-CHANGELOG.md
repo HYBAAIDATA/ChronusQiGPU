@@ -1,8 +1,8 @@
 # Euclid Emergence Track & Philos (Phi-2) Changelog
-**Status**: PARTIAL REMEDIATION — QUALIFICATION BLOCKED  
+**Status**: PUBLICATION INCOMPLETE; HISTORICAL COMPLETION CLAIMS NOT ACCEPTED  
 **Branch**: `emergence-track/phi-2`  
 **Base Commit**: `5c608b09`  
-**Historical reported suite**: 29 passed in 2.53s (92% statement coverage across 1,556 statements); not reproduced for this patch  
+**Historical reported local suite**: 29 passed / 92% coverage; not reproduced from the published tree  
 
 ---
 
@@ -101,3 +101,39 @@
 - **Code**: `tests/emergence/test_phi2_e2e_integration.py`.
 - **Test Citation**: `tests/emergence/test_phi2_e2e_integration.py::test_philos_phi2_full_condensation_pipeline`.
 - **Status**: CLOSED & VERIFIED.
+
+
+## Source-publication follow-up — 2026-10-14
+
+Reviewed remote PHILOS commit: `1d4b495b3081258908b6e7ec4d18299d64d5e970` (now accessible through the GitHub connector). This replaces the earlier observation that the branch/commit was inaccessible; no assumption about when remote publication occurred.
+
+### Blocking source omission and tested fix
+
+The published commit imports `euclid.emergence.models` but the directory is absent from the pinned repository tree. The root `.gitignore` contains broad `models/`, which actual Git tests confirm hides all seven expected Python contract paths, explaining how local tests could pass using files omitted from the commit. This is a source-publication failure; no historical 29-test reproduction or package import success is claimed here.
+
+Amended `.gitignore` narrowly reopens `/euclid/emergence/models/`, keeps its contents ignored by default, then permits direct Python source files only. Trained-model artifacts, other models directories, bytecode, and `.pnpm-store/` remain ignored. `.pnpm-store/` was ALREADY present in the reviewed remote file; user local output showing its absence refers to a different working-tree version. Ignore rules do not untrack existing indexed files.
+
+`tests/source_tracking/test_emergence_model_tracking.py` uses actual Git init/check-ignore/add/ls-files and temporary files; no Git mocks, force-adds, runtime alias or model implementation substitute. Empty source probes exist only in temporary test repositories and are not fabricated model definitions.
+
+- Baseline: `PHILOS_GITIGNORE_UNDER_TEST=<baseline-ignore> python -m unittest discover -s tests/source_tracking -v` → exit1; 3 test methods, 8 assertion failures (7 source subtests plus normal-add test).
+- Patched: `python -m unittest discover -s tests/source_tracking -v` → exit0; 3 test methods passed, 0 failures/errors/skips.
+- Optimized: `python -O -m unittest discover -s tests/source_tracking -v` → exit0; 3 passed, 0 failures/errors/skips.
+- Compilation: `python -m compileall -q tests/source_tracking` → exit0.
+- Execution environment, full short outputs and source hashes: `docs/philos_source_tracking_validation.json`, an UNSIGNED local report, not independent assurance.
+
+The ignore fix is implemented and locally verified against Git's real behavior, but the ORIGINAL missing model definitions still must be recovered from the Windows checkout and published. No substitute dataclasses were invented from imports or test expectations. The source-tracking regression does not establish actual PHILOS package completeness or runtime integration. No full emergence suite, installed artifact, Windows, lint/security scanner or CI acceptance run in this environment.
+
+### Additional source findings requiring remediation, not completion claims
+
+- Both executor `reproduce()` methods set successful trials from `simulate_failure`, copy required observables directly from the protocol, and do not execute the candidate/seed trials. Their success is synthetic evidence, not observed reproduction.
+- `AsyncIsolatedExecutor` contains synchronous Python loops, no container launch and no asynchronous scheduler. Declared substrate properties do not enforce OS isolation.
+- Stress testing accepts an executor but does not call it; it uses pseudorandom simulated survival seeded by Python's process-dependent string hash, not measured candidate stress execution.
+- EQS has a public default governance secret, hashes certificate payloads rather than digitally signing them, and permits no divergence window to skip the divergence check. Caller stack-pattern filtering does not establish process separation or unforgeable authority.
+
+These are direct source findings, not claimed reproduced exploits or complete review of remaining modules. Existing CLOSED & VERIFIED entries above are preserved as historical local reports and do not override these current blockers. Keep PHILOS separate from frontier qualification and canonical EUCLID learning ownership until explicit real-caller, permission, evidence and recovery interfaces are implemented and tested. No production capability or scope is reduced by identifying missing implementation/evidence.
+
+### Outstanding publication dependency
+
+The user's live remote output contains PHILOS at the reviewed commit, but no `elevation/euclid-intelligence-elevation`. A local origin-tracking ref that reports 132 ahead and ancestor exit0 does not prove that a corresponding branch exists on the server or establish current live fast-forward safety. Preserve that local work, inspect its history, obtain the exact source, and publish deliberately without force-push, reset, clean, automatic merge, or accidentally including `.pnpm-store`.
+
+No source models recovered, runtime qualification changed, main update, merge/rebase/cherry-pick, deployment, release, mining, pool/provider invocation or protected cryptographic acceptance modification performed in this publication fix.
