@@ -47,9 +47,17 @@ itself — not a budget or sizing convention.
 > we can search it using the Geodesic search."
 
 - **Pulvini** folds data into the working representation.
-- **Theseus** stores the folded data.
-- **Ovid** documents where it is stored and how it is searched — Geodesic
-  search.
+- **OVID** owns authoritative enduring storage, state, representation custody
+  and integrity (architectural successor/target name for `aethel`).
+- **THESEUS** owns rebuildable database, query, index, graph, ontology and
+  semantic projections (successor/target name for `hyba_db`).
+- THESEUS may be rebuilt from OVID; OVID never depends on THESEUS to establish
+  authoritative stored-state existence or integrity.
+
+The original quotation above is preserved as history. The former interpretation
+of the two names is superseded by the standing ownership clarification, recorded
+in D9 below. This is a naming/ownership reconciliation, not a claim that every
+existing adapter has already been migrated.
 - **Chronus** computes on the folded form.
 
 ### D5 — The substrate vocabulary: scales, folds, stores.
@@ -116,3 +124,41 @@ promotion claim requires scoped, retained, reviewed, fresh executed evidence.
 Documentation, code presence, infrastructure placement and inferred capability do
 not qualify readiness. This governs platform adoption without transferring domain
 authority or superseding the exact-mathematics declarations above.
+
+## D9 — Standing EUCLID convergence and custody clarifications — reconciled 14 October 2026
+
+Source: the owner's standing AI-personalization instructions, reconciled with
+`euclid/genesis.py` and the canonical EUCLID Notion research record. The following
+is an engineering summary of existing directions, not a newly invented quotation.
+
+- Mining is the capability treasury; this repository is the enterprise-facing
+  system. Chronus is their shared device-agnostic execution substrate. Transfer
+  verified reusable capability through adapters and conformance gates; do not
+  rebuild EUCLID or introduce a parallel learner to separate the products.
+- EUCLID owns training, evaluation and RewardAuthority. Salamander forms governed
+  operational experience and controls bounded deployment/promotion/rollback.
+  OVID holds authoritative durable learning state, validated experience and
+  checkpoints; THESEUS supplies rebuildable query/index/lineage projections;
+  Chronus executes. Reuse learning partitions, replay protection, memory taxonomy
+  and checkpoint contracts. Learning cannot redefine correctness or integrity.
+- The post-convergence EUCLID is a new instance. Earlier generations' memories
+  remain provenance-labelled archival/curriculum material, not current semantic
+  truth or autobiographical memory. Preserve the fresh genesis roots.
+- Kairos is the governed rehearsal laboratory before shadow/canary. Preserve the
+  recovered `hyba_substrate` provenance and the equivalence-implementation status
+  of `euclid/kairos_runtime.py`. It has no production pool, wallet, credential,
+  submission, revenue or profitability authority.
+- Preserve the 11-D Float64 boundary. Do not route it silently through certified
+  Float32 tensors. Keep CPU/exact-integer routes until a numerically tested and
+  evidence-certified FP64 Chronus path exists; `cl_khr_fp64` alone is insufficient.
+- Verified phi/PULVINI/HERMES mathematics and bounded VQC/quantum-formal computation
+  are EUCLID intelligence capabilities as well as execution/mining capabilities.
+  Preserve canonical backend and consensus owners, not a second quantum engine.
+- Scope belongs to the owner. The cryogenic Enhanced Chronos Pseudocode / physical
+  Chronos hardware plane is in scope per the 5 October 2026 direction. Unbuilt
+  work is missing/not yet implemented, never unilaterally out of scope.
+
+`UNIVERSAL_PRINCIPLE_MAP.md` and `euclid/organ_adapters/specialists.py` still contain
+older OVID/THESEUS interpretations. Their migration remains explicitly open in
+`docs/EUCLID_NOTION_RECONCILIATION_20261014.md`; this entry does not claim that
+changing documentation alone repaired executable custody semantics.

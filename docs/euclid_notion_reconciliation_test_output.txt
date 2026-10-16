@@ -1,0 +1,87 @@
+FOCUSED RETRIEVED-SOURCE VALIDATION; NOT FULL REPOSITORY/CI
+
+baseline
+FFFFF...
+======================================================================
+FAIL: test_exception_cannot_be_approved_by_validators (test_euclid_delegation_execution_refusal.TestExecutionRefusal.test_exception_cannot_be_approved_by_validators)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/euclid_review/baseline/tests/test_euclid_delegation_execution_refusal.py", line 58, in test_exception_cannot_be_approved_by_validators
+    self.assert_refused(broken, "organ_execution_failed", validators=True)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vercel/sandbox/data/euclid_review/baseline/tests/test_euclid_delegation_execution_refusal.py", line 30, in assert_refused
+    self.assertIsNone(result)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^
+AssertionError: DelegationResult(task_id='task', organ_id='math', domain=<ResearchDomain.MATHEMATICAL_ENGINE: 'mathematical_engine'>, output={'error': 'failure', 'status': 'organ_execution_failed'}, execution_time=0.0009999999999998899, confidence_profile=ConfidenceProfile(capable=True, healthy=True, permitted=True, confident=True, safe=True, capable_score=0.85, healthy_score=0.9801, permitted_score=1.0, confident_score=0.833085, safe_score=0.85), produced_at=1791990411.690187, output_hash='556e9d0b6ad45c414f81c93c79665f7ca9d940a0b5543e68071fcd80a750f2d2') is not None
+
+======================================================================
+FAIL: test_exception_refused (test_euclid_delegation_execution_refusal.TestExecutionRefusal.test_exception_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/euclid_review/baseline/tests/test_euclid_delegation_execution_refusal.py", line 47, in test_exception_refused
+    self.assert_refused(broken, "organ_execution_failed")
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vercel/sandbox/data/euclid_review/baseline/tests/test_euclid_delegation_execution_refusal.py", line 30, in assert_refused
+    self.assertIsNone(result)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^
+AssertionError: DelegationResult(task_id='task', organ_id='math', domain=<ResearchDomain.MATHEMATICAL_ENGINE: 'mathematical_engine'>, output={'error': 'failure', 'status': 'organ_execution_failed'}, execution_time=0.0009999999999998899, confidence_profile=ConfidenceProfile(capable=True, healthy=True, permitted=True, confident=True, safe=True, capable_score=0.85, healthy_score=0.9801, permitted_score=1.0, confident_score=0.833085, safe_score=0.85), produced_at=1791990411.6911263, output_hash='556e9d0b6ad45c414f81c93c79665f7ca9d940a0b5543e68071fcd80a750f2d2') is not None
+
+======================================================================
+FAIL: test_missing_handler_cannot_be_approved_by_validators (test_euclid_delegation_execution_refusal.TestExecutionRefusal.test_missing_handler_cannot_be_approved_by_validators)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/euclid_review/baseline/tests/test_euclid_delegation_execution_refusal.py", line 53, in test_missing_handler_cannot_be_approved_by_validators
+    self.assert_refused(None, "no_handler", validators=True)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vercel/sandbox/data/euclid_review/baseline/tests/test_euclid_delegation_execution_refusal.py", line 30, in assert_refused
+    self.assertIsNone(result)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^
+AssertionError: DelegationResult(task_id='task', organ_id='math', domain=<ResearchDomain.MATHEMATICAL_ENGINE: 'mathematical_engine'>, output={'status': 'no_handler', 'task_id': 'task', 'domain': 'mathematical_engine', 'organ': 'math', 'note': 'Organ registered without handler — blueprint mode.'}, execution_time=0.0009999999999998899, confidence_profile=ConfidenceProfile(capable=True, healthy=True, permitted=True, confident=True, safe=True, capable_score=0.85, healthy_score=0.9801, permitted_score=1.0, confident_score=0.833085, safe_score=0.85), produced_at=1791990411.6916595, output_hash='1e990e275720048d42a4da1ec673c78ee4f9090e85ee3c78b2369cf1fa9cc662') is not None
+
+======================================================================
+FAIL: test_missing_handler_refused (test_euclid_delegation_execution_refusal.TestExecutionRefusal.test_missing_handler_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/euclid_review/baseline/tests/test_euclid_delegation_execution_refusal.py", line 42, in test_missing_handler_refused
+    self.assert_refused(None, "no_handler")
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/vercel/sandbox/data/euclid_review/baseline/tests/test_euclid_delegation_execution_refusal.py", line 30, in assert_refused
+    self.assertIsNone(result)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^
+AssertionError: DelegationResult(task_id='task', organ_id='math', domain=<ResearchDomain.MATHEMATICAL_ENGINE: 'mathematical_engine'>, output={'status': 'no_handler', 'task_id': 'task', 'domain': 'mathematical_engine', 'organ': 'math', 'note': 'Organ registered without handler — blueprint mode.'}, execution_time=0.0009999999999998899, confidence_profile=ConfidenceProfile(capable=True, healthy=True, permitted=True, confident=True, safe=True, capable_score=0.85, healthy_score=0.9801, permitted_score=1.0, confident_score=0.833085, safe_score=0.85), produced_at=1791990411.6921594, output_hash='1e990e275720048d42a4da1ec673c78ee4f9090e85ee3c78b2369cf1fa9cc662') is not None
+
+======================================================================
+FAIL: test_noncallable_handler_refused (test_euclid_delegation_execution_refusal.TestExecutionRefusal.test_noncallable_handler_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/euclid_review/baseline/tests/test_euclid_delegation_execution_refusal.py", line 50, in test_noncallable_handler_refused
+    self.assert_refused(42, "organ_execution_failed")
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vercel/sandbox/data/euclid_review/baseline/tests/test_euclid_delegation_execution_refusal.py", line 30, in assert_refused
+    self.assertIsNone(result)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^
+AssertionError: DelegationResult(task_id='task', organ_id='math', domain=<ResearchDomain.MATHEMATICAL_ENGINE: 'mathematical_engine'>, output={'error': "'int' object is not callable", 'status': 'organ_execution_failed'}, execution_time=0.0009999999999998899, confidence_profile=ConfidenceProfile(capable=True, healthy=True, permitted=True, confident=True, safe=True, capable_score=0.85, healthy_score=0.9801, permitted_score=1.0, confident_score=0.833085, safe_score=0.85), produced_at=1791990411.6926131, output_hash='669e26d2fccbebff54609d539e04b81b1006805f78e5f86a15db248b0a2d7886') is not None
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.004s
+
+FAILED (failures=5)
+{"tests": 8, "failures": 5, "errors": 0, "skipped": 0}
+
+
+patched
+.............................................
+----------------------------------------------------------------------
+Ran 45 tests in 0.005s
+
+OK
+{"tests": 45, "failures": 0, "errors": 0, "skipped": 0}
+
+
+optimized
+.............................................
+----------------------------------------------------------------------
+Ran 45 tests in 0.005s
+
+OK
+{"tests": 45, "failures": 0, "errors": 0, "skipped": 0}
