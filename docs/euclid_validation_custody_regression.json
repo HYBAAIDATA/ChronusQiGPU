@@ -1,0 +1,66 @@
+{
+  "schema": "unsigned-local-regression-report-v1",
+  "generated_at": "2026-10-14T15:43:36.411944+00:00",
+  "source_baseline": "370be998286dd8aadc7a9bccb9f397559f2cc791",
+  "environment": {
+    "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+    "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+    "workspace": "retrieved-file slice; no git checkout"
+  },
+  "commands": [
+    {
+      "command": "CUSTODY_SCRIPT_UNDER_TEST=<baseline> python -m unittest discover -s tests/validation_custody -v",
+      "exit_code": 1,
+      "tests": 25,
+      "failures": 1,
+      "errors": 24,
+      "skips": 0,
+      "output": "fused\n    m.source_hashes(self.root)\n    ^^^^^^^^^^^^^^^\nAttributeError: module 'custody_script' has no attribute 'source_hashes'\n\n======================================================================\nERROR: test_wrong_private_key_rejected (test_validation_custody.CustodyRegression.test_wrong_private_key_rejected)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/data/euclid_custody/patched/tests/validation_custody/test_validation_custody.py\", line 90, in test_wrong_private_key_rejected\n    self.assertFalse(m.verify_artifact(self.generate(), secrets.token_bytes(32), self.root))\n                     ^^^^^^^^^^^^^^^^^\nAttributeError: module 'custody_script' has no attribute 'verify_artifact'\n\n======================================================================\nFAIL: test_cli_missing_key_nonzero_preserves_existing_artifact (test_validation_custody.CustodyRegression.test_cli_missing_key_nonzero_preserves_existing_artifact)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/data/euclid_custody/patched/tests/validation_custody/test_validation_custody.py\", line 172, in test_cli_missing_key_nonzero_preserves_existing_artifact\n    self.assertEqual(proc.returncode, 2)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^\nAssertionError: 0 != 2\n\n----------------------------------------------------------------------\nRan 25 tests in 0.584s\n\nFAILED (failures=1, errors=24)\n",
+      "full_output_sha256": "7e46799e6259062e2eaa65faa38d24ebe7f8cc192a115da2bed80268060e831d",
+      "output_truncated": true
+    },
+    {
+      "command": "python -m unittest discover -s tests/validation_custody -v",
+      "exit_code": 0,
+      "tests": 25,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "output": "test_actual_child_timeout (test_validation_custody.CustodyRegression.test_actual_child_timeout) ... ok\ntest_added_source_rejected (test_validation_custody.CustodyRegression.test_added_source_rejected) ... ok\ntest_cli_failed_validation_returns_nonzero (test_validation_custody.CustodyRegression.test_cli_failed_validation_returns_nonzero) ... ok\ntest_cli_missing_key_nonzero_preserves_existing_artifact (test_validation_custody.CustodyRegression.test_cli_missing_key_nonzero_preserves_existing_artifact) ... ok\ntest_cli_verification_valid_then_tampered (test_validation_custody.CustodyRegression.test_cli_verification_valid_then_tampered) ... ok\ntest_empty_command_list_cannot_pass (test_validation_custody.CustodyRegression.test_empty_command_list_cannot_pass) ... ok\ntest_failed_command_is_recorded_not_success (test_validation_custody.CustodyRegression.test_failed_command_is_recorded_not_success) ... ok\ntest_legacy_public_key_artifact_not_accepted (test_validation_custody.CustodyRegression.test_legacy_public_key_artifact_not_accepted) ... ok\ntest_log_tampering_rejected (test_validation_custody.CustodyRegression.test_log_tampering_rejected) ... ok\ntest_missing_executable_recorded (test_validation_custody.CustodyRegression.test_missing_executable_recorded) ... ok\ntest_payload_tampering_rejected (test_validation_custody.CustodyRegression.test_payload_tampering_rejected) ... ok\ntest_private_key_required_before_any_write_or_command (test_validation_custody.CustodyRegression.test_private_key_required_before_any_write_or_command) ... ok\ntest_public_historical_key_refused (test_validation_custody.CustodyRegression.test_public_historical_key_refused) ... ok\ntest_publication_failure_preserves_existing_directory_and_cleans_temp (test_validation_custody.CustodyRegression.test_publication_failure_preserves_existing_directory_and_cleans_temp) ... ok\ntest_real_generation_and_roundtrip (test_validation_custody.CustodyRegression.test_real_generation_and_roundtrip) ... ok\ntest_resigned_inconsistent_success_rejected (test_validation_custody.CustodyRegression.test_resigned_inconsistent_success_rejected) ... ok\ntest_short_and_invalid_keys_refused (test_validation_custody.CustodyRegression.test_short_and_invalid_keys_refused) ... ok\ntest_signed_traversal_log_rejected (test_validation_custody.CustodyRegression.test_signed_traversal_log_rejected) ... ok\ntest_signer_metadata_tampering_rejected (test_validation_custody.CustodyRegression.test_signer_metadata_tampering_rejected) ... ok\ntest_signing_key_not_in_child_environment_or_logs (test_validation_custody.CustodyRegression.test_signing_key_not_in_child_environment_or_logs) ... ok\ntest_source_drift_rejected (test_validation_custody.CustodyRegression.test_source_drift_rejected) ... ok\ntest_source_mutation_during_command_cannot_pass (test_validation_custody.CustodyRegression.test_source_mutation_during_command_cannot_pass) ... ok\ntest_symlink_publication_refused_without_overwrite (test_validation_custody.CustodyRegression.test_symlink_publication_refused_without_overwrite) ... ok\ntest_symlink_source_refused (test_validation_custody.CustodyRegression.test_symlink_source_refused) ... ok\ntest_wrong_private_key_rejected (test_validation_custody.CustodyRegression.test_wrong_private_key_rejected) ... ok\n\n----------------------------------------------------------------------\nRan 25 tests in 1.163s\n\nOK\n"
+    },
+    {
+      "command": "python -O -m unittest discover -s tests/validation_custody -v",
+      "exit_code": 0,
+      "tests": 25,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "output": "test_actual_child_timeout (test_validation_custody.CustodyRegression.test_actual_child_timeout) ... ok\ntest_added_source_rejected (test_validation_custody.CustodyRegression.test_added_source_rejected) ... ok\ntest_cli_failed_validation_returns_nonzero (test_validation_custody.CustodyRegression.test_cli_failed_validation_returns_nonzero) ... ok\ntest_cli_missing_key_nonzero_preserves_existing_artifact (test_validation_custody.CustodyRegression.test_cli_missing_key_nonzero_preserves_existing_artifact) ... ok\ntest_cli_verification_valid_then_tampered (test_validation_custody.CustodyRegression.test_cli_verification_valid_then_tampered) ... ok\ntest_empty_command_list_cannot_pass (test_validation_custody.CustodyRegression.test_empty_command_list_cannot_pass) ... ok\ntest_failed_command_is_recorded_not_success (test_validation_custody.CustodyRegression.test_failed_command_is_recorded_not_success) ... ok\ntest_legacy_public_key_artifact_not_accepted (test_validation_custody.CustodyRegression.test_legacy_public_key_artifact_not_accepted) ... ok\ntest_log_tampering_rejected (test_validation_custody.CustodyRegression.test_log_tampering_rejected) ... ok\ntest_missing_executable_recorded (test_validation_custody.CustodyRegression.test_missing_executable_recorded) ... ok\ntest_payload_tampering_rejected (test_validation_custody.CustodyRegression.test_payload_tampering_rejected) ... ok\ntest_private_key_required_before_any_write_or_command (test_validation_custody.CustodyRegression.test_private_key_required_before_any_write_or_command) ... ok\ntest_public_historical_key_refused (test_validation_custody.CustodyRegression.test_public_historical_key_refused) ... ok\ntest_publication_failure_preserves_existing_directory_and_cleans_temp (test_validation_custody.CustodyRegression.test_publication_failure_preserves_existing_directory_and_cleans_temp) ... ok\ntest_real_generation_and_roundtrip (test_validation_custody.CustodyRegression.test_real_generation_and_roundtrip) ... ok\ntest_resigned_inconsistent_success_rejected (test_validation_custody.CustodyRegression.test_resigned_inconsistent_success_rejected) ... ok\ntest_short_and_invalid_keys_refused (test_validation_custody.CustodyRegression.test_short_and_invalid_keys_refused) ... ok\ntest_signed_traversal_log_rejected (test_validation_custody.CustodyRegression.test_signed_traversal_log_rejected) ... ok\ntest_signer_metadata_tampering_rejected (test_validation_custody.CustodyRegression.test_signer_metadata_tampering_rejected) ... ok\ntest_signing_key_not_in_child_environment_or_logs (test_validation_custody.CustodyRegression.test_signing_key_not_in_child_environment_or_logs) ... ok\ntest_source_drift_rejected (test_validation_custody.CustodyRegression.test_source_drift_rejected) ... ok\ntest_source_mutation_during_command_cannot_pass (test_validation_custody.CustodyRegression.test_source_mutation_during_command_cannot_pass) ... ok\ntest_symlink_publication_refused_without_overwrite (test_validation_custody.CustodyRegression.test_symlink_publication_refused_without_overwrite) ... ok\ntest_symlink_source_refused (test_validation_custody.CustodyRegression.test_symlink_source_refused) ... ok\ntest_wrong_private_key_rejected (test_validation_custody.CustodyRegression.test_wrong_private_key_rejected) ... ok\n\n----------------------------------------------------------------------\nRan 25 tests in 1.017s\n\nOK\n"
+    },
+    {
+      "command": "python -m compileall -q scripts/generate_validation_custody_artifact.py tests/validation_custody",
+      "exit_code": 0,
+      "output": ""
+    }
+  ],
+  "historical_public_key_signature_recomputed": true,
+  "sha256": {
+    "scripts/generate_validation_custody_artifact.py": "ec253afa82533c728e90d3bebadcdfa1000408f465422ceecddef39428a5c6d0",
+    "tests/validation_custody/test_validation_custody.py": "ad01eaad56fd71d7df4df712d14eb11fb7f92d7096f847cdd32220f65300a28f",
+    "REMEDIATION-STATUS.md": "920b50a3a91d6038c19368aedfaee3a9e3f97acc5e4547ba9d50863847703c72",
+    "CAPABILITY-LEDGER.md": "6300a751bc2d46e599561915ed96010a71525ba48eb7475c893abbc7cbdb26f8"
+  },
+  "limits": [
+    "unsigned agent execution report, not independent assurance",
+    "baseline errors mainly absent required API, not independent behavior defects",
+    "no frontier pytest, canonical runtime, Windows or installed artifact test",
+    "pytest/black/ruff/flake8/gitleaks unavailable; CI access blocked",
+    "no regenerated production custody artifact; no privately trusted signing key supplied"
+  ],
+  "security_scan": {
+    "tool": "GitHub.run_secret_scanning",
+    "outcome": "unavailable",
+    "reason": "Repository does not have GitHub Advanced Security enabled.",
+    "gitleaks": "not installed; remote job logs inaccessible"
+  }
+}
