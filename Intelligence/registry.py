@@ -556,6 +556,19 @@ def build_default_registry() -> ModuleRegistry:
         factory=lambda: _import("Intelligence.domains").FinancialHolonomyEngine(),
     )
 
+    reg.register(
+        "recursive_self_learning",
+        "Intelligence.recursive_self_learning",
+        "Recursive self-learning substrate (Strange Loop): second-order "
+        "meta-learning that adapts its own adaptation rate, geometric refold "
+        "under meta-error stress, and measured cognitive irreducibility via "
+        "layer-corruption impact. Reports honest metrics or low scores.",
+        ["meta_learning", "strange_loop", "irreducibility", "self_model"],
+        factory=lambda: _import(
+            "Intelligence.recursive_self_learning"
+        ).RecursiveSelfLearningSubstrate(),
+    )
+
     # --- exact_yangmills_gap: closed-form 2I mass gap in Q(sqrt5) --------
     reg.register(
         "exact_yangmills_gap",

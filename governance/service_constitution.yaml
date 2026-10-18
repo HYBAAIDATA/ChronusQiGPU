@@ -334,6 +334,18 @@ apis:
     criticality: R4
     dependencies:
       - chronus.execution
+  pythia.customer.health:
+    capability: customer-facing aggregate health status projection
+    criticality: R4
+    dependencies: []
+  pythia.substrate.latency:
+    capability: measured substrate proxy round-trip latency observation
+    criticality: R4
+    dependencies: []
+  salamander.veritas.status:
+    capability: veritas self-repair ledger integrity projection
+    criticality: R3
+    dependencies: []
 
   # -- HTTP: AL HARAS security surface (privileged) -------------------------
   al_haras.security.status:

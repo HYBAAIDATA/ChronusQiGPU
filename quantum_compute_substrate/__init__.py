@@ -63,6 +63,16 @@ from .error_correction import SurfaceCodeQEC
 from .quantum_neural_net import QuantumNeuralNetwork, QuantumNeuralLayer
 from .compute_engine import ComputeEngine
 from .memory_hierarchy import QuantumMemoryHierarchy
+from .emergent_time import (
+    ClockType,
+    EmergentTimeSample,
+    ClockMetrologyReport,
+    MagneticClock,
+    PageWoottersUniverse,
+    build_coppo_system,
+    FeynmanKitaevHistory,
+    RelationalScheduler,
+)
 
 # Part 14: NVIDIA advances
 from .nvidia_advances import NVIDIAAdvances, NVIDIAGPU

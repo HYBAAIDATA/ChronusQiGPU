@@ -22,6 +22,7 @@ import json
 import logging
 import os
 import struct
+import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -502,6 +503,18 @@ class StratumClient:
         return max(self._jobs.values(), key=lambda job: job.received_at, default=None)
 
 
+def _default_coordinator_socket_path() -> str:
+    override = os.getenv("MLA1517_COORDINATOR_CONTROL_SOCKET", "").strip()
+    if override:
+        return override
+    if os.name == "nt":
+        base = os.getenv("LOCALAPPDATA") or tempfile.gettempdir()
+        d = Path(base) / "pythia" / "ipc"
+        d.mkdir(parents=True, exist_ok=True)
+        return str(d / "mla1517_coordinator.sock")
+    return "/dev/shm/mla1517_coordinator.sock"
+
+
 class ManifoldPoolCoordinator:
     """Failover coordinator connecting Aethel records to a pool adapter."""
 
@@ -531,10 +544,7 @@ class ManifoldPoolCoordinator:
             # changed by a supervising parent before this coordinator spawned.
             telemetry_path = str(Path(__file__).resolve().parents[3] / telemetry_path)
         self.telemetry = TelemetryWriter(telemetry_path) if telemetry_path else None
-        self.control_socket_path = os.getenv(
-            "MLA1517_COORDINATOR_CONTROL_SOCKET",
-            "/dev/shm/mla1517_coordinator.sock",
-        )
+        self.control_socket_path = _default_coordinator_socket_path()
         self._control_server: asyncio.AbstractServer | None = None
 
     async def force_failover(self, target: str = "secondary") -> bool:
@@ -570,6 +580,8 @@ class ManifoldPoolCoordinator:
             await writer.wait_closed()
 
     async def _start_control_server(self) -> None:
+        socket_path = Path(self.control_socket_path)
+        socket_path.parent.mkdir(parents=True, exist_ok=True)
         if os.name == "nt":
             # No AF_UNIX on Windows: loopback TCP, rendezvous file carries
             # the bound host:port for the salamander failover client.
@@ -577,7 +589,7 @@ class ManifoldPoolCoordinator:
                 self._control_handler, host="127.0.0.1", port=0
             )
             bound = self._control_server.sockets[0].getsockname()
-            Path(self.control_socket_path).write_text(f"{bound[0]}:{bound[1]}", encoding="utf-8")
+            socket_path.write_text(f"{bound[0]}:{bound[1]}", encoding="utf-8")
             return
         with contextlib.suppress(FileNotFoundError):
             os.unlink(self.control_socket_path)

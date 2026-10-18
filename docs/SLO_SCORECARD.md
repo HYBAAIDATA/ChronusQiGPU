@@ -40,7 +40,7 @@ with a claim.
 - `slo.mining.read`: `pythia.mining.evidence`
 - `slo.mining.telemetry`: `pythia.worker_heartbeat`
 - `slo.operator.mutation`: `pythia.config.update`, `pythia.system.verify.start`
-- `slo.projection.read`: `legacy.api_health`, `pythia.audit.tail`, `pythia.config.read`, `pythia.control.session`, `pythia.gpu`, `pythia.hardware.status`, `pythia.health`, `pythia.intelligence.status`, `pythia.knowledge`, `pythia.metrics`, `pythia.readiness`, `pythia.ready_to_mine`, `pythia.static_spa`, `pythia.status`, `pythia.stratum.status`, `pythia.system.map`, `pythia.system.verify.read`, `pythia.telemetry`
+- `slo.projection.read`: `legacy.api_health`, `pythia.audit.tail`, `pythia.config.read`, `pythia.control.session`, `pythia.customer.health`, `pythia.gpu`, `pythia.hardware.status`, `pythia.health`, `pythia.intelligence.status`, `pythia.knowledge`, `pythia.metrics`, `pythia.readiness`, `pythia.ready_to_mine`, `pythia.static_spa`, `pythia.status`, `pythia.stratum.status`, `pythia.substrate.latency`, `pythia.system.map`, `pythia.system.verify.read`, `pythia.telemetry`, `salamander.veritas.status`
 - `slo.projection.stream`: `pythia.telemetry.stream`
 - `slo.remote_execution`: `chronus.remote_opencl_v2`
 - `slo.specialist`: `kellogg.tensor.capabilities`, `kellogg.tensor.execute`, `kellogg.tensor.runtime`, `ovid.transform`, `pythia.intelligence.autonomous`, `pythia.intelligence.cognition_solve`, `pythia.intelligence.engineer`, `pythia.intelligence.maintenance`, `pythia.intelligence.selftest`, `toe.collapse`, `turing.vqc_pipeline`

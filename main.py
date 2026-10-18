@@ -12,6 +12,11 @@ import os
 import sys
 from pathlib import Path
 
+# Bound BLAS/OpenMP thread allocation to 1 thread per worker to avoid thread exhaustion
+# and memory allocation failure ("OpenBLAS error: Memory allocation still failed after 10 retries")
+for _var in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+    os.environ.setdefault(_var, "1")
+
 _PROJECT_ROOT = Path(__file__).resolve().parent
 _CANONICAL_PYTHON = _PROJECT_ROOT / "chronus/mla1517_platform" / "python"
 _CHRONOS_IGPU = _PROJECT_ROOT / "packages" / "chronos-one-igpu" / "src"

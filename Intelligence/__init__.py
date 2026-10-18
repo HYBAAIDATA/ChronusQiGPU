@@ -83,6 +83,11 @@ _EXPORTS = {
     'identify_backdoor': ('toe.causal_ladder', 'identify_backdoor'),
     'identify_frontdoor': ('toe.causal_ladder', 'identify_frontdoor'),
     'SalamanderEngine': ('.salamander', 'SalamanderEngine'),
+    'RecursiveSelfLearningSubstrate': (
+        '.recursive_self_learning',
+        'RecursiveSelfLearningSubstrate',
+    ),
+    'RecursiveLearningState': ('.recursive_self_learning', 'RecursiveLearningState'),
     'HomeostasisMonitor': ('.salamander', 'HomeostasisMonitor'),
     'HomeostasisReport': ('.salamander', 'HomeostasisReport'),
     'SelfRepairEngine': ('.salamander', 'SelfRepairEngine'),
