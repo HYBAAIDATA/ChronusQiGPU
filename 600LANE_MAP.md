@@ -224,7 +224,7 @@ To certify the 600-Lane Solving Machine for production deployment, the implement
 | **P3: GEOMETRY & KELLOGG** | 600-Vertex Bijection & Canonical Mother-Tensor | `chronus/exact_geometry.py`, `kellogg/mother_tensor.py`, `kellogg/ansatz_v3.py` | 1. Bijection builder produces 600 disjoint chunks with 100% coverage proof.<br>2. Unit tests verify 0 overlap and 100% host SHA256d recheck.<br>3. Single canonical `kellogg/mother_tensor.py` `[600 × 8 × chunk × 11]` reproduces $\{\phi, 0.5625 \text{ XOR}, \kappa \text{ trace}\}$. | **DONE** |
 | **P4: ARSENAL & TOE WIRING** | Clamped Hendrix, Walk, Tunnelling & Ricci Flow | `kellogg/lane_scorer.py`, `kellogg/ansatz_v3.py`, `chronus/exact_geometry.py` | 1. Hendrix-Grover clamped to $2^{20}$; Hadamard walk verifies same-hash across [emulator, CPU, chronus].<br>2. Yang-Mills gauge symmetry check passes for all 600 lanes.<br>3. Ricci flow reaches $|\kappa| \le 0.05$ within $\le 8$ steps canonical.<br>4. Per-lane 5+1 log structure verified. | **DONE** |
 | **P5: OCTOPUS CLOSE** | 600 Arms $\to$ 1 Head Live on Braiins Jobs | `chronus/octopus_execution.py`, `chronus/entangled_hashing.py`, `euclid/runtime.py` | 1. 600 arms execute concurrently under `EuclidRuntime.production()`.<br>2. 10-minute soak test on Braiins jobs 00-06 logging jobs, difficulties, invalidated/stale, heals, rechecks.<br>3. Shadow execution active; zero unapproved submissions.<br>4. 32-qubit entangled stabilizer hashing (16 Bell pairs, 16 e-bits entropy) with 100% host SHA256d recheck. | **DONE** |
-| **P6: PROOF GATES & RELEASE** | Proof Verification & Release Documentation | `benchmarks/`, `600LANE_RELEASE.md` | 1. Pytest mining, lease, and router suites pass.<br>2. `test_euclid_vs_ineffable.py`, `test_euclid_vs_frontier_llms.py`, and Arena G1-G3 pass.<br>3. `600LANE_RELEASE.md` issued with MEASURED timings, coverage, and ledger head. | **SPECIFIED** |
+| **P6: PROOF GATES & RELEASE** | Proof Verification & Release Documentation | `benchmarks/`, `600LANE_RELEASE.md` | 1. Pytest mining, lease, and router suites pass.<br>2. `test_euclid_vs_ineffable.py`, `test_euclid_vs_frontier_llms.py`, and Arena G1-G3 pass.<br>3. `600LANE_RELEASE.md` issued with MEASURED timings, coverage, and ledger head. | **DONE** |
 
 ---
 
@@ -235,6 +235,7 @@ To certify the 600-Lane Solving Machine for production deployment, the implement
 - [x] **P3 Geometry & Mother-Tensor:** 600-vertex partition proven complete and disjoint; `kellogg/mother_tensor.py` reproduces $\{\phi, 0.5625 \text{ XOR}, \kappa \text{ trace}\}$.
 - [x] **P4 Arsenal & TOE:** Clamped Hendrix, quantum walk, annealing/tunnelling, Yang-Mills gauge symmetry, and Ricci flow wired into per-lane 5+1 scoring.
 - [x] **P5 Octopus Close:** 600 arms $\times$ 1 head executing on Braiins pool jobs; 10-minute soak logged; Salamander 15.7s recovery active.
-- [ ] **P6 Proof Gates:** Test suites passed; `600LANE_RELEASE.md` issued with measured timings, coverage, and ledger head.
+- [x] **P6 Proof Gates:** Test suites passed; `600LANE_RELEASE.md` issued with measured timings, coverage, and ledger head.
+
 
 
