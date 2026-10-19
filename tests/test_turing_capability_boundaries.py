@@ -190,3 +190,34 @@ def test_real_actuation_denies_before_requalification(boundary, case):
         runtime.heal_organ("turing", reason="fixture", actor="operator")
     assert runtime.registry.get("turing").health is Health.DEGRADED
     assert not any(r.kind == "delegation-result" for r in runtime.evidence.records)
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("allowed", "yes"),
+        ("tenant_id", "other"),
+        ("operation", "other.operation"),
+        ("payload_hash", "wrong"),
+        ("evidence_id", ""),
+    ],
+)
+def test_invalid_guardian_response_cannot_dispatch(boundary, monkeypatch, field, value):
+    from dataclasses import replace
+
+    runtime, guardian = boundary
+    evaluate = guardian.evaluate
+
+    def malformed(*args, **kwargs):
+        return replace(evaluate(*args, **kwargs), **{field: value})
+
+    # Negative response injection, never a successful mocked integration.
+    monkeypatch.setattr(guardian, "evaluate", malformed)
+    with pytest.raises(ValueError, match="invalid or unbound AL HARAS verdict"):
+        dispatch(runtime, token(guardian))
+    assert not any(r.kind == "delegation-result" for r in runtime.evidence.records)
+
+
+def test_invalid_canonical_pipeline_injection_is_not_a_backend_fallback():
+    with pytest.raises(TypeError, match="must expose run"):
+        TuringQuantumOrgan(pipeline=object())

@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import threading
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -866,8 +867,13 @@ class SharedTuring(_BoundAdapter):
             pipeline = VQCPipeline()
         super().__init__(pipeline, port, system="turing")
         self.last_bindings: dict[str, EntanglementBinding] = {}
+        self._run_lock = threading.RLock()
 
     def run(self, request: Any) -> Any:
+        with self._run_lock:
+            return self._run_locked(request)
+
+    def _run_locked(self, request: Any) -> Any:
         # Canonical shared-data path owns durability/replay.  Avoid opening the
         # historical per-call Theseus adapter inside VQCPipeline._custody().
         if dataclasses.is_dataclass(request):
@@ -976,6 +982,10 @@ class SharedTuring(_BoundAdapter):
         return report
 
     def replay(self) -> dict[str, Any]:
+        with self._run_lock:
+            return self._replay_locked()
+
+    def _replay_locked(self) -> dict[str, Any]:
         """Re-read this run's artefacts from shared custody and prove the
         certificate boundary semantically, not just at byte level.
 
@@ -1034,6 +1044,7 @@ class SharedEuclid(_BoundAdapter):
     def __init__(self, runtime: Any, port: SystemDataPort, *, salamander_port: SystemDataPort | None = None,
                  turing_port: SystemDataPort | None = None, chronus_port: SystemDataPort | None = None) -> None:
         super().__init__(runtime, port, system="euclid")
+        self._call_lock = threading.RLock()
         self._evidence_cursor = len(getattr(runtime.evidence, "records", ()))
         self._salamander_port = salamander_port
         self._turing_port = turing_port
@@ -1043,6 +1054,10 @@ class SharedEuclid(_BoundAdapter):
             bind_adaptive(port)
 
     def flush_evidence(self) -> tuple[EntanglementBinding, ...]:
+        with self._call_lock:
+            return self._flush_evidence_locked()
+
+    def _flush_evidence_locked(self) -> tuple[EntanglementBinding, ...]:
         records = list(getattr(self.raw.evidence, "records", ()))
         written: list[EntanglementBinding] = []
         for record in records[self._evidence_cursor :]:
@@ -1068,6 +1083,10 @@ class SharedEuclid(_BoundAdapter):
             return target
 
         def _call(*args: Any, **kwargs: Any) -> Any:
+            with self._call_lock:
+                return _call_locked(*args, **kwargs)
+
+        def _call_locked(*args: Any, **kwargs: Any) -> Any:
             result = target(*args, **kwargs)
             self.flush_evidence()
             if isinstance(result, Mapping):

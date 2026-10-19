@@ -22,9 +22,10 @@ Paths are monorepo-relative. See the [map](capability-architecture.md) for scope
   demonstrated vault/rotation procedure or durable cluster replay protection.
 - Failure: missing guardian denies EUCLID specialist dispatch; missing, invalid,
   expired or out-of-scope tokens deny before specialist effects. Guardian errors
-  propagate rather than authorising a fallback. Existing EUCLID mapping validation
-  is not a remotely authenticated verdict parser; trusted in-process guardian
-  ownership remains an assumption. No remote timeout/cancellation contract exists.
+  propagate rather than authorising a fallback. EUCLID rejects a non-GuardianVerdict, non-boolean allow, mismatched tenant,
+  operation or payload hash, or missing reason/evidence/policy identity before
+  specialist dispatch. These binding checks are not remote authentication;
+  trusted in-process guardian ownership remains an assumption. No remote timeout/cancellation contract exists.
 - Retries: do not replay an effectful dispatch merely because the response was
   lost. A consumed one-use token may already be spent. Dispatch has no general
   durable request-idempotency guarantee. Audit/custody failure is not proof that
@@ -49,10 +50,13 @@ Paths are monorepo-relative. See the [map](capability-architecture.md) for scope
   credential once through the authorizer; legacy explicit-token planes retain
   their existing signature path. Provider failure becomes authorization denial
   through the canonical authorizer before requalification, not an orphan action.
+  Constructor-bound status is not a promise that a future credential is valid.
 - Configuration/authentication: real guardian, out-of-band provider, explicit
   `salamander.requalify` policy, registered bounded action plus independent
   postcondition verifier. Constructor success alone is not credential readiness.
-  Default production composition still lacks the provider and refuses healing.
+  ProductionOrganism now passes an explicitly supplied provider and its custody
+  tenant into EUCLID. Without a provider, actuation still refuses. Tenant identity
+  is not inferred from creator identity on this production path.
 - Validation: the registry binds a canonical authorizer; receipts bind the action
   and are consumed for dispatch. Unverified postconditions remain UNVERIFIED;
   they are not a successful heal. EUCLID's current requalification probes and
@@ -87,6 +91,8 @@ just to satisfy an obsolete expectation.
   the owner's result when execution is admitted. EUCLID owns cognition, routing
   and creator-scoped delegation; TURING owns Program semantics, admission and
   execution. EUCLID's older program-search adapter is not its cognition authority.
+  In ProductionOrganism the service is bound to the custody tenant; even a valid
+  foreign-tenant token is denied before specialist execution.
 - `TuringQuantumOrgan` accepts `capability-matrix` or `run-program` with native
   Program mapping and optional backend preference. Unsupported operations fail;
   backend admission refusal remains an unexecuted refusal. Backend errors are not
@@ -94,16 +100,24 @@ just to satisfy an obsolete expectation.
   facade's `OptimizationResult` or full `SharedTuring` acceptance evidence.
 - `SharedTuring.run` uses the existing canonical pipeline, verifies the mathematical
   boundary and records Program/result/certificate/witness/report in the one shared
-  custody fabric with readback/replay. `SharedEuclid` records specialist handoffs;
-  that does not call `SharedTuring.run` or replace its verification.
+  custody fabric with readback/replay. ProductionOrganism injects this existing
+  owner into `TuringQuantumOrgan(pipeline=...)`. Admitted runs return the canonical
+  `pipeline_report` alongside the retained result envelope. Standalone specialists
+  without injection retain direct execution. Admission refusal remains unexecuted;
+  it never manufactures a certificate. A SharedEuclid handoff is supplementary
+  evidence, not a replacement for verification. SharedTuring's run/replay and
+  SharedEuclid's dispatch/evidence cursor are serialized per owner instance.
 - Custody integrity, mathematical validity and customer authorisation are three
   different assurances. Composition owns shared storage lifetime. Local facade job
   timeout/cancellation semantics remain unchanged and cannot be assumed to govern
   synchronous EUCLID/SALAMANDER calls.
-- A typed TURING-to-EUCLID intelligence-consumption contract, remote authentication,
-  response validation, deadline/retry policy and independently installed enterprise
-  compatibility are unresolved. Keep that dependency visibly incomplete rather
-  than introduce a success mock or duplicate intelligence implementation.
+- The supported delivery composition consumes EUCLID's existing capability
+  routing/delegation and preserves native Program, GuardianRequest/Verdict and
+  canonical report contracts. An additional typed reverse intelligence client is
+  not implemented or claimed. Remote transport authentication/deadline policy and
+  broader independently deployed version combinations remain unqualified. The
+  selected platform/TURING/Kellogg wheels have their own installed qualification;
+  this is not proof of every standalone-distribution combination.
 
 ## Compatibility and deprecation ownership
 

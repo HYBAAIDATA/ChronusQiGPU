@@ -2,119 +2,108 @@
 
 ## Decision and scope
 
-TURING delivers computational intelligence capability. AL HARAS is its intended
-security dependency, Salamander its self-healing/optimisation dependency, and
-EUCLID its intelligence dependency at the capability-delivery boundary. These
-are architectural responsibilities, not optional feature labels or a claim that
-all runtime wiring is complete. The platform provisions and governs access;
-customers need not assemble the internal packages. Customer entitlements and
-contractual limits are separate from implementation details. No new pricing,
-service guarantees or external-device requirements follow from this decision.
+TURING delivers computational intelligence capability. AL HARAS supplies the
+security responsibility, Salamander bounded self-healing/optimisation, and
+EUCLID intelligence/routing/delegation in the capability-delivery architecture.
+They are dependencies of the governed delivery composition, not unrelated
+optional products to bolt on. The platform provisions and governs access;
+customers need not assemble its internal packages. Entitlements and contractual
+limits are separate from package layout. No pricing or service promises are added.
 
-Keep the existing `hyba-turing-vqc` identity, mathematical substrate,
-`VQCPipeline`, typed facade, finite-domain contracts and canonical verification.
-A local mathematical library operation is not automatically an authorised
-enterprise service operation. Conversely, validity of a mathematical result is
-not contingent on an entitlement or an intelligence service being available.
+The mathematical library remains independently usable and correct without
+credentials or an intelligence service. Keep `hyba-turing-vqc`, `VQCPipeline`, the
+typed facade, finite-domain contracts, exact result classes and verification
+intact. A local library call is not an authenticated enterprise service operation.
 
-## Evidence scope
-
-Inspected PR #96 at `356ab419dae197f407989da82feaa2f149da08e7` and matched the
-relevant local source files to remote content. The accompanying narrow change
-adapts EUCLID's existing `(tenant, actor)` token provider to Salamander's existing
-`ActionRequest` provider; it does not introduce a new security authority.
-Repository paths below are relative to the monorepo root. Documentation and
-class names are intent until an actual call path and evidence support them.
-
-## Actual call graph
+## Actual local call graph
 
 ```text
-Local mathematical package (no enterprise boundary implied)
+Local mathematical package (unchanged)
   TuringPipeline -> native_adapter -> canonical VQCPipeline
 
-Enterprise composition (in-process, not a verified remote service protocol)
-  ProductionOrganism -> CompositionRoot -> shared THESEUS/OVID custody
-    -> ProductionSystemRelations
-       -> SharedALHaras -> ALHaras guardian (security decisions)
-       -> SharedSalamander -> Intelligence.salamander.SalamanderEngine
-       -> SharedTuring -> VQCPipeline -> verification/certificate/custody/replay
-       -> SharedEuclid -> EuclidRuntime (intelligence/delegation owner)
-          dispatch_specialist -> AL HARAS -> creator-scoped delegation
-            -> TuringQuantumOrgan -> TURING backend selection + execution
-          heal_organ -> Salamander authorised control plane
-            -> AL HARAS -> registered bounded action -> postcondition verifier
-            [closed unless guardian AND token provider are configured]
+Governed delivery composition
+  ProductionOrganism(tenant, guardian, explicit token provider when configured)
+    -> CompositionRoot -> ONE shared THESEUS/OVID fabric
+    -> SharedALHaras -> real AL HARAS decisions
+    -> SharedSalamander -> legacy diagnosis/repair proposals (not verified actuation)
+    -> SharedTuring -> canonical VQCPipeline -> certificate / custody / replay
+    -> SharedEuclid -> EuclidRuntime
+       route_specialist / dispatch_specialist
+         -> bound-tenant check -> AL HARAS -> typed/bound verdict validation
+         -> creator-scoped delegation -> TuringQuantumOrgan(pipeline=SharedTuring)
+         -> same canonical computation / verification / custody / replay
+       heal_organ
+         -> Salamander canonical authorised control plane -> AL HARAS
+         -> bounded registered requalification -> independent redispatch verifier
+         [closed if credential provider absent; every action still needs approval]
 ```
 
-**Important:** the EUCLID specialist path is not the `SharedTuring` path. Its
-`turing_euclid_handoff` custody record does not establish a full canonical
-certificate/custody/replay acceptance. A separate successful SharedTuring startup
-check does not change that distinction.
+EUCLID supplies its existing capability selection and delegation; TURING retains
+Program semantics and mathematical execution. This is the actual supported
+intelligence relationship in this service composition. It does not add an
+invented reverse intelligence client to the typed mathematical facade, duplicate
+EUCLID cognition, or make exact arithmetic depend on a routing service.
 
-## Responsibility and dependency inventory
+## Verified responsibility/dependency inventory
 
-| Consumer / owner | Actual boundary and responsibility | Classification / status |
+| Consumer / owner | Actual responsibility and boundary | Classification / evidence status |
 | --- | --- | --- |
-| TURING typed facade / native adapter | Existing exact engine, validation, finite optimization, jobs and mathematical provenance | Local runtime; implemented. No direct AL HARAS, Salamander or EUCLID client on this path |
-| `ProductionOrganism` / `ProductionSystemRelations` | Binds owners and one shared custody lifecycle; guardian required at construction | In-process composition dependency; implemented, not a network API |
-| `EuclidRuntime.dispatch_specialist` -> AL HARAS | `GuardianRequest` plus out-of-band token -> verdict, then delegation gates | Local runtime dependency; real allow/deny and TURING dispatch tests exist |
-| `SharedALHaras` -> guardian | Delegates actual security decisions and records their custody evidence | Implemented adapter; does not itself confer identity or customer isolation |
-| `EuclidRuntime` -> `TuringQuantumOrgan` | Intelligence chooses/delegates; TURING admits and executes the Program | Implemented. Current direction is EUCLID consuming TURING, not a verified typed TURING client consuming EUCLID intelligence |
-| `EuclidRuntime.heal_organ` -> `salamander.authority` | Authorised bounded requalification with independent redispatch verifier | Implemented seam; provider mismatch corrected and real-owner local tests added. Not wired by default production root |
-| `SharedSalamander` -> `Intelligence.salamander.SalamanderEngine` | Legacy diagnosis/repair proposal and custody of outcomes/failures | Existing local runtime surface. A proposal record is not verified recovery or a substitute for the control plane |
-| `SharedTuring` -> `VQCPipeline` | Preserves engine ownership; validates before shared custody, then readback/replay | Implemented; existing real custody and substitution-rejection tests reused |
-| Capability-delivery TURING -> EUCLID intelligence | Intended consumption of intelligence with owner/version/result provenance | Architectural relationship; precise typed consumption and service contract unresolved |
-| Remote security/intelligence/recovery endpoints | Authentication, transport, schemas, deadlines and deployment versions | Not verified by this work. Do not infer a service dependency from a local import |
+| Typed TURING facade/native adapter | Contracts, exact estimates, finite optimization and jobs | Mathematical package runtime; unchanged, no new hard platform dependency |
+| ProductionOrganism/SystemRelations | Composes existing owners and one custody lifecycle; binds service tenant and optional out-of-band provider | Local runtime composition; actual shared-root/installed-consumer tests |
+| EUCLID -> AL HARAS | GuardianRequest + token -> typed tenant/operation/payload-bound verdict; delegation remains separate | Local runtime dependency; real denial, expiry, replay, malformed-response and cross-tenant tests |
+| EUCLID -> TURING in ProductionOrganism | Existing intelligence routing/delegation invokes specialist with SharedTuring injected | Local runtime dependency; canonical result/certificate/replay, routing and concurrency tests |
+| Standalone TuringQuantumOrgan without injection | Existing backend admission and direct execution | Retained compatibility surface, NOT equivalent to the governed shared-root certificate/custody path |
+| EUCLID -> Salamander control plane | Registered bounded requalification, authenticated action, named postcondition verifier | Real canonical constructor/provider tests and installed-root recovery test; absent provider remains closed |
+| SharedSalamander -> Intelligence.salamander | Legacy diagnosis/proposal with actual success/failure custody | Existing local surface; proposal is never promoted to applied recovery merely because it was recorded |
+| SharedTuring -> VQCPipeline | Canonical validation/certificate/custody/readback/replay | Existing engine, serialized shared-run state; real tamper/restart and bounded-concurrency evidence |
+| Remote security/intelligence/recovery service endpoints | Transport authentication, versioned wire schemas and deployment deadlines | Not introduced or qualified. Local imports do not establish a remote API |
+| Additional typed TURING-to-EUCLID intelligence consumption | Would require a specific consumed capability and validated result semantics | Proposed extension only; not needed to pretend the existing routing composition is a new cognition algorithm |
 
-`DEFAULT_PEERS` in `aethel/enterprise/system_relations.py` is a data lineage/sharing
-map. It is not an authorization policy or proof that every named integration is
-active. Historical redirects in TURING's `july_compat.py`, a listener-registration
-hook in `turing_core/ten_thousand.py`, and the proposal-only
-`euclid/organ_adapters/vqc_intelligence.py` are separate surfaces; their presence
-does not establish governed typed-facade intelligence consumption. The latter's
-candidate ranking explicitly requires independent verification and is not the
-native finite-domain VQE optimization contract.
+`DEFAULT_PEERS` is a sharing/lineage graph, not an authorization policy.
+Historical redirects in `july_compat.py`, the listener hook in
+`turing_core/ten_thousand.py`, and proposal-only
+`euclid/organ_adapters/vqc_intelligence.py` do not prove that unrelated capability
+integrations are active. Candidate ranking is not the finite-domain VQE contract.
 
-## Packaging, versions and deployment assumptions
+## Package/deployment boundaries
 
-- TURING's declared runtime dependencies remain NumPy, SymPy and
-  `hyba-kellogg-tensor`; research/test tooling is development-only. No speculative
-  hard dependency has been added to the mathematical wheel.
-- The descriptor at `packaging/salamander/pyproject.toml` declares
-  `hyba-salamander-self-healing` 1.0.0 and bundles `salamander*` and `al_haras*`;
-  it declares PyYAML and cryptography, not a separate AL HARAS product dependency.
-- `packaging/euclid-engine/pyproject.toml` declares
-  `hyba-euclid-intelligence` 1.0.0 with NumPy, Kellogg, TOE and THESEUS ranges;
-  `euclid.__version__` is 17.0.0. Package/runtime version labels are not an agreed
-  cross-component compatibility matrix. Both packaging directories mark legacy
-  documentation deprecated; descriptors are evidence of declarations, not proof
-  of an approved release or complete installable enterprise dependency closure.
-- This inspection is of one monorepo, not a verified set of separately deployed
-  repositories. If owners select separate services or distributions, agree
-  protocol/schema versions, authentication, tenant identity, supported version
-  combinations, startup/shutdown ownership, and independent installed-system
-  tests before changing dependencies. Preserve a stable service boundary if one
-  is established; do not replace it with forced package imports.
+- TURING retains only its existing NumPy, SymPy and Kellogg runtime declarations.
+  Platform qualification dependencies are separately hash-resolved; they are not
+  additions to the mathematical wheel.
+- The existing `hyba-pythia-mining` platform distribution owns the inspected local
+  production composition, EUCLID, Salamander and AL HARAS. It declares TURING and
+  Kellogg as dependencies. Its duplicate Kellogg package declaration was removed
+  after actual wheel inspection found 38 overlapping files. Qualification rejects
+  overlap before independently installing this three-wheel distribution set.
+- Source integration tests and installed consumers validate this selected local
+  composition. Do not additionally co-install overlapping standalone owner wheels
+  and assume a supported deployment. Separate-service deployment remains an
+  owner decision with its own authentication/version/lifecycle qualification.
+- Descriptors at `packaging/euclid-engine` and `packaging/salamander` declare their
+  independent 1.0.0 distributions; EUCLID's runtime version is 17.0.0. Matching
+  version labels are not protocol compatibility. These directories mark legacy
+  documentation deprecated; declarations are not evidence of registry publication.
 
-## Incomplete work and release effect
+## Failure, ownership and operational limits
 
-1. Default `ProductionOrganism.start()` composes EUCLID without a subscription
-   token provider. Requalification must remain closed; do not report active
-   self-healing. Agree credential ownership and creator-to-customer tenant mapping
-   before enabling it (`heal_organ` currently uses `creator_id` as tenant).
-2. Decide and test the governed service execution path: direct specialist backend
-   results versus the existing canonical SharedTuring certificate/custody chain.
-   Do not duplicate that engine or silently upgrade handoff evidence.
-3. Define the specific EUCLID intelligence result TURING consumes, preserving
-   owner, schema/version and evidence. Cognition mappings are not `Estimate`
-   objects or exact coefficients without an explicit verified transformation.
-4. Close the trust, packaging and compatibility requirements in
-   [dependency contracts](dependency-contracts.md) and
-   [security boundaries](security-boundaries.md) before claiming the full governed
-   capability is production-qualified. These gaps do not invalidate separately
-   verified local mathematics or automatically prevent a narrower library release;
-   the release owner must approve an accurate supported scope.
+A production root binds its explicit custody tenant. A valid token for another
+customer cannot admit work into this root. Healing uses that tenant, not the
+creator's delegation identity. Standalone EUCLID callers that do not bind a tenant
+retain the historical creator fallback; that is not an enterprise isolation claim.
 
-No frontend, new commercial rules, package reorganisation or engine replacement
-is part of this change. Integration decisions stay visible in the existing
-[qualification ledger](../TURING-qualification.md).
+Credential provisioning is explicit: without a provider the actuation plane is
+closed. With one, constructor readiness means the canonical authority is bound,
+not that future tokens or repairs are approved. Every action still goes through
+AL HARAS and postcondition verification. Service operators own credentials,
+policy, retention, supervision and deployment approval.
+
+SharedTuring serializes its run/replay state and SharedEuclid its dispatch/evidence
+cursor to prevent cross-run certificate/custody mixing in the tested local use.
+This is bounded concurrency evidence, not universal race freedom or a hard timeout
+contract. Synchronous dependency calls expose no general forced cancellation.
+No automatic retry, fallback authority or fabricated healing is introduced.
+
+See [contracts](dependency-contracts.md), [security boundaries](security-boundaries.md),
+[host integration](capability-integration.md) and the existing
+[qualification ledger](../TURING-qualification.md). No frontend, commercial rule,
+engine replacement, merge, tag or publication is part of this change.
