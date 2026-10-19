@@ -1,0 +1,33 @@
+name: TURING enterprise service control contracts
+on:
+  pull_request:
+    paths:
+      - 'services/turing-enterprise/**'
+      - 'al_haras/entitlements.py'
+      - '.github/workflows/turing-enterprise-service.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'services/turing-enterprise/**'
+      - 'al_haras/entitlements.py'
+      - '.github/workflows/turing-enterprise-service.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  control-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python: ['3.11', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install -e 'services/turing-enterprise[test]' black build
+      - run: python -m black --check --line-length 100 services/turing-enterprise/src services/turing-enterprise/tests
+      - run: python -m pytest services/turing-enterprise/tests -q --junitxml=turing-service-tests.xml
+      - run: python -m build services/turing-enterprise
+      # No publish, deployment, credentials or external billing actions.

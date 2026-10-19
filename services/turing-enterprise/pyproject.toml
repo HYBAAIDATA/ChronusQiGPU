@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hyba-turing-service-control"
+version = "0.1.0"
+description = "Pilot TURING enterprise service control plane; not a billing ledger or runtime scheduler"
+requires-python = ">=3.11"
+classifiers = ["Development Status :: 3 - Alpha", "Private :: Do Not Upload"]
+
+[project.optional-dependencies]
+test = ["pytest>=7.4,<10"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
