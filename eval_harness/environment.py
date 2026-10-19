@@ -114,7 +114,15 @@ def state_dir(name, *, clean=True):
     """A persistent, inspectable state dir under eval_harness/artifacts/tmp."""
     path = TMP_ROOT / name
     if clean and path.exists():
-        shutil.rmtree(path, ignore_errors=True)
+        for _ in range(5):
+            try:
+                shutil.rmtree(path)
+                break
+            except Exception:
+                time.sleep(0.05)
+        else:
+            import uuid
+            path = TMP_ROOT / f"{name}-{uuid.uuid4().hex[:8]}"
     path.mkdir(parents=True, exist_ok=True)
     return path
 

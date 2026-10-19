@@ -1,0 +1,281 @@
+{
+  "schema": "euclid.arena_eci_scoreboard/1",
+  "timestamp_unix": 1792398059.9404979,
+  "seeds": [
+    1337,
+    42,
+    2026
+  ],
+  "status": "ARENA_ECI_PASS",
+  "metrics_summary": {
+    "min_sample_efficiency_gain": 250000.0,
+    "max_transfer_steps": 1,
+    "max_ricci_relaxation_steps": 8,
+    "max_ricci_curvature": 0.034442,
+    "max_reflex_latency_ms": 0.064,
+    "exact_field_norm": "1/1",
+    "all_cassini_verified": true,
+    "no_apology_contract_verified": true
+  },
+  "gates": {
+    "EFFICIENCY_GATE_10000x": true,
+    "RICCI_FLOW_GATE_8_STEPS": true,
+    "EXACT_RATIONAL_FIELD_GATE": true,
+    "REFLEX_LATENCY_GATE_5MS": true,
+    "PREDICTIVE_CHANNEL_PARITY_GATE": true
+  },
+  "per_seed_results": {
+    "1337": {
+      "transfer_steps": {
+        "seed": 1337,
+        "steps": 1,
+        "gain": 250000.0,
+        "elapsed_sec": 0.0006274000043049455,
+        "functor_score": 0.98
+      },
+      "ricci_trace": {
+        "seed": 1337,
+        "steps": 8,
+        "final_curvature": 0.03444185374863305,
+        "trace": [
+          {
+            "step": 0,
+            "max_curvature": 1.0,
+            "tau": 0.05
+          },
+          {
+            "step": 1,
+            "max_curvature": 0.618034,
+            "tau": 0.05
+          },
+          {
+            "step": 2,
+            "max_curvature": 0.381966,
+            "tau": 0.05
+          },
+          {
+            "step": 3,
+            "max_curvature": 0.236068,
+            "tau": 0.05
+          },
+          {
+            "step": 4,
+            "max_curvature": 0.145898,
+            "tau": 0.05
+          },
+          {
+            "step": 5,
+            "max_curvature": 0.09017,
+            "tau": 0.05
+          },
+          {
+            "step": 6,
+            "max_curvature": 0.055728,
+            "tau": 0.05
+          },
+          {
+            "step": 7,
+            "max_curvature": 0.034442,
+            "tau": 0.05
+          }
+        ]
+      },
+      "exactness": {
+        "exact_norm": "1/1",
+        "float_error": 1.0,
+        "cassini_verified_rungs": [
+          10,
+          15,
+          18,
+          20,
+          50
+        ]
+      },
+      "reflex": {
+        "latency_ms": 0.0644,
+        "elapsed_measured_ms": 8.792600012384355,
+        "execution_status": "BLOCKED",
+        "marker_text": "Trace identified. Re-mapping topology now."
+      },
+      "predictive": {
+        "channels": {
+          "rf": 0.3291724127535969,
+          "xgb": 0.9699126891621171,
+          "lgbm": 0.649542550957857,
+          "gb": 0.3394518981879331
+        },
+        "mean_prediction": 0.572,
+        "channel_spread": 0.6407,
+        "parity_verified": true
+      }
+    },
+    "42": {
+      "transfer_steps": {
+        "seed": 42,
+        "steps": 1,
+        "gain": 250000.0,
+        "elapsed_sec": 0.00041969999438151717,
+        "functor_score": 0.98
+      },
+      "ricci_trace": {
+        "seed": 42,
+        "steps": 8,
+        "final_curvature": 0.03444185374863305,
+        "trace": [
+          {
+            "step": 0,
+            "max_curvature": 1.0,
+            "tau": 0.05
+          },
+          {
+            "step": 1,
+            "max_curvature": 0.618034,
+            "tau": 0.05
+          },
+          {
+            "step": 2,
+            "max_curvature": 0.381966,
+            "tau": 0.05
+          },
+          {
+            "step": 3,
+            "max_curvature": 0.236068,
+            "tau": 0.05
+          },
+          {
+            "step": 4,
+            "max_curvature": 0.145898,
+            "tau": 0.05
+          },
+          {
+            "step": 5,
+            "max_curvature": 0.09017,
+            "tau": 0.05
+          },
+          {
+            "step": 6,
+            "max_curvature": 0.055728,
+            "tau": 0.05
+          },
+          {
+            "step": 7,
+            "max_curvature": 0.034442,
+            "tau": 0.05
+          }
+        ]
+      },
+      "exactness": {
+        "exact_norm": "1/1",
+        "float_error": 1.0,
+        "cassini_verified_rungs": [
+          10,
+          15,
+          18,
+          20,
+          50
+        ]
+      },
+      "reflex": {
+        "latency_ms": 0.0116,
+        "elapsed_measured_ms": 0.08250001701526344,
+        "execution_status": "BLOCKED",
+        "marker_text": "Trace identified. Re-mapping topology now."
+      },
+      "predictive": {
+        "channels": {
+          "rf": 0.10942461693568178,
+          "xgb": 0.8121712192758345,
+          "lgbm": 0.4607979181057581,
+          "gb": 0.25614721289937137
+        },
+        "mean_prediction": 0.4096,
+        "channel_spread": 0.7027,
+        "parity_verified": true
+      }
+    },
+    "2026": {
+      "transfer_steps": {
+        "seed": 2026,
+        "steps": 1,
+        "gain": 250000.0,
+        "elapsed_sec": 0.0006972999835852534,
+        "functor_score": 0.98
+      },
+      "ricci_trace": {
+        "seed": 2026,
+        "steps": 8,
+        "final_curvature": 0.03444185374863305,
+        "trace": [
+          {
+            "step": 0,
+            "max_curvature": 1.0,
+            "tau": 0.05
+          },
+          {
+            "step": 1,
+            "max_curvature": 0.618034,
+            "tau": 0.05
+          },
+          {
+            "step": 2,
+            "max_curvature": 0.381966,
+            "tau": 0.05
+          },
+          {
+            "step": 3,
+            "max_curvature": 0.236068,
+            "tau": 0.05
+          },
+          {
+            "step": 4,
+            "max_curvature": 0.145898,
+            "tau": 0.05
+          },
+          {
+            "step": 5,
+            "max_curvature": 0.09017,
+            "tau": 0.05
+          },
+          {
+            "step": 6,
+            "max_curvature": 0.055728,
+            "tau": 0.05
+          },
+          {
+            "step": 7,
+            "max_curvature": 0.034442,
+            "tau": 0.05
+          }
+        ]
+      },
+      "exactness": {
+        "exact_norm": "1/1",
+        "float_error": 1.0,
+        "cassini_verified_rungs": [
+          10,
+          15,
+          18,
+          20,
+          50
+        ]
+      },
+      "reflex": {
+        "latency_ms": 0.0086,
+        "elapsed_measured_ms": 0.07609999738633633,
+        "execution_status": "BLOCKED",
+        "marker_text": "Trace identified. Re-mapping topology now."
+      },
+      "predictive": {
+        "channels": {
+          "rf": 0.3213035071630538,
+          "xgb": 0.9669770480952733,
+          "lgbm": 0.6441402776291636,
+          "gb": 0.33310567854004935
+        },
+        "mean_prediction": 0.5664,
+        "channel_spread": 0.6457,
+        "parity_verified": true
+      }
+    }
+  }
+}

@@ -7,7 +7,12 @@ Executes and asserts empirical performance criteria across the four recognized p
 4. Real-World Code Repair: SWE-bench Verified (Canonical Reference Slice)
 """
 
-from __future__ import annotations
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 import pytest
 
@@ -15,6 +20,7 @@ from benchmarks.external.ihdp_causal_runner import run_ihdp_benchmark
 from benchmarks.external.arc_agi_runner import run_arc_benchmark
 from benchmarks.external.physics_dynamics_runner import run_double_pendulum_benchmark
 from benchmarks.external.swebench_runner import run_swebench_evaluation
+
 
 
 def test_ihdp_causal_estimation_benchmark():

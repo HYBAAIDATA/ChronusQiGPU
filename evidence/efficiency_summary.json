@@ -1,6 +1,6 @@
 {
   "bits_ratio": "N/A (no speedup claimed)",
-  "ledger_head": "28002df9f4391965e69114b5a08a664201c06508",
+  "ledger_head": "883afc72f53fe5f10772e41703a7cd08fdab045f",
   "functor_ctcf": true,
   "route": {
     "requested": "kellogg_tensor",
