@@ -17,6 +17,13 @@ export type Job = {
 export type Credentials = { tenant: string; actor: string; token: string };
 export type Command =
   | { action: "capabilities" }
+  | {
+      action: "list";
+      offset?: number;
+      limit?: number;
+      status?: JobState;
+      query?: string;
+    }
   | { action: "submit"; program: Program; idempotency_key: string }
   | { action: "status" | "cancel"; job_id: string };
 export type Capabilities = {
@@ -38,6 +45,7 @@ export class ServiceError extends Error {
   constructor(
     message: string,
     public uncertain = false,
+    public httpStatus?: number,
   ) {
     super(message);
   }
@@ -179,7 +187,7 @@ export async function request(
         : response.status === 401 || response.status === 403
           ? "Access denied by AL HARAS"
           : `Service returned HTTP ${response.status}`;
-    throw new ServiceError(code, response.status >= 500);
+    throw new ServiceError(code, response.status >= 500, response.status);
   }
   if (
     !isRecord(value) ||
@@ -204,5 +212,70 @@ export function parseCapabilities(v: Record<string, unknown>): Capabilities {
     max_operations: 256,
     max_amplitudes: 4096,
     gates: v.gates as string[],
+  };
+}
+
+/** History contains metadata only. Fetch a selected job for its owner-scoped report. */
+export type JobSummary = Pick<Job, "job_id" | "status" | "submitted_at"> & {
+  n_qubits: number;
+  operation_count: number;
+};
+export type JobPage = {
+  jobs: JobSummary[];
+  offset: number;
+  limit: number;
+  total_matching: number;
+  total_retained: number;
+  next_offset: number | null;
+  observed_at: string;
+};
+export function parseJobPage(v: Record<string, unknown>): JobPage {
+  const integer = (n: unknown, max: number): n is number =>
+    typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= max;
+  if (
+    !Array.isArray(v.jobs) ||
+    v.jobs.length > 20 ||
+    !integer(v.offset, 256) ||
+    !integer(v.limit, 20) ||
+    v.limit < 1 ||
+    !integer(v.total_matching, 256) ||
+    !integer(v.total_retained, 256) ||
+    v.total_matching > v.total_retained ||
+    v.jobs.length > v.limit ||
+    (v.next_offset !== null &&
+      (!integer(v.next_offset, 256) || v.next_offset !== v.offset + v.limit)) ||
+    typeof v.observed_at !== "string" ||
+    Number.isNaN(Date.parse(v.observed_at))
+  )
+    throw new ServiceError("Invalid history response; no history is asserted.");
+  const jobs = v.jobs.map((r: unknown): JobSummary => {
+    if (
+      !isRecord(r) ||
+      typeof r.job_id !== "string" ||
+      typeof r.status !== "string" ||
+      !STATES.includes(r.status) ||
+      typeof r.submitted_at !== "string" ||
+      Number.isNaN(Date.parse(r.submitted_at)) ||
+      !integer(r.n_qubits, 12) ||
+      r.n_qubits < 1 ||
+      !integer(r.operation_count, 256)
+    )
+      throw new ServiceError("Invalid history entry; no history is asserted.");
+    return {
+      job_id: r.job_id,
+      status: r.status as JobState,
+      submitted_at: r.submitted_at,
+      n_qubits: r.n_qubits,
+      operation_count: r.operation_count,
+    };
+  });
+  return {
+    jobs,
+    offset: v.offset,
+    limit: v.limit,
+    total_matching: v.total_matching,
+    total_retained: v.total_retained,
+    next_offset: v.next_offset as number | null,
+    observed_at: v.observed_at,
   };
 }

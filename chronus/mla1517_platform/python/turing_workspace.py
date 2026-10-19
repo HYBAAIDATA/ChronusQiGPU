@@ -89,6 +89,7 @@ class Workspace:
         fields = {
             "submit": {"program", "idempotency_key"},
             "status": {"job_id"}, "cancel": {"job_id"}, "capabilities": set(),
+            "list": {"offset", "limit", "status", "query"},
         }
         if not isinstance(action, str) or action not in fields:
             raise WorkspaceError(400, "unsupported_workspace_action")
@@ -105,6 +106,8 @@ class Workspace:
                     "commercial_entitlements": "not_integrated",
                     "billing": "not_integrated",
                 })
+            if action == "list":
+                return 200, self._list(owner, body)
             if action == "submit":
                 return self._submit(owner, body)
             job_id = body.get("job_id")
@@ -115,6 +118,34 @@ class Workspace:
                 cancelled = entry.job.cancel()
                 return 200, self._snapshot(entry) | {"cancellation_accepted": cancelled}
             return 200, self._snapshot(entry)
+
+    def _list(self, owner: tuple[str, str], body: dict) -> dict:
+        """Only retained jobs for the verified identity; never a billing record.
+
+        Mutable bounded offset pagination: refresh from offset zero after a new
+        submission. No global counts, other actors, report payloads or keys leak.
+        """
+        offset, limit = body.get("offset", 0), body.get("limit", 10)
+        status, query = body.get("status"), body.get("query", "")
+        if (type(offset) is not int or not 0 <= offset <= self.max_jobs
+            or type(limit) is not int or not 1 <= limit <= 20):
+            raise WorkspaceError(400, "invalid_history_pagination")
+        if status is not None and status not in ("queued", "running", "succeeded", "failed", "cancelled"):
+            raise WorkspaceError(400, "invalid_history_status")
+        if not isinstance(query, str) or len(query) > 128:
+            raise WorkspaceError(400, "invalid_history_query")
+        owned = [e for e in self._jobs.values() if e.owner == owner]
+        rows = [{"job_id": e.job.job_id, "status": e.job.status().value,
+                 "submitted_at": e.submitted_at, "n_qubits": e.program["n_qubits"],
+                 "operation_count": len(e.program["operations"])} for e in owned]
+        rows = [r for r in rows if (status is None or r["status"] == status)
+                and query.casefold() in r["job_id"].casefold()]
+        rows.sort(key=lambda r: (r["submitted_at"], r["job_id"]), reverse=True)
+        page = rows[offset:offset + limit]
+        return self._envelope({"jobs": page, "offset": offset, "limit": limit,
+            "total_matching": len(rows), "total_retained": len(owned),
+            "next_offset": offset + limit if offset + limit < len(rows) else None,
+            "observed_at": datetime.now(timezone.utc).isoformat()})
 
     def _submit(self, owner: tuple[str, str], body: dict) -> tuple[int, dict]:
         program = validate_program(body.get("program"))

@@ -6,12 +6,16 @@ import {
   parseProgram,
   request,
   ServiceError,
+  type Command,
   type Capabilities,
   type Credentials,
   type Job,
   type Program,
 } from "./client";
 import "./workspace.css";
+import History from "./History";
+import Evidence, { returnedText } from "./Evidence";
+import { downloadJson } from "./downloads";
 const EXAMPLE = JSON.stringify(
   {
     n_qubits: 2,
@@ -26,6 +30,7 @@ const EXAMPLE = JSON.stringify(
 type Pending = { program: Program; key: string };
 export default function TuringWorkspace() {
   const credentials = useRef<Credentials | null>(null);
+  const boundIdentity = useRef<{ tenant: string; actor: string } | null>(null);
   const [connected, setConnected] = useState(false);
   const [capabilities, setCapabilities] = useState<Capabilities | null>(null);
   const [raw, setRaw] = useState(EXAMPLE);
@@ -33,9 +38,11 @@ export default function TuringWorkspace() {
   const [pending, setPending] = useState<Pending | null>(null);
   const [job, setJob] = useState<Job | null>(null);
   const [busy, setBusy] = useState(false);
+  const [cancelReview, setCancelReview] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const resultHeading = useRef<HTMLHeadingElement>(null);
+  const reviewHeading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     document.title = "TURING — Computational workspace";
   }, []);
@@ -51,10 +58,20 @@ export default function TuringWorkspace() {
       token: String(data.get("token") ?? "").trim(),
     };
     try {
+      if (
+        boundIdentity.current &&
+        (pending || job) &&
+        (creds.tenant !== boundIdentity.current.tenant ||
+          creds.actor !== boundIdentity.current.actor)
+      )
+        throw new Error(
+          "Reconnect with the same tenant and actor to preserve the retained execution context.",
+        );
       const envelope = parseCapabilities(
         await request(creds, { action: "capabilities" }),
       );
       credentials.current = creds;
+      boundIdentity.current = { tenant: creds.tenant, actor: creds.actor };
       setCapabilities(envelope);
       setConnected(true);
       form.reset();
@@ -67,6 +84,8 @@ export default function TuringWorkspace() {
   }
   function disconnect() {
     credentials.current = null;
+    boundIdentity.current = null;
+    setCancelReview(false);
     setConnected(false);
     setCapabilities(null);
     setJob(null);
@@ -78,12 +97,46 @@ export default function TuringWorkspace() {
       "Disconnected. In-memory credentials and displayed results cleared; server jobs are not cancelled.",
     );
   }
+  async function execute(command: Command) {
+    if (!credentials.current)
+      throw new ServiceError("Reconnect to the evaluation service.");
+    try {
+      return await request(credentials.current, command);
+    } catch (e) {
+      if (
+        e instanceof ServiceError &&
+        (e.httpStatus === 401 || e.httpStatus === 403)
+      ) {
+        credentials.current = null;
+        setConnected(false);
+        setCapabilities(null);
+        setNotice(
+          "Access refused or expired. Reconnect with the same tenant and actor. Any retained request remains unresolved; no job is assumed stopped.",
+        );
+      }
+      throw e;
+    }
+  }
+  async function selectJob(id: string) {
+    setBusy(true);
+    setError("");
+    setCancelReview(false);
+    try {
+      setJob(parseJob(await execute({ action: "status", job_id: id })));
+      setTimeout(() => resultHeading.current?.focus(), 0);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Job unavailable.");
+    } finally {
+      setBusy(false);
+    }
+  }
   function prepare(event: FormEvent) {
     event.preventDefault();
     setError("");
     setNotice("");
     try {
       setReview(parseProgram(raw));
+      setTimeout(() => reviewHeading.current?.focus(), 0);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Invalid native program.");
     }
@@ -97,7 +150,7 @@ export default function TuringWorkspace() {
     setNotice("");
     try {
       const response = parseJob(
-        await request(credentials.current, {
+        await execute({
           action: "submit",
           program: attempt.program,
           idempotency_key: attempt.key,
@@ -112,10 +165,10 @@ export default function TuringWorkspace() {
       setTimeout(() => resultHeading.current?.focus(), 0);
     } catch (e) {
       const uncertain = !(e instanceof ServiceError) || e.uncertain;
-      if (!uncertain) setPending(null);
+      if (!uncertain && !retained) setPending(null);
       setError(
         (e instanceof Error ? e.message : "Submission unavailable.") +
-          (uncertain
+          (uncertain || retained
             ? " Outcome unknown. Retry this same request key; do not create a new submission."
             : " The request was refused."),
       );
@@ -129,10 +182,9 @@ export default function TuringWorkspace() {
     setError("");
     setNotice("");
     try {
-      const next = parseJob(
-        await request(credentials.current, { action, job_id: job.job_id }),
-      );
+      const next = parseJob(await execute({ action, job_id: job.job_id }));
       setJob(next);
+      setCancelReview(false);
       if (action === "cancel")
         setNotice(
           next.cancellation_accepted
@@ -151,16 +203,7 @@ export default function TuringWorkspace() {
   }
   function download() {
     if (!job?.report) return;
-    const url = URL.createObjectURL(
-      new Blob([JSON.stringify(job.report, null, 2)], {
-        type: "application/json",
-      }),
-    );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${job.job_id}.json`;
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    downloadJson(job.report, `${job.job_id}.json`);
   }
   const pipelineReport =
     job?.report && isRecord(job.report.pipeline_report)
@@ -178,9 +221,14 @@ export default function TuringWorkspace() {
         Skip to workspace
       </a>
       <header className="t-header">
-        <a className="t-wordmark" href="/turing">
+        <a className="t-wordmark" href="/turing/product">
           TURING<span>Computational intelligence</span>
         </a>
+        <nav className="t-nav" aria-label="Product navigation">
+          <a href="/turing/product">Product</a>
+          <a href="/turing/documentation">Documentation</a>
+          <a href="/turing/security">Security</a>
+        </nav>
         <span className="t-label">
           Technical evaluation · Not a production service
         </span>
@@ -328,7 +376,9 @@ export default function TuringWorkspace() {
             </form>
             {review && !pending && (
               <section className="t-review" aria-labelledby="review-title">
-                <h3 id="review-title">Review before execution</h3>
+                <h3 id="review-title" tabIndex={-1} ref={reviewHeading}>
+                  Review before execution
+                </h3>
                 <p>
                   {review.n_qubits} logical qubits · {review.operations.length}{" "}
                   operations · exact native admission · no sampling requested.
@@ -361,7 +411,10 @@ export default function TuringWorkspace() {
                   restart can erase process-local deduplication; confirm with
                   the operator before retrying after a restart.
                 </p>
-                <button disabled={busy} onClick={() => void submit(pending)}>
+                <button
+                  disabled={busy || !connected}
+                  onClick={() => void submit(pending)}
+                >
                   {busy
                     ? "Awaiting acknowledgement…"
                     : "Retry the same request"}
@@ -425,7 +478,7 @@ export default function TuringWorkspace() {
               </dl>
               <div className="t-actions">
                 <button
-                  disabled={busy}
+                  disabled={busy || !connected}
                   className="t-secondary"
                   onClick={() => void update("status")}
                 >
@@ -433,9 +486,9 @@ export default function TuringWorkspace() {
                 </button>
                 {running && (
                   <button
-                    disabled={busy}
+                    disabled={busy || !connected}
                     className="t-secondary"
-                    onClick={() => void update("cancel")}
+                    onClick={() => setCancelReview(true)}
                   >
                     Request cancellation
                   </button>
@@ -446,6 +499,44 @@ export default function TuringWorkspace() {
                   </button>
                 )}
               </div>
+              {cancelReview && running && (
+                <section className="t-review" aria-labelledby="cancel-title">
+                  <h3 id="cancel-title">Confirm cancellation request</h3>
+                  <p>
+                    Cancellation can stop a queued job only. A running native
+                    execution may finish; this does not reverse consumed
+                    resources or resolve billing.
+                  </p>
+                  <div className="t-actions">
+                    <button
+                      disabled={busy || !connected}
+                      onClick={() => void update("cancel")}
+                    >
+                      Confirm cancellation request
+                    </button>
+                    <button
+                      className="t-secondary"
+                      disabled={busy}
+                      onClick={() => setCancelReview(false)}
+                    >
+                      Keep execution
+                    </button>
+                  </div>
+                </section>
+              )}
+              <details className="t-input-summary">
+                <summary>Submitted input and effective pilot limits</summary>
+                <p>
+                  Width: {job.program.n_qubits}. Operations:{" "}
+                  {job.program.operations.length}. Server admission: 12 logical
+                  qubits / 256 operations / 4,096 amplitudes. Backend selection
+                  and validation remain native-engine decisions; inspect the
+                  returned configuration.
+                </p>
+                <pre tabIndex={0} aria-label="Submitted native program">
+                  {JSON.stringify(job.program, null, 2)}
+                </pre>
+              </details>
               {job.error && (
                 <p className="t-alert" role="alert">
                   {job.error}. No successful result is asserted.
@@ -459,21 +550,18 @@ export default function TuringWorkspace() {
                     pipeline evidence. Its presence is not independent
                     certification or enterprise custody acceptance.
                   </p>
+                  <Evidence report={job.report} />
                   <div className="t-evidence">
                     <h3>Returned provenance</h3>
                     <dl className="t-details">
                       <dt>Artifact hash</dt>
                       <dd>
-                        <code>
-                          {String(job.report.artifact_hash ?? "Not supplied")}
-                        </code>
+                        <code>{returnedText(job.report.artifact_hash)}</code>
                       </dd>
                       <dt>Implementation hash</dt>
                       <dd>
                         <code>
-                          {String(
-                            job.report.implementation_hash ?? "Not supplied",
-                          )}
+                          {returnedText(job.report.implementation_hash)}
                         </code>
                       </dd>
                       <dt>Certificate</dt>
@@ -492,6 +580,9 @@ export default function TuringWorkspace() {
             </>
           )}
         </section>
+        {connected && (
+          <History execute={execute} select={selectJob} busy={busy} />
+        )}
         <section className="t-next">
           <h2>What this pilot does—and does not do.</h2>
           <div>
@@ -499,8 +590,8 @@ export default function TuringWorkspace() {
               <strong>Implemented boundary</strong>
               <br />
               Guarded native submission, identity-scoped job access,
-              process-local idempotency, status, cancellation and unmodified
-              report inspection.
+              process-local idempotency, filtered history, status, confirmed
+              cancellation and unmodified report inspection.
             </p>
             <p>
               <strong>Still requires integration</strong>

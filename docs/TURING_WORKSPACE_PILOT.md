@@ -26,6 +26,14 @@ Those notes are not a basis for implementing an invented billing integration.
 Existing CI includes dependency audit, secret scanning and TURING workflows;
 none is represented as having passed for this increment before a run exists.
 
+## Expanded increment
+
+The expanded acceptance register is [docs/turing/ACCEPTANCE_REGISTER.md](turing/ACCEPTANCE_REGISTER.md).
+It records the full brief, delivered code and blocked enterprise requirements.
+See also [contracts/billing](turing/CONTRACTS_AND_BILLING.md),
+[product/GTM](turing/PRODUCT_AND_GTM.md) and
+[operations/qualification](turing/OPERATIONS_AND_QUALIFICATION.md).
+
 ## Implementation inventory
 
 | Area | State in this increment | Authority / remaining gap |
@@ -34,12 +42,13 @@ none is represented as having passed for this increment before a run exists.
 | Workspace UI | `/turing`, isolated from mining UI | Same React/Vite stack; no mining polling on this route |
 | Access | Existing AL HARAS preflight on every workspace request | Security subscription only; NOT a commercial TURING allocation |
 | Identity scope | Jobs restricted to verified tenant + actor | No organisation collaboration/roles/SSO implemented |
-| Jobs | Submit, manual status refresh, queued cancellation | Process-local, bounded; running work cannot be forcibly cancelled |
+| Jobs | Submit, status, confirmed queued cancellation and scoped filtered/paginated history | Process-local, bounded; running work cannot be forcibly cancelled |
 | Result inspection | Native report and provenance, JSON export | Not independent certification or shared enterprise custody |
 | Retry | Same-key replay/conflict refusal within one process | No restart-safe or cross-replica idempotency |
 | Usage | Not implemented | No monetary values, billable quantities or ledger generated |
 | Provisioning / billing | Not implemented | Need approved contracts, resource semantics and Hermitten interface |
-| Public website / customer admin / operations | Deferred | No decorative routes or unsupported controls created |
+| Public website | Implemented evaluation product/docs/security/research/enquiry/notices | Local brief export only; no approved legal policy or public launch |
+| Customer admin / operations | Not integrated | Missing authoritative membership/capacity/commercial/support contracts; no fake controls |
 
 ## Scope and resource semantics
 
@@ -81,6 +90,7 @@ Additional action-specific fields:
 | `submit` | `program`, `idempotency_key` | 202 new job; 200 replay |
 | `status` | `job_id` | 200 last native state; report only for succeeded |
 | `cancel` | `job_id` | 200 state + `cancellation_accepted` |
+| `list` | Optional `offset`, `limit` (1–20), native `status`, job-ID `query` | 200 owner-only metadata, observed counts and next offset; no raw reports/keys |
 
 Native program: `{ "n_qubits": 2, "operations": [{ "gate": "h", "qubits": [0] },
 { "gate": "cx", "qubits": [0, 1] }] }`. This is an example INPUT, not a result.
@@ -108,7 +118,7 @@ the native backend. Input canonicalisation determines conflict semantics.
 The UI preserves the program/key after an ambiguous acknowledgement and retries
 that request only. It never automatically resubmits. Idempotency is not a
 billing deduplication guarantee. Status is manually refreshed to avoid repeated
-expensive guardian/evidence evaluation. No list/pagination/filter API is claimed.
+expensive guardian/evidence evaluation. The list API is newest-first and identity-scoped. Counts are observed retained jobs, not lifetime use, commercial capacity or billing. Refresh from offset zero after submission; mutable history can shift pages.
 
 ## Visual system and route map
 
@@ -119,10 +129,7 @@ status, responsive cards, evidence tables and horizontally scrollable raw JSON
 form the initial component language. There are no external imagery dependencies,
 fake quantum graphics, decorative charts, dark-mode controls or market claims.
 
-`/turing` is the only new application route. Existing operator routes are kept.
-It is not a public marketing/legal site or a complete organisation-admin portal.
-Potential later routes in the master brief remain proposals until their owners
-and service contracts exist.
+`/turing` and `/turing/app` open the workspace. Public routes and explicit unapproved legal notices are mapped in `turing/PRODUCT_AND_GTM.md`. Existing non-TURING routes are kept. No complete organisation-admin or operations portal is claimed; these require real owner contracts.
 
 ## Threat model / release gates
 
@@ -156,28 +163,16 @@ browser compatibility qualification remain required.
 
 ## Local qualification record
 
-Run in an isolated workspace copy using Python 3.13 and available browser tools:
+The expanded targeted runs: 33 Python tests run (32 passed, 1 opt-in real-native
+smoke skipped); 52 frontend contract/history/route/boundary tests passed;
+strict TURING TypeScript passed; standalone esbuild bundle compiled. Chromium
+fixtures passed 24 axe/overflow scans and 12 workflow groups, with no runtime
+page errors. Desktop/mobile routes and key states were individually inspected.
+These fixtures do not demonstrate live authentication, engine, custody or billing.
 
-- Python: 23 adapter/routing unit tests passed; one opt-in real-engine smoke
-  intentionally skipped. Fake jobs are explicitly labelled fixtures; route tests
-  execute the extracted real method but do not boot the heavy CompositionRoot.
-- TypeScript: 18 client contract tests passed in an isolated Vitest 4 environment.
-- Strict type check for the two new implementation TS/TSX modules passed using
-  isolated TypeScript 5.9.3 + React 19 declarations. This is not a full repository
-  TypeScript 7 check.
-- React component and CSS bundle built with sandbox esbuild. This is not the full
-  locked Vite production build, dependency audit or release artifact.
-- Local Chromium UI fixture checks passed: connection, review, lost acknowledgement,
-  retained same-key retry, report inspection/export, disconnect clearing data,
-  no browser credential storage, and no mining API calls. No runtime page errors.
-- Desktop (1440px) and mobile (390px) review/error/results/disconnected captures
-  were inspected; no page-level horizontal overflow in checked mobile states.
-  Fixture screenshots do NOT demonstrate real engine execution or auth acceptance.
-
-Not executed locally: real native computation, live guardian/subscription/TOE
-integration, full host regression suite, production Vite build, locked dependency
-scan, commercial A/B/D/E/F/G lifecycle acceptance, distributed persistence, soak
-or enterprise security review. Remote CI success is not asserted.
+Full limitations, toolchain audit caveat and exact acceptance gates are recorded
+in `turing/OPERATIONS_AND_QUALIFICATION.md`. Remote CI, live authority/native
+execution and full locked frontend/host qualification are not asserted.
 
 ## Reproduce and review
 
@@ -196,7 +191,7 @@ TURING_RUN_ENGINE_SMOKE=1 turing_universal_quantum_computer/.venv/bin/python \
 npm --prefix frontend ci
 npm --prefix frontend run lint
 (cd frontend && npx --no-install tsc --noEmit -p tsconfig.turing.json)
-npm --prefix frontend run test:ts -- src/turing/client.test.ts
+npm --prefix frontend run test:ts -- src/turing/
 npm --prefix frontend run build
 ```
 

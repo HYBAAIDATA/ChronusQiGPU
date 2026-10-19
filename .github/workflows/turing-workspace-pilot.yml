@@ -8,6 +8,8 @@ on:
       - "chronus/mla1517_platform/python/control_api.py"
       - "chronus/mla1517_platform/python/al_haras_pythia.py"
       - "tests/test_turing_workspace_pilot.py"
+      - "frontend/tsconfig.turing.json"
+      - "docs/turing/**"
       - ".github/workflows/turing-workspace-pilot.yml"
   workflow_dispatch:
 permissions:
@@ -43,5 +45,5 @@ jobs:
       - name: Strictly type-check new workspace modules
         working-directory: frontend
         run: npx --no-install tsc --noEmit -p tsconfig.turing.json
-      - run: npm --prefix frontend run test:ts -- src/turing/client.test.ts
+      - run: npm --prefix frontend run test:ts -- src/turing/
       - run: npm --prefix frontend run build

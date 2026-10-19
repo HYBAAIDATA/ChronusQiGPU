@@ -1,13 +1,13 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
-import TuringWorkspace from "./turing/Workspace";
+import TuringApp from "./turing/TuringApp";
 import "./index.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {window.location.pathname.replace(/\/$/, "") === "/turing" ? (
-      <TuringWorkspace />
+    {/^\/turing(?:\/|$)/.test(window.location.pathname) ? (
+      <TuringApp />
     ) : (
       <App />
     )}

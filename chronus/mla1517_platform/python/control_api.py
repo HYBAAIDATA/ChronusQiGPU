@@ -2851,7 +2851,8 @@ class _Handler(BaseHTTPRequestHandler):
                 {
                     "available": False,
                     "error": "guardian_unavailable",
-                    "reason": f"{type(exc).__name__}: {exc}",
+                    "reason": ("guardian_dependency_failure" if path == "/api/v1/quantum/workspace"
+                               else f"{type(exc).__name__}: {exc}"),
                 },
             )
             return False

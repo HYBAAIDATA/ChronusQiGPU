@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:hyba:turing:usage-event:proposal:v0",
+  "title": "PROPOSED usage fact \u2014 not an implemented meter or billing API",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "organisation_id",
+    "billing_account_ref",
+    "job_ref",
+    "occurred_at",
+    "capability",
+    "measurement",
+    "contract_ref",
+    "entitlement_ref",
+    "idempotency_key",
+    "provenance_refs",
+    "event_type"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "turing.usage.proposal.v0"
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "organisation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "billing_account_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "project_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "job_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "capability": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "contract_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "entitlement_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit", "quantity", "meter_version"],
+      "properties": {
+        "unit": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Must be declared by the authoritative meter; never inferred from instance counts."
+        },
+        "quantity": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$",
+          "description": "Exact non-negative decimal, no binary-float rating assumptions."
+        },
+        "meter_version": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "provenance_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "correction_of": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event_type": {
+      "const": "execution.usage_fact",
+      "description": "Proposal for an authoritative execution usage fact, not browser analytics or a rated charge."
+    }
+  }
+}

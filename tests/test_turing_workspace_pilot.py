@@ -138,6 +138,67 @@ class PilotTests(unittest.TestCase):
         with self.assertRaises(workspace.WorkspaceError) as e:
             workspace.Workspace().dispatch("tenant-a", "analyst", {"action": "status", "job_id": j["job_id"]})
         self.assertEqual(e.exception.status, 404)
+    def test_history_empty_does_not_construct_native_pipeline(self):
+        w = workspace.Workspace(lambda: self.fail("history constructed native engine"))
+        _, page = w.dispatch("a", "b", {"action": "list"})
+        self.assertEqual(page["jobs"], [])
+        self.assertEqual(page["total_retained"], 0)
+        self.assertIsNone(page["next_offset"])
+    def test_history_isolated_by_tenant_and_actor(self):
+        self.submit(); self.submit(key="other-tenant", tenant="tenant-b")
+        self.submit(key="other-actor", actor="other")
+        _, page = self.call({"action": "list"})
+        self.assertEqual(len(page["jobs"]), 1)
+        self.assertEqual(page["total_matching"], 1)
+        self.assertEqual(page["total_retained"], 1)
+        _, foreign = self.call({"action": "list"}, tenant="tenant-c")
+        self.assertEqual(foreign["total_retained"], 0)
+    def test_history_summaries_never_expose_report_program_or_keys(self):
+        self.submit(); self.engine.jobs[0].state = State.SUCCEEDED
+        _, page = self.call({"action": "list"})
+        self.assertEqual(set(page["jobs"][0]), {"job_id", "status", "submitted_at", "n_qubits", "operation_count"})
+        self.assertEqual(page["jobs"][0]["n_qubits"], 2)
+        self.assertEqual(page["jobs"][0]["operation_count"], 2)
+    def test_history_pagination_and_descending_order(self):
+        for i in range(13): self.submit(key=f"job-{i}")
+        _, first = self.call({"action": "list", "limit": 10})
+        _, second = self.call({"action": "list", "limit": 10, "offset": first["next_offset"]})
+        ids = [r["job_id"] for r in first["jobs"] + second["jobs"]]
+        self.assertEqual(len(set(ids)), 13)
+        self.assertEqual(ids[0], "fixture-job-12")
+        self.assertEqual(len(second["jobs"]), 3)
+        self.assertIsNone(second["next_offset"])
+    def test_history_filters_native_status_and_identifier(self):
+        self.submit(); self.submit(key="second")
+        self.engine.jobs[0].state = State.FAILED
+        _, page = self.call({"action": "list", "status": "failed", "query": "FIXTURE"})
+        self.assertEqual(page["total_matching"], 1)
+        self.assertEqual(page["total_retained"], 2)
+        self.assertEqual(page["jobs"][0]["status"], "failed")
+        _, page = self.call({"action": "list", "query": "no-match"})
+        self.assertEqual(page["jobs"], [])
+    def test_history_rejects_invalid_pagination_filters_and_fields(self):
+        for fields in [{"offset": True}, {"offset": -1}, {"offset": 257},
+                       {"limit": 0}, {"limit": 21}, {"limit": 2.0},
+                       {"status": "completed"}, {"status": []}, {"query": 0},
+                       {"query": "x" * 129}, {"actor": "other"}]:
+            with self.subTest(fields=fields), self.assertRaises(workspace.WorkspaceError):
+                self.call({"action": "list", **fields})
+    def test_history_reports_current_native_state_not_previous_snapshot(self):
+        self.submit()
+        self.engine.jobs[0].state = State.RUNNING
+        _, page = self.call({"action": "list"})
+        self.assertEqual(page["jobs"][0]["status"], "running")
+        self.engine.jobs[0].state = State.CANCELLED
+        _, page = self.call({"action": "list"})
+        self.assertEqual(page["jobs"][0]["status"], "cancelled")
+    def test_new_process_history_does_not_claim_lifetime_zero_use(self):
+        self.submit()
+        _, page = workspace.Workspace().dispatch("tenant-a", "analyst", {"action": "list"})
+        self.assertEqual(page["persistence"], "in_memory_process_local")
+        self.assertEqual(page["service_mode"], "technical_evaluation_only")
+        self.assertNotIn("billable_usage", page)
+        self.assertNotIn("charges", page)
     def test_invalid_programs(self):
         bad = [None, {}, {"n_qubits": True, "operations": []}, {"n_qubits": "2", "operations": []},
             {"n_qubits": 13, "operations": []}, {"n_qubits": 2, "operations": [BELL["operations"][0]] * 257},
@@ -183,6 +244,21 @@ class RoutingTests(unittest.TestCase):
 
     These are route-order regression tests, not a live authenticated HTTP test.
     """
+    def test_workspace_guardian_dependency_error_does_not_leak_exception(self):
+        tree = ast.parse((PLATFORM / "control_api.py").read_text())
+        cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "_Handler")
+        method = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == "_guardian_preflight")
+        def unavailable(): raise RuntimeError("fixture-secret-and-private-path")
+        scope = {"HTTPStatus": HTTPStatus, "pythia_guardian_api": unavailable, "Any": object}
+        exec(compile(ast.fix_missing_locations(ast.Module(body=[method], type_ignores=[])), "control_api.py", "exec"), scope)
+        class Handler:
+            def _guardian_headers(self): return {}
+            def _json(self, code, body): self.response = code, body
+        h = Handler()
+        self.assertFalse(scope["_guardian_preflight"](h, "/api/v1/quantum/workspace", {"observation": {}}))
+        self.assertEqual(h.response[0], 503)
+        self.assertEqual(h.response[1]["reason"], "guardian_dependency_failure")
+        self.assertNotIn("fixture-secret", str(h.response))
     def test_preflight_denial_never_dispatches(self):
         tree = ast.parse((PLATFORM / "control_api.py").read_text())
         cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "_Handler")
