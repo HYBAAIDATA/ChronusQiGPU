@@ -14,6 +14,12 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+if "benchmarks" in sys.modules:
+    benchmarks_mod = sys.modules["benchmarks"]
+    root_bench = str(ROOT / "benchmarks")
+    if hasattr(benchmarks_mod, "__path__") and root_bench not in benchmarks_mod.__path__:
+        benchmarks_mod.__path__.append(root_bench)
+
 import pytest
 
 from benchmarks.external.ihdp_causal_runner import run_ihdp_benchmark
