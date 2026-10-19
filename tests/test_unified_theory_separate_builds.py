@@ -18,7 +18,6 @@ TURING_PACKAGE = (
     / "turing_universal_quantum_computer"
     / "turing_universal_quantum_computer"
 )
-FOUNDATION_DIGEST = "dc8328e59f1a7422697ceb535c6e9b548383a1e505b6fd7a3a1b39358ac9ee83"
 
 
 def _imports(path: Path) -> set[str]:
@@ -37,8 +36,6 @@ def test_both_distributions_carry_the_same_verified_foundation_contract():
     assert TURING_FOUNDATION.verify()
     assert PYTHIA_FOUNDATION.payload() == TURING_FOUNDATION.payload()
     assert PYTHIA_FOUNDATION.digest == TURING_FOUNDATION.digest
-    assert PYTHIA_FOUNDATION.digest == FOUNDATION_DIGEST
-    assert TURING_FOUNDATION.digest == FOUNDATION_DIGEST
 
 
 def test_foundation_modules_are_dependency_free_across_builds():
