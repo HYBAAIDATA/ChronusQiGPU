@@ -323,6 +323,11 @@ __all__ = [
     "ManifoldEnhancedFormulations",
     "strict_quantum_work_certificate",
     "UnifiedAnalyticsPlatform",
+    "ChainFuture",
+    "IntelligenceStage",
+    "StageIntelligenceLog",
+    "SuperpositionHold",
+    "TOEMiningDecisionPlane",
 ]
 
 
@@ -334,6 +339,11 @@ _LAZY_SURFACES = {
     "UnifiedAnalyticsPlatform": ("toe.unified", "UnifiedAnalyticsPlatform"),
     "TOESystem": ("toe.system", "TOESystem"),
     "TOEProvenanceRecord": ("toe.system", "TOEProvenanceRecord"),
+    "ChainFuture": ("toe.mining_decision_plane", "ChainFuture"),
+    "IntelligenceStage": ("toe.mining_decision_plane", "IntelligenceStage"),
+    "StageIntelligenceLog": ("toe.mining_decision_plane", "StageIntelligenceLog"),
+    "SuperpositionHold": ("toe.mining_decision_plane", "SuperpositionHold"),
+    "TOEMiningDecisionPlane": ("toe.mining_decision_plane", "TOEMiningDecisionPlane"),
 }
 
 # The standalone TOE distribution does not carry the monorepo's mining-facing
