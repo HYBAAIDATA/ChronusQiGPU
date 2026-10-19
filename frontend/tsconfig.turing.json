@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "strict": true },
+  "include": [
+    "src/turing/client.ts",
+    "src/turing/Workspace.tsx",
+    "src/vite-env.d.ts"
+  ]
+}

@@ -3269,6 +3269,23 @@ class _Handler(BaseHTTPRequestHandler):
                 },
             )
             return
+        if parsed.path == "/api/v1/quantum/workspace":
+            body, err = self._read_json_body()
+            if body is None:
+                self._json(
+                    HTTPStatus.REQUEST_ENTITY_TOO_LARGE if err == "body_too_large"
+                    else HTTPStatus.BAD_REQUEST, {"error": err},
+                )
+                return
+            if not self._guardian_preflight(parsed.path, body):
+                return
+            from turing_workspace import handle_workspace
+
+            code, payload = handle_workspace(
+                self.headers, body, getattr(self, "_guardian_receipt", None)
+            )
+            self._json(HTTPStatus(code), payload)
+            return
         handler = self._POST_TABLE.get(parsed.path)
         if handler is None:
             self._discard_request_body()
