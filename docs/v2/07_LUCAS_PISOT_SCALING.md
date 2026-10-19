@@ -147,3 +147,19 @@ tests/test_lucas_partition.py .....                                       [  5 p
 tests/test_lucas_pisot_scaling_research.py ..........                     [ 10 passed ]
 ============================= 52 passed in 14.34s =============================
 ```
+
+---
+
+## 7. Honest Accounting & Methodological Verification (`tests/test_benchmark_lucas_pisot.py`)
+
+### 7.1 The Honest Accounting Principle
+In evaluating topological subset restriction against unrestricted search schedules:
+- **Unconditional Cost Invariance**: On any random oracle, the unconditional cost must account for miss penalties:
+  $$\text{Miss Cost} = \text{Subset Size} + (\text{Rank} - \text{Subset Size}) + 1 \equiv \text{Rank} + 1 = \text{Base Cost}$$
+  Across all 36 evaluation cells in `evidence/lucas_pisot_honest_accounting.jsonl` ($n \in \{3, 4, 5, 6\}$, sizes $\in \{256, 1024, 4096\}$, seeds $\in \{1337, 42, 2026\}$):
+  $$|\text{mean}_{\text{unconditional}} - \text{mean}_{\text{unrestricted}}| < 10^{-9}$$
+- **Hit-Conditional Distinction**: The restricted arm is faster *by construction* only when conditioned on a hit within the first $\lceil N \cdot d(n) \rceil$ elements. This demonstrates deterministic pre-image search ordering, **not** an unconditional hash reduction.
+- **Hit Rate Convergence**: Measured empirical hit rates converge to the theoretical Pisot damping factor $d(n) = 1 - |\psi|^n$ within $\pm 0.05$.
+- **Locked Non-Claims**: Confirmed in `tests/test_benchmark_lucas_pisot.py` and `lucas/scaling_research.py`: `non_claims = ["mining advantage", "scheduling advantage", "hardware speedup", "production qualification"]`.
+- **Reference Artifact**: Canonical standalone proof archived in [`evidence/repro_lucas_pisot.py`](../../evidence/repro_lucas_pisot.py).
+
