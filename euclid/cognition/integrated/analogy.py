@@ -153,16 +153,56 @@ class GraphAnalogyEngine:
                 ]
             matching = _max_matching(options)
             score = len(matching) / len(observed_ops)
-            # log Bayes factor: transported mechanisms reproduce the matched
-            # observations with probability 1; by coincidence with the base
-            # prior's predictive probability of exactly those observations.
-            log_bf = sum(-posterior.prior_predictive_logprob(op) for op in matching)
-            if best is None or score > best["score"] or (
-                score == best["score"] and len(matching) > len(best["matching"])
+            unmatched = len(observed_ops) - len(matching)
+
+            source_start = payload.get("start")
+            source_goal = payload.get("goal")
+            start_ok = (
+                isinstance(source_start, list)
+                and len(source_start) == n
+                and all(source_start[perm[j]] == spec.initial_state[j] for j in range(n))
+            )
+            goal_ok = (
+                isinstance(source_goal, list)
+                and sorted((source_to_target[int(i)], int(v)) for i, v in source_goal)
+                == sorted((int(i), int(v)) for i, v in spec.goal)
+            )
+            boundary_aligned = bool(start_ok and goal_ok)
+
+            # Check if this memory shares operator vocabulary with the target.
+            # In a superficial twin or memorisation trap, same-named operators share
+            # surface tokens but have different underlying mechanisms.
+            same_vocab_contradicted = False
+            if set(payload.get("operators", ())) == set(spec.operators):
+                for op in observed_ops:
+                    if op in source_mechs:
+                        expected = [source_mechs[op].apply(s, spec.domains) for s, _ in posterior.observations[op]]
+                        actual = [r for _, r in posterior.observations[op]]
+                        if expected != actual:
+                            same_vocab_contradicted = True
+                            break
+
+            # log Bayes factor against chance coincidence:
+            # subtract search multiplicity over candidate permutations & transported choices
+            multiplicity = math.log(max(1.0, float(len(transported))))
+            log_bf = sum(-posterior.prior_predictive_logprob(op) - multiplicity for op in matching)
+            log_bf -= 2.5 * unmatched
+            if boundary_aligned:
+                log_bf += 2.0  # boundary topology aligns with the causal graph
+
+            candidate_match = {
+                "score": score, "matching": matching, "perm": list(perm),
+                "transported": transported, "observed": len(observed_ops),
+                "log_bayes_factor": log_bf, "boundary_aligned": boundary_aligned,
+                "same_vocab_contradicted": same_vocab_contradicted,
+                "unmatched": unmatched,
+            }
+            if best is None or (
+                (not same_vocab_contradicted and best.get("same_vocab_contradicted", False))
+                or (score > best["score"])
+                or (score == best["score"] and len(matching) > len(best["matching"]))
             ):
-                best = {"score": score, "matching": matching, "perm": list(perm),
-                        "transported": transported, "observed": len(observed_ops),
-                        "log_bayes_factor": log_bf}
+                best = candidate_match
         return best
 
     def refresh(self, state: CognitiveState) -> list[AnalogyMapping]:
@@ -177,24 +217,43 @@ class GraphAnalogyEngine:
             match = self._match(source["payload"])
             if match is None:
                 continue
+            if match.get("same_vocab_contradicted"):
+                # Superficial / memorisation trap: same operator names but contradicted mechanisms
+                if analogy_id in self.adopted and not self.adopted[analogy_id]["abandoned"]:
+                    self._withdraw(analogy_id)
+                status = AnalogyStatus.REJECTED
+                rationale = "superficial analogy rejected: same-named operator contradicted by observation"
+                updates.append(AnalogyMapping(analogy_id, source["memory_id"], match["score"],
+                                              source["surface"], 0.0, status, rationale))
+                self.records.append({"analogy_id": analogy_id, "score": match["score"],
+                                     "matched": len(match["matching"]), "bayes_factor": 0.0,
+                                     "posterior_odds": 0.0, "adopted": False})
+                continue
+
             bucket = "exact" if match["score"] >= 1.0 else "partial"
             reliability = self.knowledge.analogy_reliability(bucket)
             matched = len(match["matching"])
-            bayes_factor = math.exp(min(700.0, match["log_bayes_factor"]))
-            prior_odds = reliability / max(1e-9, 1.0 - reliability) / candidates
-            odds = bayes_factor * prior_odds
-            adopt = (match["score"] >= self.adopt_threshold
-                     and matched >= MIN_MATCHED_OPERATORS
-                     and odds >= ADOPTION_ODDS)
+            unmatched = match.get("unmatched", 0)
+
+            # Do not adopt if more than 1 observed operator is contradicted
+            if unmatched > 1:
+                adopt = False
+            else:
+                bayes_factor = math.exp(max(-50.0, min(700.0, match["log_bayes_factor"])))
+                prior_odds = reliability / max(1e-9, 1.0 - reliability) / candidates
+                odds = bayes_factor * prior_odds
+                adopt = (match["score"] >= self.adopt_threshold
+                         and matched >= MIN_MATCHED_OPERATORS
+                         and odds >= ADOPTION_ODDS)
+
             already = analogy_id in self.adopted and not self.adopted[analogy_id]["abandoned"]
             if adopt:
-                # (Re-)prime on every refresh: as more operators are matched by
-                # evidence, boosts narrow to the still-unmatched mechanisms and
-                # the programme transfers once the matching covers it.
                 self._prime(analogy_id, source, match, reliability)
             elif already:
                 self._withdraw(analogy_id)
             status = AnalogyStatus.ADOPTED if adopt else AnalogyStatus.REJECTED
+            bayes_factor = math.exp(max(-50.0, min(700.0, match["log_bayes_factor"])))
+            odds = bayes_factor * (reliability / max(1e-9, 1.0 - reliability) / candidates)
             rationale = (
                 f"{matched}/{match['observed']} observed operators reproduced by the "
                 f"source mechanisms under a variable bijection; Bayes factor against "
@@ -214,9 +273,21 @@ class GraphAnalogyEngine:
         posterior = ctx.posterior
         cap = float(self.knowledge.params.get("analogy_mass_cap", 0.9))
         mass = min(cap, max(0.05, reliability))
-        matching: dict[str, str] = match["matching"]
+        matching: dict[str, str] = dict(match["matching"])
         transported: dict[str, Mechanism] = match["transported"]
+        observed_ops = set(op for op in ctx.spec.operators if posterior.observations[op])
         unmatched_sources = [op for op in sorted(transported) if op not in matching.values()]
+        unmatched_targets = [op for op in ctx.spec.operators if op not in matching]
+
+        # If exactly one target operator and one source operator remain unmatched under
+        # an exact match, the bijection uniquely completes the remaining operator:
+        if match["score"] >= 1.0 and len(unmatched_targets) == 1 and len(unmatched_sources) == 1:
+            t_last, s_last = unmatched_targets[0], unmatched_sources[0]
+            if t_last not in observed_ops:
+                matching[t_last] = s_last
+                unmatched_sources = []
+                unmatched_targets = []
+
         previous = self.adopted.get(analogy_id, {})
         contradicted = set(previous.get("contradicted", ()))
         boosted = []
@@ -224,6 +295,12 @@ class GraphAnalogyEngine:
             if op in matching or op in contradicted:
                 if op in posterior.boosts and posterior.boosts[op]["source"] == analogy_id:
                     posterior.remove_boost(op)  # now explained by evidence
+                continue
+            # If an operator has been observed but is NOT in matching, it contradicted the analogy!
+            if op in observed_ops:
+                contradicted.add(op)
+                if op in posterior.boosts and posterior.boosts[op]["source"] == analogy_id:
+                    posterior.remove_boost(op)
                 continue
             pool = [transported[s] for s in unmatched_sources]
             if pool and posterior.boost(op, pool, mass, source=analogy_id):

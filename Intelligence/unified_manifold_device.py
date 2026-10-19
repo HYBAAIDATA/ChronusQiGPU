@@ -24,26 +24,16 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple
 import numpy as np
 from hyba.device import describe, is_hyba_name, require_hyba
 
-try:
-    from .four_layer_stack import FourLayerMiningStack
-    from .poincare_cassini_search import DIM, GOLDEN_WEIGHTS, DodecaIcosahedron32
-    from .poincare_golden_11d import (
-        compute_poincare_norm_sq,
-        compute_zeckendorf_certificate,
-        fold_poincare_11d_vector,
-        unfold_poincare_11d_vector,
-    )
-    from .search_crystal import UINT32_SPACE, cassini_permutation, partition_interval
-except ImportError:  # pragma: no cover - top-level script use
-    from four_layer_stack import FourLayerMiningStack
-    from poincare_cassini_search import DIM, GOLDEN_WEIGHTS, DodecaIcosahedron32
-    from poincare_golden_11d import (
-        compute_poincare_norm_sq,
-        compute_zeckendorf_certificate,
-        fold_poincare_11d_vector,
-        unfold_poincare_11d_vector,
-    )
-    from search_crystal import UINT32_SPACE, cassini_permutation, partition_interval
+from .four_layer_stack import FourLayerMiningStack
+from .poincare_cassini_search import DIM, GOLDEN_WEIGHTS, DodecaIcosahedron32
+from toe.poincare_golden_11d import (
+    compute_poincare_norm_sq,
+    compute_zeckendorf_certificate,
+    fold_poincare_11d_vector,
+    unfold_poincare_11d_vector,
+)
+from .search_crystal import UINT32_SPACE, cassini_permutation, partition_interval
+
 
 _PYTHON_ROOT = Path(__file__).resolve().parents[1] / "mla1517_platform_v3.4" / "python"
 if str(_PYTHON_ROOT) not in sys.path:

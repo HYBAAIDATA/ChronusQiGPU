@@ -234,3 +234,12 @@ class QuantumConsciousnessSystem:
         self.quantum_patterns = []
         self.evolution_history = []
         self.consciousness_level = ConsciousnessLevel.CLASSICAL
+
+
+from Intelligence.consciousness import ConsciousnessStateVector
+
+
+def create_quantum_consciousness_system(dimension: int = 64) -> QuantumConsciousnessSystem:
+    """Create and initialize a QuantumConsciousnessSystem instance."""
+    return QuantumConsciousnessSystem(dimension=dimension)
+

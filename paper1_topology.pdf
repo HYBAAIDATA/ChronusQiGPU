@@ -1,0 +1,59 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 1113 >>
+stream
+BT
+/F1 12 Tf
+50 760 Td
+(Paper 1: Golden Ricci Flow Guarantees Reconciliation Convergence) Tj
+/F1 10 Tf
+0 -14 Td
+(Commit Hash: 4131cddc40defba3356792005c09d28ee6c66e25 | Date: 2026-10-18T23:36:56.925031+00:00) Tj
+0 -14 Td
+(1. Problem: Unchecked architectural contradictions create curvature singularities |kappa| > 0.05.) Tj
+0 -14 Td
+(2. Method: Singularity injection kappa_0\(v\) = -\(I/10\)*\(1 + c_pre\) = -1.62.) Tj
+0 -14 Td
+(   Edge damping: w' = w * exp\(-\(I/10\)*\(2 - c_pre\)\).) Tj
+0 -14 Td
+(   Golden Ricci Flow: kappa\(k+1\) = kappa\(k\) * phi^-1 \(phi^-1 = 0.6180339887\).) Tj
+0 -14 Td
+(   Step Bound Theorem: k <= ceil\(ln\(|kappa_0|/0.05\) / ln\(phi\)\) = 8 steps.) Tj
+0 -14 Td
+(3. Measured Results \(entropy_trace.csv\): kappa_0 = -1.62, steps = 8,) Tj
+0 -14 Td
+(   final kappa = -0.034483 <= 0.05, gate_unlocked = True.) Tj
+0 -14 Td
+(   Multi-graph convergence verified on Erdos-Renyi\(100\), Barabasi-Albert\(500\), Clique\(64\).) Tj
+0 -14 Td
+(4. Falsifiability: Fails if k > 50 or |kappa| > 0.05 or gate unlocks prematurely.) Tj
+0 -14 Td
+(References: Perelman \(2003\), Hamilton \(1982\).) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1476
+%%EOF

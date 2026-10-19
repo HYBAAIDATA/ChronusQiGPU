@@ -25,18 +25,11 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Dict
 
-try:
-    from .hardened_unified_substrate import (
-        ManifoldCurvature,
-        PrimeStorageManifold,
-        TensorCoreGPU_Context,
-    )
-except ImportError:  # pragma: no cover - top-level script use
-    from hardened_unified_substrate import (
-        ManifoldCurvature,
-        PrimeStorageManifold,
-        TensorCoreGPU_Context,
-    )
+from aethel.hardened_unified_substrate import (
+    ManifoldCurvature,
+    PrimeStorageManifold,
+    TensorCoreGPU_Context,
+)
 
 from .agentic_controller_search import AgenticSearchController
 from .orchestrator_search import SearchAwareOrchestrator

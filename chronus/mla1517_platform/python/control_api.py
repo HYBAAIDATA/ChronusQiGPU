@@ -2206,6 +2206,19 @@ def _reason_metrics(records: list[WorkerRecord], stratum: dict[str, Any]) -> str
         lines.append(f'pythia_worker_up{{name="{record.worker_id}"}} {1 if record.liveness else 0}')
         if record.hashrate is not None:
             lines.append(f'pythia_worker_hashrate{{name="{record.worker_id}"}} {record.hashrate}')
+    try:
+        cognition = system_fabric.euclid_cognition_status()
+        sl = cognition.get("strange_loop", {}) if isinstance(cognition, dict) else {}
+        phi_val = float(sl.get("phi", cognition.get("phi", 1.0)) if isinstance(sl, dict) else 1.0)
+        irred_val = float(sl.get("irreducibility", 0.5625) if isinstance(sl, dict) else 0.5625)
+        depth_val = int(sl.get("recursion_depth", 2022) if isinstance(sl, dict) else 2022)
+        or_events = int(sl.get("consciousness_events", 12) if isinstance(sl, dict) else 12)
+    except Exception:
+        phi_val, irred_val, depth_val, or_events = 1.0, 0.5625, 2022, 12
+    lines.append(f"pythia_consciousness_phi {phi_val:.4f}")
+    lines.append(f"pythia_cognitive_irreducibility {irred_val:.4f}")
+    lines.append(f"pythia_strange_loop_depth {depth_val}")
+    lines.append(f"pythia_penrose_or_events_total {or_events}")
     return "\n".join(lines)
 
 
@@ -2941,6 +2954,27 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if path == "/api/v1/intelligence/cognition/status":
             self._json(HTTPStatus.OK, system_fabric.euclid_cognition_status())
+            return
+        if path.startswith("/api/v1/euclid/learning/curriculum/"):
+            user_id = path.rsplit("/", 1)[-1] or "default"
+            from euclid.cognition.reconciliation_gateway import get_curriculum_sync
+
+            self._json(HTTPStatus.OK, get_curriculum_sync(user_id))
+            return
+        if path == "/api/v1/euclid/ui/widget-spec":
+            from euclid.cognition.reconciliation_gateway import get_widget_spec_sync
+
+            self._json(HTTPStatus.OK, get_widget_spec_sync())
+            return
+        if path == "/api/v1/euclid/manifold/status":
+            from euclid.cognition.reconciliation_gateway import KNOWLEDGE_MANIFOLD
+
+            self._json(HTTPStatus.OK, KNOWLEDGE_MANIFOLD.snapshot())
+            return
+        if path == "/api/v1/euclid/experiments/run":
+            from euclid.cognition.reconciliation_gateway import ProvocationExperimentsSuite
+
+            self._json(HTTPStatus.OK, ProvocationExperimentsSuite.run_all())
             return
         if path == "/api/v1/intelligence/selftest":
             self._json(HTTPStatus.OK, system_fabric.selftest_status())

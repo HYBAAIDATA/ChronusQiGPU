@@ -35,25 +35,13 @@ from dataclasses import dataclass
 
 import asyncio
 
-try:
+from Intelligence.grover_exact_scale import run_folded
+from kellogg.quantum_tensor import (
+    Observables,
+    encode_data_to_state,
+    quantum_fisher_information,
+)
 
-    from Intelligence.grover_exact_scale import run_folded
-
-    from Intelligence.quantum_tensor import (
-        Observables,
-        encode_data_to_state,
-        quantum_fisher_information,
-    )
-
-except (ImportError, SystemError):  # pragma: no cover
-
-    from grover_exact_scale import run_folded  # type: ignore[no-redef]
-
-    from quantum_tensor import (  # type: ignore[no-redef]
-        Observables,
-        encode_data_to_state,
-        quantum_fisher_information,
-    )
 
 
 # Declared operational constants — assumptions and budgets, not

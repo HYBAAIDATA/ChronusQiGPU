@@ -24,7 +24,7 @@ from urllib.parse import urlparse
 
 from .bitcoin_hasher import BitcoinHasher
 from .stratum_bridge import build_header80
-from Intelligence.strict_quantum import certify_work_window, verify_certificate
+from toe.strict_quantum import certify_work_window, verify_certificate
 from .scaled_execution import LucasScaledAethelExecutionAdapter
 
 LOG = logging.getLogger("pythia.production_miner")

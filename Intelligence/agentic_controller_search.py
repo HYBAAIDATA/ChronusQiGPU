@@ -16,10 +16,7 @@ import json
 import time
 from typing import Any, Dict, List, Optional
 
-try:
-    from .hardened_unified_substrate import ManifoldCurvature
-except ImportError:  # pragma: no cover - top-level script use
-    from hardened_unified_substrate import ManifoldCurvature
+from aethel.hardened_unified_substrate import ManifoldCurvature
 
 from .search_api import SearchAPI
 

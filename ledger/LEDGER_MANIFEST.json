@@ -1,0 +1,8 @@
+{
+  "schema": "euclid.ledger.manifest/1",
+  "head": "10870b3d1ab7face7684a31cab1c0b8c98ab45adaf6e30bb5627a9fe2467e0ce",
+  "count": 1,
+  "s1_hash": "4131cddc40defba3356792005c09d28ee6c66e25",
+  "merkle_root": "b2c85e9acd5934b78e09bea59e11877405858ad61c808ac2d57f25e6f9e29c1a",
+  "chain_verified": true
+}
