@@ -1,0 +1,74 @@
+{
+  "id": "bsd_1965",
+  "title": "Notes on Elliptic Curves I & II",
+  "authors": [
+    "Bryan J. Birch",
+    "Peter Swinnerton-Dyer"
+  ],
+  "year": 1965,
+  "source_url": "https://gdz.sub.uni-goettingen.de/id/PPN243919689_0218",
+  "license": "Open Access (GDZ Göttingen)",
+  "retrieved_date": "2026-10-19T07:51:40.489830+00:00",
+  "sha256": "284fa5e08c47c0af148882bc284115c2aef5fe64eccbea98b756b177d82eb5ac",
+  "category": "Arithmetic Geometry & Elliptic Curves",
+  "problem_focus": [
+    "BSD"
+  ],
+  "definitions": [
+    {
+      "term": "Hasse-Weil L-Function",
+      "statement": "L(E, s) = prod_{p | Delta} (1 - a_p p^(-s))^(-1) * prod_{p nmid Delta} (1 - a_p p^(-s) + p^(1-2s))^(-1)."
+    },
+    {
+      "term": "Partial Euler Product",
+      "statement": "P(X) = prod_{p <= X, p nmid Delta} N_p / p where N_p = #E(F_p)."
+    },
+    {
+      "term": "Mordell-Weil Group",
+      "statement": "E(Q) is a finitely generated abelian group isomorphic to Z^r oplus E(Q)_tors."
+    }
+  ],
+  "theorems": [
+    {
+      "label": "Mordell's Theorem",
+      "statement": "E(Q) is finitely generated (Mordell 1922).",
+      "status": "PROVEN"
+    },
+    {
+      "label": "Hasse's Theorem",
+      "statement": "|a_p| <= 2 sqrt(p) for all primes of good reduction.",
+      "status": "PROVEN"
+    }
+  ],
+  "conjectures": [
+    {
+      "label": "Birch-Swinnerton-Dyer Rank Conjecture",
+      "statement": "ord_{s=1} L(E, s) = rank E(Q) = r.",
+      "status": "OPEN"
+    },
+    {
+      "label": "Full BSD Leading Coefficient Formula",
+      "statement": "lim_{s->1} L(E,s)/(s-1)^r = (Omega_E * R_E * |Sha(E)| * prod c_p) / (|E(Q)_tors|^2).",
+      "status": "OPEN"
+    }
+  ],
+  "open_gaps": [
+    "Conjecture formulation was purely empirical based on EDSAC-2 computations on Mordell curves y^2 = x^3 - Dx.",
+    "Analytic continuation of L(E, s) to s=1 was unproven in 1965 (later established by Wiles et al. 1995-2001)."
+  ],
+  "computational_handles": [
+    "Frobenius point counting #E(F_p) via Legendre symbols in O(p log p).",
+    "Partial Euler product P(X) growth regression against log(log X).",
+    "2-descent for upper bounding Selmer rank Sel^(2)(E/Q)."
+  ],
+  "citations": [
+    {
+      "ref": "Birch, B.J., Swinnerton-Dyer, H.P.F. (1965). Notes on Elliptic Curves (II), J. Reine Angew. Math., 218, 79-108. GDZ Göttingen Digital Library.",
+      "url": "https://gdz.sub.uni-goettingen.de/id/PPN243919689_0218"
+    },
+    {
+      "ref": "Wiles, A. (2000). The Birch and Swinnerton-Dyer Conjecture - Official Clay Mathematics Institute Problem Description.",
+      "url": "https://www.claymath.org/wp-content/uploads/2022/05/birchswin.pdf"
+    }
+  ]
+}

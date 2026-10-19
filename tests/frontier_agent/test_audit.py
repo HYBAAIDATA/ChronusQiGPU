@@ -1,6 +1,6 @@
 import pytest
 from chronus.agent._contracts import ContractError
-from conftest import H
+from tests.frontier_agent.conftest import H
 import hashlib
 from chronus.agent.audit import AuditLedger, ReplayRecord, replay_decision
 

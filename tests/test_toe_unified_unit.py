@@ -5,7 +5,7 @@ import pytest
 from toe.unified.claims import CLAIMS
 from toe.unified.economics import CostBaseline, PlatformCost, assess
 
-from test_toe_unified_invariants import SEED, exercise, load_cost_sheet, load_iris
+from tests.test_toe_unified_invariants import SEED, exercise, load_cost_sheet, load_iris
 
 TOUCHED = {claim.id for claim in CLAIMS}
 assert SEED == 1517

@@ -12,6 +12,23 @@ EVIDENCE_CLASS = "exploratory-parametric"
 
 # Host float64 golden ratio.  Parametric use only; see module docstring.
 PHI = (1.0 + 5.0 ** 0.5) / 2.0
+PSI = (1.0 - 5.0 ** 0.5) / 2.0
+
+
+def pisot_damp(n: int) -> float:
+    """Quantum convergence factor (1 - |psi|^n) for ladder rung n."""
+    if n < 0:
+        raise ValueError("ladder rung n must be non-negative")
+    return 1.0 - abs(PSI) ** n
+
+
+def pisot_subspace_size(total_size: int, n: int) -> int:
+    """Deterministic Pisot-damped subspace budget for ladder rung n."""
+    import math
+
+    if total_size < 0:
+        raise ValueError("total_size must be >= 0")
+    return math.ceil(total_size * pisot_damp(n))
 
 
 def phi_order(size: int) -> list[int]:
@@ -32,4 +49,13 @@ def neutral_order(size: int) -> list[int]:
     return list(range(size))
 
 
-__all__ = ["EVIDENCE_CLASS", "PHI", "neutral_order", "phi_order"]
+__all__ = [
+    "EVIDENCE_CLASS",
+    "PHI",
+    "PSI",
+    "neutral_order",
+    "phi_order",
+    "pisot_damp",
+    "pisot_subspace_size",
+]
+

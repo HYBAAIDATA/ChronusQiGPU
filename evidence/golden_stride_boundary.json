@@ -1,0 +1,11 @@
+{
+  "first_collapse_n": 39,
+  "fp32_erased": [
+    18,
+    20
+  ],
+  "device_run": "NOT_RUN",
+  "odd_stride_coprime": true,
+  "gold_fifo_depth": 8,
+  "silicon_hashrate_claimed": false
+}

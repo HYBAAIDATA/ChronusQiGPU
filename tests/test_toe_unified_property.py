@@ -7,7 +7,7 @@ from kellogg.tensor_ml import exact_linear
 
 from toe.unified import UnifiedAnalyticsPlatform
 
-from test_toe_unified_invariants import SEED, load_iris
+from tests.test_toe_unified_invariants import SEED, load_iris
 
 TOUCHED = {"I1", "C1", "C5", "F1", "C15", "D11", "C7"}
 SETTINGS = settings(derandomize=True, max_examples=20)

@@ -76,8 +76,13 @@ class EuclidLearningSystem:
   attrs={str(k):float(v) for k,v in dict(attribution or {}).items()}
   if any(not math.isfinite(v) for v in attrs.values()): raise ValueError("attribution must be finite")
   error=self._prediction_error(prediction,outcome) if prediction_error is None else self._nonnegative(prediction_error,"prediction_error"); previous=self.events[-1].event_hash if self.events else None
-  base={"timestamp":time.time(),"domain":domain,"memory_kind":kind,"observation":observation,"prediction":prediction,"action":action,"outcome":outcome,"prediction_error":error,"uncertainty":uncertainty,"attribution":attrs,"modules":tuple(str(x) for x in modules),"resource_cost":resource_cost,"generalized":bool(generalized),"previous_event_hash":previous,"metadata":dict(metadata or {})}
-  digest=sha256_bytes(canonical_json_bytes(base)); event=LearningEvent("event-"+uuid.uuid4().hex,base["timestamp"],domain,kind,observation,prediction,action,outcome,error,uncertainty,attrs,base["modules"],resource_cost,bool(generalized),previous,digest,base["metadata"]); self.events.append(event)
+  obs_snap=json.loads(canonical_json_bytes(observation).decode("utf-8")) if observation is not None else None
+  pred_snap=json.loads(canonical_json_bytes(prediction).decode("utf-8")) if prediction is not None else None
+  act_snap=json.loads(canonical_json_bytes(action).decode("utf-8")) if action is not None else None
+  out_snap=json.loads(canonical_json_bytes(outcome).decode("utf-8")) if outcome is not None else None
+  meta_snap=json.loads(canonical_json_bytes(metadata or {}).decode("utf-8"))
+  base={"timestamp":time.time(),"domain":domain,"memory_kind":kind,"observation":obs_snap,"prediction":pred_snap,"action":act_snap,"outcome":out_snap,"prediction_error":error,"uncertainty":uncertainty,"attribution":attrs,"modules":tuple(str(x) for x in modules),"resource_cost":resource_cost,"generalized":bool(generalized),"previous_event_hash":previous,"metadata":meta_snap}
+  digest=sha256_bytes(canonical_json_bytes(base)); event=LearningEvent("event-"+uuid.uuid4().hex,base["timestamp"],domain,kind,obs_snap,pred_snap,act_snap,out_snap,error,uncertainty,attrs,base["modules"],resource_cost,bool(generalized),previous,digest,meta_snap); self.events.append(event)
   if persist:self._checkpoint()
   return event
  def propose_claim(self,*,domain:str,statement:str,derivation:str,source_seed_ids:Sequence[str]=(),metadata:Mapping[str,Any]|None=None,persist:bool=True)->KnowledgeClaim:

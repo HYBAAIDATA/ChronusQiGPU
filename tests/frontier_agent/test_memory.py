@@ -1,5 +1,5 @@
 from fractions import Fraction as F
-from conftest import H
+from tests.frontier_agent.conftest import H
 from chronus.agent.memory import LongHorizonMemory, Episode, Lesson
 
 

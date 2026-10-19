@@ -47,3 +47,47 @@ def test_face_bias_rotates_rank():
     # A nonce on lane 17 is probed first under the biased order.
     assert rank17(17) == 0
     assert rank0(17) != 0
+
+
+def test_toe_traversal_parity_honest_accounting():
+    """Honest accounting: TOE traversal reorders candidate evaluation order on
+    the 32-face manifold, but does not alter the double-SHA256 compression function.
+    Under a memoryless random oracle, expected search cost is invariant."""
+    import random
+    import statistics
+
+    window = 1024
+    rank = toe_rank_map(0)
+    # Verify bijective permutation over window
+    order = [None] * window
+    for nonce in range(window):
+        order[rank(nonce)] = nonce
+    assert None not in order
+
+    # Compare iteration counts to find a uniform random winner
+    rng = random.Random(1337)
+    seq_hits, toe_hits = [], []
+    for _ in range(500):
+        w = rng.randrange(window)
+        seq_hits.append(w + 1)
+        toe_hits.append(rank(w) + 1)
+
+    mean_seq = statistics.fmean(seq_hits)
+    mean_toe = statistics.fmean(toe_hits)
+    # Parity: statistical difference < 8%
+    assert abs(mean_toe - mean_seq) / mean_seq < 0.08
+
+
+def test_boundaries_per_toe_scaling_research():
+    """Locks the non-claims boundary: traversal is geometric ordering, not consensus bypass."""
+    from lucas.scaling_research import research_report
+
+    report = research_report()
+    for claim in [
+        "mining advantage",
+        "scheduling advantage",
+        "hardware speedup",
+        "production qualification",
+    ]:
+        assert claim in report["non_claims"]
+

@@ -1,7 +1,7 @@
 from dataclasses import replace
 from fractions import Fraction as F
 from chronus.agent._contracts import digest
-from conftest import H
+from tests.frontier_agent.conftest import H
 from chronus.agent.world_model import (
     WorldModel,
     Fact,

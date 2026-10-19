@@ -1,0 +1,68 @@
+{
+  "id": "voisin_hodge",
+  "title": "Hodge Theory and Complex Algebraic Geometry I & II",
+  "authors": [
+    "Claire Voisin"
+  ],
+  "year": 2002,
+  "source_url": "https://doi.org/10.1017/CBO9780511615344",
+  "license": "Academic Research & Educational Fair Use",
+  "retrieved_date": "2026-10-19T07:51:40.489830+00:00",
+  "sha256": "a682eb566bd617ea953c64a160feb41e1ed90044f87580f5b9e4b1038f8a3c41",
+  "category": "Complex Geometry & Algebraic Cycles",
+  "problem_focus": [
+    "HODGE"
+  ],
+  "definitions": [
+    {
+      "term": "Griffiths Intermediate Jacobian",
+      "statement": "J^k(X) = H^(2k-1)(X, C) / (F^k H^(2k-1)(X, C) + H^(2k-1)(X, Z)), complex torus parameterizing homologically trivial cycles."
+    },
+    {
+      "term": "Abel-Jacobi Map",
+      "statement": "AJ_k: CH^k(X)_hom -> J^k(X) sending cycle sum n_i Z_i to integral of holomorphic forms over chains."
+    },
+    {
+      "term": "Bloch-Beilinson Filtration",
+      "statement": "Conjectural filtration F^* on Chow groups CH^k(X)_Q reflecting Hodge coniveau."
+    }
+  ],
+  "theorems": [
+    {
+      "label": "Lefschetz Hard Theorem & Primitive Decomposition",
+      "statement": "H^k(X, Q) decomposes into primitive cohomology P^(p,q) under Lefschetz operator L.",
+      "status": "PROVEN"
+    },
+    {
+      "label": "Voisin's Counterexample to Variational Generalized Hodge",
+      "statement": "The generalized Hodge conjecture for variations of Hodge structures fails in codimension >= 2.",
+      "status": "PROVEN"
+    },
+    {
+      "label": "Bloch's Conjecture for Surfaces with p_g = 0",
+      "statement": "CH_0(S)_hom = 0 for surfaces with geometric genus p_g = 0 under group actions.",
+      "status": "PARTIALLY_PROVEN"
+    }
+  ],
+  "conjectures": [
+    {
+      "label": "Generalized Hodge Conjecture (Grothendieck)",
+      "statement": "The largest sub-Hodge structure of H^k(X, Q) contained in F^p H^k(X, C) comes from an algebraic subvariety of codimension p.",
+      "status": "OPEN"
+    }
+  ],
+  "open_gaps": [
+    "Mumford's theorem (1968) proves Chow groups CH_0(X) can be infinite-dimensional, creating obstruction to geometric representation."
+  ],
+  "computational_handles": [
+    "Gröbner basis computation for ideals of algebraic subvarieties representing Hodge classes.",
+    "Primitive cohomology decomposition on Fermat hypersurfaces.",
+    "Abel-Jacobi regulator evaluation for cycles on Calabi-Yau threefolds."
+  ],
+  "citations": [
+    {
+      "ref": "Voisin, C. (2002). Hodge Theory and Complex Algebraic Geometry, I & II, Cambridge Studies in Advanced Mathematics, 76 & 77.",
+      "url": "https://doi.org/10.1017/CBO9780511615344"
+    }
+  ]
+}

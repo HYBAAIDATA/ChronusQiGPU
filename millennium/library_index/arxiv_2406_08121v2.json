@@ -1,0 +1,50 @@
+{
+  "id": "arxiv_2406_08121v2",
+  "title": "Moments of derivatives of the Riemann zeta function: Characteristic polynomials and the hybrid formula",
+  "authors": [
+    "Christopher Hughes",
+    "Andrew Pearce-Crump"
+  ],
+  "year": 2024,
+  "source_url": "http://arxiv.org/abs/2406.08121v2",
+  "license": "Open Access (arXiv preprint)",
+  "retrieved_date": "2026-10-19T07:51:40.489830+00:00",
+  "sha256": "cbace1c4d39d56cb8b60124eaced55f293a596b7507fff6f7875ae5ae1a62b6d",
+  "category": "arXiv:math.NT",
+  "problem_focus": [
+    "RH"
+  ],
+  "definitions": [
+    {
+      "term": "RH Literature Concept",
+      "statement": "We conjecture results about the moments of mixed derivatives of the Riemann zeta function, evaluated at the non-trivial zeros of the Riemann zeta function. We do this in two different ways, both giving us the same conjecture. In the first, ..."
+    }
+  ],
+  "theorems": [
+    {
+      "label": "arXiv:2406_08121v2 Claim",
+      "statement": "We conjecture results about the moments of mixed derivatives of the Riemann zeta function, evaluated at the non-trivial zeros of the Riemann zeta function. We do this in two different ways, both giving us the same conjecture. In the first, we find asymptotics for the moments of derivatives of the characteristic polynom...",
+      "status": "PREPRINT"
+    }
+  ],
+  "conjectures": [
+    {
+      "label": "RH Problem Horizon",
+      "statement": "Investigates behavior related to RH in math.NT.",
+      "status": "OPEN"
+    }
+  ],
+  "open_gaps": [
+    "Finite or specialized scope in arXiv:2406_08121v2; general continuum proof remains unproven."
+  ],
+  "computational_handles": [
+    "Literature algorithmic bounds for Moments of derivatives of the Riemann ze",
+    "Independent cross-reference of RH asymptotic identities"
+  ],
+  "citations": [
+    {
+      "ref": "Christopher Hughes, Andrew Pearce-Crump (2024). Moments of derivatives of the Riemann zeta function: Characteristic polynomials and the hybrid formula. arXiv preprint 2406_08121v2.",
+      "url": "http://arxiv.org/abs/2406.08121v2"
+    }
+  ]
+}

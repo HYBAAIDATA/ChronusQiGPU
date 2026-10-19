@@ -285,6 +285,7 @@ class SearchPlan:
         if self.expires_at is not None and self.expires_at <= self.created_at:
             raise ValueError("expires_at must be after created_at")
         object.__setattr__(self, "source", PlanSource(self.source))
+        object.__setattr__(self, "executor_route", ExecutionRoute(self.executor_route))
         if self.source is PlanSource.BASELINE_FALLBACK and not self.plan_fallback_reason:
             raise ValueError("a baseline plan must say why no agentic plan ran")
         if self.source is PlanSource.AGENTIC_PRECOMPUTED and self.plan_fallback_reason:

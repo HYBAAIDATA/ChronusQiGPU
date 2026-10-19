@@ -13,7 +13,7 @@ from chronus.agent.strategy import (
 )
 from chronus.agent.trust import TrustLevel
 from chronus.agent.audit import MACSigner
-from conftest import H
+from tests.frontier_agent.conftest import H
 
 
 def select(task, ledger, *, authority=TrustLevel.ASSIST, registry=None, statistics=(), policy=None):

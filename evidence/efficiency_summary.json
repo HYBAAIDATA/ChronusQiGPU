@@ -1,0 +1,29 @@
+{
+  "bits_ratio": "N/A (no speedup claimed)",
+  "ledger_head": "883afc72f53fe5f10772e41703a7cd08fdab045f",
+  "functor_ctcf": true,
+  "route": {
+    "requested": "kellogg_tensor",
+    "executed": "chronus_cpu_fallback",
+    "fallback_reason": "NO_OPENCL_DEVICE"
+  },
+  "seeds": [
+    1337,
+    42,
+    2026
+  ],
+  "pisot_scaling": {
+    "unconditional_saving": 0.0,
+    "unconditional_cost_ratio": 1.0,
+    "hit_rate_converges_to_pisot_damp": true
+  },
+  "myths_busted": [
+    "M1: Quantum flat-space speedup (disproven: O(N^1.5) > O(N))",
+    "M2: Lucas/Pisot scales everything (disproven: scales budget only)",
+    "M3: Hendrix coprime stride gives fewer hashes (disproven: permutation only)",
+    "M4: Restricted Pisot subspace beats full scan (disproven: unconditional equal)",
+    "M5: Golden stride gives hashrate (disproven: ordering only, device_run NOT_RUN)",
+    "M6: fp32 preserves residual (disproven: 18, 20 erased in fp32)",
+    "M7: Mining is product (disproven: internal capability, PYTHIA authority)"
+  ]
+}

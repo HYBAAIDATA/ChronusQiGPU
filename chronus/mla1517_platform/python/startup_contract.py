@@ -296,12 +296,14 @@ class WorkerRecord:
     hashrate: float | None = None
     shares_accepted: int = 0
     last_error: dict[str, str] | None = None
+    heartbeat_p95: float | None = None
 
     def public(self) -> dict[str, Any]:
         return {"state": self.state, "since": self.since, "attempts_total": self.attempts_total,
                 "attempts_window": self.attempts_window, "last_heartbeat": self.last_heartbeat,
                 "liveness": self.liveness, "readiness": self.readiness,
                 "effectiveness": {"hashrate": self.hashrate, "shares_accepted": self.shares_accepted},
+                "heartbeat_p95": self.heartbeat_p95,
                 "last_error": self.last_error}
 
     def transition(self, to: str, audit: AppendOnlyAudit, reason: str) -> None:

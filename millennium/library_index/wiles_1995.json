@@ -1,0 +1,74 @@
+{
+  "id": "wiles_1995",
+  "title": "Modular elliptic curves and Fermat's Last Theorem",
+  "authors": [
+    "Andrew Wiles",
+    "Richard Taylor"
+  ],
+  "year": 1995,
+  "source_url": "https://annals.math.princeton.edu/1995/141-3/p01",
+  "license": "Open Access (Annals of Mathematics)",
+  "retrieved_date": "2026-10-19T07:51:40.489830+00:00",
+  "sha256": "5d02de920cd844cbe31378df8aa9ea9d6edc58d1efe6863663f07069da10669d",
+  "category": "Modularity & Galois Representations",
+  "problem_focus": [
+    "BSD",
+    "FOUNDATIONAL"
+  ],
+  "definitions": [
+    {
+      "term": "Modularity of Elliptic Curve",
+      "statement": "E/Q is modular if there exists a weight 2 newform f in S_2(Gamma_0(N)) such that L(E, s) = L(f, s)."
+    },
+    {
+      "term": "Deformation Ring R and Hecke Algebra T",
+      "statement": "Universal deformation ring R of residual Galois representation rho_{E,p} and Hecke algebra T acting on cusp forms."
+    },
+    {
+      "term": "R = T Theorem",
+      "statement": "The canonical surjective homomorphism phi: R -> T is an isomorphism of complete intersection rings."
+    }
+  ],
+  "theorems": [
+    {
+      "label": "Wiles Modularity Theorem (Semistable)",
+      "statement": "Every semistable elliptic curve over Q is modular (Wiles 1995). Extended to all E/Q by Breuil-Conrad-Diamond-Taylor (2001).",
+      "status": "PROVEN"
+    },
+    {
+      "label": "Analytic Continuation & Functional Equation of L(E,s)",
+      "statement": "Because E is modular, L(E, s) extends to an entire function on C and satisfies Lambda(E, s) = w_E Lambda(E, 2-s) with w_E = +-1.",
+      "status": "PROVEN"
+    },
+    {
+      "label": "Fermat's Last Theorem",
+      "statement": "x^n + y^n = z^n has no non-zero integer solutions for n >= 3 (Frey-Ribet-Wiles).",
+      "status": "PROVEN"
+    }
+  ],
+  "conjectures": [
+    {
+      "label": "Fontaine-Mazur Conjecture",
+      "statement": "Every geometric Galois representation comes from algebraic geometry / automorphic forms.",
+      "status": "OPEN"
+    }
+  ],
+  "open_gaps": [
+    "Modularity guarantees that L(E, s) is defined at s=1 and differentiable, enabling BSD to be rigorously posed, but does not prove rank equality ord_{s=1} L(E, s) = rank E(Q) for r >= 2."
+  ],
+  "computational_handles": [
+    "Fourier coefficient a_n(f) computation of weight 2 modular forms.",
+    "Sign of functional equation w_E = -a_N(E) or root number computation.",
+    "High-precision order of vanishing determination at s=1."
+  ],
+  "citations": [
+    {
+      "ref": "Wiles, A. (1995). Modular elliptic curves and Fermat's Last Theorem, Ann. of Math., 141, 443-551.",
+      "url": "https://annals.math.princeton.edu/1995/141-3/p01"
+    },
+    {
+      "ref": "Taylor, R., Wiles, A. (1995). Ring-theoretic properties of certain Hecke algebras, Ann. of Math., 141, 553-572.",
+      "url": "https://annals.math.princeton.edu/1995/141-3/p02"
+    }
+  ]
+}

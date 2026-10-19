@@ -1,0 +1,50 @@
+{
+  "id": "arxiv_math_0608265v2",
+  "title": "Counterexample to the Hodge Conjecture",
+  "authors": [
+    "K. H. Kim",
+    "F. W. Roush"
+  ],
+  "year": 2006,
+  "source_url": "http://arxiv.org/abs/math/0608265v2",
+  "license": "Open Access (arXiv preprint)",
+  "retrieved_date": "2026-10-19T07:51:40.489830+00:00",
+  "sha256": "46fd3fbad65f8df2d22fea2f241c6d532e93debb600b25fa5e315f96d85f9b14",
+  "category": "arXiv:math.AG",
+  "problem_focus": [
+    "HODGE"
+  ],
+  "definitions": [
+    {
+      "term": "HODGE Literature Concept",
+      "statement": "We construct a K3 surface whose transcendental lattice has a self-isomorphism which is not a linear combination of self-isomorphisms over $\\mathbb{Q}$ which preserve cup products up to nonzero multiples. Products of it with itself give cand..."
+    }
+  ],
+  "theorems": [
+    {
+      "label": "arXiv:math_0608265v2 Claim",
+      "statement": "We construct a K3 surface whose transcendental lattice has a self-isomorphism which is not a linear combination of self-isomorphisms over $\\mathbb{Q}$ which preserve cup products up to nonzero multiples. Products of it with itself give candidates for counterexamples to the Hodge conjecture which may be of interest. We ...",
+      "status": "PREPRINT"
+    }
+  ],
+  "conjectures": [
+    {
+      "label": "HODGE Problem Horizon",
+      "statement": "Investigates behavior related to HODGE in math.AG.",
+      "status": "OPEN"
+    }
+  ],
+  "open_gaps": [
+    "Finite or specialized scope in arXiv:math_0608265v2; general continuum proof remains unproven."
+  ],
+  "computational_handles": [
+    "Literature algorithmic bounds for Counterexample to the Hodge Conjecture",
+    "Independent cross-reference of HODGE asymptotic identities"
+  ],
+  "citations": [
+    {
+      "ref": "K. H. Kim, F. W. Roush (2006). Counterexample to the Hodge Conjecture. arXiv preprint math_0608265v2.",
+      "url": "http://arxiv.org/abs/math/0608265v2"
+    }
+  ]
+}

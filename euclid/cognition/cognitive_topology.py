@@ -582,7 +582,7 @@ def execute_discrete_ricci_reconciliation(
     )
 
 
-def load_solved_control_manifold() -> GraphManifold:
+def load_solved_control_manifold(seed: Optional[int] = None) -> GraphManifold:
     """Instantiates a topologically solved control manifold with established action policies."""
     G = GraphManifold()
     nodes = [f"state_{i}" for i in range(64)]
@@ -594,7 +594,7 @@ def load_solved_control_manifold() -> GraphManifold:
     return G
 
 
-def load_unseen_isomorphic_manifold() -> GraphManifold:
+def load_unseen_isomorphic_manifold(seed: Optional[int] = None) -> GraphManifold:
     """Instantiates an unseen target manifold isomorphic to the solved control manifold."""
     G = GraphManifold()
     target_nodes = [f"target_state_{i}" for i in range(64)]
@@ -605,7 +605,7 @@ def load_unseen_isomorphic_manifold() -> GraphManifold:
     return G
 
 
-def load_active_graph_manifold() -> GraphManifold:
+def load_active_graph_manifold(seed: Optional[int] = None) -> GraphManifold:
     """Instantiates an active multi-subsystem manifold under runtime observation."""
     G = GraphManifold()
     subsystems = ["security", "mining", "consensus", "execution", "mempool", "storage"]
@@ -617,6 +617,7 @@ def load_active_graph_manifold() -> GraphManifold:
     G.add_edge("execution", "storage", weight=1.0)
     G.add_edge("mempool", "mining", weight=1.0)
     return G
+
 
 
 def evaluate_policy_few_shot(pulled_policy: Dict[str, Any], target_manifold: GraphManifold) -> int:

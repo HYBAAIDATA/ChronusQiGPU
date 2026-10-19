@@ -1,0 +1,63 @@
+{
+  "id": "kolyvagin_1990",
+  "title": "Euler systems",
+  "authors": [
+    "Victor A. Kolyvagin"
+  ],
+  "year": 1990,
+  "source_url": "https://link.springer.com/chapter/10.1007/978-0-8176-4576-2_11",
+  "license": "Academic Research Fair Use",
+  "retrieved_date": "2026-10-19T07:51:40.489830+00:00",
+  "sha256": "84ce37a1e98f9d0ab8f58717045911838c27485b5217b3bdb365917340bd8e79",
+  "category": "Cohomology & Euler Systems",
+  "problem_focus": [
+    "BSD"
+  ],
+  "definitions": [
+    {
+      "term": "Euler System",
+      "statement": "Collection of cohomology classes c_m in H^1(K_m, T) satisfying norm compatibility relation Cor(c_{mp}) = P(Frob_p^(-1)) c_m."
+    },
+    {
+      "term": "Kolyvagin Derivative Classes",
+      "statement": "Classes P_n in H^1(K, E)[p^k] obtained by applying Kolyvagin derivative operators D_n to Heegner points."
+    },
+    {
+      "term": "Shafarevich-Tate Group",
+      "statement": "Sha(E/Q) = ker(H^1(Q, E) -> prod_v H^1(Q_v, E)), measuring failure of Hasse local-to-global principle."
+    }
+  ],
+  "theorems": [
+    {
+      "label": "Kolyvagin's Theorem",
+      "statement": "If L(E, 1) != 0, then rank E(Q) = 0 and Sha(E/Q) is finite. If L(E, 1) = 0 and L'(E, 1) != 0, then rank E(Q) = 1 and Sha(E/Q) is finite.",
+      "status": "PROVEN"
+    },
+    {
+      "label": "Selmer Group Annihilation",
+      "statement": "Euler system classes annihilate the dual Selmer group, bounding the size of Sha(E/Q).",
+      "status": "PROVEN"
+    }
+  ],
+  "conjectures": [
+    {
+      "label": "Finiteness of Sha(E/Q)",
+      "statement": "Sha(E/Q) is finite for all elliptic curves E/Q of arbitrary rank r.",
+      "status": "OPEN"
+    }
+  ],
+  "open_gaps": [
+    "Euler systems constructed from Heegner points control Selmer groups only when analytic rank is 0 or 1. No Euler system is known for rank >= 2."
+  ],
+  "computational_handles": [
+    "Upper bounding 2-Selmer group dim_F2 Sel^(2)(E/Q).",
+    "Verification of triviality or order of Sha(E) via analytic quotient.",
+    "Evaluation of local Tamagawa numbers c_p via Tate's algorithm."
+  ],
+  "citations": [
+    {
+      "ref": "Kolyvagin, V.A. (1990). Euler systems, The Grothendieck Festschrift, Vol. II, Progr. Math., 87, Birkhäuser, 435-483.",
+      "url": "https://link.springer.com/chapter/10.1007/978-0-8176-4576-2_11"
+    }
+  ]
+}

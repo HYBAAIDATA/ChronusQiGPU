@@ -1,0 +1,49 @@
+{
+  "id": "arxiv_alg-geom_9709030v1",
+  "title": "A Survey of the Hodge Conjecture for Abelian Varieties",
+  "authors": [
+    "B. Brent Gordon"
+  ],
+  "year": 1997,
+  "source_url": "http://arxiv.org/abs/alg-geom/9709030v1",
+  "license": "Open Access (arXiv preprint)",
+  "retrieved_date": "2026-10-19T07:51:40.489830+00:00",
+  "sha256": "991ee8d763626bbd4defe93e400408e6231d8aad2c89f9f4e9ac3821d1ca06bd",
+  "category": "arXiv:math.AG",
+  "problem_focus": [
+    "HODGE"
+  ],
+  "definitions": [
+    {
+      "term": "HODGE Literature Concept",
+      "statement": "We review what is known about the Hodge conjecture for abelian varieties, with some emphasis on how Mumford-Tate groups have been applied to this problem."
+    }
+  ],
+  "theorems": [
+    {
+      "label": "arXiv:alg-geom_9709030v1 Claim",
+      "statement": "We review what is known about the Hodge conjecture for abelian varieties, with some emphasis on how Mumford-Tate groups have been applied to this problem.",
+      "status": "PREPRINT"
+    }
+  ],
+  "conjectures": [
+    {
+      "label": "HODGE Problem Horizon",
+      "statement": "Investigates behavior related to HODGE in math.AG.",
+      "status": "OPEN"
+    }
+  ],
+  "open_gaps": [
+    "Finite or specialized scope in arXiv:alg-geom_9709030v1; general continuum proof remains unproven."
+  ],
+  "computational_handles": [
+    "Literature algorithmic bounds for A Survey of the Hodge Conjecture for Abe",
+    "Independent cross-reference of HODGE asymptotic identities"
+  ],
+  "citations": [
+    {
+      "ref": "B. Brent Gordon (1997). A Survey of the Hodge Conjecture for Abelian Varieties. arXiv preprint alg-geom_9709030v1.",
+      "url": "http://arxiv.org/abs/alg-geom/9709030v1"
+    }
+  ]
+}

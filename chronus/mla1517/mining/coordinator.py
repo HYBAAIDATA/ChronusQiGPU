@@ -106,6 +106,7 @@ from .toe_decision import (
     TOEMiningDecisionFrame,
     build_toe_decision_frame,
 )
+from salamander import SalamanderMiningHealer
 
 LOG = logging.getLogger("chronus.mla1517.stratum.intelligence")
 
@@ -377,6 +378,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         recovery_target = kwargs.pop(
             "recovery_target", "pythia.mining.runtime"
         )
+        salamander_healer = kwargs.pop("salamander_healer", None)
         asynchronous_submission = bool(
             kwargs.pop("asynchronous_submission", False)
         )
@@ -530,6 +532,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             recovery_authorizer=recovery_authorizer,
             require_authorization=require_recovery_authorization,
             recovery_target=recovery_target,
+        )
+        self.salamander_healer = (
+            salamander_healer
+            if salamander_healer is not None
+            else SalamanderMiningHealer()
         )
         self.production_integration = (
             production_integration
@@ -1253,6 +1260,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
     def _refresh_work_identity(self) -> WorkIdentity | None:
         identity, reason = self._resolve_work_identity()
         if identity is None:
+            if reason == "IDENTITY_MISMATCH" and getattr(self, "salamander_healer", None) is not None:
+                LOG.info("Salamander autonomic healer triggered by IDENTITY_MISMATCH")
+                healed_identity = self.salamander_healer.heal_identity_mismatch(self)
+                if healed_identity is not None:
+                    return healed_identity
             if reason in ("NO_PROOF_ADAPTER", "NO_RUNTIME_STATE") and (
                 reason not in self._identity_block_logged
             ):

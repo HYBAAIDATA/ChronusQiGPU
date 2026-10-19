@@ -1,5 +1,5 @@
 from dataclasses import replace
-from conftest import H
+from tests.frontier_agent.conftest import H
 from chronus.agent.perception import (
     confirm_action_effect,
     assess_causality,

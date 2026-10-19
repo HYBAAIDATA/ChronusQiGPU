@@ -95,6 +95,8 @@ class HeartbeatEmitter:
         self._counters: dict[str, float | int | str] = {}
         self._lock = threading.Lock()
         self._secret = _heartbeat_secret()
+        self._latencies: list[float] = []
+        self._p95_latency: float = 0.0
         self._probe_channel()
 
     def report(self, **counters: float | int | str) -> None:
@@ -142,10 +144,22 @@ class HeartbeatEmitter:
 
     def _write_metrics(self, total: float) -> None:
         with self._lock:
+            self._latencies.append(total)
+            if len(self._latencies) > 500:
+                self._latencies.pop(0)
+            if len(self._latencies) >= 3:
+                sorted_l = sorted(self._latencies)
+                idx = int(0.95 * (len(sorted_l) - 1))
+                self._p95_latency = sorted_l[idx]
+            else:
+                self._p95_latency = total
+            self._counters["heartbeat_p95_seconds"] = round(self._p95_latency, 6)
+            self._counters["heartbeat_last_seconds"] = round(total, 6)
             counters = dict(self._counters)
         payload = {
             "worker": self.worker_id,
             "write_total_seconds": total,
+            "heartbeat_p95_seconds": self._p95_latency,
             "phases": self._phases,
             "counters": counters,
         }
@@ -157,6 +171,14 @@ class HeartbeatEmitter:
             # Metrics are observational, not the liveness contract: drop the
             # sample rather than kill the emitter loop on a locked destination.
             return
+        if self.seq % 10 == 0 or total > 0.5:
+            LOG.info(
+                "[pythia-heartbeat] worker=%s seq=%d latency=%.6fs p95=%.6fs target=<1.0s",
+                self.worker_id,
+                self.seq,
+                total,
+                self._p95_latency,
+            )
         if total > float(os.getenv("PYTHIA_HEARTBEAT_STALE_THRESHOLD", "5")) * float(
             os.getenv("PYTHIA_HEARTBEAT_SLOW_FRACTION", "0.5")
         ):
@@ -164,7 +186,7 @@ class HeartbeatEmitter:
             if now - self._last_warning >= 60.0:
                 self._last_warning = now
                 print(
-                    f"[pythia-heartbeat] heartbeat_slow worker={self.worker_id} total_seconds={total:.6f}"
+                    f"[pythia-heartbeat] heartbeat_slow worker={self.worker_id} total_seconds={total:.6f} p95={self._p95_latency:.6f}"
                 )
 
     def tick(self) -> None:

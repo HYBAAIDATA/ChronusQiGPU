@@ -84,7 +84,7 @@ class ReflexReceipt:
     quarantined_node: str
     reflex_latency_ms: float
     epoch: int
-    marker_text: str = "Trace identified: structural anomaly quarantined without statistical apology. Topological circuit breaker engaged."
+    marker_text: str = "Trace identified. Re-mapping topology now."
 
     @property
     def latency_ms(self) -> float:
@@ -714,52 +714,84 @@ def process_ern_spike_signal_sync(payload: ERNSpikePayload) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+class ClearanceResult(dict):
+    """Result object supporting both attribute access and dict indexing."""
+
+    def __init__(self, data: Dict[str, Any]) -> None:
+        super().__init__(data)
+        self.__dict__.update(data)
+
+    @property
+    def allow_write(self) -> bool:
+        return bool(self.get("allow_write", False))
+
+
 class MetacognitiveGatekeeper:
     """Enforces privilege isolation on traumatized or low-confidence cognitive nodes."""
 
+    def __init__(self, capability_tokens: bool = True) -> None:
+        self.capability_tokens = capability_tokens
+
+
+    def process_interruption(
+        self,
+        node: str = "auth_module",
+        intensity: float = 9.0,
+        signature: str = "Architectural contradiction",
+    ) -> ReflexReceipt:
+        payload = {
+            "target_node": node,
+            "intensity": intensity,
+            "error_signature": signature,
+            "type": "INTERRUPTION",
+        }
+        receipt = self.fast_reflex_arc(payload)
+        receipt.marker_text = "Trace identified. Re-mapping topology now."
+        return receipt
+
     @classmethod
-    def check_privileges(cls, target_node: str) -> Dict[str, Any]:
+    def check_privileges(cls, target_node: str) -> ClearanceResult:
         state = get_node_state_sync(target_node)
         cap = ACTIVE_CAPABILITIES.get(target_node)
         is_locked = bool(state.get("insufficiently_map_matched")) or (cap is not None and not cap.can_write)
-        return {
+        return ClearanceResult({
             "node_id": target_node,
             "allow_write": not is_locked,
             "epoch": cap.epoch if cap else 0,
             "insufficiently_map_matched": is_locked,
             "reason": "CLEARANCE_GRANTED" if not is_locked else "INSUFFICIENTLY_MAP_MATCHED",
-        }
+        })
 
     @staticmethod
-    def verify_clearance_sync(target_node: str) -> Dict[str, Any]:
+    def verify_clearance_sync(target_node: str) -> ClearanceResult:
         state = get_node_state_sync(target_node)
         cap = ACTIVE_CAPABILITIES.get(target_node)
 
         if state.get("insufficiently_map_matched") or (cap is not None and not cap.can_write):
-            return {
+            return ClearanceResult({
                 "allow_write": False,
                 "reason": "INSUFFICIENTLY_MAP_MATCHED",
                 "verbal_fallback": (
                     "My access to this module is locked. I am holding an error trace. "
                     "We need to reconcile the architecture before I can patch this."
                 ),
-            }
+            })
 
         if state.get("confidence_score", 1.0) < 0.7:
-            return {
+            return ClearanceResult({
                 "allow_write": True,
                 "reason": "LOW_CONFIDENCE_WARNING",
                 "verbal_fallback": "Confidence is low. Proceeding with caution.",
-            }
+            })
 
-        return {
+        return ClearanceResult({
             "allow_write": True,
             "reason": "CLEARANCE_GRANTED",
             "verbal_fallback": None,
-        }
+        })
 
     @staticmethod
-    async def verify_clearance(target_node: str) -> Dict[str, Any]:
+    def verify_clearance(target_node: str) -> ClearanceResult:
         return MetacognitiveGatekeeper.verify_clearance_sync(target_node)
 
     @classmethod

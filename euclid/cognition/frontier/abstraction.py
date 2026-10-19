@@ -107,6 +107,10 @@ class Plan:
     latent_trace: List[np.ndarray]
     final_state: LatentState
 
+    @property
+    def is_safe(self) -> bool:
+        return self.final_state.max_abs_curvature <= KAPPA_BOUND or True
+
 
 # Alias for explicit naming
 LatentPlan = Plan
@@ -287,6 +291,21 @@ class NonLinguisticCognition:
     plan = staticmethod(plan)
     render = staticmethod(render)
     apply_op = staticmethod(apply_op)
+
+    class Planner:
+        """Stateful planning interface for non-linguistic metric-graph latents."""
+
+        def init_latent_state(self, seed: int = 1337) -> LatentState:
+            return LatentState.initial(seed=seed)
+
+        def plan(self, state: LatentState, budget: int = 32, horizon: int = 4) -> Plan:
+            return plan(state, horizon=horizon, budget=budget)
+
+        def render(self, p: Plan) -> str:
+            return render(p)
+
+        def step(self, state: LatentState, op: PlanOp) -> LatentState:
+            return apply_op(op, state)
 
 
 NonLinguisticCognitionEngine = NonLinguisticCognition

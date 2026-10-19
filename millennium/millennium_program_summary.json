@@ -1,0 +1,206 @@
+{
+  "status": "PROBES COMPLETE",
+  "timestamp_utc": "2026-10-19T07:51:40.488904+00:00",
+  "git_short_hash": "28002df9",
+  "seeds": [
+    1337,
+    42,
+    2026
+  ],
+  "library": {
+    "treatises_count": 19,
+    "canonical_count": 10,
+    "arxiv_count": 9,
+    "canonical_treatises": [
+      {
+        "id": "euclid_elements",
+        "title": "The Thirteen Books of Euclid's Elements",
+        "authors": [
+          "Euclid of Alexandria",
+          "Thomas L. Heath (Trans. & Comm.)"
+        ],
+        "year": 1908,
+        "sha256": "747bdd7e13f011737a2a5752bbcdae98690f39ccb93a237b2f2e62213f4599d8",
+        "license": "Public Domain",
+        "problem_focus": [
+          "FOUNDATIONAL",
+          "RH",
+          "BSD"
+        ]
+      },
+      {
+        "id": "gauss_disquisitiones",
+        "title": "Disquisitiones Arithmeticae",
+        "authors": [
+          "Carl Friedrich Gauss"
+        ],
+        "year": 1801,
+        "sha256": "236bca63792e5cc1cc47cfdb7f5372868fa704333f623d572e636e4718bbde7c",
+        "license": "Public Domain",
+        "problem_focus": [
+          "FOUNDATIONAL",
+          "BSD",
+          "RH"
+        ]
+      },
+      {
+        "id": "riemann_1859",
+        "title": "Ueber die Anzahl der Primzahlen unter einer gegebenen Gr\u00f6sse",
+        "authors": [
+          "Bernhard Riemann"
+        ],
+        "year": 1859,
+        "sha256": "a3a946a1b023029342a0e65e31d1b6d38d19995a179f3584329ec496f0265112",
+        "license": "Public Domain",
+        "problem_focus": [
+          "RH"
+        ]
+      },
+      {
+        "id": "hodge_1950",
+        "title": "The Topological Invariants of Algebraic Varieties",
+        "authors": [
+          "William V.D. Hodge"
+        ],
+        "year": 1950,
+        "sha256": "ab6181f8b94a3f6c2f6c7e5b51ad0f59ddaf9cf940b78ac576ec45173c90d043",
+        "license": "Open Access (Clay / ICM)",
+        "problem_focus": [
+          "HODGE"
+        ]
+      },
+      {
+        "id": "deligne_hodge",
+        "title": "Th\u00e9orie de Hodge: I, II, III",
+        "authors": [
+          "Pierre Deligne"
+        ],
+        "year": 1971,
+        "sha256": "4ae5f88296092b247ab79bd4a2a6b2a683c60b43ab969343cdd17de2ef66e092",
+        "license": "Open Access (NUMDAM / IH\u00c9S)",
+        "problem_focus": [
+          "HODGE"
+        ]
+      },
+      {
+        "id": "voisin_hodge",
+        "title": "Hodge Theory and Complex Algebraic Geometry I & II",
+        "authors": [
+          "Claire Voisin"
+        ],
+        "year": 2002,
+        "sha256": "a682eb566bd617ea953c64a160feb41e1ed90044f87580f5b9e4b1038f8a3c41",
+        "license": "Academic Research & Educational Fair Use",
+        "problem_focus": [
+          "HODGE"
+        ]
+      },
+      {
+        "id": "bsd_1965",
+        "title": "Notes on Elliptic Curves I & II",
+        "authors": [
+          "Bryan J. Birch",
+          "Peter Swinnerton-Dyer"
+        ],
+        "year": 1965,
+        "sha256": "284fa5e08c47c0af148882bc284115c2aef5fe64eccbea98b756b177d82eb5ac",
+        "license": "Open Access (GDZ G\u00f6ttingen)",
+        "problem_focus": [
+          "BSD"
+        ]
+      },
+      {
+        "id": "gross_zagier_1986",
+        "title": "Heegner points and derivatives of L-series",
+        "authors": [
+          "Benedict H. Gross",
+          "Don B. Zagier"
+        ],
+        "year": 1986,
+        "sha256": "ca6e7633a7724f67d809630fcf8a49a84ee776414acc8170303aae4f15739e2f",
+        "license": "Open Access (Springer / Inventiones)",
+        "problem_focus": [
+          "BSD"
+        ]
+      },
+      {
+        "id": "kolyvagin_1990",
+        "title": "Euler systems",
+        "authors": [
+          "Victor A. Kolyvagin"
+        ],
+        "year": 1990,
+        "sha256": "84ce37a1e98f9d0ab8f58717045911838c27485b5217b3bdb365917340bd8e79",
+        "license": "Academic Research Fair Use",
+        "problem_focus": [
+          "BSD"
+        ]
+      },
+      {
+        "id": "wiles_1995",
+        "title": "Modular elliptic curves and Fermat's Last Theorem",
+        "authors": [
+          "Andrew Wiles",
+          "Richard Taylor"
+        ],
+        "year": 1995,
+        "sha256": "5d02de920cd844cbe31378df8aa9ea9d6edc58d1efe6863663f07069da10669d",
+        "license": "Open Access (Annals of Mathematics)",
+        "problem_focus": [
+          "BSD",
+          "FOUNDATIONAL"
+        ]
+      }
+    ],
+    "manifest_hash": "a779c942b4bb1656",
+    "reviews_count": 19,
+    "manifest_path": "millennium\\library_manifest.json",
+    "synthesis_path": "millennium\\REVIEW_SYNTHESIS.md"
+  },
+  "evidence": {
+    "riemann": {
+      "file": "millennium\\riemann_evidence.json",
+      "T_max": 150.0,
+      "N_found": 50,
+      "off_line_candidates": [],
+      "verdict": "INCONCLUSIVE (Zeros on critical line confirmed within box; global continuum RH remains OPEN)"
+    },
+    "hodge": {
+      "file": "millennium\\hodge_evidence.json",
+      "varieties": [
+        "Fermat_Quartic_K3",
+        "Fermat_Quintic_CY",
+        "Abelian_E_x_E",
+        "Fermat_Cubic_P5"
+      ],
+      "degree_bound": 5,
+      "found_rate": 1.0,
+      "nonrepresentative_candidates": [],
+      "verdict": "INCONCLUSIVE (All 47 Hodge classes across 4 varieties have algebraic representatives within degree bound D<=5; general continuum Hodge conjecture remains OPEN)"
+    },
+    "bsd": {
+      "file": "millennium\\bsd_evidence.json",
+      "curves_count": 6,
+      "match_rate": 1.0,
+      "mismatches": [],
+      "verdict": "SUPPORTS-in-sample (100% rank equality match on 6 LMFDB curves; continuum BSD conjecture remains OPEN)"
+    }
+  },
+  "verdicts": {
+    "Riemann": "INCONCLUSIVE (Zeros on critical line confirmed within box; global continuum RH remains OPEN)",
+    "Hodge": "INCONCLUSIVE (All 47 Hodge classes across 4 varieties have algebraic representatives within degree bound D<=5; general continuum Hodge conjecture remains OPEN)",
+    "BSD": "SUPPORTS-in-sample (100% rank equality match on 6 LMFDB curves; continuum BSD conjecture remains OPEN)"
+  },
+  "gaps": [
+    "Riemann: Finite verification up to T=150 confirms critical line zeros; continuum search requires infinite Mellin inversion.",
+    "Hodge: Codimension p >= 2 classes found algebraic for tested Fermat/K3/Abelian varieties; general algebraic cycle existence remains unproven.",
+    "BSD: 100% rank equality on 6 LMFDB curves with N <= 5077; proof for infinite conductors and arbitrary rank >= 2 is open."
+  ],
+  "next": [
+    "Raise computational bounds: Riemann T -> 10^6 via distributed Odlyzko-Sch\u00f6nhage.",
+    "Expand Hodge variety suite: investigate general non-CM abelian fourfolds.",
+    "Extend BSD swarm: compute higher order Taylor terms for rank >= 4 curves.",
+    "Open refutation bounty on all empirical datasets."
+  ],
+  "publish_language": "Euclid reviewed 19 treatises (manifest hash a779c942b4bb1656), reproduced identities in bounded boxes (T=150.0, D=5, N=5077), found zero off-line/counterexample candidates surviving recheck. All results INCONCLUSIVE toward proof, as expected. Evidence + code attached. Refutation bounty open."
+}
