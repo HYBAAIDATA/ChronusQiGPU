@@ -282,31 +282,40 @@ def main() -> None:
     fabric = KnowledgeFabric(default_journal_path())
     last_basis: str | None = None
     last_campaign = float("-inf")
+    import concurrent.futures
+
     with HeartbeatEmitter("discovery") as heartbeat:
-        try:
-            while True:
-                fabric.sync()
-                world = fabric.observe("mining.world")
-                basis = world.fact_id if world is not None else "declared"
-                campaign = fabric.observe("discovery.campaign")
-                stale = campaign is not None and fabric.stale(campaign)
-                if campaign_due(basis, stale, last_basis, time.monotonic() - last_campaign):
-                    summary = run_campaign(fabric)
-                    last_basis, last_campaign = basis, time.monotonic()
-                    heartbeat.report(
-                        discoveries=summary["discoveries"],
-                        hypotheses_tested=summary["hypotheses_tested"],
-                    )
-                    LOG.info(
-                        "campaign on %s: %d hypotheses, %d discoveries",
-                        summary["twin"]["basis"],
-                        summary["hypotheses_tested"],
-                        summary["discoveries"],
-                    )
-                time.sleep(POLL_S)
-        except KeyboardInterrupt:
-            LOG.info("discovery runtime stopped by operator interrupt")
-            return
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=1, thread_name_prefix="pythia-discovery-campaign"
+        ) as executor:
+            try:
+                while True:
+                    fabric.sync()
+                    world = fabric.observe("mining.world")
+                    basis = world.fact_id if world is not None else "declared"
+                    campaign = fabric.observe("discovery.campaign")
+                    stale = campaign is not None and fabric.stale(campaign)
+                    if campaign_due(basis, stale, last_basis, time.monotonic() - last_campaign):
+                        future = executor.submit(run_campaign, fabric)
+                        while not future.done():
+                            heartbeat.tick()
+                            time.sleep(0.5)
+                        summary = future.result()
+                        last_basis, last_campaign = basis, time.monotonic()
+                        heartbeat.report(
+                            discoveries=summary["discoveries"],
+                            hypotheses_tested=summary["hypotheses_tested"],
+                        )
+                        LOG.info(
+                            "campaign on %s: %d hypotheses, %d discoveries",
+                            summary["twin"]["basis"],
+                            summary["hypotheses_tested"],
+                            summary["discoveries"],
+                        )
+                    time.sleep(POLL_S)
+            except KeyboardInterrupt:
+                LOG.info("discovery runtime stopped by operator interrupt")
+                return
 
 
 if __name__ == "__main__":

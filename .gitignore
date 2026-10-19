@@ -79,6 +79,7 @@ _tiny/
 _win/
 _rp/
 _inv_out/
+_archive*/
 # Agent working directory: git/diff/status dumps, *.done markers, pid files and
 # one-off scan scripts. Only the hook config and skills are source; inventory
 # files committed earlier stay tracked (ignore rules never untrack).

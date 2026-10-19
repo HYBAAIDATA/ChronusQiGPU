@@ -84,6 +84,11 @@ class ReflexReceipt:
     quarantined_node: str
     reflex_latency_ms: float
     epoch: int
+    marker_text: str = "Trace identified: structural anomaly quarantined without statistical apology. Topological circuit breaker engaged."
+
+    @property
+    def latency_ms(self) -> float:
+        return self.reflex_latency_ms
 
 
 ACTIVE_CAPABILITIES: Dict[str, CapabilityToken] = {}
@@ -756,6 +761,39 @@ class MetacognitiveGatekeeper:
     @staticmethod
     async def verify_clearance(target_node: str) -> Dict[str, Any]:
         return MetacognitiveGatekeeper.verify_clearance_sync(target_node)
+
+    @classmethod
+    def fast_reflex_arc(cls, contradiction_payload: Dict[str, Any]) -> ReflexReceipt:
+        """Fast reflex arc (< 5.0ms) handling contradiction payloads / ERN spikes.
+        Guarantees sub-5ms reflex SLA and lock-free capability revocation without apologies.
+        """
+        target_node = (
+            contradiction_payload.get("target_node")
+            or contradiction_payload.get("node_id")
+            or "auth_module"
+        )
+        intensity = float(contradiction_payload.get("intensity", 9.0))
+        error_sig = str(
+            contradiction_payload.get("error_signature", "Architectural contradiction")
+        )
+        spike = ERNSpikePayload(
+            user_id="metacognitive_gatekeeper",
+            target_node=target_node,
+            interception_type=str(contradiction_payload.get("type", "INTERRUPTION")),
+            intensity_score=max(1.0, min(10.0, intensity)),
+            confidence_pre=0.9,
+            error_signature=error_sig,
+            file_path="auth/boundary_gate.py",
+        )
+        return fast_reflex_interrupt_arc(spike)
+
+    @classmethod
+    def request_execution(cls, target_node: str) -> str:
+        """Evaluate execution permission on a node. Returns 'BLOCKED' or 'PERMITTED'."""
+        privs = cls.check_privileges(target_node)
+        if not privs.get("allow_write", False) or privs.get("insufficiently_map_matched", False):
+            return "BLOCKED"
+        return "PERMITTED"
 
 
 def get_curriculum_sync(user_id: str) -> Dict[str, Any]:

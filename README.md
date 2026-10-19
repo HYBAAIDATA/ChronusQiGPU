@@ -16,6 +16,18 @@
 > transfers PYTHIA's final SearchPlan authority, or weakens SHA256d/target proof
 > semantics is not authorised without explicit written repository-owner approval.
 
+> **CANONICAL DOCUMENTATION BASELINE (v2):**
+> All architecture, cognitive mechanics, and execution runbooks are canonically documented in [`docs/v2/`](docs/v2/00_INDEX.md).
+> - [00_INDEX.md](docs/v2/00_INDEX.md) — Documentation index and legacy archive map
+> - [01_SYSTEM_TRUTH.md](docs/v2/01_SYSTEM_TRUTH.md) — System truth and seven canonical authority boundaries
+> - [02_EUCLID_IMPLEMENTED.md](docs/v2/02_EUCLID_IMPLEMENTED.md) — Implemented EUCLID cognitive mechanics
+> - [03_QUANTUM_TENSOR_STATUS.md](docs/v2/03_QUANTUM_TENSOR_STATUS.md) — Quantum substrate reality and closed claims
+> - [04_MILLENNIUM_EVIDENCE.md](docs/v2/04_MILLENNIUM_EVIDENCE.md) — Millennium computational probes (not theorems)
+> - [05_RUNBOOKS.md](docs/v2/05_RUNBOOKS.md) — Automated test sweeps and execution runbooks
+> - [06_GLOSSARY_BOUNDARIES.md](docs/v2/06_GLOSSARY_BOUNDARIES.md) — Epistemic glossary, truth classes, and measurement contract
+>
+> **FALSIFIABILITY & MEASUREMENT CONTRACT:**
+> Code, tests, and logged evidence are the sole source of truth. Every performance claim must be MEASURED on executing silicon; unmeasured hardware defaults strictly to `NOT_RUN`. CPU fallbacks are never disguised as device execution (`requested_route`/`executed_route`/`fallback_reason`). Quantum amplitude amplification claims on flat search spaces are closed. Probes of mathematical conjectures are finite numerical computations, not general analytic proofs.
 
 ## Deterministic hashrate — solving, not searching
 
