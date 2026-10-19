@@ -15,7 +15,7 @@ Private and semi-private competition datasets are not distributed by the public 
 
 Develop on training tasks only. Freeze solver revision, resource budget and attempt policy before public evaluation. Expected test outputs must remain in the scorer, not the solver input. Exact dimensions and every cell must match; a task is solved only if all its test inputs are solved. The original upstream protocol permits three trials per test input; report any different protocol explicitly. Public evaluation availability does not guarantee absence of prior exposure.
 
-This import changes no solver or runtime code and claims no benchmark-wide score. Dataset files were structurally validated and checksummed. The existing specialised runner was separately reproduced on the known training task `007bbfb7`; that result is not a generalisation benchmark.
+Dataset files were structurally validated and checksummed. The previous standalone-helper experiment has been withdrawn and its baseline directory removed. It did not administer ARC to instantiated EUCLID and is not a valid EUCLID intelligence baseline. No canonical-runtime ARC score is established. See `ADMINISTRATION_STATUS.md` for the source trace, cleanup provenance and exact execution blockers.
 
 ## Verify integrity
 
