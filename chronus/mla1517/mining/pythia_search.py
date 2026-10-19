@@ -39,7 +39,7 @@ ROLES ON THE CANONICAL ROUTE (post exact-geometry migration):
 
 from __future__ import annotations
 
-from chronos_one_igpu.reference_contract import require_reference, reference_only, require_production_context
+from chronus.reference_contract import require_reference, reference_only, require_production_context
 import hashlib
 import heapq
 import importlib

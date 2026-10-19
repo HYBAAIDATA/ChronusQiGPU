@@ -81,7 +81,6 @@ IMPORT_NAMES = {
     "scikit-learn": "sklearn",
     "pytest-asyncio": "pytest_asyncio",
     # In-tree HYBA distributions whose import package differs from the dist name.
-    "hyba-chronos-one-igpu": "chronos_one_igpu",
     "hyba-kellogg-tensor": "kellogg",
     "hyba-turing-vqc": "turing_universal_quantum_computer",
 }

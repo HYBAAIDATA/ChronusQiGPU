@@ -1,0 +1,35 @@
+{
+  "schema": "euclid.repository-review/1",
+  "skill": "repository-review",
+  "status": "REVIEWED_READ_ONLY",
+  "semantic_verdict": "NOT_ESTABLISHED",
+  "manifest_sha256": "a1203e4e91257e3c77e7c2865f719f26d716100ae6dc2733e3098e18789ddd87",
+  "policy": {
+    "max_file_bytes": 262144,
+    "max_total_bytes": 1048576,
+    "max_findings": 128
+  },
+  "files": [
+    {
+      "path": "Intelligence/repository_review.py",
+      "sha256": "59006619b153cbe791fc041ee0cd936d98b8e39e57996adf44890641130483aa",
+      "bytes": 8290,
+      "findings": []
+    },
+    {
+      "path": "Intelligence/salamander.py",
+      "sha256": "7c468d0bf7cb49ae081b4783034a9445f3b7d2685a177e5e9bdbb8b30ea4d778",
+      "bytes": 46480,
+      "findings": []
+    },
+    {
+      "path": "tests/test_repository_review.py",
+      "sha256": "92dcf36d9ee58019f3d2d981e48c41488bf777e91a85f9ae8f23e8517639da14",
+      "bytes": 7186,
+      "findings": []
+    }
+  ],
+  "total_bytes": 61956,
+  "finding_count": 0,
+  "receipt_sha256": "6723b53ea6714f50e20d74532a1e48079af5e9975eab26e218961d99af28f2a0"
+}

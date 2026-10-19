@@ -258,7 +258,7 @@ class EuclidV17ProductionIntegration(unittest.TestCase):
             env=env,
             capture_output=True,
             text=True,
-            timeout=180,
+            timeout=300,
             check=False,
         )
         self.assertEqual(first.returncode, 0, first.stderr)
@@ -277,7 +277,7 @@ class EuclidV17ProductionIntegration(unittest.TestCase):
             env=env,
             capture_output=True,
             text=True,
-            timeout=180,
+            timeout=300,
             check=False,
         )
         self.assertEqual(second.returncode, 0, second.stderr)

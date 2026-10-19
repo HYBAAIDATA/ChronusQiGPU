@@ -5,8 +5,8 @@ Generated from `governance/api_registry.yaml` + `governance/service_fabric.yaml`
 Compares the three projections of the contract — registry,
 service fabric, and runtime — for unexplained divergence.
 
-- registry: `pythia.api_registry/2` — 60 interfaces
-- fabric: `pythia.service_fabric/1` — 84 dependency edges, 18 failure classes
+- registry: `pythia.api_registry/2` — 64 interfaces
+- fabric: `pythia.service_fabric/1` — 85 dependency edges, 18 failure classes
 - runtime taxonomy: `18` classes
 
 ## Result

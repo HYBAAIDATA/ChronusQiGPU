@@ -43,7 +43,7 @@ def _simulated_grover_walk(n: int):
 
 def test_grover_index_formula_matches_simulated_walk(tmp_path, monkeypatch):
     # Explicit numerical reference fixture; never production evidence or approval.
-    from chronos_one_igpu.reference_contract import reference_execution
+    from chronus.reference_contract import reference_execution
 
     approval = tmp_path / "reference-approval.json"
     approval.write_text(
@@ -111,7 +111,50 @@ def test_model_arm_small_run_parity():
 def test_numerical_reference_fixture_never_unlocks_production():
     import pytest
     from mining.search import GroverStyleSearch
-    from chronos_one_igpu.reference_contract import ReferenceUnavailable
+    from chronus.reference_contract import ReferenceUnavailable
 
     with pytest.raises(ReferenceUnavailable):
         GroverStyleSearch.optimal_iterations(64)
+
+
+def test_unconditional_search_parity_honest_accounting():
+    """Honest accounting: On a uniform random oracle, no permutation has an
+    unconditional advantage over any other. The expected iterations to first hit
+    under any bijection sigma:[N]->[N] is identically (N+1)/(K+1)."""
+    import random
+    import statistics
+
+    n = 1024
+    stride = hendrix_stride(n)
+    seq_hits, hen_hits, gro_hits = [], [], []
+
+    rng = random.Random(42)
+    for _ in range(500):
+        # 1 uniform marked winner
+        w = rng.randrange(n)
+        seq_hits.append(w + 1)
+        hen_hits.append(hendrix_index(w, n, stride) + 1)
+        gro_hits.append(grover_walk_index(w, n) + 1)
+
+    mean_seq = statistics.fmean(seq_hits)
+    mean_hen = statistics.fmean(hen_hits)
+    mean_gro = statistics.fmean(gro_hits)
+
+    # Parity: all means converge to (N+1)/2 = 512.5 within 5% sampling noise
+    assert abs(mean_hen - mean_seq) / mean_seq < 0.08
+    assert abs(mean_gro - mean_seq) / mean_seq < 0.08
+
+
+def test_boundaries_per_hendrix_scaling_research():
+    """Locks the non-claims boundary: permutation is ordering, not advantage."""
+    from lucas.scaling_research import research_report
+
+    report = research_report()
+    for claim in [
+        "mining advantage",
+        "scheduling advantage",
+        "hardware speedup",
+        "production qualification",
+    ]:
+        assert claim in report["non_claims"]
+

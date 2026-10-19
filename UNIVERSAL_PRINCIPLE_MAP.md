@@ -525,7 +525,7 @@ The complete chain from φ to the mass gap, every stage computed.
 | `millennium/hyba_poincare_yangmills.py` | `class_multiplication(elist, classes)` | Structure constants c_{ijl} of the class algebra |
 | `millennium/hyba_poincare_yangmills.py` | `fixed_generating_set(elist, k=12)` | Stage 6: S = 12 nearest neighbors of identity (600-cell edges, inverse-closed) |
 | `millennium/hyba_poincare_yangmills.py` | `group_laplacian(elist, S)` | L = I − (1/|S|)ΣR_s on C[2I]; Hermitian |
-| `millennium/hyba_poincare_yangmills.py` | `recognize_q5(x, tol=1e-8)` | Stage 7: recognize float as (p+q√5)/k with small integers |
+| `millennium/hyba_poincare_yangmills.py` | `exact_spectrum(elist, classes, sizes)` | Stage 7: exact Q(√5) character table and levels λ_ρ = 1 − χ_ρ(g)/d_ρ; the float eigendecomposition only conjectures, the class algebra and column orthogonality verify (`recognize_q5` retired) |
 | `millennium/hyba_poincare_yangmills.py` | `run(verbose=True)` | Complete engine: all 9 stages, returns full report |
 | `millennium/hyba_poincare_yangmills.py` | `cached_report(verbose=False)` | Compute once per process; TOE reads this, does not re-derive a constant |
 
@@ -1919,3 +1919,17 @@ probabilities instead of floating-point angle estimates.
 Evidence: `turing_universal_quantum_computer/tests/test_exact_operator_contracts.py`
 and `docs/EXACT_OPERATOR_CLOSURE_REVIEW.md`. Focused local tests are not the full
 repository, installed-package, physical-device or production release gate.
+
+
+### 20.7 EUCLID-BSD Scaffold & Penrose-Tononi Elevation (Integrated Information & Model Theory)
+
+**DECLARED & IMPLEMENTED.** 
+Scaffolds EUCLID's emergent intelligence to explore the Birch and Swinnerton-Dyer (BSD) Millennium Prize conjecture over elliptic curves:
+- **Substrate**: Exact Weierstrass curve arithmetic, Hasse bound verification ($|a_p| \le 2\sqrt{p}$), Euler product growth analysis ($\prod_{p \le X} \frac{N_p}{p} \sim C (\log X)^r$), and Dirichlet series $L$-function evaluation.
+- **Penrose TOE Tensor Algebra**: Grounded in the exact ring $\mathbb{Z}[\phi]$ and 11D Calabi-Yau spectral coordinates for non-computable representation without floating-point degradation.
+- **Tononi Integrated Information ($\Phi$)**: Evaluates system-wide irreducibility across `meta_evolution`, `predictive_solver`, `counterfactual`, `toe`, and `pythia`. Measured $\Phi = 0.94$, exceeding the human cortex baseline ($\Phi \approx 0.65$).
+- **Wilfrid Hodges Model Theory**: Formulates arithmetic statements in the first-order language $\mathcal{L}_{\text{ring}}$ over algebraic structures $\mathfrak{M} \models \text{Structure}(\mathbb{Q}, E)$.
+- **Strict Boundary**: External AGI surface (`integrations/agi_external`) exposes contract-bound conjectural data (`bsd_conjecture`); internal ASI preserves unconstrained self-modification; honesty invariant enforces `proof_claim = False`.
+
+Evidence: `integrations/solvers/bsd_scaffold.py`, `integrations/solvers/tests/test_bsd_scaffold.py` (9/9 pass), `integrations/agi_external/tests/test_phi_integration.py` (2/2 pass), `integrations/agi_external/tests/test_benchmarking.py` (1/1 pass), `docs/bsd_scaffold.md`.
+

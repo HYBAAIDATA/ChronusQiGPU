@@ -73,6 +73,10 @@ from .salamander_agentic import (
     CodebaseDiagnostic,
     CodebaseIssueType,
 )
+from pathlib import Path
+
+from .salamander_transaction import RepairValidator
+
 from .autonomous_capabilities import (
     AutonomySupervisor,
     CassiniCycleLedger,
@@ -226,10 +230,23 @@ class SelfRepairEngine:
     Stage 5 -- Verification: the repair is verified by re-checking the metric.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        control_plane: Any = None,
+        request_builder: Optional[Callable[[RepairProposal], Any]] = None,
+    ) -> None:
         self._proposals: List[RepairProposal] = []
         self._repair_count = 0
         self._success_count = 0
+        self._control_plane = control_plane
+        self._request_builder = request_builder
+        self._issued: Dict[str, Tuple[Any, ...]] = {}
+        self._verified: Dict[str, Any] = {}
+
+    @staticmethod
+    def _proposal_signature(proposal: RepairProposal) -> Tuple[Any, ...]:
+        return (proposal.target, proposal.issue_type, proposal.proposed_action, proposal.is_safe)
 
     def diagnose(
         self,
@@ -270,29 +287,99 @@ class SelfRepairEngine:
             is_safe=safe,
         )
         self._proposals.append(proposal)
+        self._issued[proposal_id] = self._proposal_signature(proposal)
         return proposal
 
     def apply_repair(self, proposal: RepairProposal) -> bool:
-        """Apply a repair proposal (with approval gate)."""
-        if not proposal.is_safe:
-            logger.warning("Repair proposal %s is not safe, skipping", proposal.proposal_id)
+        """Dispatch only registered AL HARAS-authorized, verified recovery.
+
+        A safe diagnosis is a proposal, not an actuator or proof. With no
+        configured canonical control plane and request builder, nothing is
+        applied. Source repairs belong to the separate RepairTransaction gate.
+        """
+        if (
+            not any(item is proposal for item in self._proposals)
+            or proposal.proposal_id in self._verified
+            or self._issued.get(proposal.proposal_id) != self._proposal_signature(proposal)
+            or proposal.is_safe is not True
+            or proposal.target == "unknown"
+        ):
             return False
+        proposal.applied = False
+        if self._control_plane is None or not callable(self._request_builder):
+            return False
+        from salamander.control_plane import AutonomicControlPlane
+        from salamander.models import ActionKind, ActionRequest
+
+        if type(self._control_plane) is not AutonomicControlPlane:
+            return False
+        allowed_kind = {
+            "timeout": ActionKind.THROTTLE,
+            "memory_error": ActionKind.THROTTLE,
+            "numerical_drift": ActionKind.REPLAN,
+            "circuit_open": ActionKind.HALF_OPEN_PROBE,
+        }.get(proposal.issue_type)
+        try:
+            request = self._request_builder(proposal)
+            if self._issued.get(proposal.proposal_id) != self._proposal_signature(proposal):
+                return False
+            if (
+                not isinstance(request, ActionRequest)
+                or request.action_id != proposal.proposal_id
+                or request.target != proposal.target
+                or request.kind is not allowed_kind
+            ):
+                return False
+            result = self._control_plane.execute(request)
+            ledger = self._control_plane.ledger
+            if (
+                result.action_id != proposal.proposal_id
+                or result.status != "VERIFIED"
+                or result.verified is not True
+                or not result.before_ref
+                or not result.after_ref
+                or ledger.verify() is not True
+            ):
+                return False
+            records = {r["evidence_sha256"]: r for r in ledger.records}
+            before = records.get(result.before_ref, {})
+            after = records.get(result.after_ref, {})
+            if (
+                before.get("kind") != "action-proposed"
+                or before.get("payload", {}).get("action_id") != proposal.proposal_id
+                or before.get("payload", {}).get("target") != proposal.target
+                or after.get("kind") != "action-independent-verification"
+                or after.get("payload", {}).get("verified") is not True
+                or not after.get("payload", {}).get("evidence_ref")
+            ):
+                return False
+        except Exception as exc:
+            logger.warning("Recovery unavailable or unverified: %s", type(exc).__name__)
+            return False
+        self._verified[proposal.proposal_id] = result
         proposal.applied = True
-        self._success_count += 1
+        self._success_count = len(self._verified)
         return True
 
     def status(self) -> Dict[str, Any]:
         return {
             "total_repairs": self._repair_count,
-            "successful_repairs": self._success_count,
-            "pending_proposals": len([p for p in self._proposals if not p.applied]),
+            "successful_repairs": len(self._verified),
+            "pending_proposals": len(
+                [p for p in self._proposals if p.proposal_id not in self._verified]
+            ),
             "proposals": [
                 {
                     "id": p.proposal_id,
                     "target": p.target,
                     "issue": p.issue_type,
                     "action": p.proposed_action,
-                    "applied": p.applied,
+                    "applied": p.proposal_id in self._verified,
+                    "verification_ref": (
+                        self._verified[p.proposal_id].after_ref
+                        if p.proposal_id in self._verified
+                        else None
+                    ),
                 }
                 for p in self._proposals[-10:]
             ],
@@ -572,10 +659,6 @@ class SalamanderPoincareAllocationManager:
         self._next_logical_index: int = 1
         self._bucket_allocations: Dict[int, int] = {p: 0 for p in PRIME_BUCKETS}
 
-    @property
-    def allocated_slots_count(self) -> int:
-        return len(self._slots)
-
     def _route_slot(self, routing_int: int) -> Tuple[int, int, int]:
         """Resolve a Zeckendorf prime-bucket slot and linear-probe on collision."""
         slot_address, max_k = resolve_zeckendorf_slot(routing_int)
@@ -843,14 +926,40 @@ class SalamanderEngine:
         phi_threshold: float = PHI,
         max_vram_boundary: float = 0.85,
         max_error_rate: float = 0.1,
+        *,
+        recovery_control_plane: Any = None,
+        recovery_request_builder: Optional[Callable[[RepairProposal], Any]] = None,
+        repo_root: Optional[Path] = None,
+        source_validator: Optional[RepairValidator] = None,
+        profile: Any = "internal",
+        repository_review_policies: Any = None,
+        repair_learning_ledger: Any = None,
+        repair_authorized_tokens: Optional[Sequence[str]] = None,
     ) -> None:
+        from .capability_fabric import (
+            CapabilityRegistry,
+            ExecutionProfile,
+        )
+        from .isolated_repair import IsolatedRepairExecutor
+        from .mathematical_research import MathematicalProofTracker
+
         self.phi_threshold = phi_threshold
+        self.profile = (
+            ExecutionProfile(profile)
+            if isinstance(profile, str)
+            else (profile or ExecutionProfile.INTERNAL_RESEARCH)
+        )
+        self.repo_root = (repo_root or Path(__file__).resolve().parent.parent).resolve()
+        self.repository_review_policies = repository_review_policies
+
         self.homeostasis = HomeostasisMonitor(
             phi_threshold=phi_threshold,
             max_vram_boundary=max_vram_boundary,
             max_error_rate=max_error_rate,
         )
-        self.self_repair = SelfRepairEngine()
+        self.self_repair = SelfRepairEngine(
+            control_plane=recovery_control_plane, request_builder=recovery_request_builder
+        )
         self.circuit_breaker = CircuitBreaker()
         self.scaler = LucasIntelligenceScaler()
         self.allocation_manager = SalamanderPoincareAllocationManager()
@@ -866,37 +975,321 @@ class SalamanderEngine:
         )
 
         # Agentic codebase scanner and autonomous optimizer
-        from .salamander_agentic import SalamanderCodebaseScanner, SalamanderAgenticOptimizer
+        # One host-composed controller owns scanning and validated source
+        # publication. Do not create a fresh validator-less repair controller.
+        self.agentic_controller = SalamanderAgenticController(
+            repo_root=self.repo_root, validator=source_validator
+        )
+        self.codebase_scanner = self.agentic_controller.scanner
+        self.codebase_optimizer = self.agentic_controller.optimizer
 
-        self.codebase_scanner = SalamanderCodebaseScanner()
-        self.codebase_optimizer = SalamanderAgenticOptimizer()
+        # Substrate capability fabric and isolated repair engine
+        self.isolated_repair_executor = IsolatedRepairExecutor(
+            self.repo_root, learning_ledger=repair_learning_ledger,
+            authorized_tokens=repair_authorized_tokens,
+        )
+        self.proof_tracker = MathematicalProofTracker()
+        self.capability_registry = CapabilityRegistry()
+        self._register_default_capabilities()
 
         # Equip with skills runtime
         self.skills: Dict[str, Any] = {}
-        try:
-            from .skill_loader import load_skills
+        self.load_skills()
 
-            self.skills = load_skills()
-        except Exception:
-            pass
+    def _register_default_capabilities(self) -> None:
+        """Register native executable capabilities in the capability fabric."""
+        from .capability_fabric import (
+            CapabilityManifest,
+            CapabilityPermissions,
+            CapabilityRegistry,
+            DeterminismClass,
+            ExecutionProfile,
+            ResourceBudget,
+            SideEffectClass,
+        )
+
+        if not hasattr(self, "capability_registry"):
+            self.capability_registry = CapabilityRegistry()
+
+        # 1. Shared native review owner. No policies means unavailable, not
+        # permission for callers to choose arbitrary roots or source manifests.
+        if not self.capability_registry.get_manifest("repository-review"):
+            from .repository_review_capability import register_repository_review_capability
+            register_repository_review_capability(
+                self.capability_registry, repo_root=self.repo_root,
+                approved_policies=getattr(self, "repository_review_policies", None),
+            )
+
+        # 2. source-repair (Isolated mutation, allowed ONLY in internal research profile)
+        if not self.capability_registry.get_manifest("source-repair"):
+            self.capability_registry.register(
+                CapabilityManifest(
+                    capability_id="source-repair",
+                    version="1.0.0",
+                    source_provenance="Intelligence/salamander_agentic.py",
+                    description="Write-capable source repair via isolated validation gate",
+                    permissions=CapabilityPermissions(
+                        can_read_repository=True,
+                        can_write_repository=True,
+                        can_execute_code=False,
+                        can_spawn_process=False,
+                        can_use_network=False,
+                        allowed_profiles=(ExecutionProfile.INTERNAL_RESEARCH,),
+                    ),
+                    resource_budget=ResourceBudget(
+                        max_file_bytes=262144,
+                        max_total_bytes=1048576,
+                    ),
+                    supported_operations=("repair",),
+                    determinism=DeterminismClass.DETERMINISTIC,
+                    side_effects=SideEffectClass.ISOLATED_MUTATION,
+                    verification_strategy="validator_receipt_digest_binding",
+                ),
+                adapter_fn=lambda **kwargs: self.repair_source(**kwargs),
+            )
+
+        # 3. codebase-healing (Self-repair cycle, allowed ONLY in internal research profile)
+        if not self.capability_registry.get_manifest("codebase-healing"):
+            self.capability_registry.register(
+                CapabilityManifest(
+                    capability_id="codebase-healing",
+                    version="1.0.0",
+                    source_provenance="Intelligence/salamander.py",
+                    description="Closed-loop autonomic codebase healing and AST optimization",
+                    permissions=CapabilityPermissions(
+                        can_read_repository=True,
+                        can_write_repository=True,
+                        can_execute_code=False,
+                        can_spawn_process=False,
+                        can_use_network=False,
+                        allowed_profiles=(ExecutionProfile.INTERNAL_RESEARCH,),
+                    ),
+                    resource_budget=ResourceBudget(),
+                    supported_operations=("heal",),
+                    determinism=DeterminismClass.DETERMINISTIC,
+                    side_effects=SideEffectClass.ISOLATED_MUTATION,
+                    verification_strategy="substrate_health_index_delta",
+                ),
+                adapter_fn=lambda **kwargs: self.agentic_heal(auto_heal=kwargs.get("auto_heal", False)),
+            )
+
+        # 4. isolated-repair (12-stage closed loop, allowed ONLY in internal research profile)
+        if not self.capability_registry.get_manifest("isolated-repair"):
+            def _isolated_repair_adapter(**kwargs: Any) -> Any:
+                if not hasattr(self, "isolated_repair_executor"):
+                    from .isolated_repair import IsolatedRepairExecutor
+                    self.isolated_repair_executor = IsolatedRepairExecutor(
+                        getattr(self, "repo_root", Path(__file__).resolve().parent.parent),
+                        learning_ledger=getattr(self, "repair_learning_ledger", None),
+                    )
+                receipt = self.isolated_repair_executor.execute_closed_loop_repair(**kwargs)
+                return receipt.as_dict()
+
+            self.capability_registry.register(
+                CapabilityManifest(
+                    capability_id="isolated-repair",
+                    version="1.0.0",
+                    source_provenance="Intelligence/isolated_repair.py",
+                    description="12-stage isolated verified repair executor with pre-reproduction and outcome probe",
+                    permissions=CapabilityPermissions(
+                        can_read_repository=True,
+                        can_write_repository=True,
+                        can_execute_code=True,
+                        can_spawn_process=True,
+                        allowed_profiles=(ExecutionProfile.INTERNAL_RESEARCH,),
+                    ),
+                    resource_budget=ResourceBudget(),
+                    supported_operations=("execute_closed_loop_repair",),
+                    determinism=DeterminismClass.DETERMINISTIC,
+                    side_effects=SideEffectClass.ISOLATED_MUTATION,
+                    verification_strategy="dual_probe_independent_receipt",
+                ),
+                adapter_fn=_isolated_repair_adapter,
+            )
+
+        # 5. Single native registration owner, shared with minimal research composition.
+        if not self.capability_registry.get_manifest("proof-conjecture"):
+            from .proof_capability import register_proof_capability
+
+            if not hasattr(self, "proof_tracker"):
+                from .mathematical_research import MathematicalProofTracker
+                self.proof_tracker = MathematicalProofTracker()
+            register_proof_capability(self.capability_registry, self.proof_tracker)
+
+        # 6. Shared observation-only ledger query; never initialize a repair
+        # executor merely to answer a read-only request.
+        if not self.capability_registry.get_manifest("repair-learning-query"):
+            from .repair_learning_capability import register_repair_learning_capability
+            from .isolated_repair import RepairLearningLedger
+
+            executor = getattr(self, "isolated_repair_executor", None)
+            ledger = executor.learning_ledger if executor is not None else getattr(self, "repair_learning_ledger", None)
+            if ledger is None:
+                ledger = RepairLearningLedger()
+            self.repair_learning_ledger = ledger
+            register_repair_learning_capability(self.capability_registry, ledger)
+
+        # 7. bsd-exploration (Birch & Swinnerton-Dyer collaborative multi-agent swarm)
+        if not self.capability_registry.get_manifest("bsd-exploration"):
+            def _bsd_exploration_adapter(**kwargs: Any) -> Any:
+                from integrations.solvers.bsd_solver import BSDSolverTeam
+                a = int(kwargs["a"])
+                b = int(kwargs["b"])
+                max_prime = int(kwargs.get("max_prime", 100))
+                team = BSDSolverTeam()
+                report = team.solve(a, b, max_prime=max_prime)
+                return {
+                    "curve": report.curve,
+                    "a": report.a,
+                    "b": report.b,
+                    "discriminant": report.euclid.discriminant,
+                    "conjectural_rank": report.euclid.conjectural_rank,
+                    "empirical_rank_slope": report.euclid.empirical_rank_slope,
+                    "hasse_all_satisfied": report.salamander.hasse_all_satisfied,
+                    "mazur_bound_satisfied": report.salamander.mazur_bound_satisfied,
+                    "torsion_points_found": report.salamander.torsion_points_found,
+                    "cassini_invariants_valid": report.pythia.cassini_invariants_valid,
+                    "cmi_protocol_compliant": report.al_haras.cmi_protocol_compliant,
+                    "proof_claim": report.al_haras.proof_claim,  # ALWAYS False
+                    "integrated_phi": report.integrated_phi,
+                    "overall_status": report.overall_status,
+                }
+
+            self.capability_registry.register(
+                CapabilityManifest(
+                    capability_id="bsd-exploration",
+                    version="1.0.0",
+                    source_provenance="integrations/solvers/bsd_solver.py",
+                    description="Birch and Swinnerton-Dyer multi-agent collaborative solver (Euclid, Salamander, Pythia, Al Haras)",
+                    permissions=CapabilityPermissions(
+                        can_read_repository=True,
+                        can_write_repository=False,
+                        allowed_profiles=(
+                            ExecutionProfile.INTERNAL_RESEARCH,
+                            ExecutionProfile.SHARED_RESTRICTED,
+                        ),
+                    ),
+                    resource_budget=ResourceBudget(
+                        max_runtime_seconds=60.0,
+                    ),
+                    supported_operations=("solve",),
+                    determinism=DeterminismClass.DETERMINISTIC,
+                    side_effects=SideEffectClass.READ_ONLY,
+                    verification_strategy="cmi_claim_honesty_boundary",
+                    input_schema={"required": ["a", "b"]},
+                ),
+                adapter_fn=_bsd_exploration_adapter,
+            )
+
+        # 8. external-agent-boundary (Provider-neutral external engineering-agent evaluation)
+        if not self.capability_registry.get_manifest("external-agent-boundary"):
+            def _external_agent_adapter(**kwargs: Any) -> Any:
+                from Intelligence.engineering_agent_adapter import (
+                    ExternalAgentBoundary,
+                    ExternalAgentTask,
+                    UntrustedCandidatePatch,
+                    ProviderMetadata,
+                    AgentExecutionPolicy,
+                )
+                task_dict = kwargs["task"]
+                candidate_dict = kwargs["candidate"]
+                policy_dict = task_dict.get("policy", {})
+
+                policy = AgentExecutionPolicy(
+                    allowed_repo_relative_roots=tuple(policy_dict.get("allowed_repo_relative_roots", ("chronus/", "docs/"))),
+                    allow_network=bool(policy_dict.get("allow_network", False)),
+                    allow_subprocess=bool(policy_dict.get("allow_subprocess", False)),
+                    max_patch_bytes=int(policy_dict.get("max_patch_bytes", 131072)),
+                    max_files_modified=int(policy_dict.get("max_files_modified", 5)),
+                    require_syntax_check=bool(policy_dict.get("require_syntax_check", True)),
+                    require_isolated_validation=bool(policy_dict.get("require_isolated_validation", True)),
+                )
+                task = ExternalAgentTask(
+                    task_id=task_dict["task_id"],
+                    task_type=task_dict.get("task_type", "code_patch"),
+                    instruction=task_dict.get("instruction", ""),
+                    context_files=task_dict.get("context_files", {}),
+                    policy=policy,
+                )
+                prov = candidate_dict["provider"]
+                provider = ProviderMetadata(
+                    provider_id=prov["provider_id"],
+                    model_name=prov["model_name"],
+                    model_version=prov["model_version"],
+                )
+                candidate = UntrustedCandidatePatch(
+                    task_id=candidate_dict["task_id"],
+                    provider=provider,
+                    proposed_files=candidate_dict["proposed_files"],
+                    raw_response=candidate_dict.get("raw_response", ""),
+                    claimed_success=bool(candidate_dict.get("claimed_success", False)),
+                )
+                boundary = ExternalAgentBoundary(repo_root=self.repo_root)
+                verdict, reasons, receipt = boundary.evaluate_and_confine(task, candidate)
+                return {
+                    "verdict": verdict.value,
+                    "reasons": reasons,
+                    "receipt": receipt.as_dict(),
+                }
+
+            self.capability_registry.register(
+                CapabilityManifest(
+                    capability_id="external-agent-boundary",
+                    version="1.0.0",
+                    source_provenance="Intelligence/engineering_agent_adapter.py",
+                    description="Policy-gated provider-neutral evaluation of untrusted external engineering agents",
+                    permissions=CapabilityPermissions(
+                        can_read_repository=True,
+                        can_write_repository=False,
+                        allowed_profiles=(
+                            ExecutionProfile.INTERNAL_RESEARCH,
+                            ExecutionProfile.SHARED_RESTRICTED,
+                        ),
+                    ),
+                    resource_budget=ResourceBudget(
+                        max_runtime_seconds=30.0,
+                    ),
+                    supported_operations=("evaluate_and_confine",),
+                    determinism=DeterminismClass.DETERMINISTIC,
+                    side_effects=SideEffectClass.READ_ONLY,
+                    verification_strategy="untrusted_candidate_confinement",
+                    input_schema={"required": ["task", "candidate"]},
+                ),
+                adapter_fn=_external_agent_adapter,
+            )
 
     def load_skills(self) -> Dict[str, Any]:
         """Reload available skills into Salamander's semantic runtime."""
-        try:
-            from .skill_loader import load_skills
+        from .skill_loader import load_skills
 
-            self.skills = load_skills()
-        except Exception:
-            pass
+        # An unavailable loader is a visible integration failure, not a
+        # successfully initialized intelligence with silently missing skills.
+        loaded = load_skills()
+        if not isinstance(loaded, dict):
+            raise TypeError("Skill loader must return an equipped-skill mapping")
+        self.skills = loaded
         return self.skills
 
     def execute_skill(self, skill_name: str, **kwargs: Any) -> Any:
-        """Execute an equipped skill by name."""
+        """Execute an equipped skill or registered native capability under active profile."""
         if not self.skills:
             self.load_skills()
-        if skill_name == "codebase-healing":
-            auto_heal = kwargs.get("auto_heal", False)
-            return self.agentic_heal(auto_heal=auto_heal)
+
+        if not hasattr(self, "profile"):
+            from .capability_fabric import ExecutionProfile
+            self.profile = ExecutionProfile.INTERNAL_RESEARCH
+        if not hasattr(self, "capability_registry"):
+            self._register_default_capabilities()
+
+        # If registered in CapabilityRegistry, dispatch under active profile
+        if skill_name in self.capability_registry._manifests:
+            if skill_name not in self.skills:
+                raise KeyError(f"{skill_name} is not equipped")
+            output, receipt = self.capability_registry.dispatch(
+                skill_name, profile=self.profile, **kwargs
+            )
+            return output
+
         elif skill_name in self.skills:
             # Other skills are guidance, not code: hand back what to follow
             # (and where it came from) rather than claim an execution.
@@ -913,6 +1306,15 @@ class SalamanderEngine:
                 f"Skill '{skill_name}' not found in equipped skills ({list(self.skills.keys())})."
             )
 
+    def execute_capability(self, capability_id: str, **kwargs: Any) -> Tuple[Any, Any]:
+        """Direct execution route through capability fabric with receipt."""
+        if not hasattr(self, "profile"):
+            from .capability_fabric import ExecutionProfile
+            self.profile = ExecutionProfile.INTERNAL_RESEARCH
+        if not hasattr(self, "capability_registry"):
+            self._register_default_capabilities()
+        return self.capability_registry.dispatch(capability_id, profile=self.profile, **kwargs)
+
     def scan_codebase(
         self,
         subdirs: Optional[Sequence[str]] = ("core_engine", "Intelligence", "pythagoras", "mining"),
@@ -922,10 +1324,25 @@ class SalamanderEngine:
 
     def agentic_heal(self, auto_heal: bool = False) -> Dict[str, Any]:
         """Run autonomous agentic audit and self-healing cycle."""
-        from .salamander_agentic import SalamanderAgenticController
+        return self.agentic_controller.run_autonomic_cycle(auto_heal=auto_heal)
 
-        controller = SalamanderAgenticController()
-        return controller.run_autonomic_cycle(auto_heal=auto_heal)
+    def repair_source(
+        self, *, target_file: Path, replacement: str, target_snippet: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Publish a source candidate only through the configured validation gate.
+
+        This is a write-capable adapter. No document, callable, command or
+        auto-heal flag grants authority or substitutes for regression evidence.
+        """
+        committed, reason = self.codebase_optimizer.apply_repair_sandboxed(
+            target_file=target_file, replacement=replacement, target_snippet=target_snippet
+        )
+        return {
+            "skill": "source-repair",
+            "status": "COMMITTED" if committed else "NOT_COMMITTED",
+            "committed": committed,
+            "reason": reason,
+        }
 
     def substrate_health_index(self) -> float:
         """Return the current Substrate Health Index (SHI)."""
@@ -1111,6 +1528,7 @@ __all__ = [
     "KNOWN_FAULT_TYPES",
     "lucas",
     "fibonacci",
+    "main",
 ]
 
 
@@ -1128,3 +1546,56 @@ def lucas_bound(n: int = 10) -> dict:
     result = _lucas_get("trace_kernel")(np.array([[1, 1], [1, 0]], dtype=object), n)
     result["module"] = __name__
     return result
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    """CLI entry point for Salamander autonomic intelligence."""
+    import argparse
+    parser = argparse.ArgumentParser(prog="salamander", description="Salamander Autonomic Intelligence CLI")
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
+
+    # status
+    subparsers.add_parser("status", help="Print Salamander engine status and active profile")
+
+    # capabilities
+    cap_parser = subparsers.add_parser("capabilities", help="List registered capabilities")
+    cap_parser.add_argument("--profile", choices=["internal", "shared"], default="internal")
+
+    # bsd
+    bsd_parser = subparsers.add_parser("bsd", help="Run read-only BSD exploration")
+    bsd_parser.add_argument("--a", type=int, required=True, help="Weierstrass coefficient a")
+    bsd_parser.add_argument("--b", type=int, required=True, help="Weierstrass coefficient b")
+    bsd_parser.add_argument("--max-prime", type=int, default=100, help="Maximum prime bound")
+
+    args = parser.parse_args(argv)
+    if not args.command:
+        parser.print_help()
+        return 0
+
+    engine = SalamanderEngine()
+    if args.command == "status":
+        st = engine.status()
+        print(f"Salamander Engine Status [Profile: {engine.profile.value}]:")
+        for k, v in st.items():
+            print(f"  {k}: {v}")
+        return 0
+
+    elif args.command == "capabilities":
+        from .capability_fabric import ExecutionProfile
+        p = ExecutionProfile(args.profile)
+        caps = engine.capability_registry.list_capabilities(profile=p)
+        print(f"Registered Capabilities [Profile: {p.value}]:")
+        for c in caps:
+            print(f"  - {c.capability_id} (v{c.version}): {c.description}")
+        return 0
+
+    elif args.command == "bsd":
+        rep, receipt = engine.execute_capability("bsd-exploration", a=args.a, b=args.b, max_prime=args.max_prime)
+        print(f"BSD Report: {rep['curve']}")
+        print(f"  Discriminant: {rep['discriminant']}")
+        print(f"  Conjectural Rank: {rep['conjectural_rank']}")
+        print(f"  Proof Claim: {rep['proof_claim']} (CMI Boundary Sealed)")
+        print(f"  Receipt ID: {receipt.receipt_id} [Status: {receipt.status}]")
+        return 0
+
+    return 0

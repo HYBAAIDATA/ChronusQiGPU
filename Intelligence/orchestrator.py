@@ -76,8 +76,16 @@ from toe.poincare_golden_11d import (
     unfold_poincare_11d_vector,
     compute_zeckendorf_certificate,
 )
+from .cortex_context import CortexSpectralEngine, CortexTopologicalEngine
+from .domains import (
+    BiotechResonanceEngine,
+    DefenseAssuranceEngine,
+    EnergyThermodynamicsEngine,
+    FinancialHolonomyEngine,
+)
 
 try:
+
     from .intelligence_integration import IntegratedIntelligence
 except ImportError:
     IntegratedIntelligence = None  # type: ignore[assignment]
@@ -281,6 +289,16 @@ class IntelligenceOrchestrator:
         self.store = PythiaStore(self.memory, self.pythia, store_dir=store_dir)
         self.store.load()
 
+        # Cortex topological & spectral engines
+        self.cortex_topology = CortexTopologicalEngine()
+        self.cortex_spectral = CortexSpectralEngine()
+
+        # Multi-sector Enterprise reasoning engines
+        self.finance = FinancialHolonomyEngine()
+        self.energy = EnergyThermodynamicsEngine()
+        self.defense = DefenseAssuranceEngine()
+        self.biotech = BiotechResonanceEngine()
+
         self._wire()
         # Recovered HYBA signal stack (phi/YM/consciousness/QNP + Wilson
         # ordering). Telemetry only — it annotates and reorders the search;
@@ -311,6 +329,28 @@ class IntelligenceOrchestrator:
             failed,
             len(self._instances),
         )
+        pred = self._instances.get("toe_predictive_engine")
+        if pred is not None and not getattr(pred, "_models_trained", False):
+            try:
+                from .mining_structure_training import (
+                    DEFAULT_CORPUS_CSV,
+                    DEFAULT_CORPUS_MANIFEST,
+                    build_vectors,
+                    load_nonce_corpus,
+                    split_by_height,
+                )
+                from python_backend.phi_grover_v4 import phi_resonance
+
+                if DEFAULT_CORPUS_CSV.is_file() and DEFAULT_CORPUS_MANIFEST.is_file():
+                    rows, _ = load_nonce_corpus(DEFAULT_CORPUS_CSV, DEFAULT_CORPUS_MANIFEST)
+                    train_rows, _ = split_by_height(rows)
+                    Xv = np.asarray(build_vectors(train_rows), dtype=float)
+                    yv = np.asarray([1 if phi_resonance(r.nonce) >= 0.5 else 0 for r in train_rows], dtype=int)
+                    pred.ingest_training_data(Xv, yv, source="pythia_structural_corpus")
+                    pred.fit_models()
+                    logger.info("PredictiveEngine calibrated from 160 structural corpus samples")
+            except Exception as e:
+                logger.warning("PredictiveEngine bootstrap calibration skipped: %s", e)
 
     def reload(self) -> None:
         """Re-instantiate every module (mainly for tests)."""
@@ -1353,6 +1393,70 @@ class IntelligenceOrchestrator:
             "norm_sq": compute_poincare_norm_sq(folded),
             "reflections": reflections,
             "gate_enforced": True,
+        }
+
+    def evaluate_enterprise_domains(self) -> Dict[str, Any]:
+        """Evaluate multi-sector enterprise reasoning across all key pillars:
+        - Quantitative Finance / FTSE constituent holonomy
+        - Energy network dissipation & thermodynamics
+        - Sovereign defense assurance & cryptographic security
+        - Biotechnology / molecular conformational resonance
+        """
+        fin_report = self.finance.compute_tail_risk_holonomy()
+        energy_report = self.energy.optimize_network_flow()
+        defense_report = self.defense.verify_system_integrity()
+        biotech_report = self.biotech.evaluate_binding_resonance()
+
+        return {
+            "status": "ENTERPRISE_PILLARS_EVALUATED",
+            "pillars": {
+                "finance": {
+                    "curvature_trace": fin_report.curvature_trace,
+                    "holonomy_angle": fin_report.holonomy_angle,
+                    "tail_risk_index": fin_report.tail_risk_index,
+                    "diversification_entropy": fin_report.diversification_entropy,
+                    "stress_eigenvalues": fin_report.stress_eigenvalues,
+                    "ftse_cluster_count": fin_report.ftse_cluster_count,
+                },
+                "energy": {
+                    "entropy_generation": energy_report.entropy_generation,
+                    "dissipation_rate": energy_report.dissipation_rate,
+                    "efficiency": energy_report.network_efficiency,
+                    "bottlenecks": energy_report.bottleneck_nodes,
+                },
+                "defense": {
+                    "system_verdict": defense_report.system_verdict,
+                    "integrity_score": defense_report.integrity_score,
+                    "boundary_violations": defense_report.boundary_violations,
+                    "unauthorized_egress_attempts": defense_report.unauthorized_egress_attempts,
+                    "verification_hash": defense_report.verification_hash,
+                },
+                "biotech": {
+                    "binding_free_energy": biotech_report.binding_free_energy,
+                    "conformational_entropy": biotech_report.conformational_entropy,
+                    "resonance_score": biotech_report.resonance_score,
+                    "stability_index": biotech_report.stability_index,
+                    "active_binding_sites": biotech_report.active_binding_sites,
+                },
+            },
+        }
+
+    def evaluate_cortex(
+        self, points: Optional[np.ndarray] = None, epsilon: float = 0.5
+    ) -> Dict[str, Any]:
+        """Evaluate Cortex topological invariants and Lie-algebraic spectral gaps."""
+        if points is None:
+            points = np.random.RandomState(42).randn(16, 5)
+        topo_report = self.cortex_topology.analyze_context_topology(points, epsilon=epsilon)
+        spec_report = self.cortex_spectral.analyze_spectral_context(points)
+        return {
+            "betti_numbers": topo_report.betti_numbers,
+            "euler_characteristic": topo_report.euler_characteristic,
+            "topological_complexity": topo_report.topological_complexity,
+            "spectral_gap": spec_report.spectral_gap,
+            "condition_number": spec_report.condition_number,
+            "effective_rank": spec_report.effective_rank,
+            "casimir_invariants": spec_report.casimir_invariants,
         }
 
 

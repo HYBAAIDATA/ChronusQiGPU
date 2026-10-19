@@ -49,12 +49,21 @@ def source_roots(root: Path = ROOT) -> tuple[Path, ...]:
 
 EXCLUDE = (
     "legacy/",
+    "legacy_implementations/",
+    "_archive_research/",
     "Intelligence/skills/",
     "build/",
     "node_modules/",
     "PYTHIA-main/",
+    # Vendored third-party workshop tree (aws-samples/sample-saas-multi-agents-
+    # workshop). Flat sibling imports (import ops_context, from log_agent import
+    # ...) and a lab-generated constants.py do not resolve on the consolidated
+    # import graph; excluded as a standalone vendored tree (same rule as
+    # PYTHIA-main/). See external/README.md.
+    "external/",
     # Preserved standalone package: carries its own src/chronos namespace and
     # is not part of the consolidated import graph (same rule as PYTHIA-main/).
+    "packages/",
     "chronus/packages/chronos-one-igpu/",
 )
 CATCH_ALL = {"Exception", "BaseException", "ImportError", "ModuleNotFoundError"}
@@ -87,9 +96,9 @@ class Finding:
 
 def live_files(root: Path = ROOT) -> list[Path]:
     out = subprocess.run(
-        ["git", "-C", str(root), "ls-files", "*.py"], capture_output=True, text=True, check=True
-    ).stdout.split()
-    return [root / f for f in out if not f.startswith(EXCLUDE)]
+        ["git", "-C", str(root), "ls-files", "-z", "*.py"], capture_output=True, text=True, check=True
+    ).stdout.split("\0")
+    return [root / f for f in out if f and not f.startswith(EXCLUDE) and (root / f).is_file()]
 
 
 def _module_path(base: Path, dotted: str) -> Path | None:

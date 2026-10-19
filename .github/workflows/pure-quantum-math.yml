@@ -86,7 +86,7 @@ jobs:
     needs: exact-first-principles
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: pure-quantum-math-*
           path: reproductions
@@ -108,7 +108,7 @@ jobs:
   lean-kernels:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: leanprover/lean-action@v1
         with:
           lake-package-directory: turing_universal_quantum_computer/formal

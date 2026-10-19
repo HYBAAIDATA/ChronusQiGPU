@@ -67,20 +67,47 @@ class Graft:
     licence: str
     licence_file: str  # relative to the repository root, at ``commit``
     applies_to: tuple[str, ...]
+    manifest_sha256: str = ""  # trusted plan anchor, not supplied by graft content
 
 
 _SUPERPOWERS_AT = "8ca22dba9a94f28898bbce59f2537ff4d87c747d"
 _ANTHROPIC_AT = "33375500bcea98d610eb30ce10ac4e59b89c390d"
 
+_APPROVED_MANIFESTS = {
+    "systematic-debugging": "73d73dc86425069fbf9f695d353aa4e5fbf0f902a42385c62b7b55c22be7e3c9",
+    "verification-before-completion": "a005bb5f1501f47ff8b1c2e2d050deb2fedd7a1aec3a9c5978bcc92b2e0b778f",
+    "test-driven-development": "7a628692de93ea6c5de3ca5e1fe6619ff35ab178da9095562975252b376a180c",
+    "receiving-code-review": "d975e8b2abc7a095655a1be7872b04a056ceec5705f291f1bf0ec6f0e5b4cb90",
+    "webapp-testing": "bc1118b73ac37deda9b644a81b1b73d09cbc670b1f3d6e2a367ca50d654f6e74",
+    "skill-creator": "93f87f5cc232f663134f6268499a2b0f5936fadc3f06ad00a5ec6c0930403146",
+    "claude-api": "e6db57e530804f00592749e73fa15f1f405ab6624db6f2e75d8ce5e3bdd5ee34",
+}
+
 
 def _superpowers(name: str, *applies_to: str) -> Graft:
-    return Graft(name, SUPERPOWERS, _SUPERPOWERS_AT, f"skills/{name}", "MIT", "LICENSE", applies_to)
+    return Graft(
+        name,
+        SUPERPOWERS,
+        _SUPERPOWERS_AT,
+        f"skills/{name}",
+        "MIT",
+        "LICENSE",
+        applies_to,
+        _APPROVED_MANIFESTS[name],
+    )
 
 
 def _anthropic(name: str, *applies_to: str) -> Graft:
     path = f"skills/{name}"
     return Graft(
-        name, ANTHROPIC_SKILLS, _ANTHROPIC_AT, path, "Apache-2.0", f"{path}/LICENSE.txt", applies_to
+        name,
+        ANTHROPIC_SKILLS,
+        _ANTHROPIC_AT,
+        path,
+        "Apache-2.0",
+        f"{path}/LICENSE.txt",
+        applies_to,
+        _APPROVED_MANIFESTS[name],
     )
 
 
@@ -98,6 +125,18 @@ GRAFT_PLAN: tuple[Graft, ...] = (
 
 def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def manifest_digest(files: Mapping[str, str]) -> str:
+    """Bind the complete relative-path/hash table to independently reviewed bytes."""
+    return _sha256(json.dumps(dict(files), sort_keys=True, separators=(",", ":")).encode())
+
+
+def _safe_relative_path(value: Any) -> bool:
+    if not isinstance(value, str) or not value or "\\" in value:
+        return False
+    parts = value.split("/")
+    return all(part not in ("", ".", "..") for part in parts) and not value.startswith("/")
 
 
 def _git(source: Path, *args: str) -> bytes:
@@ -194,6 +233,9 @@ def graft(spec: Graft, source: Path, skills_dir: Path = SKILLS_DIR) -> Dict[str,
         "applies_to": list(spec.applies_to),
         "files": {rel: _sha256(data) for rel, data in sorted(files.items())},
     }
+    if not spec.manifest_sha256 or manifest_digest(record["files"]) != spec.manifest_sha256:
+        raise GraftRejected(f"{spec.name}: content does not match the trusted plan anchor")
+
     staging = skills_dir / f".graft-{spec.name}"
     shutil.rmtree(staging, ignore_errors=True)
     try:
@@ -230,6 +272,8 @@ def verify_one(skill_dir: Path, spec: Optional[Graft] = None) -> List[str]:
         return [f"unreadable provenance: {exc}"]
     if record is None:
         return ["no provenance"]
+    if not isinstance(record, dict):
+        return ["provenance must be an object"]
     problems: List[str] = []
     if record.get("schema") != SCHEMA:
         problems.append(f"unknown schema {record.get('schema')!r}")
@@ -243,7 +287,26 @@ def verify_one(skill_dir: Path, spec: Optional[Graft] = None) -> List[str]:
         spec.licence,
     ):
         problems.append("provenance does not match the graft plan")
-    expected: Dict[str, str] = record.get("files") or {}
+    expected = record.get("files")
+    if not isinstance(expected, dict) or not expected:
+        return problems + ["file manifest must be a nonempty object"]
+    if any(
+        not _safe_relative_path(rel)
+        or not isinstance(value, str)
+        or len(value) != 64
+        or any(c not in "0123456789abcdef" for c in value)
+        for rel, value in expected.items()
+    ):
+        return problems + ["invalid relative path or digest in file manifest"]
+    if (
+        spec is None
+        or not spec.manifest_sha256
+        or manifest_digest(expected) != spec.manifest_sha256
+    ):
+        return problems + ["file manifest does not match the trusted plan anchor"]
+    if record.get("name") != spec.name or record.get("applies_to") != list(spec.applies_to):
+        problems.append("routing metadata does not match the graft plan")
+
     present = {
         p.relative_to(skill_dir).as_posix()
         for p in skill_dir.rglob("*")
@@ -255,11 +318,18 @@ def verify_one(skill_dir: Path, spec: Optional[Graft] = None) -> List[str]:
         path = skill_dir / rel
         if not path.is_file():
             problems.append(f"{rel}: missing")
+        elif path.is_symlink() or any(
+            parent.is_symlink() for parent in path.parents if parent != skill_dir.parent
+        ):
+            problems.append(f"{rel}: symlink paths are not graftable")
         elif _sha256(path.read_bytes()) != digest:
             problems.append(f"{rel}: changed since it was grafted")
     licence = record.get("licence_file")
-    if licence not in expected:
-        problems.append("the upstream licence is not part of the graft")
+    expected_licence = os.path.relpath(spec.licence_file, spec.path).replace(os.sep, "/")
+    if expected_licence.startswith("../"):
+        expected_licence = "LICENSE.upstream" if "LICENSE.upstream" in expected else "LICENSE"
+    if not isinstance(licence, str) or licence not in expected or licence != expected_licence:
+        problems.append("the upstream licence does not match the trusted plan")
     return problems
 
 

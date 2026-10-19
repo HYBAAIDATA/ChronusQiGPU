@@ -8,7 +8,7 @@ import os
 import time
 
 import pytest
-from chronos_one_igpu.reference_contract import reference_execution
+from chronus.reference_contract import reference_execution
 
 from chronus.mla1517.mining import poincare_11d_order
 from chronus.mla1517.mining.coordinator import resolve_nonce_order

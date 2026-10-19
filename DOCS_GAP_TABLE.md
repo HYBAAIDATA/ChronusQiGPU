@@ -7,21 +7,26 @@
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `AGENTS.md` | 560 | `cc50be8a` | 2026-10-11 | Current verified substrate / cognitive architecture specification | Intelligence/recursive_self_learning.py, tests/ (144/144 tests passing) | **CURRENT** |
 | `ARCHITECTURE.md` | 388 | `208ff3c0` | 2026-10-03 | Broad high-level claims on system architecture, deployment, and research roadmap | Contains mix of pre-v17 references, missing docs/v2 pointers and updated evidence | **STALE** |
+| `CAPABILITY-LEDGER.md` | 108 | `c74c160d` | 2026-10-16 | Current verified substrate / cognitive architecture specification | Intelligence/recursive_self_learning.py, tests/ (144/144 tests passing) | **CURRENT** |
 | `CHANGELOG.md` | 55 | `fa37f2c5` | 2026-09-27 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `CONTRIBUTING.md` | 52 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `DEMO_RUNBOOK.md` | 109 | `4131cddc` | 2026-10-18 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `DEPLOYMENT.md` | 146 | `032b745a` | 2026-10-01 | Broad high-level claims on system architecture, deployment, and research roadmap | Contains mix of pre-v17 references, missing docs/v2 pointers and updated evidence | **STALE** |
-| `DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `EMERGENCE-LOG.md` | 40 | `c74c160d` | 2026-10-16 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `GEMINI.md` | 8 | `fa37f2c5` | 2026-09-27 | Current verified substrate / cognitive architecture specification | Intelligence/recursive_self_learning.py, tests/ (144/144 tests passing) | **CURRENT** |
 | `LATEST_AUTHORITATIVE_RESEARCH.md` | 162 | `c839ffaa` | 2026-10-12 | Broad high-level claims on system architecture, deployment, and research roadmap | Contains mix of pre-v17 references, missing docs/v2 pointers and updated evidence | **STALE** |
-| `OWNER_DECLARATIONS.md` | 110 | `cc25e6a4` | 2026-10-13 | Canonical governance / inviolable doctrine | N/A (Governing Root Directive) | **EXEMPT (DO NOT TOUCH)** |
-| `README.md` | 466 | `edd4c017` | 2026-10-09 | Broad high-level claims on system architecture, deployment, and research roadmap | Contains mix of pre-v17 references, missing docs/v2 pointers and updated evidence | **STALE** |
+| `OWNER_DECLARATIONS.md` | 118 | `3cff2c46` | 2026-10-13 | Canonical governance / inviolable doctrine | N/A (Governing Root Directive) | **EXEMPT (DO NOT TOUCH)** |
+| `README.md` | 490 | `9d44ca5f` | 2026-10-13 | Broad high-level claims on system architecture, deployment, and research roadmap | Contains mix of pre-v17 references, missing docs/v2 pointers and updated evidence | **STALE** |
+| `README_MCP.md` | 45 | `e296004c` | 2026-10-13 | Current verified substrate / cognitive architecture specification | Intelligence/recursive_self_learning.py, tests/ (144/144 tests passing) | **CURRENT** |
+| `REMEDIATION-STATUS.md` | 99 | `c74c160d` | 2026-10-16 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `STRICT_QUANTUM_BOUNDARY.md` | 61 | `fa37f2c5` | 2026-09-27 | Current verified substrate / cognitive architecture specification | Intelligence/recursive_self_learning.py, tests/ (144/144 tests passing) | **CURRENT** |
-| `UNIVERSAL_PRINCIPLE_MAP.md` | 1921 | `41b997fb` | 2026-10-12 | Current verified substrate / cognitive architecture specification | Intelligence/recursive_self_learning.py, tests/ (144/144 tests passing) | **CURRENT** |
+| `UNIVERSAL_PRINCIPLE_MAP.md` | 1935 | `3cff2c46` | 2026-10-13 | Current verified substrate / cognitive architecture specification | Intelligence/recursive_self_learning.py, tests/ (144/144 tests passing) | **CURRENT** |
 | `docs/ABOVE_THE_FLOOR.md` | 451 | `fa37f2c5` | 2026-09-27 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/AGENTIC_MINING.md` | 176 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/AGENTIC_MINING_RUNTIME_AUDIT.md` | 210 | `77d05d3a` | 2026-10-04 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/AGENTS_PROJECT_EVOLUTION.md` | 377 | `85848588` | 2026-09-28 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/API_CATALOGUE.md` | 105 | `7894f1e3` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/AI_FACTORY_POSITIONING.md` | 56 | `71a4fb0b` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/API_CATALOGUE.md` | 109 | `4131cddc` | 2026-10-18 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/API_ELEVATION_GATE.md` | 27 | `7894f1e3` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/API_LIFECYCLE_POLICY.md` | 81 | `53cf7b7e` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/APPLE_M5_HANDOFF.md` | 114 | `8b4c1985` | 2026-10-09 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
@@ -34,21 +39,47 @@
 | `docs/BENCHMARK_VERIFICATION.md` | 218 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/CANONICAL_MINING_WORKFLOW.md` | 177 | `1759c273` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/CANONICAL_PYTHIA_SEARCH_DOCTRINE.md` | 147 | `ee1fbdd1` | 2026-10-06 | Canonical governance / inviolable doctrine | N/A (Governing Root Directive) | **EXEMPT (DO NOT TOUCH)** |
+| `docs/CHRONOS_DROP_INTEGRATION.md` | 123 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS.md` | 92 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_CHANGE_LEDGER.md` | 76 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_DELIVERY_MATRIX.md` | 24 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_ELEVATION_PLAN.md` | 33 | `2dd28911` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_ELEVATION_ROADMAP.md` | 387 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_FLEET.md` | 101 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_GPU_CAPABILITY_CLOSURE.md` | 41 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_IGPU.md` | 144 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_IGPU_HE_GOLDEN_QUANTUM_REVIEW.md` | 438 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_PORTABLE_SUBSTRATE.md` | 39 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_PRODUCTION_HARDENING.md` | 60 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_PRODUCTION_READINESS_A.md` | 103 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_QX_EXECUTION_CONTRACT.md` | 91 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_SUBSTRATE.md` | 59 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_SUBSTRATE_MINING.md` | 42 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_V33_FULL_CONVERGENCE.md` | 77 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_VIRTUAL_IGPU.md` | 74 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_VIRTUAL_IGPU_DELIVERY_2OCT2026.md` | 80 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CHRONUS_VIRTUAL_IGPU_IMPLEMENTATION_MATRIX.md` | 101 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/CIAAS_THREE_PLANE_SESSION_AUDIT.md` | 68 | `abc49e41` | 2026-10-04 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/CI_EXACTNESS_READINESS_REPAIR.md` | 96 | `da70a68b` | 2026-10-12 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/CLIENT_HANDOVER_AUDIT.md` | 124 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/CLIENT_UAT_HANDOVER.md` | 221 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/CLOSED_LOOP_RUNTIME.md` | 235 | `3b4d1374` | 2026-10-04 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/COGITO_PARADIGM.md` | 74 | `39ef22f0` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/CONTRACTS.md` | 1509 | `4d70069a` | 2026-10-08 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/CONTRACT_DRIFT_REPORT.md` | 18 | `7894f1e3` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/CONTRACT_DRIFT_REPORT.md` | 18 | `4131cddc` | 2026-10-18 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/CROSS_VERIFICATION.md` | 30 | `da853afc` | 2026-10-02 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/DETERMINISTIC_10_EH_MATHEMATICAL_CAPACITY.md` | 126 | `ec35d51e` | 2026-10-07 | Claims deterministic 10 EH/s or 3000 EH/s hashrate | chronus/readiness.py:165 (Hashrate MEASURED not declared; NOT_RUN without active silicon) | **CONTRADICTED** |
 | `docs/DOCKER_DUAL_POOL_DEPLOYMENT.md` | 69 | `03f62ecb` | 2026-09-28 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/ELEVATION_MOVES_STATUS.md` | 24 | `40962cc2` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/ENTERPRISE_CAPABILITY_BRIDGE.md` | 267 | `601ede6b` | 2026-10-03 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/EUCLID_CAPABILITY_EVALUATION_PROTOCOL.md` | 28 | `56e8250f` | 2026-10-14 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/EUCLID_COGNITION_LOOP.md` | 249 | `a104cdb1` | 2026-10-07 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/EUCLID_COGNITIVE_ARCHITECTURE_VALIDATION.md` | 105 | `untracked` | 2026-10-19 | Current verified substrate / cognitive architecture specification | Intelligence/recursive_self_learning.py, tests/ (144/144 tests passing) | **CURRENT** |
+| `docs/EUCLID_FRONTIER_IMPLEMENTATION.md` | 193 | `c74c160d` | 2026-10-16 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/EUCLID_FRONTIER_OWNER_SPEC.md` | 1415 | `c74c160d` | 2026-10-16 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/EUCLID_GENESIS_AND_KAIROS_QUALIFICATION.md` | 80 | `d6f6243f` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/EUCLID_KAIROS_RUNTIME.md` | 73 | `10c6a63e` | 2026-10-02 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/EUCLID_NOTION_RECONCILIATION_20261014.md` | 323 | `f3b2d15d` | 2026-10-14 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/EUCLID_PRODUCT_RECOVERY.md` | 111 | `f0a3ff18` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/EUCLID_TRAINING_READINESS.md` | 46 | `75c8cb11` | 2026-10-02 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/EUCLID_V17_INTEGRATION_GATE.md` | 54 | `7667c261` | 2026-10-08 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
@@ -72,14 +103,18 @@
 | `docs/HYBA_QC_FIXPASS_ODR.md` | 120 | `de92b149` | 2026-10-05 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/HYBA_STYLE_GUIDE_FRONTEND_PRODUCT.md` | 278 | `8606d445` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/HYBRID_ASIC_UNIFIED_THEORY.md` | 150 | `28a56ace` | 2026-10-05 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/IGPU_QUANTUM_ACCELERATION.md` | 21 | `9a9de2ad` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/INTELLIGENCE_CAPABILITY_OWNERSHIP.md` | 609 | `8c7ffcd3` | 2026-10-14 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/INTELLIGENCE_CONVERGENCE.md` | 65 | `d6f6243f` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/INTELLIGENCE_FIRST_REPOSITORY_PLAN.md` | 54 | `f43b221a` | 2026-10-07 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/INTELLIGENCE_MODEL_CARD.md` | 98 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/JULY_2026_CAPABILITY_GAP_ANALYSIS.md` | 701 | `f54db3d2` | 2026-10-04 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/KELLOGG_JULY_TENSOR_CONVERGENCE.md` | 53 | `0e52366d` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/LEARNING.md` | 245 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/LHRAS_BLUEPRINT_CLOSURE.md` | 40 | `ee3be240` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/LUCAS15_OPERATOR_ABLATION.md` | 65 | `a63030a1` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/LUCAS_PISOT_SCALING_RESEARCH.md` | 38 | `73cc1887` | 2026-10-02 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/LUCAS_SCALING_STATUS.md` | 21 | `fcd35ea7` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/LUCAS_SYSTEM_USE_CASES.md` | 266 | `fa37f2c5` | 2026-09-27 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/LUCAS_THEORETICAL_PROPERTIES.md` | 166 | `fa37f2c5` | 2026-09-27 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/M32_TENSOR_BRIDGE.md` | 219 | `7538b36d` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
@@ -97,7 +132,10 @@
 | `docs/OPS_OBSERVABILITY.md` | 71 | `e9c0337b` | 2026-10-03 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/ORGANISM_INTEGRATION.md` | 80 | `146d1989` | 2026-10-04 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/OVID_INTERFACE_CONTRACT.md` | 194 | `6e6e0a59` | 2026-10-05 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/OWNER_CANONICAL_STATUS.md` | 24 | `ba51c3df` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/OWNER_DIRECTED_ACTIVE_STATUS.md` | 27 | `314c7f59` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/PACKAGE_LAYOUT.md` | 54 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/PARADIGM_COMPLETION.md` | 75 | `850a3e57` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/PHASE5_EVIDENCE_RUNTIME.md` | 41 | `ddec65b1` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/PR140_BOUNDED_HANDOFF.md` | 26 | `3795d1be` | 2026-10-08 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/PRODUCTION_EXECUTION_WIRING.md` | 67 | `032b745a` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
@@ -111,29 +149,39 @@
 | `docs/PRODUCT_REPLACEMENT_WORK.md` | 24 | `27e2b07f` | 2026-10-07 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/PROJECT_STATUS.md` | 59 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/PULVINI_ARCHITECTURAL_SPECIFICATION.md` | 263 | `8e34b215` | 2026-10-05 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/PYTHIA_API_CONTRACT.md` | 2406 | `7894f1e3` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/PYTHIA_API_CONTRACT.md` | 2564 | `4131cddc` | 2026-10-18 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/PYTHIA_CANONICAL_MINING_SEARCH.md` | 193 | `f19e9910` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/PYTHIA_MINING_AUTHORITY.md` | 195 | `870b7743` | 2026-10-07 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/PYTHIA_STRUCTURE_TRAINING.md` | 128 | `8b443257` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/README_MINING.md` | 107 | `0a9da652` | 2026-10-11 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/RECOVERY_EVIDENCE.md` | 25 | `7894f1e3` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/RECOVERY_PROVENANCE_20260724.md` | 65 | `be0ed015` | 2026-10-04 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/RECURSIVE_SELF_LEARNING.md` | 87 | `untracked` | 2026-10-19 | Current verified substrate / cognitive architecture specification | Intelligence/recursive_self_learning.py, tests/ (144/144 tests passing) | **CURRENT** |
 | `docs/RESEARCH_INTAKE.md` | 64 | `4d70069a` | 2026-10-08 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/RESEARCH_RECONCILIATION.md` | 61 | `265efcdc` | 2026-10-04 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/RESIDENT_HENDRIX_ONE_IGPU.md` | 188 | `8b3112d6` | 2026-10-13 | Claims separate secondary iGPU or dual-GPU fabric topology | chronus/mla1517_platform/python/system_fabric.py:32 (Chronus is the sole single-backend iGPU) | **CONTRADICTED** |
 | `docs/RESILIENCE_MATRIX.md` | 98 | `7894f1e3` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/RE_PAPERED_ACCEPTANCE.md` | 88 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/SALAMANDER_AUTONOMIC_CONTROL_PLANE.md` | 150 | `d3eef9a7` | 2026-10-02 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/SALAMANDER_CONSOLIDATION.md` | 38 | `510bbee6` | 2026-10-14 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/SALAMANDER_OUTCOME_BOUNDARY.md` | 228 | `835c4346` | 2026-10-08 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/SALAMANDER_READ_ONLY_REVIEW_WIRING.md` | 44 | `eed2f497` | 2026-10-14 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/SALAMANDER_REPAIR_ADMISSION.md` | 53 | `d4bed8f2` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/SEAM.md` | 52 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/SECURITY.md` | 55 | `208ff3c0` | 2026-10-03 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/SERVICE_DEPENDENCY_GRAPH.md` | 162 | `7894f1e3` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/SLO_SCORECARD.md` | 64 | `7894f1e3` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/SERVICE_DEPENDENCY_GRAPH.md` | 167 | `4131cddc` | 2026-10-18 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/SKILL_INTEGRATION_STATUS.md` | 33 | `56e8250f` | 2026-10-14 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/SLO_SCORECARD.md` | 64 | `4131cddc` | 2026-10-18 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/SPRINT1_METHODS.md` | 125 | `untracked` | 2026-10-19 | Current verified substrate / cognitive architecture specification | Intelligence/recursive_self_learning.py, tests/ (144/144 tests passing) | **CURRENT** |
+| `docs/STACK_ARGUMENT_CORRECTED.md` | 31 | `cb5c7b35` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/STANDALONE_RELEASE_RC_PLAN.md` | 166 | `45f68434` | 2026-10-08 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/STARTUP.md` | 213 | `5e87ea16` | 2026-09-28 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/STARTUP_FS_MATRIX.md` | 17 | `fa37f2c5` | 2026-09-27 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/STORAGE_PUBLICATION_PREPARATION.md` | 161 | `fa713930` | 2026-10-08 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/STRANGE_LOOP_OPERATOR_RUNBOOK.md` | 82 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/STRATUM_V2.md` | 68 | `5eea5115` | 2026-10-08 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/STRICT_QUANTUM_ARCHITECTURE.md` | 23 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/STRUCTURAL_AUDIT_PLANES.md` | 30 | `b9298191` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/STRUCTURED_MINING_AUDIT.md` | 136 | `0fb7883a` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/SUPER_GPU_SUBSTRATE.md` | 26 | `e08dbb6a` | 2026-10-01 | Claims separate secondary iGPU or dual-GPU fabric topology | chronus/mla1517_platform/python/system_fabric.py:32 (Chronus is the sole single-backend iGPU) | **CONTRADICTED** |
 | `docs/TENSOR_ARCHITECTURE.md` | 332 | `3f52c947` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
@@ -156,10 +204,10 @@
 | `docs/TURING_VQC_CALLER_CONTRACT.md` | 156 | `b9fdd88f` | 2026-10-03 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/UNIFIED_HYBA_MANIFOLD_DEVICE.md` | 271 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/UNIFIED_RUNTIME.md` | 88 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/academic_submissions/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/academic_submissions/OXFORD_PENROSE_SCIENTIFIC_MONOGRAPH.md` | 164 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/academic_submissions/UCL_UNIVERSITY_OF_LONDON_SCIENTIFIC_MONOGRAPH.md` | 153 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/al-haras/ARCHITECTURE.md` | 48 | `ebd38bac` | 2026-09-29 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/al-haras/CONTAINER_SECURITY.md` | 64 | `c1251a3e` | 2026-10-08 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
-| `docs/al-haras/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/al-haras/EXECUTABLE_TRANCHES_AND_EXTRACTION.md` | 24 | `66966893` | 2026-09-29 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/al-haras/GAP_ANALYSIS.md` | 114 | `58bcc411` | 2026-09-29 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/al-haras/GUARDIAN_GAP_CLOSURE.md` | 32 | `361ae3cf` | 2026-09-29 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
@@ -172,11 +220,12 @@
 | `docs/al-haras/SUBSCRIPTION_AND_ROUTING.md` | 62 | `ebd38bac` | 2026-09-29 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/al-haras/SUBSYSTEM_PROMOTION_GATES.md` | 37 | `4ac2cd68` | 2026-09-29 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/al-haras/THREAT_MODEL.md` | 18 | `ebd38bac` | 2026-09-29 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
-| `docs/chronus/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/bsd_scaffold.md` | 108 | `01bae19e` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/chronus-aethel-review.md` | 62 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/chronus/FIRST_WORKLOAD.md` | 78 | `8b3112d6` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/compiler.md` | 12 | `078c558a` | 2026-10-02 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/conformance.md` | 9 | `81b672ca` | 2026-10-02 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/decisions/ADR-PI01-001-hosting-platform.md` | 51 | `990bfbe2` | 2026-10-12 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
-| `docs/decisions/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
 | `docs/enterprise_triad/00_authority_matrix.md` | 48 | `601ede6b` | 2026-10-03 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/enterprise_triad/01_storage_consistency.md` | 50 | `601ede6b` | 2026-10-03 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/enterprise_triad/02_schema_version_lineage.md` | 28 | `601ede6b` | 2026-10-03 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
@@ -185,18 +234,20 @@
 | `docs/enterprise_triad/05_migration_classification.md` | 18 | `601ede6b` | 2026-10-03 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/enterprise_triad/06_acceptance_test_matrix.md` | 26 | `601ede6b` | 2026-10-03 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/enterprise_triad/07_failure_model.md` | 21 | `601ede6b` | 2026-10-03 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
-| `docs/enterprise_triad/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/enterprise_triad/README.md` | 84 | `cc50be8a` | 2026-10-11 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
-| `docs/euclid/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/evidence/pythagoras-v12.2/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/evidence/pythagoras-v12.2/IMPLEMENTATION_12_2.md` | 73 | `cceedc69` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/gap-closure/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
+| `docs/gap-closure/00-GAP-CLOSURE-REGISTER.md` | 69 | `9c308af4` | 2026-10-13 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
+| `docs/gap-closure/01-H4-COMPOSITION-CONTRACTS.md` | 219 | `9c308af4` | 2026-10-13 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
+| `docs/gap-closure/02-WYTHOFF-BIJECTION.md` | 126 | `9c308af4` | 2026-10-13 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
+| `docs/gap-closure/03-METALLIC-DIGIT-LANGUAGE.md` | 158 | `9c308af4` | 2026-10-13 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
+| `docs/gap-closure/04-QUANTUM-ARSENAL-EMBEDDING.md` | 168 | `9c308af4` | 2026-10-13 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
+| `docs/gap-closure/05-TOE-BRIDGE-TYPING.md` | 150 | `9c308af4` | 2026-10-13 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
+| `docs/gap-closure/06-CONSORTIUM-LEDGER-SEPARATION.md` | 187 | `9c308af4` | 2026-10-13 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
+| `docs/gap-closure/07-NO-SIMULATOR-SEMANTICS.md` | 129 | `9c308af4` | 2026-10-13 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
 | `docs/hash_usage_audit.md` | 64 | `8732b6d4` | 2026-10-12 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/hyba/DATA_SUBSTRATE.md` | 67 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/hyba/DEPLOYMENT_PROFILES.md` | 9 | `98a815a1` | 2026-09-29 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/hyba/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/intelligence_elevation.md` | 77 | `ee133e9c` | 2026-10-03 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/kellogg/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/kellogg/FIRST_WORKLOAD.md` | 82 | `babee477` | 2026-10-06 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/kellogg/README.md` | 126 | `870b7743` | 2026-10-07 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/kellogg/exact_linear_algorithm_audit.md` | 116 | `fa37f2c5` | 2026-09-27 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
@@ -205,11 +256,10 @@
 | `docs/kellogg/first_principles_substrate.md` | 146 | `fa37f2c5` | 2026-09-27 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/kellogg/pisot_numbers.md` | 157 | `fa37f2c5` | 2026-09-27 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/kellogg/plastic_number_applications.md` | 95 | `fa37f2c5` | 2026-09-27 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
-| `docs/lemma_golden_ordering.md` | 57 | `fa37f2c5` | 2026-09-27 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/lemma_golden_ordering.md` | 75 | `71997635` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/lemma_lucas_polynomial.md` | 70 | `fa37f2c5` | 2026-09-27 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/lemma_lucas_universal.md` | 113 | `54331fbc` | 2026-10-09 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/lucas_scaling_audit.md` | 165 | `54331fbc` | 2026-10-09 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/mining_agents/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/mining_agents/HASH_AGENT.md` | 90 | `fa37f2c5` | 2026-09-27 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/mining_agents/MINING_COORDINATOR.md` | 89 | `fa37f2c5` | 2026-09-27 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/mining_agents/NONCE_AGENT.md` | 89 | `fa37f2c5` | 2026-09-27 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
@@ -218,14 +268,12 @@
 | `docs/mining_agents/README.md` | 172 | `fa37f2c5` | 2026-09-27 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/mining_agents/SHARE_AGENT.md` | 88 | `fa37f2c5` | 2026-09-27 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
 | `docs/mining_agents/TRAINING_TEMPLATE.md` | 99 | `fa37f2c5` | 2026-09-27 | Pre-v17 subsystem design specs and older agent manifests | Superseded by unified Chronus and Euclid runtime backends | **STALE** |
-| `docs/papers/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/papers/BIRCH_SWINNERTON_DYER_RESOLUTION_SCAFFOLD.md` | 489 | `21e00d6f` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/papers/FAIL_CLOSED_VIRTUAL_ACCELERATORS.md` | 103 | `870b7743` | 2026-10-07 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/papers/POST_QUANTUM_STRUCTURAL_COMPUTATION.md` | 416 | `fa37f2c5` | 2026-09-27 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/playbooks/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/playbooks/unit-testing-typescript.md` | 155 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/pr_body_update.md` | 45 | `4d70069a` | 2026-10-08 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/production/APPLE_M5_TRANSFER_20261009.md` | 78 | `7443630d` | 2026-10-09 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/production/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/production/LIVE_MINING_GO_LIVE_20261009.md` | 114 | `26a18aab` | 2026-10-09 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/production/M5_AGENT_FULL_PIPELINE_HANDOVER_20261009.md` | 625 | `455a4d8f` | 2026-10-09 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/production/PRODUCTION_DECLARATION.md` | 48 | `92f30aaa` | 2026-10-05 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
@@ -238,10 +286,8 @@
 | `docs/production/validation.md` | 131 | `78f9ce3b` | 2026-10-02 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/production/workflow_map.md` | 59 | `d6f6243f` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/production_environment.md` | 78 | `eb15dd16` | 2026-10-12 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/programs/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/programs/PI-01-azure-operational-hardening.md` | 207 | `ec1fb2a3` | 2026-10-12 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/programs/PI-01-cedr-enforcement.md` | 83 | `6c392b06` | 2026-10-12 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/recovery/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
 | `docs/recovery/EUCLID_CREATIVE_SUBSTRATE_RECOVERY.md` | 38 | `80de3bf3` | 2026-10-04 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
 | `docs/recovery/EUCLID_DELEGATION_RECOVERY.md` | 23 | `f95d66b4` | 2026-10-04 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
 | `docs/recovery/EUCLID_EXPLORER_RECOVERY.md` | 25 | `e973de8c` | 2026-10-04 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
@@ -252,28 +298,121 @@
 | `docs/recovery/EUCLID_PHI_VQC_INTELLIGENCE_ORGANS.md` | 32 | `69017527` | 2026-10-04 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
 | `docs/recovery/EUCLID_STARTUP_REGISTRY_RECOVERY.md` | 24 | `40721db0` | 2026-10-04 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
 | `docs/recovery/EUCLID_TASK_ORCHESTRATOR_RECOVERY.md` | 30 | `8052c6de` | 2026-10-04 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
-| `docs/releases/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/releases/PR16_LUCAS_SYSTEM_ELEVATION.md` | 26 | `fa37f2c5` | 2026-09-27 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/research_archive/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
-| `docs/research_archive/notes/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
-| `docs/reviews/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
+| `docs/research_archive/README.md` | 70 | `e34dc53b` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/047301c2d99943fa9359b0dbf5979c02.md` | 272 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/08fb41632f5b480a8016625413b647a8.md` | 138 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/098146219a28491e85a15d9303a7a3ca.md` | 147 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/0e83b14c11b54c3f90a1dc49fe5b566d.md` | 107 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/15c3121cccf24206a9bc747e516901d0.md` | 111 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/1993e69eb2594269bf1b28cb9e53da84.md` | 17 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/1aa24823d574417c81f51b5ba13990ed.md` | 190 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/1ad64f80ed974833b4c756b3ce5ffbc9.md` | 56 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/1bb848ab426941e6822cede1247c6d0a.md` | 114 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/1e47398b2fed4e29918d10d02480f102.md` | 404 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/1e5702e9d6dd4519b93e01e3c183b3c1.md` | 91 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/1fb64c306b44437a8fa1d32df5e56e71.md` | 307 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/24e053afe0854fc1a38188028dbed32e.md` | 12 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/2539733ebb7848c9a84ae4e3d7429822.md` | 403 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/259d08a1250d47aca3dad66ee06a843d.md` | 223 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/27bbc78a988d45888ef3ccc4a966dea1.md` | 26 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/28b53d2b2ec34a0194a39f66482c0abb.md` | 237 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/2b64b0199ee14ebc8ed3eac7d981aaba.md` | 56 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/2c901d4522fc49279f2e20254b615319.md` | 21 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/2e042b52e99e428195f31050ed5c5219.md` | 56 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/2ecabc7aa03148e9b8b9be96c3cfc89b.md` | 50 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/330d5851372e461d9bdfedbb18ed5276.md` | 146 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/334295bceed94cf1b63a3f2d0e133aef.md` | 64 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/35a07f39d6614ce9beba37dd87e6cc73.md` | 487 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/37cf0c9869df423bbf57b0fd1ef34b2c.md` | 56 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/38e4cdc889b049c4966eb11598e50301.md` | 159 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/39dbcc6fa499804296a8c26faee3ed9f.md` | 254 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/3b297cfe8de84f29847707837f9559fc.md` | 12 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/3c1fa98a65b64ef5b95f5f6787a54b3a.md` | 160 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/3cfee27664174a2697e1edf17be637b2.md` | 762 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/3d7ec1d0ebdb4b30ba461a328f5abc39.md` | 56 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/3e14dd365bfb4123a17f88baa7e81c38.md` | 262 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/3fbf2c3ad65b48b9b00ea5487df2bd93.md` | 136 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/43f1f47d5bab46c69ac076d6e234e5d1.md` | 235 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/46de063e428c4f8390b779f6f8855460.md` | 237 | `302118e4` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/46f56529e750463b8d880166c80a7e78.md` | 296 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/4cda54cea5554042848aabb51cb04c68.md` | 129 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/4e6ea82e3f3647b9acec0566495f987b.md` | 268 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/5042b803b58a4b5fb2fa245c9ec92410.md` | 148 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/51ad7dcf517b4e36a76d5af25e272a05.md` | 12 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/53b6d4ca11304f228e9b487b1f4683c3.md` | 86 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/585d16ab68ed4162aab9c6859fc2098f.md` | 76 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/5f064bbd7fa84ea09d3abafd3b6e6742.md` | 395 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/60bf7315e8194bfdb4a968c2eac6efab.md` | 102 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/614e009d3ff44c5f855183ecbccbe93b.md` | 71 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/61fb1335b2664aabad6b4a6caa972c11.md` | 583 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/62c927e6758f4f0285d81470b492f6a7.md` | 87 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/6582444017bd4d1bab8cead27c840d28.md` | 80 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/66fa30a0dc50466998444b444dff25d3.md` | 21 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/6b78e6e89aaf4747bc0e99cf31ee4bd2.md` | 72 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/6bcf3e275c1449bd87e6f85f1474e4b4.md` | 153 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/6c0bbde40e8b41eeba9cedb15d5bcb9b.md` | 225 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/725fd6152eb04acca0cb5d1a654720be.md` | 146 | `b6350bcc` | 2026-10-14 | Claims deterministic 10 EH/s or 3000 EH/s hashrate | chronus/readiness.py:165 (Hashrate MEASURED not declared; NOT_RUN without active silicon) | **CONTRADICTED** |
+| `docs/research_archive/notes/74d12114b6754e25a73523f7fe42c76f.md` | 227 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/7763e2edb28c4d31b927a4550bfef0ac.md` | 155 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/7c56ce1e4b8d4a6f84076377e4008be5.md` | 139 | `b6350bcc` | 2026-10-14 | Claims deterministic 10 EH/s or 3000 EH/s hashrate | chronus/readiness.py:165 (Hashrate MEASURED not declared; NOT_RUN without active silicon) | **CONTRADICTED** |
+| `docs/research_archive/notes/7c5aa25272b04258b8c0b76e954f87c5.md` | 105 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/81147026b539421c97c99fde6cbf23fa.md` | 216 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/81c0666dd7cf43ebabfc3e6291fbb507.md` | 152 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/8fa068f25b364ad7ae54c3de4be455a3.md` | 307 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/8fb2b73e8a314dbea468be18f2c3cfa7.md` | 31 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/8fb4e47b8f084abeb113366602056c29.md` | 109 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/92210715bf5847378c79d63b8f011571.md` | 235 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/93ea6e90011a4b2fbd2a16cc9e4c4c89.md` | 161 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/93f597b13fca40e79874f8ce78d08f95.md` | 119 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/9536b31029364e57b60a7248579f25a0.md` | 95 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/9798f6a8bfb24bb2bc1f74ddb2875060.md` | 662 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/981ad7efc636485987ba950ff070f9e4.md` | 160 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/9a32c65b3fd94f118b328e338510b263.md` | 342 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/a4955666990e48eba278762b1cd025b6.md` | 48 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/a51328f83a1344db92cfb0920afae11d.md` | 135 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/a7752fe8f3a34477a2c7ed81874eb31b.md` | 54 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/a89e1ba61d834120b1247b3000e9f966.md` | 285 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/ac615fb71caa4facb9622fbc47293335.md` | 138 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/ae0367ace0734991ac3d36b85f6fb219.md` | 13 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/b107feaf9116444b93eeed99bc6790bf.md` | 100 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/b4eb0eb1bfbf44b18964eb992106ebf0.md` | 107 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/be3c2c541ed74102a84e808344d33ae3.md` | 17 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/c11728df10604d93b8388b8ea99f50f5.md` | 196 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/c51c25912154402a909bd6e713b2f581.md` | 22 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/ca54ab1928554773a0d02941df4614f1.md` | 20 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/cdf7e66eb5d54af2b308091881f58f56.md` | 51 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/cf58aec6388a4a0cbfb9aa381df84541.md` | 56 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/d3261d7eaf344a16b11f02eebff4a581.md` | 12 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/d418e9374453459c924cf99c19fbd242.md` | 72 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/d5a93b121b5d43bfac65ba1e7de0eee8.md` | 166 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/d9eed332fad14702aaac9f087f3829b9.md` | 143 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/dd7d4a11224f4248b8736aecfb1dc63c.md` | 18 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/de5e046821df410b8d4fb14ee7a37c3a.md` | 181 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/df3bf01909ba4fd3b6a6c38582600da0.md` | 56 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/e015c39be6d44f3bbddbdbdafa450f67.md` | 4 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/e788538c78694c9c980511140e4c5e25.md` | 63 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/eb7dcdd58075485a8b32f95d8a62fcd5.md` | 56 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/ee9591af4ef84bc1a3d748c4286ec2a3.md` | 107 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/eea083b7691c47178d972f94cb696d6c.md` | 138 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/f0a40f0991424afc82f8688a8fe14785.md` | 56 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/f197e12be5b14872b3ea3e208652b20e.md` | 81 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/f23ba6295dce4697b3312038e442e40e.md` | 137 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/f2d526c96f6c40d6a962b06021ec17f6.md` | 56 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/research_archive/notes/fa7b7e4c02084c33a74d459127560af8.md` | 21 | `f3b2d15d` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
+| `docs/reviews/OVID_THESEUS_CHRONUS_PRODUCTION_20261004.md` | 148 | `8b3112d6` | 2026-10-13 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
 | `docs/reviews/PRODUCTION_READINESS_REVIEW_2026-10-12.md` | 101 | `340b24a8` | 2026-10-12 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
 | `docs/reviews/SOVEREIGN_READINESS_POSITION_2026-10-12.md` | 117 | `f3914071` | 2026-10-12 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
 | `docs/reviews/production-walkthrough-2026-09-27.md` | 163 | `3d566c95` | 2026-10-01 | Historical milestone reviews, retrospective audits, and older recovery logs | Historical audit artifact; superseded by v17 production integration | **STALE** |
+| `docs/safety_charter.md` | 6 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/seam_paper.md` | 40 | `4d70069a` | 2026-10-08 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `docs/sprint4_adversarial_report.md` | 30 | `untracked` | 2026-10-19 | Current verified substrate / cognitive architecture specification | Intelligence/recursive_self_learning.py, tests/ (144/144 tests passing) | **CURRENT** |
 | `docs/test_voyage_plan.md` | 63 | `4d70069a` | 2026-10-08 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/toe/ARCHAEOLOGY.md` | 97 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/toe/ARCHITECTURE.md` | 84 | `165b1aa9` | 2026-10-07 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/toe/CLAIM_REGISTER.md` | 27 | `165b1aa9` | 2026-10-07 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/toe/DEPRECATED.md` | 5 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/toe/INTELLIGENCE_MAP.md` | 151 | `165b1aa9` | 2026-10-07 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/v2/00_INDEX.md` | 32 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/v2/01_SYSTEM_TRUTH.md` | 107 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/v2/02_EUCLID_IMPLEMENTED.md` | 101 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/v2/03_QUANTUM_TENSOR_STATUS.md` | 52 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/v2/04_MILLENNIUM_EVIDENCE.md` | 34 | `untracked` | 2026-10-19 | Claims formal analytic proof / resolution of BSD Millennium Problem | millennium/discrete/: Finite numerical conductor computations; probes are finite computations, NOT theorems | **CONTRADICTED** |
-| `docs/v2/05_RUNBOOKS.md` | 146 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/v2/06_GLOSSARY_BOUNDARIES.md` | 54 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
+| `safety_charter.md` | 6 | `untracked` | 2026-10-19 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 
 
 ---

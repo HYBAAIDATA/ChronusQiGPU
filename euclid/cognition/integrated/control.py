@@ -87,16 +87,24 @@ class EvidenceMetaController:
             # expectation (P·V >= c_submit) and let execution feedback teach.
             break_even = ctx.spec.submission_cost / ctx.value
             signals["submission_break_even"] = break_even
-            if candidates and bound["p_best"] >= break_even:
+            uncertain_ops = bound.get("uncertain_relevant_ops", 0.0)
+            # Gate blind execution when candidate plan has uncertain operators and high-EIG probes remain
+            effective_break_even = (
+                max(break_even, min(0.40, break_even + 0.10 * float(uncertain_ops)))
+                if (best_gain >= 0.5 and ctx.probes_remaining > 0)
+                else break_even
+            )
+            signals["effective_break_even"] = effective_break_even
+            if candidates and bound["p_best"] >= effective_break_even:
                 return ControlAssessment(
                     "act",
                     f"act-first: P(goal) {bound['p_best']:.3f} covers submission break-even "
-                    f"{break_even:.3f}",
+                    f"{effective_break_even:.3f}",
                     signals,
                 )
             return ControlAssessment(
                 "seek_evidence",
-                f"act-first: P(goal) {bound['p_best']:.3f} below break-even {break_even:.3f}",
+                f"act-first: P(goal) {bound['p_best']:.3f} below effective break-even {effective_break_even:.3f}",
                 signals,
             )
         if strategy == "abduce-intervene-deduce":
@@ -148,13 +156,13 @@ class EvidenceMetaController:
             ]
             signals["exact_collapsed_ops"] = float(len(collapsed))
             observed_ops = sum(1 for op in posterior.operators if posterior.observations[op])
-            # Localised collapse (one operator inconsistent while others stay
-            # exactly explained) is a model failure, not observation noise.
-            if len(unresolved) == 1 and observed_ops >= 3:
+            # Localised collapse (one or more operators inconsistent while others stay
+            # explained or requiring repair) is a model failure, not observation noise.
+            if len(unresolved) >= 1:
                 return ControlAssessment(
                     "repair_model",
                     f"operator {unresolved[0]!r} contradicts every grammar hypothesis "
-                    f"while {observed_ops - 1} others remain exactly explained",
+                    f"and requires selective model repair",
                     signals,
                 )
             contradicted = []

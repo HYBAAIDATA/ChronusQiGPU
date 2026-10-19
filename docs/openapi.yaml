@@ -139,6 +139,31 @@ paths:
       x-pythia-slo: slo.operator.mutation
       security:
       - OperatorBearer: []
+  /api/v1/control/session:
+    get:
+      summary: pythia.control.session
+      description: 'owner: PYTHIA | truth_class: COMMAND_ACCEPTANCE | schema: chronus.mla1517.session/1
+        | failure: 401 unauthenticated / 403 unauthorized'
+      x-pythia-api-id: pythia.control.session
+      x-pythia-truth-class: COMMAND_ACCEPTANCE
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
+      security:
+      - OperatorBearer: []
+  /api/v1/customer/health:
+    get:
+      summary: pythia.customer.health
+      description: 'owner: PYTHIA | truth_class: READINESS | schema: pythia.customer.health/1
+        | failure: subsystem degradation reports degraded with per-component truth;
+        never a green lie'
+      x-pythia-api-id: pythia.customer.health
+      x-pythia-truth-class: READINESS
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
   /api/v1/gpu:
     get:
       summary: pythia.gpu
@@ -199,16 +224,6 @@ paths:
       x-pythia-slo: slo.specialist
       security:
       - OperatorBearer: []
-  /api/v1/intelligence/cognition/status:
-    get:
-      summary: pythia.intelligence.status
-      description: 'owner: EUCLID | truth_class: RUNTIME_OBSERVATION | schema: pythia.euclid.cognition/1 | direct first-class cognition capability, integrity, reachability and open-gate projection'
-      x-pythia-api-id: pythia.intelligence.status
-      x-pythia-truth-class: RUNTIME_OBSERVATION
-      x-pythia-deprecation-state: CANONICAL
-      x-pythia-reliability-tier: R4
-      x-pythia-lifecycle: STABLE
-      x-pythia-slo: slo.projection.read
   /api/v1/intelligence/cognition/solve:
     post:
       summary: pythia.intelligence.cognition_solve
@@ -223,6 +238,17 @@ paths:
       x-pythia-slo: slo.specialist
       security:
       - OperatorBearer: []
+  /api/v1/intelligence/cognition/status:
+    get:
+      summary: pythia.intelligence.status
+      description: 'owner: EUCLID | truth_class: RUNTIME_OBSERVATION | schema: pythia.runner/1
+        | failure: unavailable intelligence reports unavailable'
+      x-pythia-api-id: pythia.intelligence.status
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
   /api/v1/intelligence/engineer/ask:
     post:
       summary: pythia.intelligence.engineer
@@ -545,6 +571,18 @@ paths:
       x-pythia-reliability-tier: R4
       x-pythia-lifecycle: STABLE
       x-pythia-slo: slo.projection.read
+  /api/v1/substrate/proxy-latency:
+    get:
+      summary: pythia.substrate.latency
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: pythia.substrate.latency/1
+        | failure: probe failure reports ok:false with reason and measured round-trip
+        time'
+      x-pythia-api-id: pythia.substrate.latency
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
   /api/v1/system/map:
     get:
       summary: pythia.system.map
@@ -697,6 +735,18 @@ paths:
       x-pythia-slo: slo.specialist
       security:
       - AlHarasSubscription: []
+  /api/v1/veritas/status:
+    get:
+      summary: salamander.veritas.status
+      description: 'owner: SALAMANDER | truth_class: EVIDENCE | schema: pythia.veritas.status/1
+        | failure: absent ledger reports available:true with NO_LEDGER_FILE; unreadable
+        fails closed to available:false'
+      x-pythia-api-id: salamander.veritas.status
+      x-pythia-truth-class: EVIDENCE
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R3
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.read
   /healthz:
     get:
       summary: pythia.health
@@ -741,3 +791,14 @@ paths:
       x-pythia-reliability-tier: R4
       x-pythia-lifecycle: STABLE
       x-pythia-slo: slo.projection.read
+  /ws/telemetry:
+    get:
+      summary: pythia.telemetry.stream
+      description: 'owner: PYTHIA | truth_class: RUNTIME_OBSERVATION | schema: pythia.ops_telemetry/1
+        | failure: connection close is clean; staleness surfaced client-side'
+      x-pythia-api-id: pythia.telemetry.stream
+      x-pythia-truth-class: RUNTIME_OBSERVATION
+      x-pythia-deprecation-state: CANONICAL
+      x-pythia-reliability-tier: R4
+      x-pythia-lifecycle: STABLE
+      x-pythia-slo: slo.projection.stream

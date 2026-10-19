@@ -4,9 +4,9 @@ import hashlib
 
 import pytest
 
-from gpu.provenance import ProvenanceError, validate_provenance
-from gpu.readiness import EvidenceReceipt, ProductionEvidence, production_readiness
-from gpu.reference import (
+from chronus.provenance import ProvenanceError, validate_provenance
+from chronus.readiness import EvidenceReceipt, ProductionEvidence, production_readiness
+from chronus.reference import (
     cassini_step,
     fibonacci,
     grover_hendrix_iterate,
@@ -26,7 +26,7 @@ from gpu.reference import (
 )
 from chronus.seam.types import KERNEL_CLASS, KernelName
 from chronus.opencl_host import OpenClPunchHost, PUNCH_MANIFOLD_COMPUTE
-from gpu.tensor import TensorMeasurement
+from tensor.contracts import TensorMeasurement
 
 
 def test_matrix_references():
@@ -114,7 +114,7 @@ def _receipt(kind: str) -> EvidenceReceipt:
 
 
 def test_production_readiness_rejects_boolean_evidence(monkeypatch):
-    monkeypatch.setattr("gpu.readiness.audit_software_surfaces", lambda: ())
+    monkeypatch.setattr("chronus.readiness.audit_software_surfaces", lambda: ())
     report = production_readiness(
         {
             "opencl_conformance": True,
@@ -130,7 +130,7 @@ def test_production_readiness_rejects_boolean_evidence(monkeypatch):
 
 
 def test_production_readiness_accepts_validated_receipts(monkeypatch):
-    monkeypatch.setattr("gpu.readiness.audit_software_surfaces", lambda: ())
+    monkeypatch.setattr("chronus.readiness.audit_software_surfaces", lambda: ())
     provenance = {
         "repo_sha": "b" * 40,
         "pr": "32",
@@ -153,7 +153,7 @@ def test_production_readiness_accepts_validated_receipts(monkeypatch):
 
 
 def test_evidence_receipt_requires_digest_and_utc_timestamp(monkeypatch):
-    monkeypatch.setattr("gpu.readiness.audit_software_surfaces", lambda: ())
+    monkeypatch.setattr("chronus.readiness.audit_software_surfaces", lambda: ())
     bad = {
         "kind": "opencl_conformance",
         "artifact_sha256": "not-a-digest",
@@ -170,7 +170,7 @@ def test_evidence_receipt_requires_digest_and_utc_timestamp(monkeypatch):
 
 def test_production_readiness_requires_external_evidence(monkeypatch):
     monkeypatch.setattr(
-        "gpu.readiness.audit_software_surfaces",
+        "chronus.readiness.audit_software_surfaces",
         lambda: (),
     )
     report = production_readiness(ProductionEvidence())

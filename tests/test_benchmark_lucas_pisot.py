@@ -62,8 +62,20 @@ def test_boundaries_per_lucas_scaling_research():
     # Mirrors lucas/scaling_research.py non_claims:
     # ["mining advantage","scheduling advantage","hardware speedup","production qualification"]
     # This test LOCKS that boundary: no function here may claim them.
+    from lucas.scaling_research import research_report
+
+    report = research_report()
+    for claim in [
+        "mining advantage",
+        "scheduling advantage",
+        "hardware speedup",
+        "production qualification",
+    ]:
+        assert claim in report["non_claims"]
+
     assert pisot_damp(6) > pisot_damp(3)
     assert pisot_damp(15) > pisot_damp(6)
     assert pisot_damp(18) > pisot_damp(15)
     assert pisot_damp(20) > pisot_damp(18)
     assert all(0 < pisot_damp(x) < 1 for x in (3, 4, 5, 6, 15, 18, 20))
+

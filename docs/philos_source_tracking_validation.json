@@ -1,0 +1,52 @@
+{
+  "classification": "unsigned-local-source-tracking-regression",
+  "baseline_commit": "1d4b495b3081258908b6e7ec4d18299d64d5e970",
+  "environment": {
+    "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+    "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+    "git": "git version 2.49.0",
+    "checkout": "retrieved source slice, not full repo"
+  },
+  "runs": [
+    {
+      "command": "PHILOS_GITIGNORE_UNDER_TEST=<baseline-ignore> python -m unittest discover -s tests/source_tracking -v",
+      "exit_code": 1,
+      "tests": 3,
+      "assertion_failures": 8,
+      "output": "test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) ... \n  test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) (source='__init__.py') ... FAIL\n  test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) (source='manifest.py') ... FAIL\n  test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) (source='telemetry.py') ... FAIL\n  test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) (source='substrate.py') ... FAIL\n  test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) (source='candidate.py') ... FAIL\n  test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) (source='qualification.py') ... FAIL\n  test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) (source='condensation.py') ... FAIL\ntest_model_artifacts_and_package_cache_stay_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_model_artifacts_and_package_cache_stay_ignored) ... ok\ntest_normal_git_add_tracks_all_contract_probes_without_force (test_emergence_model_tracking.EmergenceModelTrackingTests.test_normal_git_add_tracks_all_contract_probes_without_force) ... FAIL\n\n======================================================================\nFAIL: test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) (source='__init__.py')\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/data/philos_source_tracking/patched/tests/source_tracking/test_emergence_model_tracking.py\", line 42, in test_each_python_contract_is_not_ignored\n    self.assertEqual(result.returncode, 1, result.stderr)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 0 != 1 : \n\n======================================================================\nFAIL: test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) (source='manifest.py')\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/data/philos_source_tracking/patched/tests/source_tracking/test_emergence_model_tracking.py\", line 42, in test_each_python_contract_is_not_ignored\n    self.assertEqual(result.returncode, 1, result.stderr)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 0 != 1 : \n\n======================================================================\nFAIL: test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) (source='telemetry.py')\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/data/philos_source_tracking/patched/tests/source_tracking/test_emergence_model_tracking.py\", line 42, in test_each_python_contract_is_not_ignored\n    self.assertEqual(result.returncode, 1, result.stderr)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 0 != 1 : \n\n======================================================================\nFAIL: test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) (source='substrate.py')\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/data/philos_source_tracking/patched/tests/source_tracking/test_emergence_model_tracking.py\", line 42, in test_each_python_contract_is_not_ignored\n    self.assertEqual(result.returncode, 1, result.stderr)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 0 != 1 : \n\n======================================================================\nFAIL: test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) (source='candidate.py')\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/data/philos_source_tracking/patched/tests/source_tracking/test_emergence_model_tracking.py\", line 42, in test_each_python_contract_is_not_ignored\n    self.assertEqual(result.returncode, 1, result.stderr)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 0 != 1 : \n\n======================================================================\nFAIL: test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) (source='qualification.py')\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/data/philos_source_tracking/patched/tests/source_tracking/test_emergence_model_tracking.py\", line 42, in test_each_python_contract_is_not_ignored\n    self.assertEqual(result.returncode, 1, result.stderr)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 0 != 1 : \n\n======================================================================\nFAIL: test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) (source='condensation.py')\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/data/philos_source_tracking/patched/tests/source_tracking/test_emergence_model_tracking.py\", line 42, in test_each_python_contract_is_not_ignored\n    self.assertEqual(result.returncode, 1, result.stderr)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 0 != 1 : \n\n======================================================================\nFAIL: test_normal_git_add_tracks_all_contract_probes_without_force (test_emergence_model_tracking.EmergenceModelTrackingTests.test_normal_git_add_tracks_all_contract_probes_without_force)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/data/philos_source_tracking/patched/tests/source_tracking/test_emergence_model_tracking.py\", line 47, in test_normal_git_add_tracks_all_contract_probes_without_force\n    self.assertEqual(result.returncode, 0, result.stderr)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 1 != 0 : The following paths are ignored by one of your .gitignore files:\neuclid/emergence/models\nhint: Use -f if you really want to add them.\nhint: Disable this message with \"git config set advice.addIgnoredFile false\"\n\n\n----------------------------------------------------------------------\nRan 3 tests in 0.048s\n\nFAILED (failures=8)\n"
+    },
+    {
+      "command": "python -m unittest discover -s tests/source_tracking -v",
+      "exit_code": 0,
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "output": "test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) ... ok\ntest_model_artifacts_and_package_cache_stay_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_model_artifacts_and_package_cache_stay_ignored) ... ok\ntest_normal_git_add_tracks_all_contract_probes_without_force (test_emergence_model_tracking.EmergenceModelTrackingTests.test_normal_git_add_tracks_all_contract_probes_without_force) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.033s\n\nOK\n"
+    },
+    {
+      "command": "python -O -m unittest discover -s tests/source_tracking -v",
+      "exit_code": 0,
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "output": "test_each_python_contract_is_not_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_each_python_contract_is_not_ignored) ... ok\ntest_model_artifacts_and_package_cache_stay_ignored (test_emergence_model_tracking.EmergenceModelTrackingTests.test_model_artifacts_and_package_cache_stay_ignored) ... ok\ntest_normal_git_add_tracks_all_contract_probes_without_force (test_emergence_model_tracking.EmergenceModelTrackingTests.test_normal_git_add_tracks_all_contract_probes_without_force) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.038s\n\nOK\n"
+    },
+    {
+      "command": "python -m compileall -q tests/source_tracking",
+      "exit_code": 0,
+      "output": ""
+    }
+  ],
+  "sha256": {
+    ".gitignore": "35788e877ad63c03b63b78d0f35d72b1cd17bbb67223773f4f5c0af468d487d1",
+    "tests/source_tracking/test_emergence_model_tracking.py": "3b28c612beedeb02f0b165a21226b9f001a8d700c32e7df4d99d8f9a92ee5988",
+    "EMERGENCE-TRACK-CHANGELOG.md": "3ee2a02288439f8e331cfd537eb0a10440a007778a96d647e2cded1d84604d64"
+  },
+  "limits": [
+    "original euclid/emergence/models sources absent; not recovered",
+    "no runtime, pytest, Windows, installed, CI or independent qualification",
+    "only actual Git ignore/index and syntax checks ran"
+  ]
+}

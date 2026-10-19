@@ -134,6 +134,14 @@ nodes:
     owner: PYTHIA
     criticality: R4
     interface: HTTP_OPERATOR
+  pythia.control.session:
+    owner: PYTHIA
+    criticality: R4
+    interface: HTTP_OPERATOR
+  pythia.customer.health:
+    owner: PYTHIA
+    criticality: R4
+    interface: HTTP_PUBLIC
   pythia.gpu:
     owner: CHRONUS
     criticality: R4
@@ -210,6 +218,10 @@ nodes:
     owner: PYTHIA
     criticality: R1
     interface: HTTP_OPERATOR
+  pythia.substrate.latency:
+    owner: PYTHIA
+    criticality: R4
+    interface: HTTP_OPERATOR
   pythia.system.map:
     owner: PYTHIA
     criticality: R4
@@ -239,6 +251,10 @@ nodes:
     criticality: R3
     interface: INTERNAL_PYTHON
   salamander.fault:
+    owner: SALAMANDER
+    criticality: R3
+    interface: HTTP_OPERATOR
+  salamander.veritas.status:
     owner: SALAMANDER
     criticality: R3
     interface: HTTP_OPERATOR
@@ -386,6 +402,9 @@ edges:
   to: pythia.runtime_config_file
   kind: api
 - from: pythia.config.update
+  to: pythia.boot_audit
+  kind: api
+- from: pythia.control.session
   to: pythia.boot_audit
   kind: api
 - from: pythia.gpu

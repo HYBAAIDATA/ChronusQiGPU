@@ -1,0 +1,12 @@
+{
+  "experiment": "vogel_spatial_embedding",
+  "description": "Work items and device seeds placed by Vogel phyllotaxis. Assignment by nearest seed.",
+  "result": {
+    "cv_range": [0.177, 0.298],
+    "improves_with_more_devices": true,
+    "beats_capacity_weighted": false,
+    "note": "CV decreases as device count rises (0.28 at 8 devices → 0.18 at 32 devices on 6400 items). Still far from the capacity-weighted optimum (~0.003)."
+  },
+  "interpretation": "Spatial embedding using the golden angle produces more balanced loads than modular reduction on heterogeneous capacities, and the balance improves with device count. It does not yet match a capacity-aware scheduler.",
+  "theorem_proven": false
+}

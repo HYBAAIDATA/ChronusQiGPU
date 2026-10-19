@@ -1,0 +1,64 @@
+{
+  "schema": "euclid.repository-review-validation/1",
+  "base_pr": 66,
+  "base_commit": "d4bed8f28bd5b139d2e82e72ca6284f403d8dc68",
+  "changed_source_hashes": {
+    "Intelligence/salamander.py": "7c468d0bf7cb49ae081b4783034a9445f3b7d2685a177e5e9bdbb8b30ea4d778",
+    "Intelligence/repository_review.py": "59006619b153cbe791fc041ee0cd936d98b8e39e57996adf44890641130483aa",
+    "Intelligence/skills/repository-review/SKILL.md": "e1a6aa91249a9c9c205ae32164d646db6dd48bc9bb1d53ccf6d5ed1465a2e648",
+    "tests/test_repository_review.py": "92dcf36d9ee58019f3d2d981e48c41488bf777e91a85f9ae8f23e8517639da14"
+  },
+  "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+  "tool_versions": {
+    "pytest": "9.1.1",
+    "black": "26.10.1",
+    "ruff": "0.17.0",
+    "flake8": "7.4.1",
+    "PyYAML": "6.0.3"
+  },
+  "commands": [
+    {
+      "command": "/data/salamander-venv/bin/python /data/wiring-work/local_harness.py tests/test_repository_review.py -q --tb=short",
+      "cwd": "/data/wiring-work",
+      "exit": 0,
+      "result": "37 passed"
+    },
+    {
+      "command": "/data/salamander-venv/bin/python -m pytest tests/test_salamander_repair_boundary.py tests/test_salamander_verified_repair.py tests/test_existing_compatibility_local.py -q --tb=short",
+      "cwd": "/data/salamander-work",
+      "exit": 0,
+      "result": "69 scoped existing repair/recovery cases passed after dispatch addition"
+    },
+    {
+      "command": "/data/salamander-venv/bin/python /data/wiring-work/run_review_evidence.py",
+      "cwd": "/data/wiring-work",
+      "exit": 0,
+      "result": "3 actual local source files, 0 syntactic candidates; NOT a semantic/security/production verdict"
+    }
+  ],
+  "checks": {
+    "black_100_three_changed_Python_files": 0,
+    "ruff_E9_F_three_changed_Python_files": 0,
+    "flake8_new_adapter_and_tests_E203_W503_ignore_100columns": 0,
+    "compileall_changed_Python_files": 0
+  },
+  "harness": "Actual standalone review module and actual loader plus actual _born/quantum_tensor imports. The local namespace harness compiles the unchanged execute_skill/load_skills method AST bodies from the edited SalamanderEngine class; full module imports and engine constructor excluded. Tests use actual method on __new__ instance, actual local skill discovery and real filesystem IO. No provider SDK, alternate review implementation or semantic-memory seeding. Previous repair harness continues its disclosed isolated actual class bodies.",
+  "excluded": [
+    "full Salamander module initialization/engine constructor",
+    "full-engine end-to-end integration",
+    "actual complete repository checkout/CI/conftest",
+    "installed artifact qualification",
+    "Claude SDK/provider/scheduled execution",
+    "semantic intelligence/model comparative evaluation"
+  ],
+  "receipt": "reports/repository_review_local_receipt.json",
+  "claims": "Read-only bounded syntactic evidence only. Host-approved root/manifest are inputs, not user authentication or git-state attestation. Budgets bound files/bytes/findings, not symbolic resources, host memory or wall time.",
+  "log_sha256": {
+    "review-tests.log": "6adbd847994908c88defd5bdb7bef714491fd981d50f8fb26f038cef19c876d7",
+    "repair-regression.log": "a582651113812dffa5ff32376b779d054092449386a63165a86269b1b00702e9",
+    "black-check.log": "45a468fa6205768496f23f1716ebb7575e9b723449d2099b88bf2afef60b721f",
+    "ruff-check.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "flake8-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compile-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

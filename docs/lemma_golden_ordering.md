@@ -55,3 +55,21 @@ coverage and sequencing, quantum advantage, any Millennium problem.
 
 theorem_proven: False — these are verified bounds under the stated
 scope, signed off as proof sketches, not proven theorems.
+
+## Lemma S — lucas_scaling_limbs
+
+The Lucas companion sequence supplies exact integer limbs for metallic-ratio scaling. For every metallic ratio \(\sigma_k\) the companion satisfies the same recurrence and a Cassini-type identity.
+
+Scope: capacity and geometry scaling (`scale_capacity_limbs`, `emit_lucas_boundary_weights`, `witness_cassini_identity`).
+
+Not a proof of: continuum Yang–Mills mass gap, quantum advantage, any Millennium problem.
+
+## Lemma Z — zeckendorf_unique_filing
+
+Every non-negative integer has a unique Zeckendorf representation as a sum of non-adjacent Fibonacci numbers. The representation is an exact address codec.
+
+Scope: storage addressing (`encode_zeckendorf_address`, `decode_zeckendorf_address`, `verify_non_adjacent_mask`).
+
+Not a proof of: lossy compression, quantum advantage, any Millennium problem.
+
+theorem_proven: False for all lemmas.

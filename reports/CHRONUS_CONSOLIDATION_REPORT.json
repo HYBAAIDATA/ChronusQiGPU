@@ -1,0 +1,29 @@
+{
+  "consolidation": "CHRONUS_CANONICAL_GPU_CONSOLIDATION",
+  "status": "COMPLETED_AND_VERIFIED",
+  "timestamp": 1791983750.0,
+  "canonical_subsystem": "chronus",
+  "deleted_redundancies": [
+    "gpu/",
+    "packages/chronos-one-igpu/",
+    "chronus/packages/",
+    "chronos/",
+    "chronus/chronos/",
+    "tests/test_tensor_gpu_compat.py"
+  ],
+  "migrated_components": {
+    "domain": "chronus.domain (ChronusDevice, ChronusBackend, ChronusMemory, ChronusScheduler)",
+    "detection": "chronus.detect (Authoritative detection and identity deduplication)",
+    "execution_mode": "chronus.one_igpu (OneIGPU execution mode and datapath pipeline)",
+    "reference_oracles": "chronus.reference (Deterministic mathematical and hashing oracles)",
+    "provenance_gates": "chronus.provenance (Hash verification and provenance checks)",
+    "readiness_gates": "chronus.readiness (Production readiness and CLI entry point)",
+    "resident_runtime": "chronus.resident_hendrix & chronus.igpu.resident_hendrix",
+    "manifold_geometry": "chronus.manifold (M32 geometry and Fibonacci sphere manifolds)"
+  },
+  "test_evidence": {
+    "consolidation_suite": "76_PASSED_0_FAILED",
+    "resident_execution": "1_PASSED_NEGATIVE_CONTROL_VERIFIED",
+    "replacement_attacks": "1_PASSED_BOUND_REPLACEMENT_VERIFIED"
+  }
+}

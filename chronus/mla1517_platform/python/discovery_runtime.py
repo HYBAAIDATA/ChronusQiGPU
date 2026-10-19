@@ -22,11 +22,21 @@ that then also wins in shadow on live measurements is ever applied.
 from __future__ import annotations
 
 import logging
+import os
 import sys
 import time
 from dataclasses import replace
 from pathlib import Path
 from typing import Any, Callable
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_PLATFORM_DIR = Path(__file__).resolve().parent
+_CHRONOS_IGPU = _REPO_ROOT / "packages" / "chronos-one-igpu" / "src"
+_PYTHIA_CONSUMER = _REPO_ROOT / "packages" / "pythia-consumer" / "src"
+_TURING = _REPO_ROOT / "turing_universal_quantum_computer"
+for _p in (str(_PLATFORM_DIR), str(_REPO_ROOT), str(_CHRONOS_IGPU), str(_PYTHIA_CONSUMER), str(_TURING)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 from chronus.mla1517.knowledge import Fact, KnowledgeFabric, default_journal_path
 from chronus.mla1517.mining.operating_policy import lucas_ladder
@@ -36,7 +46,14 @@ from policy_bench import REGIMES, Regime, simulate
 LOG = logging.getLogger("pythia.discovery")
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-BASE_REGIME = next(r for r in REGIMES if r.name == "cpu_mainnet_rung10_ladder_ceiling")
+def _default_base_regime() -> Regime:
+    device = os.getenv("PYTHIA_EXECUTION_DEVICE", "chronus").strip().lower()
+    if device in {"chronus", "one_igpu", "gpu", "opencl", "cuda"}:
+        return next((r for r in REGIMES if r.name == "chronus_mainnet_top_rung"), REGIMES[0])
+    return next((r for r in REGIMES if r.name == "cpu_mainnet_rung10_ladder_ceiling"), REGIMES[0])
+
+
+BASE_REGIME = _default_base_regime()
 L31 = 3_010_349  # the operating intelligence's CPU window ceiling
 LEVERS = {
     "envelope_half": "halve the 2 s responsiveness envelope",
@@ -62,8 +79,12 @@ def twin_regime(world: Fact | None) -> tuple[Regime, dict[str, Any]]:
         if route.get("hash_rate_hs") and route.get("overhead_ms") is not None
     }
     if not learned:
+        if BASE_REGIME.name.startswith("chronus"):
+            basis_desc = f"declared: Chronus GPU route ({round(BASE_REGIME.hash_rate / 1e6, 1)} MH/s, {round(BASE_REGIME.overhead_s * 1e3, 3)} ms per window)"
+        else:
+            basis_desc = f"declared: the measured CPU route ({round(BASE_REGIME.hash_rate / 1e3, 0):.0f} kH/s, {round(BASE_REGIME.overhead_s * 1e3, 3)} ms per window)"
         basis = {
-            "basis": "declared: the measured CPU route (88 kH/s, 0.246 ms per window)",
+            "basis": basis_desc,
             "route": BASE_REGIME.route,
             "hash_rate_hs": BASE_REGIME.hash_rate,
             "overhead_ms": round(BASE_REGIME.overhead_s * 1e3, 6),
@@ -261,28 +282,44 @@ def main() -> None:
     fabric = KnowledgeFabric(default_journal_path())
     last_basis: str | None = None
     last_campaign = float("-inf")
+    import concurrent.futures
+
     with HeartbeatEmitter("discovery") as heartbeat:
-        while True:
-            fabric.sync()
-            world = fabric.observe("mining.world")
-            basis = world.fact_id if world is not None else "declared"
-            campaign = fabric.observe("discovery.campaign")
-            stale = campaign is not None and fabric.stale(campaign)
-            if campaign_due(basis, stale, last_basis, time.monotonic() - last_campaign):
-                summary = run_campaign(fabric)
-                last_basis, last_campaign = basis, time.monotonic()
-                heartbeat.report(
-                    discoveries=summary["discoveries"],
-                    hypotheses_tested=summary["hypotheses_tested"],
-                )
-                LOG.info(
-                    "campaign on %s: %d hypotheses, %d discoveries",
-                    summary["twin"]["basis"],
-                    summary["hypotheses_tested"],
-                    summary["discoveries"],
-                )
-            time.sleep(POLL_S)
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=1, thread_name_prefix="pythia-discovery-campaign"
+        ) as executor:
+            try:
+                while True:
+                    fabric.sync()
+                    world = fabric.observe("mining.world")
+                    basis = world.fact_id if world is not None else "declared"
+                    campaign = fabric.observe("discovery.campaign")
+                    stale = campaign is not None and fabric.stale(campaign)
+                    if campaign_due(basis, stale, last_basis, time.monotonic() - last_campaign):
+                        future = executor.submit(run_campaign, fabric)
+                        while not future.done():
+                            heartbeat.tick()
+                            time.sleep(0.5)
+                        summary = future.result()
+                        last_basis, last_campaign = basis, time.monotonic()
+                        heartbeat.report(
+                            discoveries=summary["discoveries"],
+                            hypotheses_tested=summary["hypotheses_tested"],
+                        )
+                        LOG.info(
+                            "campaign on %s: %d hypotheses, %d discoveries",
+                            summary["twin"]["basis"],
+                            summary["hypotheses_tested"],
+                            summary["discoveries"],
+                        )
+                    time.sleep(POLL_S)
+            except KeyboardInterrupt:
+                LOG.info("discovery runtime stopped by operator interrupt")
+                return
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        raise SystemExit(0)

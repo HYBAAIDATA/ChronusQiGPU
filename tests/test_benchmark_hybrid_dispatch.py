@@ -51,3 +51,39 @@ def test_partition_disjoint_under_both_strategies():
             assert base == cursor
             cursor = end
         assert cursor == 1 << 15
+
+
+def test_hybrid_dispatch_conservation_of_work_across_lucas_scales():
+    """Honest accounting: Partitioning preserves total work exactly.
+    Sum of spans is invariant and matches total window with zero overlap and zero gaps."""
+    from hyba.hybrid.lucas_partition import partition
+    from lucas.ladder import CURRICULUM_RUNGS
+
+    devs = [
+        hyb.HonestCpuScheduler("cpu:1"),
+        hyb.HonestCpuScheduler("cpu:2"),
+        hyb.HonestCpuScheduler("cpu:3"),
+    ]
+    # Test across Lucas rungs including 15, 18, 20
+    for rung in (10, 12, 15, 18, 20):
+        window = 1 << 16
+        spans, cert = partition(window, devs, strategy="lucas")
+        assert cert.verify()
+        assert sum(s.span for s in spans) == window
+        # Verify no device is assigned a negative or empty span
+        assert all(s.span > 0 for s in spans)
+
+
+def test_boundaries_per_hybrid_dispatch_research():
+    """Locks the non-claims boundary: hybrid dispatch coordinates, does not amplify hash rate."""
+    from lucas.scaling_research import research_report
+
+    report = research_report()
+    for claim in [
+        "mining advantage",
+        "scheduling advantage",
+        "hardware speedup",
+        "production qualification",
+    ]:
+        assert claim in report["non_claims"]
+

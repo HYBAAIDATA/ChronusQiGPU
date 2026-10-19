@@ -289,7 +289,13 @@ class TrainingPipeline:
         source_revision: str | None = None,
         dataset_id: str | None = None,
         state_schema: str = "json-object-state.v1",
+        run_id: str | None = None,
     ) -> TrainingEvidence:
+        run_id = str(run_id or uuid.uuid4().hex).strip()
+        if not run_id or not math.isfinite(float(minimum_improvement)) or minimum_improvement < 0:
+            raise ValueError("run identity and finite nonnegative improvement are required")
+        if manifest_path is not None and not str(source_revision or "").strip():
+            raise ValueError("manifest_path requires an injectable source_revision")
         actions = tuple(str(action) for action in actions)
         if not task_id or len(actions) < 2 or len(set(actions)) != len(actions):
             raise ValueError("task and at least two unique actions are required")
@@ -376,6 +382,7 @@ class TrainingPipeline:
                         action,
                         measured_reward,
                         {"case_id": case.case_id, "epoch": epoch},
+                        done=True,
                         metadata={"provenance": self.provenance},
                     )
                 self.learning_service.record(
@@ -386,12 +393,12 @@ class TrainingPipeline:
                         source="training-pipeline",
                         observation=state,
                         action=action,
-                        outcome={"case_id": case.case_id, "epoch": epoch},
+                        outcome={"case_id": case.case_id, "epoch": epoch, "done": True},
                         reward=measured_reward,
                         reward_authority=RewardAuthority.VALIDATED_SIMULATION,
                         provenance=self.provenance,
                         uncertainty=0.0,
-                        replay_id=f"{task_id}:{epoch}:{case.case_id}",
+                        replay_id=f"{self.mission_id}:{run_id}:{task_id}:{epoch}:{case.case_id}",
                     )
                 )
         trained = self._evaluate(task_id, validation, reward, reward_range)

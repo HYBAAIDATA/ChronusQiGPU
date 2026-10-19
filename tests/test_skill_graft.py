@@ -51,6 +51,15 @@ def _spec(commit: str, name: str = "alpha", **overrides) -> Graft:
         licence_file="LICENSE",
         applies_to=("repair",),
     )
+    import hashlib
+
+    expected = {
+        "LICENSE": hashlib.sha256(MIT.encode()).hexdigest(),
+        "SKILL.md": hashlib.sha256(_skill(name).encode()).hexdigest(),
+    }
+    if name == "alpha":
+        expected["notes.md"] = hashlib.sha256(b"reviewed upstream\n").hexdigest()
+    fields["manifest_sha256"] = skill_graft.manifest_digest(expected)
     fields.update(overrides)
     return Graft(**fields)
 

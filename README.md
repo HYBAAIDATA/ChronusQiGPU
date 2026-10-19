@@ -21,6 +21,42 @@
 > transfers PYTHIA's final SearchPlan authority, or weakens SHA256d/target proof
 > semantics is not authorised without explicit written repository-owner approval.
 
+> **CANONICAL DOCUMENTATION BASELINE (v2):**
+> All architecture, cognitive mechanics, and execution runbooks are canonically documented in [`docs/v2/`](docs/v2/00_INDEX.md).
+> - [00_INDEX.md](docs/v2/00_INDEX.md) — Documentation index and legacy archive map
+> - [01_SYSTEM_TRUTH.md](docs/v2/01_SYSTEM_TRUTH.md) — System truth and seven canonical authority boundaries
+> - [02_EUCLID_IMPLEMENTED.md](docs/v2/02_EUCLID_IMPLEMENTED.md) — Implemented EUCLID cognitive mechanics
+> - [03_QUANTUM_TENSOR_STATUS.md](docs/v2/03_QUANTUM_TENSOR_STATUS.md) — Quantum substrate reality and closed claims
+> - [04_MILLENNIUM_EVIDENCE.md](docs/v2/04_MILLENNIUM_EVIDENCE.md) — Millennium computational probes (not theorems)
+> - [05_RUNBOOKS.md](docs/v2/05_RUNBOOKS.md) — Automated test sweeps and execution runbooks
+> - [06_GLOSSARY_BOUNDARIES.md](docs/v2/06_GLOSSARY_BOUNDARIES.md) — Epistemic glossary, truth classes, and measurement contract
+>
+> **FALSIFIABILITY & MEASUREMENT CONTRACT:**
+> Code, tests, and logged evidence are the sole source of truth. Every performance claim must be MEASURED on executing silicon; unmeasured hardware defaults strictly to `NOT_RUN`. CPU fallbacks are never disguised as device execution (`requested_route`/`executed_route`/`fallback_reason`). Quantum amplitude amplification claims on flat search spaces are closed. Probes of mathematical conjectures are finite numerical computations, not general analytic proofs.
+
+## Deterministic hashrate — solving, not searching
+
+Lucas scales every limb. Floating ASIC features (`hyba/hybrid/asic_solver.py`,
+`hyba/hybrid/super_asic.py`, the Chronus iGPU ASIC adjacency path) are brought
+into the same composition as the resident Hendrix walk and the Lucas-metallic
+operators.
+
+- **Solving, not searching.** The accept predicate remains SHA-256d ≤ target.
+  The schedule is a deterministic bijection (golden stride or Hendrix coprime
+  stride) over the leased window. Every nonce is visited exactly once; there is
+  no probabilistic probe.
+- **Hashrate is measured, not declared.** The floor is 10 EH/s once physical
+  ASIC channels are bound and the self-check passes. Until a device reports
+  `silicon_status()["device_run"] == PASS`, the hashrate figure is
+  `NOT_RUN`. No module self-declares SUCCESS.
+- **Composition.** `SuperAsicHasher` partitions windows by measured throughput
+  across bound ASIC, GPU and remote agents. The aggregate is the sum of
+  attested device rates; it is never assumed.
+
+See `docs/CANONICAL_PYTHIA_SEARCH_DOCTRINE.md` for the governing search
+contract and `hyba/operating_model/lemma.py` for the authorised Lucas and
+Zeckendorf scopes.
+
 **PYTHIA is HYBA's operational mining product.** Its singular function is to run the mining system, obtain honest device and pool measurements, sustain HYBA, and support Enterprise's route to market. Enterprise PRIME-DB, storage, treasury, and customer-product implementation are separate products and are not imported into PYTHIA.
 
 ## Intelligence-first composition

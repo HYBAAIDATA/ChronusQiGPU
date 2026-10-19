@@ -2,7 +2,7 @@
 
 Generated from `governance/api_registry.yaml` + `governance/service_fabric.yaml` by `governance/render_service_fabric.py`. Do not edit by hand.
 
-Schema `pythia.api_registry/2` — 60 interfaces, every one
+Schema `pythia.api_registry/2` — 64 interfaces, every one
 carrying the §2 constitution fields: capability, canonical authority,
 consumer, contract, dependencies, reliability tier, SLO, timeout,
 retry, idempotency, fallback, security classification, custody,
@@ -77,6 +77,7 @@ __
 | --- | --- | --- | --- | --- | --- |
 | `salamander.control_plane` | SALAMANDER | INTERNAL_PYTHON | STABLE | `slo.healing` | salamander_engine worker, control plane |
 | `salamander.fault` | SALAMANDER | HTTP_OPERATOR | STABLE | `slo.healing` | frontend lib/audit.ts escalation |
+| `salamander.veritas.status` | SALAMANDER | HTTP_OPERATOR | STABLE | `slo.projection.read` | operator-console, veritas-monitor |
 
 ## R4 — 
 
@@ -87,6 +88,8 @@ _loss of R4 must not corrupt R0-R2 semantics_
 | `legacy.api_health` | PYTHIA | LEGACY | LEGACY | `slo.projection.read` | older monitors |
 | `pythia.audit.tail` | PYTHIA | HTTP_OPERATOR | STABLE | `slo.projection.read` | frontend TelemetryPanel |
 | `pythia.config.read` | PYTHIA | HTTP_OPERATOR | STABLE | `slo.projection.read` | frontend RuntimeControlPanel, frontend SystemFabricPanel |
+| `pythia.control.session` | PYTHIA | HTTP_OPERATOR | STABLE | `slo.projection.read` | frontend |
+| `pythia.customer.health` | PYTHIA | HTTP_PUBLIC | STABLE | `slo.projection.read` | customer-monitoring, external-probes |
 | `pythia.gpu` | CHRONUS | HTTP_OPERATOR | STABLE | `slo.projection.read` | operator-console |
 | `pythia.hardware.status` | CHRONUS | HTTP_OPERATOR | STABLE | `slo.projection.read` | operator-console |
 | `pythia.health` | PYTHIA | HTTP_PUBLIC | STABLE | `slo.projection.read` | operator-console, load-balancer |
@@ -98,8 +101,9 @@ _loss of R4 must not corrupt R0-R2 semantics_
 | `pythia.static_spa` | PYTHIA | HTTP_PUBLIC | STABLE | `slo.projection.read` | browser |
 | `pythia.status` | PYTHIA | HTTP_OPERATOR | STABLE | `slo.projection.read` | frontend SystemFabricPanel, operator-console |
 | `pythia.stratum.status` | PYTHIA | HTTP_OPERATOR | STABLE | `slo.projection.read` | operator-console |
+| `pythia.substrate.latency` | PYTHIA | HTTP_OPERATOR | STABLE | `slo.projection.read` | operator-console, applet-latency-monitor |
 | `pythia.system.map` | PYTHIA | HTTP_OPERATOR | STABLE | `slo.projection.read` | frontend SystemFabricPanel |
 | `pythia.system.verify.read` | PYTHIA | HTTP_OPERATOR | STABLE | `slo.projection.read` | frontend SystemFabricPanel |
 | `pythia.telemetry` | PYTHIA | HTTP_OPERATOR | STABLE | `slo.projection.read` | frontend TelemetryPanel, frontend ObservabilityView, frontend ops.ts |
-| `pythia.telemetry.stream` | PYTHIA | EVENT_STREAM | STABLE | `slo.projection.stream` | frontend ops.ts EventSource |
+| `pythia.telemetry.stream` | PYTHIA | EVENT_STREAM | STABLE | `slo.projection.stream` | frontend ops.ts EventSource, WebSocket telemetry clients |
 

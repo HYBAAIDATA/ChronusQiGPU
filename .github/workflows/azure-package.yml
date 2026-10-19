@@ -10,7 +10,7 @@ jobs:
   infrastructure:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Compile Bicep without deploying resources
         run: az bicep build --file deploy/azure/main.bicep --outfile /tmp/pythia-arm.json
   container:
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build Azure control image
         run: docker build -f deploy/azure/Dockerfile -t pythia-control:ci .
       - name: Live smoke (boot, operator start, pool session, device path, evidence)

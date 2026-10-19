@@ -1,0 +1,23 @@
+{
+  "schema": "euclid.native-capability/1",
+  "id": "repair-learning-query",
+  "adapter": "Intelligence.isolated_repair.RepairLearningLedger.get_success_rate",
+  "dispatcher": "Intelligence.salamander.SalamanderEngine.execute_capability",
+  "profile": "HOST_APPROVED_READ_ONLY",
+  "evidence": "tests/test_isolated_repair.py",
+  "scope": "Query empirical success rate and confidence metrics from verified repair ledger without self-certified success claims",
+  "state": "SCOPED_LOCAL_DISPATCH_TESTED_NOT_FULL_ENGINE_QUALIFIED",
+  "external_provider_calls": false,
+  "schedules_enabled": false,
+  "writes_enabled": false,
+  "repair_or_release_authority": false,
+  "model_superiority": null,
+  "agi_asi_certification": null,
+  "source_hashes": {
+    "Intelligence/salamander.py": "d4a340bfd6754617abe2d4a2ce8681810a1f8bffb5764db44d326a6ad486a397",
+    "Intelligence/capability_fabric.py": "ef835e01a5fd1f4be15ef82dfeca6d3c75b3210ec9a86d69f430c8807ba28df1",
+    "Intelligence/isolated_repair.py": "de6d9f994dd67337f46eb1af27f6f4528787ad953a817f18bc6c65dd75a0275e",
+    "Intelligence/skills/repair-learning-query/SKILL.md": "428120484282ebd4a4a9c614d2c8bd4cd0676fcc528218e6372f3a2badfa9ccc",
+    "tests/test_isolated_repair.py": "634855ec2f922e8eae72fe7bcd9e5ba1ab917fe7352fd29cda9dee2ca30d4261"
+  }
+}

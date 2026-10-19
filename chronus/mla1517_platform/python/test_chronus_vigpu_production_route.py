@@ -8,6 +8,17 @@ bound through the real BackendRegistry ``chronus`` lane.
 from __future__ import annotations
 
 import asyncio
+import sys
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_PLATFORM_DIR = Path(__file__).resolve().parent
+_CHRONOS_IGPU = _REPO_ROOT / "packages" / "chronos-one-igpu" / "src"
+_PYTHIA_CONSUMER = _REPO_ROOT / "packages" / "pythia-consumer" / "src"
+_TURING = _REPO_ROOT / "turing_universal_quantum_computer"
+for _p in (str(_PLATFORM_DIR), str(_REPO_ROOT), str(_CHRONOS_IGPU), str(_PYTHIA_CONSUMER), str(_TURING)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 import pytest
 

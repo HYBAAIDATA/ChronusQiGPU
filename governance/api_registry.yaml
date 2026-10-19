@@ -355,6 +355,44 @@ apis:
     lifecycle: STABLE
     tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_control_auth.py]
 
+  - api_id: pythia.control.session
+    owner: PYTHIA
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_control_session
+    consumers: [frontend]
+    transport: HTTP
+    method: GET
+    path: /api/v1/control/session
+    routes: ["GET /api/v1/control/session"]
+    request_schema: none
+    response_schema: '{schema_version, ok, principal_id, role, source, generated_at}'
+    schema_version: chronus.mla1517.session/1
+    authentication_class: OPERATOR_PRINCIPAL
+    authorisation_authority: PYTHIA
+    truth_class: COMMAND_ACCEPTANCE
+    side_effects: none
+    custody_requirement: append-only audit event control_session or control_session_refused
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: 401 unauthenticated / 403 unauthorized
+    availability_semantics: reflects authenticated principal identity
+    stability: stable
+    deprecation_state: CANONICAL
+    capability: 'report server-authenticated principal for session'
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: [pythia.boot_audit]
+    slo: slo.projection.read
+    fallback_policy: 'refusal never echoes bearer tokens; never infers identity locally'
+    security_classification: OPERATOR_AUTHENTICATED
+    observability_requirement: 'audit_trail'
+    compatibility_window: 'compatible within declared schema'
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
+    tests: [tests/test_production_api_contract.py, chronus/mla1517_platform/python/test_control_auth.py]
+
   - api_id: pythia.system.map
     owner: PYTHIA
     interface_type: HTTP_OPERATOR
@@ -950,14 +988,17 @@ apis:
   - api_id: pythia.telemetry.stream
     owner: PYTHIA
     interface_type: EVENT_STREAM
-    implementation_path: chronus/mla1517_platform/python/control_api.py::_telemetry_stream
-    consumers: [frontend ops.ts EventSource]
-    transport: HTTP+SSE
+    implementation_path: chronus/mla1517_platform/python/control_api.py::_telemetry_stream, chronus/mla1517_platform/python/control_api.py::_telemetry_ws
+    consumers: [frontend ops.ts EventSource, WebSocket telemetry clients]
+    transport: HTTP+SSE+WS
     method: GET
     path: /api/v1/telemetry/stream
-    routes: ["GET /api/v1/telemetry/stream"]
+    routes: ["GET /api/v1/telemetry/stream", "GET /ws/telemetry"]
+    aliases:
+      - path: /ws/telemetry
+        status: CANONICAL
     request_schema: none
-    response_schema: 'text/event-stream frames {type:ops, seq, ops, new_events} + : keepalive'
+    response_schema: 'SSE: text/event-stream frames {type:ops, seq, ops, new_events} + : keepalive; WS: RFC 6455 text frames {type:ws, seq, ops, new_events}; plain GET on /ws/telemetry answers the 200 contract descriptor pythia.telemetry.ws/1'
     schema_version: pythia.ops_telemetry/1
     authentication_class: NONE
     authorisation_authority: none
@@ -1136,6 +1177,120 @@ apis:
     runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
     lifecycle: STABLE
     tests: [tests/test_production_api_contract.py]
+
+  - api_id: pythia.customer.health
+    owner: PYTHIA
+    interface_type: HTTP_PUBLIC
+    implementation_path: chronus/mla1517_platform/python/control_api.py::customer_health_payload
+    consumers: [customer-monitoring, external-probes]
+    transport: HTTP
+    method: GET
+    path: /api/v1/customer/health
+    routes: ["GET /api/v1/customer/health"]
+    request_schema: none
+    response_schema: '{schema_version, status, components{api, identity, readiness, stratum, worker}, generated_at}'
+    schema_version: pythia.customer.health/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: READINESS
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: subsystem degradation reports degraded with per-component truth; never a green lie
+    availability_semantics: status is ok only when all core subsystems are observably healthy
+    stability: stable
+    deprecation_state: CANONICAL
+    capability: customer-facing aggregate health status projection
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: []
+    slo: slo.projection.read
+    fallback_policy: component failure reflects directly in per-component state and aggregate degraded status
+    security_classification: PUBLIC_READ
+    observability_requirement: golden_signals
+    compatibility_window: additive fields only within pythia.customer.health/1
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
+    tests: [tests/test_parity_surface.py, tests/test_production_api_contract.py]
+
+  - api_id: pythia.substrate.latency
+    owner: PYTHIA
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/control_api.py::substrate_latency_payload
+    consumers: [operator-console, applet-latency-monitor]
+    transport: HTTP
+    method: GET
+    path: /api/v1/substrate/proxy-latency
+    routes: ["GET /api/v1/substrate/proxy-latency"]
+    request_schema: none
+    response_schema: '{schema_version, probe, measured, ok, reason, latency_ms, generated_at}'
+    schema_version: pythia.substrate.latency/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: RUNTIME_OBSERVATION
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: probe failure reports ok:false with reason and measured round-trip time
+    availability_semantics: measured per-request round-trip latency, never cached or synthesized
+    stability: stable
+    deprecation_state: CANONICAL
+    capability: measured substrate proxy round-trip latency observation
+    authority: PYTHIA
+    reliability_tier: R4
+    dependencies: []
+    slo: slo.projection.read
+    fallback_policy: failed probe reports ok:false with reason; never reports synthetic latency
+    security_classification: PUBLIC_READ
+    observability_requirement: golden_signals
+    compatibility_window: additive fields only within pythia.substrate.latency/1
+    support_owner: PYTHIA
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
+    tests: [tests/test_parity_surface.py, tests/test_production_api_contract.py]
+
+  - api_id: salamander.veritas.status
+    owner: SALAMANDER
+    interface_type: HTTP_OPERATOR
+    implementation_path: chronus/mla1517_platform/python/control_api.py::veritas_status_payload
+    consumers: [operator-console, veritas-monitor]
+    transport: HTTP
+    method: GET
+    path: /api/v1/veritas/status
+    routes: ["GET /api/v1/veritas/status"]
+    request_schema: none
+    response_schema: '{schema_version, ledger, ledger_path, governance, available, load_status, entries_total, entries_verified, verification_ratio, statuses, last_entry_at, integrity_report, generated_at}'
+    schema_version: pythia.veritas.status/1
+    authentication_class: NONE
+    authorisation_authority: none
+    truth_class: EVIDENCE
+    side_effects: none
+    custody_requirement: none
+    timeout: immediate
+    idempotency: read-only
+    retry: freely retryable
+    failure_semantics: absent ledger reports available:true with NO_LEDGER_FILE; unreadable fails closed to available:false
+    availability_semantics: honest report of self-repair ledger state without fabrication
+    stability: stable
+    deprecation_state: CANONICAL
+    capability: veritas self-repair ledger integrity projection
+    authority: SALAMANDER
+    reliability_tier: R3
+    dependencies: []
+    slo: slo.projection.read
+    fallback_policy: unreadable ledger reports available:false with reason; never fabricates integrity
+    security_classification: PUBLIC_READ
+    observability_requirement: golden_signals
+    compatibility_window: additive fields only within pythia.veritas.status/1
+    support_owner: SALAMANDER
+    runtime_evidence: LOCAL_HTTP_E2E_EXECUTED
+    lifecycle: STABLE
+    tests: [tests/test_parity_surface.py, tests/test_production_api_contract.py]
 
   - api_id: al_haras.security.status
     owner: AL_HARAS

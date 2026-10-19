@@ -1,0 +1,369 @@
+{
+  "suite": "hyba_security_ipa",
+  "total": 52,
+  "passed": 52,
+  "failed": 0,
+  "by_layer": {
+    "aead": {
+      "passed": 17,
+      "failed": 0
+    },
+    "audit_chain": {
+      "passed": 14,
+      "failed": 0
+    },
+    "production_guard": {
+      "passed": 12,
+      "failed": 0
+    },
+    "claims": {
+      "passed": 5,
+      "failed": 0
+    },
+    "cross_cutting": {
+      "passed": 4,
+      "failed": 0
+    }
+  },
+  "posture": {
+    "version": "0.1.0",
+    "aead": {
+      "algorithm": "ChaCha20-Poly1305",
+      "kdf": "HKDF-SHA256",
+      "key_bits": 256,
+      "nonce_bytes": 12,
+      "claim_lane": "CLASSICAL_AEAD",
+      "post_quantum": false,
+      "unhackable": false,
+      "aad_bound": true
+    },
+    "claims": {
+      "unhackable": false,
+      "post_quantum": false,
+      "implemented_claims": [
+        "aead_seal",
+        "audit_chain",
+        "launch_guard"
+      ],
+      "internal_only_claims": [
+        "pqc_kem",
+        "topological_protection"
+      ]
+    },
+    "fail_closed": true
+  },
+  "results": [
+    {
+      "layer": "aead",
+      "kind": "invariant",
+      "name": "round-trip empty and non-empty",
+      "passed": true
+    },
+    {
+      "layer": "aead",
+      "kind": "invariant",
+      "name": "wire magic and version",
+      "passed": true
+    },
+    {
+      "layer": "aead",
+      "kind": "invariant",
+      "name": "HKDF key length is 32 bytes",
+      "passed": true
+    },
+    {
+      "layer": "aead",
+      "kind": "invariant",
+      "name": "empty key material rejected",
+      "passed": true
+    },
+    {
+      "layer": "aead",
+      "kind": "property",
+      "name": "100 random seal/open round-trips",
+      "passed": true
+    },
+    {
+      "layer": "aead",
+      "kind": "property",
+      "name": "ciphertext length grows by header+tag only",
+      "passed": true
+    },
+    {
+      "layer": "aead",
+      "kind": "property",
+      "name": "semantic security: 20 equal plaintexts, 20 distinct blobs",
+      "passed": true
+    },
+    {
+      "layer": "aead",
+      "kind": "property",
+      "name": "key separation by context",
+      "passed": true
+    },
+    {
+      "layer": "aead",
+      "kind": "adversarial",
+      "name": "AAD binding: wrong context fails closed",
+      "passed": true
+    },
+    {
+      "layer": "aead",
+      "kind": "adversarial",
+      "name": "bit-flip in ciphertext is rejected",
+      "passed": true
+    },
+    {
+      "layer": "aead",
+      "kind": "adversarial",
+      "name": "nonce tampering is rejected",
+      "passed": true
+    },
+    {
+      "layer": "aead",
+      "kind": "adversarial",
+      "name": "magic and version tampering rejected",
+      "passed": true
+    },
+    {
+      "layer": "aead",
+      "kind": "adversarial",
+      "name": "truncation is rejected",
+      "passed": true
+    },
+    {
+      "layer": "aead",
+      "kind": "adversarial",
+      "name": "wrong key fails closed",
+      "passed": true
+    },
+    {
+      "layer": "aead",
+      "kind": "adversarial",
+      "name": "legacy XOR blob is not openable",
+      "passed": true
+    },
+    {
+      "layer": "aead",
+      "kind": "adversarial",
+      "name": "negative proof: legacy XOR is deterministic, AEAD is not",
+      "passed": true
+    },
+    {
+      "layer": "aead",
+      "kind": "adversarial",
+      "name": "claim lane: AEAD is not PQC",
+      "passed": true
+    },
+    {
+      "layer": "audit_chain",
+      "kind": "invariant",
+      "name": "empty chain verifies and has genesis last-hash",
+      "passed": true
+    },
+    {
+      "layer": "audit_chain",
+      "kind": "invariant",
+      "name": "genesis link and monotonic prev-hash",
+      "passed": true
+    },
+    {
+      "layer": "audit_chain",
+      "kind": "invariant",
+      "name": "entries are frozen copies",
+      "passed": true
+    },
+    {
+      "layer": "audit_chain",
+      "kind": "invariant",
+      "name": "single-leaf root equals the leaf",
+      "passed": true
+    },
+    {
+      "layer": "audit_chain",
+      "kind": "property",
+      "name": "80 random payloads stay verifiable",
+      "passed": true
+    },
+    {
+      "layer": "audit_chain",
+      "kind": "property",
+      "name": "hash determinism across identical chains",
+      "passed": true
+    },
+    {
+      "layer": "audit_chain",
+      "kind": "property",
+      "name": "roots are order-sensitive",
+      "passed": true
+    },
+    {
+      "layer": "audit_chain",
+      "kind": "property",
+      "name": "inclusion proofs verify for every entry",
+      "passed": true
+    },
+    {
+      "layer": "audit_chain",
+      "kind": "property",
+      "name": "fresh proof required after growth",
+      "passed": true
+    },
+    {
+      "layer": "audit_chain",
+      "kind": "adversarial",
+      "name": "payload mutation is detected",
+      "passed": true
+    },
+    {
+      "layer": "audit_chain",
+      "kind": "adversarial",
+      "name": "entry-hash bit flip is detected",
+      "passed": true
+    },
+    {
+      "layer": "audit_chain",
+      "kind": "adversarial",
+      "name": "middle splice is detected",
+      "passed": true
+    },
+    {
+      "layer": "audit_chain",
+      "kind": "adversarial",
+      "name": "foreign leaf is not provable",
+      "passed": true
+    },
+    {
+      "layer": "audit_chain",
+      "kind": "adversarial",
+      "name": "attacker rewrite of READY on chain is detected",
+      "passed": true
+    },
+    {
+      "layer": "production_guard",
+      "kind": "invariant",
+      "name": "non-mapping is blocked",
+      "passed": true
+    },
+    {
+      "layer": "production_guard",
+      "kind": "invariant",
+      "name": "empty environment is blocked",
+      "passed": true
+    },
+    {
+      "layer": "production_guard",
+      "kind": "invariant",
+      "name": "clean env with rehearsal is READY",
+      "passed": true
+    },
+    {
+      "layer": "production_guard",
+      "kind": "property",
+      "name": "every bypass fragment blocks",
+      "passed": true
+    },
+    {
+      "layer": "production_guard",
+      "kind": "property",
+      "name": "every private-material fragment blocks",
+      "passed": true
+    },
+    {
+      "layer": "production_guard",
+      "kind": "property",
+      "name": "every secret value marker blocks",
+      "passed": true
+    },
+    {
+      "layer": "production_guard",
+      "kind": "property",
+      "name": "missing required keys block",
+      "passed": true
+    },
+    {
+      "layer": "production_guard",
+      "kind": "adversarial",
+      "name": "case-insensitive truthy bypass blocks",
+      "passed": true
+    },
+    {
+      "layer": "production_guard",
+      "kind": "adversarial",
+      "name": "production without rehearsal blocks",
+      "passed": true
+    },
+    {
+      "layer": "production_guard",
+      "kind": "adversarial",
+      "name": "dev default values block",
+      "passed": true
+    },
+    {
+      "layer": "production_guard",
+      "kind": "adversarial",
+      "name": "PEM and AKIA markers block",
+      "passed": true
+    },
+    {
+      "layer": "production_guard",
+      "kind": "adversarial",
+      "name": "no rollback plan blocks",
+      "passed": true
+    },
+    {
+      "layer": "claims",
+      "kind": "invariant",
+      "name": "posture declares no PQC and no unhackable",
+      "passed": true
+    },
+    {
+      "layer": "claims",
+      "kind": "property",
+      "name": "only the three real controls are external-safe",
+      "passed": true
+    },
+    {
+      "layer": "claims",
+      "kind": "adversarial",
+      "name": "restricted marketing language is rejected",
+      "passed": true
+    },
+    {
+      "layer": "claims",
+      "kind": "adversarial",
+      "name": "honest language passes the gate",
+      "passed": true
+    },
+    {
+      "layer": "claims",
+      "kind": "adversarial",
+      "name": "unregistered claim raises",
+      "passed": true
+    },
+    {
+      "layer": "cross_cutting",
+      "kind": "property",
+      "name": "guard decisions compose onto the audit chain",
+      "passed": true
+    },
+    {
+      "layer": "cross_cutting",
+      "kind": "property",
+      "name": "sealed audit export round-trips",
+      "passed": true
+    },
+    {
+      "layer": "cross_cutting",
+      "kind": "invariant",
+      "name": "posture envelope is JSON-safe",
+      "passed": true
+    },
+    {
+      "layer": "cross_cutting",
+      "kind": "invariant",
+      "name": "legacy defect module is not re-exported",
+      "passed": true
+    }
+  ]
+}

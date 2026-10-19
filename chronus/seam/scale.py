@@ -289,3 +289,16 @@ __all__ = [
     "snap_work_items",
     "toe_t4_lucas_pisot",
 ]
+
+
+def snap_to_ladder(bound: int) -> int:
+    """Return the nearest declared ladder stop inside [1, bound].
+
+    OPEN proposal. Not used by the dispatch planner. A scaling constant
+    applied to a frozen device limit does not automatically improve utilisation.
+    Test before wiring into planning.
+    """
+    from lucas.ladder import nearest_ladder_index
+    if bound < 1:
+        return 1
+    return nearest_ladder_index(bound)

@@ -53,10 +53,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-try:
-    from toe.hardened_unified_substrate import CassiniVerifier
-except ImportError:
-    from toe.hardened_unified_substrate import CassiniVerifier
+from aethel.cassini import CassiniVerifier
 
 from kellogg.quantum_tensor import QuantumState
 

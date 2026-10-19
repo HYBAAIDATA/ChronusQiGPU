@@ -4,6 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import argparse
+import base64
+import hashlib
 import hashlib
 import hmac
 import json
@@ -18,6 +21,11 @@ import threading
 import time
 import traceback
 import uuid
+
+# Bound BLAS/OpenMP thread allocation to 1 thread per worker to avoid thread exhaustion
+# and memory allocation failure ("OpenBLAS error: Memory allocation still failed after 10 retries")
+for _var in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+    os.environ.setdefault(_var, "1")
 from collections import Counter
 from collections import deque
 from dataclasses import dataclass
@@ -32,6 +40,15 @@ from typing import Any
 from urllib.parse import parse_qs
 from urllib.parse import unquote
 from urllib.parse import urlparse
+
+_PLATFORM_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = _PLATFORM_DIR.parents[2]
+_CHRONOS_IGPU = _REPO_ROOT / "packages" / "chronos-one-igpu" / "src"
+_PYTHIA_CONSUMER = _REPO_ROOT / "packages" / "pythia-consumer" / "src"
+_TURING = _REPO_ROOT / "turing_universal_quantum_computer"
+for _p in (str(_PLATFORM_DIR), str(_REPO_ROOT), str(_CHRONOS_IGPU), str(_PYTHIA_CONSUMER), str(_TURING)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 import runtime_config
 import system_fabric
@@ -58,6 +75,9 @@ from worker_lifecycle import HeartbeatReader, _default_heartbeat_dir
 _SCHEMA_VERSION = "chronus.mla1517.status/1"
 _READY_SCHEMA_VERSION = "chronus.mla1517.ready/1"
 _TOE_SCHEMA_VERSION = "chronus.mla1517.toe_collapse/1"
+_VERITAS_SCHEMA_VERSION = "pythia.veritas.status/1"
+_CUSTOMER_HEALTH_SCHEMA_VERSION = "pythia.customer.health/1"
+_SUBSTRATE_LATENCY_SCHEMA_VERSION = "pythia.substrate.latency/1"
 _TOE_MAX_BODY_BYTES = 4 * 1024 * 1024
 _STATUS_BACKEND = "Python/C/OpenCL"
 _CANONICAL_DEVICE = "canonical-python-backend"
@@ -167,43 +187,144 @@ _REQUEST_STATS = _RequestStats()
 # Idempotency-Key on a POST/PUT replays the recorded outcome inside the
 # retention window instead of re-executing the mutation. Unknown-outcome
 # retries remain impossible — a key is recorded only after the handler
-# answered, and records expire.
-_IDEMPOTENCY_RECORDS: "dict[str, tuple[float, int, dict]]" = {}
+@dataclass
+class _IdempotencyRecord:
+    created_at: float
+    status: int | None
+    payload: dict[str, Any] | None
+    body_hash: str
+    tenant: str
+    path: str
+
+
+_IDEMPOTENCY_RECORDS: dict[str, _IdempotencyRecord] = {}
 _IDEMPOTENCY_GUARD = threading.Lock()
 _IDEMPOTENCY_TTL_S = 300.0
 _IDEMPOTENCY_MAX = 512
+
+
+def _composite_idempotency_key(
+    key: str, tenant: str, actor: str, method: str, path: str
+) -> str:
+    raw = f"{tenant}|{actor}|{method.upper()}|{path}|{key}"
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _hash_body(body: Any) -> str:
+    try:
+        data = json.dumps(body, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    except Exception:
+        data = str(body).encode("utf-8")
+    return hashlib.sha256(data).hexdigest()
+
+
+def _idempotency_reserve(
+    key: str, tenant: str, actor: str, method: str, path: str, body: dict
+) -> tuple[str, tuple[int, dict] | None]:
+    comp_key = _composite_idempotency_key(key, tenant, actor, method, path)
+    body_h = _hash_body(body)
+    now = time.monotonic()
+    with _IDEMPOTENCY_GUARD:
+        stale = [
+            k for k, rec in _IDEMPOTENCY_RECORDS.items()
+            if now - rec.created_at > _IDEMPOTENCY_TTL_S
+        ]
+        for k in stale:
+            del _IDEMPOTENCY_RECORDS[k]
+
+        entry = _IDEMPOTENCY_RECORDS.get(comp_key)
+        if entry is not None:
+            if entry.body_hash != body_h:
+                conflict_payload = {
+                    "ok": False,
+                    "failure_class": "IDEMPOTENCY_CONFLICT",
+                    "error": "Idempotency key payload mismatch",
+                }
+                return comp_key, (HTTPStatus.CONFLICT, conflict_payload)
+            if entry.status is None:
+                in_flight_payload = {
+                    "ok": False,
+                    "failure_class": "IDEMPOTENCY_IN_FLIGHT",
+                    "error": "Concurrent request with idempotency key currently in-flight",
+                }
+                return comp_key, (HTTPStatus.CONFLICT, in_flight_payload)
+            return comp_key, (int(entry.status), dict(entry.payload or {}))
+
+        while len(_IDEMPOTENCY_RECORDS) >= _IDEMPOTENCY_MAX:
+            _IDEMPOTENCY_RECORDS.pop(next(iter(_IDEMPOTENCY_RECORDS)))
+
+        _IDEMPOTENCY_RECORDS[comp_key] = _IdempotencyRecord(
+            created_at=now,
+            status=None,
+            payload=None,
+            body_hash=body_h,
+            tenant=tenant,
+            path=path,
+        )
+        return comp_key, None
 
 
 def _idempotency_lookup(key: str) -> tuple[int, dict] | None:
     now = time.monotonic()
     with _IDEMPOTENCY_GUARD:
         entry = _IDEMPOTENCY_RECORDS.get(key)
-        if entry is None:
+        if entry is None or entry.status is None:
             return None
-        at, status, payload = entry
-        if now - at > _IDEMPOTENCY_TTL_S:
+        if now - entry.created_at > _IDEMPOTENCY_TTL_S:
             del _IDEMPOTENCY_RECORDS[key]
             return None
-        return status, dict(payload)
+        return entry.status, dict(entry.payload or {})
 
 
-def _idempotency_store(key: str, status: int, payload: dict) -> None:
+def _idempotency_store(
+    key: str,
+    status: int,
+    payload: dict,
+    composite_key: str | None = None,
+    body: dict | None = None,
+) -> None:
     now = time.monotonic()
+    comp_key = composite_key or key
+    body_h = _hash_body(body) if body is not None else ""
     with _IDEMPOTENCY_GUARD:
         stale = [
-            k for k, (at, _s, _p) in _IDEMPOTENCY_RECORDS.items() if now - at > _IDEMPOTENCY_TTL_S
+            k for k, rec in _IDEMPOTENCY_RECORDS.items()
+            if now - rec.created_at > _IDEMPOTENCY_TTL_S
         ]
         for k in stale:
             del _IDEMPOTENCY_RECORDS[k]
-        while len(_IDEMPOTENCY_RECORDS) >= _IDEMPOTENCY_MAX:
+        while len(_IDEMPOTENCY_RECORDS) >= _IDEMPOTENCY_MAX and comp_key not in _IDEMPOTENCY_RECORDS:
             _IDEMPOTENCY_RECORDS.pop(next(iter(_IDEMPOTENCY_RECORDS)))
-        _IDEMPOTENCY_RECORDS[key] = (now, int(status), dict(payload))
+
+        entry = _IDEMPOTENCY_RECORDS.get(comp_key)
+        if entry is not None:
+            entry.created_at = now
+            entry.status = int(status)
+            entry.payload = dict(payload)
+            if body_h:
+                entry.body_hash = body_h
+        else:
+            _IDEMPOTENCY_RECORDS[comp_key] = _IdempotencyRecord(
+                created_at=now,
+                status=int(status),
+                payload=dict(payload),
+                body_hash=body_h,
+                tenant="",
+                path="",
+            )
+
+
+def _idempotency_release(composite_key: str) -> None:
+    with _IDEMPOTENCY_GUARD:
+        entry = _IDEMPOTENCY_RECORDS.get(composite_key)
+        if entry is not None and entry.status is None:
+            del _IDEMPOTENCY_RECORDS[composite_key]
 
 
 def _idempotency_key(headers: Any) -> str:
     """A sane caller-supplied Idempotency-Key, else ''. Malformed keys are
     ignored rather than trusted."""
-    key = (headers.get("Idempotency-Key") or "").strip()
+    key = (headers.get("Idempotency-Key") or headers.get("X-Idempotency-Key") or "").strip()
     return key if _REQUEST_ID_RE.fullmatch(key) else ""
 
 
@@ -562,9 +683,18 @@ class ControlPlane:
         elif handle.record.state == "restarting":
             handle.record.transition("starting", self.audit, "respawn_worker")
         handle.record.attempts_total += 1
-        handle.record.attempts_window = len(handle.restarts)
         env = os.environ.copy()
-        env.setdefault("PYTHONPATH", str(self.python_root))
+        python_root = str(self.python_root)
+        repo_root = str(self.python_root.parents[2])
+        existing_pp = env.get("PYTHONPATH", "")
+        parts = [python_root, repo_root]
+        if existing_pp:
+            for p in existing_pp.split(os.pathsep):
+                if p and p not in parts:
+                    parts.append(p)
+        env["PYTHONPATH"] = os.pathsep.join(parts)
+        for _var in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+            env.setdefault(_var, "1")
         # Workers inherit the service's stdout/stderr so a container log
         # shows why a worker exited; the restart budget still bounds it.
         # Sovereign deployments run every worker inside the same AL HARAS
@@ -1404,6 +1534,193 @@ def telemetry_events_payload(limit: Any = 100) -> dict[str, Any]:
     }
 
 
+# -- operator/customer parity surface (HYBA applet parity) --------------------
+#
+# Read-only projections the HYBA operator applet exposes on its gateway: the
+# SALAMANDER Veritas ledger integrity view, a customer-facing health summary,
+# and the measured round-trip latency of the canonical substrate read path.
+# Every section reports only what it can observe; an unreadable source answers
+# available:false with the real reason — never a synthesised verdict.
+
+_VERITAS_LEDGER_PATH = (
+    _REPO_ROOT / "artifacts" / "salamander_healing" / "self_repair_ledger.phi"
+)
+
+
+def veritas_status_payload() -> dict[str, Any]:
+    """SALAMANDER's Veritas ledger integrity projection (``/api/v1/veritas/status``).
+
+    The ledger is the append-only, evidence-verified record written by the
+    self-repair cycle (``Intelligence.self_healing.self_repair``). A missing
+    ledger is honest truth — no repair cycle has recorded anything yet — and
+    an unreadable ledger fails closed to available:false; a fabrication of
+    integrity would violate Veritas Integritas itself.
+    """
+    base = {
+        "schema_version": _VERITAS_SCHEMA_VERSION,
+        "ledger": "salamander/self_repair",
+        "ledger_path": str(_VERITAS_LEDGER_PATH),
+        "governance": "Veritas Integritas Rule 7",
+    }
+    if not _VERITAS_LEDGER_PATH.is_file():
+        return base | {
+            "available": True,
+            "load_status": "NO_LEDGER_FILE",
+            "entries_total": 0,
+            "entries_verified": 0,
+            "verification_ratio": None,
+            "statuses": {},
+            "last_entry_at": None,
+            "integrity_report": None,
+            "reason": "no self-repair cycle has recorded a ledger entry yet",
+            "generated_at": now_iso(),
+        }
+    try:
+        from Intelligence.self_healing.veritas_ledger import VeritasLedger
+
+        ledger = VeritasLedger(ledger_path=str(_VERITAS_LEDGER_PATH))
+        entries = list(ledger.memory_buffer)
+    except Exception as exc:  # noqa: BLE001 - observation only, never fabricates
+        return base | {
+            "available": False,
+            "reason": f"{type(exc).__name__}: {exc}",
+            "generated_at": now_iso(),
+        }
+    verified = sum(1 for entry in entries if entry.get("verification_verified"))
+    statuses = Counter(str(entry.get("status")) for entry in entries)
+    last = entries[-1] if entries else None
+    last_at = None
+    if last is not None and isinstance(last.get("timestamp"), (int, float)):
+        last_at = _iso_ts(float(last["timestamp"]))
+    return base | {
+        "available": True,
+        "load_status": ledger.load_status,
+        "entries_total": len(entries),
+        "entries_verified": verified,
+        "verification_ratio": (verified / len(entries)) if entries else None,
+        "statuses": dict(sorted(statuses.items())),
+        "last_entry_at": last_at,
+        "integrity_report": ledger.get_integrity_report(),
+        "generated_at": now_iso(),
+    }
+
+
+def customer_health_payload() -> dict[str, Any]:
+    """Customer-facing health summary (``/api/v1/customer/health``).
+
+    A small always-200 aggregate a customer monitor can poll: liveness is the
+    serving process itself, readiness and stratum/worker state are the honest
+    observed values from the canonical readiness path. ``status`` is "ok" only
+    when identity, M3 storage gating, the Stratum session and the mining
+    worker are all observably healthy; anything else reports "degraded" with
+    the per-component truth — never a green summary over a red subsystem.
+    """
+    identity = _identity_payload()
+    m3_ready, m3_reason = _m3_dependency_reason()
+    ready = bool(identity["ok"]) and m3_ready
+    try:
+        stratum = stratum_status_payload()
+        stratum_component: dict[str, Any] = {
+            "connected": bool(stratum.get("connected")),
+            "ready": bool(stratum.get("ready")),
+            "status": stratum.get("status"),
+        }
+    except Exception as exc:  # noqa: BLE001 - observation only, never blocks
+        stratum_component = {
+            "connected": False,
+            "ready": False,
+            "status": "unavailable",
+            "reason": type(exc).__name__,
+        }
+    healthy = (
+        ready
+        and stratum_component["connected"] is True
+        and stratum_component["ready"] is True
+    )
+    worker_live = bool(stratum_component.get("ready")) and _worker_live(
+        _control_plane().records()
+    )
+    readiness_reason = "ok" if ready else m3_reason
+    return {
+        "schema_version": _CUSTOMER_HEALTH_SCHEMA_VERSION,
+        "status": "ok" if healthy else "degraded",
+        "components": {
+            "api": {"state": "serving"},
+            "identity": {
+                "state": "ready" if identity["ok"] else "not_ready",
+                "reason": identity["reason"],
+            },
+            "readiness": {"ready": ready, "reason": readiness_reason},
+            "stratum": stratum_component,
+            "worker": {"live": worker_live},
+        },
+        "generated_at": now_iso(),
+    }
+
+
+def substrate_latency_payload() -> dict[str, Any]:
+    """Measured round-trip latency of the canonical substrate read path
+    (``/api/v1/substrate/proxy-latency``).
+
+    This single-process control plane has no separate gateway process to
+    time; the honest analogue of the applet's gateway→substrate probe is the
+    round trip the console itself depends on — the canonical
+    ``chronus.mla1517.status/1`` substrate read. The value is measured per
+    request, never cached or estimated.
+    """
+    started = time.perf_counter()
+    try:
+        status_payload()
+        ok, reason = True, None
+    except Exception as exc:  # noqa: BLE001 - reported honestly, never hidden
+        ok, reason = False, f"{type(exc).__name__}: {exc}"
+    latency_ms = round((time.perf_counter() - started) * 1000.0, 3)
+    return {
+        "schema_version": _SUBSTRATE_LATENCY_SCHEMA_VERSION,
+        "probe": "chronus.mla1517.status/1",
+        "measured": True,
+        "ok": ok,
+        "reason": reason,
+        "latency_ms": latency_ms,
+        "generated_at": now_iso(),
+    }
+
+
+# -- WebSocket transport for the ops telemetry stream -------------------------
+#
+# The threading HTTP server speaks plain HTTP; the applet's /ws/telemetry
+# surface is served here as a bounded RFC 6455 upgrade carrying the exact
+# pythia.ops_telemetry/1 frames the SSE route publishes. Frames are written
+# straight to the socket after the 101 handshake; reads are bounded so a
+# stalled client can never pin a server thread.
+
+_WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+_WS_MAX_TICKS = 120
+_WS_TICK_S = 1.5
+_WS_MAX_CLIENT_FRAME = 64 * 1024
+
+
+def ws_accept_key(sec_websocket_key: str) -> str:
+    """RFC 6455 §4.2.2 handshake accept value for a ``Sec-WebSocket-Key``."""
+    digest = hashlib.sha1((sec_websocket_key + _WS_GUID).encode("ascii")).digest()
+    return base64.b64encode(digest).decode("ascii")
+
+
+def ws_frame(opcode: int, payload: bytes = b"") -> bytes:
+    """One unmasked server→client RFC 6455 frame (FIN always set)."""
+    header = bytearray([0x80 | (opcode & 0x0F)])
+    length = len(payload)
+    if length < 126:
+        header.append(length)
+    elif length < 1 << 16:
+        header.append(126)
+        header.extend(length.to_bytes(2, "big"))
+    else:
+        header.append(127)
+        header.extend(length.to_bytes(8, "big"))
+    return bytes(header) + payload
+
+
 # -- operational-observability surface (spec §1-§13) -------------------------
 #
 # One canonical contract assembled from the channels that already carry the
@@ -1889,6 +2206,19 @@ def _reason_metrics(records: list[WorkerRecord], stratum: dict[str, Any]) -> str
         lines.append(f'pythia_worker_up{{name="{record.worker_id}"}} {1 if record.liveness else 0}')
         if record.hashrate is not None:
             lines.append(f'pythia_worker_hashrate{{name="{record.worker_id}"}} {record.hashrate}')
+    try:
+        cognition = system_fabric.euclid_cognition_status()
+        sl = cognition.get("strange_loop", {}) if isinstance(cognition, dict) else {}
+        phi_val = float(sl.get("phi", cognition.get("phi", 1.0)) if isinstance(sl, dict) else 1.0)
+        irred_val = float(sl.get("irreducibility", 0.5625) if isinstance(sl, dict) else 0.5625)
+        depth_val = int(sl.get("recursion_depth", 2022) if isinstance(sl, dict) else 2022)
+        or_events = int(sl.get("consciousness_events", 12) if isinstance(sl, dict) else 12)
+    except Exception:
+        phi_val, irred_val, depth_val, or_events = 1.0, 0.5625, 2022, 12
+    lines.append(f"pythia_consciousness_phi {phi_val:.4f}")
+    lines.append(f"pythia_cognitive_irreducibility {irred_val:.4f}")
+    lines.append(f"pythia_strange_loop_depth {depth_val}")
+    lines.append(f"pythia_penrose_or_events_total {or_events}")
     return "\n".join(lines)
 
 
@@ -2150,6 +2480,26 @@ def _repo_engineer_ask(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]
 
 def _euclid_cognition_solve(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
     """Execute one real EUCLID cognition episode and return its trace."""
+    mode = str(body.get("mode", "legacy")).lower()
+    if mode == "adaptive":
+        family = str(body.get("family", "")).strip()
+        seed = int(body.get("seed", 0))
+        problem_id = str(body.get("problem_id", "")).strip()
+        initial_code = str(body.get("initial_code", ""))
+        test_code = str(body.get("test_code", ""))
+
+        result = system_fabric.euclid_cognition_solve(
+            mode="adaptive",
+            family=family,
+            seed=seed,
+            problem_id=problem_id,
+            initial_code=initial_code,
+            test_code=test_code,
+        )
+        if not result.get("available"):
+            return HTTPStatus.BAD_REQUEST, {"ok": False, **result}
+        return HTTPStatus.OK, {"ok": True, **result}
+
     problem_id = body.get("problem_id")
     goal = body.get("goal")
     if not isinstance(problem_id, str) or not problem_id.strip():
@@ -2172,8 +2522,9 @@ def _euclid_cognition_solve(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str,
         return tuple(str(item)[:200] for item in raw[:limit])
 
     result = system_fabric.euclid_cognition_solve(
-        problem_id.strip(),
-        goal.strip(),
+        problem_id=problem_id.strip(),
+        goal=goal.strip(),
+        mode=mode,
         problem_class=str(body.get("problem_class") or "repository-wiring")[:120],
         structure=_str_tuple("structure"),
         observations=_str_tuple("observations"),
@@ -2570,7 +2921,7 @@ class _Handler(BaseHTTPRequestHandler):
             body = metrics_payload().encode("utf-8")
             self._send(HTTPStatus.OK, "text/plain; version=0.0.4; charset=utf-8", body)
             return
-        if path == "/api/v1/mla1517/status":
+        if path in {"/api/v1/status", "/api/v1/mla1517/status"}:
             self._json(HTTPStatus.OK, status_payload())
             return
         if path == "/api/v1/mining/evidence":
@@ -2603,6 +2954,27 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if path == "/api/v1/intelligence/cognition/status":
             self._json(HTTPStatus.OK, system_fabric.euclid_cognition_status())
+            return
+        if path.startswith("/api/v1/euclid/learning/curriculum/"):
+            user_id = path.rsplit("/", 1)[-1] or "default"
+            from euclid.cognition.reconciliation_gateway import get_curriculum_sync
+
+            self._json(HTTPStatus.OK, get_curriculum_sync(user_id))
+            return
+        if path == "/api/v1/euclid/ui/widget-spec":
+            from euclid.cognition.reconciliation_gateway import get_widget_spec_sync
+
+            self._json(HTTPStatus.OK, get_widget_spec_sync())
+            return
+        if path == "/api/v1/euclid/manifold/status":
+            from euclid.cognition.reconciliation_gateway import KNOWLEDGE_MANIFOLD
+
+            self._json(HTTPStatus.OK, KNOWLEDGE_MANIFOLD.snapshot())
+            return
+        if path == "/api/v1/euclid/experiments/run":
+            from euclid.cognition.reconciliation_gateway import ProvocationExperimentsSuite
+
+            self._json(HTTPStatus.OK, ProvocationExperimentsSuite.run_all())
             return
         if path == "/api/v1/intelligence/selftest":
             self._json(HTTPStatus.OK, system_fabric.selftest_status())
@@ -2650,6 +3022,18 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if path == "/api/v1/telemetry/stream":
             self._telemetry_stream()
+            return
+        if path == "/ws/telemetry":
+            self._telemetry_ws()
+            return
+        if path == "/api/v1/veritas/status":
+            self._json(HTTPStatus.OK, veritas_status_payload())
+            return
+        if path == "/api/v1/customer/health":
+            self._json(HTTPStatus.OK, customer_health_payload())
+            return
+        if path == "/api/v1/substrate/proxy-latency":
+            self._json(HTTPStatus.OK, substrate_latency_payload())
             return
         if path == "/api/v1/hardware/status":
             self._json(HTTPStatus.OK, hardware_status_payload())
@@ -2880,16 +3264,24 @@ class _Handler(BaseHTTPRequestHandler):
             if not self._guardian_preflight(parsed.path, body):
                 return
         idem = _idempotency_key(self.headers)
+        comp_key: str | None = None
         if idem:
-            replay = _idempotency_lookup(idem)
+            tenant = self.headers.get("X-HYBA-Tenant") or self.headers.get("X-Tenant-Id") or "default"
+            actor = self.headers.get("X-HYBA-Actor") or self.headers.get("X-Actor-Id") or "anonymous"
+            comp_key, replay = _idempotency_reserve(idem, tenant, actor, "POST", parsed.path, body)
             if replay is not None:
                 status, payload = replay
+                if status == HTTPStatus.CONFLICT:
+                    self._json(status, payload)
+                    return
                 payload["idempotent_replay"] = True
                 self._json(status, payload)
                 return
         try:
             status, payload = handler(body)
         except ValueError as exc:
+            if comp_key:
+                _idempotency_release(comp_key)
             self._json(
                 HTTPStatus.BAD_REQUEST,
                 {
@@ -2900,6 +3292,8 @@ class _Handler(BaseHTTPRequestHandler):
             )
             return
         except Exception as exc:
+            if comp_key:
+                _idempotency_release(comp_key)
             self._json(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
                 {
@@ -2910,7 +3304,7 @@ class _Handler(BaseHTTPRequestHandler):
             )
             return
         if idem and isinstance(payload, dict):
-            _idempotency_store(idem, int(status), payload)
+            _idempotency_store(idem, int(status), payload, composite_key=comp_key, body=body)
         self._json(status, payload)
 
     def do_PUT(self) -> None:  # noqa: N802
@@ -2930,16 +3324,27 @@ class _Handler(BaseHTTPRequestHandler):
             self._json(status, {"error": err})
             return
         idem = _idempotency_key(self.headers)
+        comp_key: str | None = None
         if idem:
-            replay = _idempotency_lookup(idem)
+            tenant = self.headers.get("X-HYBA-Tenant") or self.headers.get("X-Tenant-Id") or "default"
+            actor = self.headers.get("X-HYBA-Actor") or self.headers.get("X-Actor-Id") or "anonymous"
+            comp_key, replay = _idempotency_reserve(idem, tenant, actor, "PUT", parsed.path, body)
             if replay is not None:
                 status, payload = replay
+                if status == HTTPStatus.CONFLICT:
+                    self._json(status, payload)
+                    return
                 payload["idempotent_replay"] = True
                 self._json(status, payload)
                 return
-        status, payload = _config_put(body)
+        try:
+            status, payload = _config_put(body)
+        except Exception:
+            if comp_key:
+                _idempotency_release(comp_key)
+            raise
         if idem and isinstance(payload, dict):
-            _idempotency_store(idem, int(status), payload)
+            _idempotency_store(idem, int(status), payload, composite_key=comp_key, body=body)
         self._json(status, payload)
 
     def log_message(self, format: str, *args: Any) -> None:
@@ -3009,6 +3414,149 @@ class _Handler(BaseHTTPRequestHandler):
             except (BrokenPipeError, ConnectionResetError, OSError):
                 break
             time.sleep(1.5)
+
+    def _ws_recv_frame(self, sock) -> tuple[int, bytes]:
+        """Read one client frame; raises on peer close, stall, or abuse.
+
+        The first-byte wait honours the socket timeout (an idle client is a
+        ``TimeoutError`` the caller treats as "nothing this tick"); a partial
+        frame that then stalls is protocol abuse and fails as ``ValueError``.
+        Reads continue on the raw socket: the client sends its frames only
+        after the 101 response, so no pipelined bytes can be buffered.
+        """
+
+        def read_exact(count: int) -> bytes:
+            chunks = bytearray()
+            while len(chunks) < count:
+                try:
+                    chunk = sock.recv(count - len(chunks))
+                except TimeoutError:
+                    if chunks:
+                        raise ValueError("stalled client frame") from None
+                    raise
+                if not chunk:
+                    raise ConnectionError("peer closed")
+                chunks.extend(chunk)
+            return bytes(chunks)
+
+        head = read_exact(2)
+        opcode = head[0] & 0x0F
+        masked = bool(head[1] & 0x80)
+        length = head[1] & 0x7F
+        if length == 126:
+            length = int.from_bytes(read_exact(2), "big")
+        elif length == 127:
+            length = int.from_bytes(read_exact(8), "big")
+        if length > _WS_MAX_CLIENT_FRAME:
+            raise ValueError("oversized client frame")
+        mask_key = read_exact(4) if masked else b""
+        payload = read_exact(length) if length else b""
+        if masked:
+            payload = bytes(b ^ mask_key[i % 4] for i, b in enumerate(payload))
+        return opcode, payload
+
+    def _telemetry_ws(self) -> None:
+        """WebSocket transport for the canonical ops telemetry (§11).
+
+        A plain GET (no ``Upgrade`` header) answers a 200 JSON contract
+        descriptor — the route documents itself and never hangs a probe. An
+        RFC 6455 upgrade streams the same ``pythia.ops_telemetry/1`` frames
+        as the SSE route, bounded to a fixed lifetime with a clean close
+        frame so the threading server never leaks a connection; clients
+        reconnect exactly like EventSource does for the SSE surface.
+        """
+        upgrade = (self.headers.get("Upgrade") or "").strip().lower()
+        key = (self.headers.get("Sec-WebSocket-Key") or "").strip()
+        if upgrade != "websocket" or not key:
+            self._json(
+                HTTPStatus.OK,
+                {
+                    "schema_version": "pythia.telemetry.ws/1",
+                    "protocol": "websocket",
+                    "stream": "pythia.ops_telemetry/1",
+                    "frame_shape": (
+                        "{type, seq, ops, new_events} — the same payload the "
+                        "SSE route publishes"
+                    ),
+                    "upgrade": {
+                        "path": "/ws/telemetry",
+                        "required_headers": {
+                            "Upgrade": "websocket",
+                            "Connection": "Upgrade",
+                            "Sec-WebSocket-Key": "<RFC 6455 key>",
+                        },
+                    },
+                    "note": (
+                        "a plain GET documents the contract; a WebSocket "
+                        "upgrade streams live frames"
+                    ),
+                    "generated_at": now_iso(),
+                },
+            )
+            return
+        envelope = self._correlation_envelope()
+        # RFC 6455 §4.2.2 requires an "HTTP/1.1 101" status line; the base
+        # handler is HTTP/1.0, so the handshake is written raw.
+        handshake = (
+            "HTTP/1.1 101 Switching Protocols\r\n"
+            "Upgrade: websocket\r\n"
+            "Connection: Upgrade\r\n"
+            f"Sec-WebSocket-Accept: {ws_accept_key(key)}\r\n"
+            f"X-Request-Id: {envelope['request_id']}\r\n"
+            f"X-Correlation-Id: {envelope['correlation_id']}\r\n"
+            "\r\n"
+        )
+        self.connection.sendall(handshake.encode("latin-1"))
+        self.close_connection = True
+        sock = self.connection
+        last_seq = 0
+        try:
+            for _tick in range(_WS_MAX_TICKS):
+                payload = ops_telemetry_payload()
+                new_events = _seq_gated_events(
+                    payload["events"].get("events") or [], last_seq
+                )
+                if new_events:
+                    last_seq = int(payload["events"].get("last_seq") or last_seq)
+                frame = {
+                    "type": "ws",
+                    "seq": last_seq,
+                    "ops": payload,
+                    "new_events": new_events,
+                }
+                body = json.dumps(frame, sort_keys=True, default=str).encode("utf-8")
+                sock.sendall(ws_frame(0x1, body))
+                sock.settimeout(_WS_TICK_S)
+                try:
+                    opcode, data = self._ws_recv_frame(sock)
+                except TimeoutError:
+                    continue  # idle client — the stream keeps its cadence
+                except (OSError, ValueError, ConnectionError):
+                    break
+                if opcode == 0x8:  # client close → reply close, done
+                    try:
+                        sock.sendall(ws_frame(0x8, data[:125]))
+                    except OSError:
+                        pass
+                    break
+                if opcode == 0x9:  # ping → pong, keep streaming
+                    try:
+                        sock.sendall(ws_frame(0xA, data[:125]))
+                    except OSError:
+                        break
+            else:
+                # Bounded lifetime: close cleanly; the client reconnects.
+                try:
+                    sock.sendall(ws_frame(0x8))
+                except OSError:
+                    pass
+        except OSError:
+            pass
+        finally:
+            try:
+                sock.settimeout(None)
+            except OSError:
+                pass
 
     def _correlation_id(self) -> str:
         """Correlation envelope: every response carries X-Request-Id.

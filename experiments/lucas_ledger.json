@@ -1,0 +1,20 @@
+{
+  "claim": "Lucas and Pisot share one exponent n*log2(phi)",
+  "defensible": true,
+  "reduces_fixed_search_iterations": false,
+  "confirmed": [
+    "pisot_drift_exact",
+    "one_exponent",
+    "lucas_fibonacci_identity",
+    "constant_fractional_position_1.381966",
+    "information_capacity",
+    "spectral_gap",
+    "coverage_parity"
+  ],
+  "refuted": [
+    "decorative_phase_multiplier",
+    "fixed_estate_lane_throughput",
+    "zeckendorf_atomicity_of_L_n"
+  ],
+  "theorem_proven": false
+}

@@ -4,9 +4,12 @@ The July 2026 VQC artifact is retained as a trainable 32-face ranking model,
 but its production contract is tightened: it may only score/reorder candidate
 nonces supplied by the canonical miner. It cannot synthesize nonces, alter a
 Bitcoin header, change a target, validate proof, submit a share, or interpret a
-pool response. Its quantum skeleton is an exact Clifford circuit executed by
-PhiQuantumMachine; the trainable ranker itself is classical numerical software
-and is labelled accordingly.
+pool response.
+
+The exact Clifford skeleton is a capability demonstration. It does not enter
+the ranking forward path. The ranker is a classical NumPy MLP. This module
+is labelled accordingly so that the skeleton cannot be read as load-bearing
+for inference.
 """
 from __future__ import annotations
 
@@ -44,7 +47,7 @@ class VQCConfig:
 class PhiGroverVQC:
     """Trainable 32-face candidate ranker with an exact Clifford skeleton."""
 
-    execution_type = "classical_trainable_ranker_with_exact_clifford_skeleton"
+    execution_type = "classical_trainable_ranker_with_exact_clifford_skeleton_capability_demonstration_only"
     authority = "candidate-order-only"
 
     def __init__(

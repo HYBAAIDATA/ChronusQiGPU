@@ -25,6 +25,7 @@ other.
 | `pythia.config.read` | `pythia.runtime_config_file` | redacted config read | HARD | read-only | NOT_CONFIGURED |
 | `pythia.config.update` | `pythia.runtime_config_file` | atomic config write | HARD | never auto-retry mutation | CUSTODY_FAILURE or INVALID_REQUEST |
 | `pythia.config.update` | `pythia.boot_audit` | audit append | HARD | none | INTERNAL_ERROR |
+| `pythia.control.session` | `pythia.boot_audit` | audit append | HARD | none | INTERNAL_ERROR |
 | `pythia.system.map` | `pythia.boot_audit` | audit context | SOFT | read-only | degraded projection |
 | `pythia.system.verify.read` | `euclid.orchestration` | verification run state | SOFT | read-only | NOT_APPLICABLE |
 | `pythia.system.verify.read` | `pythia.boot_audit` | audit tail | SOFT | read-only | degraded |
@@ -122,12 +123,14 @@ other.
 - `ovid.transform` (R2): depends on `theseus.custody`; depended on by `euclid.orchestration`
 - `pythia.agentic` (R1): depends on `euclid.orchestration`, `pythia.worker_heartbeat`, `stratum.v1`; depended on by —
 - `pythia.audit.tail` (R4): depends on `pythia.boot_audit`; depended on by —
-- `pythia.boot_audit` (R1): depends on —; depended on by `pythia.audit.tail`, `pythia.cli.api`, `pythia.config.update`, `pythia.intelligence.maintenance`, `pythia.intelligence.selftest`, `pythia.readiness`, `pythia.status`, `pythia.system.map`, `pythia.system.verify.read`, `pythia.system.verify.start`
+- `pythia.boot_audit` (R1): depends on —; depended on by `pythia.audit.tail`, `pythia.cli.api`, `pythia.config.update`, `pythia.control.session`, `pythia.intelligence.maintenance`, `pythia.intelligence.selftest`, `pythia.readiness`, `pythia.status`, `pythia.system.map`, `pythia.system.verify.read`, `pythia.system.verify.start`
 - `pythia.campaign` (R1): depends on `euclid.orchestration`, `pythia.worker_heartbeat`; depended on by —
 - `pythia.cli.api` (R1): depends on `pythia.boot_audit`; depended on by —
 - `pythia.cli.miner` (R1): depends on `stratum.v1`; depended on by —
 - `pythia.config.read` (R4): depends on `pythia.runtime_config_file`; depended on by —
 - `pythia.config.update` (R1): depends on `pythia.runtime_config_file`, `pythia.boot_audit`; depended on by —
+- `pythia.control.session` (R4): depends on `pythia.boot_audit`; depended on by —
+- `pythia.customer.health` (R4): depends on —; depended on by —
 - `pythia.gpu` (R4): depends on `chronus.execution`; depended on by —
 - `pythia.hardware.status` (R4): depends on `chronus.execution`; depended on by —
 - `pythia.health` (R4): depends on —; depended on by `legacy.api_health`
@@ -147,6 +150,7 @@ other.
 - `pythia.static_spa` (R4): depends on —; depended on by —
 - `pythia.status` (R4): depends on `pythia.worker_heartbeat`, `stratum.v1`, `pythia.boot_audit`; depended on by —
 - `pythia.stratum.status` (R4): depends on `stratum.v1`; depended on by —
+- `pythia.substrate.latency` (R4): depends on —; depended on by —
 - `pythia.system.map` (R4): depends on `pythia.boot_audit`; depended on by —
 - `pythia.system.verify.read` (R4): depends on `euclid.orchestration`, `pythia.boot_audit`; depended on by —
 - `pythia.system.verify.start` (R1): depends on `euclid.orchestration`, `pythia.boot_audit`; depended on by —
@@ -155,6 +159,7 @@ other.
 - `pythia.worker_heartbeat` (R1): depends on —; depended on by `pythia.agentic`, `pythia.campaign`, `pythia.metrics`, `pythia.mining.control`, `pythia.mining.evidence`, `pythia.readiness`, `pythia.ready_to_mine`, `pythia.status`, `pythia.telemetry`, `pythia.telemetry.stream`
 - `salamander.control_plane` (R3): depends on `theseus.custody`; depended on by `salamander.fault`
 - `salamander.fault` (R3): depends on `salamander.control_plane`, `theseus.custody`; depended on by —
+- `salamander.veritas.status` (R3): depends on —; depended on by —
 - `stratum.v1` (R1): depends on —; depended on by `pythia.agentic`, `pythia.cli.miner`, `pythia.metrics`, `pythia.mining.control`, `pythia.ready_to_mine`, `pythia.status`, `pythia.stratum.status`, `pythia.telemetry`, `pythia.telemetry.stream`
 - `theseus.custody` (R0): depends on —; depended on by `chronus.execution`, `euclid.orchestration`, `kellogg.tensor.execute`, `kellogg.tensor.runtime`, `ovid.transform`, `pythia.mining.control`, `salamander.control_plane`, `salamander.fault`, `turing.vqc_pipeline`
 - `toe.collapse` (R2): depends on `al_haras.guardian`, `euclid.orchestration`; depended on by —

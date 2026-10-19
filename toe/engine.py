@@ -1588,6 +1588,25 @@ class PredictiveEngine:
             if os.path.exists(npz_path):
                 blob = np.load(npz_path)
                 return self._validate_training_matrix(blob["X"], blob["y"])
+            # Fallback: structural corpus (160 observed Bitcoin nonces)
+            try:
+                from Intelligence.mining_structure_training import (
+                    DEFAULT_CORPUS_CSV,
+                    DEFAULT_CORPUS_MANIFEST,
+                    build_vectors,
+                    load_nonce_corpus,
+                    split_by_height,
+                )
+                from python_backend.phi_grover_v4 import phi_resonance
+
+                if DEFAULT_CORPUS_CSV.is_file() and DEFAULT_CORPUS_MANIFEST.is_file():
+                    rows, _ = load_nonce_corpus(DEFAULT_CORPUS_CSV, DEFAULT_CORPUS_MANIFEST)
+                    train_rows, _ = split_by_height(rows)
+                    Xv = np.asarray(build_vectors(train_rows), dtype=float)
+                    yv = np.asarray([1 if phi_resonance(r.nonce) >= 0.5 else 0 for r in train_rows], dtype=int)
+                    return self._validate_training_matrix(Xv, yv)
+            except Exception as _exc:
+                logging.debug("Structural corpus resolution skipped: %s", _exc)
         except Exception as e:
             logging.warning(f"Observed training data rejected: {e}")
         return None
@@ -2100,45 +2119,13 @@ class PredictiveEngine:
         Born mean Σ w_k p_k / Σ w_k.
         """
         try:
-            predictions = {}
             features = self._prepare_input_features(indicators)
             dim = self._channel_dim()
             state = encode_data_to_state([float(v) for v in features], dim=dim, normalize=True)
             self._last_encoded_state = state
             position = Observables.position(dim)
-            weights = []
-            scores = []
-            evolved_states = []
-            for model_name, channel in self.models.items():
-                cv_score = self._model_cv_scores.get(model_name)
-                result = channel.discriminate(state)
-                if result is None:
-                    predictions[model_name] = {
-                        "available": False,
-                        "score": None,
-                        "confidence": None,
-                        "weight": None,
-                        "cv_source": "measured" if cv_score is not None else "unmeasured",
-                        "family": channel.family,
-                    }
-                    continue
-                evolved = result["evolved"]
-                qfi = quantum_fisher_information(evolved, position)
-                weight = max(float(qfi), 0.0)
-                predictions[model_name] = {
-                    "score": float(result["score"]),
-                    # Helstrom discrimination margin — the channel's own
-                    # measured certainty, not a fitted confidence curve.
-                    "confidence": float(result["margin"]),
-                    "weight": weight,
-                    "weight_source": "quantum_fisher_information",
-                    "cv_source": "measured" if cv_score is not None else "unmeasured",
-                    "cv_score": cv_score,
-                    "family": channel.family,
-                }
-                weights.append(weight)
-                scores.append(result["score"])
-                evolved_states.append(evolved)
+
+            predictions, weights, scores, evolved_states = self.evaluate_tree_channels(state, position)
             self._last_evolved_states = evolved_states
             if scores:
                 total_weight = sum(weights)
@@ -2153,6 +2140,65 @@ class PredictiveEngine:
         except Exception as e:
             logging.error(f"Error during weighting of predictions: {e}")
             raise
+
+    def evaluate_tree_channels(
+        self, state: QuantumState, position: Any
+    ) -> tuple[dict, list, list, list]:
+        """Evaluates tree channels concurrently via ThreadPoolExecutor.
+
+        Offloads channel discrimination and quantum Fisher information computation
+        to worker threads, unblocking the main worker thread and preventing event loop lag.
+        """
+        import concurrent.futures
+
+        def _eval_one(item):
+            model_name, channel = item
+            cv_score = self._model_cv_scores.get(model_name)
+            result = channel.discriminate(state)
+            if result is None:
+                return (
+                    model_name,
+                    {
+                        "available": False,
+                        "score": None,
+                        "confidence": None,
+                        "weight": None,
+                        "cv_source": "measured" if cv_score is not None else "unmeasured",
+                        "family": channel.family,
+                    },
+                    None,
+                    None,
+                    None,
+                )
+            evolved = result["evolved"]
+            qfi = quantum_fisher_information(evolved, position)
+            weight = max(float(qfi), 0.0)
+            pred_item = {
+                "score": float(result["score"]),
+                "confidence": float(result["margin"]),
+                "weight": weight,
+                "weight_source": "quantum_fisher_information",
+                "cv_source": "measured" if cv_score is not None else "unmeasured",
+                "cv_score": cv_score,
+                "family": channel.family,
+            }
+            return model_name, pred_item, weight, result["score"], evolved
+
+        predictions = {}
+        weights = []
+        scores = []
+        evolved_states = []
+
+        max_workers = min(len(self.models), 4) if self.models else 1
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            for model_name, pred_item, weight, score, evolved in executor.map(_eval_one, self.models.items()):
+                predictions[model_name] = pred_item
+                if weight is not None:
+                    weights.append(weight)
+                    scores.append(score)
+                    evolved_states.append(evolved)
+
+        return predictions, weights, scores, evolved_states
 
     def _voting_predictions(self, indicators: dict) -> dict:
         """Majority-measurement vote across the quantum channels.
@@ -4197,3 +4243,66 @@ def strict_quantum_work_certificate(header76: bytes, nonce_start: int, nonce_cou
     from toe.strict_quantum import certify_work_window
 
     return certify_work_window(header76, nonce_start, nonce_count)
+
+
+def evaluate_tree_channels(
+    models: dict,
+    state: QuantumState,
+    position: Any,
+    model_cv_scores: dict | None = None,
+    max_workers: int = 4,
+) -> tuple[dict, list, list, list]:
+    """Concurrent evaluator for quantum channels across thread pools to prevent GIL freeze."""
+    import concurrent.futures
+
+    scores_dict = model_cv_scores or {}
+
+    def _eval_one(item):
+        model_name, channel = item
+        cv_score = scores_dict.get(model_name)
+        result = channel.discriminate(state)
+        if result is None:
+            return (
+                model_name,
+                {
+                    "available": False,
+                    "score": None,
+                    "confidence": None,
+                    "weight": None,
+                    "cv_source": "measured" if cv_score is not None else "unmeasured",
+                    "family": getattr(channel, "family", "unknown"),
+                },
+                None,
+                None,
+                None,
+            )
+        evolved = result["evolved"]
+        qfi = quantum_fisher_information(evolved, position)
+        weight = max(float(qfi), 0.0)
+        pred_item = {
+            "score": float(result["score"]),
+            "confidence": float(result["margin"]),
+            "weight": weight,
+            "weight_source": "quantum_fisher_information",
+            "cv_source": "measured" if cv_score is not None else "unmeasured",
+            "cv_score": cv_score,
+            "family": getattr(channel, "family", "unknown"),
+        }
+        return model_name, pred_item, weight, result["score"], evolved
+
+    predictions = {}
+    weights = []
+    scores = []
+    evolved_states = []
+
+    workers = min(len(models), max_workers) if models else 1
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        for model_name, pred_item, weight, score, evolved in executor.map(_eval_one, models.items()):
+            predictions[model_name] = pred_item
+            if weight is not None:
+                weights.append(weight)
+                scores.append(score)
+                evolved_states.append(evolved)
+
+    return predictions, weights, scores, evolved_states
+

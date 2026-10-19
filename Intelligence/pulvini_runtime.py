@@ -32,8 +32,10 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import sys
 import tempfile
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import turing_core as tc
@@ -350,15 +352,21 @@ class ChronosSolver:
         return ranked[:top_k]
 
 
-# Canonical Chronus M32 solver wiring. This active module must never resolve
-# the retired pre-fold platform namespace used by the legacy copy.
+# Production-isolated canonical M32 solver wiring.
 _M32_SOLVER = None
 
 
 def _m32_solver():
     global _M32_SOLVER
     if _M32_SOLVER is None:
-        from chronus.mla1517.mining.solver import M32SearchSolver
+        platform_py = (
+            Path(__file__).resolve().parent.parent
+            / "mla1517_platform_v3.4"
+            / "python"
+        )
+        if str(platform_py) not in sys.path:
+            sys.path.insert(0, str(platform_py))
+        from mla1517.mining.solver import M32SearchSolver
 
         _M32_SOLVER = M32SearchSolver()
     return _M32_SOLVER

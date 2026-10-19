@@ -215,6 +215,11 @@ apis:
     dependencies:
       - pythia.runtime_config_file
       - pythia.boot_audit
+  pythia.control.session:
+    capability: report server-authenticated principal for session
+    criticality: R4
+    dependencies:
+      - pythia.boot_audit
   pythia.system.map:
     capability: forensic map of the composed subsystem fabric
     criticality: R4
@@ -329,6 +334,18 @@ apis:
     criticality: R4
     dependencies:
       - chronus.execution
+  pythia.customer.health:
+    capability: customer-facing aggregate health status projection
+    criticality: R4
+    dependencies: []
+  pythia.substrate.latency:
+    capability: measured substrate proxy round-trip latency observation
+    criticality: R4
+    dependencies: []
+  salamander.veritas.status:
+    capability: veritas self-repair ledger integrity projection
+    criticality: R3
+    dependencies: []
 
   # -- HTTP: AL HARAS security surface (privileged) -------------------------
   al_haras.security.status:

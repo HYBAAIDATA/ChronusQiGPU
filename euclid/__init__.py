@@ -30,6 +30,7 @@ from .subsystem_registry import (
 # installs; accessing them without the substrates raises the honest
 # ModuleNotFoundError for the missing package.
 _LAZY = {
+    "intelligence": "euclid.intelligence",
     "EuclidEngineAdapter": "euclid.adapter",
     "ProgramSearchEngine": "euclid.adapter",
     "TrainingCase": "euclid.training_pipeline",
@@ -44,6 +45,11 @@ _LAZY = {
 
 
 def __getattr__(name):
+    if name == "intelligence":
+        import importlib
+        mod = importlib.import_module("euclid.intelligence")
+        globals()[name] = mod
+        return mod
     module = _LAZY.get(name)
     if module is None:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
@@ -60,6 +66,7 @@ def __dir__():
 __version__ = "17.0.0"
 
 __all__ = [
+    "intelligence",
     "Authority",
     "Capability",
     "Experience",

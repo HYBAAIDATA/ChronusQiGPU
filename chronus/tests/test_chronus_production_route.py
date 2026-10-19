@@ -13,7 +13,7 @@ import time
 
 import pytest
 
-from chronos_one_igpu.reference_contract import reference_execution
+from chronus.reference_contract import reference_execution
 from chronus.mla1517.mining.backend_registry import BackendLane, BackendRegistry
 from chronus.mla1517.mining.execution_router import NONCE_ORDER_HENDRIX
 from chronus.mla1517.mining.exact_search import (

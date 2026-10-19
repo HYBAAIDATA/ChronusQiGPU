@@ -121,6 +121,32 @@ class ModuleRegistry:
         self._order.append(name)
         return entry
 
+    def configure_frontier_agent(self, agent):
+        """Bind an explicitly host-configured Euclid runtime, never invent authority.
+
+        The same cached instance is exposed through instantiate_all() to the
+        orchestrator. No provider/guard/signer default is constructed here.
+        """
+        from chronus.agent.main import FrontierAgent
+
+        if not isinstance(agent, FrontierAgent):
+            raise TypeError("explicit FrontierAgent runtime required")
+        entry = self.get("euclid_frontier_agent")
+        if entry is None or not entry.loaded:
+            raise RuntimeError("frontier module is not registered/loaded")
+        if entry.instance is not None and entry.instance is not agent:
+            raise RuntimeError("stop and reconfigure the host before replacing its runtime")
+        entry.instance = agent
+        entry.factory = lambda: agent
+        return agent
+
+    def run_frontier_task(self, objective, cognition, plan):
+        """Use the retained runtime; unconfigured is unavailable, not an answer."""
+        entry = self.get("euclid_frontier_agent")
+        if entry is None or entry.instance is None:
+            raise RuntimeError("frontier host runtime has not been configured")
+        return entry.instance.run(objective, cognition, plan)
+
     # -- introspection ----------------------------------------------------
 
     def names(self) -> List[str]:
@@ -179,6 +205,22 @@ def build_default_registry() -> ModuleRegistry:
     docstring *claims*.
     """
     reg = ModuleRegistry()
+    reg.register(
+        "euclid_frontier_agent",
+        "chronus.agent",
+        "Five-plane agent control contracts: bounded cognitive primitives, "
+        "explicit host adapters, scoped writes, verification/rollback, and a separate "
+        "signed qualification service. Registration is not benchmark competence; "
+        "requires host configuration and external execution isolation.",
+        [
+            "governed_tasks",
+            "bounded_search",
+            "strategy_selection",
+            "evidence_adjudication",
+            "qualified_capability_admission",
+            "decision_provenance",
+        ],
+    )
 
     # --- AGI substrate & quantum math (consolidated into Intelligence) ---
     reg.register(
@@ -206,6 +248,21 @@ def build_default_registry() -> ModuleRegistry:
         "An exploration tool for self-organising emergence, not a proven AGI.",
         ["process_input", "integrate_layers", "self_organize"],
         factory=lambda: _import("Intelligence.layered_intelligence_substrate").AGISubstrate(),
+    )
+    reg.register(
+        "bsd_scribe",
+        "integrations.solvers.bsd_scaffold",
+        "Scaffold EUCLID to explore the Birch and Swinnerton-Dyer conjecture "
+        "over elliptic curves via exact arithmetic, L-function analysis, and "
+        "Tononi Phi integration.",
+        [
+            "bernoulli_number_computation",
+            "l_function_evaluation",
+            "rational_point_finding",
+            "torsion_group_analysis",
+            "conjecture_verification",
+        ],
+        factory=lambda: _import("integrations.solvers.bsd_scaffold").BSDScribe(),
     )
 
     # --- aethel: topological storage substrate -----------------------------
@@ -475,6 +532,51 @@ def build_default_registry() -> ModuleRegistry:
         "self-heal degrade proposals.",
         ["detect", "bind", "dispatch", "health_check", "self_heal"],
         factory=lambda: _import("Intelligence.backend_binding").get_compute_backend(),
+    )
+
+    # --- cortex_context: consolidated topological & spectral context ----
+    reg.register(
+        "cortex_context",
+        "Intelligence.cortex_context",
+        "Consolidated Cortex topological & spectral context engine: computes "
+        "Betti numbers, Euler characteristics, and gauge-invariant Casimir "
+        "spectra on high-dimensional manifolds.",
+        ["topological_context", "spectral_context", "betti_analytics"],
+        factory=lambda: _import("Intelligence.cortex_context").CortexTopologicalEngine(),
+    )
+
+    # --- enterprise_domains: multi-sector verticals (finance, energy, defense, biotech) ---
+    reg.register(
+        "enterprise_domains",
+        "Intelligence.domains",
+        "Enterprise multi-sector reasoning surfaces: quantitative finance "
+        "tail-risk holonomy (FTSE constituent manifolds), energy thermodynamics, "
+        "sovereign defense assurance, and bio-molecular resonance.",
+        ["market_holonomy", "energy_optimization", "defense_assurance", "biotech_resonance"],
+        factory=lambda: _import("Intelligence.domains").FinancialHolonomyEngine(),
+    )
+
+    reg.register(
+        "recursive_self_learning",
+        "Intelligence.recursive_self_learning",
+        "Recursive self-learning substrate (Strange Loop): second-order "
+        "meta-learning that adapts its own adaptation rate, geometric refold "
+        "under meta-error stress, and measured cognitive irreducibility via "
+        "layer-corruption impact. Reports honest metrics or low scores.",
+        ["meta_learning", "strange_loop", "irreducibility", "self_model"],
+        factory=lambda: _import(
+            "Intelligence.recursive_self_learning"
+        ).RecursiveSelfLearningSubstrate(),
+    )
+
+    # --- exact_yangmills_gap: closed-form 2I mass gap in Q(sqrt5) --------
+    reg.register(
+        "exact_yangmills_gap",
+        "millennium.exact_gap",
+        "Exact closed-form 2I quantum-group mass gap Delta = (3 - sqrt(5))/4 "
+        "derived from the integer class algebra of order 120 without float tolerance.",
+        ["exact_mass_gap", "spectrum_derivation", "class_algebra_closure"],
+        factory=lambda: _import("millennium.exact_gap").derive_exact_mass_gap,
     )
 
     return reg

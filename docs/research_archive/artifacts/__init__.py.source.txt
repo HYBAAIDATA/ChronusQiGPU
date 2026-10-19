@@ -1,0 +1,185 @@
+"""HYBA Substrate — unified computational intelligence platform.
+
+Platform name: **HYBA Substrate** (product surface: Pulvini CIaaS)
+Engine: Φ-UFE | Acceleration: Hermes | Autonomic: Salamander
+
+Mission: Dedicated production Bitcoin mining to fund HYBA's computational
+intelligence enterprise. Every cycle channels through the 6-dimensional
+intelligence manifold — Predictive, Causal, Counterfactual, Topological,
+Geometric, and Quantum — unified under a single execution graph.
+
+Modules
+-------
+- manifold_orchestrator : 6-Dimensional Intelligence Manifold execution graph
+- telemetry_listener    : Stratum binary passport listener → manifold routing
+- multiprocess_worker_cluster : 10.0 EH/s multiprocess worker orchestration
+- platform              : Platform identity, responsibility map, and doctrine
+- engine                : Φ-UFE engine proxy
+- hermes                : Hermes acceleration plane
+- pulvini               : PULVINI memory brand proxy
+- adaptive_ui           : Adaptive UI intelligence integration
+- salamander_support    : Salamander autonomic integration
+
+Audiences
+---------
+- External: /api/v1/ciaas/* (customers, beta) — never mining
+- Internal: /api/internal/* (treasury mining, ops) — operator auth only
+- Mining: direct headless stratum loop — no web stack overhead
+
+Authors: HYBA Intelligence — CIaaS, DIFC Innovations Licence, July 2024
+"""
+
+from .platform import (
+    PLATFORM, PLATFORM_VERSION, CATEGORY, PRODUCT, ENGINE, ACCELERATION,
+    AUTONOMIC, COMPANY, describe_platform,
+)
+from .manifold_orchestrator import (
+    UnifiedManifoldOrchestrator,
+    TopologicalIntelligence,
+    GeometricIntelligence,
+    PredictiveIntelligence,
+    CausalIntelligence,
+    CounterfactualIntelligence,
+    QuantumIntelligence,
+    PHI, PHI_INV, EPSILON,
+    DODECAHEDRAL_NODES, ICOSAHEDRAL_NODES, TOTAL_NODES,
+    EXPECTED_AUTOMORPHISM_ORDER,
+    FIVE_SAFETY_CONSTRAINTS,
+    PHI_FLOOR_COHERENCE, RESONANCE_GATE,
+    SearchMode, IntelligenceDimension,
+    ManifoldState, ExecutionReport,
+)
+from .empirical_phase_mapper import (
+    EmpiricalPhaseMapper, CoherencePhasePoint, RegenerationRecord,
+    NodeUtilizationSnapshot, PhaseMapReport,
+)
+from .economic_intelligence_loop import (
+    EconomicIntelligenceLoop, EconomicRegime, StrategyRecommendation,
+    EconomicSnapshot, StrategyProposal,
+)
+from .regulatory_whitepaper import (
+    RegulatoryWhitepaperEngine, Whitepaper, WhitepaperSection,
+    FormalAssertion, EvidenceTier,
+)
+from .salamander_thermal_sentinel import (
+    SalamanderThermalSentinel, ThermalState, ThrottlingAction,
+    ThermalReading, ThermalReport, run_m3_first_session_protocol,
+)
+from .organism_cns import (
+    OrganismCNS,
+    GovernanceStateMachine, ProposalState,
+    EconomicTelemetryBridge, EconomicTelemetry,
+    HybaLensVerificationPlane, VerificationContract,
+    MultiScaleRegeneration, RegenerationScale,
+    OrganismState, OrganismHealthReport,
+)
+from .telemetry_listener import (
+    StratumTelemetryListener,
+    StratumTelemetryFrame,
+    build_mock_passport,
+)
+from .agi_attribute_evaluator import (
+    AGIAttribute, AttributeDefinition, AttributeMeasurement,
+    CapabilitySnapshot, GrowthReport, AGIAttributeEvaluator,
+    DEFINITIONS as AGI_ATTRIBUTE_DEFINITIONS,
+)
+from .agi_attribute_probe import (
+    ProbeEvidence, HybaAGIAttributeProbe, observe_current_state,
+)
+from .asi_attribute_evaluator import (
+    ASIAttribute, ASIAttributeDefinition, ASIAttributeMeasurement,
+    ASISnapshot, ASIGrowthReport, ASIAttributeEvaluator,
+    DEFINITIONS as ASI_ATTRIBUTE_DEFINITIONS,
+)
+from .asi_attribute_probe import (
+    ASIProbeEvidence, HybaASIAttributeProbe, observe_current_asi_state,
+)
+from .safe_self_modification import (
+    ModificationStatus, ModificationProposal, ApprovalRecord,
+    ModificationRecord, GovernedModificationController,
+)
+from .world_system_model import (
+    DIMENSIONS as WORLD_SYSTEM_DIMENSIONS, WorldState, WorldForecast,
+    CalibrationResult, WorldSystemModel,
+)
+from .emergence_experiment import (
+    ComplexityCondition, BehavioralTrial, EmergenceExperimentReport,
+    EmergenceExperiment, DEFAULT_CONDITIONS as EMERGENCE_CONDITIONS,
+)
+from .organism_coherence import (
+    OrganismCoherenceSnapshot, OrganismCoherenceEvaluator,
+)
+from .memory_preservation import (
+    VerifiedWriteResult, verified_atomic_json_write, PathAudit,
+    FilesystemPersistenceAuditor, ArtifactRecord, MemoryVault,
+)
+from .euclid_learning_system import (
+    MemoryKind, ClaimStage, EvidenceKind, SeedRecord, LearningEvent,
+    ClaimEvidence, KnowledgeClaim, CurriculumTask, ConsolidationSnapshot,
+    EuclidLearningSystem,
+)
+from .euclid_experience_superlearner import (
+    ExperienceTask, ExperienceTransition, WorldModelEntry,
+    CurriculumSelection, ExperienceSuperlearner,
+)
+
+__all__ = [
+    # Platform
+    "PLATFORM", "PLATFORM_VERSION", "CATEGORY", "PRODUCT", "ENGINE",
+    "ACCELERATION", "AUTONOMIC", "COMPANY", "describe_platform",
+    # Manifold
+    "UnifiedManifoldOrchestrator",
+    "TopologicalIntelligence", "GeometricIntelligence",
+    "PredictiveIntelligence", "CausalIntelligence",
+    "CounterfactualIntelligence", "QuantumIntelligence",
+    # Constants
+    "PHI", "PHI_INV", "EPSILON",
+    "DODECAHEDRAL_NODES", "ICOSAHEDRAL_NODES", "TOTAL_NODES",
+    "EXPECTED_AUTOMORPHISM_ORDER",
+    "FIVE_SAFETY_CONSTRAINTS",
+    "PHI_FLOOR_COHERENCE", "RESONANCE_GATE",
+    # Types
+    "SearchMode", "IntelligenceDimension",
+    "ManifoldState", "ExecutionReport",
+    # Telemetry
+        "OrganismCNS", "GovernanceStateMachine", "ProposalState",
+    "EconomicTelemetryBridge", "EconomicTelemetry",
+    "HybaLensVerificationPlane", "VerificationContract",
+    "MultiScaleRegeneration", "RegenerationScale",
+        "EmpiricalPhaseMapper", "CoherencePhasePoint", "PhaseMapReport",
+    "EconomicIntelligenceLoop", "EconomicRegime", "StrategyRecommendation",
+    "RegulatoryWhitepaperEngine", "Whitepaper", "FormalAssertion",
+"OrganismState", "OrganismHealthReport",
+"StratumTelemetryListener", "StratumTelemetryFrame",
+    "build_mock_passport",
+    # Longitudinal capability evidence
+    "AGIAttribute", "AttributeDefinition", "AttributeMeasurement",
+    "CapabilitySnapshot", "GrowthReport", "AGIAttributeEvaluator",
+    "AGI_ATTRIBUTE_DEFINITIONS", "ProbeEvidence", "HybaAGIAttributeProbe",
+    "observe_current_state",
+    # ASI evidence tier
+    "ASIAttribute", "ASIAttributeDefinition", "ASIAttributeMeasurement",
+    "ASISnapshot", "ASIGrowthReport", "ASIAttributeEvaluator",
+    "ASI_ATTRIBUTE_DEFINITIONS", "ASIProbeEvidence", "HybaASIAttributeProbe",
+    "observe_current_asi_state",
+    # Governed modification and world-system research
+    "ModificationStatus", "ModificationProposal", "ApprovalRecord",
+    "ModificationRecord", "GovernedModificationController",
+    "WORLD_SYSTEM_DIMENSIONS", "WorldState", "WorldForecast",
+    "CalibrationResult", "WorldSystemModel",
+    # Controlled emergence and organism coherence
+    "ComplexityCondition", "BehavioralTrial", "EmergenceExperimentReport",
+    "EmergenceExperiment", "EMERGENCE_CONDITIONS",
+    "OrganismCoherenceSnapshot", "OrganismCoherenceEvaluator",
+    # Durable, lossless longitudinal memory
+    "VerifiedWriteResult", "verified_atomic_json_write", "PathAudit",
+    "FilesystemPersistenceAuditor", "ArtifactRecord", "MemoryVault",
+    # Governed developmental learning
+    "MemoryKind", "ClaimStage", "EvidenceKind", "SeedRecord",
+    "LearningEvent", "ClaimEvidence", "KnowledgeClaim", "CurriculumTask",
+    "ConsolidationSnapshot", "EuclidLearningSystem",
+    # Experience-first policy learning and world-model planning
+    "ExperienceTask", "ExperienceTransition", "WorldModelEntry",
+    "CurriculumSelection", "ExperienceSuperlearner",
+]
+__version__ = "2.0.0"

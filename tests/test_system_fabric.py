@@ -55,12 +55,10 @@ def test_forensic_map_marks_every_named_subsystem():
     # turing_universal_quantum_computer package), so find_spec resolves
     # them as present. pulvini_runtime followed once Intelligence.pulvini_runtime
     # was wired (opt-in solve-first planning).
+    # Following the Euclid consolidation, ontology_chain, search_tree,
+    # salamander_transaction, and pool_aware_miner are resolved in Intelligence.
     parked = {
         "pythia_agent",
-        "ontology_chain",
-        "search_tree",
-        "salamander_transaction",
-        "pool_aware_miner",
     }
     absent = {s["key"] for s in m["subsystems"] if not s["present"]}
     assert absent == parked
@@ -70,6 +68,7 @@ def test_forensic_map_marks_every_named_subsystem():
     assert all(
         s["wired"] == "parked" for s in m["subsystems"] if s["key"] in parked
     )
+
 
 
 def test_forensic_map_gates_open_on_hardware():

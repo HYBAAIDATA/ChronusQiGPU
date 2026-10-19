@@ -6,9 +6,18 @@ import json
 import logging
 import os
 import socket
+import sys
+import tempfile
 import uuid
 from pathlib import Path
 from typing import Any, Callable
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_PLATFORM_DIR = Path(__file__).resolve().parent
+for _p in (str(_PLATFORM_DIR), str(_REPO_ROOT)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 from chronus.mla1517.hardware import MMIOBridge
 from euclid_core import EuclidCoreBandit
 from salamander_control import (
@@ -28,6 +37,30 @@ CURSOR_MAGIC, CURSOR_VERSION, CURSOR_BYTES = 0x50444243, 1, 256
 # The miner treats Salamander as the lane-mask owner only while it keeps
 # reporting; the keepalive must stay well inside the coordinator's TTL (10 s).
 MODE_KEEPALIVE_MS = 2000
+
+
+def _default_coordinator_socket_path() -> str:
+    override = os.getenv("MLA1517_COORDINATOR_CONTROL_SOCKET", "").strip()
+    if override:
+        return override
+    if os.name == "nt":
+        base = os.getenv("LOCALAPPDATA") or tempfile.gettempdir()
+        d = Path(base) / "pythia" / "ipc"
+        d.mkdir(parents=True, exist_ok=True)
+        return str(d / "mla1517_coordinator.sock")
+    return "/dev/shm/mla1517_coordinator.sock"
+
+
+def _default_cursors_path() -> str:
+    override = os.getenv("MLA1517_PRIME_DB_CURSORS", "").strip()
+    if override:
+        return override
+    if os.name == "nt":
+        base = os.getenv("LOCALAPPDATA") or tempfile.gettempdir()
+        d = Path(base) / "pythia" / "ipc"
+        d.mkdir(parents=True, exist_ok=True)
+        return str(d / "primedb_cursors")
+    return "/dev/shm/primedb_cursors"
 
 
 class SalamanderEngine:
@@ -78,10 +111,8 @@ class SalamanderEngine:
             self.telemetry_reader = TelemetryReader(self.telemetry_path)
         except (OSError, TelemetrySnapshotError):
             self.telemetry_reader = None
-        self.cursor_path = os.getenv("MLA1517_PRIME_DB_CURSORS", "/dev/shm/primedb_cursors")
-        self.control_socket = os.getenv(
-            "MLA1517_COORDINATOR_CONTROL_SOCKET", "/dev/shm/mla1517_coordinator.sock"
-        )
+        self.cursor_path = _default_cursors_path()
+        self.control_socket = _default_coordinator_socket_path()
         # Recovery authority reporting: every acting step opens (or continues)
         # a recovery_id; the first later step with nothing left to fix
         # verifies it by reporting NORMAL/DE_RATE.
@@ -181,11 +212,14 @@ class SalamanderEngine:
             if os.name == "nt":
                 # Windows has no AF_UNIX; the coordinator publishes its
                 # loopback host:port in the rendezvous file instead.
+                socket_file = Path(self.control_socket)
+                if not socket_file.is_file():
+                    return None
                 host, _, port = (
-                    Path(self.control_socket).read_text(encoding="utf-8").strip().rpartition(":")
+                    socket_file.read_text(encoding="utf-8").strip().rpartition(":")
                 )
                 if not port.isdigit():
-                    return False
+                    return None
                 peer: Any = (host, int(port))
                 family = socket.AF_INET
             else:
