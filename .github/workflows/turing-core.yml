@@ -12,6 +12,8 @@ on:
       - "tests/test_turing_production_pipeline.py"
       - "tests/test_turing_acceptance_gate.py"
       - "tests/test_turing_release_packaging.py"
+      - "tests/test_unified_theory_separate_builds.py"
+      - "toe/foundation.py"
       - "packaging/turing/**"
       - "packaging/verify_release_candidates.py"
       - "packaging/kellogg-tensor/build_and_verify.py"
@@ -53,6 +55,7 @@ jobs:
           tests/test_turing_production_pipeline.py
           tests/test_turing_acceptance_gate.py
           tests/test_turing_release_packaging.py
+          tests/test_unified_theory_separate_builds.py
       - name: Build deterministic digest fixture
         run: |
           python scripts/turing_digest_fixture.py > turing-digest-${{ matrix.python }}.txt
