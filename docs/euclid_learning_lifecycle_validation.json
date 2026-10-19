@@ -1,0 +1,36 @@
+{
+  "repository": "PhiEnterprise1/EuclidPhiEnterprise",
+  "base_revision": "6688e83c22d36dc16dfd5516e9e7d81959c84438",
+  "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+  "baseline": {
+    "tests": 23,
+    "passed": 3,
+    "failures": 11,
+    "errors": 9
+  },
+  "patched": {
+    "lifecycle_tests": 23,
+    "passed": 23,
+    "existing_training_subset": 14,
+    "existing_training_passed": 14,
+    "compilation": "passed"
+  },
+  "scope": "MCP-retrieved module checkout; euclid initializer exercised, Intelligence/kellogg/hyba_substrate/cognition initializers not exercised. Production-learning test isolates cognition and disables organism. Optional turing_core unavailable; existing fallback paths executed. No full repository or device qualification.",
+  "source_sha256": {
+    "euclid/runtime.py": "dc027dea738edfba1b45c2d92821120d3737959b07f64a67771b5cee3a854b78",
+    "euclid/learning_service.py": "0c241aef8cd8c8b641282d5afaf5132c04644f1f5a6567196d3c021ebc8ed242",
+    "euclid/training_pipeline.py": "c4b6fc6e2be41f7f56d84da207c973e03d5e842f7ea3c4c9755197533a20718b",
+    "hyba_substrate/euclid_learning_system.py": "6ff0dccee364a72e923477eace5cbbbf3128513e906ebc2921ccc68d2dff411a",
+    "hyba_substrate/euclid_experience_superlearner.py": "ea91fa02886282e4c7d1dfc7acc86463fc512164da439e5bc8451201027149d7",
+    "Intelligence/pythia_learning.py": "53bebc4314c94b2349cc5ee36d14f60fd38074439e0d49df97f46cf05ee2bda4",
+    "Intelligence/pythia_store.py": "d63fa3c75769c55efd9732b557527991b9b60d960c8344f98185e6619a5404e7",
+    "tests/test_euclid_learning_lifecycle.py": "2f5db3d863c8245aaf2d9014ff5661becbf23686af654a46cff247d2919694a5",
+    "scripts/verify_euclid_learning_lifecycle.py": "48b773b8039dc280745ad5053a12196bc4b2066e882e3dfebc94bad88ae32eaa"
+  },
+  "log_sha256": {
+    "learning_baseline_test.log": "6765c5f9834e2ac5f2705b098e40516e3b7c6fe3401be59134ba8e1c4433ff69",
+    "learning_test.log": "541be999d98ade37f49cba3519752f3ad441cc7a382213e5103a2d3f24c3f065",
+    "learning_regression.log": "0bdf4ed7151cb313f9ae88539e60728aaeb7728f0d8429e2a3ab72993fe26107"
+  },
+  "github_secret_scan": "UNAVAILABLE: repository does not have GitHub Advanced Security enabled"
+}
