@@ -79,7 +79,7 @@ jobs:
             type=ref,event=tag
 
       - name: Build and push ${{ matrix.package.name }}
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.package.context }}
           file: ${{ matrix.package.file }}
