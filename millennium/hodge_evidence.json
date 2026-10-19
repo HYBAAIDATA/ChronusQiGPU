@@ -1,7 +1,7 @@
 {
   "schema": "euclid.millennium.hodge_evidence/1",
   "probe": "HodgeProbe",
-  "timestamp_utc": "2026-10-19T06:30:04.811611+00:00",
+  "timestamp_utc": "2026-10-19T07:05:23.270875+00:00",
   "parameters": {
     "degree_bound": 5,
     "seed": 1337

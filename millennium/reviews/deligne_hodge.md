@@ -1,10 +1,10 @@
 # Euclid Review: Théorie de Hodge: I, II, III
 
 **Treatise ID**: `deligne_hodge`  
-**Provenance Hash**: `dadf643b5fd213484b7cd7900535ad03fa83654377c0f864095ef1cb931de056`  
+**Provenance Hash**: `4ae5f88296092b247ab79bd4a2a6b2a683c60b43ab969343cdd17de2ef66e092`  
 **Authors**: Pierre Deligne (1971)  
 **License**: Open Access (NUMDAM / IHÉS)  
-**Source URL**: [http://www.numdam.org/item/PMIHES_1971__40__5_0/](http://www.numdam.org/item/PMIHES_1971__40__5_0/)  
+**Source URL**: [http://www.numdam.org/item/PMIHES_1971__40__5_0.pdf](http://www.numdam.org/item/PMIHES_1971__40__5_0.pdf)  
 **Problem Focus**: HODGE  
 
 ---
@@ -55,7 +55,7 @@ Degenerating families of Kähler structures; nilpotent orbits and Hodge metric s
 
 ## 5. Citations & License Transparency
 
-- **Citation**: Deligne, P. (1971). Théorie de Hodge: II, Publ. Math. IHÉS, 40, 5-57.  
-  URL: [http://www.numdam.org/item/PMIHES_1971__40__5_0/](http://www.numdam.org/item/PMIHES_1971__40__5_0/)
-- **Citation**: Deligne, P. (1974). Théorie de Hodge: III, Publ. Math. IHÉS, 44, 5-77.  
-  URL: [http://www.numdam.org/item/PMIHES_1974__44__5_0/](http://www.numdam.org/item/PMIHES_1974__44__5_0/)
+- **Citation**: Deligne, P. (1971). Théorie de Hodge: II, Publ. Math. IHÉS, 40, 5-57. NUMDAM Full Treatise.  
+  URL: [http://www.numdam.org/item/PMIHES_1971__40__5_0.pdf](http://www.numdam.org/item/PMIHES_1971__40__5_0.pdf)
+- **Citation**: Deligne, P. (1974). Théorie de Hodge: III, Publ. Math. IHÉS, 44, 5-77. NUMDAM Full Treatise.  
+  URL: [http://www.numdam.org/item/PMIHES_1974__44__5_0.pdf](http://www.numdam.org/item/PMIHES_1974__44__5_0.pdf)

@@ -1,10 +1,10 @@
 # Euclid Review: The Topological Invariants of Algebraic Varieties
 
 **Treatise ID**: `hodge_1950`  
-**Provenance Hash**: `7919e72b7cd0344f562e5e8fa6574cba52f9320cd2a7b9b5528ad12974aa3742`  
+**Provenance Hash**: `ab6181f8b94a3f6c2f6c7e5b51ad0f59ddaf9cf940b78ac576ec45173c90d043`  
 **Authors**: William V.D. Hodge (1950)  
-**License**: Open Access (ICM Proceedings)  
-**Source URL**: [https://www.mathunion.org/icm/proceedings](https://www.mathunion.org/icm/proceedings)  
+**License**: Open Access (Clay / ICM)  
+**Source URL**: [https://www.claymath.org/wp-content/uploads/2022/06/hodge.pdf](https://www.claymath.org/wp-content/uploads/2022/06/hodge.pdf)  
 **Problem Focus**: HODGE  
 
 ---
@@ -57,5 +57,7 @@ Kähler metric g_ij with closed Kähler form omega = i g_{j k_bar} dz^j wedge dz
 
 ## 5. Citations & License Transparency
 
+- **Citation**: Deligne, P. (2000). The Hodge Conjecture - Official Clay Mathematics Institute Problem Description.  
+  URL: [https://www.claymath.org/wp-content/uploads/2022/06/hodge.pdf](https://www.claymath.org/wp-content/uploads/2022/06/hodge.pdf)
 - **Citation**: Hodge, W.V.D. (1950). The Topological Invariants of Algebraic Varieties, Proc. Int. Congr. Math., Vol. 1, 182-192.  
   URL: [https://www.mathunion.org/icm/proceedings](https://www.mathunion.org/icm/proceedings)

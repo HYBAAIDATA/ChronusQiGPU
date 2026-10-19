@@ -8,8 +8,8 @@
   "year": 1965,
   "source_url": "https://gdz.sub.uni-goettingen.de/id/PPN243919689_0218",
   "license": "Open Access (GDZ Göttingen)",
-  "retrieved_date": "2026-10-19T06:29:59.203754+00:00",
-  "sha256": "f2bf86b3c82dd0ae0133005e0add1df16f736ecf1713d999b31a440282314998",
+  "retrieved_date": "2026-10-19T07:05:23.087961+00:00",
+  "sha256": "284fa5e08c47c0af148882bc284115c2aef5fe64eccbea98b756b177d82eb5ac",
   "category": "Arithmetic Geometry & Elliptic Curves",
   "problem_focus": [
     "BSD"
@@ -63,12 +63,12 @@
   ],
   "citations": [
     {
-      "ref": "Birch, B.J., Swinnerton-Dyer, H.P.F. (1963). Notes on Elliptic Curves (I), J. Reine Angew. Math., 212, 7-25.",
-      "url": "https://gdz.sub.uni-goettingen.de/id/PPN243919689_0212"
+      "ref": "Birch, B.J., Swinnerton-Dyer, H.P.F. (1965). Notes on Elliptic Curves (II), J. Reine Angew. Math., 218, 79-108. GDZ Göttingen Digital Library.",
+      "url": "https://gdz.sub.uni-goettingen.de/id/PPN243919689_0218"
     },
     {
-      "ref": "Birch, B.J., Swinnerton-Dyer, H.P.F. (1965). Notes on Elliptic Curves (II), J. Reine Angew. Math., 218, 79-108.",
-      "url": "https://gdz.sub.uni-goettingen.de/id/PPN243919689_0218"
+      "ref": "Wiles, A. (2000). The Birch and Swinnerton-Dyer Conjecture - Official Clay Mathematics Institute Problem Description.",
+      "url": "https://www.claymath.org/wp-content/uploads/2022/05/birchswin.pdf"
     }
   ]
 }

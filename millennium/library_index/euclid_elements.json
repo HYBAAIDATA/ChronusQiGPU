@@ -6,10 +6,10 @@
     "Thomas L. Heath (Trans. & Comm.)"
   ],
   "year": 1908,
-  "source_url": "https://archive.org/details/thirteentriple01eucl",
+  "source_url": "http://www.perseus.tufts.edu/hopper/text?doc=Perseus:text:1999.01.0086",
   "license": "Public Domain",
-  "retrieved_date": "2026-10-19T06:29:59.203754+00:00",
-  "sha256": "2a21e6376e1625bd99bdeaae10d7d7e21ac624d9c66166d2763bd7e47c616f67",
+  "retrieved_date": "2026-10-19T07:05:23.087961+00:00",
+  "sha256": "747bdd7e13f011737a2a5752bbcdae98690f39ccb93a237b2f2e62213f4599d8",
   "category": "Foundations & Number Theory",
   "problem_focus": [
     "FOUNDATIONAL",
@@ -65,7 +65,11 @@
   ],
   "citations": [
     {
-      "ref": "Heath, T.L. (1908). The Thirteen Books of Euclid's Elements, Cambridge University Press, Vols I-III.",
+      "ref": "Heath, T.L. (1908). The Thirteen Books of Euclid's Elements, Cambridge University Press, Vols I-III. Perseus Digital Library Unabridged Greek & English Edition.",
+      "url": "http://www.perseus.tufts.edu/hopper/text?doc=Perseus:text:1999.01.0086"
+    },
+    {
+      "ref": "Internet Archive Facsimile of Cambridge 1908 Edition.",
       "url": "https://archive.org/details/thirteentriple01eucl"
     }
   ]

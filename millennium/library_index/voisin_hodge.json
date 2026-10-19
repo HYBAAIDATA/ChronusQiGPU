@@ -5,10 +5,10 @@
     "Claire Voisin"
   ],
   "year": 2002,
-  "source_url": "https://www.cambridge.org/core/books/hodge-theory-and-complex-algebraic-geometry-i/4A92DE2A08FF596160E364A96C254707",
+  "source_url": "https://doi.org/10.1017/CBO9780511615344",
   "license": "Academic Research & Educational Fair Use",
-  "retrieved_date": "2026-10-19T06:29:59.203754+00:00",
-  "sha256": "618fcc4052b8d2d7bcb0a50de2388d2c37dee438838a31ca93e704418a31f2b8",
+  "retrieved_date": "2026-10-19T07:05:23.087961+00:00",
+  "sha256": "a682eb566bd617ea953c64a160feb41e1ed90044f87580f5b9e4b1038f8a3c41",
   "category": "Complex Geometry & Algebraic Cycles",
   "problem_focus": [
     "HODGE"
@@ -62,7 +62,7 @@
   "citations": [
     {
       "ref": "Voisin, C. (2002). Hodge Theory and Complex Algebraic Geometry, I & II, Cambridge Studies in Advanced Mathematics, 76 & 77.",
-      "url": "https://www.cambridge.org/core/books/hodge-theory-and-complex-algebraic-geometry-i/4A92DE2A08FF596160E364A96C254707"
+      "url": "https://doi.org/10.1017/CBO9780511615344"
     }
   ]
 }

@@ -5,10 +5,10 @@
     "Pierre Deligne"
   ],
   "year": 1971,
-  "source_url": "http://www.numdam.org/item/PMIHES_1971__40__5_0/",
+  "source_url": "http://www.numdam.org/item/PMIHES_1971__40__5_0.pdf",
   "license": "Open Access (NUMDAM / IHÉS)",
-  "retrieved_date": "2026-10-19T06:29:59.203754+00:00",
-  "sha256": "dadf643b5fd213484b7cd7900535ad03fa83654377c0f864095ef1cb931de056",
+  "retrieved_date": "2026-10-19T07:05:23.087961+00:00",
+  "sha256": "4ae5f88296092b247ab79bd4a2a6b2a683c60b43ab969343cdd17de2ef66e092",
   "category": "Mixed Hodge Theory & Motivic Cohomology",
   "problem_focus": [
     "HODGE"
@@ -57,12 +57,12 @@
   ],
   "citations": [
     {
-      "ref": "Deligne, P. (1971). Théorie de Hodge: II, Publ. Math. IHÉS, 40, 5-57.",
-      "url": "http://www.numdam.org/item/PMIHES_1971__40__5_0/"
+      "ref": "Deligne, P. (1971). Théorie de Hodge: II, Publ. Math. IHÉS, 40, 5-57. NUMDAM Full Treatise.",
+      "url": "http://www.numdam.org/item/PMIHES_1971__40__5_0.pdf"
     },
     {
-      "ref": "Deligne, P. (1974). Théorie de Hodge: III, Publ. Math. IHÉS, 44, 5-77.",
-      "url": "http://www.numdam.org/item/PMIHES_1974__44__5_0/"
+      "ref": "Deligne, P. (1974). Théorie de Hodge: III, Publ. Math. IHÉS, 44, 5-77. NUMDAM Full Treatise.",
+      "url": "http://www.numdam.org/item/PMIHES_1974__44__5_0.pdf"
     }
   ]
 }

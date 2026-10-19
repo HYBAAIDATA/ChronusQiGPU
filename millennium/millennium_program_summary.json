@@ -1,7 +1,7 @@
 {
   "status": "PROBES COMPLETE",
-  "timestamp_utc": "2026-10-19T06:29:59.202492+00:00",
-  "git_short_hash": "c8f734e9",
+  "timestamp_utc": "2026-10-19T07:05:23.087961+00:00",
+  "git_short_hash": "a4a35faa",
   "seeds": [
     1337,
     42,
@@ -20,7 +20,7 @@
           "Thomas L. Heath (Trans. & Comm.)"
         ],
         "year": 1908,
-        "sha256": "2a21e6376e1625bd99bdeaae10d7d7e21ac624d9c66166d2763bd7e47c616f67",
+        "sha256": "747bdd7e13f011737a2a5752bbcdae98690f39ccb93a237b2f2e62213f4599d8",
         "license": "Public Domain",
         "problem_focus": [
           "FOUNDATIONAL",
@@ -50,7 +50,7 @@
           "Bernhard Riemann"
         ],
         "year": 1859,
-        "sha256": "5a2bf4222902a0f062b7967a3366505437008d2c5ae5b458e0c8e3a103009731",
+        "sha256": "a3a946a1b023029342a0e65e31d1b6d38d19995a179f3584329ec496f0265112",
         "license": "Public Domain",
         "problem_focus": [
           "RH"
@@ -63,8 +63,8 @@
           "William V.D. Hodge"
         ],
         "year": 1950,
-        "sha256": "7919e72b7cd0344f562e5e8fa6574cba52f9320cd2a7b9b5528ad12974aa3742",
-        "license": "Open Access (ICM Proceedings)",
+        "sha256": "ab6181f8b94a3f6c2f6c7e5b51ad0f59ddaf9cf940b78ac576ec45173c90d043",
+        "license": "Open Access (Clay / ICM)",
         "problem_focus": [
           "HODGE"
         ]
@@ -76,7 +76,7 @@
           "Pierre Deligne"
         ],
         "year": 1971,
-        "sha256": "dadf643b5fd213484b7cd7900535ad03fa83654377c0f864095ef1cb931de056",
+        "sha256": "4ae5f88296092b247ab79bd4a2a6b2a683c60b43ab969343cdd17de2ef66e092",
         "license": "Open Access (NUMDAM / IH\u00c9S)",
         "problem_focus": [
           "HODGE"
@@ -89,7 +89,7 @@
           "Claire Voisin"
         ],
         "year": 2002,
-        "sha256": "618fcc4052b8d2d7bcb0a50de2388d2c37dee438838a31ca93e704418a31f2b8",
+        "sha256": "a682eb566bd617ea953c64a160feb41e1ed90044f87580f5b9e4b1038f8a3c41",
         "license": "Academic Research & Educational Fair Use",
         "problem_focus": [
           "HODGE"
@@ -103,7 +103,7 @@
           "Peter Swinnerton-Dyer"
         ],
         "year": 1965,
-        "sha256": "f2bf86b3c82dd0ae0133005e0add1df16f736ecf1713d999b31a440282314998",
+        "sha256": "284fa5e08c47c0af148882bc284115c2aef5fe64eccbea98b756b177d82eb5ac",
         "license": "Open Access (GDZ G\u00f6ttingen)",
         "problem_focus": [
           "BSD"
@@ -117,8 +117,8 @@
           "Don B. Zagier"
         ],
         "year": 1986,
-        "sha256": "98e2a7bef702da4186e10fd3714387dd6bd9e355a8d38550ff3d989f1f3d05f0",
-        "license": "Open Access (EuDML / Springer)",
+        "sha256": "ca6e7633a7724f67d809630fcf8a49a84ee776414acc8170303aae4f15739e2f",
+        "license": "Open Access (Springer / Inventiones)",
         "problem_focus": [
           "BSD"
         ]
@@ -152,7 +152,7 @@
         ]
       }
     ],
-    "manifest_hash": "298a4a065d60e67d",
+    "manifest_hash": "a779c942b4bb1656",
     "reviews_count": 19,
     "manifest_path": "millennium\\library_manifest.json",
     "synthesis_path": "millennium\\REVIEW_SYNTHESIS.md"
@@ -202,5 +202,5 @@
     "Extend BSD swarm: compute higher order Taylor terms for rank >= 4 curves.",
     "Open refutation bounty on all empirical datasets."
   ],
-  "publish_language": "Euclid reviewed 19 treatises (manifest hash 298a4a065d60e67d), reproduced identities in bounded boxes (T=150.0, D=5, N=5077), found zero off-line/counterexample candidates surviving recheck. All results INCONCLUSIVE toward proof, as expected. Evidence + code attached. Refutation bounty open."
+  "publish_language": "Euclid reviewed 19 treatises (manifest hash a779c942b4bb1656), reproduced identities in bounded boxes (T=150.0, D=5, N=5077), found zero off-line/counterexample candidates surviving recheck. All results INCONCLUSIVE toward proof, as expected. Evidence + code attached. Refutation bounty open."
 }

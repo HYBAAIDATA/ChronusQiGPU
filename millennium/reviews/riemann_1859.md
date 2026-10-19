@@ -1,10 +1,10 @@
 # Euclid Review: Ueber die Anzahl der Primzahlen unter einer gegebenen Grösse
 
 **Treatise ID**: `riemann_1859`  
-**Provenance Hash**: `5a2bf4222902a0f062b7967a3366505437008d2c5ae5b458e0c8e3a103009731`  
+**Provenance Hash**: `a3a946a1b023029342a0e65e31d1b6d38d19995a179f3584329ec496f0265112`  
 **Authors**: Bernhard Riemann (1859)  
 **License**: Public Domain  
-**Source URL**: [https://archive.org/details/monatsberichtede1859knig](https://archive.org/details/monatsberichtede1859knig)  
+**Source URL**: [https://www.maths.tcd.ie/pub/HistMath/People/Riemann/Zeta/Zeta.pdf](https://www.maths.tcd.ie/pub/HistMath/People/Riemann/Zeta/Zeta.pdf)  
 **Problem Focus**: RH  
 
 ---
@@ -57,5 +57,7 @@ Symmetry under the reflection s -> 1-s; zero distribution on the critical line m
 
 ## 5. Citations & License Transparency
 
-- **Citation**: Riemann, B. (1859). Ueber die Anzahl der Primzahlen unter einer gegebenen Grösse, Monatsberichte der Berliner Akademie, 671-680.  
-  URL: [https://archive.org/details/monatsberichtede1859knig](https://archive.org/details/monatsberichtede1859knig)
+- **Citation**: Riemann, B. (1859). Ueber die Anzahl der Primzahlen unter einer gegebenen Grösse, Monatsberichte der Berliner Akademie, 671-680. Trinity College Dublin Wilkins Mathematical Archive.  
+  URL: [https://www.maths.tcd.ie/pub/HistMath/People/Riemann/Zeta/Zeta.pdf](https://www.maths.tcd.ie/pub/HistMath/People/Riemann/Zeta/Zeta.pdf)
+- **Citation**: Bombieri, E. (2000). The Riemann Hypothesis - Official Clay Mathematics Institute Problem Description.  
+  URL: [https://www.claymath.org/wp-content/uploads/2022/05/riemann.pdf](https://www.claymath.org/wp-content/uploads/2022/05/riemann.pdf)

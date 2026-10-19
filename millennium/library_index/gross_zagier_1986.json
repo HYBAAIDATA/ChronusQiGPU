@@ -6,10 +6,10 @@
     "Don B. Zagier"
   ],
   "year": 1986,
-  "source_url": "https://eudml.org/doc/143346",
-  "license": "Open Access (EuDML / Springer)",
-  "retrieved_date": "2026-10-19T06:29:59.203754+00:00",
-  "sha256": "98e2a7bef702da4186e10fd3714387dd6bd9e355a8d38550ff3d989f1f3d05f0",
+  "source_url": "https://link.springer.com/article/10.1007/BF01388805",
+  "license": "Open Access (Springer / Inventiones)",
+  "retrieved_date": "2026-10-19T07:05:23.087961+00:00",
+  "sha256": "ca6e7633a7724f67d809630fcf8a49a84ee776414acc8170303aae4f15739e2f",
   "category": "Automorphic Forms & Heegner Points",
   "problem_focus": [
     "BSD"
@@ -58,7 +58,7 @@
   "citations": [
     {
       "ref": "Gross, B.H., Zagier, D.B. (1986). Heegner points and derivatives of L-series, Invent. Math., 84, 225-320.",
-      "url": "https://eudml.org/doc/143346"
+      "url": "https://link.springer.com/article/10.1007/BF01388805"
     }
   ]
 }

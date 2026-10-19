@@ -1,10 +1,10 @@
 # Euclid Review: The Thirteen Books of Euclid's Elements
 
 **Treatise ID**: `euclid_elements`  
-**Provenance Hash**: `2a21e6376e1625bd99bdeaae10d7d7e21ac624d9c66166d2763bd7e47c616f67`  
+**Provenance Hash**: `747bdd7e13f011737a2a5752bbcdae98690f39ccb93a237b2f2e62213f4599d8`  
 **Authors**: Euclid of Alexandria, Thomas L. Heath (Trans. & Comm.) (1908)  
 **License**: Public Domain  
-**Source URL**: [https://archive.org/details/thirteentriple01eucl](https://archive.org/details/thirteentriple01eucl)  
+**Source URL**: [http://www.perseus.tufts.edu/hopper/text?doc=Perseus:text:1999.01.0086](http://www.perseus.tufts.edu/hopper/text?doc=Perseus:text:1999.01.0086)  
 **Problem Focus**: FOUNDATIONAL, RH, BSD  
 
 ---
@@ -56,5 +56,7 @@ Flat Euclidean metric with zero curvature; pythagorean distance metric on planar
 
 ## 5. Citations & License Transparency
 
-- **Citation**: Heath, T.L. (1908). The Thirteen Books of Euclid's Elements, Cambridge University Press, Vols I-III.  
+- **Citation**: Heath, T.L. (1908). The Thirteen Books of Euclid's Elements, Cambridge University Press, Vols I-III. Perseus Digital Library Unabridged Greek & English Edition.  
+  URL: [http://www.perseus.tufts.edu/hopper/text?doc=Perseus:text:1999.01.0086](http://www.perseus.tufts.edu/hopper/text?doc=Perseus:text:1999.01.0086)
+- **Citation**: Internet Archive Facsimile of Cambridge 1908 Edition.  
   URL: [https://archive.org/details/thirteentriple01eucl](https://archive.org/details/thirteentriple01eucl)

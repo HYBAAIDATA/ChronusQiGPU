@@ -5,10 +5,10 @@
     "William V.D. Hodge"
   ],
   "year": 1950,
-  "source_url": "https://www.mathunion.org/icm/proceedings",
-  "license": "Open Access (ICM Proceedings)",
-  "retrieved_date": "2026-10-19T06:29:59.203754+00:00",
-  "sha256": "7919e72b7cd0344f562e5e8fa6574cba52f9320cd2a7b9b5528ad12974aa3742",
+  "source_url": "https://www.claymath.org/wp-content/uploads/2022/06/hodge.pdf",
+  "license": "Open Access (Clay / ICM)",
+  "retrieved_date": "2026-10-19T07:05:23.087961+00:00",
+  "sha256": "ab6181f8b94a3f6c2f6c7e5b51ad0f59ddaf9cf940b78ac576ec45173c90d043",
   "category": "Algebraic Geometry & Differential Topology",
   "problem_focus": [
     "HODGE"
@@ -66,6 +66,10 @@
     "Period matrix computation for abelian varieties and identification of endomorphism algebras."
   ],
   "citations": [
+    {
+      "ref": "Deligne, P. (2000). The Hodge Conjecture - Official Clay Mathematics Institute Problem Description.",
+      "url": "https://www.claymath.org/wp-content/uploads/2022/06/hodge.pdf"
+    },
     {
       "ref": "Hodge, W.V.D. (1950). The Topological Invariants of Algebraic Varieties, Proc. Int. Congr. Math., Vol. 1, 182-192.",
       "url": "https://www.mathunion.org/icm/proceedings"

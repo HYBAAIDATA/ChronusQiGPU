@@ -1,10 +1,10 @@
 # Euclid Review: Heegner points and derivatives of L-series
 
 **Treatise ID**: `gross_zagier_1986`  
-**Provenance Hash**: `98e2a7bef702da4186e10fd3714387dd6bd9e355a8d38550ff3d989f1f3d05f0`  
+**Provenance Hash**: `ca6e7633a7724f67d809630fcf8a49a84ee776414acc8170303aae4f15739e2f`  
 **Authors**: Benedict H. Gross, Don B. Zagier (1986)  
-**License**: Open Access (EuDML / Springer)  
-**Source URL**: [https://eudml.org/doc/143346](https://eudml.org/doc/143346)  
+**License**: Open Access (Springer / Inventiones)  
+**Source URL**: [https://link.springer.com/article/10.1007/BF01388805](https://link.springer.com/article/10.1007/BF01388805)  
 **Problem Focus**: BSD  
 
 ---
@@ -55,4 +55,4 @@ Hyperbolic geometry of modular curves, Petersson inner product (f, f), and canon
 ## 5. Citations & License Transparency
 
 - **Citation**: Gross, B.H., Zagier, D.B. (1986). Heegner points and derivatives of L-series, Invent. Math., 84, 225-320.  
-  URL: [https://eudml.org/doc/143346](https://eudml.org/doc/143346)
+  URL: [https://link.springer.com/article/10.1007/BF01388805](https://link.springer.com/article/10.1007/BF01388805)

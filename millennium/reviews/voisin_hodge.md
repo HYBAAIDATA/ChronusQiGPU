@@ -1,10 +1,10 @@
 # Euclid Review: Hodge Theory and Complex Algebraic Geometry I & II
 
 **Treatise ID**: `voisin_hodge`  
-**Provenance Hash**: `618fcc4052b8d2d7bcb0a50de2388d2c37dee438838a31ca93e704418a31f2b8`  
+**Provenance Hash**: `a682eb566bd617ea953c64a160feb41e1ed90044f87580f5b9e4b1038f8a3c41`  
 **Authors**: Claire Voisin (2002)  
 **License**: Academic Research & Educational Fair Use  
-**Source URL**: [https://www.cambridge.org/core/books/hodge-theory-and-complex-algebraic-geometry-i/4A92DE2A08FF596160E364A96C254707](https://www.cambridge.org/core/books/hodge-theory-and-complex-algebraic-geometry-i/4A92DE2A08FF596160E364A96C254707)  
+**Source URL**: [https://doi.org/10.1017/CBO9780511615344](https://doi.org/10.1017/CBO9780511615344)  
 **Problem Focus**: HODGE  
 
 ---
@@ -56,4 +56,4 @@ Symplectic intersection pairing on middle cohomology; Hodge bundle curvature ove
 ## 5. Citations & License Transparency
 
 - **Citation**: Voisin, C. (2002). Hodge Theory and Complex Algebraic Geometry, I & II, Cambridge Studies in Advanced Mathematics, 76 & 77.  
-  URL: [https://www.cambridge.org/core/books/hodge-theory-and-complex-algebraic-geometry-i/4A92DE2A08FF596160E364A96C254707](https://www.cambridge.org/core/books/hodge-theory-and-complex-algebraic-geometry-i/4A92DE2A08FF596160E364A96C254707)
+  URL: [https://doi.org/10.1017/CBO9780511615344](https://doi.org/10.1017/CBO9780511615344)

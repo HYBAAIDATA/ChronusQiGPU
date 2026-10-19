@@ -5,10 +5,10 @@
     "Bernhard Riemann"
   ],
   "year": 1859,
-  "source_url": "https://archive.org/details/monatsberichtede1859knig",
+  "source_url": "https://www.maths.tcd.ie/pub/HistMath/People/Riemann/Zeta/Zeta.pdf",
   "license": "Public Domain",
-  "retrieved_date": "2026-10-19T06:29:59.203754+00:00",
-  "sha256": "5a2bf4222902a0f062b7967a3366505437008d2c5ae5b458e0c8e3a103009731",
+  "retrieved_date": "2026-10-19T07:05:23.087961+00:00",
+  "sha256": "a3a946a1b023029342a0e65e31d1b6d38d19995a179f3584329ec496f0265112",
   "category": "Analytic Number Theory & Complex Analysis",
   "problem_focus": [
     "RH"
@@ -67,8 +67,12 @@
   ],
   "citations": [
     {
-      "ref": "Riemann, B. (1859). Ueber die Anzahl der Primzahlen unter einer gegebenen Grösse, Monatsberichte der Berliner Akademie, 671-680.",
-      "url": "https://archive.org/details/monatsberichtede1859knig"
+      "ref": "Riemann, B. (1859). Ueber die Anzahl der Primzahlen unter einer gegebenen Grösse, Monatsberichte der Berliner Akademie, 671-680. Trinity College Dublin Wilkins Mathematical Archive.",
+      "url": "https://www.maths.tcd.ie/pub/HistMath/People/Riemann/Zeta/Zeta.pdf"
+    },
+    {
+      "ref": "Bombieri, E. (2000). The Riemann Hypothesis - Official Clay Mathematics Institute Problem Description.",
+      "url": "https://www.claymath.org/wp-content/uploads/2022/05/riemann.pdf"
     }
   ]
 }
