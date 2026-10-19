@@ -597,8 +597,8 @@ export default function TuringWorkspace() {
               <strong>Still requires integration</strong>
               <br />
               Enterprise identity, durable execution custody, provisioning,
-              commercial entitlements, authoritative usage metering and
-              Hermitten reconciliation.
+              commercial entitlements, authoritative operational usage metering.
+              Billing is on hold.
             </p>
           </div>
         </section>

@@ -91,7 +91,7 @@ export const ARTICLES: Record<
       {
         title: "Commercial structure to validate",
         paragraphs: [
-          "Potential arrangements include service commitments, reserved capacity, included usage, measured consumption, support and bespoke engagements. No rates or discounts are implied. Pricing requires measured cost to serve and agreed outcome value, with approved contract terms.",
+          "The intended model is usage-based. Billing implementation, rates, invoicing and financial reconciliation are on hold and are not part of this technical evaluation.",
         ],
       },
       {
@@ -104,7 +104,7 @@ export const ARTICLES: Record<
           "Contract authority and an explicit definition of a provisioned resource.",
           "Capacity inventory, admission rules and recoverable lifecycle operations.",
           "Durable job custody, customer retention policy, backup and recovery evidence.",
-          "Authoritative metering and tested Hermitten rating, invoicing and reconciliation.",
+          "Authoritative operational usage evidence, kept separate from deferred financial billing.",
         ],
       },
       {

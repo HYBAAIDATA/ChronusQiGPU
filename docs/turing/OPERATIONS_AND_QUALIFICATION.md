@@ -1,5 +1,17 @@
 # Evaluation operations and qualification
 
+## Scope correction — billing deferred
+
+The user's clarification supersedes the original billing requirements: the
+intended model is **usage-based**, billing is **on hold**, and **Hermitten is not
+an integration dependency**. Do not implement Hermitten, pricing/rating, invoicing,
+payments or financial reconciliation in the current scope. Do not request
+Hermitten access or hold non-billing implementation/acceptance on it. Keep
+execution/usage evidence distinct from charges; any future billing work needs a
+separate authorised scope. Operational usage accounting must not invent a
+measurement unit or financial event. Identity, authorisation, provisioning,
+execution, evidence and recovery work remain in scope.
+
 ## Environment and rollout (not executed)
 
 Use the existing Python control API and Vite static build; do not add another
@@ -19,7 +31,7 @@ history eviction; exhaustion429 is not a billing event or auto-scaling trigger.
 ## Local engineering evidence
 
 - Python: 33 tests run, 32 passed, 1 opt-in real-native smoke skipped.
-- Frontend: 52 client/history/route/unavailable-boundary tests passed in isolated Vitest.
+- Frontend: 53 client/history/route/unavailable-boundary tests passed in isolated Vitest.
 - Strict TURING TypeScript check passed with isolated TypeScript5.9.3/React19 declarations.
 - Standalone TURING React/CSS bundle compiled with sandbox esbuild, NOT the full locked Vite build.
 - Chromium UI transport fixtures: 24 automated axe/overflow scans and 12 workflow groups passed, no runtime page errors. Public pages at1440/390px and key workspace states individually visually inspected.
@@ -33,7 +45,7 @@ a clean environment and triage their real output before release.
 
 Not qualified: live native computation/AL HARAS/evidence provider, full host
 regression, locked frontend build/lint/audit, remote checks, distributed or
-enterprise persistence, real financial integration, load/soak/penetration tests,
+enterprise persistence, operational usage integrity (financial billing deferred), load/soak/penetration tests,
 manual assistive technology and complete WCAG conformance. The GitHub token
 could not read check runs (403); this is not evidence of passing or failing CI.
 The targeted GitHub secret-scanning tool was unavailable because Advanced
@@ -77,7 +89,7 @@ inputs/reports out of logs. No metrics collector or incident endpoint is invente
 Owner-approved thresholds, paging and access/retention policy are required.
 Service telemetry does not determine billable quantities. Future outbox lag,
 dead-letter volume, ingestion and reconciliation exceptions belong to the actual
-meter/Hermitten owners. Record incident correlation, impact, mitigation, audit
+operational metering owner; financial reconciliation remains deferred. Record incident correlation, impact, mitigation, audit
 refs and reconciliation outcome; approved external status channel required.
 
 ## Recovery / customer communication
@@ -108,11 +120,11 @@ rollback or data deletion. No production setting was changed by this work.
 | Injection/secret leakage | Strict schema/bounds, escaped text rendering; workspace guardian exception sanitisation | Full host log/error review, CSP, secret/dependency scanning and supply-chain qualification |
 | CSRF | Explicit bearer/custom JSON headers, cookies omitted, no CORS broadening | Origin/deployment review; explicit CSRF controls if later switching to cookie sessions |
 | Denial of service | Admission and retained-job bounds only | Approved edge rate limits, process resource/timeout policy and abuse/load tests |
-| Manipulated usage / duplicate charge | No browser meter/charge endpoint shipped | Trusted immutable facts, durable outbox, idempotent ingestion and real reconciliation tests |
+| Manipulated usage / duplicate charge | No browser meter/charge endpoint shipped | Trusted immutable operational facts and idempotent ingestion; financial charging/reconciliation deferred |
 | Unauthorised allocation | No allocation endpoint fabricated | Capacity authority verifies role, effective contract, inventory/version, policy and approval |
 | Retention/backup/residency | Missing guarantees stated, guardian custody separate from UI | Approved data map, store bindings, recovery exercise, deletion/legal-hold and export policies |
 
 Release signoffs are role-owned: TURING maintainer (native/API), identity/security
 owner (auth/isolation/audit), capacity/commercial owners (provisioning/contract),
-Hermitten/meter owners (financial integrity), service operator (deploy/recovery),
+meter owner (operational usage integrity; billing deferred), service operator (deploy/recovery),
 legal/product (terms/data/claims), plus explicit user authorisation for deployment.

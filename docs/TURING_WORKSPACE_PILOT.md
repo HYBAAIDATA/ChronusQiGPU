@@ -19,10 +19,9 @@ The existing guardian owns subscription verification and durable decision audit.
 The native adapter explicitly describes jobs as `in_memory_process_local`.
 
 Only inspected paths and searches support this inventory; this was not a full
-repository audit. A scoped GitHub search for Hermitten returned historical
-research notes, not an executable billing interface. No live Hermitten API,
-financial source of truth or commercial provisioning owner was verified.
-Those notes are not a basis for implementing an invented billing integration.
+repository audit. Billing is now explicitly on hold by user direction, the
+intended model is usage-based and Hermitten is not an integration dependency.
+Earlier attempts to treat Hermitten access as a blocker were a scope error.
 Existing CI includes dependency audit, secret scanning and TURING workflows;
 none is represented as having passed for this increment before a run exists.
 
@@ -46,7 +45,8 @@ See also [contracts/billing](turing/CONTRACTS_AND_BILLING.md),
 | Result inspection | Native report and provenance, JSON export | Not independent certification or shared enterprise custody |
 | Retry | Same-key replay/conflict refusal within one process | No restart-safe or cross-replica idempotency |
 | Usage | Not implemented | No monetary values, billable quantities or ledger generated |
-| Provisioning / billing | Not implemented | Need approved contracts, resource semantics and Hermitten interface |
+| Provisioning | Not implemented | Need approved resource semantics and authoritative control-plane contracts |
+| Billing | On hold by user | Future usage-based model; Hermitten excluded, not a current blocker |
 | Public website | Implemented evaluation product/docs/security/research/enquiry/notices | Local brief export only; no approved legal policy or public launch |
 | Customer admin / operations | Not integrated | Missing authoritative membership/capacity/commercial/support contracts; no fake controls |
 
@@ -147,7 +147,7 @@ fake quantum graphics, decorative charts, dark-mode controls or market claims.
   or a denial-of-service audit. Long-running jobs are not forcibly terminated.
 - **Unsupported provisioning/charges:** no price, invoice, allocation, commercial
   entitlement or usage ledger is created. Obtain owner-defined resource units,
-  contract approval, immutable metering/outbox and tested Hermitten ingestion first.
+  resource and operational usage contracts. Billing is on hold; Hermitten integration is not required.
 - **Restart/replay:** no distributed job/deduplication state. Do not run a public
   multi-replica deployment or blindly retry after a restart.
 - **Audit failure:** existing guardian durable-audit initialization remains
@@ -164,7 +164,7 @@ browser compatibility qualification remain required.
 ## Local qualification record
 
 The expanded targeted runs: 33 Python tests run (32 passed, 1 opt-in real-native
-smoke skipped); 52 frontend contract/history/route/boundary tests passed;
+smoke skipped); 53 frontend contract/history/route/boundary tests passed;
 strict TURING TypeScript passed; standalone esbuild bundle compiled. Chromium
 fixtures passed 24 axe/overflow scans and 12 workflow groups, with no runtime
 page errors. Desktop/mobile routes and key states were individually inspected.
@@ -217,11 +217,9 @@ and tell users that process-local history/keys will be lost.
    qualify the existing shared-enterprise backend and durable custody adapter.
 2. Identify authoritative organisation/contract/provisioning/usage owners. Define
    "instance" and approved quota semantics; do not equate counts with throughput.
-3. Obtain the live Hermitten schema and run duplicate/retry/reconciliation tests
-   against it. Reuse its ledger; do not create a second one.
+3. Keep billing deferred. Define operational usage facts separately from financial charging; do not request or integrate Hermitten.
 4. Build one contract-to-provisioning-to-computation-to-metering journey with
    server-owned entitlements and accountable release owners, then expand routes.
 
-Commercial hypothesis only: negotiated capability/capacity commitments plus
-measured consumption where contracts support it, not default per-seat pricing.
+Commercial direction: usage-based. Billing, rates and financial workflows are on hold; no Hermitten dependency and no default per-seat pricing.
 No prices, savings, customer references or performance advantage are asserted.

@@ -110,5 +110,6 @@
       "const": "execution.usage_fact",
       "description": "Proposal for an authoritative execution usage fact, not browser analytics or a rated charge."
     }
-  }
+  },
+  "description": "Historical non-operational proposal. Billing is on hold by user direction; Hermitten integration and this billing-oriented schema are not current acceptance dependencies. Operational usage measurement requires a separately verified contract."
 }

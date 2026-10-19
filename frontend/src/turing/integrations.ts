@@ -1,3 +1,9 @@
+/** User-confirmed scope: no billing provider or financial integration is active. */
+export const BILLING_POLICY = {
+  model: "usage_based",
+  state: "on_hold",
+  hermittenIntegration: false,
+} as const;
 /** Absent owners are explicit dependencies, not empty customer data or guessed APIs. */
 export const INTEGRATIONS = [
   {
@@ -30,10 +36,10 @@ export const INTEGRATIONS = [
   },
   {
     id: "billing",
-    owner: "Hermitten",
-    capability: "Rating, invoice references and reconciliation",
+    owner: "Usage-based billing (deferred)",
+    capability: "Billing — on hold",
     needs:
-      "Actual source repository or versioned API, sandbox access and approved contract/rate schedules.",
+      "Billing is on hold. The intended model is usage-based. Operational usage evidence is separate from prices, charges and invoices; no billing service is connected.",
   },
   {
     id: "custody",

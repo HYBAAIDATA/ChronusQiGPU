@@ -1,3 +1,5 @@
+> Scope amendment from the user: billing is on hold. The intended model is usage-based and Hermitten will not be used. Original billing requirements below are preserved as historical input, not current acceptance gates. See ACCEPTANCE_REGISTER.md.
+
 The brief should position TURING as an institutional-grade computational intelligence product, not a generic SaaS dashboard, quantum-themed website, or conventional AI chatbot.
 
 The design ambition is Apple-level product clarity, IBM-level engineering credibility, Google-level interaction quality, McKinsey-level executive communication, Gartner-level analytical rigour, and Pentagram-level visual identity. Those are design benchmarks, not claims of affiliation or endorsement.

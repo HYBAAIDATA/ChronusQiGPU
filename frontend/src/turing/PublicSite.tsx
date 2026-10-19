@@ -329,7 +329,10 @@ export default function PublicSite({ page }: { page: PublicPage | null }) {
                     <li key={i.id}>
                       <h3>{i.capability}</h3>
                       <p className="t-small">
-                        Owner: {i.owner} · Not integrated
+                        Owner: {i.owner} ·{" "}
+                        {i.id === "billing"
+                          ? "On hold — outside current scope"
+                          : "Not integrated"}
                       </p>
                       <p>{i.needs}</p>
                     </li>

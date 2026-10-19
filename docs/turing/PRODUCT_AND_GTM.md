@@ -1,5 +1,17 @@
 # Product, design and enterprise-pilot plan
 
+## Scope correction — billing deferred
+
+The user's clarification supersedes the original billing requirements: the
+intended model is **usage-based**, billing is **on hold**, and **Hermitten is not
+an integration dependency**. Do not implement Hermitten, pricing/rating, invoicing,
+payments or financial reconciliation in the current scope. Do not request
+Hermitten access or hold non-billing implementation/acceptance on it. Keep
+execution/usage evidence distinct from charges; any future billing work needs a
+separate authorised scope. Operational usage accounting must not invent a
+measurement unit or financial event. Identity, authorisation, provisioning,
+execution, evidence and recovery work remain in scope.
+
 ## Positioning and evidence policy
 
 TURING is being developed as computational capability delivered as a service:
@@ -66,23 +78,14 @@ response parsers, server adapter and integration boundaries, not page copy.
 Automated axe/overflow and visual checks are engineering evidence, not complete
 WCAG 2.2 AA certification. Qualify assistive technology, zoom and all browsers.
 
-## Packaging and pricing hypotheses (no prices)
+## Commercial direction — usage-based, billing on hold
 
-Default commercial unit is **capability**, not seats. Evaluate optional components
-per contract: recurring service commitment, capacity reservation, included usage,
-metered excess, premium support or bespoke engagement. Do not apply every
-component to every customer. A provisioned instance might eventually be a
-runtime, logical allocation or concurrency resource: this decision remains
-unapproved. Instance counts are not throughput and pilot width is not capacity.
-
-Research willingness to pay and outcome value through bounded evaluations;
-measure actual cost-to-serve, workload complexity, reservation idle cost,
-execution resource use, support/governance effort and operational risk. Compare
-value-based willingness with a cost floor including support and reserved
-capacity. Test gross-margin sensitivity across utilisation, failure/retry,
-allowance exhaustion and contract duration. Negotiate only after measured service
-cost, supported resource semantics and authorised rate versions exist. No rates,
-discounts, savings, margin forecasts or commercial entitlements are shipped.
+The intended model is usage-based, not seat licensing. Billing implementation,
+pricing/rating, invoices, payments and financial reconciliation are deferred.
+Hermitten will not be integrated. Do not promise rates, allowances or billable
+units, and do not equate instance counts or completed jobs with measured usage.
+Future measurement and charging decisions require their own approved scope;
+they must not obstruct current identity/provisioning/execution delivery.
 
 ## Qualification, onboarding and handoff
 
@@ -95,7 +98,7 @@ discounts, savings, margin forecasts or commercial entitlements are shipped.
 7. For enterprise progression, approve resource definition, contract/version and quotas.
 8. Handoff canonical customer/contract/entitlement IDs to capacity owner; authorised operation provisions and verifies state with audit.
 9. Customer admin configures real IdP/membership/roles; test invited and revoked users and project isolation.
-10. Qualify usage/rating/reconciliation, support and restore; obtain A–G signoffs before activation.
+10. Qualify operational usage evidence, support and restore; obtain in-scope service signoffs. Billing scenario E and financial parts of lifecycle/recovery are deferred.
 
 Admin training must cover invitations/revocation, role scope, contract vs usage,
 capacity vs throughput, destructive confirmations, export confidentiality and
@@ -105,9 +108,9 @@ recovery time against agreed policy, reconciled usage completeness and support
 resolution. Do not substitute vanity page views for these outcomes.
 
 Renewal/expansion: review evidence, utilisation, cost-to-serve, exceptions and
-support load; approve a new effective contract/rate version and capacity change,
+support load; approve an effective service scope and capacity change,
 not an unreviewed retroactive edit. Termination requires access revocation,
-settlement and approved retention/legal-hold handling, not a browser disconnect.
+approved retention/legal-hold handling; financial settlement remains deferred, not a browser disconnect.
 
 ## Security/architecture questionnaire pack
 
@@ -119,7 +122,7 @@ settlement and approved retention/legal-hold handling, not a browser disconnect.
 | Secrets? | UI memory only; same-origin bearer request, no browser persistence; deployment vault/TLS and credential lifecycle require approval |
 | Retention/residency/deletion? | No enterprise promise; obtain Theseus/store policy, backups, legal hold and deletion verification |
 | Encryption/compliance? | No unverified claims; obtain deployment configuration/control evidence and independent reviews if needed |
-| Usage/financial integrity? | Not integrated; meter/Hermitten contracts and duplicate/reconciliation tests required |
+| Usage/financial integrity? | Operational usage contract still to qualify; financial charging on hold, no Hermitten dependency |
 | Availability / recovery? | Single-process pilot; no SLA or restart-safe history; qualify approved durable service before enterprise activation |
 | Operator access / incidents? | No unrestricted impersonation; approved scoped/time-bound grants, audit, escalation contacts and incident process required |
 | Software supply chain? | Existing CI plus scoped regression workflow; locked dependency audit/full build/remote CI outcomes must be reviewed |
@@ -142,8 +145,8 @@ service completion against an agreed cohort, never implied customer counts.
 Approve claims, public terms/privacy/controller identity and data arrangements;
 real contact/support/incident channels; source-verified research/case studies
 only if authorised; API onboarding and release notes; approved analytics policy;
-A–G real service evidence and operational/security signoff; explicit deployment
+In-scope real service evidence and operational/security signoff (financial scenario E deferred); explicit deployment
 authorisation. The current local-only brief export is not a completed sales
 handoff. Draft release note: bounded evaluation workspace and evidence-based
-product pages added; enterprise provisioning, billing and durable custody are
-not integrated. No public or production launch has been performed.
+product pages added; enterprise provisioning and durable custody are
+not integrated; billing is explicitly deferred, not a missing Hermitten integration. No public or production launch has been performed.
