@@ -597,7 +597,14 @@ class PythiaStore:
         self.curator = PythiaCurator(memory, pythia, self.qudits, self.journal)
         self.autosave_every = max(1, int(autosave_every))
         self._since_save = 0
+        self._last_save_mono: float = -float("inf")
+        self._save_dirty: bool = False
+        default_interval = 30.0 if self._default_store else 0.0
+        self._min_save_interval_s: float = float(
+            os.getenv("PYTHIA_SNAPSHOT_MIN_INTERVAL_S", str(default_interval))
+        )
         self._snapshot_integrity = "new"
+        atexit.register(self._flush_on_exit)
         enabled = os.getenv("PYTHIA_STRUCTURE_BOOTSTRAP", "true").strip().lower() not in {
             "0",
             "false",
