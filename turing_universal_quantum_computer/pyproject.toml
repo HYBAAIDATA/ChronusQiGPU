@@ -31,7 +31,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-research = ["pytest>=7.4,<10", "build>=1.2,<2", "setuptools>=77,<83", "wheel>=0.45,<1", "hypothesis>=6.100,<7", "mypy>=1.15,<2", "ruff>=0.11,<1"]
+research = ["pytest>=7.4,<10", "build>=1.2,<2", "setuptools>=77,<84", "wheel>=0.45,<1", "hypothesis>=6.100,<7", "mypy>=1.15,<2", "ruff>=0.11,<1"]
 
 [tool.uv.sources]
 hyba-kellogg-tensor = { path = "../packaging/kellogg-tensor" }
