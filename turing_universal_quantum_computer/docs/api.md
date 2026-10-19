@@ -29,3 +29,8 @@ available. Operational errors are not returned as optimizer convergence.
 
 The existing canonical pipeline, console, native algorithm library and registry
 remain supported entry points. The module registry records every new module.
+
+For generated signatures and typed fields, see [reference](reference.md).
+For preconditions, exactness and uncertainty semantics, see
+[mathematical contracts](mathematical-contracts.md). For migration differences,
+see [compatibility](compatibility.md).

@@ -16,3 +16,15 @@
 
 No new publication, DOI, external-device execution, mathematical advantage,
 continuous-angle synthesis or general error-management implementation is claimed.
+
+### Software release qualification
+
+- Explicit mathematical/compatibility contracts, migration, support and rollback
+  guidance, qualification/approval policy and finite-domain/Kellogg ADRs.
+- Generated API reference with drift checking; strict checks for five typed
+  contract/config/protocol/exception/optimizer modules and source lint.
+- Deterministic property-based exact/reference tests, canonical differential
+  fixtures, bounded concurrency/import stress and lifecycle/fault-injection tests.
+- Disposable targeted mutation checks and independent wheel/sdist-installed
+  consumer qualification, artifact hashes, normalized content parity and JUnit
+  evidence. These do not imply release approval or completion of open gates.

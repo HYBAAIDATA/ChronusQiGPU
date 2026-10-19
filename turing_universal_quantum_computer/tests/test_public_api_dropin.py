@@ -22,7 +22,16 @@ from turing_universal_quantum_computer import (
 )
 from turing_universal_quantum_computer.backends.base import Program, Operation
 from turing_universal_quantum_computer.contracts import CircuitIR, ExecutionRequest
-from turing_universal_quantum_computer.exceptions import *
+from turing_universal_quantum_computer.exceptions import (
+    CapabilityError,
+    CompilationError,
+    ConfigurationError,
+    IdempotencyConflictError,
+    JobExecutionError,
+    JobTimeoutError,
+    ParameterValidationError,
+    ResultValidationError,
+)
 from turing_universal_quantum_computer.native_adapter import (
     NativeBackend,
     NativeJob,
@@ -511,7 +520,9 @@ def test_explicit_width_resource_limit_before_submission():
 
 
 def test_exact_dependency_import_does_not_require_chronus():
-    import os, subprocess, sys
+    import os
+    import subprocess
+    import sys
 
     code = """
 import importlib.abc

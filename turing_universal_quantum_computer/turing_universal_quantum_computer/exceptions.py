@@ -22,7 +22,9 @@ class ParameterValidationError(QuantumPipelineError, ValueError):
 
 
 class JobExecutionError(QuantumPipelineError):
-    def __init__(self, message: str, *, job_id: str | None = None, report_json: str | None = None):
+    def __init__(
+        self, message: str, *, job_id: str | None = None, report_json: str | None = None
+    ) -> None:
         super().__init__(message)
         self.job_id = job_id
         self.report_json = report_json

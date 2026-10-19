@@ -11,3 +11,6 @@ paper/*.aux
 paper/*.log
 paper/*.out
 paper/*.pdf
+.mypy_cache/
+.ruff_cache/
+.hypothesis/

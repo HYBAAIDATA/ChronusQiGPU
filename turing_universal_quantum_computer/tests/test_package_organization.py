@@ -161,3 +161,46 @@ def test_dependency_lock_and_metadata_are_real():
     )
     for directory in ("docs", "experiments", "results", "paper"):
         assert (PROJECT / directory).is_dir()
+
+
+@pytest.mark.parametrize("kind", ["parent", "absolute", "symlink"])
+def test_sdist_extraction_rejects_unsafe_members(tmp_path, kind):
+    import io
+    import tarfile
+
+    qualifier = module("qualify_artifacts")
+    archive = tmp_path / "unsafe.tar.gz"
+    member = tarfile.TarInfo(
+        {"parent": "../escape.py", "absolute": "/escape.py", "symlink": "package/link"}[kind]
+    )
+    if kind == "symlink":
+        member.type = tarfile.SYMTYPE
+        member.linkname = "/outside"
+    else:
+        member.size = 1
+    with tarfile.open(archive, "w:gz") as stream:
+        stream.addfile(member, None if kind == "symlink" else io.BytesIO(b"x"))
+    destination = tmp_path / "unpacked"
+    destination.mkdir()
+    with pytest.raises(ValueError):
+        qualifier.unpack_sdist(archive, destination)
+    assert not (tmp_path / "escape.py").exists()
+
+
+def test_wheel_content_parity_distinguishes_container_timestamps(tmp_path):
+    import zipfile
+
+    qualifier = module("qualify_artifacts")
+    paths = [tmp_path / "one.whl", tmp_path / "two.whl"]
+    for index, path in enumerate(paths):
+        with zipfile.ZipFile(path, "w") as archive:
+            item = zipfile.ZipInfo("package/__init__.py", date_time=(2020 + index, 1, 1, 0, 0, 0))
+            archive.writestr(item, b"VALUE = 1\n")
+    assert paths[0].read_bytes() != paths[1].read_bytes()
+    assert qualifier.wheel_content(paths[0]) == qualifier.wheel_content(paths[1])
+    assert qualifier.container_metadata(paths[0]) != qualifier.container_metadata(paths[1])
+
+
+def test_generated_reference_matches_importable_candidate():
+    generator = module("generate_api_reference")
+    assert generator.render() == (PROJECT / "docs/reference.md").read_text()

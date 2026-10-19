@@ -12,7 +12,7 @@ from hashlib import sha256
 from itertools import product
 import json
 from math import isfinite, prod
-from typing import Callable, Mapping
+from typing import Any, Callable, Mapping, cast
 from .backends.base import Program, Operation
 from .exceptions import ParameterValidationError, ResultValidationError
 
@@ -56,10 +56,15 @@ class ParameterSpec:
     lower_bound: float | None = None
     upper_bound: float | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
             raise ParameterValidationError("parameter name must be nonempty")
-        vals = tuple(self.values)
+        try:
+            vals = tuple(self.values)
+        except TypeError as error:
+            raise ParameterValidationError(
+                "finite domain must be an iterable of numbers"
+            ) from error
         if not vals or any(type(v) not in (int, float) or not isfinite(v) for v in vals):
             raise ParameterValidationError(
                 "native finite domain must contain finite numeric values"
@@ -90,12 +95,15 @@ class ParameterBindings:
     names: tuple[str, ...] = ()
     values: tuple[float, ...] = ()
 
-    def __post_init__(self):
-        names, values = tuple(self.names), tuple(self.values)
+    def __post_init__(self) -> None:
+        try:
+            names, values = tuple(self.names), tuple(self.values)
+        except TypeError as error:
+            raise ParameterValidationError("names and values must be iterable") from error
         if (
             len(names) != len(values)
-            or len(set(names)) != len(names)
             or any(not isinstance(n, str) or not n for n in names)
+            or len(set(names)) != len(names)
         ):
             raise ParameterValidationError("names must be unique and match values")
         if any(type(v) not in (int, float) or not isfinite(v) for v in values):
@@ -110,7 +118,9 @@ class ParameterBindings:
             raise ParameterValidationError("value outside declared finite domain")
 
     @classmethod
-    def from_mapping(cls, schema: tuple[ParameterSpec, ...], values: Mapping[str, float]):
+    def from_mapping(
+        cls, schema: tuple[ParameterSpec, ...], values: Mapping[str, float]
+    ) -> ParameterBindings:
         if set(values) != {s.name for s in schema}:
             raise ParameterValidationError("missing or extra named parameters")
         binding = cls(tuple(s.name for s in schema), tuple(values[s.name] for s in schema))
@@ -126,7 +136,7 @@ class CircuitIR:
     family_hash: str | None = None
     ir_version: str = "turing.native_program.v1"
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         object.__setattr__(self, "program", snapshot_program(self.program))
         object.__setattr__(self, "parameters", tuple(self.parameters))
         self.bindings.validate(self.parameters)
@@ -139,7 +149,7 @@ class FiniteAnsatz:
     parameters: tuple[ParameterSpec, ...]
     programs: tuple[Program, ...]
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         specs = tuple(self.parameters)
         if len({s.name for s in specs}) != len(specs):
             raise ParameterValidationError("duplicate parameter names")
@@ -158,7 +168,7 @@ class FiniteAnsatz:
         builder: Callable[[ParameterBindings], Program],
         *,
         max_candidates: int = 4096,
-    ):
+    ) -> FiniteAnsatz:
         parameters = tuple(parameters)
         if type(max_candidates) is not int or max_candidates < 1:
             raise ParameterValidationError("max_candidates must be positive")
@@ -231,7 +241,7 @@ class CompiledArtifact:
     compiler_version: str = COMPILER_VERSION
     api_schema: str = API_SCHEMA
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         object.__setattr__(self, "layout", tuple(tuple(pair) for pair in self.layout))
         expected = tuple((q, q) for q in range(self.ir.program.n_qubits))
         if self.layout != expected:
@@ -278,7 +288,7 @@ class CompiledArtifact:
 class PauliZ:
     qubit: int
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if type(self.qubit) is not int or self.qubit < 0:
             raise ParameterValidationError("observable qubit must be a nonnegative integer")
 
@@ -290,7 +300,7 @@ class ExecutionRequest:
     observable: PauliZ | None = None
     readout: tuple[int, ...] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.parameters.validate(self.artifact.ir.parameters)
         if self.parameters != self.artifact.ir.bindings:
             raise ParameterValidationError("artifact is bound; recompile changed parameter values")
@@ -329,8 +339,10 @@ class JobResult:
     request_hash: str
     report_json: str
 
-    def report(self) -> dict:
-        return json.loads(self.report_json)  # fresh copy, never mutable shared evidence
+    def report(self) -> dict[str, Any]:
+        return cast(
+            dict[str, Any], json.loads(self.report_json)
+        )  # fresh copy, never mutable shared evidence
 
 
 @dataclass(frozen=True)
@@ -344,7 +356,7 @@ class Estimate:
     exact_coefficients: tuple[str, str]
     job_result: JobResult
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not isfinite(self.value) or not isfinite(self.standard_error) or self.standard_error < 0:
             raise ResultValidationError("non-finite/invalid estimate")
 

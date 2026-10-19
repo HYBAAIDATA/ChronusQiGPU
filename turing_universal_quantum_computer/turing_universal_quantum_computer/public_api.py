@@ -14,7 +14,7 @@ from .contracts import (
     BackendCapabilities,
 )
 from .backends.base import Program
-from .exceptions import CapabilityError, ParameterValidationError
+from .exceptions import CapabilityError, ConfigurationError, ParameterValidationError
 from .interfaces import Backend, Compiler, Estimator, Optimizer, ExecutionJob
 from .native_adapter import NativeBackend, NativeCompiler, NativeEstimator
 from .optimizer import FiniteGridOptimizer
@@ -30,6 +30,8 @@ class QuantumPipeline:
         estimator: Estimator | None = None,
         optimizer: Optimizer | None = None
     ):
+        if config is not None and not isinstance(config, PipelineConfig):
+            raise ConfigurationError("config must be PipelineConfig or None")
         self.config = config if config is not None else PipelineConfig()
         self.compiler = compiler if compiler is not None else NativeCompiler(self.config)
         self.backend = backend if backend is not None else NativeBackend(self.config)

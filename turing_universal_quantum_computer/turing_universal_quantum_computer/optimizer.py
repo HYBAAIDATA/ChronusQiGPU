@@ -1,11 +1,12 @@
 """Finite-domain exhaustive minimizer, not a continuous-angle VQE solver."""
 
 from fractions import Fraction
-from .contracts import Evaluation, OptimizationResult
+from typing import Callable
+from .contracts import Estimate, Evaluation, OptimizationResult, ParameterBindings
 from .exceptions import ParameterValidationError, CapabilityError
 
 
-def exact_less(left, right):
+def exact_less(left: Estimate, right: Estimate) -> bool:
     """Compare a+b sqrt(2) by rational arithmetic, including near ties."""
     a = Fraction(left.exact_coefficients[0]) - Fraction(right.exact_coefficients[0])
     b = Fraction(left.exact_coefficients[1]) - Fraction(right.exact_coefficients[1])
@@ -18,7 +19,13 @@ def exact_less(left, right):
 
 
 class FiniteGridOptimizer:
-    def minimize(self, evaluate, candidates, *, max_iterations):
+    def minimize(
+        self,
+        evaluate: Callable[[ParameterBindings], Estimate],
+        candidates: tuple[ParameterBindings, ...],
+        *,
+        max_iterations: int,
+    ) -> OptimizationResult:
         if type(max_iterations) is not int or max_iterations < 1 or not candidates:
             raise ParameterValidationError(
                 "positive max_iterations and nonempty candidates required"

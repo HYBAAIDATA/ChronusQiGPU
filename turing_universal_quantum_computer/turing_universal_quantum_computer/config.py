@@ -20,7 +20,14 @@ class PipelineConfig:
     replay: bool = False
     custody_dir: str | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        for name in ("backend", "execution_mode", "error_management"):
+            if not isinstance(getattr(self, name), str):
+                raise ConfigurationError(f"{name} must be a string")
+        if self.custody_dir is not None and (
+            not isinstance(self.custody_dir, str) or not self.custody_dir
+        ):
+            raise ConfigurationError("custody_dir must be a nonempty string or None")
         if self.execution_mode not in {"exact_vqc", "simulation", "nisq", "fault_tolerant"}:
             raise ConfigurationError("unknown execution_mode")
         if self.execution_mode != "exact_vqc":

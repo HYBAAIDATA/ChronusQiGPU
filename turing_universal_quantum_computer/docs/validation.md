@@ -33,3 +33,36 @@ advantage, or external-device experiment is certified by this work.
 GitHub's targeted secret-scan endpoint was unavailable because Advanced Security
 is not enabled on the repository. A local targeted credential-pattern check
 found no matches in the staged files; that is not a full security audit.
+
+## Extended software qualification (same local Python 3.13.14 environment)
+
+The follow-up adds explicit mathematical/compatibility contracts, migration and
+operations guidance, a release decision ledger, generated API signatures, strict
+contract checks, generative tests, targeted mutations and an artifact qualifier.
+
+- Final focused regression run: 268 tests plus 63 subtests passed.
+- Strict mypy checks passed for all definitions in the five explicitly listed
+  contract/configuration/protocol/exception/optimizer modules. Ruff source lint
+  and generated API reference drift checks passed. This is not a claim of 100%
+  type coverage for the legacy engine or an SAST/security audit.
+- An unmutated control passed; all three explicit disposable-copy mutations
+  (parameter identity, exact ordering, exact normalization) were detected by
+  test failures without collection/infrastructure errors. This is not a
+  whole-project mutation score.
+- The exact candidate wheel and the wheel independently rebuilt from the sdist
+  each passed 114 installed consumer tests in separate external environments,
+  plus dependency consistency checks and the installed example. All wheel file
+  contents matched; wheel bytes also matched under a controlled local
+  SOURCE_DATE_EPOCH fixture of 1704067200. That fixture is a build experiment,
+  not a claimed source-commit timestamp. CI derives the epoch from its actual
+  candidate commit. This result does not assert universal build reproducibility.
+- Artifact qualification records source state, hashes, dependency-resolution
+  hash, lock hash, step outcomes and JUnit hashes. Local evidence remains
+  `development_only` because it was produced from the source archive.
+
+No release approval follows from these checks alone. Remaining work includes
+full existing-engine/shared-enterprise qualification, remote/platform and minimum
+version evidence, long-duration soak/resource baselines, required security and
+license scans, named owner/maintainer sign-off, rollback rehearsal, registry
+candidate validation and post-publication verification. See
+`../TURING-qualification.md`; outstanding items are not silently marked complete.

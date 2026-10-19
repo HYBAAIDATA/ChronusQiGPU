@@ -14,7 +14,6 @@ import json
 from pathlib import Path
 import platform
 import subprocess
-import sys
 from time import perf_counter_ns
 from uuid import uuid4
 

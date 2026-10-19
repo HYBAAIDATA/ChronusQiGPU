@@ -32,6 +32,13 @@ package is that substrate, as a single installable unit.
   reviewer-gated OIDC publication to TestPyPI or PyPI. Production publication
   is never automatic.
 
+## Start here
+
+- **Use TURING:** [installation](docs/installation.md) → [working example](examples/turing_pipeline.py) → [API](docs/api.md).
+- **Integrate safely:** [compatibility and migration](docs/compatibility.md) → [mathematical contracts](docs/mathematical-contracts.md).
+- **Operate and release:** [runbook](docs/operations.md) → [qualification](TURING-qualification.md) → [release policy](docs/release-policy.md).
+- **Reproduce research:** [experiment workflow](docs/reproducibility.md) → [publication scaffold](paper/README.md).
+
 ## Package organization and public entry point
 
 TURING remains one distribution, `hyba-turing-vqc`, and one canonical import,
