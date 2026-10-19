@@ -91,3 +91,25 @@ is implied. Affected final artifacts are rebuilt and independently requalified f
 revision recorded in validation; any subsequent change requires affected checks. Required remote CI, security,
 owner approvals and the earlier release blockers remain open. No merge, tag,
 publication or production approval is granted by these additions.
+
+## EUCLID installed-artifact acceptance refresh (2026-10-19)
+
+**Decision: not accepted; release remains blocked.** This refresh records live repository evidence and the access boundary encountered; it is not a substitute for the clean-install acceptance run.
+
+### Repository state and ancestry
+
+- `main` is at `5a4e120297d8106dfe1c1f8ba4d7e3baa913b43d`.
+- PRs #96, #97, #98 and #110 are all open and unmerged. PR #96 is head `405414903301c7ff5dae56e40adedb029a4a141e` from `feat/turing-package-organization-20261019`, based on `main` at `af4e34a3c9463750dc32bcd1eae41f7310944833`. PR #97 is head `a61a9dd1e34e23d3bcd2533089a001d50bc07c0a`, also based on that older `main` commit. PR #98 is head `9f0e4bb89507be9e141a89f79f05493f7b397362`, based on the PR #96 branch at `356ab419dae197f407989da82feaa2f149da08e7`; that base is an earlier PR #96 commit, not its current head. PR #110 is head `87dce11dfc84de7d283300ea9921ecd558b9187e`, based on current `main` at `5a4e120297d8106dfe1c1f8ba4d7e3baa913b43d`; its live GitHub state is `open`, `draft=false`, `mergeable_state=blocked` (despite the task context calling it a draft).
+- The PR #98 description claims a billing-scope correction at `cf56d0aaa7c427e7319c86af979cec1a5d808570`, but its live head and commit list contain only `d3d2366de27b788398f578b725f7dbd09d43b1dd` and `9f0e4bb89507be9e141a89f79f05493f7b397362`. The claimed correction is not present in that PR's current commit list. Treat the billing/Hermitten scope as unresolved until the branch and contract are reconciled. PR #97's proposed Hermitten receiver is not evidence of live Hermitten conformance.
+
+### Acceptance execution and CI access
+
+- Attempted `git clone --filter=blob:none https://github.com/PhiEnterprise1/EuclidPhiEnterprise.git EuclidPhiEnterprise`; it exited 128 with `fatal: could not read Username for 'https://github.com': No such device or address`. No complete checkout was obtained, so no product artifact was built or installed in this refresh and no repository test suite was rerun.
+- GitHub `get_check_runs` for the four PR heads was denied with `403 Resource not accessible by personal access token`. For PR #110, combined status returned `pending`, `total_count=0`, `statuses=[]` at head `87dce11dfc84de7d283300ea9921ecd558b9187e`. This proves an access/visibility gap, not a CI failure or a pass. Workflow run details and required branch-protection checks remain unverified.
+- Existing PR #110 `reports/euclid_clean_install/local_validation.json` records selective-source evidence only: 20 bridge tests and 8 packaging tests in normal and `-O` modes, focused Ruff and Black checks; the build/pip pipeline used synthetic fixture sources and the focused bridge used `DiskPort`. The report explicitly marks full enterprise-wheel install, canonical installed native paths, cross-process shared-custody acceptance, Linux/Windows CI, full-repository checks and independent assurance as pending. These are prior recorded results, not fresh acceptance results from this refresh.
+
+### Release disposition and blockers
+
+No installed-EUCLID acceptance result is established for canonical runtime/TURING dispatch, real empirical-state binding, host authorization, durable pre-mutation audit, shared-custody rollback/uncertain commit, restart, provenance, offline dependency closure, or normal/`-O` negative tests. No integrated test against approved AL HARAS/Salamander/identity/customer-entitlement/Hermitten sandboxes was run. Local bridge or packaging regressions do not close these gates. Mathematical evidence remains limited to the scopes and revisions recorded above; no blanket runtime or enterprise qualification is added.
+
+To remove the blockers, provide a complete checkout path (or GitHub clone/read access), grant read access to Actions/check runs and required-check configuration, run the documented `scripts/run_clean_install.py` acceptance from the intended commit for Linux and Windows/Python 3.12 and 3.13, retain wheel/dependency/verifier hashes and both normal/`-O` outputs, and reconcile PR #98's body/commit mismatch. Then execute only those live enterprise integrations for which approved sandbox contracts and credentials exist, and obtain independent/security/operational/maintainer approvals. Do not merge, deploy, publish or claim production readiness beforehand.
