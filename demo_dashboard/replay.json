@@ -12,7 +12,7 @@
       "label": "SINGULARITY INSUFFICIENTLY_MAP_MATCHED",
       "kappa": -1.62,
       "entropy": 9.357552,
-      "reflex_ms": 39.595,
+      "reflex_ms": 3.275,
       "banner": "REFUSED TO WRITE - TOPOLOGICAL CONSTRAINT, NOT PROMPT FILTER"
     },
     "GOLD": {
