@@ -1,4 +1,6 @@
 node_modules/
+.pnpm-store/
+scratch_pseudocode.txt
 build/
 dist/
 dist-public/
