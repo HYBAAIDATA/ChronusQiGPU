@@ -1,9 +1,0 @@
-test_original_known_solve (test_baseline_regressions.FrozenRunnerRegression.test_original_known_solve) ... ok
-test_recorded_unsupported_fallback (test_baseline_regressions.FrozenRunnerRegression.test_recorded_unsupported_fallback) ... ok
-test_recorded_wrong_transform (test_baseline_regressions.FrozenRunnerRegression.test_recorded_wrong_transform) ... ok
-test_second_training_solve (test_baseline_regressions.FrozenRunnerRegression.test_second_training_solve) ... ok
-
-----------------------------------------------------------------------
-Ran 4 tests in 0.001s
-
-OK
