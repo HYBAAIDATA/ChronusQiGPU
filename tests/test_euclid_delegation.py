@@ -330,23 +330,28 @@ class TestDelegationController(unittest.TestCase):
         # Register organs for each domain
         self.controller.registry.register(
             create_organ("math_01", "Math Explorer", ResearchDomain.MATHEMATICAL_ENGINE,
-                         capability_score=0.90)
+                         capability_score=0.90,
+                         handler=lambda payload: {"result": dict(payload)})
         )
         self.controller.registry.register(
             create_organ("creative_01", "Creative Substrate", ResearchDomain.CREATIVE_SUBSTRATE,
-                         capability_score=0.90)
+                         capability_score=0.90,
+                         handler=lambda payload: {"result": dict(payload)})
         )
         self.controller.registry.register(
             create_organ("forecast_01", "World Forecaster", ResearchDomain.WORLD_SYSTEM_FORECASTER,
-                         capability_score=0.90)
+                         capability_score=0.90,
+                         handler=lambda payload: {"result": dict(payload)})
         )
         self.controller.registry.register(
             create_organ("emergence_01", "Emergence Engine", ResearchDomain.EMERGENCE_ENGINE,
-                         capability_score=0.90)
+                         capability_score=0.90,
+                         handler=lambda payload: {"result": dict(payload)})
         )
         self.controller.registry.register(
             create_organ("coherence_01", "Coherence Evaluator", ResearchDomain.COHERENCE_EVALUATOR,
-                         capability_score=0.90)
+                         capability_score=0.90,
+                         handler=lambda payload: {"result": dict(payload)})
         )
 
     def test_full_pipeline_accept(self):
@@ -499,7 +504,7 @@ class TestOrganHandler(unittest.TestCase):
         self.assertEqual(result.output, {"result": 49})
 
     def test_organ_without_handler_blueprint_mode(self):
-        """An organ without a handler returns blueprint-mode status."""
+        """An organ without a handler is inventoried but cannot complete delegation."""
         organ = create_organ(
             "blueprint_01", "Blueprint", ResearchDomain.EMERGENCE_ENGINE,
             handler=None,
@@ -514,8 +519,10 @@ class TestOrganHandler(unittest.TestCase):
             created_at=time.time(),
         )
         result, assessment, _ = controller.delegate(task)
-        self.assertIsNotNone(result)
-        self.assertEqual(result.output.get("status"), "no_handler")
+        self.assertIsNone(result)
+        self.assertEqual(assessment.verdict, DelegationVerdict.VETOED)
+        self.assertIn("no_handler", assessment.veto_reason)
+        self.assertTrue(controller.verify_integrity())
 
     def test_organ_handler_error_is_captured(self):
         """Handler exceptions are captured, not propagated."""
@@ -536,8 +543,10 @@ class TestOrganHandler(unittest.TestCase):
             created_at=time.time(),
         )
         result, assessment, _ = controller.delegate(task)
-        self.assertIsNotNone(result)
-        self.assertEqual(result.output.get("status"), "organ_execution_failed")
+        self.assertIsNone(result)
+        self.assertEqual(assessment.verdict, DelegationVerdict.VETOED)
+        self.assertIn("organ_execution_failed", assessment.veto_reason)
+        self.assertTrue(controller.verify_integrity())
 
 
 # =============================================================================
@@ -572,7 +581,8 @@ class TestHealthReport(unittest.TestCase):
         """Accepted and vetoed event counts are accurate."""
         controller = DelegationController()
         controller.registry.register(
-            create_organ("org_01", "Test", ResearchDomain.COHERENCE_EVALUATOR)
+            create_organ("org_01", "Test", ResearchDomain.COHERENCE_EVALUATOR,
+                         handler=lambda payload: {"result": dict(payload)})
         )
         # Accepted
         task = DelegationTask(

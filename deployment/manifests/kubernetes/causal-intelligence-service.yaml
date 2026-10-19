@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: igpu-causal-intelligence
+  namespace: phienterprise
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: igpu-causal-intelligence
+  template:
+    metadata:
+      labels:
+        app: igpu-causal-intelligence
+    spec:
+      containers:
+        - name: intelligence
+          image: phienterprise/igpu-core:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: IGPU_MODE
+              value: "causal_intelligence"
+            - name: TOE_BRIDGE_MODE
+              value: "production"
+            - name: INTELLIGENCE_EVIDENCE_GATE
+              value: "strict"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: igpu-causal-intelligence
+  namespace: phienterprise
+spec:
+  selector:
+    app: igpu-causal-intelligence
+  ports:
+    - name: http
+      port: 8082
+      targetPort: 8082

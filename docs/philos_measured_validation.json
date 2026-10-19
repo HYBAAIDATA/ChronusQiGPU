@@ -1,0 +1,50 @@
+{
+  "base_commit": "81c8c4ef178aae8f349262cbe6c53b1222cb106d",
+  "branch": "feat/philos-measured-eqs-20261014",
+  "python": "3.13.14",
+  "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+  "normal": {
+    "command": "python scripts/verify_philos_measured.py",
+    "exit": 0,
+    "passed": 85,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "optimized": {
+    "command": "python -O scripts/verify_philos_measured.py",
+    "exit": 0,
+    "passed": 85,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "compileall": {
+    "exit": 0
+  },
+  "tabnanny": {
+    "exit": 0
+  },
+  "pytest": {
+    "command": "python -m pytest tests/emergence/ -v -p no:cacheprovider",
+    "exit": 1,
+    "reason": "No module named pytest"
+  },
+  "source_sha256": {
+    "euclid/emergence/integration.py": "cd19f64105a1e31f1874bd9af64bef575086cfd3bb9702fe7a1029495533ab84",
+    "euclid/emergence/models/qualification.py": "5feaa7ec0f9212e9209ad6ea913a9ac22c83f74fab8a6204fe2cf7c058c0f196",
+    "euclid/emergence/substrate/__init__.py": "330fd23d6fd844187b32db862f0842971f6335975bb308f4a62dcf93ed0f237a",
+    "euclid/emergence/substrate/engine.py": "0fec84a897dfd73fe5b4933e9a7eb16135c11607f042b6c274ac3673a9524c7b",
+    "euclid/emergence/substrate/executors.py": "3eb23802f08a58594aca23caf163792e5b6d5bf8378a8cda8fbb0752f88fb1b0",
+    "euclid/emergence/trusted_core/measured.py": "266c6d73ca1b0d0f06b911748f50e0e3b6e87bb5e45bef84848f323be98aeaa8",
+    "euclid/emergence/trusted_core/qualification_service.py": "899868da39d26dbdfeca648075b57728e657e86123fca79b8d3583a2433b56a2",
+    "euclid/emergence/trusted_core/receipts.py": "e523bdefe7124e1d4a3434f7b86479c702f3bd2dba76cf67f63d42a1716bd933",
+    "euclid/emergence/trusted_core/stress.py": "9722f7b1d25b06ce63b1abac3054d2ae9d3ae69637a019841d6809597f34a464",
+    "scripts/verify_philos_measured.py": "5546fec7a82bb5f9a1348753a3a24773254a2a229eec05ce4bafd203420a233f",
+    "tests/emergence/test_qualification_gates.py": "4564ad70c891612ff92b7f60363bb56b4ae44bf6909499cf29616cab394ce3c8",
+    "tests/emergence/test_real_qualification.py": "656499677eda5f4d6f37c49676b3ebeb7ee97bc1969d63822cf42d3bc9e636ee",
+    "tests/emergence/test_substrate_registry.py": "3bcdaf15cb4c4abac2f79ef7b820dc3dd95878413bd7f75808acb50299acf8c5",
+    "tests/emergence_custody/test_candidate_custody.py": "8ab9472f2d318a1aec15abed8a370125436f2913389993b7bec3ebfcc7c421c3"
+  },
+  "scope": "Scoped real modules via namespace package runner; not complete package/runtime/installed-artifact/Windows/CI/device or independent assurance."
+}

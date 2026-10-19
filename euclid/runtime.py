@@ -31,6 +31,7 @@ class EuclidRuntime:
         experience_learner: Any | None = None,
         memory_database: MemoryDatabase | None = None,
         cognition: Any | None = None,
+        governed_learning: Any | None = None,
     ) -> None:
         self.creator_id = creator_id
         self._closed = False
@@ -54,11 +55,18 @@ class EuclidRuntime:
         self.ADAPTIVE_KNOWLEDGE_KIND = "euclid.adaptive-knowledge." + domain_hash(
             "euclid.adaptive-owner.v1", {"creator_id": creator_id}
         )
+        if governed_learning is None:
+            from hyba_substrate.euclid_learning_system import EuclidLearningSystem
+
+            governed_learning = EuclidLearningSystem(
+                self.state_dir / "governed_learning.json"
+            )
         self.learning = LearningService(
             pythia=pythia,
             memory=memory,
             store=store,
             experience_learner=experience_learner,
+            governed_learning=governed_learning,
             memory_database=database,
             evidence=self.evidence,
             replay_journal_path=self.state_dir / "replay_journal.json",
@@ -137,6 +145,23 @@ class EuclidRuntime:
         for organ_id, implementation in dict(specialists or {}).items():
             runtime.register_specialist(organ_id, implementation)
         return runtime
+
+    def training_pipeline(self, *, mission_id: str, provenance: str) -> Any:
+        """One training boundary over the same learner used by this runtime."""
+        if self._closed:
+            raise RuntimeError("runtime is closed")
+        from .training_pipeline import TrainingPipeline
+
+        learner = self.learning.experience_learner
+        if learner is None:
+            raise RuntimeError("runtime has no experience learner; use production()")
+        return TrainingPipeline(learner, self.learning,
+                                mission_id=mission_id, provenance=provenance)
+
+    def consolidate_learning(self, *, replay_limit: int = 64) -> dict[str, Any]:
+        if self._closed:
+            raise RuntimeError("runtime is closed")
+        return self.learning.consolidate(replay_limit=replay_limit)
 
     # Specialist organs composed under EUCLID: organ id -> (reachability
     # component, adapter factory, read-only health probe request, declared
