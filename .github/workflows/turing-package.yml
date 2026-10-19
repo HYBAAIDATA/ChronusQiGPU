@@ -4,6 +4,11 @@ on:
   pull_request:
     paths:
       - 'turing_universal_quantum_computer/**'
+      - 'euclid/runtime.py'
+      - 'euclid/organ_adapters/specialists.py'
+      - 'al_haras/**'
+      - 'salamander/**'
+      - 'tests/test_turing_capability_boundaries.py'
       - 'kellogg/**'
       - 'packaging/kellogg-tensor/**'
       - 'scripts/run_turing_tests.py'
@@ -40,6 +45,11 @@ jobs:
       - name: API and package organization tests
         run: |
           turing_universal_quantum_computer/.venv/bin/python scripts/run_turing_tests.py . turing_universal_quantum_computer/tests/test_package_organization.py turing_universal_quantum_computer/tests/test_release_qualification.py
+      - name: Real capability dependency boundaries (not full enterprise approval)
+        run: |
+          turing_universal_quantum_computer/.venv/bin/python -m ruff check --select E4,E7,E9,F tests/test_turing_capability_boundaries.py
+          mkdir -p turing_universal_quantum_computer/results/local/capability
+          turing_universal_quantum_computer/.venv/bin/python -m pytest -q tests/test_turing_capability_boundaries.py salamander/tests/test_agent_f_closure.py --junitxml=turing_universal_quantum_computer/results/local/capability/boundaries.xml
       - name: Detect targeted mathematical and contract mutations
         run: |
           uv run --project turing_universal_quantum_computer --locked --group research python turing_universal_quantum_computer/experiments/run_targeted_mutations.py --output turing_universal_quantum_computer/results/local/mutations

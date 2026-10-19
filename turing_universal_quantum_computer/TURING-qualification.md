@@ -65,3 +65,28 @@ approver and expiry. Do not waive incorrect mathematics, forged provenance,
 artifact/source mismatch, or exposure of credentials merely to meet a date.
 Known unrelated defects remain visible; a narrower release scope must be
 explicitly approved and accurately documented, never achieved by skipping tests.
+
+## Capability architecture qualification delta (PR #96)
+
+The [verified map](docs/capability-architecture.md),
+[actual contracts](docs/dependency-contracts.md) and
+[trust boundaries](docs/security-boundaries.md) separate architectural intent,
+implemented local bindings and unresolved service/deployment contracts. These
+requirements extend the ledger; they do not reset completed mathematical work.
+
+| ID / requirement and rationale | Implementation | Verification / evidence | Status / outstanding decision | Release impact |
+| --- | --- | --- | --- | --- |
+| CAP-01: Keep security, self-healing/optimisation and intelligence ownership explicit; do not confuse presence with integration | ProductionOrganism/SystemRelations; capability map | Inspect actual calls, manifests and source; existing shared-custody tests | Map completed. Named peers/historical redirects are not authority | Required description of supported capability; no mathematical change |
+| CAP-02: Real credential-provider compatibility and safe refusal before effects | `euclid/runtime.py:_compose_actuation_plane,heal_organ` | `tests/test_turing_capability_boundaries.py`: real AL HARAS + canonical Salamander + real TURING probe; success/provider outage/invalid/cross-tenant cases | Narrow adapter fixed. Provider invoked once; no fake authorizer. Production root still lacks provider; creator/customer identity mapping open | Fix qualified locally; enabling production actuation remains blocked on owner-approved wiring/policy |
+| CAP-03: Security-critical dispatch remains guarded without weakening exact semantics | EUCLID dispatch, AL HARAS, TuringQuantumOrgan | New real exact execution/identity, missing/expired/wrong-tenant and one-use-token tests; existing AL HARAS integration test | Local tests pass; remote verdict validation/transport and durable cluster replay unqualified | Do not claim authenticated remote/customer isolation from local tests |
+| CAP-04: Do not promote a handoff into canonical execution/custody proof | SharedEuclid vs SharedTuring; specialist backend adapter | Existing guarded-handoff, shared-pipeline custody, foreign-certificate and result-substitution tests | Both local paths verified separately. Governed service path/acceptance contract decision remains open | Full service claim blocked until chosen path has required evidence; do not duplicate engine |
+| CAP-05: Actual intelligence-consumption contract, dependency closure and trust boundaries | Dependency contracts/security record; existing packaging descriptors | Source inspection, declared-vs-runtime version comparison | Typed TURING-to-EUCLID consumption, installed enterprise closure, authenticated deployment compatibility and owner approval unresolved | Blocks integrated capability claims, not correctness of separately verified local maths |
+| CAP-06: Existing incompatible actuation test fixtures stay visible | `euclid/tests/test_actuation_authority.py` | Same 4 module-replacement ImportErrors on unchanged and patched runtime; 2 other tests pass | Fixture predates canonical authorizer import and replaces whole module. Owner must migrate it to actual authority, not relax production security | Existing broader qualification blocker; not waived or presented as passing |
+
+Evidence for this delta is recorded in [validation](docs/validation.md). Existing
+mathematical, import-isolation, concurrency and artifact evidence is retained for
+its original source/artifact scope. No blanket rerun or blanket requalification
+is implied. Rebuild/requalify affected final release artifacts after scope freeze;
+new documentation changes the source distribution. Required remote CI, security,
+owner approvals and the earlier release blockers remain open. No merge, tag,
+publication or production approval is granted by these additions.

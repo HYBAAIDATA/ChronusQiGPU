@@ -5,6 +5,17 @@ TURING is the existing `hyba-turing-vqc` distribution and
 quantum mathematics admitted by its representations. Its package organization
 does not make a separate external device a prerequisite for those operations.
 
+## Governed capability delivery
+
+AL HARAS (security), Salamander (self-healing/optimisation) and EUCLID
+(intelligence) have intended dependency responsibilities in TURING's capability
+architecture, not unrelated optional product features. The mathematical engine
+remains intact. Actual local bindings, incomplete integration and deployment
+assumptions are separated in the [verified dependency map](capability-architecture.md),
+[dependency contracts](dependency-contracts.md) and
+[trust-boundary record](security-boundaries.md). A library call is not implicitly
+an authorised customer service operation.
+
 ## Three maintained surfaces
 
 | Surface | Location | What belongs here |

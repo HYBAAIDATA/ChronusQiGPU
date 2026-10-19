@@ -292,7 +292,12 @@ class EuclidRuntime:
                     "guardian": guardian,
                     "authorizer": guardian,
                     "subscription_token_provider": token_provider,
-                    "token_provider": token_provider,
+                    # EUCLID's public provider accepts (tenant, actor); the
+                    # canonical Salamander authorizer accepts ActionRequest.
+                    # Translate here, not in the security/actuation owners.
+                    "token_provider": lambda request: token_provider(
+                        request.tenant_id, request.actor_id
+                    ),
                 }
                 signature = inspect.signature(build_authorized_control_plane)
                 if any(
@@ -641,12 +646,15 @@ class EuclidRuntime:
             "heal-attempt",
             {"actor": actor, "organ": organ_id, "action_id": request.action_id},
         )
-        token = (
-            self._subscription_token_provider(self.creator_id, actor)
-            if self._subscription_token_provider is not None
-            else None
-        )
         if "subscription_token" in inspect.signature(self.autonomic.execute).parameters:
+            # Legacy planes take the credential explicitly. The canonical
+            # plane fetches it through its bound authorizer; do not fetch twice
+            # or bypass its fail-closed credential-provider error handling.
+            token = (
+                self._subscription_token_provider(self.creator_id, actor)
+                if self._subscription_token_provider is not None
+                else None
+            )
             result = self.autonomic.execute(request, subscription_token=token or "")
         else:
             result = self.autonomic.execute(request)
