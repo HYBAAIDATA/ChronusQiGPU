@@ -13,6 +13,14 @@ from kellogg.canonical_tensor import (
     RepresentationChoice,
     build_kellogg_search_plan,
     host_sha256d_recheck,
+    EstateChunk600,
+    PartitionProof600,
+    build_600_partition,
+    AnsatzV3,
+    load_ansatz,
+    KelloggMotherTensor,
+    PillarContractionResult,
+    kellogg_state_600,
 )
 
 __all__ = [
@@ -21,4 +29,13 @@ __all__ = [
     "RepresentationChoice",
     "build_kellogg_search_plan",
     "host_sha256d_recheck",
+    "EstateChunk600",
+    "PartitionProof600",
+    "build_600_partition",
+    "AnsatzV3",
+    "load_ansatz",
+    "KelloggMotherTensor",
+    "PillarContractionResult",
+    "kellogg_state_600",
 ]
+

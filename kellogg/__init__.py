@@ -203,9 +203,18 @@ from .canonical_tensor import (
     RepresentationChoice,
     build_kellogg_search_plan,
     host_sha256d_recheck,
+    EstateChunk600,
+    PartitionProof600,
+    build_600_partition,
+    AnsatzV3,
+    load_ansatz,
+    KelloggMotherTensor,
+    PillarContractionResult,
+    kellogg_state_600,
 )
 
 __version__ = "1.0.0"
+
 
 # Lazy surfaces: tensor_ml requires numpy; exact_field.sqrt_f is kept out
 # of the training path by contract (tests assert it never enters
@@ -555,6 +564,15 @@ __all__ = [
     "RepresentationChoice",
     "build_kellogg_search_plan",
     "host_sha256d_recheck",
+    # 600-lane solving machine & mother-tensor
+    "EstateChunk600",
+    "PartitionProof600",
+    "build_600_partition",
+    "AnsatzV3",
+    "load_ansatz",
+    "KelloggMotherTensor",
+    "PillarContractionResult",
+    "kellogg_state_600",
     # exact tensor networks, custody, certificates, specification (lazy)
     *_LAZY_SUBMODULE_ATTRS["cyclotomic"],
     *_LAZY_SUBMODULE_ATTRS["exact_linalg"],

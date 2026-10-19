@@ -318,10 +318,32 @@ def build_kellogg_search_plan(
     )
 
 
+# Re-export 600-lane mother-tensor and exact geometry partition
+from chronus.exact_geometry import (
+    EstateChunk600,
+    PartitionProof600,
+    build_600_partition,
+)
+from kellogg.ansatz_v3 import AnsatzV3, load_ansatz
+from kellogg.mother_tensor import (
+    KelloggMotherTensor,
+    PillarContractionResult,
+    kellogg_state_600,
+)
+
 __all__ = [
     "RepresentationChoice",
     "CoverageProofCertificate",
     "CanonicalKelloggTensor",
     "host_sha256d_recheck",
     "build_kellogg_search_plan",
+    "EstateChunk600",
+    "PartitionProof600",
+    "build_600_partition",
+    "AnsatzV3",
+    "load_ansatz",
+    "KelloggMotherTensor",
+    "PillarContractionResult",
+    "kellogg_state_600",
 ]
+
