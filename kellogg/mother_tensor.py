@@ -228,18 +228,20 @@ class KelloggMotherTensor:
         return SearchPlan(
             plan_id=f"plan_kellogg_600_{uuid_short()}",
             policy_id="kellogg.mother_tensor.600lane.v1",
-            work_identity=identity,
+            job_fingerprint=identity.job_fingerprint,
+            pool_session_id=identity.pool_session_id,
+            generation=identity.generation,
             base_step=base_step,
             window=window,
-            stride=self.chunks[0].stride if self.chunks and self.chunks[0].size > 0 else 5,
-            preferred_face=0,
-            dispatch_breadth=min(600, max(1, self.lanes)),
-            executor_route=route,
-            plan_source=PlanSource.AGENTIC_PRECOMPUTED,
-            evidence_class=EvidenceClass.SOFTWARE_VERIFIED,
-            lane_order=tuple(c.vertex_id for c in self.chunks[:32]),  # compatibility slice
-            evidence_refs=evidence_refs,
             extranonce2=extranonce2,
+            lane_order=tuple(range(32)),
+            preferred_face=0,
+            dispatch_breadth=min(32, self.lanes),
+            executor_route=route,
+            evidence_refs=evidence_refs,
+            created_at=time.monotonic(),
+            nonce_order="hendrix_coprime_stride",
+            source=PlanSource.AGENTIC_PRECOMPUTED,
         )
 
 
