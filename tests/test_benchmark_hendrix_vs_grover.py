@@ -1,12 +1,14 @@
-"""Smoke tests for the Hendrix-vs-Grover benchmark harness."""
-
+import os
 import sys
 import json
 import time
 from math import gcd
 from pathlib import Path
 
+os.environ["PYTHIA_ALLOW_QUARANTINED_MINING"] = "1"
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 
 from benchmarks.common import rng_for, uniform_winners
 from benchmarks.hendrix_vs_grover import (

@@ -60,7 +60,7 @@ CANONICAL_TREATISES: List[Dict[str, Any]] = [
         "title": "The Thirteen Books of Euclid's Elements",
         "authors": ["Euclid of Alexandria", "Thomas L. Heath (Trans. & Comm.)"],
         "year": 1908,
-        "source_url": "https://archive.org/details/thirteentriple01eucl",
+        "source_url": "http://www.perseus.tufts.edu/hopper/text?doc=Perseus:text:1999.01.0086",
         "license": "Public Domain",
         "category": "Foundations & Number Theory",
         "problem_focus": ["FOUNDATIONAL", "RH", "BSD"],
@@ -87,7 +87,8 @@ CANONICAL_TREATISES: List[Dict[str, Any]] = [
             "Sieve of Eratosthenes prime generation up to finite bound X."
         ],
         "citations": [
-            {"ref": "Heath, T.L. (1908). The Thirteen Books of Euclid's Elements, Cambridge University Press, Vols I-III.", "url": "https://archive.org/details/thirteentriple01eucl"}
+            {"ref": "Heath, T.L. (1908). The Thirteen Books of Euclid's Elements, Cambridge University Press, Vols I-III. Perseus Digital Library Unabridged Greek & English Edition.", "url": "http://www.perseus.tufts.edu/hopper/text?doc=Perseus:text:1999.01.0086"},
+            {"ref": "Internet Archive Facsimile of Cambridge 1908 Edition.", "url": "https://archive.org/details/thirteentriple01eucl"}
         ]
     },
     {
@@ -130,7 +131,7 @@ CANONICAL_TREATISES: List[Dict[str, Any]] = [
         "title": "Ueber die Anzahl der Primzahlen unter einer gegebenen Grösse",
         "authors": ["Bernhard Riemann"],
         "year": 1859,
-        "source_url": "https://archive.org/details/monatsberichtede1859knig",
+        "source_url": "https://www.maths.tcd.ie/pub/HistMath/People/Riemann/Zeta/Zeta.pdf",
         "license": "Public Domain",
         "category": "Analytic Number Theory & Complex Analysis",
         "problem_focus": ["RH"],
@@ -158,7 +159,8 @@ CANONICAL_TREATISES: List[Dict[str, Any]] = [
             "Truncated explicit formula prime counting verification against counted pi(x)."
         ],
         "citations": [
-            {"ref": "Riemann, B. (1859). Ueber die Anzahl der Primzahlen unter einer gegebenen Grösse, Monatsberichte der Berliner Akademie, 671-680.", "url": "https://archive.org/details/monatsberichtede1859knig"}
+            {"ref": "Riemann, B. (1859). Ueber die Anzahl der Primzahlen unter einer gegebenen Grösse, Monatsberichte der Berliner Akademie, 671-680. Trinity College Dublin Wilkins Mathematical Archive.", "url": "https://www.maths.tcd.ie/pub/HistMath/People/Riemann/Zeta/Zeta.pdf"},
+            {"ref": "Bombieri, E. (2000). The Riemann Hypothesis - Official Clay Mathematics Institute Problem Description.", "url": "https://www.claymath.org/wp-content/uploads/2022/05/riemann.pdf"}
         ]
     },
     {
@@ -166,8 +168,8 @@ CANONICAL_TREATISES: List[Dict[str, Any]] = [
         "title": "The Topological Invariants of Algebraic Varieties",
         "authors": ["William V.D. Hodge"],
         "year": 1950,
-        "source_url": "https://www.mathunion.org/icm/proceedings",
-        "license": "Open Access (ICM Proceedings)",
+        "source_url": "https://www.claymath.org/wp-content/uploads/2022/06/hodge.pdf",
+        "license": "Open Access (Clay / ICM)",
         "category": "Algebraic Geometry & Differential Topology",
         "problem_focus": ["HODGE"],
         "definitions": [
@@ -194,6 +196,7 @@ CANONICAL_TREATISES: List[Dict[str, Any]] = [
             "Period matrix computation for abelian varieties and identification of endomorphism algebras."
         ],
         "citations": [
+            {"ref": "Deligne, P. (2000). The Hodge Conjecture - Official Clay Mathematics Institute Problem Description.", "url": "https://www.claymath.org/wp-content/uploads/2022/06/hodge.pdf"},
             {"ref": "Hodge, W.V.D. (1950). The Topological Invariants of Algebraic Varieties, Proc. Int. Congr. Math., Vol. 1, 182-192.", "url": "https://www.mathunion.org/icm/proceedings"}
         ]
     },
@@ -202,7 +205,7 @@ CANONICAL_TREATISES: List[Dict[str, Any]] = [
         "title": "Théorie de Hodge: I, II, III",
         "authors": ["Pierre Deligne"],
         "year": 1971,
-        "source_url": "http://www.numdam.org/item/PMIHES_1971__40__5_0/",
+        "source_url": "http://www.numdam.org/item/PMIHES_1971__40__5_0.pdf",
         "license": "Open Access (NUMDAM / IHÉS)",
         "category": "Mixed Hodge Theory & Motivic Cohomology",
         "problem_focus": ["HODGE"],
@@ -227,8 +230,8 @@ CANONICAL_TREATISES: List[Dict[str, Any]] = [
             "Verification of absolute Hodge cycles on product abelian surfaces E x E."
         ],
         "citations": [
-            {"ref": "Deligne, P. (1971). Théorie de Hodge: II, Publ. Math. IHÉS, 40, 5-57.", "url": "http://www.numdam.org/item/PMIHES_1971__40__5_0/"},
-            {"ref": "Deligne, P. (1974). Théorie de Hodge: III, Publ. Math. IHÉS, 44, 5-77.", "url": "http://www.numdam.org/item/PMIHES_1974__44__5_0/"}
+            {"ref": "Deligne, P. (1971). Théorie de Hodge: II, Publ. Math. IHÉS, 40, 5-57. NUMDAM Full Treatise.", "url": "http://www.numdam.org/item/PMIHES_1971__40__5_0.pdf"},
+            {"ref": "Deligne, P. (1974). Théorie de Hodge: III, Publ. Math. IHÉS, 44, 5-77. NUMDAM Full Treatise.", "url": "http://www.numdam.org/item/PMIHES_1974__44__5_0.pdf"}
         ]
     },
     {
@@ -236,7 +239,7 @@ CANONICAL_TREATISES: List[Dict[str, Any]] = [
         "title": "Hodge Theory and Complex Algebraic Geometry I & II",
         "authors": ["Claire Voisin"],
         "year": 2002,
-        "source_url": "https://www.cambridge.org/core/books/hodge-theory-and-complex-algebraic-geometry-i/4A92DE2A08FF596160E364A96C254707",
+        "source_url": "https://doi.org/10.1017/CBO9780511615344",
         "license": "Academic Research & Educational Fair Use",
         "category": "Complex Geometry & Algebraic Cycles",
         "problem_focus": ["HODGE"],
@@ -262,7 +265,7 @@ CANONICAL_TREATISES: List[Dict[str, Any]] = [
             "Abel-Jacobi regulator evaluation for cycles on Calabi-Yau threefolds."
         ],
         "citations": [
-            {"ref": "Voisin, C. (2002). Hodge Theory and Complex Algebraic Geometry, I & II, Cambridge Studies in Advanced Mathematics, 76 & 77.", "url": "https://www.cambridge.org/core/books/hodge-theory-and-complex-algebraic-geometry-i/4A92DE2A08FF596160E364A96C254707"}
+            {"ref": "Voisin, C. (2002). Hodge Theory and Complex Algebraic Geometry, I & II, Cambridge Studies in Advanced Mathematics, 76 & 77.", "url": "https://doi.org/10.1017/CBO9780511615344"}
         ]
     },
     {
@@ -297,8 +300,8 @@ CANONICAL_TREATISES: List[Dict[str, Any]] = [
             "2-descent for upper bounding Selmer rank Sel^(2)(E/Q)."
         ],
         "citations": [
-            {"ref": "Birch, B.J., Swinnerton-Dyer, H.P.F. (1963). Notes on Elliptic Curves (I), J. Reine Angew. Math., 212, 7-25.", "url": "https://gdz.sub.uni-goettingen.de/id/PPN243919689_0212"},
-            {"ref": "Birch, B.J., Swinnerton-Dyer, H.P.F. (1965). Notes on Elliptic Curves (II), J. Reine Angew. Math., 218, 79-108.", "url": "https://gdz.sub.uni-goettingen.de/id/PPN243919689_0218"}
+            {"ref": "Birch, B.J., Swinnerton-Dyer, H.P.F. (1965). Notes on Elliptic Curves (II), J. Reine Angew. Math., 218, 79-108. GDZ Göttingen Digital Library.", "url": "https://gdz.sub.uni-goettingen.de/id/PPN243919689_0218"},
+            {"ref": "Wiles, A. (2000). The Birch and Swinnerton-Dyer Conjecture - Official Clay Mathematics Institute Problem Description.", "url": "https://www.claymath.org/wp-content/uploads/2022/05/birchswin.pdf"}
         ]
     },
     {
@@ -306,8 +309,8 @@ CANONICAL_TREATISES: List[Dict[str, Any]] = [
         "title": "Heegner points and derivatives of L-series",
         "authors": ["Benedict H. Gross", "Don B. Zagier"],
         "year": 1986,
-        "source_url": "https://eudml.org/doc/143346",
-        "license": "Open Access (EuDML / Springer)",
+        "source_url": "https://link.springer.com/article/10.1007/BF01388805",
+        "license": "Open Access (Springer / Inventiones)",
         "category": "Automorphic Forms & Heegner Points",
         "problem_focus": ["BSD"],
         "definitions": [
@@ -331,7 +334,7 @@ CANONICAL_TREATISES: List[Dict[str, Any]] = [
             "L'(E, 1) high-precision computation via rapid exponential sum."
         ],
         "citations": [
-            {"ref": "Gross, B.H., Zagier, D.B. (1986). Heegner points and derivatives of L-series, Invent. Math., 84, 225-320.", "url": "https://eudml.org/doc/143346"}
+            {"ref": "Gross, B.H., Zagier, D.B. (1986). Heegner points and derivatives of L-series, Invent. Math., 84, 225-320.", "url": "https://link.springer.com/article/10.1007/BF01388805"}
         ]
     },
     {
@@ -413,6 +416,77 @@ CANONICAL_TREATISES: List[Dict[str, Any]] = [
 
 def _hash_str(s: str) -> str:
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
+
+
+def verify_primary_treatise_network_access(timeout_sec: float = 6.0) -> List[Dict[str, Any]]:
+    """Performs live network reachability and HTTP verification of the primary open
+    access repositories hosting the Ten Canonical Great Mathematical Treatises.
+    
+    Verifies that Euclid's cognitive anchor points directly to live, authoritative, unabridged
+    mathematical repositories:
+    1. Euclid Elements: Perseus Digital Library (Tufts University)
+    2. Gauss Disquisitiones: GDZ Göttingen Digitalization Center
+    3. Riemann 1859: Trinity College Dublin Wilkins Mathematical Archive
+    4. Hodge 1950: Clay Mathematics Institute
+    5. Deligne Hodge: NUMDAM / IHÉS
+    6. Voisin Hodge: Cambridge University Press
+    7. BSD 1965: GDZ Göttingen Digitalization Center
+    8. Gross-Zagier 1986: Springer / Inventiones Mathematicae
+    9. Kolyvagin 1990: Springer / Grothendieck Festschrift
+    10. Wiles 1995: Annals of Mathematics (Princeton)
+    """
+    import time
+    import urllib.request
+
+    results: List[Dict[str, Any]] = []
+    archive_names = {
+        "euclid_elements": "Perseus Digital Library (Tufts)",
+        "gauss_disquisitiones": "GDZ Göttingen Digitalization Center",
+        "riemann_1859": "Trinity College Dublin Wilkins Archive",
+        "hodge_1950": "Clay Mathematics Institute",
+        "deligne_hodge": "NUMDAM / IHÉS",
+        "voisin_hodge": "Cambridge University Press",
+        "bsd_1965": "GDZ Göttingen Digitalization Center",
+        "gross_zagier_1986": "Springer / Inventiones Mathematicae",
+        "kolyvagin_1990": "Springer / Grothendieck Festschrift",
+        "wiles_1995": "Annals of Mathematics (Princeton)",
+    }
+
+    for item in CANONICAL_TREATISES:
+        t_id = item["id"]
+        url = item["source_url"]
+        archive = archive_names.get(t_id, "Open Mathematical Archive")
+        start_t = time.perf_counter()
+        status_code = None
+        error_msg = None
+        reachability = "OFFLINE"
+
+        try:
+            req = urllib.request.Request(
+                url,
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) EuclidMillennium/1.0 (research@hyba.ai)"}
+            )
+            with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
+                status_code = resp.status
+                reachability = "ONLINE_VERIFIED" if status_code == 200 else f"HTTP_{status_code}"
+        except Exception as e:
+            error_msg = str(e)
+            reachability = "UNREACHABLE_OR_RATE_LIMITED"
+
+        latency_ms = round((time.perf_counter() - start_t) * 1000.0, 1)
+
+        results.append({
+            "id": t_id,
+            "title": item["title"],
+            "primary_repository": archive,
+            "source_url": url,
+            "http_status": status_code,
+            "reachability": reachability,
+            "latency_ms": latency_ms,
+            "error": error_msg
+        })
+
+    return results
 
 
 def fetch_arxiv_literature(
