@@ -42,6 +42,34 @@
         "https://github.com/QuantumPhi2/PhiMiner/pull/31"
       ],
       "summary": "Chronos v3.3 compatibility facade, package data and executable capability audit were merged."
+    },
+    {
+      "id": "DOC-001",
+      "status": "CLOSED",
+      "evidence": [
+        "docs/MLA1517_PRIME_DB_TRANSFER_NOTES.md"
+      ],
+      "summary": "Transfer notes reflected in the repository in their entirety."
+    },
+    {
+      "id": "TRIAD-001",
+      "status": "CLOSED",
+      "evidence": [
+        "aethel/ovid_authority.py",
+        "aethel/theseus_projection.py",
+        "tests/test_ovid_theseus_chronus_gap_closure.py"
+      ],
+      "summary": "OVID is the durable folded-state root; THESEUS is rebuildable from OVID and can be deleted without data loss."
+    },
+    {
+      "id": "CHRONUS-001",
+      "status": "CLOSED",
+      "evidence": [
+        "chronus/igpu/fabric.py",
+        "chronus/igpu/host.py",
+        "aethel/triad.py"
+      ],
+      "summary": "Chronus is ONE iGPU. device_count!=1 fails closed. Storage correctness does not require a Chronus device."
     }
   ],
   "refuted_or_prohibited_claims": [
@@ -99,5 +127,8 @@
     "privacy, QRAM/QDC and federated services",
     "HYBA Flow, Ontology, Agent Fabric, Quality, Model Gateway, Document Intelligence, Evidence, Share, Federate, Studio, Insight, Edge, Vault, Deploy and Guard product services"
   ],
-  "production_ready": false
+  "production_ready": false,
+  "source_path": "docs/MLA1517_PRIME_DB_TRANSFER_NOTES.md",
+  "source_reflected_in_entirety": true,
+  "one_igpu": true
 }

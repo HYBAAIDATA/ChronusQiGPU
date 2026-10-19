@@ -143,10 +143,23 @@ from .theseus import (
     open_theseus,
 )
 from .triad import (
+    ONE_IGPU_DEVICE_COUNT,
+    ONE_IGPU_DEVICE_ID,
     TRIAD_CLAIM_BOUNDARY,
     TRIAD_ID,
     Triad,
     open_triad,
+)
+from .ovid_authority import (
+    OvidAuthority,
+    OvidAuthorityError,
+    OvidObject,
+    open_ovid_authority,
+)
+from .theseus_projection import (
+    TheseusProjection,
+    TheseusProjectionError,
+    open_theseus_projection,
 )
 from .enterprise_bridge import (
     CapStatus,
@@ -307,6 +320,15 @@ __all__ = [
     "open_triad",
     "TRIAD_ID",
     "TRIAD_CLAIM_BOUNDARY",
+    "ONE_IGPU_DEVICE_ID",
+    "ONE_IGPU_DEVICE_COUNT",
+    "OvidAuthority",
+    "OvidAuthorityError",
+    "OvidObject",
+    "open_ovid_authority",
+    "TheseusProjection",
+    "TheseusProjectionError",
+    "open_theseus_projection",
     # Enterprise bridge (Rule 7)
     "CapStatus",
     "TruthClass",

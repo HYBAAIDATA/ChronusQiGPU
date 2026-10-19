@@ -4,7 +4,7 @@ from ..adapters.base import BackendAbsent,DispatchError
 from .scaled_plan import ScaledPlan,LADDER
 from .overlay import OpenCLOverlay
 CONTRACT={'schema':'chronos_standalone_igpu_v1','device_id':'chronos_igpu','name':'Chronos MLA1517 iGPU',
-          'is_gpu':True,'physical':False,'independent_of_physical_gpu':True,'memory_model':'host_unified',
+          'is_gpu':True,'physical':False,'independent_of_physical_gpu':True,'memory_model':'host_unified','device_count':1,'one_igpu':True,
           'lucas_ladder':list(LADDER),'operations':['lucas','search','fold','unfold','partial_unfold','tensor','evolve','witness','qx','sha256d','structured_ground','structured_matvec','pythi_native','intrinsic','resident']}
 @dataclass(frozen=True)
 class RouteDecision:
@@ -28,7 +28,7 @@ class ComputeFabric:
         executors=[{'device_id':'host_cpu','backend':'cpu_reference','physical':True,'operations':list(CONTRACT['operations'])}]
         if self.overlay is not None:executors.append(self.overlay.capability())
         if self.mining_adapter is not None:executors.append(self.mining_adapter.capability())
-        return {'contract_device':dict(CONTRACT),'executors':executors,'overlay_available':self.overlay is not None,'overlay_unavailable_reason':self.reason, 'unbound_adapters':[{'backend':b,'operations':[],'reason':'not configured in this standalone host'} for b in ('cuda','rocm','metal','asic_mmio','rtl','remote_gpu')]}
+        return {'contract_device':dict(CONTRACT),'executors':executors,'overlay_available':self.overlay is not None,'overlay_unavailable_reason':self.reason,'device_count':1,'one_igpu':True,'logical_device':'chronos_igpu', 'unbound_adapters':[{'backend':b,'operations':[],'reason':'not configured in this standalone host'} for b in ('cuda','rocm','metal','asic_mmio','rtl','remote_gpu')]}
     def snapshot(self):return self.compose()
     def route(self,operation,scale_index=15):
         if scale_index not in LADDER:raise ValueError('undeclared Lucas rung')
