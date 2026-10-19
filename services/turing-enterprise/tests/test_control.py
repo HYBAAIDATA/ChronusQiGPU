@@ -498,5 +498,10 @@ def test_single_use_token_is_not_silently_treated_as_reusable(env):
             jti="one-use",
         )
     )
-    with pytest.raises(Denied):
-        p.overview(single_use, "alice", tenant="a")
+    assert p.overview(single_use, "alice", tenant="a")["tenant"] == "a"
+    restarted = env[5]()
+    try:
+        with pytest.raises(Denied):
+            restarted.overview(single_use, "alice", tenant="a")
+    finally:
+        restarted.close()

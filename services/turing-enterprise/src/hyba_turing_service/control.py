@@ -66,7 +66,10 @@ CREATE TABLE IF NOT EXISTS jobs (
  actor TEXT NOT NULL, request TEXT NOT NULL, request_hash TEXT NOT NULL,
  state TEXT NOT NULL CHECK(state IN
  ('admitted','running','completed','failed','cancelled','unknown')),
- report TEXT, PRIMARY KEY(tenant,job));
+ report TEXT, contract TEXT, PRIMARY KEY(tenant,job));
+CREATE TABLE IF NOT EXISTS consumed_tokens (
+ namespace TEXT NOT NULL, nonce TEXT NOT NULL, expires INTEGER NOT NULL,
+ PRIMARY KEY(namespace,nonce));
 CREATE TABLE IF NOT EXISTS commands (
  command TEXT PRIMARY KEY, payload_hash TEXT NOT NULL, response TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS usage (
@@ -104,7 +107,10 @@ class ControlPlane:
         customer_authority: Authority,
         operator_authority: Authority,
         clock: Callable[[], int] | None = None,
+        capacity_slots: int | None = None,
     ):
+        self.capacity_slots = integer(capacity_slots) if capacity_slots is not None else None
+        self.project_context = None
         self.customer_authority = customer_authority
         self.operator_authority = operator_authority
         self.clock = clock or (lambda: int(time.time()))
@@ -114,11 +120,18 @@ class ControlPlane:
         self.db.execute("PRAGMA journal_mode=WAL")
         self.db.execute("PRAGMA synchronous=FULL")
         version = self.db.execute("PRAGMA user_version").fetchone()[0]
-        if version not in (0, 1):
+        if version not in (0, 1, 2):
             self.db.close()
             raise Unavailable("unsupported control-plane schema")
         self.db.executescript(DDL)
-        self.db.execute("PRAGMA user_version=1")
+        columns = {r[1] for r in self.db.execute("PRAGMA table_info(jobs)")}
+        if "contract" not in columns:
+            with self._transaction():
+                self.db.execute("ALTER TABLE jobs ADD COLUMN contract TEXT")
+                self.db.execute(
+                    "UPDATE jobs SET contract=(SELECT contract FROM customers c WHERE c.tenant=jobs.tenant)"
+                )
+        self.db.execute("PRAGMA user_version=2")
 
     def close(self):
         self.db.close()
@@ -138,7 +151,13 @@ class ControlPlane:
                 now=self.clock(),
             )
             if getattr(claims, "jti", None) is not None:
-                raise Denied("single-use tokens require a durable Guardian replay adapter")
+                namespace = canonical([claims.issuer, claims.key_id, claims.tenant_id])
+                with self._transaction():
+                    self.db.execute("DELETE FROM consumed_tokens WHERE expires<=?", (self.clock(),))
+                    self.db.execute(
+                        "INSERT INTO consumed_tokens VALUES(?,?,?)",
+                        (namespace, claims.jti, claims.expires_at),
+                    )
             return claims
         except Exception as exc:
             raise Denied("authorization denied") from exc
@@ -256,6 +275,13 @@ class ControlPlane:
             ).fetchone()[0]
             if slots > c["contracted"] or slots < running:
                 raise Conflict("reservation outside contracted/in-flight capacity")
+            if self.capacity_slots is not None:
+                total = self.db.execute(
+                    "SELECT COALESCE(SUM(allocated),0) FROM customers"
+                ).fetchone()[0]
+                if total - c["allocated"] + slots > self.capacity_slots:
+                    raise Conflict("global configured slot capacity exhausted")
+            self._before_provision(tenant, slots)
             self.db.execute(
                 "UPDATE customers SET allocated=?,state='active' WHERE tenant=?", (slots, tenant)
             )
@@ -313,11 +339,18 @@ class ControlPlane:
 
     def submit(self, token, actor, *, tenant, job, request):
         claims = self._authorize(token, actor, tenant, "turing.jobs.submit")
+        return self._submit_authorized(claims, actor, tenant=tenant, job=job, request=request)
+
+    def _submit_authorized(self, claims, actor, *, tenant, job, request):
         text(job)
         request = self._request(request)
         if len(canonical(request).encode()) > claims.max_payload_bytes:
             raise Denied("subscription payload limit exceeded")
-        checksum = digest([actor, request])
+        checksum = digest(
+            [actor, request]
+            if self.project_context is None
+            else [actor, request, self.project_context]
+        )
         with self._transaction():
             c = self._customer(tenant, active=True)
             existing = self.db.execute(
@@ -329,7 +362,8 @@ class ControlPlane:
                 return dict(job=job, state=existing["state"])
             counts = dict(
                 self.db.execute(
-                    "SELECT state,COUNT(*) FROM jobs WHERE tenant=? GROUP BY state", (tenant,)
+                    "SELECT state,COUNT(*) FROM jobs WHERE tenant=? AND contract=? GROUP BY state",
+                    (tenant, c["contract"]),
                 )
             )
             inflight = sum(counts.get(s, 0) for s in ("admitted", "running", "unknown"))
@@ -337,12 +371,22 @@ class ControlPlane:
                 raise Conflict("reserved concurrency exhausted")
             if inflight + counts.get("completed", 0) >= c["allowance"]:
                 raise Conflict("contract completion allowance exhausted")
+            self._before_admit(tenant, actor, job)
             self.db.execute(
-                "INSERT INTO jobs VALUES(?,?,?,?,?,'admitted',NULL)",
-                (tenant, job, actor, canonical(request), checksum),
+                "INSERT INTO jobs(tenant,job,actor,request,request_hash,state,report,contract) VALUES(?,?,?,?,?,'admitted',NULL,?)",
+                (tenant, job, actor, canonical(request), checksum, c["contract"]),
             )
             self._audit(tenant, actor, "admit", dict(job=job, request_hash=checksum))
             return dict(job=job, state="admitted")
+
+    def _before_provision(self, tenant, slots):
+        """Transactional shared-policy hook for department/project reservations."""
+
+    def _before_admit(self, tenant, actor, job):
+        """Transactional policy hook; overridden by enterprise project policy."""
+
+    def _before_dispatch(self, tenant, actor, job):
+        """Transactional current-membership/revocation hook."""
 
     def cancel(self, token, actor, *, tenant, job):
         self._authorize(token, actor, tenant, "turing.jobs.submit")
@@ -376,6 +420,7 @@ class ControlPlane:
                 return json.loads(row["report"])
             if row["state"] != "admitted":
                 raise Conflict("job is not undispatched; investigate, do not retry execution")
+            self._before_dispatch(tenant, row["actor"], job)
             self.db.execute(
                 "UPDATE jobs SET state='running' WHERE tenant=? AND job=?", (tenant, job)
             )
@@ -443,6 +488,7 @@ class ControlPlane:
                     program_digest=report["program_digest"],
                     report_digest=digest(report),
                 )
+                payload.update(self._usage_details(tenant, job))
                 self.db.execute(
                     "INSERT INTO usage VALUES(?,?,?,?)", (event, tenant, job, canonical(payload))
                 )
@@ -454,6 +500,9 @@ class ControlPlane:
                 dict(job=job, digest=digest(report)),
             )
         return report
+
+    def _usage_details(self, tenant, job):
+        return {}
 
     def resolve_unknown(self, token, actor, *, tenant, job, reason):
         """Release a quarantined job only after operator investigation.
@@ -478,7 +527,8 @@ class ControlPlane:
             c = self._customer(tenant)
             counts = dict(
                 self.db.execute(
-                    "SELECT state,COUNT(*) FROM jobs WHERE tenant=? GROUP BY state", (tenant,)
+                    "SELECT state,COUNT(*) FROM jobs WHERE tenant=? AND contract=? GROUP BY state",
+                    (tenant, c["contract"]),
                 )
             )
             busy = sum(counts.get(s, 0) for s in ("admitted", "running", "unknown"))

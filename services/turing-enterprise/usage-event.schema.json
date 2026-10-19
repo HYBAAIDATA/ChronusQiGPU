@@ -4,18 +4,64 @@
   "title": "TURING candidate usage import event; not an invoice",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "event_id", "tenant", "job", "contract", "billing_account", "unit", "quantity", "occurred_at", "program_digest", "report_digest"],
+  "required": [
+    "schema",
+    "event_id",
+    "tenant",
+    "job",
+    "contract",
+    "billing_account",
+    "unit",
+    "quantity",
+    "occurred_at",
+    "program_digest",
+    "report_digest"
+  ],
   "properties": {
-    "schema": {"const": "turing.usage.v1"},
-    "event_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-    "tenant": {"type": "string", "minLength": 1},
-    "job": {"type": "string", "minLength": 1},
-    "contract": {"type": "string", "minLength": 1},
-    "billing_account": {"type": "string", "minLength": 1},
-    "unit": {"const": "verified_execution.v1"},
-    "quantity": {"const": 1},
-    "occurred_at": {"type": "integer", "minimum": 0},
-    "program_digest": {"type": "string", "minLength": 1},
-    "report_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+    "schema": {
+      "const": "turing.usage.v1"
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "tenant": {
+      "type": "string",
+      "minLength": 1
+    },
+    "job": {
+      "type": "string",
+      "minLength": 1
+    },
+    "contract": {
+      "type": "string",
+      "minLength": 1
+    },
+    "billing_account": {
+      "type": "string",
+      "minLength": 1
+    },
+    "unit": {
+      "const": "verified_execution.v1"
+    },
+    "quantity": {
+      "const": 1
+    },
+    "occurred_at": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "program_digest": {
+      "type": "string",
+      "minLength": 1
+    },
+    "report_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "spend_authorization": {
+      "type": "string",
+      "minLength": 1
+    }
   }
 }
