@@ -60,11 +60,23 @@ from .receipts import ExecutionReceipt
 from .router import RouteDecision, default_registry, route
 from .runtime import CancellationToken, Deadline, preflight_memory, telemetry_record, timed_execute
 from .verification import VerificationVerdict
+from .canonical_tensor import (
+    CanonicalKelloggTensor,
+    CoverageProofCertificate,
+    RepresentationChoice,
+    build_kellogg_search_plan,
+    host_sha256d_recheck,
+)
 
 __all__ = [
     "BackendIdentity",
     "BenchmarkReport",
     "BenchmarkRow",
+    "CanonicalKelloggTensor",
+    "CoverageProofCertificate",
+    "RepresentationChoice",
+    "build_kellogg_search_plan",
+    "host_sha256d_recheck",
     "CancellationToken",
     "DEFAULT_MAX_TENSOR_BYTES",
     "Deadline",

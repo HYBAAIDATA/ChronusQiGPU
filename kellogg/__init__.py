@@ -197,6 +197,13 @@ from .attest import (
     verify_attestation,
     verify_version,
 )
+from .canonical_tensor import (
+    CanonicalKelloggTensor,
+    CoverageProofCertificate,
+    RepresentationChoice,
+    build_kellogg_search_plan,
+    host_sha256d_recheck,
+)
 
 __version__ = "1.0.0"
 
@@ -542,6 +549,12 @@ __all__ = [
     "attest",
     "verify_attestation",
     "verify_version",
+    # canonical tensor (canonical representation and coverage proof)
+    "CanonicalKelloggTensor",
+    "CoverageProofCertificate",
+    "RepresentationChoice",
+    "build_kellogg_search_plan",
+    "host_sha256d_recheck",
     # exact tensor networks, custody, certificates, specification (lazy)
     *_LAZY_SUBMODULE_ATTRS["cyclotomic"],
     *_LAZY_SUBMODULE_ATTRS["exact_linalg"],
