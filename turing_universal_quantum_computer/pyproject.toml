@@ -30,6 +30,12 @@ dependencies = [
     "hyba-kellogg-tensor>=1.0",
 ]
 
+[dependency-groups]
+research = ["pytest>=7.4,<10", "build>=1.2,<2", "setuptools>=77,<83", "wheel>=0.45,<1"]
+
+[tool.uv.sources]
+hyba-kellogg-tensor = { path = "../packaging/kellogg-tensor" }
+
 [project.optional-dependencies]
 discovery = [
     "scipy>=1.11",

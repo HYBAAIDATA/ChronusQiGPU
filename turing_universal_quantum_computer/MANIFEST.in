@@ -1,0 +1,10 @@
+include LICENSE README.md CITATION.cff CHANGELOG.md CONTRIBUTING.md SECURITY.md uv.lock
+recursive-include docs *.md
+recursive-include examples *.py
+recursive-include experiments *.py *.json *.md
+recursive-include tests *.py
+recursive-include paper *.tex *.bib *.md
+recursive-include results README.md
+prune results/local
+prune results/raw
+global-exclude __pycache__ *.py[cod]
