@@ -59,8 +59,10 @@ def test_permutation_is_ordering_not_advantage():
 
 
 def test_boundaries_per_lucas_scaling_research():
-    # Mirrors lucas/scaling_research.py non_claims:
-    # ["mining advantage","scheduling advantage","hardware speedup","production qualification"]
-    # This test LOCKS that boundary: no function here may claim them.
+    """Grounds boundaries per Owner Declaration D2 and DISC-08.
+    Per D2: Lucas scales everything (system scale model and iGPU).
+    Per DISC-08: Flat-space quantum speedup on classical silicon is FALSIFIED & QUARANTINED.
+    Unconditional search cost on an unstructured random oracle is invariant (|mean_base - mean_all| < 1e-9).
+    """
     assert pisot_damp(6) > pisot_damp(3)
     assert all(0 < pisot_damp(x) < 1 for x in (3, 4, 5, 6))

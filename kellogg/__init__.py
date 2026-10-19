@@ -200,10 +200,16 @@ from .attest import (
 from .canonical_tensor import (
     CanonicalKelloggTensor,
     CoverageProofCertificate,
+    EstateChunk600,
+    KelloggMotherTensor,
+    PartitionProof600,
     RepresentationChoice,
+    build_600_partition,
     build_kellogg_search_plan,
     host_sha256d_recheck,
+    kellogg_state_600,
 )
+
 
 __version__ = "1.0.0"
 
@@ -555,6 +561,13 @@ __all__ = [
     "RepresentationChoice",
     "build_kellogg_search_plan",
     "host_sha256d_recheck",
+    # 600-lane canonical mother-tensor and partition
+    "EstateChunk600",
+    "KelloggMotherTensor",
+    "PartitionProof600",
+    "build_600_partition",
+    "kellogg_state_600",
+
     # exact tensor networks, custody, certificates, specification (lazy)
     *_LAZY_SUBMODULE_ATTRS["cyclotomic"],
     *_LAZY_SUBMODULE_ATTRS["exact_linalg"],

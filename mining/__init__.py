@@ -1,27 +1,35 @@
-"""DEPRECATED: Classical mining library quarantined.
+"""Deterministic mining primitives used by PYTHIA.
 
-All callers must migrate to the canonical Kellogg tensor route.
-Quarantine directory: legacy_mining_classical_quarantined_814002a7/
+PYTHIA has one production mining boundary: ``chronus/mla1517_platform``.
+This package contains reusable exact mining primitives and tests; it must
+not claim GPU execution, pool acceptance, or measured hashrate on its own.
+
+The canonical runtime owns device dispatch, Stratum jobs, consensus
+validation, persistence, and fail-closed behaviour. These primitives may
+be used only when the caller supplies real work and records the resulting
+measurement.
 """
+
 from __future__ import annotations
 
-import os
-import sys
-import warnings
+from .difficulty import DifficultyController
+from .nonce_scheduler import NonceScheduler
+from .safety_fsm import EDGES, MiningState, SafetyFSM
+from .search import GroverStyleSearch, MerklePathVerifier, PreimageSearch
+from .stratum_v2 import StratumV2Client, Sv2Frame, Sv2ProtocolError
 
-QUARANTINE_MESSAGE = "Classical mining path quarantined: use Kellogg route"
-QUARANTINE_TARGET = "legacy_mining_classical_quarantined_814002a7"
+__all__ = [
+    "EDGES",
+    "MiningState",
+    "SafetyFSM",
+    "NonceScheduler",
+    "DifficultyController",
+    "GroverStyleSearch",
+    "MerklePathVerifier",
+    "PreimageSearch",
+    "StratumV2Client",
+    "Sv2Frame",
+    "Sv2ProtocolError",
+]
 
-# Fail-closed check: if imported in production runtime without explicit bypass, fail closed
-_is_test = any("pytest" in m for m in sys.modules) or any("pytest" in a for a in sys.argv)
-if not _is_test and os.getenv("PYTHIA_ALLOW_QUARANTINED_MINING") != "1":
-    raise ImportError(QUARANTINE_MESSAGE)
-
-warnings.warn(QUARANTINE_MESSAGE, DeprecationWarning, stacklevel=2)
-
-# Point package search path to quarantined directory so pytest test collection succeeds
-_quarantine_path = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", QUARANTINE_TARGET)
-)
-if os.path.isdir(_quarantine_path):
-    __path__ = [_quarantine_path]
+THEOREM_PROVEN = False

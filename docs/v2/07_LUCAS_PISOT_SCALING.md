@@ -159,7 +159,8 @@ In evaluating topological subset restriction against unrestricted search schedul
   Across all 36 evaluation cells in `evidence/lucas_pisot_honest_accounting.jsonl` ($n \in \{3, 4, 5, 6\}$, sizes $\in \{256, 1024, 4096\}$, seeds $\in \{1337, 42, 2026\}$):
   $$|\text{mean}_{\text{unconditional}} - \text{mean}_{\text{unrestricted}}| < 10^{-9}$$
 - **Hit-Conditional Distinction**: The restricted arm is faster *by construction* only when conditioned on a hit within the first $\lceil N \cdot d(n) \rceil$ elements. This demonstrates deterministic pre-image search ordering, **not** an unconditional hash reduction.
-- **Hit Rate Convergence**: Measured empirical hit rates converge to the theoretical Pisot damping factor $d(n) = 1 - |\psi|^n$ within $\pm 0.05$.
-- **Locked Non-Claims**: Confirmed in `tests/test_benchmark_lucas_pisot.py` and `lucas/scaling_research.py`: `non_claims = ["mining advantage", "scheduling advantage", "hardware speedup", "production qualification"]`.
+- **Demarcation per Owner Declaration D2 and DISC-08**:
+  - **Owner Declaration D2**: *"LUCAS scales everything and lucas scales the iGPU."* Lucas is the execution scale model of the whole system, including Chronus itself.
+  - **DISC-08 (`tests/test_scientific_discovery_quantum_falsification.py`)**: What is **FALSIFIED & QUARANTINED** is **Flat-Space Quantum Speedup on Classical Silicon**. Simulating quantum amplitude amplification on an unstructured flat space costs $\mathcal{O}(N^{1.5}) > \mathcal{O}(N)$ and yields zero unconditional speedup over brute force ($|\text{mean}_{\text{unconditional}} - \text{mean}_{\text{unrestricted}}| < 10^{-9}$). Structured Lucas topological scaling operates on manifold representations and state ladders, not flat-space simulation shortcuts.
 - **Reference Artifact**: Canonical standalone proof archived in [`evidence/repro_lucas_pisot.py`](../../evidence/repro_lucas_pisot.py).
 

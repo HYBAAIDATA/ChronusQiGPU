@@ -152,3 +152,23 @@ class TestScientificDiscoveryQuantumFalsification:
         proven_as_universal_theorem = False
         assert proven_as_universal_theorem is False
         assert len(traces) == len(primes)
+
+    test_falsify_flat_space_quantum_speedup = test_02_myth_shattered_classical_simulation_grover_has_no_flat_speedup
+    test_falsify_poincare_cassini_not_compression_bypass = test_03_poincare_cassini_is_search_order_heuristic_not_compression_bypass
+    test_millennium_probes_finite_not_theorems = test_05_myth_shattered_millennium_probes_are_computations_not_proofs
+
+
+def test_falsify_flat_space_quantum_speedup():
+    """Module-level alias for DISC-08 test."""
+    TestScientificDiscoveryQuantumFalsification().test_02_myth_shattered_classical_simulation_grover_has_no_flat_speedup()
+
+
+def test_falsify_poincare_cassini_not_compression_bypass():
+    """Module-level alias for DISC-09 test."""
+    TestScientificDiscoveryQuantumFalsification().test_03_poincare_cassini_is_search_order_heuristic_not_compression_bypass()
+
+
+def test_millennium_probes_finite_not_theorems():
+    """Module-level alias for DISC-10 test."""
+    TestScientificDiscoveryQuantumFalsification().test_05_myth_shattered_millennium_probes_are_computations_not_proofs()
+

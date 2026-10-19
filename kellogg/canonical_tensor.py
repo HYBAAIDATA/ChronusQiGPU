@@ -318,10 +318,25 @@ def build_kellogg_search_plan(
     )
 
 
+from kellogg.mother_tensor import (
+    EstateChunk600,
+    KelloggMotherTensor,
+    PartitionProof600,
+    build_600_partition,
+    kellogg_state_600,
+)
+
 __all__ = [
     "RepresentationChoice",
     "CoverageProofCertificate",
     "CanonicalKelloggTensor",
     "host_sha256d_recheck",
     "build_kellogg_search_plan",
+    # 600-lane canonical mother-tensor and partition
+    "EstateChunk600",
+    "KelloggMotherTensor",
+    "PartitionProof600",
+    "build_600_partition",
+    "kellogg_state_600",
 ]
+
