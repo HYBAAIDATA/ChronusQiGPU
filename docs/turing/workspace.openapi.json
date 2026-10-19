@@ -1,0 +1,538 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "TURING technical evaluation workspace",
+    "version": "1.1.0",
+    "description": "Implemented pilot only. Disabled by default. No enterprise allocation, commercial metering, billing or restart-durable job registry. Native source semantics remain authoritative."
+  },
+  "paths": {
+    "/api/v1/quantum/workspace": {
+      "post": {
+        "operationId": "dispatchWorkspace",
+        "security": [
+          {
+            "ALHarasBearer": [],
+            "Tenant": [],
+            "Actor": []
+          }
+        ],
+        "description": "Runs existing AL HARAS preflight before dispatch. A hyba.security subscription is not a commercial TURING entitlement. Pilot must be enabled by an authorised operator. Pagination is bounded offset over mutable process-local rows; refresh first page after new submissions. No cross-worker affinity/restart guarantees.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Capabilities, mutable identity-scoped history, status/cancellation snapshot, or idempotent submit replay. Host may attach guardian_receipt.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Job"
+                    },
+                    {
+                      "$ref": "#/components/schemas/History"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Capabilities"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Native submission acknowledged; not a completion guarantee.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input schema, program bounds or pagination.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Authority-specific safe error or workspace error code; not a success envelope."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated, invalid or expired authority.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Authority-specific safe error or workspace error code; not a success envelope."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Guardian or tenant/actor admission refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Authority-specific safe error or workspace error code; not a success envelope."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not found in current identity/server process.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Authority-specific safe error or workspace error code; not a success envelope."
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Same key conflicts with a different normalized input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Authority-specific safe error or workspace error code; not a success envelope."
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Native capability, compilation or parameter admission refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Authority-specific safe error or workspace error code; not a success envelope."
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Retained-job bound reached; idempotent replay remains available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Authority-specific safe error or workspace error code; not a success envelope."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Pilot disabled, guardian/facade unavailable, or native execution outcome unknown. Do not assume a failed execution or retry under a new key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Authority-specific safe error or workspace error code; not a success envelope."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ALHarasBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      },
+      "Tenant": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-HYBA-Tenant"
+      },
+      "Actor": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-HYBA-Actor"
+      }
+    },
+    "schemas": {
+      "Program": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["n_qubits", "operations"],
+        "properties": {
+          "n_qubits": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "operations": {
+            "type": "array",
+            "maxItems": 256,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["gate", "qubits"],
+              "properties": {
+                "gate": {
+                  "type": "string",
+                  "enum": [
+                    "i",
+                    "x",
+                    "y",
+                    "z",
+                    "h",
+                    "s",
+                    "sdg",
+                    "t",
+                    "tdg",
+                    "cx",
+                    "cnot",
+                    "cz",
+                    "swap"
+                  ]
+                },
+                "qubits": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 2,
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 11
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "The server additionally enforces target < n_qubits and gate-specific arity (two for cx/cnot/cz/swap; one otherwise). Booleans and fractional numeric values are refused. No continuous angles or extra options."
+      },
+      "Command": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["action", "observation"],
+            "properties": {
+              "action": {
+                "const": "capabilities"
+              },
+              "observation": {
+                "type": "object",
+                "description": "Required guardian observation; client uses ui and action labels, not confidential inputs."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["action", "observation", "program", "idempotency_key"],
+            "properties": {
+              "action": {
+                "const": "submit"
+              },
+              "observation": {
+                "type": "object",
+                "description": "Required guardian observation; client uses ui and action labels, not confidential inputs."
+              },
+              "program": {
+                "$ref": "#/components/schemas/Program"
+              },
+              "idempotency_key": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:@-]{0,127}$",
+                "maxLength": 128
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["action", "observation", "job_id"],
+            "properties": {
+              "action": {
+                "const": "status"
+              },
+              "observation": {
+                "type": "object",
+                "description": "Required guardian observation; client uses ui and action labels, not confidential inputs."
+              },
+              "job_id": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["action", "observation", "job_id"],
+            "properties": {
+              "action": {
+                "const": "cancel"
+              },
+              "observation": {
+                "type": "object",
+                "description": "Required guardian observation; client uses ui and action labels, not confidential inputs."
+              },
+              "job_id": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["action", "observation"],
+            "properties": {
+              "action": {
+                "const": "list"
+              },
+              "observation": {
+                "type": "object",
+                "description": "Required guardian observation; client uses ui and action labels, not confidential inputs."
+              },
+              "offset": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 256,
+                "default": 0
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20,
+                "default": 10
+              },
+              "status": {
+                "enum": [
+                  "queued",
+                  "running",
+                  "succeeded",
+                  "failed",
+                  "cancelled",
+                  null
+                ]
+              },
+              "query": {
+                "type": "string",
+                "maxLength": 128,
+                "default": ""
+              }
+            }
+          }
+        ]
+      },
+      "Job": {
+        "type": "object",
+        "required": [
+          "schema_version",
+          "persistence",
+          "service_mode",
+          "job_id",
+          "status",
+          "submitted_at",
+          "program"
+        ],
+        "properties": {
+          "schema_version": {
+            "const": "turing.workspace.v1"
+          },
+          "persistence": {
+            "const": "in_memory_process_local"
+          },
+          "service_mode": {
+            "const": "technical_evaluation_only"
+          },
+          "job_id": {
+            "type": "string"
+          },
+          "status": {
+            "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "program": {
+            "$ref": "#/components/schemas/Program"
+          },
+          "report": {
+            "type": "object",
+            "description": "Unmodified native facade report; supplied only for succeeded jobs. This schema does not redefine native evidence."
+          },
+          "error": {
+            "type": "string"
+          },
+          "cancellation_accepted": {
+            "type": "boolean"
+          },
+          "idempotent_replay": {
+            "type": "boolean"
+          }
+        }
+      },
+      "History": {
+        "type": "object",
+        "required": [
+          "schema_version",
+          "persistence",
+          "service_mode",
+          "jobs",
+          "offset",
+          "limit",
+          "total_matching",
+          "total_retained",
+          "next_offset",
+          "observed_at"
+        ],
+        "properties": {
+          "schema_version": {
+            "const": "turing.workspace.v1"
+          },
+          "persistence": {
+            "const": "in_memory_process_local"
+          },
+          "service_mode": {
+            "const": "technical_evaluation_only"
+          },
+          "jobs": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "required": [
+                "job_id",
+                "status",
+                "submitted_at",
+                "n_qubits",
+                "operation_count"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "job_id": {
+                  "type": "string"
+                },
+                "status": {
+                  "enum": [
+                    "queued",
+                    "running",
+                    "succeeded",
+                    "failed",
+                    "cancelled"
+                  ]
+                },
+                "submitted_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "n_qubits": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 12
+                },
+                "operation_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 256
+                }
+              }
+            }
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 256
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "total_matching": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 256
+          },
+          "total_retained": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 256
+          },
+          "next_offset": {
+            "type": ["integer", "null"]
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Capabilities": {
+        "type": "object",
+        "required": [
+          "schema_version",
+          "persistence",
+          "service_mode",
+          "max_qubits",
+          "max_operations",
+          "max_amplitudes",
+          "gates",
+          "commercial_entitlements",
+          "billing"
+        ],
+        "properties": {
+          "schema_version": {
+            "const": "turing.workspace.v1"
+          },
+          "persistence": {
+            "const": "in_memory_process_local"
+          },
+          "service_mode": {
+            "const": "technical_evaluation_only"
+          },
+          "max_qubits": {
+            "const": 12
+          },
+          "max_operations": {
+            "const": 256
+          },
+          "max_amplitudes": {
+            "const": 4096
+          },
+          "gates": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "max_retained_jobs": {
+            "type": "integer"
+          },
+          "max_retained_jobs_per_identity": {
+            "type": "integer"
+          },
+          "commercial_entitlements": {
+            "const": "not_integrated"
+          },
+          "billing": {
+            "const": "not_integrated"
+          }
+        }
+      }
+    }
+  }
+}
