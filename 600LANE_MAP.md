@@ -126,24 +126,114 @@ The following active files contain linear scanning fallbacks or flat loops that 
 
 ---
 
-## 7. Production Readiness Completion Matrix (P1 through P6)
+## 7. The 11-Step Solving & Completing Lifecycle (Production Execution Contract)
 
-| Phase | Production Deliverable | Target Files / Modules | Production Readiness Criteria & SLO | Status |
-| :--- | :--- | :--- | :--- | :--- |
-| **P1: MAP** | Architectural Map & Verification Blueprint | `600LANE_MAP.md` | Complete mapping of current 32 vs target 600 lanes; classical path audit; Hendrix clamp verification; micro_tether verdict. | **DONE** |
-| **P2: QUARANTINE & GIL FIX** | Isolate classical path + ThreadPoolExecutor(4) | `mining/`, `legacy_mining_classical_quarantined_814002a7/`, `chronus/mla1517_platform/python/control_api.py` | 1. `git mv` classical files to quarantine + fail-closed shims.<br>2. ThreadPoolExecutor(4) offloads rf/xgb/lgbm/gb + discovery + snapshots.<br>3. Heartbeat p95 latency drops from ~5.0s to < 1.0s.<br>4. Braiins pool connection remains alive (shadow mode). | **READY TO EXECUTE** |
-| **P3: GEOMETRY & KELLOGG** | 600-Vertex Bijection & Canonical Mother-Tensor | `chronus/exact_geometry.py`, `kellogg/mother_tensor.py`, `hyba/hybrid/lucas_partition.py` | 1. 600-vertex partition of leased window $W$: $\bigcup W_i = W$, $\bigcap W_i = \emptyset$.<br>2. Unit tests verify 100% totality, 0% overlap, 100% SHA256d recheck.<br>3. `kellogg/mother_tensor.py` `[600 × 8 × chunk × 11]` reproduces $\{\phi, 0.5625 \text{ XOR}, \kappa \text{ trace}\}$. | **SPECIFIED** |
-| **P4: ARSENAL & TOE WIRING** | Clamped Hendrix, Walk, Tunnelling & Ricci Flow | `chronus/mla1517/mining/`, `toe/ansatz_v3.py`, `euclid/cognition/cognitive_topology.py` | 1. Hendrix-Grover with $2^{20}$ clamp + Hadamard walk same-hash verification across substrates.<br>2. Yang-Mills gauge symmetry check (no privileged lane).<br>3. Ricci flow per-lane: $|\kappa| \le 0.05$ in $\le 8$ steps canonical.<br>4. Per-lane 5+1 log `{lane, intelligences, kappa, entropy_delta, score}`. | **SPECIFIED** |
-| **P5: OCTOPUS CLOSE** | 600 Arms $\to$ 1 Head Live on Braiins Jobs | `chronus/mla1517_platform/python/coordinator.py`, `euclid/euclid_runtime.py` | 1. 600 arms execute concurrently under `EuclidRuntime.production()`.<br>2. 10-minute soak test logging Braiins jobs 00-06, difficulties, invalidated/stale, heals, rechecks.<br>3. No live submission without explicit approval flag (shadow execution default). | **SPECIFIED** |
-| **P6: PROOF GATES & RELEASE** | Proof Verification & Release Documentation | `benchmarks/`, `600LANE_RELEASE.md` | 1. All pytest mining, lease, and router suites pass.<br>2. `test_euclid_vs_ineffable.py`, `test_euclid_vs_frontier_llms.py`, and Arena G1-G3 pass.<br>3. `600LANE_RELEASE.md` published with MEASURED numbers only. | **SPECIFIED** |
+In production, the 600-Lane Solving Machine does NOT blindly search or iterate. It executes an exact, deterministic 11-step lifecycle under `EuclidRuntime.production()` where every phase gate must strictly complete before state transitions occur:
+
+```
+[1. Stratum Intake] ──> [2. 600-Vertex 11D Bijection] ──> [3. 8-Future Superposition]
+                                                                     │
+[6. Chronus iGPU Exec] <── [5. SearchPlan Collapse] <── [4. 5+1 Intelligence Scoring]
+        │
+        ▼
+[7. 100% Host SHA256d Recheck] ──> [8. Approval Gate: Shadow vs Submit]
+                                                  │
+[11. Aethel Ledger Sealing] <── [10. Salamander Healing] <── [9. Literal Outcome Feedback]
+```
+
+1. **Stratum Job Intake & Leased Window:**
+   - Ingestion of `mining.notify` from Braiins pool (jobs 00-06).
+   - Establishes leased nonce estate window $W = [N_{\text{start}}, N_{\text{end}})$.
+   - Re-verifies baseline tenant isolation (M3 tenant context, `Auth: true`).
+
+2. **600-Vertex Geometric Bijection (`Build600Partition`):**
+   - Lifts the Dodecahedron (20V, 12F) $\oplus$ Icosahedron (12V, 20F) overlay into 11D coordinates over $\mathbb{Q}(\phi)$ and $\mathbb{R}^{11}$.
+   - Decomposes window $W$ into exactly 600 disjoint estate chunks $\{W_0, W_1, \dots, W_{599}\}$.
+   - **Completing Invariant:** $\bigcup_{i=0}^{599} W_i = W$ (100% Hilbert space coverage) and $\bigcap_{i=0}^{599} W_i = \emptyset$ (0% overlap).
+
+3. **8-Future Superposition Hold (THESEUS Memory):**
+   - Retains 8 candidate future trajectories in LRU superposition.
+   - Priors seeded strictly from historical literal pool outcomes; zero invented priors.
+
+4. **5+1 Per-Lane Intelligence Scoring:**
+   - Evaluates all 600 lanes across the 5+1 fundamental state spaces:
+     - **Predictive:** $P(\text{accept})$ scored via literal-trained ensemble (`rf`, `xgb`, `lgbm`, `gb`) offloaded to `ThreadPoolExecutor(4)`.
+     - **Causal:** Pearl Layer-2 $do(\text{lease}, \text{route}, \text{transport})$ intervention attribution.
+     - **Counterfactual:** Pearl Layer-3 regret ledger evaluating alternative path value.
+     - **Topological:** Forman-Ricci curvature $\kappa$ damping singularities ($\kappa_0 = -1.62 \implies |\kappa| \le 0.05$).
+     - **Geometric:** Bijection traversal ordering over 11D Poincaré-Cassini manifold.
+     - **Quantum-Ext:** Hadamard walk reweighting with seed-pinned same-hash replayability.
+   - Applies bounded Arsenal operators (tunnelling for stuck futures, annealing from truth).
+   - **Yang-Mills Symmetry Check:** Asserts gauge invariance — no lane among the 600 holds arbitrary structural privilege.
+
+5. **SearchPlan Collapse:**
+   - Collapses the scored superposition into a deterministic `SearchPlan`.
+   - Records cryptographic `collapse_reason` and logs evaluated alternative paths for auditability.
+
+6. **CHRONUS Execution (Sole Execution Route):**
+   - Dispatches chunks to `chronus.one_igpu` (or Virtual iGPU CPU-emulator fallback).
+   - Logs `{requested: chronus, executed: device_id, fallback: bool}`.
+   - Emits hardware honesty tag: `EMULATOR` permanently logged when running on silicon CPU.
+
+7. **100% Host SHA-256d Recheck Gate (Double SHA-256 $\le$ Target Inviolable):**
+   - **Zero Unchecked Submissions:** Every candidate share meeting difficulty target $H \le \text{Target}$ is independently re-hashed on the host ALU.
+   - Mismatch triggers immediate halt (`FAIL_CLOSED`) and raises `AttestationViolation`.
+
+8. **Approval Gate: Shadow Logging vs. Live Pool Submit:**
+   - **Safe Gate:** Defaults to `SHADOW_LOG` (no live stratum submission without explicit `approval_flag=True`).
+   - If approved, dispatches `mining.submit` to Braiins pool with session credentials.
+
+9. **Literal Outcome Feedback Loop (The Only Reward):**
+   - Pool response (`ACCEPTED`, `REJECTED`, `STALE`, difficulty adjustment) ingested.
+   - Updates predictive weights and causal graphs based exclusively on literal empirical truth.
+
+10. **Salamander Self-Healing Loop:**
+    - Loop: `Observe -> Classify -> Bounded Action -> Ack -> Post-Observe -> Verified Recovery -> Resume`.
+    - **Pool Disconnect:** WinError 10054 triggers 15.7s auto-reauthentication template.
+    - **GIL Stall Elimination:** Worker monitoring, tree inference, and snapshots run in `ThreadPoolExecutor(4)`, ensuring heartbeat p95 $< 1.0\text{s}$.
+
+11. **Attestation & Aethel Ledger Sealing:**
+    - Generates Merkle root over `{SearchPlan_hash, ExecutionRecords, outcome_literal, heal_record}`.
+    - Appends attested block to hash-chained Aethel ledger, pinning `ledger_head`.
 
 ---
 
-## 8. Definition of Done Checklist
+## 8. Inviolable Production Readiness Contracts & SLO Verification Matrix
 
-- [x] **P1 Map:** Complete 600-lane architectural layout, classical audit, Hendrix clamp, and micro_tether reconciliation documented in `600LANE_MAP.md`.
+To certify the 600-Lane Solving Machine for production deployment, the implementation must satisfy 8 inviolable SLO gates:
+
+| Invariant / SLO | Metric Target | Verification Mechanism | Production Failure Mode |
+| :--- | :--- | :--- | :--- |
+| **1. Nonce Disjointness** | $\bigcap_{i=0}^{599} W_i = \emptyset$ (Overlap = 0) | Set-intersection unit test over all 600 chunks | `OverlapDetected`: Immediate lane halt; campaign aborted. |
+| **2. Nonce Totality** | $\bigcup_{i=0}^{599} W_i = W$ (Coverage = 100%) | Range coverage cardinality check $\sum |W_i| = |W|$ | `CoverageIncomplete`: Campaign rejected; fallback triggered. |
+| **3. Host Recheck Rate** | 100.0% of candidate hashes | Host ALU double-SHA256 re-computation before submit | `RecheckFailure`: Candidate dropped; hardware fault logged. |
+| **4. Hardware Honesty** | Zero false silicon claims | Backend inspection: CPU/emulator flagged `EMULATOR` | `AttestationViolation`: Process terminated on spoofing. |
+| **5. Hendrix Amplitude Clamp** | Bound $2^{20}$ enforced | `MATERIALISATION_BOUND = 2**20` assertion in QPU core | `UnclampedClaimError`: Refuted claim triggers audit halt. |
+| **6. Heartbeat Latency SLO**| p95 latency $< 1.0\text{s}$ | `ThreadPoolExecutor(4)` offloads tree inference & snapshots | `HeartbeatStall`: Supervisor flags worker stale if p95 > 2.5s. |
+| **7. Pool Recovery SLO** | Re-auth $\le 15.7\text{s}$ | Salamander automated socket reconnect on WinError 10054 | `StratumDrop`: Salamander escalates to backup pool endpoint. |
+| **8. Submission Safety** | Default Shadow Mode | Live `mining.submit` blocked unless `approval_flag=True` | `UnapprovedSubmit`: Submissions denied; logged to shadow file. |
+
+---
+
+## 9. Phase Completion Mapping & Verification Gates (P1 through P6)
+
+| Phase | Phase Deliverable | Required Proofs & Code Locations | Production Readiness Verification Gate | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **P1: MAP** | Architectural Map & Verification Blueprint | `600LANE_MAP.md` | Full topology map; classical path audit; Hendrix clamp audit ($2^{20}$ bound); micro-tether reconciliation verdict. | **DONE** |
+| **P2: QUARANTINE & GIL FIX** | Isolate classical path + ThreadPoolExecutor(4) | `mining/`, `legacy_mining_classical_quarantined_814002a7/`, `chronus/mla1517_platform/python/control_api.py` | 1. Quarantined classical imports fail closed.<br>2. ThreadPoolExecutor(4) wired for rf/xgb/lgbm/gb + discovery + snapshots.<br>3. Heartbeat p95 logged and verified $< 1.0\text{s}$.<br>4. `pytest --collect-only` passes 100% with 0 errors.<br>5. Braiins pool connection preserved. | **READY TO EXECUTE** |
+| **P3: GEOMETRY & KELLOGG** | 600-Vertex Bijection & Canonical Mother-Tensor | `chronus/exact_geometry.py`, `kellogg/mother_tensor.py`, `hyba/hybrid/lucas_partition.py` | 1. Bijection builder produces 600 disjoint chunks with 100% coverage proof.<br>2. Unit tests verify 0 overlap and 100% host SHA256d recheck.<br>3. Single canonical `kellogg/mother_tensor.py` `[600 × 8 × chunk × 11]` reproduces $\{\phi, 0.5625 \text{ XOR}, \kappa \text{ trace}\}$. | **SPECIFIED** |
+| **P4: ARSENAL & TOE WIRING** | Clamped Hendrix, Walk, Tunnelling & Ricci Flow | `chronus/mla1517/mining/`, `toe/ansatz_v3.py`, `euclid/cognition/cognitive_topology.py` | 1. Hendrix-Grover clamped to $2^{20}$; Hadamard walk verifies same-hash across [emulator, CPU, chronus].<br>2. Yang-Mills gauge symmetry check passes for all 600 lanes.<br>3. Ricci flow reaches $|\kappa| \le 0.05$ within $\le 8$ steps canonical.<br>4. Per-lane 5+1 log structure verified. | **SPECIFIED** |
+| **P5: OCTOPUS CLOSE** | 600 Arms $\to$ 1 Head Live on Braiins Jobs | `chronus/mla1517_platform/python/coordinator.py`, `euclid/euclid_runtime.py` | 1. 600 arms execute concurrently under `EuclidRuntime.production()`.<br>2. 10-minute soak test on Braiins jobs 00-06 logging jobs, difficulties, invalidated/stale, heals, rechecks.<br>3. Shadow execution active; zero unapproved submissions. | **SPECIFIED** |
+| **P6: PROOF GATES & RELEASE** | Proof Verification & Release Documentation | `benchmarks/`, `600LANE_RELEASE.md` | 1. Pytest mining, lease, and router suites pass.<br>2. `test_euclid_vs_ineffable.py`, `test_euclid_vs_frontier_llms.py`, and Arena G1-G3 pass.<br>3. `600LANE_RELEASE.md` issued with MEASURED timings, coverage, and ledger head. | **SPECIFIED** |
+
+---
+
+## 10. Definition of Done Checklist
+
+- [x] **P1 Map:** Complete 600-lane architectural layout, classical audit, Hendrix clamp, micro_tether reconciliation, and 11-step completing lifecycle documented in `600LANE_MAP.md`.
 - [ ] **P2 Quarantine & GIL Fix:** Classical paths quarantined with fail-closed shims; `ThreadPoolExecutor(4)` active; heartbeat p95 < 1.0s; Braiins connection maintained.
 - [ ] **P3 Geometry & Mother-Tensor:** 600-vertex partition proven complete and disjoint; `kellogg/mother_tensor.py` reproduces $\{\phi, 0.5625 \text{ XOR}, \kappa \text{ trace}\}$.
 - [ ] **P4 Arsenal & TOE:** Clamped Hendrix, quantum walk, annealing/tunnelling, Yang-Mills gauge symmetry, and Ricci flow wired into per-lane 5+1 scoring.
 - [ ] **P5 Octopus Close:** 600 arms $\times$ 1 head executing on Braiins pool jobs; 10-minute soak logged; Salamander 15.7s recovery active.
 - [ ] **P6 Proof Gates:** Test suites passed; `600LANE_RELEASE.md` issued with measured timings, coverage, and ledger head.
+
