@@ -1,15 +1,13 @@
 """EUCLID Unified Intelligence — Canonical Gatekeeper Subdomain.
 
-Consolidates AL HARAS pre-execution audit, host authorization, budget enforcement,
-and verified rollback into a single atomic gatekeeper for all capabilities.
+Compatibility facade over existing capability owners. Production invocations use
+EuclidRuntime.dispatch_specialist; this facade alone grants no runtime authority.
 """
+
 from __future__ import annotations
 
 import copy
-import hashlib
-import json
-import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from Intelligence.capability_fabric import (
     AuthorizationDenied,
@@ -55,14 +53,11 @@ __all__ = [
 
 
 class UnifiedIntelligenceGatekeeper:
-    """Single canonical gatekeeper routing all intelligence operations (physics and cognition).
+    """Host-only facade; not a substitute for canonical runtime authorization.
 
-    Enforces:
-    1. Caller authorization and execution profile boundaries.
-    2. Atomic capability manifest inspection and admission.
-    3. Resource budget limits and deadline guards.
-    4. Immutable SHA-256 pre-execution state hashing.
-    5. Verified rollback on execution exception.
+    State transitions require an explicitly configured bridge. Capability
+    dispatch below is the existing trusted-host registry API; externally
+    requested work must use EuclidRuntime.dispatch_specialist.
     """
 
     def __init__(
@@ -79,16 +74,6 @@ class UnifiedIntelligenceGatekeeper:
     ) -> Tuple[bool, Optional[AuditReceipt], str]:
         """Dispatch a state transition request through the native empirical state bridge."""
         ok, receipt, msg = self.state_bridge.dispatch(req)
-        if ok and receipt:
-            self.audit_log.append({
-                "type": "STATE_TRANSITION",
-                "receipt_id": receipt.receipt_id,
-                "status": receipt.status,
-                "capability_id": req.capability_id,
-                "caller_id": req.caller_id,
-                "timestamp_epoch": receipt.timestamp_epoch,
-                "state_hash": receipt.new_state_hash,
-            })
         return ok, receipt, msg
 
     def dispatch_capability(
@@ -98,23 +83,37 @@ class UnifiedIntelligenceGatekeeper:
         profile: ExecutionProfile,
         **kwargs: Any,
     ) -> Tuple[Any, Any]:
-        """Dispatch an registered capability through the atomic capability registry."""
+        """Trusted-host registry API, not the AL HARAS/creator-rights boundary."""
         output, receipt = self.registry.dispatch(
             capability_id,
             profile=profile,
             _strict_json=True,
             **kwargs,
         )
-        self.audit_log.append({
-            "type": "CAPABILITY_EXECUTION",
-            "receipt_id": receipt.receipt_id,
-            "status": receipt.status,
-            "capability_id": capability_id,
-            "profile": profile.value,
-            "timestamp_epoch": receipt.execution_timestamp,
-        })
+        self.audit_log.append(
+            {
+                "type": "CAPABILITY_EXECUTION",
+                "receipt_id": receipt.receipt_id,
+                "status": receipt.status,
+                "capability_id": capability_id,
+                "profile": profile.value,
+                "timestamp_epoch": receipt.execution_timestamp,
+            }
+        )
         return output, receipt
 
     def get_audit_trail(self) -> List[Dict[str, Any]]:
         """Return detached copy of the audit trail."""
-        return copy.deepcopy(self.audit_log)
+        state_events = [
+            {
+                "type": "STATE_TRANSITION",
+                "receipt_id": receipt.receipt_id,
+                "status": receipt.status,
+                "capability_id": receipt.capability_id,
+                "caller_id": receipt.caller_id,
+                "timestamp_epoch": receipt.timestamp_epoch,
+                "state_hash": receipt.new_state_hash,
+            }
+            for receipt in self.state_bridge.audit_log
+        ]
+        return copy.deepcopy([*self.audit_log, *state_events])

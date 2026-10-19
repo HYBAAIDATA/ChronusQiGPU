@@ -372,6 +372,15 @@ class EuclidRuntime:
         return bind_intelligence(self, registry, profile=profile,
                                  capabilities=capabilities, organ_id=organ_id)
 
+    def bind_empirical_state(self, *, data_port, organ_id="empirical-state"):
+        """Bind operational reliability state to existing shared custody.
+
+        Grants no rights or entitlements; dispatch remains AL HARAS-mediated.
+        """
+        from .capabilities.empirical_runtime import bind_empirical_state
+
+        return bind_empirical_state(self, data_port=data_port, organ_id=organ_id)
+
     def dispatch_specialist(
         self,
         organ_id: str,
