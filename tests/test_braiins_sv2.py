@@ -8,7 +8,7 @@ from mining.braiins_sv2 import (
     normalize_identity,
 )
 from mining.stratum_v2 import Sv2TransportError
-from test_stratum_v2 import FakeSecureChannel
+from tests.test_stratum_v2 import FakeSecureChannel
 
 
 def test_official_url_parses_authority_key():

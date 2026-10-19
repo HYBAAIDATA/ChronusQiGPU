@@ -1,4 +1,4 @@
-from conftest import H
+from tests.frontier_agent.conftest import H
 from chronus.agent.honesty import Claim, honest_report
 
 

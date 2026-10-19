@@ -2,7 +2,7 @@ from dataclasses import replace
 from fractions import Fraction as F
 import pytest
 from chronus.agent._contracts import ContractError
-from conftest import H
+from tests.frontier_agent.conftest import H
 from chronus.agent.anti_goodhart import OutcomeSample, anti_goodhart_review
 
 

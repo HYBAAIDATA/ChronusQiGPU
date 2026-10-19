@@ -21,6 +21,7 @@ import threading
 import time
 import traceback
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 
 # Bound BLAS/OpenMP thread allocation to 1 thread per worker to avoid thread exhaustion
 # and memory allocation failure ("OpenBLAS error: Memory allocation still failed after 10 retries")
@@ -518,6 +519,18 @@ def _heartbeat_dir() -> Path:
     return Path(raw)
 
 
+_EXECUTOR: ThreadPoolExecutor | None = None
+_EXECUTOR_LOCK = threading.Lock()
+
+
+def get_pythia_executor() -> ThreadPoolExecutor:
+    global _EXECUTOR
+    with _EXECUTOR_LOCK:
+        if _EXECUTOR is None:
+            _EXECUTOR = ThreadPoolExecutor(max_workers=4, thread_name_prefix="pythia-executor")
+        return _EXECUTOR
+
+
 def _metrics_path(worker_id: str) -> Path:
     return _heartbeat_dir() / f"{worker_id}.metrics.json"
 
@@ -620,6 +633,7 @@ class ControlPlane:
         }
         self.stop_event = threading.Event()
         self.lock = threading.RLock()
+        self.executor = get_pythia_executor()
         self.autostart = _is_truthy(os.getenv("PYTHIA_AUTOSTART_WORKERS"), default=True)
         self.mmio_device = os.getenv("MLA1517_MMIO_DEVICE", "").strip()
         self.execution_device = _execution_device_env()
@@ -753,7 +767,10 @@ class ControlPlane:
     def records(self) -> list[WorkerRecord]:
         with self.lock:
             self.ensure_workers()
-            return [self._refresh_evidence(handle) for handle in self.handles.values()]
+            handles = list(self.handles.values())
+            if len(handles) > 1:
+                return list(self.executor.map(self._refresh_evidence, handles))
+            return [self._refresh_evidence(handle) for handle in handles]
 
     def _refresh_evidence(self, handle: WorkerHandle) -> WorkerRecord:
         record = handle.record
@@ -775,6 +792,16 @@ class ControlPlane:
                 f'pythia_worker_backend_info{{name="{record.worker_id}",backend="{backend}"}}',
                 1.0,
             )
+        try:
+            p95_val = metrics.get("heartbeat_p95_seconds")
+            if p95_val is not None:
+                record.heartbeat_p95 = float(p95_val)
+                METRICS.set(
+                    f'pythia_worker_heartbeat_p95_seconds{{name="{record.worker_id}"}}',
+                    record.heartbeat_p95,
+                )
+        except (TypeError, ValueError):
+            pass
         if (
             handle.process is not None
             and handle.process.poll() is not None

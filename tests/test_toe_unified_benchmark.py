@@ -12,14 +12,14 @@ from kellogg.tensor_ml import accuracy_score, exact_linear
 from toe.unified.claims import CLAIMS, implementation_status, render_coverage, required_layers
 from toe.unified.economics import document_fortune500_scenario
 
-import test_toe_unified_adversarial as adversarial
-import test_toe_unified_e2e as e2e
-import test_toe_unified_integration as integration
-import test_toe_unified_invariants as invariants
-import test_toe_unified_property as properties
-import test_toe_unified_unit as unit
+from tests import test_toe_unified_adversarial as adversarial
+from tests import test_toe_unified_e2e as e2e
+from tests import test_toe_unified_integration as integration
+from tests import test_toe_unified_invariants as invariants
+from tests import test_toe_unified_property as properties
+from tests import test_toe_unified_unit as unit
 
-from test_toe_unified_invariants import SEED, exercise, load_iris
+from tests.test_toe_unified_invariants import SEED, exercise, load_iris
 
 ROOT = Path(__file__).resolve().parents[1]
 COVERAGE = ROOT / "reports" / "toe_unified_coverage_map.md"

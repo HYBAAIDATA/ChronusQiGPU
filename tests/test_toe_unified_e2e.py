@@ -6,7 +6,7 @@ import time
 from toe.unified import UnifiedAnalyticsPlatform
 from toe.unified.catalog import CATALOG
 
-from test_toe_unified_invariants import SEED, load_iris
+from tests.test_toe_unified_invariants import SEED, load_iris
 
 TOUCHED = {"A1", "C1", "C5", "I1", "F4", "G2", "B4"}
 assert SEED == 1517

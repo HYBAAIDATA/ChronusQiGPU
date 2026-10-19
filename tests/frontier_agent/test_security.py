@@ -1,6 +1,6 @@
 import pytest
 from chronus.agent._contracts import ContractError
-from conftest import H
+from tests.frontier_agent.conftest import H
 from chronus.agent.security import InputEnvelope, resist_manipulation
 
 

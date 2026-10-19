@@ -5,7 +5,7 @@ from dataclasses import replace
 
 import pytest
 
-from test_resident_hendrix import GENESIS, issue
+from tests.test_resident_hendrix import GENESIS, issue
 from chronus.resident_hendrix import ResidentHendrix, seal
 from chronus.one_igpu import OneIGPU
 from chronus.adapters.base import DispatchError, BackendAbsent

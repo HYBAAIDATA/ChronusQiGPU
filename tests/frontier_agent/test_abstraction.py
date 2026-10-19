@@ -1,5 +1,5 @@
 from dataclasses import replace
-from conftest import H
+from tests.frontier_agent.conftest import H
 from chronus.agent.abstraction import Abstraction, AbstractionState as S, discover_abstractions
 
 

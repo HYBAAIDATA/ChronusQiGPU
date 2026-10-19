@@ -88,6 +88,8 @@ class ClosedLoopOptimizer:
         self.trial: dict[str, Any] | None = None
         self.history: deque[OptimizationEvent] = deque(maxlen=_HISTORY_RETENTION)
         self.last_observation: dict[str, Any] | None = None
+        self.is_locked = False
+        self.lock_reason: str | None = None
         if self.state_path is not None:
             self.load()
 
@@ -103,6 +105,20 @@ class ClosedLoopOptimizer:
         self.state_path = Path(path)
         self.load()
 
+    def lock(self, reason: str = "healer active") -> None:
+        """Lock optimizer: halts active trials, defers window scaling, healer outranks optimiser."""
+        self.is_locked = True
+        self.lock_reason = reason
+        if self.trial is not None:
+            self._finish(False, None, f"healer lock: {reason}")
+        self._persist()
+
+    def unlock(self) -> None:
+        """Unlock optimizer after verified autonomic recovery."""
+        self.is_locked = False
+        self.lock_reason = None
+        self._persist()
+
     def select(
         self,
         *,
@@ -114,6 +130,8 @@ class ClosedLoopOptimizer:
         """Return the only window the runtime is authorised to execute next."""
         proposed = max(1, int(proposed_window))
         current = self.active.setdefault(route, proposed)
+        if getattr(self, "is_locked", False):
+            return current
         if safety_override:
             if self.trial is not None and self.trial["route"] == route:
                 self._finish(False, None, "safety override aborted trial")
@@ -191,6 +209,10 @@ class ClosedLoopOptimizer:
             "executed_route": executed_route or route,
             "useful_work_per_second": rate if rate is not None else "Unavailable",
         }
+        if getattr(self, "is_locked", False):
+            if self.trial is not None and self.trial["route"] == route:
+                self._finish(False, None, f"healer locked during trial: {getattr(self, 'lock_reason', 'recovery')}")
+            return
         if self.trial is not None and self.trial["route"] == route:
             if planned_window != self.trial["candidate"]:
                 return
