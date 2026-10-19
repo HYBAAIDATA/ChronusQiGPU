@@ -213,6 +213,7 @@ from .canonical_tensor import (
 
 __version__ = "1.0.0"
 
+
 # Lazy surfaces: tensor_ml requires numpy; exact_field.sqrt_f is kept out
 # of the training path by contract (tests assert it never enters
 # sys.modules through the ML import chain).
