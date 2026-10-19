@@ -1,0 +1,56 @@
+name: TURING documentation system
+on:
+  pull_request:
+    paths:
+      - 'docs/turing/**'
+      - 'docs/TURING_PRODUCTION_PIPELINE.md'
+      - 'docs/TURING_VQC_CALLER_CONTRACT.md'
+      - 'turing_universal_quantum_computer/**'
+      - 'scripts/turing_docs.py'
+      - 'scripts/test_turing_docs.py'
+      - '.github/workflows/turing-docs.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/turing/**'
+      - 'turing_universal_quantum_computer/**'
+      - 'scripts/turing_docs.py'
+      - 'scripts/test_turing_docs.py'
+      - '.github/workflows/turing-docs.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned documentation renderer
+        run: python -m pip install -r docs/turing/requirements.txt
+      - name: Validate metadata, Markdown structure, links, anchors, claims and navigation
+        run: python scripts/turing_docs.py check
+      - name: Negative boundary and output tests
+        run: python -m unittest discover -s scripts -p test_turing_docs.py -v
+      - name: Build isolated review previews (no deployment)
+        run: |
+          python scripts/turing_docs.py build --audience public --out /tmp/turing-docs-public
+          python scripts/turing_docs.py build --audience customer --out /tmp/turing-docs-customer
+          python scripts/turing_docs.py build --audience internal --out /tmp/turing-docs-internal
+      - name: Authoritative API reference and genuine existing example
+        run: |
+          python -m pip install uv==0.13.1
+          uv sync --project turing_universal_quantum_computer --locked --group research
+          uv run --project turing_universal_quantum_computer --locked --group research python turing_universal_quantum_computer/experiments/generate_api_reference.py --check
+          uv run --project turing_universal_quantum_computer --locked --group research python turing_universal_quantum_computer/examples/turing_pipeline.py
+      # Only the public review preview is retained; never upload restricted outputs here.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: turing-public-docs-review-preview
+          path: /tmp/turing-docs-public/
+          if-no-files-found: error
+          retention-days: 7
+      # No Pages deployment, publication, release, credentials or registry action.
