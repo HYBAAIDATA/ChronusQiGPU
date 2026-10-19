@@ -84,6 +84,9 @@ def run_millennium_program(seeds: List[int] = [1337, 42, 2026]) -> Dict[str, Any
         "seeds": seeds,
         "library": {
             "treatises_count": manifest["count"],
+            "canonical_count": len([t for t in manifest["treatises"] if not t["id"].startswith("arxiv_")]),
+            "arxiv_count": len([t for t in manifest["treatises"] if t["id"].startswith("arxiv_")]),
+            "canonical_treatises": [t for t in manifest["treatises"] if not t["id"].startswith("arxiv_")],
             "manifest_hash": manifest["manifest_hash"][:16],
             "reviews_count": len(review_files),
             "manifest_path": str(MANIFEST_PATH.relative_to(ROOT)),
@@ -141,8 +144,15 @@ def print_cli_report(summary: Dict[str, Any]) -> None:
     """Prints the standardized Section 6 & 7 agent completion report."""
     print("=" * 80)
     print(f"MILLENNIUM STATUS: [{summary['status']}]")
-    print(f"HASH: {summary['git_short_hash']} | LIBRARY: {summary['library']['treatises_count']} docs, manifest {summary['library']['manifest_hash']}")
-    print(f"REVIEWS: millennium/reviews/*.md ({summary['library']['reviews_count']}) + REVIEW_SYNTHESIS.md")
+    print(f"HASH: {summary['git_short_hash']} | GREAT LIBRARY: {summary['library']['canonical_count']} Canonical Treatises (+ {summary['library']['arxiv_count']} preprints)")
+    print(f"MANIFEST: {summary['library']['manifest_hash']} | REVIEWS: millennium/reviews/*.md ({summary['library']['reviews_count']}) + REVIEW_SYNTHESIS.md")
+    print("-" * 80)
+    print("CANONICAL MATHEMATICAL TREATISES (FOUNDATIONAL BEDROCK):")
+    for i, t in enumerate(summary["library"]["canonical_treatises"], 1):
+        focus_str = ", ".join(t.get("problem_focus", []))
+        author_short = t.get("authors", ["Unknown"])[0]
+        print(f"  [{i:2d}] {author_short} ({t.get('year', '')}) — {t.get('title', '')} [{focus_str}]")
+    print("-" * 80)
     print(f"EVIDENCE: riemann_evidence.json {{T={summary['evidence']['riemann']['T_max']}, N={summary['evidence']['riemann']['N_found']}, off_line:{summary['evidence']['riemann']['off_line_candidates']}}}")
     print(f"          hodge_evidence.json {{varieties={len(summary['evidence']['hodge']['varieties'])}, D={summary['evidence']['hodge']['degree_bound']}, candidates:{summary['evidence']['hodge']['nonrepresentative_candidates']}}}")
     print(f"          bsd_evidence.json {{N=5077, match_rate={summary['evidence']['bsd']['match_rate']}}}")
@@ -158,3 +168,4 @@ def print_cli_report(summary: Dict[str, Any]) -> None:
 if __name__ == "__main__":
     summary = run_millennium_program()
     print_cli_report(summary)
+

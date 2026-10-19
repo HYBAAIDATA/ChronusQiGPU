@@ -1,7 +1,7 @@
 {
   "schema": "euclid.millennium.riemann_evidence/1",
   "probe": "RiemannProbe",
-  "timestamp_utc": "2026-10-19T02:30:05.025611+00:00",
+  "timestamp_utc": "2026-10-19T02:35:19.787828+00:00",
   "parameters": {
     "T_max": 150.0,
     "seed": 1337,
