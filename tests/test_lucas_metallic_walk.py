@@ -1,9 +1,16 @@
 """Integer-only tests for the Lucas-metallic walk. No floating point in assertions."""
-from turing_universal_quantum_computer.turing_universal_quantum_computer.lucas_metallic_walk import (
-    LucasMetallicWalk,
-    metallic_companion,
-    cassini_witness,
-)
+try:
+    from turing_universal_quantum_computer.lucas_metallic_walk import (
+        LucasMetallicWalk,
+        metallic_companion,
+        cassini_witness,
+    )
+except ModuleNotFoundError:
+    from turing_universal_quantum_computer.turing_universal_quantum_computer.lucas_metallic_walk import (
+        LucasMetallicWalk,
+        metallic_companion,
+        cassini_witness,
+    )
 
 
 def test_golden_lucas_known_values():

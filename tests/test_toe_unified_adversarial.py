@@ -10,7 +10,7 @@ from toe.unified.catalog import CATALOG
 from toe.unified.connectors import ConnectorError, ConnectorUnavailable
 from toe.unified.platform import GateUnavailable
 
-from test_toe_unified_invariants import SEED, load_iris
+from tests.test_toe_unified_invariants import SEED, load_iris
 
 TOUCHED = {"C4", "I1", "I3", "A4", "C5", "G2", "I5", "F1", "C15", "I4", "A5"}
 assert SEED == 1517

@@ -144,6 +144,12 @@ manifests = ["*.json", "*.yaml", "*.key.README", "chronus105/*.json", "chronus10
 [tool.pytest.ini_options]
 testpaths = ["chronus/mla1517_platform/python", "tests"]
 addopts = "-p no:cacheprovider -p no:hypothesis --basetemp=.pytest_tmp --import-mode=importlib"
+pythonpath = [
+  ".",
+  "tests",
+  "chronus/mla1517_platform/python",
+  "turing_universal_quantum_computer",
+]
 
 [tool.black]
 line-length = 100

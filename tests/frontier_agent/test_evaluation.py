@@ -1,6 +1,6 @@
 from dataclasses import replace
 from fractions import Fraction as F
-from conftest import trial
+from tests.frontier_agent.conftest import trial
 from chronus.agent.evaluation import evaluate_agent, calibrate_uncertainty
 
 
