@@ -211,6 +211,11 @@ from .canonical_tensor import (
     KelloggMotherTensor,
     PillarContractionResult,
     kellogg_state_600,
+    PerLaneScoreLog,
+    FutureSuperpositionEntry,
+    SuperpositionHoldLRU,
+    QuantumArsenal,
+    score_600_lanes,
 )
 
 __version__ = "1.0.0"
@@ -573,6 +578,11 @@ __all__ = [
     "KelloggMotherTensor",
     "PillarContractionResult",
     "kellogg_state_600",
+    "PerLaneScoreLog",
+    "FutureSuperpositionEntry",
+    "SuperpositionHoldLRU",
+    "QuantumArsenal",
+    "score_600_lanes",
     # exact tensor networks, custody, certificates, specification (lazy)
     *_LAZY_SUBMODULE_ATTRS["cyclotomic"],
     *_LAZY_SUBMODULE_ATTRS["exact_linalg"],

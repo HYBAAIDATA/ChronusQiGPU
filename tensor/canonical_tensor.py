@@ -21,6 +21,11 @@ from kellogg.canonical_tensor import (
     KelloggMotherTensor,
     PillarContractionResult,
     kellogg_state_600,
+    PerLaneScoreLog,
+    FutureSuperpositionEntry,
+    SuperpositionHoldLRU,
+    QuantumArsenal,
+    score_600_lanes,
 )
 
 __all__ = [
@@ -37,5 +42,11 @@ __all__ = [
     "KelloggMotherTensor",
     "PillarContractionResult",
     "kellogg_state_600",
+    "PerLaneScoreLog",
+    "FutureSuperpositionEntry",
+    "SuperpositionHoldLRU",
+    "QuantumArsenal",
+    "score_600_lanes",
 ]
+
 

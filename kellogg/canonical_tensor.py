@@ -325,6 +325,13 @@ from chronus.exact_geometry import (
     build_600_partition,
 )
 from kellogg.ansatz_v3 import AnsatzV3, load_ansatz
+from kellogg.lane_scorer import (
+    FutureSuperpositionEntry,
+    PerLaneScoreLog,
+    QuantumArsenal,
+    SuperpositionHoldLRU,
+    score_600_lanes,
+)
 from kellogg.mother_tensor import (
     KelloggMotherTensor,
     PillarContractionResult,
@@ -345,5 +352,11 @@ __all__ = [
     "KelloggMotherTensor",
     "PillarContractionResult",
     "kellogg_state_600",
+    "PerLaneScoreLog",
+    "FutureSuperpositionEntry",
+    "SuperpositionHoldLRU",
+    "QuantumArsenal",
+    "score_600_lanes",
 ]
+
 
