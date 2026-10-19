@@ -1,6 +1,6 @@
 {
   "schema": "euclid.arena_eci_scoreboard/1",
-  "timestamp_unix": 1792398419.707173,
+  "timestamp_unix": 1792398617.4783335,
   "seeds": [
     1337,
     42,
@@ -12,7 +12,7 @@
     "max_transfer_steps": 1,
     "max_ricci_relaxation_steps": 8,
     "max_ricci_curvature": 0.034442,
-    "max_reflex_latency_ms": 0.024,
+    "max_reflex_latency_ms": 0.042,
     "exact_field_norm": "1/1",
     "all_cassini_verified": true,
     "no_apology_contract_verified": true
@@ -30,7 +30,7 @@
         "seed": 1337,
         "steps": 1,
         "gain": 250000.0,
-        "elapsed_sec": 0.0007282000151462853,
+        "elapsed_sec": 0.0004844999930355698,
         "functor_score": 0.98
       },
       "ricci_trace": {
@@ -92,8 +92,8 @@
         ]
       },
       "reflex": {
-        "latency_ms": 0.0239,
-        "elapsed_measured_ms": 0.19200000679120421,
+        "latency_ms": 0.0417,
+        "elapsed_measured_ms": 9.745199989993125,
         "execution_status": "BLOCKED",
         "marker_text": "Trace identified. Re-mapping topology now."
       },
@@ -114,7 +114,7 @@
         "seed": 42,
         "steps": 1,
         "gain": 250000.0,
-        "elapsed_sec": 0.0011652999965008348,
+        "elapsed_sec": 0.0004805999924428761,
         "functor_score": 0.98
       },
       "ricci_trace": {
@@ -176,8 +176,8 @@
         ]
       },
       "reflex": {
-        "latency_ms": 0.013,
-        "elapsed_measured_ms": 0.09250000584870577,
+        "latency_ms": 0.0124,
+        "elapsed_measured_ms": 0.09039998985826969,
         "execution_status": "BLOCKED",
         "marker_text": "Trace identified. Re-mapping topology now."
       },
@@ -198,7 +198,7 @@
         "seed": 2026,
         "steps": 1,
         "gain": 250000.0,
-        "elapsed_sec": 0.0004901000065729022,
+        "elapsed_sec": 0.0006138000171631575,
         "functor_score": 0.98
       },
       "ricci_trace": {
@@ -260,8 +260,8 @@
         ]
       },
       "reflex": {
-        "latency_ms": 0.0099,
-        "elapsed_measured_ms": 0.09820002014748752,
+        "latency_ms": 0.0106,
+        "elapsed_measured_ms": 0.09109999518841505,
         "execution_status": "BLOCKED",
         "marker_text": "Trace identified. Re-mapping topology now."
       },

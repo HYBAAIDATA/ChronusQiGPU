@@ -20,7 +20,7 @@ __all__ = ["Backend", "Route", "probe", "execute", "BackendUnavailable", "BACKEN
 class Backend(Enum):
     CPU_REF = "cpu_reference"
     OPENCL_IGPU = "opencl"
-    MLA1517 = "mla1517_mmio"
+    MLA1517 = "mla1517"
     REMOTE = "remote"
 
 @dataclass(frozen=True)
@@ -31,13 +31,20 @@ class Route:
 
 BACKEND_ORDER = (Backend.OPENCL_IGPU, Backend.MLA1517, Backend.CPU_REF)
 STRICT_OPS = {"miner", "submit", "strict_gate", "hash_pipeline_accept", "pool_commit"}
-SOLVER_OPS = {"solver", "amplitude_amplification", "grover", "shor", "period_finding", "bitcoin_sha256d"}
+SOLVER_OPS = {"solver", "amplitude_amplification", "grover", "shor", "period_finding", "bitcoin_sha256d", "sha256d", "hash"}
 
 class BackendUnavailable(RuntimeError):
     """Requested backend missing and fail-closed required."""
 
+_MODULE_MAP = {
+    Backend.CPU_REF: "cpu_reference",
+    Backend.OPENCL_IGPU: "opencl_igpu",
+    Backend.MLA1517: "mla1517_mmio",
+    Backend.REMOTE: "remote",
+}
+
 def _backend_module(backend: Backend):
-    return importlib.import_module(f"chronus.backends.{backend.name.lower()}")
+    return importlib.import_module(f"chronus.backends.{_MODULE_MAP[backend]}")
 
 def probe() -> dict:
     results = {}
@@ -62,6 +69,9 @@ def _resolve(requested: str) -> Backend:
     try:
         return Backend(requested)
     except ValueError:
+        for b in Backend:
+            if requested in (b.value, b.name.lower(), _MODULE_MAP[b], _MODULE_MAP[b].replace("_mmio", "")):
+                return b
         raise BackendUnavailable(f"unknown PYTHIA_EXECUTION_DEVICE {requested!r}; expected " + ", ".join(b.value for b in Backend)) from None
 
 def _is_strict_op(op: str) -> bool:

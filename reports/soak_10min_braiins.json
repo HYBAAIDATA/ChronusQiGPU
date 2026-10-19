@@ -1,0 +1,42 @@
+{
+  "endpoint": "stratum.braiins.com:3333",
+  "worker": "PYTHAGOROS.PYTHIA.002",
+  "submit_policy": "SHADOW_MODE (submit_enabled=False, approval_flag=False)",
+  "shares_submitted_to_pool": 0,
+  "requested_route": "cpu",
+  "executed_route": "cpu",
+  "hardware_honesty": "EMULATOR",
+  "duration_seconds_target": 30.0,
+  "started_at_iso": "2026-10-19T10:24:56Z",
+  "jobs_seen": [
+    "00",
+    "01"
+  ],
+  "difficulties_seen": [
+    8192,
+    8192
+  ],
+  "invalidated_leases": 0,
+  "stale_events": 0,
+  "host_recheck_total": 253,
+  "host_recheck_passed": 253,
+  "host_recheck_pass_rate": "100.0%",
+  "executions_count": 253,
+  "autonomic_heals_count": 0,
+  "healer_law_enforced": "HEALER_OUTRANKS_OPTIMISER",
+  "sample_journal_lines": [
+    "[10:24:57] JOB_BIND: job_id=00 gen=1 clean=True",
+    "[10:24:57] EXECUTE: plan=9814c466-2c4 hashes=96 route=cpu_reference host_recheck=PASS",
+    "[10:24:58] EXECUTE: plan=681713cc-e51 hashes=96 route=cpu_reference host_recheck=PASS",
+    "[10:24:59] EXECUTE: plan=d357d00c-703 hashes=96 route=cpu_reference host_recheck=PASS",
+    "[10:24:59] EXECUTE: plan=50d80463-6ed hashes=96 route=cpu_reference host_recheck=PASS",
+    "[10:25:00] EXECUTE: plan=6bbb9028-3d7 hashes=96 route=cpu_reference host_recheck=PASS",
+    "[10:25:00] EXECUTE: plan=85dd4931-4b4 hashes=96 route=cpu_reference host_recheck=PASS",
+    "[10:25:01] EXECUTE: plan=03566bf1-b85 hashes=96 route=cpu_reference host_recheck=PASS",
+    "[10:25:02] EXECUTE: plan=97d3af7b-37c hashes=96 route=cpu_reference host_recheck=PASS",
+    "[10:25:02] EXECUTE: plan=6cfca146-d2a hashes=96 route=cpu_reference host_recheck=PASS"
+  ],
+  "status": "COMPLETED",
+  "ended_at_iso": "2026-10-19T10:25:26Z",
+  "duration_seconds_actual": 30.03
+}

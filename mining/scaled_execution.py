@@ -49,8 +49,8 @@ class LucasScaledAethelExecutionAdapter:
 
     def __init__(self, *, n_qubits: int = 11, workers: int = 1, scale_index: int = 76):
         self.n_qubits = int(n_qubits)
-        if self.n_qubits < 1:
-            raise ValueError("production virtual quantum computer requires positive qubits")
+        if self.n_qubits != 11:
+            raise ValueError("production virtual quantum computer is fixed at 11 qubits")
         # Hardware gate: physical execution is admitted only on the declared
         # Lucas ladder — a stricter subset of the algebraic scale domain.
         # None resolves to the domain default (76) inside Hendrix; gate the
