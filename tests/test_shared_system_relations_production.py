@@ -586,7 +586,10 @@ def test_production_organism_is_single_startup_root_for_live_shared_systems(tmp_
             "timeout",
             {"component": "production-root-probe"},
         )
-        assert proposal.applied is True
+        # A diagnosis is not an authorized, verified repair. This root has
+        # no legacy proposal actuator configured; retain the safe refusal.
+        assert proposal.applied is False
+        assert proposal.target == "production-root-probe"
 
         graph = fabric.graph()
         sources = {item["source_system"] for item in graph["bindings"]}

@@ -1,0 +1,39 @@
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\title{TURING: Exact Quantum-Mathematical Execution and Reproducible Software Contracts}
+\author{Author list pending owner review}
+\date{Working draft --- not submitted}
+\begin{document}
+\maketitle
+\begin{abstract}
+This working draft documents the organization of TURING's exact execution
+software, typed public interfaces and reproducibility surfaces. The accompanying
+package-validation experiments check exact observables and a finite variational
+family. They are not evidence of a new complexity advantage, a general continuous
+variational solver, or an implemented correction/control extension. A complete
+research contribution and evaluation must be specified before submission.
+\end{abstract}
+\section{Introduction and related work}
+Exact circuit representations and stabilizer methods provide context
+\cite{nielsen2010,aaronson2004}. The final manuscript must distinguish TURING's
+specific contributions from established techniques and state falsifiable
+research questions.
+\section{Architecture and implementation}
+\input{sections/implementation}
+\section{Experimental methodology}
+The package-validation cases are a Bell-state Z expectation, a radical-valued
+single-qubit expectation, and minimization over three explicitly declared exact
+states. Configurations, manifests and table-generation scripts are separate from
+implementation code. These cases establish software invariants, not comparative
+performance. A broader evaluation requires independently selected baselines and
+resource/uncertainty definitions.
+\section{Results and discussion}
+No publication experiment table is asserted in this draft. Include only reviewed,
+archived, commit-bound data and script-generated tables, with failed cases and
+limitations. Do not substitute validation-test counts for scientific results.
+\section{Limitations and reproducibility}
+Use the package reproducibility guide and existing release workflow. Cite an
+actual reviewed release/archive only after it exists; no DOI is assigned here.
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}

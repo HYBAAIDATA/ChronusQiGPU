@@ -32,6 +32,38 @@ package is that substrate, as a single installable unit.
   reviewer-gated OIDC publication to TestPyPI or PyPI. Production publication
   is never automatic.
 
+## Start here
+
+- **Use TURING:** [installation](docs/installation.md) → [working example](examples/turing_pipeline.py) → [API](docs/api.md).
+- **Integrate safely:** [compatibility and migration](docs/compatibility.md) → [mathematical contracts](docs/mathematical-contracts.md).
+- **Operate and release:** [runbook](docs/operations.md) → [qualification](TURING-qualification.md) → [release policy](docs/release-policy.md).
+- **Reproduce research:** [experiment workflow](docs/reproducibility.md) → [publication scaffold](paper/README.md).
+
+## Package organization and public entry point
+
+TURING remains one distribution, `hyba-turing-vqc`, and one canonical import,
+`turing_universal_quantum_computer`. The new `TuringPipeline` facade delegates
+to the existing `VQCPipeline`; it is not a replacement engine or a physical-QPU
+execution requirement. `QuantumPipeline` remains an alias for compatibility.
+
+- **Software:** the existing inner Python package and its typed contracts,
+  native adapter, job lifecycle, estimator, and finite-domain optimizer.
+- **Research evidence:** `experiments/` contains executable configurations and
+  runners; `results/` documents manifests and generated summaries.
+- **Publication:** `paper/` contains a clearly labelled manuscript scaffold,
+  bibliography, and generated-table instructions, not invented findings.
+- **Validation:** `tests/` checks API behavior, packaging, exact reference
+  values, manifest integrity, and reproducible analysis.
+
+Start with [installation](docs/installation.md), the [API](docs/api.md),
+[architecture](docs/architecture.md), and [reproducibility](docs/reproducibility.md).
+Run `examples/turing_pipeline.py` after installation. The
+[layout decision](docs/decisions/0001-preserve-canonical-package.md) explains why
+this change preserves the current working distribution rather than mechanically
+moving its engine into a new `src/advanced_quantum_pipeline` package.
+The facade's present bindings are documented separately from the capabilities
+of the full TURING engine. No empty pulse/QEC modules are introduced.
+
 ## Install
 
 ```bash

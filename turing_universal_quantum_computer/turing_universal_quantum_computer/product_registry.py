@@ -52,6 +52,15 @@ def _m(name: str, role: str, purpose: str, **kw: Any) -> ModuleEntry:
 
 
 MODULES: Tuple[ModuleEntry, ...] = (
+    _m("config", "boundary", "Validated native public API configuration and fail-closed unsupported modes."),
+    _m("contracts", "boundary", "Immutable typed IR, named finite parameters, artifacts, jobs and estimates."),
+    _m("exceptions", "boundary", "Typed input, capability, execution, timeout and provenance failures."),
+    _m("interfaces", "boundary", "Compiler/backend/estimator/optimizer/error-plan extension protocols."),
+    _m("native_adapter", "adapter", "Typed native admission, local jobs and certified-result Z estimation.",
+       consumes=["pipeline", "backends"]),
+    _m("optimizer", "algorithm", "Bounded exhaustive finite-ansatz optimizer with exact radical comparison."),
+    _m("public_api", "pipeline", "Additive QuantumPipeline facade over the canonical native computation path."),
+    _m("lucas_metallic_walk", "research", "Existing Lucas-metallic walk research surface with exact operators over Q(phi)."),
     _m("__init__", "core", "Package surface: eager exact substrate, lazy engines."),
     _m("turing_core", "core", "Exact arithmetic, deterministic scheduling and certification."),
     _m("turing_core.core", "core", "Zero-dependency exact Q[sqrt 5] algebra, Zeckendorf, T_phi fold, "

@@ -28,7 +28,7 @@ from __future__ import annotations
 import base64
 import hashlib
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 
 from .entangled_custody import SystemDataPort
 from .lifecycle import CompositionRoot
@@ -139,9 +139,16 @@ class ProductionOrganism:
         allow_insecure_dev_key: bool = False,
         intelligence: Any | None = None,
         euclid_runtime: Any | None = None,
+        subscription_token_provider: Callable[[str, str], str] | None = None,
     ) -> None:
         if guardian is None:
             raise ValueError("production organism requires an AL HARAS guardian")
+        if not isinstance(tenant, str) or not tenant.strip():
+            raise ValueError("tenant must be a non-empty string")
+        if subscription_token_provider is not None and not callable(subscription_token_provider):
+            raise TypeError("subscription_token_provider must be callable")
+        self.tenant = tenant
+        self._subscription_token_provider = subscription_token_provider
         self.root = Path(root)
         self.creator_id = str(creator_id)
         self.guardian_input = guardian
@@ -222,11 +229,16 @@ class ProductionOrganism:
                         "production root cannot prove it avoided private Triad custody"
                     )
 
+            from euclid.organ_adapters.specialists import TuringQuantumOrgan
+
             self._euclid_raw = euclid_runtime
             euclid_runtime.compose_organism(
                 guardian=self.al_haras,
+                tenant_id=self.tenant,
+                subscription_token_provider=self._subscription_token_provider,
                 implementations={
                     "triad": _SharedTriadOrgan(relations.ports["euclid"]),
+                    "turing": TuringQuantumOrgan(pipeline=self.turing),
                 },
             )
             self.euclid = relations.bind_euclid(euclid_runtime)
@@ -507,6 +519,13 @@ class ProductionOrganism:
             "shared_custody_ready": bool(lifecycle.get("ready")),
             "bound_systems": bound,
             "authority_preserved": True,
+            "service_tenant_id": self.tenant,
+            "salamander_actuation": {
+                "configured": self._subscription_token_provider is not None,
+                "ready": bool(getattr(raw_euclid, "_actuation_ready", False)),
+                "reason": getattr(raw_euclid, "_actuation_reason", None),
+                "scope": "registered bounded requalification; each action requires authorization",
+            },
             "custody_owner": "theseus",
             "transform_lineage_owner": "ovid",
             "euclid_private_triad_opened": False,
