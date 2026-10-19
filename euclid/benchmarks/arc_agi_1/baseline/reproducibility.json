@@ -1,0 +1,10 @@
+{
+  "training_runs": 2,
+  "identical_task_outcomes": true,
+  "identical_classifications": true,
+  "run_1_runner_seconds": 0.07585767700038559,
+  "run_2_runner_seconds": 0.077891080001109,
+  "regression_tests": 4,
+  "regression_failures": 0,
+  "evaluation_executed": false
+}
