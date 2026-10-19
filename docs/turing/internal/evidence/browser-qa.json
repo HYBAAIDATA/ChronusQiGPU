@@ -1,0 +1,13 @@
+{
+  "routeViewportChecks": 50,
+  "viewportWidths": [
+    1440,
+    390
+  ],
+  "searchMatches": 2,
+  "menu": true,
+  "searchEmpty": true,
+  "searchUnavailable": true,
+  "darkTheme": true,
+  "pageErrors": []
+}

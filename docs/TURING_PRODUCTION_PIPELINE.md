@@ -172,8 +172,10 @@ These are not software defects and must not be faked closed:
   bound and its dispatch is measured;
 - GPU/iGPU/OpenCL/CUDA/Metal execution: evidence is device-bound and may only
   be claimed after an actual completed launch;
-- tensor-network/MPS remains unavailable until its exactness/error contract is
-  implemented and verified.
+- the canonical exact MPS backend is implemented under a static Schmidt-bound
+  admission contract (`representation.py`, `backends.mps`); this does not imply
+  unrestricted MPS execution or completed release qualification. Other
+  tensor-network paths require their own implemented and verified contracts.
 
 TURING can be production-ready as an exact VQC without physical QPU hardware;
 it simply cannot claim physical-QPU execution or hardware speedup without that
