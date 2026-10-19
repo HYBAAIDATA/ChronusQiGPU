@@ -399,6 +399,7 @@ class FourLayerMiningStack:
         self.tensor = TensorFoldEngine()
         self.turing = TuringLayer(n_qubits=n_qubits)
         self.chronus = NearStateIGpu(self.aethel, self.tensor)
+        self.igpu = self.chronus
 
     def mine_block(
         self,

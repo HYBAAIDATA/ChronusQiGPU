@@ -12,7 +12,7 @@ import os
 from dataclasses import dataclass
 from typing import Any
 
-from Intelligence.four_layer_stack import FourLayerMiningStack
+from mining.four_layer_stack import FourLayerMiningStack
 from toe.strict_quantum import certify_work_window, verify_certificate
 from toe.system import TOESystem
 from lucas.pisot import (
@@ -21,6 +21,19 @@ from lucas.pisot import (
     plan_hilbert_coverage,
     require_lucas_execution_scale,
 )
+
+
+_EXECUTION_MODULE = "mining.four_layer_stack:FourLayerMiningStack.mine"
+_EXECUTION_MODE = "structured_classical"
+_RECEIPT_VERSION = 1
+
+
+def _canonical_digest(payload: Any) -> str:
+    import hashlib
+    import json
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
+    ).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -36,8 +49,8 @@ class LucasScaledAethelExecutionAdapter:
 
     def __init__(self, *, n_qubits: int = 11, workers: int = 1, scale_index: int = 76):
         self.n_qubits = int(n_qubits)
-        if self.n_qubits != 11:
-            raise ValueError("production virtual quantum computer is fixed at 11 qubits")
+        if self.n_qubits < 1:
+            raise ValueError("production virtual quantum computer requires positive qubits")
         # Hardware gate: physical execution is admitted only on the declared
         # Lucas ladder — a stricter subset of the algebraic scale domain.
         # None resolves to the domain default (76) inside Hendrix; gate the
@@ -90,11 +103,37 @@ class LucasScaledAethelExecutionAdapter:
         ordered = [
             nonce for worker in range(schedule.workers) for nonce in schedule.worker_nonces(worker)
         ]
+        # Execution-identity receipt (D-007): requested/planned/executed are
+        # recorded separately and truthfully — the Hendrix permutation plans
+        # the probe order, exhaustive SHA-256d enumeration executes it on a
+        # classical hasher, and nothing quantum executes.
+        receipt = {
+            "receipt_version": _RECEIPT_VERSION,
+            "requested_algorithm": "lucas_scaled_aethel_execution",
+            "planned_algorithm": "hendrix_coprime_stride_permutation",
+            "executed_algorithm": "sha256d_window_enumeration",
+            "implementation_module": _EXECUTION_MODULE,
+            "implementation_digest": _canonical_digest(
+                {
+                    "module": _EXECUTION_MODULE,
+                    "schedule": schedule.manifest(),
+                }
+            ),
+            "execution_mode": _EXECUTION_MODE,
+            "schedule_digest": _canonical_digest(schedule.manifest()),
+            "fallback_used": False,
+            "fallback_reason": None,
+        }
         self.toe.record_decision(
             "job_received",
             "geometric",
             "prepare_mining_window",
-            {"base_nonce": base_nonce, "count": count, "scale_index": self.scheduler.scale.index},
+            {
+                "base_nonce": base_nonce,
+                "count": count,
+                "scale_index": self.scheduler.scale.index,
+                "execution_receipt": receipt,
+            },
             8,
             verified=True,
         )
@@ -103,13 +142,17 @@ class LucasScaledAethelExecutionAdapter:
         fold_ok = self.stack.tensor.decompress(folded, original_len) == header
         coverage = self._coverage(len(header) + len(target_bytes))
         try:
-            result = self.stack.igpu.mine(header, target_bytes, ordered, max_hashes=count)
+            result = self.stack.chronus.mine(header, target_bytes, ordered, max_hashes=count)
         except Exception as exc:
             self.toe.record_decision(
                 "execution_failed",
-                "quantum",
+                "geometric",
                 "execution_error",
-                {"error_type": type(exc).__name__, "message": str(exc)},
+                {
+                    "error_type": type(exc).__name__,
+                    "message": str(exc),
+                    "execution_receipt": receipt,
+                },
                 11,
                 verified=False,
             )
@@ -119,14 +162,21 @@ class LucasScaledAethelExecutionAdapter:
             "evidence:latest",
             f"nonce={result['winning_nonce']} recheck={result['recheck_bit_exact']}".encode(),
         )
+        receipt["substrate"] = result["hasher_backend"]
+        receipt["independent_sha256d_verification"] = {
+            "performed": True,
+            "method": "host hashlib double-SHA256 digest + consensus target recheck",
+            "winner_bit_exact": bool(result["recheck_bit_exact"]),
+        }
         self.toe.record_decision(
             "execution_complete",
-            "quantum",
+            "geometric",
             "sha256d_consensus_check",
             {
                 "winner": result["winning_nonce"],
                 "hashes": int(result["hashes_computed"]),
                 "recheck_bit_exact": bool(result["recheck_bit_exact"]),
+                "execution_receipt": receipt,
             },
             11,
             verified=bool(result["recheck_bit_exact"]),
@@ -134,7 +184,7 @@ class LucasScaledAethelExecutionAdapter:
         if (
             not fold_ok
             or not cassini
-            or not result["recheck_bit_exact"]
+            or (result["winning_nonce"] is not None and not result["recheck_bit_exact"])
             or not self.toe.verify_provenance()
         ):
             raise RuntimeError("TOE/AETHEL/Tensor/Hendrix/iGPU invariant failed")
@@ -143,7 +193,8 @@ class LucasScaledAethelExecutionAdapter:
             digest=bytes.fromhex(result["winning_hash"]) if result["winning_hash"] else None,
             hashes=int(result["hashes_computed"]),
             metadata={
-                "execution_path": "aethel_exact_tensor_hendrix_lucas_pisot_igpu",
+                "execution_path": "structured_classical",
+                "execution_receipt": receipt,
                 "coverage": coverage,
                 "tensor_scale": self.tensor.scale_manifest(),
                 "schedule": schedule.manifest(),
@@ -152,6 +203,7 @@ class LucasScaledAethelExecutionAdapter:
                 "evidence_store": evidence,
                 "fold_roundtrip_lossless": fold_ok,
                 "cassini_holds": cassini,
+                "chronus": result,
                 "igpu": result,
                 "toe": {
                     "provenance_verified": self.toe.verify_provenance(),
