@@ -8,10 +8,11 @@ through quantum-mathematical first principles (Born rule, Heisenberg
 uncertainty, Schrödinger evolution, path integrals, von Neumann entropy,
 quantum Fisher information).
 
-The HR vocabulary in ``toe.engine`` ("employee", "churn", "performance score",
+The HR-shaped vocabulary in ``toe.engine`` ("employee", "churn", "performance score",
 "login_time", "promotion_history", "compensation ratio", "survey_text") is a
-**semantic disguise layer** — a domain metaphor projected over a quantum state
-tomography and evolution engine:
+**legacy demonstration schema** — a compatibility fixture translated into quantum-state
+tomography and evolution concepts, not the engine's canonical domain model. New domains
+should enter through explicit sector adapters into ``toe.problem``:
 
 - "Employee"          → quantum state vector |ψ⟩ in Hilbert space
 - "Churn risk"        → quantum decoherence probability
