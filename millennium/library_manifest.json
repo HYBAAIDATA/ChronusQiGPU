@@ -1,0 +1,186 @@
+{
+  "schema": "euclid.millennium.library_manifest/1",
+  "generated_utc": "2026-10-19T02:18:13.845794+00:00",
+  "count": 10,
+  "licenses": [
+    "Academic Research & Educational Fair Use",
+    "Academic Research Fair Use",
+    "Open Access (Annals of Mathematics)",
+    "Open Access (EuDML / Springer)",
+    "Open Access (GDZ G\u00f6ttingen)",
+    "Open Access (ICM Proceedings)",
+    "Open Access (NUMDAM / IH\u00c9S)",
+    "Public Domain"
+  ],
+  "treatises": [
+    {
+      "id": "euclid_elements",
+      "title": "The Thirteen Books of Euclid's Elements",
+      "authors": [
+        "Euclid of Alexandria",
+        "Thomas L. Heath (Trans. & Comm.)"
+      ],
+      "year": 1908,
+      "sha256": "2a21e6376e1625bd99bdeaae10d7d7e21ac624d9c66166d2763bd7e47c616f67",
+      "license": "Public Domain",
+      "problem_focus": [
+        "FOUNDATIONAL",
+        "RH",
+        "BSD"
+      ]
+    },
+    {
+      "id": "gauss_disquisitiones",
+      "title": "Disquisitiones Arithmeticae",
+      "authors": [
+        "Carl Friedrich Gauss"
+      ],
+      "year": 1801,
+      "sha256": "236bca63792e5cc1cc47cfdb7f5372868fa704333f623d572e636e4718bbde7c",
+      "license": "Public Domain",
+      "problem_focus": [
+        "FOUNDATIONAL",
+        "BSD",
+        "RH"
+      ]
+    },
+    {
+      "id": "riemann_1859",
+      "title": "Ueber die Anzahl der Primzahlen unter einer gegebenen Gr\u00f6sse",
+      "authors": [
+        "Bernhard Riemann"
+      ],
+      "year": 1859,
+      "sha256": "5a2bf4222902a0f062b7967a3366505437008d2c5ae5b458e0c8e3a103009731",
+      "license": "Public Domain",
+      "problem_focus": [
+        "RH"
+      ]
+    },
+    {
+      "id": "hodge_1950",
+      "title": "The Topological Invariants of Algebraic Varieties",
+      "authors": [
+        "William V.D. Hodge"
+      ],
+      "year": 1950,
+      "sha256": "7919e72b7cd0344f562e5e8fa6574cba52f9320cd2a7b9b5528ad12974aa3742",
+      "license": "Open Access (ICM Proceedings)",
+      "problem_focus": [
+        "HODGE"
+      ]
+    },
+    {
+      "id": "deligne_hodge",
+      "title": "Th\u00e9orie de Hodge: I, II, III",
+      "authors": [
+        "Pierre Deligne"
+      ],
+      "year": 1971,
+      "sha256": "dadf643b5fd213484b7cd7900535ad03fa83654377c0f864095ef1cb931de056",
+      "license": "Open Access (NUMDAM / IH\u00c9S)",
+      "problem_focus": [
+        "HODGE"
+      ]
+    },
+    {
+      "id": "voisin_hodge",
+      "title": "Hodge Theory and Complex Algebraic Geometry I & II",
+      "authors": [
+        "Claire Voisin"
+      ],
+      "year": 2002,
+      "sha256": "618fcc4052b8d2d7bcb0a50de2388d2c37dee438838a31ca93e704418a31f2b8",
+      "license": "Academic Research & Educational Fair Use",
+      "problem_focus": [
+        "HODGE"
+      ]
+    },
+    {
+      "id": "bsd_1965",
+      "title": "Notes on Elliptic Curves I & II",
+      "authors": [
+        "Bryan J. Birch",
+        "Peter Swinnerton-Dyer"
+      ],
+      "year": 1965,
+      "sha256": "f2bf86b3c82dd0ae0133005e0add1df16f736ecf1713d999b31a440282314998",
+      "license": "Open Access (GDZ G\u00f6ttingen)",
+      "problem_focus": [
+        "BSD"
+      ]
+    },
+    {
+      "id": "gross_zagier_1986",
+      "title": "Heegner points and derivatives of L-series",
+      "authors": [
+        "Benedict H. Gross",
+        "Don B. Zagier"
+      ],
+      "year": 1986,
+      "sha256": "98e2a7bef702da4186e10fd3714387dd6bd9e355a8d38550ff3d989f1f3d05f0",
+      "license": "Open Access (EuDML / Springer)",
+      "problem_focus": [
+        "BSD"
+      ]
+    },
+    {
+      "id": "kolyvagin_1990",
+      "title": "Euler systems",
+      "authors": [
+        "Victor A. Kolyvagin"
+      ],
+      "year": 1990,
+      "sha256": "84ce37a1e98f9d0ab8f58717045911838c27485b5217b3bdb365917340bd8e79",
+      "license": "Academic Research Fair Use",
+      "problem_focus": [
+        "BSD"
+      ]
+    },
+    {
+      "id": "wiles_1995",
+      "title": "Modular elliptic curves and Fermat's Last Theorem",
+      "authors": [
+        "Andrew Wiles",
+        "Richard Taylor"
+      ],
+      "year": 1995,
+      "sha256": "5d02de920cd844cbe31378df8aa9ea9d6edc58d1efe6863663f07069da10669d",
+      "license": "Open Access (Annals of Mathematics)",
+      "problem_focus": [
+        "BSD",
+        "FOUNDATIONAL"
+      ]
+    }
+  ],
+  "hashes": {
+    "euclid_elements": "2a21e6376e1625bd99bdeaae10d7d7e21ac624d9c66166d2763bd7e47c616f67",
+    "gauss_disquisitiones": "236bca63792e5cc1cc47cfdb7f5372868fa704333f623d572e636e4718bbde7c",
+    "riemann_1859": "5a2bf4222902a0f062b7967a3366505437008d2c5ae5b458e0c8e3a103009731",
+    "hodge_1950": "7919e72b7cd0344f562e5e8fa6574cba52f9320cd2a7b9b5528ad12974aa3742",
+    "deligne_hodge": "dadf643b5fd213484b7cd7900535ad03fa83654377c0f864095ef1cb931de056",
+    "voisin_hodge": "618fcc4052b8d2d7bcb0a50de2388d2c37dee438838a31ca93e704418a31f2b8",
+    "bsd_1965": "f2bf86b3c82dd0ae0133005e0add1df16f736ecf1713d999b31a440282314998",
+    "gross_zagier_1986": "98e2a7bef702da4186e10fd3714387dd6bd9e355a8d38550ff3d989f1f3d05f0",
+    "kolyvagin_1990": "84ce37a1e98f9d0ab8f58717045911838c27485b5217b3bdb365917340bd8e79",
+    "wiles_1995": "5d02de920cd844cbe31378df8aa9ea9d6edc58d1efe6863663f07069da10669d"
+  },
+  "coverage_gaps": [
+    "[euclid_elements] Discrete geometry in Elements assumes continuous magnitude trichotomy without Dedekind completeness.",
+    "[euclid_elements] Asymptotic distribution of primes pi(x) is completely absent in Greek synthetic geometry.",
+    "[gauss_disquisitiones] Connection between quadratic form class numbers and analytic L-functions (later established by Dirichlet 1839).",
+    "[gauss_disquisitiones] Generalization to cubic and higher reciprocity laws.",
+    "[riemann_1859] Riemann's hand calculations gave the first three zeros (14.1347, 21.0220, 25.0108) on Re(s)=1/2 but could not prove global confinement.",
+    "[riemann_1859] Non-vanishing of zeta(s) for Re(s) in (1/2, 1) remains completely unproven across the continuum.",
+    "[hodge_1950] Atiyah and Hirzebruch (1962) found torsion counterexamples to the integral version, forcing restriction to Q-coefficients.",
+    "[hodge_1950] For codimension p >= 2, no general analytic inversion mechanism exists to construct algebraic cycles from harmonic (p,p)-forms.",
+    "[deligne_hodge] Absolute Hodge property does not automatically deliver algebraic cycles without Grothendieck's standard conjectures on algebraic cycles.",
+    "[voisin_hodge] Mumford's theorem (1968) proves Chow groups CH_0(X) can be infinite-dimensional, creating obstruction to geometric representation.",
+    "[bsd_1965] Conjecture formulation was purely empirical based on EDSAC-2 computations on Mordell curves y^2 = x^3 - Dx.",
+    "[bsd_1965] Analytic continuation of L(E, s) to s=1 was unproven in 1965 (later established by Wiles et al. 1995-2001).",
+    "[gross_zagier_1986] Heegner points only produce points of rank 1 in E(K); cannot construct rank 2 or higher subspaces directly.",
+    "[kolyvagin_1990] Euler systems constructed from Heegner points control Selmer groups only when analytic rank is 0 or 1. No Euler system is known for rank >= 2.",
+    "[wiles_1995] Modularity guarantees that L(E, s) is defined at s=1 and differentiable, enabling BSD to be rigorously posed, but does not prove rank equality ord_{s=1} L(E, s) = rank E(Q) for r >= 2."
+  ],
+  "manifest_hash": "91e22bcae89b53dc67a5e072f90faec587b62cb776d685ab9c10fff63a4a1185"
+}

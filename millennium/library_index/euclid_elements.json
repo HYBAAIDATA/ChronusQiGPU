@@ -1,0 +1,72 @@
+{
+  "id": "euclid_elements",
+  "title": "The Thirteen Books of Euclid's Elements",
+  "authors": [
+    "Euclid of Alexandria",
+    "Thomas L. Heath (Trans. & Comm.)"
+  ],
+  "year": 1908,
+  "source_url": "https://archive.org/details/thirteentriple01eucl",
+  "license": "Public Domain",
+  "retrieved_date": "2026-10-19T02:18:13.845794+00:00",
+  "sha256": "2a21e6376e1625bd99bdeaae10d7d7e21ac624d9c66166d2763bd7e47c616f67",
+  "category": "Foundations & Number Theory",
+  "problem_focus": [
+    "FOUNDATIONAL",
+    "RH",
+    "BSD"
+  ],
+  "definitions": [
+    {
+      "term": "Prime number",
+      "statement": "Book VII, Def 11: A prime number is that which is measured by an unit alone."
+    },
+    {
+      "term": "Perfect number",
+      "statement": "Book VII, Def 22: A perfect number is that which is equal to its own parts."
+    },
+    {
+      "term": "Euclidean Algorithm",
+      "statement": "Book VII, Props 1-2: Successive subtraction/division yields the greatest common measure."
+    }
+  ],
+  "theorems": [
+    {
+      "label": "Book IX, Prop 20",
+      "statement": "Prime numbers are more than any assigned multitude of prime numbers (infinitude of primes).",
+      "status": "PROVEN"
+    },
+    {
+      "label": "Book IX, Prop 36",
+      "statement": "If 2^n - 1 is prime, then 2^(n-1)(2^n - 1) is perfect (even perfect numbers).",
+      "status": "PROVEN"
+    },
+    {
+      "label": "Book X, Prop 9",
+      "statement": "Squares having side incommensurable with unit side have non-square rational ratios (irrationality).",
+      "status": "PROVEN"
+    }
+  ],
+  "conjectures": [
+    {
+      "label": "Odd Perfect Numbers",
+      "statement": "Existence of odd perfect numbers (unresolved in Elements).",
+      "status": "OPEN"
+    }
+  ],
+  "open_gaps": [
+    "Discrete geometry in Elements assumes continuous magnitude trichotomy without Dedekind completeness.",
+    "Asymptotic distribution of primes pi(x) is completely absent in Greek synthetic geometry."
+  ],
+  "computational_handles": [
+    "Exact Euclidean greatest common divisor algorithm on arbitrary integer lattices.",
+    "Mersenne exponent primality verification for 2^p - 1.",
+    "Sieve of Eratosthenes prime generation up to finite bound X."
+  ],
+  "citations": [
+    {
+      "ref": "Heath, T.L. (1908). The Thirteen Books of Euclid's Elements, Cambridge University Press, Vols I-III.",
+      "url": "https://archive.org/details/thirteentriple01eucl"
+    }
+  ]
+}

@@ -247,3 +247,28 @@ async def get_millennium_info() -> Dict[str, Any]:
             "of any Clay problem."
         ),
     }
+
+
+@router.get("/library/search")
+async def search_math_library(q: str = "", limit: int = 10) -> Dict[str, Any]:
+    """Search the Great Library index for treatises, definitions, theorems, and computational handles."""
+    try:
+        from .math_library import search_library
+    except ImportError:
+        from millennium.math_library import search_library
+    results = search_library(q, limit=limit)
+    return {"query": q, "count": len(results), "results": results}
+
+
+@router.get("/library/manifest")
+async def get_library_manifest() -> Dict[str, Any]:
+    """Returns the Great Library manifest with hashes, treatise provenance, and coverage gaps."""
+    try:
+        from .math_library import MANIFEST_PATH, BuildMathLibrary
+    except ImportError:
+        from millennium.math_library import MANIFEST_PATH, BuildMathLibrary
+    if not MANIFEST_PATH.exists():
+        return BuildMathLibrary()
+    import json
+    return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+

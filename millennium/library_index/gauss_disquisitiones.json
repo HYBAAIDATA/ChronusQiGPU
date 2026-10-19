@@ -1,0 +1,71 @@
+{
+  "id": "gauss_disquisitiones",
+  "title": "Disquisitiones Arithmeticae",
+  "authors": [
+    "Carl Friedrich Gauss"
+  ],
+  "year": 1801,
+  "source_url": "https://gdz.sub.uni-goettingen.de/id/PPN235993352",
+  "license": "Public Domain",
+  "retrieved_date": "2026-10-19T02:18:13.845794+00:00",
+  "sha256": "236bca63792e5cc1cc47cfdb7f5372868fa704333f623d572e636e4718bbde7c",
+  "category": "Algebraic Number Theory & Quadratic Forms",
+  "problem_focus": [
+    "FOUNDATIONAL",
+    "BSD",
+    "RH"
+  ],
+  "definitions": [
+    {
+      "term": "Congruence modulo m",
+      "statement": "Section I, Art 1: Numbers whose difference is divisible by m are congruent."
+    },
+    {
+      "term": "Quadratic Residue",
+      "statement": "Section II, Art 13: a is quadratic residue mod p if x^2 = a (mod p) has integer solution."
+    },
+    {
+      "term": "Binary Quadratic Form",
+      "statement": "Section V, Art 153: F(x,y) = ax^2 + 2bxy + cy^2 of determinant D = b^2 - ac."
+    }
+  ],
+  "theorems": [
+    {
+      "label": "Theorema Fundamentale (Quadratic Reciprocity)",
+      "statement": "Section IV, Art 131: For distinct odd primes p and q, (p/q)(q/p) = (-1)^((p-1)/2 * (q-1)/2).",
+      "status": "PROVEN"
+    },
+    {
+      "label": "Class Number Finiteness",
+      "statement": "Section V, Art 172: The number of classes of binary quadratic forms of given determinant D is finite.",
+      "status": "PROVEN"
+    },
+    {
+      "label": "Cyclotomic Construction",
+      "statement": "Section VII, Art 365: Regular polygon of n sides constructible with ruler and compass iff n = 2^k * p_1 * ... * p_r with Fermat primes.",
+      "status": "PROVEN"
+    }
+  ],
+  "conjectures": [
+    {
+      "label": "Gauss Class Number Problem",
+      "statement": "h(D) -> infinity as D -> -infinity, and complete determination of determinants with small class numbers.",
+      "status": "PROVEN_LATER"
+    }
+  ],
+  "open_gaps": [
+    "Connection between quadratic form class numbers and analytic L-functions (later established by Dirichlet 1839).",
+    "Generalization to cubic and higher reciprocity laws."
+  ],
+  "computational_handles": [
+    "Exact Legendre symbol (a/p) and Jacobi symbol evaluation via reciprocity.",
+    "Reduction algorithm for positive definite binary quadratic forms.",
+    "Finite class group cl(D) composition and structure verification."
+  ],
+  "citations": [
+    {
+      "ref": "Gauss, C.F. (1801). Disquisitiones Arithmeticae, Leipzig: Gerh. Fleischer.",
+      "url": "https://gdz.sub.uni-goettingen.de/id/PPN235993352"
+    }
+  ]
+}
