@@ -1,0 +1,26 @@
+{
+  "256": {
+    "N": 256,
+    "classical_mean_checks": 128.0,
+    "grover_optimal_iterations": 12,
+    "simulated_grover_operations": 6144.0,
+    "simulated_vs_classical_ratio": 48.0,
+    "advantage": "NONE (simulated is slower by O(sqrt(N)))"
+  },
+  "1024": {
+    "N": 1024,
+    "classical_mean_checks": 512.0,
+    "grover_optimal_iterations": 25,
+    "simulated_grover_operations": 51200.0,
+    "simulated_vs_classical_ratio": 100.0,
+    "advantage": "NONE (simulated is slower by O(sqrt(N)))"
+  },
+  "4096": {
+    "N": 4096,
+    "classical_mean_checks": 2048.0,
+    "grover_optimal_iterations": 50,
+    "simulated_grover_operations": 409600.0,
+    "simulated_vs_classical_ratio": 200.0,
+    "advantage": "NONE (simulated is slower by O(sqrt(N)))"
+  }
+}

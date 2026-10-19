@@ -1,0 +1,13 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\leonn\AppData\Local\Programs\Python\Python312\python.exe
+hypothesis profile 'default'
+rootdir: C:\Users\leonn\OneDrive\Desktop\PhiEnterprise-main
+configfile: pyproject.toml
+plugins: anyio-4.14.2, hypothesis-6.140.3, cov-7.1.0
+collecting ... collected 3 items
+
+tests/test_benchmark_lucas_pisot.py::test_unconditional_cost_equal_no_speedup PASSED [ 33%]
+tests/test_benchmark_lucas_pisot.py::test_permutation_is_ordering_not_advantage PASSED [ 66%]
+tests/test_benchmark_lucas_pisot.py::test_boundaries_per_lucas_scaling_research PASSED [100%]
+
+============================== 3 passed in 2.27s ==============================
