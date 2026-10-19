@@ -48,7 +48,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
 from .backend_binding import get_compute_backend
-from .hardened_unified_substrate import (
+from aethel.hardened_unified_substrate import (
     CassiniVerifier,
     apply_zeckendorf_compression,
     reverse_zeckendorf_expansion,
@@ -411,7 +411,7 @@ class FourLayerMiningStack:
         assert len(header80) == 80, "header must be 80 bytes"
         assert len(target_be) == 32, "target must be 32 bytes"
 
-        from .strict_quantum import certify_work_window, verify_certificate
+        from toe.strict_quantum import certify_work_window, verify_certificate
 
         strict_quantum = certify_work_window(
             header80[:76], int(nonce_start) & 0xFFFFFFFF, int(n_candidates)

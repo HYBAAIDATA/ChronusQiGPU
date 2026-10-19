@@ -145,6 +145,8 @@ class HashChainAudit:
         if self.path is None:
             yield
             return
+        if not self.path.parent.exists():
+            self.path.parent.mkdir(parents=True, exist_ok=True)
         lock_path = self.path.with_name(f"{self.path.name}.lock")
         fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
         try:
@@ -237,6 +239,8 @@ class HashChainAudit:
         record = {**body, "record_hash": digest(body)}
         if self.path is not None:
             raw = canonical_json(record) + b"\n"
+            if not self.path.parent.exists():
+                self.path.parent.mkdir(parents=True, exist_ok=True)
             fd = os.open(
                 self.path,
                 os.O_APPEND | os.O_CREAT | os.O_WRONLY,

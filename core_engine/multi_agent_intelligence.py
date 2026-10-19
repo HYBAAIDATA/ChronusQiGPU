@@ -40,7 +40,7 @@ from core_engine.multi_agent_execution_graph import (
     MessageBus
 )
 
-from core_engine.agi_substrate import (
+from Intelligence.agi_substrate import (
     CanonicalAGISubstrate,
     AGIRequest,
     AGICapability

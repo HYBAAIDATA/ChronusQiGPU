@@ -725,7 +725,10 @@ class ResidentFoldedBytes(_ResidentBase):
         self._engine.write_buffer(self._buffers.get("bytes"), zeros, 0)
 
 
+from .v33.engine import ChronosEngine
+
 __all__ = [
+    "ChronosEngine",
     "DEFAULT_LOCAL_SIZE",
     "ChronusOpenCLEngine",
     "ChronusOpenCLUnavailable",
@@ -737,3 +740,4 @@ __all__ = [
     "is_power_of_two",
     "validate_local_size",
 ]
+

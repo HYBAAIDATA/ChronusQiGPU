@@ -6,6 +6,7 @@ import errno
 import hashlib
 import hmac
 import json
+import logging
 import os
 import secrets
 import struct
@@ -13,6 +14,8 @@ import tempfile
 import threading
 import time
 from pathlib import Path
+
+LOG = logging.getLogger("pythia.worker_lifecycle")
 
 MAGIC = b"PYHB"
 VERSION = 1
@@ -172,23 +175,28 @@ class HeartbeatEmitter:
             MAGIC, VERSION, self.worker_epoch, self.seq, time.monotonic_ns()
         )
         blob = body + _heartbeat_tag(self._secret, self.worker_id, body)
-        self._phase("serialize", start)
-        temporary = self.path.with_name(f".{self.path.name}.{os.getpid()}.tmp")
+        self.directory.mkdir(parents=True, exist_ok=True)
+        temporary = self.path.with_name(f".{self.path.name}.{os.getpid()}.{self.seq}.tmp")
         start = time.perf_counter()
-        with temporary.open("wb") as fh:
-            fh.write(blob)
+        for attempt in range(10):
+            try:
+                with temporary.open("wb") as fh:
+                    fh.write(blob)
+                    fh.flush()
+                    os.fsync(fh.fileno())
+                break
+            except OSError:
+                if attempt == 9:
+                    raise
+                time.sleep(0.005)
         self._phase("write", start)
-        start = time.perf_counter()
-        with temporary.open("ab") as fh:
-            fh.flush()
-            os.fsync(fh.fileno())
         self._phase("fsync_file", start)
         start = time.perf_counter()
         for _attempt in range(50):
             try:
                 temporary.replace(self.path)
                 break
-            except PermissionError:
+            except (PermissionError, OSError):
                 # Windows denies replace while a reader holds the
                 # destination open; POSIX rename is atomic over open
                 # files. Bounded retry between reader polls only on nt.
@@ -227,7 +235,10 @@ class HeartbeatEmitter:
 
     def _loop(self) -> None:
         while not self._stop.wait(self.interval):
-            self.tick()
+            try:
+                self.tick()
+            except Exception as exc:
+                LOG.warning("Heartbeat tick failed for %s: %s", self.worker_id, exc)
 
     def __exit__(self, _exc_type, _exc, _tb) -> None:
         self._stop.set()

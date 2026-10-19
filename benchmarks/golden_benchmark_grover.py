@@ -17,18 +17,13 @@ import os
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-try:
-    from python_backend.pythia_mining.phi_folding_v2 import (
-        PhiFoldingOperatorV2,
-        BraidingAwareGADDR,
-        PhiCompiler,
-        WeightScheme,
-        PrecisionTier
-    )
-    PHI_AVAILABLE = True
-except ImportError:
-    PHI_AVAILABLE = False
-    print("Warning: Phi-folding v2 not available, using mock implementation")
+PHI_AVAILABLE = False
+PhiFoldingOperatorV2 = None
+BraidingAwareGADDR = None
+PhiCompiler = None
+WeightScheme = None
+PrecisionTier = None
+
 
 
 class GroverBenchmark:

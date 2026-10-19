@@ -1588,6 +1588,25 @@ class PredictiveEngine:
             if os.path.exists(npz_path):
                 blob = np.load(npz_path)
                 return self._validate_training_matrix(blob["X"], blob["y"])
+            # Fallback: structural corpus (160 observed Bitcoin nonces)
+            try:
+                from Intelligence.mining_structure_training import (
+                    DEFAULT_CORPUS_CSV,
+                    DEFAULT_CORPUS_MANIFEST,
+                    build_vectors,
+                    load_nonce_corpus,
+                    split_by_height,
+                )
+                from python_backend.phi_grover_v4 import phi_resonance
+
+                if DEFAULT_CORPUS_CSV.is_file() and DEFAULT_CORPUS_MANIFEST.is_file():
+                    rows, _ = load_nonce_corpus(DEFAULT_CORPUS_CSV, DEFAULT_CORPUS_MANIFEST)
+                    train_rows, _ = split_by_height(rows)
+                    Xv = np.asarray(build_vectors(train_rows), dtype=float)
+                    yv = np.asarray([1 if phi_resonance(r.nonce) >= 0.5 else 0 for r in train_rows], dtype=int)
+                    return self._validate_training_matrix(Xv, yv)
+            except Exception as _exc:
+                logging.debug("Structural corpus resolution skipped: %s", _exc)
         except Exception as e:
             logging.warning(f"Observed training data rejected: {e}")
         return None

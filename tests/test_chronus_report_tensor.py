@@ -1,5 +1,8 @@
+import json
 import sys
 from types import SimpleNamespace
+
+import chronus.report as report_module
 
 
 def test_tensor_report_is_evidence_first(monkeypatch):
@@ -13,9 +16,42 @@ def test_tensor_report_is_evidence_first(monkeypatch):
     module = SimpleNamespace(probe=lambda: probe, _RUNTIME=None)
     monkeypatch.setitem(sys.modules, "chronus.tensor_compute", module)
     import chronus
-    monkeypatch.setattr(chronus, "tensor_compute", module, raising=False)
-    from chronus.report import _tensor_section
 
-    section = _tensor_section()
+    monkeypatch.setattr(chronus, "tensor_compute", module, raising=False)
+
+    section = report_module._tensor_section()
+
     assert section["available"] is True
     assert section["last_execution_evidence"] == "Unavailable"
+
+
+def test_tensor_section_prefers_sys_modules_entry(monkeypatch):
+    """_tensor_section must honor the sys.modules stub (no hardware import)."""
+    probe = SimpleNamespace(as_dict=lambda: {"available": False, "reason": "stubbed"})
+    module = SimpleNamespace(probe=lambda: probe, _RUNTIME=None)
+    monkeypatch.setitem(sys.modules, "chronus.tensor_compute", module)
+
+    section = report_module._tensor_section()
+
+    assert section["available"] is False
+    assert section["reason"] == "stubbed"
+    assert section["last_execution_evidence"] == "Unavailable"
+
+
+def test_report_sections_carry_elapsed_ms(monkeypatch):
+    """Every canonical section records elapsed_ms and stays JSON-safe."""
+    monkeypatch.setattr(report_module, "_opencl_section", lambda: {"importable": False})
+    monkeypatch.setattr(report_module, "_vendor_section", lambda: {"probes": []})
+    monkeypatch.setattr(report_module, "_hasher_section", lambda: {"backend": "cpu"})
+    monkeypatch.setattr(report_module, "_punch_section", lambda: {"use_opencl": False})
+    monkeypatch.setattr(
+        report_module, "_tensor_section", lambda: {"last_execution_evidence": "Unavailable"}
+    )
+
+    doc = report_module.report()
+
+    assert set(doc) == {"opencl", "vendors", "hasher", "punch", "tensor"}
+    for section in doc.values():
+        assert isinstance(section["elapsed_ms"], int)
+        assert section["elapsed_ms"] >= 0
+    json.dumps(doc, default=str)

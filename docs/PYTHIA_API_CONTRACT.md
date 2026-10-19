@@ -208,6 +208,45 @@ objectives); `tests/test_service_constitution.py` enforces it.
 | Deprecation | CANONICAL |
 | Tests | `tests/test_production_api_contract.py` |
 
+### `pythia.customer.health` — PYTHIA
+
+**Routes**
+
+- `GET /api/v1/customer/health`
+
+| Field | Value |
+| --- | --- |
+| Capability | customer-facing aggregate health status projection |
+| Interface | HTTP_PUBLIC |
+| Implementation | `chronus/mla1517_platform/python/control_api.py::customer_health_payload` |
+| Consumers | customer-monitoring, external-probes |
+| Authority | PYTHIA |
+| Reliability tier | R4 |
+| Lifecycle | STABLE |
+| SLO | `slo.projection.read` |
+| Auth | NONE |
+| Authorisation authority | none |
+| Truth class | READINESS |
+| Request | none |
+| Response | {schema_version, status, components{api, identity, readiness, stratum, worker}, generated_at} |
+| Timeout | immediate |
+| Idempotency | read-only |
+| Retry | freely retryable |
+| Failure semantics | subsystem degradation reports degraded with per-component truth; never a green lie |
+| Availability semantics | status is ok only when all core subsystems are observably healthy |
+| Fallback policy | component failure reflects directly in per-component state and aggregate degraded status |
+| Dependencies | none |
+| Security classification | PUBLIC_READ |
+| Observability | golden_signals |
+| Compatibility window | additive fields only within pythia.customer.health/1 |
+| Support owner | PYTHIA |
+| Runtime evidence | LOCAL_HTTP_E2E_EXECUTED |
+| Side effects | none |
+| Custody | none |
+| Stability | stable |
+| Deprecation | CANONICAL |
+| Tests | `tests/test_parity_surface.py`, `tests/test_production_api_contract.py` |
+
 ### `pythia.static_spa` — PYTHIA
 
 **Routes**
@@ -1084,6 +1123,84 @@ objectives); `tests/test_service_constitution.py` enforces it.
 | Deprecation | CANONICAL |
 | Tests | `tests/test_production_api_contract.py` |
 
+### `pythia.substrate.latency` — PYTHIA
+
+**Routes**
+
+- `GET /api/v1/substrate/proxy-latency`
+
+| Field | Value |
+| --- | --- |
+| Capability | measured substrate proxy round-trip latency observation |
+| Interface | HTTP_OPERATOR |
+| Implementation | `chronus/mla1517_platform/python/control_api.py::substrate_latency_payload` |
+| Consumers | operator-console, applet-latency-monitor |
+| Authority | PYTHIA |
+| Reliability tier | R4 |
+| Lifecycle | STABLE |
+| SLO | `slo.projection.read` |
+| Auth | NONE |
+| Authorisation authority | none |
+| Truth class | RUNTIME_OBSERVATION |
+| Request | none |
+| Response | {schema_version, probe, measured, ok, reason, latency_ms, generated_at} |
+| Timeout | immediate |
+| Idempotency | read-only |
+| Retry | freely retryable |
+| Failure semantics | probe failure reports ok:false with reason and measured round-trip time |
+| Availability semantics | measured per-request round-trip latency, never cached or synthesized |
+| Fallback policy | failed probe reports ok:false with reason; never reports synthetic latency |
+| Dependencies | none |
+| Security classification | PUBLIC_READ |
+| Observability | golden_signals |
+| Compatibility window | additive fields only within pythia.substrate.latency/1 |
+| Support owner | PYTHIA |
+| Runtime evidence | LOCAL_HTTP_E2E_EXECUTED |
+| Side effects | none |
+| Custody | none |
+| Stability | stable |
+| Deprecation | CANONICAL |
+| Tests | `tests/test_parity_surface.py`, `tests/test_production_api_contract.py` |
+
+### `salamander.veritas.status` — SALAMANDER
+
+**Routes**
+
+- `GET /api/v1/veritas/status`
+
+| Field | Value |
+| --- | --- |
+| Capability | veritas self-repair ledger integrity projection |
+| Interface | HTTP_OPERATOR |
+| Implementation | `chronus/mla1517_platform/python/control_api.py::veritas_status_payload` |
+| Consumers | operator-console, veritas-monitor |
+| Authority | SALAMANDER |
+| Reliability tier | R3 |
+| Lifecycle | STABLE |
+| SLO | `slo.projection.read` |
+| Auth | NONE |
+| Authorisation authority | none |
+| Truth class | EVIDENCE |
+| Request | none |
+| Response | {schema_version, ledger, ledger_path, governance, available, load_status, entries_total, entries_verified, verification_ratio, statuses, last_entry_at, integrity_report, generated_at} |
+| Timeout | immediate |
+| Idempotency | read-only |
+| Retry | freely retryable |
+| Failure semantics | absent ledger reports available:true with NO_LEDGER_FILE; unreadable fails closed to available:false |
+| Availability semantics | honest report of self-repair ledger state without fabrication |
+| Fallback policy | unreadable ledger reports available:false with reason; never fabricates integrity |
+| Dependencies | none |
+| Security classification | PUBLIC_READ |
+| Observability | golden_signals |
+| Compatibility window | additive fields only within pythia.veritas.status/1 |
+| Support owner | SALAMANDER |
+| Runtime evidence | LOCAL_HTTP_E2E_EXECUTED |
+| Side effects | none |
+| Custody | none |
+| Stability | stable |
+| Deprecation | CANONICAL |
+| Tests | `tests/test_parity_surface.py`, `tests/test_production_api_contract.py` |
+
 ### `salamander.fault` — SALAMANDER
 
 **Routes**
@@ -1448,13 +1565,14 @@ objectives); `tests/test_service_constitution.py` enforces it.
 **Routes**
 
 - `GET /api/v1/telemetry/stream`
+- `GET /ws/telemetry`
 
 | Field | Value |
 | --- | --- |
 | Capability | SSE telemetry stream |
 | Interface | EVENT_STREAM |
-| Implementation | `chronus/mla1517_platform/python/control_api.py::_telemetry_stream` |
-| Consumers | frontend ops.ts EventSource |
+| Implementation | `chronus/mla1517_platform/python/control_api.py::_telemetry_stream, chronus/mla1517_platform/python/control_api.py::_telemetry_ws` |
+| Consumers | frontend ops.ts EventSource, WebSocket telemetry clients |
 | Authority | PYTHIA |
 | Reliability tier | R4 |
 | Lifecycle | STABLE |
@@ -1463,7 +1581,7 @@ objectives); `tests/test_service_constitution.py` enforces it.
 | Authorisation authority | none |
 | Truth class | RUNTIME_OBSERVATION |
 | Request | none |
-| Response | text/event-stream frames {type:ops, seq, ops, new_events} + : keepalive |
+| Response | SSE: text/event-stream frames {type:ops, seq, ops, new_events} + : keepalive; WS: RFC 6455 text frames {type:ws, seq, ops, new_events}; plain GET on /ws/telemetry answers the 200 contract descriptor pythia.telemetry.ws/1 |
 | Timeout | bounded ~120 ticks then clean close |
 | Idempotency | read-only; client resumes from last_seq |
 | Retry | EventSource auto-reconnect; seq resumes |

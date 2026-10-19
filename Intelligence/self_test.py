@@ -424,7 +424,7 @@ def _check_extended_algebra() -> Dict[str, Any]:
         )
         sig = turing_core.detect_family_signature([turing_core.padovan(i) for i in range(24)])
         sig_ok = sig["family"] == "plastic"
-        sched = turing_core.extended_nonce_schedule(10_000, seed=42)
+        sched = turing_core.extended_nonce_schedule(10_000, seed=42, cap=1000)
         sched_ok = 0 < len(sched) <= 1000 and len(set(sched)) == len(sched)
         ladders_ok = True
         try:
@@ -550,6 +550,33 @@ def _check_folded_state(orchestrator) -> Dict[str, Any]:
         return {"passed": False, "error": str(e)}
 
 
+def _check_recursive_self_learning() -> Dict[str, Any]:
+    """Exercise the Strange-Loop substrate: adaptivity + measured coupling."""
+    try:
+        from .recursive_self_learning import RecursiveSelfLearningSubstrate
+
+        sub = RecursiveSelfLearningSubstrate(dimension=16, seed=0)
+        for error in (0.9, 0.7, 0.5, 0.4, 0.35):
+            sub.evolve(error)
+        status = sub.status()
+        return {
+            "passed": bool(
+                status["strange_loop_active"] and status["recursion_depth"] == 5
+            ),
+            "recursion_depth": status["recursion_depth"],
+            "learning_rate": status["learning_rate"],
+            "meta_learning_rate": status["meta_learning_rate"],
+            "geometry": status["geometry"],
+            "phi": status["phi"],
+            "irreducibility": status["irreducibility"],
+            "strange_loop_active": status["strange_loop_active"],
+            "narrative": status["narrative"],
+            "criteria": status["criteria"],
+        }
+    except Exception as e:  # pragma: no cover - defensive
+        return {"passed": False, "error": str(e)}
+
+
 def run_intelligence_self_test() -> Dict[str, Any]:
     """Run the full falsifiable intelligence self-test and return a report."""
     from .orchestrator import IntelligenceOrchestrator
@@ -571,6 +598,7 @@ def run_intelligence_self_test() -> Dict[str, Any]:
     meta_evo = _check_meta_evolution(orchestrator)
     algebra = _check_extended_algebra()
     folded = _check_folded_state(orchestrator)
+    recursive_learning = _check_recursive_self_learning()
 
     report = {
         "loadability": {
@@ -596,6 +624,7 @@ def run_intelligence_self_test() -> Dict[str, Any]:
         "meta_evolution": meta_evo,
         "extended_algebra": algebra,
         "folded_state": folded,
+        "recursive_self_learning": recursive_learning,
         "registry_summary": registry.summary(),
     }
     # Overall: loadability + instantiation + mining + Lucas scales + agentic

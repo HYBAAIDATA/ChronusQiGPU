@@ -15,14 +15,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-try:
-    from .hardened_unified_substrate import (
-        ManifoldCurvature,
-    )
-except ImportError:  # pragma: no cover - top-level script use
-    from hardened_unified_substrate import (
-        ManifoldCurvature,
-    )
+from aethel.hardened_unified_substrate import (
+    ManifoldCurvature,
+)
 
 from .intent_compiler import Intent, IntentCompiler
 from .poincare_cassini_search import (

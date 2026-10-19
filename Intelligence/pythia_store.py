@@ -31,6 +31,7 @@ signals, and the journal makes every decision auditable.
 
 from __future__ import annotations
 
+import atexit
 import hashlib
 import json
 import logging
@@ -609,6 +610,13 @@ class PythiaStore:
             "default_store": self._default_store,
         }
 
+    def _flush_on_exit(self) -> None:
+        if getattr(self, "_save_dirty", False):
+            try:
+                self.save(force=True)
+            except Exception:
+                pass
+
     @property
     def snapshot_path(self) -> Path:
         return self.dir / "memory_snapshot.json"
@@ -642,8 +650,14 @@ class PythiaStore:
         for m in self.pythia.patterns():
             self.qudits.store(f"lt:{m.pattern_id}", np.frombuffer(m.folded_data, dtype=float))
 
-    def save(self) -> Path:
+    def save(self, force: bool = False) -> Path:
         """Persist memory tiers + learning substrate + qudit traces."""
+        now = time.monotonic()
+        if not force and (now - self._last_save_mono) < self._min_save_interval_s:
+            self._save_dirty = True
+            return self.snapshot_path
+        self._last_save_mono = now
+        self._save_dirty = False
         self.dir.mkdir(parents=True, exist_ok=True)
         self._refresh_qudits()
         snap = {

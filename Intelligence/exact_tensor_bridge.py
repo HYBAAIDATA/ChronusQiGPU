@@ -10,9 +10,7 @@ re-exports the adapter's public names so existing
 
 from __future__ import annotations
 
-try:
-    from kellogg.exact_tensor import ExactTOETensor, canonical_digest
-except ImportError:
-    from .exact_tensor import ExactTOETensor, canonical_digest
+from kellogg.exact_tensor import ExactTOETensor, canonical_digest
 
 __all__ = ["ExactTOETensor", "canonical_digest"]
+
