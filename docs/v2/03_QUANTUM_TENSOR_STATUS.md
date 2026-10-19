@@ -27,6 +27,12 @@ In commit `9e3420bb` (`fix(quantum): close amplitude-amplification claim, clamp 
 | **1000 Physical Qubits / Fault-Tolerant ASIC** | **CLOSED / DISPROVEN** | No physical cryogenic qubit fabric exists in the repository. All quantum gates execute as classical linear algebra or symplectic Clifford updates. |
 | **Quadratic Speedup on Uniform Space** | **CLOSED / DISPROVEN** | Grover speedup requires coherent physical quantum hardware. Classical emulation of coherent superposition across 2^{32} states incurs exponential memory/compute overhead. |
 
+### 2.1 The Foundational Contrast: Flat Brute-Force vs. Lucas & PV Number Scaling
+While amplitude amplification over flat, unstructured state spaces yields no speedup on classical silicon, this repository's genuine mathematical breakthrough is **Lucas & Pisot-Vijayaraghavan (PV) Number Power Scaling** (`lucas/`, see [`07_LUCAS_PISOT_SCALING.md`](07_LUCAS_PISOT_SCALING.md)):
+- Rather than uniform sampling on flat space, the system operates over the quadratic integer ring $\mathbb{Z}[\phi]$ and the minimal quadratic Pisot number $\phi = \frac{1+\sqrt{5}}{2}$.
+- Exponential geometric residual decay $|\phi^n - L_n| = \phi^{-n} \to 0$ guides non-repeating ergodic coverage of the $2^{32}$ nonce estate.
+- All 17 subsystems route through the 7 canonical Lucas kernels (`lucas/pool.py`), verified by 52 unit and property tests.
+
 ---
 
 ## 3. Implemented Quantum & Tensor Modules

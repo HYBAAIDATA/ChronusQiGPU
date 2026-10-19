@@ -55,6 +55,48 @@ python -m pytest `
 ======================= 144 passed in 75s =======================
 ```
 
+### 1.3 Lucas & Pisot-Vijayaraghavan (PV) 52-Test Scaling Sweep
+Executes the foundational integer ring identities, fast doubling, Cassini-Hoggatt conservation, and Pisot precision boundary tests:
+
+```powershell
+$env:PYTHONPATH="chronus/packages/chronos-one-igpu/src;."
+python -m pytest `
+  tests/test_a_lucas_math.py `
+  tests/test_benchmark_lucas_pisot.py `
+  tests/test_lucas15_operator_ablation.py `
+  tests/test_lucas_algebra.py `
+  tests/test_lucas_exponential_scaling_honesty.py `
+  tests/test_lucas_partition.py `
+  tests/test_lucas_pisot_scaling_research.py `
+  -v -p no:cacheprovider --basetemp=.pytest_tmp
+```
+**Expected Output**:
+```text
+============================= 52 passed in 14.34s =============================
+```
+
+### 1.4 Euclid Arena 100-Test Anti-Hype & Benchmark Suite
+Executes the full 100-test comparative arena across all 5+1 intelligences, Solver/Ineffable duel, and Frontier duel:
+
+```powershell
+python -m pytest `
+  tests/euclid_arena/test_10_predictive.py `
+  tests/euclid_arena/test_11_causal.py `
+  tests/euclid_arena/test_12_counterfactual.py `
+  tests/euclid_arena/test_13_topological.py `
+  tests/euclid_arena/test_14_geometric.py `
+  tests/euclid_arena/test_15_quantum_ext.py `
+  tests/euclid_arena/test_16_solver_duel.py `
+  tests/euclid_arena/test_17_ineffable_duel.py `
+  tests/euclid_arena/test_18_frontier_duel.py `
+  tests/euclid_arena/test_19_efficiency.py `
+  -v -p no:cacheprovider --basetemp=.pytest_tmp
+```
+**Expected Output**:
+```text
+============================= 100 passed in 5.71s =============================
+```
+
 ---
 
 ## 2. Full Scientific Pipeline Execution

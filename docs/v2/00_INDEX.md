@@ -24,6 +24,7 @@ Historical documentation, superseded research notes, and legacy audit documents 
 | [`04_MILLENNIUM_EVIDENCE.md`](04_MILLENNIUM_EVIDENCE.md) | Millennium Probes & Discrete Computations | `millennium/discrete/`, `Intelligence/theoretical_foundations.py:380-450` | **FINITE COMPUTATIONS** |
 | [`05_RUNBOOKS.md`](05_RUNBOOKS.md) | Operational Runbooks & Execution Harness | `scripts/execute_sprint_1_to_4_pipeline.py`, `tests/` | **MEASURED** |
 | [`06_GLOSSARY_BOUNDARIES.md`](06_GLOSSARY_BOUNDARIES.md) | Epistemic Glossary & Truth Classes | `toe/intelligences/authority_boundary.py`, `chronus/readiness.py:165` | **MEASURED** |
+| [`07_LUCAS_PISOT_SCALING.md`](07_LUCAS_PISOT_SCALING.md) | Lucas & Pisot-Vijayaraghavan (PV) Scaling Architecture | `lucas/`, `tests/test_a_lucas_math.py`, `tests/test_pisot_theory.py` | **MEASURED & PROVEN** |
 
 ---
 
