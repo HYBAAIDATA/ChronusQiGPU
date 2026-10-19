@@ -1,6 +1,6 @@
 # EUCLID Open Replication Pack
 
-- **Pinned Commit**: `4131cddc40defba3356792005c09d28ee6c66e25`
+- **Pinned Commit**: `f850abb9cdba1554c6bb94f0cf391f863f0b05c4`
 - **Seeds**: `[1337, 42, 2026]`
 - **One-Command Reproduction**:
   ```bash

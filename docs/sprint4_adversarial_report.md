@@ -1,7 +1,7 @@
 # Sprint 4 Adversarial & Ablation Report
 
-**Pinned Commit**: `4131cddc40defba3356792005c09d28ee6c66e25`  
-**Timestamp**: `2026-10-18T23:36:56.925031+00:00`  
+**Pinned Commit**: `f850abb9cdba1554c6bb94f0cf391f863f0b05c4`  
+**Timestamp**: `2026-10-19T02:36:31.322591+00:00`  
 **Seeds**: `[1337, 42, 2026]`  
 
 ## 1. Executive Summary
