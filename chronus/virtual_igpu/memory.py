@@ -197,6 +197,8 @@ class VirtualMemoryPlane:
 
             if host_b and self._host_bytes + host_b > self.max_host_bytes:
                 self._evict_until(host_b)
+            if host_b and self._host_bytes + host_b > self.max_host_bytes:
+                raise MemoryError("host residency budget exceeded")
 
             rec = ObjectRecord(
                 object_id=oid,
@@ -266,7 +268,23 @@ class VirtualMemoryPlane:
                 raise PermissionError(
                     f"tenant {tenant!r} not authorized for object {object_id}"
                 )
-            return rec
+            # Return a copy so callers cannot mutate occupancy or ownership.
+            return ObjectRecord(
+                object_id=rec.object_id,
+                tenant=rec.tenant,
+                content_id=rec.content_id,
+                representation_version=rec.representation_version,
+                logical_bytes=rec.logical_bytes,
+                folded_bytes=rec.folded_bytes,
+                host_resident_bytes=rec.host_resident_bytes,
+                device_resident_bytes=rec.device_resident_bytes,
+                payload=rec.payload,
+                metadata=dict(rec.metadata),
+                adapter_id=rec.adapter_id,
+                residency=rec.residency,
+                created_at=rec.created_at,
+                refs=rec.refs,
+            )
 
     def sizes(
         self, object_id: str, *, tenant: str | None = None, tenant_id: str | None = None
@@ -317,6 +335,7 @@ class VirtualMemoryPlane:
                 break
             self._host_bytes -= rec.host_resident_bytes
             rec.host_resident_bytes = 0
+            rec.payload = None
             if rec.device_resident_bytes == 0:
                 rec.residency = "folded"
                 self.residency[rec.object_id] = "folded"

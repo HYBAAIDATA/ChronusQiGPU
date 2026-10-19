@@ -312,12 +312,29 @@ class FoldedWorkingForm:
 
     def verify(self) -> bool:
         try:
+            if self.owner != OWNER_ID:
+                return False
+            if not isinstance(self.digest, str) or len(self.digest) != 64:
+                return False
+            bytes.fromhex(self.digest)
+            if self.sparse is None:
+                return False
             if not bool(self.vector.verify()):
                 return False
             # folded_units tracks the Zeckendorf vector; sparse is parallel witness
             if self.folded_units != int(self.vector.folded_units):
                 return False
             if self.raw_len < 0:
+                return False
+            if int(getattr(self.vector, "total_bytes", self.raw_len)) != int(self.raw_len):
+                return False
+            materialised = unfold(self.vector)
+            if len(materialised) != int(self.raw_len):
+                return False
+            if hashlib.sha256(materialised).hexdigest() != self.digest:
+                return False
+            working = working_form_digest(self.vector)
+            if self.lineage is not None and self.lineage.output_digest != working:
                 return False
             return True
         except Exception:
