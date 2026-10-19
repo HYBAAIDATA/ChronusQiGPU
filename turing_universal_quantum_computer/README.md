@@ -34,6 +34,8 @@ package is that substrate, as a single installable unit.
 
 ## Start here
 
+- **Documentation system:** [audience portal](../docs/turing/index.md) and [maintainer inventory](../docs/turing/internal/inventory.md). Candidate review preview; not publication approval.
+
 - **Use TURING:** [installation](docs/installation.md) → [working example](examples/turing_pipeline.py) → [API](docs/api.md).
 - **Integrate safely:** [compatibility and migration](docs/compatibility.md) → [mathematical contracts](docs/mathematical-contracts.md).
 - **Operate and release:** [runbook](docs/operations.md) → [qualification](TURING-qualification.md) → [release policy](docs/release-policy.md).
