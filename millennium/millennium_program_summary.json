@@ -1,16 +1,16 @@
 {
   "status": "PROBES COMPLETE",
-  "timestamp_utc": "2026-10-19T02:18:13.844520+00:00",
-  "git_short_hash": "4cd967b4",
+  "timestamp_utc": "2026-10-19T02:28:37.366766+00:00",
+  "git_short_hash": "6a72bf73",
   "seeds": [
     1337,
     42,
     2026
   ],
   "library": {
-    "treatises_count": 10,
-    "manifest_hash": "91e22bcae89b53dc",
-    "reviews_count": 10,
+    "treatises_count": 19,
+    "manifest_hash": "298a4a065d60e67d",
+    "reviews_count": 19,
     "manifest_path": "millennium\\library_manifest.json",
     "synthesis_path": "millennium\\REVIEW_SYNTHESIS.md"
   },
@@ -59,5 +59,5 @@
     "Extend BSD swarm: compute higher order Taylor terms for rank >= 4 curves.",
     "Open refutation bounty on all empirical datasets."
   ],
-  "publish_language": "Euclid reviewed 10 treatises (manifest hash 91e22bcae89b53dc), reproduced identities in bounded boxes (T=150.0, D=5, N=5077), found zero off-line/counterexample candidates surviving recheck. All results INCONCLUSIVE toward proof, as expected. Evidence + code attached. Refutation bounty open."
+  "publish_language": "Euclid reviewed 19 treatises (manifest hash 298a4a065d60e67d), reproduced identities in bounded boxes (T=150.0, D=5, N=5077), found zero off-line/counterexample candidates surviving recheck. All results INCONCLUSIVE toward proof, as expected. Evidence + code attached. Refutation bounty open."
 }

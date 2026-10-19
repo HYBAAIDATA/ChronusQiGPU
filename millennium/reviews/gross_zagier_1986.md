@@ -1,7 +1,7 @@
 # Euclid Review: Heegner points and derivatives of L-series
 
 **Treatise ID**: `gross_zagier_1986`  
-**Provenance Hash**: `deceae15eada2a8f53aa9e08ffc63beaf68eef0ddfb4f4b71b5d321cad54a736`  
+**Provenance Hash**: `98e2a7bef702da4186e10fd3714387dd6bd9e355a8d38550ff3d989f1f3d05f0`  
 **Authors**: Benedict H. Gross, Don B. Zagier (1986)  
 **License**: Open Access (EuDML / Springer)  
 **Source URL**: [https://eudml.org/doc/143346](https://eudml.org/doc/143346)  

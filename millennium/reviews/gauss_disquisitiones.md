@@ -1,7 +1,7 @@
 # Euclid Review: Disquisitiones Arithmeticae
 
 **Treatise ID**: `gauss_disquisitiones`  
-**Provenance Hash**: `3853d1adc115fb9290ed027ba074a6c42e411fbf6b94f7eb56a34599385b1fba`  
+**Provenance Hash**: `236bca63792e5cc1cc47cfdb7f5372868fa704333f623d572e636e4718bbde7c`  
 **Authors**: Carl Friedrich Gauss (1801)  
 **License**: Public Domain  
 **Source URL**: [https://gdz.sub.uni-goettingen.de/id/PPN235993352](https://gdz.sub.uni-goettingen.de/id/PPN235993352)  

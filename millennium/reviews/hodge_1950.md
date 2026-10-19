@@ -1,7 +1,7 @@
 # Euclid Review: The Topological Invariants of Algebraic Varieties
 
 **Treatise ID**: `hodge_1950`  
-**Provenance Hash**: `b7530926dc24c34af26d77df059719bbd52cff105d401ff995c813ed960b8f57`  
+**Provenance Hash**: `7919e72b7cd0344f562e5e8fa6574cba52f9320cd2a7b9b5528ad12974aa3742`  
 **Authors**: William V.D. Hodge (1950)  
 **License**: Open Access (ICM Proceedings)  
 **Source URL**: [https://www.mathunion.org/icm/proceedings](https://www.mathunion.org/icm/proceedings)  

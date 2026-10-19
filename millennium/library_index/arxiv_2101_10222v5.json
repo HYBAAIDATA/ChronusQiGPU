@@ -1,0 +1,51 @@
+{
+  "id": "arxiv_2101_10222v5",
+  "title": "The conjectures of Artin-Tate and Birch-Swinnerton-Dyer",
+  "authors": [
+    "S. Lichtenbaum",
+    "N. Ramachandran",
+    "T. Suzuki"
+  ],
+  "year": 2021,
+  "source_url": "http://arxiv.org/abs/2101.10222v5",
+  "license": "Open Access (arXiv preprint)",
+  "retrieved_date": "2026-10-19T02:28:37.366766+00:00",
+  "sha256": "461ddb9d82c03291079855f565d2dbbf65bdc625b8ac89d82499548fb877613a",
+  "category": "arXiv:math.AG",
+  "problem_focus": [
+    "BSD"
+  ],
+  "definitions": [
+    {
+      "term": "BSD Literature Concept",
+      "statement": "We provide two proofs that the conjecture of Artin-Tate for a fibered surface is equivalent to the conjecture of Birch-Swinnerton-Dyer for the Jacobian of the generic fibre. As a byproduct, we obtain a new proof of a theorem of Geisser rela..."
+    }
+  ],
+  "theorems": [
+    {
+      "label": "arXiv:2101_10222v5 Claim",
+      "statement": "We provide two proofs that the conjecture of Artin-Tate for a fibered surface is equivalent to the conjecture of Birch-Swinnerton-Dyer for the Jacobian of the generic fibre. As a byproduct, we obtain a new proof of a theorem of Geisser relating the orders of the Brauer group and the Tate-Shafarevich group.",
+      "status": "PREPRINT"
+    }
+  ],
+  "conjectures": [
+    {
+      "label": "BSD Problem Horizon",
+      "statement": "Investigates behavior related to BSD in math.AG.",
+      "status": "OPEN"
+    }
+  ],
+  "open_gaps": [
+    "Finite or specialized scope in arXiv:2101_10222v5; general continuum proof remains unproven."
+  ],
+  "computational_handles": [
+    "Literature algorithmic bounds for The conjectures of Artin-Tate and Birch-",
+    "Independent cross-reference of BSD asymptotic identities"
+  ],
+  "citations": [
+    {
+      "ref": "S. Lichtenbaum, N. Ramachandran, T. Suzuki (2021). The conjectures of Artin-Tate and Birch-Swinnerton-Dyer. arXiv preprint 2101_10222v5.",
+      "url": "http://arxiv.org/abs/2101.10222v5"
+    }
+  ]
+}

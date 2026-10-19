@@ -1,7 +1,7 @@
 # Euclid Review: Théorie de Hodge: I, II, III
 
 **Treatise ID**: `deligne_hodge`  
-**Provenance Hash**: `0d28c8cb0aeffde404369d967233a696845c5ad87ca2dda485db486a78512743`  
+**Provenance Hash**: `dadf643b5fd213484b7cd7900535ad03fa83654377c0f864095ef1cb931de056`  
 **Authors**: Pierre Deligne (1971)  
 **License**: Open Access (NUMDAM / IHÉS)  
 **Source URL**: [http://www.numdam.org/item/PMIHES_1971__40__5_0/](http://www.numdam.org/item/PMIHES_1971__40__5_0/)  

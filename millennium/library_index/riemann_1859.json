@@ -1,13 +1,13 @@
 {
   "id": "riemann_1859",
-  "title": "Ueber die Anzahl der Primzahlen unter einer gegebenen Gr\u00f6sse",
+  "title": "Ueber die Anzahl der Primzahlen unter einer gegebenen Grösse",
   "authors": [
     "Bernhard Riemann"
   ],
   "year": 1859,
   "source_url": "https://archive.org/details/monatsberichtede1859knig",
   "license": "Public Domain",
-  "retrieved_date": "2026-10-19T02:18:13.845794+00:00",
+  "retrieved_date": "2026-10-19T02:28:37.366766+00:00",
   "sha256": "5a2bf4222902a0f062b7967a3366505437008d2c5ae5b458e0c8e3a103009731",
   "category": "Analytic Number Theory & Complex Analysis",
   "problem_focus": [
@@ -67,7 +67,7 @@
   ],
   "citations": [
     {
-      "ref": "Riemann, B. (1859). Ueber die Anzahl der Primzahlen unter einer gegebenen Gr\u00f6sse, Monatsberichte der Berliner Akademie, 671-680.",
+      "ref": "Riemann, B. (1859). Ueber die Anzahl der Primzahlen unter einer gegebenen Grösse, Monatsberichte der Berliner Akademie, 671-680.",
       "url": "https://archive.org/details/monatsberichtede1859knig"
     }
   ]

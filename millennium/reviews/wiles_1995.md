@@ -1,7 +1,7 @@
 # Euclid Review: Modular elliptic curves and Fermat's Last Theorem
 
 **Treatise ID**: `wiles_1995`  
-**Provenance Hash**: `911a95007381b21bd08af20e99c716d506badbe0a0bcd3d8d06ae3f6b2897a64`  
+**Provenance Hash**: `5d02de920cd844cbe31378df8aa9ea9d6edc58d1efe6863663f07069da10669d`  
 **Authors**: Andrew Wiles, Richard Taylor (1995)  
 **License**: Open Access (Annals of Mathematics)  
 **Source URL**: [https://annals.math.princeton.edu/1995/141-3/p01](https://annals.math.princeton.edu/1995/141-3/p01)  

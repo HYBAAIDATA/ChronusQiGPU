@@ -1,0 +1,49 @@
+{
+  "id": "arxiv_0905_1527v4",
+  "title": "Riemann Zeta Function",
+  "authors": [
+    "Dorin Ghisa"
+  ],
+  "year": 2009,
+  "source_url": "http://arxiv.org/abs/0905.1527v4",
+  "license": "Open Access (arXiv preprint)",
+  "retrieved_date": "2026-10-19T02:28:37.366766+00:00",
+  "sha256": "877cd9c1b3a5bcf04a714dbe8af44145ea3b35fc936cb10e02f548a1d2003ad9",
+  "category": "arXiv:math.CV",
+  "problem_focus": [
+    "RH"
+  ],
+  "definitions": [
+    {
+      "term": "RH Literature Concept",
+      "statement": "Global mapping properties of the Riemann Zeta function are used to investigate its non trivial zeros."
+    }
+  ],
+  "theorems": [
+    {
+      "label": "arXiv:0905_1527v4 Claim",
+      "statement": "Global mapping properties of the Riemann Zeta function are used to investigate its non trivial zeros.",
+      "status": "PREPRINT"
+    }
+  ],
+  "conjectures": [
+    {
+      "label": "RH Problem Horizon",
+      "statement": "Investigates behavior related to RH in math.CV.",
+      "status": "OPEN"
+    }
+  ],
+  "open_gaps": [
+    "Finite or specialized scope in arXiv:0905_1527v4; general continuum proof remains unproven."
+  ],
+  "computational_handles": [
+    "Literature algorithmic bounds for Riemann Zeta Function",
+    "Independent cross-reference of RH asymptotic identities"
+  ],
+  "citations": [
+    {
+      "ref": "Dorin Ghisa (2009). Riemann Zeta Function. arXiv preprint 0905_1527v4.",
+      "url": "http://arxiv.org/abs/0905.1527v4"
+    }
+  ]
+}

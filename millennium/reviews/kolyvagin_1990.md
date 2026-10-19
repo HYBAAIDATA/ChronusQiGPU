@@ -1,7 +1,7 @@
 # Euclid Review: Euler systems
 
 **Treatise ID**: `kolyvagin_1990`  
-**Provenance Hash**: `1bfa0890f1ad46ac99bbcdba7bc304d217e1776880ddb9cbdd2259428ef0c493`  
+**Provenance Hash**: `84ce37a1e98f9d0ab8f58717045911838c27485b5217b3bdb365917340bd8e79`  
 **Authors**: Victor A. Kolyvagin (1990)  
 **License**: Academic Research Fair Use  
 **Source URL**: [https://link.springer.com/chapter/10.1007/978-0-8176-4576-2_11](https://link.springer.com/chapter/10.1007/978-0-8176-4576-2_11)  

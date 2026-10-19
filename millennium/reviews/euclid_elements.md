@@ -1,7 +1,7 @@
 # Euclid Review: The Thirteen Books of Euclid's Elements
 
 **Treatise ID**: `euclid_elements`  
-**Provenance Hash**: `2891ccbdae4d930313bd6fe54466bd9c92caff78ea29192d22a483a33fe122e2`  
+**Provenance Hash**: `2a21e6376e1625bd99bdeaae10d7d7e21ac624d9c66166d2763bd7e47c616f67`  
 **Authors**: Euclid of Alexandria, Thomas L. Heath (Trans. & Comm.) (1908)  
 **License**: Public Domain  
 **Source URL**: [https://archive.org/details/thirteentriple01eucl](https://archive.org/details/thirteentriple01eucl)  

@@ -1,0 +1,50 @@
+{
+  "id": "arxiv_1708_01807v1",
+  "title": "On the Birch--Swinnerton-Dyer conjecture and Schur indices",
+  "authors": [
+    "Matthew Bisatt",
+    "Vladimir Dokchitser"
+  ],
+  "year": 2017,
+  "source_url": "http://arxiv.org/abs/1708.01807v1",
+  "license": "Open Access (arXiv preprint)",
+  "retrieved_date": "2026-10-19T02:28:37.366766+00:00",
+  "sha256": "925ff15b32101d0aed5362cc3a1b53599c3ba0c03f012e8b615048fe1e9a2b25",
+  "category": "arXiv:math.NT",
+  "problem_focus": [
+    "BSD"
+  ],
+  "definitions": [
+    {
+      "term": "BSD Literature Concept",
+      "statement": "For every odd prime $p$, we exhibit families of irreducible Artin representations $τ$ with the property that for every elliptic curve $E$ the order of the zero of the twisted $L$-function $L(E,τ,s)$ at $s\\!=\\!1$ must be a multiple~of~$p$. A..."
+    }
+  ],
+  "theorems": [
+    {
+      "label": "arXiv:1708_01807v1 Claim",
+      "statement": "For every odd prime $p$, we exhibit families of irreducible Artin representations $τ$ with the property that for every elliptic curve $E$ the order of the zero of the twisted $L$-function $L(E,τ,s)$ at $s\\!=\\!1$ must be a multiple~of~$p$. Analogously, the multiplicity of $τ$ in the Selmer group of $E$ must also be divi...",
+      "status": "PREPRINT"
+    }
+  ],
+  "conjectures": [
+    {
+      "label": "BSD Problem Horizon",
+      "statement": "Investigates behavior related to BSD in math.NT.",
+      "status": "OPEN"
+    }
+  ],
+  "open_gaps": [
+    "Finite or specialized scope in arXiv:1708_01807v1; general continuum proof remains unproven."
+  ],
+  "computational_handles": [
+    "Literature algorithmic bounds for On the Birch--Swinnerton-Dyer conjecture",
+    "Independent cross-reference of BSD asymptotic identities"
+  ],
+  "citations": [
+    {
+      "ref": "Matthew Bisatt, Vladimir Dokchitser (2017). On the Birch--Swinnerton-Dyer conjecture and Schur indices. arXiv preprint 1708_01807v1.",
+      "url": "http://arxiv.org/abs/1708.01807v1"
+    }
+  ]
+}

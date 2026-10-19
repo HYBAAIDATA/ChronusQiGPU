@@ -977,7 +977,30 @@ graph TD
 > - Bounded numerical verification $\\neq$ continuum proof.
 > - Any agent output asserting "RH proven", "Hodge solved", or "BSD resolved" is quarantined as an AL HARAS violation.
 > - Permitted terminal verdicts: `SUPPORTS` (in sample), `REFUTES` (verified counterexample), `INCONCLUSIVE` (bounds reached), `OUT-OF-SCOPE` (continuum object).
+
+---
+
+## 5. Contemporary Open Research Literature (arXiv math.NT / math.AG)
+
+The Great Library actively monitors and ingests contemporary open preprints from arXiv:
+
+| Paper ID | Problem | Year | Title | Primary Computational Handle |
+| :--- | :--- | :--- | :--- | :--- |
 """
+    if LIBRARY_DIR.exists():
+        for fpath in sorted(LIBRARY_DIR.glob("*.json")):
+            try:
+                doc = json.loads(fpath.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            if doc.get("id", "").startswith("arxiv_"):
+                p_id = doc.get("id")
+                focus = ", ".join(doc.get("problem_focus", []))
+                yr = doc.get("year", 2024)
+                title = doc.get("title", "")[:55]
+                handle = doc.get("computational_handles", ["N/A"])[0][:60]
+                synthesis_md += f"| `{p_id}` | {focus} | {yr} | {title}... | {handle} |\n"
+
     SYNTHESIS_PATH.write_text(synthesis_md, encoding="utf-8")
 
 

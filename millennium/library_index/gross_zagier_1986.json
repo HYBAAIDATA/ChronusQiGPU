@@ -8,7 +8,7 @@
   "year": 1986,
   "source_url": "https://eudml.org/doc/143346",
   "license": "Open Access (EuDML / Springer)",
-  "retrieved_date": "2026-10-19T02:18:13.845794+00:00",
+  "retrieved_date": "2026-10-19T02:28:37.366766+00:00",
   "sha256": "98e2a7bef702da4186e10fd3714387dd6bd9e355a8d38550ff3d989f1f3d05f0",
   "category": "Automorphic Forms & Heegner Points",
   "problem_focus": [
@@ -20,7 +20,7 @@
       "statement": "CM point y_K on modular curve X_0(N) associated to imaginary quadratic field K with discriminant D coprime to N."
     },
     {
-      "term": "N\u00e9ron-Tate Canonical Height",
+      "term": "Néron-Tate Canonical Height",
       "statement": "Quadratic form h_hat: E(Q) -> R measuring arithmetic complexity of rational points."
     },
     {

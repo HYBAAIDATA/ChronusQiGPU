@@ -7,7 +7,7 @@
   "year": 1950,
   "source_url": "https://www.mathunion.org/icm/proceedings",
   "license": "Open Access (ICM Proceedings)",
-  "retrieved_date": "2026-10-19T02:18:13.845794+00:00",
+  "retrieved_date": "2026-10-19T02:28:37.366766+00:00",
   "sha256": "7919e72b7cd0344f562e5e8fa6574cba52f9320cd2a7b9b5528ad12974aa3742",
   "category": "Algebraic Geometry & Differential Topology",
   "problem_focus": [
@@ -16,7 +16,7 @@
   "definitions": [
     {
       "term": "Harmonic Form",
-      "statement": "Differential form omega on compact Riemannian/K\u00e4hler manifold satisfying Delta omega = (d delta + delta d) omega = 0."
+      "statement": "Differential form omega on compact Riemannian/Kähler manifold satisfying Delta omega = (d delta + delta d) omega = 0."
     },
     {
       "term": "Hodge Decomposition",
@@ -29,12 +29,12 @@
   ],
   "theorems": [
     {
-      "label": "Hodge Theorem for Compact K\u00e4hler Manifolds",
+      "label": "Hodge Theorem for Compact Kähler Manifolds",
       "statement": "De Rham cohomology decomposes into harmonic forms of type (p,q), and Hodge diamond is symmetric.",
       "status": "PROVEN"
     },
     {
-      "label": "K\u00e4hler Identities",
+      "label": "Kähler Identities",
       "statement": "[L, Lambda] = (p+q-n) I and [d, Lambda] = i d^c_* relating Lefschetz operator and dual operator.",
       "status": "PROVEN"
     },

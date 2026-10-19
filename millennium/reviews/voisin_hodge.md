@@ -1,7 +1,7 @@
 # Euclid Review: Hodge Theory and Complex Algebraic Geometry I & II
 
 **Treatise ID**: `voisin_hodge`  
-**Provenance Hash**: `1d2646f482921278a8feeb920a22e1a114a29acf6546f9ce68db957dfa79bc26`  
+**Provenance Hash**: `618fcc4052b8d2d7bcb0a50de2388d2c37dee438838a31ca93e704418a31f2b8`  
 **Authors**: Claire Voisin (2002)  
 **License**: Academic Research & Educational Fair Use  
 **Source URL**: [https://www.cambridge.org/core/books/hodge-theory-and-complex-algebraic-geometry-i/4A92DE2A08FF596160E364A96C254707](https://www.cambridge.org/core/books/hodge-theory-and-complex-algebraic-geometry-i/4A92DE2A08FF596160E364A96C254707)  

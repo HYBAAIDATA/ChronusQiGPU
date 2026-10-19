@@ -70,3 +70,21 @@ graph TD
 > - Bounded numerical verification $\neq$ continuum proof.
 > - Any agent output asserting "RH proven", "Hodge solved", or "BSD resolved" is quarantined as an AL HARAS violation.
 > - Permitted terminal verdicts: `SUPPORTS` (in sample), `REFUTES` (verified counterexample), `INCONCLUSIVE` (bounds reached), `OUT-OF-SCOPE` (continuum object).
+
+---
+
+## 5. Contemporary Open Research Literature (arXiv math.NT / math.AG)
+
+The Great Library actively monitors and ingests contemporary open preprints from arXiv:
+
+| Paper ID | Problem | Year | Title | Primary Computational Handle |
+| :--- | :--- | :--- | :--- | :--- |
+| `arxiv_0905_1527v4` | RH | 2009 | Riemann Zeta Function... | Literature algorithmic bounds for Riemann Zeta Function |
+| `arxiv_1706_01781v1` | BSD | 2017 | Remarks on the Birch-Swinnerton-Dyer conjecture... | Literature algorithmic bounds for Remarks on the Birch-Swinn |
+| `arxiv_1708_01807v1` | BSD | 2017 | On the Birch--Swinnerton-Dyer conjecture and Schur indi... | Literature algorithmic bounds for On the Birch--Swinnerton-D |
+| `arxiv_2101_10222v5` | BSD | 2021 | The conjectures of Artin-Tate and Birch-Swinnerton-Dyer... | Literature algorithmic bounds for The conjectures of Artin-T |
+| `arxiv_2204_13891v1` | RH | 2022 | The eighth moment of the Riemann zeta function... | Literature algorithmic bounds for The eighth moment of the R |
+| `arxiv_2406_08121v2` | RH | 2024 | Moments of derivatives of the Riemann zeta function: Ch... | Literature algorithmic bounds for Moments of derivatives of  |
+| `arxiv_2509_25273v1` | HODGE | 2025 | Hodge Conjecture via Singular Varieties... | Literature algorithmic bounds for Hodge Conjecture via Singu |
+| `arxiv_alg-geom_9709030v1` | HODGE | 1997 | A Survey of the Hodge Conjecture for Abelian Varieties... | Literature algorithmic bounds for A Survey of the Hodge Conj |
+| `arxiv_math_0608265v2` | HODGE | 2006 | Counterexample to the Hodge Conjecture... | Literature algorithmic bounds for Counterexample to the Hodg |
