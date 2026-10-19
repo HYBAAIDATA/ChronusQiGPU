@@ -1,5 +1,10 @@
 # PYTHIA
 
+> **CANONICAL DOCUMENTATION (v2 — 2026-10-19):**  
+> All legacy narrative and marketing documents have been safely relocated to `_archive_docs_legacy_20261019/`.  
+> The fresh, code-verified, falsifiable system documentation is located in [`docs/v2/`](docs/v2/00_INDEX.md).  
+> All documentation claims are strictly bound to code reality (`path:line`), measured test runs, and immutable evidence logs.
+
 > **PUBLICATION IDENTITIES:** HYBA uses `hyba-<system>-<capability>`.
 > The current catalog contains **11 distinct existing Python distribution
 > candidates**, plus **2 planned CHRONUS splits** (13-package roadmap).
