@@ -1,0 +1,70 @@
+.FFF                                                                     [100%]
+=================================== FAILURES ===================================
+_____ test_tail_without_pending_is_repaired_and_second_restart_sees_append _____
+
+wal = <closeout_real_journal.WriteAheadJournal object at 0x7fc4844b2660>
+mod = <module 'closeout_real_journal' from '/data/closeout-implementation/baseline/aethel/enterprise/journal.py'>
+
+    def test_tail_without_pending_is_repaired_and_second_restart_sees_append(wal, mod):
+        txn(wal,'one'); original=wal.path.read_bytes()+b'{"op_id":'
+        wal.path.write_bytes(original)
+        assert sealed_ids(wal)==['one']
+        evidence=list(wal.path.parent.glob('*.repair-*.bin'))
+>       assert len(evidence)==1 and evidence[0].read_bytes()==original
+E       assert (0 == 1)
+E        +  where 0 = len([])
+
+closeout-implementation/baseline/tests/test_journal_closeout_recovery.py:50: AssertionError
+____________ test_complete_final_row_without_newline_is_normalised _____________
+
+wal = <closeout_real_journal.WriteAheadJournal object at 0x7fc4842f8ad0>
+
+    def test_complete_final_row_without_newline_is_normalised(wal):
+        txn(wal,'one'); original=wal.path.read_bytes().rstrip(b'\n'); wal.path.write_bytes(original)
+>       assert sealed_ids(wal)==['one']; assert wal.path.read_bytes().endswith(b'\n')
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert False
+E        +  where False = <built-in method endswith of bytes object at 0x7fc4842bc850>(b'\n')
+E        +    where <built-in method endswith of bytes object at 0x7fc4842bc850> = b'{"op":"put","op_id":"one","record_id":"one","status":"intent","ts":1792517425.9272232}\n{"op_id":"one","record_id":"one","status":"sealed","ts":1792517425.9280186}'.endswith
+E        +      where b'{"op":"put","op_id":"one","record_id":"one","status":"intent","ts":1792517425.9272232}\n{"op_id":"one","record_id":"one","status":"sealed","ts":1792517425.9280186}' = read_bytes()
+E        +        where read_bytes = PosixPath('/data/closeout-implementation/tmp/journal-baseline-final/test_complete_final_row_withou0/wal.jsonl').read_bytes
+E        +          where PosixPath('/data/closeout-implementation/tmp/journal-baseline-final/test_complete_final_row_withou0/wal.jsonl') = <closeout_real_journal.WriteAheadJournal object at 0x7fc4842f8ad0>.path
+
+closeout-implementation/baseline/tests/test_journal_closeout_recovery.py:65: AssertionError
+_______________ test_recover_holds_lock_across_parse_and_repair ________________
+
+wal = <closeout_real_journal.WriteAheadJournal object at 0x7fc4842f9550>
+mod = <module 'closeout_real_journal' from '/data/closeout-implementation/baseline/aethel/enterprise/journal.py'>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fc4842dc510>
+
+    def test_recover_holds_lock_across_parse_and_repair(wal, mod, monkeypatch):
+        txn(wal,'one'); wal.append_intent({'op_id':'dangling'})
+        entered=threading.Event(); release=threading.Event(); appended=threading.Event(); errors=[]
+        original=mod.json.loads
+        def blocked(*args, **kwargs):
+            if threading.current_thread().name == 'closeout-recovery-reader' and not entered.is_set():
+                entered.set()
+                if not release.wait(5): raise RuntimeError('test barrier timed out')
+            return original(*args, **kwargs)
+        monkeypatch.setattr(mod.json, 'loads', blocked)
+        def recover():
+            try: wal.recover()
+            except BaseException as e: errors.append(e)
+        def append():
+            try:
+                peer=mod.WriteAheadJournal(wal.path); txn(peer,'two'); appended.set()
+            except BaseException as e: errors.append(e)
+        reader=threading.Thread(target=recover,name='closeout-recovery-reader'); reader.start(); assert entered.wait(5)
+        writer=threading.Thread(target=append); writer.start()
+>       try: assert not appended.wait(.15)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert not True
+E        +  where True = wait(0.15)
+E        +    where wait = <threading.Event at 0x7fc4842dc770: set>.wait
+
+closeout-implementation/baseline/tests/test_journal_closeout_recovery.py:173: AssertionError
+=========================== short test summary info ============================
+FAILED closeout-implementation/baseline/tests/test_journal_closeout_recovery.py::test_tail_without_pending_is_repaired_and_second_restart_sees_append
+FAILED closeout-implementation/baseline/tests/test_journal_closeout_recovery.py::test_complete_final_row_without_newline_is_normalised
+FAILED closeout-implementation/baseline/tests/test_journal_closeout_recovery.py::test_recover_holds_lock_across_parse_and_repair
+3 failed, 1 passed, 29 deselected in 0.18s

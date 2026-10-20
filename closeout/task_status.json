@@ -1,0 +1,183 @@
+{
+  "production_ready": false,
+  "publication_ready": false,
+  "supervisor_verdict": "HOLD",
+  "base_commit": "2bc45bd4f9c45a29fea00aa1f6ed34222ed58f07",
+  "branch": "fix/trio-journal-memory-closeout-20261020",
+  "new_local_tests": {
+    "normal": {
+      "passed": 64,
+      "failed": 0,
+      "skipped": 0,
+      "log": "evidence/combined-pytest.log"
+    },
+    "optimized": {
+      "passed": 64,
+      "warning": "pytest notes non-test asserts disabled under -O; pytest test assertions are rewritten",
+      "log": "evidence/optimized-pytest.log"
+    },
+    "baseline_negative_controls": {
+      "journal": {
+        "failed": 3,
+        "passed": 1,
+        "deselected": 29
+      },
+      "memory": {
+        "failed": 20,
+        "passed": 2
+      }
+    }
+  },
+  "tasks": {
+    "T0.1": {
+      "status": "BLOCKED",
+      "evidence_or_gap": "No complete clean authenticated checkout. No tag created."
+    },
+    "T0.2": {
+      "status": "BLOCKED",
+      "evidence_or_gap": "Remote isolation branch exists; no genuine local Git worktrees."
+    },
+    "T0.3": {
+      "status": "BLOCKED",
+      "evidence_or_gap": "Pinned blob hashes available; actual ROOT claims gate and ROOT identity unavailable."
+    },
+    "T1.1": {
+      "status": "BLOCKED",
+      "evidence_or_gap": "Five full-stack v17 tests not run."
+    },
+    "T1.2": {
+      "status": "BLOCKED",
+      "evidence_or_gap": "Ineffable suite not run."
+    },
+    "T1.3": {
+      "status": "BLOCKED",
+      "evidence_or_gap": "Integration gate not run."
+    },
+    "T1.4": {
+      "status": "BLOCKED",
+      "evidence_or_gap": "Arena 100 not run; 64 new tests are NOT the arena."
+    },
+    "T1.5": {
+      "status": "BLOCKED",
+      "evidence_or_gap": "No fresh Chronus elevation report or actual physical-device receipt."
+    },
+    "T2.1": {
+      "status": "NOT_IMPLEMENTED",
+      "evidence_or_gap": "Pool implementation/dependency closure and fake-pool acceptance not exercised."
+    },
+    "T2.2": {
+      "status": "NOT_IMPLEMENTED",
+      "evidence_or_gap": "No executor patch, four-hour replay or heartbeat p95 artifact."
+    },
+    "T2.3": {
+      "status": "PARTIAL",
+      "evidence_or_gap": "Expectation definitions documented; actual outcome-consumer assertions not run."
+    },
+    "T3.1": {
+      "status": "OPEN",
+      "evidence_or_gap": "Full facade/root/projection recovery not qualified."
+    },
+    "T3.2": {
+      "status": "PARTIAL",
+      "evidence_or_gap": "Existing custody tenant guards inspected; scoped memory traversal/tenant tests pass, full custody attacks not run."
+    },
+    "T3.3": {
+      "status": "OPEN",
+      "evidence_or_gap": "WAL matched seals tested; complete primary/replica sealed-only crash matrix not run."
+    },
+    "T3.4": {
+      "status": "PARTIAL_PASS",
+      "evidence_or_gap": "33 WAL-local cases pass incl tail repair, evidence, failure injection, threads/processes. Full custody integration/schema/retention and owner sign-off pending."
+    },
+    "T3.5": {
+      "status": "OPEN",
+      "evidence_or_gap": "Actual custody generation/quota checks precede its process lock; full transaction CAS/backup/restore not fixed or proven."
+    },
+    "T3.6": {
+      "status": "PARTIAL",
+      "evidence_or_gap": "Journal repair file+directory fsync covered on Linux; full custody provenance/readiness/read-only and Windows power-loss durability not qualified."
+    },
+    "T3.7": {
+      "status": "PARTIAL_PASS",
+      "evidence_or_gap": "22 memory cases include forged handles, immutable content, paths, tenants, restart; full caller/auth compatibility not qualified."
+    },
+    "T3.8": {
+      "status": "PARTIAL",
+      "evidence_or_gap": "Fake physical claims refused, tamper checks and restart UNBOUND tested; no real transfer adapter, facade durability or device retention qualification."
+    },
+    "T3.9": {
+      "status": "SOURCE_PRESENT_NOT_QUALIFIED",
+      "evidence_or_gap": "Current ontology traversal already calls attested get_edge; runtime corruption/policy suite not run; no redundant patch."
+    },
+    "T4.1": {
+      "status": "EXPORTED",
+      "evidence_or_gap": "Nine prior authenticated Notion body snapshots copied with original manifest."
+    },
+    "T4.2": {
+      "status": "PARTIAL",
+      "evidence_or_gap": "99 unresolved field groups enumerated, not exhaustive actual ABI-field audit."
+    },
+    "T4.3": {
+      "status": "BLOCKED",
+      "evidence_or_gap": "No invented executable schemas/import gates; actual implementations must be reconciled first."
+    },
+    "T5.1": {
+      "status": "BLOCKED",
+      "evidence_or_gap": "No full dependency inventory or approved license policy."
+    },
+    "T5.2": {
+      "status": "BLOCKED",
+      "evidence_or_gap": "No named legal approver or verified signed schedules."
+    },
+    "T5.3": {
+      "status": "PARTIAL",
+      "evidence_or_gap": "Draft review runbook supplied; no actual restore/backup-during-write/atomic switch drill or rollback tag."
+    }
+  },
+  "signoffs": {
+    "EUCLID": {
+      "owner": "UNASSIGNED",
+      "approval": "PENDING"
+    },
+    "Chronus": {
+      "owner": "UNASSIGNED",
+      "approval": "PENDING"
+    },
+    "Ovid": {
+      "owner": "UNASSIGNED",
+      "approval": "PENDING"
+    },
+    "Theseus": {
+      "owner": "UNASSIGNED",
+      "approval": "PENDING"
+    },
+    "PULVINI": {
+      "owner": "UNASSIGNED",
+      "approval": "PENDING"
+    },
+    "Turing VQC": {
+      "owner": "UNASSIGNED",
+      "approval": "PENDING"
+    },
+    "Kellogg": {
+      "owner": "UNASSIGNED",
+      "approval": "PENDING"
+    },
+    "SALAMANDER Enterprise": {
+      "owner": "UNASSIGNED",
+      "approval": "PENDING"
+    },
+    "SALAMANDER Mining": {
+      "owner": "UNASSIGNED",
+      "approval": "PENDING"
+    },
+    "AL HARAS": {
+      "owner": "UNASSIGNED",
+      "approval": "PENDING"
+    },
+    "Legal-License": {
+      "owner": "UNASSIGNED",
+      "approval": "PENDING"
+    }
+  }
+}
