@@ -1,0 +1,16 @@
+{
+  "classification": "fresh operator-executed verification supplied by owner in current conversation",
+  "agent_execution": false,
+  "source_sha_in_supplied_runs": "not included in supplied output; do not transfer automatically to patched candidate",
+  "runs": {
+    "D_runtime": 28,
+    "E_ASI": 16,
+    "C_consensus": 7,
+    "G_API_machine_crossdomain": 64,
+    "machine_crossdomain_rerun": 41
+  },
+  "duplicate_run_counts_are_not_added": true,
+  "B": "operator T16 environment failure retained; repaired candidate separately rerun all16",
+  "A": "operator full run did not finish",
+  "F": "domain-specific specialist approval pending"
+}

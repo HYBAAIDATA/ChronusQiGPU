@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="4" failures="4" skipped="0" tests="16" time="3.270" timestamp="2026-10-20T18:48:47.075618+00:00" hostname="71c0a84c-ac0"><testcase classname="tests.test_toe_durable_defaults" name="test_model_default_uses_durable_intelligence_volume" time="0.002" /><testcase classname="tests.test_toe_durable_defaults" name="test_local_default_remains_compatible_without_volume" time="0.002" /><testcase classname="tests.test_toe_expansion_contract.TOEExpansionContractTests" name="test_causal_edge_direction_and_transitive_queries" time="0.002" /><testcase classname="tests.test_toe_expansion_contract.TOEExpansionContractTests" name="test_exact_tensor_rejects_undeclared_continuous_evolution" time="0.002" /><testcase classname="tests.test_toe_expansion_contract.TOEExpansionContractTests" name="test_full_pisot_scale_program_and_receipt" time="0.717"><failure message="RuntimeError: MLA1517 scale controller is unavailable">self = &lt;tests.test_toe_expansion_contract.TOEExpansionContractTests testMethod=test_full_pisot_scale_program_and_receipt&gt;
+
+    def test_full_pisot_scale_program_and_receipt(self):
+&gt;       result = self.engine.collapse(
+            {"series": [1, 1, 2, 3, 5, 8, 13, 21]},
+            domain="recurrence",
+            context_id="full-family",
+        )
+
+tests/test_toe_expansion_contract.py:78: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+toe/expansion.py:163: in collapse
+    scale_program = self._scale_program()
+                    ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;toe.expansion.TOEExpansionEngine object at 0x7ff32dfe7610&gt;
+
+    def _scale_program(self) -&gt; list[Mapping[str, Any]]:
+        if ScaleController is None:
+&gt;           raise RuntimeError("MLA1517 scale controller is unavailable")
+E           RuntimeError: MLA1517 scale controller is unavailable
+
+toe/expansion.py:122: RuntimeError</failure></testcase><testcase classname="tests.test_toe_expansion_contract.TOEExpansionContractTests" name="test_new_heterogeneous_surfaces_collapse" time="0.555"><failure message="RuntimeError: MLA1517 scale controller is unavailable">self = &lt;tests.test_toe_expansion_contract.TOEExpansionContractTests testMethod=test_new_heterogeneous_surfaces_collapse&gt;
+
+    def test_new_heterogeneous_surfaces_collapse(self):
+        surfaces = {
+            "document": {"title": "incident", "body": "thermal recovery"},
+            "graph": {"edges": [("source", "router"), ("router", "sink")]},
+            "code": "def fold_state(x): return x",
+            "binary": bytes(range(128)),
+            "events": [{"t": 1, "event": "open"}, {"t": 2, "event": "close"}],
+        }
+        for domain, data in surfaces.items():
+&gt;           result = self.engine.collapse(data, domain=domain, context_id=domain)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_toe_expansion_contract.py:34: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+toe/expansion.py:163: in collapse
+    scale_program = self._scale_program()
+                    ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;toe.expansion.TOEExpansionEngine object at 0x7ff3291642b0&gt;
+
+    def _scale_program(self) -&gt; list[Mapping[str, Any]]:
+        if ScaleController is None:
+&gt;           raise RuntimeError("MLA1517 scale controller is unavailable")
+E           RuntimeError: MLA1517 scale controller is unavailable
+
+toe/expansion.py:122: RuntimeError</failure></testcase><testcase classname="tests.test_toe_expansion_contract.TOEExpansionContractTests" name="test_nonfinite_input_is_not_silently_zeroed" time="0.002" /><testcase classname="tests.test_toe_expansion_contract.TOEExpansionContractTests" name="test_scale_budget_is_fail_closed" time="0.712"><failure message="RuntimeError: MLA1517 scale controller is unavailable">self = &lt;tests.test_toe_expansion_contract.TOEExpansionContractTests testMethod=test_scale_budget_is_fail_closed&gt;
+
+    def test_scale_budget_is_fail_closed(self):
+        engine = TOEExpansionEngine(
+            policy=TOEExpansionPolicy(
+                scale_indices=(10, 1000),
+                scale_families=("golden",),
+                max_physical_bytes=300,
+            )
+        )
+&gt;       result = engine.collapse({"series": [1, 2, 3]}, domain="budget")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_toe_expansion_contract.py:72: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+toe/expansion.py:163: in collapse
+    scale_program = self._scale_program()
+                    ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;toe.expansion.TOEExpansionEngine object at 0x7ff329376580&gt;
+
+    def _scale_program(self) -&gt; list[Mapping[str, Any]]:
+        if ScaleController is None:
+&gt;           raise RuntimeError("MLA1517 scale controller is unavailable")
+E           RuntimeError: MLA1517 scale controller is unavailable
+
+toe/expansion.py:122: RuntimeError</failure></testcase><testcase classname="tests.test_toe_expansion_contract.TOEExpansionContractTests" name="test_schema_digest_is_canonical_but_schema_sensitive" time="0.716"><failure message="RuntimeError: MLA1517 scale controller is unavailable">self = &lt;tests.test_toe_expansion_contract.TOEExpansionContractTests testMethod=test_schema_digest_is_canonical_but_schema_sensitive&gt;
+
+    def test_schema_digest_is_canonical_but_schema_sensitive(self):
+&gt;       first = self.engine.collapse({"a": 1, "b": 2})
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_toe_expansion_contract.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+toe/expansion.py:163: in collapse
+    scale_program = self._scale_program()
+                    ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;toe.expansion.TOEExpansionEngine object at 0x7ff329376ad0&gt;
+
+    def _scale_program(self) -&gt; list[Mapping[str, Any]]:
+        if ScaleController is None:
+&gt;           raise RuntimeError("MLA1517 scale controller is unavailable")
+E           RuntimeError: MLA1517 scale controller is unavailable
+
+toe/expansion.py:122: RuntimeError</failure></testcase><testcase classname="tests.test_toe_expansion_contract.TOEExpansionContractTests" name="test_typed_operator_compilers_preserve_structure" time="0.002" /><testcase classname="tests.test_toe_mining_voyage" name="test_toe_advice_is_bounded_and_authorized" time="0.001"><error message="failed on setup with &quot;FileNotFoundError: [Errno 2] No such file or directory: '/data/toe-production/repo/scripts/toe_mining_voyage.py'&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('/data/toe-production/tmp/omitted-integration'), _trace=&lt;pluggy._tracing.Tag...d60&gt;, _basetemp=PosixPath('/data/toe-production/tmp/omitted-integration'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def report(tmp_path_factory):
+        root = tmp_path_factory.mktemp("custody") if theseus_available() else None
+&gt;       return _voyage().run(root, rounds=2)
+               ^^^^^^^^^
+
+tests/test_toe_mining_voyage.py:34: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_toe_mining_voyage.py:27: in _voyage
+    spec.loader.exec_module(mod)
+&lt;frozen importlib._bootstrap_external&gt;:1019: in exec_module
+    ???
+&lt;frozen importlib._bootstrap_external&gt;:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;_frozen_importlib_external.SourceFileLoader object at 0x7ff32df9ec90&gt;
+path = '/data/toe-production/repo/scripts/toe_mining_voyage.py'
+
+&gt;   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/data/toe-production/repo/scripts/toe_mining_voyage.py'
+
+&lt;frozen importlib._bootstrap_external&gt;:1214: FileNotFoundError</error></testcase><testcase classname="tests.test_toe_mining_voyage" name="test_validity_is_decided_by_check_pow_only" time="0.001"><error message="failed on setup with &quot;FileNotFoundError: [Errno 2] No such file or directory: '/data/toe-production/repo/scripts/toe_mining_voyage.py'&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('/data/toe-production/tmp/omitted-integration'), _trace=&lt;pluggy._tracing.Tag...d60&gt;, _basetemp=PosixPath('/data/toe-production/tmp/omitted-integration'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def report(tmp_path_factory):
+        root = tmp_path_factory.mktemp("custody") if theseus_available() else None
+&gt;       return _voyage().run(root, rounds=2)
+               ^^^^^^^^^
+
+tests/test_toe_mining_voyage.py:34: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_toe_mining_voyage.py:27: in _voyage
+    spec.loader.exec_module(mod)
+&lt;frozen importlib._bootstrap_external&gt;:1019: in exec_module
+    ???
+&lt;frozen importlib._bootstrap_external&gt;:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;_frozen_importlib_external.SourceFileLoader object at 0x7ff32df9ec90&gt;
+path = '/data/toe-production/repo/scripts/toe_mining_voyage.py'
+
+&gt;   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/data/toe-production/repo/scripts/toe_mining_voyage.py'
+
+&lt;frozen importlib._bootstrap_external&gt;:1214: FileNotFoundError</error></testcase><testcase classname="tests.test_toe_mining_voyage" name="test_no_consensus_field_is_a_toe_variable" time="0.002" /><testcase classname="tests.test_toe_mining_voyage" name="test_toe_never_touches_the_proof_boundary" time="0.009" /><testcase classname="tests.test_toe_mining_voyage" name="test_decision_effect_is_measured_not_assumed" time="0.000"><error message="failed on setup with &quot;FileNotFoundError: [Errno 2] No such file or directory: '/data/toe-production/repo/scripts/toe_mining_voyage.py'&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('/data/toe-production/tmp/omitted-integration'), _trace=&lt;pluggy._tracing.Tag...d60&gt;, _basetemp=PosixPath('/data/toe-production/tmp/omitted-integration'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def report(tmp_path_factory):
+        root = tmp_path_factory.mktemp("custody") if theseus_available() else None
+&gt;       return _voyage().run(root, rounds=2)
+               ^^^^^^^^^
+
+tests/test_toe_mining_voyage.py:34: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_toe_mining_voyage.py:27: in _voyage
+    spec.loader.exec_module(mod)
+&lt;frozen importlib._bootstrap_external&gt;:1019: in exec_module
+    ???
+&lt;frozen importlib._bootstrap_external&gt;:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;_frozen_importlib_external.SourceFileLoader object at 0x7ff32df9ec90&gt;
+path = '/data/toe-production/repo/scripts/toe_mining_voyage.py'
+
+&gt;   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/data/toe-production/repo/scripts/toe_mining_voyage.py'
+
+&lt;frozen importlib._bootstrap_external&gt;:1214: FileNotFoundError</error></testcase><testcase classname="tests.test_toe_mining_voyage" name="test_feedback_reaches_learning_and_survives_restart" time="0.001"><error message="failed on setup with &quot;FileNotFoundError: [Errno 2] No such file or directory: '/data/toe-production/repo/scripts/toe_mining_voyage.py'&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('/data/toe-production/tmp/omitted-integration'), _trace=&lt;pluggy._tracing.Tag...d60&gt;, _basetemp=PosixPath('/data/toe-production/tmp/omitted-integration'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def report(tmp_path_factory):
+        root = tmp_path_factory.mktemp("custody") if theseus_available() else None
+&gt;       return _voyage().run(root, rounds=2)
+               ^^^^^^^^^
+
+tests/test_toe_mining_voyage.py:34: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_toe_mining_voyage.py:27: in _voyage
+    spec.loader.exec_module(mod)
+&lt;frozen importlib._bootstrap_external&gt;:1019: in exec_module
+    ???
+&lt;frozen importlib._bootstrap_external&gt;:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;_frozen_importlib_external.SourceFileLoader object at 0x7ff32df9ec90&gt;
+path = '/data/toe-production/repo/scripts/toe_mining_voyage.py'
+
+&gt;   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/data/toe-production/repo/scripts/toe_mining_voyage.py'
+
+&lt;frozen importlib._bootstrap_external&gt;:1214: FileNotFoundError</error></testcase></testsuite></testsuites>

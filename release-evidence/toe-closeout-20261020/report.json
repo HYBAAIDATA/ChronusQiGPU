@@ -1,0 +1,167 @@
+{
+  "schema": "toe.gates/v1",
+  "run_id": "20261020T183909Z-3d4f2755",
+  "source_commit": null,
+  "complete_checkout_asserted": false,
+  "clean_tree_before_execution": false,
+  "source_manifest_stable": true,
+  "gates": {
+    "A": false,
+    "B": true,
+    "C": false,
+    "D": true,
+    "E": true,
+    "F": false,
+    "G": true
+  },
+  "tasks": {
+    "D": {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_toe_runtime.py",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp=/data/toe-production/repo/release-evidence/toe/20261020T183909Z-3d4f2755/tmp/D",
+        "--junitxml=/data/toe-production/repo/release-evidence/toe/20261020T183909Z-3d4f2755/D.xml"
+      ],
+      "exit_code": 0,
+      "passed": true,
+      "source_manifest_stable": true,
+      "elapsed_seconds": 0.5955140590667725,
+      "log": "D.log",
+      "log_sha256": "a2166d498e116fbe1410d8c7aec80378e6b0858da58dc1a66e54200475b6f654"
+    },
+    "E": {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_asi_core.py",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp=/data/toe-production/repo/release-evidence/toe/20261020T183909Z-3d4f2755/tmp/E",
+        "--junitxml=/data/toe-production/repo/release-evidence/toe/20261020T183909Z-3d4f2755/E.xml"
+      ],
+      "exit_code": 0,
+      "passed": true,
+      "source_manifest_stable": true,
+      "elapsed_seconds": 0.563133955001831,
+      "log": "E.log",
+      "log_sha256": "21326f9afa0de598f626c77f483f8c4cc4132aaf3a74ec11b1d929e98e85bbc3"
+    },
+    "C": {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_toe_consensus_boundary.py",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp=/data/toe-production/repo/release-evidence/toe/20261020T183909Z-3d4f2755/tmp/C",
+        "--junitxml=/data/toe-production/repo/release-evidence/toe/20261020T183909Z-3d4f2755/C.xml"
+      ],
+      "exit_code": 2,
+      "passed": false,
+      "source_manifest_stable": true,
+      "elapsed_seconds": 0.7136414051055908,
+      "log": "C.log",
+      "log_sha256": "18c4b3238191eba2dcae824f0e62333cf7ddec3920f03a59f17ee994985a3256"
+    },
+    "G": {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_toe_ciaas_api.py",
+        "tests/test_toe_machine.py",
+        "tests/test_toe_cross_domain.py",
+        "tests/test_toe_http_closeout.py",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp=/data/toe-production/repo/release-evidence/toe/20261020T183909Z-3d4f2755/tmp/G",
+        "--junitxml=/data/toe-production/repo/release-evidence/toe/20261020T183909Z-3d4f2755/G.xml"
+      ],
+      "exit_code": 0,
+      "passed": true,
+      "source_manifest_stable": true,
+      "elapsed_seconds": 13.487345218658447,
+      "log": "G.log",
+      "log_sha256": "c53e4bf4521e4ebd1ce333cbac4280bfd5532a7f427a8d0329ac7a1913264749"
+    },
+    "F_technical": {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_toe_domain_qualification.py",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp=/data/toe-production/repo/release-evidence/toe/20261020T183909Z-3d4f2755/tmp/F_technical",
+        "--junitxml=/data/toe-production/repo/release-evidence/toe/20261020T183909Z-3d4f2755/F_technical.xml"
+      ],
+      "exit_code": 0,
+      "passed": true,
+      "source_manifest_stable": true,
+      "elapsed_seconds": 3.908966302871704,
+      "log": "F_technical.log",
+      "log_sha256": "a53a303a0ea056a6c7f420e7b820e1d081e3e402ac49d1eaf0e5e7f2aee8d67e"
+    },
+    "B": {
+      "command": [
+        "/usr/local/bin/python",
+        "experiments/toe_enterprise_collapse.py"
+      ],
+      "exit_code": 0,
+      "passed": true,
+      "source_manifest_stable": true,
+      "elapsed_seconds": 10.067963361740112,
+      "log": "B.log",
+      "log_sha256": "96ae4f70f053f1128f03399c28d09566ce8a6c241088e1ac3fcb044e3ebd164f"
+    },
+    "turing_registry": {
+      "command": [
+        "/usr/local/bin/python",
+        "-c",
+        "from turing_universal_quantum_computer.product_registry import verify_registry; r=verify_registry(); print(r); raise SystemExit(0 if r.get('ok') is True else 1)"
+      ],
+      "exit_code": 1,
+      "passed": false,
+      "source_manifest_stable": true,
+      "elapsed_seconds": 0.13977885246276855,
+      "log": "turing_registry.log",
+      "log_sha256": "57fa7cc9fd4b5e7445f7875bdfc741318b965b106f117934ed1f5c090cfaa750"
+    },
+    "turing_benchmark": {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "turing_universal_quantum_computer.benchmark",
+        "--quick"
+      ],
+      "exit_code": 1,
+      "passed": false,
+      "source_manifest_stable": true,
+      "elapsed_seconds": 0.10612702369689941,
+      "log": "turing_benchmark.log",
+      "log_sha256": "f2fac7de0507349a444b6e4366b81ef25d523554c9b9da27dba6d8f7c3e05127"
+    },
+    "A": {
+      "passed": false,
+      "reason": "full clean Git checkout required; no subset substitution"
+    },
+    "F": {
+      "passed": false,
+      "reason": "named independent domain reviews and domain-specific validity remain mandatory",
+      "technical_passed": true
+    }
+  },
+  "production_ready": false,
+  "receipt_flag_changed": false
+}

@@ -1,0 +1,35 @@
+.....................FFF................................................ [ 58%]
+....................................................                     [100%]
+=================================== FAILURES ===================================
+_______ TestGoldenContract.test_spec_precision_bound_is_bounded_contract _______
+
+self = <tests.test_toe_intelligence_state.TestGoldenContract object at 0x7f5ea93fc9d0>
+
+    def test_spec_precision_bound_is_bounded_contract(self):
+>       from hyba.math_ir.specs import get_spec
+E       ModuleNotFoundError: No module named 'hyba'
+
+tests/test_toe_intelligence_state.py:176: ModuleNotFoundError
+_____________ TestGoldenContract.test_cpu_emitter_overflow_raises ______________
+
+self = <tests.test_toe_intelligence_state.TestGoldenContract object at 0x7f5ea93fcb00>
+
+    def test_cpu_emitter_overflow_raises(self):
+>       from hyba.math_ir.emit_cpu import emit_cpu
+E       ModuleNotFoundError: No module named 'hyba'
+
+tests/test_toe_intelligence_state.py:181: ModuleNotFoundError
+____________ TestGoldenContract.test_cpu_emitter_exact_within_int64 ____________
+
+self = <tests.test_toe_intelligence_state.TestGoldenContract object at 0x7f5ea93ebad0>
+
+    def test_cpu_emitter_exact_within_int64(self):
+>       from hyba.math_ir.emit_cpu import emit_cpu
+E       ModuleNotFoundError: No module named 'hyba'
+
+tests/test_toe_intelligence_state.py:190: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED tests/test_toe_intelligence_state.py::TestGoldenContract::test_spec_precision_bound_is_bounded_contract
+FAILED tests/test_toe_intelligence_state.py::TestGoldenContract::test_cpu_emitter_overflow_raises
+FAILED tests/test_toe_intelligence_state.py::TestGoldenContract::test_cpu_emitter_exact_within_int64
+3 failed, 121 passed in 2.79s

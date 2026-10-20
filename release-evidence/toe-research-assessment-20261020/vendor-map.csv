@@ -1,0 +1,19 @@
+vendor_brand,hyba_lanes,comparable_scope,official_source
+Dataiku,TOE,Enterprise AI/analytics,https://www.dataiku.com/product
+DataRobot,TOE,Enterprise AI platform,https://www.datarobot.com/product/ai-platform/
+Palantir,TOE,AIP operational AI,https://palantir.com/docs/foundry/aip
+IBM,TURING VQC,Qiskit Aer circuit simulation (legacy API reference),https://docs.quantum.ibm.com/api/qiskit/0.30/qiskit.providers.aer.AerSimulator
+Quantinuum,TURING VQC,TKET circuit toolkit,https://docs.quantinuum.com/tket/index.html
+Classiq,TURING VQC,High-level quantum algorithm design,https://classiq.io/quantum-algorithm-design
+NVIDIA,Kellogg;Chronus,CUDA libraries/compiler/runtime,https://developer.nvidia.com/cuda-toolkit
+Intel,Kellogg;Chronus,oneAPI heterogeneous compute,https://www.intel.com/content/www/us/en/developer/tools/oneapi/overview.html
+Databricks,Ovid,Integrated data platform; limited transform/lineage overlap,http://www.databricks.com/product
+Fivetran,Ovid,Data movement and transformations,https://fivetran.com/
+Veeam,Theseus,Enterprise backup and recovery,https://www.veeam.com/products/veeam-data-platform/backup-recovery.html?ad=pr1
+Rubrik,Theseus,Backup and recovery,https://www.rubrik.com/solutions/backup-recovery
+Dynatrace,SALAMANDER Enterprise,Observability and governed operations,https://www.dynatrace.com/news/press-release/autonomous-operations-enterprise-ai/
+PagerDuty,SALAMANDER Enterprise,Incident response workflows,https://www.pagerduty.com/platform/incident-management/incident-response
+Adobe,EUCLID,Firefly creative generation/editing,https://www.adobe.com/products/firefly.html
+Runway,EUCLID,Enterprise generative video,http://runwayml.com/enterprise
+Finout,Hermitten,FinOps allocation and cost management,http://www.finout.io/
+Permit.io,AL HARAS,Authorization policies and approvals,https://docs.permit.io/overview/access-requests-and-approvals

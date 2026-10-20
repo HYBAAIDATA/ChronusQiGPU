@@ -149,3 +149,8 @@ planning over linear SCMs adds nothing without interaction or budgets.
 | mining as first workload | IMPLEMENTED | `chronus/mla1517/mining/toe_problem.py` + `scripts/toe_mining_voyage.py`; validity stays `check_pow` |
 | EUCLID access | IMPLEMENTED | `euclid/cognition/toe_capabilities.py`; `EuclidRuntime.toe` |
 | ablations | MEASURED | `reports/toe_ablation_heldout.json` (held-out seeds, negative controls) |
+
+
+## Dated assessment addendum — 2026-10-20
+
+See [research/capability assessment](RESEARCH_CAPABILITY_ASSESSMENT_20261020.md) for TOE origin, 124 fresh research tests and 16 additional configuration/integration tests, historical artifact discrepancies, conditional custody coverage and tracked gaps. Earlier measurements above retain their original scope; this addendum does not silently reconcile them. Production/publication HOLD remains.

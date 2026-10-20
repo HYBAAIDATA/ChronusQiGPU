@@ -1,0 +1,71 @@
+{
+  "toe_version": "1.0.0",
+  "toe_file": "/data/toe-production/repo/toe/__init__.py",
+  "template": "regtest-difficulty template (declared fixture)",
+  "latency_budget_ms": 39.474595800038514,
+  "bootstrap_rows": 6,
+  "toe": {
+    "ok": true,
+    "status": "ACT",
+    "recommended_window": 4096.0,
+    "futures_rung": 2,
+    "estimated_weights": {
+      "window_size->hashes_per_s": {
+        "estimate": 18.462502457266556,
+        "standard_error": 7.350344359277805,
+        "estimator": "observational OLS (valid only without unobserved confounding of the child)"
+      },
+      "window_size->latency_ms": {
+        "estimate": 0.004033682604671556,
+        "standard_error": 5.944390003491466e-05,
+        "estimator": "observational OLS (valid only without unobserved confounding of the child)"
+      }
+    },
+    "excluded": [
+      "set_window=16384.0: violates constraint: latency p95 within budget"
+    ],
+    "advisory_contains_consensus_fields": false
+  },
+  "pythia_authority": {
+    "authorized": true,
+    "window_size": 4096,
+    "reason": "within PYTHIA bounds",
+    "authority": "PYTHIA"
+  },
+  "execution": {
+    "window_size": 4096,
+    "hashes": 4096,
+    "hashes_per_s": 251402.58520626763,
+    "latency_ms": 16.292593000343913,
+    "within_budget": true,
+    "candidates_found_by_check_pow": 2021,
+    "candidates_rechecked_valid": 2021,
+    "validity_authority": "chronus.mla1517.mining.pow.check_pow (+ independent SHA256d recheck)"
+  },
+  "baseline_no_toe": {
+    "policy": "largest declared window",
+    "window_size": 16384,
+    "hashes_per_s": 251463.02551275404,
+    "latency_ms": 65.1547079996817,
+    "within_budget": false
+  },
+  "decision_effect": {
+    "toe_changed_window": true,
+    "toe_within_budget": true,
+    "baseline_within_budget": false,
+    "throughput_ratio_toe_over_baseline": 0.9997596453539713
+  },
+  "learning": {
+    "ok": true,
+    "assessment": "INSUFFICIENT_EVIDENCE",
+    "revised": false,
+    "persisted": {
+      "available": false,
+      "reason": "no THESEUS custody bound (UNAVAILABLE)"
+    }
+  },
+  "restart": {
+    "available": false,
+    "reason": "THESEUS custody unavailable"
+  }
+}

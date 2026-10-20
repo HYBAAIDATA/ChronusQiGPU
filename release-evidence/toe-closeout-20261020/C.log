@@ -1,0 +1,18 @@
+
+==================================== ERRORS ====================================
+____________ ERROR collecting tests/test_toe_consensus_boundary.py _____________
+ImportError while importing test module '/data/toe-production/repo/tests/test_toe_consensus_boundary.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+tests/test_toe_consensus_boundary.py:39: in <module>
+    from chronus.mla1517.mining.coordinator import IntelligentPoolCoordinator  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+chronus/mla1517/mining/coordinator.py:84: in <module>
+    from .intelligence_memory import IntelligenceMemory
+chronus/mla1517/mining/intelligence_memory.py:23: in <module>
+    from aethel.errors import AethelError
+E   ModuleNotFoundError: No module named 'aethel.errors'
+=========================== short test summary info ============================
+ERROR tests/test_toe_consensus_boundary.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.37s
