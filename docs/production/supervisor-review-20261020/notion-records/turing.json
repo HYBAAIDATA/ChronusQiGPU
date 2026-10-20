@@ -1,0 +1,20 @@
+{
+  "url": "https://app.notion.com/p/e183affb2dd64fc9ae5701c694f0c220",
+  "parent": {
+    "type": "page",
+    "url": "https://app.notion.com/p/3f113476fb44496e99a2fcbb37546ccb"
+  },
+  "properties": {
+    "title": "TURING VQC — Product, Contract & API Lock"
+  },
+  "createdBy": "user://39bd872b-594c-8119-a5d3-0002278b998d",
+  "lastEditedBy": "user://39bd872b-594c-8119-a5d3-0002278b998d",
+  "content": "<b>Locked identity:</b> enterprise virtual quantum computation and exact, capability-bounded algebra on classical infrastructure. Not a physical quantum computer and not a mining engine by definition.\n\n<b>Status:</b> product/authority baseline documented; current runtime qualification incomplete. Existing implementation findings are commit-scoped, not a fresh execution or release approval.\n\n## Authority and dependencies\n\nTURING owns backend capability admission, supported program semantics, representation selection, measurement interfaces and run witnesses. Kellogg remains the tensor mathematics dependency; Chronus owns eligible device execution. A QPU adapter refuses unless a real provider is registered/configured. A wide Clifford register is not an unrestricted universal amplitude vector.\n\n## Contract and API inventory\n\n| Surface | Documented contract | Qualification condition |\n| --- | --- | --- |\n| Backend registry / capability envelopes | Admit only programs supported by the selected backend and resource budget; refuse out-of-domain operations rather than truncate or approximate silently | Pin exact package exports and capability matrix |\n| Exact Clifford tableau | Supported Clifford-state evolution and bounded queries | Re-run phase, measurement, marginal and continuation parity |\n| Exact Clifford+T algebra | Exact field Q(√2)+i·Q(√2) within declared resource limits | Do not extrapolate width from the tableau backend |\n| Marginals / sampling | Explicit readout, shots, seed and limits; probability/count consistency | Caller readout order versus sorted/deduplicated implementation remains unresolved |\n| QPU adapter | Explicit provider requirement and honest execution identity | No configured provider means refusal, not simulated hardware success |\n| Certificates / claims | Backend, representation and actual evidence scope | <code>tableau_bits=2*n</code> must not be sold as actual stored bit count |\n\nDocumented operator entry point: <code>turing-vqc</code>; documented caller contract: <code>docs/TURING_VQC_CALLER_CONTRACT.md</code>. These references do not prove a network API or installed package on a customer system. No new HTTP routes are invented by this record.\n\n## Non-mining acceptance requirement\n\nExecute Bell/GHZ, deterministic and random bounded circuits against an independent reference; verify measurement continuations, readout order, seed replay, count conservation and refusal beyond supported domain. Qualify entropy and end-to-end QEC separately. Tests using stand-ins cannot qualify real adapter bindings.\n\n## Optional mining boundary\n\nMining-specific hash/search/swarm code must remain an adapter or separately scoped module. TURING does not own SHA-256d target correctness, pool acceptance, wallets or revenue accounting. Quantum-inspired algebra does not confer an unmeasured search advantage.\n\n## Customer and publication schedule\n\nDeliver only the named backend classes, resource limits and interfaces qualified for the supplied version. No universal-width, physical-QPU, QEC-pipeline or mining-profit warranty. Price, license scope, support, SLA and data-processing terms remain to be attached to an approved order form; this technical lock is not a signed contract.\n\n## Source traceability\n\n- <mention url=\"https://app.notion.com/p/ef634a9a2941468abd2da3a3400edb8d\">TURING VQC — Product Boundary Elevation (v1.2)</mention>\n- <mention url=\"https://app.notion.com/p/3f113476fb44496e99a2fcbb37546ccb\">HYBA — Enterprise Product Lock Register</mention>",
+  "cover": null,
+  "iconMetadata": null,
+  "contentLastEditedAt": 1792515770923,
+  "accessMetadata": {
+    "bucket": "private"
+  },
+  "title": "TURING VQC — Product, Contract & API Lock"
+}
