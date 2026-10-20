@@ -1,0 +1,34 @@
+name: Trio release tooling regressions (not qualification)
+
+on:
+  pull_request:
+    paths:
+      - 'packaging/check_wheel_ownership.py'
+      - 'packaging/kellogg-tensor/**'
+      - 'packaging/turing/**'
+      - 'chronus/packaging/chronus-igpu/**'
+      - 'turing_universal_quantum_computer/pyproject.toml'
+      - 'tests/test_trio_release_closeout.py'
+      - '.github/workflows/trio-release-tooling.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tooling-only:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ['3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Focused metadata and synthetic archive/staging tests
+        run: python -m unittest discover -s tests -p test_trio_release_closeout.py -v
+      - name: Optimized interpreter regression
+        run: python -O -m unittest discover -s tests -p test_trio_release_closeout.py -v

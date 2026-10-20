@@ -52,9 +52,9 @@ dev = [
 turing-vqc = "turing_universal_quantum_computer.console:main"
 
 [project.urls]
-Homepage = "https://github.com/QuantumPhiRedux/PhiMiner"
-Repository = "https://github.com/QuantumPhiRedux/PhiMiner"
-Issues = "https://github.com/QuantumPhiRedux/PhiMiner/issues"
+Homepage = "https://github.com/PhiEnterprise1/EuclidPhiEnterprise"
+Repository = "https://github.com/PhiEnterprise1/EuclidPhiEnterprise"
+Issues = "https://github.com/PhiEnterprise1/EuclidPhiEnterprise/issues"
 
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]
