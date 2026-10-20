@@ -71,7 +71,7 @@ jobs:
             tests: chronus/mla1517_platform/python/test_learning.py
             floor: "0.85"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
