@@ -85,7 +85,7 @@ jobs:
         run: |
           python -m black --check scripts/verify_release_tag.py tests/test_release_workflow_regressions.py tests/test_signed_release_tag.py
           python -m flake8 scripts/verify_release_tag.py tests/test_release_workflow_regressions.py tests/test_signed_release_tag.py
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: container-checks-${{ matrix.python }}
@@ -126,7 +126,7 @@ jobs:
           platforms: linux/amd64
           push: false
           outputs: type=oci,dest=/tmp/pythia-candidate.tar
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pythia-container-candidate
           path: /tmp/pythia-candidate.tar
@@ -188,7 +188,7 @@ jobs:
               'signed': True, 'deployed': False,
           }, indent=2, sort_keys=True))
           PY
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: signed-container-release
           path: container-release.json

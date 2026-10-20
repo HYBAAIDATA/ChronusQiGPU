@@ -106,7 +106,7 @@ jobs:
 
       - name: Upload release evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: euclid-v17-release-evidence
           if-no-files-found: error
@@ -153,7 +153,7 @@ jobs:
           python -m pip install --disable-pip-version-check build
           python packaging/euclid-engine/build_and_verify.py
       - name: Retain interpreter evidence
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: euclid-candidates-${{ matrix.python }}
           path: packaging/euclid-engine/dist/
@@ -218,7 +218,7 @@ jobs:
           }
           Path("euclid-release-verdict.json").write_text(json.dumps(verdict, indent=2, sort_keys=True))
           print(json.dumps(verdict, indent=2, sort_keys=True))
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: euclid-release-verdict
           path: euclid-release-verdict.json
@@ -312,7 +312,7 @@ jobs:
               "status": "PASS",
           }
           Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: euclid-testpypi-smoke-${{ matrix.python }}
           path: receipts/receipt.json
@@ -412,7 +412,7 @@ jobs:
               "status": "PASS",
           }
           Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: euclid-pypi-smoke-${{ matrix.python }}
           path: receipts/receipt.json
@@ -467,7 +467,7 @@ jobs:
           gh release create euclid-intelligence-v1.0.0 --target "$RC_SHA" \
             --title "hyba-euclid-intelligence 1.0.0" --notes-file release-notes.md \
             dist/*.whl dist/*.tar.gz publication.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: euclid-final-publication
           path: publication.json

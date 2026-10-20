@@ -88,7 +88,7 @@ jobs:
         run: |
           uv run --project turing_universal_quantum_computer --locked --group research python turing_universal_quantum_computer/experiments/run_experiment.py > "$RUNNER_TEMP/turing-manifest-path"
           uv run --project turing_universal_quantum_computer --locked --group research python turing_universal_quantum_computer/experiments/analyze_results.py "$(cat "$RUNNER_TEMP/turing-manifest-path")" --output turing_universal_quantum_computer/results/local/analysis
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: turing-package-validation-py${{ matrix.python }}

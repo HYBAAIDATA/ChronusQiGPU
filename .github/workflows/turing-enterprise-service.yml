@@ -40,7 +40,7 @@ jobs:
           python -m venv /tmp/turing-installed
           /tmp/turing-installed/bin/pip install services/turing-enterprise/dist/*.whl fastapi uvicorn "PyJWT[crypto]" cryptography pytest httpx
           /tmp/turing-installed/bin/python -m pytest services/turing-enterprise/tests -q
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: turing-service-tests-${{ matrix.python }}
@@ -62,7 +62,7 @@ jobs:
       - run: python packaging/turing/build_wheel.py
       - run: python -m pip install --find-links packaging/wheelhouse packaging/turing/dist/*.whl 'services/turing-enterprise[server,test]'
       - run: python -m pytest services/turing-enterprise/integration -q --junitxml=turing-installed-runtime.xml
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: turing-installed-runtime-${{ matrix.python }}
@@ -86,7 +86,7 @@ jobs:
       - run: npm install --no-save --ignore-scripts playwright@1.63.0
       - run: npx playwright install --with-deps chromium
       - run: node services/turing-enterprise/tests/portal-smoke.cjs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: turing-portal-fixture-previews

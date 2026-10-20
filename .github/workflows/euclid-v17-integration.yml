@@ -78,7 +78,7 @@ jobs:
         run: python packaging/euclid-engine/build_and_verify.py
       - name: Retain integrity evidence without declaring production readiness
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: euclid-integrity-evidence-${{ matrix.os }}
           if-no-files-found: error
