@@ -18,7 +18,13 @@ from al_haras import (
 from aethel.enterprise.production_organism import ProductionOrganism
 from euclid.contracts import Health
 from salamander.control_plane import FailClosed
+from toe.foundation import UNIFIED_THEORY as PYTHIA_FOUNDATION
 from turing_universal_quantum_computer.backends import Program
+from turing_universal_quantum_computer.unified_theory import (
+    UNIFIED_THEORY as TURING_FOUNDATION,
+)
+
+FOUNDATION_DIGEST = "dc8328e59f1a7422697ceb535c6e9b548383a1e505b6fd7a3a1b39358ac9ee83"
 
 
 @pytest.fixture
@@ -94,6 +100,13 @@ def run(organism, credential, program, *, routed=False):
     if routed:
         return organism.euclid.route_specialist(request, **kwargs)
     return organism.euclid.dispatch_specialist("turing", request, **kwargs)
+
+
+def test_installed_pythia_and_turing_wheels_expose_pinned_foundation():
+    assert PYTHIA_FOUNDATION.verify()
+    assert TURING_FOUNDATION.verify()
+    assert PYTHIA_FOUNDATION.payload() == TURING_FOUNDATION.payload()
+    assert PYTHIA_FOUNDATION.digest == TURING_FOUNDATION.digest == FOUNDATION_DIGEST
 
 
 def test_governed_turing_uses_canonical_certificate_and_shared_replay(factory):
