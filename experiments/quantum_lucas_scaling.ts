@@ -25,14 +25,14 @@ import {
   ExactVQE,
   QuantumGates,
   QuantumState,
-} from "../src/lib/first_principles_quantum";
+} from "../frontend/src/lib/first_principles_quantum";
 import {
   LucasQFT,
   LucasGrover,
   LucasQPE,
   LucasQuantumWalk,
   LucasVQE,
-} from "../src/lib/lucas_quantum_algorithms";
+} from "../frontend/src/lib/lucas_quantum_algorithms";
 
 const results: Record<string, any> = {};
 

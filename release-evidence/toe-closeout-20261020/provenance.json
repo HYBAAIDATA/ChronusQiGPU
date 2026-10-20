@@ -1,0 +1,27 @@
+{
+  "source_repository": "PhiEnterprise1/EuclidPhiEnterprise",
+  "pinned_base": "2bc45bd4f9c45a29fea00aa1f6ed34222ed58f07",
+  "branch": "fix/toe-production-gates-20261020",
+  "source_form": "scoped genuine GitHub MCP source export, not complete Git checkout",
+  "python": "3.13.14",
+  "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+  "node": "v24.14.1",
+  "pytest": "9.1.1",
+  "numpy": "2.5.3",
+  "tests": {
+    "D": 28,
+    "E": 16,
+    "G": 84,
+    "F_technical": 6
+  },
+  "full_candidate_tests": 154,
+  "pytest_plugins_autoload": false,
+  "basetemp": "distinct per invocation; see retained commands/JUnit",
+  "source_manifest_scope": "PY/TS/JSON in declared source trees plus root package/lock/requirements; generated *_results.json excluded from before/after stability scan; result files separately hashed",
+  "source_manifest_stable_before_after": true,
+  "midrun_monitoring_claimed": false,
+  "optimized_python_run": false,
+  "full_checkout_gate_A_executed": false,
+  "paid_workflow_dispatched": false,
+  "production_ready": false
+}
