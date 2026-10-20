@@ -1,0 +1,106 @@
+{
+  "api_http_tested": false,
+  "full_checkout_tested": false,
+  "hardware_execution_tested": false,
+  "inputs": {
+    "chronus/exact_geometry.py": {
+      "git_blob_sha1": "87a4ff9c9fdf61f44fd9b50a74dd1292a8e7aafd",
+      "sha256": "41e5cb6aabc3cb920e8a739a0cbfb1bbbf90ee5b7f922df4fd92f1d777e8df76"
+    },
+    "chronus/family_algebra.py": {
+      "git_blob_sha1": "cc28260d2d077a8bd70a254847b86ec34c34c10b",
+      "sha256": "1fa7b2c986b484477ad80d6cd7af914c4530670bc53a09da69cc21e6f14efe62"
+    },
+    "chronus/lucas_engine.py": {
+      "git_blob_sha1": "9ce60c3b0af5fa1f42cce0ceec6bb9fb9bdf1082",
+      "sha256": "120c91784b6e32c25b2255576d8d9e4044d538d051df070ba79ed745067b9ae6"
+    },
+    "chronus/mla1517/mining/search_plan.py": {
+      "git_blob_sha1": "74980e62483e84cadbd605e265305cc08b5527b6",
+      "sha256": "d84a58a7abe46703ca8b87942c518fa0d6c84dc6965506062cbd071a559506d0"
+    },
+    "kellogg/ansatz_v3.py": {
+      "git_blob_sha1": "ed2bfd9a291f23f275063d004e9f5ce6fbdf6731",
+      "sha256": "7b749000c6486e93e9f02fe9b27899947d6c8ed34ebbc37f70ad3b0d5e811e96"
+    },
+    "kellogg/mother_tensor.py": {
+      "git_blob_sha1": "752c24636afc3d7cad46899a18541aeccc6f3bd7",
+      "sha256": "1436a8c95796824ab41b9b3dac359b400c0376a2ad5ef422e289a5285d85ed5a"
+    },
+    "tests/test_kellogg_plan_admission.py": {
+      "git_blob_sha1": "596c9dbc35aa43f8c4890b75fcac915b40d50abb",
+      "sha256": "b3f3fb4d6af479d542779a8c851c26625120d3736d4f6528e64fd247d5154358"
+    }
+  },
+  "ledger_replayed": false,
+  "numpy": "2.5.3",
+  "pool_submission_tested": false,
+  "production_ready": false,
+  "publication_ready": false,
+  "pytest_available": false,
+  "python": "3.13.14",
+  "repository": "PhiEnterprise1/EuclidPhiEnterprise",
+  "runs": [
+    {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_kellogg_plan_admission.py",
+        "-v"
+      ],
+      "failure_records": 22,
+      "log": "baseline.log",
+      "log_sha256": "7f0e1ef7bd6b39a7c0c8894bb28149693948a713011ffe2e48e514b5ca82838a",
+      "returncode": 1,
+      "tests_run": 23,
+      "variant": "baseline"
+    },
+    {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_kellogg_plan_admission.py",
+        "-v"
+      ],
+      "failure_records": 0,
+      "log": "patched.log",
+      "log_sha256": "a0b61ec0d3ccb5634af0ffd651d546de8b051f70a64fc99d71ce8382205d8e8e",
+      "returncode": 0,
+      "tests_run": 23,
+      "variant": "patched"
+    },
+    {
+      "command": [
+        "/usr/local/bin/python",
+        "-O",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_kellogg_plan_admission.py",
+        "-v"
+      ],
+      "failure_records": 0,
+      "log": "patched-optimized.log",
+      "log_sha256": "19015019a4a6805f8d20ff9cd110a21e405aedc001541b7b7f7239c2d6840559",
+      "returncode": 0,
+      "tests_run": 23,
+      "variant": "patched-optimized"
+    }
+  ],
+  "schema": "hyba.scoped-plan-admission-test/1",
+  "scope": "Six actual source modules plus regression tests; namespace packages, repository package initializers absent. No fake engines or patched imports. Not an installed-package or full-checkout integration run.",
+  "source_base_sha": "2bc45bd4f9c45a29fea00aa1f6ed34222ed58f07"
+}

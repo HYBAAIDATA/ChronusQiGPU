@@ -1,0 +1,234 @@
+test_bad_certificate_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_bad_certificate_fails_closed) ... FAIL
+test_bad_lane_identity_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_bad_lane_identity_fails_closed) ... FAIL
+test_bad_ray_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_bad_ray_fails_closed) ... FAIL
+test_bad_vertex_owner_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_bad_vertex_owner_fails_closed) ... FAIL
+test_boolean_probability_rejected (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_boolean_probability_rejected) ... FAIL
+test_chunk_overlap_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_chunk_overlap_fails_closed) ... FAIL
+test_dimension_mutation_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_dimension_mutation_fails_closed) ... FAIL
+test_failed_contraction_cannot_be_cached_as_passed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_failed_contraction_cannot_be_cached_as_passed) ... FAIL
+test_failed_gauge_cannot_be_cached_as_passed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_failed_gauge_cannot_be_cached_as_passed) ... FAIL
+test_finite_probabilities_required (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_finite_probabilities_required) ... 
+  test_finite_probabilities_required (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_finite_probabilities_required) (value=nan) ... FAIL
+test_foreign_proof_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_foreign_proof_fails_closed) ... FAIL
+test_future_names_nonempty_unique_strings (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_future_names_nonempty_unique_strings) ... 
+  test_future_names_nonempty_unique_strings (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_future_names_nonempty_unique_strings) (names=('',)) ... FAIL
+  test_future_names_nonempty_unique_strings (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_future_names_nonempty_unique_strings) (names=(' ',)) ... FAIL
+  test_future_names_nonempty_unique_strings (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_future_names_nonempty_unique_strings) (names=(None,)) ... FAIL
+  test_future_names_nonempty_unique_strings (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_future_names_nonempty_unique_strings) (names=('a', 'a')) ... FAIL
+test_good_plan_retains_m32_compatibility_not_600_devices (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_good_plan_retains_m32_compatibility_not_600_devices) ... ok
+test_missing_proof_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_missing_proof_fails_closed) ... FAIL
+test_mutable_nonce_container_rejected (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_mutable_nonce_container_rejected) ... FAIL
+test_nonce_order_tamper_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_nonce_order_tamper_fails_closed) ... FAIL
+test_normalization_still_required (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_normalization_still_required) ... ok
+test_plan_evidence_detached_from_mutable_tensor (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_plan_evidence_detached_from_mutable_tensor) ... FAIL
+test_probability_range_required (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_probability_range_required) ... FAIL
+test_seed_mutation_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_seed_mutation_fails_closed) ... FAIL
+test_self_consistent_wrong_coverage_certificate_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_self_consistent_wrong_coverage_certificate_fails_closed) ... FAIL
+test_window_boundary_cases (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_window_boundary_cases) ... ok
+test_zero_window_not_executable (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_zero_window_not_executable) ... ok
+
+======================================================================
+FAIL: test_bad_certificate_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_bad_certificate_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 54, in test_bad_certificate_fails_closed
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_bad_lane_identity_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_bad_lane_identity_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 96, in test_bad_lane_identity_fails_closed
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_bad_ray_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_bad_ray_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 108, in test_bad_ray_fails_closed
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_bad_vertex_owner_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_bad_vertex_owner_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 102, in test_bad_vertex_owner_fails_closed
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_boolean_probability_rejected (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_boolean_probability_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 36, in test_boolean_probability_rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_chunk_overlap_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_chunk_overlap_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 84, in test_chunk_overlap_fails_closed
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_dimension_mutation_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_dimension_mutation_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 126, in test_dimension_mutation_fails_closed
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_failed_contraction_cannot_be_cached_as_passed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_failed_contraction_cannot_be_cached_as_passed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 133, in test_failed_contraction_cannot_be_cached_as_passed
+    with self.assertRaises(ArithmeticError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+AssertionError: ArithmeticError not raised
+
+======================================================================
+FAIL: test_failed_gauge_cannot_be_cached_as_passed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_failed_gauge_cannot_be_cached_as_passed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 78, in test_failed_gauge_cannot_be_cached_as_passed
+    with self.assertRaises(ArithmeticError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+AssertionError: ArithmeticError not raised
+
+======================================================================
+FAIL: test_finite_probabilities_required (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_finite_probabilities_required) (value=nan)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 28, in test_finite_probabilities_required
+    with self.subTest(value=value), self.assertRaises(ValueError):
+                                    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_foreign_proof_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_foreign_proof_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 59, in test_foreign_proof_fails_closed
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_future_names_nonempty_unique_strings (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_future_names_nonempty_unique_strings) (names=('',))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 41, in test_future_names_nonempty_unique_strings
+    with self.subTest(names=names), self.assertRaises(ValueError):
+                                    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_future_names_nonempty_unique_strings (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_future_names_nonempty_unique_strings) (names=(' ',))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 41, in test_future_names_nonempty_unique_strings
+    with self.subTest(names=names), self.assertRaises(ValueError):
+                                    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_future_names_nonempty_unique_strings (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_future_names_nonempty_unique_strings) (names=(None,))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 41, in test_future_names_nonempty_unique_strings
+    with self.subTest(names=names), self.assertRaises(ValueError):
+                                    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_future_names_nonempty_unique_strings (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_future_names_nonempty_unique_strings) (names=('a', 'a'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 41, in test_future_names_nonempty_unique_strings
+    with self.subTest(names=names), self.assertRaises(ValueError):
+                                    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_missing_proof_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_missing_proof_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 49, in test_missing_proof_fails_closed
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_mutable_nonce_container_rejected (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_mutable_nonce_container_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 90, in test_mutable_nonce_container_rejected
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_nonce_order_tamper_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_nonce_order_tamper_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 114, in test_nonce_order_tamper_fails_closed
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_plan_evidence_detached_from_mutable_tensor (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_plan_evidence_detached_from_mutable_tensor)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 162, in test_plan_evidence_detached_from_mutable_tensor
+    self.assertEqual(plan.evidence_refs['contraction']['phi_method']['status'], 'PASS')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'MISSING' != 'PASS'
+- MISSING
++ PASS
+
+
+======================================================================
+FAIL: test_probability_range_required (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_probability_range_required)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 32, in test_probability_range_required
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_seed_mutation_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_seed_mutation_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 120, in test_seed_mutation_fails_closed
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_self_consistent_wrong_coverage_certificate_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_self_consistent_wrong_coverage_certificate_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/production-gates/tests/test_kellogg_plan_admission.py", line 72, in test_self_consistent_wrong_coverage_certificate_fails_closed
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 23 tests in 3.766s
+
+FAILED (failures=22)
