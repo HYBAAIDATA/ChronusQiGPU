@@ -103,7 +103,7 @@ jobs:
           mkdir -p dist/root
           python -m pip wheel . --no-deps --wheel-dir dist/root
       - name: Upload qualification artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: north-star-package-evidence-${{ github.sha }}
           path: |
@@ -131,7 +131,7 @@ jobs:
         run: python -m pytest -q --junitxml=north-star-full-suite.xml
       - name: Upload full-suite result
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: north-star-full-suite-${{ github.sha }}
           path: north-star-full-suite.xml

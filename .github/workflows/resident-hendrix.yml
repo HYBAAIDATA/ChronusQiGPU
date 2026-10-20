@@ -31,7 +31,7 @@ jobs:
         run: python -m pytest tests/ -x -q --junitxml=canonical-results.xml
       - name: Retain actual test evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: resident-hendrix-test-evidence
           path: |
@@ -84,7 +84,7 @@ jobs:
         run: python -m pytest chronus/mla1517_platform/python/test_production_loop_e2e.py chronus/mla1517_platform/python/test_production_replacements.py -q --junitxml=installed-platform.xml
       - name: Preserve local-scope artifacts without certification
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pr140-installed-${{ matrix.variant }}-${{ github.sha }}
           path: |
