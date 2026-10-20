@@ -30,7 +30,7 @@ REPO = HERE.parent.parent
 DIST = HERE / "dist"
 PRODUCT = "hyba-kellogg-tensor"
 VERSION = "1.0.0"
-REPOSITORY = "QuantumPhiRedux/PhiMiner"
+REPOSITORY = "PhiEnterprise1/EuclidPhiEnterprise"
 
 _REQUIRED_PUBLIC = (
     "attest",
@@ -107,6 +107,15 @@ def stage(root: Path) -> Path:
     for name in ("pyproject.toml", "README.md"):
         shutil.copy2(HERE / name, src / name)
     shutil.copy2(REPO / "LICENSE", src / "LICENSE")
+    # The live manifest maps back to the monorepo. The staged source and its
+    # sdist must instead resolve Kellogg inside their own self-contained tree.
+    manifest = src / "pyproject.toml"
+    text = manifest.read_text(encoding="utf-8")
+    original = 'package-dir = {"kellogg" = "../../kellogg"}'
+    if text.count(original) != 1:
+        raise RuntimeError("Kellogg package-dir contract changed; review staging")
+    manifest.write_text(text.replace(original, 'package-dir = {"kellogg" = "kellogg"}'),
+                        encoding="utf-8")
     return src
 
 
@@ -234,8 +243,9 @@ requires = importlib.metadata.requires("hyba-kellogg-tensor") or []
 hard_requires = [r for r in requires if "extra ==" not in r]
 assert len(hard_requires) == 1 and hard_requires[0].lower().startswith("numpy"), hard_requires
 project_urls = metadata.get_all("Project-URL") or []
-assert any("https://github.com/QuantumPhiRedux/PhiMiner" in u for u in project_urls), project_urls
-assert not any("QuantumPhi2/PhiMiner" in u for u in project_urls), project_urls
+assert any("https://github.com/PhiEnterprise1/EuclidPhiEnterprise" in u for u in project_urls), project_urls
+assert not any(old in u for old in ("QuantumPhi2/PhiMiner", "QuantumPhiRedux/PhiMiner")
+               for u in project_urls), project_urls
 
 mods = sorted(m.name for m in pkgutil.iter_modules(kellogg.__path__))
 failed = {}
