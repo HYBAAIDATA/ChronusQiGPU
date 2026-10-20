@@ -1,0 +1,1006 @@
+{
+  "scope": "99 enumerated unresolved field groups across 9 records, not 99 proven absent API fields; exhaustive source-level field diff NOT RUN. Not all workspace notes were reviewed.",
+  "gaps": [
+    {
+      "id": "MISSING-pulvini-1",
+      "product": "pulvini",
+      "field_group": "distribution-and-exports",
+      "required_evidence": "Exact distribution, namespace, version, module and exported callable inventory.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/339540722ac047da84098000c32d88d0",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-pulvini-2",
+      "product": "pulvini",
+      "field_group": "parameters",
+      "required_evidence": "Exact ordered/keyword arguments, types, defaults, nullability and bounds.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/339540722ac047da84098000c32d88d0",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-pulvini-3",
+      "product": "pulvini",
+      "field_group": "request-schema",
+      "required_evidence": "Versioned request/serialization schema, IDs, shapes, byte encoding and limits.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/339540722ac047da84098000c32d88d0",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-pulvini-4",
+      "product": "pulvini",
+      "field_group": "result-schema",
+      "required_evidence": "Versioned result/serialization schema including receipts, provenance and unavailable states.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/339540722ac047da84098000c32d88d0",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-pulvini-5",
+      "product": "pulvini",
+      "field_group": "errors",
+      "required_evidence": "Exhaustive typed errors/status mapping, refusals and authorised fallback.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/339540722ac047da84098000c32d88d0",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-pulvini-6",
+      "product": "pulvini",
+      "field_group": "security",
+      "required_evidence": "Principal-to-tenant binding, authorisation, isolation and action replay policy.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/339540722ac047da84098000c32d88d0",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-pulvini-7",
+      "product": "pulvini",
+      "field_group": "lifecycle",
+      "required_evidence": "Idempotency, cancellation, concurrency/version checks and resource lifecycle.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/339540722ac047da84098000c32d88d0",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-pulvini-8",
+      "product": "pulvini",
+      "field_group": "compatibility",
+      "required_evidence": "ABI/schema compatibility and migration policy for the frozen candidate.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/339540722ac047da84098000c32d88d0",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-pulvini-9",
+      "product": "pulvini",
+      "field_group": "acceptance",
+      "required_evidence": "Executable acceptance commands, fixtures, expected outcomes and retained same-candidate evidence.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/339540722ac047da84098000c32d88d0",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-pulvini-10",
+      "product": "pulvini",
+      "field_group": "commercial",
+      "required_evidence": "Named approver and actual signed product schedule/license status; never inferred from a technical charter.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/339540722ac047da84098000c32d88d0",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-pulvini-11",
+      "product": "pulvini",
+      "field_group": "product-specific-reconciliation",
+      "required_evidence": "Canonical module/export and exact signatures; mode-specific input/output and residual/kernel encoding; reconstruction-error semantics and resource limits; package/license boundary.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/339540722ac047da84098000c32d88d0",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-turing-1",
+      "product": "turing",
+      "field_group": "distribution-and-exports",
+      "required_evidence": "Exact distribution, namespace, version, module and exported callable inventory.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/e183affb2dd64fc9ae5701c694f0c220",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-turing-2",
+      "product": "turing",
+      "field_group": "parameters",
+      "required_evidence": "Exact ordered/keyword arguments, types, defaults, nullability and bounds.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/e183affb2dd64fc9ae5701c694f0c220",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-turing-3",
+      "product": "turing",
+      "field_group": "request-schema",
+      "required_evidence": "Versioned request/serialization schema, IDs, shapes, byte encoding and limits.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/e183affb2dd64fc9ae5701c694f0c220",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-turing-4",
+      "product": "turing",
+      "field_group": "result-schema",
+      "required_evidence": "Versioned result/serialization schema including receipts, provenance and unavailable states.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/e183affb2dd64fc9ae5701c694f0c220",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-turing-5",
+      "product": "turing",
+      "field_group": "errors",
+      "required_evidence": "Exhaustive typed errors/status mapping, refusals and authorised fallback.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/e183affb2dd64fc9ae5701c694f0c220",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-turing-6",
+      "product": "turing",
+      "field_group": "security",
+      "required_evidence": "Principal-to-tenant binding, authorisation, isolation and action replay policy.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/e183affb2dd64fc9ae5701c694f0c220",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-turing-7",
+      "product": "turing",
+      "field_group": "lifecycle",
+      "required_evidence": "Idempotency, cancellation, concurrency/version checks and resource lifecycle.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/e183affb2dd64fc9ae5701c694f0c220",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-turing-8",
+      "product": "turing",
+      "field_group": "compatibility",
+      "required_evidence": "ABI/schema compatibility and migration policy for the frozen candidate.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/e183affb2dd64fc9ae5701c694f0c220",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-turing-9",
+      "product": "turing",
+      "field_group": "acceptance",
+      "required_evidence": "Executable acceptance commands, fixtures, expected outcomes and retained same-candidate evidence.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/e183affb2dd64fc9ae5701c694f0c220",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-turing-10",
+      "product": "turing",
+      "field_group": "commercial",
+      "required_evidence": "Named approver and actual signed product schedule/license status; never inferred from a technical charter.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/e183affb2dd64fc9ae5701c694f0c220",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-turing-11",
+      "product": "turing",
+      "field_group": "product-specific-reconciliation",
+      "required_evidence": "Installed backend/registry signatures and serialisation schemas; readout order versus sorting/deduplication; actual tableau-storage metric; QPU refusal and real tensor dependency bindings.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/e183affb2dd64fc9ae5701c694f0c220",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-kellogg-1",
+      "product": "kellogg",
+      "field_group": "distribution-and-exports",
+      "required_evidence": "Exact distribution, namespace, version, module and exported callable inventory.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/ccfcdd6511be4c93bb516102bf90a495",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-kellogg-2",
+      "product": "kellogg",
+      "field_group": "parameters",
+      "required_evidence": "Exact ordered/keyword arguments, types, defaults, nullability and bounds.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/ccfcdd6511be4c93bb516102bf90a495",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-kellogg-3",
+      "product": "kellogg",
+      "field_group": "request-schema",
+      "required_evidence": "Versioned request/serialization schema, IDs, shapes, byte encoding and limits.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/ccfcdd6511be4c93bb516102bf90a495",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-kellogg-4",
+      "product": "kellogg",
+      "field_group": "result-schema",
+      "required_evidence": "Versioned result/serialization schema including receipts, provenance and unavailable states.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/ccfcdd6511be4c93bb516102bf90a495",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-kellogg-5",
+      "product": "kellogg",
+      "field_group": "errors",
+      "required_evidence": "Exhaustive typed errors/status mapping, refusals and authorised fallback.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/ccfcdd6511be4c93bb516102bf90a495",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-kellogg-6",
+      "product": "kellogg",
+      "field_group": "security",
+      "required_evidence": "Principal-to-tenant binding, authorisation, isolation and action replay policy.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/ccfcdd6511be4c93bb516102bf90a495",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-kellogg-7",
+      "product": "kellogg",
+      "field_group": "lifecycle",
+      "required_evidence": "Idempotency, cancellation, concurrency/version checks and resource lifecycle.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/ccfcdd6511be4c93bb516102bf90a495",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-kellogg-8",
+      "product": "kellogg",
+      "field_group": "compatibility",
+      "required_evidence": "ABI/schema compatibility and migration policy for the frozen candidate.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/ccfcdd6511be4c93bb516102bf90a495",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-kellogg-9",
+      "product": "kellogg",
+      "field_group": "acceptance",
+      "required_evidence": "Executable acceptance commands, fixtures, expected outcomes and retained same-candidate evidence.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/ccfcdd6511be4c93bb516102bf90a495",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-kellogg-10",
+      "product": "kellogg",
+      "field_group": "commercial",
+      "required_evidence": "Named approver and actual signed product schedule/license status; never inferred from a technical charter.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/ccfcdd6511be4c93bb516102bf90a495",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-kellogg-11",
+      "product": "kellogg",
+      "field_group": "product-specific-reconciliation",
+      "required_evidence": "Canonical tensor exports/signatures, dtype/shape/rank/error-budget schema, artifact-version/authentication schema, exact exception and limit mapping.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/ccfcdd6511be4c93bb516102bf90a495",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-chronus-1",
+      "product": "chronus",
+      "field_group": "distribution-and-exports",
+      "required_evidence": "Exact distribution, namespace, version, module and exported callable inventory.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/8774f4fa7c344656b1f0d0532e502e71",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-chronus-2",
+      "product": "chronus",
+      "field_group": "parameters",
+      "required_evidence": "Exact ordered/keyword arguments, types, defaults, nullability and bounds.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/8774f4fa7c344656b1f0d0532e502e71",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-chronus-3",
+      "product": "chronus",
+      "field_group": "request-schema",
+      "required_evidence": "Versioned request/serialization schema, IDs, shapes, byte encoding and limits.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/8774f4fa7c344656b1f0d0532e502e71",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-chronus-4",
+      "product": "chronus",
+      "field_group": "result-schema",
+      "required_evidence": "Versioned result/serialization schema including receipts, provenance and unavailable states.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/8774f4fa7c344656b1f0d0532e502e71",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-chronus-5",
+      "product": "chronus",
+      "field_group": "errors",
+      "required_evidence": "Exhaustive typed errors/status mapping, refusals and authorised fallback.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/8774f4fa7c344656b1f0d0532e502e71",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-chronus-6",
+      "product": "chronus",
+      "field_group": "security",
+      "required_evidence": "Principal-to-tenant binding, authorisation, isolation and action replay policy.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/8774f4fa7c344656b1f0d0532e502e71",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-chronus-7",
+      "product": "chronus",
+      "field_group": "lifecycle",
+      "required_evidence": "Idempotency, cancellation, concurrency/version checks and resource lifecycle.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/8774f4fa7c344656b1f0d0532e502e71",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-chronus-8",
+      "product": "chronus",
+      "field_group": "compatibility",
+      "required_evidence": "ABI/schema compatibility and migration policy for the frozen candidate.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/8774f4fa7c344656b1f0d0532e502e71",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-chronus-9",
+      "product": "chronus",
+      "field_group": "acceptance",
+      "required_evidence": "Executable acceptance commands, fixtures, expected outcomes and retained same-candidate evidence.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/8774f4fa7c344656b1f0d0532e502e71",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-chronus-10",
+      "product": "chronus",
+      "field_group": "commercial",
+      "required_evidence": "Named approver and actual signed product schedule/license status; never inferred from a technical charter.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/8774f4fa7c344656b1f0d0532e502e71",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-chronus-11",
+      "product": "chronus",
+      "field_group": "product-specific-reconciliation",
+      "required_evidence": "Distinct Chronos/Chronus distribution-to-API mapping; execution/capability signatures; device fingerprint/handle lifetime and tenant binding; fallback/error schema; actual device receipts.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/8774f4fa7c344656b1f0d0532e502e71",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-euclid-1",
+      "product": "euclid",
+      "field_group": "distribution-and-exports",
+      "required_evidence": "Exact distribution, namespace, version, module and exported callable inventory.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/f1ea1e2825114d54986de07910b99dca",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-euclid-2",
+      "product": "euclid",
+      "field_group": "parameters",
+      "required_evidence": "Exact ordered/keyword arguments, types, defaults, nullability and bounds.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/f1ea1e2825114d54986de07910b99dca",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-euclid-3",
+      "product": "euclid",
+      "field_group": "request-schema",
+      "required_evidence": "Versioned request/serialization schema, IDs, shapes, byte encoding and limits.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/f1ea1e2825114d54986de07910b99dca",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-euclid-4",
+      "product": "euclid",
+      "field_group": "result-schema",
+      "required_evidence": "Versioned result/serialization schema including receipts, provenance and unavailable states.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/f1ea1e2825114d54986de07910b99dca",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-euclid-5",
+      "product": "euclid",
+      "field_group": "errors",
+      "required_evidence": "Exhaustive typed errors/status mapping, refusals and authorised fallback.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/f1ea1e2825114d54986de07910b99dca",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-euclid-6",
+      "product": "euclid",
+      "field_group": "security",
+      "required_evidence": "Principal-to-tenant binding, authorisation, isolation and action replay policy.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/f1ea1e2825114d54986de07910b99dca",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-euclid-7",
+      "product": "euclid",
+      "field_group": "lifecycle",
+      "required_evidence": "Idempotency, cancellation, concurrency/version checks and resource lifecycle.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/f1ea1e2825114d54986de07910b99dca",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-euclid-8",
+      "product": "euclid",
+      "field_group": "compatibility",
+      "required_evidence": "ABI/schema compatibility and migration policy for the frozen candidate.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/f1ea1e2825114d54986de07910b99dca",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-euclid-9",
+      "product": "euclid",
+      "field_group": "acceptance",
+      "required_evidence": "Executable acceptance commands, fixtures, expected outcomes and retained same-candidate evidence.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/f1ea1e2825114d54986de07910b99dca",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-euclid-10",
+      "product": "euclid",
+      "field_group": "commercial",
+      "required_evidence": "Named approver and actual signed product schedule/license status; never inferred from a technical charter.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/f1ea1e2825114d54986de07910b99dca",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-euclid-11",
+      "product": "euclid",
+      "field_group": "product-specific-reconciliation",
+      "required_evidence": "Exact arguments/defaults/type signatures and result/manifest serialisation; full exception schema; declared transport scope; persistent-store/provider binding and concurrency version fields.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/f1ea1e2825114d54986de07910b99dca",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-enterprise-1",
+      "product": "salamander-enterprise",
+      "field_group": "distribution-and-exports",
+      "required_evidence": "Exact distribution, namespace, version, module and exported callable inventory.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/97f11d176eb149659add24c32d58b07e",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-enterprise-2",
+      "product": "salamander-enterprise",
+      "field_group": "parameters",
+      "required_evidence": "Exact ordered/keyword arguments, types, defaults, nullability and bounds.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/97f11d176eb149659add24c32d58b07e",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-enterprise-3",
+      "product": "salamander-enterprise",
+      "field_group": "request-schema",
+      "required_evidence": "Versioned request/serialization schema, IDs, shapes, byte encoding and limits.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/97f11d176eb149659add24c32d58b07e",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-enterprise-4",
+      "product": "salamander-enterprise",
+      "field_group": "result-schema",
+      "required_evidence": "Versioned result/serialization schema including receipts, provenance and unavailable states.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/97f11d176eb149659add24c32d58b07e",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-enterprise-5",
+      "product": "salamander-enterprise",
+      "field_group": "errors",
+      "required_evidence": "Exhaustive typed errors/status mapping, refusals and authorised fallback.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/97f11d176eb149659add24c32d58b07e",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-enterprise-6",
+      "product": "salamander-enterprise",
+      "field_group": "security",
+      "required_evidence": "Principal-to-tenant binding, authorisation, isolation and action replay policy.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/97f11d176eb149659add24c32d58b07e",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-enterprise-7",
+      "product": "salamander-enterprise",
+      "field_group": "lifecycle",
+      "required_evidence": "Idempotency, cancellation, concurrency/version checks and resource lifecycle.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/97f11d176eb149659add24c32d58b07e",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-enterprise-8",
+      "product": "salamander-enterprise",
+      "field_group": "compatibility",
+      "required_evidence": "ABI/schema compatibility and migration policy for the frozen candidate.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/97f11d176eb149659add24c32d58b07e",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-enterprise-9",
+      "product": "salamander-enterprise",
+      "field_group": "acceptance",
+      "required_evidence": "Executable acceptance commands, fixtures, expected outcomes and retained same-candidate evidence.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/97f11d176eb149659add24c32d58b07e",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-enterprise-10",
+      "product": "salamander-enterprise",
+      "field_group": "commercial",
+      "required_evidence": "Named approver and actual signed product schedule/license status; never inferred from a technical charter.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/97f11d176eb149659add24c32d58b07e",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-enterprise-11",
+      "product": "salamander-enterprise",
+      "field_group": "product-specific-reconciliation",
+      "required_evidence": "Canonical control-plane callable exports/payload schemas; adapter-versus-pseudocode distinction; action registry and approval types; telemetry freshness/authenticity, unknown-state and rollback schema.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/97f11d176eb149659add24c32d58b07e",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-theseus-1",
+      "product": "theseus",
+      "field_group": "distribution-and-exports",
+      "required_evidence": "Exact distribution, namespace, version, module and exported callable inventory.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/14ef71cd36624fd8bc1e1c44e820b552",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-theseus-2",
+      "product": "theseus",
+      "field_group": "parameters",
+      "required_evidence": "Exact ordered/keyword arguments, types, defaults, nullability and bounds.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/14ef71cd36624fd8bc1e1c44e820b552",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-theseus-3",
+      "product": "theseus",
+      "field_group": "request-schema",
+      "required_evidence": "Versioned request/serialization schema, IDs, shapes, byte encoding and limits.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/14ef71cd36624fd8bc1e1c44e820b552",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-theseus-4",
+      "product": "theseus",
+      "field_group": "result-schema",
+      "required_evidence": "Versioned result/serialization schema including receipts, provenance and unavailable states.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/14ef71cd36624fd8bc1e1c44e820b552",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-theseus-5",
+      "product": "theseus",
+      "field_group": "errors",
+      "required_evidence": "Exhaustive typed errors/status mapping, refusals and authorised fallback.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/14ef71cd36624fd8bc1e1c44e820b552",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-theseus-6",
+      "product": "theseus",
+      "field_group": "security",
+      "required_evidence": "Principal-to-tenant binding, authorisation, isolation and action replay policy.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/14ef71cd36624fd8bc1e1c44e820b552",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-theseus-7",
+      "product": "theseus",
+      "field_group": "lifecycle",
+      "required_evidence": "Idempotency, cancellation, concurrency/version checks and resource lifecycle.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/14ef71cd36624fd8bc1e1c44e820b552",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-theseus-8",
+      "product": "theseus",
+      "field_group": "compatibility",
+      "required_evidence": "ABI/schema compatibility and migration policy for the frozen candidate.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/14ef71cd36624fd8bc1e1c44e820b552",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-theseus-9",
+      "product": "theseus",
+      "field_group": "acceptance",
+      "required_evidence": "Executable acceptance commands, fixtures, expected outcomes and retained same-candidate evidence.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/14ef71cd36624fd8bc1e1c44e820b552",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-theseus-10",
+      "product": "theseus",
+      "field_group": "commercial",
+      "required_evidence": "Named approver and actual signed product schedule/license status; never inferred from a technical charter.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/14ef71cd36624fd8bc1e1c44e820b552",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-theseus-11",
+      "product": "theseus",
+      "field_group": "product-specific-reconciliation",
+      "required_evidence": "Authoritative root/component/version and catalog import mapping; commit/acknowledgement/consistency schema; tenant and object keys; transaction/journal concurrency; read-only/fsync/repair semantics; key identity/rotation API.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/14ef71cd36624fd8bc1e1c44e820b552",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-ovid-1",
+      "product": "ovid",
+      "field_group": "distribution-and-exports",
+      "required_evidence": "Exact distribution, namespace, version, module and exported callable inventory.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/b2ea679b44554cb2b837575ef1a205a4",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-ovid-2",
+      "product": "ovid",
+      "field_group": "parameters",
+      "required_evidence": "Exact ordered/keyword arguments, types, defaults, nullability and bounds.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/b2ea679b44554cb2b837575ef1a205a4",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-ovid-3",
+      "product": "ovid",
+      "field_group": "request-schema",
+      "required_evidence": "Versioned request/serialization schema, IDs, shapes, byte encoding and limits.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/b2ea679b44554cb2b837575ef1a205a4",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-ovid-4",
+      "product": "ovid",
+      "field_group": "result-schema",
+      "required_evidence": "Versioned result/serialization schema including receipts, provenance and unavailable states.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/b2ea679b44554cb2b837575ef1a205a4",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-ovid-5",
+      "product": "ovid",
+      "field_group": "errors",
+      "required_evidence": "Exhaustive typed errors/status mapping, refusals and authorised fallback.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/b2ea679b44554cb2b837575ef1a205a4",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-ovid-6",
+      "product": "ovid",
+      "field_group": "security",
+      "required_evidence": "Principal-to-tenant binding, authorisation, isolation and action replay policy.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/b2ea679b44554cb2b837575ef1a205a4",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-ovid-7",
+      "product": "ovid",
+      "field_group": "lifecycle",
+      "required_evidence": "Idempotency, cancellation, concurrency/version checks and resource lifecycle.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/b2ea679b44554cb2b837575ef1a205a4",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-ovid-8",
+      "product": "ovid",
+      "field_group": "compatibility",
+      "required_evidence": "ABI/schema compatibility and migration policy for the frozen candidate.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/b2ea679b44554cb2b837575ef1a205a4",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-ovid-9",
+      "product": "ovid",
+      "field_group": "acceptance",
+      "required_evidence": "Executable acceptance commands, fixtures, expected outcomes and retained same-candidate evidence.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/b2ea679b44554cb2b837575ef1a205a4",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-ovid-10",
+      "product": "ovid",
+      "field_group": "commercial",
+      "required_evidence": "Named approver and actual signed product schedule/license status; never inferred from a technical charter.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/b2ea679b44554cb2b837575ef1a205a4",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-ovid-11",
+      "product": "ovid",
+      "field_group": "product-specific-reconciliation",
+      "required_evidence": "Canonical facade signatures, actual hyba_db/ovid/aethel mapping and authority; working-form/residual lineage schema; sealed handoff/commit token and error semantics; ontology-attestation admission.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/b2ea679b44554cb2b837575ef1a205a4",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-mining-1",
+      "product": "salamander-mining",
+      "field_group": "distribution-and-exports",
+      "required_evidence": "Exact distribution, namespace, version, module and exported callable inventory.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/06fe66554a704882a36026442fbffdc6",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-mining-2",
+      "product": "salamander-mining",
+      "field_group": "parameters",
+      "required_evidence": "Exact ordered/keyword arguments, types, defaults, nullability and bounds.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/06fe66554a704882a36026442fbffdc6",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-mining-3",
+      "product": "salamander-mining",
+      "field_group": "request-schema",
+      "required_evidence": "Versioned request/serialization schema, IDs, shapes, byte encoding and limits.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/06fe66554a704882a36026442fbffdc6",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-mining-4",
+      "product": "salamander-mining",
+      "field_group": "result-schema",
+      "required_evidence": "Versioned result/serialization schema including receipts, provenance and unavailable states.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/06fe66554a704882a36026442fbffdc6",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-mining-5",
+      "product": "salamander-mining",
+      "field_group": "errors",
+      "required_evidence": "Exhaustive typed errors/status mapping, refusals and authorised fallback.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/06fe66554a704882a36026442fbffdc6",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-mining-6",
+      "product": "salamander-mining",
+      "field_group": "security",
+      "required_evidence": "Principal-to-tenant binding, authorisation, isolation and action replay policy.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/06fe66554a704882a36026442fbffdc6",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-mining-7",
+      "product": "salamander-mining",
+      "field_group": "lifecycle",
+      "required_evidence": "Idempotency, cancellation, concurrency/version checks and resource lifecycle.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/06fe66554a704882a36026442fbffdc6",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-mining-8",
+      "product": "salamander-mining",
+      "field_group": "compatibility",
+      "required_evidence": "ABI/schema compatibility and migration policy for the frozen candidate.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/06fe66554a704882a36026442fbffdc6",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-mining-9",
+      "product": "salamander-mining",
+      "field_group": "acceptance",
+      "required_evidence": "Executable acceptance commands, fixtures, expected outcomes and retained same-candidate evidence.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/06fe66554a704882a36026442fbffdc6",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-mining-10",
+      "product": "salamander-mining",
+      "field_group": "commercial",
+      "required_evidence": "Named approver and actual signed product schedule/license status; never inferred from a technical charter.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/06fe66554a704882a36026442fbffdc6",
+      "source_abi_diff": "NOT_RUN"
+    },
+    {
+      "id": "MISSING-salamander-mining-11",
+      "product": "salamander-mining",
+      "field_group": "product-specific-reconciliation",
+      "required_evidence": "Current integration module/signatures; exact mode enum and payload/result/error schemas; auth/action replay policy; binding to canonical SearchPlan/proof/pool owners; heartbeat and recovery evidence schema.",
+      "status": "NOT_ESTABLISHED_BY_THIS_AUDIT",
+      "source_url": "https://app.notion.com/p/06fe66554a704882a36026442fbffdc6",
+      "source_abi_diff": "NOT_RUN"
+    }
+  ],
+  "records": [
+    {
+      "product": "pulvini",
+      "source_url": "https://app.notion.com/p/339540722ac047da84098000c32d88d0",
+      "status": "MISSING_IN_RECORD_OR_NOT_VERIFIED",
+      "named_or_semantic_surface": "Fold/unfold/validate operation families; zphi_exact, hyperbolic and holograph modes are referenced.",
+      "required_reconciliation": "Canonical module/export and exact signatures; mode-specific input/output and residual/kernel encoding; reconstruction-error semantics and resource limits; package/license boundary.",
+      "required_acceptance": "Round-trip plus corrupted/missing metadata refusal, counting residuals and all representation overhead.",
+      "source_abi_diff": "NOT_RUN",
+      "runtime_qualification": "NOT_RUN",
+      "owner": "UNASSIGNED",
+      "owner_signoff": "PENDING"
+    },
+    {
+      "product": "turing",
+      "source_url": "https://app.notion.com/p/e183affb2dd64fc9ae5701c694f0c220",
+      "status": "MISSING_IN_RECORD_OR_NOT_VERIFIED",
+      "named_or_semantic_surface": "Backend/capability registry, sampling/marginals, certificates and turing-vqc are named.",
+      "required_reconciliation": "Installed backend/registry signatures and serialisation schemas; readout order versus sorting/deduplication; actual tableau-storage metric; QPU refusal and real tensor dependency bindings.",
+      "required_acceptance": "Independent-reference phase/measurement/continuation parity, seeded sampling and unsupported-domain refusal; entropy and QEC separately.",
+      "source_abi_diff": "NOT_RUN",
+      "runtime_qualification": "NOT_RUN",
+      "owner": "UNASSIGNED",
+      "owner_signoff": "PENDING"
+    },
+    {
+      "product": "kellogg",
+      "source_url": "https://app.notion.com/p/ccfcdd6511be4c93bb516102bf90a495",
+      "status": "MISSING_IN_RECORD_OR_NOT_VERIFIED",
+      "named_or_semantic_surface": "TT/MPS/MPO mathematics and safe .pv artifact responsibilities are defined.",
+      "required_reconciliation": "Canonical tensor exports/signatures, dtype/shape/rank/error-budget schema, artifact-version/authentication schema, exact exception and limit mapping.",
+      "required_acceptance": "Complex tensor reconstruction and reference contractions; malformed/nonfinite/invalid-HMAC and corrupted artifact refusal.",
+      "source_abi_diff": "NOT_RUN",
+      "runtime_qualification": "NOT_RUN",
+      "owner": "UNASSIGNED",
+      "owner_signoff": "PENDING"
+    },
+    {
+      "product": "chronus",
+      "source_url": "https://app.notion.com/p/8774f4fa7c344656b1f0d0532e502e71",
+      "status": "MISSING_IN_RECORD_OR_NOT_VERIFIED",
+      "named_or_semantic_surface": "Hardware capability/execution semantics, actual-device evidence and explicit fallback are specified.",
+      "required_reconciliation": "Distinct Chronos/Chronus distribution-to-API mapping; execution/capability signatures; device fingerprint/handle lifetime and tenant binding; fallback/error schema; actual device receipts.",
+      "required_acceptance": "Required-device refusal and actual device binding, tenant isolation and reference-output/timing evidence.",
+      "source_abi_diff": "NOT_RUN",
+      "runtime_qualification": "NOT_RUN",
+      "owner": "UNASSIGNED",
+      "owner_signoff": "PENDING"
+    },
+    {
+      "product": "euclid",
+      "source_url": "https://app.notion.com/p/f1ea1e2825114d54986de07910b99dca",
+      "status": "MISSING_IN_RECORD_OR_NOT_VERIFIED",
+      "named_or_semantic_surface": "EuclidCreativeKernel.run/refine/adapt_world, EuclidCreatorAPI and ProviderManifest are named.",
+      "required_reconciliation": "Exact arguments/defaults/type signatures and result/manifest serialisation; full exception schema; declared transport scope; persistent-store/provider binding and concurrency version fields.",
+      "required_acceptance": "Rights/coherence refusal, deterministic semantic identities, world-version conflicts, honest rendered status and provenance tamper detection.",
+      "source_abi_diff": "NOT_RUN",
+      "runtime_qualification": "NOT_RUN",
+      "owner": "UNASSIGNED",
+      "owner_signoff": "PENDING"
+    },
+    {
+      "product": "salamander-enterprise",
+      "source_url": "https://app.notion.com/p/97f11d176eb149659add24c32d58b07e",
+      "status": "MISSING_IN_RECORD_OR_NOT_VERIFIED",
+      "named_or_semantic_surface": "Typed health/recovery operations and telemetry reporter examples are documented.",
+      "required_reconciliation": "Canonical control-plane callable exports/payload schemas; adapter-versus-pseudocode distinction; action registry and approval types; telemetry freshness/authenticity, unknown-state and rollback schema.",
+      "required_acceptance": "Unknown/stale state, quarantine, denied action, bounded recovery, human-gated compaction and restart truth reacquisition.",
+      "source_abi_diff": "NOT_RUN",
+      "runtime_qualification": "NOT_RUN",
+      "owner": "UNASSIGNED",
+      "owner_signoff": "PENDING"
+    },
+    {
+      "product": "theseus",
+      "source_url": "https://app.notion.com/p/14ef71cd36624fd8bc1e1c44e820b552",
+      "status": "MISSING_IN_RECORD_OR_NOT_VERIFIED",
+      "named_or_semantic_surface": "Custody/write/read/replicate/heal/recover obligations and historical namespaces are documented.",
+      "required_reconciliation": "Authoritative root/component/version and catalog import mapping; commit/acknowledgement/consistency schema; tenant and object keys; transaction/journal concurrency; read-only/fsync/repair semantics; key identity/rotation API.",
+      "required_acceptance": "Tenant/traversal/crash/journal-tail/concurrent-writer/backup-during-write faults, restore and authenticated custody continuity.",
+      "source_abi_diff": "NOT_RUN",
+      "runtime_qualification": "NOT_RUN",
+      "owner": "UNASSIGNED",
+      "owner_signoff": "PENDING"
+    },
+    {
+      "product": "ovid",
+      "source_url": "https://app.notion.com/p/b2ea679b44554cb2b837575ef1a205a4",
+      "status": "MISSING_IN_RECORD_OR_NOT_VERIFIED",
+      "named_or_semantic_surface": "Versioned transform/materialise and migration handoff semantics are documented.",
+      "required_reconciliation": "Canonical facade signatures, actual hyba_db/ovid/aethel mapping and authority; working-form/residual lineage schema; sealed handoff/commit token and error semantics; ontology-attestation admission.",
+      "required_acceptance": "Version mismatch, corrupted/missing reconstruction state, interrupted handoff and ontology-policy refusal with identity-preserving reconstruction.",
+      "source_abi_diff": "NOT_RUN",
+      "runtime_qualification": "NOT_RUN",
+      "owner": "UNASSIGNED",
+      "owner_signoff": "PENDING"
+    },
+    {
+      "product": "salamander-mining",
+      "source_url": "https://app.notion.com/p/06fe66554a704882a36026442fbffdc6",
+      "status": "MISSING_IN_RECORD_OR_NOT_VERIFIED",
+      "named_or_semantic_surface": "ProductionMiningIntegration and IntelligentPoolCoordinator.apply_salamander_mode are named.",
+      "required_reconciliation": "Current integration module/signatures; exact mode enum and payload/result/error schemas; auth/action replay policy; binding to canonical SearchPlan/proof/pool owners; heartbeat and recovery evidence schema.",
+      "required_acceptance": "Disconnected rehearsal, denied/replayed actions and honest unavailable states; separately authorised pool-kill recovery and heartbeat measurement; live acceptance attributed to pool.",
+      "source_abi_diff": "NOT_RUN",
+      "runtime_qualification": "NOT_RUN",
+      "owner": "UNASSIGNED",
+      "owner_signoff": "PENDING"
+    }
+  ]
+}

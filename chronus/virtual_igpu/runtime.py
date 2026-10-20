@@ -500,15 +500,6 @@ class RuntimeDaemon:
                 result = replace(result, object_id=oid, output={**result.output, "payload": payload, "object_id": oid})
             else:
                 result = self._execute_with_deadline(adapter, w, deadline_ms)
-                # Persist fold/unfold (and any output with payload bytes) for object handles
-                if w.kind in {WorkloadKind.FOLD, WorkloadKind.UNFOLD}:
-                    stored = self.memory.store(
-                        result.output,
-                        tenant=w.tenant,
-                        adapter_id=adapter.id,
-                        residency=adapter.id,
-                    )
-                    result = replace(result, object_id=str(getattr(stored, "object_id", stored)))
             result = _finalise(result)
 
             # Independent result verification: the receipt must bind more
@@ -535,6 +526,21 @@ class RuntimeDaemon:
                         f"{verify_report.get('detail', 'unspecified')}"
                     ),
                 )
+
+            # The adapter executed the operation, but its id is not a memory
+            # allocation receipt. Returned Python output is host-resident; do
+            # not claim device residency or publish failed/unverified output
+            # as a successful object handle. Real device transfers are separate.
+            if result.status == "ok" and w.kind in {WorkloadKind.FOLD, WorkloadKind.UNFOLD}:
+                stored = self.memory.store(
+                    result.output,
+                    tenant=w.tenant,
+                    adapter_id=adapter.id,
+                    residency="host",
+                    metadata={"execution_adapter_id": adapter.id,
+                              "memory_residency_basis": "returned_host_output"},
+                )
+                result = replace(result, object_id=str(getattr(stored, "object_id", stored)))
 
             # Build portable package + receipt
             pkg = PortablePackage(

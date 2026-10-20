@@ -1,0 +1,355 @@
+FFFF.......FFF.                                                          [100%]
+=================================== FAILURES ===================================
+____________ test_real_runtime_fold_unfold_returns_host_handles[a] _____________
+
+daemon = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7fa1bc1ef620>
+tenant = 'a'
+
+    @pytest.mark.parametrize('tenant',['a','a/b','a?b','../../outside'])
+    def test_real_runtime_fold_unfold_returns_host_handles(daemon,tenant):
+        payload=b'enterprise caller compatibility'
+>       folded=daemon.submit(req('fold','fold',tenant=tenant,input={'payload_b64':base64.b64encode(payload).decode()}))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_chronus_memory_caller_compat.py:27: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+chronus/virtual_igpu/runtime.py:505: in submit
+    stored = self.memory.store(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <chronus.virtual_igpu.memory.VirtualMemoryPlane object at 0x7fa1ba5d4050>
+payload = {'folded_b64': 'HwAAAGVudGVycHJpc2UgY2FsbGVyIGNvbXBhdGliaWxpdHk=', 'logical_bytes': 31, 'folded_bytes': 35, 'engine': 'length_prefix_identity'}
+tenant = 'a', tenant_id = None, adapter_id = 'cpu-emulator', metadata = None
+representation_version = 'v1', object_id = None, residency = 'cpu-emulator'
+kind = None, identity = None, representation = None, _extra = {}
+
+    def store(
+        self,
+        payload: Any = None,
+        *,
+        tenant: str | None = None,
+        tenant_id: str | None = None,
+        adapter_id: str | None = None,
+        metadata: Mapping[str, Any] | None = None,
+        representation_version: str = "v1",
+        object_id: str | None = None,
+        residency: str = "host",
+        # Legacy elevation test signature
+        kind: str | None = None,
+        identity: Mapping[str, Any] | None = None,
+        representation: Mapping[str, Any] | None = None,
+        **_extra: Any,
+    ) -> Any:
+        """Store payload; return object_id (str) or legacy SimpleNamespace with fields."""
+        with self._lock:
+            tenant_s = str(tenant or tenant_id or "default")
+            if residency not in {"host", "folded"}:
+>               raise NotImplementedError("physical device residency requires a bound transfer adapter")
+E               NotImplementedError: physical device residency requires a bound transfer adapter
+
+chronus/virtual_igpu/memory.py:225: NotImplementedError
+___________ test_real_runtime_fold_unfold_returns_host_handles[a/b] ____________
+
+daemon = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7fa1ba9c5950>
+tenant = 'a/b'
+
+    @pytest.mark.parametrize('tenant',['a','a/b','a?b','../../outside'])
+    def test_real_runtime_fold_unfold_returns_host_handles(daemon,tenant):
+        payload=b'enterprise caller compatibility'
+>       folded=daemon.submit(req('fold','fold',tenant=tenant,input={'payload_b64':base64.b64encode(payload).decode()}))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_chronus_memory_caller_compat.py:27: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+chronus/virtual_igpu/runtime.py:505: in submit
+    stored = self.memory.store(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <chronus.virtual_igpu.memory.VirtualMemoryPlane object at 0x7fa1ba9c5a90>
+payload = {'folded_b64': 'HwAAAGVudGVycHJpc2UgY2FsbGVyIGNvbXBhdGliaWxpdHk=', 'logical_bytes': 31, 'folded_bytes': 35, 'engine': 'length_prefix_identity'}
+tenant = 'a/b', tenant_id = None, adapter_id = 'cpu-emulator', metadata = None
+representation_version = 'v1', object_id = None, residency = 'cpu-emulator'
+kind = None, identity = None, representation = None, _extra = {}
+
+    def store(
+        self,
+        payload: Any = None,
+        *,
+        tenant: str | None = None,
+        tenant_id: str | None = None,
+        adapter_id: str | None = None,
+        metadata: Mapping[str, Any] | None = None,
+        representation_version: str = "v1",
+        object_id: str | None = None,
+        residency: str = "host",
+        # Legacy elevation test signature
+        kind: str | None = None,
+        identity: Mapping[str, Any] | None = None,
+        representation: Mapping[str, Any] | None = None,
+        **_extra: Any,
+    ) -> Any:
+        """Store payload; return object_id (str) or legacy SimpleNamespace with fields."""
+        with self._lock:
+            tenant_s = str(tenant or tenant_id or "default")
+            if residency not in {"host", "folded"}:
+>               raise NotImplementedError("physical device residency requires a bound transfer adapter")
+E               NotImplementedError: physical device residency requires a bound transfer adapter
+
+chronus/virtual_igpu/memory.py:225: NotImplementedError
+___________ test_real_runtime_fold_unfold_returns_host_handles[a?b] ____________
+
+daemon = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7fa1ba9c6850>
+tenant = 'a?b'
+
+    @pytest.mark.parametrize('tenant',['a','a/b','a?b','../../outside'])
+    def test_real_runtime_fold_unfold_returns_host_handles(daemon,tenant):
+        payload=b'enterprise caller compatibility'
+>       folded=daemon.submit(req('fold','fold',tenant=tenant,input={'payload_b64':base64.b64encode(payload).decode()}))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_chronus_memory_caller_compat.py:27: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+chronus/virtual_igpu/runtime.py:505: in submit
+    stored = self.memory.store(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <chronus.virtual_igpu.memory.VirtualMemoryPlane object at 0x7fa1ba9c6990>
+payload = {'folded_b64': 'HwAAAGVudGVycHJpc2UgY2FsbGVyIGNvbXBhdGliaWxpdHk=', 'logical_bytes': 31, 'folded_bytes': 35, 'engine': 'length_prefix_identity'}
+tenant = 'a?b', tenant_id = None, adapter_id = 'cpu-emulator', metadata = None
+representation_version = 'v1', object_id = None, residency = 'cpu-emulator'
+kind = None, identity = None, representation = None, _extra = {}
+
+    def store(
+        self,
+        payload: Any = None,
+        *,
+        tenant: str | None = None,
+        tenant_id: str | None = None,
+        adapter_id: str | None = None,
+        metadata: Mapping[str, Any] | None = None,
+        representation_version: str = "v1",
+        object_id: str | None = None,
+        residency: str = "host",
+        # Legacy elevation test signature
+        kind: str | None = None,
+        identity: Mapping[str, Any] | None = None,
+        representation: Mapping[str, Any] | None = None,
+        **_extra: Any,
+    ) -> Any:
+        """Store payload; return object_id (str) or legacy SimpleNamespace with fields."""
+        with self._lock:
+            tenant_s = str(tenant or tenant_id or "default")
+            if residency not in {"host", "folded"}:
+>               raise NotImplementedError("physical device residency requires a bound transfer adapter")
+E               NotImplementedError: physical device residency requires a bound transfer adapter
+
+chronus/virtual_igpu/memory.py:225: NotImplementedError
+______ test_real_runtime_fold_unfold_returns_host_handles[../../outside] _______
+
+daemon = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7fa1ba9c7250>
+tenant = '../../outside'
+
+    @pytest.mark.parametrize('tenant',['a','a/b','a?b','../../outside'])
+    def test_real_runtime_fold_unfold_returns_host_handles(daemon,tenant):
+        payload=b'enterprise caller compatibility'
+>       folded=daemon.submit(req('fold','fold',tenant=tenant,input={'payload_b64':base64.b64encode(payload).decode()}))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_chronus_memory_caller_compat.py:27: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+chronus/virtual_igpu/runtime.py:505: in submit
+    stored = self.memory.store(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <chronus.virtual_igpu.memory.VirtualMemoryPlane object at 0x7fa1ba9cf230>
+payload = {'folded_b64': 'HwAAAGVudGVycHJpc2UgY2FsbGVyIGNvbXBhdGliaWxpdHk=', 'logical_bytes': 31, 'folded_bytes': 35, 'engine': 'length_prefix_identity'}
+tenant = '../../outside', tenant_id = None, adapter_id = 'cpu-emulator'
+metadata = None, representation_version = 'v1', object_id = None
+residency = 'cpu-emulator', kind = None, identity = None, representation = None
+_extra = {}
+
+    def store(
+        self,
+        payload: Any = None,
+        *,
+        tenant: str | None = None,
+        tenant_id: str | None = None,
+        adapter_id: str | None = None,
+        metadata: Mapping[str, Any] | None = None,
+        representation_version: str = "v1",
+        object_id: str | None = None,
+        residency: str = "host",
+        # Legacy elevation test signature
+        kind: str | None = None,
+        identity: Mapping[str, Any] | None = None,
+        representation: Mapping[str, Any] | None = None,
+        **_extra: Any,
+    ) -> Any:
+        """Store payload; return object_id (str) or legacy SimpleNamespace with fields."""
+        with self._lock:
+            tenant_s = str(tenant or tenant_id or "default")
+            if residency not in {"host", "folded"}:
+>               raise NotImplementedError("physical device residency requires a bound transfer adapter")
+E               NotImplementedError: physical device residency requires a bound transfer adapter
+
+chronus/virtual_igpu/memory.py:225: NotImplementedError
+___________________ test_failed_fold_does_not_publish_handle ___________________
+
+tmp_path = PosixPath('/data/closeout-followup/tmp/before/test_failed_fold_does_not_publ0')
+
+    def test_failed_fold_does_not_publish_handle(tmp_path):
+        class Failed(CPUEmulatorAdapter):
+            def execute(self,w):
+                return self._result(w,{'error':'synthetic fail'},time.time_ns(),status='failed',error='synthetic fail')
+        d=RuntimeDaemon(adapters=[Failed()],store_dir=tmp_path/'r')
+>       out=d.submit(req('fold'))
+            ^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_chronus_memory_caller_compat.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+chronus/virtual_igpu/runtime.py:505: in submit
+    stored = self.memory.store(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <chronus.virtual_igpu.memory.VirtualMemoryPlane object at 0x7fa1ba572430>
+payload = {'error': 'synthetic fail'}, tenant = 'default', tenant_id = None
+adapter_id = 'cpu-emulator', metadata = None, representation_version = 'v1'
+object_id = None, residency = 'cpu-emulator', kind = None, identity = None
+representation = None, _extra = {}
+
+    def store(
+        self,
+        payload: Any = None,
+        *,
+        tenant: str | None = None,
+        tenant_id: str | None = None,
+        adapter_id: str | None = None,
+        metadata: Mapping[str, Any] | None = None,
+        representation_version: str = "v1",
+        object_id: str | None = None,
+        residency: str = "host",
+        # Legacy elevation test signature
+        kind: str | None = None,
+        identity: Mapping[str, Any] | None = None,
+        representation: Mapping[str, Any] | None = None,
+        **_extra: Any,
+    ) -> Any:
+        """Store payload; return object_id (str) or legacy SimpleNamespace with fields."""
+        with self._lock:
+            tenant_s = str(tenant or tenant_id or "default")
+            if residency not in {"host", "folded"}:
+>               raise NotImplementedError("physical device residency requires a bound transfer adapter")
+E               NotImplementedError: physical device residency requires a bound transfer adapter
+
+chronus/virtual_igpu/memory.py:225: NotImplementedError
+______________ test_verification_mismatch_does_not_publish_handle ______________
+
+tmp_path = PosixPath('/data/closeout-followup/tmp/before/test_verification_mismatch_doe0')
+
+    def test_verification_mismatch_does_not_publish_handle(tmp_path):
+        class Liar(CPUEmulatorAdapter):
+            def execute(self,w):
+                return self._result(w,{'folded_b64':'AAAAAA==','logical_bytes':0,'folded_bytes':4,'engine':'length_prefix_identity'},time.time_ns())
+        d=RuntimeDaemon(adapters=[Liar()],store_dir=tmp_path/'r')
+>       out=d.submit(req('fold',input={'payload_utf8':'must not disappear'}))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_chronus_memory_caller_compat.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+chronus/virtual_igpu/runtime.py:505: in submit
+    stored = self.memory.store(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <chronus.virtual_igpu.memory.VirtualMemoryPlane object at 0x7fa1ba53f110>
+payload = {'folded_b64': 'AAAAAA==', 'logical_bytes': 0, 'folded_bytes': 4, 'engine': 'length_prefix_identity'}
+tenant = 'default', tenant_id = None, adapter_id = 'cpu-emulator'
+metadata = None, representation_version = 'v1', object_id = None
+residency = 'cpu-emulator', kind = None, identity = None, representation = None
+_extra = {}
+
+    def store(
+        self,
+        payload: Any = None,
+        *,
+        tenant: str | None = None,
+        tenant_id: str | None = None,
+        adapter_id: str | None = None,
+        metadata: Mapping[str, Any] | None = None,
+        representation_version: str = "v1",
+        object_id: str | None = None,
+        residency: str = "host",
+        # Legacy elevation test signature
+        kind: str | None = None,
+        identity: Mapping[str, Any] | None = None,
+        representation: Mapping[str, Any] | None = None,
+        **_extra: Any,
+    ) -> Any:
+        """Store payload; return object_id (str) or legacy SimpleNamespace with fields."""
+        with self._lock:
+            tenant_s = str(tenant or tenant_id or "default")
+            if residency not in {"host", "folded"}:
+>               raise NotImplementedError("physical device residency requires a bound transfer adapter")
+E               NotImplementedError: physical device residency requires a bound transfer adapter
+
+chronus/virtual_igpu/memory.py:225: NotImplementedError
+__________________ test_timeout_fold_does_not_publish_handle ___________________
+
+tmp_path = PosixPath('/data/closeout-followup/tmp/before/test_timeout_fold_does_not_pub0')
+
+    def test_timeout_fold_does_not_publish_handle(tmp_path):
+        class Slow(CPUEmulatorAdapter):
+            gate=threading.Event()
+            def execute(self,w):
+                self.gate.wait(2); return super().execute(w)
+        adapter=Slow();d=RuntimeDaemon(adapters=[adapter],store_dir=tmp_path/'r')
+        try:
+>           out=d.submit(req('fold',input={'payload_utf8':'timeout'},deadline_ms=20))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_chronus_memory_caller_compat.py:97: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+chronus/virtual_igpu/runtime.py:505: in submit
+    stored = self.memory.store(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <chronus.virtual_igpu.memory.VirtualMemoryPlane object at 0x7fa1ba5d0f50>
+payload = {'timed_out': True, 'deadline_ms': 20, 'execution_state': 'TIMED_OUT_BUT_EXECUTION_DRAINING'}
+tenant = 'default', tenant_id = None, adapter_id = 'cpu-emulator'
+metadata = None, representation_version = 'v1', object_id = None
+residency = 'cpu-emulator', kind = None, identity = None, representation = None
+_extra = {}
+
+    def store(
+        self,
+        payload: Any = None,
+        *,
+        tenant: str | None = None,
+        tenant_id: str | None = None,
+        adapter_id: str | None = None,
+        metadata: Mapping[str, Any] | None = None,
+        representation_version: str = "v1",
+        object_id: str | None = None,
+        residency: str = "host",
+        # Legacy elevation test signature
+        kind: str | None = None,
+        identity: Mapping[str, Any] | None = None,
+        representation: Mapping[str, Any] | None = None,
+        **_extra: Any,
+    ) -> Any:
+        """Store payload; return object_id (str) or legacy SimpleNamespace with fields."""
+        with self._lock:
+            tenant_s = str(tenant or tenant_id or "default")
+            if residency not in {"host", "folded"}:
+>               raise NotImplementedError("physical device residency requires a bound transfer adapter")
+E               NotImplementedError: physical device residency requires a bound transfer adapter
+
+chronus/virtual_igpu/memory.py:225: NotImplementedError
+=========================== short test summary info ============================
+FAILED tests/test_chronus_memory_caller_compat.py::test_real_runtime_fold_unfold_returns_host_handles[a]
+FAILED tests/test_chronus_memory_caller_compat.py::test_real_runtime_fold_unfold_returns_host_handles[a/b]
+FAILED tests/test_chronus_memory_caller_compat.py::test_real_runtime_fold_unfold_returns_host_handles[a?b]
+FAILED tests/test_chronus_memory_caller_compat.py::test_real_runtime_fold_unfold_returns_host_handles[../../outside]
+FAILED tests/test_chronus_memory_caller_compat.py::test_failed_fold_does_not_publish_handle
+FAILED tests/test_chronus_memory_caller_compat.py::test_verification_mismatch_does_not_publish_handle
+FAILED tests/test_chronus_memory_caller_compat.py::test_timeout_fold_does_not_publish_handle
+7 failed, 8 passed in 0.47s
