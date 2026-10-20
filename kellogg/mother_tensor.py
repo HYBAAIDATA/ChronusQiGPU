@@ -16,11 +16,13 @@ Constitutional Contract:
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import math
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from numbers import Real
 from typing import Any, Mapping, Sequence, Tuple
 
 import numpy as np
@@ -81,9 +83,80 @@ class KelloggMotherTensor:
             raise ValueError(f"Futures dimension {len(self.futures)} exceeds bound N={MAX_FUTURES}")
         if len(self.futures) != len(self.future_probabilities):
             raise ValueError("Futures and probabilities must match in length")
-        prob_sum = sum(self.future_probabilities)
+        if any(not isinstance(name, str) or not name.strip() for name in self.futures):
+            raise ValueError("Future names must be nonempty strings")
+        if len(set(self.futures)) != len(self.futures):
+            raise ValueError("Future names must be unique")
+        if any(
+            isinstance(value, bool) or not isinstance(value, Real)
+            or not math.isfinite(value) or not 0.0 <= value <= 1.0
+            for value in self.future_probabilities
+        ):
+            raise ValueError("Probabilities must be finite real numbers in [0, 1]")
+        prob_sum = math.fsum(self.future_probabilities)
         if abs(prob_sum - 1.0) > 1e-6:
             raise ValueError(f"Probabilities must normalize to 1.0, got {prob_sum}")
+
+    def _validate_partition_for_plan(self) -> None:
+        """Bind the supplied certificate to the actual chunks, not cached flags.
+
+        This is structural admission only. An unkeyed certificate and the
+        builder's sample recheck are neither a live-job seal nor mining proof.
+        """
+        if type(self.seed) is not int:
+            raise ValueError("Partition seed must be an integer")
+        if not isinstance(self.proof, PartitionProof600) or not self.proof.verify():
+            raise ValueError("A valid 600-lane partition certificate is required")
+        if any(not isinstance(chunk, EstateChunk600) for chunk in self.chunks):
+            raise ValueError("Typed 600-lane chunks are required")
+        base = self.chunks[0].base_step
+        if type(base) is not int or not 0 <= base <= 0xFFFFFFFF:
+            raise ValueError("Partition base must be uint32")
+        if any(type(chunk.size) is not int or chunk.size < 0 for chunk in self.chunks):
+            raise ValueError("Chunk sizes must be nonnegative integers")
+        window = self.total_nonces
+        if window <= 0 or base + window > 1 << 32:
+            raise ValueError("Executable partition must be nonempty and inside uint32")
+        proof = self.proof
+        if (
+            type(proof.total_window) is not int or proof.total_window != window
+            or type(proof.total_lanes) is not int or proof.total_lanes != CANONICAL_LANES
+            or type(proof.order_seed) is not int or proof.order_seed != self.seed
+            or proof.bijection_fn != "hendrix_grover_600_partition"
+            or proof.is_complete is not True or proof.is_disjoint is not True
+            or proof.recheck_passed is not True
+            or type(proof.recheck_count) is not int
+            or proof.recheck_count != min(10, window)
+        ):
+            raise ValueError("Partition certificate does not match the admitted state")
+        vertices = hendrix_grover_order(self.seed)
+        rays = embed_11d_exact(dodeca_overlay_icosa())
+        cursor = base
+        quotient, remainder = divmod(window, CANONICAL_LANES)
+        for index, chunk in enumerate(self.chunks):
+            if (
+                type(chunk.lane_id) is not int or chunk.lane_id != index
+                or type(chunk.vertex_id) is not int or chunk.vertex_id != vertices[index]
+                or type(chunk.base_step) is not int or chunk.base_step != cursor
+                or chunk.size != quotient + (index < remainder)
+                or type(chunk.stride) is not int or chunk.stride <= 0
+                or not isinstance(chunk.nonces, tuple)
+                or any(type(nonce) is not int for nonce in chunk.nonces)
+                or not chunk.verify_bijection()
+                or chunk.ray_11d != rays[chunk.vertex_id]
+            ):
+                raise ValueError(f"Invalid canonical partition chunk at lane {index}")
+            cursor += chunk.size
+        # Contiguous, disjoint, individually bijective chunks imply this union.
+        # Stream the canonical coverage encoding in bounded buffers, not a
+        # second window-sized list/set. The builder uses the same ASCII format.
+        digest = hashlib.sha256()
+        for offset in range(base, base + window, 4096):
+            if offset != base:
+                digest.update(b",")
+            digest.update(",".join(map(str, range(offset, min(offset + 4096, base + window)))).encode("ascii"))
+        if digest.hexdigest() != proof.coverage_hash:
+            raise ValueError("Partition coverage digest does not bind the supplied chunks")
 
     @property
     def lanes(self) -> int:
@@ -199,29 +272,42 @@ class KelloggMotherTensor:
         extranonce2: str = "00000000",
         executor_route: str = "chronus_batch",
     ) -> SearchPlan:
-        """Collapse mother-tensor state to an immutable, fully verified SearchPlan."""
-        if not self.yang_mills_enforced:
-            self.enforce_gauge_symmetry()
-        if not self.contraction_evidence:
-            self.contract()
+        """Issue a structurally admitted plan; never a device or mining proof.
 
-        base_step = self.chunks[0].base_step if self.chunks else 0
-        window = self.total_nonces
+        Revalidate a snapshot on every issuance: this dataclass is mutable, so
+        caller-supplied/cached flags cannot authorise a later changed state.
+        PYTHIA live-job admission and independent SHA256d remain downstream.
+        """
+        snapshot = replace(
+            self, chunks=tuple(self.chunks), futures=tuple(self.futures),
+            future_probabilities=tuple(self.future_probabilities),
+            yang_mills_enforced=False, contraction_evidence={},
+        )
+        snapshot._validate_partition_for_plan()
+        snapshot.enforce_gauge_symmetry()
+        evidence = snapshot.contract()
+        if evidence.get("contraction_verified") is not True:
+            raise ArithmeticError("Mother-tensor contraction failed required invariants")
+        self.yang_mills_enforced = snapshot.yang_mills_enforced
+        self.contraction_evidence = copy.deepcopy(evidence)
+
+        base_step = snapshot.chunks[0].base_step
+        window = snapshot.total_nonces
 
         evidence_refs: dict[str, Any] = {
             "kellogg_mother_tensor_600": True,
-            "lanes": self.lanes,
-            "futures_count": len(self.futures),
-            "futures": list(self.futures),
-            "future_probabilities": list(self.future_probabilities),
-            "ansatz_version": self.ansatz.version,
-            "shape": list(self.shape),
-            "yang_mills_gauge": self.yang_mills_enforced,
-            "contraction": self.contraction_evidence,
+            "lanes": snapshot.lanes,
+            "futures_count": len(snapshot.futures),
+            "futures": list(snapshot.futures),
+            "future_probabilities": list(snapshot.future_probabilities),
+            "ansatz_version": snapshot.ansatz.version,
+            "shape": list(snapshot.shape),
+            "yang_mills_gauge": snapshot.yang_mills_enforced,
+            "contraction": snapshot.contraction_evidence,
         }
 
-        if self.proof is not None:
-            evidence_refs["partition_proof_600"] = self.proof.as_dict()
+        if snapshot.proof is not None:
+            evidence_refs["partition_proof_600"] = snapshot.proof.as_dict()
 
         route = ExecutionRoute(executor_route)
 
@@ -234,9 +320,10 @@ class KelloggMotherTensor:
             base_step=base_step,
             window=window,
             extranonce2=extranonce2,
+            # M32 compatibility faces, not the 600 logical partition owners.
             lane_order=tuple(range(32)),
             preferred_face=0,
-            dispatch_breadth=min(32, self.lanes),
+            dispatch_breadth=min(32, snapshot.lanes),
             executor_route=route,
             evidence_refs=evidence_refs,
             created_at=time.monotonic(),
