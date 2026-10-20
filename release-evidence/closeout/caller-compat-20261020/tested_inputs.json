@@ -1,0 +1,159 @@
+{
+  "parent_candidate_commit": "7a2e749ef5f4c62299fed14eaac2ebf5e6927bde",
+  "full_checkout": false,
+  "source_identity_ROOT": "UNAVAILABLE: exported source subset, not a Git checkout",
+  "python": "3.13.14",
+  "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+  "collected_test_paths": [
+    "tests/test_journal_closeout_recovery.py",
+    "tests/test_memory_closeout_boundaries.py",
+    "tests/test_closeout_runner_contract.py",
+    "tests/test_chronus_memory_caller_compat.py"
+  ],
+  "scope_notes": [
+    "Genuine chronus package initializers, runtime, memory, client and wire imported.",
+    "Optional aethel.encoding absent: CPU fold/unfold uses length_prefix_identity fallback, not enterprise PULVINI folding.",
+    "Loopback HTTP server is a local test instance, not deployment acceptance.",
+    "No physical device adapter, mining pool, Arena/v17, custody crash matrix or installed wheel qualification.",
+    "Three other inspected original test modules present in export were not collected.",
+    "Negative control uses unchanged parent runtime with PR123 memory and identical new test module."
+  ],
+  "files": [
+    {
+      "path": "aethel/enterprise/journal.py",
+      "sha256": "fa069f2467f4f2f41c1a061443913f622f1627b81b28ed6bd3e8176f33e116fc",
+      "git_blob": "caae4136baa01bd096d6d020f0a9506d3b646088",
+      "role": "runtime_or_runner_input"
+    },
+    {
+      "path": "chronus/__init__.py",
+      "sha256": "539f5876a1f588d7657740d7f2aa85e85ff3edee96a6b40c91b0f9dba609a4ca",
+      "git_blob": "36aedf3b04e535847341c65b6db7b8f4f6700345",
+      "role": "runtime_or_runner_input",
+      "pinned_source_git_blob": "36aedf3b04e535847341c65b6db7b8f4f6700345"
+    },
+    {
+      "path": "chronus/virtual_igpu/__init__.py",
+      "sha256": "a7eb47168da9c6458b660a3827409a1414918811d5f476cb662d0f81ade53f9e",
+      "git_blob": "02665fb09c62150df5c0c7c0b152a1c719d28b56",
+      "role": "runtime_or_runner_input",
+      "pinned_source_git_blob": "02665fb09c62150df5c0c7c0b152a1c719d28b56"
+    },
+    {
+      "path": "chronus/virtual_igpu/abi.py",
+      "sha256": "4e7076a0a690501384dc087fe9dfb67a3d5cb5b5ad067361ac15572d85c143ff",
+      "git_blob": "342ac568200095d7d17104e86fc58ff89b2be277",
+      "role": "runtime_or_runner_input",
+      "pinned_source_git_blob": "342ac568200095d7d17104e86fc58ff89b2be277"
+    },
+    {
+      "path": "chronus/virtual_igpu/adapters.py",
+      "sha256": "14c1cc22ac471f4faa689c0bc10e0802c0eb30ba7b2a5f41a0e2c5e0bd44bf4e",
+      "git_blob": "8418dc9909c01d65508a170cae0bf7101a7c315e",
+      "role": "runtime_or_runner_input",
+      "pinned_source_git_blob": "8418dc9909c01d65508a170cae0bf7101a7c315e"
+    },
+    {
+      "path": "chronus/virtual_igpu/attestation.py",
+      "sha256": "7de2291f774dddb3006bd900869f03da96f2a6b9f43c08e030e70b45302da73b",
+      "git_blob": "7e81517acf21365338436791621cfff8da3ad2c6",
+      "role": "runtime_or_runner_input",
+      "pinned_source_git_blob": "7e81517acf21365338436791621cfff8da3ad2c6"
+    },
+    {
+      "path": "chronus/virtual_igpu/client.py",
+      "sha256": "de827882df87b5d3d97c3451d9e9016cf366f1f9e4ebc853e47aa52473c70f3b",
+      "git_blob": "f67d3d7bf5aa522cbd71d51e96578f1448445119",
+      "role": "runtime_or_runner_input",
+      "pinned_source_git_blob": "f67d3d7bf5aa522cbd71d51e96578f1448445119"
+    },
+    {
+      "path": "chronus/virtual_igpu/evidence.py",
+      "sha256": "2ea4abf7e332ebc70f199721e0891aa2118e828c071121f0770578c5ff8d0479",
+      "git_blob": "070e9eada2176eb26d2056572bbfcb594c31b200",
+      "role": "runtime_or_runner_input",
+      "pinned_source_git_blob": "070e9eada2176eb26d2056572bbfcb594c31b200"
+    },
+    {
+      "path": "chronus/virtual_igpu/memory.py",
+      "sha256": "b2aab0c514c0be82ffe8d3c090a5765b117d7301c11f7e40d816208c43319131",
+      "git_blob": "9167f36eac57651eeaae30f8d0ef81ba4e55b388",
+      "role": "runtime_or_runner_input",
+      "pinned_source_git_blob": "9167f36eac57651eeaae30f8d0ef81ba4e55b388"
+    },
+    {
+      "path": "chronus/virtual_igpu/runtime.py",
+      "sha256": "89d7d23d433b17cf7bc4b00ea22697f646b2148abab7c4046e44241df2f8bae8",
+      "git_blob": "c9c0ae9716a1feb58d5c96118ce019500782ddc1",
+      "role": "runtime_or_runner_input",
+      "pinned_source_git_blob": "f3cdeec42d296a8939b937fadce94a478ffab745",
+      "modified_for_this_tranche": true
+    },
+    {
+      "path": "chronus/virtual_igpu/verifier.py",
+      "sha256": "800ab941eea8933a126e91f17d79670878f86aade2a4fbc7d149a7dd5a4f4a14",
+      "git_blob": "325645008e43af01871f9bf777f5fb96daef189d",
+      "role": "runtime_or_runner_input",
+      "pinned_source_git_blob": "325645008e43af01871f9bf777f5fb96daef189d"
+    },
+    {
+      "path": "chronus/virtual_igpu/wire.py",
+      "sha256": "938c48d5b12045c8152b9cdd7fbcbc0dcb2c364a15a5e8bd3e33bb8464ba7bf3",
+      "git_blob": "40d23f558dbb373b7be9e3b47da2c244aa85226a",
+      "role": "runtime_or_runner_input",
+      "pinned_source_git_blob": "40d23f558dbb373b7be9e3b47da2c244aa85226a"
+    },
+    {
+      "path": "scripts/run_closeout_qualification.py",
+      "sha256": "53e27eb4e8cd388116e83c66c49c51eefca50c3a831483a4f7cc804abdcd6167",
+      "git_blob": "2aab04f5a47033923725c1cdf1ba0b6fce2855ae",
+      "role": "runtime_or_runner_input"
+    },
+    {
+      "path": "tests/test_chronus_memory_caller_compat.py",
+      "sha256": "22850e2561cc3462b8c0d906694546dcc3feb0c2badc0256232728d366abbcb0",
+      "git_blob": "c748b8c14e849881a97ef4397f9458c07b935bd5",
+      "role": "collected_test",
+      "new_test_for_this_tranche": true
+    },
+    {
+      "path": "tests/test_chronus_production_readiness_fixes.py",
+      "sha256": "139b390813b2face93809f616a107edcd341dd64d98e5847cbcecc22fe4d84f8",
+      "git_blob": "dd44d48aaf910ec79a865ec60a7344bb5cb251e7",
+      "role": "inspected_not_collected",
+      "pinned_source_git_blob": "dd44d48aaf910ec79a865ec60a7344bb5cb251e7"
+    },
+    {
+      "path": "tests/test_chronus_vigpu_fail_closed_contract.py",
+      "sha256": "026d86e7ab6d2f792ab1bb2b7fc37900a45aed072e68cd0482a01372eb9b6f59",
+      "git_blob": "aa34108308163f238b79e2cdfa6b75b2192c48d7",
+      "role": "inspected_not_collected",
+      "pinned_source_git_blob": "aa34108308163f238b79e2cdfa6b75b2192c48d7"
+    },
+    {
+      "path": "tests/test_closeout_runner_contract.py",
+      "sha256": "1e3116c75f646e62dd9cf8a1f40253401ea0bd5445b0188c54f7770d22638544",
+      "git_blob": "c74d01c4704f7fe3d0136e174b7efc46ae1481df",
+      "role": "collected_test"
+    },
+    {
+      "path": "tests/test_journal_closeout_recovery.py",
+      "sha256": "7bc8a1279db3bdf40809a4d8a81f9a3dadd3289148f132f5bc4c7e277a640c28",
+      "git_blob": "b5d719251b1e10c314db4d6a74dd8c9748828856",
+      "role": "collected_test"
+    },
+    {
+      "path": "tests/test_memory_closeout_boundaries.py",
+      "sha256": "9fe26d1fc9687ea320511fc7565b6c45de8d7076db5f3bbf3b209a2daa7dc2c4",
+      "git_blob": "ea5d76a38570bdd53ee233e6e309b634e638827d",
+      "role": "collected_test"
+    },
+    {
+      "path": "tests/test_ovid_theseus_chronus_gap_closure.py",
+      "sha256": "73b0c1cd3abd735116629b8e820ce4001ef84e4d50b7d5d634c71dda87ff36ea",
+      "git_blob": "49c85d2f8482c1dc3dd08cdb7ef7ba56b971a81e",
+      "role": "inspected_not_collected",
+      "pinned_source_git_blob": "49c85d2f8482c1dc3dd08cdb7ef7ba56b971a81e"
+    }
+  ]
+}

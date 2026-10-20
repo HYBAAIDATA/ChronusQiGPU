@@ -31,7 +31,7 @@
   "tasks": {
     "T0.1": {
       "status": "BLOCKED",
-      "evidence_or_gap": "No complete clean authenticated checkout. No tag created."
+      "evidence_or_gap": "No complete clean authenticated checkout; pinned MCP source retrieval used without asking owner to upload. No tag created."
     },
     "T0.2": {
       "status": "BLOCKED",
@@ -55,7 +55,7 @@
     },
     "T1.4": {
       "status": "BLOCKED",
-      "evidence_or_gap": "Arena 100 not run; 64 new tests are NOT the arena."
+      "evidence_or_gap": "Arena 100 not run; combined 85 scoped tests are NOT the arena."
     },
     "T1.5": {
       "status": "BLOCKED",
@@ -99,7 +99,7 @@
     },
     "T3.7": {
       "status": "PARTIAL_PASS",
-      "evidence_or_gap": "22 memory cases include forged handles, immutable content, paths, tenants, restart; full caller/auth compatibility not qualified."
+      "evidence_or_gap": "22 memory cases plus 21 caller cases pass (runtime/embedded client/loopback HTTP); complete external caller, app/auth, installed package and physical adapter qualification remains open."
     },
     "T3.8": {
       "status": "PARTIAL",
@@ -179,5 +179,26 @@
       "owner": "UNASSIGNED",
       "approval": "PENDING"
     }
+  },
+  "caller_followup": {
+    "parent_commit": "7a2e749ef5f4c62299fed14eaac2ebf5e6927bde",
+    "new_cases": 21,
+    "combined_normal_passed": 85,
+    "combined_optimized_passed": 85,
+    "negative_control": {
+      "failed": 12,
+      "passed": 9
+    },
+    "scope": "local runtime / embedded client / loopback HTTP, CPU/software only",
+    "report": "closeout/CALLER_COMPATIBILITY_20261020.md",
+    "full_caller_qualification": false,
+    "evidence_directory": "release-evidence/closeout/caller-compat-20261020/"
+  },
+  "original_review": {
+    "path": "docs/reviews/OVID_THESEUS_CHRONUS_PRODUCTION_20261004.md",
+    "findings": "R01-R12",
+    "class": "static review",
+    "retest_map": "closeout/ORIGINAL_REVIEW_RETEST_MAP_20261020.md",
+    "historical_ownership_labels_superseded_by_later_user_product_split": true
   }
 }
