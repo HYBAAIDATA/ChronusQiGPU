@@ -84,3 +84,8 @@ Before promotion: full A; source-complete C and TURING; domain-specific F plus n
 [Raw logs, JUnit, source hashes and machine report](../release-evidence/toe-closeout-20261020/)
 
 `candidate_sha256.json` binds proposed changed files. `source_manifest.json` binds the executed export's selected PY/TS/JSON/config inputs before/after; generated results are separately hashed, not treated as immutable inputs. This is not a complete clean-ROOT attestation or a sampled mid-run monitor. `provenance.json` records environment and limitations. No ephemeral GitHub download credentials are included.
+
+
+## Additional research assessment — 2026-10-20
+
+[Research/capability assessment](toe/RESEARCH_CAPABILITY_ASSESSMENT_20261020.md): 124 additional research tests and 16 configuration/expansion/mining-advisory tests pass. These 140 distinct cases are separately recorded, not a full Gate A or Gate F promotion. Theseus was unavailable and durable restart was not exercised. Stream-ID normalization collision is demonstrated; reachability/impact needs review. See `release-evidence/toe-research-assessment-20261020/`. [Solution/vendor and repo strategy](strategy/HYBA_SOLUTION_VENDOR_MAP_20261020.md) identifies 18 selected comparable brands, not proven replacements. All existing release blockers remain.
