@@ -76,3 +76,35 @@ training/retraining remains trusted; see `SYSTEM_CONTRACT.md` for boundaries.
 `analyze` is descriptive state tomography via the existing TOE bridge, not a
 causal finding or action approval. Acting identity selection is performed by the
 trusted embedding host; it is not a login/credential-verification API.
+
+
+## Host-composed tenant entry point
+
+```python
+from toe.unified import TenantGateway
+
+gateway = TenantGateway()  # trusted host composition root; not a tenant RPC object
+gateway.provision("customer-a")
+gateway.grant("customer-a", "principal-42", "operator")
+
+# verified_subject must come from the host's successful authentication, never a
+# client-supplied actor name. The client may select only a tenant they belong to.
+verified_subject = "principal-42"  # stand-in for the host IdP's verified subject
+request = gateway.session(tenant_id="customer-a", verified_actor=verified_subject)
+result = request.call("ingest_rows", "approved-source", "events", [{"x": 1}])
+assert result.tenant_id == "customer-a"
+
+gateway.revoke("customer-a", verified_subject)
+# request.call("export_records") now raises AccessDenied.
+```
+
+The host controls `provision`, `grant`, `revoke` and `configure_connector`.
+`TenantSession.call` exposes only `TENANT_OPERATIONS`; connector credentials,
+`connections`, direct security objects and live registry/runtime handles are not
+returned. All results have `tenant_id`, `operation` and a detached `value`.
+Existing facade role policy still applies within that tenant. Sessions are host
+identity selections, not bearer/login credentials. Calls serialize per tenant;
+in-flight work may complete before revocation returns. A bare
+`UnifiedAnalyticsPlatform(tenant_id=...)` labels analysis receipts but does not
+supply membership enforcement. External authentication, durable isolation and
+production qualification remain the embedding deployment's responsibility.

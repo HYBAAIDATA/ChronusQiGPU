@@ -14,6 +14,8 @@ verify-unified:
 		tests/test_toe_unified_authority.py \
 		tests/test_toe_unified_atomic.py \
 		tests/test_toe_unified_promotion.py \
+		tests/test_toe_unified_tenancy.py \
+		tests/test_toe_unified_installed_gate.py \
 		tests/test_toe_unified_evidence_runner.py -q
 
 test: assurance-gates
