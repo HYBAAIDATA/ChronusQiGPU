@@ -15,6 +15,7 @@ export interface MiningDashboardAccess {
  */
 export async function miningDashboardAccess(
   fetchImpl: typeof fetch = fetch,
+  signal?: AbortSignal,
 ): Promise<MiningDashboardAccess> {
   const key = operatorKey();
   const principal = operatorPrincipal();
@@ -35,6 +36,7 @@ export async function miningDashboardAccess(
   try {
     const response = await fetchImpl(apiUrl("/api/v1/control/session"), {
       method: "GET",
+      signal,
       headers,
       cache: "no-store",
       credentials: "same-origin",
