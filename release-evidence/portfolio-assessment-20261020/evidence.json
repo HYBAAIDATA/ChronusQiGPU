@@ -1,0 +1,61 @@
+{
+  "source_sha": "2bc45bd4f9c45a29fea00aa1f6ed34222ed58f07",
+  "source_mode": "partial genuine MCP export; not git clone",
+  "root_entries": 178,
+  "capability_families": 26,
+  "declared_api_interfaces": 64,
+  "reserved_interfaces": 7,
+  "package_identities": 14,
+  "scaffolds": 13,
+  "planned": 1,
+  "catalog_entries": 1063,
+  "distinct_catalog_ids": 1063,
+  "raw_vendor_labels": 232,
+  "system_classes": 19,
+  "fresh_catalog_tests": 16,
+  "release_status": "HOLD",
+  "count_check": "Python plus SQLite DISTINCT; JUnit testcase parse",
+  "profile_disposition": "Catalog product mixed-type warning: retain all values as strings/identifiers, not numeric quantities; package sparse legacy fields intentionally optional; no row exclusions.",
+  "visual_plan": [
+    {
+      "question": "Capability-to-workflow-to-vendor relationships",
+      "disposition": "table",
+      "reason": "Categorical many-to-many source mapping; no common quantitative performance measure or ordering"
+    },
+    {
+      "question": "Different inventory grains",
+      "disposition": "prose",
+      "reason": "Counts are incompatible denominators, not a ranked comparison"
+    }
+  ],
+  "api_registry_embedded_baseline": "f50f2e97fb850f83dc68c2b0713d6fcfd75e53e8",
+  "publication_catalog_embedded_baseline": "4cb6f5d95785be4129bf6337bc2fecfedd329973",
+  "source_hashes": {
+    "UNIVERSAL_PRINCIPLE_MAP.md": "a3962d5b48e35e0780cdf44ccffa4d3510e35ed75f93e563927abbaf6ca55767",
+    "docs/INTELLIGENCE_CAPABILITY_OWNERSHIP.md": "8cca25442a41a97524b2c1a91960b7b3f457dbd4db39e4b30a6cd864e6fb277a",
+    "docs/ENTERPRISE_CAPABILITY_BRIDGE.md": "03958f03cb028555c10071ca10268b7e139d3c34ddc47f976dd5f9f768ad7806",
+    "packaging/publication_catalog.json": "543afbbc8744fcfb818934f2ceeb303cde2caa7754b9c0aaf0e2c7f586cd1d12",
+    "governance/api_registry.yaml": "abdef5b831e36ce6e287bb6cfd9b8428b8273a658b90150459930634fc7601d4",
+    "hyba_services/catalogue.py": "0759c554df2b0f79e2088d60db0480aee900844560ee09c98081a09a26fdeb62",
+    "reports/toe_unified_disposition.md": "ff9afc8c603800834083cb36587e9838c881546280b029b5bff4f3e3a8b59aa3",
+    "toe/unified/catalog.py": "62d654e4fed89eb3c827879465136d4c9f9433e90fadb9b19688675fc2a605e3",
+    "toe/unified/claims.py": "eb0fa688a8b893a37d1083f728ec1a515ea65f4e771c255bea587fa56d3f8bde"
+  },
+  "runtime": {
+    "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+    "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+    "command": "PYTHONPATH=/data/closeout-tools:. python -m pytest tests/test_toe_unified_catalog.py tests/test_toe_unified_connectors.py tests/test_toe_unified_claims.py -p no:cacheprovider --basetemp=/data/analysis/hyba-portfolio/pytest-catalog-final --junitxml=/data/analysis/hyba-portfolio/catalog-tests.xml -q",
+    "scope": "Partial MCP export contains prior candidate changes elsewhere; tested catalog and claims match pinned genuine source. No full-tree source identity asserted."
+  },
+  "tested_file_hashes": {
+    "toe/unified/catalog.py": "62d654e4fed89eb3c827879465136d4c9f9433e90fadb9b19688675fc2a605e3",
+    "toe/unified/claims.py": "eb0fa688a8b893a37d1083f728ec1a515ea65f4e771c255bea587fa56d3f8bde",
+    "toe/unified/connectors.py": "8c5955734222eb5dde33bf883b9135400ac12a746bb92aa9ba5227e4de1f85e0",
+    "reports/toe_unified_disposition.md": "ff9afc8c603800834083cb36587e9838c881546280b029b5bff4f3e3a8b59aa3",
+    "tests/test_toe_unified_catalog.py": "652719bb8302c6affc674b253a457617b76f5469ff3928ada6e1c612a1df1dad",
+    "tests/test_toe_unified_connectors.py": "1ead78892db502ff4b18b57043a6c2800d9f525cf034f3071a379dbc2485425c",
+    "tests/test_toe_unified_claims.py": "bf324f0faf750289e2259bbe5758c04e04524fc2e8bb18e40e90a23accf8c9df"
+  },
+  "documentation_branch_base": "4f71b5647e5cacd053e9a9d545ab5f26d38b4f34",
+  "pr124_current_status": "merged by pythiaphi at 2026-10-20T22:38:05Z; not merged by this assessment"
+}
