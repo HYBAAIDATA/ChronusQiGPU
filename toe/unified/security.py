@@ -8,7 +8,7 @@ from threading import RLock
 
 
 class AccessDenied(PermissionError):
-    pass
+    status = "blocked"
 
 
 ROLES = {
@@ -40,6 +40,7 @@ ROLES = {
             "ingest",
             "heal",
             "grant",
+            "promote",
             "reload",
             "govern",
             "operate",

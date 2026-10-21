@@ -60,6 +60,13 @@ UNIFIED_TESTS = (
     "test_toe_unified_authority.py",
     "test_toe_unified_atomic.py",
     "test_toe_unified_promotion.py",
+    "test_toe_unified_production_guardrails.py",
+    "test_toe_unified_intelligence.py",
+    "test_toe_unified_ingest_digest.py",
+    "test_toe_unified_data_layer.py",
+    "test_toe_unified_operations.py",
+    "test_toe_unified_failclosed.py",
+    "test_toe_unified_security_fixes.py",
 )
 
 INSTALLED_UNIFIED_PROBE = r"""
@@ -233,6 +240,7 @@ def inspect_wheel(wheel: Path, version: str) -> Dict[str, Any]:
         "toe/default_propagators.json",
         "toe/adapters/__init__.py",
         "toe/unified/__init__.py",
+        "toe/unified/checkpoint.py",
     }
     missing = sorted(required - set(names))
     if missing:
@@ -370,7 +378,7 @@ print(json.dumps({
 
 
 def installed_unified_check(py: Path, workdir: Path, label: str) -> Dict[str, Any]:
-    """Run the three hardening suites against installed artifacts, fail closed.
+    """Run the named hardening suites against installed artifacts, fail closed.
 
     Copy tests only, never package sources or repository conftest. Retain logs,
     counts and hashes outside the temporary venv even on a failed invocation.
@@ -385,7 +393,7 @@ def installed_unified_check(py: Path, workdir: Path, label: str) -> Dict[str, An
     env = {
         key: value
         for key, value in _NO_CACHE.items()
-        if key not in {"PYTHONPATH", "PYTHONHOME", "PYTEST_ADDOPTS", "PYTEST_PLUGINS"}
+        if key not in {"PYTHONPATH", "PYTHONHOME", "PYTEST_ADDOPTS", "PYTEST_PLUGINS", "EUCLID_FOCUSED_SNAPSHOT"}
     }
     env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
     junit = output / "junit.xml"
@@ -401,7 +409,7 @@ def installed_unified_check(py: Path, workdir: Path, label: str) -> Dict[str, An
         "test_verdict": "failed_or_incomplete",
         "production_certification": "not_assessed",
         "limitations": [
-            "Three named fixture/in-process suites, not the full repository suite.",
+            "Named fixture/in-process suites, not the full repository suite.",
             "No tenant, recovery, live-vendor or deployment-SLA qualification.",
         ],
     }

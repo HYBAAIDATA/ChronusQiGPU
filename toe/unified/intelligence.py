@@ -42,6 +42,10 @@ class TrainResult:
     evaluation_rows: int = 0
     evaluated_version: int | None = None
 
+    @property
+    def status(self) -> str:
+        return "rejected" if self.reason else "healthy"
+
 
 def _matrix(rows: list[dict], features: tuple[str, ...]) -> list[list[float]]:
     matrix = []
@@ -65,6 +69,8 @@ def _accuracy(model: object, rows: list[dict], features: tuple[str, ...], target
         return 0.0
     predicted = tensor_predict(model, _matrix(rows, features))
     actual = _labels(rows, target)
+    if len(predicted) != len(actual) or any(value not in (0, 1) for value in predicted):
+        raise ValueError("prediction output does not match validation labels")
     hits = sum(int(left) == int(right) for left, right in zip(predicted, actual))
     return hits / len(actual)
 
@@ -117,26 +123,43 @@ def _evaluation_guard(
 
 
 class ModelRegistry:
-    def __init__(self) -> None:
-        self._lock = threading.Lock()
+    def __init__(self, *, accuracy_floor: float = 0.8) -> None:
+        if isinstance(accuracy_floor, bool) or not math.isfinite(accuracy_floor) or not 0 <= accuracy_floor <= 1:
+            raise ValueError("accuracy_floor must be finite and between zero and one")
+        self._accuracy_floor = accuracy_floor
+        self._lock = threading.RLock()
         self._live: dict[str, ModelRecord] = {}
         self._history: dict[str, list[ModelRecord]] = {}
 
+    @property
+    def accuracy_floor(self) -> float:
+        return self._accuracy_floor
+
     def names(self) -> tuple[str, ...]:
-        return tuple(sorted(self._live))
+        with self._lock:
+            return tuple(sorted(self._live))
 
     def get(self, name: str) -> ModelRecord:
-        try:
-            return self._live[name]
-        except KeyError as exc:
-            raise KeyError(f"no live model {name}") from exc
+        with self._lock:
+            try:
+                return deepcopy(self._live[name])
+            except KeyError as exc:
+                raise KeyError(f"no live model {name}") from exc
 
     def train(self, name: str, rows: list[dict], features: list[str], target: str) -> TrainResult:
+        """Development bootstrap only, not governed initial production promotion."""
         feature_names = tuple(features)
+        if not rows or not feature_names or len(set(feature_names)) != len(feature_names):
+            raise ValueError("training requires rows and unique nonempty features")
+        with self._lock:
+            if name in self._live:
+                raise ValueError("existing models must use validated retrain")
         rows = deepcopy(rows)
         fingerprints = _fingerprints(rows, feature_names)
         model = tensor_fit("exact_linear", _matrix(rows, feature_names), _labels(rows, target))
         with self._lock:
+            if name in self._live:
+                raise ValueError("model changed during training; use retrain")
             version = len(self._history.get(name, [])) + 1
             record = ModelRecord(
                 name, version, feature_names, target, model, len(rows), True, fingerprints
@@ -146,7 +169,7 @@ class ModelRegistry:
                 previous.live = False
             self._live[name] = record
             self._history.setdefault(name, []).append(record)
-        return TrainResult(record, replaced=previous is not None, rolled_back=False, live_version=version)
+        return TrainResult(deepcopy(record), replaced=previous is not None, rolled_back=False, live_version=version)
 
     def validate_retrain_evidence(
         self,
@@ -166,12 +189,12 @@ class ModelRegistry:
         require_evaluation: bool = False,
         min_accuracy: float = 0.8,
     ) -> TrainResult:
-        current = self.get(name)
+        with self._lock:
+            current = self._live[name]
         rows, eval_rows = deepcopy(rows), deepcopy(eval_rows)
-        if require_evaluation:
-            _evaluation_guard(current, rows, eval_rows, min_accuracy)
-        elif eval_rows is not None and not eval_rows:
-            raise ValueError("evaluation rows must not be empty")
+        # Legacy flag is retained for call compatibility, not as a bypass.
+        _evaluation_guard(current, rows, eval_rows, min_accuracy)
+        min_accuracy = max(min_accuracy, self.accuracy_floor)
         feature_names = current.features
         fingerprints = _fingerprints(rows, feature_names)
         candidate = tensor_fit("exact_linear", _matrix(rows, feature_names), _labels(rows, current.target))
@@ -200,13 +223,13 @@ class ModelRegistry:
             reason = None
             if candidate_accuracy < live_accuracy:
                 reason = "candidate_regressed"
-            elif require_evaluation and candidate_accuracy < min_accuracy:
+            elif candidate_accuracy < min_accuracy:
                 reason = "candidate_below_accuracy_floor"
         with self._lock:
             live = self._live[name]
             if live is not current:
                 return TrainResult(
-                    live,
+                    deepcopy(live),
                     replaced=False,
                     rolled_back=True,
                     live_version=live.version,
@@ -218,7 +241,7 @@ class ModelRegistry:
                 )
             if reason:
                 return TrainResult(
-                    current,
+                    deepcopy(current),
                     replaced=False,
                     rolled_back=True,
                     live_version=current.version,
@@ -237,13 +260,13 @@ class ModelRegistry:
                 candidate,
                 len(rows),
                 True,
-                fingerprints,
+                current.training_fingerprints | fingerprints,
             )
             current.live = False
             self._live[name] = record
             self._history[name].append(record)
         return TrainResult(
-            record,
+            deepcopy(record),
             replaced=True,
             rolled_back=False,
             live_version=version,
