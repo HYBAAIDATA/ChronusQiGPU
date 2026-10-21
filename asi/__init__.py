@@ -12,6 +12,14 @@ This is the superintelligence layer - beyond AGI.
 """
 
 from .asi_core import ASICore
+from .causal_temporal import (
+    GrangerResult,
+    LagCriterion,
+    TemporalCausalGraph,
+    discover_temporal_causality,
+    granger_causality,
+    select_lag,
+)
 from .problem_solver import NovelProblemSolver, get_problem_solver
 from .quantum_creator import QuantumAlgorithmCreator, get_quantum_creator
 from .self_healing import SelfHealingEngine
@@ -22,14 +30,20 @@ __version__ = "1.0.0"
 __all__ = [
     "ASICore",
     "ContinuousWebLearner",
+    "GrangerResult",
+    "LagCriterion",
     "NovelProblemSolver",
     "QuantumAlgorithmCreator",
     "SelfHealingEngine",
     "SystemOptimizer",
+    "TemporalCausalGraph",
     "create_asi_system",
+    "discover_temporal_causality",
     "get_problem_solver",
     "get_quantum_creator",
     "get_web_learner",
+    "granger_causality",
+    "select_lag",
 ]
 
 
