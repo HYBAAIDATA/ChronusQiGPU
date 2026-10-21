@@ -1,0 +1,73 @@
+{
+  "matrix_version": "2.1.0",
+  "domains": {
+    "base_pattern": {
+      "recurrence_index": 7,
+      "alignment_bytes": 1
+    },
+    "memory": {
+      "recurrence_index": 7,
+      "alignment_bytes": 64
+    },
+    "network_protocol": {
+      "recurrence_index": 11,
+      "alignment_bytes": 1
+    },
+    "search": {
+      "recurrence_index": 10,
+      "alignment_bytes": 1
+    },
+    "verification": {
+      "recurrence_index": 20,
+      "alignment_bytes": 1
+    },
+    "database_indexing": {
+      "recurrence_index": 13,
+      "alignment_bytes": 1
+    },
+    "tensor": {
+      "recurrence_index": 12,
+      "alignment_bytes": 1
+    },
+    "schedule": {
+      "recurrence_index": 76,
+      "alignment_bytes": 1
+    },
+    "cryptographic_sharding": {
+      "recurrence_index": 16,
+      "alignment_bytes": 1
+    },
+    "virtual_quantum": {
+      "recurrence_index": 15,
+      "alignment_bytes": 1
+    },
+    "coherence": {
+      "recurrence_index": 18,
+      "alignment_bytes": 1
+    },
+    "hardware": {
+      "recurrence_index": 31,
+      "alignment_bytes": 1
+    },
+    "hardware_extended": {
+      "recurrence_index": 50,
+      "alignment_bytes": 1
+    },
+    "intelligence_extended": {
+      "recurrence_index": 50,
+      "alignment_bytes": 1
+    },
+    "pisot_convergence": {
+      "recurrence_index": 76,
+      "alignment_bytes": 1
+    },
+    "io_throughput": {
+      "recurrence_index": 21,
+      "alignment_bytes": 4096
+    },
+    "intelligence": {
+      "recurrence_index": 50,
+      "alignment_bytes": 1
+    }
+  }
+}

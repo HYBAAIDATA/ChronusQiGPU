@@ -20,27 +20,32 @@ from .families import (
 from .registry import FAMILY_REGISTRY
 
 
+from decimal import localcontext
+
+
 def run_all(max_n: int = 10000, bases: list[int] = None) -> CheckRegistry:
     """Run all 8 family test suites and return collected results."""
-    registry = CheckRegistry()
+    with localcontext() as ctx:
+        ctx.prec = 10000
+        registry = CheckRegistry()
 
-    if bases is None:
-        from .constants import INTEGER_BASES
-        bases = INTEGER_BASES
+        if bases is None:
+            from .constants import INTEGER_BASES
+            bases = INTEGER_BASES
 
-    # Run each family
-    scaling.run(registry, max_n=max_n, bases=bases)
-    folding.run(registry, max_n=max_n)
-    storing.run(registry, max_n=max_n)
-    signal.run(registry, max_n=max_n)
-    transform.run(registry, max_n=max_n)
-    sampling.run(registry, max_n=max_n)
-    layout.run(registry, max_n=max_n)
-    stability.run(registry, max_n=max_n)
-    runtime.run(registry, max_n=max_n)
-    hyba_math.run(registry, max_n=max_n)
+        # Run each family
+        scaling.run(registry, max_n=max_n, bases=bases)
+        folding.run(registry, max_n=max_n)
+        storing.run(registry, max_n=max_n)
+        signal.run(registry, max_n=max_n)
+        transform.run(registry, max_n=max_n)
+        sampling.run(registry, max_n=max_n)
+        layout.run(registry, max_n=max_n)
+        stability.run(registry, max_n=max_n)
+        runtime.run(registry, max_n=max_n)
+        hyba_math.run(registry, max_n=max_n)
 
-    return registry
+        return registry
 
 
 def format_report(registry: CheckRegistry) -> str:
