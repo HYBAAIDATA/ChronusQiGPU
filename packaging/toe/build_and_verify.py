@@ -23,6 +23,7 @@ Usage: python packaging/toe/build_and_verify.py [--python PATH ...]
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import hashlib
 import importlib.util
 import json
@@ -34,15 +35,17 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import traceback
 import venv
 import zipfile
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
 DIST = HERE / "dist"
-REPOSITORY = "QuantumPhiRedux/PhiMiner"
+REPOSITORY = "PhiEnterprise1/EuclidPhiEnterprise"
 KELLOGG_VERSION = "1.0.0"
 
 # Monorepo integration surfaces TOE does not ship (mining-facing coordinator,
@@ -53,6 +56,35 @@ RELEASE_TESTS = (
     "test_toe_geometry.py",
     "test_toe_learning_persistence.py",
 )
+# Explicit runtime regression scope, not the full repository test harness.
+UNIFIED_TESTS = (
+    "test_toe_unified_tenancy.py",
+    "test_toe_unified_tenant_qualification.py",
+    "test_toe_unified_authority.py",
+    "test_toe_unified_atomic.py",
+    "test_toe_unified_promotion.py",
+    "test_toe_unified_tenancy.py",
+)
+
+INSTALLED_UNIFIED_PROBE = r"""
+import hashlib, json, sysconfig
+from pathlib import Path
+import toe, kellogg
+from toe.unified import UnifiedAnalyticsPlatform
+from toe.unified import platform as facade
+roots = {Path(sysconfig.get_path(key)).resolve() for key in ("purelib", "platlib")}
+origins = {}
+for name, module in (("toe", toe), ("kellogg", kellogg), ("toe.unified.platform", facade)):
+    if not module.__file__:
+        raise RuntimeError(f"{name} is a namespace package, not a verified installed artifact")
+    path = Path(module.__file__).resolve()
+    if not any(path.is_relative_to(root) for root in roots):
+        raise RuntimeError(f"{name} resolved outside this interpreter's installed packages: {path}")
+    origins[name] = {"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+print(json.dumps(origins, sort_keys=True))
+"""
+
+
 _SECRET_PATTERNS = (
     re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
     re.compile(rb"ghp_[A-Za-z0-9]{30,}"),
@@ -67,6 +99,7 @@ _NO_CACHE = {**os.environ, "PIP_NO_CACHE_DIR": "1", "PIP_DISABLE_PIP_VERSION_CHE
 def sh(cmd: List[Any], **kw: Any) -> subprocess.CompletedProcess:
     print("$", " ".join(str(c) for c in cmd), flush=True)
     kw.setdefault("env", _NO_CACHE)
+    kw.setdefault("timeout", 1800)
     return subprocess.run([str(c) for c in cmd], check=True, text=True, **kw)
 
 
@@ -205,6 +238,7 @@ def inspect_wheel(wheel: Path, version: str) -> Dict[str, Any]:
         "toe/default_propagators.json",
         "toe/adapters/__init__.py",
         "toe/unified/__init__.py",
+        "toe/unified/checkpoint.py",
     }
     missing = sorted(required - set(names))
     if missing:
@@ -261,7 +295,8 @@ assert md["Requires-Python"] == ">=3.11"
 reqs = [r for r in (importlib.metadata.requires(DIST) or []) if "extra ==" not in r]
 assert sorted(r.split(">")[0].split("<")[0].strip().lower() for r in reqs) == ["hyba-kellogg-tensor", "numpy"], reqs
 urls = md.get_all("Project-URL") or []
-assert any("QuantumPhiRedux/PhiMiner" in u for u in urls) and not any("QuantumPhi2" in u for u in urls), urls
+assert any("PhiEnterprise1/EuclidPhiEnterprise" in u for u in urls), urls
+assert not any(old in u for old in ("QuantumPhi2/PhiMiner", "QuantumPhiRedux/PhiMiner") for u in urls), urls
 
 mods = sorted(m.name for m in pkgutil.walk_packages(toe.__path__, "toe."))
 failed = {}
@@ -341,6 +376,105 @@ print(json.dumps({
 """
 
 
+def installed_unified_check(py: Path, workdir: Path, label: str) -> Dict[str, Any]:
+    """Run the four hardening suites against installed artifacts, fail closed.
+
+    Copy tests only, never package sources or repository conftest. Retain logs,
+    counts and hashes outside the temporary venv even on a failed invocation.
+    Harness unit tests do not themselves establish installed-package success.
+    """
+    output = DIST / ("installed-" + kind) / workdir.name
+    shutil.rmtree(output, ignore_errors=True)
+    output.mkdir(parents=True)
+    tests = workdir / (kind + "_tests")
+    shutil.rmtree(tests, ignore_errors=True)
+    tests.mkdir()
+    env = isolated_environment()
+    junit = output / "junit.xml"
+    record: Dict[str, Any] = {
+        "schema": "hyba.unified.installed-test-evidence/v1",
+        "label": label,
+        "git_sha": git_sha(),
+        "scope": "installed authority, atomic-import, promotion and tenant regressions",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "test_files": list(test_files),
+        "input_artifacts": [{"file": path.name, "sha256": sha256(path)} for path in (artifacts or [])],
+        "source_tests": {},
+        "counts": {key: 0 for key in ("tests", "failures", "errors", "skipped")},
+        "test_verdict": "failed_or_incomplete",
+        "production_certification": "not_assessed",
+        "limitations": [
+            "Four named fixture/in-process suites, not the full repository suite.",
+            "No independent tenant security audit, recovery, live-vendor or SLA qualification.",
+        ],
+    }
+    try:
+        for name in test_files:
+            source = REPO / "tests" / name
+            shutil.copy2(source, tests / name)
+            record["source_tests"][name] = sha256(source)
+        probe_command = [str(py), "-I", "-c", INSTALLED_UNIFIED_PROBE]
+        record["probe_command"] = probe_command
+        probe = subprocess.run(
+            probe_command, cwd=workdir, env=env, capture_output=True, text=True,
+            timeout=INSTALLED_TIMEOUT_SECONDS
+        )
+        (output / "import-probe.log").write_text(
+            probe.stdout + probe.stderr, encoding="utf-8"
+        )
+        if probe.returncode:
+            raise RuntimeError("installed import-origin probe failed")
+        record["installed_origins"] = json.loads(probe.stdout.strip())
+        command = [
+            str(py),
+            "-I",
+            "-m",
+            "pytest",
+            "-q",
+            "--noconftest",
+            "--import-mode=importlib",
+            "-o",
+            "addopts=",
+            "-p",
+            "no:cacheprovider",
+            "--rootdir",
+            str(tests),
+            "--junitxml",
+            str(junit),
+            str(tests),
+        ]
+        record["command"] = command
+        with (output / "pytest.log").open("w", encoding="utf-8") as log:
+            result = subprocess.run(
+                command, cwd=workdir, env=env, stdout=log, stderr=subprocess.STDOUT,
+                timeout=INSTALLED_TIMEOUT_SECONDS
+            )
+        record["pytest_exit_code"] = result.returncode
+        record["counts"] = validated_test_counts(junit, test_files)
+        if result.returncode != 0:
+            raise RuntimeError(f"installed pytest exited {result.returncode}")
+        record["test_verdict"] = "passed"
+    except Exception as exc:
+        record["error"] = f"{type(exc).__name__}: {exc}"
+    record["finished_at"] = datetime.now(timezone.utc).isoformat()
+    record["artifacts"] = {
+        path.name: sha256(path) for path in output.iterdir() if path.is_file()
+    }
+    (output / "evidence.json").write_text(
+        json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    if record["test_verdict"] != "passed":
+        raise RuntimeError(
+            f"installed {kind} verification failed under {label}; see {output}"
+        )
+    return record
+
+
+def installed_unified_check(py: Path, workdir: Path, label: str,
+                            artifacts: Optional[List[Path]] = None) -> Dict[str, Any]:
+    return _installed_test_check(py, workdir, label, UNIFIED_TESTS, "unified", artifacts)
+
+
 def installed_check(
     python: Path, wheels: List[Path], workdir: Path, label: str, version: str
 ) -> Dict[str, Any]:
@@ -348,37 +482,16 @@ def installed_check(
     sh([python, "-m", "venv", "--clear", env_dir])
     py = _py(env_dir)
     sh([py, "-m", "pip", "install", "-q", *[str(w) for w in wheels], "pytest"])
+    unified_record = installed_unified_check(py, workdir, label, wheels)
     check = workdir / "installed_check.py"
     check.write_text(INSTALLED_CHECK, encoding="utf-8")
-    out = sh([py, "-I", check, version, dist_name()], cwd=workdir, capture_output=True)
+    out = sh([py, "-I", check, version, dist_name()], cwd=workdir, capture_output=True,
+             env=isolated_environment(), timeout=INSTALLED_TIMEOUT_SECONDS)
     record = json.loads(out.stdout.strip().splitlines()[-1])
-    tests = workdir / "release_tests"
-    tests.mkdir()
-    for name in RELEASE_TESTS:
-        shutil.copy2(REPO / "tests" / name, tests / name)
-    res = subprocess.run(
-        [
-            str(py),
-            "-m",
-            "pytest",
-            "-q",
-            "-p",
-            "no:cacheprovider",
-            "--rootdir",
-            str(tests),
-            str(tests),
-        ],
-        cwd=workdir,
-        text=True,
-        capture_output=True,
-        env=_NO_CACHE,
+    record["release_tests"] = _installed_test_check(
+        py, workdir, label, RELEASE_TESTS, "release", wheels
     )
-    record["release_tests"] = {
-        "returncode": res.returncode,
-        "summary": res.stdout.strip().splitlines()[-1] if res.stdout else res.stderr[-400:],
-    }
-    if res.returncode != 0:
-        raise RuntimeError(f"release tests failed under {label}: {res.stdout[-2000:]}")
+    record["unified_tests"] = unified_record
     record["label"] = label
     shutil.rmtree(env_dir, ignore_errors=True)
     return record
@@ -400,21 +513,19 @@ def rebuild_from_sdist(tool_py: Path, sdist: Path, root: Path) -> Path:
     return wheels[0]
 
 
-def main(argv: Optional[List[str]] = None) -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument(
-        "--python", action="append", default=[], help="extra interpreter for the installed check"
-    )
-    args = ap.parse_args(argv)
+def _qualify(args: argparse.Namespace, attempt: Dict[str, Any]) -> int:
+    attempt["stage"] = "source-preflight"
+    validate_source_inputs()
     version = toe_version()
     name = dist_name()
-    shutil.rmtree(DIST, ignore_errors=True)
-    DIST.mkdir(parents=True)
     with tempfile.TemporaryDirectory(prefix="toe-release-") as tmp:
         root = Path(tmp)
+        attempt["stage"] = "build-tooling"
         tool = tooling_python(root)
+        attempt["stage"] = "kellogg-build"
         kellogg_wheel = build_kellogg_wheel(tool, root)
         shutil.copy2(kellogg_wheel, DIST / kellogg_wheel.name)
+        attempt["stage"] = "toe-build"
         sh([tool, "-m", "build", "--wheel", "--sdist", "--outdir", DIST, stage_toe(root)])
         stem = name.replace("-", "_")
         wheels = sorted(DIST.glob(f"{stem}-{version}-*.whl"))
@@ -422,12 +533,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         if len(wheels) != 1 or len(sdists) != 1:
             raise RuntimeError(f"expected one wheel and one sdist: {wheels} {sdists}")
         wheel, sdist = wheels[0], sdists[0]
+        attempt["stage"] = "archive-inspection"
         sh([tool, "-m", "twine", "check", wheel, sdist])
         manifest = inspect_wheel(wheel, version)
         scans = [scan(wheel), scan(sdist)]
         records = []
         interpreters = [Path(sys.executable)] + [Path(p) for p in args.python]
         for i, interp in enumerate(interpreters):
+            attempt["stage"] = f"installed-wheel-{i}"
             work = root / f"check-{i}"
             work.mkdir()
             records.append(
@@ -435,15 +548,18 @@ def main(argv: Optional[List[str]] = None) -> int:
                     interp, [kellogg_wheel, wheel], work, f"wheel@{interp.name}", version
                 )
             )
+        attempt["stage"] = "sdist-rebuild"
         rebuilt = rebuild_from_sdist(tool, sdist, root)
         work = root / "check-sdist"
         work.mkdir()
+        attempt["stage"] = "installed-sdist"
         sdist_record = installed_check(
             Path(sys.executable), [kellogg_wheel, rebuilt], work, "sdist-rebuilt-wheel", version
         )
         digests = {r["fixture_digest"] for r in records} | {sdist_record["fixture_digest"]}
         if len(digests) != 1:
             raise RuntimeError(f"deterministic fixture differs across installs: {digests}")
+        attempt["stage"] = "verdict-composition"
         decisions = owner_decisions()
         blockers = []
         approved_name = decisions["distribution_name_approved"]
@@ -520,6 +636,46 @@ def main(argv: Optional[List[str]] = None) -> int:
         + ("" if not blockers else " — publication blocked: " + "; ".join(blockers))
     )
     return 0
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "--python", action="append", default=[], help="extra interpreter for the installed check"
+    )
+    args = ap.parse_args(argv)
+    shutil.rmtree(DIST, ignore_errors=True)
+    DIST.mkdir(parents=True)
+    attempt: Dict[str, Any] = {
+        "schema": "hyba.toe.qualification-attempt/v1",
+        "git_sha": git_sha(), "python": platform.python_version(),
+        "platform": platform.platform(), "stage": "initializing",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "verdict": "failed_or_incomplete", "artifact_verified": False,
+        "production_certification": "not_assessed", "published": False,
+    }
+    try:
+        result = _qualify(args, attempt)
+        if result != 0 or not (DIST / "artifact-verdict.json").is_file():
+            raise RuntimeError("qualification completed without a verified artifact verdict")
+        verdict = json.loads((DIST / "artifact-verdict.json").read_text())
+        if verdict.get("artifact_verified") is not True:
+            raise RuntimeError("artifact verdict is not verified")
+        attempt.update(verdict="passed", artifact_verified=True, stage="complete")
+        return result
+    except Exception as exc:
+        attempt["error"] = f"{type(exc).__name__}: {exc}"
+        (DIST / "qualification-failure.log").write_text(traceback.format_exc(), encoding="utf-8")
+        raise
+    finally:
+        attempt["finished_at"] = datetime.now(timezone.utc).isoformat()
+        attempt["evidence_sha256"] = {
+            str(path.relative_to(DIST)): sha256(path)
+            for path in sorted(DIST.rglob("*")) if path.is_file()
+        }
+        (DIST / "qualification-attempt.json").write_text(
+            json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
 
 
 if __name__ == "__main__":

@@ -1,0 +1,13 @@
+test_all_test_grids_required (test_output_validation.OutputValidationTests.test_all_test_grids_required) ... ok
+test_bad_target_raises (test_output_validation.OutputValidationTests.test_bad_target_raises) ... ok
+test_dimension_mismatch (test_output_validation.OutputValidationTests.test_dimension_mismatch) ... ok
+test_exact (test_output_validation.OutputValidationTests.test_exact) ... ok
+test_invalid_grids (test_output_validation.OutputValidationTests.test_invalid_grids) ... ok
+test_mismatch_not_repaired (test_output_validation.OutputValidationTests.test_mismatch_not_repaired) ... ok
+test_no_hidden_target_in_public_envelope (test_output_validation.OutputValidationTests.test_no_hidden_target_in_public_envelope) ... ok
+test_no_normalisation (test_output_validation.OutputValidationTests.test_no_normalisation) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.001s
+
+OK

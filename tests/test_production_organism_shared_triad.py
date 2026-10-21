@@ -55,6 +55,7 @@ def test_governed_euclid_triad_uses_same_shared_theseus_ovid_fabric(tmp_path):
         tmp_path / "organism",
         hmac_key=TEST_KEY,
         guardian=guardian,
+        tenant="production-tenant",
         allow_insecure_dev_key=True,
     )
     try:

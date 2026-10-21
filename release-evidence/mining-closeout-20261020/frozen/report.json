@@ -1,0 +1,141 @@
+{
+  "rc_sha": "80fe0d413255c45b910da4599e4d276bc9098321",
+  "base_sha": "4f71b5647e5cacd053e9a9d545ab5f26d38b4f34",
+  "scope": "partial genuine source export; not clean full checkout or installed artifact qualification",
+  "environment": {
+    "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+    "platform": "Linux-6.18.49-x86_64-with-glibc2.34"
+  },
+  "production_ready": false,
+  "publication_ready": false,
+  "source_diff": [
+    "experiments/quantum_lucas_scaling_results.json"
+  ],
+  "changed_file_sha256": {
+    "mining/production_miner.py": "f0a8cb64849baf8d4560b85f8ab5b81266345f4331c9c9e185b3938cb9fbabd5",
+    "salamander/mining_healer.py": "aad6dfd7102719b8f585af7485eb7fe233ce1844f4e9ae003f14e9d0fc4fae5e",
+    "chronus/mla1517/mining/recovery_authority.py": "d3c7669ae7bf9f61e6fd36a98c228373f6dfffb5cd0b91fe0f76ef7e2015f18e",
+    "mining/tests/test_closeout_window_isolation.py": "7112771e5fd7599d0cbbccf1af39c0028f48ab9430759ac4faa8c57ffa00bbe7",
+    "salamander/tests/test_mining_healer_dispatch_closeout.py": "21a7b610e91757682901805859f68d8635613b6424cebbbd0bb1b81695e87c49"
+  },
+  "commands": [
+    {
+      "name": "safety",
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "mining/tests/test_closeout_window_isolation.py",
+        "salamander/tests/test_mining_healer_dispatch_closeout.py",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp=/data/mining-closeout/tmp/frozen-safety",
+        "--junitxml=/data/mining-closeout/evidence/frozen/safety.xml",
+        "-q"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.5731044409999413,
+      "log": "safety.log"
+    },
+    {
+      "name": "safety-optimized",
+      "command": [
+        "python",
+        "-O",
+        "-m",
+        "pytest",
+        "mining/tests/test_closeout_window_isolation.py",
+        "salamander/tests/test_mining_healer_dispatch_closeout.py",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp=/data/mining-closeout/tmp/frozen-safety-optimized",
+        "--junitxml=/data/mining-closeout/evidence/frozen/safety-optimized.xml",
+        "-q"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.075707099000283,
+      "log": "safety-optimized.log"
+    },
+    {
+      "name": "compat",
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "mining/tests",
+        "salamander/tests",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp=/data/mining-closeout/tmp/frozen-compat",
+        "--junitxml=/data/mining-closeout/evidence/frozen/compat.xml",
+        "-q"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 1.4129364289997284,
+      "log": "compat.log"
+    },
+    {
+      "name": "toe-fast",
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/test_toe_runtime.py",
+        "tests/test_toe_ciaas_api.py",
+        "tests/test_asi_core.py",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp=/data/mining-closeout/tmp/frozen-toe-fast",
+        "--junitxml=/data/mining-closeout/evidence/frozen/toe-fast.xml",
+        "-q"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.5703448819999721,
+      "log": "toe-fast.log"
+    },
+    {
+      "name": "consensus",
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/test_toe_consensus_boundary.py",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp=/data/mining-closeout/tmp/frozen-consensus",
+        "--junitxml=/data/mining-closeout/evidence/frozen/consensus.xml",
+        "-q"
+      ],
+      "exit_code": 2,
+      "elapsed_seconds": 0.5353261249997558,
+      "log": "consensus.log"
+    },
+    {
+      "name": "gate-b",
+      "command": [
+        "python",
+        "experiments/toe_enterprise_collapse.py"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 7.3673993740003425,
+      "log": "gate-b.log"
+    }
+  ],
+  "qualification_caveat": "Unrefreshed dependencies from earlier genuine source exports remain hash-listed. Current Chronus mining base hashes compared separately. No full RC certification.",
+  "generated_output_diffs": [
+    "experiments/quantum_lucas_scaling_results.json"
+  ],
+  "runtime_and_test_source_diff": [],
+  "gate_b_checks": {
+    "passed": 16,
+    "required": 16,
+    "skipped": 0,
+    "scope": "export execution; full RC dependency closure not certified"
+  },
+  "consensus_retry": {
+    "log": "consensus-restored.log",
+    "exit_code": 2,
+    "blocker": "missing exported chronus.mla1517.quantum",
+    "dependency_restored": "chronus/mla1517/learning.py at base SHA"
+  }
+}

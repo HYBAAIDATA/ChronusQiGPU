@@ -1,138 +1,302 @@
 #!/usr/bin/env python3
-"""Build standalone enterprise distribution wheel for unified EUCLID.
+"""Build the dedicated EUCLID enterprise artifact, never the mining umbrella.
 
-Stages euclid, Intelligence, hyba_substrate, toe, kellogg, and legacy compatibility shims
-into a standalone enterprise distribution (euclid-engine), self-contained and offline-ready.
+Build tools must already be installed. --offline additionally resolves all
+runtime dependency wheels only from the supplied wheelhouse. The output is a
+platform/Python-specific wheelhouse, not a universal offline bundle.
 """
+
 from __future__ import annotations
 
+import argparse
+import ast
+from email.parser import BytesParser
+import hashlib
+import fnmatch
+import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import tomllib
+import zipfile
 
 REPO = Path(__file__).resolve().parent.parent
-DIST = REPO / "dist"
-DIST.mkdir(exist_ok=True)
-WHEELHOUSE = REPO / "packaging" / "wheelhouse"
-
-
-def stage_and_build() -> Path:
-    with tempfile.TemporaryDirectory(prefix="euclid-standalone-") as tmp:
-        tmp_path = Path(tmp)
-        src_path = tmp_path / "src"
-        src_path.mkdir(parents=True, exist_ok=True)
-
-        ignore = shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo", "var")
-
-        # 1. Stage core enterprise and consolidated packages
-        packages_to_stage = [
-            "euclid",
-            "Intelligence",
-            "al_haras",
-            "hyba_substrate",
-            "resonance_intelligence",
-            "toe",
-            "kellogg",
-            "aethel",
-            "lucas",
-            "hyba_toe_intelligence",
-            "hyba_euclid_intelligence",
-        ]
-        for pkg in packages_to_stage:
-            pkg_path = REPO / pkg
-            if pkg_path.is_dir():
-                shutil.copytree(pkg_path, src_path / pkg, ignore=ignore)
-
-        # Stage turing_core and pythia_turing_math packages
-        chronus_py = REPO / "chronus" / "mla1517_platform" / "python"
-        if chronus_py.is_dir():
-            turing_pkg = src_path / "turing_core"
-            turing_pkg.mkdir(exist_ok=True)
-            shutil.copy2(chronus_py / "turing_core.py", turing_pkg / "__init__.py")
-
-            math_pkg = src_path / "pythia_turing_math"
-            math_pkg.mkdir(exist_ok=True)
-            shutil.copy2(chronus_py / "pythia_turing_math.py", math_pkg / "__init__.py")
-
-        # 2. Create pyproject.toml
-        pyproject_content = """[build-system]
-requires = ["setuptools>=68.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "euclid-engine"
-version = "1.0.0"
-description = "EUCLID Enterprise Engine — unified autonomous adaptive intelligence substrate"
-readme = "README.md"
-requires-python = ">=3.11"
-dependencies = [
+DIST = REPO / "dist" / "euclid-enterprise"
+SEEDS = (
+    "euclid",
+    "Intelligence",
+    "al_haras",
+    "hyba_substrate",
+    "resonance_intelligence",
+    "toe",
+    "kellogg",
+    "aethel",
+    "lucas",
+    "hyba_toe_intelligence",
+    "hyba_euclid_intelligence",
+)
+DEPENDENCIES = (
     "numpy>=1.26,<3",
-]
+    "PyYAML>=6,<7",
+    "cryptography>=46,<51",
+    "sympy>=1.12,<2",
+    "scipy>=1.11,<2",
+)
+EXCLUDED = {"tests", "__pycache__", "var", ".git", ".venv", "node_modules"}
+SECRET_PATTERNS = (
+    rb"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----",
+    rb"ghp_[A-Za-z0-9]{30,}",
+    rb"github_pat_[A-Za-z0-9_]{40,}",
+    rb"pypi-AgEI[A-Za-z0-9_-]{20,}",
+    rb"AKIA[0-9A-Z]{16}",
+)
 
-[tool.setuptools]
-include-package-data = false
 
-[tool.setuptools.packages.find]
-where = ["src"]
-include = [
-    "euclid*",
-    "Intelligence*",
-    "al_haras*",
-    "hyba_substrate*",
-    "resonance_intelligence*",
-    "toe*",
-    "kellogg*",
-    "aethel*",
-    "lucas*",
-    "turing_core*",
-    "pythia_turing_math*",
-    "hyba_toe_intelligence*",
-    "hyba_euclid_intelligence*",
-]
-exclude = ["*.tests*", "tests*"]
-"""
-        (tmp_path / "pyproject.toml").write_text(pyproject_content, encoding="utf-8")
+def sh(args, **kwargs):
+    print("$", " ".join(map(str, args)), flush=True)
+    return subprocess.run(list(map(str, args)), check=True, text=True, **kwargs)
 
-        readme_content = """# EUCLID Enterprise Engine
 
-Unified autonomous adaptive intelligence substrate.
-"""
-        (tmp_path / "README.md").write_text(readme_content, encoding="utf-8")
-        if (REPO / "LICENSE").exists():
-            shutil.copy2(REPO / "LICENSE", tmp_path / "LICENSE")
+def sha256(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
-        # 3. Build wheel via build module
-        print(f"[*] Building enterprise wheel from {tmp_path}...")
-        cmd = [
-            sys.executable,
-            "-m",
-            "build",
-            "--wheel",
-            "--no-isolation",
-            "--outdir",
-            str(DIST),
-            str(tmp_path),
-        ]
-        print("$", " ".join(cmd), flush=True)
-        subprocess.run(cmd, check=True)
 
-    # 4. Copy wheelhouse artifacts into dist if available
-    if WHEELHOUSE.is_dir():
-        for whl in WHEELHOUSE.glob("*.whl"):
-            target = DIST / whl.name
-            if not target.exists():
-                shutil.copy2(whl, target)
+def source_commit(expected=None):
+    commit = sh(["git", "rev-parse", "HEAD"], cwd=REPO, capture_output=True).stdout.strip()
+    if expected and commit != expected:
+        raise RuntimeError(f"source commit mismatch: expected {expected}, found {commit}")
+    dirty = sh(
+        ["git", "status", "--porcelain", "--untracked-files=normal"], cwd=REPO, capture_output=True
+    ).stdout
+    if dirty.strip():
+        raise RuntimeError("source must be a clean committed checkout")
+    return commit
 
-    wheels = sorted(DIST.glob("euclid_engine-*.whl"), key=lambda p: p.stat().st_mtime, reverse=True)
-    if not wheels:
-        raise RuntimeError("Failed to produce euclid_engine wheel in dist/")
 
-    built_wheel = wheels[0]
-    print(f"[+] Enterprise wheel built successfully: {built_wheel}")
-    return built_wheel
+def local_source(name, package_dirs):
+    if not name.isidentifier() or name in {"tests", "legacy", "scripts"}:
+        return None
+    if name in package_dirs:
+        candidate = REPO / package_dirs[name]
+        if candidate.exists():
+            return candidate
+    if name == "turing_universal_quantum_computer":
+        candidate = REPO / name / name
+        if candidate.is_dir():
+            return candidate
+    for root in (REPO, REPO / "chronus/mla1517_platform/python"):
+        directory, module = root / name, root / (name + ".py")
+        if (directory / "__init__.py").is_file():
+            return directory
+        if module.is_file():
+            return module
+    return None
+
+
+def imported_roots(path):
+    # Include lazy literal imports, including the existing public-export tables.
+    tree = ast.parse(path.read_bytes(), filename=str(path))
+    roots = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            roots.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            roots.add(node.module.split(".")[0])
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str):
+            value = node.value
+            if re.fullmatch(r"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+", value):
+                roots.add(value.split(".")[0])
+    return roots
+
+
+def stage(destination, tracked_files=None):
+    config = tomllib.loads((REPO / "pyproject.toml").read_text())
+    package_dirs = config.get("tool", {}).get("setuptools", {}).get("package-dir", {})
+    pending, copied = set(SEEDS) | {"turing_core", "pythia_turing_math"}, set()
+    while pending:
+        name = min(pending)
+        pending.remove(name)
+        if name in copied:
+            continue
+        source = local_source(name, package_dirs)
+        if source is None:
+            raise FileNotFoundError(f"required local package/module missing: {name}")
+        target = destination / (name if source.is_dir() else name + ".py")
+        ignored_patterns = ("*.pyc", "*.pyo", "*.key", ".env", ".env.*", "*.pem", "test_*.py")
+        if source.is_dir():
+            target.mkdir(parents=True)
+            candidates = (
+                sorted(
+                    REPO / path for path in tracked_files if (REPO / path).is_relative_to(source)
+                )
+                if tracked_files is not None
+                else sorted(source.rglob("*"))
+            )
+            for path in candidates:
+                relative = path.relative_to(source)
+                if set(relative.parts) & EXCLUDED or any(
+                    fnmatch.fnmatch(part, pattern)
+                    for part in relative.parts
+                    for pattern in ignored_patterns
+                ):
+                    continue
+                if path.is_symlink():
+                    raise ValueError("symlinked source is not accepted in enterprise staging")
+                if path.is_file():
+                    staged = target / relative
+                    staged.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(path, staged)
+            files = sorted(target.rglob("*.py"))
+        else:
+            if source.is_symlink() or (
+                tracked_files is not None
+                and source.relative_to(REPO).as_posix() not in tracked_files
+            ):
+                raise ValueError("source module must be a tracked regular file")
+            shutil.copy2(source, target)
+            files = [target]
+        copied.add(name)
+        for path in files:
+            for imported in imported_roots(path):
+                if imported not in copied and local_source(imported, package_dirs) is not None:
+                    pending.add(imported)
+    return sorted(copied)
+
+
+def inspect_wheel(wheel):
+    with zipfile.ZipFile(wheel) as archive:
+        names = archive.namelist()
+        metadata = [n for n in names if n.endswith(".dist-info/METADATA")]
+        if len(metadata) != 1:
+            raise RuntimeError("wheel must have exactly one distribution identity")
+        identity = BytesParser().parsebytes(archive.read(metadata[0]))
+        if identity["Name"] != "euclid-engine" or identity["Version"] != "1.0.0":
+            raise RuntimeError("wrong enterprise distribution")
+        for name in names:
+            if any(re.search(pattern, archive.read(name)) for pattern in SECRET_PATTERNS):
+                raise RuntimeError(f"credential-pattern scan rejected wheel member {name}")
+        required = (
+            "euclid/runtime.py",
+            "Intelligence/capability_fabric.py",
+            "euclid/capabilities/empirical_state_bridge.py",
+            "euclid/capabilities/empirical_runtime.py",
+            "al_haras/audit.py",
+            "aethel/enterprise/lifecycle.py",
+            "euclid/_artifact_provenance.json",
+        )
+        missing = sorted(set(required) - set(names))
+        if missing or any(set(Path(n).parts) & EXCLUDED for n in names):
+            raise RuntimeError(f"wheel inspection rejected missing/forbidden members: {missing}")
+        return {name: hashlib.sha256(archive.read(name)).hexdigest() for name in names}
+
+
+def stage_and_build(*, expected_commit=None, output_dir=None, offline=False, wheelhouse=None):
+    commit = source_commit(expected_commit)
+    output = Path(output_dir or DIST).resolve()
+    # Never let a later run mistake a previous PASS record for fresh evidence.
+    output.mkdir(parents=True, exist_ok=True)
+    for name in ("build-manifest.json", "verification.json"):
+        (output / name).unlink(missing_ok=True)
+    if any(output.glob("*.whl")):
+        raise FileExistsError("choose a fresh output directory; existing wheels are never deleted")
+    with tempfile.TemporaryDirectory(prefix="euclid-build-") as tmp:
+        work = Path(tmp)
+        project, source, built = work / "project", work / "project/src", work / "built"
+        source.mkdir(parents=True)
+        tracked = set(
+            sh(["git", "ls-files", "--cached", "-z"], cwd=REPO, capture_output=True).stdout.split(
+                "\0"
+            )
+        ) - {""}
+        modules = stage(source, tracked_files=tracked)
+        module_names = sorted(p.stem for p in source.glob("*.py"))
+        shutil.copy2(REPO / "LICENSE", project / "LICENSE")
+        (project / "README.md").write_text("# EUCLID enterprise verification candidate\n")
+        (source / "euclid/_artifact_provenance.json").write_text(
+            json.dumps(
+                {
+                    "schema": "euclid.artifact-provenance/1",
+                    "source_commit": commit,
+                    "classification": "VERIFICATION_CANDIDATE_NOT_RELEASE_APPROVAL",
+                },
+                sort_keys=True,
+            )
+        )
+        (project / "pyproject.toml").write_text(
+            '[build-system]\nrequires = ["setuptools>=68", "wheel"]\n'
+            'build-backend = "setuptools.build_meta"\n[project]\n'
+            'name = "euclid-engine"\nversion = "1.0.0"\nrequires-python = ">=3.12"\n'
+            'readme = "README.md"\n'
+            f"dependencies = {json.dumps(DEPENDENCIES)}\n"
+            "[tool.setuptools]\ninclude-package-data = true\n"
+            f"py-modules = {json.dumps(module_names)}\n"
+            'package-dir = {"" = "src"}\n'
+            '[tool.setuptools.packages.find]\nwhere = ["src"]\n'
+            'exclude = ["*.tests", "*.tests.*", "tests", "tests.*"]\n'
+            '[tool.setuptools.package-data]\n"*" = ["*.json", "*.yaml", "*.yml", "*.toml", '
+            '"*.md", "*.cl", "*.h", "py.typed", "**/*.json", "**/*.yaml", "**/*.yml", "**/*.cl", "**/*.h", "skills/**/*"]\n'
+        )
+        sh(
+            [
+                sys.executable,
+                "-m",
+                "build",
+                "--wheel",
+                "--no-isolation",
+                "--outdir",
+                built,
+                project,
+            ],
+            cwd=work,
+        )
+        wheels = list(built.glob("euclid_engine-*.whl"))
+        if len(wheels) != 1:
+            raise RuntimeError("build did not produce exactly one enterprise wheel")
+        members = inspect_wheel(wheels[0])
+        source_python = {
+            path.relative_to(source).as_posix(): sha256(path)
+            for path in sorted(source.rglob("*.py"))
+        }
+        if any(members.get(name) != digest for name, digest in source_python.items()):
+            raise RuntimeError("wheel Python sources differ from committed staged sources")
+        # Resolve the full declared runtime closure while network is allowed;
+        # the actual acceptance installation below will be offline.
+        download = [sys.executable, "-m", "pip", "download", "--only-binary=:all:", "--dest", built]
+        if offline:
+            if wheelhouse is None:
+                raise ValueError("--offline requires --wheelhouse")
+            download += ["--no-index", "--find-links", Path(wheelhouse).resolve()]
+        sh([*download, wheels[0]], cwd=work)
+        if source_commit(expected_commit) != commit:
+            raise RuntimeError("source changed during build")
+        # Only this invocation's freshly built wheelhouse is published.
+        for path in built.glob("*.whl"):
+            shutil.copy2(path, output / path.name)
+        wheel = output / wheels[0].name
+        record = {
+            "schema": "euclid.enterprise-build/1",
+            "source_commit": commit,
+            "wheel": wheel.name,
+            "wheel_sha256": sha256(wheel),
+            "members": members,
+            "source_python": source_python,
+            "local_import_roots": modules,
+            "dependency_wheels": {p.name: sha256(p) for p in sorted(output.glob("*.whl"))},
+            "verifier_sha256": sha256(REPO / "scripts/verify_clean_install.py"),
+            "classification": "BUILT_NOT_RUNTIME_VERIFIED",
+        }
+        (output / "build-manifest.json").write_text(json.dumps(record, indent=2, sort_keys=True))
+        print(f"WHEEL={wheel}")
+        return wheel
 
 
 if __name__ == "__main__":
-    stage_and_build()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--expected-commit")
+    parser.add_argument("--output-dir", type=Path)
+    parser.add_argument("--offline", action="store_true")
+    parser.add_argument("--wheelhouse", type=Path)
+    stage_and_build(**vars(parser.parse_args()))

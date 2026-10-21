@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="16" time="0.339" timestamp="2026-10-21T00:27:37.376689+00:00" hostname="dbc5f504-010"><testcase classname="tests.test_toe_unified_catalog" name="test_catalog_count_and_classes" time="0.002" /><testcase classname="tests.test_toe_unified_connectors" name="test_each_protocol_binds[jdbc]" time="0.004" /><testcase classname="tests.test_toe_unified_connectors" name="test_each_protocol_binds[rest]" time="0.001" /><testcase classname="tests.test_toe_unified_connectors" name="test_each_protocol_binds[odata]" time="0.001" /><testcase classname="tests.test_toe_unified_connectors" name="test_each_protocol_binds[kafka]" time="0.001" /><testcase classname="tests.test_toe_unified_connectors" name="test_each_protocol_binds[sdk]" time="0.001" /><testcase classname="tests.test_toe_unified_connectors" name="test_each_protocol_binds[opcua]" time="0.001" /><testcase classname="tests.test_toe_unified_connectors" name="test_each_protocol_fails_closed[jdbc]" time="0.001" /><testcase classname="tests.test_toe_unified_connectors" name="test_each_protocol_fails_closed[rest]" time="0.001" /><testcase classname="tests.test_toe_unified_connectors" name="test_each_protocol_fails_closed[odata]" time="0.001" /><testcase classname="tests.test_toe_unified_connectors" name="test_each_protocol_fails_closed[kafka]" time="0.001" /><testcase classname="tests.test_toe_unified_connectors" name="test_each_protocol_fails_closed[sdk]" time="0.001" /><testcase classname="tests.test_toe_unified_connectors" name="test_each_protocol_fails_closed[opcua]" time="0.001" /><testcase classname="tests.test_toe_unified_connectors" name="test_each_displaced_class_binds" time="0.002" /><testcase classname="tests.test_toe_unified_claims" name="test_claim_table_covers_every_id" time="0.001" /><testcase classname="tests.test_toe_unified_claims" name="test_disposition_matches_claim_table" time="0.001"><failure message="FileNotFoundError: [Errno 2] No such file or directory: '/data/toe-production/repo/reports/toe_unified_disposition.md'">def test_disposition_matches_claim_table():
+&gt;       assert DISPOSITION.read_text(encoding="utf-8") == render_disposition()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_toe_unified_claims.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib64/python3.13/pathlib/_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/pathlib/_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/data/toe-production/repo/reports/toe_unified_disposition.md')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/data/toe-production/repo/reports/toe_unified_disposition.md'
+
+/usr/lib64/python3.13/pathlib/_local.py:537: FileNotFoundError</failure></testcase></testsuite></testsuites>

@@ -1373,6 +1373,37 @@ def control_authorization(headers: Any) -> tuple[HTTPStatus, str] | None:
     return refusal
 
 
+# Mining telemetry reads require the server-mapped CEO, not mere key possession.
+# Guardian endpoints additionally retain their own subscription authorization.
+_CEO_READ_PATHS = frozenset({
+    "/api/v1/status", "/api/v1/mla1517/status", "/api/v1/mining/evidence",
+    "/api/v1/telemetry/summary", "/api/v1/telemetry/history",
+    "/api/v1/telemetry/causal", "/api/v1/telemetry/events",
+    "/api/v1/telemetry/ops", "/api/v1/stratum/status", "/api/v1/telemetry/session",
+    "/api/v1/telemetry/stream", "/ws/telemetry", "/api/v1/config",
+    "/api/v1/audit/tail",
+})
+
+def console_read_authorization(path: str, headers: Any) -> tuple[HTTPStatus, str] | None:
+    if path not in _CEO_READ_PATHS:
+        return None
+    if path.startswith(_PRIVILEGED_PREFIXES):
+        # Do not replace the guardian bearer: it independently grants (or
+        # refuses) the subscription operation after this control-role check.
+        control_headers = {
+            "Authorization": str(headers.get("X-PYTHIA-Control-Authorization", "")),
+            OPERATOR_PRINCIPAL_HEADER: str(headers.get(OPERATOR_PRINCIPAL_HEADER, "")),
+        }
+    else:
+        control_headers = headers
+    principal, refusal = authenticate_control_principal(control_headers)
+    if refusal is not None:
+        return refusal
+    if principal is None or principal.role != "ceo":
+        return HTTPStatus.FORBIDDEN, "ceo_role_required"
+    return None
+
+
 def start_repo_engineer() -> bool:
     """Load the repo engineer; an optional service never keeps the control
     API from serving. A failure is audited and printed, and the engineer's
@@ -1428,6 +1459,36 @@ def mining_evidence_payload() -> dict[str, Any]:
             "reason": "the miner has not published evidence",
         }
     return {**observed, "evidence_available": True, "worker_live": worker_live}
+
+
+def console_sources_payload() -> dict[str, Any]:
+    """Non-guardian console lenses. Mining receipts remain guardian-mediated.
+
+    This is an aggregate, not a transactionally atomic cross-owner snapshot.
+    Each section keeps its producer's own timestamp and evidence semantics.
+    """
+    producers = {
+        "fabric": _fabric_map_payload,
+        "verification": system_fabric.verification_status,
+        "selftest": system_fabric.selftest_status,
+        "agentic": system_fabric.agentic_status,
+        "campaign": system_fabric.campaign_status,
+        "telemetry": telemetry_summary_payload,
+        "audit": lambda: audit_tail_payload(30),
+        "intelligence": system_fabric.intelligence_status,
+        "cognition": system_fabric.euclid_cognition_status,
+    }
+    result: dict[str, Any] = {"unavailable": {}}
+    for key, producer in producers.items():
+        try:
+            value = producer()
+            if not isinstance(value, dict):
+                raise TypeError("source did not return an object")
+            result[key] = value
+        except Exception as exc:  # optional source failure must not invent data
+            result[key] = None
+            result["unavailable"][key] = type(exc).__name__
+    return result
 
 
 def status_payload() -> dict[str, Any]:
@@ -2851,7 +2912,8 @@ class _Handler(BaseHTTPRequestHandler):
                 {
                     "available": False,
                     "error": "guardian_unavailable",
-                    "reason": f"{type(exc).__name__}: {exc}",
+                    "reason": ("guardian_dependency_failure" if path == "/api/v1/quantum/workspace"
+                               else f"{type(exc).__name__}: {exc}"),
                 },
             )
             return False
@@ -2899,6 +2961,11 @@ class _Handler(BaseHTTPRequestHandler):
     def _route_get(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
+        refusal = console_read_authorization(path, self.headers)
+        if refusal is not None:
+            code, reason = refusal
+            self._json(code, {"error": reason})
+            return
         if path.startswith(_PRIVILEGED_PREFIXES):
             if not self._guardian_preflight(path):
                 return
@@ -2949,7 +3016,9 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(HTTPStatus.OK, "text/plain; version=0.0.4; charset=utf-8", body)
             return
         if path in {"/api/v1/status", "/api/v1/mla1517/status"}:
-            self._json(HTTPStatus.OK, status_payload())
+            payload = status_payload()
+            payload["console"] = console_sources_payload()
+            self._json(HTTPStatus.OK, payload)
             return
         if path == "/api/v1/mining/evidence":
             self._json(HTTPStatus.OK, mining_evidence_payload())
@@ -3268,6 +3337,23 @@ class _Handler(BaseHTTPRequestHandler):
                     **result,
                 },
             )
+            return
+        if parsed.path == "/api/v1/quantum/workspace":
+            body, err = self._read_json_body()
+            if body is None:
+                self._json(
+                    HTTPStatus.REQUEST_ENTITY_TOO_LARGE if err == "body_too_large"
+                    else HTTPStatus.BAD_REQUEST, {"error": err},
+                )
+                return
+            if not self._guardian_preflight(parsed.path, body):
+                return
+            from turing_workspace import handle_workspace
+
+            code, payload = handle_workspace(
+                self.headers, body, getattr(self, "_guardian_receipt", None)
+            )
+            self._json(HTTPStatus(code), payload)
             return
         handler = self._POST_TABLE.get(parsed.path)
         if handler is None:

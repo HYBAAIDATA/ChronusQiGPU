@@ -4,6 +4,11 @@ on:
   pull_request:
     paths:
       - "turing_universal_quantum_computer/**"
+      - "toe/**"
+      - "tests/test_a_exact_algorithms.py"
+      - "tests/test_toe_poincare_yangmills.py"
+      - "tests/test_toe_intelligence_state.py"
+      - "tests/test_toe_uncertainty_explanation.py"
       - "kellogg/**"
       - "mining/fault_tolerant_asic.py"
       - "mining/deterministic_hashrate.py"
@@ -14,6 +19,11 @@ on:
     branches: [main]
     paths:
       - "turing_universal_quantum_computer/**"
+      - "toe/**"
+      - "tests/test_a_exact_algorithms.py"
+      - "tests/test_toe_poincare_yangmills.py"
+      - "tests/test_toe_intelligence_state.py"
+      - "tests/test_toe_uncertainty_explanation.py"
       - "kellogg/**"
       - "mining/fault_tolerant_asic.py"
       - "mining/deterministic_hashrate.py"
@@ -32,7 +42,7 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
@@ -42,11 +52,25 @@ jobs:
         # resolution and Kellogg, Mining and TOE resolve from the checkout.
         run: |
           python -m pip install "numpy>=1.26,<3" "sympy>=1.12,<2"
+          python -m pip install "pytest>=7.4,<10"
           python -m pip install --no-deps -e ./turing_universal_quantum_computer
           # mining/search.py imports chronos_one_igpu at module load (in-tree, not on PyPI).
           python -m pip install --no-deps ./chronus/packages/chronos-one-igpu
           # chronus/ after the root: first-party packages relocated under chronus/ (lucas, ...)
           echo "PYTHONPATH=${{ github.workspace }}:${{ github.workspace }}/chronus" >> "$GITHUB_ENV"
+      - name: Verify shared foundation contract stays byte-identical
+        run: |
+          python - <<'PY'
+          from hashlib import sha256
+          from pathlib import Path
+          paths = (
+              Path("toe/foundation.py"),
+              Path("turing_universal_quantum_computer/turing_universal_quantum_computer/unified_theory.py"),
+          )
+          digests = {path: sha256(path.read_bytes()).hexdigest() for path in paths}
+          if len(set(digests.values())) != 1:
+              raise SystemExit(f"TOE/TURING foundation drift: {digests}")
+          print(f"shared foundation sha256: {next(iter(digests.values()))}")
       - name: Compile exact implementation
         run: >-
           python -m py_compile
@@ -71,11 +95,17 @@ jobs:
           python -m unittest discover -v -s "$tests" -p test_mps_exact_backend.py
           python -m unittest discover -v -s "$tests" -p test_canonical_serialization.py
           python -m unittest discover -v -s "$tests" -p test_exact_field_registry.py
+          # TOE exact-control, finite-spectrum, representation and uncertainty boundaries.
+          python -m pytest -q tests/test_a_exact_algorithms.py tests/test_toe_poincare_yangmills.py
+          python -m pytest -q tests/test_toe_intelligence_state.py tests/test_toe_uncertainty_explanation.py
+          # TURING's pre-execution admission and claim-audit boundaries.
+          python -m unittest discover -v -s "$tests" -p test_backend_boundary.py
+          python -m unittest discover -v -s "$tests" -p test_golden_quantum_core.py
       - name: Reproduce canonical proof bundle
         run: >-
           python scripts/verify_pure_quantum_math.py
           --output artifacts/pure-quantum-math/reproduction.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: pure-quantum-math-${{ matrix.python-version }}
           path: artifacts/pure-quantum-math/reproduction.json

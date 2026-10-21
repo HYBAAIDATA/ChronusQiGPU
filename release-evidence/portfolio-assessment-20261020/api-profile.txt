@@ -1,0 +1,14 @@
+## /data/raw/hyba-portfolio/apis.jsonl
+
+- Shape: 64 rows x 5 columns
+- Duplicate rows: 0
+- Candidate key columns (distinct == rows): api_id
+
+| column | type | non-null | distinct | values |
+| --- | --- | --- | --- | --- |
+| api_id | text | 100% | 64 | top: pythia.health (1), pythia.readiness (1), pythia.ready_to_mine (1), pythia.metrics (1), pythia.status (1) |
+| owner | text | 100% | 11 | top: PYTHIA (26), EUCLID (11), AL_HARAS (10), CHRONUS (5), SALAMANDER (3) |
+| interface_type | text | 100% | 10 | top: HTTP_OPERATOR (24), INTERNAL_PYTHON (9), HTTP_PRIVILEGED (8), RESERVED_NAMESPACE (7), HTTP_PUBLIC (6) |
+| implementation_path | text | 100% | 56 | top: chronus/mla1517_platform/python/control_ (35), chronus/mla1517_platform/python/system_f (11), turing_universal_quantum_computer/turing (1), aethel/theseus.py::Theseus (open_theseus (1), aethel/ovid.py::Ovid (open_ovid) (1) |
+| runtime_evidence | text | 100% | 4 | top: "LOCAL_HTTP_E2E_EXECUTED" (43), "LOCAL_TEST_PASSED" (14), "LOCAL_CROSS_SERVICE_EXECUTED" (6), "INSTALLED_ARTIFACT_EXECUTED" (1) |
+

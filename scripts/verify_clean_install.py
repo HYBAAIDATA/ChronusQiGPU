@@ -1,430 +1,360 @@
-"""Clean-room runtime fidelity verification for the installed euclid-engine wheel.
+"""Installed-artifact acceptance. Invoke through run_clean_install.py.
 
-Runs with a clean-venv interpreter from an empty directory outside the checkout
-(e.g., in a temporary directory outside the repository).
-Every gate exercises the shipped entry points strictly from site-packages:
-  1. Strict site-packages isolation (no source tree on sys.path or in cwd)
-  2. CompositionRoot custody & EuclidRuntime canonical initialization
-  3. Capability registry & organ discovery
-  4. Governed dispatch, permission boundaries, and fail-closed audit vetoes
-  5. Unified intelligence subdomain architecture (physics, cognition, gatekeeper)
-  6. Live empirical state transition under AL HARAS pre-execution audit receipt
-  7. Fail-closed negative gates (unapproved capability, exhausted budget)
-  8. Verified rollback port on execution exception
-  9. Clean instance restart and state reconstruction without memory bleed
- 10. Backward-compatible deprecation shims (hyba_toe_intelligence, hyba_euclid_intelligence)
+All checks use unconditional branches (also under -O). Random local test keys
+exercise real contracts, not independent assurance or production authorization.
+No provider, mining pool, deployment, repair, or network operation is performed.
 """
 
 from __future__ import annotations
 
-import os
-import sys
-import time
+import argparse
+import hashlib
+import importlib
+import importlib.metadata
+import importlib.resources
 import json
-import warnings
+import os
 from pathlib import Path
-from typing import Any, Dict
+import subprocess
+import sys
+import sysconfig
+import tempfile
+import time
 
 
-def log_gate(name: str, passed: bool, detail: str = "") -> None:
-    status = "[PASS]" if passed else "[FAIL]"
-    print(f"  {status} {name}{f': {detail}' if detail else ''}", flush=True)
+def require(condition, message):
+    if not condition:
+        raise RuntimeError(message)
 
 
-def gate_isolation() -> Dict[str, Any]:
-    print("\n--- Gate 1: Out-of-Tree Site-Packages Isolation ---")
-    required_packages = [
-        "euclid",
-        "Intelligence",
-        "aethel",
-        "kellogg",
-        "toe",
-        "lucas",
-        "turing_core",
-        "pythia_turing_math",
-        "hyba_substrate",
-        "resonance_intelligence",
-    ]
-    modules_checked = {}
-    for pkg in required_packages:
-        mod = __import__(pkg)
-        mod_file = getattr(mod, "__file__", "") or ""
-        modules_checked[pkg] = mod_file
-        is_in_site_packages = "site-packages" in mod_file
-        log_gate(f"Package '{pkg}' in site-packages", is_in_site_packages, mod_file)
-        if not is_in_site_packages:
-            raise RuntimeError(f"POLLUTION: '{pkg}' loaded from outside site-packages: {mod_file}")
+def isolation(repo, expected_commit):
+    require(sys.prefix != sys.base_prefix, "acceptance requires a fresh virtual environment")
+    roots = {Path(sysconfig.get_path(name)).resolve() for name in ("purelib", "platlib")}
+    for root in roots:
+        require(root.is_relative_to(Path(sys.prefix).resolve()), "site-packages outside venv")
+    require(not Path.cwd().resolve().is_relative_to(repo), "cwd is inside checkout")
+    for entry in sys.path:
+        require(
+            not Path(entry or os.getcwd()).resolve().is_relative_to(repo),
+            "checkout present on sys.path",
+        )
+    names = ("euclid", "Intelligence", "aethel", "al_haras", "kellogg", "toe", "lucas")
+    paths = {}
+    for name in names:
+        module = importlib.import_module(name)
+        path = Path(module.__file__).resolve()
+        require(any(path.is_relative_to(root) for root in roots), f"non-installed import: {name}")
+        paths[name] = str(path)
+    # Also catches checkout imports reached lazily during real dispatch.
+    for module in tuple(sys.modules.values()):
+        filename = getattr(module, "__file__", None)
+        if filename:
+            require(not Path(filename).resolve().is_relative_to(repo), "lazy checkout import")
+    require(importlib.metadata.version("euclid-engine") == "1.0.0", "wrong distribution version")
+    try:
+        importlib.metadata.version("hyba-pythia-mining")
+    except importlib.metadata.PackageNotFoundError:
+        pass
+    else:
+        raise RuntimeError("mining umbrella must not satisfy enterprise acceptance")
+    provenance = json.loads(
+        importlib.resources.files("euclid").joinpath("_artifact_provenance.json").read_text()
+    )
+    require(provenance["source_commit"] == expected_commit, "artifact commit mismatch")
+    return paths
 
-    cwd = str(Path.cwd().resolve())
-    print(f"  [*] Current working directory: {cwd}")
-    return {"passed": True, "modules": modules_checked}
 
-
-def gate_canonical_init(work: Path) -> Dict[str, Any]:
-    print("\n--- Gate 2: Canonical Runtime Init & CompositionRoot Custody ---")
+def lifecycle_for(work):
     from aethel.enterprise.lifecycle import CompositionRoot
+
+    return CompositionRoot(
+        work / "custody", tenant="clean-room", hmac_key=(work / "custody.key").read_bytes()
+    )
+
+
+def state_from_port(port):
+    from euclid.capabilities.empirical_state_bridge import EmpiricalStateBridge
+
+    binding = port.latest(EmpiricalStateBridge.STATE_KIND)
+    require(binding is not None, "operational state not persisted")
+    return json.loads(port.read(binding.binding_id))
+
+
+def reader(work):
+    from al_haras import HashChainAudit
     from euclid.runtime import EuclidRuntime
 
-    lifecycle = CompositionRoot(work / "custody", tenant="clean-room-tenant", hmac_key=b"k" * 32)
+    prior = json.loads((work / "restart.json").read_text())
+    lifecycle = lifecycle_for(work)
     lifecycle.start()
-    runtime = EuclidRuntime(creator_id="clean-room-creator", state_dir=work / "runtime-state")
     try:
-        runtime.bind_adaptive_data_port(lifecycle.data_port("euclid"))
-        runtime.compose_adaptive_intelligence()
-        report = runtime.startup_report()
-        grants = runtime.rights.snapshot()["grants"]
-        leak = (runtime.state_dir / "adaptive_knowledge.json").exists()
-
-        schema_ok = report.get("schema") == "euclid.startup/1"
-        grants_ok = len(grants) == 0
-        no_leak = not leak
-        adaptive_ok = runtime.adaptive is not None
-
-        log_gate("Startup report schema (euclid.startup/1)", schema_ok, report.get("schema"))
-        log_gate("Zero initial unearned grants", grants_ok)
-        log_gate("No private adaptive knowledge leak", no_leak)
-        log_gate("Adaptive intelligence composed", adaptive_ok)
-
-        passed = schema_ok and grants_ok and no_leak and adaptive_ok
-        return {"passed": passed, "report": report}
+        with_runtime = EuclidRuntime(creator_id="clean-room-owner", state_dir=work / "runtime")
+        try:
+            port = lifecycle.data_port("euclid")
+            with_runtime.bind_adaptive_data_port(port)
+            with_runtime.compose_adaptive_intelligence()
+            verified = with_runtime.verify_adaptive_restart_receipt(prior["adaptive"])
+            require(verified["passed"], "adaptive restart verification failed")
+            require(
+                not with_runtime.rights.snapshot()["grants"], "restart adopted dispatch authority"
+            )
+            with_runtime.bind_empirical_state(data_port=port)
+            envelope = state_from_port(port)
+            require(envelope == prior["operational"], "operational state changed across restart")
+            audit = HashChainAudit(work / "runtime/empirical/empirical-state.jsonl")
+            require(audit.verify(audit.records), "audit chain failed after restart")
+            require(
+                any(r["event"].get("receipt") == envelope["receipt"] for r in audit.records),
+                "durable operational receipt missing",
+            )
+            require(os.getpid() != prior["pid"], "restart did not cross process boundary")
+            return {
+                "pid": os.getpid(),
+                "adaptive": verified,
+                "operational": "RESTORED",
+                "authority": "FRESH_NO_GRANTS",
+                "audit": "RESTORED_AND_VERIFIED",
+            }
+        finally:
+            with_runtime.close()
     finally:
-        runtime.close()
         lifecycle.stop()
 
 
-def gate_capability_discovery(work: Path) -> Dict[str, Any]:
-    print("\n--- Gate 3: Capability Discovery & Registration ---")
-    from euclid.contracts import Authority
-    from euclid.governance import Organ
+def writer(work, args):
+    from al_haras import (
+        ALHaras,
+        GuardianPolicy,
+        HashChainAudit,
+        SubscriptionAuthority,
+        SubscriptionClaims,
+    )
+    from Intelligence.capability_fabric import CapabilityRegistry, ExecutionProfile
+    from Intelligence.mathematical_research import MathematicalProofTracker
+    from Intelligence.proof_capability import register_proof_capability
+    from Intelligence.repository_review import ReviewPolicy
+    from Intelligence.repository_review_capability import register_repository_review_capability
+    from euclid.cognition.worlds import MechanismWorld, WorldExecutor, generate_task
     from euclid.runtime import EuclidRuntime
 
-    runtime = EuclidRuntime(creator_id="discovery-agent", state_dir=work / "discovery-state")
+    lifecycle = lifecycle_for(work)
+    lifecycle.start()
+    runtime = None
     try:
-        organ = Organ(
-            "clean-room-organ",
-            frozenset({"ping", "status"}),
-            Authority.READ_ONLY,
-            lambda req: {"pong": True, "ts": time.time()},
+        runtime = EuclidRuntime(creator_id="clean-room-owner", state_dir=work / "runtime")
+        require(runtime.startup_report()["schema"] == "euclid.startup/1", "startup schema")
+        require(not runtime.rights.snapshot()["grants"], "unearned initial grants")
+        port = lifecycle.data_port("euclid")
+        runtime.bind_adaptive_data_port(port)
+        runtime.compose_adaptive_intelligence()
+        registry = CapabilityRegistry()
+        register_proof_capability(registry, MathematicalProofTracker())
+        approved = work / "review"
+        approved.mkdir()
+        source = approved / "example.py"
+        source.write_text("value = 3\n")
+        digest = hashlib.sha256(source.read_bytes()).hexdigest()
+        register_repository_review_capability(
+            registry,
+            repo_root=approved,
+            approved_policies={"fixture": ReviewPolicy((("example.py", digest),))},
         )
-        runtime.register_organ(organ)
-        registry = [item["organ_id"] for item in runtime.registry.report()]
-        registered = "clean-room-organ" in registry
-        log_gate("Dynamic organ registration & discovery", registered)
-        return {"passed": registered, "registry": registry}
+        specialist = runtime.bind_intelligence(
+            registry,
+            profile=ExecutionProfile.INTERNAL_RESEARCH,
+            capabilities=["proof-conjecture", "repository-review"],
+        )
+        empirical = runtime.bind_empirical_state(data_port=port)
+        catalog = specialist.catalog() + empirical.catalog()
+        require(
+            {r["capability_id"] for r in catalog}
+            == {
+                "proof-conjecture",
+                "repository-review",
+                "host:capability:empirical_state_controller",
+            },
+            "native capability discovery incomplete",
+        )
+        profiles = [profile.value for profile in ExecutionProfile]
+        require(profiles == ["internal", "shared"], "execution profile contract changed")
+
+        authority = SubscriptionAuthority({"fixture": os.urandom(32)}, "clean-room-authority")
+        audit = HashChainAudit(work / "guardian/decisions.jsonl")
+        runtime.guardian = ALHaras(
+            authority,
+            GuardianPolicy(
+                "clean-room-policy",
+                allowed_operations=frozenset(
+                    {
+                        "intelligence.proof-conjecture",
+                        "intelligence.repository-review",
+                        "empirical-state.UPDATE_RELIABILITY",
+                        "empirical-state.INVALID_TRANSITION",
+                    }
+                ),
+            ),
+            audit,
+        )
+        now = int(time.time())
+        token = authority.issue(
+            SubscriptionClaims(
+                "fixture-subscription",
+                "clean-room",
+                "clean-room-authority",
+                "fixture",
+                ("hyba.security",),
+                ("verifier",),
+                now - 1,
+                now + 300,
+            )
+        )
+
+        def dispatch(organ, operation, arguments, credential=token):
+            return runtime.dispatch_specialist(
+                organ,
+                {"operation": operation, "arguments": arguments},
+                tenant_id="clean-room",
+                actor="verifier",
+                subscription_token=credential,
+            )
+
+        proof = {
+            "action": "register",
+            "conjecture_id": "clean-room-c",
+            "domain": "test",
+            "statement": "Acceptance fixture, not a proven theorem",
+        }
+        require(
+            not dispatch("intelligence", "proof-conjecture", proof)["allowed"],
+            "missing creator rights not refused",
+        )
+        for organ in ("intelligence", "empirical-state"):
+            runtime.rights.grant(runtime.creator_id, organ, organ + ".request", "dispatch")
+        for credential in ("", "arbitrary-not-a-credential"):
+            require(
+                not dispatch("intelligence", "proof-conjecture", proof, credential)["allowed"],
+                "invalid entitlement accepted",
+            )
+        result = dispatch("intelligence", "proof-conjecture", proof)
+        require(result["allowed"] and result["result"]["executed"], "native conjecture failed")
+        result = dispatch("intelligence", "repository-review", {"review_id": "fixture"})
+        require(
+            result["allowed"]
+            and result["result"]["executed"]
+            and result["result"]["output"]["files"][0]["sha256"] == digest,
+            "native source-bound review failed",
+        )
+        request = {
+            "state_payload": {"domain": "atomic", "weight": 0.99},
+            "deadline_epoch": time.time() + 60,
+            "max_budget": 1,
+        }
+        result = dispatch("empirical-state", "UPDATE_RELIABILITY", request)
+        require(
+            result["allowed"] and result["result"]["executed"], "native empirical dispatch failed"
+        )
+        before = state_from_port(port)
+        for arguments, reason in (
+            ({**request, "max_budget": 0}, "BUDGET_EXHAUSTED"),
+            ({**request, "deadline_epoch": time.time() - 1}, "DEADLINE_EXPIRED"),
+        ):
+            result = dispatch("empirical-state", "UPDATE_RELIABILITY", arguments)
+            require(
+                not result["result"]["executed"] and result["result"]["status"] == reason,
+                "negative transition gate failed",
+            )
+        result = dispatch("empirical-state", "INVALID_TRANSITION", request)
+        require(
+            result["result"]["status"] == "EXECUTION_FAILED_ROLLED_BACK", "rollback gate failed"
+        )
+        require(state_from_port(port) == before, "negative gates mutated durable state")
+        require(
+            not dispatch("empirical-state", "unapproved-operation", request)["allowed"],
+            "unapproved operation not refused",
+        )
+        runtime.rights.revoke(
+            runtime.creator_id, "empirical-state", "empirical-state.request", "dispatch"
+        )
+        require(
+            not dispatch("empirical-state", "UPDATE_RELIABILITY", request)["allowed"],
+            "revoked rights accepted",
+        )
+        spec, truth = generate_task("program-transformation", seed=37, partition="evaluation")
+        runtime.solve_task(spec, WorldExecutor(MechanismWorld(spec, truth)), seed=37)
+        prior = {
+            "pid": os.getpid(),
+            "operational": before,
+            "adaptive": runtime.adaptive_restart_receipt(),
+        }
+        require(not (runtime.state_dir / "adaptive_knowledge.json").exists(), "private state leak")
+        (work / "restart.json").write_text(json.dumps(prior))
+        state_audit = HashChainAudit(work / "runtime/empirical/empirical-state.jsonl")
+        phases = [r["event"]["phase"] for r in state_audit.records]
+        require(
+            phases == ["ADMITTED", "COMMITTED", "ADMITTED", "ROLLED_BACK"],
+            "missing durable admission/completion/rollback",
+        )
+        require(
+            token not in (work / "runtime/empirical/empirical-state.jsonl").read_text(),
+            "credential leaked into empirical audit",
+        )
     finally:
-        runtime.close()
-
-
-def gate_dispatch_authorization(work: Path) -> Dict[str, Any]:
-    print("\n--- Gate 4: Governed Dispatch & Fail-Closed Vetoes ---")
-    from euclid.contracts import Authority
-    from euclid.governance import Organ
-    from euclid.runtime import EuclidRuntime
-
-    runtime = EuclidRuntime(creator_id="authz-agent", state_dir=work / "authz-state")
-    closed = False
-    try:
-        runtime.register_organ(Organ(
-            "monitored-organ",
-            frozenset({"query"}),
-            Authority.READ_ONLY,
-            lambda req: {"result": "authorized-data"},
-        ))
-
-        # 1. Unearned grant refusal
-        refused_permission = False
-        try:
-            runtime.delegator.dispatch("monitored-organ", "query", {}, confident=True, safe=True)
-        except PermissionError:
-            refused_permission = True
-        log_gate("PermissionError on ungranted dispatch", refused_permission)
-
-        # 2. Authorized dispatch after explicit grant
-        runtime.rights.grant(runtime.creator_id, "monitored-organ", "query", "dispatch")
-        res = runtime.delegator.dispatch("monitored-organ", "query", {}, confident=True, safe=True)
-        dispatched_ok = res.get("result") == "authorized-data"
-        log_gate("Authorized dispatch succeeds after explicit grant", dispatched_ok)
-
-        # 3. Unknown organ refusal
-        unknown_refused = False
-        try:
-            runtime.delegator.dispatch("nonexistent-organ", "query", {}, confident=True, safe=True)
-        except ValueError:
-            unknown_refused = True
-        log_gate("ValueError on unknown organ dispatch", unknown_refused)
-
-        # 4. Fail-closed on closed runtime
-        runtime.close()
-        closed = True
-        closed_refused = False
-        try:
-            runtime.dispatch_specialist("monitored-organ", {}, tenant_id="t", actor="a")
-        except RuntimeError:
-            closed_refused = True
-        log_gate("RuntimeError on invocation after runtime closure", closed_refused)
-
-        passed = refused_permission and dispatched_ok and unknown_refused and closed_refused
-        return {"passed": passed}
-    finally:
-        if not closed:
+        if runtime is not None:
             runtime.close()
+        lifecycle.stop()
+    command = [sys.executable, "-I"]
+    if sys.flags.optimize:
+        command += ["-O"]
+    # run_path executes only the copied verifier; cwd stays empty and sys.path isolated.
+    command += [
+        "-c",
+        "import runpy,sys; p=sys.argv.pop(1); runpy.run_path(p,run_name='__main__')",
+        str(Path(__file__).resolve()),
+        "--reader",
+        "--work",
+        str(work),
+        "--repo-root",
+        str(args.repo_root),
+        "--expected-commit",
+        args.expected_commit,
+    ]
+    completed = subprocess.run(command, check=True, text=True, capture_output=True, timeout=300)
+    restart = json.loads(completed.stdout.strip().splitlines()[-1])
+    return {
+        "catalog": catalog,
+        "profiles": profiles,
+        "restart": restart,
+        "native_paths": ["proof-conjecture", "repository-review", "empirical-state"],
+        "limits": "bounded in-process tests; not independent assurance or production qualification",
+    }
 
 
-def gate_unified_intelligence_architecture() -> Dict[str, Any]:
-    print("\n--- Gate 5: Unified Intelligence Architecture ---")
-    import euclid.intelligence as intel
-    import Intelligence
-
-    # Canonical surfaces
-    euclid_has_subdomains = (
-        hasattr(intel, "physics")
-        and hasattr(intel, "cognition")
-        and hasattr(intel, "gatekeeper")
-        and hasattr(intel, "UnifiedIntelligenceGatekeeper")
-    )
-    intel_has_subdomains = (
-        hasattr(Intelligence, "physics")
-        and hasattr(Intelligence, "cognition")
-        and hasattr(Intelligence, "gatekeeper")
-        and hasattr(Intelligence, "UnifiedIntelligenceGatekeeper")
-    )
-    log_gate("euclid.intelligence exposes physics, cognition, gatekeeper", euclid_has_subdomains)
-    log_gate("Intelligence exposes physics, cognition, gatekeeper", intel_has_subdomains)
-
-    # Physics domain
-    physics = intel.physics
-    physics_ok = (
-        hasattr(physics, "first_principles_quantum")
-        and hasattr(physics, "quantum_algorithms")
-        and hasattr(physics, "lucas_scales")
-        and hasattr(physics, "poincare_cassini_search")
-        and hasattr(physics, "mining_native")
-    )
-    log_gate("physics domain organizes quantum, Lucas, and physical simulation", physics_ok)
-
-    # Cognition domain
-    cognition = intel.cognition
-    cognition_ok = (
-        hasattr(cognition, "EmpiricalStateController")
-        and hasattr(cognition, "EmpiricalStateBridge")
-        and hasattr(cognition, "StateTransitionRequest")
-        and hasattr(cognition, "MathematicalProofTracker")
-        and hasattr(cognition, "register_proof_capability")
-        and hasattr(cognition, "repository_review")
-    )
-    log_gate("cognition domain organizes empirical state, proof tracking, and review", cognition_ok)
-
-    passed = euclid_has_subdomains and intel_has_subdomains and physics_ok and cognition_ok
-    return {"passed": passed}
-
-
-def gate_live_empirical_state_and_audit() -> Dict[str, Any]:
-    print("\n--- Gate 6: Live Empirical State & AL HARAS Audit ---")
-    from euclid.intelligence.gatekeeper import (
-        UnifiedIntelligenceGatekeeper,
-        StateTransitionRequest,
-    )
-    gatekeeper = UnifiedIntelligenceGatekeeper()
-
-    req = StateTransitionRequest(
-        capability_id="host:capability:empirical_state_controller",
-        caller_id="operator:verifier:001",
-        transition_type="UPDATE_RELIABILITY",
-        state_payload={"domain": "atomic", "weight": 0.98},
-        deadline_epoch=time.time() + 60.0,
-        max_budget=100,
-        operator_token="valid_operator_token_12345",
-    )
-    ok, receipt, msg = gatekeeper.dispatch_state_transition(req)
-    state_committed = (
-        ok
-        and receipt is not None
-        and receipt.status == "COMMITTED"
-        and gatekeeper.state_bridge.controller.state["reliability_weights"]["atomic"] == 0.98
-    )
-    log_gate("State transition committed with pre-execution receipt", state_committed)
-    if receipt:
-        print(f"    [*] Receipt ID: {receipt.receipt_id}")
-        print(f"    [*] State transition hash: {receipt.new_state_hash[:16]}...")
-
-    trail = gatekeeper.get_audit_trail()
-    audit_logged = len(trail) >= 1 and trail[-1]["receipt_id"] == receipt.receipt_id
-    log_gate("Durable pre-execution audit receipt recorded in trail", audit_logged)
-
-    return {"passed": state_committed and audit_logged, "receipt": receipt}
-
-
-def gate_fail_closed_and_rollback() -> Dict[str, Any]:
-    print("\n--- Gate 7: Fail-Closed Negative Gates & Verified Rollback ---")
-    from euclid.intelligence.gatekeeper import (
-        UnifiedIntelligenceGatekeeper,
-        StateTransitionRequest,
-    )
-    gatekeeper = UnifiedIntelligenceGatekeeper()
-
-    # 1. Unapproved capability refusal
-    bad_req = StateTransitionRequest(
-        capability_id="unapproved:arbitrary:target",
-        caller_id="attacker",
-        transition_type="BYPASS",
-        state_payload={},
-        deadline_epoch=time.time() + 10.0,
-        max_budget=10,
-        operator_token="token_with_length_16_bytes",
-    )
-    ok, _, msg = gatekeeper.dispatch_state_transition(bad_req)
-    unapproved_refused = (not ok) and ("FORBIDDEN_CAPABILITY" in msg)
-    log_gate("Refusal on unapproved capability target", unapproved_refused, msg)
-
-    # 2. Budget exhaustion refusal
-    zero_budget_req = StateTransitionRequest(
-        capability_id="host:capability:empirical_state_controller",
-        caller_id="operator:001",
-        transition_type="UPDATE_RELIABILITY",
-        state_payload={"domain": "atomic", "weight": 0.15},
-        deadline_epoch=time.time() + 10.0,
-        max_budget=0,
-        operator_token="token_with_length_16_bytes",
-    )
-    ok, _, msg = gatekeeper.dispatch_state_transition(zero_budget_req)
-    budget_refused = (
-        (not ok)
-        and ("BUDGET_EXHAUSTED" in msg)
-        and gatekeeper.state_bridge.controller.state["reliability_weights"]["atomic"] != 0.15
-    )
-    log_gate("Refusal on budget exhaustion without mutation", budget_refused, msg)
-
-    # 3. Verified rollback on exception
-    initial_weights = dict(gatekeeper.state_bridge.controller.state["reliability_weights"])
-    failing_req = StateTransitionRequest(
-        capability_id="host:capability:empirical_state_controller",
-        caller_id="operator:001",
-        transition_type="INVALID_TYPE_TRIGGERING_EXCEPTION",
-        state_payload={},
-        deadline_epoch=time.time() + 10.0,
-        max_budget=10,
-        operator_token="token_with_length_16_bytes",
-    )
-    ok, _, msg = gatekeeper.dispatch_state_transition(failing_req)
-    rolled_back = (
-        (not ok)
-        and ("EXECUTION_FAILED_ROLLED_BACK" in msg)
-        and gatekeeper.state_bridge.controller.state["reliability_weights"] == initial_weights
-    )
-    log_gate("Verified rollback restored pre-execution state on failure", rolled_back, msg)
-
-    passed = unapproved_refused and budget_refused and rolled_back
-    return {"passed": passed}
-
-
-def gate_persistence_and_clean_restart() -> Dict[str, Any]:
-    print("\n--- Gate 8: Clean Instance Restart (No Memory Bleed) ---")
-    from euclid.intelligence.gatekeeper import (
-        UnifiedIntelligenceGatekeeper,
-        StateTransitionRequest,
-    )
-    gatekeeper = UnifiedIntelligenceGatekeeper()
-
-    # Commit state
-    req = StateTransitionRequest(
-        capability_id="host:capability:empirical_state_controller",
-        caller_id="operator:001",
-        transition_type="UPDATE_RELIABILITY",
-        state_payload={"domain": "atomic", "weight": 0.99},
-        deadline_epoch=time.time() + 60.0,
-        max_budget=100,
-        operator_token="token_with_length_16_bytes",
-    )
-    gatekeeper.dispatch_state_transition(req)
-    snapshot = dict(gatekeeper.state_bridge.controller.state)
-
-    # Reconstruct fresh instance from snapshot
-    restarted = UnifiedIntelligenceGatekeeper()
-    restarted.state_bridge.controller.state = dict(snapshot)
-
-    state_restored = restarted.state_bridge.controller.state["reliability_weights"]["atomic"] == 0.99
-    no_log_bleed = len(restarted.get_audit_trail()) == 0
-
-    log_gate("Operational state restored across clean restart", state_restored)
-    log_gate("Prior in-memory audit logs not adopted as identity", no_log_bleed)
-
-    passed = state_restored and no_log_bleed
-    return {"passed": passed}
-
-
-def gate_deprecation_shims() -> Dict[str, Any]:
-    print("\n--- Gate 9: Backward-Compatibility Deprecation Shims ---")
-    toe_shim_ok = False
-    euclid_shim_ok = False
-
-    with warnings.catch_warnings(record=True) as recorded:
-        warnings.simplefilter("always")
-        import hyba_toe_intelligence as toe_shim
-
-        toe_warnings = [w for w in recorded if issubclass(w.category, DeprecationWarning)]
-        if toe_warnings and hasattr(toe_shim, "physics"):
-            toe_shim_ok = True
-        log_gate(
-            "hyba_toe_intelligence emits DeprecationWarning and routes to physics",
-            toe_shim_ok,
-            str(toe_warnings[0].message) if toe_warnings else "No warning",
-        )
-
-    with warnings.catch_warnings(record=True) as recorded:
-        warnings.simplefilter("always")
-        import hyba_euclid_intelligence as euclid_shim
-
-        euclid_warnings = [w for w in recorded if issubclass(w.category, DeprecationWarning)]
-        if euclid_warnings and hasattr(euclid_shim, "intelligence"):
-            euclid_shim_ok = True
-        log_gate(
-            "hyba_euclid_intelligence emits DeprecationWarning and routes to euclid.intelligence",
-            euclid_shim_ok,
-            str(euclid_warnings[0].message) if euclid_warnings else "No warning",
-        )
-
-    passed = toe_shim_ok and euclid_shim_ok
-    return {"passed": passed}
-
-
-def run_all_gates() -> bool:
-    print("=" * 75)
-    print("EUCLID ENTERPRISE ENGINE — CLEAN-ROOM RUNTIME FIDELITY VERIFICATION")
-    print("=" * 75)
-    work = Path(os.environ.get("TEMP", "/tmp")) / "euclid-verification-work"
-    if work.exists():
-        import shutil
-        shutil.rmtree(work, ignore_errors=True)
-    work.mkdir(parents=True, exist_ok=True)
-
-    results = []
-    try:
-        results.append(("Isolation", gate_isolation()))
-        results.append(("Canonical Init", gate_canonical_init(work)))
-        results.append(("Capability Discovery", gate_capability_discovery(work)))
-        results.append(("Dispatch Authorization", gate_dispatch_authorization(work)))
-        results.append(("Unified Intelligence", gate_unified_intelligence_architecture()))
-        results.append(("Live State & Audit", gate_live_empirical_state_and_audit()))
-        results.append(("Fail-Closed & Rollback", gate_fail_closed_and_rollback()))
-        results.append(("Persistence & Clean Restart", gate_persistence_and_clean_restart()))
-        results.append(("Deprecation Shims", gate_deprecation_shims()))
-    except Exception as exc:
-        print(f"\n[!] Verification encountered unhandled error: {exc}", flush=True)
-        import traceback
-        traceback.print_exc()
-        return False
-
-    all_passed = all(r["passed"] for _, r in results)
-    print("\n" + "=" * 75)
-    if all_passed:
-        print("[+] ALL CLEAN-ROOM ARTIFACT GATES PASSED (100% SITE-PACKAGES ISOLATED)")
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--expected-commit", required=True)
+    parser.add_argument("--repo-root", type=Path, required=True)
+    parser.add_argument("--reader", action="store_true")
+    parser.add_argument("--work", type=Path)
+    args = parser.parse_args()
+    args.repo_root = args.repo_root.resolve()
+    paths = isolation(args.repo_root, args.expected_commit)
+    if args.reader:
+        result = reader(args.work)
     else:
-        failed = [name for name, r in results if not r["passed"]]
-        print(f"[!] FAILED GATES: {failed}")
-    print("=" * 75)
-    return all_passed
+        with tempfile.TemporaryDirectory(prefix="euclid-acceptance-") as tmp:
+            work = Path(tmp)
+            require(not work.resolve().is_relative_to(args.repo_root), "work is inside checkout")
+            (work / "custody.key").write_bytes(os.urandom(32))
+            (work / "custody.key").chmod(0o600)
+            result = writer(work, args)
+    isolation(args.repo_root, args.expected_commit)
+    print(
+        json.dumps(
+            {"passed": True, "optimized": bool(sys.flags.optimize), "imports": paths, **result},
+            sort_keys=True,
+        )
+    )
 
 
 if __name__ == "__main__":
-    success = run_all_gates()
-    sys.exit(0 if success else 1)
+    main()

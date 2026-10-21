@@ -1,0 +1,32 @@
+{
+  "schema": "turing.docs.claims.v1",
+  "claims": [
+    {
+      "id": "DOC-001",
+      "claim": "Facade delegates execution; does not replace engine",
+      "status": "source-inspected-not-runtime-qualified",
+      "source_commit": "356ab419dae197f407989da82feaa2f149da08e7",
+      "source": "turing_universal_quantum_computer/turing_universal_quantum_computer/native_adapter.py",
+      "verification": "Existing test_public_api_dropin.py differential suite; not rerun locally",
+      "approval": "pending"
+    },
+    {
+      "id": "DOC-002",
+      "claim": "Canonical exact MPS admission exists under static bound",
+      "status": "source-inspected-not-runtime-qualified",
+      "source_commit": "356ab419dae197f407989da82feaa2f149da08e7",
+      "source": "turing_universal_quantum_computer/turing_universal_quantum_computer/representation.py",
+      "verification": "Source inspection only; full engine release gate required",
+      "approval": "pending"
+    },
+    {
+      "id": "DOC-003",
+      "claim": "Native jobs/idempotency are live-instance local",
+      "status": "source-inspected-not-runtime-qualified",
+      "source_commit": "356ab419dae197f407989da82feaa2f149da08e7",
+      "source": "turing_universal_quantum_computer/turing_universal_quantum_computer/native_adapter.py",
+      "verification": "Source inspection and existing package qualification tests; not executed here",
+      "approval": "pending"
+    }
+  ]
+}

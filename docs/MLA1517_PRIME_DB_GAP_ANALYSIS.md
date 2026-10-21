@@ -12,6 +12,9 @@ The transfer notes are a mixed historical/specification record, not a single shi
 | Shipped vs planned ambiguity | Classified enterprise product-platform sections as enterprise-only planned work, not mining-repository capabilities. | `manifests/mla1517_prime_db_gap_analysis.json` |
 | Narrative-only review | Added a machine-readable ledger and regression test for ownership, refuted claims, and open physical gates. | `tests/test_mla1517_prime_db_gap_analysis.py` |
 | Chronos v3.3 distribution gap | Already closed by merged PR #31: packaged facade/data and executable capability audit. | PR #31 |
+| Transfer notes missing from the repo | Canonical document copied in its entirety. | `docs/MLA1517_PRIME_DB_TRANSFER_NOTES.md` |
+| OVID/THESEUS ownership inversion in the triad façade | OVID authority root + rebuildable THESEUS projection; Chronus optional. | `aethel/ovid_authority.py`, `aethel/theseus_projection.py`, `tests/test_ovid_theseus_chronus_gap_closure.py` |
+| Multi-device iGPU ambiguity | Chronus locked to ONE iGPU (`device_count=1`). | `chronus/igpu/fabric.py`, `chronus/igpu/host.py` |
 
 ## Verified software surfaces already present
 
@@ -44,3 +47,12 @@ The transfer notes' enterprise platform roadmap—versioned datasets, multimodel
 - The 11D substrate boundary is Float64 or exact integer unless a narrower device path is explicitly certified; no silent downcast is permitted.
 - SHA-256d and target comparison remain the mining accept authority; pool acknowledgement remains required for a share.
 - Refuted hypotheses and unmeasured physical/performance claims remain prohibited.
+
+
+## Canonical source
+
+The owner transfer document is now in the repository in its entirety:
+
+`docs/MLA1517_PRIME_DB_TRANSFER_NOTES.md`
+
+Chronus execution remains **ONE iGPU**. Host-GPU overlay is optional assist, not a second product iGPU. Physical OpenCL/RTL/pool gates remain open evidence, not software passes.

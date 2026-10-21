@@ -1,6 +1,6 @@
 import type { StratumStatus } from "./status";
 
-export type StratumStageState = "complete" | "active" | "blocked" | "idle";
+export type StratumStageState = "complete" | "active" | "blocked" | "idle" | "unavailable";
 
 export type StratumStage = {
   key: string;
@@ -9,6 +9,7 @@ export type StratumStage = {
 };
 
 export function stratumStages(status?: StratumStatus | null): StratumStage[] {
+  if (!status || status.evidence_available === false) return ["connect", "subscribe", "authorize", "job", "search", "candidate", "submit", "accepted"].map(key => ({ key, label: key, state: "unavailable" }));
   const primary = status?.primary;
   const job = status?.job;
   const submission = status?.submission;
@@ -20,8 +21,8 @@ export function stratumStages(status?: StratumStatus | null): StratumStage[] {
   const submitted =
     submission?.state === "SUBMITTING" ||
     submission?.last_submit_at != null ||
-    (status?.counters?.submitted ?? 0) > 0;
-  const accepted = submission?.last_result === "ACCEPTED" || (status?.counters?.accepted ?? 0) > 0;
+    (status?.counters?.submitted != null && status.counters.submitted > 0);
+  const accepted = submission?.last_result === "ACCEPTED" || submission?.state === "ACCEPTED";
   const acceptedStage: StratumStageState = accepted
     ? "complete"
     : submission?.last_result === "REJECTED" || submission?.last_result === "OUTCOME_UNKNOWN"
@@ -74,7 +75,8 @@ export function stratumAlert(status?: StratumStatus | null): string | null {
   if (!status || status.evidence_available === false) return "STRATUM EVIDENCE UNAVAILABLE";
   if (status.state === "AUTH_FAILED") return "POOL AUTHORIZATION FAILED";
   if (status.submission?.state === "OUTCOME_UNKNOWN") return "SUBMISSION OUTCOME UNKNOWN";
-  if (status.primary?.transport !== "CONNECTED") return "POOL DISCONNECTED";
+  if (status.primary?.transport == null) return "STRATUM TRANSPORT NOT REPORTED";
+  if (status.primary.transport !== "CONNECTED") return "POOL DISCONNECTED";
   if (status.primary?.authorized === true && status.job?.active !== true) {
     return "NO FRESH JOB";
   }

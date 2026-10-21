@@ -1,0 +1,19 @@
+...E........                                                             [100%]
+==================================== ERRORS ====================================
+____ ERROR at setup of test_stratum_reader_progresses_during_native_window _____
+
+self = PosixPath('/data/mining-closeout/tmp/third'), mode = 448, parents = False
+exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/mining-closeout/tmp/third'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+=========================== short test summary info ============================
+ERROR mining/tests/test_closeout_window_isolation.py::test_stratum_reader_progresses_during_native_window
+11 passed, 1 error in 0.25s

@@ -1,0 +1,12 @@
+{
+  "theseus_available": false,
+  "stream_inputs": [
+    "a/b",
+    "a?b"
+  ],
+  "normalized": [
+    "a_b",
+    "a_b"
+  ],
+  "scope": "Canonicalization collision demonstrated; reachability and tenant impact not established."
+}

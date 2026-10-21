@@ -1,0 +1,22 @@
+{
+  "toe/ciaas_api.py": "3791be81756fe94330027819f4e8d69456c497d09e5b766e4bf4321ce55b0c9f",
+  "Intelligence/__init__.py": "f0a65690bc85f869078d8406cb63067803265bc33afdd144e7d1981dca2f81a3",
+  "Intelligence/lucas_scaler.py": "103c9fb780b5daddd66265276c5ba7fc65d4b3868ba8bdcf4091ee63483bf852",
+  "Intelligence/salamander.py": "6629371f62cd9014d549a59f5a28fef63580de121ba6ad35d165dcc51d24a9c5",
+  "experiments/toe_enterprise_collapse.py": "9f314e3858f7455d6e46dc3c0880c5d7720303146896b36aaec8158c1c03633a",
+  "experiments/quantum_lucas_scaling.ts": "4e14548bed08ca50d9d3fab8947b5c1638cdc3ac892ffc2ef438d824ecb37bf2",
+  "experiments/toe_enterprise_collapse_results.json": "709a069b30a5d4844ef9f3a2dab03c81b2161ecdced59a3ccb1291be04d92d7a",
+  "package.json": "607f7040d1e823f742d955bc46be15a4fc47aaf7e3f00289fd12445a9c31b2a1",
+  "package-lock.json": "721979dce1caaf31a5eb3bf2f569df3a98a7068f8443f1d36dc62e6a59d747e7",
+  "scripts/run_toe_production_gates.py": "a9a5ccab41570401009233a94a4e293167b4e1bf5e73a2a8226698831ecec850",
+  "tests/test_toe_http_closeout.py": "78f56c749ffde7943e21e40dd522f35f9c76f95aadc3e949d8e7ac58ff1c8d6f",
+  "tests/test_toe_gate_closeout.py": "5c7e0913796780e2e46cae56ae0ac8b8606a6600138bba171555b5ae20197462",
+  "tests/test_toe_domain_qualification.py": "0678fae354265672375e50c056a736c7a08b4b34e7a26d2b3fb8f7da65b89055",
+  "tests/test_toe_local_gate_runner.py": "ac29c8dfee90f9f5c39f2c2b8d70627c8d97014097a0ea6184c5a05b09356e81",
+  "toe/adapters/qualification/arabic_nlp.json": "f571880f11d3d42ca32101b473f0fd9058ebe4ed070ddb9eb5915ba22d461e2a",
+  "toe/adapters/qualification/cybersecurity.json": "406c9d6e600b36a9d9959e77363cba753f17fe4bc1b1919a79d5660d277c5e9f",
+  "toe/adapters/qualification/healthcare.json": "bf9c6783b18ab552acad2badc3a6695dcc6403539e588b36fec8437231be86e9",
+  "toe/adapters/qualification/islamic_finance.json": "63a1e52fdb00702d3b056a45095dc5dfdeb375541f2078c5c2d7f1d580c815d6",
+  "toe/adapters/qualification/logistics.json": "2981f62cb6f7f88e1289794f477a750ff4c9c91cf59bb88b42a23063da8c620e",
+  "toe/adapters/qualification/mining.json": "3f941a16d899eb010c4714b69114b040445fc9d004fb1300dee296d05d01dbcc"
+}

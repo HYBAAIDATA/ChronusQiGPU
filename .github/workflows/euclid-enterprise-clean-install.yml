@@ -1,0 +1,61 @@
+name: EUCLID enterprise clean install
+
+on:
+  pull_request:
+    paths:
+      - "euclid/**"
+      - "Intelligence/**"
+      - "al_haras/**"
+      - "aethel/**"
+      - "toe/**"
+      - "kellogg/**"
+      - "hyba_substrate/**"
+      - "resonance_intelligence/**"
+      - "scripts/*clean_install*"
+      - "scripts/build_standalone_wheel.py"
+      - "tests/test_empirical_state_bridge_hardening.py"
+      - "tests/test_enterprise_packaging.py"
+      - "tests/test_unified_intelligence_consolidation.py"
+      - "tests/intelligence_consolidation/**"
+      - ".github/workflows/euclid-enterprise-clean-install.yml"
+  push:
+    branches: [main, fix/euclid-clean-install-runtime-fidelity]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  installed-artifact:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install build tooling only
+        run: python -m pip install "build>=1.2,<2" "setuptools>=77,<81" wheel
+      - name: Packaging regressions
+        run: python -m unittest discover -s tests -p test_enterprise_packaging.py -v
+      - name: Build and verify installed enterprise artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/run_clean_install.py \
+            --expected-commit "$(git rev-parse HEAD)" \
+            --output-dir "${{ runner.temp }}/euclid-enterprise-evidence"
+      - name: Retain wheels, provenance, failure evidence and terminal output
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: euclid-enterprise-${{ matrix.os }}-py${{ matrix.python }}
+          path: ${{ runner.temp }}/euclid-enterprise-evidence
+          if-no-files-found: warn

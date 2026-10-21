@@ -1,0 +1,28 @@
+test_bad_certificate_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_bad_certificate_fails_closed) ... ok
+test_bad_lane_identity_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_bad_lane_identity_fails_closed) ... ok
+test_bad_ray_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_bad_ray_fails_closed) ... ok
+test_bad_vertex_owner_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_bad_vertex_owner_fails_closed) ... ok
+test_boolean_probability_rejected (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_boolean_probability_rejected) ... ok
+test_chunk_overlap_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_chunk_overlap_fails_closed) ... ok
+test_dimension_mutation_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_dimension_mutation_fails_closed) ... ok
+test_failed_contraction_cannot_be_cached_as_passed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_failed_contraction_cannot_be_cached_as_passed) ... ok
+test_failed_gauge_cannot_be_cached_as_passed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_failed_gauge_cannot_be_cached_as_passed) ... ok
+test_finite_probabilities_required (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_finite_probabilities_required) ... ok
+test_foreign_proof_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_foreign_proof_fails_closed) ... ok
+test_future_names_nonempty_unique_strings (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_future_names_nonempty_unique_strings) ... ok
+test_good_plan_retains_m32_compatibility_not_600_devices (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_good_plan_retains_m32_compatibility_not_600_devices) ... ok
+test_missing_proof_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_missing_proof_fails_closed) ... ok
+test_mutable_nonce_container_rejected (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_mutable_nonce_container_rejected) ... ok
+test_nonce_order_tamper_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_nonce_order_tamper_fails_closed) ... ok
+test_normalization_still_required (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_normalization_still_required) ... ok
+test_plan_evidence_detached_from_mutable_tensor (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_plan_evidence_detached_from_mutable_tensor) ... ok
+test_probability_range_required (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_probability_range_required) ... ok
+test_seed_mutation_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_seed_mutation_fails_closed) ... ok
+test_self_consistent_wrong_coverage_certificate_fails_closed (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_self_consistent_wrong_coverage_certificate_fails_closed) ... ok
+test_window_boundary_cases (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_window_boundary_cases) ... ok
+test_zero_window_not_executable (test_kellogg_plan_admission.KelloggPlanAdmissionTests.test_zero_window_not_executable) ... ok
+
+----------------------------------------------------------------------
+Ran 23 tests in 8.847s
+
+OK

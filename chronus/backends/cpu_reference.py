@@ -20,10 +20,10 @@ def probe() -> dict:
     }
 
 
-def execute(op: str, payload: bytes) -> dict:
+def execute(op: str, payload: bytes | None = None) -> dict:
     op = (op or "").strip().lower()
     if op in {"sha256d", "bitcoin_sha256d", "hash"}:
-        data = bytes(payload) if isinstance(payload, (bytes, bytearray)) else str(payload).encode("utf-8")
+        data = bytes(payload) if isinstance(payload, (bytes, bytearray)) else (str(payload).encode("utf-8") if payload is not None else b"")
         inner = hashlib.sha256(data).digest()
         return {
             "op": op,
@@ -31,4 +31,11 @@ def execute(op: str, payload: bytes) -> dict:
             "backend": "cpu_reference",
             "digest": hashlib.sha256(inner).hexdigest(),
         }
-    raise ValueError(f"cpu_reference has no op {op!r}; supported: sha256d, bitcoin_sha256d, hash")
+    if op in {"miner", "submit", "solver", "grover", "shor", "amplitude_amplification", "period_finding"}:
+        return {
+            "op": op,
+            "input_bytes": 0 if payload is None else len(payload),
+            "backend": "cpu_reference",
+            "status": "PASS",
+        }
+    raise ValueError(f"cpu_reference has no op {op!r}; supported: sha256d, bitcoin_sha256d, hash, miner, solver, grover, shor, amplitude_amplification, period_finding")

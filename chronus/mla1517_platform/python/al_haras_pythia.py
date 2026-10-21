@@ -41,6 +41,8 @@ _PYTHIA_ALLOWED_OPERATIONS: frozenset[str] = DEFAULT_ALLOWED_OPERATIONS | frozen
         "security.subscribe",
         "tensor.capabilities",
         "tensor.execute",
+        # Explicitly enabled technical-evaluation adapter; not commercial entitlement.
+        "quantum.workspace",
     }
 )
 

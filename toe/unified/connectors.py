@@ -31,6 +31,7 @@ class Probe:
     connector_id: str
     ok: bool
     detail: str
+    measured: bool = False
 
 
 @dataclass(frozen=True)
@@ -75,7 +76,7 @@ class JdbcDriver:
         path = str(dsn).split(":", 1)[1]
         with sqlite3.connect(path) as conn:
             conn.execute("select 1")
-        return Probe(spec.id, True, f"sqlite {path}")
+        return Probe(spec.id, True, f"sqlite {path}", measured=True)
 
     def extract(self, spec: ConnectorSpec, credentials: Mapping[str, Any], entity: str, mode: str) -> Extract:
         _entity(spec, entity)
@@ -92,6 +93,23 @@ class JdbcDriver:
                 raise ConnectorError(f"{spec.id} read of {table} failed: {exc}") from exc
             rows = [dict(row) for row in cursor.fetchall()]
         return Extract(spec.id, entity, mode, tuple(rows))
+
+
+def _origin(url: str) -> tuple[str, str]:
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc or parsed.username or parsed.password:
+        raise ConnectorError("invalid HTTP origin")
+    return parsed.scheme.lower(), parsed.netloc.lower()
+
+
+class _SameOriginRedirect(urllib.request.HTTPRedirectHandler):
+    def __init__(self, origin):
+        self.origin = origin
+
+    def redirect_request(self, request, fp, code, msg, headers, newurl):
+        if _origin(newurl) != self.origin:
+            raise ConnectorError("redirect resolves outside base_url origin")
+        return super().redirect_request(request, fp, code, msg, headers, newurl)
 
 
 class RestDriver:
@@ -114,14 +132,15 @@ class RestDriver:
         # Same-origin gate: an entity like "//host/path" makes urljoin escape
         # the configured base, which would send the bearer token to a foreign
         # origin. Reject anything that resolves outside base_url's netloc.
-        if urlparse(url).netloc != urlparse(str(base)).netloc:
+        if _origin(url) != _origin(str(base)):
             raise ConnectorError(f"{spec.id} entity {entity!r} resolves outside base_url")
         request = urllib.request.Request(url, headers={"Accept": "application/json"})
         token = credentials.get("token")
         if token:
             request.add_header("Authorization", f"Bearer {token}")
         try:
-            with urllib.request.urlopen(request, timeout=30) as response:
+            opener = urllib.request.build_opener(_SameOriginRedirect(_origin(str(base))))
+            with opener.open(request, timeout=30) as response:
                 body = json.loads(response.read().decode("utf-8"))
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
             raise ConnectorUnavailable(f"{spec.id} {url} failed: {exc}") from exc

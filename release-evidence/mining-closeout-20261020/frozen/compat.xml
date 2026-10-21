@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="35" time="1.141" timestamp="2026-10-21T00:57:34.265483+00:00" hostname="dbc5f504-010"><testcase classname="mining.tests.test_agent_b_regressions.FleetM32SlicingTests" name="test_contiguous_and_batch_unchanged" time="0.001" /><testcase classname="mining.tests.test_agent_b_regressions.FleetM32SlicingTests" name="test_partial_epoch_window_rejected" time="0.000" /><testcase classname="mining.tests.test_agent_b_regressions.FleetM32SlicingTests" name="test_slices_align_to_32_step_epochs" time="0.000" /><testcase classname="mining.tests.test_agent_b_regressions.FleetM32SlicingTests" name="test_union_covers_window_exactly_once_for_any_split" time="0.000" /><testcase classname="mining.tests.test_agent_b_regressions.MalformedPoolInputTests" name="test_malformed_notify_dropped_without_replacing_job" time="0.000" /><testcase classname="mining.tests.test_agent_b_regressions.MalformedPoolInputTests" name="test_malformed_set_difficulty_ignored" time="0.000" /><testcase classname="mining.tests.test_agent_b_regressions.MalformedPoolInputTests" name="test_malformed_subscribe_fails_handshake_closed" time="0.001" /><testcase classname="mining.tests.test_agent_b_regressions.MalformedPoolInputTests" name="test_notify_field_validation" time="0.000" /><testcase classname="mining.tests.test_agent_b_regressions.MalformedPoolInputTests" name="test_valid_subscribe_still_binds" time="0.000" /><testcase classname="mining.tests.test_agent_b_regressions.ListenerOwnershipTests" name="test_wait_for_job_never_reads_while_listening_claimed" time="0.302" /><testcase classname="mining.tests.test_agent_b_regressions.OversizedLineTests" name="test_oversized_line_exits_listener_without_exception" time="0.001" /><testcase classname="mining.tests.test_agent_b_regressions.PendingRpcBoundTests" name="test_listening_rpc_timeout_pops_pending" time="0.011" /><testcase classname="mining.tests.test_agent_b_regressions.ExecutionIdentityTests" name="test_execute_receipt_labels_classical_end_to_end" time="0.057"><failure message="ImportError: cannot import name 'turing_core' from partially initialized module 'turing_universal_quantum_computer' (most likely due to a circular import) (/data/mining-closeout/repo/turing_universal_quantum_computer/turing_universal_quantum_computer/__init__.py)">self = &lt;mining.tests.test_agent_b_regressions.ExecutionIdentityTests testMethod=test_execute_receipt_labels_classical_end_to_end&gt;
+
+    def test_execute_receipt_labels_classical_end_to_end(self):
+        from mining.scaled_execution import LucasScaledAethelExecutionAdapter
+    
+&gt;       adapter = LucasScaledAethelExecutionAdapter(scale_index=76)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+mining/tests/test_agent_b_regressions.py:328: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+mining/scaled_execution.py:66: in __init__
+    self.stack = FourLayerMiningStack(n_qubits=self.n_qubits)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+mining/four_layer_stack.py:399: in __init__
+    self.tensor = TensorFoldEngine()
+                  ^^^^^^^^^^^^^^^^^^
+mining/four_layer_stack.py:149: in __init__
+    from turing_universal_quantum_computer import turing_core
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """Turing Universal Quantum Computer — consolidated exact-quantum substrate.
+    
+    This package consolidates every PYTHIA/MLA1517 module that constitutes the
+    Turing virtual quantum computer: the canonical exact register, Q[sqrt(5)] /
+    Pisot algebra, exact tensor witnesses, Lucas/Pisot
+    Hendrix schedule, large-scale stabilizer execution, the production phi-machine
+    facade, bounded phi-VQC ranking and the exact backends behind the product boundary.
+    
+    Layers
+    ------
+    turing_core           exact Q[sqrt(5)] algebra, Zeckendorf, T_phi fold,
+                          dual-overlay frame, complete nonce schedule, sha256d
+                          engine, and (optional) the mathematical discovery engine
+    hilbert               QuantumRegister — canonical exact sparse state vector
+                          over Q(i, sqrt(2)) + exact cyclotomics; n is unlimited,
+                          support is bounded (fail-closed max_amplitudes)
+    stabilizer            StabilizerState — exact Clifford tableau; superposition,
+                          entanglement and measurement at arbitrary n (incl. 10000)
+    phi_machine           HYBA 1,000-qubit Clifford execution profile on Turing,
+                          QASM subset, exact T_phi checkpoint custody and bounded
+                          algorithm capability metadata
+    midas_vqc             32-face variational nonce ranker + exact Clifford skeleton;
+                          candidate ordering only, never mining consensus authority
+    quantum_walk          coined cycle walk (sparse-exact) + closed-form
+                          continuous-time hypercube walk (exact at any n)
+    annealing             exact TFIM free-fermion spectrum, adiabatic gap,
+                          Landau-Zener tunnelling (symbolic, any n)
+    swarm                 QuantumSwarm — agents sampling exact Born distributions
+    turing_core.ten_thousand  TenThousandQubitSystem — the universal engine
+    register_tensor       QuantumTensor — audited facade over QuantumRegister
+    exact_tensor          canonical Q(sqrt(2)) + i Q(sqrt(2)) exact state vector
+    exact_state_vector    MLA1517 exact state-vector algebra
+    quantum_tensor        first-principles tensor layer over C^N
+    pisot / hendrix       Lucas/Pisot scale contracts + Hendrix schedule
+    quantum_cuda          iGPU / Turing exact-math accelerator facade
+    
+    Carved out to their owners: the mining production plane and the capacity
+    surface (mining/), copies of live TOE, Intelligence and Mining modules, and
+    the tensor forks (now aliases of Kellogg).
+    
+    Product boundary (v1.3):
+    backends              backend registry, capability envelopes, admission and
+                          refusal, and the fail-closed QPU boundary
+    capabilities          published capability matrix + enforced claim audit
+    certificates          verifiable run witnesses
+    console               the operator console (`turing-vqc`)
+    """
+    
+    from __future__ import annotations
+    
+&gt;   from . import turing_core  # noqa: F401
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ImportError: cannot import name 'turing_core' from partially initialized module 'turing_universal_quantum_computer' (most likely due to a circular import) (/data/mining-closeout/repo/turing_universal_quantum_computer/turing_universal_quantum_computer/__init__.py)
+
+turing_universal_quantum_computer/turing_universal_quantum_computer/__init__.py:51: ImportError</failure></testcase><testcase classname="mining.tests.test_agent_b_regressions.MineJobFallbackTests" name="test_runtime_error_propagates_no_arm_switch" time="0.444" /><testcase classname="mining.tests.test_agent_b_regressions.MineJobFallbackTests" name="test_shape_error_falls_back_preserving_window" time="0.021" /><testcase classname="mining.tests.test_agent_b_regressions.MineJobFallbackTests" name="test_unexpected_type_error_propagates_no_arm_switch" time="0.009" /><testcase classname="mining.tests.test_closeout_window_isolation" name="test_changed_target_invalidates_old_generation[mining.set_target-0000000000000000000000000000000000000000000000000000000000000001]" time="0.001" /><testcase classname="mining.tests.test_closeout_window_isolation" name="test_changed_target_invalidates_old_generation[mining.set_difficulty-2]" time="0.001" /><testcase classname="mining.tests.test_closeout_window_isolation" name="test_same_target_does_not_invalidate_work" time="0.000" /><testcase classname="mining.tests.test_closeout_window_isolation" name="test_stratum_reader_progresses_during_native_window" time="0.007" /><testcase classname="mining.tests.test_closeout_window_isolation" name="test_cancel_drains_one_window_without_blocking_event_loop" time="0.023" /><testcase classname="mining.tests.test_closeout_window_isolation" name="test_local_socket_kill_clears_identity_on_reconnect" time="0.004" /><testcase classname="salamander.tests.test_agent_f_closure" name="test_production_constructor_requires_real_al_haras_verdict" time="0.002" /><testcase classname="salamander.tests.test_agent_f_closure" name="test_recovery_reject_executes_authorized_verified_rollback" time="0.001" /><testcase classname="salamander.tests.test_agent_f_closure" name="test_recovery_fails_closed_when_changed_state_has_no_rollback" time="0.001" /><testcase classname="salamander.tests.test_agent_f_closure" name="test_recovery_plan_cannot_smuggle_foreign_tenant_or_target" time="0.000" /><testcase classname="salamander.tests.test_mining_healer_dispatch_closeout" name="test_governor_authorizes_real_mutations_and_ack_matches_dispatch" time="0.002" /><testcase classname="salamander.tests.test_mining_healer_dispatch_closeout" name="test_denied_governor_cannot_mutate_adapter_and_keeps_safety_lock" time="0.001" /><testcase classname="salamander.tests.test_mining_healer_dispatch_closeout" name="test_missing_governor_cannot_mutate_adapter" time="0.001" /><testcase classname="salamander.tests.test_mining_healer_dispatch_closeout" name="test_missing_generation_does_not_emit_success_ack" time="0.001" /><testcase classname="salamander.tests.test_mining_healer_dispatch_closeout" name="test_post_observation_does_not_invent_cleared_leases" time="0.001" /><testcase classname="salamander.tests.test_mining_healer_dispatch_closeout" name="test_targeted_post_observation_does_not_verify_other_recovery" time="0.000" /><testcase classname="salamander.tests.test_mining_healer_dispatch_closeout" name="test_successful_seven_stage_fixture_unlocks_only_after_rebind" time="0.001" /><testcase classname="salamander.tests.test_mining_healer_dispatch_closeout" name="test_generation_changes_between_verify_and_resume_remain_locked" time="0.001" /><testcase classname="salamander.tests.test_mining_healer_dispatch_closeout" name="test_partial_authorization_failure_stops_before_adapter_write" time="0.001" /></testsuite></testsuites>

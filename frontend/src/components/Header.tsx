@@ -43,12 +43,12 @@ export const Header: React.FC<HeaderProps> = ({
       ? `Chronus · ${contractDeviceName}`
       : logicalSubstrateAvailable
         ? `Super-GPU · ${hostBackend === "cpu" ? "CPU host" : hostBackend}`
-        : "no device";
+        : "device not reported";
 
   return (
     <header className="sticky top-0 z-50 border-b border-[rgba(10,37,64,0.13)] bg-[rgba(255,255,255,0.86)] backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between min-h-16 py-3 gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 clip-hex bg-[#635bff] text-[#f5f7fa] flex items-center justify-center">
               <Hexagon className="w-5 h-5" strokeWidth={2.4} />
@@ -70,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {!miningAuthorized ? (
               <Chip
                 tone="dim"

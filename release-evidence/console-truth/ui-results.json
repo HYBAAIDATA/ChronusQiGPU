@@ -1,0 +1,96 @@
+[
+  {
+    "name": "ceo-operations",
+    "width": 1440,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "name": "ceo-observability",
+    "width": 1440,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "name": "ceo-algebra",
+    "width": 1440,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "name": "ceo-intelligence",
+    "width": 1440,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "name": "ceo-manifold",
+    "width": 1440,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "name": "ceo-audit",
+    "width": 1440,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "name": "backend-down",
+    "width": 1440,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "name": "ceo-denied",
+    "width": 1440,
+    "overflow": false
+  },
+  {
+    "name": "ceo-operations",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "name": "ceo-observability",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "name": "ceo-algebra",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "name": "ceo-intelligence",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "name": "ceo-manifold",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "name": "ceo-audit",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "name": "backend-down",
+    "width": 390,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "name": "ceo-denied",
+    "width": 390,
+    "overflow": false
+  }
+]

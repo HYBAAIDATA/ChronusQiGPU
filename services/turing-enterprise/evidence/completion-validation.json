@@ -1,0 +1,77 @@
+{
+  "schema": "turing.service.completion-validation.v1",
+  "recorded_at": "2026-10-19T16:04:35.856375+00:00",
+  "python": "3.13.14",
+  "baseline_commit": "2c1e8aef61f0b3607cb30f582ea975988f9774be",
+  "service_version": "0.2.0",
+  "runs": [
+    {
+      "name": "source-contracts",
+      "passed": 77,
+      "failed": 0,
+      "skipped": 0,
+      "output": "........................................................................ [ 93%]\n.....                                                                    [100%]\n=============================== warnings summary ===============================\n../../../../home/vercel-sandbox/.local/lib/python3.13/site-packages/fastapi/testclient.py:1\n  /home/vercel-sandbox/.local/lib/python3.13/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n77 passed, 1 warning in 2.89s\n"
+    },
+    {
+      "name": "installed-wheel-contracts",
+      "passed": 77,
+      "failed": 0,
+      "skipped": 0,
+      "output": "........................................................................ [ 93%]\n.....                                                                    [100%]\n=============================== warnings summary ===============================\n../../../../home/vercel-sandbox/.local/lib/python3.13/site-packages/fastapi/testclient.py:1\n  /home/vercel-sandbox/.local/lib/python3.13/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n77 passed, 1 warning in 2.76s\n"
+    },
+    {
+      "name": "portal-fixture-render-navigation-submission",
+      "states": 10,
+      "widths": [
+        1280,
+        390
+      ],
+      "result": "PASS; zero page overflow; no browser exceptions; form request asserted; explicit API fixtures, not live service acceptance"
+    }
+  ],
+  "wheel": {
+    "name": "hyba_turing_service_control-0.2.0-py3-none-any.whl",
+    "sha256": "a9ccf6a0661a14ad0e5004c9052bbdf554c7f4914c4bd093fd5275f0c314878a"
+  },
+  "source_sha256": {
+    "services/turing-enterprise/src/hyba_turing_service/__init__.py": "f7639ed7d9976e80ada28e920bd69d272e71efb826dc46b0d8570e8af1ffe258",
+    "services/turing-enterprise/src/hyba_turing_service/control.py": "923065e55cb5156f66e73caf91ff6a80ed36bf6aa0ae432c5763f60818da04ef",
+    "services/turing-enterprise/src/hyba_turing_service/adapters.py": "faa300185a5c02b1632e21017b58cac0468028b28418f80aea8d833fadcaea12",
+    "services/turing-enterprise/src/hyba_turing_service/enterprise.py": "31e20c5908b5e533980a2d96832be409689b802df559502b955b68e76f418b34",
+    "services/turing-enterprise/src/hyba_turing_service/identity.py": "b556d0faceca4f5be843793d2857636dea7ec581b4651e72ae93375ac8ef39a1",
+    "services/turing-enterprise/src/hyba_turing_service/runtime.py": "43ce11b1e8bf6665ea5b1ddd718efbed1f676657d288456834c4187b2f839bda",
+    "services/turing-enterprise/src/hyba_turing_service/worker_child.py": "f7bd7194d2b60fbf96473b66cddaaa27eeed28ad00928ae35aa79c12a49b74c6",
+    "services/turing-enterprise/src/hyba_turing_service/billing.py": "5e392750228ea3246663a5b375ec8899151200b8bc21715a63747e2d3e9e2166",
+    "services/turing-enterprise/src/hyba_turing_service/sessions.py": "c716c3b3f5d37707cb1456c0fd071e6c8d3a69523b41706c1c60a578e4ae24f9",
+    "services/turing-enterprise/src/hyba_turing_service/api.py": "6809a4b885e555a7662e739784abcb48758b6027ab645573c5b523acec090979",
+    "services/turing-enterprise/src/hyba_turing_service/release.py": "f743e97c5967f3f9d0166423574caa3ddb31f8e77ca68fb351e34c7995cd5aa0",
+    "services/turing-enterprise/src/hyba_turing_service/supervisor.py": "4538d18eb5249cc4c7b18f9c725eba176be9af44525cbd8533ace39d1231d870",
+    "services/turing-enterprise/src/hyba_turing_service/main.py": "7ad4d42cf665f707f123b7a493b478cc679b8a286949b1e5da551e97dabcf02c",
+    "services/turing-enterprise/src/hyba_turing_service/static/portal.html": "b58b5ef53b8d808ba632a53a4045e60d90681c9e8f1bc1ffd62d67cb4e5bbc50",
+    "services/turing-enterprise/src/hyba_turing_service/static/portal.css": "7dbeaf862fe9bc0c48d057d0a90da18a4ca0fd064bdcb9e54a81c85aa4455440",
+    "services/turing-enterprise/src/hyba_turing_service/static/portal.js": "14f9d3b66b991292b3d883bba5b540dbf1fcc03c1116bb04392742cbb1eaa9af",
+    "services/turing-enterprise/tests/test_control.py": "209a1a4bb0950e9ede64123939ca9c080084ed53076f713923530a54f2731921",
+    "services/turing-enterprise/tests/test_enterprise.py": "d4f31fda3836cafa92ef46bd759ab2a0a13ca275146a48d42dcb3e99f0c4c5b5",
+    "services/turing-enterprise/integration/test_installed_runtime.py": "cebf03d163fb0be884dd13f5a9fbeac45ba367c0068c7d45028c6ea54c1263ee"
+  },
+  "checks": {
+    "black": "PASS:16 Python files",
+    "compileall": "PASS",
+    "javascript_syntax": "PASS",
+    "yaml": "workflow/Compose parsed; not runtime acceptance",
+    "secret_scan": "detect-secrets --all-files targeted source/tests/deploy/integration/docs/workflow:0 findings; not full repository/security certification",
+    "portal_inspection": "All 3 surfaces desktop/mobile plus project and unavailable-billing states inspected locally; textarea rendering and narrow-table wrapping defects fixed"
+  },
+  "not_executed": [
+    "actual installed VQC/Kellogg service integration (separate non-skipping CI job added)",
+    "Docker image build/run (Docker unavailable locally)",
+    "live enterprise IdP/network/MFA policy acceptance",
+    "real Hermitten import/spend/statement/invoice/correction acceptance",
+    "target workload load/HA/backup+custody recovery acceptance",
+    "independent commercial/security/package/publication approval",
+    "remote GitHub CI results: check-run access previously403"
+  ],
+  "production_approved": false,
+  "deployed": false,
+  "published": false
+}

@@ -1,0 +1,42 @@
+<b>Locked enterprise target:</b> durable custody, placement, continuity and recovery for enterprise data. Mining is an optional tenant/workload, not the product's identity.
+
+<b>Status:</b> target authority documented from the newer enterprise triad; legacy projection mapping, exact API and current runtime qualification open.
+
+## Owned obligations
+
+Durable custody, replicas, healing, journals, quotas, provenance and lifecycle coordination. Ovid owns versioned transformation/materialisation; Chronus owns eligible acceleration without digest changes; AL HARAS remains security/policy authority. Theseus emits and enforces integrated policy hooks, not an independent policy root.
+
+## Technical contract baseline
+
+| Operation family | Required obligation |
+| --- | --- |
+| Custody admission | Bind tenant/policy, object identity, schema lineage, quota and durability requirements |
+| Durable write/read | Record acknowledged durability level and consistency scope; verify stored/materialised identity; do not acknowledge stronger guarantees than the deployment provides |
+| Replicate / heal / recover | Explicit placement/recovery evidence, failure state and provenance continuity; no silent authority switch |
+| Migration / reopen | Version-aware lineage, authenticity and degradation policy; fail closed on incompatible or unverifiable state |
+
+Historical surfaces: <code>theseus</code>, <code>aethel.triad</code>, <code>aethel.enterprise.EnterpriseCustody</code>, journal and lifecycle composition, plus distributed/solutions integration. These are source references, not a complete current function/HTTP schema. Pin the exact package and fixtures before ABI freeze.
+
+SHA-256 is integrity; HMAC is authenticity. Production authentication must not silently use a default key; key identity/rotation and fail-closed verification are explicit conditions.
+
+## Legacy split
+
+An older SALAMANDER adapter describes THESEUS/hyba\_db as a rebuildable projection. That adapter must be version-mapped or migrated explicitly; this enterprise custody charter does not retroactively make every historical projection authoritative.
+
+## Non-mining acceptance requirement
+
+Store and restore a tenant-scoped enterprise artifact across restart; verify replica/heal/journal behaviour, quota refusal, corruption detection, key rotation and declared failure semantics. Test simultaneous writer contention separately from attach/reopen. Historical 67 tests, local nodes, simulated regions and 50 light-endurance operations do not establish physical WAN, hyperscaler production or soak qualification.
+
+## Customer schedule
+
+Specify exact durability/consistency level, topology, backup/restore responsibilities, RPO/RTO only if tested and contracted, region/residency, retention/deletion and customer key obligations. No blanket zero-loss or compliance certification. Approved license, pricing, support/SLA and DPA remain separate.
+
+## Mining boundary
+
+May hold authorised workload data and evidence; does not own block correctness, pool acceptance, keys/wallet operations or reward accounting by virtue of custody.
+
+## Source traceability
+
+- <mention url="https://app.notion.com/p/5d54be90d6ed483aa70f99740cfb5324">feat(aethel): Chronus·Theseus·Ovid enterprise custody substrate</mention>
+- <mention url="https://app.notion.com/p/1227dd46c43c496ba32440192cb2e754">#108 SALAMANDER_AUTONOMIC_CONTROL_PLANE</mention>
+- <mention url="https://app.notion.com/p/3f113476fb44496e99a2fcbb37546ccb">HYBA — Enterprise Product Lock Register</mention>

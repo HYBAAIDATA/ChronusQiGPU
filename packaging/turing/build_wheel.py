@@ -27,7 +27,7 @@ SOURCE = REPO / "turing_universal_quantum_computer"
 DIST = HERE / "dist"
 PRODUCT = "hyba-turing-vqc"
 VERSION = "1.0.0"
-REPOSITORY = "QuantumPhiRedux/PhiMiner"
+REPOSITORY = "PhiEnterprise1/EuclidPhiEnterprise"
 
 _SECRET_PATTERNS = (
     re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
@@ -155,9 +155,12 @@ def inspect_wheel(wheel: Path) -> dict:
         "requires_python": metadata.get("Requires-Python") == ">=3.11",
         "kellogg_dependency": any(r.lower().startswith("hyba-kellogg-tensor") for r in requires),
         "canonical_repository": any(
-            "https://github.com/QuantumPhiRedux/PhiMiner" in url for url in project_urls
+            "https://github.com/PhiEnterprise1/EuclidPhiEnterprise" in url for url in project_urls
         ),
-        "old_repository_absent": not any("QuantumPhi2/PhiMiner" in url for url in project_urls),
+        "old_repository_absent": not any(
+            old in url for old in ("QuantumPhi2/PhiMiner", "QuantumPhiRedux/PhiMiner")
+            for url in project_urls
+        ),
         "console_entry_point": (
             "turing-vqc = turing_universal_quantum_computer.console:main"
             in files[entry_name].decode("utf-8")

@@ -1,0 +1,101 @@
+name: TURING package organization
+
+on:
+  pull_request:
+    paths:
+      - 'turing_universal_quantum_computer/**'
+      - 'pyproject.toml'
+      - 'aethel/enterprise/**'
+      - 'euclid/tests/test_actuation_authority.py'
+      - 'tests/test_turing_production_capability.py'
+      - 'tests/test_shared_system_relations_production.py'
+      - 'tests/test_production_organism_shared_triad.py'
+      - 'tests/test_turing_release_packaging.py'
+      - 'euclid/runtime.py'
+      - 'euclid/organ_adapters/specialists.py'
+      - 'al_haras/**'
+      - 'salamander/**'
+      - 'tests/test_turing_capability_boundaries.py'
+      - 'kellogg/**'
+      - 'packaging/kellogg-tensor/**'
+      - 'scripts/run_turing_tests.py'
+      - '.github/workflows/turing-package.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install locked research environment
+        run: |
+          python -m pip install uv==0.13.1
+          uv sync --project turing_universal_quantum_computer --locked --group research
+      - name: Strict contract typing, source lint and API reference drift
+        run: |
+          cd turing_universal_quantum_computer
+          .venv/bin/python -m mypy --config-file mypy.ini
+          .venv/bin/python -m ruff check --select E4,E7,E9,F turing_universal_quantum_computer/{contracts,config,interfaces,exceptions,optimizer,native_adapter,public_api}.py experiments tests/test_public_api_dropin.py tests/test_package_organization.py tests/test_release_qualification.py
+          .venv/bin/python experiments/generate_api_reference.py --check
+      - name: API and package organization tests
+        run: |
+          turing_universal_quantum_computer/.venv/bin/python scripts/run_turing_tests.py . turing_universal_quantum_computer/tests/test_package_organization.py turing_universal_quantum_computer/tests/test_release_qualification.py
+      - name: Real capability dependency boundaries (not full enterprise approval)
+        run: |
+          turing_universal_quantum_computer/.venv/bin/python -m ruff check --select E4,E7,E9,F tests/test_turing_capability_boundaries.py
+          mkdir -p turing_universal_quantum_computer/results/local/capability
+          turing_universal_quantum_computer/.venv/bin/python -m pytest -q tests/test_turing_capability_boundaries.py euclid/tests/test_actuation_authority.py salamander/tests/test_agent_f_closure.py tests/test_turing_release_packaging.py --junitxml=turing_universal_quantum_computer/results/local/capability/boundaries.xml
+      - name: Shared production capability integration (platform supports Python 3.12+)
+        if: matrix.python != '3.11'
+        run: |
+          uv pip install --python turing_universal_quantum_computer/.venv/bin/python --require-hashes -r turing_universal_quantum_computer/experiments/platform-qualification.txt
+          turing_universal_quantum_computer/.venv/bin/python -m pytest -q tests/test_turing_production_capability.py tests/test_shared_system_relations_production.py tests/test_production_organism_shared_triad.py euclid/tests/test_runtime_integrity.py --junitxml=turing_universal_quantum_computer/results/local/capability/production.xml
+      - name: Detect targeted mathematical and contract mutations
+        run: |
+          uv run --project turing_universal_quantum_computer --locked --group research python turing_universal_quantum_computer/experiments/run_targeted_mutations.py --output turing_universal_quantum_computer/results/local/mutations
+      - name: Affected engine conformance tests
+        run: |
+          turing_universal_quantum_computer/.venv/bin/python scripts/run_turing_tests.py . turing_universal_quantum_computer/tests/test_product_boundary.py turing_universal_quantum_computer/tests/test_backend_boundary.py turing_universal_quantum_computer/tests/test_stabilizer_measurement.py turing_universal_quantum_computer/tests/test_production_release_gate.py
+      - name: Build dependency wheel and TURING distributions
+        run: |
+          export SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
+          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> "$GITHUB_ENV"
+          uv run --project turing_universal_quantum_computer --locked --group research python -m build --wheel --no-isolation packaging/kellogg-tensor --outdir "$RUNNER_TEMP/turing-dist"
+          uv run --project turing_universal_quantum_computer --locked --group research python -m build --no-isolation turing_universal_quantum_computer --outdir "$RUNNER_TEMP/turing-dist"
+      - name: Qualify exact wheel and sdist outside the checkout
+        run: |
+          uv export --project turing_universal_quantum_computer --locked --group research --no-emit-project --no-emit-package hyba-kellogg-tensor --format requirements-txt > "$RUNNER_TEMP/turing-requirements.txt"
+          uv run --project turing_universal_quantum_computer --locked --group research python turing_universal_quantum_computer/experiments/qualify_artifacts.py --dist-dir "$RUNNER_TEMP/turing-dist" --requirements "$RUNNER_TEMP/turing-requirements.txt" --output turing_universal_quantum_computer/results/local/artifact-qualification
+      - name: Qualify actual installed capability distribution set
+        if: matrix.python != '3.11'
+        run: |
+          uv run --project turing_universal_quantum_computer --locked --group research python -m build --wheel --no-isolation . --outdir "$RUNNER_TEMP/platform-dist"
+          export PATH="$PWD/turing_universal_quantum_computer/.venv/bin:$PATH"
+          turing_universal_quantum_computer/.venv/bin/python turing_universal_quantum_computer/experiments/qualify_capability_installation.py --platform-wheel "$RUNNER_TEMP/platform-dist/hyba_pythia_mining-1.0.0-py3-none-any.whl" --turing-wheel "$RUNNER_TEMP/turing-dist/hyba_turing_vqc-1.0.0-py3-none-any.whl" --kellogg-wheel "$RUNNER_TEMP/turing-dist/hyba_kellogg_tensor-1.0.0-py3-none-any.whl" --research-requirements "$RUNNER_TEMP/turing-requirements.txt" --platform-requirements turing_universal_quantum_computer/experiments/platform-qualification.txt --consumer-tests tests/test_turing_production_capability.py --output turing_universal_quantum_computer/results/local/capability/installed
+      - name: Generate commit-bound validation evidence and tables
+        run: |
+          uv run --project turing_universal_quantum_computer --locked --group research python turing_universal_quantum_computer/experiments/run_experiment.py > "$RUNNER_TEMP/turing-manifest-path"
+          uv run --project turing_universal_quantum_computer --locked --group research python turing_universal_quantum_computer/experiments/analyze_results.py "$(cat "$RUNNER_TEMP/turing-manifest-path")" --output turing_universal_quantum_computer/results/local/analysis
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: turing-package-validation-py${{ matrix.python }}
+          path: |
+            turing_universal_quantum_computer/results/local/
+            ${{ runner.temp }}/turing-dist/
+            ${{ runner.temp }}/platform-dist/
+
+# Deliberately no publication step. Existing turing-release.yml remains the
+# release authority; these focused checks do not replace its broader gates.

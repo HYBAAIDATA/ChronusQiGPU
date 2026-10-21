@@ -37,9 +37,7 @@ def test_turing_build_is_wheel_sdist_metadata_and_secret_scan_bound() -> None:
 
 
 def test_turing_release_workflow_uses_verified_artifact_and_oidc() -> None:
-    workflow = (ROOT / ".github" / "workflows" / "turing-release.yml").read_text(
-        encoding="utf-8"
-    )
+    workflow = (ROOT / ".github" / "workflows" / "turing-release.yml").read_text(encoding="utf-8")
     for required in (
         "pull_request:",
         "workflow_dispatch:",
@@ -70,14 +68,9 @@ def test_turing_release_workflow_uses_verified_artifact_and_oidc() -> None:
 
 def test_mining_capacity_proof_is_not_a_turing_release_claim() -> None:
     turing_formal = (
-        ROOT
-        / "turing_universal_quantum_computer"
-        / "formal"
-        / "PureQuantumMath.lean"
+        ROOT / "turing_universal_quantum_computer" / "formal" / "PureQuantumMath.lean"
     ).read_text(encoding="utf-8")
-    mining_formal = (ROOT / "mining" / "formal" / "MiningCapacity.lean").read_text(
-        encoding="utf-8"
-    )
+    mining_formal = (ROOT / "mining" / "formal" / "MiningCapacity.lean").read_text(encoding="utf-8")
     assert "ten_eh_canonical_floor" not in turing_formal
     assert "capacityFloorMet" not in turing_formal
     assert "ten_eh_canonical_floor" in mining_formal
@@ -89,3 +82,33 @@ def test_kellogg_release_verifier_accepts_pep639_license_expression() -> None:
         encoding="utf-8"
     )
     assert 'metadata.get("License-Expression") or metadata.get("License")' in verifier
+
+
+def test_platform_distribution_does_not_vendor_the_kellogg_dependency() -> None:
+    import tomllib
+
+    config = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    packages = config["tool"]["setuptools"]["packages"]
+    assert not any(name == "kellogg" or name.startswith("kellogg.") for name in packages)
+    assert "hyba-kellogg-tensor>=1.0" in config["project"]["dependencies"]
+
+
+def test_capability_qualifier_rejects_duplicate_owner_files(tmp_path) -> None:
+    import runpy
+    import zipfile
+    import pytest
+
+    module = runpy.run_path(
+        str(
+            ROOT
+            / "turing_universal_quantum_computer"
+            / "experiments"
+            / "qualify_capability_installation.py"
+        )
+    )
+    wheels = [tmp_path / "owner-a.whl", tmp_path / "owner-b.whl"]
+    for wheel in wheels:
+        with zipfile.ZipFile(wheel, "w") as archive:
+            archive.writestr("kellogg/__init__.py", "# duplicated owner")
+    with pytest.raises(ValueError, match="wheel ownership overlap"):
+        module["verify_wheel_ownership"](wheels)

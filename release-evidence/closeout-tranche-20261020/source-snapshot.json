@@ -1,0 +1,23 @@
+{
+  "repository": "PhiEnterprise1/EuclidPhiEnterprise",
+  "base_sha": "2bc45bd4f9c45a29fea00aa1f6ed34222ed58f07",
+  "scope": "three verified source files, not complete checkout",
+  "full_checkout": false,
+  "files": [
+    {
+      "path": "aethel/enterprise/journal.py",
+      "git_blob_sha1": "a43de0bac9262f3fd3853c25b15aa7ebb35f9544",
+      "sha256": "264748b1ed55c7b92db374fa7cf773c9c5f6c0cd7c400c17cb35095dde19f8b4"
+    },
+    {
+      "path": "chronus/virtual_igpu/memory.py",
+      "git_blob_sha1": "5f9e9019919a68eb2ce1c697b7447d997b46f2dd",
+      "sha256": "2e85a025efef4258ca2713568560adca9818bd2114cc8c31d2557db1bba40f36"
+    },
+    {
+      "path": "hyba_db/store.py",
+      "git_blob_sha1": "413cab1853d612cd760aec22356546d0d79a3bb9",
+      "sha256": "4764723503c01029cc03cc5ceb3523ea3ce6ce451b98c8064c61242f0892de2e"
+    }
+  ]
+}

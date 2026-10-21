@@ -14,7 +14,8 @@ def test_train_retrain_rollback():
     assert trained.record.version == 1
     assert trained.record.model.model_family == "exact_linear"
     flipped = [{**row, "defaulted": 1 - row["defaulted"]} for row in rows]
-    result = platform.retrain("risk", flipped, eval_rows=rows)
+    eval_rows = [{**row, "amount": row["amount"] + 0.125} for row in rows]
+    result = platform.retrain("risk", flipped, eval_rows=eval_rows)
     assert result.rolled_back is True
     assert result.live_version == 1
     assert platform.predict("risk", rows)

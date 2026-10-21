@@ -25,7 +25,7 @@ jobs:
         run: python3 scripts/docker_smoke.py --image pythia-control:ci --seconds 150 --out smoke-artifacts
       - name: Upload smoke evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: docker-live-smoke
           path: smoke-artifacts/
@@ -53,7 +53,7 @@ jobs:
         run: cat sovereign-proof/pack/summary.md >> "$GITHUB_STEP_SUMMARY" || true
       - name: Upload sovereign proof pack
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sovereign-proof-pack
           path: sovereign-proof/pack/

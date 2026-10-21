@@ -1,0 +1,76 @@
+F..E........                                                             [100%]
+==================================== ERRORS ====================================
+____ ERROR at setup of test_stratum_reader_progresses_during_native_window _____
+
+self = PosixPath('/data/mining-closeout/tmp/second'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/mining-closeout/tmp/second'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+=================================== FAILURES ===================================
+_____ test_changed_target_invalidates_old_generation[mining.set_target-01] _____
+
+method = 'mining.set_target', value = '01'
+
+    @pytest.mark.parametrize('method,value', [('mining.set_target', '01'), ('mining.set_difficulty', 2)])
+    def test_changed_target_invalidates_old_generation(method, value):
+        async def scenario():
+            c = client()
+            c.target = MAX_UINT256
+            c.generation = 1
+            c.job = parse_notify(notify(), 1, MAX_UINT256)
+            old = c.job
+            await c._notification({'method': method, 'params': [value]})
+            assert c.job.generation > old.generation
+            assert c.job.target != old.target
+            c.authorized = True
+            # Stale candidate must be rejected before any network request.
+            assert await c.submit(old, '', 0) is False
+>       asyncio.run(scenario())
+
+mining/tests/test_closeout_window_isolation.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib64/python3.13/asyncio/runners.py:196: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/asyncio/runners.py:119: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/asyncio/base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+mining/tests/test_closeout_window_isolation.py:35: in scenario
+    await c._notification({'method': method, 'params': [value]})
+mining/production_miner.py:403: in _notification
+    self._update_target(target_from_hex(params[0]))
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+mining/production_miner.py:148: in target_from_hex
+    value = _hex(value, "target", 64)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = '01', name = 'target', length = 64
+
+    def _hex(value: Any, name: str, length: int | None = None) -> str:
+        if not isinstance(value, str) or len(value) % 2:
+            raise ProtocolError(f"{name} must be even-length hexadecimal")
+        try:
+            bytes.fromhex(value)
+        except ValueError as exc:
+            raise ProtocolError(f"{name} is not hexadecimal") from exc
+        if length is not None and len(value) != length:
+>           raise ProtocolError(f"{name} must be exactly {length // 2} bytes")
+E           mining.production_miner.ProtocolError: target must be exactly 32 bytes
+
+mining/production_miner.py:117: ProtocolError
+=========================== short test summary info ============================
+FAILED mining/tests/test_closeout_window_isolation.py::test_changed_target_invalidates_old_generation[mining.set_target-01]
+ERROR mining/tests/test_closeout_window_isolation.py::test_stratum_reader_progresses_during_native_window
+1 failed, 10 passed, 1 error in 0.33s

@@ -197,26 +197,10 @@ from .attest import (
     verify_attestation,
     verify_version,
 )
-from .canonical_tensor import (
-    CanonicalKelloggTensor,
-    CoverageProofCertificate,
-    RepresentationChoice,
-    build_kellogg_search_plan,
-    host_sha256d_recheck,
-    EstateChunk600,
-    PartitionProof600,
-    build_600_partition,
-    AnsatzV3,
-    load_ansatz,
-    KelloggMotherTensor,
-    PillarContractionResult,
-    kellogg_state_600,
-    PerLaneScoreLog,
-    FutureSuperpositionEntry,
-    SuperpositionHoldLRU,
-    QuantumArsenal,
-    score_600_lanes,
-)
+# Mining/SearchPlan integration is optional for exact tensor consumers.
+# Preserve the named exports, but do not import Chronus at package import time.
+
+
 
 __version__ = "1.0.0"
 
@@ -225,6 +209,12 @@ __version__ = "1.0.0"
 # of the training path by contract (tests assert it never enters
 # sys.modules through the ML import chain).
 _LAZY_SUBMODULE_ATTRS = {
+    "canonical_tensor": (
+        "CanonicalKelloggTensor", "CoverageProofCertificate", "EstateChunk600",
+        "KelloggMotherTensor", "PartitionProof600", "RepresentationChoice",
+        "build_600_partition", "build_kellogg_search_plan",
+        "host_sha256d_recheck", "kellogg_state_600",
+    ),
     "cyclotomic": ("Q8", "NotReal"),
     "exact_linalg": ("SingularMatrix", "cr_factor", "rref"),
     "custody": ("CustodyError", "FoldStoreCustody", "ResidentCustody", "default_custody"),
@@ -569,20 +559,13 @@ __all__ = [
     "RepresentationChoice",
     "build_kellogg_search_plan",
     "host_sha256d_recheck",
-    # 600-lane solving machine & mother-tensor
+    # 600-lane canonical mother-tensor and partition
     "EstateChunk600",
+    "KelloggMotherTensor",
     "PartitionProof600",
     "build_600_partition",
-    "AnsatzV3",
-    "load_ansatz",
-    "KelloggMotherTensor",
-    "PillarContractionResult",
     "kellogg_state_600",
-    "PerLaneScoreLog",
-    "FutureSuperpositionEntry",
-    "SuperpositionHoldLRU",
-    "QuantumArsenal",
-    "score_600_lanes",
+
     # exact tensor networks, custody, certificates, specification (lazy)
     *_LAZY_SUBMODULE_ATTRS["cyclotomic"],
     *_LAZY_SUBMODULE_ATTRS["exact_linalg"],

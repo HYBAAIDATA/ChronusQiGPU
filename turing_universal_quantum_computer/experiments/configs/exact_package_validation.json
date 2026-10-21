@@ -1,0 +1,12 @@
+{
+  "schema": "turing.experiment_config.v1",
+  "experiment_id": "exact_package_validation",
+  "repetitions": 3,
+  "execution": {
+    "backend": "exact_algebraic",
+    "execution_mode": "exact_vqc",
+    "seed": 1234,
+    "max_amplitudes": 256
+  },
+  "cases": ["bell_z0", "radical_z0", "finite_variational_z0"]
+}

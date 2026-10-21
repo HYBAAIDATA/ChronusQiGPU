@@ -1,0 +1,14 @@
+
+> pythia-operator-frontend@0.1.0 build
+> vite build
+
+vite v8.3.4 building client environment for production...
+transforming...
+✓ 1948 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/public/index.html                   1.03 kB │ gzip:   0.52 kB
+../dist/public/assets/index-BEP4jDu8.css   38.10 kB │ gzip:   8.59 kB
+../dist/public/assets/index-ClxDbuLc.js   342.53 kB │ gzip: 103.23 kB
+
+✓ built in 390ms

@@ -91,6 +91,7 @@ class Theseus:
     _by_digest: Dict[str, str] = field(default_factory=dict)
     _payloads: Dict[str, bytes] = field(default_factory=dict)
     _replicas: Dict[str, bytes] = field(default_factory=dict)
+    _forms: Dict[str, FoldedWorkingForm] = field(default_factory=dict)
     _metrics: Dict[str, int] = field(
         default_factory=lambda: {
             "put_ok": 0,
@@ -190,6 +191,7 @@ class Theseus:
             # Primary + replica parts of the ship
             self._payloads[uid] = data
             self._replicas[uid] = bytes(data)
+            self._forms[uid] = form
 
             curv_name = (
                 curvature.value if hasattr(curvature, "value") else str(curvature)
@@ -293,6 +295,10 @@ class Theseus:
             self._payloads[uid] = junk
 
     def get_working_form(self, uid: str) -> FoldedWorkingForm:
+        with self._lock:
+            form = self._forms.get(uid)
+            if form is not None and form.verify():
+                return form
         return self.ovid.metamorphose(self.get(uid))
 
     def lookup_digest(self, digest: str) -> Optional[TheseusRecord]:

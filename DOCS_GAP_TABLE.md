@@ -3,6 +3,8 @@
 **Generated Date**: 2026-10-19
 **Audit Standard**: Code + Tests + Evidence > Documentation Claims
 
+**2026-10-20 reconciliation:** The original 388 STALE + 8 CONTRADICTED classification is historical, not an approved move manifest. Eight flagged paths were re-read at `2bc45bd4f9c45a29fea00aa1f6ed34222ed58f07`: six require retained/current-document review; two historical notes are redirected. See `DOCS_PHASE2_RECONCILIATION_20261020.md`. Remaining rows have not been revalidated; their old test counts are historical, not current proof.
+
 | Doc File | Lines | Last Commit | Date | Key Claim | Code Reality (path:line) | Verdict |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `AGENTS.md` | 560 | `cc50be8a` | 2026-10-11 | Current verified substrate / cognitive architecture specification | Intelligence/recursive_self_learning.py, tests/ (144/144 tests passing) | **CURRENT** |
@@ -68,7 +70,7 @@
 | `docs/CONTRACTS.md` | 1509 | `4d70069a` | 2026-10-08 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/CONTRACT_DRIFT_REPORT.md` | 18 | `4131cddc` | 2026-10-18 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/CROSS_VERIFICATION.md` | 30 | `da853afc` | 2026-10-02 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/DETERMINISTIC_10_EH_MATHEMATICAL_CAPACITY.md` | 126 | `ec35d51e` | 2026-10-07 | Claims deterministic 10 EH/s or 3000 EH/s hashrate | chronus/readiness.py:165 (Hashrate MEASURED not declared; NOT_RUN without active silicon) | **CONTRADICTED** |
+| `docs/DETERMINISTIC_10_EH_MATHEMATICAL_CAPACITY.md` | 126 | `ec35d51e` | 2026-10-07 | Claims deterministic 10 EH/s or 3000 EH/s hashrate | Current text explicitly labels exact_mathematical_capacity_not_executed_work and physical realization false; old executed-hashrate allegation does not describe this revision. | **REVALIDATE — RETAIN** |
 | `docs/DOCKER_DUAL_POOL_DEPLOYMENT.md` | 69 | `03f62ecb` | 2026-09-28 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/ELEVATION_MOVES_STATUS.md` | 24 | `40962cc2` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/ENTERPRISE_CAPABILITY_BRIDGE.md` | 267 | `601ede6b` | 2026-10-03 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
@@ -92,7 +94,7 @@
 | `docs/EXACT_OPERATOR_CLOSURE_REVIEW.md` | 85 | `41b997fb` | 2026-10-12 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/EXACT_SUBSTRATE_FOUNDATIONS_REVIEW.md` | 114 | `99e0ef32` | 2026-10-12 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/FAULT_INJECTION_EVIDENCE.md` | 28 | `7894f1e3` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/FAULT_TOLERANT_QUANTUM_ASIC.md` | 93 | `0a9da652` | 2026-10-11 | Claims 1000 physical qubits or fault-tolerant quantum ASIC hardware | STRICT_QUANTUM_BOUNDARY.md:12, AGENTS.md:1.2 (Substrate-agnostic linear algebra, amplitude search closed) | **CONTRADICTED** |
+| `docs/FAULT_TOLERANT_QUANTUM_ASIC.md` | 93 | `0a9da652` | 2026-10-11 | Claims 1000 physical qubits or fault-tolerant quantum ASIC hardware | Current text describes a deterministic engineering model and explicitly denies physical feasibility or fabricated-silicon evidence. | **REVALIDATE — RETAIN** |
 | `docs/FIRST_WORKLOAD_READINESS.md` | 102 | `84a014ad` | 2026-10-07 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/FORMAL_THEOREMS.md` | 517 | `fa37f2c5` | 2026-09-27 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/GAP_CLOSURE_REREPORT.md` | 56 | `fa37f2c5` | 2026-09-27 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
@@ -159,7 +161,7 @@
 | `docs/RECURSIVE_SELF_LEARNING.md` | 87 | `untracked` | 2026-10-19 | Current verified substrate / cognitive architecture specification | Intelligence/recursive_self_learning.py, tests/ (144/144 tests passing) | **CURRENT** |
 | `docs/RESEARCH_INTAKE.md` | 64 | `4d70069a` | 2026-10-08 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/RESEARCH_RECONCILIATION.md` | 61 | `265efcdc` | 2026-10-04 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/RESIDENT_HENDRIX_ONE_IGPU.md` | 188 | `8b3112d6` | 2026-10-13 | Claims separate secondary iGPU or dual-GPU fabric topology | chronus/mla1517_platform/python/system_fabric.py:32 (Chronus is the sole single-backend iGPU) | **CONTRADICTED** |
+| `docs/RESIDENT_HENDRIX_ONE_IGPU.md` | 188 | `8b3112d6` | 2026-10-13 | Claims separate secondary iGPU or dual-GPU fabric topology | Current text describes ONE iGPU, logical 600 positions, independent host checks and separate physical-device qualification; old second-iGPU allegation does not describe this revision. | **REVALIDATE — RETAIN** |
 | `docs/RESILIENCE_MATRIX.md` | 98 | `7894f1e3` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/RE_PAPERED_ACCEPTANCE.md` | 88 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/SALAMANDER_AUTONOMIC_CONTROL_PLANE.md` | 150 | `d3eef9a7` | 2026-10-02 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
@@ -183,7 +185,7 @@
 | `docs/STRICT_QUANTUM_ARCHITECTURE.md` | 23 | `3d566c95` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/STRUCTURAL_AUDIT_PLANES.md` | 30 | `b9298191` | 2026-10-13 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/STRUCTURED_MINING_AUDIT.md` | 136 | `0fb7883a` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/SUPER_GPU_SUBSTRATE.md` | 26 | `e08dbb6a` | 2026-10-01 | Claims separate secondary iGPU or dual-GPU fabric topology | chronus/mla1517_platform/python/system_fabric.py:32 (Chronus is the sole single-backend iGPU) | **CONTRADICTED** |
+| `docs/SUPER_GPU_SUBSTRATE.md` | 26 | `e08dbb6a` | 2026-10-01 | Claims separate secondary iGPU or dual-GPU fabric topology | Current text identifies SuperGPU as ChronusFabric; multi-device inventory is not independently a second execution authority. Retain pending call-graph qualification. | **REVALIDATE — RETAIN** |
 | `docs/TENSOR_ARCHITECTURE.md` | 332 | `3f52c947` | 2026-10-06 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/TENSOR_MINING_INTEGRATION.md` | 161 | `7538b36d` | 2026-10-01 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/TENSOR_OPERATOR_MATRIX.md` | 99 | `449a05f9` | 2026-10-05 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
@@ -195,7 +197,7 @@
 | `docs/TOE_CIAAS_ACCEPTANCE_GATES.md` | 321 | `306001b0` | 2026-10-07 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/TOE_INTELLIGENCE_PRODUCTION_READINESS_PLAN.md` | 647 | `812a2384` | 2026-10-07 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/TOPOLOGICAL_SEARCH_ELEVATION.md` | 110 | `fa37f2c5` | 2026-09-27 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/TURING_1000_QUBIT_CONSOLIDATION.md` | 119 | `85aa0a38` | 2026-10-01 | Claims 1000 physical qubits or fault-tolerant quantum ASIC hardware | STRICT_QUANTUM_BOUNDARY.md:12, AGENTS.md:1.2 (Substrate-agnostic linear algebra, amplitude search closed) | **CONTRADICTED** |
+| `docs/TURING_1000_QUBIT_CONSOLIDATION.md` | 119 | `85aa0a38` | 2026-10-01 | Claims 1000 physical qubits or fault-tolerant quantum ASIC hardware | Current text describes exact Clifford/stabilizer algebra and explicitly rejects quantum advantage and mining authority transfer. | **REVALIDATE — RETAIN** |
 | `docs/TURING_PRODUCTION_CLOSURE_20261005.md` | 147 | `42b62a68` | 2026-10-05 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/TURING_PRODUCTION_PIPELINE.md` | 198 | `509fd246` | 2026-10-07 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/TURING_PYTHAGORAS_RECONCILIATION.md` | 72 | `1eef82d6` | 2026-10-05 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
@@ -277,7 +279,7 @@
 | `docs/production/LIVE_MINING_GO_LIVE_20261009.md` | 114 | `26a18aab` | 2026-10-09 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/production/M5_AGENT_FULL_PIPELINE_HANDOVER_20261009.md` | 625 | `455a4d8f` | 2026-10-09 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/production/PRODUCTION_DECLARATION.md` | 48 | `92f30aaa` | 2026-10-05 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
-| `docs/production/PYTHIA_M3_CUSTODY_REPLAY_QUALIFICATION.md` | 84 | `fe9e4292` | 2026-10-09 | Claims EUCLID possesses mining or block header validation authority | toe/intelligences/authority_boundary.py:41 (EUCLID_FORBIDDEN_DOMAINS includes header, target, sha256d) | **CONTRADICTED** |
+| `docs/production/PYTHIA_M3_CUSTODY_REPLAY_QUALIFICATION.md` | 84 | `fe9e4292` | 2026-10-09 | Claims EUCLID possesses mining or block header validation authority | Current text gives PYTHIA mining authority and EUCLID orchestration, with NOT_CERTIFIED / QC_HOLD; old authority allegation is not supported by this text. | **REVALIDATE — RETAIN** |
 | `docs/production/api-governed-release-increment.md` | 179 | `d306606b` | 2026-10-08 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/production/capability_matrix.md` | 68 | `7b428768` | 2026-10-02 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
 | `docs/production/execplan.md` | 146 | `78f9ce3b` | 2026-10-02 | Legacy documentation or operational note | Pending fresh verification in docs/v2 | **STALE** |
@@ -352,10 +354,10 @@
 | `docs/research_archive/notes/6b78e6e89aaf4747bc0e99cf31ee4bd2.md` | 72 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
 | `docs/research_archive/notes/6bcf3e275c1449bd87e6f85f1474e4b4.md` | 153 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
 | `docs/research_archive/notes/6c0bbde40e8b41eeba9cedb15d5bcb9b.md` | 225 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
-| `docs/research_archive/notes/725fd6152eb04acca0cb5d1a654720be.md` | 146 | `b6350bcc` | 2026-10-14 | Claims deterministic 10 EH/s or 3000 EH/s hashrate | chronus/readiness.py:165 (Hashrate MEASURED not declared; NOT_RUN without active silicon) | **CONTRADICTED** |
+| `docs/research_archive/notes/725fd6152eb04acca0cb5d1a654720be.md` | 146 | `b6350bcc` | 2026-10-14 | Claims deterministic 10 EH/s or 3000 EH/s hashrate | Historical workflow note claims 1–10 EH/s bounds and broad verified readiness without current execution evidence. Active copy replaced by deprecation pointer; archive bytes preserved. | **DEPRECATED — ARCHIVED** |
 | `docs/research_archive/notes/74d12114b6754e25a73523f7fe42c76f.md` | 227 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
 | `docs/research_archive/notes/7763e2edb28c4d31b927a4550bfef0ac.md` | 155 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
-| `docs/research_archive/notes/7c56ce1e4b8d4a6f84076377e4008be5.md` | 139 | `b6350bcc` | 2026-10-14 | Claims deterministic 10 EH/s or 3000 EH/s hashrate | chronus/readiness.py:165 (Hashrate MEASURED not declared; NOT_RUN without active silicon) | **CONTRADICTED** |
+| `docs/research_archive/notes/7c56ce1e4b8d4a6f84076377e4008be5.md` | 139 | `b6350bcc` | 2026-10-14 | Claims deterministic 10 EH/s or 3000 EH/s hashrate | Historical note claims mined block and 1 EH/s with 32-qubit readiness. Active copy replaced by deprecation pointer; archive bytes preserved. | **DEPRECATED — ARCHIVED** |
 | `docs/research_archive/notes/7c5aa25272b04258b8c0b76e954f87c5.md` | 105 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
 | `docs/research_archive/notes/81147026b539421c97c99fde6cbf23fa.md` | 216 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |
 | `docs/research_archive/notes/81c0666dd7cf43ebabfc3e6291fbb507.md` | 152 | `b6350bcc` | 2026-10-14 | Legacy exploratory research notes / unstructured markdown dumps | Superseded by canonical modules in euclid/ and Intelligence/ | **STALE** |

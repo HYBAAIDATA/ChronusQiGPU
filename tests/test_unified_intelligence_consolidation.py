@@ -8,20 +8,46 @@ Verifies:
 """
 
 import time
+import secrets
+import tempfile
+from pathlib import Path
 import warnings
 import unittest
 
 from euclid.capabilities.empirical_state_bridge import (
     EmpiricalStateBridge,
-    EmpiricalStateController,
-    StateTransitionRequest,
 )
 
 
 class TestUnifiedIntelligenceConsolidation(unittest.TestCase):
+    def setUp(self):
+        self.token = secrets.token_urlsafe(32)
+
+    def gatekeeper(self):
+        from aethel.enterprise.lifecycle import CompositionRoot
+        from al_haras import HashChainAudit
+        from euclid.intelligence.gatekeeper import UnifiedIntelligenceGatekeeper
+
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        lifecycle = CompositionRoot(
+            root / "custody", tenant="fixture", hmac_key=secrets.token_bytes(32)
+        )
+        lifecycle.start()
+        self.addCleanup(lifecycle.stop)
+        bridge = EmpiricalStateBridge(
+            authorizer=lambda req: req.caller_id in {"operator:001", "operator:verifier:001"}
+            and secrets.compare_digest(req.operator_token, self.token),
+            audit=HashChainAudit(root / "audit/state.jsonl"),
+            data_port=lifecycle.data_port("euclid"),
+        )
+        return UnifiedIntelligenceGatekeeper(state_bridge=bridge)
+
     def test_canonical_euclid_intelligence_exports(self):
         """Verify euclid.intelligence exports physics, cognition, and gatekeeper subdomains."""
         import euclid.intelligence as intel
+
         self.assertTrue(hasattr(intel, "physics"))
         self.assertTrue(hasattr(intel, "cognition"))
         self.assertTrue(hasattr(intel, "gatekeeper"))
@@ -30,6 +56,7 @@ class TestUnifiedIntelligenceConsolidation(unittest.TestCase):
     def test_canonical_intelligence_exports(self):
         """Verify top-level Intelligence exports physics, cognition, and gatekeeper subdomains."""
         import Intelligence
+
         self.assertTrue(hasattr(Intelligence, "physics"))
         self.assertTrue(hasattr(Intelligence, "cognition"))
         self.assertTrue(hasattr(Intelligence, "gatekeeper"))
@@ -38,6 +65,7 @@ class TestUnifiedIntelligenceConsolidation(unittest.TestCase):
     def test_physics_subdomain_reachability(self):
         """Verify physics subdomain organizes quantum, Lucas, and physical simulation."""
         from euclid.intelligence import physics
+
         self.assertTrue(hasattr(physics, "first_principles_quantum"))
         self.assertTrue(hasattr(physics, "quantum_algorithms"))
         self.assertTrue(hasattr(physics, "lucas_scales"))
@@ -47,6 +75,7 @@ class TestUnifiedIntelligenceConsolidation(unittest.TestCase):
     def test_cognition_subdomain_reachability(self):
         """Verify cognition subdomain organizes empirical state, proof tracking, and review."""
         from euclid.intelligence import cognition
+
         self.assertTrue(hasattr(cognition, "EmpiricalStateController"))
         self.assertTrue(hasattr(cognition, "EmpiricalStateBridge"))
         self.assertTrue(hasattr(cognition, "StateTransitionRequest"))
@@ -57,10 +86,10 @@ class TestUnifiedIntelligenceConsolidation(unittest.TestCase):
     def test_unified_gatekeeper_dispatch_and_audit(self):
         """Verify single gatekeeper handles state transition with pre-audit and receipt."""
         from euclid.intelligence.gatekeeper import (
-            UnifiedIntelligenceGatekeeper,
             StateTransitionRequest,
         )
-        gatekeeper = UnifiedIntelligenceGatekeeper()
+
+        gatekeeper = self.gatekeeper()
 
         req = StateTransitionRequest(
             capability_id="host:capability:empirical_state_controller",
@@ -69,13 +98,15 @@ class TestUnifiedIntelligenceConsolidation(unittest.TestCase):
             state_payload={"domain": "atomic", "weight": 0.95},
             deadline_epoch=time.time() + 60.0,
             max_budget=100,
-            operator_token="valid_operator_token_12345",
+            operator_token=self.token,
         )
         ok, receipt, msg = gatekeeper.dispatch_state_transition(req)
         self.assertTrue(ok)
         self.assertIsNotNone(receipt)
         self.assertEqual(receipt.status, "COMMITTED")
-        self.assertEqual(gatekeeper.state_bridge.controller.state["reliability_weights"]["atomic"], 0.95)
+        self.assertEqual(
+            gatekeeper.state_bridge.controller.state["reliability_weights"]["atomic"], 0.95
+        )
 
         trail = gatekeeper.get_audit_trail()
         self.assertEqual(len(trail), 1)
@@ -85,10 +116,10 @@ class TestUnifiedIntelligenceConsolidation(unittest.TestCase):
     def test_unified_gatekeeper_refusal_and_budget(self):
         """Verify unified gatekeeper enforces fail-closed refusal and budget limits."""
         from euclid.intelligence.gatekeeper import (
-            UnifiedIntelligenceGatekeeper,
             StateTransitionRequest,
         )
-        gatekeeper = UnifiedIntelligenceGatekeeper()
+
+        gatekeeper = self.gatekeeper()
 
         # Unapproved capability refusal
         bad_req = StateTransitionRequest(
@@ -98,7 +129,7 @@ class TestUnifiedIntelligenceConsolidation(unittest.TestCase):
             state_payload={},
             deadline_epoch=time.time() + 10.0,
             max_budget=10,
-            operator_token="token_with_length_16_bytes",
+            operator_token=self.token,
         )
         ok, _, msg = gatekeeper.dispatch_state_transition(bad_req)
         self.assertFalse(ok)
@@ -112,7 +143,7 @@ class TestUnifiedIntelligenceConsolidation(unittest.TestCase):
             state_payload={"domain": "atomic", "weight": 0.10},
             deadline_epoch=time.time() + 10.0,
             max_budget=0,
-            operator_token="token_with_length_16_bytes",
+            operator_token=self.token,
         )
         ok, _, msg = gatekeeper.dispatch_state_transition(zero_budget)
         self.assertFalse(ok)
@@ -126,10 +157,10 @@ class TestUnifiedIntelligenceConsolidation(unittest.TestCase):
     def test_unified_gatekeeper_rollback_on_failure(self):
         """Verify verified rollback port restores pre-execution state on exception."""
         from euclid.intelligence.gatekeeper import (
-            UnifiedIntelligenceGatekeeper,
             StateTransitionRequest,
         )
-        gatekeeper = UnifiedIntelligenceGatekeeper()
+
+        gatekeeper = self.gatekeeper()
         initial_weights = dict(gatekeeper.state_bridge.controller.state["reliability_weights"])
 
         failing_req = StateTransitionRequest(
@@ -139,7 +170,7 @@ class TestUnifiedIntelligenceConsolidation(unittest.TestCase):
             state_payload={},
             deadline_epoch=time.time() + 10.0,
             max_budget=10,
-            operator_token="token_with_length_16_bytes",
+            operator_token=self.token,
         )
         ok, _, msg = gatekeeper.dispatch_state_transition(failing_req)
         self.assertFalse(ok)

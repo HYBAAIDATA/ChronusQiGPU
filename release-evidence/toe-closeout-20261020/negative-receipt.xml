@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="0" tests="6" time="0.291" timestamp="2026-10-20T18:37:53.325002+00:00" hostname="71c0a84c-ac0"><testcase classname="tests.test_toe_http_closeout" name="test_success_without_complete_receipt_is_rejected[receipt_id]" time="0.004"><failure message="assert (200 == 502)">field = 'receipt_id'
+
+    @pytest.mark.parametrize("field", ["receipt_id", "tenant_id", "payload_digest", "result_digest", "evidence_status", "receipt"])
+    def test_success_without_complete_receipt_is_rejected(field):
+        from types import SimpleNamespace
+        from toe.runtime import RuntimeResponse, RuntimeReceipt
+        receipt = RuntimeReceipt("r", "tenant-a", "predict", "a"*64, "b"*64, 0.0,
+                                 "test", "MEASURED", True, False)
+        response = RuntimeResponse(ok=True, tenant_id="tenant-a", operation="predict", receipt=receipt)
+        if field == "receipt":
+            response.receipt = None
+        else:
+            from dataclasses import replace
+            response.receipt = replace(receipt, **{field: ""})
+        runtime = SimpleNamespace(predict=lambda *args, **kwargs: response)
+        service = CIaaSService(runtime=runtime, api_key="x"*40)
+        service.register_tenant("tenant-a")
+        result, status = service.handle_request("predict", {"x": 1}, "tenant-a", "x"*40)
+&gt;       assert status == 502 and result.error.code == "receipt_invalid"
+E       assert (200 == 502)
+
+tests/test_toe_http_closeout.py:88: AssertionError</failure></testcase><testcase classname="tests.test_toe_http_closeout" name="test_success_without_complete_receipt_is_rejected[tenant_id]" time="0.002"><failure message="assert (200 == 502)">field = 'tenant_id'
+
+    @pytest.mark.parametrize("field", ["receipt_id", "tenant_id", "payload_digest", "result_digest", "evidence_status", "receipt"])
+    def test_success_without_complete_receipt_is_rejected(field):
+        from types import SimpleNamespace
+        from toe.runtime import RuntimeResponse, RuntimeReceipt
+        receipt = RuntimeReceipt("r", "tenant-a", "predict", "a"*64, "b"*64, 0.0,
+                                 "test", "MEASURED", True, False)
+        response = RuntimeResponse(ok=True, tenant_id="tenant-a", operation="predict", receipt=receipt)
+        if field == "receipt":
+            response.receipt = None
+        else:
+            from dataclasses import replace
+            response.receipt = replace(receipt, **{field: ""})
+        runtime = SimpleNamespace(predict=lambda *args, **kwargs: response)
+        service = CIaaSService(runtime=runtime, api_key="x"*40)
+        service.register_tenant("tenant-a")
+        result, status = service.handle_request("predict", {"x": 1}, "tenant-a", "x"*40)
+&gt;       assert status == 502 and result.error.code == "receipt_invalid"
+E       assert (200 == 502)
+
+tests/test_toe_http_closeout.py:88: AssertionError</failure></testcase><testcase classname="tests.test_toe_http_closeout" name="test_success_without_complete_receipt_is_rejected[payload_digest]" time="0.002"><failure message="assert (200 == 502)">field = 'payload_digest'
+
+    @pytest.mark.parametrize("field", ["receipt_id", "tenant_id", "payload_digest", "result_digest", "evidence_status", "receipt"])
+    def test_success_without_complete_receipt_is_rejected(field):
+        from types import SimpleNamespace
+        from toe.runtime import RuntimeResponse, RuntimeReceipt
+        receipt = RuntimeReceipt("r", "tenant-a", "predict", "a"*64, "b"*64, 0.0,
+                                 "test", "MEASURED", True, False)
+        response = RuntimeResponse(ok=True, tenant_id="tenant-a", operation="predict", receipt=receipt)
+        if field == "receipt":
+            response.receipt = None
+        else:
+            from dataclasses import replace
+            response.receipt = replace(receipt, **{field: ""})
+        runtime = SimpleNamespace(predict=lambda *args, **kwargs: response)
+        service = CIaaSService(runtime=runtime, api_key="x"*40)
+        service.register_tenant("tenant-a")
+        result, status = service.handle_request("predict", {"x": 1}, "tenant-a", "x"*40)
+&gt;       assert status == 502 and result.error.code == "receipt_invalid"
+E       assert (200 == 502)
+
+tests/test_toe_http_closeout.py:88: AssertionError</failure></testcase><testcase classname="tests.test_toe_http_closeout" name="test_success_without_complete_receipt_is_rejected[result_digest]" time="0.002"><failure message="assert (200 == 502)">field = 'result_digest'
+
+    @pytest.mark.parametrize("field", ["receipt_id", "tenant_id", "payload_digest", "result_digest", "evidence_status", "receipt"])
+    def test_success_without_complete_receipt_is_rejected(field):
+        from types import SimpleNamespace
+        from toe.runtime import RuntimeResponse, RuntimeReceipt
+        receipt = RuntimeReceipt("r", "tenant-a", "predict", "a"*64, "b"*64, 0.0,
+                                 "test", "MEASURED", True, False)
+        response = RuntimeResponse(ok=True, tenant_id="tenant-a", operation="predict", receipt=receipt)
+        if field == "receipt":
+            response.receipt = None
+        else:
+            from dataclasses import replace
+            response.receipt = replace(receipt, **{field: ""})
+        runtime = SimpleNamespace(predict=lambda *args, **kwargs: response)
+        service = CIaaSService(runtime=runtime, api_key="x"*40)
+        service.register_tenant("tenant-a")
+        result, status = service.handle_request("predict", {"x": 1}, "tenant-a", "x"*40)
+&gt;       assert status == 502 and result.error.code == "receipt_invalid"
+E       assert (200 == 502)
+
+tests/test_toe_http_closeout.py:88: AssertionError</failure></testcase><testcase classname="tests.test_toe_http_closeout" name="test_success_without_complete_receipt_is_rejected[evidence_status]" time="0.002"><failure message="assert (200 == 502)">field = 'evidence_status'
+
+    @pytest.mark.parametrize("field", ["receipt_id", "tenant_id", "payload_digest", "result_digest", "evidence_status", "receipt"])
+    def test_success_without_complete_receipt_is_rejected(field):
+        from types import SimpleNamespace
+        from toe.runtime import RuntimeResponse, RuntimeReceipt
+        receipt = RuntimeReceipt("r", "tenant-a", "predict", "a"*64, "b"*64, 0.0,
+                                 "test", "MEASURED", True, False)
+        response = RuntimeResponse(ok=True, tenant_id="tenant-a", operation="predict", receipt=receipt)
+        if field == "receipt":
+            response.receipt = None
+        else:
+            from dataclasses import replace
+            response.receipt = replace(receipt, **{field: ""})
+        runtime = SimpleNamespace(predict=lambda *args, **kwargs: response)
+        service = CIaaSService(runtime=runtime, api_key="x"*40)
+        service.register_tenant("tenant-a")
+        result, status = service.handle_request("predict", {"x": 1}, "tenant-a", "x"*40)
+&gt;       assert status == 502 and result.error.code == "receipt_invalid"
+E       assert (200 == 502)
+
+tests/test_toe_http_closeout.py:88: AssertionError</failure></testcase><testcase classname="tests.test_toe_http_closeout" name="test_success_without_complete_receipt_is_rejected[receipt]" time="0.002"><failure message="assert (200 == 502)">field = 'receipt'
+
+    @pytest.mark.parametrize("field", ["receipt_id", "tenant_id", "payload_digest", "result_digest", "evidence_status", "receipt"])
+    def test_success_without_complete_receipt_is_rejected(field):
+        from types import SimpleNamespace
+        from toe.runtime import RuntimeResponse, RuntimeReceipt
+        receipt = RuntimeReceipt("r", "tenant-a", "predict", "a"*64, "b"*64, 0.0,
+                                 "test", "MEASURED", True, False)
+        response = RuntimeResponse(ok=True, tenant_id="tenant-a", operation="predict", receipt=receipt)
+        if field == "receipt":
+            response.receipt = None
+        else:
+            from dataclasses import replace
+            response.receipt = replace(receipt, **{field: ""})
+        runtime = SimpleNamespace(predict=lambda *args, **kwargs: response)
+        service = CIaaSService(runtime=runtime, api_key="x"*40)
+        service.register_tenant("tenant-a")
+        result, status = service.handle_request("predict", {"x": 1}, "tenant-a", "x"*40)
+&gt;       assert status == 502 and result.error.code == "receipt_invalid"
+E       assert (200 == 502)
+
+tests/test_toe_http_closeout.py:88: AssertionError</failure></testcase></testsuite></testsuites>

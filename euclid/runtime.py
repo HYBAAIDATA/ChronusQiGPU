@@ -185,6 +185,7 @@ class EuclidRuntime:
         guardian: Any | None = None,
         implementations: Mapping[str, Any] | None = None,
         subscription_token_provider: Any | None = None,
+        tenant_id: str | None = None,
     ) -> None:
         """Register TURING/CHRONUS/Triad specialists, the AL HARAS boundary and
         the Salamander bounded-recovery plane on this composition root.
@@ -198,6 +199,16 @@ class EuclidRuntime:
         from .cognition.reachability import ReachabilityStage
         from .organ_adapters import specialists as adapters
 
+        if tenant_id is not None and (
+            not isinstance(tenant_id, str) or not tenant_id.strip()
+        ):
+            raise ValueError("tenant_id must be a non-empty string when bound")
+        if subscription_token_provider is not None and not callable(subscription_token_provider):
+            raise TypeError("subscription_token_provider must be callable")
+        # A shared enterprise fabric belongs to one tenant. Creator identity is
+        # a delegation owner, not an implicit customer identity. Standalone
+        # callers without a bound tenant retain their existing behavior.
+        self._service_tenant_id = tenant_id
         self.guardian = guardian
         self.organism_unavailable: dict[str, str] = {}
         self._organ_probes: dict[str, dict[str, Any]] = {}
@@ -292,7 +303,12 @@ class EuclidRuntime:
                     "guardian": guardian,
                     "authorizer": guardian,
                     "subscription_token_provider": token_provider,
-                    "token_provider": token_provider,
+                    # EUCLID's public provider accepts (tenant, actor); the
+                    # canonical Salamander authorizer accepts ActionRequest.
+                    # Translate here, not in the security/actuation owners.
+                    "token_provider": lambda request: token_provider(
+                        request.tenant_id, request.actor_id
+                    ),
                 }
                 signature = inspect.signature(build_authorized_control_plane)
                 if any(
@@ -372,6 +388,15 @@ class EuclidRuntime:
         return bind_intelligence(self, registry, profile=profile,
                                  capabilities=capabilities, organ_id=organ_id)
 
+    def bind_empirical_state(self, *, data_port, organ_id="empirical-state"):
+        """Bind operational reliability state to existing shared custody.
+
+        Grants no rights or entitlements; dispatch remains AL HARAS-mediated.
+        """
+        from .capabilities.empirical_runtime import bind_empirical_state
+
+        return bind_empirical_state(self, data_port=data_port, organ_id=organ_id)
+
     def dispatch_specialist(
         self,
         organ_id: str,
@@ -391,6 +416,14 @@ class EuclidRuntime:
         # Detach caller-owned nested data before authorization. The guardian
         # receives its own observation, not a mutable dispatch authority handle.
         request = copy.deepcopy(dict(request))
+        bound_tenant = getattr(self, "_service_tenant_id", None)
+        if bound_tenant is not None and tenant_id != bound_tenant:
+            self.evidence.append("governance-denial", {
+                "organ": organ_id, "reason": "TENANT_BOUNDARY_MISMATCH",
+            })
+            return {"allowed": False, "organ": organ_id,
+                    "operation": f"{organ_id}.{request.get('operation', 'default')}",
+                    "governance": {"allowed": False, "reason": "TENANT_BOUNDARY_MISMATCH"}}
         if getattr(self, "guardian", None) is None:
             # Creator-scoped grants are necessary but are not a substitute
             # for the security owner's authorisation of specialist effects.
@@ -411,7 +444,8 @@ class EuclidRuntime:
         episode = f"dispatch:{operation}"
         governance: dict[str, Any] = {"guardian": "not-configured"}
         if getattr(self, "guardian", None) is not None:
-            from al_haras import GuardianRequest
+            from al_haras import GuardianRequest, GuardianVerdict
+            from al_haras.audit import digest as guardian_digest
 
             verdict = self.guardian.evaluate(
                 GuardianRequest(
@@ -423,6 +457,18 @@ class EuclidRuntime:
                 ),
                 subscription_token=subscription_token or "",
             )
+            if (
+                not isinstance(verdict, GuardianVerdict)
+                or type(verdict.allowed) is not bool
+                or verdict.tenant_id != tenant_id
+                or verdict.operation != operation
+                or verdict.payload_hash != guardian_digest(request)
+                or any(not isinstance(value, str) or not value.strip() for value in (
+                    verdict.reason, verdict.evidence_id, verdict.policy_version,
+                ))
+            ):
+                self.evidence.append("governance-invalid-response", {"organ": organ_id})
+                raise ValueError("invalid or unbound AL HARAS verdict")
             governance = {
                 "guardian": "al_haras",
                 "allowed": verdict.allowed,
@@ -627,7 +673,7 @@ class EuclidRuntime:
             action_id=f"requalify:{organ_id}:{uuid.uuid4().hex[:12]}",
             kind=ActionKind.REQUALIFY,
             handler="requalify-organ",
-            tenant_id=self.creator_id,
+            tenant_id=getattr(self, "_service_tenant_id", None) or self.creator_id,
             target=organ_id,
             reason=reason,
             bounds={"max_attempts": 1},
@@ -641,12 +687,15 @@ class EuclidRuntime:
             "heal-attempt",
             {"actor": actor, "organ": organ_id, "action_id": request.action_id},
         )
-        token = (
-            self._subscription_token_provider(self.creator_id, actor)
-            if self._subscription_token_provider is not None
-            else None
-        )
         if "subscription_token" in inspect.signature(self.autonomic.execute).parameters:
+            # Legacy planes take the credential explicitly. The canonical
+            # plane fetches it through its bound authorizer; do not fetch twice
+            # or bypass its fail-closed credential-provider error handling.
+            token = (
+                self._subscription_token_provider(request.tenant_id, actor)
+                if self._subscription_token_provider is not None
+                else None
+            )
             result = self.autonomic.execute(request, subscription_token=token or "")
         else:
             result = self.autonomic.execute(request)

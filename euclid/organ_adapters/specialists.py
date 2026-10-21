@@ -42,7 +42,7 @@ class TuringQuantumOrgan:
     organ_id = "turing"
     owner = "TURING"
 
-    def __init__(self, *, max_amplitudes: int | None = None) -> None:
+    def __init__(self, *, max_amplitudes: int | None = None, pipeline: Any | None = None) -> None:
         try:  # installed distribution (pyproject: pip install ./turing_universal_quantum_computer)
             from turing_universal_quantum_computer import backends
         except ImportError:  # in-tree checkout resolved from the repository root
@@ -50,7 +50,10 @@ class TuringQuantumOrgan:
                 backends,
             )
 
+        if pipeline is not None and not callable(getattr(pipeline, "run", None)):
+            raise TypeError("injected TURING pipeline must expose run(request)")
         self._backends = backends
+        self._pipeline = pipeline
         self._max_amplitudes = max_amplitudes or backends.DEFAULT_MAX_AMPLITUDES
 
     def execute(self, request: Mapping[str, Any]) -> dict[str, Any]:
@@ -85,6 +88,23 @@ class TuringQuantumOrgan:
                 "measured_qpu": False,
                 "reason": admission.reason,
             }
+        if self._pipeline is not None:
+            # Enterprise composition injects the EXISTING shared VQCPipeline
+            # owner, not another executor or a private custody instance.
+            from turing_universal_quantum_computer.pipeline import VQCRequest
+
+            report = self._pipeline.run(VQCRequest(
+                program=program, prefer_backend=prefer,
+                max_amplitudes=self._max_amplitudes,
+            ))
+            result = dict(report.result or {})
+            payload = dict(result.pop("payload", {}))
+            payload.pop("state", None)
+            return _jsonable({
+                **base, **result, "executed": report.result is not None,
+                "payload": payload, "pipeline_verdict": report.verdict,
+                "pipeline_report": report.as_dict(),
+            })
         result = backend.execute(program).as_dict()
         payload = dict(result.pop("payload", {}))
         payload.pop("state", None)  # live object; amplitudes/dirac carry the answer

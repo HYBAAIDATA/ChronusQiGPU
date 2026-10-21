@@ -112,7 +112,7 @@ would fail if the collapse were cosmetic:
         probed at every scale
     T14 scale-fold memory store: data-independent operators computed
         once and folded across all sectors; Zeckendorf-folded signatures
-        deduplicate near-identical telemetry without recompute
+        index telemetry; only exact-content matches reuse encoded states
 
 What is proven: every layer's *function* is carried by the same substrate
 with exact mathematics where the substrate is theorem-backed (Born rule,
@@ -131,6 +131,7 @@ Exit 0 iff every check passes.
 from __future__ import annotations
 
 import json
+import hashlib
 import math
 import os
 import random
@@ -152,7 +153,7 @@ from kellogg.quantum_tensor import (  # noqa: E402
     born_probabilities,
 )
 from toe.bridge import TOEBridge  # noqa: E402
-from Intelligence.lucas_scales import build_lucas_scale_profile  # noqa: E402
+from Intelligence.lucas_scales import build_lucas_scale_profile, multiscale_coherence_probe  # noqa: E402
 
 # The support layer: the project's exact Q[√5] family — Fibonacci, Lucas,
 # Binet, Cassini, doubling, Zeckendorf, Pisot, golden Q-matrix, dual
@@ -533,7 +534,7 @@ class ScaleFoldStore:
     on (dim, ℏ, m, ω, t) — never on which sector's data is being evolved —
     so they are computed once, stored, and folded back across every sector
     and every check. The same store deduplicates encoded states by their
-    Zeckendorf signature. Exact reuse — zero approximation.
+    Zeckendorf signature. Only content-identical values reuse encoded states; coarse fold collisions never alias.
     """
 
     def __init__(self, dim: int, hbar: float, mass: float, omega: float) -> None:
@@ -541,7 +542,7 @@ class ScaleFoldStore:
         self._mass, self._omega = mass, omega
         self._H: Optional[ComplexMatrix] = None
         self._U: Dict[float, ComplexMatrix] = {}
-        self._states: Dict[Tuple[Tuple[int, ...], ...], QuantumState] = {}
+        self._states: Dict[Tuple[Any, str], QuantumState] = {}
         self.hamiltonian_computations = 0
         self.propagator_computations = 0
         self.propagator_uses = 0
@@ -571,7 +572,12 @@ class ScaleFoldStore:
 
     def folded_state(self, data: Any) -> Tuple[QuantumState, bool]:
         """Return the encoded state, reusing a fold-identical one if stored."""
-        sig = zeckendorf_signature(data)
+        # A coarse Zeckendorf bucket is not an exact content identity.
+        # Preserve the bucket, but never reuse another datum's encoded state.
+        content = json.dumps(data, sort_keys=True, separators=(",", ":"),
+                             default=lambda value: {"bytes": list(value)}
+                             if isinstance(value, (bytes, bytearray)) else str(value))
+        sig = (zeckendorf_signature(data), hashlib.sha256(content.encode()).hexdigest())
         hit = sig in self._states
         if hit:
             self.state_fold_hits += 1
@@ -647,15 +653,90 @@ def check_born_and_schema(
             )
         )
         schema_ok = set(result.keys()) == expected_top
-        born_ok = abs(psum - 1.0) < 1e-9
+        born_ok = abs(psum - 1.0) < 1e-9 and all(math.isfinite(v) and v >= 0 for v in probs.values())
         details[sector] = {
             "born_sum": psum,
+            "born_valid": born_ok,
             "all_capabilities_available": sub_ok,
             "schema_match": schema_ok,
             "confidence": result["confidence"],
         }
         ok = ok and sub_ok and schema_ok and born_ok
     return {"name": "T2_T3_born_distribution_and_schema_collapse", "passed": ok, "sectors": details}
+
+
+def check_support_layer() -> Dict[str, Any]:
+    """T12: executed bounded witnesses over the canonical shared mathematics."""
+    name = "T12_exact_support_family"
+    if not _HAS_TURING_CORE:
+        return {"name": name, "passed": False, "error": "canonical turing_core unavailable"}
+    witnesses = []
+    for n in range(1, 35):
+        q = turing_core.q_matrix_power(n)
+        witnesses.extend([
+            turing_core.cassini_check(n), turing_core.doubling_check(n),
+            abs(turing_core.binet_fibonacci(n) - turing_core.fibonacci(n)) < 1e-4,
+            abs(turing_core.binet_lucas(n) - turing_core.lucas(n)) < 1e-4,
+            q[0][0] + q[1][1] == turing_core.lucas(n),
+            q[0][0] * q[1][1] - q[0][1] * q[1][0] == (-1) ** n,
+        ])
+    for value in range(256):
+        indices = sorted(turing_core.zeckendorf_encode(value))
+        witnesses.extend([turing_core.zeckendorf_decode(indices) == value,
+                          all(b > a + 1 for a, b in zip(indices, indices[1:]))])
+    frame = turing_core.generate_dual_overlay_frame()
+    witnesses.append(len(frame) == 32)
+    witnesses.extend(abs(sum(x*x for x in vertex) - 1) < 1e-9 for vertex in frame)
+    for n in (10, 12, 15, 18, 20):
+        drift = abs(turing_core.PHI ** n - turing_core.lucas(n))
+        witnesses.append(abs(drift - turing_core.PHI ** (-n)) < 1e-9)
+    return {"name": name, "passed": all(witnesses), "witness_count": len(witnesses),
+            "scope": "bounded integer identities and Float64 Binet/overlay/Pisot tolerances, not physical hardware"}
+
+
+def check_lucas_ladder() -> Dict[str, Any]:
+    """T13: exact ladder and measured coherence, no inferred intelligence gain."""
+    profile = build_lucas_scale_profile()
+    probe = multiscale_coherence_probe([math.sin(i / 17) for i in range(2 * 15127)], profile)
+    values = profile.values()
+    coherent = list(probe["per_scale"].values())
+    substrate_ok = bool(_HAS_TURING_CORE and profile.substrate_validated)
+    exact = substrate_ok and all(lv.value == turing_core.lucas(lv.index) for lv in profile.levels)
+    finite = len(coherent) == len(values) and all(math.isfinite(row["autocorr_lag1"]) for row in coherent)
+    from Intelligence.lucas_scaler import LucasIntelligenceScaler
+    scaler = LucasIntelligenceScaler()
+    rows = [scaler.scale(0.5, 0.5, 0.5, lv.index) for lv in profile.levels]
+    confidence = [row.pci_after for row in rows]
+    monotonic = all(a <= b for a, b in zip(confidence, confidence[1:]))
+    bounded = all(math.isfinite(x) and 0 <= x <= 1 for x in confidence)
+    matched = exact and all(row.lucas_number == lv.value for row, lv in zip(rows, profile.levels))
+    return {"name": "T13_lucas_ladder_and_confidence", "passed": bool(matched and finite and monotonic and bounded),
+            "exact_ladder": exact, "monotonic_values": profile.monotonic,
+            "coherence_measured": finite, "coherence": probe,
+            "scaled_confidence_formula": confidence,
+            "scope": "canonical mathematical confidence transformation; not measured predictive accuracy or evidence of consciousness"}
+
+
+def check_scale_fold_store() -> Dict[str, Any]:
+    """T14: one operator per time, exact-content reuse, collision negative control."""
+    store = ScaleFoldStore(DIM, HBAR, MASS, OMEGA)
+    operators = [store.propagator(0.125) for _ in SECTORS]
+    first, first_hit = store.folded_state({"value": [1.0]})
+    same, same_hit = store.folded_state({"value": [1.0]})
+    distinct, collision_hit = store.folded_state({"value": [1.001]})
+    passed = (all(op is operators[0] for op in operators) and not first_hit
+              and same_hit and same is first and not collision_hit and distinct is not first
+              and store.hamiltonian_computations == 1 and store.propagator_computations == 1)
+    return {"name": "T14_scale_fold_store", "passed": passed, "stats": store.stats(),
+            "coarse_collision_witness": zeckendorf_signature({"value": [1.0]}) == zeckendorf_signature({"value": [1.001]}),
+            "scope": "exact input cache identity, not approximate telemetry equivalence"}
+
+
+def all_required_checks_pass(checks: List[Dict[str, Any]]) -> bool:
+    """All sixteen unique IDs must execute and pass; skips never satisfy Gate B."""
+    ids = [row.get("name", "").split("_", 1)[0] for row in checks]
+    return (len(ids) == 16 and set(ids) == {"T%d" % n for n in range(1, 17)}
+            and all(row.get("passed") is True and not row.get("skipped") for row in checks))
 
 
 def check_evolution(store: ScaleFoldStore) -> Dict[str, Any]:
@@ -1151,6 +1232,9 @@ def check_first_principles_lucas_scaling() -> Dict[str, Any]:
             "or runner node_modules/tsx is absent from this checkout",
             "security": _security_assessment(),
         }
+    out_path = root / "experiments" / "quantum_lucas_scaling_results.json"
+    # A previous run's output can never qualify a new process.
+    out_path.unlink(missing_ok=True)
     result = subprocess.run(
         [str(Path("node")), str(tsx), str(script)],
         cwd=str(root),
@@ -1279,9 +1363,12 @@ def run() -> int:
     banner("PART C — verification suite (each check must pass)")
     causal_check = check_causal(bridge)
     store = ScaleFoldStore(DIM, HBAR, MASS, OMEGA)
+    combined = check_born_and_schema(bridge, predictions)
+    sectors = combined["sectors"]
     checks = [
         check_ingest(),
-        check_born_and_schema(bridge, predictions),
+        {"name": "T2_born_distribution", "passed": all(row["born_valid"] for row in sectors.values()), "sectors": sectors},
+        {"name": "T3_schema_collapse", "passed": all(row["schema_match"] and row["all_capabilities_available"] for row in sectors.values()), "sectors": sectors},
         check_evolution(store),
         check_kernel_ml(),
         check_anomaly(),
@@ -1290,10 +1377,13 @@ def run() -> int:
         check_causal_vs_correlational(causal_check),
         check_emergent_breadth(predictions["cybersecurity"]),
         check_zero_domain_vocabulary(),
+        check_support_layer(),
+        check_lucas_ladder(),
+        check_scale_fold_store(),
         check_quantum_lucas_scaling(),
         check_first_principles_lucas_scaling(),
     ]
-    all_pass = True
+    all_pass = all_required_checks_pass(checks)
     for c in checks:
         skipped = bool(c.get("skipped"))
         if not skipped:
@@ -1427,6 +1517,9 @@ def run() -> int:
         "sector_summary": sector_rows,
         "checks": checks,
         "all_passed": all_pass,
+        "required_check_count": 16,
+        "executed_check_count": len(checks),
+        "production_ready": False,
         "elapsed_seconds": elapsed,
     }
     out_path = os.path.join(

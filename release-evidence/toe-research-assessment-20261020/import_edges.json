@@ -1,0 +1,59 @@
+{
+  "toe": {
+    "kellogg": [
+      "toe/bridge.py",
+      "toe/causal_ladder.py",
+      "toe/engine.py",
+      "toe/expansion.py",
+      "toe/geometric_contract.py",
+      "toe/machine.py",
+      "toe/mining_decision_plane.py",
+      "toe/solovay_kitaev.py",
+      "toe/system.py",
+      "toe/unified/industries.py",
+      "toe/unified/intelligence.py"
+    ],
+    "lucas": [
+      "toe/bridge.py",
+      "toe/causal_ladder.py",
+      "toe/expansion.py"
+    ],
+    "Intelligence": [
+      "toe/engine.py"
+    ],
+    "asi": [
+      "toe/runtime.py"
+    ]
+  },
+  "kellogg": {
+    "toe": [
+      "kellogg/substrate.py",
+      "kellogg/toe_superposition.py"
+    ]
+  },
+  "Intelligence": {
+    "lucas": [
+      "Intelligence/lucas_scaler.py",
+      "Intelligence/lucas_scales.py",
+      "Intelligence/salamander.py"
+    ],
+    "toe": [
+      "Intelligence/lucas_scaler.py",
+      "Intelligence/salamander.py"
+    ],
+    "salamander": [
+      "Intelligence/salamander.py"
+    ]
+  },
+  "asi": {
+    "salamander": [
+      "asi/self_healing.py"
+    ]
+  },
+  "salamander": {},
+  "lucas": {
+    "toe": [
+      "lucas/scaling_research.py"
+    ]
+  }
+}

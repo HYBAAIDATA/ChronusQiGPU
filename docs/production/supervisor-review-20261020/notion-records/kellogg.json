@@ -1,0 +1,20 @@
+{
+  "url": "https://app.notion.com/p/ccfcdd6511be4c93bb516102bf90a495",
+  "parent": {
+    "type": "page",
+    "url": "https://app.notion.com/p/3f113476fb44496e99a2fcbb37546ccb"
+  },
+  "properties": {
+    "title": "Kellogg — Product, Contract & API Lock"
+  },
+  "createdBy": "user://39bd872b-594c-8119-a5d3-0002278b998d",
+  "lastEditedBy": "user://39bd872b-594c-8119-a5d3-0002278b998d",
+  "content": "<b>Locked identity:</b> enterprise tensor mathematics and safe tensor artifacts. Canonical spelling: Kellogg. One mathematical authority, not a duplicate hardware scheduler or mining identity.\n\n<b>Status:</b> responsibility baseline documented; executable API/version mapping and current qualification open.\n\n## Owned authority\n\nComplex-preserving TT/MPS decomposition and reconstruction; MPO algebra and contractions; declared numerical error budgets; invariant checks; tensor representation accounting and safe <code>.pv</code> artifact format. Optional domain-specific operators remain capability-scoped, not proof that every solver is qualified.\n\nChronus owns probing, scheduling, transfers and execution evidence. Ovid/PULVINI folding and Theseus custody are separate responsibilities. Historical Aethel fold-custody references need version/lineage mapping rather than duplication.\n\n## Required technical contract\n\n| Operation family | Required contract |\n| --- | --- |\n| Decompose / reconstruct | Bind dtype, shape, complex phase, rank/bond limits and requested error budget; report actual error |\n| Contract / evolve | Validate compatible dimensions, supported operator/state class and resource limits; preserve declared invariants |\n| Serialize / restore | Canonical safe format; schema/version, dtype/shape and integrity binding; atomic replacement where supported; no pickle |\n| Authenticate artifacts | Distinguish SHA-256 integrity from optional HMAC authenticity; declare key identity and verification policy |\n\nHistorical public namespace is <code>kellogg</code>; the reviewed integration record does not enumerate full current signatures. Operation families above are requirements, not invented callable names or a deployed REST service. Pin exports and schema fixtures before calling the ABI frozen.\n\n## Non-mining acceptance requirement\n\nReconstruct complex enterprise tensors within a declared error budget; compare contracted operators with an independent bounded reference; reject malformed shape, nonfinite values, corrupted artifacts and invalid authentication. Record logical versus materialised storage honestly. No fresh execution is claimed.\n\n## Mining boundary\n\nA mining consumer may use eligible tensor operations, but Kellogg does not own proof/target semantics, submission or accepted-share truth. Representation compression is not a multiplier for completed hash work.\n\n## Customer schedule\n\nScope the licensed operations, exactness/approximation policy, supported formats and limits per version. No guaranteed compression ratio, numerical advantage or device throughput without workload-specific evidence. License, fees, support and SLA require an approved product schedule.\n\n## Source traceability\n\n- <mention url=\"https://app.notion.com/p/083f5e3ca1f84472bdddd6386f9cac89\">Converge July tensor capabilities into Kellogg and close Chronus GPU gaps</mention>\n- <mention url=\"https://app.notion.com/p/3f113476fb44496e99a2fcbb37546ccb\">HYBA — Enterprise Product Lock Register</mention>",
+  "cover": null,
+  "iconMetadata": null,
+  "contentLastEditedAt": 1792515771011,
+  "accessMetadata": {
+    "bucket": "private"
+  },
+  "title": "Kellogg — Product, Contract & API Lock"
+}

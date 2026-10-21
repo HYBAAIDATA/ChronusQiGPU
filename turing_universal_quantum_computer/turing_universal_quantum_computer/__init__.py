@@ -149,6 +149,19 @@ _LAZY_MODULES = {
 }
 
 _LAZY_SYMBOLS = {
+    # additive typed public API (canonical VQCPipeline remains unchanged)
+    "QuantumPipeline": "public_api",
+    "TuringPipeline": "public_api",
+    "AdvancedQuantumPipeline": "public_api",
+    "PipelineConfig": "config",
+    "CircuitIR": "contracts",
+    "ParameterSpec": "contracts",
+    "ParameterBindings": "contracts",
+    "FiniteAnsatz": "contracts",
+    "PauliZ": "contracts",
+    "OptimizationResult": "contracts",
+    "JobStatus": "contracts",
+    "Estimate": "contracts",
     "QuantumRegister": "hilbert",
     "GroverExact": "hilbert",
     "ExactComplex": "hilbert",

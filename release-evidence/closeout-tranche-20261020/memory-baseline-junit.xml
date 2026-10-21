@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="20" skipped="0" tests="22" time="0.434" timestamp="2026-10-20T17:39:38.339044+00:00" hostname="bf572200-cb8"><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_same_content_tenants_keep_distinct_handles" time="0.014" /><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_forged_content_id_rejected" time="0.004"><failure message="Failed: DID NOT RAISE ValueError">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c4590&gt;
+
+    def test_forged_content_id_rejected(plane):
+&gt;       with pytest.raises(ValueError): plane.store({'x':1},tenant='a',identity={'content_id':'0'*64})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:31: Failed</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_explicit_handle_cannot_change_content" time="0.003"><failure message="Failed: DID NOT RAISE PermissionError">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c5400&gt;
+
+    def test_explicit_handle_cannot_change_content(plane):
+        r=plane.store({'x':1},tenant='a',object_id='my-handle')
+&gt;       with pytest.raises(PermissionError): plane.store({'x':2},tenant='a',object_id='my-handle')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE PermissionError
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:36: Failed</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_payload_and_metadata_aliases_do_not_mutate_store" time="0.003"><failure message="AssertionError: assert {'nested': [2, 4, 7]} == {'nested': [2]}&#10;  &#10;  Differing items:&#10;  {'nested': [2, 4, 7]} != {'nested': [2]}&#10;  Use -v to get more diff">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c5a90&gt;
+
+    def test_payload_and_metadata_aliases_do_not_mutate_store(plane):
+        payload={'x':[1]}; metadata={'nested':[2]}
+        r=plane.store(payload,tenant='a',metadata=metadata)
+        payload['x'].append(3); metadata['nested'].append(4); r.payload['x'].append(5)
+        view=plane.lookup(r.object_id,tenant='a'); view.payload['x'].append(6); view.metadata['nested'].append(7)
+&gt;       assert plane.lookup(r.object_id,tenant='a').metadata=={'nested':[2]}
+E       AssertionError: assert {'nested': [2, 4, 7]} == {'nested': [2]}
+E         
+E         Differing items:
+E         {'nested': [2, 4, 7]} != {'nested': [2]}
+E         Use -v to get more diff
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:44: AssertionError</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_object_path_rejected[../escape]" time="0.007"><failure message="KeyError: 'object not found: ../escape'">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c6270&gt;
+oid = '../escape'
+
+    @pytest.mark.parametrize('oid',['../escape','/tmp/escape','x','A'*64,'0'*65])
+    def test_object_path_rejected(plane,oid):
+&gt;       with pytest.raises(ValueError): plane.retrieve(oid,tenant='a')
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+closeout-implementation/baseline/chronus/virtual_igpu/memory.py:399: in retrieve
+    return self._retrieve_object(object_id, tenant=str(tenant))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c6270&gt;
+object_id = '../escape', tenant = 'a'
+
+    def _retrieve_object(self, object_id: str, *, tenant: str) -&gt; Any:
+        with self._lock:
+            rec = self._objects.get(object_id)
+            if rec is None:
+                path = self.objects_dir / f"{object_id}.json"
+                if not path.exists():
+&gt;                   raise KeyError(f"object not found: {object_id}")
+E                   KeyError: 'object not found: ../escape'
+
+closeout-implementation/baseline/chronus/virtual_igpu/memory.py:407: KeyError</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_object_path_rejected[/tmp/escape]" time="0.003"><failure message="KeyError: 'object not found: /tmp/escape'">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c6900&gt;
+oid = '/tmp/escape'
+
+    @pytest.mark.parametrize('oid',['../escape','/tmp/escape','x','A'*64,'0'*65])
+    def test_object_path_rejected(plane,oid):
+&gt;       with pytest.raises(ValueError): plane.retrieve(oid,tenant='a')
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+closeout-implementation/baseline/chronus/virtual_igpu/memory.py:399: in retrieve
+    return self._retrieve_object(object_id, tenant=str(tenant))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c6900&gt;
+object_id = '/tmp/escape', tenant = 'a'
+
+    def _retrieve_object(self, object_id: str, *, tenant: str) -&gt; Any:
+        with self._lock:
+            rec = self._objects.get(object_id)
+            if rec is None:
+                path = self.objects_dir / f"{object_id}.json"
+                if not path.exists():
+&gt;                   raise KeyError(f"object not found: {object_id}")
+E                   KeyError: 'object not found: /tmp/escape'
+
+closeout-implementation/baseline/chronus/virtual_igpu/memory.py:407: KeyError</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_object_path_rejected[x]" time="0.004"><failure message="KeyError: 'object not found: x'">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d1796cf0&gt;
+oid = 'x'
+
+    @pytest.mark.parametrize('oid',['../escape','/tmp/escape','x','A'*64,'0'*65])
+    def test_object_path_rejected(plane,oid):
+&gt;       with pytest.raises(ValueError): plane.retrieve(oid,tenant='a')
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+closeout-implementation/baseline/chronus/virtual_igpu/memory.py:399: in retrieve
+    return self._retrieve_object(object_id, tenant=str(tenant))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d1796cf0&gt;
+object_id = 'x', tenant = 'a'
+
+    def _retrieve_object(self, object_id: str, *, tenant: str) -&gt; Any:
+        with self._lock:
+            rec = self._objects.get(object_id)
+            if rec is None:
+                path = self.objects_dir / f"{object_id}.json"
+                if not path.exists():
+&gt;                   raise KeyError(f"object not found: {object_id}")
+E                   KeyError: 'object not found: x'
+
+closeout-implementation/baseline/chronus/virtual_igpu/memory.py:407: KeyError</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_object_path_rejected[AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA]" time="0.003"><failure message="KeyError: 'object not found: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c6270&gt;
+oid = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+
+    @pytest.mark.parametrize('oid',['../escape','/tmp/escape','x','A'*64,'0'*65])
+    def test_object_path_rejected(plane,oid):
+&gt;       with pytest.raises(ValueError): plane.retrieve(oid,tenant='a')
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+closeout-implementation/baseline/chronus/virtual_igpu/memory.py:399: in retrieve
+    return self._retrieve_object(object_id, tenant=str(tenant))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c6270&gt;
+object_id = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+tenant = 'a'
+
+    def _retrieve_object(self, object_id: str, *, tenant: str) -&gt; Any:
+        with self._lock:
+            rec = self._objects.get(object_id)
+            if rec is None:
+                path = self.objects_dir / f"{object_id}.json"
+                if not path.exists():
+&gt;                   raise KeyError(f"object not found: {object_id}")
+E                   KeyError: 'object not found: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+
+closeout-implementation/baseline/chronus/virtual_igpu/memory.py:407: KeyError</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_object_path_rejected[00000000000000000000000000000000000000000000000000000000000000000]" time="0.003"><failure message="KeyError: 'object not found: 00000000000000000000000000000000000000000000000000000000000000000'">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c5a90&gt;
+oid = '00000000000000000000000000000000000000000000000000000000000000000'
+
+    @pytest.mark.parametrize('oid',['../escape','/tmp/escape','x','A'*64,'0'*65])
+    def test_object_path_rejected(plane,oid):
+&gt;       with pytest.raises(ValueError): plane.retrieve(oid,tenant='a')
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+closeout-implementation/baseline/chronus/virtual_igpu/memory.py:399: in retrieve
+    return self._retrieve_object(object_id, tenant=str(tenant))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c5a90&gt;
+object_id = '00000000000000000000000000000000000000000000000000000000000000000'
+tenant = 'a'
+
+    def _retrieve_object(self, object_id: str, *, tenant: str) -&gt; Any:
+        with self._lock:
+            rec = self._objects.get(object_id)
+            if rec is None:
+                path = self.objects_dir / f"{object_id}.json"
+                if not path.exists():
+&gt;                   raise KeyError(f"object not found: {object_id}")
+E                   KeyError: 'object not found: 00000000000000000000000000000000000000000000000000000000000000000'
+
+closeout-implementation/baseline/chronus/virtual_igpu/memory.py:407: KeyError</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_artifact_tenant_paths_do_not_escape_or_collide" time="0.005" /><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_artifact_return_does_not_alias_internal_state" time="0.003"><failure message="AssertionError: assert {'x': [1, 2]} == {'x': [1]}&#10;  &#10;  Differing items:&#10;  {'x': [1, 2]} != {'x': [1]}&#10;  Use -v to get more diff">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c41a0&gt;
+
+    def test_artifact_return_does_not_alias_internal_state(plane):
+        plane.store_artifact(tenant='a',workload_id='w',artifact={'x':[1]})
+        a=plane.retrieve('a','w'); a['x'].append(2)
+&gt;       assert plane.retrieve('a','w')=={'x':[1]}
+E       AssertionError: assert {'x': [1, 2]} == {'x': [1]}
+E         
+E         Differing items:
+E         {'x': [1, 2]} != {'x': [1]}
+E         Use -v to get more diff
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:65: AssertionError</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_tampered_blob_detected_with_and_without_restart" time="0.004"><failure message="Failed: DID NOT RAISE ValueError">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c4590&gt;
+mod = &lt;module 'closeout_real_memory' from '/data/closeout-implementation/baseline/chronus/virtual_igpu/memory.py'&gt;
+
+    def test_tampered_blob_detected_with_and_without_restart(plane,mod):
+        r=plane.store({'x':1},tenant='a'); p=plane.objects_dir/f'{r.object_id}.json'
+        data=json.loads(p.read_text()); data['payload']={'x':2}; p.write_text(json.dumps(data))
+&gt;       with pytest.raises(ValueError): plane.retrieve(r.object_id,tenant='a')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:70: Failed</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_cross_tenant_blob_copy_rejected" time="0.003"><failure message="Failed: DID NOT RAISE any of (ValueError, PermissionError)">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c6f90&gt;
+
+    def test_cross_tenant_blob_copy_rejected(plane):
+        a=plane.store({'x':1},tenant='a'); b=plane.store({'x':1},tenant='b')
+        (plane.objects_dir/f'{a.object_id}.json').write_bytes((plane.objects_dir/f'{b.object_id}.json').read_bytes())
+&gt;       with pytest.raises((ValueError,PermissionError)): plane.retrieve(a.object_id,tenant='a')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE any of (ValueError, PermissionError)
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:76: Failed</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_persisted_index_tamper_refuses_not_empty_success" time="0.003"><failure message="Failed: DID NOT RAISE ValueError">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c7770&gt;
+mod = &lt;module 'closeout_real_memory' from '/data/closeout-implementation/baseline/chronus/virtual_igpu/memory.py'&gt;
+
+    def test_persisted_index_tamper_refuses_not_empty_success(plane,mod):
+        plane.store({'x':1},tenant='a'); p=plane.root/'memory_index.json'; original=p.read_bytes()
+        p.write_bytes(b'broken')
+&gt;       with pytest.raises(ValueError): mod.VirtualMemoryPlane(plane.root)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:81: Failed</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_no_fabricated_device_residency[gpu]" time="0.003"><failure message="Failed: DID NOT RAISE NotImplementedError">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d1484050&gt;
+target = 'gpu'
+
+    @pytest.mark.parametrize('target',['gpu','adapter-1','cuda:0'])
+    def test_no_fabricated_device_residency(plane,target):
+&gt;       with pytest.raises(NotImplementedError): plane.store({'x':1},tenant='a',residency=target)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE NotImplementedError
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:88: Failed</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_no_fabricated_device_residency[adapter-1]" time="0.003"><failure message="Failed: DID NOT RAISE NotImplementedError">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c7770&gt;
+target = 'adapter-1'
+
+    @pytest.mark.parametrize('target',['gpu','adapter-1','cuda:0'])
+    def test_no_fabricated_device_residency(plane,target):
+&gt;       with pytest.raises(NotImplementedError): plane.store({'x':1},tenant='a',residency=target)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE NotImplementedError
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:88: Failed</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_no_fabricated_device_residency[cuda:0]" time="0.003"><failure message="Failed: DID NOT RAISE NotImplementedError">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c6f90&gt;
+target = 'cuda:0'
+
+    @pytest.mark.parametrize('target',['gpu','adapter-1','cuda:0'])
+    def test_no_fabricated_device_residency(plane,target):
+&gt;       with pytest.raises(NotImplementedError): plane.store({'x':1},tenant='a',residency=target)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE NotImplementedError
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:88: Failed</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_restart_marks_legacy_device_label_unbound" time="0.003"><failure message="AssertionError: assert ('gpu' == 'unbound'&#10;  &#10;  - unbound&#10;  + gpu)">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c4590&gt;
+mod = &lt;module 'closeout_real_memory' from '/data/closeout-implementation/baseline/chronus/virtual_igpu/memory.py'&gt;
+
+    def test_restart_marks_legacy_device_label_unbound(plane,mod):
+        r=plane.store({'x':1},tenant='a'); p=plane.root/'memory_index.json'; d=json.loads(p.read_text())
+        item=d['objects'][0]; item['residency']='gpu'; item['device_resident_bytes']=item['logical_bytes']; item['host_resident_bytes']=0; item['adapter_id']='gpu-1'; p.write_text(json.dumps(d))
+        reopened=mod.VirtualMemoryPlane(plane.root); view=reopened.lookup(r.object_id,tenant='a')
+&gt;       assert view.residency=='unbound' and view.adapter_id is None and view.device_resident_bytes==0
+E       AssertionError: assert ('gpu' == 'unbound'
+E         
+E         - unbound
+E         + gpu)
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:98: AssertionError</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_folded_to_host_updates_actual_record_and_checks_budget" time="0.003"><failure message="AssertionError: assert 'host' == 'folded'&#10;  &#10;  - folded&#10;  + host">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c41a0&gt;
+mod = &lt;module 'closeout_real_memory' from '/data/closeout-implementation/baseline/chronus/virtual_igpu/memory.py'&gt;
+
+    def test_folded_to_host_updates_actual_record_and_checks_budget(plane,mod):
+        r=plane.store({'x':[1]},tenant='a'); plane.migrate_residency(r.object_id,tenant='a',target_tier='folded')
+&gt;       assert plane.lookup(r.object_id,tenant='a').residency=='folded'
+E       AssertionError: assert 'host' == 'folded'
+E         
+E         - folded
+E         + host
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:104: AssertionError</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_legacy_migrate_cannot_infer_owner" time="0.003"><failure message="Failed: DID NOT RAISE PermissionError">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d15c5d30&gt;
+
+    def test_legacy_migrate_cannot_infer_owner(plane):
+        r=plane.store({'x':1},tenant='a')
+&gt;       with pytest.raises(PermissionError): plane.migrate(r.object_id,'host')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE PermissionError
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:116: Failed</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_blob_symlink_refused" time="0.003"><failure message="Failed: DID NOT RAISE PermissionError">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d1796e40&gt;
+tmp_path = PosixPath('/data/closeout-implementation/tmp/memory-baseline/test_blob_symlink_refused0')
+
+    def test_blob_symlink_refused(plane,tmp_path):
+        r=plane.store({'x':1},tenant='a'); p=plane.objects_dir/f'{r.object_id}.json'; target=tmp_path/'outside'; target.write_bytes(p.read_bytes()); p.unlink(); p.symlink_to(target)
+&gt;       with pytest.raises(PermissionError): plane.retrieve(r.object_id,tenant='a')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE PermissionError
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:120: Failed</failure></testcase><testcase classname="closeout-implementation.baseline.tests.test_memory_closeout_boundaries" name="test_artifact_tenant_symlink_refused" time="0.003"><failure message="Failed: DID NOT RAISE PermissionError">plane = &lt;closeout_real_memory.VirtualMemoryPlane object at 0x7fa3d1484590&gt;
+tmp_path = PosixPath('/data/closeout-implementation/tmp/memory-baseline/test_artifact_tenant_symlink_r0')
+
+    def test_artifact_tenant_symlink_refused(plane,tmp_path):
+        parent=plane.root/'artifacts'; parent.mkdir(); outside=tmp_path/'outside'; outside.mkdir(); (parent/'a').symlink_to(outside,target_is_directory=True)
+&gt;       with pytest.raises(PermissionError): plane.store_artifact(tenant='a',workload_id='w',artifact={'x':1})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE PermissionError
+
+closeout-implementation/baseline/tests/test_memory_closeout_boundaries.py:124: Failed</failure></testcase></testsuite></testsuites>

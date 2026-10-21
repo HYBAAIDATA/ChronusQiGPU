@@ -1,0 +1,74 @@
+............F......................                                      [100%]
+=================================== FAILURES ===================================
+___ ExecutionIdentityTests.test_execute_receipt_labels_classical_end_to_end ____
+
+self = <mining.tests.test_agent_b_regressions.ExecutionIdentityTests testMethod=test_execute_receipt_labels_classical_end_to_end>
+
+    def test_execute_receipt_labels_classical_end_to_end(self):
+>       from mining.scaled_execution import LucasScaledAethelExecutionAdapter
+
+mining/tests/test_agent_b_regressions.py:326: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+mining/scaled_execution.py:17: in <module>
+    from toe.system import TOESystem
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """TOE (Theory of Everything) System — Central Coordinator & Verification Arbiter.
+    
+    STATUS: Research/simulation coordinator consumed by the canonical Python
+    Chronus mining path as advisory evidence. Stratum owns live work identity;
+    SHA-256d and the negotiated target own local validity; literal pool responses
+    own acceptance. TOE can order or gate candidates but cannot replace them.
+    
+    Coordinates the 5 domain intelligences across all 13 substrates:
+      - Substrate 1: Predictive (Forecasts)
+      - Substrate 2: Causal (Interventions)
+      - Substrate 3: Topological (Manifold curvature)
+      - Substrate 4: Geometric (11D Nonce navigation)
+      - Substrate 5: Counterfactual (Alternative trajectories)
+      - Substrate 6: Yang-Mills (Mass-gap bound)
+      - Substrate 7: Millennium Data (7-sector assignment)
+      - Substrate 8: MDMemory (Multi-dimensional candidate storage)
+      - Substrate 9: Tensor (25-punch dispatch engine)
+      - Substrate 10: Quantum (Born rule and unitarity)
+      - Substrate 11: iGPU (VRAM hot retention)
+      - Substrate 12: Storage (Galois prime persistence)
+      - Substrate 13: Physics (First-principles mathematical foundation)
+    
+    Enforces the 8 formal contracts, runs the 12-theorem candidate verification
+    matrix, and logs immutable decision provenance.
+    
+    LUCAS WIRING: draws from lucas/ (pool) OR implements its Lucas kernel
+    inline below. MUST NOT import from any sibling algorithm.
+    Substrate route: gap
+    """
+    
+    from __future__ import annotations
+    
+    from dataclasses import dataclass, field
+    import copy
+    import hashlib
+    import json
+    import time
+    from typing import Any, Dict, List, Optional, Tuple
+    
+    try:
+        from .hardened_unified_substrate import (
+            CassiniVerifier,
+            MODULUS_Q,
+            PSI,
+        )
+    except ImportError:
+        from .hardened_unified_substrate import (
+            CassiniVerifier,
+            MODULUS_Q,
+            PSI,
+        )
+    
+>   from .intelligences.causal import CausalIntelligence
+E   ModuleNotFoundError: No module named 'toe.intelligences'
+
+toe/system.py:53: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED mining/tests/test_agent_b_regressions.py::ExecutionIdentityTests::test_execute_receipt_labels_classical_end_to_end
+1 failed, 34 passed in 1.15s

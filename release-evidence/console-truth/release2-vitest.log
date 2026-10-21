@@ -1,0 +1,35 @@
+
+> pythia-operator-frontend@0.1.0 test:ts
+> vitest run
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "./vite.config" without a file extension (vitest.config.ts:2:24). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.5 /data/frontend-closeout/repo/frontend
+
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx (10 tests) 57ms
+ ✓ src/components/ConsoleMissingData.test.tsx (3 tests) 47ms
+ ✓ src/views/ObservabilityView.test.tsx (5 tests) 39ms
+ ✓ src/lib/__tests__/quantum_lucas.test.ts (12 tests) 34ms
+ ✓ src/lib/__tests__/api.test.ts (20 tests) 23ms
+ ✓ src/components/Header.test.tsx (2 tests) 15ms
+ ✓ src/turing/client.test.ts (18 tests) 13ms
+ ✓ src/lib/__tests__/access.test.ts (4 tests) 11ms
+ ✓ src/turing/history.test.ts (13 tests) 10ms
+ ✓ src/turing/integrations.test.ts (2 tests) 5ms
+ ✓ src/lib/__tests__/no-mock-data.test.ts (2 tests) 7ms
+ ✓ src/lib/__tests__/evidence.test.ts (6 tests) 6ms
+ ✓ src/turing/routes.test.ts (20 tests) 6ms
+ ✓ src/lib/__tests__/console-contract.test.ts (5 tests) 5ms
+ ✓ src/lib/__tests__/canonicalMiningEvidence.test.ts (2 tests) 4ms
+ ✓ src/lib/__tests__/stratum.test.ts (5 tests) 4ms
+
+ Test Files  16 passed (16)
+      Tests  129 passed (129)
+   Start at  01:29:15
+   Duration  9.94s (environment 88%, import 6%, tests 3%, transform 2%, worker 1%)
+
+    Isolate  16 workers spawned · ~548ms startup each (spawn + environment, per file)
+             at least ~8.21s faster with isolate: false — reuses workers across files instead of one per file
+

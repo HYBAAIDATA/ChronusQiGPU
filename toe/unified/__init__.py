@@ -6,5 +6,6 @@ operations, the cost model, and the scholarship ledger.
 """
 
 from .platform import UnifiedAnalyticsPlatform
+from .tenancy import TenantGateway, TenantResult, TenantSession
 
-__all__ = ["UnifiedAnalyticsPlatform"]
+__all__ = ["UnifiedAnalyticsPlatform", "TenantGateway", "TenantSession", "TenantResult"]

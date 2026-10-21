@@ -72,7 +72,7 @@ jobs:
         run: python packaging/storage-release/build_and_verify.py --product all --source-tests
       - name: Retain actual outcomes, including failed candidate diagnostics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: storage-candidates-${{ matrix.python }}
           path: |
@@ -155,7 +155,7 @@ jobs:
               (out / f"{product}-release-verdict.json").write_text(
                   json.dumps(verdict, indent=2, sort_keys=True))
               print(json.dumps(verdict, indent=2, sort_keys=True))
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: storage-release-verdicts
           path: verdicts/*
@@ -246,7 +246,7 @@ jobs:
               "status": "PASS",
           }
           Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: theseus-testpypi-smoke-${{ matrix.python }}
           path: receipts/receipt.json
@@ -347,7 +347,7 @@ jobs:
               "status": "PASS",
           }
           Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ovid-testpypi-smoke-${{ matrix.python }}
           path: receipts/receipt.json
@@ -446,7 +446,7 @@ jobs:
               "status": "PASS",
           }
           Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: theseus-pypi-smoke-${{ matrix.python }}
           path: receipts/receipt.json
@@ -553,7 +553,7 @@ jobs:
               "status": "PASS",
           }
           Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ovid-pypi-smoke-${{ matrix.python }}
           path: receipts/receipt.json
@@ -611,7 +611,7 @@ jobs:
                         f"{d}/*.whl {d}/*.tar.gz publication.json")
               Path(f"{product}-publication.json").write_text(Path("publication.json").read_text())
           PY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: storage-final-publication
           path: "*-publication.json"

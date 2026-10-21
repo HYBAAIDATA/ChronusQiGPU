@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
@@ -31,7 +31,7 @@ jobs:
           python experiments/lucas15_operator_ablation.py
           --repeats 2 --dimension 32 --seed 1517
           --output artifacts/lucas15_operator_ablation.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: lucas15-operator-ablation
           path: artifacts/lucas15_operator_ablation.json

@@ -1,0 +1,17 @@
+{
+  "artifact_verified": false,
+  "error": "RuntimeError: incomplete declared build inputs: LICENSE, kellogg/quantum_tensor.py, packaging/kellogg-tensor/README.md, packaging/kellogg-tensor/pyproject.toml, packaging/toe/OWNER_DECISIONS.md, packaging/toe/README.md, tests/test_toe_geometry.py, tests/test_toe_learning_persistence.py, tests/test_toe_machine.py, toe/bridge.py, toe/machine.py, toe/problem.py",
+  "evidence_sha256": {
+    "qualification-failure.log": "a7f4150ffb8e44128b226215a1fe49f5c30a0637c0a1a5da90ac575d221449ed"
+  },
+  "finished_at": "2026-10-21T15:03:49.183065+00:00",
+  "git_sha": "UNAVAILABLE",
+  "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+  "production_certification": "not_assessed",
+  "published": false,
+  "python": "3.13.14",
+  "schema": "hyba.toe.qualification-attempt/v1",
+  "stage": "source-preflight",
+  "started_at": "2026-10-21T15:03:49.178392+00:00",
+  "verdict": "failed_or_incomplete"
+}

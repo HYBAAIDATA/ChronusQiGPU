@@ -39,7 +39,7 @@ from typing import Any, Dict, List
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]  # chronus/packaging/chronus-igpu -> repository root
 DIST = HERE / "dist"
-REPOSITORY = "QuantumPhiRedux/PhiMiner"
+REPOSITORY = "PhiEnterprise1/EuclidPhiEnterprise"
 
 # Surfaces hyba-chronus-igpu must NOT ship: the chronus facade (__init__.py)
 # and the v33 maths plane belong to hyba-chronos-mathematics; the mla1517

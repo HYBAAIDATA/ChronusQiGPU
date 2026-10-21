@@ -1,0 +1,123 @@
+{
+  "baseline_reproduction": {
+    "arbitrary_long_token_accepted": true,
+    "durable_audit_configured": false
+  },
+  "build_fixture": "Real setuptools/build/pip pipeline with synthetic committed sources; not a product wheel",
+  "pending": [
+    "complete enterprise wheel build/install",
+    "canonical installed native paths",
+    "cross-process shared-custody acceptance",
+    "Linux/Windows CI",
+    "full-repository regression/lint/security",
+    "independent assurance"
+  ],
+  "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+  "scope": "selective source; not full-checkout/installed EUCLID acceptance",
+  "source_sha256": {
+    "Intelligence/gatekeeper/__init__.py": "78a833147c58ce664d6d291fff64e187442e08e8b53176b47e08c4f64ed44041",
+    "euclid/capabilities/empirical_runtime.py": "a42738b704a9fcd01ee27904d25511cdbe3dfe491b99935009deba2fc0777da1",
+    "euclid/capabilities/empirical_state_bridge.py": "cd4c31beeeaa296d28ce3452367aa1599075e346ccda0dec790f814462257458",
+    "euclid/runtime.py": "9b1a5e618c15c28f57fcbd4123eaef5b56c1721d422d284f7d5d223c0b414e35",
+    "scripts/build_standalone_wheel.py": "04d88424dcd0d9a738f88d50202bee1eaaa54a557b5ce7b909dafb81e30acdd2",
+    "scripts/run_clean_install.py": "34a28c04e2b3bc50231d1d291754cef8f8f4edca2f7ebf0a886f9a2f1b85592e",
+    "scripts/verify_clean_install.py": "39c0cc2130a9c635aff08c450097bf8a1b760f50d06d815f9203adeead617a02",
+    "tests/test_empirical_state_bridge_hardening.py": "9cf606086b583e4b392ad321599acbefb0790b2dbec0ab77fbd72d8b4f8744c2",
+    "tests/test_enterprise_packaging.py": "356cdf4c9d969c5144862ddb28309fddca13bc290ce852d2a31f4b5e8c979e5f",
+    "tests/test_unified_intelligence_consolidation.py": "3c3a1fb1f496ef83e780814ebee684132573564d572a493a8128c9548816f8e2"
+  },
+  "test_double": "DiskPort in focused bridge tests; actual SystemDataPort only in pending installed acceptance",
+  "unmodified_audit_git_blob_sha1": "893cef7e77b188488854b6636828656d206b80e8",
+  "validation": [
+    {
+      "command": [
+        "/usr/local/bin/python",
+        "/data/run_scoped_tests.py"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "b2aa6047c5bebc3f7aa277d71b3f8fcf188231561b6f17bf62fbba31f5fe5be8"
+    },
+    {
+      "command": [
+        "/usr/local/bin/python",
+        "-O",
+        "/data/run_scoped_tests.py"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "b5605240152dd58599e7047a79765118d61a5642a2cdae6d109135b73d132144"
+    },
+    {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_enterprise_packaging.py",
+        "-v"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "714b9dca6209810f30b5bb80836f7cc05ef234ec4eb542df8e05c5b0a020320e"
+    },
+    {
+      "command": [
+        "/usr/local/bin/python",
+        "-O",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_enterprise_packaging.py",
+        "-v"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "15de0c6b1fc74b9896699cbee2f8de29c5375f09de714a1edce20e00bdeeaa6a"
+    },
+    {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "--select",
+        "F,E9",
+        "euclid/capabilities/empirical_state_bridge.py",
+        "euclid/capabilities/empirical_runtime.py",
+        "Intelligence/gatekeeper/__init__.py",
+        "scripts/build_standalone_wheel.py",
+        "scripts/verify_clean_install.py",
+        "scripts/run_clean_install.py",
+        "tests/test_empirical_state_bridge_hardening.py",
+        "tests/test_enterprise_packaging.py",
+        "tests/test_unified_intelligence_consolidation.py"
+      ],
+      "output": "All checks passed!\n",
+      "returncode": 0
+    },
+    {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "black",
+        "--check",
+        "--line-length",
+        "100",
+        "euclid/capabilities/empirical_state_bridge.py",
+        "euclid/capabilities/empirical_runtime.py",
+        "Intelligence/gatekeeper/__init__.py",
+        "scripts/build_standalone_wheel.py",
+        "scripts/verify_clean_install.py",
+        "scripts/run_clean_install.py",
+        "tests/test_empirical_state_bridge_hardening.py",
+        "tests/test_enterprise_packaging.py",
+        "tests/test_unified_intelligence_consolidation.py"
+      ],
+      "output": "All done! \u2728 \ud83c\udf70 \u2728\n9 files would be left unchanged.\n",
+      "returncode": 0
+    }
+  ]
+}
