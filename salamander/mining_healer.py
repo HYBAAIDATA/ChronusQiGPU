@@ -121,6 +121,7 @@ class HealPostObservation:
             "stale_leases_cleared": self.stale_leases_cleared,
             "resolved_identity_generation": getattr(self.resolved_identity, "generation", None),
             "resolved_identity_job_id": getattr(self.resolved_identity, "job_id", None),
+            "resolved_identity_fingerprint": getattr(self.resolved_identity, "job_fingerprint", None),
         }
 
 
@@ -307,44 +308,55 @@ class SalamanderMiningHealer:
             recovery_id,
         )
 
-        # 1. LAW: HEALER OUTRANKS OPTIMISER -> LOCK OPTIMIZER IMMEDIATELY
-        if hasattr(coordinator, "optimization") and coordinator.optimization is not None:
-            coordinator.optimization.lock(f"salamander_healer: {diagnosis.symptom}")
-            executed_commands.append("LOCK_OPTIMIZER")
+        # A safety inhibit is allowed even when recovery authorization fails;
+        # no drain, lease mutation or proof-adapter write bypasses the governor.
+        optimizer = getattr(coordinator, "optimization", None)
+        if optimizer is None:
+            self.state = HealerState.FAILED
+            raise RuntimeError("recovery requires an optimizer safety lock")
+        optimizer.lock(f"salamander_healer: {diagnosis.symptom}")
+        rec_gov = getattr(coordinator, "recovery", None)
+        if rec_gov is None:
+            self.state = HealerState.FAILED
+            raise RuntimeError("recovery governor unavailable")
+        allowed = {"LOCK_OPTIMIZER", "DRAIN_PRECOMPUTE",
+                   "INVALIDATE_IN_FLIGHT_LEASES", "RESYNC_PROOF_ADAPTER", "RESET_CURSOR"}
+        if not diagnosis.proposed_actions or set(diagnosis.proposed_actions) - allowed:
+            self.state = HealerState.FAILED
+            raise RuntimeError("empty or unsupported recovery action set")
 
-        # 2. Record proposal in RecoveryGovernor if present
-        rec_gov: RecoveryGovernor | None = getattr(coordinator, "recovery", None)
-        record = None
-        if rec_gov is not None:
-            record = rec_gov.propose(diagnosis.proposed_actions, diagnosis.symptom)
-            if record is not None:
-                dispatch_steps = [(cmd, lambda cmd=cmd: cmd) for cmd in diagnosis.proposed_actions]
-                rec_gov.dispatch(record, dispatch_steps)
-
-        # 3. Drain and clear stale precomputed plans from agentic queue
-        if "DRAIN_PRECOMPUTE" in diagnosis.proposed_actions:
-            if hasattr(coordinator, "agentic") and coordinator.agentic is not None:
+        def act(command: str) -> str:
+            if command == "LOCK_OPTIMIZER":
+                optimizer.lock(f"salamander_healer: {diagnosis.symptom}")
+            elif command in ("DRAIN_PRECOMPUTE", "RESET_CURSOR"):
                 coordinator.agentic.clear_work(diagnosis.symptom)
-                executed_commands.append("DRAIN_PRECOMPUTE")
+            elif command == "INVALIDATE_IN_FLIGHT_LEASES":
+                coordinator.agentic._leases.invalidate_reserved()
+            elif command == "RESYNC_PROOF_ADAPTER":
+                client = coordinator.client
+                generation = client.runtime_state.current_job
+                if generation is None or client.proof_adapter is None:
+                    raise RuntimeError("pool generation or proof adapter unavailable")
+                client.proof_adapter.current_job = generation
+            executed_commands.append(command)
+            return command
 
-        # 4. Invalidate any in-flight leases matching stale identity
-        if "INVALIDATE_IN_FLIGHT_LEASES" in diagnosis.proposed_actions:
-            if hasattr(coordinator, "agentic") and coordinator.agentic is not None:
-                leases_ledger = getattr(coordinator.agentic, "_leases", None)
-                if leases_ledger is not None:
-                    leases_ledger.invalidate_reserved()
-                executed_commands.append("INVALIDATE_IN_FLIGHT_LEASES")
-
-        # 5. Resynchronize proof adapter to current pool runtime state
-        if "RESYNC_PROOF_ADAPTER" in diagnosis.proposed_actions:
-            client = getattr(coordinator, "client", None)
-            adapter = getattr(client, "proof_adapter", None)
-            state = getattr(client, "runtime_state", None)
-            if adapter is not None and state is not None and getattr(state, "current_job", None) is not None:
-                gen = state.current_job
-                # Bit-exact sync of proof adapter current job
-                adapter.current_job = gen
-                executed_commands.append("RESYNC_PROOF_ADAPTER")
+        try:
+            record = rec_gov.propose(diagnosis.proposed_actions, diagnosis.symptom)
+            if record is None:
+                raise RuntimeError("recovery proposal refused")
+            recovery_id = record.recovery_id
+            self.active_recovery_id = recovery_id
+            self._action_started = time.monotonic()
+            rec_gov.dispatch(record, [(cmd, lambda cmd=cmd: act(cmd))
+                                      for cmd in diagnosis.proposed_actions])
+            if (tuple(executed_commands) != diagnosis.proposed_actions
+                    or record.state not in (RecoveryState.DISPATCHED, RecoveryState.ACKED)):
+                raise RuntimeError("recovery dispatch incomplete or deferred")
+        except Exception:
+            self.state = HealerState.FAILED
+            # Deliberately leave the safety inhibit engaged. No resume/ACK.
+            raise
 
         # 6. Actuator ack record
         ack = HealActionAck(
@@ -395,7 +407,15 @@ class SalamanderMiningHealer:
             and getattr(gen, "target", None) == getattr(adj, "target", None)
         )
 
-        healthy = identity is not None and reason is None and match_job and match_target
+        leases = getattr(getattr(coordinator, "agentic", None), "_leases", None)
+        lease_snapshot = leases.snapshot() if leases is not None else None
+        stale_leases_cleared = bool(
+            lease_snapshot is not None
+            and lease_snapshot.get("reserved") == 0
+            and lease_snapshot.get("executing") == 0
+        )
+        healthy = (identity is not None and reason is None and match_job
+                   and match_target and stale_leases_cleared)
 
         return HealPostObservation(
             healthy=healthy,
@@ -403,7 +423,7 @@ class SalamanderMiningHealer:
             reason=reason,
             adapter_generation_match=match_job,
             target_match=match_target,
-            stale_leases_cleared=True,
+            stale_leases_cleared=stale_leases_cleared,
         )
 
     # -------------------------------------------------------------------------
@@ -424,7 +444,7 @@ class SalamanderMiningHealer:
             self.state = HealerState.FAILED
             rec_gov: RecoveryGovernor | None = getattr(coordinator, "recovery", None)
             if rec_gov is not None:
-                rec_gov.observe(healthy=False)
+                rec_gov.observe(healthy=False, recovery_id=recovery_id)
             raise RuntimeError(
                 f"Autonomic healing postcondition failed: reason={post_obs.reason}, "
                 f"job_match={post_obs.adapter_generation_match}, target_match={post_obs.target_match}"
@@ -433,7 +453,7 @@ class SalamanderMiningHealer:
         # Postcondition proven! Update RecoveryGovernor
         rec_gov: RecoveryGovernor | None = getattr(coordinator, "recovery", None)
         if rec_gov is not None:
-            rec_gov.observe(healthy=True)
+            rec_gov.observe(healthy=True, recovery_id=recovery_id)
 
         # Record in EvidenceLedger
         evidence_payload = {
@@ -463,7 +483,7 @@ class SalamanderMiningHealer:
             actual_window=0,
             device_used="salamander_healer",
             hash_count=0,
-            elapsed_seconds=0.001,
+            elapsed_seconds=max(0.0, time.monotonic() - self._action_started),
             kernel_ms=0.0,
             temperature_c=None,
             locally_valid_shares=0,
@@ -502,10 +522,6 @@ class SalamanderMiningHealer:
             except Exception as exc:
                 LOG.warning("Causal ledger record skipped: %s", exc)
 
-        # LAW: HEALER RELEASES OPTIMIZER ONLY AFTER VERIFIED RECOVERY
-        if hasattr(coordinator, "optimization") and coordinator.optimization is not None:
-            coordinator.optimization.unlock()
-
         audit = HealAuditRecord(
             recovery_id=recovery_id,
             timestamp_ns=now_ns,
@@ -529,20 +545,26 @@ class SalamanderMiningHealer:
     # -------------------------------------------------------------------------
     def resume(self, coordinator: Any, audit: HealAuditRecord) -> Any | None:
         """Stage 7: Safely bind healed identity and wake precompute & execution loops."""
-        self.state = HealerState.IDLE
-        ident = audit.post_observation.get("resolved_identity")
+        self.state = HealerState.RECOVERED
         # Direct call to refresh or bind work
         if hasattr(coordinator, "agentic") and coordinator.agentic is not None:
-            work_ident = coordinator._refresh_work_identity()
-            if work_ident is not None:
+            work_ident, reason = coordinator._resolve_work_identity()
+            expected_generation = audit.post_observation.get("resolved_identity_generation")
+            if (work_ident is not None and reason is None
+                    and getattr(work_ident, "generation", None) == expected_generation
+                    and getattr(work_ident, "job_fingerprint", None)
+                    == audit.post_observation.get("resolved_identity_fingerprint")):
                 coordinator.agentic.bind_work(work_ident)
                 if hasattr(coordinator, "_precompute_wake"):
                     coordinator._precompute_wake.set()
                 if hasattr(coordinator, "_work_wake"):
                     coordinator._work_wake.set()
+                coordinator.optimization.unlock()
+                self.state = HealerState.IDLE
                 return work_ident
 
-        return None
+        self.state = HealerState.FAILED
+        raise RuntimeError("recovery could not rebind work; optimizer remains locked")
 
     # -------------------------------------------------------------------------
     # HIGH-LEVEL ORCHESTRATION ENTRANCE

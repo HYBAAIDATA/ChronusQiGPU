@@ -16,6 +16,7 @@ import os
 import signal
 import ssl
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, replace
 from fractions import Fraction
 from pathlib import Path
@@ -25,7 +26,6 @@ from urllib.parse import urlparse
 from .bitcoin_hasher import BitcoinHasher
 from .stratum_bridge import build_header80
 from toe.strict_quantum import certify_work_window, verify_certificate
-from .scaled_execution import LucasScaledAethelExecutionAdapter
 
 LOG = logging.getLogger("pythia.production_miner")
 MAX_UINT256 = (1 << 256) - 1
@@ -395,16 +395,12 @@ class StratumV1Client:
         if method == "mining.set_difficulty":
             if not isinstance(params, list) or len(params) != 1:
                 raise ProtocolError("invalid mining.set_difficulty")
-            self.target = difficulty_target(params[0])
-            if self.job is not None:
-                self.job = replace(self.job, target=self.target)
+            self._update_target(difficulty_target(params[0]))
             return
         if method == "mining.set_target":
             if not isinstance(params, list) or len(params) != 1:
                 raise ProtocolError("invalid mining.set_target")
-            self.target = target_from_hex(params[0])
-            if self.job is not None:
-                self.job = replace(self.job, target=self.target)
+            self._update_target(target_from_hex(params[0]))
             return
         if method == "mining.set_extranonce":
             if not isinstance(params, list) or len(params) != 2:
@@ -425,6 +421,15 @@ class StratumV1Client:
             return
         if method == "client.reconnect":
             raise SessionLost("pool requested client reconnect")
+
+    def _update_target(self, target: int) -> None:
+        """Invalidate work computed against a superseded negotiated target."""
+        changed = self.target != target
+        self.target = target
+        if changed and self.job is not None:
+            self.generation += 1
+            self.job = replace(self.job, target=target, generation=self.generation)
+            self.job_event.set()
 
     def _apply_subscribe(self, response: dict[str, Any]) -> None:
         if response.get("error") is not None:
@@ -473,6 +478,7 @@ class ProductionMiner:
         self.total_hashes = 0
         self.started = time.perf_counter()
         self.heartbeat = None
+        self._session_active = False
         # Drain file: checked between windows, i.e. at a point where no GPU op is
         # in flight. On WSL2/dxgkrnl a docker stop that lands mid-OpenCL-call
         # leaves the process in uninterruptible sleep and wedges the container —
@@ -484,6 +490,41 @@ class ProductionMiner:
         return self.stop_file is not None and self.stop_file.exists()
 
     async def run_session(self, *, max_runtime: float | None = None, max_shares: int | None = None) -> bool:
+        # One in-flight window, no unbounded submission queue. Never tear down
+        # a device context while its native call is still using it.
+        if self._session_active:
+            raise RuntimeError("a mining session is already active")
+        self._session_active = True
+        with ThreadPoolExecutor(max_workers=1, thread_name_prefix="pythia-window") as pool:
+            self._window_pool = pool
+            try:
+                return await self._run_session(max_runtime=max_runtime, max_shares=max_shares)
+            finally:
+                self._window_pool = None
+                self._session_active = False
+
+    async def _execute_window(self, header: bytes, target: int, base: int, count: int):
+        adapter = DirectExecutionAdapter(self.executor) if isinstance(self.executor, BitcoinHasher) else self.executor
+        loop = asyncio.get_running_loop()
+        future = loop.run_in_executor(self._window_pool, adapter.execute, header, target, base, count)
+        try:
+            return await asyncio.shield(future)
+        except asyncio.CancelledError:
+            # Cancellation cannot interrupt a native device call. Drain this
+            # exact window before allowing shutdown/reconnect, without blocking
+            # Stratum's reader. A wedged driver remains a qualification blocker.
+            while not future.done():
+                try:
+                    await asyncio.shield(future)
+                except asyncio.CancelledError:
+                    continue
+                except Exception:
+                    break
+            if future.done() and not future.cancelled():
+                future.exception()  # retrieve worker failures during cancellation
+            raise
+
+    async def _run_session(self, *, max_runtime: float | None = None, max_shares: int | None = None) -> bool:
         current_generation = -1
         while self.client.connected:
             if self._drain_requested():
@@ -517,11 +558,7 @@ class ProductionMiner:
             if not verify_certificate(strict_quantum):
                 raise ProtocolError("strict quantum work certificate failed")
             window_start = time.perf_counter()
-            execution = (
-                DirectExecutionAdapter(self.executor).execute(header, job.target, self.base_nonce, count)
-                if isinstance(self.executor, BitcoinHasher)
-                else self.executor.execute(header, job.target, self.base_nonce, count)
-            )
+            execution = await self._execute_window(header, job.target, self.base_nonce, count)
             window_seconds = time.perf_counter() - window_start
             execution.metadata["strict_quantum"] = strict_quantum
             winner, digest, hashes = execution.winner, execution.digest, execution.hashes
@@ -632,6 +669,7 @@ async def run(args: argparse.Namespace) -> int:
                     workers = 0
                 if not 1 <= workers <= 600:
                     raise SystemExit("PYTHIA_SOLVER_WORKERS must be between 1 and 600")
+                from .scaled_execution import LucasScaledAethelExecutionAdapter
                 executor = LucasScaledAethelExecutionAdapter(workers=workers)
                 LOG.info(
                     "Execution path=AETHEL->Tensor->Hendrix/Pisot->iGPU solver_workers=%d",
