@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { apiFetch } from "../lib/api";
+import React from "react";
+import { Field, Empty, Source } from "./ConsolePrimitives";
 import {
   evidenceAlert,
   evidenceRows,
@@ -11,27 +11,8 @@ import {
 import { TruthChip } from "./TruthChip";
 
 /** The miner's own evidence snapshot: route, lease, plan provenance, outcome, recovery. */
-export const MiningEvidencePanel: React.FC = () => {
-  const [evidence, setEvidence] = useState<MiningEvidence | null>(null);
-  const [offline, setOffline] = useState(false);
-
-  const poll = useCallback(async () => {
-    try {
-      const response = await apiFetch("/api/v1/mining/evidence");
-      if (response.ok) setEvidence((await response.json()) as MiningEvidence);
-      setOffline(false);
-    } catch {
-      setOffline(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    void poll();
-    const timer = window.setInterval(poll, 5000);
-    return () => window.clearInterval(timer);
-  }, [poll]);
-
-  const alert = offline ? "CONTROL API UNREACHABLE" : evidenceAlert(evidence);
+export const MiningEvidencePanel: React.FC<{ evidence: MiningEvidence | null; offline: boolean; error?: string | null }> = ({ evidence, offline, error }) => {
+  const alert = offline ? "CONTROL API UNREACHABLE" : error ?? evidenceAlert(evidence);
   const rows = evidenceRows(evidence);
   const intel = intelligenceRows(evidence);
   const losses = lossBreakdown(evidence);
@@ -52,6 +33,11 @@ export const MiningEvidencePanel: React.FC = () => {
           </span>
         )}
       </header>
+      <div className="p-5">
+        <Source endpoint="/api/v1/mining/evidence" timestamp={evidence?.observed_at == null ? null : String(evidence.observed_at)} />
+        <p className="console-source">Pool acknowledgement is the only share-acceptance authority. A displayed identifier is not a qualified receipt.</p>
+        <dl>{(["receipt_id", "tenant_id", "payload_digest", "result_digest", "evidence_status"] as const).map(key => <Field label={key} key={key}>{evidence?.receipt?.[key] ?? <Empty />}</Field>)}</dl>
+      </div>
       <div className="p-5 grid gap-x-8 sm:grid-cols-2">
         {rows.map((item) => (
           <Row key={item.key} item={item} />

@@ -69,6 +69,7 @@ export type AgenticWorkforceEvidence = {
 };
 
 export type MiningEvidence = {
+  receipt?: { receipt_id?: string; tenant_id?: string; payload_digest?: string; result_digest?: string; evidence_status?: string } | null;
   schema?: string;
   evidence_available?: boolean;
   worker_live?: boolean;

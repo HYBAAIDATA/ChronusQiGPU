@@ -1,3 +1,5 @@
+import { Field, Empty } from "./ConsolePrimitives";
+import type { ConsoleStatus } from "../lib/console";
 import React from "react";
 import {
   Activity,
@@ -38,19 +40,6 @@ const Card: React.FC<{
     <div className="p-5">{children}</div>
   </section>
 );
-
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <div className="flex items-start justify-between gap-4 py-2 border-b border-[rgba(10,37,64,0.07)] last:border-0">
-    <span className="text-[11px] font-telemetry-mono uppercase tracking-wider text-[#6b7c93] pt-0.5">
-      {label}
-    </span>
-    <span className="text-right text-[13px] font-telemetry-mono text-[#0a2540] break-all">
-      {children}
-    </span>
-  </div>
-);
-
-const Empty = () => <span className="text-[#6b7c93] lowercase">{NOT_REPORTED}</span>;
 
 const StratumOperationalPanel: React.FC<{ status: MlaStatus["stratum"] }> = ({ status }) => {
   const primary = status?.primary;
@@ -124,6 +113,8 @@ const StratumOperationalPanel: React.FC<{ status: MlaStatus["stratum"] }> = ({ s
           return (
             <div
               key={stage.key}
+              title={`${stage.label}: ${stage.state}`}
+              aria-label={`${stage.label}: ${stage.state}`}
               className="flex min-h-16 flex-col items-center justify-center gap-1 bg-white px-1.5 py-2 text-center"
             >
               <Icon className={`h-4 w-4 ${tone}`} />
@@ -136,11 +127,11 @@ const StratumOperationalPanel: React.FC<{ status: MlaStatus["stratum"] }> = ({ s
       </div>
 
       <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-[11px] font-telemetry-mono text-[#6b7c93]">
-        <span>submitted {status?.counters?.submitted ?? 0}</span>
-        <span className="text-[#067647]">accepted {status?.counters?.accepted ?? 0}</span>
-        <span className="text-[#df1b41]">rejected {status?.counters?.rejected ?? 0}</span>
-        <span className="text-[#b45309]">unknown {status?.counters?.unknown ?? 0}</span>
-        <span>disconnects {status?.counters?.disconnects ?? 0}</span>
+        <span>submitted {status?.counters?.submitted ?? <Empty />}</span>
+        <span className="text-[#067647]">accepted {status?.counters?.accepted ?? <Empty />}</span>
+        <span className="text-[#df1b41]">rejected {status?.counters?.rejected ?? <Empty />}</span>
+        <span className="text-[#b45309]">unknown {status?.counters?.unknown ?? <Empty />}</span>
+        <span>disconnects {status?.counters?.disconnects ?? <Empty />}</span>
       </div>
     </Card>
   );
@@ -154,7 +145,7 @@ const WorkerRow: React.FC<{ name: string; worker: WorkerPublic }> = ({ name, wor
         ? "text-[#df1b41] border-[rgba(223,27,65,0.35)] bg-[rgba(223,27,65,0.08)]"
         : "text-[#b45309] border-[rgba(180,83,9,0.35)] bg-[rgba(180,83,9,0.08)]";
   const hashrate = worker.effectiveness?.hashrate ?? null;
-  const shares = worker.effectiveness?.shares_accepted ?? 0;
+  const shares = worker.effectiveness?.shares_accepted;
   return (
     <div className="console-surface-inset px-4 py-3">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -187,7 +178,7 @@ const WorkerRow: React.FC<{ name: string; worker: WorkerPublic }> = ({ name, wor
           )}
         </span>
         <span className="text-[#6b7c93]">
-          shares {shares > 0 ? <span className="text-[#0a2540]">{shares}</span> : <Empty />}
+          shares {shares != null ? <span className="text-[#0a2540]">{shares}</span> : <Empty />}
         </span>
       </div>
       {worker.last_error ? (
@@ -200,7 +191,7 @@ const WorkerRow: React.FC<{ name: string; worker: WorkerPublic }> = ({ name, wor
 };
 
 interface PanelProps {
-  status: MlaStatus | null;
+  status: ConsoleStatus | null;
   ready: ReadyToMine | null;
   offline: boolean;
   onConfigChanged?: () => void;
@@ -223,49 +214,11 @@ export const Mla1517MiningPanel: React.FC<PanelProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Hero readiness band */}
-      <section className="relative overflow-hidden border-b border-[rgba(10,37,64,0.13)] -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pt-12 pb-10">
-        <div className="hero-grid absolute inset-0 pointer-events-none" />
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(ellipse 60% 80% at 12% 0%, rgba(99,91,255,0.10), transparent 65%), radial-gradient(ellipse 45% 70% at 85% 20%, rgba(37,99,235,0.07), transparent 70%)",
-          }}
-        />
-        <div className="relative">
-          <p className="text-[11px] font-telemetry-mono uppercase tracking-[0.28em] text-[#635bff]">
-            Operational mining console
-          </p>
-          <h1 className="font-serif-display mt-3 text-4xl sm:text-5xl font-semibold tracking-tight text-[#0a2540]">
-            {offline
-              ? "Control plane unreachable."
-              : readyToMine
-                ? "Ready to mine."
-                : "Standing by."}
-          </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[#42566f]">
-            {offline
-              ? "The Python control API is not answering. Mining state cannot be read — nothing below is live."
-              : readyToMine
-                ? "Every supervised worker is alive, heartbeat-ready, and producing measured work against the resolved pool."
-                : `Readiness gate reports ${readyReason}. The console shows measured state only — no synthetic or projected figures.`}
-          </p>
-          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] font-telemetry-mono uppercase tracking-wider text-[#6b7c93]">
-            <span className="flex items-center gap-2">
-              <Fingerprint className="w-3.5 h-3.5 text-[#635bff]" />
-              identity {identity?.identity_commit ? identity.identity_commit.slice(0, 12) : "—"}
-            </span>
-            <span className="flex items-center gap-2">
-              <Waypoints className="w-3.5 h-3.5 text-[#635bff]" />
-              pool {identity ? `${identity.host}:${identity.port}` : "—"}
-            </span>
-            <span className="flex items-center gap-2">
-              <Activity className="w-3.5 h-3.5 text-[#635bff]" />
-              polled {status?.generated_at ?? "—"}
-            </span>
-          </div>
-        </div>
+      <section className="console-surface p-5 mt-5">
+        <h2 className="console-label">Is mining ready?</h2>
+        <p className="mt-3 text-lg font-semibold">{offline ? "Control API offline" : ready == null ? "not reported" : readyToMine ? "Backend verdict: ready" : "Backend verdict: not ready"}</p>
+        <p className="console-source">reason: {readyReason} · source: /api/v1/mla1517/status · {status?.generated_at ?? "not reported"}</p>
+        <p className="console-source">pool: {identity?.host && identity.port != null ? `${identity.host}:${identity.port}` : "not reported"}</p>
       </section>
 
       <StratumOperationalPanel status={status?.stratum} />
@@ -277,7 +230,7 @@ export const Mla1517MiningPanel: React.FC<PanelProps> = ({
             <div>
               <Field label="Profile">{identity.profile}</Field>
               <Field label="Endpoint">
-                {identity.host}:{identity.port}
+                {identity.host && identity.port != null ? `${identity.host}:${identity.port}` : <Empty />}
               </Field>
               <Field label="Worker">{identity.user_redacted}</Field>
               <Field label="Password">
@@ -288,7 +241,7 @@ export const Mla1517MiningPanel: React.FC<PanelProps> = ({
                   <span className="text-[#067647]">connected</span>
                 ) : (
                   <span className="text-[#b45309]">
-                    {status?.stratum?.state ?? "not connected"}
+                    {status?.stratum?.state ?? "not reported"}
                   </span>
                 )}
               </Field>
@@ -357,13 +310,13 @@ export const Mla1517MiningPanel: React.FC<PanelProps> = ({
       ) : null}
 
       {/* System fabric — forensic subsystem map + supervised runners */}
-      <SystemFabricPanel />
+      <SystemFabricPanel config={status?.runtime ?? null} sources={status?.console ?? null} offline={offline} onChanged={onConfigChanged} />
 
       {/* Operator runtime control — pools, arms, hashrate, live submit */}
-      <RuntimeControlPanel onChanged={onConfigChanged} />
+      <RuntimeControlPanel config={status?.runtime ?? null} offline={offline} onChanged={onConfigChanged} />
 
       {/* Telemetry — live aggregates, session counters, audit history */}
-      <TelemetryPanel />
+      <TelemetryPanel summary={status?.console?.telemetry ?? null} audit={status?.console?.audit ?? null} unreachable={offline} />
 
       {/* Workers */}
       <Card title="Supervised workers" icon={<Gauge className="w-4 h-4" />}>
@@ -400,7 +353,7 @@ export const Mla1517MiningPanel: React.FC<PanelProps> = ({
           <p className="text-sm text-[#6b7c93]">
             {status === null
               ? `Device surface ${NOT_REPORTED} — waiting on control plane.`
-              : "No OpenCL device discovered. The canonical engine fails closed on hardware absence by design."}
+              : "Device availability is reported by the backend; physical execution is not inferred by this console."}
           </p>
         )}
       </Card>

@@ -1,0 +1,9 @@
+{
+  "source_manifest_sha256": "907f7aff89bfd2ac44136fe08511d39fee06fb24ccb195d442d972ef92aa5cdb",
+  "source_drift_after_rerun": [],
+  "tsc": "PASS",
+  "vitest_passed": 129,
+  "python_contract_passed": 14,
+  "vite": "PASS",
+  "scope": "local envelope/auth fixture qualification only; not deployed or full-service production qualification"
+}

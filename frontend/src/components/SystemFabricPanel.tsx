@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import type { ConsoleSources } from "../lib/console";
+import React, { useCallback, useState } from "react";
 import { BrainCircuit, Layers3, Octagon, Play, ShieldCheck, Square } from "lucide-react";
 import { apiFetch } from "../lib/api";
 import type {
@@ -7,6 +8,7 @@ import type {
   CampaignStatus,
   FabricMap,
   SelftestStatus,
+  RuntimeConfig,
   VerificationStatus,
 } from "../lib/status";
 
@@ -50,7 +52,7 @@ const RunnerCard: React.FC<{
               : "text-[#42566f] border-[rgba(10,37,64,0.25)]"
         }`}
       >
-        {state ?? "offline"}
+        {state ?? "not reported"}
       </span>
     </div>
     {meta ? <p className="text-[11px] font-telemetry-mono text-[#42566f]">{meta}</p> : null}
@@ -71,41 +73,15 @@ const RunnerCard: React.FC<{
 );
 
 /** Forensic subsystem map + supervised intelligence runs (verify/selftest/agentic/campaign). */
-export const SystemFabricPanel: React.FC = () => {
-  const [map, setMap] = useState<FabricMap | null>(null);
-  const [verify, setVerify] = useState<VerificationStatus | null>(null);
-  const [selftest, setSelftest] = useState<SelftestStatus | null>(null);
-  const [agentic, setAgentic] = useState<AgenticStatus | null>(null);
-  const [campaign, setCampaign] = useState<CampaignStatus | null>(null);
+export const SystemFabricPanel: React.FC<{ sources: Partial<ConsoleSources> | null; config: RuntimeConfig | null; offline: boolean; onChanged?: () => void }> = ({ sources, config, offline, onChanged }) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const timer = useRef<number | null>(null);
-
-  const refresh = useCallback(async () => {
-    const endpoints: Array<[string, (v: unknown) => void]> = [
-      ["/api/v1/system/map", (v) => setMap(v as FabricMap)],
-      ["/api/v1/system/verify", (v) => setVerify(v as VerificationStatus)],
-      ["/api/v1/intelligence/selftest", (v) => setSelftest(v as SelftestStatus)],
-      ["/api/v1/agentic/status", (v) => setAgentic(v as AgenticStatus)],
-      ["/api/v1/campaign/status", (v) => setCampaign(v as CampaignStatus)],
-    ];
-    for (const [path, setter] of endpoints) {
-      try {
-        const res = await apiFetch(path);
-        if (res.ok) setter(await res.json());
-      } catch {
-        /* control plane offline — keep last snapshot */
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    refresh();
-    timer.current = window.setInterval(refresh, 4000);
-    return () => {
-      if (timer.current !== null) window.clearInterval(timer.current);
-    };
-  }, [refresh]);
+  const map = sources?.fabric ?? null;
+  const verify = sources?.verification ?? null;
+  const selftest = sources?.selftest ?? null;
+  const agentic = sources?.agentic ?? null;
+  const campaign = sources?.campaign ?? null;
+  const refresh = () => onChanged?.();
 
   const post = useCallback(
     async (path: string, body?: Record<string, unknown>) => {
@@ -144,16 +120,17 @@ export const SystemFabricPanel: React.FC = () => {
   const selfSummary = selftest?.summary;
 
   return (
+    <fieldset disabled={offline || !sources} className="min-w-0 border-0 p-0">
     <section className="console-surface">
       <header className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[rgba(10,37,64,0.10)]">
         <h2 className="text-[11px] font-telemetry-mono uppercase tracking-[0.2em] text-[#42566f] flex items-center gap-2">
           <span className="text-[#635bff]">
             <Octagon className="w-4 h-4" />
           </span>
-          System fabric — one brain, every subsystem mapped
+          System fabric
         </h2>
         <span className="text-[10px] font-telemetry-mono text-[#6b7c93]">
-          {running ? "supervisor active" : "idle"} · polled every 4s
+          {sources ? (running ? "supervisor active" : "backend snapshot") : "not reported"} · polled every 5s
         </span>
       </header>
       <div className="p-5 space-y-5">
@@ -167,10 +144,10 @@ export const SystemFabricPanel: React.FC = () => {
             onStart={() => post("/api/v1/system/verify")}
             meta={
               verify?.ready === true
-                ? `ready — ${verify.overlay?.faces_total ?? 32}-face overlay`
+                ? `ready — ${verify.overlay?.faces_total ?? "not reported"}-face overlay`
                 : verify?.ready === false
                   ? "not ready"
-                  : `${verifyStages.length} stages ${verify?.state === "done" ? "checked" : "idle"}`
+                  : verify ? `${verifyStages.length} reported stages` : "not reported"
             }
           >
             {verifyStages.length > 0 && (
@@ -200,10 +177,10 @@ export const SystemFabricPanel: React.FC = () => {
             onStart={() => post("/api/v1/intelligence/selftest")}
             meta={
               selfSummary?.passed === true
-                ? `passed ${selfSummary.checks?.passed}/${selfSummary.checks?.total} checks`
+                ? `passed ${selfSummary.checks?.passed ?? "not reported"}/${selfSummary.checks?.total ?? "not reported"} checks`
                 : selfSummary?.passed === false
                   ? `failed — ${selfSummary.failures?.join(", ") ?? "see report"}`
-                  : "45-module registry smoke test"
+                  : "not reported"
             }
           />
 
@@ -242,7 +219,7 @@ export const SystemFabricPanel: React.FC = () => {
                     {p.measured_hs_avg != null
                       ? `${(p.measured_hs_avg / 1e18).toFixed(3)} EH/s avg`
                       : "not measured"}{" "}
-                    · shares {p.shares_accepted ?? 0}
+                    · shares {p.shares_accepted ?? "not reported"}
                   </p>
                 ))}
               </div>
@@ -315,7 +292,7 @@ export const SystemFabricPanel: React.FC = () => {
             >
               stop
             </button>
-            <PoolSwitch onPick={(v) => post("/api/v1/mining/switch", { pool: v })} busy={busy} />
+            <PoolSwitch pools={config?.pools ?? []} onPick={(v) => post("/api/v1/mining/switch", { pool: v })} busy={busy} />
             <VerbField
               label="elevate"
               placeholder="target H/s"
@@ -324,7 +301,7 @@ export const SystemFabricPanel: React.FC = () => {
             />
             <VerbField
               label="escalate"
-              placeholder="arms 1–600"
+              placeholder="reported arm bounds"
               busy={busy}
               onGo={(v) => post("/api/v1/mining/escalate", { arms: Number(v) })}
             />
@@ -343,20 +320,11 @@ export const SystemFabricPanel: React.FC = () => {
         every runner reports measured state only — sha256d remains the sole accept authority
       </p>
     </section>
+    </fieldset>
   );
 };
 
-const PoolSwitch: React.FC<{ onPick: (v: string) => void; busy: boolean }> = ({
-  onPick,
-  busy,
-}) => {
-  const [pools, setPools] = useState<Array<{ endpoint: string; worker: string }>>([]);
-  useEffect(() => {
-    apiFetch("/api/v1/config")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((cfg) => setPools(cfg?.pools ?? []))
-      .catch(() => setPools([]));
-  }, []);
+const PoolSwitch: React.FC<{ pools: Array<{ endpoint: string; worker: string }>; onPick: (v: string) => void; busy: boolean }> = ({ pools, onPick, busy }) => {
   if (pools.length === 0) return null;
   return (
     <select

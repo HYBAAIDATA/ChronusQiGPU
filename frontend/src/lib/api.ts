@@ -15,7 +15,7 @@ const SUBSCRIPTION_DECLINED = "pythia.subscriptionDeclined";
 // subscription guardian — X-HYBA tenant/actor headers plus the subscription
 // token as bearer — rather than by the operator key alone.
 const PRIVILEGED_RE =
-  /^\/api\/v1\/(mining|policy|worker|recovery|admin|toe|quantum|scale|assembly|security)\//;
+  /^\/api\/v1\/(mining|policy|worker|recovery|admin|toe|quantum|scale|assembly|security|tensor)\//;
 
 export function apiUrl(input: string): string {
   return input.startsWith("/") ? `${API_BASE}${input}` : input;
@@ -54,6 +54,7 @@ export function operatorKey(): string | null {
 
 export function setOperatorKey(key: string | null): void {
   sessionSet(OPERATOR_KEY, key);
+  window.dispatchEvent(new Event("pythia-credentials-changed"));
 }
 
 /** Server-mapped operator identity claimed alongside the session bearer. */
@@ -63,6 +64,7 @@ export function operatorPrincipal(): string | null {
 
 export function setOperatorPrincipal(principal: string | null): void {
   sessionSet(OPERATOR_PRINCIPAL, principal);
+  window.dispatchEvent(new Event("pythia-credentials-changed"));
 }
 
 export interface SubscriptionCreds {
@@ -143,7 +145,7 @@ async function controlError(response: Response): Promise<string | null> {
 }
 
 /**
- * Reads pass through. State-changing requests carry the operator credential
+ * Unrelated public reads pass through. Console reads and state-changing requests carry the operator credential
  * and, when configured, its server-mapped principal id — or, on
  * guardian-mediated routes, the subscription boundary (X-HYBA headers +
  * subscription bearer, and the POST body's `observation`). On the matching
@@ -151,13 +153,18 @@ async function controlError(response: Response): Promise<string | null> {
  * request is retried with it. Cancelling the prompt declines for the rest of
  * the session — denied responses then surface honestly without re-asking.
  */
-export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {}, options: { interactive?: boolean } = {}): Promise<Response> {
   const target = typeof input === "string" ? apiUrl(input) : input;
   const headers = new Headers(init.headers || {});
   const method = (init.method || "GET").toUpperCase();
   const mutating = method !== "GET" && method !== "HEAD";
 
   if (PRIVILEGED_RE.test(requestPath(input))) {
+    if (requestPath(input) === "/api/v1/mining/evidence") {
+      const controlKey = operatorKey(), controlPrincipal = operatorPrincipal();
+      if (controlKey) headers.set("X-PYTHIA-Control-Authorization", `Bearer ${controlKey}`);
+      if (controlPrincipal) headers.set("X-PYTHIA-Principal", controlPrincipal);
+    }
     const creds = subscriptionCreds();
     if (creds) {
       applySubscriptionHeaders(headers, creds);
@@ -167,7 +174,7 @@ export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {})
     }
     const sendInit = mutating && creds ? withObservation(init, creds.actor) : init;
     const response = await fetch(target, { ...sendInit, headers });
-    if (typeof window.prompt !== "function") return response;
+    if (options.interactive === false || typeof window.prompt !== "function") return response;
     const retryable =
       response.status === 402 ||
       response.status === 403 ||
@@ -186,12 +193,14 @@ export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {})
     return fetch(target, { ...retryInit, headers });
   }
 
-  const key = mutating ? operatorKey() : null;
-  const principal = mutating ? operatorPrincipal() : null;
+  const consoleRead = /^\/api\/v1\/(?:mla1517\/status|status|control\/session|config|audit\/tail|stratum\/status|telemetry\/(?:summary|history|causal|events|ops|session|stream))$/.test(requestPath(input));
+  const key = mutating || consoleRead ? operatorKey() : null;
+  const principal = mutating || consoleRead ? operatorPrincipal() : null;
   if (key) headers.set("Authorization", `Bearer ${key}`);
   if (principal) headers.set("X-PYTHIA-Principal", principal);
   const response = await fetch(target, { ...init, headers });
   if (
+    options.interactive === false ||
     !mutating ||
     response.status !== 401 ||
     typeof window.prompt !== "function" ||

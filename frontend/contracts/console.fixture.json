@@ -1,0 +1,80 @@
+{
+  "schema_version": "chronus.mla1517.status/1",
+  "generated_at": "2026-10-20T23:00:00Z",
+  "product": "PYTHIA",
+  "backend": "Python/C/OpenCL",
+  "measurement": "observed",
+  "canonicalEngine": {
+    "product": "MLA1517",
+    "path": "main.py \u2192 control_api.py \u2192 chronus/mla1517_platform/python",
+    "backend": "Python/C/OpenCL",
+    "ladder": [],
+    "execution": "canonical_python_control_api",
+    "hashrate": "measured",
+    "fallback": false
+  },
+  "host": {
+    "profile": "fixture",
+    "stratum": {}
+  },
+  "solvers": {
+    "arms": 1,
+    "lanes_per_arm": 32,
+    "lane_ceiling": 32,
+    "nonce_partition": "strict_m32_geometric_partition",
+    "hashrate": "measured"
+  },
+  "runtime": {},
+  "device": {
+    "name": "fixture-unbound",
+    "available": false,
+    "count": 0,
+    "devices": [],
+    "execution_boundary": "canonical_python_control_api"
+  },
+  "gpu": {},
+  "workers": {},
+  "stratum": {},
+  "identity": {
+    "ok": false
+  },
+  "ready_to_mine": {
+    "ready": false,
+    "reason": "fixture_no_device",
+    "details": {
+      "hashrate_hs": null,
+      "shares_accepted": 0,
+      "workers": []
+    }
+  },
+  "console": {
+    "unavailable": {},
+    "fabric": {
+      "schema": "fixture-owner/1"
+    },
+    "verification": {
+      "schema": "fixture-owner/1"
+    },
+    "selftest": {
+      "schema": "fixture-owner/1"
+    },
+    "agentic": {
+      "schema": "fixture-owner/1"
+    },
+    "campaign": {
+      "schema": "fixture-owner/1"
+    },
+    "telemetry": {
+      "schema": "fixture-owner/1"
+    },
+    "audit": {
+      "records": []
+    },
+    "intelligence": {
+      "schema": "fixture-owner/1"
+    },
+    "cognition": {
+      "schema": "fixture-owner/1"
+    }
+  }
+}

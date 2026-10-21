@@ -70,10 +70,10 @@ describe("apiFetch", () => {
 describe("operator key", () => {
   const bearer = (call: unknown[]) => new Headers((call[1] as RequestInit).headers).get("Authorization");
 
-  it("never sends the key on reads", async () => {
+  it("does not send the key on unrelated public reads", async () => {
     setOperatorKey("k-1");
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(createMockResponse({}));
-    await apiFetch("/api/v1/config");
+    await apiFetch("/readyz");
     expect(bearer(fetchMock.mock.calls[0]!)).toBeNull();
   });
 
@@ -212,5 +212,39 @@ describe("subscription boundary", () => {
     const response = await apiFetch("/api/v1/mining/evidence");
     expect(response.status).toBe(402);
     expect(prompt).toHaveBeenCalledTimes(1);
+  });
+});
+
+
+describe("console read boundaries", () => {
+  it("carries server-mapped control credentials on protected console reads", async () => {
+    setOperatorKey("control-test-only"); setOperatorPrincipal("owner");
+    const mock = vi.spyOn(globalThis, "fetch").mockResolvedValue(createMockResponse({}));
+    for (const path of ["/api/v1/mla1517/status", "/api/v1/config", "/api/v1/telemetry/summary", "/api/v1/audit/tail"]) {
+      await apiFetch(path, {}, {interactive:false});
+    }
+    for (const call of mock.mock.calls) {
+      const h = new Headers((call[1] as RequestInit).headers);
+      expect(h.get("Authorization")).toBe("Bearer control-test-only");
+      expect(h.get("X-PYTHIA-Principal")).toBe("owner");
+    }
+  });
+  it("keeps CEO and guardian subscription credentials independent", async () => {
+    setOperatorKey("control-test-only"); setOperatorPrincipal("owner");
+    setSubscriptionCreds({tenant:"tenant-test", actor:"actor-test", token:"subscription-test-only"});
+    const mock = vi.spyOn(globalThis, "fetch").mockResolvedValue(createMockResponse({}));
+    await apiFetch("/api/v1/mining/evidence", {}, {interactive:false});
+    const h = new Headers((mock.mock.calls[0]![1] as RequestInit).headers);
+    expect(h.get("X-PYTHIA-Control-Authorization")).toBe("Bearer control-test-only");
+    expect(h.get("X-PYTHIA-Principal")).toBe("owner");
+    expect(h.get("Authorization")).toBe("Bearer subscription-test-only");
+    expect(h.get("X-HYBA-Tenant")).toBe("tenant-test");
+    expect(h.get("X-HYBA-Actor")).toBe("actor-test");
+  });
+  it("never opens credential prompts or retries denied background polls", async () => {
+    const mock = vi.spyOn(globalThis, "fetch").mockResolvedValue(createMockResponse({reason:"TENANT_AND_ACTOR_REQUIRED"}, {status:403}));
+    const prompt = vi.spyOn(window, "prompt");
+    expect((await apiFetch("/api/v1/mining/evidence", {}, {interactive:false})).status).toBe(403);
+    expect(mock).toHaveBeenCalledTimes(1); expect(prompt).not.toHaveBeenCalled();
   });
 });
