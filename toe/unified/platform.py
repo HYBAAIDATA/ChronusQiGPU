@@ -7,15 +7,18 @@ operations, the cost model, and the scholarship ledger.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from copy import deepcopy
+import threading
 
 from toe.operator_compilers import compile_operator
+from toe.receipts import ReceiptLedger
 
 from . import industries
 from .adaptive import AdaptiveInterface
 from .bi import Inquiry, dashboard
 from .catalog import CATALOG, DISPLACED_CLASSES, search
 from .connectors import BoundConnector, bind
-from .data_layer import Policy, UnifiedDataLayer
+from .data_layer import IngestBatch, Policy, UnifiedDataLayer, normalize_snapshot
 from .economics import CostBaseline, PlatformCost, assess, document_fortune500_scenario, financial_services_case
 from .impact import ScholarshipLedger
 from .intelligence import ModelRegistry
@@ -29,6 +32,10 @@ from .security import SecurityModel
 from .consciousness import ConsciousnessState
 
 
+class AnalysisUnavailable(RuntimeError):
+    """No governed, available analysis can be issued for the requested data."""
+
+
 class GateUnavailable(RuntimeError):
     """A gate was read before its measured source existed."""
 
@@ -40,17 +47,30 @@ class Gate:
     passed: bool
     measured: object
     target: object
+    evidence_kind: str = "runtime_counter"
 
 
 class UnifiedAnalyticsPlatform:
-    def __init__(self, *, allocation_rate: float = 0.0, max_workers: int = 8) -> None:
+
+    def __init__(
+        self,
+        *,
+        allocation_rate: float = 0.0,
+        max_workers: int = 8,
+        security_enforced: bool = False,
+        monitor_actor: str | None = None,
+    ) -> None:
         self.data = UnifiedDataLayer()
         self.models = ModelRegistry()
         self.adaptive = AdaptiveInterface()
         self.operations = Operations(max_workers=max_workers)
         self.ledger = ScholarshipLedger(allocation_rate=allocation_rate)
         self.consciousness = ConsciousnessState()
-        self.security = SecurityModel()
+        self.security = SecurityModel(enforced=security_enforced)
+        self._monitor_actor = monitor_actor
+        self._analysis_ledger = ReceiptLedger()
+        self._analysis_lock = threading.Lock()
+        self._bridge = None
         self.productivity = ProductivityMeter()
         self.patents = PatentRegister()
         self.risks = RiskRegister()
@@ -60,6 +80,8 @@ class UnifiedAnalyticsPlatform:
         self._retired: set[str] = set()
         self._receipts: list = []
         self._drift: tuple | None = None
+        self._drift_lock = threading.RLock()
+        self._drift_status: dict = {"state": "not_watching"}
         self.drift_retrains = 0
         self._processing_reduction: float | None = None
         self._health_seq = 0
@@ -67,6 +89,7 @@ class UnifiedAnalyticsPlatform:
         self._last_roi = None
 
     def start(self) -> dict:
+        self.security.authorize("operate")
         self.started = True
         return {
             "started": True,
@@ -81,38 +104,48 @@ class UnifiedAnalyticsPlatform:
         self.security.authorize("connect")
         bound = bind(connector_id, credentials)
         self._connections[bound.spec.id] = bound
+        self._retired.discard(bound.spec.id)
         self.operations.note_probe(True)
         return bound
 
     def connections(self) -> dict:
+        self.security.authorize("connect")
         return dict(self._connections)
 
     def operations_note(self, ok: bool) -> None:
+        self.security.authorize("heal")
         self.operations.note_probe(ok)
 
     def entities(self) -> list[str]:
+        self.security.authorize("ask")
         # Read under the data layer's lock — monitor ticks iterate while the
         # main thread may be ingesting.
         with self.data._lock:
             return sorted({record.entity for record in self.data._records.values()})
 
     def quality(self, entity: str):
+        self.security.authorize("ask")
         return self.data.quality(entity)
 
     def null_policy(self, entity: str) -> float:
+        self.security.authorize("ask")
         return self.data.policy_for(entity).max_null_rate
 
     def batches(self, entity: str) -> list[str]:
+        self.security.authorize("ask")
         with self.data._lock:
             return sorted({record.batch_id for record in self.data._records.values() if record.entity == entity})
 
     def quarantine(self, batch_id: str) -> int:
+        self.security.authorize("heal")
         return self.data.quarantine(batch_id)
 
     def release(self, batch_id: str) -> int:
+        self.security.authorize("heal")
         return self.data.release(batch_id)
 
     def batch_null_rate(self, batch_id: str) -> float:
+        self.security.authorize("ask")
         return self.data.batch_null_rate(batch_id)
 
     def integrate(self, connector_id: str, entity: str, *, mode: str = "batch") -> dict:
@@ -123,11 +156,12 @@ class UnifiedAnalyticsPlatform:
         if bound is None:
             raise KeyError(f"{connector_id} is not connected")
         extracted = bound.extract(entity, mode)
-        compiled = compile_operator({"events": list(extracted.rows)})
+        rows = deepcopy(list(extracted.rows))
+        compiled = compile_operator({"events": rows})
         receipt = self.data.ingest(
             connector_id,
             entity,
-            list(extracted.rows),
+            rows,
             operator_digest=compiled.input_digest,
             operator_kind=compiled.kind,
         )
@@ -141,6 +175,7 @@ class UnifiedAnalyticsPlatform:
 
     def ingest_rows(self, source: str, entity: str, rows: list[dict]) -> dict:
         self.security.authorize("ingest")
+        rows = deepcopy(rows)
         compiled = compile_operator({"events": rows})
         receipt = self.data.ingest(
             source,
@@ -157,24 +192,32 @@ class UnifiedAnalyticsPlatform:
         return self.data.snapshot()
 
     def import_records(self, rows: list[dict]) -> list[dict]:
-        # Rows carry the exporting platform's quarantine state; dropping it
-        # would reactivate records the source had isolated. Payload digests
-        # are content-derived, so re-ingested rows map back one-to-one.
+        self.security.authorize("ingest")
+        normalized = normalize_snapshot(rows)
         grouped: dict[tuple[str, str], list[dict]] = {}
         quarantined: list[tuple[str, str, dict]] = []
-        for row in rows:
+        for row in normalized:
             grouped.setdefault((row["source"], row["entity"]), []).append(row["payload"])
-            if row.get("quarantined"):
+            if row["quarantined"]:
                 quarantined.append((row["source"], row["entity"], row["payload"]))
-        results = [
-            self.ingest_rows(source, entity, payloads)
-            for (source, entity), payloads in sorted(grouped.items())
+        batches, compiled_specs = [], []
+        # Compile every group before the transaction: bad later groups cannot
+        # leave earlier groups visible or emit partial success receipts.
+        for (source, entity), payloads in sorted(grouped.items()):
+            compiled = compile_operator({"events": payloads})
+            batches.append(
+                IngestBatch(source, entity, payloads, compiled.input_digest, compiled.kind)
+            )
+            compiled_specs.append(compiled)
+        receipts = self.data.ingest_atomic(batches, quarantined)
+        self._receipts.extend(receipts)
+        return [
+            {"receipt": receipt, "operator": compiled.operator, "truth_class": compiled.truth_class}
+            for receipt, compiled in zip(receipts, compiled_specs)
         ]
-        if quarantined:
-            self.data.quarantine_payloads(quarantined)
-        return results
 
     def govern(self, entity: str, classification: str, retention_days: int, owner: str, max_null_rate: float = 0.2) -> Policy:
+        self.security.authorize("govern")
         return self.data.set_policy(
             Policy(entity, classification, retention_days, owner, max_null_rate)
         )
@@ -183,14 +226,26 @@ class UnifiedAnalyticsPlatform:
         self.security.authorize("train")
         return self.models.train(name, rows, features, target)
 
-    def retrain(self, name: str, rows: list[dict], eval_rows: list[dict] | None = None):
+    def retrain(
+        self,
+        name: str,
+        rows: list[dict],
+        eval_rows: list[dict] | None = None,
+        *,
+        require_evaluation: bool = False,
+        min_accuracy: float = 0.8,
+    ):
         self.security.authorize("train")
-        return self.models.retrain(name, rows, eval_rows)
+        return self.models.retrain(
+            name, rows, eval_rows, require_evaluation=require_evaluation, min_accuracy=min_accuracy
+        )
 
     def predict(self, name: str, rows: list[dict]) -> list[int]:
+        self.security.authorize("predict")
         return self.models.predict(name, rows)
 
     def transfer(self, name: str, rows: list[dict], features: list[str]) -> dict:
+        self.security.authorize("predict")
         return self.models.predict_aligned(name, rows, features)
 
     def ask(self, question: str) -> dict:
@@ -200,19 +255,87 @@ class UnifiedAnalyticsPlatform:
             return {"question": question, "kind": "health", "rows": [report], "text": "platform health"}
         return self.inquiry.ask(question).as_dict()
 
+    def analyze(self, entity: str) -> dict:
+        """Run existing TOE state tomography on non-quarantined entity records.
+
+        This is a descriptive representation, not causal identification or an
+        action approval. Receipts remain in-process, using the existing TOE format.
+        """
+        self.security.authorize("ask")
+        from toe.bridge import TOEBridge
+
+        with self.data._lock:
+            records = sorted(
+                (
+                    record
+                    for record in self.data._records.values()
+                    if record.entity.casefold() == entity.casefold() and not record.quarantined
+                ),
+                key=lambda record: record.digest,
+            )
+            rows = [deepcopy(record.payload) for record in records]
+            lineage = [
+                {
+                    "record_digest": record.digest,
+                    "operator_digest": record.operator_digest,
+                    "batch_id": record.batch_id,
+                }
+                for record in records
+            ]
+        if not rows:
+            raise AnalysisUnavailable(f"{entity} has no non-quarantined records")
+        inputs = {"events": rows}
+        compiled = compile_operator(inputs)
+        with self._analysis_lock:
+            if self._bridge is None:
+                self._bridge = TOEBridge()
+            result = self._bridge.state_tomography(inputs).as_dict()
+            if not result["available"]:
+                raise AnalysisUnavailable("TOE state tomography is unavailable")
+            receipt = self._analysis_ledger.issue(
+                "unified.state_tomography",
+                inputs=inputs,
+                config={
+                    "entity": entity,
+                    "actor": self.security.actor,
+                    "operator_digest": compiled.input_digest,
+                    "lineage": lineage,
+                },
+                output=result,
+                execution_evidence={
+                    "path": "UnifiedAnalyticsPlatform.analyze -> TOEBridge.state_tomography",
+                    "engine": "kellogg.quantum_tensor",
+                    "arithmetic": "float64",
+                    "scope": "descriptive_state_tomography",
+                },
+            )
+        return {
+            "result": result,
+            "receipt": receipt.as_dict(),
+            "truth_class": "descriptive_state_tomography",
+        }
+
+    def analysis_receipts(self) -> list[dict]:
+        self.security.authorize("export")
+        with self._analysis_lock:
+            return self._analysis_ledger.export()
+
     def feedback(self, user: str, widget: str, depth: int = 1, rating: float | None = None):
+        self.security.authorize("dashboard")
         profile = self.adaptive.observe(user, widget, depth)
         if rating is not None:
             self.operations.note_rating(rating)
         return profile
 
     def dashboard_for(self, user: str, name: str, widgets: list[dict]) -> dict:
+        self.security.authorize("dashboard")
         profile = self.adaptive.profile(user)
         spec = dashboard(name, widgets, profile.widget_rank)
         spec["density"] = profile.preferred_density
         return spec
 
     def health(self) -> dict:
+        self.security.authorize("health")
         self._health_seq += 1
         quality = self.data.quality()
         return {
@@ -225,9 +348,12 @@ class UnifiedAnalyticsPlatform:
             "rows": quality.rows,
             "null_rate": quality.null_rate,
             "availability": self.operations.availability(),
+            "availability_probes": self.operations.probes,
+            "availability_failures": self.operations.probe_failures,
             "satisfaction": self.operations.satisfaction(),
             "models": list(self.models.names()),
             "unplanned_downtime": self.operations.unplanned_downtime,
+            "drift": deepcopy(self._drift_status),
         }
 
     def require_gate(self, name: str) -> Gate:
@@ -249,28 +375,78 @@ class UnifiedAnalyticsPlatform:
         return bound
 
     def _monitor_tick(self) -> None:
-        self.operations.heal(self)
-        self._retrain_if_drifted()
+        if self._monitor_actor is None:
+            self.heal()
+            self._retrain_if_drifted()
+        else:
+            # Service identity is configured by the embedding host, never inherited
+            # from whichever interactive caller last used the platform.
+            with self.security.as_actor(self._monitor_actor):
+                self.heal()
+                self._retrain_if_drifted()
 
-    def watch(self, name: str, rows: list[dict]) -> None:
+    def watch(
+        self,
+        name: str,
+        rows: list[dict],
+        *,
+        eval_rows: list[dict] | None = None,
+        min_accuracy: float = 0.8,
+    ) -> None:
+        self.security.authorize("train")
         if not rows:
             raise ValueError("watch requires at least one row to score drift")
-        self._drift = (name, list(rows))
+        observed, evaluation = deepcopy(rows), deepcopy(eval_rows)
+        self.models.get(name)
+        if evaluation is not None:
+            self.models.validate_retrain_evidence(name, observed, evaluation, min_accuracy)
+        with self._drift_lock:
+            self._drift = (name, observed, evaluation, min_accuracy)
+            self._drift_status = {
+                "state": "watching" if evaluation is not None else "blocked_missing_evaluation",
+                "model": name,
+                "min_accuracy": min_accuracy,
+            }
 
     def _retrain_if_drifted(self) -> None:
-        if self._drift is None:
-            return
-        name, rows = self._drift
-        record = self.models.get(name)
-        predicted = self.models.predict(name, rows)
-        actual = [int(row[record.target]) for row in rows]
-        accuracy = sum(int(left) == right for left, right in zip(predicted, actual)) / len(actual)
-        if accuracy < 0.5:
-            self.models.retrain(name, rows)
-            self.drift_retrains += 1
-            self._drift = None
+        with self._drift_lock:
+            if self._drift is None:
+                return
+            self.security.authorize("train")
+            name, rows, eval_rows, min_accuracy = self._drift
+            if eval_rows is None:
+                return  # Detection data is not held-out promotion evidence.
+            record = self.models.get(name)
+            predicted = self.models.predict(name, rows)
+            actual = [int(row[record.target]) for row in rows]
+            accuracy = sum(int(left) == right for left, right in zip(predicted, actual)) / len(
+                actual
+            )
+            if accuracy < 0.5:
+                result = self.retrain(
+                    name,
+                    rows,
+                    eval_rows=eval_rows,
+                    require_evaluation=True,
+                    min_accuracy=min_accuracy,
+                )
+                self._drift_status = {
+                    "state": "promoted" if result.replaced else "rejected",
+                    "model": name,
+                    "live_version": result.live_version,
+                    "evaluated_version": result.evaluated_version,
+                    "candidate_accuracy": result.candidate_accuracy,
+                    "live_accuracy": result.live_accuracy,
+                    "reason": result.reason,
+                    "evaluation_digest": result.evaluation_digest,
+                    "evaluation_rows": result.evaluation_rows,
+                }
+                if result.replaced:
+                    self.drift_retrains += 1
+                self._drift = None
 
     def benchmark_processing(self, entities: int = 100, per_entity: int = 20) -> dict:
+        self.security.authorize("ask")
         if entities < 1 or per_entity < 1:
             raise ValueError("benchmark requires entities >= 1 and per_entity >= 1")
         # Measure against a scratch layer — benchmark rows must never land in
@@ -304,20 +480,25 @@ class UnifiedAnalyticsPlatform:
         }
 
     def optimize(self, rows: list[dict], filters: list[tuple]) -> dict:
+        self.security.authorize("ask")
         return plan_query(rows, filters)
 
     def file_patent(self, title: str) -> int:
+        self.security.authorize("govern")
         return self.patents.file(title)
 
     def case_financial_services(self):
+        self.security.authorize("ask")
         result = financial_services_case()
         self._last_roi = result
         return result
 
     def scale(self):
+        self.security.authorize("operate")
         return self.operations.scale()
 
     def displacement(self) -> dict:
+        self.security.authorize("health")
         covered = {}
         for bound in self._connections.values():
             covered.setdefault(bound.spec.category, []).append(bound.spec.id)
@@ -329,20 +510,28 @@ class UnifiedAnalyticsPlatform:
         }
 
     def retire(self, connector_id: str) -> None:
+        self.security.authorize("reload")
+        if connector_id not in self._connections:
+            raise KeyError(f"{connector_id} is not connected")
+        del self._connections[connector_id]
         self._retired.add(connector_id)
 
     def economics(self, baseline: CostBaseline, platform_cost: PlatformCost, **kwargs):
+        self.security.authorize("ask")
         result = assess(baseline, platform_cost, **kwargs)
         self._last_roi = result
         return result
 
     def scenario(self) -> dict:
+        self.security.authorize("ask")
         return document_fortune500_scenario()
 
     def recognize_value(self, amount: float, source: str):
+        self.security.authorize("govern")
         return self.ledger.recognize(amount, source)
 
     def industry(self, name: str) -> dict:
+        self.security.authorize("ask")
         if name not in industries.PACKS:
             raise KeyError(f"unknown industry pack {name}")
         connectors = search(industry=name)
@@ -353,6 +542,7 @@ class UnifiedAnalyticsPlatform:
         }
 
     def run_application(self, application: str, **payload):
+        self.security.authorize("predict")
         functions = {
             "risk": industries.risk_scores,
             "fraud": industries.fraud_rate,
@@ -379,25 +569,103 @@ class UnifiedAnalyticsPlatform:
         health = self.health()
         classes = len(health["classes_bound"])
         satisfaction = health["satisfaction"]
+        availability = health["availability"]
         savings = None if self._last_roi is None else self._last_roi.annual_savings
         roi = None if self._last_roi is None else self._last_roi.roi_3y
         gates = [
             Gate("foundation", "started", self.started, self.started, True),
-            Gate("foundation", "connectors_integrated", len(self._connections) >= 50, len(self._connections), 50),
+            Gate(
+                "foundation",
+                "connectors_integrated",
+                len(self._connections) >= 50,
+                len(self._connections),
+                50,
+                "bound_inventory",
+            ),
             Gate("foundation", "heal_armed", self.operations.armed, self.operations.armed, True),
-            Gate("foundation", "downtime", self.operations.unplanned_downtime == 0, self.operations.unplanned_downtime, 0),
+            Gate(
+                "foundation",
+                "downtime",
+                self.operations.unplanned_downtime == 0,
+                self.operations.unplanned_downtime,
+                0,
+            ),
             Gate("expansion", "classes_in_use", classes >= 8, classes, 8),
-            Gate("expansion", "enterprise_systems", len(self._connections) >= 500, len(self._connections), 500),
-            Gate("expansion", "model_deployed", bool(self.models.names()), list(self.models.names()), "one live model"),
-            Gate("expansion", "self_serve", bool(self.adaptive._actions), len(self.adaptive._actions), "one user profile"),
-            Gate("optimization", "legacy_retired", len(self._retired) >= 1, sorted(self._retired), "one retired source"),
-            Gate("optimization", "availability", health["availability"] >= 0.999, health["availability"], 0.999),
-            Gate("optimization", "satisfaction", satisfaction is not None and satisfaction >= 0.95, satisfaction, 0.95),
-            Gate("optimization", "processing_reduction", self._processing_reduction is not None and self._processing_reduction >= 0.90, self._processing_reduction, 0.90),
-            Gate("optimization", "roi_positive", savings is not None and savings > 0, savings, "> 0"),
-            Gate("optimization", "roi_400", roi is not None and roi >= 4.0, roi, 4.0),
-            Gate("innovation", "model_retained", any(len(items) >= 1 for items in self.models._history.values()), len(self.models._history), "registry history"),
-            Gate("innovation", "scholarship_configured", self.ledger.allocation_rate > 0, self.ledger.allocation_rate, "> 0"),
+            Gate(
+                "expansion",
+                "enterprise_systems",
+                len(self._connections) >= 500,
+                len(self._connections),
+                500,
+                "bound_inventory",
+            ),
+            Gate(
+                "expansion",
+                "model_deployed",
+                bool(self.models.names()),
+                list(self.models.names()),
+                "one live model",
+            ),
+            Gate(
+                "expansion",
+                "self_serve",
+                bool(self.adaptive._actions),
+                len(self.adaptive._actions),
+                "one user profile",
+            ),
+            Gate(
+                "optimization",
+                "legacy_retired",
+                len(self._retired) >= 1,
+                sorted(self._retired),
+                "one retired source",
+            ),
+            Gate(
+                "optimization",
+                "availability",
+                availability is not None and availability >= 0.999,
+                availability,
+                0.999,
+                "probe_ratio",
+            ),
+            Gate(
+                "optimization",
+                "satisfaction",
+                satisfaction is not None and satisfaction >= 0.95,
+                satisfaction,
+                0.95,
+            ),
+            Gate(
+                "optimization",
+                "processing_reduction",
+                self._processing_reduction is not None and self._processing_reduction >= 0.90,
+                self._processing_reduction,
+                0.90,
+                "fixture_row_visits",
+            ),
+            Gate(
+                "optimization",
+                "roi_positive",
+                savings is not None and savings > 0,
+                savings,
+                "> 0",
+                "modeled",
+            ),
+            Gate("optimization", "roi_400", roi is not None and roi >= 4.0, roi, 4.0, "modeled"),
+            Gate(
+                "innovation",
+                "model_retained",
+                any(len(items) >= 1 for items in self.models._history.values()),
+                len(self.models._history),
+                "registry history",
+            ),
+            Gate(
+                "innovation",
+                "scholarship_configured",
+                self.ledger.allocation_rate > 0,
+                self.ledger.allocation_rate,
+                "> 0",
+            ),
             Gate("innovation", "patents", self.patents.count() >= 10, self.patents.count(), 10),
         ]
         return gates
