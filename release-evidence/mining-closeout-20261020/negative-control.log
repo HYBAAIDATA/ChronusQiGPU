@@ -1,0 +1,541 @@
+Original miner window/target + original healer; optional scaled import removed to isolate defects. Governor has additive targeted-observe API.
+FFFFF.FFFFF.FF.                                                          [100%]
+=================================== FAILURES ===================================
+_ test_changed_target_invalidates_old_generation[mining.set_target-0000000000000000000000000000000000000000000000000000000000000001] _
+
+method = 'mining.set_target'
+value = '0000000000000000000000000000000000000000000000000000000000000001'
+
+    @pytest.mark.parametrize('method,value', [('mining.set_target', '00'*31+'01'), ('mining.set_difficulty', 2)])
+    def test_changed_target_invalidates_old_generation(method, value):
+        async def scenario():
+            c = client()
+            c.target = MAX_UINT256
+            c.generation = 1
+            c.job = parse_notify(notify(), 1, MAX_UINT256)
+            old = c.job
+            await c._notification({'method': method, 'params': [value]})
+            assert c.job.generation > old.generation
+            assert c.job.target != old.target
+            c.authorized = True
+            # Stale candidate must be rejected before any network request.
+            assert await c.submit(old, '', 0) is False
+>       asyncio.run(scenario())
+
+mining/tests/test_closeout_window_isolation.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib64/python3.13/asyncio/runners.py:196: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/asyncio/runners.py:119: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/asyncio/base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def scenario():
+        c = client()
+        c.target = MAX_UINT256
+        c.generation = 1
+        c.job = parse_notify(notify(), 1, MAX_UINT256)
+        old = c.job
+        await c._notification({'method': method, 'params': [value]})
+>       assert c.job.generation > old.generation
+E       AssertionError: assert 1 > 1
+E        +  where 1 = MiningJob(generation=1, job_id='local-job', prevhash='0000000000000000000000000000000000000000000000000000000000000000...'00', coinb2='00', merkle_branch=(), version='00000001', nbits='207fffff', ntime='65000000', clean_jobs=True, target=1).generation
+E        +    where MiningJob(generation=1, job_id='local-job', prevhash='0000000000000000000000000000000000000000000000000000000000000000...'00', coinb2='00', merkle_branch=(), version='00000001', nbits='207fffff', ntime='65000000', clean_jobs=True, target=1) = <mining.production_miner.StratumV1Client object at 0x7f2b91efa7b0>.job
+E        +  and   1 = MiningJob(generation=1, job_id='local-job', prevhash='0000000000000000000000000000000000000000000000000000000000000000...ime='65000000', clean_jobs=True, target=115792089237316195423570985008687907853269984665640564039457584007913129639935).generation
+
+mining/tests/test_closeout_window_isolation.py:36: AssertionError
+___ test_changed_target_invalidates_old_generation[mining.set_difficulty-2] ____
+
+method = 'mining.set_difficulty', value = 2
+
+    @pytest.mark.parametrize('method,value', [('mining.set_target', '00'*31+'01'), ('mining.set_difficulty', 2)])
+    def test_changed_target_invalidates_old_generation(method, value):
+        async def scenario():
+            c = client()
+            c.target = MAX_UINT256
+            c.generation = 1
+            c.job = parse_notify(notify(), 1, MAX_UINT256)
+            old = c.job
+            await c._notification({'method': method, 'params': [value]})
+            assert c.job.generation > old.generation
+            assert c.job.target != old.target
+            c.authorized = True
+            # Stale candidate must be rejected before any network request.
+            assert await c.submit(old, '', 0) is False
+>       asyncio.run(scenario())
+
+mining/tests/test_closeout_window_isolation.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib64/python3.13/asyncio/runners.py:196: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/asyncio/runners.py:119: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/asyncio/base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def scenario():
+        c = client()
+        c.target = MAX_UINT256
+        c.generation = 1
+        c.job = parse_notify(notify(), 1, MAX_UINT256)
+        old = c.job
+        await c._notification({'method': method, 'params': [value]})
+>       assert c.job.generation > old.generation
+E       AssertionError: assert 1 > 1
+E        +  where 1 = MiningJob(generation=1, job_id='local-job', prevhash='0000000000000000000000000000000000000000000000000000000000000000...fffff', ntime='65000000', clean_jobs=True, target=13479767645505654746578238172361995668005449369287082043068886548480).generation
+E        +    where MiningJob(generation=1, job_id='local-job', prevhash='0000000000000000000000000000000000000000000000000000000000000000...fffff', ntime='65000000', clean_jobs=True, target=13479767645505654746578238172361995668005449369287082043068886548480) = <mining.production_miner.StratumV1Client object at 0x7f2b91c20f50>.job
+E        +  and   1 = MiningJob(generation=1, job_id='local-job', prevhash='0000000000000000000000000000000000000000000000000000000000000000...ime='65000000', clean_jobs=True, target=115792089237316195423570985008687907853269984665640564039457584007913129639935).generation
+
+mining/tests/test_closeout_window_isolation.py:36: AssertionError
+__________________ test_same_target_does_not_invalidate_work ___________________
+
+    def test_same_target_does_not_invalidate_work():
+        c = client()
+        c.target = MAX_UINT256
+        c.generation = 1
+        c.job = parse_notify(notify(), 1, MAX_UINT256)
+>       c._update_target(MAX_UINT256)
+        ^^^^^^^^^^^^^^^^
+E       AttributeError: 'StratumV1Client' object has no attribute '_update_target'
+
+mining/tests/test_closeout_window_isolation.py:49: AttributeError
+_____________ test_stratum_reader_progresses_during_native_window ______________
+
+fut = <Future cancelled>, timeout = 2
+
+    async def wait_for(fut, timeout):
+        """Wait for the single Future or coroutine to complete, with timeout.
+    
+        Coroutine will be wrapped in Task.
+    
+        Returns result of the Future or coroutine.  When a timeout occurs,
+        it cancels the task and raises TimeoutError.  To avoid the task
+        cancellation, wrap it in shield().
+    
+        If the wait is cancelled, the task is also cancelled.
+    
+        If the task suppresses the cancellation and returns a value instead,
+        that value is returned.
+    
+        This function is a coroutine.
+        """
+        # The special case for timeout <= 0 is for the following case:
+        #
+        # async def test_waitfor():
+        #     func_started = False
+        #
+        #     async def func():
+        #         nonlocal func_started
+        #         func_started = True
+        #
+        #     try:
+        #         await asyncio.wait_for(func(), 0)
+        #     except asyncio.TimeoutError:
+        #         assert not func_started
+        #     else:
+        #         assert False
+        #
+        # asyncio.run(test_waitfor())
+    
+    
+        if timeout is not None and timeout <= 0:
+            fut = ensure_future(fut)
+    
+            if fut.done():
+                return fut.result()
+    
+            await _cancel_and_wait(fut)
+            try:
+                return fut.result()
+            except exceptions.CancelledError as exc:
+                raise TimeoutError from exc
+    
+        async with timeouts.timeout(timeout):
+>           return await fut
+                   ^^^^^^^^^
+E           asyncio.exceptions.CancelledError
+
+/usr/lib64/python3.13/asyncio/tasks.py:507: CancelledError
+
+The above exception was the direct cause of the following exception:
+
+self = <mining.production_miner.StratumV1Client object at 0x7f2b91bf35c0>
+method = 'mining.submit'
+params = ['fixture', 'local-job', '', '65000000', '00000000']
+
+    async def request(self, method: str, params: list[Any]) -> dict[str, Any]:
+        if self.writer is None or self.closed:
+            raise SessionLost("request on closed Stratum session")
+        request_id = self.next_id
+        self.next_id += 1
+        loop = asyncio.get_running_loop()
+        future: asyncio.Future[dict[str, Any]] = loop.create_future()
+        self.pending[request_id] = future
+        payload = json.dumps({"id": request_id, "method": method, "params": params}, separators=(",", ":")).encode() + b"\n"
+        try:
+            self.writer.write(payload)
+            await asyncio.wait_for(self.writer.drain(), timeout=self.timeout)
+>           return await asyncio.wait_for(future, timeout=self.timeout)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+mining/production_miner.py:346: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib64/python3.13/asyncio/tasks.py:506: in wait_for
+    async with timeouts.timeout(timeout):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Timeout [expired]>
+exc_type = <class 'asyncio.exceptions.CancelledError'>
+exc_val = CancelledError(), exc_tb = <traceback object at 0x7f2b91c3c8c0>
+
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> Optional[bool]:
+        assert self._state in (_State.ENTERED, _State.EXPIRING)
+    
+        if self._timeout_handler is not None:
+            self._timeout_handler.cancel()
+            self._timeout_handler = None
+    
+        if self._state is _State.EXPIRING:
+            self._state = _State.EXPIRED
+    
+            if self._task.uncancel() <= self._cancelling and exc_type is not None:
+                # Since there are no new cancel requests, we're
+                # handling this.
+                if issubclass(exc_type, exceptions.CancelledError):
+>                   raise TimeoutError from exc_val
+E                   TimeoutError
+
+/usr/lib64/python3.13/asyncio/timeouts.py:117: TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = PosixPath('/data/mining-closeout/tmp/negative/test_stratum_reader_progresses0')
+
+    def test_stratum_reader_progresses_during_native_window(tmp_path):
+        async def scenario():
+            started = threading.Event()
+            finished = threading.Event()
+            server_tasks = set()
+            observations = []
+            worker_observed_notification = []
+            stop = tmp_path / 'drain'
+    
+            class SlowExecutor:
+                def execute(self, header, target, base, count):
+                    started.set()
+                    # Worker waits for socket notification to be processed. If this
+                    # blocks the event loop the original implementation times out.
+                    deadline = time.monotonic() + 0.8
+                    while not finished.is_set() and time.monotonic() < deadline:
+                        time.sleep(0.002)
+                    worker_observed_notification.append(finished.is_set())
+                    digest = hashlib.sha256(hashlib.sha256(header[:76] + b'\0'*4).digest()).digest()
+                    return ExecutionResult(0, digest, count, {'backend': 'fixture-cpu'})
+    
+            async def serve(reader, writer):
+                server_tasks.add(asyncio.current_task())
+                try:
+                    for method, result in [('mining.subscribe', [[], 'aa', 0]), ('mining.authorize', True)]:
+                        req = json.loads(await reader.readline())
+                        assert req['method'] == method
+                        writer.write((json.dumps({'id': req['id'], 'result': result, 'error': None})+'\n').encode())
+                        await writer.drain()
+                    for method, params in [('mining.set_target', ['ff'*32]), ('mining.notify', notify())]:
+                        writer.write((json.dumps({'method': method, 'params': params})+'\n').encode())
+                    await writer.drain()
+                    while not started.is_set():
+                        await asyncio.sleep(0.002)
+                    writer.write((json.dumps({'method': 'mining.set_target', 'params': ['00'*31+'01']})+'\n').encode())
+                    await writer.drain()
+                    deadline = time.monotonic()+1
+                    while c.target != 1 and time.monotonic() < deadline:
+                        await asyncio.sleep(0.002)
+                    observations.append(c.target)
+                    stop.touch()
+                    finished.set()
+                    await reader.read()
+                finally:
+                    writer.close()
+                    await writer.wait_closed()
+                    server_tasks.discard(asyncio.current_task())
+    
+            server = await asyncio.start_server(serve, '127.0.0.1', 0)
+            c = StratumV1Client(PoolEndpoint('127.0.0.1', server.sockets[0].getsockname()[1], False), 'fixture', 'fixture', timeout=2)
+            try:
+                await c.connect_and_authorize()
+                m = ProductionMiner(c, SlowExecutor(), window=32, submit_enabled=True)
+                m.stop_file = stop
+                assert await asyncio.wait_for(m.run_session(), 3) is False
+                assert observations == [1]
+                assert worker_observed_notification == [True]
+                assert c.accepted == 0 and c.rejected == 0
+                assert m.total_hashes == 32
+            finally:
+                finished.set()
+                await c.close()
+                server.close()
+                await server.wait_closed()
+                await asyncio.gather(*list(server_tasks))
+>       asyncio.run(scenario())
+
+mining/tests/test_closeout_window_isolation.py:118: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib64/python3.13/asyncio/runners.py:196: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/asyncio/runners.py:119: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/asyncio/base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+mining/tests/test_closeout_window_isolation.py:107: in scenario
+    assert await asyncio.wait_for(m.run_session(), 3) is False
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/asyncio/tasks.py:507: in wait_for
+    return await fut
+           ^^^^^^^^^
+mining/production_miner.py:564: in run_session
+    accepted = await self.client.submit(job, extranonce2, winner)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+mining/production_miner.py:453: in submit
+    response = await self.request("mining.submit", [self.worker, job.job_id, extranonce2, job.ntime, f"{nonce:08x}"])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <mining.production_miner.StratumV1Client object at 0x7f2b91bf35c0>
+method = 'mining.submit'
+params = ['fixture', 'local-job', '', '65000000', '00000000']
+
+    async def request(self, method: str, params: list[Any]) -> dict[str, Any]:
+        if self.writer is None or self.closed:
+            raise SessionLost("request on closed Stratum session")
+        request_id = self.next_id
+        self.next_id += 1
+        loop = asyncio.get_running_loop()
+        future: asyncio.Future[dict[str, Any]] = loop.create_future()
+        self.pending[request_id] = future
+        payload = json.dumps({"id": request_id, "method": method, "params": params}, separators=(",", ":")).encode() + b"\n"
+        try:
+            self.writer.write(payload)
+            await asyncio.wait_for(self.writer.drain(), timeout=self.timeout)
+            return await asyncio.wait_for(future, timeout=self.timeout)
+        except asyncio.TimeoutError as exc:
+            self.pending.pop(request_id, None)
+>           raise SessionLost(f"Stratum {method} timed out") from exc
+E           mining.production_miner.SessionLost: Stratum mining.submit timed out
+
+mining/production_miner.py:349: SessionLost
+__________ test_cancel_drains_one_window_without_blocking_event_loop ___________
+
+    def test_cancel_drains_one_window_without_blocking_event_loop():
+        async def scenario():
+            started, release, finished = threading.Event(), threading.Event(), threading.Event()
+            def execute(*args):
+                started.set()
+                release.wait(2)
+                finished.set()
+                return ExecutionResult(None, None, 1, {})
+            m = ProductionMiner(client(), SimpleNamespace(execute=execute), window=1)
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                m._window_pool = pool
+                task = asyncio.create_task(m._execute_window(b'\0'*80, 1, 0, 1))
+                while not started.is_set():
+                    await asyncio.sleep(0.002)
+                task.cancel()
+                await asyncio.sleep(0.02)
+                assert not task.done()
+                release.set()
+                with pytest.raises(asyncio.CancelledError):
+                    await task
+                assert finished.is_set()
+>       asyncio.run(scenario())
+
+mining/tests/test_closeout_window_isolation.py:142: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib64/python3.13/asyncio/runners.py:196: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/asyncio/runners.py:119: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/asyncio/base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def scenario():
+        started, release, finished = threading.Event(), threading.Event(), threading.Event()
+        def execute(*args):
+            started.set()
+            release.wait(2)
+            finished.set()
+            return ExecutionResult(None, None, 1, {})
+        m = ProductionMiner(client(), SimpleNamespace(execute=execute), window=1)
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            m._window_pool = pool
+>           task = asyncio.create_task(m._execute_window(b'\0'*80, 1, 0, 1))
+                                       ^^^^^^^^^^^^^^^^^
+E           AttributeError: 'ProductionMiner' object has no attribute '_execute_window'
+
+mining/tests/test_closeout_window_isolation.py:132: AttributeError
+_______ test_governor_authorizes_real_mutations_and_ack_matches_dispatch _______
+
+    def test_governor_authorizes_real_mutations_and_ack_matches_dispatch():
+        seen = []
+        c = fixture(lambda record, command, target: seen.append(command) or {'allowed': True})
+        h = SalamanderMiningHealer()
+        d = diagnosis(h, c)
+        rid, ack = h.bounded_action(c, d)
+        assert seen == list(d.proposed_actions)
+        assert ack.executed_commands == d.proposed_actions
+        assert c.client.proof_adapter.current_job is c.client.runtime_state.current_job
+        assert c.optimization.is_locked
+>       assert c.recovery.snapshot()['open'][0]['recovery_id'] == rid
+E       AssertionError: assert 'recovery:710...-1f2127228f77' == 'salamander:heal:c46bc5ada139'
+E         
+E         - salamander:heal:c46bc5ada139
+E         + recovery:71053e56-1bac-4bde-b113-1f2127228f77
+
+salamander/tests/test_mining_healer_dispatch_closeout.py:38: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  salamander.mining_healer:mining_healer.py:303 SALAMANDER HEALER ACTIVE: IDENTITY_MISMATCH (root_cause: proof_adapter job (old) or target (100) desynchronized from Stratum generation (new, 100)) -> recovery_id=salamander:heal:c46bc5ada139
+_______ test_denied_governor_cannot_mutate_adapter_and_keeps_safety_lock _______
+
+    def test_denied_governor_cannot_mutate_adapter_and_keeps_safety_lock():
+        c = fixture(lambda *args: {'allowed': False, 'reason': 'fixture-denial'})
+        original = c.client.proof_adapter.current_job
+        h = SalamanderMiningHealer()
+        with pytest.raises(PermissionError):
+            h.bounded_action(c, diagnosis(h, c))
+        assert c.client.proof_adapter.current_job is original
+        assert c.optimization.is_locked
+>       assert h.state is HealerState.FAILED
+E       AssertionError: assert <HealerState.ACTUATING: 'ACTUATING'> is <HealerState.FAILED: 'FAILED'>
+E        +  where <HealerState.ACTUATING: 'ACTUATING'> = <salamander.mining_healer.SalamanderMiningHealer object at 0x7f2b91c22490>.state
+E        +  and   <HealerState.FAILED: 'FAILED'> = HealerState.FAILED
+
+salamander/tests/test_mining_healer_dispatch_closeout.py:50: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  salamander.mining_healer:mining_healer.py:303 SALAMANDER HEALER ACTIVE: IDENTITY_MISMATCH (root_cause: proof_adapter job (old) or target (100) desynchronized from Stratum generation (new, 100)) -> recovery_id=salamander:heal:5ebaac2f358d
+_________________ test_missing_governor_cannot_mutate_adapter __________________
+
+    def test_missing_governor_cannot_mutate_adapter():
+        c = fixture()
+        c.recovery = None
+        h = SalamanderMiningHealer()
+>       with pytest.raises(RuntimeError, match='governor unavailable'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE RuntimeError
+
+salamander/tests/test_mining_healer_dispatch_closeout.py:58: Failed
+------------------------------ Captured log call -------------------------------
+WARNING  salamander.mining_healer:mining_healer.py:303 SALAMANDER HEALER ACTIVE: IDENTITY_MISMATCH (root_cause: proof_adapter job (old) or target (100) desynchronized from Stratum generation (new, 100)) -> recovery_id=salamander:heal:46e48bf57bc2
+______________ test_missing_generation_does_not_emit_success_ack _______________
+
+    def test_missing_generation_does_not_emit_success_ack():
+        c = fixture()
+        h = SalamanderMiningHealer()
+        d = diagnosis(h, c)
+        c.client.runtime_state.current_job = None
+>       with pytest.raises(RuntimeError, match='generation'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE RuntimeError
+
+salamander/tests/test_mining_healer_dispatch_closeout.py:69: Failed
+------------------------------ Captured log call -------------------------------
+WARNING  salamander.mining_healer:mining_healer.py:303 SALAMANDER HEALER ACTIVE: IDENTITY_MISMATCH (root_cause: proof_adapter job (old) or target (100) desynchronized from Stratum generation (new, 100)) -> recovery_id=salamander:heal:f5974f7c5639
+_____________ test_post_observation_does_not_invent_cleared_leases _____________
+
+    def test_post_observation_does_not_invent_cleared_leases():
+        c = fixture()
+        c.client.proof_adapter.current_job = c.client.runtime_state.current_job
+        c.agentic._leases = None
+        post = SalamanderMiningHealer().post_observe(c)
+>       assert post.stale_leases_cleared is False
+E       AssertionError: assert True is False
+E        +  where True = HealPostObservation(healthy=True, resolved_identity=namespace(generation=2, job_fingerprint='fixture-fingerprint'), reason=None, adapter_generation_match=True, target_match=True, stale_leases_cleared=True).stale_leases_cleared
+
+salamander/tests/test_mining_healer_dispatch_closeout.py:80: AssertionError
+________ test_successful_seven_stage_fixture_unlocks_only_after_rebind _________
+
+    def test_successful_seven_stage_fixture_unlocks_only_after_rebind():
+        c = fixture()
+        h = SalamanderMiningHealer()
+        d = diagnosis(h, c)
+        rid, ack = h.bounded_action(c, d)
+        h.actuator_ack(ack)
+        post = h.post_observe(c)
+        assert post.healthy
+        audit = h.verified_recovery(c, d, post, rid)
+>       assert c.optimization.is_locked  # independent verification is not resume
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert False
+E        +  where False = <chronus.mla1517.mining.closed_loop.ClosedLoopOptimizer object at 0x7f2b91c78ef0>.is_locked
+E        +    where <chronus.mla1517.mining.closed_loop.ClosedLoopOptimizer object at 0x7f2b91c78ef0> = namespace(optimization=<chronus.mla1517.mining.closed_loop.ClosedLoopOptimizer object at 0x7f2b91c78ef0>, agentic=<chr...d='new', target=100, generation_id=2))), _resolve_work_identity=<function fixture.<locals>.<lambda> at 0x7f2b91c6fce0>).optimization
+
+salamander/tests/test_mining_healer_dispatch_closeout.py:106: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  salamander.mining_healer:mining_healer.py:303 SALAMANDER HEALER ACTIVE: IDENTITY_MISMATCH (root_cause: proof_adapter job (old) or target (100) desynchronized from Stratum generation (new, 100)) -> recovery_id=salamander:heal:253935cade86
+_______ test_generation_changes_between_verify_and_resume_remain_locked ________
+
+    def test_generation_changes_between_verify_and_resume_remain_locked():
+        c = fixture()
+        h = SalamanderMiningHealer()
+        d = diagnosis(h, c)
+        rid, ack = h.bounded_action(c, d)
+        h.actuator_ack(ack)
+        audit = h.verified_recovery(c, d, h.post_observe(c), rid)
+        c._resolve_work_identity = lambda: (SimpleNamespace(generation=3), None)
+        with pytest.raises(RuntimeError, match='rebind'):
+>           h.resume(c, audit)
+
+salamander/tests/test_mining_healer_dispatch_closeout.py:125: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <salamander.mining_healer.SalamanderMiningHealer object at 0x7f2b91c9a470>
+coordinator = namespace(optimization=<chronus.mla1517.mining.closed_loop.ClosedLoopOptimizer object at 0x7f2b91c99bf0>, agentic=<chr...dentity=<function test_generation_changes_between_verify_and_resume_remain_locked.<locals>.<lambda> at 0x7f2b91c6f420>)
+audit = HealAuditRecord(recovery_id='salamander:heal:d6b7965d3df2', timestamp_ns=1792543936981766738, fault_class='RECOVERABLE...an_id=None, job_id=None, candidate_nonce=None, candidate_host_verified=None, recovery_id=None, toe_advice_reason=None))
+
+    def resume(self, coordinator: Any, audit: HealAuditRecord) -> Any | None:
+        """Stage 7: Safely bind healed identity and wake precompute & execution loops."""
+        self.state = HealerState.IDLE
+        ident = audit.post_observation.get("resolved_identity")
+        # Direct call to refresh or bind work
+        if hasattr(coordinator, "agentic") and coordinator.agentic is not None:
+>           work_ident = coordinator._refresh_work_identity()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'types.SimpleNamespace' object has no attribute '_refresh_work_identity'. Did you mean: '_resolve_work_identity'?
+
+salamander/mining_healer.py:536: AttributeError
+------------------------------ Captured log call -------------------------------
+WARNING  salamander.mining_healer:mining_healer.py:303 SALAMANDER HEALER ACTIVE: IDENTITY_MISMATCH (root_cause: proof_adapter job (old) or target (100) desynchronized from Stratum generation (new, 100)) -> recovery_id=salamander:heal:d6b7965d3df2
+=========================== short test summary info ============================
+FAILED mining/tests/test_closeout_window_isolation.py::test_changed_target_invalidates_old_generation[mining.set_target-0000000000000000000000000000000000000000000000000000000000000001]
+FAILED mining/tests/test_closeout_window_isolation.py::test_changed_target_invalidates_old_generation[mining.set_difficulty-2]
+FAILED mining/tests/test_closeout_window_isolation.py::test_same_target_does_not_invalidate_work
+FAILED mining/tests/test_closeout_window_isolation.py::test_stratum_reader_progresses_during_native_window
+FAILED mining/tests/test_closeout_window_isolation.py::test_cancel_drains_one_window_without_blocking_event_loop
+FAILED salamander/tests/test_mining_healer_dispatch_closeout.py::test_governor_authorizes_real_mutations_and_ack_matches_dispatch
+FAILED salamander/tests/test_mining_healer_dispatch_closeout.py::test_denied_governor_cannot_mutate_adapter_and_keeps_safety_lock
+FAILED salamander/tests/test_mining_healer_dispatch_closeout.py::test_missing_governor_cannot_mutate_adapter
+FAILED salamander/tests/test_mining_healer_dispatch_closeout.py::test_missing_generation_does_not_emit_success_ack
+FAILED salamander/tests/test_mining_healer_dispatch_closeout.py::test_post_observation_does_not_invent_cleared_leases
+FAILED salamander/tests/test_mining_healer_dispatch_closeout.py::test_successful_seven_stage_fixture_unlocks_only_after_rebind
+FAILED salamander/tests/test_mining_healer_dispatch_closeout.py::test_generation_changes_between_verify_and_resume_remain_locked
+12 failed, 3 passed in 3.30s

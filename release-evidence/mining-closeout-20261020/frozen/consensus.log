@@ -1,0 +1,18 @@
+RC_SHA=80fe0d413255c45b910da4599e4d276bc9098321
+COMMAND=["python", "-m", "pytest", "tests/test_toe_consensus_boundary.py", "-p", "no:cacheprovider", "--basetemp=/data/mining-closeout/tmp/frozen-consensus", "--junitxml=/data/mining-closeout/evidence/frozen/consensus.xml", "-q"]
+
+==================================== ERRORS ====================================
+____________ ERROR collecting tests/test_toe_consensus_boundary.py _____________
+ImportError while importing test module '/data/mining-closeout/repo/tests/test_toe_consensus_boundary.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+tests/test_toe_consensus_boundary.py:39: in <module>
+    from chronus.mla1517.mining.coordinator import IntelligentPoolCoordinator  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+chronus/mla1517/mining/coordinator.py:86: in <module>
+    from ..learning import LearningLedger, ResidualScale
+E   ModuleNotFoundError: No module named 'chronus.mla1517.learning'
+=========================== short test summary info ============================
+ERROR tests/test_toe_consensus_boundary.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.28s

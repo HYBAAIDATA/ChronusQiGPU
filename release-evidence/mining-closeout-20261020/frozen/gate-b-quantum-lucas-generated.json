@@ -1,0 +1,60 @@
+{
+  "qft": {
+    "base": {
+      "unitaryError": 2.220446049250313e-16,
+      "runtimeSeconds": 0.0007839879999999855
+    },
+    "lucas": {
+      "unitaryError": 2.220446049250313e-16,
+      "runtimeSeconds": 0.00031535500000001715
+    }
+  },
+  "grover": {
+    "base": {
+      "peakSuccessProbability": 0.9613189697265625,
+      "optimalIterations": 3,
+      "runtimeSeconds": 0.00016011300000001727
+    },
+    "lucas": {
+      "peakSuccessProbability": 0.68359375,
+      "optimalIterations": 1,
+      "runtimeSeconds": 0.00006993599999999267
+    }
+  },
+  "qpe": {
+    "base": {
+      "phaseError": 0,
+      "precisionQubits": 6,
+      "runtimeSeconds": 0.002135540000000019
+    },
+    "lucas": {
+      "phaseError": 0,
+      "precisionQubits": 4,
+      "runtimeSeconds": 0.00015529000000000237
+    }
+  },
+  "quantumWalk": {
+    "base": {
+      "quantumVariance": 7.999999999999992,
+      "classicalVariance": 5,
+      "runtimeSeconds": 0.001217092000000003
+    },
+    "lucas": {
+      "quantumVariance": 19.12499999999998,
+      "classicalVariance": 8,
+      "runtimeSeconds": 0.00009808799999999618
+    }
+  },
+  "vqe": {
+    "base": {
+      "finalEnergy": -1.343599627988694,
+      "exactGroundEnergy": -1.414213562373095,
+      "runtimeSeconds": 0.003814762999999999
+    },
+    "lucas": {
+      "finalEnergy": -1.374124567260898,
+      "exactGroundEnergy": -1.414213562373095,
+      "runtimeSeconds": 0.01716189800000001
+    }
+  }
+}

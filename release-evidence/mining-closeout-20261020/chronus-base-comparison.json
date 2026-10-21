@@ -1,0 +1,382 @@
+[
+  {
+    "path": "chronus/mla1517/mining/__init__.py",
+    "expected_blob": "6269566f90189b96261760f410cdfd2a4f5ac9f0",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/agentic_controller.py",
+    "expected_blob": "8c1b23df3127016f3bb6b9a2adf51403bcf0c181",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/backend_registry.py",
+    "expected_blob": "b71c5eabd8556f647502d6ae7b1cca337b6db2ba",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/cassini_seal.py",
+    "expected_blob": "63584811fef987d7fd9a871c94707c31b48ed9d0",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/causal.py",
+    "expected_blob": "386bce1b17e622986da4967984efe815f4e29747",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/chain_observer.py",
+    "expected_blob": "0ddb273d2c2cefa533717010893109c722cdfb5d",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/chooser.py",
+    "expected_blob": "b853ad8c69b652f32d806b4e2623301e2dd02caf",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/closed_loop.py",
+    "expected_blob": "0dcd1ef810ec6d573294e319484a9096493f4e71",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/coordinator.py",
+    "expected_blob": "2ef6c34153b801b2dde2fc5e21806978a61b7091",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/cycle_fsm.py",
+    "expected_blob": "c4cff29e9f342abb2a8374c85b50114b88638cab",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/decision_journal.py",
+    "expected_blob": "9879b59f16c05e9c58976d51e9b661801260c0e0",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/dispatch_algebra.py",
+    "expected_blob": "83bf1337791f5846c1dd3dfaaa809d930ff006c3",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/euclid_support.py",
+    "expected_blob": "bbe2a4a96ca5373ae8c201ad985948dbe7f4b4fd",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/exact_search.py",
+    "expected_blob": "1fa692dddfe24d255961950e6403bd920a96dd8d",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/execution.py",
+    "expected_blob": "b13c66bb2732d9794e77caca9a2f01701b1ae772",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/execution_router.py",
+    "expected_blob": "020345ff3800e2c6ecea7924b9a6cac00d98927f",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/geodesic_nonce_planner.py",
+    "expected_blob": "f89d88b213b355c6268c3b71f13fee6c90277795",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/geodesic_support.py",
+    "expected_blob": "de79480bd4d6d3e105c59994d4b71a8aad2ca596",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/geometry.py",
+    "expected_blob": "2afbf98365d980b54d22a525a58422574704a843",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/h4_600_execution.py",
+    "expected_blob": "b5f17f89d988233c83ec7aae623ed09adfff568e",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/hashrate_governor.py",
+    "expected_blob": "337e70d3c064901dc6da1e18ef34cdac8ac18474",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/hendrix_order.py",
+    "expected_blob": "b85ad21c143f9b42ab67c30e062ceffb1b87b61c",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/hyba_bridge.py",
+    "expected_blob": "7202928720dd2da29120b10e99d70bb711dd6421",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/hyba_intelligence.py",
+    "expected_blob": "e98079be6b53bedf98a1120b05f432d54cead6ae",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/intelligence_controller.py",
+    "expected_blob": "6061df13800f451a8edbc2693ec0f3f26c1986d4",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/intelligence_memory.py",
+    "expected_blob": "df9aa21a06ab9734a06c4dd579abc9067dea43cb",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/lane.py",
+    "expected_blob": "c9e678f7c13214fddff75217448458409e62f4b5",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/loss_ledger.py",
+    "expected_blob": "e42ce334538c4c09828b6f71f5660c6251a0503e",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/m3_coordinator.py",
+    "expected_blob": "c9fdf5a57c73f1a1ef6ab1d07822bae82fc627e9",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/nonce_lease.py",
+    "expected_blob": "3db7b001c2fb4e00a9158e9ffa3e0f57118f2943",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/opencl_driver.py",
+    "expected_blob": "9823aae269b165aa8711a183d85c7ad01f15ab80",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/operating_policy.py",
+    "expected_blob": "03cdc71f6958d7c94817b8ddf60ddde3113255cb",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/persistence.py",
+    "expected_blob": "82e1602953e850860f0c658356bcde16db893f74",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/poincare_11d_order.py",
+    "expected_blob": "88b22201a0738abe7c22208192840f3255f88c88",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/policy_audit.py",
+    "expected_blob": "06fb40cdbcb54b452ecb44187e198d412ba1d606",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/pool_chain.py",
+    "expected_blob": "cc563ca7d794f6813996d91b1f9cceabd2b88dcb",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/pow.py",
+    "expected_blob": "02dd64c4dc07ca547b431b34df73dc62318f726e",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/production_integration.py",
+    "expected_blob": "545e9ac59ceeddf7707437e567a45de39e12ae86",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/production_transport.py",
+    "expected_blob": "a86fd5cfd915a0b4ca96f1eba8dc61e7fb8ba9b7",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/promotion.py",
+    "expected_blob": "06ed742e5f6f762c7a67316277279089408bfca0",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/pythia_agentic_cycle.py",
+    "expected_blob": "1761f503c1031b50a4be871a0fb7302cff87cc38",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/pythia_authority.py",
+    "expected_blob": "88f367a3ca0b04d149f4f3bc027262e21b3119eb",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/pythia_search.py",
+    "expected_blob": "7d86aef07263af290b665049486a688962920007",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/quality.py",
+    "expected_blob": "7466da95aa55a74a56119130f95e34eac5e292e3",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/recovery_authority.py",
+    "expected_blob": "341ed7dc39767815afe8d28dc9d321646ff45142",
+    "status": "MODIFIED"
+  },
+  {
+    "path": "chronus/mla1517/mining/recovery_effect.py",
+    "expected_blob": "33f849293260769ae9f3a6da1b980541f4b234d6",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/resident_router.py",
+    "expected_blob": "e5f95fd7251568c235ce77046935336fa153a741",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/resident_search.py",
+    "expected_blob": "aac276a572e31b023023bd8f2d415395aa910e39",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/retarget_telemetry.py",
+    "expected_blob": "beb9c9c825fb69c40a959eac37d7f0688e615482",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/scale_state.py",
+    "expected_blob": "e6c5111c2650a91e6e1fabc118d381d354ca03ed",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/search_plan.py",
+    "expected_blob": "74980e62483e84cadbd605e265305cc08b5527b6",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/self_healing_agent.py",
+    "expected_blob": "827ab3968e9c3beede49f0659f003aea9830d4fd",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/self_optimizing_agent.py",
+    "expected_blob": "512cacb15d24aa46ea89c37e06adb3f66eb15c89",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/session.py",
+    "expected_blob": "1aa02b33ec4fd15891093ce4b782803db6c3774f",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/software_revision.py",
+    "expected_blob": "57405d6214b1b366c78713c882fb7181d968d48d",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/solver.py",
+    "expected_blob": "3e9803f377147599c7558279f747cdc341dc8293",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/storage_recorder.py",
+    "expected_blob": "a68185ea3e2157ec66120ded2a0323f2b77566d7",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/stratum_adapter.py",
+    "expected_blob": "41fdd23cd258ad558525decefa838a8eac4d8d90",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/stratum_events.py",
+    "expected_blob": "0c2ebe53134e2a49647d83147e69cd2940a7932f",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/stratum_state.py",
+    "expected_blob": "1dfa552893265228fe50df8b82c92ac3bcb72979",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/stratum_v2_transport.py",
+    "expected_blob": "650235ae3e39c91c71a457aa5f1ea076a74647a1",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/structure.py",
+    "expected_blob": "08d4ac1b927c861d95746be0ffa50629bdbc09c1",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/telemetry_history.py",
+    "expected_blob": "563e5f8cc262cec54a17702391779dd781a4fd7c",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/toe_adapter.py",
+    "expected_blob": "8ef69087a7aea629109984c56c98f6c61b7f2cab",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/toe_capabilities.py",
+    "expected_blob": "793694d36014c73dd78a5df57b71c52e779e6403",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/toe_context.py",
+    "expected_blob": "2ddcc113b20312f485d0c1876d56deb6f50ad9da",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/toe_decision.py",
+    "expected_blob": "1343745d3df5b1a564c7c925dc4e64c9cd606800",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/toe_lane_decision.py",
+    "expected_blob": "3923b5d1de068ef1185ecf0233a578476c81f1f1",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/toe_problem.py",
+    "expected_blob": "6f528d700b33699b9aab2b9f66f921f04f977694",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/toe_signal.py",
+    "expected_blob": "bdf0cb553da5cc75a913f6fa1590abfd6eea9a99",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/toe_unified.py",
+    "expected_blob": "06ab0688c8180075ceed5eb95daeec88bae33a91",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/tuning_gate.py",
+    "expected_blob": "e5ae389b5a40fadfddaf1328679a660af3fad1b6",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/turing_adapter.py",
+    "expected_blob": "583712240f1387fe7f07ec066a847b795623254b",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/verification.py",
+    "expected_blob": "919c667e0a3e3eb2c4cf52e1d1ebb182827fe101",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/workflow.py",
+    "expected_blob": "3622a2f2309a75a2a8276eab8bdf45627574e9ca",
+    "status": "MATCH"
+  },
+  {
+    "path": "chronus/mla1517/mining/world_model.py",
+    "expected_blob": "7fd51df809b8f169831322a1ab1cbdc3ba09da3a",
+    "status": "MATCH"
+  }
+]

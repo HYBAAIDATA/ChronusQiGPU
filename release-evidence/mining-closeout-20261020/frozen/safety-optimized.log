@@ -1,0 +1,11 @@
+RC_SHA=80fe0d413255c45b910da4599e4d276bc9098321
+COMMAND=["python", "-O", "-m", "pytest", "mining/tests/test_closeout_window_isolation.py", "salamander/tests/test_mining_healer_dispatch_closeout.py", "-p", "no:cacheprovider", "--basetemp=/data/mining-closeout/tmp/frozen-safety-optimized", "--junitxml=/data/mining-closeout/evidence/frozen/safety-optimized.xml", "-q"]
+...............                                                          [100%]
+=============================== warnings summary ===============================
+../../closeout-tools/_pytest/config/__init__.py:1346
+  /data/closeout-tools/_pytest/config/__init__.py:1346: PytestConfigWarning: assertions not in test modules or plugins will be ignored because assert statements are not executed by the underlying Python interpreter (are you using python -O?)
+  
+    self._warn_about_missing_assertion(mode)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+15 passed, 1 warning in 0.66s

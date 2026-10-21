@@ -1,0 +1,82 @@
+............F......................                                      [100%]
+=================================== FAILURES ===================================
+___ ExecutionIdentityTests.test_execute_receipt_labels_classical_end_to_end ____
+
+self = <mining.tests.test_agent_b_regressions.ExecutionIdentityTests testMethod=test_execute_receipt_labels_classical_end_to_end>
+
+    def test_execute_receipt_labels_classical_end_to_end(self):
+        from mining.scaled_execution import LucasScaledAethelExecutionAdapter
+    
+>       adapter = LucasScaledAethelExecutionAdapter(scale_index=76)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+mining/tests/test_agent_b_regressions.py:328: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+mining/scaled_execution.py:66: in __init__
+    self.stack = FourLayerMiningStack(n_qubits=self.n_qubits)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+mining/four_layer_stack.py:399: in __init__
+    self.tensor = TensorFoldEngine()
+                  ^^^^^^^^^^^^^^^^^^
+mining/four_layer_stack.py:149: in __init__
+    from turing_universal_quantum_computer import turing_core
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """Turing Universal Quantum Computer — consolidated exact-quantum substrate.
+    
+    This package consolidates every PYTHIA/MLA1517 module that constitutes the
+    Turing virtual quantum computer: the canonical exact register, Q[sqrt(5)] /
+    Pisot algebra, exact tensor witnesses, Lucas/Pisot
+    Hendrix schedule, large-scale stabilizer execution, the production phi-machine
+    facade, bounded phi-VQC ranking and the exact backends behind the product boundary.
+    
+    Layers
+    ------
+    turing_core           exact Q[sqrt(5)] algebra, Zeckendorf, T_phi fold,
+                          dual-overlay frame, complete nonce schedule, sha256d
+                          engine, and (optional) the mathematical discovery engine
+    hilbert               QuantumRegister — canonical exact sparse state vector
+                          over Q(i, sqrt(2)) + exact cyclotomics; n is unlimited,
+                          support is bounded (fail-closed max_amplitudes)
+    stabilizer            StabilizerState — exact Clifford tableau; superposition,
+                          entanglement and measurement at arbitrary n (incl. 10000)
+    phi_machine           HYBA 1,000-qubit Clifford execution profile on Turing,
+                          QASM subset, exact T_phi checkpoint custody and bounded
+                          algorithm capability metadata
+    midas_vqc             32-face variational nonce ranker + exact Clifford skeleton;
+                          candidate ordering only, never mining consensus authority
+    quantum_walk          coined cycle walk (sparse-exact) + closed-form
+                          continuous-time hypercube walk (exact at any n)
+    annealing             exact TFIM free-fermion spectrum, adiabatic gap,
+                          Landau-Zener tunnelling (symbolic, any n)
+    swarm                 QuantumSwarm — agents sampling exact Born distributions
+    turing_core.ten_thousand  TenThousandQubitSystem — the universal engine
+    register_tensor       QuantumTensor — audited facade over QuantumRegister
+    exact_tensor          canonical Q(sqrt(2)) + i Q(sqrt(2)) exact state vector
+    exact_state_vector    MLA1517 exact state-vector algebra
+    quantum_tensor        first-principles tensor layer over C^N
+    pisot / hendrix       Lucas/Pisot scale contracts + Hendrix schedule
+    quantum_cuda          iGPU / Turing exact-math accelerator facade
+    
+    Carved out to their owners: the mining production plane and the capacity
+    surface (mining/), copies of live TOE, Intelligence and Mining modules, and
+    the tensor forks (now aliases of Kellogg).
+    
+    Product boundary (v1.3):
+    backends              backend registry, capability envelopes, admission and
+                          refusal, and the fail-closed QPU boundary
+    capabilities          published capability matrix + enforced claim audit
+    certificates          verifiable run witnesses
+    console               the operator console (`turing-vqc`)
+    """
+    
+    from __future__ import annotations
+    
+>   from . import turing_core  # noqa: F401
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ImportError: cannot import name 'turing_core' from partially initialized module 'turing_universal_quantum_computer' (most likely due to a circular import) (/data/mining-closeout/repo/turing_universal_quantum_computer/turing_universal_quantum_computer/__init__.py)
+
+turing_universal_quantum_computer/turing_universal_quantum_computer/__init__.py:51: ImportError
+=========================== short test summary info ============================
+FAILED mining/tests/test_agent_b_regressions.py::ExecutionIdentityTests::test_execute_receipt_labels_classical_end_to_end
+1 failed, 34 passed in 1.16s
