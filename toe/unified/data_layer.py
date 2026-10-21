@@ -43,6 +43,13 @@ class Policy:
     def __post_init__(self) -> None:
         if self.classification not in ("public", "internal", "restricted"):
             raise ValueError("classification must be public, internal, or restricted")
+        if (
+            isinstance(self.max_null_rate, bool)
+            or not isinstance(self.max_null_rate, (int, float))
+            or not math.isfinite(self.max_null_rate)
+            or not 0.0 <= self.max_null_rate <= 1.0
+        ):
+            raise ValueError("max_null_rate must be finite and between 0 and 1")
         if self.retention_days < 0:
             raise ValueError("retention_days must be >= 0")
 

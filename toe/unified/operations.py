@@ -48,9 +48,9 @@ class Operations:
             raise ValueError("rating must be between 0 and 1")
         self.ratings.append(score)
 
-    def availability(self) -> float:
+    def availability(self) -> float | None:
         if self.probes == 0:
-            return 1.0
+            return None
         return (self.probes - self.probe_failures) / self.probes
 
     def satisfaction(self) -> float | None:
