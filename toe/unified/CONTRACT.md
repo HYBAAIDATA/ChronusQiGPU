@@ -10,7 +10,7 @@ What a call does:
 - Payload bytes are zlib-compressed under that digest. `restore_payload` returns the original object.
 - Reads by entity use an index. `benchmark_processing` records index visits against a full scan. The processing gate opens when the reduction is at least 0.90.
 - Models are `kellogg` `exact_linear`. `retrain` keeps the live model when held-out accuracy falls. Transfer zero-fills missing features and reports the overlap. `predict` during `retrain` still returns a class.
-- `watch` plus `HealthMonitor` retrains when accuracy on the watched rows is below 0.5. `monitor.start()` ticks without a further `heal()` call; platform `start()` alone does not start the monitor.
+- `watch` plus `HealthMonitor` proposes retraining when observed accuracy is below 0.5; automatic replacement additionally requires disjoint held-out evaluation, non-regression, the configured minimum accuracy and an unchanged incumbent version. A watch without evaluation remains blocked. `monitor.start()` ticks without a further `heal()` call; platform `start()` alone does not start the monitor.
 - `ConsciousnessState.observe` weights widgets. `correct` sets the threshold to the midpoint of the corrected class scores.
 - Questions accept the grammar in `toe/unified/bi.py`. Anything else raises `QueryError`. `optimize` orders filters by measured selectivity.
 - Dashboards reorder the widgets the caller supplied.
@@ -55,3 +55,15 @@ numbers between zero and one.
 `python scripts/verify_unified_enterprise.py` retains executed test evidence,
 including failures. The CI workflow runs the unified suites on Python 3.12/3.13;
 a fresh passing result must be inspected, not inferred from this contract.
+
+Imports now publish all groups and quarantine flags in one in-process data-layer
+transaction. Every envelope/digest is checked and every group compiled before
+publication; failed staging leaves live rows, batch IDs, indexes, blobs, audit and
+receipts unchanged. Exports and ingest inputs detach nested payloads.
+
+`watch(name, rows, eval_rows=held_out, min_accuracy=0.8)` supplies independent model
+inputs for automatic promotion. The holdout must avoid both incumbent and
+candidate training inputs, contain both binary classes and have finite complete
+features. `health()["drift"]` reports blocked/promoted/rejected state and scoring
+evidence. Direct manual training remains trusted; it is not made production-safe
+merely by the presence of the automatic-promotion gate.

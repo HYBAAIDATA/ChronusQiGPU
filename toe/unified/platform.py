@@ -7,6 +7,7 @@ operations, the cost model, and the scholarship ledger.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from copy import deepcopy
 import threading
 
 from toe.operator_compilers import compile_operator
@@ -17,7 +18,7 @@ from .adaptive import AdaptiveInterface
 from .bi import Inquiry, dashboard
 from .catalog import CATALOG, DISPLACED_CLASSES, search
 from .connectors import BoundConnector, bind
-from .data_layer import Policy, UnifiedDataLayer
+from .data_layer import IngestBatch, Policy, UnifiedDataLayer, normalize_snapshot
 from .economics import CostBaseline, PlatformCost, assess, document_fortune500_scenario, financial_services_case
 from .impact import ScholarshipLedger
 from .intelligence import ModelRegistry
@@ -79,6 +80,8 @@ class UnifiedAnalyticsPlatform:
         self._retired: set[str] = set()
         self._receipts: list = []
         self._drift: tuple | None = None
+        self._drift_lock = threading.RLock()
+        self._drift_status: dict = {"state": "not_watching"}
         self.drift_retrains = 0
         self._processing_reduction: float | None = None
         self._health_seq = 0
@@ -153,11 +156,12 @@ class UnifiedAnalyticsPlatform:
         if bound is None:
             raise KeyError(f"{connector_id} is not connected")
         extracted = bound.extract(entity, mode)
-        compiled = compile_operator({"events": list(extracted.rows)})
+        rows = deepcopy(list(extracted.rows))
+        compiled = compile_operator({"events": rows})
         receipt = self.data.ingest(
             connector_id,
             entity,
-            list(extracted.rows),
+            rows,
             operator_digest=compiled.input_digest,
             operator_kind=compiled.kind,
         )
@@ -171,6 +175,7 @@ class UnifiedAnalyticsPlatform:
 
     def ingest_rows(self, source: str, entity: str, rows: list[dict]) -> dict:
         self.security.authorize("ingest")
+        rows = deepcopy(rows)
         compiled = compile_operator({"events": rows})
         receipt = self.data.ingest(
             source,
@@ -188,22 +193,28 @@ class UnifiedAnalyticsPlatform:
 
     def import_records(self, rows: list[dict]) -> list[dict]:
         self.security.authorize("ingest")
-        # Rows carry the exporting platform's quarantine state; dropping it
-        # would reactivate records the source had isolated. Payload digests
-        # are content-derived, so re-ingested rows map back one-to-one.
+        normalized = normalize_snapshot(rows)
         grouped: dict[tuple[str, str], list[dict]] = {}
         quarantined: list[tuple[str, str, dict]] = []
-        for row in rows:
+        for row in normalized:
             grouped.setdefault((row["source"], row["entity"]), []).append(row["payload"])
-            if row.get("quarantined"):
+            if row["quarantined"]:
                 quarantined.append((row["source"], row["entity"], row["payload"]))
-        results = [
-            self.ingest_rows(source, entity, payloads)
-            for (source, entity), payloads in sorted(grouped.items())
+        batches, compiled_specs = [], []
+        # Compile every group before the transaction: bad later groups cannot
+        # leave earlier groups visible or emit partial success receipts.
+        for (source, entity), payloads in sorted(grouped.items()):
+            compiled = compile_operator({"events": payloads})
+            batches.append(
+                IngestBatch(source, entity, payloads, compiled.input_digest, compiled.kind)
+            )
+            compiled_specs.append(compiled)
+        receipts = self.data.ingest_atomic(batches, quarantined)
+        self._receipts.extend(receipts)
+        return [
+            {"receipt": receipt, "operator": compiled.operator, "truth_class": compiled.truth_class}
+            for receipt, compiled in zip(receipts, compiled_specs)
         ]
-        if quarantined:
-            self.data.quarantine_payloads(quarantined)
-        return results
 
     def govern(self, entity: str, classification: str, retention_days: int, owner: str, max_null_rate: float = 0.2) -> Policy:
         self.security.authorize("govern")
@@ -215,9 +226,19 @@ class UnifiedAnalyticsPlatform:
         self.security.authorize("train")
         return self.models.train(name, rows, features, target)
 
-    def retrain(self, name: str, rows: list[dict], eval_rows: list[dict] | None = None):
+    def retrain(
+        self,
+        name: str,
+        rows: list[dict],
+        eval_rows: list[dict] | None = None,
+        *,
+        require_evaluation: bool = False,
+        min_accuracy: float = 0.8,
+    ):
         self.security.authorize("train")
-        return self.models.retrain(name, rows, eval_rows)
+        return self.models.retrain(
+            name, rows, eval_rows, require_evaluation=require_evaluation, min_accuracy=min_accuracy
+        )
 
     def predict(self, name: str, rows: list[dict]) -> list[int]:
         self.security.authorize("predict")
@@ -241,7 +262,6 @@ class UnifiedAnalyticsPlatform:
         action approval. Receipts remain in-process, using the existing TOE format.
         """
         self.security.authorize("ask")
-        from copy import deepcopy
         from toe.bridge import TOEBridge
 
         with self.data._lock:
@@ -333,6 +353,7 @@ class UnifiedAnalyticsPlatform:
             "satisfaction": self.operations.satisfaction(),
             "models": list(self.models.names()),
             "unplanned_downtime": self.operations.unplanned_downtime,
+            "drift": deepcopy(self._drift_status),
         }
 
     def require_gate(self, name: str) -> Gate:
@@ -364,25 +385,65 @@ class UnifiedAnalyticsPlatform:
                 self.heal()
                 self._retrain_if_drifted()
 
-    def watch(self, name: str, rows: list[dict]) -> None:
+    def watch(
+        self,
+        name: str,
+        rows: list[dict],
+        *,
+        eval_rows: list[dict] | None = None,
+        min_accuracy: float = 0.8,
+    ) -> None:
         self.security.authorize("train")
         if not rows:
             raise ValueError("watch requires at least one row to score drift")
-        self._drift = (name, list(rows))
+        observed, evaluation = deepcopy(rows), deepcopy(eval_rows)
+        self.models.get(name)
+        if evaluation is not None:
+            self.models.validate_retrain_evidence(name, observed, evaluation, min_accuracy)
+        with self._drift_lock:
+            self._drift = (name, observed, evaluation, min_accuracy)
+            self._drift_status = {
+                "state": "watching" if evaluation is not None else "blocked_missing_evaluation",
+                "model": name,
+                "min_accuracy": min_accuracy,
+            }
 
     def _retrain_if_drifted(self) -> None:
-        if self._drift is None:
-            return
-        self.security.authorize("train")
-        name, rows = self._drift
-        record = self.models.get(name)
-        predicted = self.models.predict(name, rows)
-        actual = [int(row[record.target]) for row in rows]
-        accuracy = sum(int(left) == right for left, right in zip(predicted, actual)) / len(actual)
-        if accuracy < 0.5:
-            self.retrain(name, rows)
-            self.drift_retrains += 1
-            self._drift = None
+        with self._drift_lock:
+            if self._drift is None:
+                return
+            self.security.authorize("train")
+            name, rows, eval_rows, min_accuracy = self._drift
+            if eval_rows is None:
+                return  # Detection data is not held-out promotion evidence.
+            record = self.models.get(name)
+            predicted = self.models.predict(name, rows)
+            actual = [int(row[record.target]) for row in rows]
+            accuracy = sum(int(left) == right for left, right in zip(predicted, actual)) / len(
+                actual
+            )
+            if accuracy < 0.5:
+                result = self.retrain(
+                    name,
+                    rows,
+                    eval_rows=eval_rows,
+                    require_evaluation=True,
+                    min_accuracy=min_accuracy,
+                )
+                self._drift_status = {
+                    "state": "promoted" if result.replaced else "rejected",
+                    "model": name,
+                    "live_version": result.live_version,
+                    "evaluated_version": result.evaluated_version,
+                    "candidate_accuracy": result.candidate_accuracy,
+                    "live_accuracy": result.live_accuracy,
+                    "reason": result.reason,
+                    "evaluation_digest": result.evaluation_digest,
+                    "evaluation_rows": result.evaluation_rows,
+                }
+                if result.replaced:
+                    self.drift_retrains += 1
+                self._drift = None
 
     def benchmark_processing(self, entities: int = 100, per_entity: int = 20) -> dict:
         self.security.authorize("ask")

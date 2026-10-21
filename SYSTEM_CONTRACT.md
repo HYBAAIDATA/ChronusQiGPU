@@ -62,6 +62,8 @@ claim's evidence label. A named test is a test specification, not proof of a fre
 | Connectors | Bind/extract, retirement removes active binding | Fixture lifecycle and failure tests | Vendor certification, live connectivity or displaced customer systems |
 | Ingest -> TOE -> output | Existing operator compiler, bridge and receipt ledger | Real tomography, norm assertion, input/output binding, quarantine exclusion | Identified causality, business benefit, durable custody or physical QPU execution |
 | Availability | Successful / total probe ratio; no probes is unknown | Empty/failing/successful probe tests | Time-window SLA or independent uptime observation |
+| Import publication | All groups and quarantine flags stage before one locked publish | Atomic rollback, concurrent-reader and payload-alias tests in `test_toe_unified_atomic.py` | Durable transactions or isolation across later policy changes |
+| Automatic retraining | Disjoint held-out evaluation, non-regression, accuracy floor and live-version compare-and-swap | Real exact-linear tests in `test_toe_unified_promotion.py` | Generalization guarantees, independent corpus quality or deployment approval |
 | Economics | Scenario arithmetic | Formula and input checks, labeled `modeled` | Realized savings or return on a deployed investment |
 | Phase counters | Inventory, supplied feedback, counters and fixture benchmarks | Tests of each threshold; explicit `evidence_kind` where specialized | A deployment-readiness score or production release approval |
 
@@ -90,9 +92,44 @@ CI reporting does not configure branch protection or replace independent review.
 
 - Live vendor integration, credential lifecycle and tenant/record-level authority.
 - Durable custody, restart/recovery, signed or independently retained audit receipts.
-- Atomic multi-entity import and quarantine publication; isolation across policy changes.
-- Held-out evaluation/promotion controls for automatic drift retraining.
+- Isolation across subsequent policy changes and crash recovery of import transactions.
+- Independent evaluation-corpus quality, holdout reuse controls and domain-specific promotion qualification.
 - Load/fault/soak tests and externally observed availability windows in target deployments.
 - Realized economics, retention enforcement, external governance and security review.
 
 These are required qualification boundaries, not silently completed capabilities.
+
+## Atomic import and automatic-promotion implementation
+
+`import_records` validates and detaches every envelope, verifies any supplied
+content digest, strictly checks quarantine flags and compiles all groups before
+writing. `UnifiedDataLayer.ingest_atomic` stages records, blobs, indexes, batch
+metadata, audit and counters, then publishes under the data-layer lock only when
+all batches and quarantine updates succeed. A failed transaction emits no facade
+success receipts or consumed live batch IDs. Duplicate imports cannot silently
+release quarantined data. Ingest inputs and export snapshots detach nested
+payloads so caller mutation cannot invalidate stored digests.
+
+This is copy-on-write **in-process** atomicity for lock-participating data-layer
+readers. Staging costs memory proportional to the current store plus imported
+data and blocks those readers during staging. It does not implement durable
+custody, serializable policy changes or an external database transaction.
+
+`watch(name, rows, eval_rows=held_out, min_accuracy=0.8)` registers detached drift
+and evaluation evidence. A watch without held-out rows stays
+`blocked_missing_evaluation` and cannot automatically replace a model. Held-out
+model inputs must differ from both the candidate training inputs and the current
+model's recorded training inputs, ignoring unrelated IDs and labels. All features
+must be present and finite, and the binary evaluation must contain both classes.
+
+Automatic promotion evaluates the actual candidate and incumbent on that
+holdout. It requires non-regression and the configured accuracy floor (default
+0.8, an explicit local policy, not an industry readiness threshold). The live
+version must still be the evaluated version at swap time. Rejected or stale
+candidates do not append model history or increment `drift_retrains`; the health
+report exposes the outcome, evaluated version, scores and evaluation digest.
+
+The direct/manual `train` and legacy `retrain` APIs remain trusted operations;
+`retrain(..., require_evaluation=True)` opts into the same guarded path. The host
+must restrict direct training authority appropriately. No holdout's existence
+proves independence of its collection process or fitness for a deployed domain.
