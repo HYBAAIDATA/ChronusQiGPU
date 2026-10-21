@@ -131,6 +131,8 @@ def test_installed_probe_timeout_retains_failed_evidence(gate, tmp_path, monkeyp
 def test_gate_scope_preserves_tenant_and_recovery_regressions(gate):
     assert {'test_toe_unified_tenancy.py', 'test_toe_unified_production_guardrails.py',
             'test_toe_unified_atomic.py', 'test_toe_unified_promotion.py'} <= set(gate.UNIFIED_TESTS)
+    assert 'test_toe_self_governance.py' in gate.RELEASE_TESTS
+    assert 'test_toe_learning_persistence.py' not in gate.RELEASE_TESTS
 
 
 def test_workflow_retains_failure_evidence_even_when_build_fails():
@@ -199,6 +201,17 @@ def test_repository_provenance_matches_actual_target(gate):
     assert 'PhiEnterprise1/EuclidPhiEnterprise' in gate.INSTALLED_CHECK
     text = (ROOT / 'packaging/toe/pyproject.toml').read_text()
     assert 'QuantumPhiRedux/PhiMiner' not in text
+
+
+def test_standalone_boundary_excludes_mining_integration(gate):
+    assert 'mining_decision_plane.py' in gate.EXCLUDED
+    assert 'toe.mining_decision_plane' in gate.INSTALLED_CHECK
+    init_text = (ROOT / 'toe/__init__.py').read_text()
+    assert 'find_spec(__name__ + ".mining_decision_plane")' in init_text
+
+
+def test_installed_check_accepts_exact_or_ranged_dependency_specs(gate):
+    assert 're.split(r"[<>=!~; ]"' in gate.INSTALLED_CHECK
 
 
 def test_xml_child_failure_cannot_hide_behind_zero_counters(gate, tmp_path):
