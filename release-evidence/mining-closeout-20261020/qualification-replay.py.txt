@@ -1,0 +1,35 @@
+import os,sys,json,hashlib,subprocess,platform,time
+from pathlib import Path
+r=Path('/data/mining-closeout/repo');out=Path('/data/mining-closeout/evidence/frozen');out.mkdir(parents=True,exist_ok=True)
+sha='80fe0d413255c45b910da4599e4d276bc9098321'
+changed=['mining/production_miner.py','salamander/mining_healer.py','chronus/mla1517/mining/recovery_authority.py','mining/tests/test_closeout_window_isolation.py','salamander/tests/test_mining_healer_dispatch_closeout.py']
+def manifest():
+ d={}
+ for p in r.rglob('*'):
+  if not p.is_file() or p.suffix not in ('.py','.json','.ts','.toml'):continue
+  if any(x in p.parts for x in ['node_modules','__pycache__','.pytest_cache','.git']):continue
+  if p.name=='toe_enterprise_collapse_results.json':continue
+  d[str(p.relative_to(r))]=hashlib.sha256(p.read_bytes()).hexdigest()
+ return d
+before=manifest();env={**os.environ,'PYTHONPATH':'/data/closeout-tools:.:turing_universal_quantum_computer'}
+new=['mining/tests/test_closeout_window_isolation.py','salamander/tests/test_mining_healer_dispatch_closeout.py']
+commands=[('safety', ['python','-m','pytest',*new]),('safety-optimized',['python','-O','-m','pytest',*new]),('compat',['python','-m','pytest','mining/tests','salamander/tests']),('toe-fast',['python','-m','pytest','tests/test_toe_runtime.py','tests/test_toe_ciaas_api.py','tests/test_asi_core.py']),('consensus',['python','-m','pytest','tests/test_toe_consensus_boundary.py']),('gate-b',['python','experiments/toe_enterprise_collapse.py'])]
+results=[]
+for name,cmd in commands:
+ if name!='gate-b':cmd+=['-p','no:cacheprovider','--basetemp=/data/mining-closeout/tmp/frozen-'+name,'--junitxml='+str(out/(name+'.xml')),'-q']
+ t=time.monotonic()
+ try:
+  p=subprocess.run(cmd,cwd=r,env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=180)
+  code=p.returncode;text=p.stdout
+ except subprocess.TimeoutExpired as e:
+  code=124;text=(e.stdout or b'').decode() if isinstance(e.stdout,bytes) else (e.stdout or '')
+ (out/(name+'.log')).write_text('RC_SHA='+sha+'\nCOMMAND='+json.dumps(cmd)+'\n'+text)
+ results.append({'name':name,'command':cmd,'exit_code':code,'elapsed_seconds':time.monotonic()-t,'log':name+'.log'})
+ print(name,code,'; '.join(text.splitlines()[-2:]),flush=True)
+after=manifest();diff=sorted(k for k in before.keys()|after.keys() if before.get(k)!=after.get(k))
+report={'rc_sha':sha,'base_sha':'4f71b5647e5cacd053e9a9d545ab5f26d38b4f34','scope':'partial genuine source export; not clean full checkout or installed artifact qualification','environment':{'python':sys.version,'platform':platform.platform()},'production_ready':False,'publication_ready':False,'source_diff':diff,'changed_file_sha256':{k:before[k] for k in changed},'commands':results,'qualification_caveat':'Unrefreshed dependencies from earlier genuine source exports remain hash-listed. Current Chronus mining base hashes compared separately. No full RC certification.'}
+(out/'report.json').write_text(json.dumps(report,indent=2)+'\n');(out/'source-before.json').write_text(json.dumps(before,indent=2)+'\n');(out/'source-after.json').write_text(json.dumps(after,indent=2)+'\n')
+pack=r/'experiments/toe_enterprise_collapse_results.json'
+if pack.exists():
+ import shutil;shutil.copy2(pack,out/'gate-b-generated-results.json')
+print('source diff',diff)

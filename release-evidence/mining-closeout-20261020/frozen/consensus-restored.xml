@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="0.340" timestamp="2026-10-21T00:58:46.028610+00:00" hostname="dbc5f504-010"><testcase classname="" name="tests.test_toe_consensus_boundary" time="0.000"><error message="collection failure">ImportError while importing test module '/data/mining-closeout/repo/tests/test_toe_consensus_boundary.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+tests/test_toe_consensus_boundary.py:39: in &lt;module&gt;
+    from chronus.mla1517.mining.coordinator import IntelligentPoolCoordinator  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+chronus/mla1517/mining/coordinator.py:94: in &lt;module&gt;
+    from .policy_audit import PolicyAuditor
+chronus/mla1517/mining/policy_audit.py:22: in &lt;module&gt;
+    from chronus.mla1517.quantum import classical_simulation_provenance
+E   ModuleNotFoundError: No module named 'chronus.mla1517.quantum'</error></testcase></testsuite></testsuites>

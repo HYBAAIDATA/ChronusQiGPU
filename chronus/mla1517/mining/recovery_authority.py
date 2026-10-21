@@ -266,10 +266,12 @@ class RecoveryGovernor:
                 self._emit("recovery_acked", record)
         return record
 
-    def observe(self, healthy: bool) -> list[RecoveryRecord]:
+    def observe(self, healthy: bool, *, recovery_id: str | None = None) -> list[RecoveryRecord]:
         """Advance open internal recoveries from a fresh post-action observation."""
         closed = []
         for record in list(self._records.values()):
+            if recovery_id is not None and record.recovery_id != recovery_id:
+                continue
             if not record.open or record.origin != "self_healing_agent":
                 continue
             if record.state is RecoveryState.PROPOSED:
@@ -283,7 +285,7 @@ class RecoveryGovernor:
                 record.failure = f"unhealthy after {record.unhealthy_observations} observations"
                 self._close(record, RecoveryState.FAILED)
                 closed.append(record)
-        if healthy:
+        if healthy and recovery_id is None:
             self._faulted = False
         return closed
 
