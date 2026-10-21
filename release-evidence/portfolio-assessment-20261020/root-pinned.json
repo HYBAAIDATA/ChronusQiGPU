@@ -1,0 +1,1070 @@
+[
+  {
+    "name": ".agents",
+    "path": ".agents",
+    "sha": "d97f956cbd11ca46a808aba8785d351c1ee5d4a3",
+    "type": "dir"
+  },
+  {
+    "name": ".devin",
+    "path": ".devin",
+    "sha": "26aaac89ad78f06f66e76d8ba9daf70f2a7d6505",
+    "type": "dir"
+  },
+  {
+    "name": ".dockerignore",
+    "path": ".dockerignore",
+    "sha": "cfa0a0a45d736f17670897fb163a59728f75c610",
+    "type": "file"
+  },
+  {
+    "name": ".env.example",
+    "path": ".env.example",
+    "sha": "ddc41b96ffe1ecf25baa295701ddd38d51190235",
+    "type": "file"
+  },
+  {
+    "name": ".flake8",
+    "path": ".flake8",
+    "sha": "3799dbb4785ccffdc6e76fbdeb3efbb2481ef6b0",
+    "type": "file"
+  },
+  {
+    "name": ".gitattributes",
+    "path": ".gitattributes",
+    "sha": "13d3a7bcb7da9e3a9d95ebc81deb93be52e51bac",
+    "type": "file"
+  },
+  {
+    "name": ".github",
+    "path": ".github",
+    "sha": "7efded01eb31eb45e8174d73e94321d18e745fbe",
+    "type": "dir"
+  },
+  {
+    "name": ".gitignore",
+    "path": ".gitignore",
+    "sha": "49b78d41ad2355eee176cb101518a5c8f5a4bfcd",
+    "type": "file"
+  },
+  {
+    "name": ".gitlab-ci.yml",
+    "path": ".gitlab-ci.yml",
+    "sha": "e994aa0f408afd7d1d3b317a618bbba35ae0b2e6",
+    "type": "file"
+  },
+  {
+    "name": ".gitleaks.toml",
+    "path": ".gitleaks.toml",
+    "sha": "1428c21b9ee82bbed20a12965412c1d0472d5d7c",
+    "type": "file"
+  },
+  {
+    "name": ".mcp.json",
+    "path": ".mcp.json",
+    "sha": "3e875069c9b9f66921ac939c21827567842527ec",
+    "type": "file"
+  },
+  {
+    "name": ".nvmrc",
+    "path": ".nvmrc",
+    "sha": "df6ae3370f9f89272d88629c442cf554d6c1f9fb",
+    "type": "file"
+  },
+  {
+    "name": ".prettierignore",
+    "path": ".prettierignore",
+    "sha": "bba533d5e12a614bcbaa158433e276b5fd922512",
+    "type": "file"
+  },
+  {
+    "name": ".prettierrc.json",
+    "path": ".prettierrc.json",
+    "sha": "703bcf903ab15f4422f1af0d9e7432acbca2cc37",
+    "type": "file"
+  },
+  {
+    "name": "600LANE_MAP.md",
+    "path": "600LANE_MAP.md",
+    "sha": "7abe3e20e18dfc7dcb73551ab24455f12db44bb7",
+    "type": "file"
+  },
+  {
+    "name": "600LANE_RELEASE.md",
+    "path": "600LANE_RELEASE.md",
+    "sha": "6e40315ab0ca3c68b57efee835f7aded343aad2b",
+    "type": "file"
+  },
+  {
+    "name": "AGENTS.md",
+    "path": "AGENTS.md",
+    "sha": "18a7a6a8e5c56802cba8270f877816aa263193cc",
+    "type": "file"
+  },
+  {
+    "name": "ARCHITECTURE.md",
+    "path": "ARCHITECTURE.md",
+    "sha": "8ca6675ab37cd5bb8fc91db8c8841ba86f3512e2",
+    "type": "file"
+  },
+  {
+    "name": "CAPABILITY-LEDGER.md",
+    "path": "CAPABILITY-LEDGER.md",
+    "sha": "bc399de76a04610eb75b9507791c4edbc527d1fb",
+    "type": "file"
+  },
+  {
+    "name": "CHANGELOG.md",
+    "path": "CHANGELOG.md",
+    "sha": "01fdbe961f7c3e36032b54143ae8f3985d5fedca",
+    "type": "file"
+  },
+  {
+    "name": "CONTRIBUTING.md",
+    "path": "CONTRIBUTING.md",
+    "sha": "8b03a0f706586007c4ab2702e41b98352dd0d6c4",
+    "type": "file"
+  },
+  {
+    "name": "Chronus_elevation",
+    "path": "Chronus_elevation",
+    "sha": "56336dfbd769e78893ebbdad00a5b33af4721b06",
+    "type": "file"
+  },
+  {
+    "name": "DEMO_RUNBOOK.md",
+    "path": "DEMO_RUNBOOK.md",
+    "sha": "f616a478d68d105294596cafd5bb0fc050c9b251",
+    "type": "file"
+  },
+  {
+    "name": "DEPLOYMENT.md",
+    "path": "DEPLOYMENT.md",
+    "sha": "ecc0111f0d912ae0e0a7e8c96f41d67cec6f5c4a",
+    "type": "file"
+  },
+  {
+    "name": "DEPRECATED.md",
+    "path": "DEPRECATED.md",
+    "sha": "04616ecd13ca7ffd6b4e2931eae13121ff92e1b3",
+    "type": "file"
+  },
+  {
+    "name": "DISCOVERIES_LEDGER.md",
+    "path": "DISCOVERIES_LEDGER.md",
+    "sha": "54c7c09cac1922c9078e89ce4a0a7011c381557a",
+    "type": "file"
+  },
+  {
+    "name": "DOCS_GAP_TABLE.md",
+    "path": "DOCS_GAP_TABLE.md",
+    "sha": "a1ccd1cc8681b9a30d51998ce917c6f486477fbf",
+    "type": "file"
+  },
+  {
+    "name": "Dockerfile",
+    "path": "Dockerfile",
+    "sha": "38012a1c11fe1262a056083d9e9357733011914d",
+    "type": "file"
+  },
+  {
+    "name": "Dockerfile.hybrid",
+    "path": "Dockerfile.hybrid",
+    "sha": "e763407678d4eab8cb1c7f1b63ca72410601a0c9",
+    "type": "file"
+  },
+  {
+    "name": "EMERGENCE-LOG.md",
+    "path": "EMERGENCE-LOG.md",
+    "sha": "f23400da3d6b7b278e38672350b81050640f43ed",
+    "type": "file"
+  },
+  {
+    "name": "EMERGENCE-TRACK-CHANGELOG.md",
+    "path": "EMERGENCE-TRACK-CHANGELOG.md",
+    "sha": "93acfbd756eecf6a302a41f157fabf5c5a94b966",
+    "type": "file"
+  },
+  {
+    "name": "GEMINI.md",
+    "path": "GEMINI.md",
+    "sha": "4cec934674dd22ed99a1a9853165c7839e885d55",
+    "type": "file"
+  },
+  {
+    "name": "Intelligence",
+    "path": "Intelligence",
+    "sha": "fea9932f16650bcd840ba9880fa3b19f9553d063",
+    "type": "dir"
+  },
+  {
+    "name": "LATEST_AUTHORITATIVE_RESEARCH.md",
+    "path": "LATEST_AUTHORITATIVE_RESEARCH.md",
+    "sha": "a692a66723ad393c82dbaf430272d9fc28650140",
+    "type": "file"
+  },
+  {
+    "name": "LICENSE",
+    "path": "LICENSE",
+    "sha": "9ce5efbe5f566015a933c1f67dc6b382d2082305",
+    "type": "file"
+  },
+  {
+    "name": "M5run",
+    "path": "M5run",
+    "sha": "7bbffdc9ca06e2f32bfd87db2580de0f7c5c4502",
+    "type": "file"
+  },
+  {
+    "name": "MINING_INTELLIGENCE_RELEASE.md",
+    "path": "MINING_INTELLIGENCE_RELEASE.md",
+    "sha": "706a3c6876258eb826a682b317d4fdaba4840643",
+    "type": "file"
+  },
+  {
+    "name": "MINING_REWIRE_MAP.md",
+    "path": "MINING_REWIRE_MAP.md",
+    "sha": "44899cef7b903349342b93e9e83468a7ae3f93e8",
+    "type": "file"
+  },
+  {
+    "name": "Makefile",
+    "path": "Makefile",
+    "sha": "852aac92f2948dae05a780bdb3066ff437013fa8",
+    "type": "file"
+  },
+  {
+    "name": "OWNER_DECLARATIONS.md",
+    "path": "OWNER_DECLARATIONS.md",
+    "sha": "1cf66ce93ffd046e8fc034f7dc3ab60cb705efe9",
+    "type": "file"
+  },
+  {
+    "name": "README.md",
+    "path": "README.md",
+    "sha": "405749a8fde4e8146ac69831b7759b1dcb33bc97",
+    "type": "file"
+  },
+  {
+    "name": "README_MCP.md",
+    "path": "README_MCP.md",
+    "sha": "e8c33929b1f0e6243fce797938da5e90789b552f",
+    "type": "file"
+  },
+  {
+    "name": "REMEDIATION-STATUS.md",
+    "path": "REMEDIATION-STATUS.md",
+    "sha": "055f28372ca2ad7d7c53d5d43b9fc1dbdc1ae8e0",
+    "type": "file"
+  },
+  {
+    "name": "STRICT_QUANTUM_BOUNDARY.md",
+    "path": "STRICT_QUANTUM_BOUNDARY.md",
+    "sha": "9e844239352af54dd336b3e326c13f0f37f590af",
+    "type": "file"
+  },
+  {
+    "name": "UNIVERSAL_PRINCIPLE_MAP.md",
+    "path": "UNIVERSAL_PRINCIPLE_MAP.md",
+    "sha": "9e232c62cf8d97edb1eb727e6cb95531e8237e60",
+    "type": "file"
+  },
+  {
+    "name": "_archive_docs_legacy_20261019",
+    "path": "_archive_docs_legacy_20261019",
+    "sha": "65b6cf4837e674fc5a894c74e11736564609a30a",
+    "type": "dir"
+  },
+  {
+    "name": "_archive_research",
+    "path": "_archive_research",
+    "sha": "09884c3f6762aa2d9a5cb732c8cc85d12a54157f",
+    "type": "dir"
+  },
+  {
+    "name": "abi",
+    "path": "abi",
+    "sha": "c64497122a0bb765b6fc0067f9c3b58631827e22",
+    "type": "dir"
+  },
+  {
+    "name": "abstraction",
+    "path": "abstraction",
+    "sha": "20b5592ebae8fde43320265f0fc76bbbc1aa1653",
+    "type": "dir"
+  },
+  {
+    "name": "aethel",
+    "path": "aethel",
+    "sha": "82a774d45b5748e1670fd361c68f4d4d75e42c77",
+    "type": "dir"
+  },
+  {
+    "name": "agi",
+    "path": "agi",
+    "sha": "1777e1c31923497f2d13c7f1fa6bd8ad9be99fee",
+    "type": "dir"
+  },
+  {
+    "name": "al_haras",
+    "path": "al_haras",
+    "sha": "99ab4ec71746d86b48fea909fa43e941f7c80f30",
+    "type": "dir"
+  },
+  {
+    "name": "artifacts",
+    "path": "artifacts",
+    "sha": "8a47c563da93c349d08f4a4d079646ce46c34eb0",
+    "type": "dir"
+  },
+  {
+    "name": "asi",
+    "path": "asi",
+    "sha": "a6b6b3c6dfb71a79fcce4eed6e25cc54674c1718",
+    "type": "dir"
+  },
+  {
+    "name": "asi_validation",
+    "path": "asi_validation",
+    "sha": "8676caa26602b85bb4ab46c64b7b08136178f655",
+    "type": "dir"
+  },
+  {
+    "name": "asic",
+    "path": "asic",
+    "sha": "5b37b9946c321695c9fde4b603bc448e2d0b1f75",
+    "type": "dir"
+  },
+  {
+    "name": "bench",
+    "path": "bench",
+    "sha": "30b5cad4b6fc89ee572fc4949cfbd2768ae3e1e7",
+    "type": "dir"
+  },
+  {
+    "name": "benchmark_portfolio",
+    "path": "benchmark_portfolio",
+    "sha": "2d40e60f71eabdc0c2c6829cf4fb4c2f7d4f8f6d",
+    "type": "dir"
+  },
+  {
+    "name": "benchmarks",
+    "path": "benchmarks",
+    "sha": "7e6ea457785454fbd52831f2fe07c2982a05a130",
+    "type": "dir"
+  },
+  {
+    "name": "build_hash.txt",
+    "path": "build_hash.txt",
+    "sha": "5d406aa09eb5664d7224a990a88ae1e390682041",
+    "type": "file"
+  },
+  {
+    "name": "chronos",
+    "path": "chronos",
+    "sha": "119542388fc303562a44cc1d53546c65f21775d2",
+    "type": "dir"
+  },
+  {
+    "name": "chronus",
+    "path": "chronus",
+    "sha": "0fe9be3a024273de3f69c8015f47577b84edd95c",
+    "type": "dir"
+  },
+  {
+    "name": "claims.yaml",
+    "path": "claims.yaml",
+    "sha": "cd7e749e44b35b8d78e6fb49e603bcbf278d2c3c",
+    "type": "file"
+  },
+  {
+    "name": "compiler",
+    "path": "compiler",
+    "sha": "b992b7c0104ae201163323b64d4d8dd168b308d1",
+    "type": "dir"
+  },
+  {
+    "name": "config.example.toml",
+    "path": "config.example.toml",
+    "sha": "da4c69c715c6be19ea2e5027bbc81d9615a6b879",
+    "type": "file"
+  },
+  {
+    "name": "config",
+    "path": "config",
+    "sha": "a873bde11178194c93b6d3a783dcbabdbf9218cc",
+    "type": "dir"
+  },
+  {
+    "name": "conformance",
+    "path": "conformance",
+    "sha": "1c4ca8f3e94fd97a34447fdd453a18d05fd1adad",
+    "type": "dir"
+  },
+  {
+    "name": "core_engine",
+    "path": "core_engine",
+    "sha": "5380c6173f65f4de421b67aa0806b5363a68f54e",
+    "type": "dir"
+  },
+  {
+    "name": "cross_verification",
+    "path": "cross_verification",
+    "sha": "326d2d3bf05045f1afdcd56f1a5672a0d380da89",
+    "type": "dir"
+  },
+  {
+    "name": "delegation",
+    "path": "delegation",
+    "sha": "a3dbe29922b63c0267d111417e8669df51684897",
+    "type": "dir"
+  },
+  {
+    "name": "demo_boot.ps1",
+    "path": "demo_boot.ps1",
+    "sha": "a439648da17e9111df945d9d99aa07ed724794ab",
+    "type": "file"
+  },
+  {
+    "name": "demo_dashboard",
+    "path": "demo_dashboard",
+    "sha": "03acfb60fed88a6189d840427d49963f2027c919",
+    "type": "dir"
+  },
+  {
+    "name": "deploy",
+    "path": "deploy",
+    "sha": "b2258a761bee11bda81692eb4da058ee7c45c9fb",
+    "type": "dir"
+  },
+  {
+    "name": "deployment",
+    "path": "deployment",
+    "sha": "9e7e36efc89cfabc8895c18d7bb6363e7f5bdd44",
+    "type": "dir"
+  },
+  {
+    "name": "distributed",
+    "path": "distributed",
+    "sha": "2f154be942bb82296599864347c04c9e7f410ce7",
+    "type": "dir"
+  },
+  {
+    "name": "docker-compose.chronus-linux.yml",
+    "path": "docker-compose.chronus-linux.yml",
+    "sha": "080ffb39c1dbd1773d3e90284ec365c1910a4dde",
+    "type": "file"
+  },
+  {
+    "name": "docker-compose.chronus-wsl2.yml",
+    "path": "docker-compose.chronus-wsl2.yml",
+    "sha": "7a18d31683e23882a3f1a2f5356e6f93419f68b4",
+    "type": "file"
+  },
+  {
+    "name": "docker-compose.cuda.yml",
+    "path": "docker-compose.cuda.yml",
+    "sha": "2c50ee72c1b7c9f4cb456a460ba804f7ec70a324",
+    "type": "file"
+  },
+  {
+    "name": "docker-compose.hybrid.yml",
+    "path": "docker-compose.hybrid.yml",
+    "sha": "57b2ddf325e8c8496981789e89003afa89472c9c",
+    "type": "file"
+  },
+  {
+    "name": "docker-compose.metal.yml",
+    "path": "docker-compose.metal.yml",
+    "sha": "8c5a72e6d1386d00d89de5889005ac5bd24bd18d",
+    "type": "file"
+  },
+  {
+    "name": "docker-compose.override.yml",
+    "path": "docker-compose.override.yml",
+    "sha": "0cf7bfa0a6bb637a79be1e14cf8f0c7415ab239d",
+    "type": "file"
+  },
+  {
+    "name": "docker-compose.pools.yml",
+    "path": "docker-compose.pools.yml",
+    "sha": "661c31ca2c986f5ad25b3c493a1b9d74260842b0",
+    "type": "file"
+  },
+  {
+    "name": "docker-compose.rocm.yml",
+    "path": "docker-compose.rocm.yml",
+    "sha": "e2c5725b6d4c5576a1b038cbcdd4e971c57b2014",
+    "type": "file"
+  },
+  {
+    "name": "docker-compose.sovereign.yml",
+    "path": "docker-compose.sovereign.yml",
+    "sha": "035b17629b1cd572328427b5b3b26d5b147fbba2",
+    "type": "file"
+  },
+  {
+    "name": "docker-compose.yml",
+    "path": "docker-compose.yml",
+    "sha": "e28f565cd6edd6bc6d0439896bb3fc55fac9ce22",
+    "type": "file"
+  },
+  {
+    "name": "docs",
+    "path": "docs",
+    "sha": "200df866bbcac8b1fbc75ec448cec3866e354143",
+    "type": "dir"
+  },
+  {
+    "name": "domains",
+    "path": "domains",
+    "sha": "7d65fd623543d4fb3aa44bde7ee859bc06b7a558",
+    "type": "dir"
+  },
+  {
+    "name": "emulator",
+    "path": "emulator",
+    "sha": "068061ca18bd422befb0a153be7fecf89954f05a",
+    "type": "dir"
+  },
+  {
+    "name": "enhanced_intelligence",
+    "path": "enhanced_intelligence",
+    "sha": "2eab245e0a25b4c3e1ecab73e4431bd6c0b89e82",
+    "type": "dir"
+  },
+  {
+    "name": "euclid",
+    "path": "euclid",
+    "sha": "ee77d7685443781b4c47ce171b445ce9ef0cc45e",
+    "type": "dir"
+  },
+  {
+    "name": "euclid_delegation.py",
+    "path": "euclid_delegation.py",
+    "sha": "9d540c12fcb6f17c3127b91038365bb80dc00f25",
+    "type": "file"
+  },
+  {
+    "name": "eval_harness",
+    "path": "eval_harness",
+    "sha": "ebdbc3b03ef7d0eccb4282a4c50625a5a630b2ac",
+    "type": "dir"
+  },
+  {
+    "name": "evidence",
+    "path": "evidence",
+    "sha": "562317ba3ca8a7df6d399f470b2a8a308a6a670b",
+    "type": "dir"
+  },
+  {
+    "name": "exact_math.py",
+    "path": "exact_math.py",
+    "sha": "63f194d182047f6d238688a58ea15e348baaeb9b",
+    "type": "file"
+  },
+  {
+    "name": "examples",
+    "path": "examples",
+    "sha": "ddc1b2104b6ac7f9d7b4353a11a35f6d4c7b3af5",
+    "type": "dir"
+  },
+  {
+    "name": "experiments",
+    "path": "experiments",
+    "sha": "ca36876c9468b10fd425c78ecd45c56bf63bfb23",
+    "type": "dir"
+  },
+  {
+    "name": "external",
+    "path": "external",
+    "sha": "7feb071918b9729f15171681f95b0a9ab91d3ccb",
+    "type": "dir"
+  },
+  {
+    "name": "format",
+    "path": "format",
+    "sha": "d23f7e1e9b8d883bc13a33b336227870ceefd118",
+    "type": "dir"
+  },
+  {
+    "name": "frontend",
+    "path": "frontend",
+    "sha": "3e7cb3a371d813221cc34029f65d286df5f1c39e",
+    "type": "dir"
+  },
+  {
+    "name": "golden_quantum",
+    "path": "golden_quantum",
+    "sha": "f4c54d11c052ae7f14fc7758401ce0fd329ab074",
+    "type": "dir"
+  },
+  {
+    "name": "governance",
+    "path": "governance",
+    "sha": "c4c180e3e3c531363674a5282a6e9734f7c544ed",
+    "type": "dir"
+  },
+  {
+    "name": "gpu",
+    "path": "gpu",
+    "sha": "db9e1377680d6545f718086378b0cb1c802485d7",
+    "type": "dir"
+  },
+  {
+    "name": "hyba",
+    "path": "hyba",
+    "sha": "7087a4e8ec122c5bc7b2871b0395bec717a8b41f",
+    "type": "dir"
+  },
+  {
+    "name": "hyba_compat",
+    "path": "hyba_compat",
+    "sha": "e81801aac269ed25f8639272e76a7e5051d353a9",
+    "type": "dir"
+  },
+  {
+    "name": "hyba_contracts",
+    "path": "hyba_contracts",
+    "sha": "7e64152ffbfb27a4aee62324ec0eec15f3669eb5",
+    "type": "dir"
+  },
+  {
+    "name": "hyba_db",
+    "path": "hyba_db",
+    "sha": "1cbc89670997a4d350a83ec800b1b679cf24bd0a",
+    "type": "dir"
+  },
+  {
+    "name": "hyba_euclid_intelligence",
+    "path": "hyba_euclid_intelligence",
+    "sha": "324f0970522e72a4cebca1c09a52814897cebd72",
+    "type": "dir"
+  },
+  {
+    "name": "hyba_profiles",
+    "path": "hyba_profiles",
+    "sha": "210404325b0156d5b978e8ba72042be8f3de55d5",
+    "type": "dir"
+  },
+  {
+    "name": "hyba_services",
+    "path": "hyba_services",
+    "sha": "38e8a437a924294ed2a1867c56ed76a889b5ec44",
+    "type": "dir"
+  },
+  {
+    "name": "hyba_substrate",
+    "path": "hyba_substrate",
+    "sha": "65398d247e10828ea5873a0c8006848fdf69bec5",
+    "type": "dir"
+  },
+  {
+    "name": "hyba_toe_intelligence",
+    "path": "hyba_toe_intelligence",
+    "sha": "8b92d225b3afcdeced4bc7e22e75743317b1b5ba",
+    "type": "dir"
+  },
+  {
+    "name": "integrations",
+    "path": "integrations",
+    "sha": "611609da8c13615db76d8b5672088f3d5c9766c0",
+    "type": "dir"
+  },
+  {
+    "name": "isa",
+    "path": "isa",
+    "sha": "1c698ebee2f91f808233461a08e7d047310720c1",
+    "type": "dir"
+  },
+  {
+    "name": "kellogg",
+    "path": "kellogg",
+    "sha": "6f6dcf5e402ec48a58d5761f5507ba5a01d0c5c1",
+    "type": "dir"
+  },
+  {
+    "name": "kernels",
+    "path": "kernels",
+    "sha": "5784c5e1ca005c2a67835a02760c49358b89c9d4",
+    "type": "dir"
+  },
+  {
+    "name": "l_hras",
+    "path": "l_hras",
+    "sha": "f3ab31e44d620ee97beb723d50369bedb70100b8",
+    "type": "dir"
+  },
+  {
+    "name": "ledger",
+    "path": "ledger",
+    "sha": "afcb35a4187310eac7f86582bbd2993ab24c4362",
+    "type": "dir"
+  },
+  {
+    "name": "legacy",
+    "path": "legacy",
+    "sha": "0eb11e07a21ea291543108d53642471dc86588fd",
+    "type": "dir"
+  },
+  {
+    "name": "legacy_implementations",
+    "path": "legacy_implementations",
+    "sha": "de2f16226bdf0bfc3e1edb65824a215bc5e90594",
+    "type": "dir"
+  },
+  {
+    "name": "lucas",
+    "path": "lucas",
+    "sha": "3cdaf0b8d003e22e979079d5b39fd9be2816b35d",
+    "type": "dir"
+  },
+  {
+    "name": "m5",
+    "path": "m5",
+    "sha": "238213fa477a277511f33b2cb7949d3dcb3e2102",
+    "type": "file"
+  },
+  {
+    "name": "m5evidence",
+    "path": "m5evidence",
+    "sha": "a2d892acbd25e1ca385636daecf9fe3727d5b5eb",
+    "type": "file"
+  },
+  {
+    "name": "main.py",
+    "path": "main.py",
+    "sha": "f3204011d5647ffc2427167adcc42b69d97741dd",
+    "type": "file"
+  },
+  {
+    "name": "make",
+    "path": "make",
+    "sha": "aad9aea2d80fb2f7334e87e29f4146c15cb32a0f",
+    "type": "dir"
+  },
+  {
+    "name": "manifests",
+    "path": "manifests",
+    "sha": "3800246df603476ef834e2e35830e1b137c81a1b",
+    "type": "dir"
+  },
+  {
+    "name": "mcp",
+    "path": "mcp",
+    "sha": "423906e1f63a06bb4918f6dd7cdf279c375fc6b6",
+    "type": "dir"
+  },
+  {
+    "name": "meta_rl",
+    "path": "meta_rl",
+    "sha": "7c4542d9d0287d33697f6ae0076b8daf0ec50a6f",
+    "type": "dir"
+  },
+  {
+    "name": "millennium",
+    "path": "millennium",
+    "sha": "6c9b3bb2d981159801f2a1129846300cccc60dc8",
+    "type": "dir"
+  },
+  {
+    "name": "mining",
+    "path": "mining",
+    "sha": "a35060d0c528152b87c45d0abc18f503e9ae140a",
+    "type": "dir"
+  },
+  {
+    "name": "mtheory",
+    "path": "mtheory",
+    "sha": "d90ad430bddef3a94fde197574b1349c16ede5b7",
+    "type": "dir"
+  },
+  {
+    "name": "notebooks",
+    "path": "notebooks",
+    "sha": "21261cbf7d7ca727c8987733800ff2ff9449fba5",
+    "type": "dir"
+  },
+  {
+    "name": "observability",
+    "path": "observability",
+    "sha": "57d8d4159a95a843fe1d436d54b9dcce0006ba43",
+    "type": "dir"
+  },
+  {
+    "name": "omega",
+    "path": "omega",
+    "sha": "f59157584d4b6a2dabdeb56a1d006cf053585c8a",
+    "type": "dir"
+  },
+  {
+    "name": "open_ended",
+    "path": "open_ended",
+    "sha": "2b1ef77af61def864865cafaedf73b322081cbd0",
+    "type": "dir"
+  },
+  {
+    "name": "open_replication_pack",
+    "path": "open_replication_pack",
+    "sha": "a3a710cf428d0300758778a8b93e92c97743381e",
+    "type": "dir"
+  },
+  {
+    "name": "opencl",
+    "path": "opencl",
+    "sha": "a383726615d776c63bdd0161975a634ca191e315",
+    "type": "dir"
+  },
+  {
+    "name": "orchestrate.py",
+    "path": "orchestrate.py",
+    "sha": "7766acd740ad424358a57c443653887d373f5b29",
+    "type": "file"
+  },
+  {
+    "name": "orcle.py",
+    "path": "orcle.py",
+    "sha": "a37e535a2eb034239dff5c273ed66fecc45d046d",
+    "type": "file"
+  },
+  {
+    "name": "package.json",
+    "path": "package.json",
+    "sha": "4194e11be16fc5203f84ef8f31fe1dc1bb9e98b1",
+    "type": "file"
+  },
+  {
+    "name": "packages",
+    "path": "packages",
+    "sha": "6638dd86a3ddd02765a105154db0272cf70492b3",
+    "type": "dir"
+  },
+  {
+    "name": "packaging",
+    "path": "packaging",
+    "sha": "7f8dd073c057f82f446f3350b07b556b3e6cd9d2",
+    "type": "dir"
+  },
+  {
+    "name": "pairings.yaml",
+    "path": "pairings.yaml",
+    "sha": "1a658f92b1e645118c50aab3bf455312c58f3f91",
+    "type": "file"
+  },
+  {
+    "name": "paper1_topology.pdf",
+    "path": "paper1_topology.pdf",
+    "sha": "9f9d07e374802afdbc83eeaa38743305cd5bb13c",
+    "type": "file"
+  },
+  {
+    "name": "paper2_efficiency.pdf",
+    "path": "paper2_efficiency.pdf",
+    "sha": "417a6f2d4f931fae578b4e5747cf57830dd47a20",
+    "type": "file"
+  },
+  {
+    "name": "pci",
+    "path": "pci",
+    "sha": "7390646fc05cc0a0111dfffdf83dd1cda1922726",
+    "type": "dir"
+  },
+  {
+    "name": "phi_rotation",
+    "path": "phi_rotation",
+    "sha": "ebc7a9079d3db910962440e4804568424e6d29d1",
+    "type": "dir"
+  },
+  {
+    "name": "plugins",
+    "path": "plugins",
+    "sha": "dd1a19a1ef6a309e4d3c3f0e275d039b78472223",
+    "type": "dir"
+  },
+  {
+    "name": "proofs",
+    "path": "proofs",
+    "sha": "f3a2a3ad1ab7eb6f4ec256dbdbea9b02270c0309",
+    "type": "dir"
+  },
+  {
+    "name": "pyproject.toml",
+    "path": "pyproject.toml",
+    "sha": "f09f5243a39ad1ea44200267302dcc3d979fe9ef",
+    "type": "file"
+  },
+  {
+    "name": "pytest_fixed.log",
+    "path": "pytest_fixed.log",
+    "sha": "414d8ab6c73fbc8763787a48ade18eb07c8f0b55",
+    "type": "file"
+  },
+  {
+    "name": "pythagoras",
+    "path": "pythagoras",
+    "sha": "8fce881b87a4e39b6681194a6d0c4c271d2a44dc",
+    "type": "dir"
+  },
+  {
+    "name": "pythia",
+    "path": "pythia",
+    "sha": "28442d36f97d6729d55528bf5692cbf86795b113",
+    "type": "dir"
+  },
+  {
+    "name": "python_backend",
+    "path": "python_backend",
+    "sha": "19125e8af128e44c051837d0e057c98313155f3c",
+    "type": "dir"
+  },
+  {
+    "name": "quantum_compute_substrate",
+    "path": "quantum_compute_substrate",
+    "sha": "f799fdbd3212803ef325a080d5829b1bc58da5b5",
+    "type": "dir"
+  },
+  {
+    "name": "reconciliation_gateway.py",
+    "path": "reconciliation_gateway.py",
+    "sha": "6b5adab7cd3257e28e3f997cd6aef267cc2554bf",
+    "type": "file"
+  },
+  {
+    "name": "release-evidence",
+    "path": "release-evidence",
+    "sha": "4b041372897ec4e7aee6419654215f9af0d1b3d7",
+    "type": "dir"
+  },
+  {
+    "name": "reports",
+    "path": "reports",
+    "sha": "d08c51062c9e2e0acbc7aca588f874b338bb0f88",
+    "type": "dir"
+  },
+  {
+    "name": "repro_lucas_pisot.py",
+    "path": "repro_lucas_pisot.py",
+    "sha": "24c61d96cc7a874bd19b0a31546b6995b7ff8adb",
+    "type": "file"
+  },
+  {
+    "name": "requirements-lock.txt",
+    "path": "requirements-lock.txt",
+    "sha": "c40b8d2a1c88fe3e9cb33318ff572351d0c187cf",
+    "type": "file"
+  },
+  {
+    "name": "requirements.txt",
+    "path": "requirements.txt",
+    "sha": "29bf38dccc56114b69d39edb7f18c3aa2dbc6848",
+    "type": "file"
+  },
+  {
+    "name": "resonance_intelligence",
+    "path": "resonance_intelligence",
+    "sha": "9d7ddc37f41d3d547b7188b33606c6c85326d8a1",
+    "type": "dir"
+  },
+  {
+    "name": "runbooks",
+    "path": "runbooks",
+    "sha": "cb530b918a254dea7f30b7596ec55ba6f60836a2",
+    "type": "dir"
+  },
+  {
+    "name": "safety_charter.md",
+    "path": "safety_charter.md",
+    "sha": "b2ecd87dd753c677902e8381fabc469587732fee",
+    "type": "file"
+  },
+  {
+    "name": "salamander",
+    "path": "salamander",
+    "sha": "977283bc761d99d529d94cc9f5846e4e79905a3c",
+    "type": "dir"
+  },
+  {
+    "name": "schema",
+    "path": "schema",
+    "sha": "a629ecec5ebc207096b9782188a73da3e227b9e7",
+    "type": "dir"
+  },
+  {
+    "name": "scripts",
+    "path": "scripts",
+    "sha": "b281873a8554c64648be32a2dc08ec57a5be4d13",
+    "type": "dir"
+  },
+  {
+    "name": "sdk",
+    "path": "sdk",
+    "sha": "cf8fc3635160afe196e59afb45099b48cf942e7e",
+    "type": "dir"
+  },
+  {
+    "name": "services",
+    "path": "services",
+    "sha": "c364e8e51d82baea8870ce161c70944a2ead117b",
+    "type": "dir"
+  },
+  {
+    "name": "src",
+    "path": "src",
+    "sha": "22885f8fe234e362e4c6b5c19a2d6109c9e4a6b6",
+    "type": "dir"
+  },
+  {
+    "name": "standard",
+    "path": "standard",
+    "sha": "b98f75098ac358a12d57b988974422d1c9961c1f",
+    "type": "dir"
+  },
+  {
+    "name": "tensor",
+    "path": "tensor",
+    "sha": "d3262e7433658c3cb803a5056a555c1c8bcf8208",
+    "type": "dir"
+  },
+  {
+    "name": "tests",
+    "path": "tests",
+    "sha": "ea5313ef92475387ba48e61973ec753c14f371bf",
+    "type": "dir"
+  },
+  {
+    "name": "thermo",
+    "path": "thermo",
+    "sha": "ad63a812e1bb789ea1ed7a2806b2e02c88914de7",
+    "type": "dir"
+  },
+  {
+    "name": "toe",
+    "path": "toe",
+    "sha": "dbd0cba2c6733890178788cb58ca80b4f234aef8",
+    "type": "dir"
+  },
+  {
+    "name": "tools",
+    "path": "tools",
+    "sha": "ac368ba3d37607d6385f3e7ccde02d6dc3bd331a",
+    "type": "dir"
+  },
+  {
+    "name": "turing_core.py",
+    "path": "turing_core.py",
+    "sha": "6602f7edf687c98df9f00feaff6733264b70099c",
+    "type": "file"
+  },
+  {
+    "name": "turing_universal_quantum_computer",
+    "path": "turing_universal_quantum_computer",
+    "sha": "2ee8f30bcd26fa31fa18ee8685a25d236baf57ca",
+    "type": "dir"
+  },
+  {
+    "name": "unused",
+    "path": "unused",
+    "sha": "c4b31087541b330f0a965897507d9635e206fd3d",
+    "type": "dir"
+  }
+]

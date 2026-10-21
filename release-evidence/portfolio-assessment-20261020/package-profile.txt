@@ -1,0 +1,28 @@
+## /data/raw/hyba-portfolio/packages.jsonl
+
+- Shape: 14 rows x 13 columns
+- Duplicate rows: 0
+- Candidate key columns (distinct == rows): distribution, legacy_distribution, manifest_paths, preserved_interface_fingerprints
+
+| column | type | non-null | distinct | values |
+| --- | --- | --- | --- | --- |
+| system | text | 100% | 11 | top: PYTHIA (3), CHRONUS (2), KELLOGG (1), TURING (1), THESEUS (1) |
+| capability | text | 100% | 11 | top: tensor (2), intelligence (2), igpu (2), vqc (1), storage (1) |
+| distribution | text | 100% | 14 | top: hyba-kellogg-tensor (1), hyba-turing-vqc (1), hyba-theseus-storage (1), hyba-ovid-data-organisation (1), hyba-toe-intelligence (1) |
+| legacy_distribution | text | 100% | 14 | top: kellogg-tensor (1), turing-universal-quantum-computer (1), hyba-theseus (1), hyba-ovid (1), hyba-toe (1) |
+| manifest_paths | text | 100% | 14 | top: ["packaging/kellogg-tensor/pyproject.tom (1), ["turing_universal_quantum_computer/pypr (1), ["packaging/theseus/pyproject.toml"] (1), ["packaging/ovid/pyproject.toml"] (1), ["packaging/toe/pyproject.toml"] (1) |
+| canonical_manifest | text | 93% | 13 | top: packaging/kellogg-tensor/pyproject.toml (1), turing_universal_quantum_computer/pyproj (1), packaging/theseus/pyproject.toml (1), packaging/ovid/pyproject.toml (1), packaging/toe/pyproject.toml (1) |
+| state | text | 100% | 2 | top: EXISTING_SCAFFOLD (13), PLANNED_NOT_SCAFFOLDED (1) |
+| imports_unchanged | text | 93% | 13 | top: ["kellogg"] (1), ["turing_universal_quantum_computer"] (1), ["aethel"] (1), ["hyba_db"] (1), ["toe"] (1) |
+| first_public_version | text | 100% | 1 | top: 1.0.0 (14) |
+| source_metadata_version | text | 93% | 2 | top: 1.0.0 (11), DYNAMIC (2) |
+| publication_status | text | 100% | 1 | top: NOT_QUALIFIED_BY_THIS_CHANGE (14) |
+| preserved_interface_fingerprints | text | 100% | 14 | top: {"packaging/kellogg-tensor/pyproject.tom (1), {"turing_universal_quantum_computer/pypr (1), {"packaging/theseus/pyproject.toml": "87 (1), {"packaging/ovid/pyproject.toml": "b3460 (1), {"packaging/toe/pyproject.toml": "a9428f (1) |
+| note | text | 7% | 1 | top: one identity; legacy research metadata i (1) |
+
+**Warnings:**
+
+- ⚠️ `first_public_version` is constant
+- ⚠️ `publication_status` is constant
+- ⚠️ `note` is 93% null
+
