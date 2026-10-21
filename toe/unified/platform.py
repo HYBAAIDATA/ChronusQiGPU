@@ -61,7 +61,14 @@ class UnifiedAnalyticsPlatform:
         max_workers: int = 8,
         security_enforced: bool = False,
         monitor_actor: str | None = None,
+        tenant_id: str | None = None,
     ) -> None:
+        if tenant_id is not None and (
+            not isinstance(tenant_id, str) or not tenant_id or tenant_id != tenant_id.strip()
+        ):
+            raise ValueError("tenant_id must be a nonempty, trimmed string or None")
+        # A label alone does not enforce membership; TenantGateway composes that boundary.
+        self._tenant_id = tenant_id
         self.data = UnifiedDataLayer()
         self.models = ModelRegistry()
         self.adaptive = AdaptiveInterface()
@@ -314,6 +321,7 @@ class UnifiedAnalyticsPlatform:
                 inputs=inputs,
                 config={
                     "entity": entity,
+                    **({"tenant_id": self._tenant_id} if self._tenant_id is not None else {}),
                     "actor": self.security.actor,
                     "operator_digest": compiled.input_digest,
                     "lineage": lineage,

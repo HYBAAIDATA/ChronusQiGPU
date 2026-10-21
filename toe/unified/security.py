@@ -73,6 +73,12 @@ class SecurityModel:
                 raise ValueError(f"unknown role {role}")
             self._roles[name] = role
 
+    def revoke(self, name: str) -> None:
+        """Revoke a role under the same authority required for grants."""
+        with self._lock:
+            self.authorize("grant")
+            self._roles.pop(name, None)
+
     def authenticate(self, name: str) -> None:
         """Select an identity already authenticated by the trusted embedding host.
 

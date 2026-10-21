@@ -1,5 +1,11 @@
 # Production evidence matrix
 
+> Follow-up: tenant work from main PR #131 is reconciled in this branch. See
+> [package/runtime qualification plan](PACKAGE_QUALIFICATION_PLAN.md) and
+> `evidence/package-qualification/` for fresh results and unresolved gates.
+> The 94-test figures below are the historical first-patch run at `22aa518`,
+> not certification of later changes. Overall readiness remains blocked.
+
 **Overall verdict: not yet production-ready.**
 
 Status vocabulary: **declared** = required/described; **implemented** = code present
@@ -21,8 +27,8 @@ Test names below refer to
 | Public data reads do not expose mutable nested payloads | measured | `rows`, `scan_rows`, `snapshot`, `restore_payload`; `test_nested_payloads_are_detached_on_every_public_read` | Private internals are trusted, not an access-control sandbox |
 | Import checks digest and retains source lineage | measured | `import_records`; `test_import_verifies_claimed_content_digest`, `test_import_retains_quarantine_and_source_lineage` | Retained metadata is not signed provenance |
 | Lossy payload coercion is rejected | measured | `detached_payload`, strict canonical JSON; five invalid-payload regressions | Intentional API tightening: migrate tuples/objects/non-string keys before ingest |
-| Contextual authorization and background parity | partial | Existing merged `SecurityModel` context isolation and monitor public methods preserved; reader-denial and background-identity regressions pass | No IdP verification, tenant enforcement or whole-repository mutator inventory |
-| Production tenant/security authority | declared | Required by architecture contract and explicit startup/readiness block | Must integrate and adversarially test trusted principals/tenant boundaries before release |
+| Contextual authorization and background parity | partial | Existing merged `SecurityModel` context isolation and monitor public methods preserved; reader-denial and background-identity regressions pass | No external IdP/endpoint qualification or whole-repository mutator inventory; see follow-up tenant gateway tests |
+| Production tenant/security authority | partial | TenantGateway provides per-tenant state/allowlist/live membership; follow-up tenant-qualification suite measures completed revocation before dispatch for every operation | Host-authenticated principals, real endpoints and external adversarial qualification remain required |
 | Retraining cannot opt out of validation | measured | `ModelRegistry.retrain -> _evaluation_guard`; `test_legacy_evaluation_flag_cannot_bypass_validation` | Initial `train` remains development-only |
 | Model replacement is floor/non-regression/stale-safe in process | measured | Actual `kellogg.tensor_ml` training; merged promotion suite, floor tests, blocked stale-candidate race | No distributed registry CAS, independent validation authority or authenticated model recovery |
 | Returned model records cannot mutate live state | measured | Defensive `get` and result copies; `test_returned_model_cannot_mutate_live_registry` | Does not protect against deliberate private-field access |

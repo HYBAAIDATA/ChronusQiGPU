@@ -1,5 +1,11 @@
 # Production-readiness assessment and remediation backlog
 
+> Follow-up: tenant work from main PR #131 is reconciled in this branch. See
+> [package/runtime qualification plan](PACKAGE_QUALIFICATION_PLAN.md) and
+> `evidence/package-qualification/` for fresh results and unresolved gates.
+> The 94-test figures below are the historical first-patch run at `22aa518`,
+> not certification of later changes. Overall readiness remains blocked.
+
 ## Verdict
 
 **NOT YET PRODUCTION-READY.** Targeted hardening is implemented and measured, but

@@ -47,9 +47,9 @@ legacy-hr = ["pandas>=2.0"]
 dev = ["pytest==9.1.1"]  # latest stable
 
 [project.urls]
-Homepage = "https://github.com/QuantumPhiRedux/PhiMiner"
-Repository = "https://github.com/QuantumPhiRedux/PhiMiner"
-Issues = "https://github.com/QuantumPhiRedux/PhiMiner/issues"
+Homepage = "https://github.com/PhiEnterprise1/EuclidPhiEnterprise"
+Repository = "https://github.com/PhiEnterprise1/EuclidPhiEnterprise"
+Issues = "https://github.com/PhiEnterprise1/EuclidPhiEnterprise/issues"
 
 [tool.setuptools]
 include-package-data = false

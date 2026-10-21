@@ -1,5 +1,11 @@
 # Production architecture and authority contract
 
+> Follow-up: tenant work from main PR #131 is reconciled in this branch. See
+> [package/runtime qualification plan](PACKAGE_QUALIFICATION_PLAN.md) and
+> `evidence/package-qualification/` for fresh results and unresolved gates.
+> The 94-test figures below are the historical first-patch run at `22aa518`,
+> not certification of later changes. Overall readiness remains blocked.
+
 **Disposition: NOT YET PRODUCTION-READY.** This contract defines the required
 enterprise boundary; it does not certify the complete repository or deployed services.
 It covers the inspected `toe.unified` consumer and its actual exact-tensor dependency.
@@ -20,7 +26,7 @@ It does not replace that work with the older implementation.
 | Mathematical substrate | `kellogg.exact_tensor` -> `kellogg.tensor_ml.fit/predict` | Typed arithmetic and bounded computation; no identity or release authority | Real exact-linear implementation executes in focused tests; broad mathematical/performance claims not qualified |
 | TOE reasoning | `toe` package; merged `UnifiedAnalyticsPlatform.analyze` -> `TOEBridge.state_tomography` | Advisory/descriptive outputs, not permission or operational acceptance | Merged analysis path preserved; bridge and whole-package initializer not executed in this partial snapshot |
 | Platform orchestration | `toe.unified.platform.UnifiedAnalyticsPlatform` -> data, models, connectors, operations | Validate inputs, authorize actions, bind computation and provenance | In-process regressions measured; not an internet-facing production security boundary |
-| Governance/security | `SecurityModel.authorize`, context-local host-selected actor; AL HARAS is a separate declared integration | Trusted principal, tenant, least privilege, fail closed, service identities, independent model promotion | Existing contextual authorization retained; tenant/IdP/AL HARAS end-to-end integration unproven |
+| Governance/security | `TenantGateway` tenant-local facade instances, allowlist and live membership; `SecurityModel.authorize`; AL HARAS is a separate declared integration | Trusted principal, tenant, least privilege, fail closed, service identities, independent model promotion | Tenant-local state and completed revocation measured in process; trusted IdP/endpoint/AL HARAS end-to-end qualification unproven |
 | Persistence/recovery | `UnifiedDataLayer` + new `checkpoint.save_checkpoint/load_checkpoint` | Atomic durable acknowledgements, authenticated backups, deterministic recovery and approved rollback | In-memory transactions and offline POSIX data checkpoints tested; no live WAL or complete platform recovery |
 | Deployment/runtime | Existing TOE build/installed-artifact gate and enterprise clean-install workflow | Exact artifact/commit binding, supported interpreter/OS tests, secrets handling, rollout/rollback, measured dependency readiness | Gate extended, not executed here; deployment qualification remains blocked |
 
