@@ -83,6 +83,24 @@ are not a complete passing verdict. A report records commit, worktree state,
 interpreter, timestamps, command and artifact hashes; it never grants production
 certification. Existing `make verify-unified` remains the seven-layer entry point.
 
+Source/facade tests and installed-package tests are separate evidence scopes.
+`python packaging/toe/build_and_verify.py` also copies the authority, atomic-import
+and promotion suites into each clean installed-artifact check, for both the wheel
+and a wheel rebuilt from the sdist. It verifies that TOE, Kellogg and the facade
+resolve inside that interpreter's installed-package directories, then runs those
+three suites with `python -I`, importlib-mode pytest, no repository conftest and
+no inherited Python/pytest path or plugin overrides. This is an explicit runtime
+regression subset, not a replacement for the source or full repository suites.
+
+Logs, JUnit, test hashes and a fail-closed verdict are retained under
+`packaging/toe/dist/installed-unified/`, including on import-probe/test failure.
+Missing suites, zero executed tests, skips and failures cannot produce a passing
+verdict; reruns discard older evidence. The unified CI workflow includes separate
+Python 3.12/3.13 artifact jobs and retains the build outputs even on failure.
+Adding a gate or passing its orchestration-fixture tests does **not** establish
+that the real installed artifacts passed: inspect a fresh, commit-bound run.
+Nothing in this build path publishes a package or certifies deployment readiness.
+
 Before any release claim, the accountable release reviewer must check that the
 executed evidence matches the candidate commit/artifacts, is fresh for the
 change, covers the claimed deployment and has no unresolved blocking failures.

@@ -47,6 +47,10 @@ def main() -> int:
                 "tests/test_toe_unified*.py",
                 "tests/fixtures/toe_unified/**/*",
                 "scripts/verify_unified_enterprise.py",
+                "packaging/toe/build_and_verify.py",
+                "packaging/toe/pyproject.toml",
+                "packaging/kellogg-tensor/build_and_verify.py",
+                "packaging/kellogg-tensor/pyproject.toml",
                 ".github/workflows/unified-enterprise-contract.yml",
                 "pyproject.toml",
             )

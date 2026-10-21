@@ -23,6 +23,7 @@ Usage: python packaging/toe/build_and_verify.py [--python PATH ...]
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import hashlib
 import importlib.util
 import json
@@ -36,6 +37,7 @@ import tarfile
 import tempfile
 import venv
 import zipfile
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -53,6 +55,32 @@ RELEASE_TESTS = (
     "test_toe_geometry.py",
     "test_toe_learning_persistence.py",
 )
+# Explicit runtime regression scope, not the full repository test harness.
+UNIFIED_TESTS = (
+    "test_toe_unified_authority.py",
+    "test_toe_unified_atomic.py",
+    "test_toe_unified_promotion.py",
+)
+
+INSTALLED_UNIFIED_PROBE = r"""
+import hashlib, json, sysconfig
+from pathlib import Path
+import toe, kellogg
+from toe.unified import UnifiedAnalyticsPlatform
+from toe.unified import platform as facade
+roots = {Path(sysconfig.get_path(key)).resolve() for key in ("purelib", "platlib")}
+origins = {}
+for name, module in (("toe", toe), ("kellogg", kellogg), ("toe.unified.platform", facade)):
+    if not module.__file__:
+        raise RuntimeError(f"{name} is a namespace package, not a verified installed artifact")
+    path = Path(module.__file__).resolve()
+    if not any(path.is_relative_to(root) for root in roots):
+        raise RuntimeError(f"{name} resolved outside this interpreter's installed packages: {path}")
+    origins[name] = {"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+print(json.dumps(origins, sort_keys=True))
+"""
+
+
 _SECRET_PATTERNS = (
     re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
     re.compile(rb"ghp_[A-Za-z0-9]{30,}"),
@@ -341,6 +369,114 @@ print(json.dumps({
 """
 
 
+def installed_unified_check(py: Path, workdir: Path, label: str) -> Dict[str, Any]:
+    """Run the three hardening suites against installed artifacts, fail closed.
+
+    Copy tests only, never package sources or repository conftest. Retain logs,
+    counts and hashes outside the temporary venv even on a failed invocation.
+    Harness unit tests do not themselves establish installed-package success.
+    """
+    output = DIST / "installed-unified" / workdir.name
+    shutil.rmtree(output, ignore_errors=True)
+    output.mkdir(parents=True)
+    tests = workdir / "unified_tests"
+    shutil.rmtree(tests, ignore_errors=True)
+    tests.mkdir()
+    env = {
+        key: value
+        for key, value in _NO_CACHE.items()
+        if key not in {"PYTHONPATH", "PYTHONHOME", "PYTEST_ADDOPTS", "PYTEST_PLUGINS"}
+    }
+    env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
+    junit = output / "junit.xml"
+    record: Dict[str, Any] = {
+        "schema": "hyba.unified.installed-test-evidence/v1",
+        "label": label,
+        "git_sha": git_sha(),
+        "scope": "installed authority, atomic-import and promotion regressions",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "test_files": list(UNIFIED_TESTS),
+        "source_tests": {},
+        "counts": {key: 0 for key in ("tests", "failures", "errors", "skipped")},
+        "test_verdict": "failed_or_incomplete",
+        "production_certification": "not_assessed",
+        "limitations": [
+            "Three named fixture/in-process suites, not the full repository suite.",
+            "No tenant, recovery, live-vendor or deployment-SLA qualification.",
+        ],
+    }
+    try:
+        for name in UNIFIED_TESTS:
+            source = REPO / "tests" / name
+            shutil.copy2(source, tests / name)
+            record["source_tests"][name] = sha256(source)
+        probe_command = [str(py), "-I", "-c", INSTALLED_UNIFIED_PROBE]
+        record["probe_command"] = probe_command
+        probe = subprocess.run(
+            probe_command, cwd=workdir, env=env, capture_output=True, text=True
+        )
+        (output / "import-probe.log").write_text(
+            probe.stdout + probe.stderr, encoding="utf-8"
+        )
+        if probe.returncode:
+            raise RuntimeError("installed import-origin probe failed")
+        record["installed_origins"] = json.loads(probe.stdout.strip())
+        command = [
+            str(py),
+            "-I",
+            "-m",
+            "pytest",
+            "-q",
+            "--noconftest",
+            "--import-mode=importlib",
+            "-o",
+            "addopts=",
+            "-p",
+            "no:cacheprovider",
+            "--rootdir",
+            str(tests),
+            "--junitxml",
+            str(junit),
+            str(tests),
+        ]
+        record["command"] = command
+        with (output / "pytest.log").open("w", encoding="utf-8") as log:
+            result = subprocess.run(
+                command, cwd=workdir, env=env, stdout=log, stderr=subprocess.STDOUT
+            )
+        record["pytest_exit_code"] = result.returncode
+        suites = ET.parse(junit).getroot()
+        for suite in (
+            [suites] if suites.tag == "testsuite" else suites.findall("testsuite")
+        ):
+            for key in record["counts"]:
+                record["counts"][key] += int(suite.get(key, "0"))
+        counts = record["counts"]
+        if (
+            result.returncode != 0
+            or counts["tests"] <= 0
+            or any(counts[key] for key in ("failures", "errors", "skipped"))
+        ):
+            raise RuntimeError(
+                "installed unified tests failed, skipped or executed no tests"
+            )
+        record["test_verdict"] = "passed"
+    except Exception as exc:
+        record["error"] = f"{type(exc).__name__}: {exc}"
+    record["finished_at"] = datetime.now(timezone.utc).isoformat()
+    record["artifacts"] = {
+        path.name: sha256(path) for path in output.iterdir() if path.is_file()
+    }
+    (output / "evidence.json").write_text(
+        json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    if record["test_verdict"] != "passed":
+        raise RuntimeError(
+            f"installed unified verification failed under {label}; see {output}"
+        )
+    return record
+
+
 def installed_check(
     python: Path, wheels: List[Path], workdir: Path, label: str, version: str
 ) -> Dict[str, Any]:
@@ -348,6 +484,7 @@ def installed_check(
     sh([python, "-m", "venv", "--clear", env_dir])
     py = _py(env_dir)
     sh([py, "-m", "pip", "install", "-q", *[str(w) for w in wheels], "pytest"])
+    unified_record = installed_unified_check(py, workdir, label)
     check = workdir / "installed_check.py"
     check.write_text(INSTALLED_CHECK, encoding="utf-8")
     out = sh([py, "-I", check, version, dist_name()], cwd=workdir, capture_output=True)
@@ -379,6 +516,7 @@ def installed_check(
     }
     if res.returncode != 0:
         raise RuntimeError(f"release tests failed under {label}: {res.stdout[-2000:]}")
+    record["unified_tests"] = unified_record
     record["label"] = label
     shutil.rmtree(env_dir, ignore_errors=True)
     return record

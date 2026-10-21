@@ -8,6 +8,8 @@ on:
       - "tests/test_toe_unified*"
       - "tests/fixtures/toe_unified/**"
       - "scripts/verify_unified_enterprise.py"
+      - "packaging/toe/**"
+      - "packaging/kellogg-tensor/**"
       - "SYSTEM_CONTRACT.md"
       - "pyproject.toml"
       - ".github/workflows/unified-enterprise-contract.yml"
@@ -42,5 +44,28 @@ jobs:
         with:
           name: unified-enterprise-evidence-${{ matrix.python }}
           path: artifacts/unified-enterprise/
+          if-no-files-found: error
+          retention-days: 30
+
+  installed-artifacts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Build and verify wheels and sdist without publishing
+        run: python packaging/toe/build_and_verify.py
+      - name: Retain installed-artifact evidence on success and failure
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unified-installed-artifact-evidence-${{ matrix.python }}
+          path: packaging/toe/dist/
           if-no-files-found: error
           retention-days: 30

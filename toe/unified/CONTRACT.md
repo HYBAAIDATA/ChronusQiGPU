@@ -67,3 +67,14 @@ candidate training inputs, contain both binary classes and have finite complete
 features. `health()["drift"]` reports blocked/promoted/rejected state and scoring
 evidence. Direct manual training remains trusted; it is not made production-safe
 merely by the presence of the automatic-promotion gate.
+
+
+Installed-artifact verification is a separate gate: the existing TOE build verifier
+runs `test_toe_unified_authority.py`, `test_toe_unified_atomic.py` and
+`test_toe_unified_promotion.py` in clean wheel and rebuilt-sdist environments.
+Imports must originate in the environment's installed packages; source-path
+fallback, skipped tests, empty runs and failures cannot qualify. Evidence is
+retained in `packaging/toe/dist/installed-unified/`. This is a three-suite runtime
+regression scope, not full-package success inferred from a source test or a
+production-readiness declaration. The workflow must actually pass for the
+candidate commit before any installed-artifact claim is made.
