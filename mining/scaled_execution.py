@@ -142,7 +142,7 @@ class LucasScaledAethelExecutionAdapter:
         fold_ok = self.stack.tensor.decompress(folded, original_len) == header
         coverage = self._coverage(len(header) + len(target_bytes))
         try:
-            result = self.stack.chronus.mine(header, target_bytes, ordered, max_hashes=count)
+            result = self.stack.igpu.mine(header, target_bytes, ordered, max_hashes=count)
         except Exception as exc:
             self.toe.record_decision(
                 "execution_failed",
