@@ -1,0 +1,37 @@
+{
+  "audited_pr": 127,
+  "audited_head": "a5430ff1fea51cd5c8ed295798de123e3db5eeac",
+  "scope": "source/document consistency only; no new runtime rerun",
+  "checks": {
+    "families_separate_from_capabilities": true,
+    "manifest_capabilities": 24,
+    "manifest_statuses": {
+      "IMPLEMENTED": 23,
+      "LEGACY": 1
+    },
+    "portfolio_families": 26,
+    "many_domains_status": "MEASURED",
+    "every_problem_status": "UNSUPPORTED",
+    "optional_integration_semantics": {
+      "THESEUS custody (aethel.enterprise.custody)": "durable learning state; absent -> persistence UNAVAILABLE",
+      "millennium.hyba_poincare_yangmills": "finite 2I spectrum surface; absent -> UNAVAILABLE",
+      "turing_core": "shared algebraic-family substrate; absent -> TOE's embedded exact detector",
+      "chronus.mla1517.scale + lucas.ladder": "expansion envelope scale program; absent -> collapse fails closed",
+      "pandas": "legacy HR engine (extra 'legacy-hr')"
+    },
+    "prior_pr_files": 17,
+    "prior_runtime_files_modified": [],
+    "runtime_readiness_default_false": true,
+    "readiness_is_configurable": true,
+    "registry_execution_performed": false,
+    "catalog_tests_qualify_gate_f": false
+  },
+  "source_sha256": {
+    "toe/CAPABILITY_MANIFEST.json": "d640ff4ec75e40e4ff6d0167a70190ca4e8e5b828c7d08a4b1b31d4de7c24ed9",
+    "toe/CLAIM_REGISTER.json": "76e18d7ac919ec5b377a288afef7433ac7c996c1d38cebf177d3cda995e32711",
+    "toe/runtime.py": "b979b33d4bdd1cfeca3f307b1bd25f7e8692fead259651c95d17ed811be146af",
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py": "3a1f1d0f94be06589a4d335f6a3007266a5d43d7a3e68185b98f15f10807d988"
+  },
+  "release_decision": "HOLD",
+  "artifact_policy": "Existing CSVs, ZIP and logs remain versioned original-tranche artifacts; addendum does not imply they contain this later cross-check."
+}

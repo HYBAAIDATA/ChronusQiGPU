@@ -1,5 +1,13 @@
 Assessment source: `2bc45bd4f9c45a29fea00aa1f6ed34222ed58f07`. Enterprise-first; optional mining. **Production/publication HOLD remains.**
 
+## TOE / TURING contract cross-check
+
+**Assessment complete, production/publication HOLD. No runtime promotion on catalog tests alone.** The 16 catalog/connector/claim passes do not qualify Gate F. The map's 26 whole-portfolio families are not TOE's 24 manifest entries (23 IMPLEMENTED, one LEGACY) or its separate 19 unified system classes. Many-domains remains MEASURED; every-possible-problem remains UNSUPPORTED. Tested coverage is not TOE's application ceiling.
+
+Preserve dependency-specific absence semantics: THESEUS persistence/Millennium spectrum UNAVAILABLE; Chronus scale collapse fail-closed; absent turing_core uses the declared embedded exact detector. Do not invent integrations. TURING verify_registry checks source inventory/carve-outs/imports, not installation or rollback qualification. Runtime readiness defaults false but is configurable; this review does not change or approve it.
+
+Next freeze the intended release candidate and qualify Gate B on that source, full Gate A and remaining boundaries through local/self-hosted qualification while paid CI is unavailable, actual Gate F packs/human approvals, then finalize the existing Gate H report. PR #124 already records npm ci and 16/16 Gate B; the earlier T16 failure is separate evidence, not current candidate status. Details and pinned sources: [contract cross-check](HYBA_TOE_TURING_CONTRACT_CROSSCHECK_20261020.md).
+
 ## Executive findings
 
 - The earlier 18-brand selection was not the whole portfolio. This review maps **26 capability families**, separating engines, application layers, shared authorities, research, outcome bundles and delivery editions. These are analytical groupings, not 26 approved commercial SKUs.
