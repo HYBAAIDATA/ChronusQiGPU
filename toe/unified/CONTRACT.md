@@ -70,11 +70,25 @@ merely by the presence of the automatic-promotion gate.
 
 
 Installed-artifact verification is a separate gate: the existing TOE build verifier
-runs `test_toe_unified_authority.py`, `test_toe_unified_atomic.py` and
-`test_toe_unified_promotion.py` in clean wheel and rebuilt-sdist environments.
+runs `test_toe_unified_authority.py`, `test_toe_unified_atomic.py`,
+`test_toe_unified_promotion.py` and `test_toe_unified_tenancy.py` in clean wheel
+and rebuilt-sdist environments.
 Imports must originate in the environment's installed packages; source-path
 fallback, skipped tests, empty runs and failures cannot qualify. Evidence is
-retained in `packaging/toe/dist/installed-unified/`. This is a three-suite runtime
+retained in `packaging/toe/dist/installed-unified/`. This is a four-suite runtime
 regression scope, not full-package success inferred from a source test or a
 production-readiness declaration. The workflow must actually pass for the
 candidate commit before any installed-artifact claim is made.
+
+
+`TenantGateway` adds a host-composed tenant entry point. Each tenant owns a separate
+role-enforced platform; every session call rechecks current membership and role.
+Revocation waits for an in-flight same-tenant call and blocks later calls through
+already-issued sessions. Data/model/policy/connector/governance/receipt state is
+not shared between provisioned tenants. Tenant outputs are detached and tagged;
+analysis receipts include the tenant ID in their hash-bound configuration.
+Connector configuration and all grant/provision/revoke methods remain trusted
+host controls, never tenant API operations. Tenant selection is not identity
+verification. The host must authenticate first; neither this gateway nor a tenant
+label secures adversarial Python code, external vendor resources or a deployment.
+See `SYSTEM_CONTRACT.md` for isolation limits and remaining qualification gates.

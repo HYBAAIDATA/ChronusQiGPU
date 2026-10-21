@@ -56,7 +56,8 @@ claim's evidence label. A named test is a test specification, not proof of a fre
 
 | Concern | Code / declared behaviour | Executed evidence required | What it does not establish |
 |---|---|---|---|
-| Facade authorization | Guards on data, model, governance and operations methods | Denial tests and permitted-role flows | External credential verification, tenant/row isolation or a security audit |
+| Facade authorization | Guards on data, model, governance and operations methods | Denial tests and permitted-role flows | External credential verification, tenant/row isolation by the bare facade or a security audit |
+| Tenant routing | `TenantGateway` owns separate enforced runtime instances and rechecks membership/roles on every call | Cross-tenant data/model/policy/receipt/connector separation and revoke/downgrade tests in `test_toe_unified_tenancy.py` | External identity, adversarial Python/process isolation, distributed custody or independent tenant security qualification |
 | Context isolation | Context-local identity and scoped service selection | Cross-thread denial; service role downgrade | Host login correctness or universal concurrency safety |
 | Quality policy | Finite null-rate limit in [0, 1] | Invalid-policy rejection; real quarantine path | Retention deletion or regulatory compliance |
 | Connectors | Bind/extract, retirement removes active binding | Fixture lifecycle and failure tests | Vendor certification, live connectivity or displaced customer systems |
@@ -84,11 +85,11 @@ interpreter, timestamps, command and artifact hashes; it never grants production
 certification. Existing `make verify-unified` remains the seven-layer entry point.
 
 Source/facade tests and installed-package tests are separate evidence scopes.
-`python packaging/toe/build_and_verify.py` also copies the authority, atomic-import
-and promotion suites into each clean installed-artifact check, for both the wheel
+`python packaging/toe/build_and_verify.py` also copies the authority, atomic-import,
+promotion and tenancy suites into each clean installed-artifact check, for both the wheel
 and a wheel rebuilt from the sdist. It verifies that TOE, Kellogg and the facade
 resolve inside that interpreter's installed-package directories, then runs those
-three suites with `python -I`, importlib-mode pytest, no repository conftest and
+four suites with `python -I`, importlib-mode pytest, no repository conftest and
 no inherited Python/pytest path or plugin overrides. This is an explicit runtime
 regression subset, not a replacement for the source or full repository suites.
 
@@ -108,7 +109,7 @@ CI reporting does not configure branch protection or replace independent review.
 
 ### Explicitly open qualification work
 
-- Live vendor integration, credential lifecycle and tenant/record-level authority.
+- Live vendor integration, credential lifecycle, external identity and independently qualified tenant/record-level authority.
 - Durable custody, restart/recovery, signed or independently retained audit receipts.
 - Isolation across subsequent policy changes and crash recovery of import transactions.
 - Independent evaluation-corpus quality, holdout reuse controls and domain-specific promotion qualification.
@@ -151,3 +152,48 @@ The direct/manual `train` and legacy `retrain` APIs remain trusted operations;
 `retrain(..., require_evaluation=True)` opts into the same guarded path. The host
 must restrict direct training authority appropriately. No holdout's existence
 proves independence of its collection process or fitness for a deployed domain.
+
+
+## Tenant composition boundary
+
+`TenantGateway` is a trusted embedding-host composition root, not an authentication
+endpoint or a network service. The host authenticates the principal, provisions
+its exact tenant membership and role, and obtains a `TenantSession` using that
+verified identity. Never accept `verified_actor` from an unverified client field
+or expose gateway provisioning/grant/revoke/connector configuration as tenant APIs.
+
+Each provisioned tenant has an independent role-enforced platform instance,
+including records, indexes, policies, models/history, connectors, operational and
+drift state, governance state and receipt chain. Tenant calls use an explicit
+allowlist and the canonical facade's current role checks. Membership is rechecked
+on every invocation; revocation and role changes serialize with calls for that
+tenant. In-flight calls may complete before revoke returns. Once it returns,
+previously issued sessions cannot start another authorized call. Revocation cannot
+recall data already returned or cancel an external action already started.
+
+Connector credentials and live driver/runtime objects are host-only. Tenant
+results and model records are detached copies, with explicit tenant/operation
+scope. Analysis receipts also hash-bind the tenant ID in their configuration.
+A bare platform's optional tenant label alone does not enforce membership.
+
+Calls serialize per tenant, trading same-tenant throughput for a clear grant/
+revocation boundary; different tenant locks are independent. The gateway is
+in-process: it does not isolate arbitrary Python code, process memory, filesystem,
+external credentials, vendor namespaces or shared external services. Hosts must
+not share credential scopes/transports across tenants unless that sharing is
+intentional and independently controlled. It does not provide durable tenant
+custody or restart recovery, nor replace an independent multi-tenant security review.
+
+### Remaining qualification order
+
+1. Obtain a fresh full-package wheel and rebuilt-sdist verdict at the candidate
+   commit, including root-package initialization and the installed runtime suites.
+2. Read and retain source/package CI evidence; inaccessible checks remain a blocker.
+3. Qualify the host authentication/tenant adapter and external resource isolation
+   against cross-tenant adversarial cases in the actual deployment.
+4. Implement and test durable checkpoint/restore and rollback using the accountable
+   custody backend: interruption at each write boundary, corruption rejection,
+   fresh-process restore, tenant binding and model/data/audit consistency.
+5. Run live-vendor, load/fault/soak and SLA qualification in the target environment.
+
+Implemented tenant routing and passing fixture tests do not close these release gates.

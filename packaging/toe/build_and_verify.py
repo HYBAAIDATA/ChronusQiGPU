@@ -60,6 +60,7 @@ UNIFIED_TESTS = (
     "test_toe_unified_authority.py",
     "test_toe_unified_atomic.py",
     "test_toe_unified_promotion.py",
+    "test_toe_unified_tenancy.py",
 )
 
 INSTALLED_UNIFIED_PROBE = r"""
@@ -370,7 +371,7 @@ print(json.dumps({
 
 
 def installed_unified_check(py: Path, workdir: Path, label: str) -> Dict[str, Any]:
-    """Run the three hardening suites against installed artifacts, fail closed.
+    """Run the four hardening suites against installed artifacts, fail closed.
 
     Copy tests only, never package sources or repository conftest. Retain logs,
     counts and hashes outside the temporary venv even on a failed invocation.
@@ -393,7 +394,7 @@ def installed_unified_check(py: Path, workdir: Path, label: str) -> Dict[str, An
         "schema": "hyba.unified.installed-test-evidence/v1",
         "label": label,
         "git_sha": git_sha(),
-        "scope": "installed authority, atomic-import and promotion regressions",
+        "scope": "installed authority, atomic-import, promotion and tenant regressions",
         "started_at": datetime.now(timezone.utc).isoformat(),
         "test_files": list(UNIFIED_TESTS),
         "source_tests": {},
@@ -401,8 +402,8 @@ def installed_unified_check(py: Path, workdir: Path, label: str) -> Dict[str, An
         "test_verdict": "failed_or_incomplete",
         "production_certification": "not_assessed",
         "limitations": [
-            "Three named fixture/in-process suites, not the full repository suite.",
-            "No tenant, recovery, live-vendor or deployment-SLA qualification.",
+            "Four named fixture/in-process suites, not the full repository suite.",
+            "No independent tenant security audit, recovery, live-vendor or SLA qualification.",
         ],
     }
     try:
