@@ -98,13 +98,14 @@ def test_candidate_cannot_overwrite_a_concurrently_replaced_live_version(monkeyp
         )
         try:
             assert fitted.wait(5)
-            replacement = models.train("m", rows(), ["x"], "label")
+            # Existing names cannot bypass validation by calling train again.
+            replacement = models.retrain("m", rows(), rows(False, 0.5), require_evaluation=True)
         finally:
             resume.set()
         result = future.result(timeout=5)
     assert result.reason == "live_model_changed_during_evaluation"
     assert result.replaced is False
-    assert models.get("m") is replacement.record
+    assert models.get("m").version == replacement.record.version
     assert models.get("m").version == 2
     assert len(models._history["m"]) == 2
 

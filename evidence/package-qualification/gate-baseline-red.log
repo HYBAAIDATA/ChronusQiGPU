@@ -1,0 +1,451 @@
+FFFFFFFFFFFFFFFFFF..FF                                                   [100%]
+=================================== FAILURES ===================================
+__________ test_environment_cannot_enable_source_or_namespace_bypass ___________
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f443ed1c8a0>
+
+    def test_environment_cannot_enable_source_or_namespace_bypass(gate, monkeypatch):
+        forbidden = ('PYTHONPATH', 'PYTHONHOME', 'PYTEST_ADDOPTS', 'PYTEST_PLUGINS',
+                     'EUCLID_FOCUSED_SNAPSHOT')
+        for name in forbidden:
+            monkeypatch.setitem(gate._NO_CACHE, name, 'hostile-setting')
+>       env = gate.isolated_environment()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'toe_package_gate_under_test' has no attribute 'isolated_environment'
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:46: AttributeError
+___________________ test_junit_accepts_every_required_module ___________________
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-28/test_junit_accepts_every_requi0')
+
+    def test_junit_accepts_every_required_module(gate, tmp_path):
+        path = tmp_path / 'junit.xml'; junit(path)
+>       assert gate.validated_test_counts(path, ('test_a.py', 'test_b.py')) == {
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+            'tests': 2, 'failures': 0, 'errors': 0, 'skipped': 0}
+E       AttributeError: module 'toe_package_gate_under_test' has no attribute 'validated_test_counts'
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:53: AttributeError
+_______________ test_junit_rejects_nonpassing_outcomes[failures] _______________
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-28/test_junit_rejects_nonpassing_0')
+field = 'failures'
+
+    @pytest.mark.parametrize('field', ['failures', 'errors', 'skipped'])
+    def test_junit_rejects_nonpassing_outcomes(gate, tmp_path, field):
+        path = tmp_path / 'junit.xml'; junit(path, **{field: 1})
+        with pytest.raises(RuntimeError):
+>           gate.validated_test_counts(path, ('test_a.py', 'test_b.py'))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'toe_package_gate_under_test' has no attribute 'validated_test_counts'
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:61: AttributeError
+________________ test_junit_rejects_nonpassing_outcomes[errors] ________________
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-28/test_junit_rejects_nonpassing_1')
+field = 'errors'
+
+    @pytest.mark.parametrize('field', ['failures', 'errors', 'skipped'])
+    def test_junit_rejects_nonpassing_outcomes(gate, tmp_path, field):
+        path = tmp_path / 'junit.xml'; junit(path, **{field: 1})
+        with pytest.raises(RuntimeError):
+>           gate.validated_test_counts(path, ('test_a.py', 'test_b.py'))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'toe_package_gate_under_test' has no attribute 'validated_test_counts'
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:61: AttributeError
+_______________ test_junit_rejects_nonpassing_outcomes[skipped] ________________
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-28/test_junit_rejects_nonpassing_2')
+field = 'skipped'
+
+    @pytest.mark.parametrize('field', ['failures', 'errors', 'skipped'])
+    def test_junit_rejects_nonpassing_outcomes(gate, tmp_path, field):
+        path = tmp_path / 'junit.xml'; junit(path, **{field: 1})
+        with pytest.raises(RuntimeError):
+>           gate.validated_test_counts(path, ('test_a.py', 'test_b.py'))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'toe_package_gate_under_test' has no attribute 'validated_test_counts'
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:61: AttributeError
+_______ test_junit_rejects_empty_missing_suite_or_false_total[names0-0] ________
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-28/test_junit_rejects_empty_missi0')
+names = (), tests = 0
+
+    @pytest.mark.parametrize('names,tests', [((), 0), (('test_a',), 1), (('test_a', 'test_b'), 99)])
+    def test_junit_rejects_empty_missing_suite_or_false_total(gate, tmp_path, names, tests):
+        path = tmp_path / 'junit.xml'; junit(path, names=names, tests=tests)
+        with pytest.raises(RuntimeError):
+>           gate.validated_test_counts(path, ('test_a.py', 'test_b.py'))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'toe_package_gate_under_test' has no attribute 'validated_test_counts'
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:68: AttributeError
+_______ test_junit_rejects_empty_missing_suite_or_false_total[names1-1] ________
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-28/test_junit_rejects_empty_missi1')
+names = ('test_a',), tests = 1
+
+    @pytest.mark.parametrize('names,tests', [((), 0), (('test_a',), 1), (('test_a', 'test_b'), 99)])
+    def test_junit_rejects_empty_missing_suite_or_false_total(gate, tmp_path, names, tests):
+        path = tmp_path / 'junit.xml'; junit(path, names=names, tests=tests)
+        with pytest.raises(RuntimeError):
+>           gate.validated_test_counts(path, ('test_a.py', 'test_b.py'))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'toe_package_gate_under_test' has no attribute 'validated_test_counts'
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:68: AttributeError
+_______ test_junit_rejects_empty_missing_suite_or_false_total[names2-99] _______
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-28/test_junit_rejects_empty_missi2')
+names = ('test_a', 'test_b'), tests = 99
+
+    @pytest.mark.parametrize('names,tests', [((), 0), (('test_a',), 1), (('test_a', 'test_b'), 99)])
+    def test_junit_rejects_empty_missing_suite_or_false_total(gate, tmp_path, names, tests):
+        path = tmp_path / 'junit.xml'; junit(path, names=names, tests=tests)
+        with pytest.raises(RuntimeError):
+>           gate.validated_test_counts(path, ('test_a.py', 'test_b.py'))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'toe_package_gate_under_test' has no attribute 'validated_test_counts'
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:68: AttributeError
+_______________________ test_junit_rejects_malformed_xml _______________________
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-28/test_junit_rejects_malformed_x0')
+
+    def test_junit_rejects_malformed_xml(gate, tmp_path):
+        path = tmp_path / 'junit.xml'; path.write_text('not xml')
+        with pytest.raises(RuntimeError):
+>           gate.validated_test_counts(path, ('test_a.py',))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'toe_package_gate_under_test' has no attribute 'validated_test_counts'
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:74: AttributeError
+___________ test_failure_attempt_retains_failure_and_never_certifies ___________
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-28/test_failure_attempt_retains_f0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f443eba2b30>
+
+    def test_failure_attempt_retains_failure_and_never_certifies(gate, tmp_path, monkeypatch):
+        monkeypatch.setattr(gate, 'DIST', tmp_path / 'dist')
+        monkeypatch.setattr(gate, 'git_sha', lambda: 'a' * 40)
+        def fail(args, attempt):
+            attempt['stage'] = 'injected-install-failure'
+            raise RuntimeError('fixture install failed')
+        monkeypatch.setattr(gate, '_qualify', fail, raising=False)
+        with pytest.raises(RuntimeError, match='fixture install failed'):
+>           gate.main([])
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../qualification-gate-baseline/packaging/toe/build_and_verify.py:548: in main
+    version = toe_version()
+              ^^^^^^^^^^^^^
+../qualification-gate-baseline/packaging/toe/build_and_verify.py:113: in toe_version
+    (REPO / "toe" / "__init__.py").read_text(encoding="utf-8"),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/pathlib/_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/pathlib/_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/vercel/sandbox/data/qualification-gate-baseline/toe/__init__.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/qualification-gate-baseline/toe/__init__.py'
+
+/usr/lib64/python3.13/pathlib/_local.py:537: FileNotFoundError
+_____________ test_incomplete_snapshot_is_not_a_buildable_release ______________
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-28/test_incomplete_snapshot_is_no0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f443ed4b310>
+
+    def test_incomplete_snapshot_is_not_a_buildable_release(gate, tmp_path, monkeypatch):
+        monkeypatch.setattr(gate, 'REPO', tmp_path)
+        with pytest.raises(RuntimeError, match='incomplete'):
+>           gate.validate_source_inputs()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'toe_package_gate_under_test' has no attribute 'validate_source_inputs'
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:98: AttributeError
+__________ test_build_failure_evidence_contains_exact_missing_inputs ___________
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-28/test_build_failure_evidence_co0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f443ea48390>
+
+    def test_build_failure_evidence_contains_exact_missing_inputs(gate, tmp_path, monkeypatch):
+        monkeypatch.setattr(gate, 'DIST', tmp_path / 'dist')
+        monkeypatch.setattr(gate, 'REPO', tmp_path)
+        with pytest.raises(RuntimeError, match='incomplete'):
+>           gate.main([])
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:105: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../qualification-gate-baseline/packaging/toe/build_and_verify.py:548: in main
+    version = toe_version()
+              ^^^^^^^^^^^^^
+../qualification-gate-baseline/packaging/toe/build_and_verify.py:113: in toe_version
+    (REPO / "toe" / "__init__.py").read_text(encoding="utf-8"),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/pathlib/_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/pathlib/_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-28/test_build_failure_evidence_co0/toe/__init__.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-vercel-sandbox/pytest-28/test_build_failure_evidence_co0/toe/__init__.py'
+
+/usr/lib64/python3.13/pathlib/_local.py:537: FileNotFoundError
+_____________ test_installed_probe_timeout_retains_failed_evidence _____________
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-28/test_installed_probe_timeout_r0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f443ed07f50>
+
+    def test_installed_probe_timeout_retains_failed_evidence(gate, tmp_path, monkeypatch):
+        monkeypatch.setattr(gate, 'git_sha', lambda: 'fixture')
+        monkeypatch.setattr(gate, 'DIST', tmp_path / 'dist')
+        monkeypatch.setattr(gate, 'REPO', tmp_path / 'repo')
+        monkeypatch.setattr(gate, 'UNIFIED_TESTS', ('test_fixture.py',))
+        source = gate.REPO / 'tests/test_fixture.py'; source.parent.mkdir(parents=True)
+        source.write_text('def test_fixture(): pass\n')
+        work = tmp_path / 'work'; work.mkdir()
+        def timeout(command, **kwargs):
+            assert kwargs['timeout'] == gate.INSTALLED_TIMEOUT_SECONDS
+            raise subprocess.TimeoutExpired(command, kwargs['timeout'])
+        monkeypatch.setattr(gate.subprocess, 'run', timeout)
+        with pytest.raises(RuntimeError, match='installed unified verification failed'):
+            gate.installed_unified_check(Path(sys.executable), work, 'fixture')
+        record = json.loads((gate.DIST / 'installed-unified/work/evidence.json').read_text())
+        assert record['test_verdict'] == 'failed_or_incomplete'
+>       assert 'TimeoutExpired' in record['error']
+E       assert 'TimeoutExpired' in "KeyError: 'timeout'"
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:128: AssertionError
+__________ test_gate_scope_preserves_tenant_and_recovery_regressions ___________
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+
+    def test_gate_scope_preserves_tenant_and_recovery_regressions(gate):
+>       assert {'test_toe_unified_tenancy.py', 'test_toe_unified_production_guardrails.py',
+                'test_toe_unified_atomic.py', 'test_toe_unified_promotion.py'} <= set(gate.UNIFIED_TESTS)
+E       AssertionError: assert {'test_toe_un...d_tenancy.py'} <= {'test_toe_un...d_tenancy.py'}
+E         
+E         Extra items in the left set:
+E         'test_toe_unified_production_guardrails.py'
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:132: AssertionError
+_________ test_workflow_retains_failure_evidence_even_when_build_fails _________
+
+    def test_workflow_retains_failure_evidence_even_when_build_fails():
+        workflow = yaml.load((ROOT / '.github/workflows/toe-release.yml').read_text(), Loader=yaml.BaseLoader)
+        steps = workflow['jobs']['verify-wheel']['steps']
+        retention = [s for s in steps if s.get('name') == 'Retain qualification evidence, including failed attempts']
+>       assert len(retention) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:140: AssertionError
+______________ test_workflow_has_bounded_build_and_mandatory_gate ______________
+
+    def test_workflow_has_bounded_build_and_mandatory_gate():
+        workflow = yaml.load((ROOT / '.github/workflows/toe-release.yml').read_text(), Loader=yaml.BaseLoader)
+        job = workflow['jobs']['verify-wheel']
+>       assert int(job['timeout-minutes']) <= 45
+                   ^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'timeout-minutes'
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:149: KeyError
+__________ test_zero_exit_without_verified_artifact_cannot_pass[None] __________
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-28/test_zero_exit_without_verifie0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f443ea05ff0>
+verdict = None
+
+    @pytest.mark.parametrize('verdict', [None, {'artifact_verified': False}])
+    def test_zero_exit_without_verified_artifact_cannot_pass(gate, tmp_path, monkeypatch, verdict):
+        monkeypatch.setattr(gate, 'DIST', tmp_path / 'dist')
+        monkeypatch.setattr(gate, 'git_sha', lambda: 'fixture')
+        def incomplete(args, attempt):
+            if verdict is not None:
+                (gate.DIST / 'artifact-verdict.json').write_text(json.dumps(verdict))
+            return 0
+        monkeypatch.setattr(gate, '_qualify', incomplete, raising=False)
+        with pytest.raises(RuntimeError, match='verdict'):
+>           gate.main([])
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:164: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../qualification-gate-baseline/packaging/toe/build_and_verify.py:548: in main
+    version = toe_version()
+              ^^^^^^^^^^^^^
+../qualification-gate-baseline/packaging/toe/build_and_verify.py:113: in toe_version
+    (REPO / "toe" / "__init__.py").read_text(encoding="utf-8"),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/pathlib/_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/pathlib/_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/vercel/sandbox/data/qualification-gate-baseline/toe/__init__.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/qualification-gate-baseline/toe/__init__.py'
+
+/usr/lib64/python3.13/pathlib/_local.py:537: FileNotFoundError
+________ test_zero_exit_without_verified_artifact_cannot_pass[verdict1] ________
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-28/test_zero_exit_without_verifie1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f443ecc2fc0>
+verdict = {'artifact_verified': False}
+
+    @pytest.mark.parametrize('verdict', [None, {'artifact_verified': False}])
+    def test_zero_exit_without_verified_artifact_cannot_pass(gate, tmp_path, monkeypatch, verdict):
+        monkeypatch.setattr(gate, 'DIST', tmp_path / 'dist')
+        monkeypatch.setattr(gate, 'git_sha', lambda: 'fixture')
+        def incomplete(args, attempt):
+            if verdict is not None:
+                (gate.DIST / 'artifact-verdict.json').write_text(json.dumps(verdict))
+            return 0
+        monkeypatch.setattr(gate, '_qualify', incomplete, raising=False)
+        with pytest.raises(RuntimeError, match='verdict'):
+>           gate.main([])
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:164: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../qualification-gate-baseline/packaging/toe/build_and_verify.py:548: in main
+    version = toe_version()
+              ^^^^^^^^^^^^^
+../qualification-gate-baseline/packaging/toe/build_and_verify.py:113: in toe_version
+    (REPO / "toe" / "__init__.py").read_text(encoding="utf-8"),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/pathlib/_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/pathlib/_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/vercel/sandbox/data/qualification-gate-baseline/toe/__init__.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/qualification-gate-baseline/toe/__init__.py'
+
+/usr/lib64/python3.13/pathlib/_local.py:537: FileNotFoundError
+_______________ test_repository_provenance_matches_actual_target _______________
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+
+    def test_repository_provenance_matches_actual_target(gate):
+>       assert gate.REPOSITORY == 'PhiEnterprise1/EuclidPhiEnterprise'
+E       AssertionError: assert 'QuantumPhiRedux/PhiMiner' == 'PhiEnterpris...PhiEnterprise'
+E         
+E         - PhiEnterprise1/EuclidPhiEnterprise
+E         + QuantumPhiRedux/PhiMiner
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:198: AssertionError
+___________ test_xml_child_failure_cannot_hide_behind_zero_counters ____________
+
+gate = <module 'toe_package_gate_under_test' from '/vercel/sandbox/data/qualification-gate-baseline/packaging/toe/build_and_verify.py'>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-28/test_xml_child_failure_cannot_0')
+
+    def test_xml_child_failure_cannot_hide_behind_zero_counters(gate, tmp_path):
+        path = tmp_path / 'junit.xml'; junit(path)
+        tree = ET.parse(path)
+        ET.SubElement(tree.getroot().find('testsuite/testcase'), 'failure')
+        tree.write(path)
+        with pytest.raises(RuntimeError):
+>           gate.validated_test_counts(path, ('test_a.py', 'test_b.py'))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'toe_package_gate_under_test' has no attribute 'validated_test_counts'
+
+/data/qualification-gate-baseline/tests/test_toe_package_qualification.py:210: AttributeError
+=========================== short test summary info ============================
+FAILED ../../../../dev::test_environment_cannot_enable_source_or_namespace_bypass
+FAILED ../../../../dev::test_junit_accepts_every_required_module - AttributeE...
+FAILED ../../../../dev::test_junit_rejects_nonpassing_outcomes[failures] - At...
+FAILED ../../../../dev::test_junit_rejects_nonpassing_outcomes[errors] - Attr...
+FAILED ../../../../dev::test_junit_rejects_nonpassing_outcomes[skipped] - Att...
+FAILED ../../../../dev::test_junit_rejects_empty_missing_suite_or_false_total[names0-0]
+FAILED ../../../../dev::test_junit_rejects_empty_missing_suite_or_false_total[names1-1]
+FAILED ../../../../dev::test_junit_rejects_empty_missing_suite_or_false_total[names2-99]
+FAILED ../../../../dev::test_junit_rejects_malformed_xml - AttributeError: mo...
+FAILED ../../../../dev::test_failure_attempt_retains_failure_and_never_certifies
+FAILED ../../../../dev::test_incomplete_snapshot_is_not_a_buildable_release
+FAILED ../../../../dev::test_build_failure_evidence_contains_exact_missing_inputs
+FAILED ../../../../dev::test_installed_probe_timeout_retains_failed_evidence
+FAILED ../../../../dev::test_gate_scope_preserves_tenant_and_recovery_regressions
+FAILED ../../../../dev::test_workflow_retains_failure_evidence_even_when_build_fails
+FAILED ../../../../dev::test_workflow_has_bounded_build_and_mandatory_gate - ...
+FAILED ../../../../dev::test_zero_exit_without_verified_artifact_cannot_pass[None]
+FAILED ../../../../dev::test_zero_exit_without_verified_artifact_cannot_pass[verdict1]
+FAILED ../../../../dev::test_repository_provenance_matches_actual_target - As...
+FAILED ../../../../dev::test_xml_child_failure_cannot_hide_behind_zero_counters
+20 failed, 2 passed in 0.41s

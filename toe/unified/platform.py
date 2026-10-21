@@ -18,7 +18,7 @@ from .adaptive import AdaptiveInterface
 from .bi import Inquiry, dashboard
 from .catalog import CATALOG, DISPLACED_CLASSES, search
 from .connectors import BoundConnector, bind
-from .data_layer import IngestBatch, Policy, UnifiedDataLayer, normalize_snapshot
+from .data_layer import Policy, UnifiedDataLayer, detached_payload, _digest
 from .economics import CostBaseline, PlatformCost, assess, document_fortune500_scenario, financial_services_case
 from .impact import ScholarshipLedger
 from .intelligence import ModelRegistry
@@ -38,6 +38,8 @@ class AnalysisUnavailable(RuntimeError):
 
 class GateUnavailable(RuntimeError):
     """A gate was read before its measured source existed."""
+
+    status = "unavailable"
 
 
 @dataclass(frozen=True)
@@ -95,8 +97,10 @@ class UnifiedAnalyticsPlatform:
         self.started = False
         self._last_roi = None
 
-    def start(self) -> dict:
+    def start(self, *, production: bool = False) -> dict:
         self.security.authorize("operate")
+        if production:
+            raise GateUnavailable("production start blocked: tenant identity, governed initial promotion, durable recovery and full-artifact qualification are incomplete")
         self.started = True
         return {
             "started": True,
@@ -112,7 +116,7 @@ class UnifiedAnalyticsPlatform:
         bound = bind(connector_id, credentials)
         self._connections[bound.spec.id] = bound
         self._retired.discard(bound.spec.id)
-        self.operations.note_probe(True)
+        # Configuration/preflight is not a measured availability sample.
         return bound
 
     def connections(self) -> dict:
@@ -163,7 +167,7 @@ class UnifiedAnalyticsPlatform:
         if bound is None:
             raise KeyError(f"{connector_id} is not connected")
         extracted = bound.extract(entity, mode)
-        rows = deepcopy(list(extracted.rows))
+        rows = [detached_payload(row) for row in extracted.rows]
         compiled = compile_operator({"events": rows})
         receipt = self.data.ingest(
             connector_id,
@@ -182,7 +186,7 @@ class UnifiedAnalyticsPlatform:
 
     def ingest_rows(self, source: str, entity: str, rows: list[dict]) -> dict:
         self.security.authorize("ingest")
-        rows = deepcopy(rows)
+        rows = [detached_payload(row) for row in rows]
         compiled = compile_operator({"events": rows})
         receipt = self.data.ingest(
             source,
@@ -200,28 +204,40 @@ class UnifiedAnalyticsPlatform:
 
     def import_records(self, rows: list[dict]) -> list[dict]:
         self.security.authorize("ingest")
-        normalized = normalize_snapshot(rows)
         grouped: dict[tuple[str, str], list[dict]] = {}
-        quarantined: list[tuple[str, str, dict]] = []
-        for row in normalized:
-            grouped.setdefault((row["source"], row["entity"]), []).append(row["payload"])
-            if row["quarantined"]:
-                quarantined.append((row["source"], row["entity"], row["payload"]))
-        batches, compiled_specs = [], []
-        # Compile every group before the transaction: bad later groups cannot
-        # leave earlier groups visible or emit partial success receipts.
+        quarantined = []
+        lineage = {}
+        for row in deepcopy(rows):
+            source, entity = row["source"], row["entity"]
+            payload = detached_payload(row["payload"])
+            digest = _digest({"source": source, "entity": entity, "payload": payload})
+            if "digest" in row and row["digest"] != digest:
+                raise ValueError("import content digest mismatch")
+            flag = row.get("quarantined", False)
+            if type(flag) is not bool:
+                raise ValueError("quarantined must be a boolean")
+            grouped.setdefault((source, entity), []).append(payload)
+            if flag:
+                quarantined.append((source, entity, payload))
+            prior = row.get("lineage", [])
+            if not isinstance(prior, list):
+                raise ValueError("lineage must be a list")
+            entries = [detached_payload(entry) for entry in prior]
+            entries.append({key: row[key] for key in (
+                "digest", "operator_digest", "batch_id", "ingested_at"
+            ) if key in row})
+            lineage.setdefault(digest, []).extend(entries)
+        compiled = []
+        batches = []
         for (source, entity), payloads in sorted(grouped.items()):
-            compiled = compile_operator({"events": payloads})
-            batches.append(
-                IngestBatch(source, entity, payloads, compiled.input_digest, compiled.kind)
-            )
-            compiled_specs.append(compiled)
-        receipts = self.data.ingest_atomic(batches, quarantined)
+            op = compile_operator({"events": payloads})
+            compiled.append(op)
+            batches.append(dict(source=source, entity=entity, rows=payloads,
+                                operator_digest=op.input_digest, operator_kind=op.kind))
+        receipts = self.data.ingest_many(batches, quarantined=quarantined, lineage=lineage)
         self._receipts.extend(receipts)
-        return [
-            {"receipt": receipt, "operator": compiled.operator, "truth_class": compiled.truth_class}
-            for receipt, compiled in zip(receipts, compiled_specs)
-        ]
+        return [{"receipt": receipt, "operator": op.operator, "truth_class": op.truth_class}
+                for receipt, op in zip(receipts, compiled)]
 
     def govern(self, entity: str, classification: str, retention_days: int, owner: str, max_null_rate: float = 0.2) -> Policy:
         self.security.authorize("govern")
@@ -243,6 +259,7 @@ class UnifiedAnalyticsPlatform:
         min_accuracy: float = 0.8,
     ):
         self.security.authorize("train")
+        self.security.authorize("promote")
         return self.models.retrain(
             name, rows, eval_rows, require_evaluation=require_evaluation, min_accuracy=min_accuracy
         )
@@ -330,6 +347,9 @@ class UnifiedAnalyticsPlatform:
 
     def feedback(self, user: str, widget: str, depth: int = 1, rating: float | None = None):
         self.security.authorize("dashboard")
+        if self.security.enforced and user != self.security.actor:
+            from .security import AccessDenied
+            raise AccessDenied("feedback user must match actor")
         profile = self.adaptive.observe(user, widget, depth)
         if rating is not None:
             self.operations.note_rating(rating)
@@ -337,6 +357,9 @@ class UnifiedAnalyticsPlatform:
 
     def dashboard_for(self, user: str, name: str, widgets: list[dict]) -> dict:
         self.security.authorize("dashboard")
+        if self.security.enforced and user != self.security.actor:
+            from .security import AccessDenied
+            raise AccessDenied("dashboard user must match actor")
         profile = self.adaptive.profile(user)
         spec = dashboard(name, widgets, profile.widget_rank)
         spec["density"] = profile.preferred_density
@@ -348,6 +371,18 @@ class UnifiedAnalyticsPlatform:
         quality = self.data.quality()
         return {
             "sequence": self._health_seq,
+            "status": (
+                "blocked" if not self.security.enforced else
+                "unavailable" if not self.started or not self.operations.probes_fresh() else
+                "degraded" if self.operations.probe_failures or self.monitor.last_error else "healthy"
+            ),
+            "probe_evidence_fresh": self.operations.probes_fresh(),
+            "availability_scope": "recorded probe samples; not uptime or an SLO",
+            "production_ready": False,
+            "qualification_blockers": [
+                "tenant identity not integrated", "durable recovery not qualified",
+                "initial model promotion not governed", "full package and deployment checks outstanding",
+            ],
             "started": self.started,
             "connectors_bound": len(self._connections),
             "connectors_available": len(CATALOG),
@@ -363,6 +398,12 @@ class UnifiedAnalyticsPlatform:
             "unplanned_downtime": self.operations.unplanned_downtime,
             "drift": deepcopy(self._drift_status),
         }
+
+    def readiness(self) -> dict:
+        report = self.health()
+        return {"ready": False, "status": "blocked",
+                "reasons": report["qualification_blockers"],
+                "operational_status": report["status"]}
 
     def require_gate(self, name: str) -> Gate:
         gate = next(item for item in self.phases() if item.name == name)

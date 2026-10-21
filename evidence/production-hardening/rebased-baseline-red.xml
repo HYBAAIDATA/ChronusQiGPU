@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="31" skipped="0" tests="48" time="1.102" timestamp="2026-10-21T14:46:02.509267+00:00" hostname="80ec4acb-b82"><testcase classname="" name="test_no_probe_is_unknown" time="0.000" /><testcase classname="" name="test_partial_ingest_never_publishes" time="0.001"><failure message="AssertionError: assert {'_records': ...atch': 1, ...} == {'_records': ...atch': 0, ...}&#10;  &#10;  Omitting 4 identical items, use -vv to show&#10;  Differing items:&#10;  {'stored_bytes': 17} != {'stored_bytes': 0}&#10;  {'_batch': 1} != {'_batch': 0}&#10;  {'_records': {'c753aa29278feb41af66badf7536f8e207fde1dfd552d775b963a9033cbcb75d': Record(source='s', entity='e', paylo...e1dfd552d775b963a9033cbcb75d', batch_id='b1', operator_digest='d', ingested_at=1792593962.6573732, quarantined=False)}} != {'_records': {}}&#10;  {'row_audit': ['c753aa29278feb41af66badf7536f8e207fde1dfd552d775b963a9033cbcb75d']} != {'row_audit': []}...&#10;  &#10;  ...Full output truncated (5 lines hidden), use '-vv' to show">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f47f8d28180&gt;
+
+    def test_partial_ingest_never_publishes(monkeypatch):
+        import toe.unified.data_layer as dl
+        layer = UnifiedDataLayer()
+        before = deepcopy({k: v for k, v in vars(layer).items() if k != '_lock'})
+        real_compress = dl.zlib.compress
+        calls = 0
+    
+        def fail_second(*args, **kwargs):
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                raise OSError('injected compression failure')
+            return real_compress(*args, **kwargs)
+    
+        monkeypatch.setattr(dl.zlib, 'compress', fail_second)
+        with pytest.raises(OSError):
+            layer.ingest('s', 'e', [{'id': 1}, {'id': 2}], **OP)
+&gt;       assert {k: v for k, v in vars(layer).items() if k != '_lock'} == before
+E       AssertionError: assert {'_records': ...atch': 1, ...} == {'_records': ...atch': 0, ...}
+E         
+E         Omitting 4 identical items, use -vv to show
+E         Differing items:
+E         {'stored_bytes': 17} != {'stored_bytes': 0}
+E         {'_batch': 1} != {'_batch': 0}
+E         {'_records': {'c753aa29278feb41af66badf7536f8e207fde1dfd552d775b963a9033cbcb75d': Record(source='s', entity='e', paylo...e1dfd552d775b963a9033cbcb75d', batch_id='b1', operator_digest='d', ingested_at=1792593962.6573732, quarantined=False)}} != {'_records': {}}
+E         {'row_audit': ['c753aa29278feb41af66badf7536f8e207fde1dfd552d775b963a9033cbcb75d']} != {'row_audit': []}...
+E         
+E         ...Full output truncated (5 lines hidden), use '-vv' to show
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:52: AssertionError</failure></testcase><testcase classname="" name="test_nested_payloads_are_detached_on_every_public_read" time="0.001"><failure message="AssertionError: assert {'nested': {'...[1, 2, 5, 6]}} == {'nested': {'values': [1, 2]}}&#10;  &#10;  Differing items:&#10;  {'nested': {'values': [1, 2, 5, 6]}} != {'nested': {'values': [1, 2]}}&#10;  Use -v to get more diff">def test_nested_payloads_are_detached_on_every_public_read():
+        layer = UnifiedDataLayer()
+        original = {'nested': {'values': [1, 2]}}
+        layer.ingest('s', 'e', [original], **OP)
+        original['nested']['values'].append(3)
+        exported = layer.snapshot()
+        exported[0]['payload']['nested']['values'].append(4)
+        indexed = layer.rows('e')[0]
+        indexed.payload['nested']['values'].append(5)
+        scanned = layer.scan_rows('e')[0]
+        scanned.payload['nested']['values'].append(6)
+&gt;       assert layer.snapshot()[0]['payload'] == {'nested': {'values': [1, 2]}}
+E       AssertionError: assert {'nested': {'...[1, 2, 5, 6]}} == {'nested': {'values': [1, 2]}}
+E         
+E         Differing items:
+E         {'nested': {'values': [1, 2, 5, 6]}} != {'nested': {'values': [1, 2]}}
+E         Use -v to get more diff
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:66: AssertionError</failure></testcase><testcase classname="" name="test_import_failure_rolls_back_all_groups" time="0.001" /><testcase classname="" name="test_import_verifies_claimed_content_digest" time="0.000" /><testcase classname="" name="test_import_retains_quarantine_and_source_lineage" time="0.001"><failure message="KeyError: 'lineage'">def test_import_retains_quarantine_and_source_lineage():
+        source = UnifiedAnalyticsPlatform()
+        receipt = source.ingest_rows('s', 'e', [{'nested': [1]}])['receipt']
+        source.quarantine(receipt.batch_id)
+        exported = source.export_records()
+        dest = UnifiedAnalyticsPlatform()
+        dest.import_records(exported)
+        imported = dest.export_records()[0]
+        assert imported['quarantined'] is True
+&gt;       assert imported['lineage'][-1]['operator_digest'] == exported[0]['operator_digest']
+               ^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'lineage'
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:98: KeyError</failure></testcase><testcase classname="" name="test_reader_cannot_mutate_through_alternate_facade_paths[&lt;lambda&gt;0]" time="0.000" /><testcase classname="" name="test_reader_cannot_mutate_through_alternate_facade_paths[&lt;lambda&gt;1]" time="0.000" /><testcase classname="" name="test_reader_cannot_mutate_through_alternate_facade_paths[&lt;lambda&gt;2]" time="0.000" /><testcase classname="" name="test_reader_cannot_mutate_through_alternate_facade_paths[&lt;lambda&gt;3]" time="0.000" /><testcase classname="" name="test_reader_cannot_mutate_through_alternate_facade_paths[&lt;lambda&gt;4]" time="0.000" /><testcase classname="" name="test_reader_cannot_mutate_through_alternate_facade_paths[&lt;lambda&gt;5]" time="0.000" /><testcase classname="" name="test_reader_cannot_mutate_through_alternate_facade_paths[&lt;lambda&gt;6]" time="0.000" /><testcase classname="" name="test_reader_cannot_mutate_through_alternate_facade_paths[&lt;lambda&gt;7]" time="0.000" /><testcase classname="" name="test_reader_cannot_mutate_through_alternate_facade_paths[&lt;lambda&gt;8]" time="0.000" /><testcase classname="" name="test_reader_cannot_mutate_through_alternate_facade_paths[&lt;lambda&gt;9]" time="0.000" /><testcase classname="" name="test_actor_identity_does_not_leak_into_background_thread" time="0.001" /><testcase classname="" name="test_retrain_requires_nonempty_heldout_data" time="0.010"><failure message="Failed: DID NOT RAISE ValueError">def test_retrain_requires_nonempty_heldout_data():
+        registry = ModelRegistry()
+        registry.train('m', rows(), ['x'], 'y')
+&gt;       with pytest.raises(ValueError, match='held.out'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:138: Failed</failure></testcase><testcase classname="" name="test_retrain_rejects_training_validation_overlap" time="0.006"><failure message="Failed: DID NOT RAISE ValueError">def test_retrain_rejects_training_validation_overlap():
+        registry = ModelRegistry()
+        registry.train('m', rows(), ['x'], 'y')
+&gt;       with pytest.raises(ValueError, match='overlap'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:146: Failed</failure></testcase><testcase classname="" name="test_train_cannot_bypass_retraining_controls" time="0.003"><failure message="Failed: DID NOT RAISE ValueError">def test_train_cannot_bypass_retraining_controls():
+        registry = ModelRegistry()
+        registry.train('m', rows(), ['x'], 'y')
+&gt;       with pytest.raises(ValueError, match='retrain'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:154: Failed</failure></testcase><testcase classname="" name="test_health_never_claims_production_qualification" time="0.000"><failure message="KeyError: 'status'">def test_health_never_claims_production_qualification():
+        p = UnifiedAnalyticsPlatform()
+        h = p.health()
+        assert h['availability'] is None
+&gt;       assert h['status'] == 'blocked'
+               ^^^^^^^^^^^
+E       KeyError: 'status'
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:163: KeyError</failure></testcase><testcase classname="" name="test_retrain_floor_and_evidence" time="0.000"><failure message="TypeError: ModelRegistry.__init__() got an unexpected keyword argument 'accuracy_floor'">def test_retrain_floor_and_evidence():
+&gt;       registry = ModelRegistry(accuracy_floor=1.0)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: ModelRegistry.__init__() got an unexpected keyword argument 'accuracy_floor'
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:170: TypeError</failure></testcase><testcase classname="" name="test_stale_candidate_cannot_overwrite_newer_model" time="0.011" /><testcase classname="" name="test_returned_model_cannot_mutate_live_registry" time="0.002"><failure message="AssertionError: assert 888 == 1&#10; +  where 888 = ModelRecord(name='m', version=888, features=('x',), target='y', model=&lt;kellogg.tensor_ml.TensorModelAPI object at 0x7f...d06c66cd1a9ed9fc389420c6a1de6c0513c428fe6bca6c5', '22d46a52d8a73b953e806c7d1d22c951d69a026b62b169cdc4d198077fb25df6'})).version&#10; +    where ModelRecord(name='m', version=888, features=('x',), target='y', model=&lt;kellogg.tensor_ml.TensorModelAPI object at 0x7f...d06c66cd1a9ed9fc389420c6a1de6c0513c428fe6bca6c5', '22d46a52d8a73b953e806c7d1d22c951d69a026b62b169cdc4d198077fb25df6'})) = get('m')&#10; +      where get = &lt;toe.unified.intelligence.ModelRegistry object at 0x7f47f8d9ea30&gt;.get">def test_returned_model_cannot_mutate_live_registry():
+        registry = ModelRegistry()
+        result = registry.train('m', rows(), ['x'], 'y')
+        result.record.version = 999
+        detached = registry.get('m')
+        detached.version = 888
+&gt;       assert registry.get('m').version == 1
+E       AssertionError: assert 888 == 1
+E        +  where 888 = ModelRecord(name='m', version=888, features=('x',), target='y', model=&lt;kellogg.tensor_ml.TensorModelAPI object at 0x7f...d06c66cd1a9ed9fc389420c6a1de6c0513c428fe6bca6c5', '22d46a52d8a73b953e806c7d1d22c951d69a026b62b169cdc4d198077fb25df6'})).version
+E        +    where ModelRecord(name='m', version=888, features=('x',), target='y', model=&lt;kellogg.tensor_ml.TensorModelAPI object at 0x7f...d06c66cd1a9ed9fc389420c6a1de6c0513c428fe6bca6c5', '22d46a52d8a73b953e806c7d1d22c951d69a026b62b169cdc4d198077fb25df6'})) = get('m')
+E        +      where get = &lt;toe.unified.intelligence.ModelRegistry object at 0x7f47f8d9ea30&gt;.get
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:222: AssertionError</failure></testcase><testcase classname="" name="test_checkpoint_roundtrip_and_rollback_to_new_layer" time="0.002"><failure message="ModuleNotFoundError: No module named 'toe.unified.checkpoint'">tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-16/test_checkpoint_roundtrip_and_0')
+
+    def test_checkpoint_roundtrip_and_rollback_to_new_layer(tmp_path):
+&gt;       from toe.unified.checkpoint import load_checkpoint, save_checkpoint
+E       ModuleNotFoundError: No module named 'toe.unified.checkpoint'
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:226: ModuleNotFoundError</failure></testcase><testcase classname="" name="test_checkpoint_survives_fresh_process" time="0.001"><failure message="ModuleNotFoundError: No module named 'toe.unified.checkpoint'">tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-16/test_checkpoint_survives_fresh0')
+
+    def test_checkpoint_survives_fresh_process(tmp_path):
+        import pathlib
+        import subprocess
+        import sys
+&gt;       from toe.unified.checkpoint import save_checkpoint
+E       ModuleNotFoundError: No module named 'toe.unified.checkpoint'
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:247: ModuleNotFoundError</failure></testcase><testcase classname="" name="test_checkpoint_write_failure_preserves_previous_file" time="0.001"><failure message="ModuleNotFoundError: No module named 'toe.unified.checkpoint'">tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-16/test_checkpoint_write_failure_0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f47f8de97f0&gt;
+
+    def test_checkpoint_write_failure_preserves_previous_file(tmp_path, monkeypatch):
+&gt;       import toe.unified.checkpoint as cp
+E       ModuleNotFoundError: No module named 'toe.unified.checkpoint'
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:277: ModuleNotFoundError</failure></testcase><testcase classname="" name="test_checkpoint_corruption_and_missing_file_fail_closed" time="0.001"><failure message="ModuleNotFoundError: No module named 'toe.unified.checkpoint'">tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-16/test_checkpoint_corruption_and0')
+
+    def test_checkpoint_corruption_and_missing_file_fail_closed(tmp_path):
+        import json
+&gt;       from toe.unified.checkpoint import save_checkpoint, load_checkpoint
+E       ModuleNotFoundError: No module named 'toe.unified.checkpoint'
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:296: ModuleNotFoundError</failure></testcase><testcase classname="" name="test_checkpoint_rejects_consistently_hashed_but_inconsistent_state" time="0.001"><failure message="ModuleNotFoundError: No module named 'toe.unified.checkpoint'">tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-16/test_checkpoint_rejects_consis0')
+
+    def test_checkpoint_rejects_consistently_hashed_but_inconsistent_state(tmp_path):
+        import hashlib
+        import json
+&gt;       from toe.unified.checkpoint import save_checkpoint, load_checkpoint
+E       ModuleNotFoundError: No module named 'toe.unified.checkpoint'
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:313: ModuleNotFoundError</failure></testcase><testcase classname="" name="test_configuration_probe_is_not_availability_evidence" time="0.000"><failure message="assert 1.0 is None">def test_configuration_probe_is_not_availability_evidence():
+        p = UnifiedAnalyticsPlatform()
+        p.connect('confluent.cloud', {'events': [{'entity': 'Event', 'id': 1}]})
+        p.heal()
+&gt;       assert p.health()['availability'] is None
+E       assert 1.0 is None
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:331: AssertionError</failure></testcase><testcase classname="" name="test_stale_probe_does_not_make_health_healthy" time="0.000"><failure message="AttributeError: module 'toe.unified.operations' has no attribute 'time'">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f47f8df8050&gt;
+
+    def test_stale_probe_does_not_make_health_healthy(monkeypatch):
+        import toe.unified.operations as operations
+        p = locked_platform()
+        p.security.authenticate('root')
+        p.start()
+        now = [100.0]
+&gt;       monkeypatch.setattr(operations.time, 'monotonic', lambda: now[0])
+                            ^^^^^^^^^^^^^^^
+E       AttributeError: module 'toe.unified.operations' has no attribute 'time'
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:341: AttributeError</failure></testcase><testcase classname="" name="test_monitor_thread_does_not_borrow_interactive_admin" time="0.000" /><testcase classname="" name="test_rejected_probe_sample_is_not_counted" time="0.000"><failure message="Failed: DID NOT RAISE TypeError">def test_rejected_probe_sample_is_not_counted():
+        ops = Operations()
+&gt;       with pytest.raises(TypeError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE TypeError
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:368: Failed</failure></testcase><testcase classname="" name="test_rest_entity_cannot_downgrade_origin_scheme" time="0.012"><failure message="AssertionError: Regex pattern did not match.&#10;  Expected regex: 'outside base_url'&#10;  Actual message: 'sap.joule http://api.vendor.example/steal failed: &lt;urlopen error [Errno -2] Name or service not known&gt;'">def test_rest_entity_cannot_downgrade_origin_scheme():
+        from dataclasses import replace
+        from toe.unified.catalog import CATALOG
+        from toe.unified.connectors import ConnectorError, RestDriver
+        spec = replace(next(s for s in CATALOG if s.protocol == 'rest'),
+                       entities=('http://api.vendor.example/steal',))
+&gt;       with pytest.raises(ConnectorError, match='outside base_url'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'outside base_url'
+E         Actual message: 'sap.joule http://api.vendor.example/steal failed: &lt;urlopen error [Errno -2] Name or service not known&gt;'
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:379: AssertionError</failure></testcase><testcase classname="" name="test_redirect_does_not_send_bearer_to_foreign_origin" time="0.505"><failure message="Failed: DID NOT RAISE ConnectorError">def test_redirect_does_not_send_bearer_to_foreign_origin():
+        from dataclasses import replace
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+        from toe.unified.catalog import CATALOG
+        from toe.unified.connectors import ConnectorError, RestDriver
+        foreign_requests = []
+        class Foreign(BaseHTTPRequestHandler):
+            def do_GET(self):
+                foreign_requests.append(self.headers.get('Authorization'))
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b'[]')
+            def log_message(self, *args):
+                pass
+        foreign = ThreadingHTTPServer(('127.0.0.1', 0), Foreign)
+        class Redirect(BaseHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(302)
+                self.send_header('Location', f'http://127.0.0.1:{foreign.server_port}/steal')
+                self.end_headers()
+            def log_message(self, *args):
+                pass
+        origin = ThreadingHTTPServer(('127.0.0.1', 0), Redirect)
+        threads = [threading.Thread(target=s.serve_forever, daemon=True) for s in (foreign, origin)]
+        for thread in threads:
+            thread.start()
+        try:
+            spec = replace(next(s for s in CATALOG if s.protocol == 'rest'), entities=('entity',))
+&gt;           with pytest.raises(ConnectorError, match='outside base_url origin'):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE ConnectorError
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:412: Failed</failure></testcase><testcase classname="" name="test_atomic_import_never_exposes_active_quarantined_rows" time="0.052" /><testcase classname="" name="test_lossy_or_non_json_payloads_are_rejected_atomically[payload0]" time="0.001"><failure message="Failed: DID NOT RAISE any of (TypeError, ValueError)">payload = {'x': inf}
+
+    @pytest.mark.parametrize('payload', [{'x': float('inf')}, {'x': object()}, {1: 'integer-key'},
+                                        {'nested': {False: 'key'}}, {'tuple': (1, 2)}])
+    def test_lossy_or_non_json_payloads_are_rejected_atomically(payload):
+        layer = UnifiedDataLayer()
+&gt;       with pytest.raises((TypeError, ValueError)):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE any of (TypeError, ValueError)
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:456: Failed</failure></testcase><testcase classname="" name="test_lossy_or_non_json_payloads_are_rejected_atomically[payload1]" time="0.001"><failure message="Failed: DID NOT RAISE any of (TypeError, ValueError)">payload = {'x': &lt;object object at 0x7f47fb6d85c0&gt;}
+
+    @pytest.mark.parametrize('payload', [{'x': float('inf')}, {'x': object()}, {1: 'integer-key'},
+                                        {'nested': {False: 'key'}}, {'tuple': (1, 2)}])
+    def test_lossy_or_non_json_payloads_are_rejected_atomically(payload):
+        layer = UnifiedDataLayer()
+&gt;       with pytest.raises((TypeError, ValueError)):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE any of (TypeError, ValueError)
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:456: Failed</failure></testcase><testcase classname="" name="test_lossy_or_non_json_payloads_are_rejected_atomically[payload2]" time="0.001"><failure message="Failed: DID NOT RAISE any of (TypeError, ValueError)">payload = {1: 'integer-key'}
+
+    @pytest.mark.parametrize('payload', [{'x': float('inf')}, {'x': object()}, {1: 'integer-key'},
+                                        {'nested': {False: 'key'}}, {'tuple': (1, 2)}])
+    def test_lossy_or_non_json_payloads_are_rejected_atomically(payload):
+        layer = UnifiedDataLayer()
+&gt;       with pytest.raises((TypeError, ValueError)):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE any of (TypeError, ValueError)
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:456: Failed</failure></testcase><testcase classname="" name="test_lossy_or_non_json_payloads_are_rejected_atomically[payload3]" time="0.001"><failure message="Failed: DID NOT RAISE any of (TypeError, ValueError)">payload = {'nested': {False: 'key'}}
+
+    @pytest.mark.parametrize('payload', [{'x': float('inf')}, {'x': object()}, {1: 'integer-key'},
+                                        {'nested': {False: 'key'}}, {'tuple': (1, 2)}])
+    def test_lossy_or_non_json_payloads_are_rejected_atomically(payload):
+        layer = UnifiedDataLayer()
+&gt;       with pytest.raises((TypeError, ValueError)):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE any of (TypeError, ValueError)
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:456: Failed</failure></testcase><testcase classname="" name="test_lossy_or_non_json_payloads_are_rejected_atomically[payload4]" time="0.001"><failure message="Failed: DID NOT RAISE any of (TypeError, ValueError)">payload = {'tuple': (1, 2)}
+
+    @pytest.mark.parametrize('payload', [{'x': float('inf')}, {'x': object()}, {1: 'integer-key'},
+                                        {'nested': {False: 'key'}}, {'tuple': (1, 2)}])
+    def test_lossy_or_non_json_payloads_are_rejected_atomically(payload):
+        layer = UnifiedDataLayer()
+&gt;       with pytest.raises((TypeError, ValueError)):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE any of (TypeError, ValueError)
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:456: Failed</failure></testcase><testcase classname="" name="test_production_start_and_readiness_fail_closed" time="0.001"><failure message="TypeError: UnifiedAnalyticsPlatform.start() got an unexpected keyword argument 'production'">def test_production_start_and_readiness_fail_closed():
+        from toe.unified.platform import GateUnavailable
+        p = UnifiedAnalyticsPlatform()
+        with pytest.raises(GateUnavailable):
+&gt;           p.start(production=True)
+E           TypeError: UnifiedAnalyticsPlatform.start() got an unexpected keyword argument 'production'
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:465: TypeError</failure></testcase><testcase classname="" name="test_policies_do_not_alias_store" time="0.001"><failure message="AssertionError: assert 'public' == 'restricted'&#10;  &#10;  - restricted&#10;  + public">def test_policies_do_not_alias_store():
+        from toe.unified.data_layer import Policy
+        layer = UnifiedDataLayer()
+        policy = Policy('e', 'restricted', 30, 'owner')
+        published = layer.set_policy(policy)
+        policy.classification = 'public'
+        published.classification = 'public'
+        layer.policy_for('e').classification = 'public'
+&gt;       assert layer.policy_for('e').classification == 'restricted'
+E       AssertionError: assert 'public' == 'restricted'
+E         
+E         - restricted
+E         + public
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:479: AssertionError</failure></testcase><testcase classname="" name="test_checkpoint_preserves_governance_and_audit" time="0.001"><failure message="ModuleNotFoundError: No module named 'toe.unified.checkpoint'">tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-16/test_checkpoint_preserves_gove0')
+
+    def test_checkpoint_preserves_governance_and_audit(tmp_path):
+&gt;       from toe.unified.checkpoint import save_checkpoint, load_checkpoint
+E       ModuleNotFoundError: No module named 'toe.unified.checkpoint'
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:483: ModuleNotFoundError</failure></testcase><testcase classname="" name="test_legacy_evaluation_flag_cannot_bypass_validation" time="0.003"><failure message="Failed: DID NOT RAISE ValueError">def test_legacy_evaluation_flag_cannot_bypass_validation():
+        registry = ModelRegistry()
+        registry.train('m', rows(), ['x'], 'y')
+&gt;       with pytest.raises(ValueError, match='held-out'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:499: Failed</failure></testcase><testcase classname="" name="test_per_call_floor_cannot_weaken_registry_floor" time="0.000"><failure message="TypeError: ModelRegistry.__init__() got an unexpected keyword argument 'accuracy_floor'">def test_per_call_floor_cannot_weaken_registry_floor():
+&gt;       registry = ModelRegistry(accuracy_floor=1.0)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: ModelRegistry.__init__() got an unexpected keyword argument 'accuracy_floor'
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:505: TypeError</failure></testcase><testcase classname="" name="test_bulk_quarantine_validates_all_payloads_before_mutating" time="0.000"><failure message="Failed: DID NOT RAISE ValueError">def test_bulk_quarantine_validates_all_payloads_before_mutating():
+        layer = UnifiedDataLayer()
+        layer.ingest('s', 'e', [{'id': 1}], **OP)
+&gt;       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:515: Failed</failure></testcase><testcase classname="" name="test_mutated_invalid_policy_cannot_be_published" time="0.000"><failure message="Failed: DID NOT RAISE ValueError">def test_mutated_invalid_policy_cannot_be_published():
+        from toe.unified.data_layer import Policy
+        layer = UnifiedDataLayer()
+        policy = Policy('e', 'restricted', 30, 'owner')
+        policy.max_null_rate = -1
+&gt;       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py:525: Failed</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,278 @@
+{
+  "schema": "euclid.production-hardening.local-evidence/v1",
+  "assessment": "not yet production-ready",
+  "initial_review_base": "a9914fc9fbd06655cbbb5fb96d9e6b0101eaa278",
+  "reconciled_target_base": "da432bbe4e59855f7c8a6ec3028217e57ca59f25",
+  "environment": {
+    "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+    "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+    "numpy": "2.5.3",
+    "pytest": "9.1.1"
+  },
+  "scope": "retrieved source closure with toe/kellogg parent namespace initializers intentionally bypassed; actual unified facade and actual exact tensor implementation execute",
+  "not_verified": [
+    "complete repository checkout",
+    "real top-level package initializers",
+    "wheel/sdist build or installed artifact",
+    "GitHub Actions run status or artifacts",
+    "tenant identity and isolation",
+    "production deployment and SLA",
+    "WAL/crash-durable live writes",
+    "model artifact recovery and separation of duties"
+  ],
+  "counts": {
+    "rebased-baseline-red": {
+      "tests": 48,
+      "failures": 31,
+      "errors": 0,
+      "skipped": 0
+    },
+    "focused-green": {
+      "tests": 48,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "all-retrieved-green": {
+      "tests": 94,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "runs": [
+    {
+      "name": "rebased-baseline-red",
+      "command": [
+        "/usr/local/bin/python",
+        "/data/EuclidPhiEnterprise/evidence/production-hardening/run_snapshot_tests.py",
+        "/data/EuclidPhiEnterprise-rebased-baseline",
+        "/data/EuclidPhiEnterprise-rebased-baseline/tests/test_toe_unified_production_guardrails.py",
+        "-q",
+        "--junitxml=/data/EuclidPhiEnterprise/evidence/production-hardening/rebased-baseline-red.xml"
+      ],
+      "started_at": "2026-10-21T14:46:02.315735+00:00",
+      "finished_at": "2026-10-21T14:46:03.720152+00:00",
+      "exit_code": 1,
+      "expected_exit_code": 1,
+      "expectation_met": true,
+      "log": "rebased-baseline-red.log",
+      "log_sha256": "de89736129c893bf85f9c5a074dc4464e39d70926d1d521933d37c4325672789"
+    },
+    {
+      "name": "focused-green",
+      "command": [
+        "/usr/local/bin/python",
+        "/data/EuclidPhiEnterprise/evidence/production-hardening/run_snapshot_tests.py",
+        "/data/EuclidPhiEnterprise",
+        "tests/test_toe_unified_production_guardrails.py",
+        "-q",
+        "--junitxml=/data/EuclidPhiEnterprise/evidence/production-hardening/focused-green.xml"
+      ],
+      "started_at": "2026-10-21T14:46:03.720380+00:00",
+      "finished_at": "2026-10-21T14:46:05.459292+00:00",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "expectation_met": true,
+      "log": "focused-green.log",
+      "log_sha256": "5ff009444e93dc7f931162415f5bb56b0892a588bc2926874cdc223f5b4e172e"
+    },
+    {
+      "name": "all-retrieved-green",
+      "command": [
+        "/usr/local/bin/python",
+        "/data/EuclidPhiEnterprise/evidence/production-hardening/run_snapshot_tests.py",
+        "/data/EuclidPhiEnterprise",
+        "tests",
+        "-q",
+        "--junitxml=/data/EuclidPhiEnterprise/evidence/production-hardening/all-retrieved-green.xml"
+      ],
+      "started_at": "2026-10-21T14:46:05.459441+00:00",
+      "finished_at": "2026-10-21T14:46:07.311382+00:00",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "expectation_met": true,
+      "log": "all-retrieved-green.log",
+      "log_sha256": "6378063c9eebf2c1697a7a5b632c2039f6008c9de3808f9b98e83013288da825"
+    },
+    {
+      "name": "concurrency-repeat-1",
+      "command": [
+        "/usr/local/bin/python",
+        "/data/EuclidPhiEnterprise/evidence/production-hardening/run_snapshot_tests.py",
+        "/data/EuclidPhiEnterprise",
+        "tests/test_toe_unified_atomic.py",
+        "tests/test_toe_unified_production_guardrails.py",
+        "-q",
+        "-k",
+        "concurrent or stale or atomic_import or background_thread or monitor_thread"
+      ],
+      "started_at": "2026-10-21T14:46:07.311448+00:00",
+      "finished_at": "2026-10-21T14:46:07.744394+00:00",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "expectation_met": true,
+      "log": "concurrency-repeat-1.log",
+      "log_sha256": "ee95d7ca147379bc71215d0ba4215cb33ac0036191df43deaecab91b178bb16e"
+    },
+    {
+      "name": "concurrency-repeat-2",
+      "command": [
+        "/usr/local/bin/python",
+        "/data/EuclidPhiEnterprise/evidence/production-hardening/run_snapshot_tests.py",
+        "/data/EuclidPhiEnterprise",
+        "tests/test_toe_unified_atomic.py",
+        "tests/test_toe_unified_production_guardrails.py",
+        "-q",
+        "-k",
+        "concurrent or stale or atomic_import or background_thread or monitor_thread"
+      ],
+      "started_at": "2026-10-21T14:46:07.744502+00:00",
+      "finished_at": "2026-10-21T14:46:08.165476+00:00",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "expectation_met": true,
+      "log": "concurrency-repeat-2.log",
+      "log_sha256": "ee95d7ca147379bc71215d0ba4215cb33ac0036191df43deaecab91b178bb16e"
+    },
+    {
+      "name": "concurrency-repeat-3",
+      "command": [
+        "/usr/local/bin/python",
+        "/data/EuclidPhiEnterprise/evidence/production-hardening/run_snapshot_tests.py",
+        "/data/EuclidPhiEnterprise",
+        "tests/test_toe_unified_atomic.py",
+        "tests/test_toe_unified_production_guardrails.py",
+        "-q",
+        "-k",
+        "concurrent or stale or atomic_import or background_thread or monitor_thread"
+      ],
+      "started_at": "2026-10-21T14:46:08.165541+00:00",
+      "finished_at": "2026-10-21T14:46:08.600695+00:00",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "expectation_met": true,
+      "log": "concurrency-repeat-3.log",
+      "log_sha256": "ee95d7ca147379bc71215d0ba4215cb33ac0036191df43deaecab91b178bb16e"
+    },
+    {
+      "name": "compile",
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "compileall",
+        "-q",
+        "toe/unified",
+        "toe/operator_compilers.py",
+        "toe/receipts.py",
+        "packaging/toe/build_and_verify.py",
+        "tests"
+      ],
+      "started_at": "2026-10-21T14:46:08.600757+00:00",
+      "finished_at": "2026-10-21T14:46:08.635829+00:00",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "expectation_met": true,
+      "log": "compile.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "normal-package-import",
+      "command": [
+        "/usr/local/bin/python",
+        "-c",
+        "import toe.unified"
+      ],
+      "started_at": "2026-10-21T14:46:08.635877+00:00",
+      "finished_at": "2026-10-21T14:46:08.659078+00:00",
+      "exit_code": 1,
+      "expected_exit_code": 1,
+      "expectation_met": true,
+      "log": "normal-package-import.log",
+      "log_sha256": "fec193da7fedb89908a1780231c7ee540bd198240d6f57458ed9426770abcb36"
+    },
+    {
+      "name": "package-gate-help",
+      "command": [
+        "/usr/local/bin/python",
+        "packaging/toe/build_and_verify.py",
+        "--help"
+      ],
+      "started_at": "2026-10-21T14:46:08.659133+00:00",
+      "finished_at": "2026-10-21T14:46:08.712079+00:00",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "expectation_met": true,
+      "log": "package-gate-help.log",
+      "log_sha256": "878bbe2514c351249ca366a3d8bff7675973192442c15da55fbb7aaa016761e3"
+    },
+    {
+      "name": "focused-lint",
+      "command": [
+        "ruff",
+        "check",
+        "--select",
+        "F,E9",
+        "toe/unified/data_layer.py",
+        "toe/unified/intelligence.py",
+        "toe/unified/security.py",
+        "toe/unified/operations.py",
+        "toe/unified/platform.py",
+        "toe/unified/connectors.py",
+        "toe/unified/checkpoint.py",
+        "tests/test_toe_unified_production_guardrails.py",
+        "tests/test_toe_unified_release_wiring.py",
+        "tests/test_toe_unified_promotion.py",
+        "tests/test_toe_unified_intelligence.py",
+        "packaging/toe/build_and_verify.py"
+      ],
+      "started_at": "2026-10-21T14:46:08.712138+00:00",
+      "finished_at": "2026-10-21T14:46:08.718370+00:00",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "expectation_met": true,
+      "log": "focused-lint.log",
+      "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    }
+  ],
+  "source_sha256": {
+    "evidence/production-hardening/run_snapshot_tests.py": "0b3c38ca26263d69e69c4a8264daccf2c7f42dee09dec4b77c0370773a3adfbb",
+    "kellogg/__init__.py": "6a28626b202d3cc4b43e608d048ffd4d7a3e08929d9aa723a47c19f8cd4c88a8",
+    "kellogg/exact_tensor.py": "919fa8b6ab305cf8cd91678aff2748b93d39efb8f07d397dd78bea1d2f4d4dd4",
+    "kellogg/tensor_ml.py": "663256d0a1c271cfc6d38590ec111ba06de054cab7de6130a08e863fc711b3be",
+    "packaging/toe/build_and_verify.py": "d83c23af07c2c142a1b4d60e88bebf29b45db63615486be4d8575600d55f3fce",
+    "tests/test_toe_unified_atomic.py": "41b1f7fcb26d0ef58720e9aa32e324d76514b4129b71aeda1ccbea3d41965b6d",
+    "tests/test_toe_unified_data_layer.py": "baa10feb3197cfdbe8ea0709f3e3e05bcfb7243db4c7e4ac154c1a3214aa5133",
+    "tests/test_toe_unified_failclosed.py": "3ad2879156fef520914540aa149edd22cab04e25b9865c099e4a21f0fcb6fc6e",
+    "tests/test_toe_unified_ingest_digest.py": "fd1838f8bb48ee94cec849d0dbe49572a8dc46fce062b24849691ccfbd743f26",
+    "tests/test_toe_unified_intelligence.py": "b036dbdc583d444c6d5d6b971e932c8e8ea9a0045d754681659004916d17e74f",
+    "tests/test_toe_unified_operations.py": "2f3390ffd6fec63fe3d36dcb45d51658daafad23f6c65924a5b3db088c9786e7",
+    "tests/test_toe_unified_production_guardrails.py": "1d72295c4a9a3264318f8913bbf4a70fd97b064c820c39eb42d6a66e1dfddef1",
+    "tests/test_toe_unified_promotion.py": "bb68d9503874561ca222429040d1b5e61098055b6045ec7fd98905b1cbc2da9d",
+    "tests/test_toe_unified_release_wiring.py": "f383fb38d604a2659ca869a553326d5d3cbea7d0d7d0f464c920b6f5fb28c7d6",
+    "tests/test_toe_unified_security_fixes.py": "fa3d9d97fffd5288ec1220aa8f0c60b5259f084106adf78449f226976d628a65",
+    "toe/__init__.py": "230c81f8ba655ebf64733ff8b0f37317d7ffb9aaf449f817c78effb5f830a0f2",
+    "toe/operator_compilers.py": "d6dbc74489b0415a26d71f06f93ff072a5074bf5d965170b708d07a09a342522",
+    "toe/receipts.py": "9fdd70a381ab7732eb845098275b7700e1408f13ebd4695ee6ad7129c8df1564",
+    "toe/unified/__init__.py": "fe32ee375abdd35f1013bfcab02c4976e4676292bad8b9397a8cab257cc99c79",
+    "toe/unified/adaptive.py": "fc08e6940914b899bdf8fd983df52d4bb215ae23db32f4780b85e462f504eeda",
+    "toe/unified/bi.py": "ed88d758923b27c9e543d9d5b28587d03fc33e666d914e07308f92aafa90c2eb",
+    "toe/unified/catalog.py": "62d654e4fed89eb3c827879465136d4c9f9433e90fadb9b19688675fc2a605e3",
+    "toe/unified/checkpoint.py": "925774333e554f9922a9881c02bc1d090034cc1e5cc9dd5f7f1e5b22348d5347",
+    "toe/unified/connectors.py": "a371e348d291e6d4238954255b03a47f0efa911cc7dfd3c9d2755cf93084ac9e",
+    "toe/unified/consciousness.py": "aa7e0ab3d02737f20c642dfc66a33f43e46f4426591f133e7768b837aca4fec7",
+    "toe/unified/data_layer.py": "a729c3ee567c39611a0875ff2e3e85be31bc772430233e65bad51523a4ce1793",
+    "toe/unified/economics.py": "13c56b37bf8b3676026aafa9784dd23abd0536f11b1eabbc18787de8798d7d2c",
+    "toe/unified/impact.py": "fa49523804e2f44a834e9fc06c528e363f9191077b5bcc5ae4fd84dfe8c20ba5",
+    "toe/unified/industries.py": "1fe8b3777b3e04decca7d88206b13b042d80a6d6c74d56725e162ce5ab0c9414",
+    "toe/unified/intelligence.py": "30766755053a1970643e5e7e7c0a4f34d970eb8aebf41840274902bcfc24eec8",
+    "toe/unified/monitor.py": "c6a5f82328accaa17fa9e62b7b3282688460ca3853b774032d4d3531a99ae51a",
+    "toe/unified/operations.py": "b5b6730300f28386786a8d4fe43a9ef7388c5b4ad9ce66d1a3c0b2fb4332363f",
+    "toe/unified/optimizer.py": "71251cf751ad6e109788214eb0b7faca44e3efcfa7acb7f60e75d833006106c1",
+    "toe/unified/patents.py": "323b1e95243b62254740cbdcd4d59c07fef06ff43caf0b6f53de6030a2dcf7fc",
+    "toe/unified/platform.py": "60b1a40edadd58fbcace4fa3a817a5290f04c37363bf9b7c126730113a41c48b",
+    "toe/unified/productivity.py": "b123bf2eb6894d7f5ad829791b273476c32fe84a8cd8305b0d978a34a436e0c1",
+    "toe/unified/risks.py": "e99d6293b384795fce22c6064b5c5d99cee01f126898edf97b0b69e6b75790bc",
+    "toe/unified/security.py": "910f5425457c78266c514edea86417d17f9d573b00d6ec8d85bd96ef89611efa"
+  }
+}
