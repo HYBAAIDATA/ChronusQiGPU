@@ -387,45 +387,40 @@ class EnterpriseCustody:
                 raise AuthenticityError(f"content digest mismatch for {env.record_id}")
         return env
 
-    def _side_ok(self, data: Optional[dict], expected_record_id: Optional[str] = None) -> bool:
+    def _validated_side(
+        self, data: Optional[dict], expected_record_id: Optional[str] = None
+    ) -> Optional[CustodyEnvelope]:
+        """Authenticate one loaded side once, with no cross-read cache."""
         if not data:
-            return False
+            return None
         try:
-            self._validate_dict(data, expected_record_id)
-            return True
+            return self._validate_dict(data, expected_record_id)
         except (
-            AuthenticityError,
-            SchemaVersionError,
-            UnrecoverableCustodyError,
-            KeyError,
-            TypeError,
-            ValueError,
+            AuthenticityError, SchemaVersionError, UnrecoverableCustodyError,
+            KeyError, TypeError, ValueError,
         ):
-            return False
+            return None
+
+    def _side_ok(self, data: Optional[dict], expected_record_id: Optional[str] = None) -> bool:
+        return self._validated_side(data, expected_record_id) is not None
 
     def _load_envelope(self, record_id: str, verify: bool = True) -> Optional[CustodyEnvelope]:
         primary, replica = self._load_raw_sides(record_id)
-        p_ok = self._side_ok(primary, record_id)
-        r_ok = self._side_ok(replica, record_id)
-        if p_ok and primary is not None:
-            if not r_ok:
-                # heal replica
+        # Both replicas are authenticated on every call, including ingress
+        # unfolding/digests. Reuse only this call's validated envelope rather
+        # than unfolding and authenticating the selected side a second time.
+        p_env = self._validated_side(primary, record_id)
+        r_env = self._validated_side(replica, record_id)
+        if p_env is not None:
+            if r_env is None:
                 _atomic_write_json(self._replica_path(record_id), primary)
                 self._degraded = False
                 self.telemetry.incr("heal_replica")
-            return (
-                self._validate_dict(primary, record_id)
-                if verify
-                else CustodyEnvelope.from_dict(primary)
-            )
-        if r_ok and replica is not None:
+            return p_env
+        if r_env is not None:
             _atomic_write_json(self._primary_path(record_id), replica)
             self.telemetry.incr("heal_primary")
-            return (
-                self._validate_dict(replica, record_id)
-                if verify
-                else CustodyEnvelope.from_dict(replica)
-            )
+            return r_env
         if primary is None and replica is None:
             return None
         raise UnrecoverableCustodyError(f"all replicas bad for record_id={record_id}")

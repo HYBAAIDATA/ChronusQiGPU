@@ -74,3 +74,23 @@ def test_unreadable_interval_fails_safe_to_every_lease(monkeypatch):
     g._lease_storage_health()
     g._lease_storage_health()
     assert rec.calls == [True, True]
+
+
+def test_slow_full_pass_interval_starts_at_completion(monkeypatch):
+    monkeypatch.setenv("PYTHIA_STORAGE_RECONCILE_INTERVAL_S", "60")
+    clock = [0.0]
+    monkeypatch.setattr(m3_mining_guard.time, "monotonic", lambda: clock[0])
+    rec = Recorder()
+    original = rec.health
+    def slow(**kwargs):
+        out = original(**kwargs)
+        if kwargs["full"]:
+            clock[0] += 90
+        return out
+    rec.health = slow
+    g = gate(rec)
+    assert g._lease_storage_health()["healthy"]
+    assert g._lease_storage_health()["healthy"]
+    clock[0] += 61
+    assert g._lease_storage_health()["healthy"]
+    assert rec.calls == [True, False, True]

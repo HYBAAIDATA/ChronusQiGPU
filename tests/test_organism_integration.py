@@ -35,14 +35,27 @@ BELL = {
 }
 
 
+def _production(**kwargs):
+    # Positive voyages must use signed operator authority, not bypass the
+    # production Guardian boundary. Restricted/negative cases supply their own.
+    if "guardian" in kwargs:
+        return EuclidRuntime.production(**kwargs)
+    from organism_test_authority import configured_authority
+    guardian, token, provider = configured_authority(kwargs["creator_id"])
+    rt = EuclidRuntime.production(**kwargs, guardian=guardian, subscription_token_provider=provider)
+    rt._fixture_subscription_token = token
+    return rt
+
+
 @pytest.fixture
 def runtime(tmp_path):
-    rt = EuclidRuntime.production(creator_id="creator-1", state_dir=tmp_path)
+    rt = _production(creator_id="creator-1", state_dir=tmp_path)
     yield rt
     rt.close()
 
 
 def _dispatch(rt, organ, request, **kw):
+    kw.setdefault("subscription_token", getattr(rt, "_fixture_subscription_token", None))
     return rt.dispatch_specialist(organ, request, tenant_id="tenant-a", actor="user-1", **kw)
 
 
@@ -51,7 +64,7 @@ def test_production_root_composes_specialists_and_autonomic(runtime):
     assert organism["specialists"] == ["chronus", "triad", "turing"]
     assert organism["unavailable"] == {}
     assert organism["autonomic"] is True
-    assert organism["guardian_configured"] is False
+    assert organism["guardian_configured"] is True
     for component in ("turing.backends", "chronus.backend_registry", "aethel.triad"):
         assert runtime.reachability.stage(component) is ReachabilityStage.REACHABLE
 
@@ -131,7 +144,7 @@ def test_restart_restores_the_whole_organism_not_just_state(tmp_path):
     longer do anything the original could.
     """
     checkpoint = tmp_path / "runtime.json"
-    first = EuclidRuntime.production(creator_id="creator-1", state_dir=tmp_path)
+    first = _production(creator_id="creator-1", state_dir=tmp_path)
     try:
         expected = sorted(item["organ_id"] for item in first.registry.report())
         assert expected, "the production root must compose specialists"
@@ -139,7 +152,11 @@ def test_restart_restores_the_whole_organism_not_just_state(tmp_path):
     finally:
         first.close()
 
-    restored = EuclidRuntime.restore(checkpoint, state_dir=tmp_path)
+    restored = EuclidRuntime.restore(
+        checkpoint, state_dir=tmp_path, guardian=first.guardian,
+        subscription_token_provider=first._subscription_token_provider,
+    )
+    restored._fixture_subscription_token = first._fixture_subscription_token
     try:
         assert sorted(item["organ_id"] for item in restored.registry.report()) == expected
         # Reachability must be restored too: a restarted organism that reports
@@ -156,7 +173,7 @@ def test_restart_restores_the_whole_organism_not_just_state(tmp_path):
 def test_restored_checkpoint_rejects_tampering(tmp_path):
     """A mutated checkpoint must fail closed rather than restore partially."""
     checkpoint = tmp_path / "runtime.json"
-    first = EuclidRuntime.production(creator_id="creator-1", state_dir=tmp_path)
+    first = _production(creator_id="creator-1", state_dir=tmp_path)
     try:
         first.save(checkpoint)
     finally:
@@ -198,7 +215,7 @@ def _guardian(allowed):
 
 def test_al_haras_denies_prohibited_action_and_permits_replan(tmp_path):
     guardian, token = _guardian({"turing.capability-matrix"})
-    rt = EuclidRuntime.production(creator_id="creator-1", state_dir=tmp_path, guardian=guardian)
+    rt = _production(creator_id="creator-1", state_dir=tmp_path, guardian=guardian)
     try:
         denied = _dispatch(
             rt, "turing", {"operation": "run-program", "program": BELL}, subscription_token=token
@@ -222,7 +239,7 @@ def test_salamander_detects_repairs_and_verifies_bounded_fault(runtime):
     runtime.registry.get("chronus").health = Health.DEGRADED
     vetoed = _dispatch(runtime, "chronus", {"operation": "census"})
     assert vetoed["allowed"] is False and vetoed["health"] == "degraded"
-    result = runtime.heal_organ("chronus", reason="injected degradation")
+    result = runtime.heal_organ("chronus", reason="injected degradation", actor="user-1")
     assert result.status == "VERIFIED" and result.verified
     assert runtime.registry.get("chronus").health is Health.HEALTHY
     assert _dispatch(runtime, "chronus", {"operation": "census"})["allowed"] is True
@@ -239,13 +256,13 @@ def test_salamander_does_not_mark_unverifiable_repair_verified(runtime):
     triad.handler = lambda request: (
         {"verified": False} if request.get("operation") == "verify" else original(request)
     )
-    result = runtime.heal_organ("triad", reason="custody integrity failure")
+    result = runtime.heal_organ("triad", reason="custody integrity failure", actor="user-1")
     assert result.verified is False
     assert runtime.registry.get("triad").health is Health.DEGRADED
 
 
 def test_reachability_evidence_survives_restart(tmp_path):
-    rt = EuclidRuntime.production(creator_id="creator-1", state_dir=tmp_path)
+    rt = _production(creator_id="creator-1", state_dir=tmp_path)
     try:
         _dispatch(rt, "turing", {"operation": "run-program", "program": BELL})
     finally:
@@ -260,7 +277,7 @@ def test_unconstructable_owner_is_recorded_unavailable(tmp_path, monkeypatch):
         raise ImportError("turing backends not installed")
 
     monkeypatch.setattr(adapters, "TuringQuantumOrgan", broken)
-    rt = EuclidRuntime.production(creator_id="creator-1", state_dir=tmp_path)
+    rt = _production(creator_id="creator-1", state_dir=tmp_path)
     try:
         report = rt.startup_report()["organism"]
         assert "turing" not in report["specialists"]
@@ -279,6 +296,7 @@ def test_mining_truth_is_not_delegated_to_specialists(runtime):
 
 
 def _route(rt, request, **kw):
+    kw.setdefault("subscription_token", getattr(rt, "_fixture_subscription_token", None))
     return rt.route_specialist(request, tenant_id="tenant-a", actor="user-1", **kw)
 
 
@@ -361,7 +379,7 @@ def test_restart_through_theseus_custody_verified_cross_process(tmp_path):
 
     custody_root = tmp_path / "custody"
     state_dir = tmp_path / "state"
-    first = EuclidRuntime.production(creator_id="creator-1", state_dir=state_dir)
+    first = _production(creator_id="creator-1", state_dir=state_dir)
     custody = EnterpriseCustody(custody_root, hmac_key=CUSTODY_KEY)
     try:
         # The checkpoint embeds the chain head at snapshot time; the
@@ -397,7 +415,7 @@ def test_restart_through_theseus_custody_verified_cross_process(tmp_path):
     assert report["readiness"]["restart_verified"] is True
 
     # The ledger the child wrote is durable for later sessions in the dir.
-    resumed = EuclidRuntime.production(creator_id="creator-1", state_dir=state_dir)
+    resumed = _production(creator_id="creator-1", state_dir=state_dir)
     try:
         readiness = resumed.startup_report()["intelligence_readiness"]
         assert readiness["restart_verified"] is True

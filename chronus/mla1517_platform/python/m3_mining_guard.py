@@ -135,7 +135,9 @@ class M3MiningSubmissionGate:
         due = interval == 0.0 or last is None or now - last >= interval
         health = self.recorder.health(reconcile=due, full=due)
         if due:
-            self._reconciled_at = now
+            # A long full pass must not make the next lease immediately due.
+            # Every intervening lease still verifies newly appended evidence.
+            self._reconciled_at = time.monotonic()
         return {**health, "reconciled_this_lease": due,
                 "reconcile_interval_s": interval}
 
