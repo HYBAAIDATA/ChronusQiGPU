@@ -64,6 +64,8 @@ RELEASE_TESTS = (
     "test_toe_geometry.py",
     "test_toe_self_governance.py",
 )
+# Standalone artifacts exclude THESEUS. Its durable-restart integration remains
+# in the source/deployment gates; it cannot be counted as a skipped artifact pass.
 # Explicit runtime regression scope, not the full repository test harness.
 UNIFIED_TESTS = (
     "test_toe_unified_tenancy.py",
@@ -519,7 +521,8 @@ def _installed_test_check(py: Path, workdir: Path, label: str,
                 timeout=INSTALLED_TIMEOUT_SECONDS
             )
         record["pytest_exit_code"] = result.returncode
-        record["counts"] = validated_test_counts(junit, test_files)
+        record["counts"] = observed_test_counts(junit)
+        validated_test_counts(junit, test_files)
         if result.returncode != 0:
             raise RuntimeError(f"installed pytest exited {result.returncode}")
         record["test_verdict"] = "passed"
@@ -678,6 +681,12 @@ def _qualify(args: argparse.Namespace, attempt: Dict[str, Any]) -> int:
                 "final publication requires the full repository suite",
                 "final publication requires registry prerequisites and trusted publishers",
             ],
+            "qualification_profile": "standalone-toe-with-kellogg",
+            "not_qualified": [
+                "THESEUS durable restart and full-platform model rollback",
+                "live-vendor deployment, tenant security audit and SLA/load qualification",
+            ],
+            "production_certification": "not_assessed",
             "artifact_verified": True,
             "owner_identity_approved": not blockers,
             # A local artifact build can never self-award publication readiness.

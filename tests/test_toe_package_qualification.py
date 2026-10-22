@@ -221,3 +221,24 @@ def test_xml_child_failure_cannot_hide_behind_zero_counters(gate, tmp_path):
     tree.write(path)
     with pytest.raises(RuntimeError):
         gate.validated_test_counts(path, ('test_a.py', 'test_b.py'))
+
+
+def test_merge_cannot_leave_duplicate_or_missing_gate_entrypoints(gate):
+    import ast
+    tree = ast.parse((ROOT / 'packaging/toe/build_and_verify.py').read_text())
+    names = [node.name for node in tree.body if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))]
+    assert len(names) == len(set(names)), 'duplicate definitions can hide merge damage'
+    for name in ('validate_source_inputs', 'isolated_environment',
+                 'validated_test_counts', '_installed_test_check', 'installed_unified_check'):
+        assert callable(getattr(gate, name))
+    assert len(gate.UNIFIED_TESTS) == len(set(gate.UNIFIED_TESTS))
+    assert len(gate.RELEASE_TESTS) == len(set(gate.RELEASE_TESTS))
+
+
+def test_standalone_scope_does_not_count_optional_custody_skips(gate):
+    assert 'test_toe_standalone_learning.py' in gate.RELEASE_TESTS
+    assert 'test_toe_learning_persistence.py' not in gate.RELEASE_TESTS
+    workflow = yaml.load((ROOT / '.github/workflows/toe-release.yml').read_text(), Loader=yaml.BaseLoader)
+    assert 'tests/test_toe_learning_persistence.py' in str(workflow['jobs']['source-gate'])
+    assert "'production_certification': 'not_assessed'".replace("'", '"') in (
+        ROOT / 'packaging/toe/build_and_verify.py').read_text()
