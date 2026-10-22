@@ -2,7 +2,7 @@
   "name": "pythia-operator",
   "private": true,
   "version": "0.1.0",
-  "description": "PYTHIA consolidated stack — Python control plane + frontend/ operator app.",
+  "description": "PYTHIA consolidated stack \u2014 Python control plane + frontend/ operator app.",
   "type": "module",
   "scripts": {
     "dev": "npm --prefix frontend run dev",
@@ -23,8 +23,5 @@
   },
   "engines": {
     "node": ">=22.0.0"
-  },
-  "devDependencies": {
-    "tsx": "4.20.6"
   }
 }

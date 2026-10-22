@@ -78,6 +78,7 @@ UNIFIED_TESTS = (
     "test_toe_unified_operations.py",
     "test_toe_unified_failclosed.py",
     "test_toe_unified_security_fixes.py",
+    "test_toe_unified_readiness_regressions.py",
 )
 
 INSTALLED_UNIFIED_PROBE = r"""
