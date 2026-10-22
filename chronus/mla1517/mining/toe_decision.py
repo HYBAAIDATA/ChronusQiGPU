@@ -115,6 +115,7 @@ class TOEMiningDecisionFrame:
     explanation_status: str = "audit_only_unvalidated_fidelity"
     causal_ladder_status: str = "audit_only_partial_effect_recovery"
     frame_digest: str = ""
+    observation_source: str = "mla1517_vault"
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "surface_digests", MappingProxyType(dict(self.surface_digests)))
@@ -150,7 +151,10 @@ class TOEMiningDecisionFrame:
         )
         return (
             bool(self.job_id)
-            and self.node_id >= 0
+            and (
+                (self.observation_source == "mla1517_vault" and self.node_id >= 0)
+                or (self.observation_source == "stratum_job" and self.node_id == -1)
+            )
             and self.sequence >= 0
             and all(math.isfinite(value) for value in numeric)
             and all(0.0 <= value <= 1.0 for value in unit)
@@ -194,6 +198,7 @@ class TOEMiningDecisionFrame:
     def evidence_refs(self) -> Mapping[str, Any]:
         """Compact refs suitable for immutable ``SearchPlan.evidence_refs``."""
         return {
+            "toe_observation_source": self.observation_source,
             "toe_frame_digest": self.frame_digest,
             "toe_result_digest": self.full_result_digest,
             "toe_expansion_receipt": self.expansion_receipt_digest,
@@ -260,6 +265,7 @@ def build_toe_decision_frame(context: Any) -> TOEMiningDecisionFrame:
             algebraic_family = str(family)
 
     frame = TOEMiningDecisionFrame(
+        observation_source=str(evidence.get("observation_source", "mla1517_vault")),
         job_id=str(getattr(context, "job_id", "")),
         node_id=int(getattr(context, "node_id", -1)),
         sequence=int(getattr(context, "sequence", -1)),
@@ -269,7 +275,8 @@ def build_toe_decision_frame(context: Any) -> TOEMiningDecisionFrame:
         causal_confidence=float(causal.get("confidence", 0.0)),
         causal_ladder_confidence=float(ladder.get("confidence", 0.0)),
         coherence=float(tomo.get("coherence", 0.0)),
-        entropy=float(tomo.get("entropy", 0.0)),
+        entropy=float(tomo.get("entropy", 0.0) if tomo.get("von_neumann_entropy") is None
+                      else tomo["von_neumann_entropy"]),
         trend=str(traj.get("trend", "stable")),
         trend_rate=float(traj.get("trend_rate", 0.0)),
         key_factors=tuple(factors),

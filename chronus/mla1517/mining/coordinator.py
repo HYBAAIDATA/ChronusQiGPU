@@ -359,6 +359,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         session = kwargs.pop("mining_session", None)
+        lease_alignment = kwargs.pop("lease_alignment", 32)
         observer = kwargs.pop("chain_observer", None)
         hasher = kwargs.pop("execution_hasher", None)
         # Rebuilds the execution device (and re-runs its hashlib self-check)
@@ -397,6 +398,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         # from, nothing written to the pool.
         self.mining_enabled = True
         self._live_submit_approved = False
+        self._require_toe = False
         self.session = session if session is not None else MiningSession()
         self.chain_observer = observer
         self._submission_lock = asyncio.Lock()
@@ -461,7 +463,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         self._records_observed = 0
         self._last_job_id: str | None = None
         self._recovery_backpressure = False
-        self.agentic = AgenticMiningController()
+        self.agentic = AgenticMiningController(lease_alignment=lease_alignment)
         self.tuning = TuningGate()
         self._tuned_window: int | None = None
         # Measured-only operating intelligence: HOW MUCH per window. It never
@@ -1264,6 +1266,11 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 LOG.info("Salamander autonomic healer triggered by IDENTITY_MISMATCH")
                 healed_identity = self.salamander_healer.heal_identity_mismatch(self)
                 if healed_identity is not None:
+                    # The healer rebinds agentic work directly in resume().
+                    # Do not let that bypass generation-scoped TOE invalidation.
+                    self.last_toe_context = None
+                    self.last_toe_frame = None
+                    self.last_toe_signal = None
                     return healed_identity
             if reason in ("NO_PROOF_ADAPTER", "NO_RUNTIME_STATE") and (
                 reason not in self._identity_block_logged
@@ -1545,9 +1552,50 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 await asyncio.wait_for(self._precompute_wake.wait(), _PRECOMPUTE_IDLE_S)
             self._precompute_wake.clear()
             try:
+                await self._refresh_pool_toe_context()
                 self._fill_precompute_queue()
             except Exception:
                 LOG.exception("agentic precompute step failed")
+
+    async def _refresh_pool_toe_context(self) -> bool:
+        """Bridge-free TOE observation, off the Stratum reader's event loop.
+
+        A slow result is discarded if session/generation changed while it
+        executed. Hardware observations retain their separate vault path.
+        """
+        if self._bridge is not None or self.toe is None:
+            return False
+        identity = self._refresh_work_identity()
+        if identity is None or self.last_toe_context is not None:
+            return False
+        job = self.client.proof_adapter.current_job
+        try:
+            context = await asyncio.to_thread(
+                self.toe.analyse_pool_job, job=job, generation=identity.generation
+            )
+            frame = build_toe_decision_frame(context)
+            signal = build_toe_signal(context)
+        except (TOEUnavailable, TOEDecisionFrameUnavailable, ValueError, TypeError) as exc:
+            LOG.warning("pool TOE observation unavailable: %s", exc)
+            return False
+        current, _ = self._resolve_work_identity()
+        if current != identity:
+            return False
+        self.last_toe_context = context
+        self.last_toe_frame = frame
+        self.last_toe_signal = signal
+        self._apply_toe_signal(signal)
+        self._work_wake.set()
+        self.causal.record(
+            "toe_observation", CausalCoordinate(
+                pool_session_id=identity.pool_session_id,
+                generation=identity.generation,
+                job_fingerprint=identity.job_fingerprint,
+                toe_frame_id=frame.frame_digest,
+            ), observation_source="stratum_job", hardware_node_observed=False,
+            **dict(frame.evidence_refs()),
+        )
+        return True
 
     def _fill_precompute_queue(self) -> int:
         """Top the queue up to the adaptive lookahead; bounded, never speculative in recovery."""
@@ -1555,6 +1603,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             return 0
         identity = self._refresh_work_identity()
         if identity is None:
+            return 0
+        if self._require_toe and (self.last_toe_frame is None or not self.last_toe_frame.is_valid()):
             return 0
         built = 0
         for _ in range(self.agentic.plans_needed()):
@@ -1819,6 +1869,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             cfg = runtime_config.load()
             if cfg.get("_policy_error"):
                 raise ValueError("invalid persisted runtime policy")
+            self._require_toe = cfg.get("intelligence", {}).get("require_toe", False) is True
             hashrate = cfg.get("hashrate", {})
             self.governor.configure(
                 target_hs=hashrate.get("target_hs", 0.0),
@@ -2820,6 +2871,14 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                     "reason": self.agentic.admission_block_reason(),
                 }
                 return False
+            self._refresh_governor()
+            if self._require_toe and (
+                self.last_toe_frame is None or not self.last_toe_frame.is_valid()
+                or self.last_toe_frame.job_id != identity.job_id
+            ):
+                self.last_execution = {"executed": False, "reason": "required_toe_frame_unavailable"}
+                self._precompute_wake.set()
+                return False
             self.cycle.transition(
                 MiningCycleState.PLAN,
                 event="success",
@@ -2834,7 +2893,6 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             client = self.client
             adapter = client.proof_adapter
             job = adapter.current_job
-            self._refresh_governor()
             try:
                 self.governor.observe_network(job.nbits)
             except (AttributeError, ValueError) as exc:
@@ -2848,6 +2906,13 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 return False
             ready_forecast = self._forecast_plan_ready()
             plan = self.agentic.consume_plan(timeout_ms=0)
+            if plan is not None and self._require_toe and (
+                plan.toe_frame_id != self.last_toe_frame.frame_digest
+            ):
+                # A plan queued before a policy change may not acquire the
+                # newly required TOE provenance by association. Rebuild it.
+                self.agentic.release_lease(plan.plan_id)
+                plan = None
             fallback_reason = (
                 None
                 if plan is not None
