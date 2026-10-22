@@ -102,3 +102,30 @@ the gate. The product suite passed 48 tests and the scope/adversarial checks pas
 Fresh independent Braiins and ViaBTC protocol sessions authenticated and received
 80-byte-header jobs at 15:10:55 UTC. Neither session submitted a share; these are
 connection checks, not failover or pool-acceptance evidence.
+
+## Final observations for this continuation
+
+The final outstanding-regression rerun on the repaired tree completed with
+**48 failed, 48 passed** (96 previously outstanding nodes; not the full root
+suite). Remaining failures are retained in the audit bundle. No all-green claim
+is made.
+
+Snapshot `source-manifest-sha256:1b7732ef0f81cba2b7a08dcad25335e9d31a82e6375f4cdc3aa6b1ba64f0a46d`
+executed fresh TOE-linked complete 600-work waves after the batch repair.
+Both strict readiness endpoints returned HTTP 200 with `ready: true`. The last
+restart's offline custody check found zero pending intents, passed reconciliation
+and database verification, and verified the mining chain. Raw heartbeat counters
+and causal-event counts are captured independently and need not be synchronized.
+
+Docker was not simply assumed unavailable: official Docker 28.5.1 tooling was
+installed into an isolated validation directory, an isolated daemon started,
+and the real `hello-world` image was pulled. Container startup failed because
+the process namespace lacked the matching `/proc` view; mounting a private
+`/proc` was then denied by this host (`Operation not permitted`). This does not
+qualify the application container, its image build, its Compose profile or its
+GPU behavior. The temporary validation daemon was stopped. An appropriate
+Docker-capable target is still needed; no host security requirement was disabled.
+
+The continuation is tracked separately from merged PR #134 in draft PR #138.
+The integration token cannot read Actions check runs (HTTP 403); no CI verdict
+is inferred from pushing commits or opening the draft pull request.
