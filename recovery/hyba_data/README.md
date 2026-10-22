@@ -3,8 +3,8 @@
 ## Current state
 
 This is a provenance-preserving recovery checkpoint, not a completed integration.
-The Notion import inventory contains **867 attachment paths**. **303 artifacts** have been recovered byte-for-byte; **564 remain pending**.
-This includes 173 Python files, 13 deployment YAML files, 11 JSON records and one checksum file.
+The Notion import inventory contains **867 attachment paths**. **353 artifacts** have been recovered byte-for-byte; **514 remain pending**.
+This includes 222 Python files, 13 deployment YAML files, 11 JSON records and one checksum file.
 The parent import report additionally records four import failures; this inventory
 is not proof that the original repository itself was imported completely.
 

@@ -1,0 +1,15 @@
+# Free-tier packaging sketch for PHI-1 Core (M1 demos only).
+# Install locally: pip install -e .  with this file renamed/copied as needed.
+
+[project]
+name = "phi1-core"
+version = "0.1.0"
+description = "HYBA PHI-1 Core — fold/unfold demos (M1 class). CIaaS doctrine."
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+gpu = ["torch"]
+
+[project.scripts]
+phi1-demo = "hyba_data.sdk_core:demo_m1"
