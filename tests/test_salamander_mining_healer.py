@@ -157,6 +157,18 @@ def test_salamander_heals_stale_identity(mock_coordinator):
     assert exec_rec.executed_route is None
     assert exec_rec.completion_state == CompletionState.COMPLETE
 
+    # Recovery must be traceable in the canonical causal ledger, not only
+    # in the healer's separate evidence ledger. A stale module import used
+    # to silently omit this link during real pool difficulty changes.
+    events = [event for event in coord.causal.events()
+              if event.kind == "salamander_healed_identity"]
+    assert len(events) == 1
+    event = events[0]
+    assert event.coordinate.recovery_id == last_audit.recovery_id
+    assert event.coordinate.generation == healed_ident.generation
+    assert event.coordinate.job_fingerprint == healed_ident.job_fingerprint
+    assert event.detail["evidence_sha256"] == last_audit.evidence_sha256
+
     # Verify optimizer unlocked after verified recovery
     assert coord.optimization.is_locked is False
 
@@ -239,11 +251,17 @@ def test_salamander_fail_closed_on_unresolvable_state(mock_coordinator):
     coord.client.proof_adapter.current_job = None
 
     healer = coord.salamander_healer
-    with pytest.raises(RuntimeError, match="Autonomic healing postcondition failed"):
+    # Missing authoritative pool state must stop before adapter mutation,
+    # rather than reaching the later postcondition check.
+    with pytest.raises(RuntimeError, match="pool generation or proof adapter unavailable"):
         healer.heal_identity_mismatch(coord)
 
     assert healer.state == HealerState.FAILED
     assert coord.optimization.is_locked is True
+    assert healer.heal_count == 0
+    assert healer.last_audit is None
+    assert not any(event.kind == "salamander_healed_identity"
+                   for event in coord.causal.events())
 
 
 @pytest.mark.parametrize("seed", [1337, 42, 2026])
