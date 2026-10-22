@@ -6,8 +6,7 @@ This is a bounded single-host reference topology, **not production acceptance**.
 Docker is unavailable in the local authoring environment; image build/run is a
 separate non-skipping CI job. Review its results before use. Pin approved image
 and dependency digests, retain SBOM/vulnerability review and verify the platform's
-native sandbox/cgroup behaviour before promotion. No host cloud/registry/IdP or
-Hermitten credentials were supplied or invented.
+native sandbox/cgroup behaviour before promotion. No host cloud/registry/IdP credentials were supplied or invented.
 
 1. Build from the complete repo, not a service-only checkout:
 
@@ -18,7 +17,7 @@ Hermitten credentials were supplied or invented.
 
 2. Copy `service.example.json` to `service.json`. Configure approved IdP issuer,
    client/audiences, JWKS and code-flow endpoints, exact HTTPS service origin,
-   account-scoped Hermitten credential and actual service limits. Register exact
+   `billing_scope: deferred` and actual service limits. Register exact
    callback `https://SERVICE/auth/callback`. Customer and operator signing keys
    are independent base64 random keys (at least 32 random bytes); session key is
    a Fernet key. Keep all in private secret files owned by UID 10001, mode 0600.
@@ -28,11 +27,11 @@ Hermitten credentials were supplied or invented.
    source commit. The image bakes `/opt/service-source-commit`; production refuses
    a mismatch or missing/stale evidence. Do not substitute self-generated PASS
    evidence. An isolated evaluation may explicitly select `controlled-pilot`;
-   this deliberately omits production promotion/spend requirements, not safety
+   this deliberately omits production promotion requirements, not safety
    permissions. It must not be routed as an approved enterprise service.
 4. Use the Compose topology behind TLS ingress. Host port is loopback-only. The
    configured origin must match the browser origin. Do not trust arbitrary
-   forwarded headers. Restrict API egress to approved IdP/JWKS/billing endpoints;
+   forwarded headers. Restrict API egress to approved IdP/JWKS endpoints;
    the worker has `network_mode:none`. Configure ingress login/readiness/body/
    connection rate limits and timeouts. Public login must not be an unbounded
    identity-provider or SQLite write amplifier.
@@ -41,9 +40,9 @@ Hermitten credentials were supplied or invented.
    POSIX locking, not NFS. No horizontal HA or physical hardware allocation is
    promised. One worker processes jobs serially; reservations are admission slots.
 6. Send traffic only after `/health/ready` succeeds with the canonical VQC report,
-   real receiver capabilities and valid promotion evidence. Liveness alone is
+   valid promotion evidence. Liveness alone is
    not readiness. Monitor request errors, queue age, disk/memory, unknown outcomes,
-   contract expiry, outbox lag and billing reconciliation; configure an alert
+   contract expiry and retained usage integrity; configure an alert
    receiver and human on-call. No external monitoring service is assumed.
 
 ## Onboard a customer
@@ -66,24 +65,26 @@ No named institution from a planning example is treated as an actual account.
    `members` (IdP subjects), `active:true`. Sum of active project slots cannot
    exceed customer allocation. Admin may manage customer access; analysts cannot.
 5. Confirm customer login, negative cross-tenant/project checks, revoked-member
-   denial, supported/unsupported work, durable result and real billing statement.
-   Set commercial spending ceiling through `/api/customer/{tenant}/spend-limit`
-   with `amount` decimal string, uppercase `currency`, unique `command`.
+   denial, supported/unsupported work and durable results. Operational completion
+   facts are not invoices. Do not configure a billing receiver or spend ceiling.
 6. Activate only within approved window and accepted service policy. Reserve one
    bounded pilot workload first; do not provision hypothetical 100-instance deals.
 
 The `/ops` commercial action form accepts the same action-specific JSON (without
 `tenant`, actor, keys or runtime). `/api/openapi.json` is authenticated. Paginated
 list APIs take `limit` (1..100) and `after` (last lexical identifier; audit uses
-last numeric cursor). GUI shows first 50; use the API for full exports.
+last numeric cursor). Job history uses server-side filters and cursor next/previous controls; other
+inventories show the first 50. Use the API for full permitted exports.
 
-## Billing and operational reconciliation
+## Operational reconciliation — billing deferred
 
-Run `turing-service billing --config PATH` with the configured machine identity,
-or invoke the separately authorised operator billing action. Schedule it through
-the approved host scheduler; no polling scheduler with credentials is silently
-installed. Deliver usage and commercial outboxes, alert on pending receipts and
-reconcile account statements to the receiver. Never convert an ACK into an invoice.
+Contractually agreed usage-based billing is the future direction, not an enabled
+commercial integration. Hermitten's separate avoided-cost data model is not a
+TURING/VQC dependency. No billing scheduler, spend reservation, statement or invoice
+is activated. The `billing` command and financial APIs refuse operation; explicit
+billing-provider/spend configuration fails closed. Retained legacy helpers and
+outboxes are historical non-financial observations, not pending required charges.
+Operational reconciliation reports retained fact counts separately from issues.
 
 Suspension prevents new admission; operators must inspect/drain active work and
 cancellation before resolving it. Membership/project changes are checked during
@@ -91,7 +92,7 @@ worker polling, not just at login. Killing work produces an ambiguous outcome,
 not an automatically billable completion. `running`/`unknown` on restart remain
 quarantined; inspect retained result/custody and execution evidence, then use the
 explicit operator resolution with a reason. Never automatically retry an unknown
-job under a new ID. Do not release spend authority for a potentially completed job.
+job under a new ID. No financial authorisation is inferred from an execution state.
 
 ## Backup, restore, renewal and deletion
 
@@ -117,9 +118,9 @@ job under a new ID. Do not release spend authority for a potentially completed j
 ## Incident and support policy template (commercial owner must approve)
 
 Assign named on-call, incident commander and customer administrator contact before
-pilot. Suspected tenant leakage, incorrect verified results or billing duplication:
+pilot. Suspected tenant leakage, incorrect verified results or evidence corruption:
 suspend affected admission, preserve evidence, revoke affected membership/keys,
-stop billing delivery, record timeline and contact security/commercial owners.
+pause dispatch if necessary, record timeline and contact security/commercial owners.
 Recover to a verified state before resumption. Publish a customer-specific service
 notification under the approved communications policy. Response/restoration times,
 maintenance windows and SLA credits are negotiated; no unsupported availability
@@ -130,19 +131,39 @@ promise is embedded in the UI or package.
 `release-check --config PATH [--publication]` verifies the read-only image source,
 Ed25519-signed `approval.json`, matching commit, <=7-day freshness, expiry, named
 reviewers and SHA-256-bound retained artifact for each required gate. Envelope:
-`{manifest:{schema:"turing.promotion.v1",commit,issued_at,expires_at,gates:{...}},signature}`.
+`{manifest:{schema:"turing.promotion.v1",commit,billing_scope:"deferred",issued_at,expires_at,gates:{...}},signature}`.
 Each gate entry has `state:"PASS"`, `reviewer`, `executed_at`, relative `artifact`,
 `sha256`; signature is base64 over canonical JSON manifest. Verification public
 key is deployment-owned, independent of service signing keys. Runtime, identity,
-billing, recovery/load, package and commercial gates are mandatory; publication
+recovery/load, package and commercial approval gates are mandatory; publication
 also requires `publication_rights`. Missing evidence fails closed. Do not use
 unit-test generated fixture approvals in deployment.
 
 Separate acceptance: real canonical package suite/clean install; actual IdP tenant
-policy and security review; actual Hermitten invoices/corrections; measured target
-load, restart/backup/custody restore; approved offer/rates/support; source/IP/license
+policy and security review; measured target
+load, restart/backup/custody restore; approved non-financial contract/support; source/IP/license
 and public-claim review. Validate public claims against retained evidence; no
 physical QPU, arbitrary scale, validated tariff or customer endorsement is implied.
 The command checks evidence, **does not** deploy, create a release tag, upload to
 PyPI, change repository visibility or publish company IP. Those actions follow a
 separately approved release procedure only after these gates pass.
+
+## Scope migration and denial audit
+
+1. Back up database and custody under the documented maintenance window.
+2. Remove legacy billing URL/token/import/spend configuration; set
+   `billing_scope: deferred`. Do not erase historical records or change contracts.
+3. Independently review/re-sign the promotion manifest with the explicit deferred
+   scope and all remaining gates. Old scope-less approval is deliberately invalid.
+4. Validate health/readiness and negative authorization; no deployment is implied.
+5. Rollback requires a separately reviewed configuration: old binaries may require
+   financial wiring. Do not blindly roll back to a build that reinstates billing.
+
+Backend operation denials append a correlation-bound audit event under the reserved
+`__service_security__` namespace. Subjects and target tenants are hashed; no bearer,
+request payload, raw subject or raw target is logged. Hashes are pseudonymous, not
+anonymity. They are not placed in a foreign customer's audit feed. Audit failure
+returns unavailable and never authorizes work. These events still require approved
+security monitoring, retention, access controls and independent audit anchoring.
+Unauthenticated denial logging is subject to the required ingress rate limits;
+this is not a claim of a complete IdP/security event export integration.

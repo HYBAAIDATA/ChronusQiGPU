@@ -483,6 +483,8 @@ class ControlPlane:
                     contract=c["contract"],
                     billing_account=c["billing_account"],
                     unit="verified_execution.v1",
+                    billing_scope="deferred",
+                    chargeable=False,
                     quantity=1,
                     occurred_at=self.clock(),
                     program_digest=report["program_digest"],
@@ -609,7 +611,7 @@ class ControlPlane:
         self._authorize(token, actor, "__service_ops__", "turing.ops.billing", operator=True)
         integer(limit, 1, 1000)
         if sink is None:
-            raise Unavailable("Hermitten usage sink not configured")
+            raise Unavailable("usage sink is not configured")
         rows = self.db.execute(
             "SELECT u.event,u.tenant,u.payload FROM usage u JOIN delivery d ON u.event=d.event "
             "WHERE d.receipt IS NULL ORDER BY u.event LIMIT ?",

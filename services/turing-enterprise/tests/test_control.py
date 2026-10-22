@@ -233,6 +233,12 @@ def test_capacity_allowance_retry_cancel_and_resize(env):
     with pytest.raises(Conflict):
         p.submit(a, "alice", tenant="a", job="j3", request=REQUEST)
     assert len(p.usage(a, "alice", tenant="a")) == 1
+    event = p.usage(a, "alice", tenant="a")[0]
+    assert event["billing_scope"] == "deferred" and event["chargeable"] is False
+    schema = json.loads((Path(__file__).parents[1] / "usage-event.schema.json").read_text())
+    assert set(event) <= set(schema["properties"])
+    assert schema["properties"]["billing_scope"]["const"] == "deferred"
+    assert schema["properties"]["chargeable"]["const"] is False
 
 
 @pytest.mark.parametrize("verdict", ["FAIL", "GATED", "REFUSED", "SKIPPED"])

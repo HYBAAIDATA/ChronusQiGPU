@@ -9,8 +9,6 @@
   "customer_key_file": "/run/service-secrets/customer-key",
   "operator_key_file": "/run/service-secrets/operator-key",
   "session_key_file": "/run/service-secrets/session-key",
-  "billing_token_file": "/run/service-secrets/hermitten-token",
-  "billing_url": "https://REPLACE-WITH-APPROVED-HERMITTEN",
   "origin": "https://REPLACE-WITH-SERVICE-ORIGIN",
   "oidc_issuer": "https://REPLACE-WITH-IDP-ISSUER",
   "jwks_url": "https://REPLACE-WITH-IDP-JWKS",
@@ -25,5 +23,6 @@
   "port": 8080,
   "source_commit": "REPLACE-WITH-REVIEWED-40-CHAR-COMMIT",
   "approval_bundle": "/approval",
-  "approval_public_key": "REPLACE-WITH-INDEPENDENT-ED25519-PUBLIC-KEY"
+  "approval_public_key": "REPLACE-WITH-INDEPENDENT-ED25519-PUBLIC-KEY",
+  "billing_scope": "deferred"
 }

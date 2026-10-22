@@ -1,0 +1,87 @@
+{
+  "schema": "turing.local-qualification.v1",
+  "repository": "PhiEnterprise1/EuclidPhiEnterprise",
+  "baseline": "4b75ace56712501f7d091e33d386df64ade9ba1b",
+  "not_full_checkout": true,
+  "python": "3.13.14",
+  "source_hashes": "changed-source-hashes.json",
+  "commands": [
+    {
+      "command": "python -m pytest services/turing-enterprise/tests -q --junitxml=OUT/service-final.xml",
+      "result": "93 passed, 0 failed, 0 skipped; 1 deprecation warning",
+      "environment": "editable candidate service; real SQLite/cryptography, owner entitlements source loaded directly; IdP/runtime/billing peers are local doubles"
+    },
+    {
+      "command": "python -m build services/turing-enterprise",
+      "result": "wheel and sdist built; 17 packaged source/static files identical to candidate source",
+      "environment": "sandbox Python 3.13; not locked full repository packaging or native/container build"
+    },
+    {
+      "command": "python -m venv OUT/wheel-venv; OUT/wheel-venv/bin/pip install \"PATH/hyba_turing_service_control-0.2.0-py3-none-any.whl[server,test]\"; OUT/wheel-venv/bin/python -m pytest services/turing-enterprise/tests -q --junitxml=OUT/wheel-tests.xml",
+      "result": "93 passed, 0 failed/skipped; 1 deprecation warning; import path retained",
+      "environment": "separate service wheel environment, same real owner entitlements module in pinned partial snapshot; not full installed AL HARAS closure"
+    },
+    {
+      "command": "python -m pytest services/turing-enterprise/integration -q --junitxml=OUT/runtime-integration.xml",
+      "result": "1 FAILED; PackageNotFoundError: hyba-turing-vqc; exit 1",
+      "environment": "actual non-skipping integration gate; no runtime substitution"
+    },
+    {
+      "command": "python services/turing-enterprise/tests/qualify_stabilizer_isolated.py -q --junitxml=OUT/stabilizer.xml",
+      "result": "11 passed, 0 failed/skipped",
+      "environment": "unchanged stabilizer owner source; unrelated package initializer bypassed explicitly; no installed/canonical custody claim"
+    },
+    {
+      "command": "python -m pytest turing_universal_quantum_computer/tests/test_structural_research_claim_gates.py -q --junitxml=OUT/research.xml",
+      "result": "11 tests plus 4 subtests passed (JUnit reports 15); 0 failed/skipped",
+      "environment": "actual research registry/spec; gating only, not theorem/benchmark/QPU proof"
+    },
+    {
+      "command": "CHROMIUM_PATH=/path/to/chromium TURING_PREVIEW_DIR=OUT/portal node services/turing-enterprise/tests/portal-smoke.cjs",
+      "result": "exit 0; 10 fixture views at 1280/390px, no page errors or page overflow",
+      "environment": "browser API transport fixtures; no live IdP or execution"
+    },
+    {
+      "command": "CHROMIUM_PATH=/path/to/chromium AXE_CORE_PATH=/test-only/axe.min.js TURING_PREVIEW_DIR=OUT/portal node services/turing-enterprise/tests/portal-release-scope.cjs",
+      "result": "exit 0; 12 interaction groups across 2 viewports; 2 automated WCAG-tagged axe scans, 0 violations",
+      "environment": "browser transport fixtures; no live SSO/execution; not manual accessibility"
+    },
+    {
+      "command": "python -m black --check --line-length 100 services/turing-enterprise/src services/turing-enterprise/tests services/turing-enterprise/integration",
+      "result": "exit 0; 19 files unchanged",
+      "environment": "targeted service formatting, not whole-repository lint"
+    },
+    {
+      "command": "node --check services/turing-enterprise/src/hyba_turing_service/static/portal.js",
+      "result": "exit 0",
+      "environment": "Node syntax check only"
+    },
+    {
+      "command": "GIT_TERMINAL_PROMPT=0 git ls-remote https://github.com/PhiEnterprise1/EuclidPhiEnterprise.git HEAD",
+      "result": "exit 128; could not read Username; terminal prompts disabled",
+      "environment": "checkout access refusal; scoped GitHub connector reads remain available"
+    },
+    {
+      "command": "GitHub pull_request_read get_check_runs for PR138 head 4a9f92096b57d5a00b6a5b0686ddafb5b26bdf9c",
+      "result": "403 Resource not accessible by personal access token",
+      "environment": "remote CI not observable; no inference from workflow configuration"
+    }
+  ],
+  "development_failures": [
+    {
+      "result": "89 passed, 1 failed in initial new regressions",
+      "cause": "test setup lacked required session secret file; fixture corrected without changing production secret validation"
+    },
+    {
+      "result": "2 test collection errors in initial denial audit change",
+      "cause": "audit block mistakenly inserted into synchronous logout; corrected to operation boundary; current full service/wheel reruns pass"
+    }
+  ],
+  "boundaries": [
+    "No production deployment, live IdP call, actuation, customer charge, invoice or external custody acceptance occurred",
+    "No full VQC/backend/entropy/hardware qualification or locked host regression is claimed",
+    "No missing/failed/skipped result is a pass",
+    "No independent promotion approval is manufactured",
+    "No repository-wide dependency/security scan or full manual accessibility certification is claimed"
+  ]
+}
