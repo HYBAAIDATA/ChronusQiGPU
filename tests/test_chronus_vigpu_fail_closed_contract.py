@@ -211,7 +211,7 @@ def test_daemon_denies_cross_tenant_retrieve_and_isolates_identical_bytes(tmp_pa
         )
     )
     assert own.status == "ok" and own.output["payload"] == payload
-    with pytest.raises(PermissionError, match="not authorized"):
+    with pytest.raises(PermissionError, match="not authori[sz]ed"):
         d.submit(
             Workload(
                 id="r-b",

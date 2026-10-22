@@ -14,11 +14,11 @@ from __future__ import annotations
 import time
 import pytest
 from pathlib import Path
+from typing import Any
 
 from Intelligence.capability_fabric import (
     AuthorizationDenied,
     CapabilityExecutionError,
-    CapabilityExecutionReceipt,
     CapabilityManifest,
     CapabilityPermissions,
     CapabilityRegistrationError,
@@ -245,9 +245,18 @@ def test_schema_requirement_enforcement() -> None:
     assert receipt.status == "SUCCESS"
 
 
-def test_salamander_engine_capability_fabric_integration() -> None:
+def test_salamander_engine_capability_fabric_integration(tmp_path) -> None:
     """SalamanderEngine exposes capabilities and enforces profile restrictions."""
-    engine = SalamanderEngine()
+    import hashlib
+    from Intelligence.repository_review import ReviewPolicy
+    source = b"value = 1\n"
+    (tmp_path / "reviewed.py").write_bytes(source)
+    engine = SalamanderEngine(
+        repo_root=tmp_path,
+        repository_review_policies={"fixture": ReviewPolicy(
+            (("reviewed.py", hashlib.sha256(source).hexdigest()),)
+        )},
+    )
 
     # Default profile is INTERNAL_RESEARCH
     assert engine.profile == ExecutionProfile.INTERNAL_RESEARCH

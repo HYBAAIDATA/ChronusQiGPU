@@ -45,8 +45,10 @@ operators.
   The schedule is a deterministic bijection (golden stride or Hendrix coprime
   stride) over the leased window. Every nonce is visited exactly once; there is
   no probabilistic probe.
-- **Hashrate is measured, not declared.** The floor is 10 EH/s once physical
-  ASIC channels are bound and the self-check passes. Until a device reports
+- **Hashrate is measured, not declared.** `hashrate.ceiling_hs` is an upper
+  policy bound, not a floor, throughput guarantee, or performance measurement.
+  Binding a device and passing a self-check does not establish a rate.
+  Until a device reports
   `silicon_status()["device_run"] == PASS`, the hashrate figure is
   `NOT_RUN`. No module self-declares SUCCESS.
 - **Composition.** `SuperAsicHasher` partitions windows by measured throughput

@@ -24,7 +24,10 @@ class TinyLearner:
 
     def register_task(self, task_id, actions, **_kwargs):
         if task_id not in self.tasks:
-            self.tasks[task_id] = type("Task", (), {"actions": tuple(actions)})()
+            low, high = _kwargs.get("reward_range", (-1.0, 1.0))
+            self.tasks[task_id] = type("Task", (), {
+                "actions": tuple(actions), "reward_min": low, "reward_max": high,
+            })()
             self.values[task_id] = {action: 0.0 for action in actions}
 
     def select_action(self, task_id, state, *, explore):

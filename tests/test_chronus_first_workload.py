@@ -32,7 +32,13 @@ def test_contract_declared(verdict: dict) -> None:
     assert verdict["schema"] == "chronus.first-workload-verdict/1"
     assert verdict["workload_id"] == WORKLOAD_ID
     assert "delegated" in verdict["owner_approval"]
-    assert len(verdict["git_head"]) == 40
+    assert verdict["git_head"] == "UNKNOWN" or (
+        len(verdict["git_head"]) == 40
+        and all(c in "0123456789abcdef" for c in verdict["git_head"])
+    )
+    provenance = verdict["source_provenance"]
+    assert provenance["kind"] == "content-addressed-source-files"
+    assert len(provenance["content_sha256"]) == 64 and provenance["files"]
 
 
 def test_every_stage_passes(verdict: dict) -> None:

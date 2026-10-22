@@ -1548,7 +1548,16 @@ class EuclidRuntime:
         atomic_write(Path(path), self.snapshot())
 
     @classmethod
-    def restore(cls, path: str | Path, *, state_dir: str | Path) -> "EuclidRuntime":
+    def restore(
+        cls, path: str | Path, *, state_dir: str | Path,
+        guardian: Any | None = None,
+        subscription_token_provider: Any | None = None,
+    ) -> "EuclidRuntime":
+        """Restore state while reattaching operator-owned authority out of band.
+
+        Credentials and guardian configuration are deliberately not checkpointed.
+        Without explicit authority, restored actuation and dispatch stay closed.
+        """
         payload = load_json(Path(path))
         body = {
             "schema": payload.get("schema"),
@@ -1564,7 +1573,10 @@ class EuclidRuntime:
             raise ValueError("unsupported EUCLID runtime checkpoint schema")
         if payload.get("seal") != domain_hash("euclid.runtime-checkpoint.seal.v1", body):
             raise ValueError("EUCLID runtime checkpoint seal mismatch")
-        runtime = cls.production(creator_id=str(body["creator_id"]), state_dir=state_dir)
+        runtime = cls.production(
+            creator_id=str(body["creator_id"]), state_dir=state_dir,
+            guardian=guardian, subscription_token_provider=subscription_token_provider,
+        )
         runtime.evidence = EvidenceChain.from_payload(body["evidence"])
         runtime.kairos = KairosRuntime(runtime.creator_id, runtime.evidence)
         runtime.kairos.worlds = {key: World(**value) for key, value in dict(body["worlds"]).items()}
@@ -1624,7 +1636,9 @@ class EuclidRuntime:
 
     @classmethod
     def restore_from_custody(
-        cls, custody: Any, record_id: str, *, state_dir: str | Path
+        cls, custody: Any, record_id: str, *, state_dir: str | Path,
+        guardian: Any | None = None,
+        subscription_token_provider: Any | None = None,
     ) -> "EuclidRuntime":
         """Restore a runtime from a THESEUS-custodied checkpoint.
 
@@ -1638,7 +1652,10 @@ class EuclidRuntime:
         checkpoint_path = Path(state_dir) / "custody_checkpoint.json"
         checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
         checkpoint_path.write_bytes(payload)
-        runtime = cls.restore(checkpoint_path, state_dir=state_dir)
+        runtime = cls.restore(
+            checkpoint_path, state_dir=state_dir, guardian=guardian,
+            subscription_token_provider=subscription_token_provider,
+        )
         runtime.evidence.append(
             "custody-restart",
             {"record_id": record_id, "restored_evidence_head": runtime.evidence.head},

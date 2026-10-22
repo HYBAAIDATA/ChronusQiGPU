@@ -94,6 +94,22 @@ def _git_head() -> str:
         return "UNKNOWN"
 
 
+def _source_provenance() -> dict:
+    """Bind ZIP/source-tree execution without inventing a Git commit."""
+    paths = [Path(__file__).resolve(), *sorted(
+        (_REPO_ROOT / "chronus" / "virtual_igpu").rglob("*.py")
+    )]
+    manifest = {
+        str(p.relative_to(_REPO_ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in paths
+    }
+    digest = hashlib.sha256(json.dumps(
+        manifest, sort_keys=True, separators=(",", ":")
+    ).encode()).hexdigest()
+    return {"kind": "content-addressed-source-files", "content_sha256": digest,
+            "files": manifest, "not_a_git_commit": True}
+
+
 def _first_workload() -> Workload:
     return Workload(
         id=WORKLOAD_ID,
@@ -255,6 +271,7 @@ def run_workload(workdir: Path) -> dict:
             "(@bollingertm, 2026-10-06)"
         ),
         "git_head": _git_head(),
+        "source_provenance": _source_provenance(),
         "stages": stages,
         "claim_boundary": (
             "executed on this host's standalone software path; no hardware, "

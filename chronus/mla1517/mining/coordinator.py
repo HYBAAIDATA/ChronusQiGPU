@@ -3574,7 +3574,10 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 job = latest()
             elif hasattr(self.client, "current_job"):
                 job = self.client.current_job
-        if job is None:
+        if job is None or any(
+            getattr(job, field, None) is None
+            for field in ("prevhash", "version", "nbits", "ntime")
+        ):
             LOG.warning("dropping node %d record: no normalized Stratum job", record.node_id)
             return False
 

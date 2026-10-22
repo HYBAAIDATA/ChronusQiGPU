@@ -48,7 +48,7 @@ def temp_repo(tmp_path: Path) -> Path:
 
 def test_authorization_token_enforcement(temp_repo: Path) -> None:
     """Repairs without authorized tokens are rejected without touching files."""
-    executor = IsolatedRepairExecutor(temp_repo)
+    executor = IsolatedRepairExecutor(temp_repo, authorized_tokens=("INTERNAL_RESEARCH_AUTONOMOUS_OPERATOR",))
     target = temp_repo / "core_engine" / "sample_module.py"
     initial_content = target.read_text(encoding="utf-8")
 
@@ -62,12 +62,12 @@ def test_authorization_token_enforcement(temp_repo: Path) -> None:
 
     assert receipt.status == "REJECTED_UNAUTHORIZED"
     assert target.read_text(encoding="utf-8") == initial_content
-    assert "Invalid authorization token" in receipt.reason
+    assert "authorization denied" in receipt.reason.lower()
 
 
 def test_scope_confinement_protections(temp_repo: Path) -> None:
     """Scope checks strictly protect tests, authority docs, and non-python paths."""
-    executor = IsolatedRepairExecutor(temp_repo)
+    executor = IsolatedRepairExecutor(temp_repo, authorized_tokens=("INTERNAL_RESEARCH_AUTONOMOUS_OPERATOR",))
     auth_token = "INTERNAL_RESEARCH_AUTONOMOUS_OPERATOR"
 
     # 1. Protected test file
@@ -119,7 +119,7 @@ def test_scope_confinement_protections(temp_repo: Path) -> None:
 
 def test_pre_change_defect_reproduction_requirement(temp_repo: Path) -> None:
     """If the defect cannot be reproduced on baseline, the repair is refused."""
-    executor = IsolatedRepairExecutor(temp_repo)
+    executor = IsolatedRepairExecutor(temp_repo, authorized_tokens=("INTERNAL_RESEARCH_AUTONOMOUS_OPERATOR",))
     target = temp_repo / "core_engine" / "sample_module.py"
     initial_content = target.read_text(encoding="utf-8")
     auth_token = "INTERNAL_RESEARCH_AUTONOMOUS_OPERATOR"
@@ -140,7 +140,7 @@ def test_pre_change_defect_reproduction_requirement(temp_repo: Path) -> None:
 
 def test_syntax_validation_of_candidate(temp_repo: Path) -> None:
     """Candidate code with syntax errors is rejected before sandbox evaluation."""
-    executor = IsolatedRepairExecutor(temp_repo)
+    executor = IsolatedRepairExecutor(temp_repo, authorized_tokens=("INTERNAL_RESEARCH_AUTONOMOUS_OPERATOR",))
     target = temp_repo / "core_engine" / "sample_module.py"
     initial_content = target.read_text(encoding="utf-8")
     auth_token = "INTERNAL_RESEARCH_AUTONOMOUS_OPERATOR"
@@ -160,7 +160,7 @@ def test_syntax_validation_of_candidate(temp_repo: Path) -> None:
 
 def test_sandbox_probe_failure_rollback(temp_repo: Path) -> None:
     """If candidate still exhibits the defect in sandbox, rollback occurs and baseline is untouched."""
-    executor = IsolatedRepairExecutor(temp_repo)
+    executor = IsolatedRepairExecutor(temp_repo, authorized_tokens=("INTERNAL_RESEARCH_AUTONOMOUS_OPERATOR",))
     target = temp_repo / "core_engine" / "sample_module.py"
     initial_content = target.read_text(encoding="utf-8")
     auth_token = "INTERNAL_RESEARCH_AUTONOMOUS_OPERATOR"
@@ -185,7 +185,7 @@ def test_sandbox_probe_failure_rollback(temp_repo: Path) -> None:
 
 def test_validator_failure_rollback(temp_repo: Path) -> None:
     """If external regression validator rejects candidate, target file remains untouched."""
-    executor = IsolatedRepairExecutor(temp_repo)
+    executor = IsolatedRepairExecutor(temp_repo, authorized_tokens=("INTERNAL_RESEARCH_AUTONOMOUS_OPERATOR",))
     target = temp_repo / "core_engine" / "sample_module.py"
     initial_content = target.read_text(encoding="utf-8")
     auth_token = "INTERNAL_RESEARCH_AUTONOMOUS_OPERATOR"
@@ -219,7 +219,7 @@ def test_successful_closed_loop_repair_and_atomic_publication(temp_repo: Path) -
     """Full 12-stage verified healing loop succeeds, publishes atomically, and records learning."""
     ledger_path = temp_repo / "Intelligence" / "repair_ledger.json"
     ledger = RepairLearningLedger(storage_path=ledger_path)
-    executor = IsolatedRepairExecutor(temp_repo, learning_ledger=ledger)
+    executor = IsolatedRepairExecutor(temp_repo, learning_ledger=ledger, authorized_tokens=("INTERNAL_RESEARCH_AUTONOMOUS_OPERATOR",))
     target = temp_repo / "core_engine" / "sample_module.py"
     auth_token = "INTERNAL_RESEARCH_AUTONOMOUS_OPERATOR"
 

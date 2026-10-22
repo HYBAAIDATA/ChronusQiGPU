@@ -24,8 +24,9 @@ from chronus.mla1517.mining.geodesic_support import (
 from chronus.mla1517.mining.h4_600_execution import promote_execution_hasher
 from chronus.mla1517.mining.pythia_search import (
     SEARCH_ARCHITECTURE_ID,
-    precompute_pythia_search,
-    pythia_hendrix_nonces,
+)
+from chronus.mla1517.mining.exact_search import (
+    precompute_exact_search as precompute_pythia_search, exact_reference_nonces, exact_face_order,
 )
 from chronus.mla1517.mining.search_plan import (
     CompletionState,
@@ -41,6 +42,12 @@ from hyba.hybrid.nonce_scheduler import (
     next_handle_id,
 )
 from hyba.hybrid.super_asic import SuperAsicHasher
+
+def _expected_nonces(header, base, window, *, precompute, preferred_face):
+    # Independent exact reference, not the prohibited FP64 legacy itinerary.
+    assert precompute.digest == precompute_pythia_search().digest
+    return exact_reference_nonces(header, base, window, preferred_face=preferred_face)
+
 
 HEADER = bytes(range(80))
 BASE = 0x0020_0000
@@ -124,24 +131,30 @@ class _FabricScheduler:
         self._done.setdefault(handle.handle_id, 0)
 
 
-def _plan(route: str = "chronus_batch") -> SearchPlan:
-    return SearchPlan(
+def _plan(route: str = "chronus_batch", *, target=bytes(32), window=WINDOW, plan_id="plan-chronus-600") -> SearchPlan:
+    from chronus.mla1517.mining.resident_search import compile_hendrix_plan
+    state = precompute_pythia_search()
+    lanes = exact_face_order(HEADER, state)
+    plan = SearchPlan(
         job_fingerprint="fp-chronus-600",
         pool_session_id="session-chronus-600",
         generation=1,
         base_step=BASE,
-        window=WINDOW,
+        window=window,
         extranonce2="00000000",
-        lane_order=tuple(range(32)),
-        preferred_face=0,
-        dispatch_breadth=WINDOW,
+        lane_order=lanes,
+        preferred_face=lanes[0],
+        dispatch_breadth=window,
         executor_route=route,
         policy_id="canonical-600",
-        evidence_refs={"search_architecture": SEARCH_ARCHITECTURE_ID},
+        evidence_refs={"search_architecture": SEARCH_ARCHITECTURE_ID, "search_precompute_digest": state.digest},
         created_at=time.monotonic(),
-        plan_id="plan-chronus-600",
+        plan_id=plan_id,
         nonce_order=NONCE_ORDER_HENDRIX,
     )
+
+    artifact = compile_hendrix_plan(plan, HEADER, target, state)
+    return replace(plan, evidence_refs={**plan.evidence_refs, "resident_hendrix": artifact.as_dict()})
 
 
 def _lease(plan: SearchPlan) -> NonceLease:
@@ -195,7 +208,7 @@ def test_chronus_batch_executes_exact_600_vertex_itinerary_without_vendor_route_
         lease=_lease(plan),
     )
 
-    expected = pythia_hendrix_nonces(
+    expected = _expected_nonces(
         HEADER,
         BASE,
         WINDOW,
@@ -217,18 +230,13 @@ def test_chronus_batch_executes_exact_600_vertex_itinerary_without_vendor_route_
     assert sorted(hasher.seen) == list(range(BASE, BASE + WINDOW))
 
 
-def test_pythia_router_reaches_promoted_h4_fabric_and_preserves_ordered_membership():
+def test_reference_only_h4_promoter_cannot_issue_production_execution():
     worker = _FabricScheduler()
     hasher = promote_execution_hasher(
         SuperAsicHasher(HybridCoordinator(worker), [worker])
     )
     precompute = precompute_pythia_search()
-    plan = replace(
-        _plan(),
-        window=24,
-        dispatch_breadth=24,
-        plan_id="plan-chronus-h4-seam",
-    )
+    plan = _plan(window=24, plan_id="plan-chronus-h4-seam")
     router = ProductionExecutionRouter(
         hasher,
         lambda _header, _target, _start, count: (None, None, count),
@@ -242,33 +250,19 @@ def test_pythia_router_reaches_promoted_h4_fabric_and_preserves_ordered_membersh
         lease=_lease(plan),
     )
 
-    expected = pythia_hendrix_nonces(
-        HEADER,
-        BASE,
-        plan.window,
-        precompute=precompute,
-        preferred_face=plan.preferred_face,
-    )
-    dispatched = []
-    for window in worker.dispatched:
-        dispatched.extend(range(window.base_nonce, window.base_nonce + window.span))
-
+    # The legacy H4 promoter is now explicitly reference-only. A production
+    # router must refuse it, not manufacture a physical/native execution
+    # receipt. Exact resident Chronus execution is covered by the other tests.
     assert candidate is None
-    assert record.completion_state is CompletionState.COMPLETE
-    assert record.executed_route == "chronus_batch"
-    assert record.hash_count == plan.window
-    assert dispatched == expected
-
+    assert record.completion_state is CompletionState.DEVICE_ERROR
+    assert "ReferenceUnavailable" in record.device_error
+    assert record.hash_count == 0
+    assert worker.dispatched == []
     evidence = hasher.last_batch_evidence
-    assert evidence is not None
-    assert evidence["h4_topology_observed"] is True
-    assert evidence["completed_work_items"] == plan.window
+    assert evidence["completion_state"] == "DEVICE_ERROR"
+    assert evidence["completed_work_items"] == 0
     assert evidence["physical_fanout_observed"] is False
-
-    fabric = chronus_fabric_execution_state_for(hasher)
-    assert fabric["capability_bound"] is True
-    assert fabric["physical_fanout"] is False
-    assert fabric["execution_evidence"]["ordered_nonce_count"] == plan.window
+    assert evidence["full_600_shard_dispatch_observed"] is False
 
 
 def test_refused_plan_clears_prior_h4_execution_evidence():
@@ -341,7 +335,7 @@ def test_missing_batch_contract_falls_back_explicitly_without_relabelling():
     assert record.executed_route == "cpu_reference"
     assert record.fallback_reason == "CHRONUS_BATCH_UNAVAILABLE"
     assert record.evidence_class is EvidenceClass.SOFTWARE_VERIFIED
-    assert visited == pythia_hendrix_nonces(
+    assert visited == _expected_nonces(
         HEADER,
         BASE,
         WINDOW,
@@ -371,6 +365,11 @@ def test_coordinator_bound_plan_requests_chronus_batch_and_falls_back_end_to_end
         coordinator.execution_hasher
     )
     coordinator.pythia_search_precompute = precompute_pythia_search()
+    from types import SimpleNamespace
+    coordinator.client = SimpleNamespace(proof_adapter=SimpleNamespace(
+        current_job=SimpleNamespace(job_id="fixture", ntime="00000000", target=0),
+        build_header=lambda *args: HEADER,
+    ))
 
     plan = coordinator._bind_plan_execution_intent(_plan("cpu_reference"))
 
@@ -402,7 +401,7 @@ def test_coordinator_bound_plan_requests_chronus_batch_and_falls_back_end_to_end
     assert record.executed_route == "cpu_reference"
     assert record.fallback_reason == "CHRONUS_BATCH_UNAVAILABLE"
     assert record.evidence_class is EvidenceClass.SOFTWARE_VERIFIED
-    assert visited == pythia_hendrix_nonces(
+    assert visited == _expected_nonces(
         HEADER,
         BASE,
         WINDOW,
@@ -433,6 +432,11 @@ def test_coordinator_bound_plan_executes_chronus_batch_when_capability_bound():
     coordinator.execution_hasher = hasher
     coordinator._chronus_fabric_state = chronus_fabric_state_for(hasher)
     coordinator.pythia_search_precompute = precompute_pythia_search()
+    from types import SimpleNamespace
+    coordinator.client = SimpleNamespace(proof_adapter=SimpleNamespace(
+        current_job=SimpleNamespace(job_id="fixture", ntime="00000000", target=(1 << 256) - 1),
+        build_header=lambda *args: HEADER,
+    ))
 
     plan = coordinator._bind_plan_execution_intent(_plan("cpu_reference"))
     assert plan.executor_route == "chronus_batch"
@@ -449,7 +453,7 @@ def test_coordinator_bound_plan_executes_chronus_batch_when_capability_bound():
         lease=_lease(plan),
     )
 
-    order = pythia_hendrix_nonces(
+    order = _expected_nonces(
         HEADER,
         BASE,
         WINDOW,
@@ -533,6 +537,11 @@ def test_plan_binding_declares_chronus_authority_not_vendor_runtime():
         coordinator.execution_hasher
     )
     coordinator.pythia_search_precompute = precompute_pythia_search()
+    from types import SimpleNamespace
+    coordinator.client = SimpleNamespace(proof_adapter=SimpleNamespace(
+        current_job=SimpleNamespace(job_id="fixture", ntime="00000000", target=0),
+        build_header=lambda *args: HEADER,
+    ))
     coordinator._chronus_fabric_state = {
         "schema": "pythia.chronus_search_fabric/2",
         "state": "NOT_BOUND",
