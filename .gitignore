@@ -137,3 +137,7 @@ scratch_pseudocode.txt
 # Re-include PHILOS Python contracts hidden by broad models/ ignore
 !euclid/emergence/models/
 
+
+# Provenance-preserving HYBA import recovery, not a vendored runtime clone.
+!/recovery/hyba_data/
+!/recovery/hyba_data/source/hyba_data/

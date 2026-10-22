@@ -1,0 +1,41 @@
+{
+  "claim_boundary": "No public service, external authentication, distributed persistence, multi-user execution, provider deployment, rendering, physics engine, SDK, or external comparative evaluation is asserted.",
+  "date": "2026-07-19",
+  "environment": {
+    "platform": "Linux-5.10.174-x86_64-with-glibc2.34",
+    "python": "3.13.13"
+  },
+  "files_sha256": {
+    "euclid/KAIROS_RUNTIME_CONTROL_PLANE.md": "1f9d90d22b21297a73d9aeded6d80411fe092a455e85c5a4150aa0989db42d86",
+    "euclid/__init__.py": "134e50313d734edff1639d63a832659464b4cbf7947079a53b38bd1815c04256",
+    "euclid/evidence/kairos_control_plane_harness_20260719.json": "3d411722983737dfef6c6fe64fae3840b0bd0551e20f3a7b779ef116d2f2522d",
+    "euclid/evidence/kairos_control_plane_test_transcript_20260719.txt": "728589ebd5fe4ded8eb6fae026d917686f223db56e84c1fd9a84585810070644",
+    "euclid/kairos_runtime.py": "9fc761c8514e8bd46cde45b77fb3759e25ae9770418697b2d1b2ded36c128d36",
+    "euclid/production_harness.py": "03331ffb23ac4a1556fe4ffe861419a3dfb950d2fce45f7eb9d7d91ab0b981d3",
+    "tests/test_kairos_runtime.py": "a0110a60b282b909ab62939576bf9144591726691f7287b8ace6978c71930fee"
+  },
+  "runtime_boundary": {
+    "external_providers_enabled": false,
+    "multi_user_enabled": false,
+    "network_enabled": false,
+    "runtime_mode": "LABORATORY"
+  },
+  "schema": "EUCLID_KAIROS_CONTROL_PLANE_EVIDENCE_V1",
+  "scope": "deterministic in-process single-operator laboratory control plane",
+  "source_paths": [
+    "euclid/kairos_runtime.py",
+    "euclid/KAIROS_RUNTIME_CONTROL_PLANE.md",
+    "euclid/production_harness.py",
+    "euclid/__init__.py",
+    "tests/test_kairos_runtime.py"
+  ],
+  "verification": {
+    "compilation": "passed",
+    "focused_and_regression_tests": "42 passed",
+    "production_harness": {
+      "passed": true,
+      "passed_count": 11,
+      "total": 11
+    }
+  }
+}

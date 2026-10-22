@@ -1,0 +1,100 @@
+# HYBA_DATA — Google Cloud Platform Deployment
+# McKinsey-grade configuration for GCP hosted environments.
+
+deployment:
+  name: hyba-data-gcp
+  environment: production
+  classification: confidential
+  network_mode: vpc-isolated
+
+infrastructure:
+  provider: gcp
+  region: europe-west2
+  zones: [a, b, c]
+  machine_type: n2-standard-32
+  gpu_machine_type: a2-highgpu-2g
+  mig:
+    min_size: 3
+    max_size: 12
+    target_cpu: 70
+  storage:
+    disk_type: pd-ssd
+    disk_iops: 16000
+    encryption: google-managed-cmek
+    kms_key: projects/hyba-data/locations/europe-west2/keyRings/hyba/cryptoKeys/prod
+  network:
+    vpc_cidr: 10.70.0.0/16
+    private_subnets: true
+    cloud_nat: true
+    firewall_rules:
+      - name: hyba-api
+        direction: INGRESS
+        ports: [443]
+        source_ranges: [10.70.0.0/16]
+      - name: hyba-internal
+        direction: INGRESS
+        ports: [9090]
+        source_ranges: [10.70.0.0/16]
+
+engine:
+  manifold: M32
+  search_space: 32-bit
+  workers: auto
+  cache_size: 150000
+  precision: float64
+  gpu_acceleration: true
+  checkpoint_interval: 500
+  gcs_mount: /mnt/hyba/checkpoints
+
+security:
+  abac:
+    enabled: true
+    default_deny: true
+    policy_file: gs://hyba-config/abac-policy.json
+  tls:
+    enabled: true
+    cert_source: gcp-cas
+    min_version: TLSv1.3
+  data_residency:
+    region: europe-west2
+    egress_blocked: false
+    allowed_egress: [storage.googleapis.com]
+  audit:
+    enabled: true
+    destination: cloud-logging
+    retention_days: 365
+  iam:
+    service_account: hyba-data@hyba-data.iam.gserviceaccount.com
+    roles: [roles/compute.instanceAdmin, roles/storage.objectAdmin]
+  secrets:
+    backend: gcp-secret-manager
+
+finops:
+  cost_tracking: true
+  flop_metering: true
+  chargeback_model: label-based
+  cost_labels: [project, environment, owner]
+  budget_alerts:
+    threshold_pct: 80
+    notification: pubsub
+  preemptible:
+    enabled: true
+    max_wait: 300
+  committed_use_discount: 3-year
+
+mlops:
+  drift_monitoring: true
+  calibration_interval: 1000
+  zero_downtime_reindex: true
+  canary_pct: 10
+  model_registry: gcs://hyba-models/
+
+compliance:
+  framework: ISO-27001
+  data_classification: confidential
+  encryption_at_rest: cmek
+  encryption_in_transit: tls-1.3
+  backup: gcp-backup
+  dr_strategy: pilot-light
+  rto: 14400
+  rpo: 300

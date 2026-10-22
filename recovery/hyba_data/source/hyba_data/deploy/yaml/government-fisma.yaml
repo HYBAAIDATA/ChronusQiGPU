@@ -1,0 +1,114 @@
+# HYBA_DATA — Federal Information Security Modernization Act (FISMA)
+# McKinsey-grade configuration for federal civilian agencies.
+# FedRAMP High baseline with continuous monitoring.
+
+deployment:
+  name: hyba-data-fisma
+  environment: production
+  classification: controlled-unclassified
+  network_mode: fedramp-isolated
+  authority_to_operate: ATO
+
+# ── Infrastructure ──────────────────────────────────────────────
+infrastructure:
+  provider: fedramp-high          # FedRAMP High authorized CSP
+  region: us-gov-west-1
+  availability_zones: [a, b, c]
+  instance_type: m5.4xlarge
+  gpu_instance_type: p4d.24xlarge
+  auto_scaling:
+    min_size: 3
+    max_size: 10
+    target_cpu: 70
+  storage:
+    type: ebs-gov
+    encryption: aws-kms-gov
+    kms_key: alias/hyba-data-fedramp
+  network:
+    vpc_cidr: 10.200.0.0/16
+    private_subnets: true
+    nat_gateway: true
+    security_groups:
+      - name: hyba-api
+        ingress: [{port: 443, source: 10.200.0.0/16}]
+      - name: hyba-internal
+        ingress: [{port: 9090, source: 10.200.0.0/16}]
+    ddos_protection: aws-shield-advanced
+
+# ── HYBA_DATA Engine ────────────────────────────────────────────
+engine:
+  manifold: M32
+  search_space: 32-bit
+  workers: 8
+  cache_size: 150000
+  precision: float64
+  gpu_acceleration: true
+  checkpoint_interval: 500
+  adaptive_precision: true
+
+# ── Security ────────────────────────────────────────────────────
+security:
+  abac:
+    enabled: true
+    default_deny: true
+    policy_file: s3://hyba-config-fedramp/abac-policy.json
+    tenant_isolation: namespace
+  tls:
+    enabled: true
+    cert_source: aws-acm-gov
+    min_version: TLSv1.3
+  data_residency:
+    region: us-gov-west-1
+    egress_blocked: true
+    allowed_egress: [s3.us-gov-west-1.amazonaws.com]
+  audit:
+    enabled: true
+    destination: cloudwatch-gov
+    retention_days: 2555           # 7 years
+    siem_integration: splunk-fedramp
+    immutable_logs: true
+  fips_mode: true
+  zero_trust: true
+  vulnerability_scanning: continuous
+  stig_hardening: true
+  sbom_required: true
+
+# ── FinOps ──────────────────────────────────────────────────────
+finops:
+  cost_tracking: true
+  flop_metering: true
+  chargeback_model: agency-based
+  budget_alerts:
+    threshold_pct: [80, 95]
+    notification: sns-gov
+  unit_economics:
+    cost_per_flop: tracked
+    cost_per_search: tracked
+    savings_vs_classical: measured
+
+# ── MLOps ───────────────────────────────────────────────────────
+mlops:
+  drift_monitoring: true
+  calibration_interval: 1000
+  zero_downtime_reindex: true
+  canary_pct: 10
+  model_registry: s3://hyba-models-fedramp/
+  ci_cd: gitops
+  blue_green: true
+
+# ── Compliance ───────────────────────────────────────────────────
+compliance:
+  framework: [FedRAMP-High, FISMA, NIST-800-53-High, NIST-800-171]
+  data_classification: controlled-unclassified
+  encryption_at_rest: aws-kms-gov
+  encryption_in_transit: tls-1.3
+  fips_validated: true
+  backup: aws-backup-gov
+  dr_strategy: pilot-light
+  rto: 14400                    # 4 hours
+  rpo: 300                      # 5 minutes
+  supply_chain: SBOM-required
+  attestation: signed-hash
+  penetration_test: annual
+  continuous_monitoring: true
+  plan_of_action: required

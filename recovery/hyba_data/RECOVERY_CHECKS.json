@@ -1,0 +1,19 @@
+{
+  "scope": "Static parsing and source integrity only; recovered modules were not imported or executed.",
+  "python_files_checked": 78,
+  "syntax_errors": [],
+  "json_files_checked": 11,
+  "json_errors": [],
+  "runtime_qualified": false,
+  "recovered_files": 103,
+  "pending_files": 764,
+  "legacy_evidence_checksum": {
+    "path": "hyba_data/euclid/evidence/creative_architecture_audit.json",
+    "recorded_sha256": "94a66fdb920b8f781f10ad660802b35e847d12dd0ba50f335c9c66d4017276b3",
+    "recovered_bytes_sha256": "cad007159137bbfa90133f62d89fa578823d6ddf93fb7c7039dc66316a227c4e",
+    "exact_byte_match": false,
+    "lf_normalised_match": true,
+    "original_bytes_preserved": true,
+    "interpretation": "The legacy checksum matches only after CRLF-to-LF normalisation; this is not an exact-byte checksum match or evidence of runtime qualification."
+  }
+}

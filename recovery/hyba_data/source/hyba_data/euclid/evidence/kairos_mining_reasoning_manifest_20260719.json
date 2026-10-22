@@ -1,0 +1,18 @@
+{
+  "claim_boundary": "Abstract deterministic laboratory reasoning only; no live mining, miner/pool/wallet/credential handling, accepted-share, hashrate, revenue, profitability, external evaluation, or operational prediction claim.",
+  "files_sha256": {
+    "euclid/KAIROS_MINING_REASONING_LAYER.md": "bd5031a0d7e01f8f120f0af1a30c3d466813abb65368160137891eb85a8407f7",
+    "euclid/evidence/kairos_mining_reasoning_harness_20260719.json": "7d2c70af56f2cb8f97592192d4c655a2e5c09c6f454da0b334b86cb6808e7d69",
+    "euclid/evidence/kairos_mining_reasoning_test_transcript_20260719.txt": "e92f93b38af833a8bb8f2fd6c9cbf099b2bde112a0ac0b8888e781c339f565e6",
+    "euclid/kairos_mining_reasoning.py": "303c9ee827a854ff7a9becc2606f60382be122f77a1efba17a341c1f6bbb56f5",
+    "tests/test_kairos_mining_reasoning.py": "98bbe828f923a8b313c4590192da1aeb764287409ab1af576721883693c0909c"
+  },
+  "implemented_slice": "stability-first",
+  "schema": "EUCLID_KAIROS_MINING_REASONING_EVIDENCE_V1",
+  "sequence": "hybrid: stability \u2192 coordination \u2192 policy",
+  "verification": {
+    "compilation": "passed",
+    "harness": "15/15",
+    "regressions": "56 passed"
+  }
+}

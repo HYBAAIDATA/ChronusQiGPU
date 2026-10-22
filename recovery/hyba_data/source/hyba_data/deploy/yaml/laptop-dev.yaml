@@ -1,0 +1,62 @@
+# HYBA_DATA — Laptop / Developer Mode
+# Lightweight local installation via `pip install pulvini`.
+# No GPU, no cluster — just the framework on your machine.
+
+deployment:
+  name: hyba-data-laptop
+  environment: development
+  classification: unclassified
+  network_mode: localhost
+
+# ── Infrastructure ──────────────────────────────────────────────
+infrastructure:
+  provider: local
+  cpu: 4                        # Cores to use
+  memory: 8                      # GB
+  gpu: false
+  storage:
+    type: local-fs
+    path: ~/.hyba/data
+    capacity: 10GB
+
+# ── HYBA_DATA Engine ────────────────────────────────────────────
+engine:
+  manifold: M32
+  search_space: 32-bit
+  workers: 2
+  cache_size: 10000
+  precision: float64
+  gpu_acceleration: false
+  checkpoint_interval: 1000
+
+# ── Security ────────────────────────────────────────────────────
+security:
+  abac:
+    enabled: false               # Disabled for dev
+  tls:
+    enabled: false
+  data_residency:
+    region: local
+    egress_blocked: false
+  audit:
+    enabled: false
+
+# ── FinOps ──────────────────────────────────────────────────────
+finops:
+  cost_tracking: false
+  flop_metering: true            # Still track FLOPs for profiling
+
+# ── MLOps ───────────────────────────────────────────────────────
+mlops:
+  drift_monitoring: false
+  calibration_interval: 5000
+  zero_downtime_reindex: false
+
+# ── Install ────────────────────────────────────────────────────
+install:
+  method: pip
+  package: pulvini
+  extras: [viz]                   # pip install pulvini[viz]
+  python: ">=3.10"
+  virtualenv: true
+  config_path: ~/.hyba/config.yaml
