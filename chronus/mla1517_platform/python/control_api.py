@@ -1213,6 +1213,22 @@ def _m3_dependency_reason() -> tuple[bool, str]:
     return True, "ok"
 
 
+def _readiness_qualification(scope: str) -> dict[str, Any]:
+    """Disclose probe scope without claiming an end-to-end release verdict.
+
+    Non-strict shadow runs deliberately omit submission dependencies. Their
+    successful probe must not be mistaken for production authorization.
+    Even a strict probe is not a Docker, hardware, or pool-acceptance test.
+    """
+    strict = _is_truthy(os.getenv("PYTHIA_M3_REQUIRED"))
+    return {
+        "scope": scope,
+        "governance_mode": "strict" if strict else "non_strict",
+        "submission_dependencies_required": strict,
+        "production_qualification": "not_established_by_this_probe",
+    }
+
+
 def _ready_to_mine_reason(
     records: list[WorkerRecord],
     stratum: dict[str, Any],
@@ -1556,6 +1572,7 @@ def status_payload() -> dict[str, Any]:
         "stratum": stratum,
         "identity": _identity_payload(),
         "ready_to_mine": {
+            **_readiness_qualification("mining_runtime"),
             "ready": ready,
             "reason": reason,
             "details": {
@@ -2991,6 +3008,7 @@ class _Handler(BaseHTTPRequestHandler):
                 HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE,
                 {
                     "schema_version": _READY_SCHEMA_VERSION,
+                    **_readiness_qualification("control_plane"),
                     "ready": ready,
                     "reason": reason,
                     "components": _readiness_components(),

@@ -506,7 +506,7 @@ class SalamanderMiningHealer:
         # Causal ledger entry if coordinator has one
         if hasattr(coordinator, "causal") and coordinator.causal is not None:
             try:
-                from chronus.mla1517.mining.causal_ledger import CausalCoordinate
+                from chronus.mla1517.mining.causal import CausalCoordinate
                 coord = CausalCoordinate(
                     recovery_id=recovery_id,
                     generation=gen_id,
