@@ -1817,6 +1817,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             import runtime_config
 
             cfg = runtime_config.load()
+            if cfg.get("_policy_error"):
+                raise ValueError("invalid persisted runtime policy")
             hashrate = cfg.get("hashrate", {})
             self.governor.configure(
                 target_hs=hashrate.get("target_hs", 0.0),
@@ -1825,6 +1827,8 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         except Exception as exc:
             # The last good limits stay in force; the network cap always does.
             LOG.warning("hashrate config unavailable, keeping current cap: %s", exc)
+            # A previous approval must not survive loss of its policy authority.
+            self._live_submit_approved = False
             return
         try:
             approved = self._approval_binds_here(cfg, runtime_config)

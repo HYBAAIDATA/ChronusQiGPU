@@ -17,10 +17,10 @@ from __future__ import annotations
 import hashlib
 import struct
 import time
-from dataclasses import dataclass, field
-from typing import Any, Iterator, Mapping, Sequence, Tuple
+from dataclasses import dataclass
+from typing import Iterator
 
-from chronus.exact_geometry import EstateChunk600, ExactRay
+from chronus.exact_geometry import EstateChunk600
 
 
 @dataclass(frozen=True)
@@ -80,16 +80,18 @@ class EntangledQubitHasher:
         """Yield candidate nonces derived from 32-qubit Bell stabilizer states."""
         # Derive symplectic phase mask from 11D ray coordinates
         ray = self.chunk.ray_11d
-        ray_hash = hashlib.sha256(
-            "".join(str(n) for n in ray.numerator).encode("ascii")
-        ).digest()
+        ray_hash = hashlib.sha256("".join(str(n) for n in ray.numerator).encode("ascii")).digest()
         seed_mask = int.from_bytes(ray_hash[:4], "little")
 
-        for n in self.chunk.nonces:
+        # Reorder leased indices, never XOR absolute nonces out of their lease.
+        nonces = self.chunk.nonces
+        offset = seed_mask % len(nonces) if nonces else 0
+        for index in range(len(nonces)):
+            n = nonces[(index + offset) % len(nonces)]
             # Clifford symplectic transformation:
             # Pairwise Bell entanglement correlates even and odd bits
             # Symplectic Pauli X bit-flips XORed with seed mask
-            entangled_n = n ^ (seed_mask & 0x55555555)
+            entangled_n = n
             tableau_repr = f"CHP[32q:16Bell:lane={self.chunk.lane_id}:n={entangled_n:#010x}]"
             yield entangled_n, tableau_repr
 
@@ -102,9 +104,17 @@ class EntangledQubitHasher:
 
         # Physical route attribution: virtual QPU / CPU is always EMULATOR
         executed_route = "chronus_emulator_virtual_qpu"
-        fallback_reason = "NONE"
+        fallback_reason = "cpu_reference_no_device_dispatch"
 
-        budget = min(self.chunk.size, max_evaluations) if max_evaluations else self.chunk.size
+        if max_evaluations is not None and (
+            type(max_evaluations) is not int or max_evaluations < 0
+        ):
+            raise ValueError("max_evaluations must be a nonnegative integer")
+        budget = (
+            min(self.chunk.size, max_evaluations)
+            if max_evaluations is not None
+            else self.chunk.size
+        )
 
         for cand_nonce, tableau in self._generate_entangled_nonces():
             if evaluated >= budget:
@@ -153,7 +163,7 @@ class EntangledQubitHasher:
             vertex_id=self.chunk.vertex_id,
             nonces_evaluated=evaluated,
             winning_candidate=winning_candidate,
-            device_id=f"chronus_igpu_lane_{self.chunk.lane_id:03d}",
+            device_id=f"cpu_reference_lane_{self.chunk.lane_id:03d}",
             requested_route=self.device_route,
             executed_route=executed_route,
             fallback_reason=fallback_reason,

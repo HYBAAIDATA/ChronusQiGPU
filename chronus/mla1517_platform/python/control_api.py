@@ -4,9 +4,7 @@
 from __future__ import annotations
 
 import argparse
-import argparse
 import base64
-import hashlib
 import hashlib
 import hmac
 import json
@@ -2328,7 +2326,7 @@ def metrics_payload() -> str:
 # endpoint reports the gate instead of fabricating a result.
 # ---------------------------------------------------------------------------
 
-_CONFIG_SECTIONS = {"pools", "solvers", "hashrate", "live_submit", "window", "campaign"}
+_CONFIG_SECTIONS = {"pools", "solvers", "hashrate", "live_submit", "window", "campaign", "execution", "intelligence"}
 
 
 def _desired_arms() -> int:
@@ -2382,11 +2380,12 @@ def _config_merge_sections(body: dict[str, Any]) -> dict[str, Any]:
                 entry["password"] = stored.get(f"{entry.get('endpoint')}|{entry.get('worker')}", "")
             merged_pools.append(entry)
         cfg["pools"] = merged_pools
-    for key in ("solvers", "hashrate"):
+    for key in ("solvers", "hashrate", "execution", "intelligence"):
         if key in body:
             section = dict(cfg.get(key) or {})
-            if isinstance(body[key], dict):
-                section.update(body[key])
+            if not isinstance(body[key], dict):
+                raise ValueError(f"{key} must be an object")
+            section.update(body[key])
             cfg[key] = section
     if "window" in body:
         cfg["window"] = body["window"]

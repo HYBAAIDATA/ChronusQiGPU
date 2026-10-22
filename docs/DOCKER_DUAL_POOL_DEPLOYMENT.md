@@ -67,3 +67,36 @@ docker stop pythia-main
 
 Always stop mining through the API first: on WSL2 a container stop during an
 OpenCL call can wedge the device.
+
+
+## Hardware-free local qualification
+
+Use the **complete** `docker-compose.local.yml` profile, not a merge with the
+MMIO profile. It declares no `/dev/uio0`, `/dev/dri` or NVIDIA passthrough.
+
+Provide these values privately in the shell or an ignored, access-restricted
+local env file: `EUCLID_ADMIN_API_KEY`, `PYTHIA_IDENTITY_HMAC_SECRET`,
+`MLA1517_BRAIINS_USER`, `MLA1517_BRAIINS_PASSWORD`, `MLA1517_VIABTC_USER` and
+`MLA1517_VIABTC_PASSWORD`. Use a strong admin key and a random 32-byte hex
+heartbeat key. Pool worker passwords are separate from administrative keys.
+Do not commit or paste expanded `docker compose config` output: it contains
+resolved secrets. Do not reuse the primary pool's worker identity for failover.
+
+```sh
+docker compose --env-file .env.local -f docker-compose.local.yml config --quiet
+docker compose --env-file .env.local -f docker-compose.local.yml up -d --build
+curl --fail http://127.0.0.1:3000/api/health
+```
+
+The profile selects the canonical `chronus` mining backend and independent
+software-defined GPU. It enables no live authorization and starts with the
+normal shadow/submission gates. Check `/api/v1/mla1517/status`, execution
+receipts and `/api/v1/ready-to-mine`; a healthy HTTP process is not mining
+readiness. Existing persistent config takes precedence, so verify
+`execution.mode=independent` through the authenticated config API. No fixed
+rate is promised: target zero uses available execution capacity under policy.
+
+Climb/scale mode requires `execution.mode=scale_stack`, a real executable physical
+adapter and host-specific passthrough/qualification. It must refuse an absent
+adapter, not relabel software work as a physical execution or scaling result.
+TOE's non-mining capabilities remain available under their own qualifications.
