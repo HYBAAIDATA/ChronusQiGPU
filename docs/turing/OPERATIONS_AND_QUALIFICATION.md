@@ -1,3 +1,47 @@
+# TURING operations and qualification
+
+## Current reconciliation
+
+Current acceptance is tracked in `ACCEPTANCE_REGISTER.md` and its machine-readable
+`requirements-evidence.json`. The previously stated draft PR stack is closed:
+#96/#97/#99 merged; #98 closed unmerged. Main now contains the separate enterprise
+service. Do not treat the historical native pilot's process-local persistence
+limits as an assessment of that service's SQLite/custody implementation.
+
+The service runbook is `../../services/turing-enterprise/deploy/OPERATIONS.md`.
+Its current non-financial production gates remain fail-closed. Hermitten is not
+a dependency, and future contractual usage-based billing is deferred. Actual
+SSO, installed canonical execution/custody, container isolation, target-host
+load/backup+custody recovery/rollback, CI and manual accessibility acceptance
+remain distinct from local fixture/unit evidence.
+
+Fresh service local qualification: 93 passed, zero failed/skipped, one
+Starlette/httpx deprecation warning; separate installed-wheel tests also passed
+93 (overlapping tests). Three real local integration tests pass: native installed
+worker, signed TEST-identity API/durable queue/result/same-key/revocation, and
+canonical SharedTuring/THESEUS/OVID lineage plus durable lifecycle restart replay.
+The initial missing-distribution failure is retained historically and superseded
+by recovery and installation of actual pinned VQC/Kellogg sources, not a mock.
+The complete recovered VQC test directory passes 556 tests and 111 subtests,
+zero failures/errors/skips. Initial partial-source failures are retained, not
+relabeled as product defects or erased. This is still a partial repository
+snapshot, not a clean full Git checkout or deployed enterprise acceptance.
+Isolated stabilizer tests passed 11; research gates passed 11 plus 4 subtests;
+these overlap the broader suite and are not added as independent coverage.
+New browser fixture checks cover 12 interaction groups and 2 automated axe scans
+with zero violations; manual accessibility remains unexecuted. No hardware claim.
+
+Current production-organism source already forwards the credential provider and
+injects the shared TURING specialist. Approved authority/secret binding, live IdP,
+installed consumers and target-host drills remain separate acceptance gates.
+
+## Historical native evaluation report — NOT fresh qualification
+
+The remainder preserves the earlier pilot report and its historical counts and
+architecture. Its statements about draft dependencies and missing enterprise
+implementations are superseded by the current register above. None of its old
+passes is counted as a fresh result for the present candidate.
+
 # Evaluation operations and qualification
 
 ## Scope correction — billing deferred

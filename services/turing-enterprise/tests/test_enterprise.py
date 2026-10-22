@@ -465,6 +465,7 @@ def test_signed_release_gate_requires_fresh_complete_evidence(tmp_path):
     )
     manifest = dict(
         schema="turing.promotion.v1",
+        billing_scope="deferred",
         commit="commit-test",
         issued_at=now,
         expires_at=now + 100,

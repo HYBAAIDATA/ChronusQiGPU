@@ -1,0 +1,288 @@
+{
+  "repository": "PhiEnterprise1/EuclidPhiEnterprise",
+  "baseline": "4b75ace56712501f7d091e33d386df64ade9ba1b",
+  "review_commit": "411707502fb544c386b9d38112b75792842574e6",
+  "implementation_commit": "d015099c2c6dfa34d8e5185baf4774139374dab8",
+  "files": {
+    "docs/TURING_ENTERPRISE_SERVICE_DELIVERY.md": {
+      "sha256": "81a7e129652ece1d31d6be8d8ba858219c7f84d620ac65a735a03caa5eb46b79",
+      "git_blob": "7b2d813a0d056ddbbb3473b22c2fb021296ce418"
+    },
+    "docs/turing/ACCEPTANCE_REGISTER.md": {
+      "sha256": "3eb3ce442450bfca9077cc5cd9415bdc36ae5fae8dbc3ab19265ebd15ef66ae6",
+      "git_blob": "7e97fdec7ed5f5b05a30164a193dd6683f407e28"
+    },
+    "docs/turing/CONTRACTS_AND_BILLING.md": {
+      "sha256": "aee9829f403d30d888dac27bccd99bf77218564c0588c6d2ff5ae2883ca6b34d",
+      "git_blob": "05e47b5fc1e7c268847947e9e1def9ed1d51d59a"
+    },
+    "docs/turing/OPERATIONS_AND_QUALIFICATION.md": {
+      "sha256": "2ba44e6cca0ea78fc98e0012b28a772833d3b4cac737f442aff2d2728346ae1e",
+      "git_blob": "cb473b682f5013a6413ec0aa87377865adcb051c"
+    },
+    "docs/turing/requirements-evidence.json": {
+      "sha256": "278ef54e64e5509277457d027162f49f1885a0ee4338be9a196bcdd7772ce751",
+      "git_blob": "98820e8e7bef913f1371c96e63c9d460c6864cc0"
+    },
+    "services/turing-enterprise/README.md": {
+      "sha256": "1d9edf088610c8b25ce422644b63af260508cccf194cb06744e6d3ac16672aea",
+      "git_blob": "91967790106f0e16491e5763a5aa28cea502e29d"
+    },
+    "services/turing-enterprise/deploy/HERMITTEN_CONTRACT.md": {
+      "sha256": "a9ba31704b38333de49a85fadb9ccf2ec41a5dfffe9e666d3ecd097e57b1443e",
+      "git_blob": "d7fe3f6b0b5ea38bfb1337b5a4b9854a65e1cea7"
+    },
+    "services/turing-enterprise/deploy/OPERATIONS.md": {
+      "sha256": "ff0dd8c7b41b7b34dd274dbda1a3824e452a3eb4647d5df90e937e1516ca9d0a",
+      "git_blob": "0cd8cd4a786823c0b9ee714977316751e41da21c"
+    },
+    "services/turing-enterprise/deploy/compose.yaml": {
+      "sha256": "2e811d09886436c3775f2ee90dd8f0d10763d36eea5432d0da7dc1630bb53239",
+      "git_blob": "34e4df49fecd980d7f7528e3908e40d71fa9046e"
+    },
+    "services/turing-enterprise/deploy/service.example.json": {
+      "sha256": "760aa38e4717815d1df991470c6f365a15d94beca34f87ee5bc86ea1c11215b3",
+      "git_blob": "63998b193532ccfdd9ff420962f81d6ad0aeedec"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/README.md": {
+      "sha256": "9c8d630b04a8f7f0d64520e32d3eb7c29932ffede3ef45121db5ec61ac09a761",
+      "git_blob": "8f8e21f655684ca6a471af482c108861e3b808ef"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/SHA256SUMS.json": {
+      "sha256": "11cada2d781c33df5b3758d2fd2aa976dcdebc9f5bd794b57fc27ea1b9ac3546",
+      "git_blob": "09d7f29170f47a9689543e9ab0a84424b50cba0f"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/baseline.log": {
+      "sha256": "1fd8d854dc81d905ed027be15cbcf6a7894e338e1d2cf60796dcd32e076c7871",
+      "git_blob": "33716ca03d0a398aa0c6dac8ee2ca72f53830b3c"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/baseline.xml": {
+      "sha256": "c7f9444c83c356923e20c2aa1d8abce7890ff083dc70c6c44b36cc29246cf0fa",
+      "git_blob": "1bad63e9eca6b239b0882f78773c3e8ab0b22884"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/black-check.log": {
+      "sha256": "cb030f9cd7a40429e384a466ae9845a39bb7ec7c7e3d508d03aeb693bc2f5c85",
+      "git_blob": "9126e38c91097ae1c037e15ec8c5ce505ff134d4"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/browser-environment.json": {
+      "sha256": "04132bb7562259bd0bca55c101ac628202f28208961dfaa2bcd1686fefc9ce26",
+      "git_blob": "0d5a2e1f9ac418e7c5e393ae8b73bad7310462a3"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/build.log": {
+      "sha256": "0c356c59bf8884341763300d2e69c41ae14e36b1db6792e3e20176a745ad95c5",
+      "git_blob": "e93b218c3673b792cd3035411f36f39f08f53400"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/canonical-environment.json": {
+      "sha256": "74b0682cbe59ed1508dead7565a2cb864e4e94bb18e2a9f7410bacbd7e0e7a22",
+      "git_blob": "c5614ef5a4433a23c2dcf575b57ba5cff246442d"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/canonical-install.log": {
+      "sha256": "617aa289834a98230ca2b5db781ef128c309f316c8033e533232a0c8f88b4bbd",
+      "git_blob": "05bf6b6bb8eaefd88e16860c4188ffe0527c853a"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/changed-source-hashes.json": {
+      "sha256": "070f08b9f3805edaadcfc76489c3f7c8e71dd9d29ad5d13a4f3928cc3e7fa9af",
+      "git_blob": "d91242f9783b9c63504d7497398598eb0782ff89"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/checkout-access.log": {
+      "sha256": "2e554a39e2bb4414b5e2c3f5a90ebc87b405b5b8231d692704ec6df4580e8f60",
+      "git_blob": "db3159db44fcda8a16079d6368beaed49a5b3dee"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/ci-check-access.txt": {
+      "sha256": "d59a8fa642d3486fc481e47d34da4619331d07fe95ec63d4dbc44c4b9e0c40ee",
+      "git_blob": "9bdc11fd5ce720533b79f71f4fcc18f7e7737226"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/docker-availability.txt": {
+      "sha256": "354b2e53c9c001202212b2b0339ba0ee88e73104b14d449c9c7de4efa85f6dac",
+      "git_blob": "049514851b3a9826eb1a97b0e21a6f5230ee7333"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/native-source-provenance.json": {
+      "sha256": "dc58301441def974996a41d2f5568af6ef5aa3cbe1bc7c30b004d5578f2df3eb",
+      "git_blob": "dc6928df168d4f1c51bb1433ed5c974392587d74"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/node-check.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/portal-qa.json": {
+      "sha256": "165cc28eac3e3067005d1e5e30007c946725b8d3093702e0165e81ef016766c9",
+      "git_blob": "02853f66ac43a3346a421d44161852f12da11c82"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/portal-regression.log": {
+      "sha256": "475d408f96a28e4b5a7dacaefd847cb655ca32c25bf3344285b4c7d5128d209f",
+      "git_blob": "102f34e0f78fe2c75959a4ca8f1ef50fb4b1dccd"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/portal.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/python-environment.txt": {
+      "sha256": "ee65131faeac188442aee9900ec2d180c62d35790c02ded21a84776c1dbac07a",
+      "git_blob": "66c9a3d291db11ac1fc391c4b798d0a2eeb9c1f8"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/qualification.json": {
+      "sha256": "d7b114acd648876dbf32835cff8c25a6281e7854c6df8404ddf9e34bafafcf15",
+      "git_blob": "263a4af0017b88e591b3f9f5ea98fe9ec022a698"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/release-scope-qa.json": {
+      "sha256": "1fe58c373a6d166053f1c9eb7fcb312954ad6e3ef7e2ebc9802ba2b4795fe230",
+      "git_blob": "bcf47161e72598ef99a04b8f9bf9f86314bf0c31"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/remote-source-parity.json": {
+      "sha256": "fb96a550bf563eee8ee0bc4e508d7f10d7e63f70e5a2fe41676d4fcad91fbaee",
+      "git_blob": "9d1d92adc98ab25f20ad0180e38d5c823ce7f89f"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/research.log": {
+      "sha256": "840f45340f109f715573378e87980999e0b6a2f2cb965ab0f2f1ba4e0d709480",
+      "git_blob": "f4b9ab1e90080f4e91f01e5f6017b41ae95ee03b"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/research.xml": {
+      "sha256": "3c1fc5a77704f947c9d72c3e585ee66b60101ec3e0d4394d335192d7ef6d331f",
+      "git_blob": "d26e8db844939f301648f401122b3b2b71589577"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/runtime-installed.log": {
+      "sha256": "f0fa58322c7f6d2908862b792bcd9569c88b49f8b34b0b1fdae3967ff0f3448f",
+      "git_blob": "11ff213fc18b57cd049127440d778eeb3d9ec2a5"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/runtime-installed.xml": {
+      "sha256": "2d12f424c34dfbb605a12d90489c7ba797ee2c78f1c19c14d3d1ffc5a117ac3a",
+      "git_blob": "5488a019a1b59a024b318d5db6b4bdf659c6ec10"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/runtime-integration.log": {
+      "sha256": "acb70ce7081a63aff5be56c8db4ed075c2e6c87d0638072d02973ebcfcab483d",
+      "git_blob": "f58445e1180238b8d4409535ab5a498b93f4307f"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/runtime-integration.xml": {
+      "sha256": "14c4012923909aa4f1dc84a133508f91aba03a2f6e21f1a61e87cd384a4f3efb",
+      "git_blob": "4715bae4b3f2f01e151192150b7c059f4e315d39"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/runtime-shared.log": {
+      "sha256": "70123efe24fabec35587cb83592cc084b43cce5f0929760cb223d6c6d166473b",
+      "git_blob": "b1fb0b8d3679f8e0e5b2ca3aa2f488ac53851052"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/runtime-shared.xml": {
+      "sha256": "2e51076c262558a3d3fd584d4491ae0bfa8a3cc0a474269e0781149af9667360",
+      "git_blob": "716a799b3c65d643472bd5b46cc3047dccc2a04d"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/service-final.log": {
+      "sha256": "fc5d19d7210e44cbdb3e4aedf4767667e6f035bc06229ab991ae7c8c9d0e9863",
+      "git_blob": "ba759ffb56cf355e227a1d897a60bd439880d931"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/service-final.xml": {
+      "sha256": "86c5e3281eb7a43b50b6871197d1b34380c5140e6802e450777299c12b796496",
+      "git_blob": "5dd2fffc096365521b81b4ca7af910e75e59593f"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/stabilizer.log": {
+      "sha256": "674e6eeb9e21ea5cef529c904bac71222c96b58eb0f209336cf1c0f0f3bd250b",
+      "git_blob": "2382e752bedddcf5145e52601ea0953cefc6c428"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/stabilizer.xml": {
+      "sha256": "2becb98382c8e84eabff5a9f20f567743f73f3b83ec5a55fc468afddc47412cb",
+      "git_blob": "48404b817744e268585d5eccdcccde7886187e0d"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/test-result-index.json": {
+      "sha256": "cbeb8234476a062171f023bf99e9392e95d693a0979226d282a40b242b485c9d",
+      "git_blob": "63e78afcecaaf052cf9dc56e23526f92c50893c8"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/vqc-complete.log": {
+      "sha256": "37d117597e5fb9c8cc5639b8a18bec86df5930b90d6999c583ba054ea7f56ec2",
+      "git_blob": "3ea460aa7abbd0250fdc4f4d4cf5b69f233a872d"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/vqc-complete.xml": {
+      "sha256": "f6b5b0dfc77d09868eb7e1d5f119d1d3f81db619631b32566bdc805b84786059",
+      "git_blob": "f936678890b392745de0a0f09011df929a771b1c"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/vqc-package.log": {
+      "sha256": "6952339a4e462e7f3d08fef856ffafb80817d73d9e76768c2d66060b9e40ba7b",
+      "git_blob": "19ae76d04be2edd4b1d513eeb65e72c356b019cd"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/vqc-package.xml": {
+      "sha256": "252241e7466e7ae7a95abaae3f20659bacf9228af56d7fd8e23024e0c80da8a6",
+      "git_blob": "486d9e18d0c488d5b918590966041a1110a7bac0"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/vqc-test-dependencies.log": {
+      "sha256": "4daffbf56f8d2f07e50e09f5a4f9e3a558611381d79b1b0fe91ab7c205087237",
+      "git_blob": "81c2d5fda5b4c289fd8f8e58a2c3acabbe08dfed"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/wheel-import.txt": {
+      "sha256": "3465970d84d1f5c4731a090e6ab95d11ed6f5b8c7ebbd08888a9590a34722f7f",
+      "git_blob": "313ac6972b8b0c1b7ef01422bfa5dd3c51a81e66"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/wheel-source-parity.json": {
+      "sha256": "d84519d15326c69756bf35ab9c558fe9d1674bee1e4aed8addf7d73498963b0c",
+      "git_blob": "9be511a92ab299e058ca6387b4ad7ecce9dfd9c4"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/wheel-tests.log": {
+      "sha256": "aa217ba819f2b3afbcdd0098b4d957b16eaf9b11af30f5aabbdfb21c4fc08100",
+      "git_blob": "1b0f847bdd397f2efa0b102da2bed59a8760ede7"
+    },
+    "services/turing-enterprise/evidence/scope-reconciliation-20261022/wheel-tests.xml": {
+      "sha256": "4f3587454d1482c55a5439e6659c5f9ae3daa43587c9057e0c586de255db50f8",
+      "git_blob": "3dfe1eb72fcc22e9335083b226fbc9a1b1efd56a"
+    },
+    "services/turing-enterprise/integration/test_real_service_workflow.py": {
+      "sha256": "8c3520e6265d22de88bf3a9f99c9b0989a5187b44bc7ad88feb289e60427f7b4",
+      "git_blob": "24364476b4ac20d8eb2374a759949cebf1e6e2c5"
+    },
+    "services/turing-enterprise/integration/test_shared_custody.py": {
+      "sha256": "65288a4bddd205bef72227fdf82382793331486c63700c41627e15e5b090f734",
+      "git_blob": "fbf6779414392d3138aab9cdd0ee25f4ffd47711"
+    },
+    "services/turing-enterprise/src/hyba_turing_service/api.py": {
+      "sha256": "befafc192b47ce305a0aa146eb6af9739c4e9c79547ff86c67f4b70a08bc8c19",
+      "git_blob": "369aedfb50c0f9fb72f9f0856eaaafb5a14d5c6b"
+    },
+    "services/turing-enterprise/src/hyba_turing_service/commercial.py": {
+      "sha256": "edd362a1ca7279c899739e523293a0b019c72788de9aa63a9fcaa60b99589a77",
+      "git_blob": "c3bbf6cc755bd3cc625d1f31cf9f5dc32110601b"
+    },
+    "services/turing-enterprise/src/hyba_turing_service/control.py": {
+      "sha256": "2ee9a5fd920a5d7a0604b5ec882bea14caeab50aa18f637b6c44c8b1f3ace198",
+      "git_blob": "4ef3bc6f915b85d9766ea0d350f8208a5fc08b67"
+    },
+    "services/turing-enterprise/src/hyba_turing_service/main.py": {
+      "sha256": "a572f8c24a4f20f29d5ab1cead7e5d1434d917a0cae38fe932196afeff997bc5",
+      "git_blob": "ab17aa92fb144811ed04e5384b9f360a4666b377"
+    },
+    "services/turing-enterprise/src/hyba_turing_service/release.py": {
+      "sha256": "4fc57da924a77303db08e30c0c6f2425d1016b5af285b272919d830f71c4c319",
+      "git_blob": "0f31f0496ae812cf50544f709b6ec3190a4df528"
+    },
+    "services/turing-enterprise/src/hyba_turing_service/static/portal.html": {
+      "sha256": "c58d1d9403b4e819702683041729766cfe914e6e5ae05cd0accfe0a62d346af8",
+      "git_blob": "c9c26e5fe8135972382f4510368cc5dde4686b23"
+    },
+    "services/turing-enterprise/src/hyba_turing_service/static/portal.js": {
+      "sha256": "51efaa923c4ea86a9153613332c5bf59795a8cd85fb04bf6e7912916872d6267",
+      "git_blob": "872ebd77dd64a4862f18d7c98c9b8acef0211881"
+    },
+    "services/turing-enterprise/tests/portal-release-scope.cjs": {
+      "sha256": "0e218966c0df1e7bb0375e782cc960d89922952e438aa2243e919c3748c575dd",
+      "git_blob": "836f44f1bd404883fbfc9fc3dd1f5ae3a00f5acc"
+    },
+    "services/turing-enterprise/tests/portal-smoke.cjs": {
+      "sha256": "6d695b44ec2820f346190b2d151c00f507c61d6b9c73dae7ff90d986fea2822e",
+      "git_blob": "97ad934e3a77323e666d26f0491bab8ac3e35680"
+    },
+    "services/turing-enterprise/tests/qualify_stabilizer_isolated.py": {
+      "sha256": "e8256351a7bfb7542838b63f9d2ca5b096d6aec74c34477243f9dce5af968a28",
+      "git_blob": "19ed91d7d764a8f642cda78a6fa444fb7b07446b"
+    },
+    "services/turing-enterprise/tests/test_control.py": {
+      "sha256": "667bff5381f862dedb12235d4f532babce8ba52e14a24dc0586405f1e4610853",
+      "git_blob": "6ee203cdfc5d4e460d404bc4ccf218a5261dd7c3"
+    },
+    "services/turing-enterprise/tests/test_enterprise.py": {
+      "sha256": "9c5df8601412df25fa6384542630b20044d40a4647a50720b98c48e7ba29aa41",
+      "git_blob": "827f640aadcb87e7f89d588749f7d76608b13c2e"
+    },
+    "services/turing-enterprise/tests/test_release_scope.py": {
+      "sha256": "611586c58911b80e1c2d46cf3b58744a352e2053a9bfdecf9ddfa696e35bd3cf",
+      "git_blob": "a049a9ff1a075e58828a9a7229b07594789ded04"
+    },
+    "services/turing-enterprise/usage-event.schema.json": {
+      "sha256": "67a5fe0e30504ef0e7d85d2f438e384b19fc9e70913942fec47be07d462c1527",
+      "git_blob": "5302f231f9673513602006d8f9d4f1037d9f17f1"
+    }
+  }
+}

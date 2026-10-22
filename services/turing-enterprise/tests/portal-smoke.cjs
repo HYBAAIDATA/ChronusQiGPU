@@ -154,7 +154,7 @@ const path = require("path");
           throw Error("Portal submission contract mismatch");
       }
       if (surface === "admin") {
-        for (const section of ["Projects and capacity", "Usage and costs"]) {
+        for (const section of ["Projects and capacity", "Operational usage"]) {
           await page
             .getByRole("button", { name: section, exact: true })
             .click();

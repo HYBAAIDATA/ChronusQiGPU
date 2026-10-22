@@ -17,7 +17,6 @@ GATES = frozenset(
     {
         "runtime_integration",
         "identity_security",
-        "billing_reconciliation",
         "recovery_load",
         "package_qualification",
         "commercial_approval",
@@ -36,6 +35,7 @@ def verify_bundle(directory, public_key, commit, *, publication=False, now=None)
         )
         if (
             manifest["schema"] != "turing.promotion.v1"
+            or manifest.get("billing_scope") != "deferred"
             or manifest["commit"] != commit
             or not commit
         ):

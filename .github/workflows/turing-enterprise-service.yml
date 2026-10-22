@@ -33,7 +33,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: python -m pip install -e 'services/turing-enterprise[server,test]' black build
-      - run: python -m black --check --line-length 100 services/turing-enterprise/src services/turing-enterprise/tests
+      - run: python -m black --check --line-length 100 services/turing-enterprise/src services/turing-enterprise/tests services/turing-enterprise/integration
       - run: python -m pytest services/turing-enterprise/tests -q --junitxml=turing-service-tests.xml
       - run: python -m build services/turing-enterprise
       - run: |
@@ -83,9 +83,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: npm install --no-save --ignore-scripts playwright@1.63.0
+      - run: npm install --no-save --ignore-scripts playwright@1.63.0 axe-core@4.14.0
       - run: npx playwright install --with-deps chromium
       - run: node services/turing-enterprise/tests/portal-smoke.cjs
+      - name: Portal recovery, tenant-switch and automated accessibility fixtures
+        run: node services/turing-enterprise/tests/portal-release-scope.cjs
+        env:
+          TURING_PREVIEW_DIR: /tmp/turing-portal-preview
+          AXE_CORE_PATH: ${{ github.workspace }}/node_modules/axe-core/axe.min.js
       - uses: actions/upload-artifact@v7
         if: always()
         with:

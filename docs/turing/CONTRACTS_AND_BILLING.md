@@ -12,7 +12,19 @@ separate authorised scope. Operational usage accounting must not invent a
 measurement unit or financial event. Identity, authorisation, provisioning,
 execution, evidence and recovery work remain in scope.
 
-## Verified implementation vs proposals
+## Current main reconciliation
+
+PR #97's `services/turing-enterprise` implementation is present on main. It has
+OIDC/JWKS and PKCE/session code, current membership/role checks, SQLite contract
+approval/provisioning, project quotas, durable jobs and operational completion
+facts. It is not an accepted external IdP invitation interface, an approved
+billing provider, or proof of canonical SharedTuring custody/consumer parity.
+The native evaluation adapter and enterprise service are separate paths; do not
+attribute the native pilot's process-local limits to all service code, nor assume
+the enterprise service is wired into every host deployment. See the canonical
+`ACCEPTANCE_REGISTER.md` for current evidence and unresolved acceptance.
+
+## Evaluation adapter vs proposed external contracts
 
 `workspace.openapi.json` describes the implemented evaluation endpoint. The
 existing guardian authenticates each request before the adapter rechecks
@@ -95,4 +107,5 @@ Its billing-account and contract fields must not become mandatory dependencies
 for non-billing execution telemetry. A later authorised usage-accounting contract
 must define actual measurements and provenance independently of financial rating.
 Do not infer usage units from qubit counts, job counts, capacity allocations or
-page analytics. No emitter, rate, charge, invoice or payment flow is shipped.
+page analytics. The enterprise service emits non-financial operational completion facts; no
+financial rate, charge, invoice or payment flow is enabled in default composition.

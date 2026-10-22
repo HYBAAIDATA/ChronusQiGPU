@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.080" timestamp="2026-10-22T20:09:01.282013+00:00" hostname="ee6e8ba1-fdb"><testcase classname="integration.test_installed_runtime" name="test_installed_canonical_runtime_and_durable_report" time="0.003"><failure message="importlib.metadata.PackageNotFoundError: No package metadata was found for hyba-turing-vqc">cls = &lt;class 'importlib.metadata.Distribution'&gt;, name = 'hyba-turing-vqc'
+
+    @classmethod
+    def from_name(cls, name: str) -&gt; Distribution:
+        """Return the Distribution for the given package name.
+    
+        :param name: The name of the distribution package to search for.
+        :return: The Distribution instance (or subclass thereof) for the named
+            package, if found.
+        :raises PackageNotFoundError: When the named package's distribution
+            metadata cannot be found.
+        :raises ValueError: When an invalid value is supplied for name.
+        """
+        if not name:
+            raise ValueError("A distribution name is required.")
+        try:
+&gt;           return next(iter(cls.discover(name=name)))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           StopIteration
+
+/usr/lib64/python3.13/importlib/metadata/__init__.py:407: StopIteration
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-5/test_installed_canonical_runti0')
+
+    def test_installed_canonical_runtime_and_durable_report(tmp_path):
+&gt;       assert version("hyba-turing-vqc")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+services/turing-enterprise/integration/test_installed_runtime.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib64/python3.13/importlib/metadata/__init__.py:987: in version
+    return distribution(distribution_name).version
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/importlib/metadata/__init__.py:960: in distribution
+    return Distribution.from_name(distribution_name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = &lt;class 'importlib.metadata.Distribution'&gt;, name = 'hyba-turing-vqc'
+
+    @classmethod
+    def from_name(cls, name: str) -&gt; Distribution:
+        """Return the Distribution for the given package name.
+    
+        :param name: The name of the distribution package to search for.
+        :return: The Distribution instance (or subclass thereof) for the named
+            package, if found.
+        :raises PackageNotFoundError: When the named package's distribution
+            metadata cannot be found.
+        :raises ValueError: When an invalid value is supplied for name.
+        """
+        if not name:
+            raise ValueError("A distribution name is required.")
+        try:
+            return next(iter(cls.discover(name=name)))
+        except StopIteration:
+&gt;           raise PackageNotFoundError(name)
+E           importlib.metadata.PackageNotFoundError: No package metadata was found for hyba-turing-vqc
+
+/usr/lib64/python3.13/importlib/metadata/__init__.py:409: PackageNotFoundError</failure></testcase></testsuite></testsuites>

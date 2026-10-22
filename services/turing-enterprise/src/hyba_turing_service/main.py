@@ -14,7 +14,7 @@ from .api import Dependencies, create_app
 from .enterprise import EnterprisePlane
 from .identity import OIDCVerifier
 from .sessions import Sessions
-from .billing import HermittenClient, deliver_commercial
+from .commercial import validate_scope
 from .release import verify_bundle
 from .runtime import ProcessRuntime, ResultCustody
 from .supervisor import Supervisor
@@ -35,10 +35,11 @@ def read_secret(path):
 
 
 def configuration(path):
-    from al_haras.entitlements import SubscriptionAuthority, SubscriptionClaims
-
     os.umask(0o077)
     config = json.loads(Path(path).read_text())
+    validate_scope(config)
+    from al_haras.entitlements import SubscriptionAuthority, SubscriptionClaims
+
     if set(config["operator_subjects"]) & set(config["approver_subjects"]):
         raise ValueError("operator and commercial approver identities must be distinct")
     if read_secret(config["customer_key_file"]) == read_secret(config["operator_key_file"]):
@@ -66,7 +67,7 @@ def configuration(path):
             customer_authority=customer,
             operator_authority=operator,
             capacity_slots=config["capacity_slots"],
-            require_spend=config.get("mode") != "controlled-pilot",
+            require_spend=False,
         )
 
     plane = factory()
@@ -87,15 +88,7 @@ def configuration(path):
             )
         )
 
-    billing = (
-        HermittenClient(
-            config["billing_url"],
-            read_secret(config["billing_token_file"]),
-            import_path=config.get("billing_import_path", "/v1/usage/import"),
-        )
-        if config.get("billing_url")
-        else None
-    )
+    billing = None  # No approved current-release financial service.
     return config, customer, operator, SubscriptionClaims, factory, machine_token, billing
 
 
@@ -109,6 +102,8 @@ def main():
     parser.add_argument("--publication", action="store_true")
     args = parser.parse_args()
     config, customer, operator, Claims, factory, machine_token, billing = configuration(args.config)
+    if args.command == "billing":
+        raise ValueError("billing is deferred; no provider is authorised")
     if args.command == "restore":
         if not args.destination or Path(args.destination).exists():
             raise ValueError("restore requires a new destination")
@@ -122,7 +117,7 @@ def main():
             source.close()
             target.close()
         return
-    if args.command in {"backup", "billing"}:
+    if args.command == "backup":
         plane = factory()
         try:
             if args.command == "backup":
@@ -132,13 +127,6 @@ def main():
                     machine_token(["turing.ops.manage"]), config["worker_subject"], args.destination
                 )
                 os.chmod(args.destination, 0o600)
-            else:
-                plane.deliver_usage(
-                    machine_token(["turing.ops.billing"]), config["worker_subject"], sink=billing
-                )
-                deliver_commercial(
-                    plane, machine_token(["turing.ops.billing"]), config["worker_subject"], billing
-                )
         finally:
             plane.close()
         return
@@ -206,15 +194,6 @@ def main():
                 {"qasm": "OPENQASM 2.0; qreg q[1]; h q[0];", "shots": 8, "seed": 1}
             )
             good = report.get("verdict") == "PASS" and bool(report.get("certificate"))
-            if billing:
-                capabilities = billing.capabilities()
-                if (
-                    config.get("mode") != "controlled-pilot"
-                    and capabilities.get("spend_authorisation") is not True
-                ):
-                    good = False
-            elif config.get("mode") != "controlled-pilot":
-                good = False
         except Exception:
             good = False
         ready_cache[:] = [time.monotonic(), good]
@@ -234,7 +213,7 @@ def main():
             sessions,
             billing,
             ready,
-            config.get("mode") != "controlled-pilot",
+            False,  # Contract, membership and capacity checks remain mandatory.
             ResultCustody(config["custody_root"]),
         )
     )

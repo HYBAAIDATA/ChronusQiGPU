@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 import json
+import hashlib
 from pathlib import Path
 import secrets
 import time
@@ -12,7 +13,7 @@ from starlette.concurrency import run_in_threadpool
 
 from .control import Conflict, Denied, Unavailable
 from .enterprise import ROLES
-from .billing import deliver_commercial
+from .commercial import BILLING_SCOPE
 
 
 @dataclass
@@ -34,6 +35,8 @@ class Dependencies:
 
 
 def create_app(deps: Dependencies):
+    if deps.billing is not None or deps.require_spend:
+        raise ValueError("billing is deferred; provider/spend wiring is not authorised")
     app = FastAPI(
         title="TURING Enterprise Service",
         version="0.2.0",
@@ -46,6 +49,7 @@ def create_app(deps: Dependencies):
     @app.middleware("http")
     async def boundary(request, call_next):
         request_id = secrets.token_hex(16)
+        request.state.request_id = request_id
         try:
             if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
                 if request.headers.get("content-type", "").split(";")[0] not in {
@@ -118,6 +122,7 @@ def create_app(deps: Dependencies):
         return issuer.issue(claims)
 
     async def operation(request, tenant, capability, action, *, operator=False, body=False):
+        who = None
         try:
             who = identity(request)
             payload = await request.json() if body else None
@@ -153,6 +158,34 @@ def create_app(deps: Dependencies):
 
             return JSONResponse(await run_in_threadpool(execute))
         except Denied:
+            # Keep denials out of customer-visible audit feeds: a foreign tenant
+            # must not learn an authenticated visitor's identity. No tokens,
+            # request bodies, query strings or raw subject/tenant are retained.
+            def record_denial():
+                plane = deps.plane_factory()
+                try:
+                    with plane._transaction():
+                        plane._audit(
+                            "__service_security__",
+                            (
+                                hashlib.sha256(who.subject.encode()).hexdigest()
+                                if who
+                                else "unverified"
+                            ),
+                            "authorization_denied",
+                            {
+                                "request_id": request.state.request_id,
+                                "target_digest": hashlib.sha256(tenant.encode()).hexdigest(),
+                                "capability": capability,
+                                "operator": operator,
+                            },
+                        )
+                finally:
+                    plane.close()
+
+            # Audit failure propagates to the fail-closed middleware (503),
+            # never to execution or a successful response.
+            await run_in_threadpool(record_denial)
             return JSONResponse({"error": "access denied"}, status_code=403)
         except Conflict as exc:
             return JSONResponse({"error": str(exc)}, status_code=409)
@@ -300,6 +333,8 @@ def create_app(deps: Dependencies):
         capability, method = methods[action]
 
         def call(p, t, a, b):
+            if action == "adjust":
+                raise Unavailable("billing is deferred")
             if action == "member":
                 b = {**b, "operator": True}
             return {"result": getattr(p, method)(t, a, tenant=tenant, **b)}
@@ -313,6 +348,10 @@ def create_app(deps: Dependencies):
             report["pending_commercial"] = p.db.execute(
                 "SELECT COUNT(*) FROM commercial_events WHERE receipt IS NULL"
             ).fetchone()[0]
+            report["billing_scope"] = BILLING_SCOPE
+            report["retained_usage_events"] = report.pop("pending_billing")
+            report["retained_commercial_events"] = report.pop("pending_commercial")
+            report.pop("pending_commercial_billing", None)
             return report
 
         return await operation(request, "__service_ops__", "turing.ops.manage", call, operator=True)
@@ -320,10 +359,7 @@ def create_app(deps: Dependencies):
     @app.post("/api/ops/billing/deliver")
     async def deliver(request: Request):
         def call(p, t, a, b):
-            return {
-                "usage": p.deliver_usage(t, a, sink=deps.billing),
-                "commercial": deliver_commercial(p, t, a, deps.billing),
-            }
+            raise Unavailable("billing is deferred")
 
         return await operation(
             request, "__service_ops__", "turing.ops.billing", call, operator=True
@@ -340,7 +376,14 @@ def create_app(deps: Dependencies):
 
     @app.get("/api/customer/{tenant}/{resource}")
     async def customer_list(
-        request: Request, tenant: str, resource: str, after: str = "", limit: int = 50
+        request: Request,
+        tenant: str,
+        resource: str,
+        after: str = "",
+        limit: int = 50,
+        q: str = "",
+        state: str = "",
+        project: str = "",
     ):
         cap = (
             "turing.customer.admin"
@@ -374,15 +417,29 @@ def create_app(deps: Dependencies):
                     ]
                 }
             if resource == "jobs":
+                if len(q) > 200 or len(project) > 256 or len(after) > 256:
+                    raise ValueError("filter too long")
+                if state and state not in {
+                    "admitted",
+                    "running",
+                    "completed",
+                    "failed",
+                    "cancelled",
+                    "unknown",
+                }:
+                    raise ValueError("invalid state")
                 role = p.require_member(tenant, a)
+                rows = p.db.execute(
+                    "SELECT j.job,j.state,j.actor,p.project FROM jobs j JOIN job_projects p USING(tenant,job) "
+                    "WHERE j.tenant=? AND j.job>? "
+                    "AND (?='admin' OR EXISTS(SELECT 1 FROM project_members m WHERE m.tenant=p.tenant AND m.project=p.project AND m.actor=?)) "
+                    "AND (?='' OR instr(lower(j.job),lower(?))>0) "
+                    "AND (?='' OR j.state=?) AND (?='' OR p.project=?) ORDER BY j.job LIMIT ?",
+                    (tenant, after, role, a, q, q, state, state, project, project, limit + 1),
+                ).fetchall()
                 return {
-                    "jobs": [
-                        dict(r)
-                        for r in p.db.execute(
-                            "SELECT j.job,j.state,j.actor,p.project FROM jobs j JOIN job_projects p USING(tenant,job) WHERE j.tenant=? AND j.job>? AND (?='admin' OR EXISTS(SELECT 1 FROM project_members m WHERE m.tenant=p.tenant AND m.project=p.project AND m.actor=?)) ORDER BY j.job LIMIT ?",
-                            (tenant, after, role, a, limit),
-                        )
-                    ]
+                    "jobs": [dict(r) for r in rows[:limit]],
+                    "next_cursor": rows[limit - 1]["job"] if len(rows) > limit else None,
                 }
             if resource == "usage":
                 return {
@@ -401,9 +458,7 @@ def create_app(deps: Dependencies):
                 )
                 return {"audit": [dict(cursor=r[0], **json.loads(r[1])) for r in rows]}
             if resource == "billing":
-                if deps.billing is None:
-                    raise Unavailable()
-                return deps.billing.account(p._customer(tenant)["billing_account"])
+                raise Unavailable("billing is deferred")
             raise ValueError("unknown resource")
 
         return await operation(request, tenant, cap, call)
@@ -430,21 +485,15 @@ def create_app(deps: Dependencies):
 
     @app.post("/api/customer/{tenant}/spend-limit")
     async def spend_limit(request: Request, tenant: str):
-        from .billing import set_spend_limit
-
         def call(p, t, a, b):
             p._authorize(t, a, tenant, "turing.customer.admin")
-            if deps.billing is None:
-                raise Unavailable("billing unavailable")
-            return set_spend_limit(deps.billing, p._customer(tenant)["billing_account"], **b)
+            raise Unavailable("billing is deferred")
 
         return await operation(request, tenant, "turing.customer.admin", call, body=True)
 
     @app.post("/api/customer/{tenant}/jobs")
     async def submit(request: Request, tenant: str):
         def call(p, t, a, b):
-            if deps.require_spend:
-                return p.submit_with_spend(t, a, tenant=tenant, billing=deps.billing, **b)
             return p.submit_project(t, a, tenant=tenant, **b)
 
         return await operation(request, tenant, "turing.jobs.submit", call, body=True)
