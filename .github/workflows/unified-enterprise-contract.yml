@@ -94,7 +94,7 @@ jobs:
     steps:
       # This writer job NEVER checks out or executes pull-request code. It only
       # parses bounded JSON from the same run and writes a scoped review comment.
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         continue-on-error: true
         with:
           pattern: unified-installed-artifact-evidence-*
@@ -129,6 +129,15 @@ jobs:
               try {
                 const dir = path.join(root, `unified-installed-artifact-evidence-${python}`);
                 const attempt = read(path.join(dir, 'qualification-attempt.json'));
+                ensure(attempt.git_sha === head, 'stale commit');
+                if (attempt.artifact_verified !== true || attempt.verdict !== 'passed') {
+                  const stages = new Set(['initializing', 'source-preflight', 'build-tooling',
+                    'kellogg-build', 'toe-build', 'archive-inspection', 'installed-wheel-0',
+                    'sdist-rebuild', 'installed-sdist', 'verdict-composition', 'complete']);
+                  summaries.push({python, verdict: 'failed_or_incomplete',
+                    stage: stages.has(attempt.stage) ? attempt.stage : 'unknown'});
+                  throw new Error('incomplete artifact qualification');
+                }
                 const verdict = read(path.join(dir, 'artifact-verdict.json'));
                 ensure(attempt.git_sha === head && verdict.git_sha === head, 'stale commit');
                 ensure(attempt.artifact_verified === true && attempt.verdict === 'passed' &&

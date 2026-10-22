@@ -41,7 +41,7 @@ product itself failed the installed tests: execution could not reach that stage.
 A focused workspace was reconstructed from exact pinned GitHub file contents.
 This was sufficient to execute the release-harness tests, not the full product.
 Python 3.13 harness baseline: **24 failed, 6 passed** across the two existing gate
-modules. After repair and reporter regression additions: **45 passed** across
+modules. After repair and reporter regression additions: **46 passed** across
 `test_toe_package_qualification.py`, `test_toe_unified_installed_gate.py` and
 `test_toe_ci_evidence_report.py` (`--noconftest`).
 

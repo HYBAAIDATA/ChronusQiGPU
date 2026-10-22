@@ -60,7 +60,7 @@ def fixture_evidence(root, python):
 
 @pytest.mark.parametrize('damage', [None, 'missing', 'stale', 'skipped', 'empty', 'job_failed',
                                     'tampered', 'certification', 'missing_sdist_check',
-                                    'duplicate_suite', 'missing_test_identity', 'malformed'])
+                                    'duplicate_suite', 'missing_test_identity', 'malformed', 'build_failed'])
 def test_reporter_fails_closed_and_binds_exact_candidate(tmp_path, damage):
     for python in ('3.12', '3.13'):
         fixture_evidence(tmp_path, python)
@@ -77,6 +77,11 @@ def test_reporter_fails_closed_and_binds_exact_candidate(tmp_path, damage):
     file.write_text(json.dumps(verdict))
     if damage == 'malformed': file.write_text('INJECTED_SECRET_DO_NOT_ECHO')
     if damage == 'missing': file.unlink()
+    if damage == 'build_failed':
+        attempt_file = directory / 'qualification-attempt.json'
+        attempt_file.write_text(json.dumps({'git_sha': HEAD, 'artifact_verified': False,
+                                           'verdict': 'failed_or_incomplete', 'stage': 'installed-wheel-0'}))
+        file.unlink()
     if damage == 'tampered': (directory / 'toe.whl').write_text('INJECTED_SECRET_DO_NOT_ECHO')
     jobs = {name: {'result': 'success'} for name in ('verify', 'installed-artifacts')}
     if damage == 'job_failed': jobs['verify']['result'] = 'failure'
@@ -98,6 +103,7 @@ def test_reporter_fails_closed_and_binds_exact_candidate(tmp_path, damage):
     report = json.loads(result.stdout)
     assert bool(report['failed']) == (damage is not None)
     body = report['comment']['body']
+    if damage == 'build_failed': assert 'installed-wheel-0' in body
     assert HEAD in body and '/actions/runs/123' in body
     assert 'not production certification' in body
     assert 'INJECTED_SECRET_DO_NOT_ECHO' not in body
