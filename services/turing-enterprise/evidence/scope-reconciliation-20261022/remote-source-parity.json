@@ -1,0 +1,97 @@
+{
+  "commit": "d015099c2c6dfa34d8e5185baf4774139374dab8",
+  "verified_files": [
+    {
+      "path": "services/turing-enterprise/src/hyba_turing_service/static/portal.css",
+      "git_blob": "b93d49625218afc53b6fbb10078b6a2b6f8565bd"
+    },
+    {
+      "path": "services/turing-enterprise/src/hyba_turing_service/static/portal.html",
+      "git_blob": "c9c26e5fe8135972382f4510368cc5dde4686b23"
+    },
+    {
+      "path": "services/turing-enterprise/src/hyba_turing_service/static/portal.js",
+      "git_blob": "872ebd77dd64a4862f18d7c98c9b8acef0211881"
+    },
+    {
+      "path": "services/turing-enterprise/src/hyba_turing_service/__init__.py",
+      "git_blob": "1df12d50b956bd439888c6a69a9168aa114ce5aa"
+    },
+    {
+      "path": "services/turing-enterprise/src/hyba_turing_service/adapters.py",
+      "git_blob": "3b6ec2b46996becdd3160daa75ddeab0063012ba"
+    },
+    {
+      "path": "services/turing-enterprise/src/hyba_turing_service/api.py",
+      "git_blob": "369aedfb50c0f9fb72f9f0856eaaafb5a14d5c6b"
+    },
+    {
+      "path": "services/turing-enterprise/src/hyba_turing_service/billing.py",
+      "git_blob": "073048819c84e6a16f398aa01b2bf00a0ea4a586"
+    },
+    {
+      "path": "services/turing-enterprise/src/hyba_turing_service/commercial.py",
+      "git_blob": "c3bbf6cc755bd3cc625d1f31cf9f5dc32110601b"
+    },
+    {
+      "path": "services/turing-enterprise/src/hyba_turing_service/control.py",
+      "git_blob": "4ef3bc6f915b85d9766ea0d350f8208a5fc08b67"
+    },
+    {
+      "path": "services/turing-enterprise/src/hyba_turing_service/enterprise.py",
+      "git_blob": "3666207cfc93559538935d38fa61a9e2501efb8f"
+    },
+    {
+      "path": "services/turing-enterprise/src/hyba_turing_service/identity.py",
+      "git_blob": "f59636fca3016f92dd6cce22e8f52f3de4e03f3b"
+    },
+    {
+      "path": "services/turing-enterprise/src/hyba_turing_service/main.py",
+      "git_blob": "ab17aa92fb144811ed04e5384b9f360a4666b377"
+    },
+    {
+      "path": "services/turing-enterprise/src/hyba_turing_service/release.py",
+      "git_blob": "0f31f0496ae812cf50544f709b6ec3190a4df528"
+    },
+    {
+      "path": "services/turing-enterprise/src/hyba_turing_service/runtime.py",
+      "git_blob": "6d4399480824daca42bf4228bd3bcae14b2bfd37"
+    },
+    {
+      "path": "services/turing-enterprise/src/hyba_turing_service/sessions.py",
+      "git_blob": "0c06e85720632ae652d579e4e83f91661d307e96"
+    },
+    {
+      "path": "services/turing-enterprise/src/hyba_turing_service/supervisor.py",
+      "git_blob": "c66403beacb183ac4809a6d5e3864a7dbeb2b43d"
+    },
+    {
+      "path": "services/turing-enterprise/src/hyba_turing_service/worker_child.py",
+      "git_blob": "033795f957ac184238ab2041b3b0cc9f672d0d96"
+    },
+    {
+      "path": "services/turing-enterprise/tests/portal-release-scope.cjs",
+      "git_blob": "836f44f1bd404883fbfc9fc3dd1f5ae3a00f5acc"
+    },
+    {
+      "path": "services/turing-enterprise/tests/portal-smoke.cjs",
+      "git_blob": "97ad934e3a77323e666d26f0491bab8ac3e35680"
+    },
+    {
+      "path": "services/turing-enterprise/tests/qualify_stabilizer_isolated.py",
+      "git_blob": "19ed91d7d764a8f642cda78a6fa444fb7b07446b"
+    },
+    {
+      "path": "services/turing-enterprise/tests/test_control.py",
+      "git_blob": "6ee203cdfc5d4e460d404bc4ccf218a5261dd7c3"
+    },
+    {
+      "path": "services/turing-enterprise/tests/test_enterprise.py",
+      "git_blob": "827f640aadcb87e7f89d588749f7d76608b13c2e"
+    },
+    {
+      "path": "services/turing-enterprise/tests/test_release_scope.py",
+      "git_blob": "a049a9ff1a075e58828a9a7229b07594789ded04"
+    }
+  ]
+}

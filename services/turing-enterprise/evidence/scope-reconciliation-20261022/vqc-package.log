@@ -1,0 +1,704 @@
+............................................... [  8%]
+........................................................ [ 18%]
+........................................................................ [ 31%]
+........................................................................ [ 44%]
+.......................................................F.........F...... [ 57%]
+...EEEEEEFFFFFFFFFFF..................F....................................... [ 71%]
+........................................................................ [ 84%]
+.................................................................... [ 96%]
+................FFF                                                      [100%]
+==================================== ERRORS ====================================
+___________ ERROR at setup of test_complete_real_experiment_manifest ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-11/test_complete_real_experiment_0')
+
+    @pytest.fixture
+    def experiment(tmp_path):
+>       runner = module("run_experiment")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_package_organization.py:22: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/tests/test_package_organization.py:16: in module
+    spec.loader.exec_module(loaded)
+<frozen importlib._bootstrap_external>:1019: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f4e7fe51f70>
+path = '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+<frozen importlib._bootstrap_external>:1214: FileNotFoundError
+_________ ERROR at setup of test_analysis_deterministic_from_manifest __________
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-11/test_analysis_deterministic_fr0')
+
+    @pytest.fixture
+    def experiment(tmp_path):
+>       runner = module("run_experiment")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_package_organization.py:22: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/tests/test_package_organization.py:16: in module
+    spec.loader.exec_module(loaded)
+<frozen importlib._bootstrap_external>:1019: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f4e7fe53650>
+path = '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+<frozen importlib._bootstrap_external>:1214: FileNotFoundError
+_ ERROR at setup of test_analysis_rejects_modified_or_incomplete_results[value] _
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-11/test_analysis_rejects_modified0')
+
+    @pytest.fixture
+    def experiment(tmp_path):
+>       runner = module("run_experiment")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_package_organization.py:22: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/tests/test_package_organization.py:16: in module
+    spec.loader.exec_module(loaded)
+<frozen importlib._bootstrap_external>:1019: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f4e7fe538f0>
+path = '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+<frozen importlib._bootstrap_external>:1214: FileNotFoundError
+_ ERROR at setup of test_analysis_rejects_modified_or_incomplete_results[failed] _
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-11/test_analysis_rejects_modified1')
+
+    @pytest.fixture
+    def experiment(tmp_path):
+>       runner = module("run_experiment")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_package_organization.py:22: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/tests/test_package_organization.py:16: in module
+    spec.loader.exec_module(loaded)
+<frozen importlib._bootstrap_external>:1019: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f4e7fe53ad0>
+path = '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+<frozen importlib._bootstrap_external>:1214: FileNotFoundError
+_ ERROR at setup of test_analysis_rejects_modified_or_incomplete_results[coverage] _
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-11/test_analysis_rejects_modified2')
+
+    @pytest.fixture
+    def experiment(tmp_path):
+>       runner = module("run_experiment")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_package_organization.py:22: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/tests/test_package_organization.py:16: in module
+    spec.loader.exec_module(loaded)
+<frozen importlib._bootstrap_external>:1019: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f4e7fe51f70>
+path = '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+<frozen importlib._bootstrap_external>:1214: FileNotFoundError
+_ ERROR at setup of test_analysis_rejects_modified_or_incomplete_results[reference] _
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-11/test_analysis_rejects_modified3')
+
+    @pytest.fixture
+    def experiment(tmp_path):
+>       runner = module("run_experiment")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_package_organization.py:22: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/tests/test_package_organization.py:16: in module
+    spec.loader.exec_module(loaded)
+<frozen importlib._bootstrap_external>:1019: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f4e7fe53f50>
+path = '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+<frozen importlib._bootstrap_external>:1214: FileNotFoundError
+=================================== FAILURES ===================================
+____________ TenThousandQubitSystemTests.test_aethel_manifest_store ____________
+
+self = <test_large_scale.TenThousandQubitSystemTests testMethod=test_aethel_manifest_store>
+
+    def test_aethel_manifest_store(self):
+>       rec = self.sys.aethel_store_manifest()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_large_scale.py:203: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/ten_thousand.py:309: in custody_manifest
+    self._custody = open_custody()
+                    ^^^^^^^^^^^^^^
+turing_universal_quantum_computer/turing_universal_quantum_computer/custody.py:346: in open_custody
+    return TuringCustody(durable=durable, durable_dir=durable_dir)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <turing_universal_quantum_computer.custody.TuringCustody object at 0x7f4e825a3e00>
+theseus = None, durable = False, durable_dir = None
+
+    def __init__(
+        self,
+        theseus: Any = None,
+        *,
+        durable: bool = False,
+        durable_dir: str | Path | None = None,
+    ) -> None:
+        if theseus is None:
+            if not theseus_available():
+>               raise CustodyUnavailable(
+                    "aethel.theseus is not importable; THESEUS custody is "
+                    "UNAVAILABLE on this host (no private substitute permitted)"
+                )
+E               turing_universal_quantum_computer.custody.CustodyUnavailable: aethel.theseus is not importable; THESEUS custody is UNAVAILABLE on this host (no private substitute permitted)
+
+turing_universal_quantum_computer/turing_universal_quantum_computer/custody.py:162: CustodyUnavailable
+__________________ test_vendored_lucas_modules_byte_identical __________________
+
+    def test_vendored_lucas_modules_byte_identical() -> None:
+        for name in SHARED_MODULES:
+            vendored = (VENDORED / name).read_bytes()
+>           canonical = (CANONICAL / name).read_bytes()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_lucas_vendor_parity.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib64/python3.13/pathlib/_abc.py:625: in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/vercel/sandbox/data/repo/chronus/lucas/__init__.py')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/repo/chronus/lucas/__init__.py'
+
+/usr/lib64/python3.13/pathlib/_local.py:537: FileNotFoundError
+________________ test_unversioned_source_does_not_invent_commit ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-11/test_unversioned_source_does_n0')
+
+    def test_unversioned_source_does_not_invent_commit(tmp_path):
+>       runner = module("run_experiment")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_package_organization.py:89: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/tests/test_package_organization.py:16: in module
+    spec.loader.exec_module(loaded)
+<frozen importlib._bootstrap_external>:1019: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f4e7fe52ff0>
+path = '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+<frozen importlib._bootstrap_external>:1214: FileNotFoundError
+___________________ test_default_rejects_unversioned_source ____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f4e826c8050>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-11/test_default_rejects_unversion0')
+
+    def test_default_rejects_unversioned_source(monkeypatch, tmp_path):
+>       runner = module("run_experiment")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_package_organization.py:95: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/tests/test_package_organization.py:16: in module
+    spec.loader.exec_module(loaded)
+<frozen importlib._bootstrap_external>:1019: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f4e7fe51df0>
+path = '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+<frozen importlib._bootstrap_external>:1214: FileNotFoundError
+______________________ test_default_rejects_dirty_source _______________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f4e826c9050>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-11/test_default_rejects_dirty_sou0')
+
+    def test_default_rejects_dirty_source(monkeypatch, tmp_path):
+>       runner = module("run_experiment")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_package_organization.py:106: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/tests/test_package_organization.py:16: in module
+    spec.loader.exec_module(loaded)
+<frozen importlib._bootstrap_external>:1019: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f4e7ff34ef0>
+path = '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+<frozen importlib._bootstrap_external>:1214: FileNotFoundError
+______________ test_failed_execution_retains_diagnostic_manifest _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f4e7fe8b4d0>
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-11/test_failed_execution_retains_0')
+
+    def test_failed_execution_retains_diagnostic_manifest(monkeypatch, tmp_path):
+>       runner = module("run_experiment")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_package_organization.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/tests/test_package_organization.py:16: in module
+    spec.loader.exec_module(loaded)
+<frozen importlib._bootstrap_external>:1019: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f4e7ff353d0>
+path = '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+<frozen importlib._bootstrap_external>:1214: FileNotFoundError
+_________ test_config_rejects_unimplemented_case_and_unknown_settings __________
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-11/test_config_rejects_unimplemen0')
+
+    def test_config_rejects_unimplemented_case_and_unknown_settings(tmp_path):
+>       runner = module("run_experiment")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_package_organization.py:137: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/tests/test_package_organization.py:16: in module
+    spec.loader.exec_module(loaded)
+<frozen importlib._bootstrap_external>:1019: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f4e7ff35970>
+path = '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/run_experiment.py'
+
+<frozen importlib._bootstrap_external>:1214: FileNotFoundError
+__________________ test_dependency_lock_and_metadata_are_real __________________
+
+    def test_dependency_lock_and_metadata_are_real():
+        import tomllib
+    
+        project = tomllib.loads((PROJECT / "pyproject.toml").read_text())
+        lock = tomllib.loads((PROJECT / "uv.lock").read_text())
+        assert project["project"]["name"] == "hyba-turing-vqc"
+        assert any(
+            p["name"] == "hyba-kellogg-tensor"
+            and p["source"].get("directory") == "../packaging/kellogg-tensor"
+            for p in lock["package"]
+        )
+        for directory in ("docs", "experiments", "results", "paper"):
+>           assert (PROJECT / directory).is_dir()
+E           AssertionError: assert False
+E            +  where False = is_dir()
+E            +    where is_dir = (PosixPath('/vercel/sandbox/data/repo/turing_universal_quantum_computer') / 'docs').is_dir
+
+turing_universal_quantum_computer/tests/test_package_organization.py:163: AssertionError
+_____________ test_sdist_extraction_rejects_unsafe_members[parent] _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-11/test_sdist_extraction_rejects_0')
+kind = 'parent'
+
+    @pytest.mark.parametrize("kind", ["parent", "absolute", "symlink"])
+    def test_sdist_extraction_rejects_unsafe_members(tmp_path, kind):
+        import io
+        import tarfile
+    
+>       qualifier = module("qualify_artifacts")
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_package_organization.py:171: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/tests/test_package_organization.py:16: in module
+    spec.loader.exec_module(loaded)
+<frozen importlib._bootstrap_external>:1019: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f4e7ff36450>
+path = '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/qualify_artifacts.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/qualify_artifacts.py'
+
+<frozen importlib._bootstrap_external>:1214: FileNotFoundError
+____________ test_sdist_extraction_rejects_unsafe_members[absolute] ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-11/test_sdist_extraction_rejects_1')
+kind = 'absolute'
+
+    @pytest.mark.parametrize("kind", ["parent", "absolute", "symlink"])
+    def test_sdist_extraction_rejects_unsafe_members(tmp_path, kind):
+        import io
+        import tarfile
+    
+>       qualifier = module("qualify_artifacts")
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_package_organization.py:171: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/tests/test_package_organization.py:16: in module
+    spec.loader.exec_module(loaded)
+<frozen importlib._bootstrap_external>:1019: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f4e7ff37c50>
+path = '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/qualify_artifacts.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/qualify_artifacts.py'
+
+<frozen importlib._bootstrap_external>:1214: FileNotFoundError
+____________ test_sdist_extraction_rejects_unsafe_members[symlink] _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-11/test_sdist_extraction_rejects_2')
+kind = 'symlink'
+
+    @pytest.mark.parametrize("kind", ["parent", "absolute", "symlink"])
+    def test_sdist_extraction_rejects_unsafe_members(tmp_path, kind):
+        import io
+        import tarfile
+    
+>       qualifier = module("qualify_artifacts")
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_package_organization.py:171: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/tests/test_package_organization.py:16: in module
+    spec.loader.exec_module(loaded)
+<frozen importlib._bootstrap_external>:1019: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f4e7fde8d70>
+path = '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/qualify_artifacts.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/qualify_artifacts.py'
+
+<frozen importlib._bootstrap_external>:1214: FileNotFoundError
+_________ test_wheel_content_parity_distinguishes_container_timestamps _________
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-11/test_wheel_content_parity_dist0')
+
+    def test_wheel_content_parity_distinguishes_container_timestamps(tmp_path):
+        import zipfile
+    
+>       qualifier = module("qualify_artifacts")
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_package_organization.py:193: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/tests/test_package_organization.py:16: in module
+    spec.loader.exec_module(loaded)
+<frozen importlib._bootstrap_external>:1019: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f4e7ff37d70>
+path = '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/qualify_artifacts.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/qualify_artifacts.py'
+
+<frozen importlib._bootstrap_external>:1214: FileNotFoundError
+____________ test_generated_reference_matches_importable_candidate _____________
+
+    def test_generated_reference_matches_importable_candidate():
+>       generator = module("generate_api_reference")
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_package_organization.py:205: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/tests/test_package_organization.py:16: in module
+    spec.loader.exec_module(loaded)
+<frozen importlib._bootstrap_external>:1019: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1156: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f4e7ff35bb0>
+path = '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/generate_api_reference.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/vercel/sandbox/data/repo/turing_universal_quantum_computer/experiments/generate_api_reference.py'
+
+<frozen importlib._bootstrap_external>:1214: FileNotFoundError
+___________ ProductBoundaryTests.test_manifest_custody_keeps_working ___________
+
+self = <test_product_boundary.ProductBoundaryTests testMethod=test_manifest_custody_keeps_working>
+
+    def test_manifest_custody_keeps_working(self):
+        system = tqc.TenThousandQubitSystem(n_qubits=16)
+>       record = system.custody_manifest()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_product_boundary.py:66: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/ten_thousand.py:309: in custody_manifest
+    self._custody = open_custody()
+                    ^^^^^^^^^^^^^^
+turing_universal_quantum_computer/turing_universal_quantum_computer/custody.py:346: in open_custody
+    return TuringCustody(durable=durable, durable_dir=durable_dir)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <turing_universal_quantum_computer.custody.TuringCustody object at 0x7f4e8ac52350>
+theseus = None, durable = False, durable_dir = None
+
+    def __init__(
+        self,
+        theseus: Any = None,
+        *,
+        durable: bool = False,
+        durable_dir: str | Path | None = None,
+    ) -> None:
+        if theseus is None:
+            if not theseus_available():
+>               raise CustodyUnavailable(
+                    "aethel.theseus is not importable; THESEUS custody is "
+                    "UNAVAILABLE on this host (no private substitute permitted)"
+                )
+E               turing_universal_quantum_computer.custody.CustodyUnavailable: aethel.theseus is not importable; THESEUS custody is UNAVAILABLE on this host (no private substitute permitted)
+
+turing_universal_quantum_computer/turing_universal_quantum_computer/custody.py:162: CustodyUnavailable
+_ QuickBenchmarkTests.test_correctness_and_meta_benchmarks_pass (benchmark='pipeline_custody_replay') _
+
+self = <test_product_release.QuickBenchmarkTests testMethod=test_correctness_and_meta_benchmarks_pass>
+
+    def test_correctness_and_meta_benchmarks_pass(self):
+        for bench, (axis, _) in BENCHMARKS.items():
+            if axis == "cost" or bench == "cross_version_digest":
+                continue
+            with self.subTest(benchmark=bench):
+                artifact = run(bench, quick=True)
+>               self.assertIs(artifact["passed"], True, artifact.get("error") or artifact["result"])
+E               AssertionError: None is not True : {'rows': [{'program': 'bell_t_dense', 'verdict': 'FAIL', 'backend': 'exact_algebraic', 'custody': 'FAIL', 'replay': 'UNAVAILABLE', 'substituted_payload_rejected': None}, {'program': 'ghz_t_200_mps', 'verdict': 'FAIL', 'backend': 'mps_exact', 'custody': 'FAIL', 'replay': 'UNAVAILABLE', 'substituted_payload_rejected': None}], 'reason': 'theseus custody unavailable on this host; degradation honesty verified'}
+
+turing_universal_quantum_computer/tests/test_product_release.py:34: AssertionError
+_ QuickBenchmarkTests.test_correctness_and_meta_benchmarks_pass (benchmark='ten_thousand_qubit_vqc_voyage') _
+
+self = <test_product_release.QuickBenchmarkTests testMethod=test_correctness_and_meta_benchmarks_pass>
+
+    def test_correctness_and_meta_benchmarks_pass(self):
+        for bench, (axis, _) in BENCHMARKS.items():
+            if axis == "cost" or bench == "cross_version_digest":
+                continue
+            with self.subTest(benchmark=bench):
+                artifact = run(bench, quick=True)
+>               self.assertIs(artifact["passed"], True, artifact.get("error") or artifact["result"])
+E               AssertionError: None is not True : {'qubits': 1000, 'gates': 1002, 'verdict': 'FAIL', 'custody_leg': 'theseus custody unavailable; durability leg not exercised', 'backend': 'mps_exact', 'stages': {'request_validation': 'PASS', 'capability_analysis': 'PASS', 'representation_choice': 'PASS', 'contract_validation': 'GATED', 'compile_plan': 'PASS', 'chronus_lane': 'UNAVAILABLE', 'execution': 'PASS', 'measurement': 'PASS', 'verification': 'PASS', 'custody': 'FAIL', 'replay': 'UNAVAILABLE'}, 'marginal': {'00': '1/2', '11': '1/2'}, 'max_bond': 2, 'norm_squared': '1', 'elapsed_ns': 904468958, 'gated_stages': ['contract_validation']}
+
+turing_universal_quantum_computer/tests/test_product_release.py:34: AssertionError
+______________ test_pipeline_durable_custody_recovers_and_replays ______________
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-11/test_pipeline_durable_custody_0')
+
+    def test_pipeline_durable_custody_recovers_and_replays(tmp_path) -> None:
+        request = VQCRequest(
+            program=_bell(),
+            custody=True,
+            replay=True,
+            custody_dir=str(tmp_path / "custody"),
+        )
+        report = run_pipeline(request)
+>       assert report.verdict == "PASS", report.to_json()
+E       AssertionError: {"certificate": {"attestation": "5f248d1bc8e87bdd7b04cd07ebb766dade41e707ef43af81b64e81954c574015", "backend": "stabilizer", "certificate_digest": "b15e8082bd7ee0fd800e59b801d69da7b6e41bf5b6758b753b4bf9ad8356a4d1", "execution_class": "bounded_exact", "field": "GF2", "halted": true, "input": "1221398f7e718df36739f09bc1ced1cb921880e521a91801943f3586106ca33b", "machine": "04caefad0d9b39c6b230edc5043ffc5ea093788f532de699ebf6a54fbb03d2c6", "machine_type": "quantum_folded", "output": "d3abe902371ab657878fede506831ffa4915a5aba2af96d6805fb23cacd965e5", "replayable": true, "schema": "turing.vqc.computation_certificate.v1", "steps": 2, "trace": [{"kind": "input", "options": {"expectation": false}, "program": {"n_qubits": 2, "operations": [{"gate": "h", "qubits": [0]}, {"gate": "cx", "qubits": [0, 1]}]}}, {"gate": "h", "index": 0, "kind": "operation", "qubits": [0]}, {"gate": "cx", "index": 1, "kind": "operation", "qubits": [0, 1]}, {"backend": "stabilizer", "kind": "output", "output_digest": "d3abe902371ab657878fede506831ffa4915a5aba2af96d6805fb23cacd965e5", "truth_class": "exact"}], "truth_class": "exact"}, "custody": [{"error": "aethel.theseus is not importable; THESEUS custody is UNAVAILABLE on this host (no private substitute permitted)"}], "execution_kind": {"backend": "stabilizer", "execution_class": "bounded_exact", "hardware_evidence": "none", "kind": "turing_vqc_execution", "measured_qpu": false, "rationale": "executed through the Turing VQC composition path on an admitted Turing backend (exact state class on classical hardware)", "truth_class": "exact"}, "notes": "", "program_digest": "e279d3382249cd8020b0027024500d664336e2a6933ee2708c1add14395c1c2e", "refusals": ["custody: requested but FAIL", "replay: requested but custody did not commit"], "replay": [], "result": {"backend": "stabilizer", "certificate": {"attestation": "5f248d1bc8e87bdd7b04cd07ebb766dade41e707ef43af81b64e81954c574015", "backend": "stabilizer", "certificate_digest": "b15e8082bd7ee0fd800e59b801d69da7b6e41bf5b6758b753b4bf9ad8356a4d1", "execution_class": "bounded_exact", "field": "GF2", "halted": true, "input": "1221398f7e718df36739f09bc1ced1cb921880e521a91801943f3586106ca33b", "machine": "04caefad0d9b39c6b230edc5043ffc5ea093788f532de699ebf6a54fbb03d2c6", "machine_type": "quantum_folded", "output": "d3abe902371ab657878fede506831ffa4915a5aba2af96d6805fb23cacd965e5", "replayable": true, "schema": "turing.vqc.computation_certificate.v1", "steps": 2, "trace": [{"kind": "input", "options": {"expectation": false}, "program": {"n_qubits": 2, "operations": [{"gate": "h", "qubits": [0]}, {"gate": "cx", "qubits": [0, 1]}]}}, {"gate": "h", "index": 0, "kind": "operation", "qubits": [0]}, {"gate": "cx", "index": 1, "kind": "operation", "qubits": [0, 1]}, {"backend": "stabilizer", "kind": "output", "output_digest": "d3abe902371ab657878fede506831ffa4915a5aba2af96d6805fb23cacd965e5", "truth_class": "exact"}], "truth_class": "exact"}, "execution_class": "bounded_exact", "materialised": false, "measured_qpu": false, "n_qubits": 2, "payload": {"field": "GF(2)", "representation": "tableau", "stabilizer_generators": ["+XX", "+ZZ"], "state_dimension": 4, "tableau_bits": 4}, "program_digest": "e279d3382249cd8020b0027024500d664336e2a6933ee2708c1add14395c1c2e", "refusals": [], "truth_class": "exact"}, "schema": "turing.vqc.pipeline_report.v1", "stages": [{"artifacts": {}, "detail": "program object accepted: 2 qubits, 2 operations", "stage": "request_validation", "state": "PASS"}, {"artifacts": {"statements": 3}, "detail": "claim boundary audited", "stage": "capability_analysis", "state": "PASS"}, {"artifacts": {"choice": {"admitted": true, "automatic": true, "backend": "stabilizer", "candidates": ["tableau"], "rationale": "Clifford program; tableau domain covers any width; selected automatically over candidates []", "refusals": [], "representation": "tableau"}}, "detail": "Clifford program; tableau domain covers any width; selected automatically over candidates []", "stage": "representation_choice", "state": "PASS"}, {"artifacts": {"unitarity": {"checked_pairs": 10, "failing_pairs": [], "n_qubits": 2, "program_digest": "e279d3382249cd8020b0027024500d664336e2a6933ee2708c1add14395c1c2e", "reason": "U^dagger U = I verified exactly over the algebraic field", "state": "PASS", "verified": true}}, "detail": "gate/qubit domains checked at Program construction; U^dagger U = I verified exactly over the algebraic field", "stage": "contract_validation", "state": "PASS"}, {"artifacts": {"backend": "stabilizer"}, "detail": "admitted by stabilizer: Clifford program within the stabilizer domain", "stage": "compile_plan", "state": "PASS"}, {"artifacts": {"lane": {"cross_agent_dependency": null, "device_identity": null, "device_present": false, "execution_path": "turing_classical_exact", "lane_state": "UNAVAILABLE", "projection_backend": null, "reason": "aethel.chronus is not importable on this host", "workload": "vqc_gate_execution"}}, "detail": "aethel.chronus is not importable on this host", "stage": "chronus_lane", "state": "UNAVAILABLE"}, {"artifacts": {"execution_class": "bounded_exact"}, "detail": "stabilizer executed; truth_class=exact", "stage": "execution", "state": "PASS"}, {"artifacts": {"payload_keys": ["field", "representation", "stabilizer_generators", "state_dimension", "tableau_bits"]}, "detail": "measurement surface: representation, stabilizer_generators, state_dimension, tableau_bits", "stage": "measurement", "state": "PASS"}, {"artifacts": {"differential": "GATED"}, "detail": "computation certificate and witness issued and re-verified; exact_algebraic does not expose a comparable probe observable", "stage": "verification", "state": "PASS"}, {"artifacts": {"durable_dir": "/tmp/pytest-of-vercel-sandbox/pytest-11/test_pipeline_durable_custody_0/custody", "receipts": 1}, "detail": "custody unavailable or failed", "stage": "custody", "state": "FAIL"}, {"artifacts": {}, "detail": "replay did not verify", "stage": "replay", "state": "UNAVAILABLE"}], "verdict": "FAIL", "witness": {"backend": "stabilizer", "computation_certificate_digest": "b15e8082bd7ee0fd800e59b801d69da7b6e41bf5b6758b753b4bf9ad8356a4d1", "consensus_authority": false, "execution_class": "bounded_exact", "field": "GF(2)", "gate_counts": {"cx": 1, "h": 1}, "issued_at": "2026-10-22T20:25:36+00:00", "materialised": false, "measured_qpu": false, "n_qubits": 2, "norm_sq_exact": null, "notes": "", "program_digest": "e279d3382249cd8020b0027024500d664336e2a6933ee2708c1add14395c1c2e", "provider_job_id": null, "schema": "turing.vqc.run_witness.v2", "support": null, "theorem_proven": false, "truth_class": "exact"}}
+E       assert 'FAIL' == 'PASS'
+E         
+E         - PASS
+E         + FAIL
+
+turing_universal_quantum_computer/tests/test_vqc_custody_durable.py:40: AssertionError
+_____________ test_fresh_process_open_theseus_recovers_and_replays _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-11/test_fresh_process_open_theseu0')
+
+    def test_fresh_process_open_theseus_recovers_and_replays(tmp_path) -> None:
+        custody_dir = tmp_path / "custody"
+>       custody = open_custody(durable_dir=str(custody_dir))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_vqc_custody_durable.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/turing_universal_quantum_computer/custody.py:346: in open_custody
+    return TuringCustody(durable=durable, durable_dir=durable_dir)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <turing_universal_quantum_computer.custody.TuringCustody object at 0x7f4e7fd939b0>
+theseus = None, durable = False
+durable_dir = '/tmp/pytest-of-vercel-sandbox/pytest-11/test_fresh_process_open_theseu0/custody'
+
+    def __init__(
+        self,
+        theseus: Any = None,
+        *,
+        durable: bool = False,
+        durable_dir: str | Path | None = None,
+    ) -> None:
+        if theseus is None:
+            if not theseus_available():
+>               raise CustodyUnavailable(
+                    "aethel.theseus is not importable; THESEUS custody is "
+                    "UNAVAILABLE on this host (no private substitute permitted)"
+                )
+E               turing_universal_quantum_computer.custody.CustodyUnavailable: aethel.theseus is not importable; THESEUS custody is UNAVAILABLE on this host (no private substitute permitted)
+
+turing_universal_quantum_computer/turing_universal_quantum_computer/custody.py:162: CustodyUnavailable
+_______________ test_in_process_custody_stays_honest_about_scope _______________
+
+    def test_in_process_custody_stays_honest_about_scope() -> None:
+>       custody = open_custody()
+                  ^^^^^^^^^^^^^^
+
+turing_universal_quantum_computer/tests/test_vqc_custody_durable.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+turing_universal_quantum_computer/turing_universal_quantum_computer/custody.py:346: in open_custody
+    return TuringCustody(durable=durable, durable_dir=durable_dir)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <turing_universal_quantum_computer.custody.TuringCustody object at 0x7f4e7fd93df0>
+theseus = None, durable = False, durable_dir = None
+
+    def __init__(
+        self,
+        theseus: Any = None,
+        *,
+        durable: bool = False,
+        durable_dir: str | Path | None = None,
+    ) -> None:
+        if theseus is None:
+            if not theseus_available():
+>               raise CustodyUnavailable(
+                    "aethel.theseus is not importable; THESEUS custody is "
+                    "UNAVAILABLE on this host (no private substitute permitted)"
+                )
+E               turing_universal_quantum_computer.custody.CustodyUnavailable: aethel.theseus is not importable; THESEUS custody is UNAVAILABLE on this host (no private substitute permitted)
+
+turing_universal_quantum_computer/turing_universal_quantum_computer/custody.py:162: CustodyUnavailable
+=========================== short test summary info ============================
+FAILED turing_universal_quantum_computer/tests/test_large_scale.py::TenThousandQubitSystemTests::test_aethel_manifest_store
+FAILED turing_universal_quantum_computer/tests/test_lucas_vendor_parity.py::test_vendored_lucas_modules_byte_identical
+FAILED turing_universal_quantum_computer/tests/test_package_organization.py::test_unversioned_source_does_not_invent_commit
+FAILED turing_universal_quantum_computer/tests/test_package_organization.py::test_default_rejects_unversioned_source
+FAILED turing_universal_quantum_computer/tests/test_package_organization.py::test_default_rejects_dirty_source
+FAILED turing_universal_quantum_computer/tests/test_package_organization.py::test_failed_execution_retains_diagnostic_manifest
+FAILED turing_universal_quantum_computer/tests/test_package_organization.py::test_config_rejects_unimplemented_case_and_unknown_settings
+FAILED turing_universal_quantum_computer/tests/test_package_organization.py::test_dependency_lock_and_metadata_are_real
+FAILED turing_universal_quantum_computer/tests/test_package_organization.py::test_sdist_extraction_rejects_unsafe_members[parent]
+FAILED turing_universal_quantum_computer/tests/test_package_organization.py::test_sdist_extraction_rejects_unsafe_members[absolute]
+FAILED turing_universal_quantum_computer/tests/test_package_organization.py::test_sdist_extraction_rejects_unsafe_members[symlink]
+FAILED turing_universal_quantum_computer/tests/test_package_organization.py::test_wheel_content_parity_distinguishes_container_timestamps
+FAILED turing_universal_quantum_computer/tests/test_package_organization.py::test_generated_reference_matches_importable_candidate
+FAILED turing_universal_quantum_computer/tests/test_product_boundary.py::ProductBoundaryTests::test_manifest_custody_keeps_working
+SUBFAILED(benchmark='pipeline_custody_replay') turing_universal_quantum_computer/tests/test_product_release.py::QuickBenchmarkTests::test_correctness_and_meta_benchmarks_pass
+SUBFAILED(benchmark='ten_thousand_qubit_vqc_voyage') turing_universal_quantum_computer/tests/test_product_release.py::QuickBenchmarkTests::test_correctness_and_meta_benchmarks_pass
+FAILED turing_universal_quantum_computer/tests/test_vqc_custody_durable.py::test_pipeline_durable_custody_recovers_and_replays
+FAILED turing_universal_quantum_computer/tests/test_vqc_custody_durable.py::test_fresh_process_open_theseus_recovers_and_replays
+FAILED turing_universal_quantum_computer/tests/test_vqc_custody_durable.py::test_in_process_custody_stays_honest_about_scope
+ERROR turing_universal_quantum_computer/tests/test_package_organization.py::test_complete_real_experiment_manifest
+ERROR turing_universal_quantum_computer/tests/test_package_organization.py::test_analysis_deterministic_from_manifest
+ERROR turing_universal_quantum_computer/tests/test_package_organization.py::test_analysis_rejects_modified_or_incomplete_results[value]
+ERROR turing_universal_quantum_computer/tests/test_package_organization.py::test_analysis_rejects_modified_or_incomplete_results[failed]
+ERROR turing_universal_quantum_computer/tests/test_package_organization.py::test_analysis_rejects_modified_or_incomplete_results[coverage]
+ERROR turing_universal_quantum_computer/tests/test_package_organization.py::test_analysis_rejects_modified_or_incomplete_results[reference]
+19 failed, 533 passed, 6 errors, 109 subtests passed in 146.63s (0:02:26)

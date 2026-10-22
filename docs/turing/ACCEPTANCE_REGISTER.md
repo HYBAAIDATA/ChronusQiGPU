@@ -7,7 +7,10 @@ This record supersedes earlier register statements that PR #98 is still draft an
 that no administration/provisioning code exists. PR #97's enterprise service is
 already present on main; source presence does not establish its live acceptance.
 The working environment contains verified source subsets, **not a complete Git
-checkout**. Local candidate changes and test source hashes are retained in the
+checkout**. Review branch first implementation commit: `d015099c2c6dfa34d8e5185baf4774139374dab8`.
+Subsequent integration-only tests and refreshed evidence supersede its initial
+missing-runtime qualification failure without erasing that historical run.
+Local candidate changes and test source hashes are retained in the
 qualification handover. No whole-repository, remote-CI or production PASS is implied.
 
 ## Commercial authority
@@ -41,13 +44,13 @@ success, conflict-free full checkout, installed-consumer parity or deployment is
 | Category | Actually executed / disposition |
 |---|---|
 | Unit tests | Service baseline 77 passed; candidate 93 passed, zero failures/skips, one Starlette/httpx deprecation warning |
-| Integration | Non-skipping installed-runtime test: **1 FAILED**, missing `hyba-turing-vqc` distribution metadata; no mock substituted |
-| Real-runtime end-to-end | NOT EXECUTED; no approved real-service target or complete installed dependency closure |
+| Integration | **3 passed**, zero failures/skips: installed worker, real local API/queue/result/revocation, canonical SharedTuring shared custody and durable restart replay. Cryptographic test identity only |
+| Real-runtime end-to-end | Local in-process HTTP API through real isolated native subprocess and retained result: passed. Live enterprise SSO, network ingress and complete production organism acceptance NOT EXECUTED |
 | Security / tenant isolation | Local real SQLite/signatures/JWT fixtures; role/project/revocation negatives and denial-audit failure tests pass. Not deployed isolation/penetration acceptance |
 | Frontend fixtures | 10 desktop/mobile views; 12 new interaction groups for history filters/pages, confirmation, unchanged export and tenant-switch safety; no real IdP/execution |
 | Accessibility | 2 automated axe WCAG-tagged fixture scans, zero violations. Not manual screen-reader/zoom or complete WCAG certification |
 | Failure / recovery | Existing local cancellation/quarantine/idempotency/backup/restore and new audit-failure tests pass; no target-host recovery or rollback drill |
-| VQC / research | Unchanged exact-source isolated stabilizer measurement tests: 11 passed, including independent NumPy dense comparisons. Research gating: 11 passed, 4 subtests; no research claim thereby proven/refuted. Full package, entropy/backend parity and hardware qualification NOT EXECUTED |
+| VQC / research | Unchanged exact-source isolated stabilizer measurement tests: 11 passed, including independent NumPy dense comparisons. Research gating: 11 passed, 4 subtests; no research claim thereby proven/refuted. Full recovered VQC test directory: **556 passed + 111 subtests**, zero failures/errors/skips; includes actual local custody/replay. Hardware qualification and full repository/installed-consumer parity NOT EXECUTED |
 | Deployment / operations | Service wheel+sdist build and separate wheel test environment completed. Docker absent; host build/alerts/restore/rollbacks, named on-call and independent release approval outstanding |
 
 The stabilizer harness directly loads the real owner module to avoid unrelated
@@ -68,16 +71,19 @@ Skipped/untested results are never passes or refuted claims.
    test tenant, registered client/callback/audiences, safe credentials, invitation
    interface and revocation/offboarding policy. Existing-subject role management
    does not establish invitation or IdP deprovisioning.
-3. **Canonical execution/custody and consumers:** install actual approved VQC,
-   Kellogg and SharedTuring dependency closure from the full source; execute
-   service/canonical custody, replay, provenance and consumer suites. The current
-   service adapter calls the native pipeline; its report file is not proof of
-   every SharedTuring custody transition or tenant/creator mapping.
-4. **Salamander actuation:** `euclid/runtime.py` accepts a Guardian and subscription
-   token provider and composes the authorized control plane when supplied; defaults
-   omit both and stay fail-closed. Approved authority/secret-provider configuration
-   and tenant/actor scope are required before safe actuation acceptance. No live
-   action is taken or test credential minted as a production substitute.
+3. **Production execution/custody and installed consumers:** local VQC/Kellogg,
+   native service execution and canonical SharedTuring/THESEUS/OVID restart replay
+   now pass; missing owner source was recovered, not replaced with a mock. The
+   remaining gate is the approved full deployed composition, installed-consumer
+   parity and tenant/creator mapping through real authority. The bounded service's
+   local report file is not itself the shared fabric; acceptance must identify
+   which approved composition serves the release, then run its complete voyage.
+4. **Salamander actuation:** current `aethel/enterprise/production_organism.py`
+   already injects the shared TURING specialist and forwards an optional
+   `subscription_token_provider` and tenant into EUCLID. Do not rebuild that
+   integration or claim it is absent. Approved Guardian/secret-provider binding,
+   least-privilege tenant/actor scopes and an authorized non-actuating validation
+   target are still needed; no live action or production credential was minted.
 5. **Deployment / operational authority:** deployment owner must supply a permitted
    target, secret manager, independently signed source-bound evidence, approved
    service objectives/retention/residency and named operational/escalation owners;
@@ -308,7 +314,7 @@ Use shared design primitives and consistent identity and authorisation semantics
 
 **Acceptance test:** Trace authority through default startup, service adapter, custody and installed consumers
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Recovered pinned owner sources; installed hyba-turing-vqc 1.0.0 and hyba-kellogg-tensor 1.0.0. Full recovered VQC test directory: 556 passed plus 111 subtests, 0 failed/errors/skipped (134.85s). No VQC implementation patch reapplied. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition. Current aethel/enterprise/production_organism.py already binds the shared TURING specialist and forwards subscription_token_provider with tenant_id; preserve that implementation. Source trace is not approved credential deployment.
 
 **Owner / external dependency:** Platform, identity and custody owners
 
@@ -527,7 +533,7 @@ These are proposed route contracts, not evidence that backend functionality alre
 
 **Acceptance test:** Route all real surfaces with permitted backend state; no simulated customer success
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.
 
 **Owner / external dependency:** Product/platform owners
 
@@ -681,7 +687,7 @@ Never manufacture a favourable result to make a demonstration appear successful.
 
 **Acceptance test:** Real execution through result/provenance; search/filter/pages, cancellation and same-key recovery; fixtures are insufficient
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Fixture history/filter/cursor/cancel/export/stale-tenant workflows passed. Installed runtime gate: 1 FAILED (missing hyba-turing-vqc distribution).
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Fixture history/filter/cursor/cancel/export/stale-tenant workflows passed. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition. Recovered pinned owner sources; installed hyba-turing-vqc 1.0.0 and hyba-kellogg-tensor 1.0.0. Full recovered VQC test directory: 556 passed plus 111 subtests, 0 failed/errors/skipped (134.85s). No VQC implementation patch reapplied. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition.
 
 **Owner / external dependency:** Execution/custody and frontend owners
 
@@ -762,7 +768,7 @@ Never log credentials, expose secret values after creation, or store privileged 
 
 **Acceptance test:** Actual SSO, invite, assign/revoke, expiry, current role and direct cross-tenant API negatives
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.
 
 **Owner / external dependency:** Identity and customer administrators
 
@@ -858,7 +864,7 @@ Use confirmation screens for destructive or commercially consequential operation
 
 **Acceptance test:** Transactional provisioning/resize/activation/revocation, contention, duplicate/restart/partial failure on authoritative target
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.
 
 **Owner / external dependency:** Capacity and contract authority
 
@@ -934,7 +940,7 @@ Do not introduce per-seat licensing as the default commercial model merely becau
 
 **Acceptance test:** Exact-term approval and quotas remain mandatory; no rates/provider/invoices accepted
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.
 
 **Owner / external dependency:** Commercial approver and authorization owner
 
@@ -1063,7 +1069,7 @@ Avoid silently introducing a new database or second backend when an established 
 
 **Acceptance test:** Authenticated OpenAPI and actual typed request/response contracts; do not invent missing ports
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.
 
 **Owner / external dependency:** Authoritative service/interface owners
 
@@ -1114,7 +1120,7 @@ Build a threat model covering customer isolation, compromised accounts, privileg
 
 **Acceptance test:** Role/tenant/project negatives, stale credentials, rate/body limits, audit integrity, threat review and deployed isolation
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Denial audit is durable/correlation-bound/pseudonymous; audit write failure stays closed. No deployed penetration/isolation/retention qualification.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Denial audit is durable/correlation-bound/pseudonymous; audit write failure stays closed. No deployed penetration/isolation/retention qualification.
 
 **Owner / external dependency:** Security, identity, privacy and platform owners
 
@@ -1265,7 +1271,7 @@ Avoid unrestricted impersonation. If support access to a customer workspace is n
 
 **Acceptance test:** Readiness, monitoring/alerts, incident, backup+custody restore, rollback and failure drill
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.
 
 **Owner / external dependency:** Deployment owner; named on-call/security escalation
 
@@ -1409,7 +1415,7 @@ Use the existing project's testing infrastructure where possible. Run tests agai
 
 **Acceptance test:** All nine evidence categories separately; integration failure retained, no skipped tests called passes
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Isolated current stabilizer: 11 passed. Research gating: 11 passed plus 4 unittest subtests. No whole-package, entropy/backend parity, QPU or theorem proof inferred.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Isolated current stabilizer: 11 passed. Research gating: 11 passed plus 4 unittest subtests. The initial isolated harness was supplemented by the full recovered VQC suite; no QPU or theorem proof inferred. Recovered pinned owner sources; installed hyba-turing-vqc 1.0.0 and hyba-kellogg-tensor 1.0.0. Full recovered VQC test directory: 556 passed plus 111 subtests, 0 failed/errors/skipped (134.85s). No VQC implementation patch reapplied. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition.
 
 **Owner / external dependency:** CI, security, accessibility and release owners
 
@@ -1509,7 +1515,7 @@ Document verified functionality, unresolved dependencies, security consideration
 
 **Acceptance test:** Stages A–F cannot be closed by a plan; code and local evidence delivered, full acceptance still open
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.
 
 **Owner / external dependency:** Repository and release owners
 
@@ -1552,7 +1558,7 @@ Document verified functionality, unresolved dependencies, security consideration
 
 **Acceptance test:** No engine rewrite, fabricated integration, merge, force-push, release publication or deployment; preserve tests
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.
 
 **Owner / external dependency:** Engineering/release owners
 
@@ -1610,7 +1616,7 @@ That combination will do more for TURING's credibility than an enormous interfac
 
 **Acceptance test:** Every applicable condition in authoritative text must be evidenced; current overall completion NOT established
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.
 
 **Owner / external dependency:** Accountable product/security/release owners
 
@@ -1658,7 +1664,7 @@ Product requirements and route map.
 
 **Acceptance test:** Route all real surfaces with permitted backend state; no simulated customer success
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.
 
 **Owner / external dependency:** Product/platform owners
 
@@ -1754,7 +1760,7 @@ Authenticated computational workspace.
 
 **Acceptance test:** Real execution through result/provenance; search/filter/pages, cancellation and same-key recovery; fixtures are insufficient
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Fixture history/filter/cursor/cancel/export/stale-tenant workflows passed. Installed runtime gate: 1 FAILED (missing hyba-turing-vqc distribution).
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Fixture history/filter/cursor/cancel/export/stale-tenant workflows passed. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition. Recovered pinned owner sources; installed hyba-turing-vqc 1.0.0 and hyba-kellogg-tensor 1.0.0. Full recovered VQC test directory: 556 passed plus 111 subtests, 0 failed/errors/skipped (134.85s). No VQC implementation patch reapplied. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition.
 
 **Owner / external dependency:** Execution/custody and frontend owners
 
@@ -1778,7 +1784,7 @@ Customer administration portal.
 
 **Acceptance test:** Actual SSO, invite, assign/revoke, expiry, current role and direct cross-tenant API negatives
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.
 
 **Owner / external dependency:** Identity and customer administrators
 
@@ -1802,7 +1808,7 @@ Internal service operations console.
 
 **Acceptance test:** Readiness, monitoring/alerts, incident, backup+custody restore, rollback and failure drill
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.
 
 **Owner / external dependency:** Deployment owner; named on-call/security escalation
 
@@ -1826,7 +1832,7 @@ Provisioning and entitlement workflows.
 
 **Acceptance test:** Transactional provisioning/resize/activation/revocation, contention, duplicate/restart/partial failure on authoritative target
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.
 
 **Owner / external dependency:** Capacity and contract authority
 
@@ -1850,7 +1856,7 @@ Typed frontend service adapters and documented API contracts.
 
 **Acceptance test:** Authenticated OpenAPI and actual typed request/response contracts; do not invent missing ports
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Recovered pinned owner sources; installed hyba-turing-vqc 1.0.0 and hyba-kellogg-tensor 1.0.0. Full recovered VQC test directory: 556 passed plus 111 subtests, 0 failed/errors/skipped (134.85s). No VQC implementation patch reapplied. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition.
 
 **Owner / external dependency:** Authoritative service/interface owners
 
@@ -1898,7 +1904,7 @@ Security and privacy assessment.
 
 **Acceptance test:** Role/tenant/project negatives, stale credentials, rate/body limits, audit integrity, threat review and deployed isolation
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Denial audit is durable/correlation-bound/pseudonymous; audit write failure stays closed. No deployed penetration/isolation/retention qualification.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Denial audit is durable/correlation-bound/pseudonymous; audit write failure stays closed. No deployed penetration/isolation/retention qualification.
 
 **Owner / external dependency:** Security, identity, privacy and platform owners
 
@@ -1922,7 +1928,7 @@ Testing strategy and automated tests.
 
 **Acceptance test:** All nine evidence categories separately; integration failure retained, no skipped tests called passes
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Isolated current stabilizer: 11 passed. Research gating: 11 passed plus 4 unittest subtests. No whole-package, entropy/backend parity, QPU or theorem proof inferred.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Isolated current stabilizer: 11 passed. Research gating: 11 passed plus 4 unittest subtests. The initial isolated harness was supplemented by the full recovered VQC suite; no QPU or theorem proof inferred. Recovered pinned owner sources; installed hyba-turing-vqc 1.0.0 and hyba-kellogg-tensor 1.0.0. Full recovered VQC test directory: 556 passed plus 111 subtests, 0 failed/errors/skipped (134.85s). No VQC implementation patch reapplied. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition.
 
 **Owner / external dependency:** CI, security, accessibility and release owners
 
@@ -1946,7 +1952,7 @@ Commercial model and pricing hypotheses.
 
 **Acceptance test:** Exact-term approval and quotas remain mandatory; no rates/provider/invoices accepted
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.
 
 **Owner / external dependency:** Commercial approver and authorization owner
 
@@ -1994,7 +2000,7 @@ Deployment, monitoring, and recovery documentation.
 
 **Acceptance test:** Readiness, monitoring/alerts, incident, backup+custody restore, rollback and failure drill
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.
 
 **Owner / external dependency:** Deployment owner; named on-call/security escalation
 
@@ -2018,7 +2024,7 @@ Implementation status and outstanding dependency register.
 
 **Acceptance test:** Every applicable condition in authoritative text must be evidenced; current overall completion NOT established
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.
 
 **Owner / external dependency:** Accountable product/security/release owners
 
@@ -2044,7 +2050,7 @@ An authorised operator creates a customer, associates an approved contract, prov
 
 **Acceptance test:** Transactional provisioning/resize/activation/revocation, contention, duplicate/restart/partial failure on authoritative target
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.
 
 **Owner / external dependency:** Capacity and contract authority
 
@@ -2070,7 +2076,7 @@ The customer administrator invites a user, assigns an appropriate role, and veri
 
 **Acceptance test:** Actual SSO, invite, assign/revoke, expiry, current role and direct cross-tenant API negatives
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Existing-subject membership APIs are not an IdP invitation or delivery integration.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Existing-subject membership APIs are not an IdP invitation or delivery integration.
 
 **Owner / external dependency:** Identity and customer administrators
 
@@ -2096,7 +2102,7 @@ An authorised user submits valid inputs, tracks a real computational job, inspec
 
 **Acceptance test:** Real execution through result/provenance; search/filter/pages, cancellation and same-key recovery; fixtures are insufficient
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Fixture history/filter/cursor/cancel/export/stale-tenant workflows passed. Installed runtime gate: 1 FAILED (missing hyba-turing-vqc distribution).
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Fixture history/filter/cursor/cancel/export/stale-tenant workflows passed. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition. Recovered pinned owner sources; installed hyba-turing-vqc 1.0.0 and hyba-kellogg-tensor 1.0.0. Full recovered VQC test directory: 556 passed plus 111 subtests, 0 failed/errors/skipped (134.85s). No VQC implementation patch reapplied. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition.
 
 **Owner / external dependency:** Execution/custody and frontend owners
 
@@ -2122,7 +2128,7 @@ An organisation attempts an operation outside its permissions or contractual ent
 
 **Acceptance test:** Role/tenant/project negatives, stale credentials, rate/body limits, audit integrity, threat review and deployed isolation
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Denial audit is durable/correlation-bound/pseudonymous; audit write failure stays closed. No deployed penetration/isolation/retention qualification.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Denial audit is durable/correlation-bound/pseudonymous; audit write failure stays closed. No deployed penetration/isolation/retention qualification.
 
 **Owner / external dependency:** Security, identity, privacy and platform owners
 
@@ -2174,7 +2180,7 @@ An authorised operator suspends or terminates a customer according to policy, ac
 
 **Acceptance test:** Transactional provisioning/resize/activation/revocation, contention, duplicate/restart/partial failure on authoritative target
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Suspension blocks new work; preserved read/audit access follows existing implementation, not an approved universal offboarding policy. Financial consequences deferred.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Suspension blocks new work; preserved read/audit access follows existing implementation, not an approved universal offboarding policy. Financial consequences deferred.
 
 **Owner / external dependency:** Capacity and contract authority
 
@@ -2200,7 +2206,7 @@ A provisioning or usage-ingestion operation fails partway through, is retried sa
 
 **Acceptance test:** Transactional provisioning/resize/activation/revocation, contention, duplicate/restart/partial failure on authoritative target
 
-**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Local SQLite retry/recovery tests only. Provisioning and operational-fact integrity remain in scope; no financial posting implied.
+**Current evidence:** Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Local SQLite retry/recovery tests only. Provisioning and operational-fact integrity remain in scope; no financial posting implied. Recovered pinned owner sources; installed hyba-turing-vqc 1.0.0 and hyba-kellogg-tensor 1.0.0. Full recovered VQC test directory: 556 passed plus 111 subtests, 0 failed/errors/skipped (134.85s). No VQC implementation patch reapplied. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition.
 
 **Owner / external dependency:** Capacity and contract authority
 

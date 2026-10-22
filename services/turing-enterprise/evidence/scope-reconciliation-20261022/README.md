@@ -6,16 +6,20 @@ Git checkout. `qualification.json` records exact executed command forms, evidenc
 scope, development failures and remaining boundaries. Log/JUnit paths refer to
 the sandbox run; use an approved output directory when reproducing.
 
-**Retained current failure:** installed canonical runtime integration: one FAILED,
-missing `hyba-turing-vqc` distribution. No test is deleted, skipped or mocked to
-make this pass. No check-run success is claimed: GitHub read returned 403.
+**Superseding results:** installed runtime and real local workflow/canonical shared
+custody integration: 3 passed. Full recovered VQC directory: 556 passed plus 111
+subtests, zero failures/errors/skips. Initial missing-runtime and partial-source
+failures remain in logs and qualification.json as historical, resolved environment
+gaps; they are neither hidden nor current product failures. Check-run read remains
+403, so no remote CI result is claimed.
 
-Service tests and wheel tests each pass 93 (overlapping, not 186 independent tests).
-Stabilizer tests pass 11 in the explicitly isolated real-source harness. Research
-gates pass 11 plus 4 subtests; that verifies non-promotion rules, not the research
-claims. Browser flows and automated accessibility scans use explicit API fixtures.
-The local signature verifier is the owning AL HARAS module, loaded directly to
-avoid unrelated imports; full Guardian/install closure is unqualified.
+Service and separate wheel tests each pass 93 (overlapping, not 186 independent).
+Isolated stabilizer passes 11; research gates 11 plus 4 subtests, overlapping the
+full VQC suite. Browser fixtures and 2 automated accessibility scans are explicitly
+not live IdP or complete accessibility acceptance. API runtime integration uses
+signed TEST identity/JWKS with actual native execution, SQLite and file retention.
+SharedTuring test uses actual local owner code and ephemeral test custody key;
+it does not prove deployed credential wiring or full production organism startup.
 
 Current matrix: `../../../../docs/turing/ACCEPTANCE_REGISTER.md` and
 `requirements-evidence.json` beside that register. All 23 sections, 17 deliverables

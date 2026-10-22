@@ -17,12 +17,23 @@ remain distinct from local fixture/unit evidence.
 
 Fresh service local qualification: 93 passed, zero failed/skipped, one
 Starlette/httpx deprecation warning; separate installed-wheel tests also passed
-93. The non-skipping actual installed-runtime test FAILED for missing
-`hyba-turing-vqc` distribution metadata; it was not skipped or replaced by a
-fixture. Isolated actual-source stabilizer tests passed 11; research gates passed
-11 plus 4 subtests. Those do not establish whole-package or hardware correctness.
+93 (overlapping tests). Three real local integration tests pass: native installed
+worker, signed TEST-identity API/durable queue/result/same-key/revocation, and
+canonical SharedTuring/THESEUS/OVID lineage plus durable lifecycle restart replay.
+The initial missing-distribution failure is retained historically and superseded
+by recovery and installation of actual pinned VQC/Kellogg sources, not a mock.
+The complete recovered VQC test directory passes 556 tests and 111 subtests,
+zero failures/errors/skips. Initial partial-source failures are retained, not
+relabeled as product defects or erased. This is still a partial repository
+snapshot, not a clean full Git checkout or deployed enterprise acceptance.
+Isolated stabilizer tests passed 11; research gates passed 11 plus 4 subtests;
+these overlap the broader suite and are not added as independent coverage.
 New browser fixture checks cover 12 interaction groups and 2 automated axe scans
-with zero violations; manual accessibility remains unexecuted.
+with zero violations; manual accessibility remains unexecuted. No hardware claim.
+
+Current production-organism source already forwards the credential provider and
+injects the shared TURING specialist. Approved authority/secret binding, live IdP,
+installed consumers and target-host drills remain separate acceptance gates.
 
 ## Historical native evaluation report — NOT fresh qualification
 

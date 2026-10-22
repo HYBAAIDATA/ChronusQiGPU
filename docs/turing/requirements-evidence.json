@@ -39,7 +39,7 @@
       "implementation": "euclid/runtime.py; al_haras/entitlements.py; services/turing-enterprise/src/hyba_turing_service/{main,api,enterprise,runtime}.py",
       "runtime_dependencies": "Installed canonical package closure and approved service composition",
       "acceptance_test": "Trace authority through default startup, service adapter, custody and installed consumers",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Recovered pinned owner sources; installed hyba-turing-vqc 1.0.0 and hyba-kellogg-tensor 1.0.0. Full recovered VQC test directory: 556 passed plus 111 subtests, 0 failed/errors/skipped (134.85s). No VQC implementation patch reapplied. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition. Current aethel/enterprise/production_organism.py already binds the shared TURING specialist and forwards subscription_token_provider with tenant_id; preserve that implementation. Source trace is not approved credential deployment.",
       "owner": "Platform, identity and custody owners",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -78,7 +78,7 @@
       "implementation": "frontend/src/turing/{routes.ts,TuringApp.tsx}; services/turing-enterprise/src/hyba_turing_service/static/portal.js",
       "runtime_dependencies": "Approved IdP/customer/contract and real runtime",
       "acceptance_test": "Route all real surfaces with permitted backend state; no simulated customer success",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.",
       "owner": "Product/platform owners",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -104,7 +104,7 @@
       "implementation": "frontend/src/turing/{Workspace.tsx,History.tsx,Evidence.tsx}; services/turing-enterprise/src/hyba_turing_service/{api.py,static/portal.js,runtime.py}",
       "runtime_dependencies": "Actual canonical installed runtime and authenticated target",
       "acceptance_test": "Real execution through result/provenance; search/filter/pages, cancellation and same-key recovery; fixtures are insufficient",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Fixture history/filter/cursor/cancel/export/stale-tenant workflows passed. Installed runtime gate: 1 FAILED (missing hyba-turing-vqc distribution).",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Fixture history/filter/cursor/cancel/export/stale-tenant workflows passed. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition. Recovered pinned owner sources; installed hyba-turing-vqc 1.0.0 and hyba-kellogg-tensor 1.0.0. Full recovered VQC test directory: 556 passed plus 111 subtests, 0 failed/errors/skipped (134.85s). No VQC implementation patch reapplied. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition.",
       "owner": "Execution/custody and frontend owners",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -117,7 +117,7 @@
       "implementation": "services/turing-enterprise/src/hyba_turing_service/{identity,sessions,enterprise,api}.py",
       "runtime_dependencies": "Approved IdP tenant/client, invitation/offboarding interface and revocation policy",
       "acceptance_test": "Actual SSO, invite, assign/revoke, expiry, current role and direct cross-tenant API negatives",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.",
       "owner": "Identity and customer administrators",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -130,7 +130,7 @@
       "implementation": "services/turing-enterprise/src/hyba_turing_service/{control,enterprise,supervisor,api}.py",
       "runtime_dependencies": "Approved logical-slot meaning and contract limits; target resource sizing",
       "acceptance_test": "Transactional provisioning/resize/activation/revocation, contention, duplicate/restart/partial failure on authoritative target",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.",
       "owner": "Capacity and contract authority",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -143,7 +143,7 @@
       "implementation": "services/turing-enterprise/src/hyba_turing_service/{commercial,enterprise,release}.py; docs/turing/CONTRACTS_AND_BILLING.md",
       "runtime_dependencies": "Current approved non-financial terms and effective entitlements; future financial scope deferred",
       "acceptance_test": "Exact-term approval and quotas remain mandatory; no rates/provider/invoices accepted",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.",
       "owner": "Commercial approver and authorization owner",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -169,7 +169,7 @@
       "implementation": "services/turing-enterprise/src/hyba_turing_service/{api,adapters}.py; docs/turing/workspace.openapi.json",
       "runtime_dependencies": "Approved external contracts and installed consumers",
       "acceptance_test": "Authenticated OpenAPI and actual typed request/response contracts; do not invent missing ports",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.",
       "owner": "Authoritative service/interface owners",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -182,7 +182,7 @@
       "implementation": "services/turing-enterprise/src/hyba_turing_service/{identity,sessions,api,control,runtime,release}.py",
       "runtime_dependencies": "Actual IdP/Guardian, secret manager, deployment controls and approved retention",
       "acceptance_test": "Role/tenant/project negatives, stale credentials, rate/body limits, audit integrity, threat review and deployed isolation",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Denial audit is durable/correlation-bound/pseudonymous; audit write failure stays closed. No deployed penetration/isolation/retention qualification.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Denial audit is durable/correlation-bound/pseudonymous; audit write failure stays closed. No deployed penetration/isolation/retention qualification.",
       "owner": "Security, identity, privacy and platform owners",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -221,7 +221,7 @@
       "implementation": "services/turing-enterprise/deploy/OPERATIONS.md; services/turing-enterprise/src/hyba_turing_service/{main,supervisor,api}.py",
       "runtime_dependencies": "Target infrastructure, approved objectives, independent audit sink and named operators",
       "acceptance_test": "Readiness, monitoring/alerts, incident, backup+custody restore, rollback and failure drill",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.",
       "owner": "Deployment owner; named on-call/security escalation",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -247,7 +247,7 @@
       "implementation": "services/turing-enterprise/tests/; services/turing-enterprise/integration/test_installed_runtime.py; turing_universal_quantum_computer/tests/",
       "runtime_dependencies": "Full installed checkout, CI check-read access and authorized target services",
       "acceptance_test": "All nine evidence categories separately; integration failure retained, no skipped tests called passes",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Isolated current stabilizer: 11 passed. Research gating: 11 passed plus 4 unittest subtests. No whole-package, entropy/backend parity, QPU or theorem proof inferred.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Isolated current stabilizer: 11 passed. Research gating: 11 passed plus 4 unittest subtests. The initial isolated harness was supplemented by the full recovered VQC suite; no QPU or theorem proof inferred. Recovered pinned owner sources; installed hyba-turing-vqc 1.0.0 and hyba-kellogg-tensor 1.0.0. Full recovered VQC test directory: 556 passed plus 111 subtests, 0 failed/errors/skipped (134.85s). No VQC implementation patch reapplied. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition.",
       "owner": "CI, security, accessibility and release owners",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -273,7 +273,7 @@
       "implementation": "This register; services/turing-enterprise/src/; docs/turing/",
       "runtime_dependencies": "Full qualification environment and independent release approvals",
       "acceptance_test": "Stages A\u2013F cannot be closed by a plan; code and local evidence delivered, full acceptance still open",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.",
       "owner": "Repository and release owners",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -286,7 +286,7 @@
       "implementation": "Pinned source inventories; targeted implementation and test diffs",
       "runtime_dependencies": "Repository protections and approved external access",
       "acceptance_test": "No engine rewrite, fabricated integration, merge, force-push, release publication or deployment; preserve tests",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.",
       "owner": "Engineering/release owners",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -299,7 +299,7 @@
       "implementation": "This register and evidence manifest; all implementation locations above",
       "runtime_dependencies": "All mandatory in-scope acceptance and actual deployment qualification",
       "acceptance_test": "Every applicable condition in authoritative text must be evidenced; current overall completion NOT established",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.",
       "owner": "Accountable product/security/release owners",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -325,7 +325,7 @@
       "implementation": "frontend/src/turing/{routes.ts,TuringApp.tsx}; services/turing-enterprise/src/hyba_turing_service/static/portal.js",
       "runtime_dependencies": "Approved IdP/customer/contract and real runtime",
       "acceptance_test": "Route all real surfaces with permitted backend state; no simulated customer success",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.",
       "owner": "Product/platform owners",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -377,7 +377,7 @@
       "implementation": "frontend/src/turing/{Workspace.tsx,History.tsx,Evidence.tsx}; services/turing-enterprise/src/hyba_turing_service/{api.py,static/portal.js,runtime.py}",
       "runtime_dependencies": "Actual canonical installed runtime and authenticated target",
       "acceptance_test": "Real execution through result/provenance; search/filter/pages, cancellation and same-key recovery; fixtures are insufficient",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Fixture history/filter/cursor/cancel/export/stale-tenant workflows passed. Installed runtime gate: 1 FAILED (missing hyba-turing-vqc distribution).",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Fixture history/filter/cursor/cancel/export/stale-tenant workflows passed. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition. Recovered pinned owner sources; installed hyba-turing-vqc 1.0.0 and hyba-kellogg-tensor 1.0.0. Full recovered VQC test directory: 556 passed plus 111 subtests, 0 failed/errors/skipped (134.85s). No VQC implementation patch reapplied. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition.",
       "owner": "Execution/custody and frontend owners",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -390,7 +390,7 @@
       "implementation": "services/turing-enterprise/src/hyba_turing_service/{identity,sessions,enterprise,api}.py",
       "runtime_dependencies": "Approved IdP tenant/client, invitation/offboarding interface and revocation policy",
       "acceptance_test": "Actual SSO, invite, assign/revoke, expiry, current role and direct cross-tenant API negatives",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.",
       "owner": "Identity and customer administrators",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -403,7 +403,7 @@
       "implementation": "services/turing-enterprise/deploy/OPERATIONS.md; services/turing-enterprise/src/hyba_turing_service/{main,supervisor,api}.py",
       "runtime_dependencies": "Target infrastructure, approved objectives, independent audit sink and named operators",
       "acceptance_test": "Readiness, monitoring/alerts, incident, backup+custody restore, rollback and failure drill",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.",
       "owner": "Deployment owner; named on-call/security escalation",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -416,7 +416,7 @@
       "implementation": "services/turing-enterprise/src/hyba_turing_service/{control,enterprise,supervisor,api}.py",
       "runtime_dependencies": "Approved logical-slot meaning and contract limits; target resource sizing",
       "acceptance_test": "Transactional provisioning/resize/activation/revocation, contention, duplicate/restart/partial failure on authoritative target",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.",
       "owner": "Capacity and contract authority",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -429,7 +429,7 @@
       "implementation": "services/turing-enterprise/src/hyba_turing_service/{api,adapters}.py; docs/turing/workspace.openapi.json",
       "runtime_dependencies": "Approved external contracts and installed consumers",
       "acceptance_test": "Authenticated OpenAPI and actual typed request/response contracts; do not invent missing ports",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Recovered pinned owner sources; installed hyba-turing-vqc 1.0.0 and hyba-kellogg-tensor 1.0.0. Full recovered VQC test directory: 556 passed plus 111 subtests, 0 failed/errors/skipped (134.85s). No VQC implementation patch reapplied. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition.",
       "owner": "Authoritative service/interface owners",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -455,7 +455,7 @@
       "implementation": "services/turing-enterprise/src/hyba_turing_service/{identity,sessions,api,control,runtime,release}.py",
       "runtime_dependencies": "Actual IdP/Guardian, secret manager, deployment controls and approved retention",
       "acceptance_test": "Role/tenant/project negatives, stale credentials, rate/body limits, audit integrity, threat review and deployed isolation",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Denial audit is durable/correlation-bound/pseudonymous; audit write failure stays closed. No deployed penetration/isolation/retention qualification.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Denial audit is durable/correlation-bound/pseudonymous; audit write failure stays closed. No deployed penetration/isolation/retention qualification.",
       "owner": "Security, identity, privacy and platform owners",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -468,7 +468,7 @@
       "implementation": "services/turing-enterprise/tests/; services/turing-enterprise/integration/test_installed_runtime.py; turing_universal_quantum_computer/tests/",
       "runtime_dependencies": "Full installed checkout, CI check-read access and authorized target services",
       "acceptance_test": "All nine evidence categories separately; integration failure retained, no skipped tests called passes",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Isolated current stabilizer: 11 passed. Research gating: 11 passed plus 4 unittest subtests. No whole-package, entropy/backend parity, QPU or theorem proof inferred.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Isolated current stabilizer: 11 passed. Research gating: 11 passed plus 4 unittest subtests. The initial isolated harness was supplemented by the full recovered VQC suite; no QPU or theorem proof inferred. Recovered pinned owner sources; installed hyba-turing-vqc 1.0.0 and hyba-kellogg-tensor 1.0.0. Full recovered VQC test directory: 556 passed plus 111 subtests, 0 failed/errors/skipped (134.85s). No VQC implementation patch reapplied. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition.",
       "owner": "CI, security, accessibility and release owners",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -481,7 +481,7 @@
       "implementation": "services/turing-enterprise/src/hyba_turing_service/{commercial,enterprise,release}.py; docs/turing/CONTRACTS_AND_BILLING.md",
       "runtime_dependencies": "Current approved non-financial terms and effective entitlements; future financial scope deferred",
       "acceptance_test": "Exact-term approval and quotas remain mandatory; no rates/provider/invoices accepted",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.",
       "owner": "Commercial approver and authorization owner",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -507,7 +507,7 @@
       "implementation": "services/turing-enterprise/deploy/OPERATIONS.md; services/turing-enterprise/src/hyba_turing_service/{main,supervisor,api}.py",
       "runtime_dependencies": "Target infrastructure, approved objectives, independent audit sink and named operators",
       "acceptance_test": "Readiness, monitoring/alerts, incident, backup+custody restore, rollback and failure drill",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.",
       "owner": "Deployment owner; named on-call/security escalation",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -520,7 +520,7 @@
       "implementation": "This register and evidence manifest; all implementation locations above",
       "runtime_dependencies": "All mandatory in-scope acceptance and actual deployment qualification",
       "acceptance_test": "Every applicable condition in authoritative text must be evidenced; current overall completion NOT established",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.",
       "owner": "Accountable product/security/release owners",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -533,7 +533,7 @@
       "implementation": "services/turing-enterprise/src/hyba_turing_service/{control,enterprise,supervisor,api}.py",
       "runtime_dependencies": "Approved logical-slot meaning and contract limits; target resource sizing",
       "acceptance_test": "Transactional provisioning/resize/activation/revocation, contention, duplicate/restart/partial failure on authoritative target",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance.",
       "owner": "Capacity and contract authority",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -546,7 +546,7 @@
       "implementation": "services/turing-enterprise/src/hyba_turing_service/{identity,sessions,enterprise,api}.py",
       "runtime_dependencies": "Approved IdP tenant/client, invitation/offboarding interface and revocation policy",
       "acceptance_test": "Actual SSO, invite, assign/revoke, expiry, current role and direct cross-tenant API negatives",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Existing-subject membership APIs are not an IdP invitation or delivery integration.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Existing-subject membership APIs are not an IdP invitation or delivery integration.",
       "owner": "Identity and customer administrators",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -559,7 +559,7 @@
       "implementation": "frontend/src/turing/{Workspace.tsx,History.tsx,Evidence.tsx}; services/turing-enterprise/src/hyba_turing_service/{api.py,static/portal.js,runtime.py}",
       "runtime_dependencies": "Actual canonical installed runtime and authenticated target",
       "acceptance_test": "Real execution through result/provenance; search/filter/pages, cancellation and same-key recovery; fixtures are insufficient",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Fixture history/filter/cursor/cancel/export/stale-tenant workflows passed. Installed runtime gate: 1 FAILED (missing hyba-turing-vqc distribution).",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Fixture history/filter/cursor/cancel/export/stale-tenant workflows passed. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition. Recovered pinned owner sources; installed hyba-turing-vqc 1.0.0 and hyba-kellogg-tensor 1.0.0. Full recovered VQC test directory: 556 passed plus 111 subtests, 0 failed/errors/skipped (134.85s). No VQC implementation patch reapplied. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition.",
       "owner": "Execution/custody and frontend owners",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -572,7 +572,7 @@
       "implementation": "services/turing-enterprise/src/hyba_turing_service/{identity,sessions,api,control,runtime,release}.py",
       "runtime_dependencies": "Actual IdP/Guardian, secret manager, deployment controls and approved retention",
       "acceptance_test": "Role/tenant/project negatives, stale credentials, rate/body limits, audit integrity, threat review and deployed isolation",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Denial audit is durable/correlation-bound/pseudonymous; audit write failure stays closed. No deployed penetration/isolation/retention qualification.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Denial audit is durable/correlation-bound/pseudonymous; audit write failure stays closed. No deployed penetration/isolation/retention qualification.",
       "owner": "Security, identity, privacy and platform owners",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -598,7 +598,7 @@
       "implementation": "services/turing-enterprise/src/hyba_turing_service/{control,enterprise,supervisor,api}.py",
       "runtime_dependencies": "Approved logical-slot meaning and contract limits; target resource sizing",
       "acceptance_test": "Transactional provisioning/resize/activation/revocation, contention, duplicate/restart/partial failure on authoritative target",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Suspension blocks new work; preserved read/audit access follows existing implementation, not an approved universal offboarding policy. Financial consequences deferred.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Suspension blocks new work; preserved read/audit access follows existing implementation, not an approved universal offboarding policy. Financial consequences deferred.",
       "owner": "Capacity and contract authority",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"
@@ -611,7 +611,7 @@
       "implementation": "services/turing-enterprise/src/hyba_turing_service/{control,enterprise,supervisor,api}.py",
       "runtime_dependencies": "Approved logical-slot meaning and contract limits; target resource sizing",
       "acceptance_test": "Transactional provisioning/resize/activation/revocation, contention, duplicate/restart/partial failure on authoritative target",
-      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP/runtime peers are doubles. Not live acceptance. Local SQLite retry/recovery tests only. Provisioning and operational-fact integrity remain in scope; no financial posting implied.",
+      "evidence": "Local service suite: 93 passed, 0 failed/skipped (one deprecation warning). Real SQLite/cryptography; IdP and unit-test runtime peers are doubles; actual local integrations are listed separately. Not live acceptance. Local SQLite retry/recovery tests only. Provisioning and operational-fact integrity remain in scope; no financial posting implied. Recovered pinned owner sources; installed hyba-turing-vqc 1.0.0 and hyba-kellogg-tensor 1.0.0. Full recovered VQC test directory: 556 passed plus 111 subtests, 0 failed/errors/skipped (134.85s). No VQC implementation patch reapplied. Three actual local integrations passed (3.01s): installed subprocess runtime; signed TEST-identity API -> SQLite queue -> default worker -> certificate/witness/report, same-key recovery and revocation; canonical SharedTuring -> shared THESEUS/OVID -> verified lineage -> durable lifecycle restart replay. Real local owner code, not enterprise SSO/approved production composition.",
       "owner": "Capacity and contract authority",
       "status": "PARTIAL",
       "release_impact": "Applicable mandatory acceptance remains open; no section-wide PASS inferred from unit/source evidence"

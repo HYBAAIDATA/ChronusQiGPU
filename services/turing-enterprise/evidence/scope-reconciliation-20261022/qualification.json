@@ -65,6 +65,31 @@
       "command": "GitHub pull_request_read get_check_runs for PR138 head 4a9f92096b57d5a00b6a5b0686ddafb5b26bdf9c",
       "result": "403 Resource not accessible by personal access token",
       "environment": "remote CI not observable; no inference from workflow configuration"
+    },
+    {
+      "command": "python -m pip install ./packaging/kellogg-tensor ./turing_universal_quantum_computer",
+      "result": "actual local owner distributions hyba-kellogg-tensor 1.0.0 and hyba-turing-vqc 1.0.0 built/installed",
+      "environment": "verified pinned source files; editable candidate service; not clean full checkout"
+    },
+    {
+      "command": "python -m pip install \"hypothesis>=6.100,<7\"; python -m pytest turing_universal_quantum_computer/tests -q --junitxml=OUT/vqc-complete.xml",
+      "result": "556 passed, 111 subtests passed, 0 failures/errors/skips, 134.85s; JUnit counts 667 including subtests",
+      "environment": "actual installed VQC/Kellogg plus real pinned source AETHEL/THESEUS/OVID and research assets; no hardware or live enterprise authority"
+    },
+    {
+      "command": "python -m pytest services/turing-enterprise/integration -q --junitxml=OUT/runtime-shared.xml",
+      "result": "3 passed, 0 failures/errors/skips, 1 deprecation warning, 3.01s",
+      "environment": "actual installed subprocess worker; API signed TEST-JWT and fixture JWKS; actual SQLite and local native execution; actual canonical SharedTuring shared durable custody/restart; not live SSO or full production organism"
+    },
+    {
+      "command": "python -m pytest services/turing-enterprise/tests -q --junitxml=OUT/service-final.xml",
+      "result": "93 passed, 0 failures/errors/skips, 1 deprecation warning, 4.83s",
+      "environment": "final unchanged service code; two additional non-skipping integration tests are outside this unit suite"
+    },
+    {
+      "command": "python -m black --check --line-length 100 services/turing-enterprise/src services/turing-enterprise/tests services/turing-enterprise/integration",
+      "result": "exit 0; 21 files unchanged",
+      "environment": "final service and integration source"
     }
   ],
   "development_failures": [
@@ -75,13 +100,27 @@
     {
       "result": "2 test collection errors in initial denial audit change",
       "cause": "audit block mistakenly inserted into synchronous logout; corrected to operation boundary; current full service/wheel reruns pass"
+    },
+    {
+      "result": "initial actual integration 1 failed",
+      "cause": "missing distribution metadata, then recovered and installed pinned actual VQC/Kellogg; superseded by integration 3 passed"
+    },
+    {
+      "result": "initial broader VQC collection failed",
+      "cause": "missing declared Hypothesis test dependency; installed before execution"
+    },
+    {
+      "result": "initial partial-source VQC: 19 failed, 533 passed, 6 errors, 109 subtests passed",
+      "cause": "missing experiment/config/docs/canonical Lucas and aethel source; recovered exact git-blob-verified owner sources; full rerun 556 passed plus 111 subtests, not suppressed/skipped"
     }
   ],
   "boundaries": [
     "No production deployment, live IdP call, actuation, customer charge, invoice or external custody acceptance occurred",
-    "No full VQC/backend/entropy/hardware qualification or locked host regression is claimed",
     "No missing/failed/skipped result is a pass",
     "No independent promotion approval is manufactured",
-    "No repository-wide dependency/security scan or full manual accessibility certification is claimed"
-  ]
+    "No repository-wide dependency/security scan or full manual accessibility certification is claimed",
+    "Full recovered VQC directory passed, not full repository, installed-consumer, live IdP, target-host or hardware qualification",
+    "Native execution/custody source gaps resolved locally; approved deployment composition and authority still unverified"
+  ],
+  "first_implementation_commit": "d015099c2c6dfa34d8e5185baf4774139374dab8"
 }
