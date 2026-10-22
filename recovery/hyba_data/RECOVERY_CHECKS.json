@@ -1,12 +1,12 @@
 {
   "scope": "Static parsing and source integrity only; recovered modules were not imported or executed.",
-  "python_files_checked": 222,
+  "python_files_checked": 272,
   "syntax_errors": [],
   "json_files_checked": 11,
   "json_errors": [],
   "runtime_qualified": false,
-  "recovered_files": 353,
-  "pending_files": 514,
+  "recovered_files": 403,
+  "pending_files": 464,
   "legacy_evidence_checksum": {
     "path": "hyba_data/euclid/evidence/creative_architecture_audit.json",
     "recorded_sha256": "94a66fdb920b8f781f10ad660802b35e847d12dd0ba50f335c9c66d4017276b3",
