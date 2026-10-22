@@ -19,6 +19,109 @@ from .models import AccessDenied, IntegrityFailure, InvalidRecord
 class TheseusFileRegistry(FileRegistry):
     """File projection whose byte authority is mathematical THESEUS storage."""
 
+    def resume_write_intent(
+        self, tenant_id: str, intent_id: str, root: str | Path, *,
+        legacy_request: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Finish a retained write, never turn a failed attempt into a claim.
+
+        Invoke with an exclusive maintenance/startup owner of the projection.
+        Bytes, tenant, canonical placement and object identity must still
+        match. Legacy requests require explicit operator reconstruction; they
+        are labelled as such rather than inferred silently. The original error
+        remains in the intent and a new authenticated recovery record binds the
+        exact request and completed version. No blobs or history are deleted.
+        """
+        self._tenant(tenant_id)
+        row = self.store._db.execute(
+            "SELECT * FROM file_intents WHERE tenant_id=? AND intent_id=?",
+            (tenant_id, intent_id),
+        ).fetchone()
+        if row is None:
+            raise AccessDenied("write intent not found in tenant")
+        detail = json.loads(row["detail_json"])
+        if row["state"] == "COMMITTED":
+            return {"intent_id": intent_id, "state": "COMMITTED",
+                    "file_version_id": row["file_version_id"], "replayed": False}
+        request = detail.get("request")
+        if request is None:
+            if legacy_request is None:
+                raise IntegrityFailure("legacy intent requires an explicit recovery request")
+            request = dict(legacy_request)
+        elif legacy_request is not None and _json(request) != _json(legacy_request):
+            raise IntegrityFailure("recovery request conflicts with retained request")
+        obj = self.store._db.execute(
+            "SELECT * FROM file_objects WHERE tenant_id=? AND file_object_id=?",
+            (tenant_id, row["file_object_id"]),
+        ).fetchone()
+        if obj is None or any(
+            request.get(key) != obj[key]
+            for key in ("logical_name", "file_class", "semantic_owner", "domain")
+        ):
+            raise IntegrityFailure("recovery request object identity mismatch")
+        root = filesystem_root(root)
+        physical = TheseusPhysicalStore(root)
+        final = Path(row["final_uri"])
+        # Resolve containment before reading a caller- or database-supplied path.
+        try:
+            final.resolve().relative_to(root.resolve() / tenant_id)
+        except ValueError as exc:
+            raise IntegrityFailure("recovery path outside tenant root") from exc
+        data = final.read_bytes()
+        if len(data) != row["size_bytes"] or _sha(data) != row["content_sha256"]:
+            raise IntegrityFailure("recovery intent payload mismatch")
+        address = derive_storage_address(
+            data, tenant_id=tenant_id, scope=str(obj["file_class"])
+        )
+        if (
+            final.resolve() != physical.primary_path(address).resolve()
+            or not physical.verify(address, data)
+            or detail.get("theseus_address_id") != address.address_id
+        ):
+            raise IntegrityFailure("recovery intent placement mismatch")
+        if self.custody is None:
+            raise IntegrityFailure("recovery requires authenticated custody")
+        _oid, vid = self.put_file(tenant_id, root, content=data, **request)
+        bound = self.storage_address(tenant_id, vid)
+        version = self.store._db.execute(
+            "SELECT * FROM file_versions WHERE tenant_id=? AND file_version_id=?",
+            (tenant_id, vid),
+        ).fetchone()
+        if (
+            bound != address or version is None
+            or not self.custody.verify(tenant_id, str(version["custody_record_id"]))
+            or not self.store.verify_attestation(tenant_id, str(version["attestation_id"]))
+        ):
+            raise IntegrityFailure("resumed version failed custody verification")
+        receipt = {
+            "schema": "hyba.file-write-recovery/v1", "tenant_id": tenant_id,
+            "intent_id": intent_id, "file_version_id": vid,
+            "content_sha256": _sha(data), "request_sha256": _sha(_json(request).encode()),
+            "original_error": detail.get("error"),
+            "request_source": "retained" if detail.get("request") is not None
+                              else "operator_reconstructed_legacy",
+        }
+        op = OperationalRecord(
+            record_id=f"file_write_recovery.{intent_id}.{vid}", producer="theseus",
+            producer_version="hyba-write-recovery/1", schema_version=1,
+            kind="file_write_recovery", payload=_json(receipt).encode(),
+            evidence_state="MEASURED", lineage=(vid,),
+            correlation_ids={"tenant_id": tenant_id, "file_version_id": vid},
+        )
+        cid = self.custody.put_record(tenant_id, op)
+        if not self.custody.verify(tenant_id, cid):
+            raise IntegrityFailure("write recovery receipt failed authentication")
+        with self.store._tx() as db:
+            self._event(db, tenant_id, vid, "RECOVERED", "theseus",
+                        {**receipt, "custody_record_id": cid})
+            db.execute(
+                "UPDATE file_intents SET state='COMMITTED',file_version_id=?,"
+                "detail_json=?,updated_at=? WHERE tenant_id=? AND intent_id=?",
+                (vid, _json({**detail, "recovery": {**receipt, "custody_record_id": cid}}),
+                 _now(), tenant_id, intent_id),
+            )
+        return {**receipt, "state": "COMMITTED", "replayed": True}
+
     def register_version(self, *args: Any, **kwargs: Any) -> str:
         vid = super().register_version(*args, **kwargs)
         tenant_id = str(args[0] if args else kwargs["tenant_id"])

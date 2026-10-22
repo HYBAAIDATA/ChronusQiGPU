@@ -254,6 +254,17 @@ class MiningStorageRecorder:
         )
         recorder._store = store  # keep the connection reachable via the recorder
         try:
+            # New-format writes retain their semantic request before placement.
+            # Resume only those exact requests; legacy incomplete writes remain
+            # fail-closed until an operator supplies explicit reconstruction.
+            pending = store._db.execute(
+                "SELECT intent_id,detail_json FROM file_intents "
+                "WHERE tenant_id=? AND state!='COMMITTED' ORDER BY rowid",
+                (tenant_id,),
+            ).fetchall()
+            for intent in pending:
+                if json.loads(intent["detail_json"]).get("request_schema") == "hyba.file-write-request/v1":
+                    store.files.resume_write_intent(tenant_id, intent["intent_id"], root)
             recorder.recover()
         except Exception:
             store.close()
