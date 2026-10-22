@@ -1,0 +1,110 @@
+# HYBA_DATA — Enterprise Standard Deployment
+# McKinsey-grade configuration for enterprise production environments.
+# Supports hybrid cloud, multi-tenancy, and full governance.
+
+deployment:
+  name: hyba-data-enterprise
+  environment: production
+  classification: confidential
+  network_mode: private
+  multi_tenant: true
+
+# ── Infrastructure ──────────────────────────────────────────────
+infrastructure:
+  provider: hybrid               # On-prem + cloud burst
+  on_prem:
+    nodes: 5
+    cpu_per_node: 64
+    memory_per_node: 256
+    gpu_per_node: 4
+    storage:
+      type: nvme-san
+      capacity_per_node: 8TB
+      encryption: aes-256
+  cloud_burst:
+    provider: aws                 # Burst to cloud during peak
+    region: eu-west-1
+    instance_type: p4d.24xlarge
+    max_burst_nodes: 20
+    spot_enabled: true
+  network:
+    external_access: true
+    vpn: ipsec
+    internal_cidr: 10.0.0.0/8
+    ports: [443, 8080, 9090, 2379]
+    ddos_protection: true
+
+# ── HYBA_DATA Engine ────────────────────────────────────────────
+engine:
+  manifold: M32
+  search_space: 32-bit
+  workers: 16
+  cache_size: 200000
+  precision: float64
+  gpu_acceleration: true
+  checkpoint_interval: 500
+  adaptive_precision: true
+  multi_gpu: true
+
+# ── Security ────────────────────────────────────────────────────
+security:
+  abac:
+    enabled: true
+    default_deny: true
+    policy_file: /etc/hyba/abac-policy.json
+    tenant_isolation: namespace
+  tls:
+    enabled: true
+    cert_source: internal-ca
+    min_version: TLSv1.3
+  data_residency:
+    region: hybrid
+    egress_blocked: true
+    allowed_egress: [internal-artifacts.corp]
+  audit:
+    enabled: true
+    log_path: /var/log/hyba/audit
+    retention_days: 2555
+    siem_integration: splunk
+  fips_mode: true
+  vulnerability_scanning: daily
+  sbom_required: true
+
+# ── FinOps ──────────────────────────────────────────────────────
+finops:
+  cost_tracking: true
+  flop_metering: true
+  chargeback_model: tenant-based
+  cost_allocation: [tenant, project, environment]
+  budget_alerts:
+    threshold_pct: [50, 80, 95]
+    notification: [email, slack, pagerduty]
+  showback_report: monthly
+  unit_economics:
+    cost_per_flop: tracked
+    cost_per_search: tracked
+    savings_vs_classical: measured
+
+# ── MLOps ───────────────────────────────────────────────────────
+mlops:
+  drift_monitoring: true
+  calibration_interval: 1000
+  zero_downtime_reindex: true
+  canary_pct: 10
+  model_registry: internal
+  ci_cd: gitops
+  blue_green: true
+
+# ── Compliance ───────────────────────────────────────────────────
+compliance:
+  framework: [SOC2-TypeII, ISO-27001, NIST-800-53]
+  data_classification: confidential
+  encryption_at_rest: aes-256
+  encryption_in_transit: tls-1.3
+  backup: enterprise-backup-vault
+  dr_strategy: warm-standby
+  rto: 3600                     # 1 hour
+  rpo: 60                       # 1 minute
+  supply_chain: SBOM-required
+  attestation: signed-hash
+  penetration_test: annual

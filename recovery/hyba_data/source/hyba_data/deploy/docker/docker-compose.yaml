@@ -1,0 +1,57 @@
+# HYBA_DATA — Docker Compose for local/dev/enterprise
+version: "3.9"
+
+services:
+  hyba-data:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    image: hyba/data:9.0.0
+    container_name: hyba-data
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    volumes:
+      - hyba-data:/home/hyba/data
+      - ./config:/etc/hyba:ro
+    environment:
+      - HYBA_MANIFOLD=M32
+      - HYBA_WORKERS=4
+      - HYBA_GPU=false
+      - HYBA_CACHE_SIZE=10000
+      - HYBA_PRECISION=float64
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 8G
+        reservations:
+          cpus: "1"
+          memory: 2G
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import hyba_data; print('ok')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - hyba-net
+
+  hyba-metrics:
+    image: prom/prometheus:latest
+    container_name: hyba-metrics
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    restart: unless-stopped
+    networks:
+      - hyba-net
+
+volumes:
+  hyba-data:
+    driver: local
+
+networks:
+  hyba-net:
+    driver: bridge

@@ -1,0 +1,103 @@
+# HYBA_DATA — AWS Cloud Deployment
+# McKinsey-grade configuration for AWS hosted environments.
+
+deployment:
+  name: hyba-data-aws
+  environment: production
+  classification: confidential
+  network_mode: vpc-isolated
+
+# ── AWS Infrastructure ─────────────────────────────────────────
+infrastructure:
+  provider: aws
+  region: eu-west-1              # Sovereign region option
+  availability_zones: [a, b, c]
+  instance_type: c6i.4xlarge
+  gpu_instance_type: p4d.24xlarge
+  auto_scaling:
+    min_size: 3
+    max_size: 12
+    target_cpu: 70
+  storage:
+    ebs_type: gp3
+    ebs_iops: 16000
+    ebs_throughput: 1000
+    encryption: aws-kms
+    kms_key: alias/hyba-data-prod
+  network:
+    vpc_cidr: 10.50.0.0/16
+    private_subnets: true
+    nat_gateway: true
+    security_groups:
+      - name: hyba-api
+        ingress: [{port: 443, source: 10.50.0.0/16}]
+      - name: hyba-internal
+        ingress: [{port: 9090, source: 10.50.0.0/16}]
+
+# ── HYBA_DATA Engine ────────────────────────────────────────────
+engine:
+  manifold: M32
+  search_space: 32-bit
+  workers: auto                  # Scales with ASG
+  cache_size: 150000
+  precision: float64
+  gpu_acceleration: true
+  checkpoint_interval: 500
+  efs_mount: /mnt/hyba/checkpoints
+
+# ── Security ────────────────────────────────────────────────────
+security:
+  abac:
+    enabled: true
+    default_deny: true
+    policy_file: s3://hyba-config/abac-policy.json
+  tls:
+    enabled: true
+    cert_source: aws-acm
+    min_version: TLSv1.3
+  data_residency:
+    region: eu-west-1
+    egress_blocked: false
+    allowed_egress: [s3.eu-west-1.amazonaws.com]
+  audit:
+    enabled: true
+    destination: cloudwatch
+    retention_days: 365
+  iam:
+    role: arn:aws:iam::ACCOUNT:role/hyba-data-role
+    policy: hyba-data-least-privilege
+  secrets:
+    backend: aws-secrets-manager
+
+# ── FinOps ──────────────────────────────────────────────────────
+finops:
+  cost_tracking: true
+  flop_metering: true
+  chargeback_model: tag-based
+  cost_allocation_tags: [Project, Environment, Owner]
+  budget_alerts:
+    threshold_pct: 80
+    notification: sns
+  spot_instances:
+    enabled: true
+    max_wait: 300
+  savings_plan: compute
+
+# ── MLOps ───────────────────────────────────────────────────────
+mlops:
+  drift_monitoring: true
+  calibration_interval: 1000
+  zero_downtime_reindex: true
+  canary_pct: 10
+  model_registry: s3://hyba-models/
+
+# ── Compliance ───────────────────────────────────────────────────
+compliance:
+  framework: SOC2-TypeII
+  data_classification: confidential
+  encryption_at_rest: aws-kms
+  encryption_in_transit: tls-1.3
+  backup: aws-backup-vault
+  dr_strategy: pilot-light
+  rto: 14400                    # 4 hours
+  rpo: 300                       # 5 minutes

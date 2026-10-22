@@ -1,0 +1,8 @@
+{
+  "scope": "Static Python syntax parsing only; recovered modules were not imported or executed.",
+  "python_files_checked": 40,
+  "syntax_errors": [],
+  "runtime_qualified": false,
+  "recovered_files": 53,
+  "pending_files": 814
+}

@@ -1,0 +1,113 @@
+# HYBA_DATA — Government Classified Deployment
+# McKinsey-grade configuration for classified government environments.
+# Air-gapped, FIPS 140-3, IL5+, and zero-trust architecture.
+
+deployment:
+  name: hyba-data-gov-classified
+  environment: production
+  classification: secret
+  network_mode: air-gapped
+  authority_to_operate: IATT
+
+# ── Infrastructure ──────────────────────────────────────────────
+infrastructure:
+  provider: on-premise
+  nodes: 5                        # Odd number for quorum
+  cpu_per_node: 64
+  memory_per_node: 512
+  gpu_per_node: 4                # H100 (if available) or A100
+  storage:
+    type: nvme-local               # No network storage
+    capacity_per_node: 16TB
+    encryption: aes-256-gcm
+    fips_validated: true
+  network:
+    external_access: false
+    internal_cidr: 192.168.0.0/16
+    ports: [8080, 9090, 2379]
+    cross_domain: false
+    data_diode: true              # One-way data out only
+
+# ── HYBA_DATA Engine ────────────────────────────────────────────
+engine:
+  manifold: M32
+  search_space: 32-bit
+  workers: 16
+  cache_size: 200000
+  precision: float64
+  gpu_acceleration: true
+  checkpoint_interval: 250
+  adaptive_precision: true
+  multi_gpu: true
+
+# ── Security ────────────────────────────────────────────────────
+security:
+  abac:
+    enabled: true
+    default_deny: true
+    policy_file: /etc/hyba/abac-policy.json
+    clearance_levels: [secret, top-secret]
+    tenant_isolation: physical
+  tls:
+    enabled: true
+    cert_source: dod-pki           # DoD PKI only
+    min_version: TLSv1.3
+    fips_module: FIPS-140-3
+  data_residency:
+    region: on-premise
+    egress_blocked: true
+    cross_domain_transfer: prohibited
+  audit:
+    enabled: true
+    log_path: /var/log/hyba/audit
+    retention_days: 3650           # 10 years
+    siem_integration: splunk-es
+    immutable_logs: true
+    signed_logs: true
+  fips_mode: true
+  zero_trust: true
+  microsegmentation: true
+  vulnerability_scanning: continuous
+  stig_hardening: true
+  sbom_required: true
+  supply_chain_risk: level-1
+
+# ── FinOps ──────────────────────────────────────────────────────
+finops:
+  cost_tracking: true
+  flop_metering: true
+  chargeback_model: agency-based
+  budget_alerts:
+    threshold_pct: [80, 95]
+    notification: syslog
+  unit_economics:
+    cost_per_flop: tracked
+    cost_per_search: tracked
+    savings_vs_classical: measured
+
+# ── MLOps ───────────────────────────────────────────────────────
+mlops:
+  drift_monitoring: true
+  calibration_interval: 500
+  zero_downtime_reindex: true
+  canary_pct: 5
+  model_registry: local-registry
+  ci_cd: gitops-airgapped
+  blue_green: true
+
+# ── Compliance ───────────────────────────────────────────────────
+compliance:
+  framework: [NIST-800-53-High, NIST-800-171, CMMC-ML3, IL5]
+  data_classification: secret
+  encryption_at_rest: aes-256-gcm
+  encryption_in_transit: tls-1.3
+  fips_validated: true
+  backup: local-backup-vault
+  dr_strategy: cold-standby
+  rto: 86400                     # 24 hours
+  rpo: 3600                      # 1 hour
+  supply_chain: SBOM-required
+  attestation: signed-hash
+  penetration_test: continuous
+  continuous_monitoring: true
+  plan_of_action: required
