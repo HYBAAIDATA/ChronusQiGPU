@@ -1,0 +1,221 @@
+/* ============================================================================
+   HYBA — Editorial Design System (McKinsey-caliber, NVIDIA/Stripe/DeepMind tier)
+   ---------------------------------------------------------------------------
+   Language:  restraint, editorial rhythm, hairline rules, tabular figures
+   Palette:   Cream #F5F1ED base, Oxford Navy #002147 text, Gold #F2A900 accent
+   Type:      Playfair Display display / Source Serif body / IBM Plex Mono data
+   ============================================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,500;8..60,600&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+
+:root {
+  /* Palette */
+  --oxford:      #002147;
+  --midnight:    #001E3C;
+  --logo-navy:   #001E46;
+  --primary:     #0066B2;
+  --bright:      #009FDA;
+  --light:       #7FB8DD;
+  --gold:        #F2A900;
+  --orange:      #E86C1E;
+  --cream:       #F5F1ED;
+  --paper:       #FAF7F2;
+  --rule:        #1F2A3E1A;   /* 10% navy hairline */
+  --rule-strong: #1F2A3E33;   /* 20% navy */
+  --muted:       #4A5568;
+
+  /* Type scale — editorial, not app-y */
+  --display: 'Playfair Display', 'Times New Roman', serif;
+  --serif:   'Source Serif 4', Georgia, serif;
+  --mono:    'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  /* Rhythm */
+  --line-height-tight: 1.15;
+  --line-height-body:  1.65;
+  --tracking-label:    0.14em;
+  --tracking-caps:     0.22em;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--cream); color: var(--oxford); }
+body {
+  font-family: var(--serif);
+  font-size: 16px;
+  line-height: var(--line-height-body);
+  font-feature-settings: 'kern' 1, 'liga' 1, 'onum' 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* --- Type ---------------------------------------------------------------- */
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 500; line-height: var(--line-height-tight); color: var(--oxford); }
+h1 { font-size: clamp(2.75rem, 5.4vw, 4.75rem); letter-spacing: -0.015em; }
+h2 { font-size: clamp(1.875rem, 3vw, 2.5rem); letter-spacing: -0.01em; }
+h3 { font-size: 1.375rem; letter-spacing: -0.005em; }
+h4 { font-size: 1.125rem; }
+p  { color: var(--midnight); }
+
+.lede { font-family: var(--serif); font-size: 1.25rem; line-height: 1.55; color: var(--midnight); font-weight: 300; max-width: 62ch; }
+.body-serif { font-family: var(--serif); color: var(--midnight); }
+.italic-note { font-style: italic; color: var(--muted); }
+
+/* Small-caps labels — the McKinsey "exhibit" system */
+.eyebrow, .label {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.eyebrow--gold { color: var(--gold); }
+.exhibit-tag {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--oxford);
+  border-top: 2px solid var(--gold);
+  padding-top: 0.5rem;
+  display: inline-block;
+}
+
+/* Numbers — tabular, monospace, editorial weight */
+.figure {
+  font-family: var(--display);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-weight: 400;
+  color: var(--oxford);
+  font-size: clamp(2rem, 3.2vw, 2.75rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.figure-sm { font-family: var(--display); font-variant-numeric: tabular-nums; font-size: 1.5rem; color: var(--oxford); }
+.figure-mono { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 0.9375rem; color: var(--oxford); }
+
+/* --- Layout primitives --------------------------------------------------- */
+.container { max-width: 1240px; margin: 0 auto; padding: 0 40px; }
+.container--narrow { max-width: 900px; margin: 0 auto; padding: 0 40px; }
+.section { padding: 96px 0; }
+.section--tight { padding: 56px 0; }
+.rule { border: 0; border-top: 1px solid var(--rule-strong); margin: 0; }
+.rule--gold { border: 0; border-top: 2px solid var(--gold); width: 48px; margin: 0; }
+.rule--thin { border: 0; border-top: 1px solid var(--rule); }
+
+.grid { display: grid; gap: 40px; }
+.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 900px) { .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; } .grid-2 { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+/* --- Exhibit (McKinsey signature module) --------------------------------- */
+.exhibit {
+  border-top: 1px solid var(--oxford);
+  padding-top: 1.5rem;
+  margin-top: 1rem;
+}
+.exhibit__title { font-family: var(--display); font-size: 1.375rem; margin: 0.5rem 0 0.25rem; color: var(--oxford); }
+.exhibit__subtitle { color: var(--muted); font-size: 0.9375rem; font-style: italic; margin-bottom: 1.5rem; }
+.exhibit__source { font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.08em; color: var(--muted); margin-top: 1rem; text-transform: uppercase; }
+
+/* --- Tables — mono-numeric, hairline ----------------------------------- */
+table.exhibit-table { width: 100%; border-collapse: collapse; font-family: var(--serif); }
+table.exhibit-table th {
+  font-family: var(--mono); font-size: 0.6875rem; font-weight: 500;
+  letter-spacing: var(--tracking-label); text-transform: uppercase;
+  color: var(--muted); text-align: left; padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid var(--oxford);
+}
+table.exhibit-table td {
+  padding: 1rem 0.5rem; font-size: 0.9375rem;
+  color: var(--oxford); border-bottom: 1px solid var(--rule);
+  font-variant-numeric: tabular-nums;
+}
+table.exhibit-table td.num { font-family: var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+table.exhibit-table tr:hover td { background: var(--paper); }
+
+/* --- Data blocks (KPI strip, McKinsey "metric shelf") ------------------- */
+.metric { padding: 0; }
+.metric__label { font-family: var(--mono); font-size: 0.6875rem; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+.metric__value { font-family: var(--display); font-size: 2.5rem; color: var(--oxford); font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -0.015em; }
+.metric__unit  { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); margin-left: 0.25rem; }
+.metric__delta { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); margin-top: 0.5rem; }
+.metric__delta--pos { color: #1B7A3E; }
+.metric__delta--neg { color: #B91C1C; }
+
+/* --- Nav ---------------------------------------------------------------- */
+.nav {
+  border-bottom: 1px solid var(--rule-strong);
+  background: var(--cream);
+  position: sticky; top: 0; z-index: 50;
+  backdrop-filter: saturate(1.05);
+}
+.nav__inner { max-width: 1240px; margin: 0 auto; padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; gap: 32px; }
+.nav__brand { display: flex; align-items: baseline; gap: 12px; text-decoration: none; color: var(--oxford); }
+.nav__brand-mark { font-family: var(--display); font-size: 1.375rem; font-weight: 500; letter-spacing: 0.02em; }
+.nav__brand-sub  { font-family: var(--mono); font-size: 0.6875rem; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--muted); }
+.nav__links { display: flex; gap: 28px; }
+.nav__link  {
+  font-family: var(--mono); font-size: 0.75rem; letter-spacing: var(--tracking-label);
+  text-transform: uppercase; color: var(--midnight); text-decoration: none;
+  padding: 6px 0; border-bottom: 2px solid transparent; transition: border-color 120ms ease;
+}
+.nav__link:hover, .nav__link--active { border-bottom-color: var(--gold); color: var(--oxford); }
+@media (max-width: 900px) { .nav__links { display: none; } }
+
+/* --- Buttons — restrained editorial ------------------------------------- */
+.btn {
+  font-family: var(--mono); font-size: 0.75rem; letter-spacing: var(--tracking-label);
+  text-transform: uppercase; padding: 12px 24px;
+  background: var(--oxford); color: var(--cream); border: 1px solid var(--oxford);
+  text-decoration: none; display: inline-block; cursor: pointer; transition: all 140ms ease;
+}
+.btn:hover { background: var(--midnight); }
+.btn--ghost { background: transparent; color: var(--oxford); }
+.btn--ghost:hover { background: var(--oxford); color: var(--cream); }
+.btn--link {
+  background: none; border: none; padding: 0; color: var(--oxford);
+  border-bottom: 1px solid var(--oxford);
+  font-family: var(--mono); font-size: 0.75rem; letter-spacing: var(--tracking-label);
+  text-transform: uppercase; padding-bottom: 2px;
+}
+.btn--link:hover { color: var(--gold); border-bottom-color: var(--gold); }
+
+/* --- Chips / status ----------------------------------------------------- */
+.chip {
+  display: inline-block; font-family: var(--mono); font-size: 0.6875rem;
+  letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 10px;
+  border: 1px solid var(--rule-strong); color: var(--midnight); background: var(--paper);
+}
+.chip--gold { border-color: var(--gold); color: var(--gold); }
+.chip--ok   { border-color: #1B7A3E; color: #1B7A3E; }
+.chip--warn { border-color: var(--orange); color: var(--orange); }
+
+/* --- Sparkline / mini-bar visuals -------------------------------------- */
+.spark { display: inline-flex; align-items: end; gap: 2px; height: 22px; }
+.spark span { display: inline-block; width: 4px; background: var(--oxford); }
+
+/* --- Cover / hero ------------------------------------------------------- */
+.cover {
+  padding: 128px 0 96px;
+  border-bottom: 1px solid var(--rule-strong);
+  background: var(--cream);
+}
+.cover__eyebrow { margin-bottom: 24px; }
+.cover__title { max-width: 22ch; margin-bottom: 32px; }
+.cover__lede  { margin-bottom: 48px; }
+.cover__meta  { display: flex; gap: 32px; align-items: center; }
+
+/* --- Footer ------------------------------------------------------------- */
+.footer { border-top: 1px solid var(--rule-strong); padding: 48px 0; background: var(--cream); }
+.footer__row { display: flex; justify-content: space-between; align-items: baseline; gap: 32px; flex-wrap: wrap; }
+.footer__meta { font-family: var(--mono); font-size: 0.6875rem; letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--muted); }
+
+/* --- Utilities ---------------------------------------------------------- */
+.text-muted { color: var(--muted); }
+.text-gold  { color: var(--gold); }
+.text-navy  { color: var(--oxford); }
+.mt-1 { margin-top: 0.5rem; } .mt-2 { margin-top: 1rem; } .mt-3 { margin-top: 1.5rem; } .mt-4 { margin-top: 2rem; } .mt-6 { margin-top: 3rem; } .mt-8 { margin-top: 4rem; }
+.mb-1 { margin-bottom: 0.5rem; } .mb-2 { margin-bottom: 1rem; } .mb-3 { margin-bottom: 1.5rem; } .mb-4 { margin-bottom: 2rem; } .mb-6 { margin-bottom: 3rem; }
+.flex { display: flex; } .items-center { align-items: center; } .items-baseline { align-items: baseline; } .justify-between { justify-content: space-between; } .gap-2 { gap: 0.5rem; } .gap-4 { gap: 1rem; } .gap-8 { gap: 2rem; }

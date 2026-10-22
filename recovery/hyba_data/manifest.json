@@ -4,7 +4,7 @@
   "source_inventory": "collection://3ecaf6c7-3d79-81fb-a547-000b2a9be5a9",
   "repository_base_commit": "459b3983701d912558b70a8f1e8a3a341eab4566",
   "expected_files": 867,
-  "recovered_files": 103,
+  "recovered_files": 203,
   "complete": false,
   "qualification": "Source recovery only; no system qualification or runtime execution.",
   "files": [
@@ -711,502 +711,702 @@
     {
       "path": "hyba_data/euclid/quantum_core.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817babfcc7e1fafa618a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "3b37dae770658d9f97430955baa073afbd40460d7c82d2052b06b51efc642cc4",
+      "size_bytes": 20855
     },
     {
       "path": "hyba_data/euclid/regenerator.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981959ae0f3bc21267c63",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "798557f103b2ba8e1b407bd5acb201b7f9020bf0c84bf04b16de4d396eaae68f",
+      "size_bytes": 8993
     },
     {
       "path": "hyba_data/euclid/reputation_recovery.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798136b710d41a0026cbc7",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "2e834b1476d10cf957d6e898a03d7022796b887b8aca4f6ab006ae3e822681cd",
+      "size_bytes": 1940
     },
     {
       "path": "hyba_data/euclid/scbc.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798137a7e3f0d020a88385",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7bd1e3439adbee8f34dc6fd1cd865ace1590ab1babe91c35f133ac23e871e840",
+      "size_bytes": 17509
     },
     {
       "path": "hyba_data/euclid/scbc_hardened.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c380bbc85c2e93c292",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "10d64b38a342e0b4af20285660439a2f07140fb18c048d4357bf659e1890809a",
+      "size_bytes": 14832
     },
     {
       "path": "hyba_data/euclid/schema_negotiation.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798100a6f5f7025c493c24",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "cdb510bf282f1c55cf07f7540dc3202aee7bdb7f5e1c64202df79e26247066e6",
+      "size_bytes": 5326
     },
     {
       "path": "hyba_data/euclid/simulation.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814d8be2d51b1eaea387",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e1f86cf557dd280ada02a9877f96b5f0463db43fc66472a1ff5cc7813b6cc999",
+      "size_bytes": 3606
     },
     {
       "path": "hyba_data/euclid/staging_stubs.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798121a7d8eacd6414ce60",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "a3b4a59493edcf7722354dfaecde958884151b06040fd89fed1c39ab9203506a",
+      "size_bytes": 1224
     },
     {
       "path": "hyba_data/euclid/startup_orchestrator.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981008379e6b527f6d162",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "3860fc2651e88ff6f48f39a6e3f42d6838fdead20923b05d236b8fe1b39af631",
+      "size_bytes": 10795
     },
     {
       "path": "hyba_data/euclid/subsystem_registry.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798104bbdfc131875e9a69",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7156929f68cc1fc5041e2f031ce107ff8ac52174d938d0de1d95bf83effa0eb4",
+      "size_bytes": 3554
     },
     {
       "path": "hyba_data/euclid/task_orchestrator.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c68cd8d30aaf0d0b31",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "c1a74722314d53d42c1905bf1f1a2ee60232df6a7a4b3b58c38dacdb5c270dda",
+      "size_bytes": 28250
     },
     {
       "path": "hyba_data/euclid/telemetry_bridge.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d7bf60d1023bd1baba",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ba2d95c75deb94477d8d341263b4d98769529cbffc66e8179bb6461c1cccd9f1",
+      "size_bytes": 1206
     },
     {
       "path": "hyba_data/euclid/test_euclid_delegation.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798152a5d1c95f76197ed1",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1c0fbbd21a58f2e783decd4a54728739f0ce0e14bac9a644155794150a68ce12",
+      "size_bytes": 28931
     },
     {
       "path": "hyba_data/euclid/test_salamander_regeneration.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814ba655fa4c05f652f3",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f11d9b08d66f961d0319448df5d84582af15d152c826fa52efd7d4a967931ecf",
+      "size_bytes": 3915
     },
     {
       "path": "hyba_data/euclid/unsolved_problem_test.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798107be40c4e5233cb510",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "feec6970a553d3ee6890080f5cd75efc839a91327f1533e02142fa7919412e6e",
+      "size_bytes": 9488
     },
     {
       "path": "hyba_data/euclid/v4_planetary_stack.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798198a953d736c0743073",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "dd8613284bc27ef7b286ff08a253deca85d52c5d4f02226aaf1b9811a6d4f5f6",
+      "size_bytes": 10149
     },
     {
       "path": "hyba_data/euclid/zk_chronicle.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79812c906befbf33a1fd0b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "8b6492321773535c6bc84a166385a434cab9c476b5c47b8f521f2610baa67c8f",
+      "size_bytes": 2345
     },
     {
       "path": "hyba_data/frontend/Dockerfile.azure",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798150babcefc2647220f0",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1d0cdd12265f13afafd8d7ee91860906e1c82d8be9772861ff3bd93dba99e3c1",
+      "size_bytes": 2199
     },
     {
       "path": "hyba_data/frontend/app/admin/billing/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981fb9996c466b2acccae",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7a60a8bc360ecece0e9966c7fc854aa03980d11ee322efa754449da2e8cf7bdf",
+      "size_bytes": 4360
     },
     {
       "path": "hyba_data/frontend/app/admin/clients/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c58fa6f6eec54dd02d",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1342ac6276c74c6d1517b0ad146640a629cba468cf8b6dbadf6822d92bfd8b6c",
+      "size_bytes": 4313
     },
     {
       "path": "hyba_data/frontend/app/admin/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798170a46deb47d6a96e45",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "197d93beed1c9563e6ceee34b2c3e2cbdc7c58e4b7b753e9c0f826e6fe726328",
+      "size_bytes": 5718
     },
     {
       "path": "hyba_data/frontend/app/admin/products/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79818aa8fec9564cbf30c7",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "edb731d65272c8769f6d10d68b5d40a5934d118d04e22167bb43a9ea29dd6dcc",
+      "size_bytes": 5262
     },
     {
       "path": "hyba_data/frontend/app/admin/sales/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798157bca3f02a53c0a843",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "5dbb6f48e70978db51a95d1417df15c625b842a4b5da68689b04b7df4869a1c0",
+      "size_bytes": 4146
     },
     {
       "path": "hyba_data/frontend/app/admin/users/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981969c8de40aa7ad4781",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "be884b8285e3095527522ab51239863c45666695771096320b4451a7fc6451db",
+      "size_bytes": 11702
     },
     {
       "path": "hyba_data/frontend/app/al-haras/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79816eb9eecf0778f0dcde",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f3327e49becf89c77c5e93810d8142ed2f9bb380b63365d85ef7489c7c791ebe",
+      "size_bytes": 12905
     },
     {
       "path": "hyba_data/frontend/app/api/[[...path]]/route.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798146833acb987920fee4",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7c4dfd5e77456ef9f8ed1eb87fef1dd7ac9e5f5651c1ba91b1a2bb93755e8eef",
+      "size_bytes": 7835
     },
     {
       "path": "hyba_data/frontend/app/api/auth/login/route.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79818d9e1ad1f1086be3b9",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "492d83ef9a84ade2a537002ec4090b717da810168aeaa71cbac8da6270ee0b00",
+      "size_bytes": 4200
     },
     {
       "path": "hyba_data/frontend/app/api/auth/me/route.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798104953ad2dfb1fa527b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "4e61884a6c986d7733dbb3a83af6abf087236fb9778c264b2e917123fb5b386f",
+      "size_bytes": 1337
     },
     {
       "path": "hyba_data/frontend/app/dashboard/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981098375d15bf40af346",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ebfbe55e5d04906c9383c143bc41544cd2ae873db3e7b5c479cf15184e021432",
+      "size_bytes": 2993
     },
     {
       "path": "hyba_data/frontend/app/globals.css",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798196b12ae8c9b8a1216c",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e741e7529e26fdc4d2c8b36fed0f53d051cbf4e4b661c6d95887bd48c85f9e4d",
+      "size_bytes": 11230
     },
     {
       "path": "hyba_data/frontend/app/home/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981599df1f04042e013b9",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f3c8bd3e23fc77d7ea30f7438173de3914b8babd6c564bdbda763779306ea58d",
+      "size_bytes": 4765
     },
     {
       "path": "hyba_data/frontend/app/layout.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798187bb5cc19fbf52c3ad",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "db8ac9e8c86078b445c12ae17b21bbb55916c72a2a0047d9df9227361ba589ee",
+      "size_bytes": 1103
     },
     {
       "path": "hyba_data/frontend/app/login/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79815581b4da75a6e8c9ef",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "01556bf9e768b2da6191cf785d58906113429db7fe5bc95901161fcd1d03b33f",
+      "size_bytes": 6592
     },
     {
       "path": "hyba_data/frontend/app/millennium/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981369d03fd6ed166cac5",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "067dfbdb19691fb92468fd86d1d1ab0993bf2ecd7c46356aff43ad4966ab2917",
+      "size_bytes": 5159
     },
     {
       "path": "hyba_data/frontend/app/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798153ad8aea5fe5fb7ff4",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ae31acb4179ba179f36eb4ef994ca190d591211dcaafcbcedd84c10f195a575d",
+      "size_bytes": 5037
     },
     {
       "path": "hyba_data/frontend/app/research/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798194b034e459760a1f44",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "4d8caaf25b6a8e6f090b90849fcc0154ec190d051596ba5338dc8540ff16be04",
+      "size_bytes": 2634
     },
     {
       "path": "hyba_data/frontend/app/security/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814eaa57e06500998258",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1b01a01dd833bdf23c6a2238c8042ba3719778621101625176a15bc14aa4f209",
+      "size_bytes": 4293
     },
     {
       "path": "hyba_data/frontend/app/telemetry/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a19c37d9cf125c381e",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "5b6e79695f2108bfbb9d77f524e8f027e9b850f000211e8e5f2453dcb0ad0cd9",
+      "size_bytes": 3185
     },
     {
       "path": "hyba_data/frontend/app/themis/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79818c82a9d1c28d018be5",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "3b7fa7130e5e928fa37a74f6bc0049f8e042ec09e9dd9c1d5c9a65266620d057",
+      "size_bytes": 5314
     },
     {
       "path": "hyba_data/frontend/app/workbench/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981968698f52785abc170",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "12a5d689965532fc63a3f0ef8191d394bf202b57fb758f47de22938c3e2419b9",
+      "size_bytes": 8972
     },
     {
       "path": "hyba_data/frontend/components.json",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810ba845c625cb012231",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "5521c2c09b0bcab7230b2f9716e0fd1e74b704cacc8a5b685b9f84c6ba915b77",
+      "size_bytes": 443
     },
     {
       "path": "hyba_data/frontend/components/AIAssistant.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817f9adaf3a162dd1d8b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "054e4a1f3238e738a9eb70831d8b06068fa7ed438a2c80feab501f149a253075",
+      "size_bytes": 17742
     },
     {
       "path": "hyba_data/frontend/components/ErrorBoundary.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817b912ff8edcc1555b3",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e7f8a57d4d5c6af92afa689a3f82c768e0e76538eab10b1eec667e8d90510590",
+      "size_bytes": 2701
     },
     {
       "path": "hyba_data/frontend/components/Nav.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79811e9555c0db3a2336d8",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "16d5416f20379224e05bdd4ae5d7b5678ff0b55f618e2e95e9482e21f358d962",
+      "size_bytes": 3550
     },
     {
       "path": "hyba_data/frontend/components/mining/Dashboard.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d3b4a4db559da74bbb",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "539713e41c404a0def2f723b679ef5add109ad4dfb664a249ecbc44a1c13f60e",
+      "size_bytes": 113341
     },
     {
       "path": "hyba_data/frontend/components/ui/accordion.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981f9ab02dbe7888e8def",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "a14fb150053d59320abb4d609a68e0d8e080e9cb51d867009d1bb61f7ca45cd7",
+      "size_bytes": 1629
     },
     {
       "path": "hyba_data/frontend/components/ui/alert-dialog.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814191d2dfc366debf54",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "6e0d40a7bdf2e8a18fbf4751cf2e9dcbd6c505c390d979ee9efdbf66e9cd9de6",
+      "size_bytes": 3475
     },
     {
       "path": "hyba_data/frontend/components/ui/alert.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79819fa8accdd31326a76a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "c5baf27fb6a4bf130236fa0f336c21084fee192e8215bb6b20c87436c27f3b38",
+      "size_bytes": 1335
     },
     {
       "path": "hyba_data/frontend/components/ui/aspect-ratio.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981ab9b1ce8efde6986aa",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "589c299c27e2ad99c2e96c9a90e6ad49051cf99fc88f0c42a13465177379186f",
+      "size_bytes": 154
     },
     {
       "path": "hyba_data/frontend/components/ui/avatar.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981cc9df1db7d9a4e3f94",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "703fb6852952bd039b68dc494c004eee1d835fa12647b851722ab9b6b3058b32",
+      "size_bytes": 1043
     },
     {
       "path": "hyba_data/frontend/components/ui/badge.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981ddb330f9498fd9a0c2",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "380dcda78ff8fdd80c82b89cb7dd38ffd84c355735fc8f16300ff647e15988aa",
+      "size_bytes": 990
     },
     {
       "path": "hyba_data/frontend/components/ui/breadcrumb.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798110a58eeb047d0765af",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "bb43d4d07119e0cf1a458feac2c9cfb3946b33813b12e11e576d9eb7dcddf189",
+      "size_bytes": 2269
     },
     {
       "path": "hyba_data/frontend/components/ui/button.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798153828bd0a38263279f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "142f7c20fc514464ff6e372ea86cb2d99fb97f1fc09631609617dcf2158eee92",
+      "size_bytes": 1676
     },
     {
       "path": "hyba_data/frontend/components/ui/calendar.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981deb9ecc7aab068086d",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "fd1ce6855bf96c86b21e0e2b81fd2663f94f54de552c84214cbf682070223b32",
+      "size_bytes": 6981
     },
     {
       "path": "hyba_data/frontend/components/ui/card.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79811f88c3ccc71b03eb6d",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "8ab6f42e722e9c51752ce2f14aabb2696bddc0b6818041fb8f313f670955c2c4",
+      "size_bytes": 1440
     },
     {
       "path": "hyba_data/frontend/components/ui/carousel.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814dbdf5cef0eba1ff70",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "518ad601c32e7585f9d50972968af938a9aea7686b0af1224cb153a302a6325a",
+      "size_bytes": 4825
     },
     {
       "path": "hyba_data/frontend/components/ui/chart.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79813ea3d7ffe2671ec1aa",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "cf5dd570212ecbdcb2165aae513f0456cd778f42044f6a3905b518d35ba78eb3",
+      "size_bytes": 8627
     },
     {
       "path": "hyba_data/frontend/components/ui/checkbox.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981048043c88bbc1d467a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "75745849f51ef6e716b2986e867701dc7ccab747c9191ffa4581893a0779228c",
+      "size_bytes": 894
     },
     {
       "path": "hyba_data/frontend/components/ui/collapsible.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c48ce6d2236cf66b66",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f4cdd104de29928bfcd40b865c7d08eed9157a537fbb8b5e6d0921f02b63cc04",
+      "size_bytes": 329
     },
     {
       "path": "hyba_data/frontend/components/ui/command.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814b99d2d37b4634a0a6",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "79dc2aada4c1a7d92809b5a7611779212bf9518c5f0c5451587b6d18cb6a8933",
+      "size_bytes": 3907
     },
     {
       "path": "hyba_data/frontend/components/ui/context-menu.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814dbc55e11f1c8d2fc5",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "a17b59e3ca075a61ecd260a99b397a4f2125c2931a944bd8f59b5dc605212868",
+      "size_bytes": 6189
     },
     {
       "path": "hyba_data/frontend/components/ui/dialog.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810f8c34ee9e576dbdd1",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "50a7cc4ae5ce0f2527662ed9742d35b8c4933d1629a2740b26890793aee00742",
+      "size_bytes": 3228
     },
     {
       "path": "hyba_data/frontend/components/ui/drawer.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79813c85b9cf9d50fe2bdb",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "3d2dce97d3f6bc5dfa887e87c6688228298526bfdc29a28f2edbd6c1dc2eb47a",
+      "size_bytes": 2359
     },
     {
       "path": "hyba_data/frontend/components/ui/dropdown-menu.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810f8680dffc13a36d9f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f9c5772d2cef683672a1fc98e6fcd259efacbb65297441f712de70aff52e569a",
+      "size_bytes": 6359
     },
     {
       "path": "hyba_data/frontend/components/ui/form.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981ee9032d6f3e745204c",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e39d46490656fdb98fb1f00ebf30829ef97856be71860819ec2d2fd21d908e26",
+      "size_bytes": 3135
     },
     {
       "path": "hyba_data/frontend/components/ui/hover-card.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79812e8956f6e7f9ee0e78",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "9dc14e83592cb894d502204934727bd05a902438c4b3bcd0c35268c635b10f78",
+      "size_bytes": 1123
     },
     {
       "path": "hyba_data/frontend/components/ui/input-otp.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798115a50cfe2115a54b78",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "375666810474070f1045124361147bb1c2269bf4c17580bcc6a1c86e82fb0123",
+      "size_bytes": 1823
     },
     {
       "path": "hyba_data/frontend/components/ui/input.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79818b8fb0f69dc085fde8",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7c9f0c756530ae1dbe3b1424f09e32e3f54323826b2f2d817b13c865f96309ad",
+      "size_bytes": 688
     },
     {
       "path": "hyba_data/frontend/components/ui/label.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981449ab7e72120bcc8ba",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "416c4a0cf9f53a20f877d47250eafb5957fd991c0f334e104e3b9c328519e907",
+      "size_bytes": 539
     },
     {
       "path": "hyba_data/frontend/components/ui/menubar.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a1b64bef388acf036d",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "2ea81524ac61af1ba565ad309cd775a5a9a947d9d35d9e768be2a017c6664558",
+      "size_bytes": 6888
     },
     {
       "path": "hyba_data/frontend/components/ui/navigation-menu.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b69832dc3373750431",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "5e4efd6acb3836f19205aeca1373da81cf48c35be6fedd62326d704c2ee2a921",
+      "size_bytes": 4299
     },
     {
       "path": "hyba_data/frontend/components/ui/pagination.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c68b56f018a06a4704",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1d519fc3ba1c8c6cf7f2d30c98739ecba2fa7af35cbc024d6793785e7a6d65c8",
+      "size_bytes": 2322
     },
     {
       "path": "hyba_data/frontend/components/ui/popover.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a19e71d94b10ab036f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "26a602ec7f6e17a4d26a57e2cb07dd124b834dacfaa0f885568d075c4bcca797",
+      "size_bytes": 1230
     },
     {
       "path": "hyba_data/frontend/components/ui/progress.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798188ac34f9c69be3bcb0",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1ad2808d51c365f04f23a4e985b03274dcc30735d74db68e1f78332a6533859c",
+      "size_bytes": 667
     },
     {
       "path": "hyba_data/frontend/components/ui/radio-group.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814f9efbca8e851878fc",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "63ae480638880a198a2e0ee48a5cd024af165d1c3631224c9ea33767b0511690",
+      "size_bytes": 1147
     },
     {
       "path": "hyba_data/frontend/components/ui/resizable.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981e991dcf6f86495bffa",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "4e74fb31b8321012570554dc8c55a58aacf1adcced2fdc43085c67ff96ce9773",
+      "size_bytes": 1570
     },
     {
       "path": "hyba_data/frontend/components/ui/scroll-area.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798165a8eaf3e2b8cee780",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d932a4919d0c2ca50af440cab3e8c8b8ba1dbc2b3bf7583cdfb7a9c8e286e62d",
+      "size_bytes": 1376
     },
     {
       "path": "hyba_data/frontend/components/ui/select.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b7acc3dd94e39b5051",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "765e3a7517a2c4d9a91c3b24707c9a7f70fbba0a6ae044215524d3476fde0960",
+      "size_bytes": 4783
     },
     {
       "path": "hyba_data/frontend/components/ui/separator.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981f6a741cb21fc3880cd",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "79d743646ce35e62bfc4c548e40e3c1049f2a779263c577c959505f05dbb7abe",
+      "size_bytes": 614
     },
     {
       "path": "hyba_data/frontend/components/ui/sheet.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79813485dbdf0b5bcaa3bb",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "33f27d1b55925dbc354d0a61b0cbc6f977352da13f4df519f06e5b5bd9ed2d5c",
+      "size_bytes": 3549
     },
     {
       "path": "hyba_data/frontend/components/ui/sidebar.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a3ba7fea39a1a51ccf",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7328376c75a954416f621da5e7eb62a9707ecc2f6daa399bfa12d31c4a50bdbb",
+      "size_bytes": 20660
     },
     {
       "path": "hyba_data/frontend/components/ui/skeleton.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79811fbce0c1fcb69a02dd",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "78dad1ec71e4fc2c0060dd244ee68b2f9e7fc42ae680dab4f310e2ad8f17b741",
+      "size_bytes": 225
     },
     {
       "path": "hyba_data/frontend/components/ui/slider.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b29f0bc68b9bb39515",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "23ddaf7f6dff26dfe244ce9a7462c07cbc06adc8dda3bc26673f50af93f22939",
+      "size_bytes": 928
     },
     {
       "path": "hyba_data/frontend/components/ui/sonner.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d6a44ed3848d4f5eb7",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "309c182402be92fd03d3955671d7c494c5400556eaf2bf4da02ea45be1d660c3",
+      "size_bytes": 797
     },
     {
       "path": "hyba_data/frontend/components/ui/switch.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814c8ffcc25f5e19b153",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "684f7079fad73f6115b65a1eb046f13395b71f7cca3c2e984e4bc6faf746ee5f",
+      "size_bytes": 1039
     },
     {
       "path": "hyba_data/frontend/components/ui/table.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981de976bf6c9eeb1d35f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "301509bb8337184f1b299cb15b8d4f8ec8f0d3bbc17a2ffdf33ff58f7eaa444e",
+      "size_bytes": 2231
     },
     {
       "path": "hyba_data/frontend/components/ui/tabs.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810f9a49e807ad1d4bec",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "4e2ad38ef4aa6861322b53b86c959eaf7d4f12a61bffa344980574f3da36104e",
+      "size_bytes": 1543
     },
     {
       "path": "hyba_data/frontend/components/ui/textarea.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981429542f3cad624c950",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "6b2c6dd8023a32be3b52af960d7615018488c5601fb05cec97ed76d1141ae2f4",
+      "size_bytes": 585
     },
     {
       "path": "hyba_data/frontend/components/ui/toast.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981fe86b0f549843a534b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1ac5ca58637b6315c987bcec790ffe787c26bfd054aaa4df7d1b608cc7da196f",
+      "size_bytes": 3843
     },
     {
       "path": "hyba_data/frontend/components/ui/toaster.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981198c4cf0f3bdb41405",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "006be21d5f7e97f46ba1b603a65a19e076c244c6feae60cc7697dbee2bd41204",
+      "size_bytes": 788
     },
     {
       "path": "hyba_data/frontend/components/ui/toggle-group.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a48356f76105819158",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "58cf53b4994a89b18ba900dc4259b7174bf393ade2f895bd36a1fec8a4d9e3fa",
+      "size_bytes": 1282
     },
     {
       "path": "hyba_data/frontend/components/ui/toggle.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798175881fe15618306e69",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "8c563045f231bfa2ca8cde62085f00c0600fa558a60d8c14ea3a1cb5c9c644c5",
+      "size_bytes": 1324
     },
     {
       "path": "hyba_data/frontend/components/ui/tooltip.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d7bacad0f895c80d98",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "35239d8f3bfa731947d6ce8c07a49fc4f8a1bec3844c547ab8f32f26883896ac",
+      "size_bytes": 1141
     },
     {
       "path": "hyba_data/frontend/contexts/AIContext.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c39b81c7e633b50cbf",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f7fb1b2cb1ecb8e7ab24554ede20636e861717f2452206c3b851a15c43c3430f",
+      "size_bytes": 6955
     },
     {
       "path": "hyba_data/frontend/contexts/AuthContext.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798124a966d1c8e3aea406",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ca58c7e6058db5af9baf25ef48819c7c4f0992d45a4dd95a83b442aae018e2b9",
+      "size_bytes": 4502
     },
     {
       "path": "hyba_data/frontend/hooks/use-mobile.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817ca0e5f3565611db07",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "a136217739e79f9d02440e711b9bd1abb6adf60f1a83b45a39a009a09568ad1c",
+      "size_bytes": 545
     },
     {
       "path": "hyba_data/frontend/hooks/use-toast.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981abb083e38e2622f072",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "767e0227c5c9406b5d00e25a57c6d01e9f6e083d36e803ccb0a5e260992a5225",
+      "size_bytes": 3085
     },
     {
       "path": "hyba_data/frontend/infrastructure/configmap.yaml",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981949abadb5ae20d46a8",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "291a223261bde93b857749f66e0caa42b3f280546ddfce54899e2b7f7b40619f",
+      "size_bytes": 753
     },
     {
       "path": "hyba_data/frontend/infrastructure/deployment.yaml",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798148bfdcec651f698fe7",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "cc686eb4fc8d29e1d1bbbfe0b80e91128d14f473fc693bc08bcf92f091add59d",
+      "size_bytes": 3392
     },
     {
       "path": "hyba_data/frontend/infrastructure/hpa.yaml",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798123b044fa70dcab85dc",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "c828275e54598f26fccb0ee06db35f88f60f23439aacc60a39dbec9a93d83e47",
+      "size_bytes": 900
     },
     {
       "path": "hyba_data/frontend/infrastructure/ingress.yaml",

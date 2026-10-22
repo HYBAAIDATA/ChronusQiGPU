@@ -1,0 +1,76 @@
+# =============================================================================
+# Dockerfile.azure
+# Multi-stage build optimised for Azure Container Apps / AKS.
+#
+# Build:
+#   docker build -f Dockerfile.azure -t hyba-frontend .
+# Run:
+#   docker run -p 3000:3000 --env-file .env.production hyba-frontend
+# =============================================================================
+
+# ---- Stage 1: dependency installation ----------------------------------------
+FROM node:20-alpine AS deps
+
+# Install OS-level build dependencies for native modules (e.g. sharp)
+RUN apk add --no-cache libc6-compat
+
+WORKDIR /app
+
+# Copy lockfiles first for better layer caching
+COPY package.json yarn.lock ./
+
+RUN yarn install --frozen-lockfile --prefer-offline
+
+# ---- Stage 2: build ----------------------------------------------------------
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy dependencies from previous stage
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy source
+COPY . .
+
+# Use Azure-optimised Next.js config
+COPY next.config.azure.js ./next.config.js
+
+# Set build-time environment (non-sensitive)
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1
+
+RUN yarn build
+
+# ---- Stage 3: production runtime ---------------------------------------------
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000 \
+    HOSTNAME=0.0.0.0
+
+# Install dumb-init for proper PID 1 signal handling
+RUN apk add --no-cache dumb-init
+
+# Create a non-root user
+RUN addgroup --system --gid 1001 nodejs \
+ && adduser  --system --uid 1001 nextjs
+
+# Copy only what the standalone server needs
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static   ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public         ./public
+
+USER nextjs
+
+EXPOSE 3000
+
+# Healthcheck – polls the built-in Next.js health endpoint
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget -qO- http://localhost:3000/api/health || exit 1
+
+# Use dumb-init to forward signals correctly
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+CMD ["node", "server.js"]
