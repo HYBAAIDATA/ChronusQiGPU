@@ -37,16 +37,17 @@ class StabilizerDomainError(ValueError):
 
 
 def _row_str(x: int, z: int, n: int) -> str:
-    return "".join(
-        "I"
-        if ((x >> q) & 1) == 0 and ((z >> q) & 1) == 0
-        else "X"
-        if ((x >> q) & 1) == 1 and ((z >> q) & 1) == 0
-        else "Z"
-        if ((x >> q) & 1) == 0 and ((z >> q) & 1) == 1
-        else "Y"
-        for q in range(n)
-    )
+    # Fill identity positions in C, visiting only nonidentity Pauli bits in
+    # Python. This preserves the full exact string without n large-int shifts
+    # per sparse row (the console's 10,000-wire states are predominantly sparse).
+    letters = bytearray(b"I" * n)
+    remaining = (x | z) & ((1 << n) - 1)
+    while remaining:
+        bit = remaining & -remaining
+        qubit = bit.bit_length() - 1
+        letters[qubit] = ord("Y" if x & bit and z & bit else "X" if x & bit else "Z")
+        remaining ^= bit
+    return letters.decode("ascii")
 
 
 def _symplectic_product(x1: int, z1: int, x2: int, z2: int) -> int:

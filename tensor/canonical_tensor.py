@@ -9,6 +9,11 @@ from __future__ import annotations
 
 from kellogg.canonical_tensor import (
     CanonicalKelloggTensor,
+    PerLaneScoreLog,
+    FutureSuperpositionEntry,
+    SuperpositionHoldLRU,
+    QuantumArsenal,
+    score_600_lanes,
     CoverageProofCertificate,
     EstateChunk600,
     KelloggMotherTensor,
@@ -21,6 +26,11 @@ from kellogg.canonical_tensor import (
 )
 
 __all__ = [
+    "PerLaneScoreLog",
+    "FutureSuperpositionEntry",
+    "SuperpositionHoldLRU",
+    "QuantumArsenal",
+    "score_600_lanes",
     "CanonicalKelloggTensor",
     "CoverageProofCertificate",
     "RepresentationChoice",
@@ -32,4 +42,3 @@ __all__ = [
     "build_600_partition",
     "kellogg_state_600",
 ]
-

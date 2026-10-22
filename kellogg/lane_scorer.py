@@ -22,26 +22,18 @@ from __future__ import annotations
 
 import collections
 import hashlib
-import json
 import math
-import struct
 import time
-from dataclasses import asdict, dataclass, field
-from typing import Any, Mapping, Sequence, Tuple
+from dataclasses import dataclass, field
+from typing import Any, Mapping, Sequence
 
 from chronus.exact_geometry import (
-    EstateChunk600,
     hendrix_grover_order,
 )
 from kellogg.ansatz_v3 import (
-    ANSATZ_V3,
     FUTURES,
     LANES,
     PHI_INV,
-    TAU,
-    AnsatzV3,
-    RicciReconciliationTrace,
-    load_ansatz,
 )
 from kellogg.mother_tensor import KelloggMotherTensor
 
@@ -101,9 +93,13 @@ class SuperpositionHoldLRU:
     def __init__(self, max_futures: int = FUTURES) -> None:
         self.max_futures = max_futures
         # Ordered dictionary: future_id -> FutureSuperpositionEntry
-        self._futures: collections.OrderedDict[str, FutureSuperpositionEntry] = collections.OrderedDict()
+        self._futures: collections.OrderedDict[str, FutureSuperpositionEntry] = (
+            collections.OrderedDict()
+        )
 
-    def put(self, future_id: str, probability: float, metadata: Mapping[str, Any] | None = None) -> None:
+    def put(
+        self, future_id: str, probability: float, metadata: Mapping[str, Any] | None = None
+    ) -> None:
         if future_id in self._futures:
             self._futures.move_to_end(future_id)
         elif len(self._futures) >= self.max_futures:
@@ -153,7 +149,7 @@ class QuantumArsenal:
     @staticmethod
     def quantum_walk_reweight(lane_id: int, steps: int = 8, seed: int = 1337) -> tuple[float, str]:
         """Hadamard coined walk over 600-cycle: returns probability and deterministic replay hash.
-        
+
         Substrate-agnostic: exact same hash on emulator, CPU, and Chronus.
         """
         # Exact integer state vector evolution on cycle of 600
@@ -164,7 +160,9 @@ class QuantumArsenal:
         # 8-step Hadamard evolution simulation with exact arithmetic
         # Coin H = 1/sqrt(2) [[1, 1], [1, -1]]
         # Functorial shift: |pos, L> -> |pos - stride, L>, |pos, R> -> |pos + stride, R>
-        weight = 0.5 + 0.5 * math.cos(2.0 * math.pi * ((pos * steps * stride) % LANES) / float(LANES))
+        weight = 0.5 + 0.5 * math.cos(
+            2.0 * math.pi * ((pos * steps * stride) % LANES) / float(LANES)
+        )
 
         # Replay hash proving identical result across execution substrates
         hash_payload = f"walk:lane={lane_id}:steps={steps}:seed={seed}:stride={stride}:pos={pos}"
@@ -183,7 +181,7 @@ class QuantumArsenal:
             return 0.0
         delta = barrier_height * PHI_INV
         velocity = 0.25
-        exponent = - (math.pi * (delta ** 2)) / (2.0 * velocity)
+        exponent = -(math.pi * (delta**2)) / (2.0 * velocity)
         p_tunnel = 1.0 - math.exp(exponent)
         return p_tunnel
 
@@ -196,11 +194,12 @@ class QuantumArsenal:
         if not literal_history:
             return 1.0 / LANES
         # Grounding: use count of literal successes in history
-        success_count = sum(1 for h in literal_history if getattr(h, "is_valid", False) or h is True)
+        success_count = sum(
+            1 for h in literal_history if getattr(h, "is_valid", False) or h is True
+        )
         total = max(len(literal_history), 1)
         ratio = success_count / total
         # Excitation gap scaling
-        g = 1.0  # critical point
         gap = 4.0 * math.sin(math.pi / (2.0 * LANES))
         return float(gap * (1.0 + ratio))
 
@@ -217,7 +216,7 @@ class QuantumArsenal:
         # Amplitude after 1 iteration: sin(3*theta)
         amplitude = math.sin(3.0 * theta)
         # Modulated by vertex rank
-        weight = float((amplitude ** 2) * (1.0 + (vertex_rank % 32) / 64.0))
+        weight = float((amplitude**2) * (1.0 + (vertex_rank % 32) / 64.0))
         return weight
 
 
@@ -235,6 +234,7 @@ def score_600_lanes(
 
     scores_list: list[PerLaneScoreLog] = []
     raw_scores: list[float] = []
+    max_chunk_size = max((chunk.size for chunk in mother_tensor.chunks), default=0)
 
     for l_idx in range(LANES):
         chunk = mother_tensor.chunks[l_idx]
@@ -257,10 +257,12 @@ def score_600_lanes(
         topo_factor = math.exp(-abs(topo_kappa))
 
         # 5. Geometric: 11D bijection position and estate allocation
-        geo_factor = float(chunk.size) / float(mother_tensor.max_chunk_size or 1)
+        geo_factor = float(chunk.size) / float(max_chunk_size or 1)
 
         # 6. Quantum-ext: Hadamard walk + clamped Hendrix amplitude
-        qw_prob, replay_hash = arsenal.quantum_walk_reweight(lane_id=l_idx, steps=8, seed=order_seed)
+        qw_prob, replay_hash = arsenal.quantum_walk_reweight(
+            lane_id=l_idx, steps=8, seed=order_seed
+        )
         hendrix_amp = arsenal.hendrix_clamped_reweight(lane_id=l_idx, order_seed=order_seed)
         quantum_ext = 0.5 * qw_prob + 0.5 * hendrix_amp
 
@@ -271,15 +273,20 @@ def score_600_lanes(
 
         # Fusion under AnsatzV3 parametric weights
         fused_score = (
-            ansatz.w_predictive * p_pred
-            + ansatz.w_causal * c_causal
-            + ansatz.w_counterfactual * cf_regret
-            + ansatz.w_topological * topo_factor
-            + ansatz.w_geometric * geo_factor
-            + ansatz.w_quantum_ext * (quantum_ext + tunnel_boost + 0.1 * anneal_warm)
+            ansatz.intelligence_weights["predictive"] * p_pred
+            + ansatz.intelligence_weights["causal"] * c_causal
+            + ansatz.intelligence_weights["counterfactual"] * cf_regret
+            + ansatz.intelligence_weights["topological"] * topo_factor
+            + ansatz.intelligence_weights["geometric"] * geo_factor
+            + ansatz.intelligence_weights["quantum_ext"]
+            * (quantum_ext + tunnel_boost + 0.1 * anneal_warm)
         )
 
-        entropy_delta = ricci_trace.trace[-1].entropy - ricci_trace.trace[0].entropy if ricci_trace.trace else 0.0
+        entropy_delta = (
+            ricci_trace.trace[-1].entropy - ricci_trace.trace[0].entropy
+            if ricci_trace.trace
+            else 0.0
+        )
 
         is_complete = all(
             v is not None

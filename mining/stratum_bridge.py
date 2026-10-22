@@ -95,9 +95,15 @@ def _load_runtime_config() -> dict:
     try:
         with open(_runtime_config_path(), "r", encoding="utf-8") as fh:
             raw = json.load(fh)
-        return raw if isinstance(raw, dict) else {}
+        from chronus.mla1517_platform.python import runtime_config
+        if not isinstance(raw, dict):
+            return {"_policy_error": "invalid_persisted_config"}
+        try:
+            return runtime_config.validate(raw)
+        except (TypeError, ValueError, OverflowError):
+            return {"_policy_error": "invalid_persisted_config"}
     except (OSError, json.JSONDecodeError):
-        return {}
+        return {"_policy_error": "invalid_or_unavailable_config"} if os.path.exists(_runtime_config_path()) else {}
 
 
 def _config_live_submit_permits(host: str, port: int, worker: str) -> bool:
@@ -137,6 +143,32 @@ def _configured_target_hs() -> float:
     if not 0.0 <= target <= 1e19:  # mirrors runtime_config.HASHRATE_CEILING_HS
         return 0.0
     return target
+
+
+async def _pace_configured_work(total_hashes: int, started_at: float) -> float:
+    """Pace cumulative executed work, including full-power mode, under policy.
+
+    Target zero removes a lower operator target, never the 10 EH/s outer cap.
+    Re-read every bounded sleep so reductions apply to an ongoing wait too.
+    This is rate control, not a throughput or deterministic share-time claim.
+    """
+    while True:
+        cfg = _load_runtime_config()
+        if cfg.get("_policy_error"):
+            raise PermissionError("invalid persisted hashrate policy; execution refused")
+        rate = cfg.get("hashrate") or {}
+        try:
+            ceiling = float(rate.get("ceiling_hs", 1e19))
+            target = float(rate.get("target_hs", 0.0))
+            if not 0 < ceiling <= 1e19 or not 0 <= target <= ceiling:
+                raise ValueError("invalid rate policy")
+        except (TypeError, ValueError, OverflowError):
+            raise ValueError("invalid persisted hashrate policy; execution refused")
+        effective = min(ceiling, target or ceiling)
+        delay = total_hashes / effective - (time.perf_counter() - started_at)
+        if delay <= 0:
+            return effective
+        await asyncio.sleep(min(delay, 30.0))
 
 
 _HEX_DIGITS = frozenset("0123456789abcdefABCDEF")
@@ -1064,17 +1096,10 @@ async def _amain(argv=None) -> int:
             # partitions across 32 disjoint lanes; other orders are single
             # traversal classes over the same space.
             lanes = 32 if order == "m32" else 1
-            # Deterministic hashrate: the configured target is the driver —
-            # the loop is throttled so measured rate converges to
-            # min(target, physical). 0 = unthrottled (physical rate).
-            target_hs = _configured_target_hs()
-            if target_hs > 0:
-                expected_elapsed = total_hashes / target_hs
-                pacing_delay = expected_elapsed - (time.perf_counter() - t_start)
-                if pacing_delay > 0:
-                    await asyncio.sleep(min(pacing_delay, 30.0))
-                now_elapsed = time.perf_counter() - t_start
-                avg_hps = total_hashes / now_elapsed if now_elapsed > 0 else 0.0
+            # Full power means the achievable rate below the configured cap.
+            target_hs = await _pace_configured_work(total_hashes, t_start)
+            now_elapsed = time.perf_counter() - t_start
+            avg_hps = total_hashes / now_elapsed if now_elapsed > 0 else 0.0
             if emitter is not None:
                 emitter.report(
                     hashrate_hs=res.measured_hps,

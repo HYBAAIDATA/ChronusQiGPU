@@ -154,6 +154,7 @@ MODULES: Tuple[ModuleEntry, ...] = (
     _m("lucas.core", "substrate", "Exact Lucas and Fibonacci numbers via fast doubling."),
     _m("lucas.ladder", "substrate", "Lucas ladder: the canonical scale sequence."),
     _m("lucas.pool", "substrate", "Lucas pool registry: the only legal shared import."),
+    _m("lucas.scale_model", "substrate", "Canonical Lucas capacity, precision and stride model."),
     _m("lucas.trace", "substrate", "tr(M^n) = L_n verification and bounding."),
     _m("unified_theory", "research", "Executable unified-theory foundation contract."),
     _m("july_compat", "compat", "Bounded compatibility adapters for retained July facades.",

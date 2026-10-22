@@ -91,7 +91,11 @@ def test_prop_8_previous_model_stays_loadable():
     rows = [{"petal_length": row["petal_length"], "setosa": row["setosa"]} for row in iris]
     platform.train("iris", rows, ["petal_length"], "setosa")
     flipped = [{**row, "setosa": 1 - row["setosa"]} for row in rows]
-    platform.retrain("iris", flipped)
+    held_out = [
+        {"petal_length": row["petal_length"] + 0.001 * (index + 1), "setosa": 1 - row["setosa"]}
+        for index, row in enumerate(rows)
+    ]
+    platform.retrain("iris", flipped, eval_rows=held_out)
     assert len(platform.models._history["iris"]) == 2
     assert platform.models._history["iris"][0].model.predict([[1.0]])[0] in (0, 1)
 
