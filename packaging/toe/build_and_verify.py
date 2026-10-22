@@ -54,8 +54,10 @@ EXCLUDED = ("system.py", "manifold_bridge.py", "hardened_unified_substrate.py", 
 RELEASE_TESTS = (
     "test_toe_machine.py",
     "test_toe_geometry.py",
-    "test_toe_learning_persistence.py",
+    "test_toe_standalone_learning.py",
 )
+# Standalone artifacts exclude THESEUS. Its durable-restart integration remains
+# in the source/deployment gates; it cannot be counted as a skipped artifact pass.
 # Explicit runtime regression scope, not the full repository test harness.
 UNIFIED_TESTS = (
     "test_toe_unified_tenancy.py",
@@ -63,7 +65,13 @@ UNIFIED_TESTS = (
     "test_toe_unified_authority.py",
     "test_toe_unified_atomic.py",
     "test_toe_unified_promotion.py",
-    "test_toe_unified_tenancy.py",
+    "test_toe_unified_production_guardrails.py",
+    "test_toe_unified_intelligence.py",
+    "test_toe_unified_ingest_digest.py",
+    "test_toe_unified_data_layer.py",
+    "test_toe_unified_operations.py",
+    "test_toe_unified_failclosed.py",
+    "test_toe_unified_security_fixes.py",
 )
 
 INSTALLED_UNIFIED_PROBE = r"""
@@ -376,8 +384,63 @@ print(json.dumps({
 """
 
 
-def installed_unified_check(py: Path, workdir: Path, label: str) -> Dict[str, Any]:
-    """Run the four hardening suites against installed artifacts, fail closed.
+INSTALLED_TIMEOUT_SECONDS = 300
+
+
+def isolated_environment() -> Dict[str, str]:
+    excluded = {"PYTHONPATH", "PYTHONHOME", "PYTEST_ADDOPTS", "PYTEST_PLUGINS",
+                "EUCLID_FOCUSED_SNAPSHOT"}
+    env = {key: value for key, value in _NO_CACHE.items() if key not in excluded}
+    env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
+    return env
+
+
+def observed_test_counts(junit: Path) -> Dict[str, int]:
+    """Retain observed counters even when their verdict fails validation."""
+    root = ET.parse(junit).getroot()
+    suites = [root] if root.tag == "testsuite" else root.findall("testsuite")
+    return {key: sum(int(suite.get(key, "0")) for suite in suites)
+            for key in ("tests", "failures", "errors", "skipped")}
+
+
+def validated_test_counts(junit: Path, test_files: tuple[str, ...]) -> Dict[str, int]:
+    """Require passing, nonempty collection from EVERY named suite, without skips."""
+    try:
+        root = ET.parse(junit).getroot()
+        suites = [root] if root.tag == "testsuite" else root.findall("testsuite")
+        counts = observed_test_counts(junit)
+        cases = [case for suite in suites for case in suite.findall("testcase")]
+        modules = {part for case in cases for part in case.get("classname", "").split(".")}
+        missing = sorted(Path(name).stem for name in test_files if Path(name).stem not in modules)
+        if (not suites or counts["tests"] <= 0 or counts["tests"] != len(cases)
+                or any(counts[key] for key in ("failures", "errors", "skipped"))
+                or any(case.find(tag) is not None for case in cases
+                       for tag in ("failure", "error", "skipped")) or missing):
+            raise ValueError(f"nonpassing/incomplete collection: counts={counts}, missing={missing}")
+        return counts
+    except (ET.ParseError, OSError, ValueError) as exc:
+        raise RuntimeError(f"invalid installed-test evidence: {exc}") from exc
+
+
+def validate_source_inputs() -> None:
+    """Check declared inputs before spending on builds; imports still qualify closure."""
+    required = ["LICENSE", "toe/__init__.py", "toe/bridge.py", "toe/machine.py",
+                "toe/problem.py", "toe/unified/tenancy.py", "toe/unified/checkpoint.py",
+                "kellogg/__init__.py", "kellogg/quantum_tensor.py",
+                "packaging/kellogg-tensor/build_and_verify.py",
+                "packaging/kellogg-tensor/pyproject.toml", "packaging/kellogg-tensor/README.md",
+                "packaging/toe/pyproject.toml", "packaging/toe/README.md",
+                "packaging/toe/OWNER_DECISIONS.md"]
+    required += ["tests/" + name for name in (*RELEASE_TESTS, *UNIFIED_TESTS)]
+    missing = sorted(name for name in required if not (REPO / name).is_file())
+    if missing:
+        raise RuntimeError("incomplete declared build inputs: " + ", ".join(missing))
+
+
+def _installed_test_check(py: Path, workdir: Path, label: str,
+                          test_files: tuple[str, ...], kind: str,
+                          artifacts: Optional[List[Path]] = None) -> Dict[str, Any]:
+    """Run the named hardening suites against installed artifacts, fail closed.
 
     Copy tests only, never package sources or repository conftest. Retain logs,
     counts and hashes outside the temporary venv even on a failed invocation.
@@ -395,7 +458,7 @@ def installed_unified_check(py: Path, workdir: Path, label: str) -> Dict[str, An
         "schema": "hyba.unified.installed-test-evidence/v1",
         "label": label,
         "git_sha": git_sha(),
-        "scope": "installed authority, atomic-import, promotion and tenant regressions",
+        "scope": f"installed {kind} suites; not full repository or production qualification",
         "started_at": datetime.now(timezone.utc).isoformat(),
         "test_files": list(test_files),
         "input_artifacts": [{"file": path.name, "sha256": sha256(path)} for path in (artifacts or [])],
@@ -404,8 +467,8 @@ def installed_unified_check(py: Path, workdir: Path, label: str) -> Dict[str, An
         "test_verdict": "failed_or_incomplete",
         "production_certification": "not_assessed",
         "limitations": [
-            "Four named fixture/in-process suites, not the full repository suite.",
-            "No independent tenant security audit, recovery, live-vendor or SLA qualification.",
+            "Named fixture/in-process suites, not the full repository suite.",
+            "No external tenant audit, live-write crash recovery, live-vendor or deployment-SLA qualification.",
         ],
     }
     try:
@@ -450,7 +513,8 @@ def installed_unified_check(py: Path, workdir: Path, label: str) -> Dict[str, An
                 timeout=INSTALLED_TIMEOUT_SECONDS
             )
         record["pytest_exit_code"] = result.returncode
-        record["counts"] = validated_test_counts(junit, test_files)
+        record["counts"] = observed_test_counts(junit)
+        validated_test_counts(junit, test_files)
         if result.returncode != 0:
             raise RuntimeError(f"installed pytest exited {result.returncode}")
         record["test_verdict"] = "passed"
@@ -609,6 +673,12 @@ def _qualify(args: argparse.Namespace, attempt: Dict[str, Any]) -> int:
                 "final publication requires the full repository suite",
                 "final publication requires registry prerequisites and trusted publishers",
             ],
+            "qualification_profile": "standalone-toe-with-kellogg",
+            "not_qualified": [
+                "THESEUS durable restart and full-platform model rollback",
+                "live-vendor deployment, tenant security audit and SLA/load qualification",
+            ],
+            "production_certification": "not_assessed",
             "artifact_verified": True,
             "owner_identity_approved": not blockers,
             # A local artifact build can never self-award publication readiness.

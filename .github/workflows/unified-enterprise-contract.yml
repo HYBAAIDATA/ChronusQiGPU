@@ -6,6 +6,9 @@ on:
       - "toe/**"
       - "kellogg/**"
       - "tests/test_toe_unified*"
+      - "tests/test_toe_package_qualification.py"
+      - "tests/test_toe_standalone_learning.py"
+      - "tests/test_toe_ci_evidence_report.py"
       - "tests/fixtures/toe_unified/**"
       - "scripts/verify_unified_enterprise.py"
       - "packaging/toe/**"
@@ -28,6 +31,8 @@ jobs:
         python: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
@@ -36,6 +41,8 @@ jobs:
           python -m pip install --disable-pip-version-check
           "numpy>=1.26,<3" "pytest>=7.4,<10" "sympy>=1.12,<2"
           "hypothesis>=6,<7" "pyyaml>=6,<7" "scikit-learn>=1.3"
+      - name: Verify qualification harness regressions
+        run: python -m pytest -q --noconftest tests/test_toe_package_qualification.py tests/test_toe_unified_installed_gate.py tests/test_toe_ci_evidence_report.py
       - name: Execute unified suites and retain evidence
         run: python scripts/verify_unified_enterprise.py
       - name: Upload evidence even when verification fails
@@ -56,6 +63,8 @@ jobs:
         python: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
@@ -69,3 +78,112 @@ jobs:
           path: packaging/toe/dist/
           if-no-files-found: error
           retention-days: 30
+
+  readable-evidence:
+    name: Commit-bound qualification evidence for PR review
+    needs: [verify, installed-artifacts]
+    if: >-
+      always() && github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      # This writer job NEVER checks out or executes pull-request code. It only
+      # parses bounded JSON from the same run and writes a scoped review comment.
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: unified-installed-artifact-evidence-*
+          path: ${{ runner.temp }}/toe-ci-evidence
+      - name: Report verified scope or explicit incomplete evidence
+        uses: actions/github-script@v8
+        env:
+          EVIDENCE_ROOT: ${{ runner.temp }}/toe-ci-evidence
+          JOB_RESULTS: ${{ toJSON(needs) }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const crypto = require('crypto');
+            const root = process.env.EVIDENCE_ROOT;
+            const head = context.payload.pull_request.head.sha;
+            const jobs = JSON.parse(process.env.JOB_RESULTS);
+            const failures = [];
+            const summaries = [];
+            const ensure = (ok, label) => { if (!ok) throw new Error(label); };
+            const sha = /^[a-f0-9]{40}$/;
+            const digest = /^[a-f0-9]{64}$/;
+            const read = file => {
+              ensure(fs.statSync(file).size <= 2000000, 'oversized evidence');
+              return JSON.parse(fs.readFileSync(file, 'utf8'));
+            };
+            ensure(sha.test(head), 'invalid head SHA');
+            for (const job of ['verify', 'installed-artifacts']) {
+              if (jobs[job]?.result !== 'success') failures.push(`${job}: not successful`);
+            }
+            for (const python of ['3.12', '3.13']) {
+              try {
+                const dir = path.join(root, `unified-installed-artifact-evidence-${python}`);
+                const attempt = read(path.join(dir, 'qualification-attempt.json'));
+                const verdict = read(path.join(dir, 'artifact-verdict.json'));
+                ensure(attempt.git_sha === head && verdict.git_sha === head, 'stale commit');
+                ensure(attempt.artifact_verified === true && attempt.verdict === 'passed' &&
+                       attempt.stage === 'complete' && verdict.artifact_verified === true,
+                       'incomplete artifact qualification');
+                ensure(verdict.publishable === false && verdict.published === false &&
+                       verdict.production_certification === 'not_assessed', 'invalid scope');
+                ensure(verdict.qualification_profile === 'standalone-toe-with-kellogg', 'wrong profile');
+                ensure(digest.test(verdict.fixture_digest), 'missing fixture digest');
+                for (const key of ['wheel', 'sdist', 'kellogg_wheel']) {
+                  const item = verdict[key];
+                  ensure(item && typeof item.file === 'string' &&
+                         /^[A-Za-z0-9_.+-]+$/.test(item.file) && digest.test(item.sha256), 'invalid artifact identity');
+                  const file = path.join(dir, item.file);
+                  ensure(fs.statSync(file).size <= 100000000, 'oversized artifact');
+                  ensure(crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex') === item.sha256,
+                         'artifact digest mismatch');
+                }
+                ensure(Array.isArray(verdict.installed_checks) && verdict.installed_checks.length > 0,
+                       'missing wheel checks');
+                const records = [...verdict.installed_checks, verdict.sdist_installed_check];
+                let testExecutions = 0;
+                for (const record of records) {
+                  ensure(record && record.fixture_digest === verdict.fixture_digest, 'fixture mismatch');
+                  for (const key of ['unified_tests', 'release_tests']) {
+                    const test = record[key];
+                    ensure(test && test.git_sha === head && test.test_verdict === 'passed', 'missing installed tests');
+                    ensure(Array.isArray(test.test_files) && test.test_files.length > 0 &&
+                           new Set(test.test_files).size === test.test_files.length, 'invalid test scope');
+                    ensure(Number.isInteger(test.counts?.tests) && test.counts.tests > 0 &&
+                           ['failures', 'errors', 'skipped'].every(k => test.counts[k] === 0), 'nonpassing tests');
+                    ensure(test.test_files.every(name => digest.test(test.source_tests?.[name])), 'missing test identities');
+                    testExecutions += test.counts.tests;
+                  }
+                }
+                summaries.push({python, test_executions: testExecutions,
+                  wheel_sha256: verdict.wheel.sha256, sdist_sha256: verdict.sdist.sha256});
+              } catch (error) {
+                // Never echo arbitrary logs, filenames, credentials or JSON values.
+                const safe = new Set(['oversized evidence', 'stale commit', 'incomplete artifact qualification',
+                  'invalid scope', 'wrong profile', 'missing fixture digest', 'invalid artifact identity',
+                  'oversized artifact', 'artifact digest mismatch', 'missing wheel checks', 'fixture mismatch',
+                  'missing installed tests', 'invalid test scope', 'nonpassing tests', 'missing test identities']);
+                failures.push(`Python ${python}: ${safe.has(error.message) ? error.message : 'missing or unreadable evidence'}`);
+              }
+            }
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = ['<!-- toe-qualification-evidence/v1 -->',
+              '## Commit-bound package qualification',
+              `Candidate: \`${head}\``,
+              `Run: ${run}`,
+              `Verdict: **${failures.length ? 'FAILED OR INCOMPLETE' : 'STANDALONE ARTIFACT CHECKS PASSED'}**`,
+              'Scope: wheel and sdist-rebuilt installs; source contract job; not production certification or publication approval.',
+              'Unqualified: THESEUS/full-platform rollback, external tenant audit, live-vendor and deployment SLA/load evidence.',
+              '```json', JSON.stringify({summaries, blockers: failures}, null, 2), '```'].join('\n\n');
+            await github.rest.issues.createComment({...context.repo,
+              issue_number: context.payload.pull_request.number, body});
+            if (failures.length) core.setFailed('Artifact qualification evidence is failed or incomplete');
