@@ -167,3 +167,30 @@ returns unavailable and never authorizes work. These events still require approv
 security monitoring, retention, access controls and independent audit anchoring.
 Unauthenticated denial logging is subject to the required ingress rate limits;
 this is not a claim of a complete IdP/security event export integration.
+
+## Explicit operator risk acceptance
+
+The default qualification policy remains `strict`. An operator-authorized release
+may explicitly configure `qualification_policy: operator-risk-acceptance`.
+Only that opt-in allows required qualification entries to be `WAIVED` rather
+than `PASS`. A waiver does not claim the test ran or passed. Each waived entry
+retains its relative `artifact` and `sha256` and replaces `reviewer`/`executed_at`
+with `risk_acceptance: {approver, reason, authorization_reference, accepted_at}`.
+All three text fields must be nonempty; `accepted_at` is a UTC epoch integer.
+Do not include `executed_at` in a waiver. The normal signature, commit binding,
+artifact-integrity, seven-day freshness and expiry checks still apply.
+
+The existing deployment-authority key may attest the operator decision; a new
+secondary qualification reviewer is not required by this policy. This is not
+permission to invent a deployment private key or substitute fixture signatures.
+`publication_rights` cannot be waived through this qualification policy.
+Authorization, identity, tenant isolation, request validation, custody integrity,
+resource bounds and readiness computation are unchanged. Missing host access,
+real secret bindings or an actual identity configuration are execution
+prerequisites, not failed tests that a waiver can supply.
+
+The operator's current decision is retained in
+`../evidence/operator-risk-acceptance/decision.json`. That record is not itself a
+signed promotion bundle and does not start a deployment. Build and sign against
+the final pushed candidate commit, not the historical baseline SHA. A production
+host must supply its real configuration and deployment-authority signature.

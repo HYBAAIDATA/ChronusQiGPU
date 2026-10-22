@@ -1,0 +1,70 @@
+{
+  "schema": "turing.operator-risk-acceptance.v1",
+  "recorded_at": "2026-10-22T22:04:26.957421+00:00",
+  "requested_baseline_commit": "4b75ace56712501f7d091e33d386df64ade9ba1b",
+  "preserved_branch_base": "d5baa2e89806a1b25ca33db746fc284c6d4793f0",
+  "branch": "hyba-data-evolution",
+  "candidate_identity": "The Git commit containing this record; build and sign the final candidate SHA, not either historical baseline.",
+  "authorization": {
+    "approver": "Andre Taylor-Morris",
+    "reference": "https://app.notion.com/chat?t=3feaf6c73d7980d9b4a900a93f4641f6",
+    "instruction": "Override remaining validation requirements and accept the architectural bypass, incomplete orphan recovery and outstanding regression selections as deployment risks. Commit to hyba-data-evolution.",
+    "secondary_qualification_signoff_required": false
+  },
+  "qualification_disposition": "WAIVED_BY_OPERATOR_NOT_PASSED",
+  "accepted_risks": [
+    "Enterprise standalone run_pipeline path is not the shared CompositionRoot custody path.",
+    "Verified successful-orphan recovery remains incomplete; ambiguous jobs must not auto-execute again.",
+    "Outstanding regression selections remain recorded failures, not fixed by this change.",
+    "Remote CI/check visibility remains unverified; prior 403 is an access gap, not CI success.",
+    "Archive content identity is retained; no Git checkout identity or full-source artifact parity is fabricated."
+  ],
+  "preserved_fixes": [
+    "All current-main changes through merged PR #139; no reset to 4b75ace.",
+    "Billing remains deferred and unrelated to current TURING activation.",
+    "Canonical engine, mathematical invariants, request/identity/tenant authorization, custody integrity and resource isolation unchanged."
+  ],
+  "policy": {
+    "default": "strict",
+    "explicit_opt_in": "qualification_policy: operator-risk-acceptance",
+    "signed_waiver_state": "WAIVED",
+    "signature_and_source_binding_required": true,
+    "publication_rights_waivable": false,
+    "runtime_security_bypass": false
+  },
+  "source_archive": {
+    "sha256": "1575dbeb13dca7cdaed11e0020889515b5bad4d02a491c6939c44ff20d4cd709",
+    "entries": 11090,
+    "verification": "The four existing files changed by this commit were blob-hash matched against live main before editing. This is not a full archive-to-Git tree equivalence claim."
+  },
+  "executed": [
+    {
+      "command": "python -m pytest services/turing-enterprise/tests -q",
+      "initial_result": "112 passed, 1 failed, 10 subtests passed; local test environment lacked declared uvicorn dependency. Failure retained.",
+      "corrective_action": "Installed declared uvicorn dependency in the isolated test environment; no product test altered.",
+      "rerun_result": "113 passed, 10 subtests passed, 1 Starlette/httpx deprecation warning; zero failures/errors/skips.",
+      "scope": "Source-local service suite, including 20 added waiver tests. Not full mathematical, installed-artifact, external IdP or deployment acceptance."
+    },
+    {
+      "command": "python -m hyba_turing_service.main release-check --config services/turing-enterprise/deploy/service.example.json",
+      "exit_code": 1,
+      "result": "FileNotFoundError /run/service-secrets/customer-key; real production authority absent, not generated."
+    },
+    {
+      "command": "black --check --line-length 100 service src/tests/integration",
+      "result": "Broad check exit1: unchanged runtime.py and sessions.py need formatting under this installed Black version; preserved without unrelated edits. Changed Python files check exit0 (3 files unchanged).",
+      "scope": "Formatting only; not runtime qualification."
+    }
+  ],
+  "deployment_state": "NOT_EXECUTED_MISSING_TARGET_AND_RUNTIME_CONFIGURATION",
+  "execution_prerequisites_not_created_by_waiver": [
+    "Actual deployment target and authenticated deployment connection.",
+    "Real production origin, IdP issuer/client/audiences/callback and secret-manager/file bindings.",
+    "Source-bound risk-acceptance promotion bundle signed by the configured deployment authority; no secondary qualification reviewer required."
+  ],
+  "not_performed": [
+    "No merge to main.",
+    "No image publication, service deployment, traffic switch or registry release.",
+    "No branch-protection change, disabled security check, fixture key promotion or fabricated CI verdict."
+  ]
+}

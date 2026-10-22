@@ -1,4 +1,4 @@
-"""Fail-closed verification of an independently signed promotion evidence bundle.
+"""Fail-closed verification of a deployment-authority signed promotion bundle.
 
 This verifies signature, freshness and retained artefact binding. It does not
 assert that a reviewer's assertions are true, or generate its own approval.
@@ -24,7 +24,9 @@ GATES = frozenset(
 )
 
 
-def verify_bundle(directory, public_key, commit, *, publication=False, now=None):
+def verify_bundle(
+    directory, public_key, commit, *, publication=False, now=None, allow_waivers=False
+):
     root = Path(directory).resolve()
     now = int(time.time()) if now is None else now
     try:
@@ -48,12 +50,26 @@ def verify_bundle(directory, public_key, commit, *, publication=False, now=None)
         required = GATES | ({"publication_rights"} if publication else set())
         for gate in required:
             entry = manifest["gates"][gate]
-            if (
-                entry["state"] != "PASS"
-                or not entry["reviewer"]
-                or not 0 <= now - entry["executed_at"] <= 7 * 86400
-            ):
-                raise ValueError("gate not freshly accepted")
+            state = entry["state"]
+            if state == "PASS":
+                if not entry["reviewer"] or not 0 <= now - entry["executed_at"] <= 7 * 86400:
+                    raise ValueError("gate not freshly accepted")
+            elif state == "WAIVED" and allow_waivers is True and gate in GATES:
+                # A signed risk decision is NOT execution evidence. Runtime
+                # authorization, custody checks and source binding stay intact.
+                acceptance = entry["risk_acceptance"]
+                for field in ("approver", "reason", "authorization_reference"):
+                    value = acceptance[field]
+                    if not isinstance(value, str) or not value.strip():
+                        raise ValueError("waiver has no accountable authorization")
+                if (
+                    type(acceptance["accepted_at"]) is not int
+                    or not 0 <= now - acceptance["accepted_at"] <= 7 * 86400
+                    or "executed_at" in entry
+                ):
+                    raise ValueError("waiver is stale or misrepresented as execution")
+            else:
+                raise ValueError("gate not accepted under configured policy")
             relative = Path(entry["artifact"])
             if relative.is_absolute() or ".." in relative.parts:
                 raise ValueError("invalid artifact path")

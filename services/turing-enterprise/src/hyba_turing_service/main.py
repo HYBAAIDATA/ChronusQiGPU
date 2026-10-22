@@ -38,6 +38,8 @@ def configuration(path):
     os.umask(0o077)
     config = json.loads(Path(path).read_text())
     validate_scope(config)
+    if config.get("qualification_policy", "strict") not in {"strict", "operator-risk-acceptance"}:
+        raise ValueError("unsupported qualification policy")
     from al_haras.entitlements import SubscriptionAuthority, SubscriptionClaims
 
     if set(config["operator_subjects"]) & set(config["approver_subjects"]):
@@ -145,6 +147,7 @@ def main():
             config["approval_public_key"],
             config["source_commit"],
             publication=args.publication,
+            allow_waivers=config.get("qualification_policy") == "operator-risk-acceptance",
         )
         return True
 
