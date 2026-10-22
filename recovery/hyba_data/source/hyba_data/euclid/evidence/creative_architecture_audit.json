@@ -1,0 +1,68 @@
+{
+  "architecture": {
+    "coherence_engine": "implemented_fail_closed_in_kernel",
+    "emergence_engine": "implemented_controlled_proposals",
+    "expression_layer": "implemented_in_process_contract",
+    "generative_substrate_layer": "implemented_with_governed_provider_manifests",
+    "governance": "implemented_fail_closed_before_world_creation_and_refinement",
+    "intent_layer": "implemented_with_deterministic_semantic_identity",
+    "lineage": "federated modular organism with one durable hash-chained provenance ledger",
+    "semantic_geometry_layer": "implemented_with_deterministic_geometry",
+    "telemetry_truth_layer": "implemented",
+    "world_state_engine": "implemented_with_hash_verified_persistence_sharding_and_fork_protection"
+  },
+  "canonical_paths": {
+    "architecture_spec": "euclid/PROJECT_EUCLID_ARCHITECTURE.md",
+    "benchmark_protocol": "euclid/creative_benchmarks.py",
+    "benchmark_tests": "tests/test_euclid_creative_benchmarks.py",
+    "closure_tests": "tests/test_euclid_product_architecture_closure.py",
+    "implementation": "euclid/creative_substrate.py",
+    "organism_cns": "euclid/organism_cns.py",
+    "production_harness": "euclid/production_harness.py",
+    "startup_registry": "euclid/default_registry.py"
+  },
+  "closed_gaps": {
+    "audience_governance": "audience rule mutation and creator-conflict resolution prohibited",
+    "coherence": "kernel rejection on failed gate",
+    "concurrency": "same-version fork rejection",
+    "determinism": "stable intent, manifold, world, event and artifact identities for equal validated input",
+    "intent_conflicts": "unresolved collisions rejected before world creation",
+    "provenance": "single append-only chain across every creative layer",
+    "provider_governance": "manifest, modality, sovereignty and rendered-deployment validation",
+    "reference_media": "typed hash-verified rights and consent metadata"
+  },
+  "identity": {
+    "agi": false,
+    "asi": false,
+    "classification": "Project EUCLID creative-intelligence substrate beyond legacy AGI/ASI taxonomy"
+  },
+  "production_boundaries": {
+    "claim": "EUCLID is not labelled AGI or ASI; those historical categories do not define its identity.",
+    "distributed_world_cluster": "contract implemented; durable distributed storage adapter requires deployment infrastructure",
+    "independent_evaluation": "requires held-out external baselines and independent assessors",
+    "network_api_sdk_ui": "in-process API contract implemented; transports and product UI require deployment",
+    "rendered_visual_audio": "requires validated external modality provider deployment",
+    "share_acceptance_metrics": "excluded_as_midas_mining_specific"
+  },
+  "repository_blockers_closed": {
+    "mag_agent_routing": "domain relevance and intrinsic fitness are blended without lowering the 0.70 threshold",
+    "us_regulatory_stress_import": "published import contract restored through compatibility module"
+  },
+  "schema": "EUCLID_CREATIVE_ARCHITECTURE_AUDIT_V2",
+  "test_environment": {
+    "installation_attempt": "failed because package index was unreachable",
+    "interpretation": "environment dependency fault; affected tests were executed through a dependency-independent runner",
+    "pytest_declared": true,
+    "pytest_runtime_available": false
+  },
+  "validation": {
+    "canonical_euclid_regression": "219/219 passed",
+    "complete_compilation": "passed",
+    "declared_pytest_tests_dependency_independent_execution": "34/34 passed",
+    "kernel_health": "healthy",
+    "live_share_submission": false,
+    "production_harness": "10/10 passed",
+    "total_distinct_tests": "253/253 passed",
+    "unrestricted_self_modification": false
+  }
+}

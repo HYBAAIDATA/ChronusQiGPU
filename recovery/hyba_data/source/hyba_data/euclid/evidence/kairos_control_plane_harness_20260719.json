@@ -1,0 +1,127 @@
+{
+  "boundaries": {
+    "agi": false,
+    "asi": false,
+    "distributed_storage": "deployment_required",
+    "external_evaluation": "independent_evidence_required",
+    "network_transports": "deployment_required",
+    "rendered_media_providers": "deployment_required"
+  },
+  "checks": [
+    {
+      "details": {
+        "coherence": 1.0,
+        "world": "sha256:6d78fe9623a05c99e18d383ca6b20f4e37d615423f7a91a3bd528d261b4c2652"
+      },
+      "name": "closed_loop",
+      "passed": true
+    },
+    {
+      "details": {
+        "hash": "sha256:6d78fe9623a05c99e18d383ca6b20f4e37d615423f7a91a3bd528d261b4c2652"
+      },
+      "name": "world_restoration",
+      "passed": true
+    },
+    {
+      "details": {
+        "head": "sha256:6dccc0f6a24905e88c2de06987fc977ac4ce6644bc2f1c367b7d8f67530c0b28",
+        "verified": true
+      },
+      "name": "provenance_restoration",
+      "passed": true
+    },
+    {
+      "details": {
+        "equal": true
+      },
+      "name": "semantic_determinism",
+      "passed": true
+    },
+    {
+      "details": {
+        "failed": 0,
+        "pass_rate": 1.0,
+        "passed": 2,
+        "total_tests": 2
+      },
+      "name": "phase_ii_stress",
+      "passed": true
+    },
+    {
+      "details": {
+        "schema": "EUCLID_ORGANISM_DASHBOARD_V1"
+      },
+      "name": "dashboard",
+      "passed": true
+    },
+    {
+      "details": {
+        "cluster": {
+          "contract": "deterministic_sharding_with_optimistic_concurrency_and_fork_rejection",
+          "shards": 8,
+          "worlds": 1
+        },
+        "healthy": true,
+        "identity": {
+          "agi": false,
+          "asi": false,
+          "classification": "Project EUCLID creative-intelligence substrate"
+        },
+        "mood": "exploratory",
+        "phase": "emergent",
+        "stress": {
+          "failed": 0,
+          "pass_rate": 1.0,
+          "passed": 2,
+          "total_tests": 2
+        }
+      },
+      "name": "organism_health",
+      "passed": true
+    },
+    {
+      "details": {
+        "lane": "INTERNAL"
+      },
+      "name": "benchmark_protocol",
+      "passed": true
+    },
+    {
+      "details": {
+        "agi": false,
+        "asi": false,
+        "classification": "Project EUCLID creative-intelligence substrate beyond legacy AGI/ASI taxonomy"
+      },
+      "name": "architecture_identity",
+      "passed": true
+    },
+    {
+      "details": {
+        "audience_governance": "audience rule mutation and creator-conflict resolution prohibited",
+        "coherence": "kernel rejection on failed gate",
+        "concurrency": "same-version fork rejection",
+        "determinism": "stable intent, manifold, world, event and artifact identities for equal validated input",
+        "intent_conflicts": "unresolved collisions rejected before world creation",
+        "provenance": "single append-only chain across every creative layer",
+        "provider_governance": "manifest, modality, sovereignty and rendered-deployment validation",
+        "reference_media": "typed hash-verified rights and consent metadata"
+      },
+      "name": "architecture_gap_closure",
+      "passed": true
+    },
+    {
+      "details": {
+        "checkpoint": "checkpoint-254f7fa28d38c0efe065",
+        "replay_events": 7,
+        "world_hash": "sha256:a03f987489da20accc946f9d0068305c587514d3dd478374cde189f64513847b"
+      },
+      "name": "kairos_control_plane",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "passed_count": 11,
+  "schema": "EUCLID_PRODUCTION_HARNESS_V2",
+  "total": 11
+}
