@@ -99,7 +99,8 @@ def test_predict_during_swap():
     threads = [threading.Thread(target=read) for _ in range(4)]
     for thread in threads:
         thread.start()
-    platform.retrain("risk", rows)
+    held_out = [{"amount": float(i) + 0.25, "defaulted": int(i > 5)} for i in range(12)]
+    platform.retrain("risk", rows, eval_rows=held_out)
     platform.reload("confluent.cloud", {"events": [{"entity": "Event", "id": 2}]})
     for thread in threads:
         thread.join()

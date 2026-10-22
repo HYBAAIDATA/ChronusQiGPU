@@ -15,80 +15,14 @@ import json
 import os
 import re
 import struct
-import sys
-from pathlib import Path
 
 import pytest
 
-# `python_backend` was consolidated to `legacy/python_backend`. Put `legacy/`
-# on sys.path only long enough to bind it — popping immediately avoids
-# shadowing the canonical root `mining/` package (and any foreign
-# `python_backend` leaked via PYTHONPATH).
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+# Exercise canonical modules through the normal importer. Loading every mining
+# file with spec_from_file_location polluted sys.modules without binding the
+# children on their parent package, breaking unrelated protocol tests.
 from python_backend.pythia_mining import midstate as ms
 from python_backend.pythia_mining import precompute_cache as pc
-sys.path.pop(0)
-
-# `Intelligence` modules this suite exercises were consolidated into
-# `legacy/Intelligence/` — a namespace dir, while the canonical root
-# `Intelligence/` is a regular package and therefore wins `import
-# Intelligence`. Bind each legacy leaf as ``Intelligence.<name>`` in
-# sys.modules so the test (and the snapshot modules' own absolute
-# imports) resolve the archived implementations without shadowing the
-# canonical package for other suites.
-import importlib
-
-_intel_dir = Path(__file__).resolve().parents[1] / "Intelligence"
-_pending = {p.stem for p in _intel_dir.glob("*.py") if p.stem != "__init__"}
-while _pending:
-    _progress = False
-    for _stem in sorted(_pending):
-        try:
-            _mod = importlib.import_module(f"legacy.Intelligence.{_stem}")
-        except Exception:
-            continue
-        sys.modules.setdefault(f"Intelligence.{_stem}", _mod)
-        _pending.discard(_stem)
-        _progress = True
-    if not _progress:
-        break
-
-# `Intelligence.strict_quantum` was promoted to the canonical `toe` package
-# (same API). Legacy modules that import it need the name bound explicitly.
-sys.modules.setdefault(
-    "Intelligence.strict_quantum",
-    importlib.import_module("toe.strict_quantum"),
-)
-
-# Same story for `legacy/mining/*` — those modules use relative imports
-# (`from .bitcoin_hasher import ...`) so they must load under the canonical
-# `mining.<name>` to resolve siblings from the root `mining/` package.
-# None of these submodule names exist in root `mining/`, so the bindings
-# are additive for this process.
-import importlib.util as _ilu
-
-_mining_dir = _intel_dir.parent / "mining"
-_pending = {p.stem for p in _mining_dir.glob("*.py") if p.stem != "__init__"}
-while _pending:
-    _progress = False
-    for _stem in sorted(_pending):
-        _name = f"mining.{_stem}"
-        if _name in sys.modules:
-            _pending.discard(_stem)
-            _progress = True
-            continue
-        try:
-            _spec = _ilu.spec_from_file_location(_name, _mining_dir / f"{_stem}.py")
-            _m = _ilu.module_from_spec(_spec)
-            sys.modules[_name] = _m
-            _spec.loader.exec_module(_m)
-        except Exception:
-            sys.modules.pop(_name, None)
-            continue
-        _pending.discard(_stem)
-        _progress = True
-    if not _progress:
-        break
 from mining.bitcoin_hasher import sha256_midstate
 from mining import stratum_bridge as sb
 from mining.hash_pipeline import HashPipeline, double_sha256

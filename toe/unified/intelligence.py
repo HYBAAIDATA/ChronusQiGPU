@@ -191,6 +191,10 @@ class ModelRegistry:
     ) -> TrainResult:
         with self._lock:
             current = self._live[name]
+            # Tensor prediction records per-call commitments on the model. Never
+            # evaluate the published live object outside the registry lock: a
+            # concurrent get() deep-copies its dictionary under that lock.
+            evaluation_model = deepcopy(current.model)
         rows, eval_rows = deepcopy(rows), deepcopy(eval_rows)
         # Legacy flag is retained for call compatibility, not as a bypass.
         _evaluation_guard(current, rows, eval_rows, min_accuracy)
@@ -206,7 +210,7 @@ class ModelRegistry:
         }
         if eval_rows is not None:
             candidate_accuracy = _accuracy(candidate, eval_rows, feature_names, current.target)
-            live_accuracy = _accuracy(current.model, eval_rows, feature_names, current.target)
+            live_accuracy = _accuracy(evaluation_model, eval_rows, feature_names, current.target)
             evaluation_digest = hashlib.sha256(
                 json.dumps(
                     {

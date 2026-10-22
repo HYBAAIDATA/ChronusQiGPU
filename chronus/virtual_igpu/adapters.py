@@ -673,7 +673,7 @@ class ChronusSoftwareFabricAdapter(CPUEmulatorAdapter):
 
 def default_adapters(*, include_cpu_emulator: bool = True) -> list[Adapter]:
     """Build the adapter ladder. Missing SDKs → typed UnavailableAdapter."""
-    adapters: list[Adapter] = []
+    adapters: list[Adapter] = [ChronusSoftwareFabricAdapter()] if include_cpu_emulator else []
     if include_cpu_emulator:
         adapters.append(CPUEmulatorAdapter())
     # Optional physical OpenCL probe (may be unavailable)

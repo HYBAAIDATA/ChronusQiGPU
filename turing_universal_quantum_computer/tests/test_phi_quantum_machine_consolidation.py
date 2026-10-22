@@ -100,7 +100,7 @@ def test_vqc_clifford_skeleton_checkpoint_is_exact():
     assert report["logical_qubits"] == 32
     assert report["checkpoint_restore_verified"] is True
     assert report["truth_class"] == "exact-clifford"
-    assert report["execution_type"] == "classical_trainable_ranker_with_exact_clifford_skeleton"
+    assert report["execution_type"] == "classical_trainable_ranker_with_exact_clifford_skeleton_capability_demonstration_only"
 
 
 def test_full_1000_qubit_production_gate():

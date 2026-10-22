@@ -33,18 +33,16 @@ def verifier(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "source,passes,expected_count",
+    "source,passes",
     [
-        ("def test_ok():\n    assert True\n", True, None),
-        ("def test_fail():\n    assert False\n", False, None),
-        ("import pytest\ndef test_skip():\n    pytest.skip('not proof')\n", False, None),
-        ("# intentionally empty\n", False, 0),
-        ("import nonexistent_unified_fixture_dependency\n", False, None),
+        ("def test_ok():\n    assert True\n", True),
+        ("def test_fail():\n    assert False\n", False),
+        ("import pytest\ndef test_skip():\n    pytest.skip('not proof')\n", False),
+        ("# intentionally empty\n", False),
+        ("import nonexistent_unified_fixture_dependency\n", False),
     ],
 )
-def test_installed_gate_requires_executed_passes(
-    verifier, source, passes, expected_count
-):
+def test_installed_gate_requires_executed_passes(verifier, source, passes):
     module, work = verifier
     for name in module.UNIFIED_TESTS:
         (module.REPO / "tests" / name).write_text(source)
@@ -57,7 +55,7 @@ def test_installed_gate_requires_executed_passes(
     evidence = json.loads((output / "evidence.json").read_text())
     assert evidence["test_verdict"] == ("passed" if passes else "failed_or_incomplete")
     assert evidence["production_certification"] == "not_assessed"
-    assert evidence["counts"]["tests"] == (len(module.UNIFIED_TESTS) if expected_count is None else expected_count)
+    assert evidence["counts"]["tests"] == (len(module.UNIFIED_TESTS) if passes else 0)
     assert evidence["test_files"] == list(module.UNIFIED_TESTS)
     assert len(evidence["source_tests"]) == len(module.UNIFIED_TESTS)
     assert evidence["artifacts"]["pytest.log"] == module.sha256(output / "pytest.log")

@@ -7,13 +7,10 @@ Complements the scripted-pool coordinator test in
 from __future__ import annotations
 
 import hashlib
-import json
-import os
 import time
 
 import pytest
 
-from chronus.reference_contract import reference_execution
 from chronus.mla1517.mining.backend_registry import BackendLane, BackendRegistry
 from chronus.mla1517.mining.execution_router import NONCE_ORDER_HENDRIX
 from chronus.mla1517.mining.exact_search import (
@@ -144,10 +141,10 @@ def test_plan_executes_through_chronus_and_returns_a_host_verified_candidate(pre
     assert record.requested_route == record.executed_route == "chronus_batch"
     assert record.device_backend == "chronus_vigpu"
     assert record.hash_count == index + 1
-    # Software emulator: verified software execution, never hardware evidence.
+    # Independent software fabric: verified execution, never hardware evidence.
     assert record.evidence_class is EvidenceClass.SOFTWARE_VERIFIED
     assert hasher.launches >= 1
-    assert hasher.last_result["receipt"]["actual_backend"] == "cpu-emulator"
+    assert hasher.last_result["receipt"]["actual_backend"] == "chronus-software-fabric"
     assert hasher.last_verification["status"] == "passed"
 
 

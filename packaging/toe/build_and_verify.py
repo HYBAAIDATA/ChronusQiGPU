@@ -50,11 +50,19 @@ KELLOGG_VERSION = "1.0.0"
 
 # Monorepo integration surfaces TOE does not ship (mining-facing coordinator,
 # the five nonce-authority intelligences, and an alias of aethel's code).
-EXCLUDED = ("system.py", "manifold_bridge.py", "hardened_unified_substrate.py", "intelligences")
+EXCLUDED = (
+    "system.py",
+    "mining_decision_plane.py",
+    "manifold_bridge.py",
+    "hardened_unified_substrate.py",
+    "intelligences",
+)
+# Installed release checks must exercise only the declared standalone boundary.
+# Monorepo custody/restart persistence remains a source-tree qualification concern.
 RELEASE_TESTS = (
     "test_toe_machine.py",
     "test_toe_geometry.py",
-    "test_toe_standalone_learning.py",
+    "test_toe_self_governance.py",
 )
 # Standalone artifacts exclude THESEUS. Its durable-restart integration remains
 # in the source/deployment gates; it cannot be counted as a skipped artifact pass.
@@ -72,6 +80,7 @@ UNIFIED_TESTS = (
     "test_toe_unified_operations.py",
     "test_toe_unified_failclosed.py",
     "test_toe_unified_security_fixes.py",
+    "test_toe_unified_readiness_regressions.py",
 )
 
 INSTALLED_UNIFIED_PROBE = r"""
@@ -286,7 +295,7 @@ def scan(archive: Path) -> Dict[str, Any]:
 
 
 INSTALLED_CHECK = r"""
-import hashlib, importlib, importlib.metadata, importlib.util, json, pkgutil, sys
+import hashlib, importlib, importlib.metadata, importlib.util, json, pkgutil, re, sys
 from importlib.resources import files
 
 EXPECTED_VERSION, DIST = sys.argv[1], sys.argv[2]
@@ -301,7 +310,7 @@ md = importlib.metadata.metadata(DIST)
 assert md["Name"] == DIST and md["Version"] == EXPECTED_VERSION, (md["Name"], md["Version"])
 assert md["Requires-Python"] == ">=3.11"
 reqs = [r for r in (importlib.metadata.requires(DIST) or []) if "extra ==" not in r]
-assert sorted(r.split(">")[0].split("<")[0].strip().lower() for r in reqs) == ["hyba-kellogg-tensor", "numpy"], reqs
+assert sorted(re.split(r"[<>=!~; ]", r, maxsplit=1)[0].strip().lower() for r in reqs) == ["hyba-kellogg-tensor", "numpy"], reqs
 urls = md.get_all("Project-URL") or []
 assert any("PhiEnterprise1/EuclidPhiEnterprise" in u for u in urls), urls
 assert not any(old in u for old in ("QuantumPhi2/PhiMiner", "QuantumPhiRedux/PhiMiner") for u in urls), urls
@@ -314,7 +323,13 @@ for name in mods:
     except Exception as exc:
         failed[name] = f"{type(exc).__name__}: {exc}"
 assert not failed, failed
-for gone in ("toe.system", "toe.manifold_bridge", "toe.hardened_unified_substrate", "toe.intelligences"):
+for gone in (
+    "toe.system",
+    "toe.mining_decision_plane",
+    "toe.manifold_bridge",
+    "toe.hardened_unified_substrate",
+    "toe.intelligences",
+):
     assert importlib.util.find_spec(gone) is None, gone
 from toe import *  # noqa: F401,F403 - the public surface must resolve standalone
 
@@ -395,20 +410,13 @@ def isolated_environment() -> Dict[str, str]:
     return env
 
 
-def observed_test_counts(junit: Path) -> Dict[str, int]:
-    """Retain observed counters even when their verdict fails validation."""
-    root = ET.parse(junit).getroot()
-    suites = [root] if root.tag == "testsuite" else root.findall("testsuite")
-    return {key: sum(int(suite.get(key, "0")) for suite in suites)
-            for key in ("tests", "failures", "errors", "skipped")}
-
-
 def validated_test_counts(junit: Path, test_files: tuple[str, ...]) -> Dict[str, int]:
     """Require passing, nonempty collection from EVERY named suite, without skips."""
     try:
         root = ET.parse(junit).getroot()
         suites = [root] if root.tag == "testsuite" else root.findall("testsuite")
-        counts = observed_test_counts(junit)
+        counts = {key: sum(int(suite.get(key, "0")) for suite in suites)
+                  for key in ("tests", "failures", "errors", "skipped")}
         cases = [case for suite in suites for case in suite.findall("testcase")]
         modules = {part for case in cases for part in case.get("classname", "").split(".")}
         missing = sorted(Path(name).stem for name in test_files if Path(name).stem not in modules)

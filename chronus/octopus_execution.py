@@ -12,7 +12,7 @@ Phase P5 implementation:
   7. ThreadPoolExecutor(4) Parallel Execution over 600 Arms
   8. Entangled Qubit Hashing (32-qubit Bell stabilizer tableau)
   9. 100% Host SHA256d Bit-Exact Recheck
-  10. Submission Gate: Shadow Mode by default (approval_flag=False required for live submit)
+  10. Submission Gate: Shadow Mode by default (shadow only until a governed transport is integrated)
   11. Literal Learning + Salamander 15.7s Autonomic Recovery + Attestation Ledger Merkle Root
 """
 
@@ -22,32 +22,30 @@ import concurrent.futures
 import hashlib
 import json
 import logging
-import struct
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
-from typing import Any, Callable, Mapping, Sequence, Tuple
+from typing import Any, Sequence
 
-from chronus.entangled_hashing import EntangledNonceCandidate, EntangledQubitHasher, LaneHashingReceipt
+from chronus.entangled_hashing import (
+    EntangledNonceCandidate,
+    EntangledQubitHasher,
+    LaneHashingReceipt,
+)
 from chronus.exact_geometry import (
     EstateChunk600,
-    PartitionProof600,
     build_600_partition,
 )
 from chronus.mla1517.mining.search_plan import (
-    PlanSource,
-    SearchPlan,
     WorkIdentity,
-    _LANES,
 )
-from kellogg.ansatz_v3 import FUTURES, LANES, load_ansatz
+from kellogg.ansatz_v3 import FUTURES, LANES
 from kellogg.lane_scorer import (
-    PerLaneScoreLog,
     SuperpositionHoldLRU,
     score_600_lanes,
 )
-from kellogg.mother_tensor import KelloggMotherTensor, kellogg_state_600
-from salamander.mining_healer import HealerState, SalamanderMiningHealer
+from kellogg.mother_tensor import kellogg_state_600
+from salamander.mining_healer import SalamanderMiningHealer
 
 LOG = logging.getLogger(__name__)
 
@@ -72,6 +70,7 @@ class OctopusCampaignReceipt:
     total_bell_pairs: int
     lane_receipts: tuple[LaneHashingReceipt, ...]
     healing_events: tuple[str, ...]
+    runtime_policy_digest: str = ""
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -90,6 +89,7 @@ class OctopusCampaignReceipt:
             "qubit_dimension": self.qubit_dimension,
             "total_bell_pairs": self.total_bell_pairs,
             "healing_events": list(self.healing_events),
+            "runtime_policy_digest": self.runtime_policy_digest,
         }
 
 
@@ -105,7 +105,9 @@ class OctopusExecutionEngine:
         self.shadow_dir.mkdir(parents=True, exist_ok=True)
         self.max_workers = max_workers
         self.superposition = SuperpositionHoldLRU(max_futures=FUTURES)
-        self.healer = SalamanderMiningHealer(evidence_path=self.shadow_dir / "salamander_evidence.jsonl")
+        self.healer = SalamanderMiningHealer(
+            evidence_path=self.shadow_dir / "salamander_evidence.jsonl"
+        )
         self.campaign_counter = 0
 
     def run_campaign(
@@ -120,8 +122,21 @@ class OctopusExecutionEngine:
         approval_flag: bool = False,
         literal_history: Sequence[Any] | None = None,
         max_nonces_per_arm: int | None = None,
+        work_identity: WorkIdentity | None = None,
+        extranonce2: str = "00000001",
+        plan_id: str | None = None,
+        worker_limit: int | None = None,
+        runtime_policy_digest: str = "",
     ) -> OctopusCampaignReceipt:
         """Execute a full 600-arm Octopus campaign over leased window W."""
+        workers = self.max_workers if worker_limit is None else worker_limit
+        if type(workers) is not int or not 1 <= workers <= 32:
+            raise ValueError("worker_limit must be in [1,32]")
+        if runtime_policy_digest and (
+            len(runtime_policy_digest) != 64
+            or any(c not in "0123456789abcdef" for c in runtime_policy_digest)
+        ):
+            raise ValueError("runtime policy digest must be lowercase SHA-256")
         t0 = time.monotonic()
         self.campaign_counter += 1
         campaign_id = f"octopus_camp_{self.campaign_counter:06d}_{int(t0)}"
@@ -133,13 +148,12 @@ class OctopusExecutionEngine:
             metadata={"fingerprint": job_fingerprint, "target": target_int},
         )
 
-        # 2. Partition leased window into 600 disjoint chunks
+        # 2. Structural partition certificate only: sample headers are not PoW.
+        # Real header/target checks belong to the executing hasher below.
         chunks, proof = build_600_partition(
             base_step=base_step,
             window=window,
             seed=seed,
-            header_prefix=header_prefix,
-            target_int=target_int,
         )
 
         # 3. Canonical Kellogg Mother-Tensor
@@ -149,8 +163,6 @@ class OctopusExecutionEngine:
             seed=seed,
             futures=(job_id,),
             future_probabilities=(1.0,),
-            header_prefix=header_prefix,
-            target_int=target_int,
         )
 
         # 4. 5+1 Intelligence Scoring + Quantum Arsenal
@@ -167,7 +179,7 @@ class OctopusExecutionEngine:
         )
 
         # 6. Build immutable SearchPlan
-        identity = WorkIdentity(
+        identity = work_identity or WorkIdentity(
             pool_session_id=f"braiins_session_{self.campaign_counter}",
             generation=1,
             job_id=job_id,
@@ -176,15 +188,24 @@ class OctopusExecutionEngine:
             clean_jobs=True,
             received_at=t0,
         )
+        if identity.job_id != job_id or identity.job_fingerprint != job_fingerprint:
+            raise ValueError("work identity must match the campaign job")
         plan = mt.build_search_plan(
             identity=identity,
-            base_step=base_step,
-            window=window,
-            extranonce2="00000001",
+            extranonce2=extranonce2,
             executor_route="chronus_batch",
         )
+        if plan_id is not None:
+            plan = replace(plan, plan_id=plan_id)
         plan_hash = hashlib.sha256(
-            json.dumps({"plan_id": plan.plan_id, "window": window, "coverage": proof.coverage_hash}).encode("utf-8")
+            json.dumps(
+                {
+                    "plan_id": plan.plan_id,
+                    "window": window,
+                    "coverage": proof.coverage_hash,
+                    "runtime_policy_digest": runtime_policy_digest,
+                }
+            ).encode("utf-8")
         ).hexdigest()
 
         # 7. ThreadPoolExecutor(4) Execution over 600 Arms
@@ -199,7 +220,7 @@ class OctopusExecutionEngine:
             )
             return hasher.execute(max_evaluations=max_nonces_per_arm)
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
             future_to_arm = {executor.submit(_execute_arm, c): c.lane_id for c in chunks}
             for fut in concurrent.futures.as_completed(future_to_arm):
                 lane_receipt = fut.result()
@@ -211,33 +232,36 @@ class OctopusExecutionEngine:
         # 8. Host recheck verification and winner detection
         total_nonces = sum(r.nonces_evaluated for r in receipts)
         total_recheck_pct = sum(r.host_recheck_pct for r in receipts) / float(len(receipts))
-        winning_candidate = next((r.winning_candidate for r in receipts if r.winning_candidate is not None), None)
+        winning_candidate = next(
+            (r.winning_candidate for r in receipts if r.winning_candidate is not None), None
+        )
 
         # 9. Submission Gate (Shadow Mode Default)
         submitted_live = False
-        shadow_logged = False
-        if approval_flag and winning_candidate is not None:
-            # Live submission authorised by explicit flag
-            submitted_live = True
-        else:
-            # Safe shadow logging
-            shadow_logged = True
-            shadow_file = self.shadow_dir / f"{campaign_id}.jsonl"
-            payload = {
-                "campaign_id": campaign_id,
-                "job_id": job_id,
-                "job_fingerprint": job_fingerprint,
-                "winner": asdict(winning_candidate) if winning_candidate else None,
-                "total_nonces": total_nonces,
-                "timestamp": time.time(),
-            }
-            with open(shadow_file, "a", encoding="utf-8") as sf:
-                sf.write(json.dumps(payload) + "\n")
+        # This coordinator has no identity-bound transport or pool acknowledgement.
+        # An approval flag alone cannot establish submission. Always retain shadow
+        # evidence, including approved winners, until governed transport is wired.
+        shadow_logged = True
+        shadow_file = self.shadow_dir / f"{campaign_id}.jsonl"
+        payload = {
+            "campaign_id": campaign_id,
+            "job_id": job_id,
+            "job_fingerprint": job_fingerprint,
+            "winner": asdict(winning_candidate) if winning_candidate else None,
+            "total_nonces": total_nonces,
+            "timestamp": time.time(),
+            "approval_requested": bool(approval_flag),
+            "submission_status": "unavailable_no_governed_transport",
+        }
+        with open(shadow_file, "a", encoding="utf-8") as sf:
+            sf.write(json.dumps(payload) + "\n")
 
         # 10. Compute Merkle Root across all 600 execution receipts
         leaf_hashes = [
             hashlib.sha256(
-                f"{r.lane_id}:{r.nonces_evaluated}:{r.host_recheck_pct}:{r.device_id}".encode("ascii")
+                f"{r.lane_id}:{r.nonces_evaluated}:{r.host_recheck_pct}:{r.device_id}".encode(
+                    "ascii"
+                )
             ).digest()
             for r in receipts
         ]
@@ -258,7 +282,6 @@ class OctopusExecutionEngine:
         if total_recheck_pct < 100.0:
             healing_events.append("HealAction=STALL_DETECTED_RECHECK_DROP")
 
-
         elapsed_sec = time.monotonic() - t0
 
         return OctopusCampaignReceipt(
@@ -278,6 +301,7 @@ class OctopusExecutionEngine:
             total_bell_pairs=LANES * 16,  # 600 lanes × 16 Bell pairs = 9,600 Bell pairs
             lane_receipts=tuple(receipts),
             healing_events=tuple(healing_events),
+            runtime_policy_digest=runtime_policy_digest,
         )
 
 
@@ -297,7 +321,9 @@ def run_10min_soak_campaign(
 
     prefix = b"\x00" * 76
 
-    while (time.monotonic() - t_start) < max_duration_seconds and campaigns_completed < len(jobs) * 5:
+    while (time.monotonic() - t_start) < max_duration_seconds and campaigns_completed < len(
+        jobs
+    ) * 5:
         job_idx = campaigns_completed % len(jobs)
         job_id, fp, target = jobs[job_idx]
 

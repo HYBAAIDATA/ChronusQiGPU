@@ -18,7 +18,6 @@ import math
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Sequence
 
-
 PHI: float = (1.0 + math.sqrt(5.0)) / 2.0
 PHI_INV: float = 1.0 / PHI
 TAU: float = 0.05
@@ -28,6 +27,26 @@ XOR_INVARIANT: float = 0.5625  # 9/16 irreducible subspace ratio
 RICCI_REF: int = 8
 LANES: int = 600
 FUTURES: int = 8
+SEEDS: tuple[int, ...] = (1337, 42, 2026)
+ANSATZ_V3: str = "ansatz_v3"
+
+
+@dataclass(frozen=True)
+class RicciFlowStep:
+    step: int
+    kappa: float
+    entropy: float
+    damping: float
+
+
+@dataclass(frozen=True)
+class RicciReconciliationTrace:
+    lane_id: int
+    trace: tuple[RicciFlowStep, ...]
+    steps_taken: int
+    final_kappa: float
+    is_canonical: bool
+    execution_granted: bool
 
 
 @dataclass(frozen=True)
@@ -69,6 +88,12 @@ class TOEAnsatzV3:
 
         Canonical trauma (I=9.0, c=0.8) converges to |kappa| <= tau in <= 8 steps.
         """
+        if not all(math.isfinite(v) for v in (initial_kappa, c_pre, intensity)):
+            raise ValueError("curvature inputs must be finite")
+        if not 0.0 <= c_pre <= 1.0 or intensity < 0.0:
+            raise ValueError("c_pre must be in [0, 1] and intensity must be nonnegative")
+        if isinstance(max_steps, bool) or not isinstance(max_steps, int) or max_steps < 0:
+            raise ValueError("max_steps must be a nonnegative integer")
         k = 0
         kappa = float(initial_kappa)
         trace: list[dict[str, Any]] = []
@@ -99,6 +124,36 @@ class TOEAnsatzV3:
         )
 
         return trace
+
+    def reconcile_lane(
+        self,
+        lane_id: int,
+        initial_kappa: float = -1.62,
+        c_pre: float = 0.8,
+        intensity: float = 9.0,
+        max_steps: int = 200,
+    ) -> RicciReconciliationTrace:
+        """Expose the lane-scoring contract over the canonical golden-flow trace.
+
+        Grant execution only when the unrounded recurrence reaches equilibrium;
+        canonical inputs must also satisfy the reference step bound.
+        """
+        if isinstance(lane_id, bool) or not isinstance(lane_id, int):
+            raise ValueError("lane_id must be an integer")
+        if not 0 <= lane_id < self.lanes:
+            raise ValueError("lane_id is outside the ansatz lane range")
+        rows = self.reconcile_lane_curvature(initial_kappa, c_pre, intensity, max_steps)
+        steps = tuple(
+            RicciFlowStep(row["step"], row["kappa"], row["entropy"], row["damping"]) for row in rows
+        )
+        canonical = c_pre == 0.8 and intensity == 9.0 and abs(initial_kappa) <= 1.62
+        steps_taken = rows[-1]["step"]
+        granted = bool(rows[-1]["reconciled"]) and (
+            not canonical or steps_taken <= self.ricci_ref_steps
+        )
+        return RicciReconciliationTrace(
+            lane_id, steps, steps_taken, steps[-1].kappa, canonical, granted
+        )
 
     def verify_xor_irreducibility(self, initial_entropy: float = 0.0520) -> dict[str, Any]:
         """Compute the XOR mask projection reproducing 0.0520 -> 0.5625."""
@@ -148,3 +203,7 @@ def load_ansatz(version: str = "ansatz_v3") -> TOEAnsatzV3:
     if version != "ansatz_v3":
         raise ValueError(f"Unknown ansatz version: {version!r}. Only 'ansatz_v3' supported.")
     return TOEAnsatzV3()
+
+
+# Historical lane-scoring name; both loaders use the same canonical implementation.
+AnsatzV3 = TOEAnsatzV3

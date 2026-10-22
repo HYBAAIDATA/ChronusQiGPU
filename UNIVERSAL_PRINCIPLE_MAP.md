@@ -1933,3 +1933,21 @@ Scaffolds EUCLID's emergent intelligence to explore the Birch and Swinnerton-Dye
 
 Evidence: `integrations/solvers/bsd_scaffold.py`, `integrations/solvers/tests/test_bsd_scaffold.py` (9/9 pass), `integrations/agi_external/tests/test_phi_integration.py` (2/2 pass), `integrations/agi_external/tests/test_benchmarking.py` (1/1 pass), `docs/bsd_scaffold.md`.
 
+
+
+### 20.8 Config-bound execution, two GPU modes and full TOE scope
+
+Owner direction is recorded in `OWNER_DECLARATIONS.md` D10. Implementation anchors:
+
+| Requirement | Runtime/evidence anchor | Qualification boundary |
+|---|---|---|
+| Config-bound intelligence | `runtime_config.py`: validated seed, worker and per-arm work budget; `GovernedOctopusAdapter`: per-campaign snapshot/digest; `OctopusExecutionEngine`: bound seed/worker/budget | Reproducible policy/ordering is not proof of predictive advantage or SHA256d inversion |
+| Governed mining cap | `HashrateGovernor`; bridge cumulative pacing; strict config ceiling validation and approval revocation | Rate cap is not achieved rate; independent deployments require aggregate allocation |
+| Independent Docker GPU | `docker-compose.local.yml`; `ChronusSoftwareFabricAdapter`; real SHA256d known-answer execution | No physical GPU/ASIC/QPU or external pool acceptance claimed |
+| Climb/scale host GPU | config `execution.mode=scale_stack`; preferred physical adapter with software fallback forbidden | Missing executable adapter fails closed; target-host scaling measurements still required |
+| Hardware-neutral governance | `GovernedProductionMiningCoordinator` aliases the existing M3 authorization/custody implementation | No security gates removed and no chip restriction added |
+| TOE is a full engine | Section 11 and Section 19; `TOEIntelligenceRuntime.solve/learn/predict/explain/forecast/causal` | Preserve full domain-neutral interfaces; mining remains a bounded integration |
+
+The solve-first requirement remains an implementation/evidence gate. A bounded
+nonce traversal, heuristic score or passing consensus recheck must not be renamed
+an analytical solution, nor asserted to deliver a deterministic pool share time.

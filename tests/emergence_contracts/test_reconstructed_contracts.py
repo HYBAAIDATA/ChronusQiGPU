@@ -2,6 +2,7 @@
 
 Synthetic harness tests below establish plumbing only, not empirical emergence.
 """
+
 import dataclasses
 import hashlib
 import hmac
@@ -16,35 +17,61 @@ import unittest
 import euclid
 import euclid.emergence as public
 from euclid.emergence.models import (
-    CapabilityManifest, NoveltyReport, TelemetryRecord, SubstrateProperties,
-    SubstrateExecutionResult, DiscoveryEnvelope, ReproductionProtocol,
-    EmergentCandidate, QualifiedEmergent, RejectedQualification,
-    SuspendedQualification, ColonyConfig, CondensationEvent,
+    CapabilityManifest,
+    NoveltyReport,
+    TelemetryRecord,
+    SubstrateProperties,
+    SubstrateExecutionResult,
+    DiscoveryEnvelope,
+    ReproductionProtocol,
+    EmergentCandidate,
+    QualifiedEmergent,
+    RejectedQualification,
+    SuspendedQualification,
+    ColonyConfig,
+    CondensationEvent,
 )
 from euclid.emergence.telemetry import (
-    AgentTelemetry, TelemetryKeyManager, TelemetryStream, detect_novelty,
+    AgentTelemetry,
+    TelemetryKeyManager,
+    TelemetryStream,
+    detect_novelty,
 )
 from euclid.emergence.substrate import StandardSyncExecutor, RunHarness
 from euclid.emergence.cultivator import AgentColony, CondensationCultivator
 from euclid.emergence.condensation import ConsortiumGovernance
 from euclid.emergence.trusted_core import DivergenceMonitor, EmergentQualificationService
 from euclid.emergence.folding.recursive_folding import (
-    verify_frozen_max_fold, FROZEN_MAX_FOLD, FROZEN_MAX_FOLD_SIGNATURE,
+    verify_frozen_max_fold,
+    FROZEN_MAX_FOLD,
+    FROZEN_MAX_FOLD_SIGNATURE,
 )
 
 
 def record(**updates):
-    values = dict(run_id="run", substrate_id="substrate", iteration_index=0,
-                  task_signature="task", programmed_actions_used=("navigate",),
-                  novel_elements=NoveltyReport(), timestamps={"start": 1.25},
-                  seeds={"rng": 42}, env_hash="environment")
+    values = dict(
+        run_id="run",
+        substrate_id="substrate",
+        iteration_index=0,
+        task_signature="task",
+        programmed_actions_used=("navigate",),
+        novel_elements=NoveltyReport(),
+        timestamps={"start": 1.25},
+        seeds={"rng": 42},
+        env_hash="environment",
+        invariant_violations=(),
+    )
     values.update(updates)
     return TelemetryRecord(**values).with_computed_hash()
 
 
 def properties(**updates):
-    values = dict(executor_type="sync", observation_latency=5.0,
-                  action_granularity="atomic", compute_substrate="declared-vm")
+    values = dict(
+        executor_type="sync",
+        observation_latency=5.0,
+        action_granularity="atomic",
+        compute_substrate="declared-vm",
+    )
     values.update(updates)
     return SubstrateProperties(**values)
 
@@ -54,7 +81,8 @@ class Contracts(unittest.TestCase):
         self.assertTrue(Path(euclid.__file__).is_file())
         self.assertEqual(euclid.EuclidRuntime.__module__, "euclid.runtime")
         self.assertIs(public.CapabilityManifest, CapabilityManifest)
-        self.assertEqual(len(public.__all__), 44)
+        self.assertEqual(len(public.__all__), len(set(public.__all__)))
+        self.assertIn("QualificationAuthorization", public.__all__)
         for name in public.__all__:
             self.assertTrue(hasattr(public, name), name)
 
@@ -73,7 +101,9 @@ class Contracts(unittest.TestCase):
         a = CapabilityManifest({"a"}, {("a", "b")}, {"s"})
         b = dataclasses.replace(a, declared_compositions={("b", "a")})
         self.assertNotEqual(a.compute_hash(), b.compute_hash())
-        self.assertEqual(a.compute_hash(), CapabilityManifest({"a"}, {("a", "b")}, {"s"}).compute_hash())
+        self.assertEqual(
+            a.compute_hash(), CapabilityManifest({"a"}, {("a", "b")}, {"s"}).compute_hash()
+        )
 
     def test_manifest_normalizes_caller_mutation(self):
         actions = {"a"}
@@ -82,21 +112,35 @@ class Contracts(unittest.TestCase):
         self.assertEqual(manifest.declared_actions, frozenset({"a"}))
 
     def test_cross_process_hash_seed_stability(self):
-        command = [sys.executable, "-c", "from euclid.emergence.models import CapabilityManifest; print(CapabilityManifest({'a','b'},{('a','b')},{'s'}).compute_hash())"]
-        outputs = [subprocess.check_output(command, env=dict(os.environ, PYTHONHASHSEED=seed)) for seed in ("1", "11")]
+        command = [
+            sys.executable,
+            "-c",
+            "from euclid.emergence.models import CapabilityManifest; print(CapabilityManifest({'a','b'},{('a','b')},{'s'}).compute_hash())",
+        ]
+        outputs = [
+            subprocess.check_output(command, env=dict(os.environ, PYTHONHASHSEED=seed))
+            for seed in ("1", "11")
+        ]
         self.assertEqual(*outputs)
 
     def test_telemetry_binds_novelty_and_invariants(self):
         r = record()
-        for kwargs in ({"novel_elements": NoveltyReport(("novel",))},
-                       {"invariant_violations": ("violation",)},
-                       {"seeds": {"rng": 43}}, {"env_hash": "other"}):
-            self.assertNotEqual(r.compute_digest(), dataclasses.replace(r, **kwargs).compute_digest())
+        for kwargs in (
+            {"novel_elements": NoveltyReport(("novel",))},
+            {"invariant_violations": ("violation",)},
+            {"seeds": {"rng": 43}},
+            {"env_hash": "other"},
+        ):
+            self.assertNotEqual(
+                r.compute_digest(), dataclasses.replace(r, **kwargs).compute_digest()
+            )
 
     def test_record_hash_not_recursively_bound(self):
         r = record()
         self.assertEqual(r.record_hash, r.compute_digest())
-        self.assertEqual(r.compute_digest(), dataclasses.replace(r, record_hash="wrong").compute_digest())
+        self.assertEqual(
+            r.compute_digest(), dataclasses.replace(r, record_hash="wrong").compute_digest()
+        )
         self.assertNotIn("record_hash", json.loads(r.canonical_json()))
 
     def test_telemetry_snapshot_immutable(self):
@@ -127,21 +171,33 @@ class Contracts(unittest.TestCase):
         r = record()
         sig = km.sign_record(r, "local-test-signer")
         self.assertTrue(km.verify_signature(r, sig))
-        self.assertFalse(km.verify_signature(dataclasses.replace(r, novel_elements=NoveltyReport(("tamper",))), sig))
+        self.assertFalse(
+            km.verify_signature(
+                dataclasses.replace(r, novel_elements=NoveltyReport(("tamper",))), sig
+            )
+        )
         km.revoke_key(sig.key_id)
         self.assertFalse(km.verify_signature(r, sig))
 
     def test_payload_remains_float64_boundary(self):
         value = 1.0000000000000002
-        self.assertEqual(json.loads(record(timestamps={"t": value}).canonical_json())["timestamps"]["t"], value)
+        self.assertEqual(
+            json.loads(record(timestamps={"t": value}).canonical_json())["timestamps"]["t"], value
+        )
 
     def test_actual_telemetry_to_stream(self):
         stream, telemetry = TelemetryStream(), AgentTelemetry()
         r, sig = telemetry.on_iteration(
-            agent_id="agent", task_signature="task", actions=["navigate"],
-            observations=["obs"], decisions=["navigate", "new_action"],
-            run_id="run", substrate_id="substrate", iteration_index=0,
-            manifest=CapabilityManifest({"navigate"}), telemetry_stream=stream,
+            agent_id="agent",
+            task_signature="task",
+            actions=["navigate"],
+            observations=["obs"],
+            decisions=["navigate", "new_action"],
+            run_id="run",
+            substrate_id="substrate",
+            iteration_index=0,
+            manifest=CapabilityManifest({"navigate"}),
+            telemetry_stream=stream,
         )
         self.assertTrue(telemetry.key_manager.verify_signature(r, sig))
         self.assertEqual(stream.count(), 1)
@@ -150,8 +206,11 @@ class Contracts(unittest.TestCase):
 
     def test_substrate_identity_binds_description(self):
         p = properties()
-        for kwargs in ({"sandbox_id": "other"}, {"memory_limit_mb": 128},
-                       {"complexity_axis_tags": ("depth:2",)}):
+        for kwargs in (
+            {"sandbox_id": "other"},
+            {"memory_limit_mb": 128},
+            {"complexity_axis_tags": ("depth:2",)},
+        ):
             self.assertNotEqual(p.compute_id(), dataclasses.replace(p, **kwargs).compute_id())
 
     def test_run_hash_binds_full_records(self):
@@ -169,33 +228,58 @@ class Contracts(unittest.TestCase):
             SubstrateExecutionResult("wrong", properties(), 0)
 
     def test_envelope_expansion_explicit_semantics(self):
-        source = DiscoveryEnvelope(10, .5, .5, {"alpha": (0, 10)})
+        source = DiscoveryEnvelope(10, 0.5, 0.5, {"alpha": (0, 10)})
         expanded = source.scale_margin(1.5)
         self.assertEqual(expanded.parameter_bounds["alpha"], (-2.5, 12.5))
         self.assertEqual(expanded.max_observation_latency, 15)
-        self.assertAlmostEqual(expanded.compute_budget_sec, 1/3)
+        self.assertAlmostEqual(expanded.compute_budget_sec, 1 / 3)
         self.assertEqual(source.parameter_bounds["alpha"], (0, 10))
         with self.assertRaises(ValueError):
-            source.scale_margin(.5)
+            source.scale_margin(0.5)
 
     def test_invalid_bounds_and_protocol(self):
         with self.assertRaises(ValueError):
             DiscoveryEnvelope(1, 1, 1, {"x": (2, 1)})
-        for seeds, tolerance in (((), .95), ((True,), .95), ((42,), 1.1)):
+        for seeds, tolerance in (((), 0.95), ((True,), 0.95), ((42,), 1.1)):
             with self.assertRaises(ValueError):
                 ReproductionProtocol("task", seeds, "manifest", "env", ("observable",), tolerance)
 
     def test_candidate_supports_actual_folding_source(self):
         p = ReproductionProtocol("task", (42,), "manifest", "env", ("x",))
-        c = EmergentCandidate("id", "cap", "sub", DiscoveryEnvelope(1, .5, .5), p, source="fold(depth=0)+model_1")
+        c = EmergentCandidate(
+            "id",
+            "cap",
+            "sub",
+            DiscoveryEnvelope(1, 0.5, 0.5),
+            p,
+            claimed_behavior_signature="folded-observable",
+            source="fold(depth=0)+model_1",
+        )
         self.assertIn("source", c.to_dict())
 
     def test_outcomes_serialize_distinctly(self):
-        outcomes = [QualifiedEmergent("id", "cap", .95, {}, {}, "local-token", "local-governance"),
-                    RejectedQualification("id", "cap", "gate1", "missing evidence"),
-                    SuspendedQualification("id", "cap", "drift", 1, .25, "drift")]
-        self.assertEqual([json.loads(json.dumps(v.to_dict()))["status"] for v in outcomes],
-                         ["QUALIFIED", "REJECTED", "SUSPENDED"])
+        outcomes = [
+            QualifiedEmergent(
+                "id",
+                "cap",
+                score=0.95,
+                certification_token="local-token",
+                governance_signature="local-governance",
+            ),
+            RejectedQualification("id", "cap", gate_failed="gate1", reason="missing evidence"),
+            SuspendedQualification(
+                "id",
+                "cap",
+                divergence_metric="drift",
+                divergence_value=1,
+                threshold=0.25,
+                reason="drift",
+            ),
+        ]
+        self.assertEqual(
+            [json.loads(json.dumps(v.to_dict()))["status"] for v in outcomes],
+            ["QUALIFIED", "REJECTED", "SUSPENDED"],
+        )
 
     def test_bounded_synthetic_colony_and_breeding(self):
         colony = AgentColony(ColonyConfig("test", interaction_topology="recursive_folding"))
@@ -209,7 +293,20 @@ class Contracts(unittest.TestCase):
         p = properties()
         executor = StandardSyncExecutor(p)
         h = RunHarness({p.compute_id(): executor})
-        result = h.execute(None, ["task"], p.compute_id(), tiers=[3])
+
+        class MeasuredArchitecture:
+            def decide(self, task, iteration):
+                return ["navigate"]
+
+            def act(self, decisions):
+                return decisions
+
+            def observe(self):
+                return {"position": 1.0}
+
+        with self.assertRaises(TypeError):
+            h.execute(None, ["task"], p.compute_id(), tiers=[3])
+        result = h.execute(MeasuredArchitecture(), ["task"], p.compute_id(), tiers=[3])
         self.assertEqual(result.iterations_completed, 3)
         self.assertEqual(len(result.telemetry_records), 3)
         self.assertEqual(result.run_hash, result.compute_run_hash())
@@ -217,12 +314,16 @@ class Contracts(unittest.TestCase):
     def test_novelty_and_divergence_consumers(self):
         novelty = detect_novelty(["navigate", "x"], [], CapabilityManifest({"navigate"}))
         self.assertIn("x", novelty.unattributed)
-        divergent, report = DivergenceMonitor().divergence_detected([record(invariant_violations=("tripwire",))])
+        divergent, report = DivergenceMonitor().divergence_detected(
+            [record(invariant_violations=("tripwire",))]
+        )
         self.assertTrue(divergent)
         self.assertEqual(report["divergence_metric"], "invariant_violations")
 
     def test_event_and_adjudication_contract(self):
-        event = CondensationEvent({"criticality": {"avalanche_count": 10, "power_law_fit": .8}}, ["a", "b"])
+        event = CondensationEvent(
+            {"criticality": {"avalanche_count": 10, "power_law_fit": 0.8}}, ["a", "b"]
+        )
         with self.assertRaises(CondensationEvent):
             raise event
         verdict = ConsortiumGovernance().adjudicate(event, ["a", "b", "c"], [True, True, True])
@@ -232,20 +333,25 @@ class Contracts(unittest.TestCase):
 
     def test_qualification_refuses_missing_authority(self):
         from euclid.emergence.trusted_core.access_control import InvalidGovernanceTokenError
+
         with self.assertRaises(InvalidGovernanceTokenError):
             EmergentQualificationService().qualify(None, None, None)
 
 
 class SecurityRegressions(unittest.TestCase):
     def test_frozen_ceiling_rejects_recomputed_public_salt_mac(self):
-        forged = hmac.new(b"euclid_phi2_frozen_recursion_ceiling_2026", b"MAX_FOLD=999", hashlib.sha256).hexdigest()
+        forged = hmac.new(
+            b"euclid_phi2_frozen_recursion_ceiling_2026", b"MAX_FOLD=999", hashlib.sha256
+        ).hexdigest()
         self.assertFalse(verify_frozen_max_fold(999, forged))
         self.assertTrue(verify_frozen_max_fold(FROZEN_MAX_FOLD, FROZEN_MAX_FOLD_SIGNATURE))
 
     def test_signature_identity_cannot_be_relabelled(self):
         km, r = TelemetryKeyManager(), record()
         sig = km.sign_record(r, "alice")
-        self.assertFalse(km.verify_signature(r, dataclasses.replace(sig, signer_identity="mallory")))
+        self.assertFalse(
+            km.verify_signature(r, dataclasses.replace(sig, signer_identity="mallory"))
+        )
         self.assertFalse(km.verify_signature(r, dataclasses.replace(sig, algorithm="not-Ed25519")))
 
     def test_explicit_key_cannot_sign_as_other_identity(self):

@@ -32,7 +32,7 @@ class ChronusVirtualIGPUHasher:
         client: ChronusClient | None = None,
         *,
         tenant: str = "mining",
-        execution_policy: str = ExecutionPolicy.PREFERRED_ACCELERATOR.value,
+        execution_policy: str | None = None,
         allow_software_fallback: bool = True,
         grind_batch: int = 1 << 16,
     ) -> None:
@@ -57,6 +57,21 @@ class ChronusVirtualIGPUHasher:
         return bool(self.last_adapter_kind) and self.last_adapter_kind != "software"
 
     def _submit(self, header: bytes, target_be: bytes, nonces: list[int]) -> dict[str, Any]:
+        from chronus.mla1517_platform.python import runtime_config
+
+        cfg = runtime_config.load()
+        if cfg.get("_policy_error"):
+            raise PermissionError("invalid persisted execution policy; execution refused")
+        mode = cfg["execution"]["mode"]
+        policy = self.execution_policy or (
+            ExecutionPolicy.STANDALONE_SOFTWARE.value
+            if mode == "independent"
+            else ExecutionPolicy.PREFERRED_ACCELERATOR.value
+        )
+        if mode == "independent" and policy != ExecutionPolicy.STANDALONE_SOFTWARE.value:
+            raise PermissionError("execution policy conflicts with independent config")
+        if mode == "scale_stack" and policy == ExecutionPolicy.STANDALONE_SOFTWARE.value:
+            raise PermissionError("execution policy conflicts with scale_stack config")
         workload = Workload(
             id=str(uuid.uuid4()),
             kind=WorkloadKind.SHA256D_SCAN,
@@ -66,8 +81,8 @@ class ChronusVirtualIGPUHasher:
                 "target_hex": bytes(target_be).hex(),
                 "nonces": nonces,
             },
-            execution_policy=self.execution_policy,
-            allow_software_fallback=self.allow_software_fallback,
+            execution_policy=policy,
+            allow_software_fallback=self.allow_software_fallback and mode != "scale_stack",
         )
         result = self.client.submit(workload)
         if result.status != "ok":
@@ -75,7 +90,9 @@ class ChronusVirtualIGPUHasher:
         self.launches += 1
         self.kernel_ms += float(result.device_time_ns or 0) / 1e6
         adapter_id = result.actual_adapter_id or result.adapter_id
-        self.last_adapter_kind = "software" if adapter_id == "cpu-emulator" else adapter_id
+        self.last_adapter_kind = (
+            "software" if adapter_id in {"cpu-emulator", "chronus-software-fabric"} else adapter_id
+        )
         self.device = f"Chronus Virtual iGPU ({adapter_id})"
         self.last_result = result.to_dict()
         return dict(result.output or {})

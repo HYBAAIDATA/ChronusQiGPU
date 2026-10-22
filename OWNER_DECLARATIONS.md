@@ -162,3 +162,34 @@ is an engineering summary of existing directions, not a newly invented quotation
 older OVID/THESEUS interpretations. Their migration remains explicitly open in
 `docs/EUCLID_NOTION_RECONCILIATION_20261014.md`; this entry does not claim that
 changing documentation alone repaired executable custody semantics.
+
+
+## D10 — Config-bound intelligence, agnostic execution and full TOE scope
+
+**DECLARED — owner-directed minimum across offerings.** Engineering summary
+of the owner's latest deployment requirements (pool credentials intentionally
+excluded from this governing record):
+
+- Intelligence must obey the operator configuration; deterministic decisions
+  and budgets are bound to that configuration. The governed mining ceiling is
+  10 EH/s, not a substitute for measured executed throughput.
+- Solve-first is the target, not indiscriminate search. Consensus validity
+  remains exact SHA256d and the negotiated target; no ordering or intelligence
+  result self-certifies a solution or establishes a cryptographic shortcut.
+- The system is substrate- and vendor-agnostic. M3's authorization/custody
+  milestone is not an Apple M3 hardware requirement.
+- Chronus detects and binds a usable host GPU for climb/scale mode, or operates
+  independently as the software-defined GPU. Local Docker qualification must
+  not require a physical GPU or MMIO device. Full-power mode remains bounded by
+  configuration and reports the executor and work actually completed.
+- TOE is the domain-neutral reasoning/inference/certification engine, not merely
+  a mining scorer. Preserve solve, learn, explain, forecast and causal interfaces,
+  tenant isolation, durable learning and evidence. Mining is one governed adapter.
+- These minimums apply to mining, enterprise data, intelligence, quantum,
+  analytics, security and finance. Each offering needs its own executed
+  qualification; one green adapter does not certify every offering.
+
+PI-01 remains in force: requirement capture is not completion evidence. External
+pool acceptance, physical-host scaling and publication need their own retained,
+source-bound executed evidence. Private pool identities/passwords are deployment
+secrets and must not appear in source, examples or qualification reports.
