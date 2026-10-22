@@ -75,3 +75,30 @@ then passed. Earlier failures and observations are retained rather than replaced
 
 Release remains blocked until the remaining gates are exercised and pass on the
 intended target. Readiness is a scoped dependency probe, not release approval.
+
+## Restart follow-up
+
+A restart onto the second repair snapshot exposed a remaining scalability defect:
+`TheseusPhysicalStore.verify` reparsed the entire address journal for each file.
+A live stack capture identified this path; readiness correctly returned 503 while
+startup verification was incomplete. The previous 200 observations are historical,
+not a claim about this restart.
+
+Reconciliation now uses one journal-membership snapshot scoped to one pass.
+Per-object tenant, digest, mathematical address and both-replica checks remain
+active. File identity/size/mtime/ctime are checked during and at the end of the
+pass; journal mutation aborts verification. The validator cannot be reused after
+the pass and no journal cache survives to the next pass. Mining health also reuses
+one current lineage verdict within its result, instead of recomputing it twice.
+The expanded batch/fault/tenant/recovery/registry selection passed 69 tests.
+
+The standalone Kellogg benchmark is now explicitly scoped to the tensor core.
+All modules are still attempted. The four declared consumer integration modules
+remain visibly unavailable when their Chronus/TOE dependencies are blocked;
+unrelated adapter exceptions and undeclared core dependency violations still fail
+the gate. The product suite passed 48 tests and the scope/adversarial checks passed
+3 tests. This is not a claim that consumer adapters run without their dependencies.
+
+Fresh independent Braiins and ViaBTC protocol sessions authenticated and received
+80-byte-header jobs at 15:10:55 UTC. Neither session submitted a share; these are
+connection checks, not failover or pool-acceptance evidence.

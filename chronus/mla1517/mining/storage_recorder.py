@@ -757,9 +757,10 @@ class MiningStorageRecorder:
                 if report is not None
                 else bool((self._last_health or {}).get("reconciliation_ok", False))
             )
+            mining_chain_ok = bool(self.files.verify_mining(self.tenant_id))
             healthy = bool(
                 verification.get("passed")
-                and self.files.verify_mining(self.tenant_id)
+                and mining_chain_ok
                 and reconciliation_ok
                 and self.errors == 0
             )
@@ -771,7 +772,7 @@ class MiningStorageRecorder:
                 "errors": self.errors,
                 "last_error": self.last_error,
                 "file_plane_ok": bool(verification.get("file_plane_ok")),
-                "mining_chain_ok": bool(self.files.verify_mining(self.tenant_id)),
+                "mining_chain_ok": mining_chain_ok,
                 "reconciliation_ok": bool(reconciliation_ok),
                 "verification": "incremental" if incremental else "full",
                 "unresolved": (

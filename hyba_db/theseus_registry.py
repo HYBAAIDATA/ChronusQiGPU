@@ -254,83 +254,84 @@ class TheseusFileRegistry(FileRegistry):
         attestation_invalid: list[str] = []
 
         proved: set[str] = set()
-        for row in self._file_rows(tenant_id):
-            vid = str(row["file_version_id"])
-            # These independent semantic failures must remain visible even
-            # when physical/custody checks also fail during partial recovery.
-            attestation_ok = False
-            try:
-                attestation_ok = self.store.verify_attestation(
-                    tenant_id, str(row["attestation_id"]), verified=proved
-                )
-            except Exception:
-                pass
-            if not attestation_ok:
-                attestation_invalid.append(vid)
-            linked = self.store._db.execute(
-                "SELECT 1 FROM file_links WHERE tenant_id=? AND file_version_id=?",
-                (tenant_id, vid),
-            ).fetchone() is not None
-            if not linked:
-                link_missing.append(vid)
-            uri = str(row["storage_uri"])
-            if not uri.startswith("file://"):
-                orphans.append(vid)
-                continue
-            path = Path(uri[7:])
-            try:
-                resolved = path.resolve()
-                rel = resolved.relative_to(resolved_root)
-            except (OSError, ValueError):
-                orphans.append(vid)
-                continue
-            if not rel.parts or rel.parts[0] != tenant_id:
-                tenant_mismatches.append(vid)
-                continue
-            try:
-                address = self.storage_address(tenant_id, vid)
-                canonical = physical.primary_path(address).resolve()
-            except Exception:
-                conflicts.append(vid)
-                continue
-            expected[str(canonical)] = vid
-            if resolved != canonical or address.content_sha256 != row["content_sha256"]:
-                conflicts.append(vid)
-                continue
-            if not path.is_file():
-                missing.append(vid)
-                continue
-            try:
-                data = path.read_bytes()
-            except OSError:
-                missing.append(vid)
-                continue
-            if len(data) != row["size_bytes"] or _sha(data) != row["content_sha256"]:
-                hashes.append(vid)
-                continue
-            if not verify_storage_address(address, data) or not physical.verify(address, data):
-                conflicts.append(vid)
-                continue
-            if row["status"] in {"MISSING", "QUARANTINED"}:
-                conflicts.append(vid)
-                continue
-            cid = str(row["custody_record_id"] or "")
-            if not cid or self.custody is None or not self.custody.verify(tenant_id, cid):
-                custody_missing.append(vid)
-                continue
-            if not attestation_ok or not linked:
-                continue
-            if (row["ovid_lineage_id"] is None) != (row["transform_contract"] is None):
-                transform_mismatches.append(vid)
-                continue
-            if row["status"] == "RETIRED" and not self.store._db.execute(
-                "SELECT 1 FROM file_events WHERE tenant_id=? AND file_version_id=? "
-                "AND event_type IN ('RETENTION_APPLIED','DELETED_BY_POLICY')",
-                (tenant_id, vid),
-            ).fetchone():
-                retention_violations.append(vid)
-                continue
-            healthy.append(vid)
+        with physical.verification_batch(tenant_id) as verify_physical:
+            for row in self._file_rows(tenant_id):
+                vid = str(row["file_version_id"])
+                # These independent semantic failures must remain visible even
+                # when physical/custody checks also fail during partial recovery.
+                attestation_ok = False
+                try:
+                    attestation_ok = self.store.verify_attestation(
+                        tenant_id, str(row["attestation_id"]), verified=proved
+                    )
+                except Exception:
+                    pass
+                if not attestation_ok:
+                    attestation_invalid.append(vid)
+                linked = self.store._db.execute(
+                    "SELECT 1 FROM file_links WHERE tenant_id=? AND file_version_id=?",
+                    (tenant_id, vid),
+                ).fetchone() is not None
+                if not linked:
+                    link_missing.append(vid)
+                uri = str(row["storage_uri"])
+                if not uri.startswith("file://"):
+                    orphans.append(vid)
+                    continue
+                path = Path(uri[7:])
+                try:
+                    resolved = path.resolve()
+                    rel = resolved.relative_to(resolved_root)
+                except (OSError, ValueError):
+                    orphans.append(vid)
+                    continue
+                if not rel.parts or rel.parts[0] != tenant_id:
+                    tenant_mismatches.append(vid)
+                    continue
+                try:
+                    address = self.storage_address(tenant_id, vid)
+                    canonical = physical.primary_path(address).resolve()
+                except Exception:
+                    conflicts.append(vid)
+                    continue
+                expected[str(canonical)] = vid
+                if resolved != canonical or address.content_sha256 != row["content_sha256"]:
+                    conflicts.append(vid)
+                    continue
+                if not path.is_file():
+                    missing.append(vid)
+                    continue
+                try:
+                    data = path.read_bytes()
+                except OSError:
+                    missing.append(vid)
+                    continue
+                if len(data) != row["size_bytes"] or _sha(data) != row["content_sha256"]:
+                    hashes.append(vid)
+                    continue
+                if not verify_storage_address(address, data) or not verify_physical(address, data):
+                    conflicts.append(vid)
+                    continue
+                if row["status"] in {"MISSING", "QUARANTINED"}:
+                    conflicts.append(vid)
+                    continue
+                cid = str(row["custody_record_id"] or "")
+                if not cid or self.custody is None or not self.custody.verify(tenant_id, cid):
+                    custody_missing.append(vid)
+                    continue
+                if not attestation_ok or not linked:
+                    continue
+                if (row["ovid_lineage_id"] is None) != (row["transform_contract"] is None):
+                    transform_mismatches.append(vid)
+                    continue
+                if row["status"] == "RETIRED" and not self.store._db.execute(
+                    "SELECT 1 FROM file_events WHERE tenant_id=? AND file_version_id=? "
+                    "AND event_type IN ('RETENTION_APPLIED','DELETED_BY_POLICY')",
+                    (tenant_id, vid),
+                ).fetchone():
+                    retention_violations.append(vid)
+                    continue
+                healthy.append(vid)
 
         for obj in self.store._db.execute(
             "SELECT * FROM file_objects WHERE tenant_id=?", (tenant_id,)
