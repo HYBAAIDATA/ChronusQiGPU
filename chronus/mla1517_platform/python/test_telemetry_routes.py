@@ -8,6 +8,7 @@ dropping the connection.
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import tempfile
 import threading
@@ -16,7 +17,7 @@ from http.server import ThreadingHTTPServer
 from pathlib import Path
 from unittest.mock import patch
 from urllib.error import HTTPError
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 import control_api
 
@@ -36,7 +37,12 @@ class TelemetryRouteTests(unittest.TestCase):
         self.tempdir = tempfile.TemporaryDirectory()
         root = Path(self.tempdir.name)
         self.hb = root / "hb"
+        self.auth_headers = {"Authorization": "Bearer telemetry-fixture-token",
+                             "X-PYTHIA-Control-Authorization": "Bearer telemetry-fixture-token",
+                             "X-PYTHIA-Principal": "telemetry-test"}
         env = {
+            "PYTHIA_OPERATOR_PRINCIPALS_JSON": json.dumps({"telemetry-test": {
+                "role": "ceo", "token_sha256": hashlib.sha256(b"telemetry-fixture-token").hexdigest()}}),
             "MLA1517_STRATUM_USER": "rig.telemetry",
             "MLA1517_STRATUM_PASSWORD": "x",
             "PYTHIA_POOL_PROFILE": "braiins",
@@ -84,7 +90,7 @@ class TelemetryRouteTests(unittest.TestCase):
 
     def _get(self, base: str, path: str) -> tuple[int, dict]:
         try:
-            with urlopen(base + path, timeout=30) as response:
+            with urlopen(Request(base + path, headers=self.auth_headers), timeout=30) as response:
                 return response.status, json.loads(response.read().decode("utf-8"))
         except HTTPError as exc:
             return exc.code, json.loads(exc.read().decode("utf-8"))

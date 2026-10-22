@@ -261,4 +261,4 @@ def test_hashrate_governor_constants_and_cap_rules_are_locked():
     clock = Clock()
     gov = HashrateGovernor(target_hs=1e12, ceiling_hs=1e18, clock=clock)
     gov.observe_network(MAINNET_LIKE_NBITS)
-    assert gov.cap_hs == pytest.approx(0.01 * gov.network_hs)
+    assert gov.cap_hs == min(1e12, 1e18, 0.01 * gov.network_hs)

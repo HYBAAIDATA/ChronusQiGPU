@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import os
 import subprocess
 from dataclasses import dataclass
 from functools import lru_cache
@@ -95,9 +96,26 @@ class Finding:
 
 
 def live_files(root: Path = ROOT) -> list[Path]:
-    out = subprocess.run(
-        ["git", "-C", str(root), "ls-files", "-z", "*.py"], capture_output=True, text=True, check=True
-    ).stdout.split("\0")
+    result = subprocess.run(
+        ["git", "-C", str(root), "ls-files", "-z", "*.py"],
+        capture_output=True, text=True, check=False,
+    )
+    if result.returncode == 0:
+        out = result.stdout.split("\0")
+    elif not (root / ".git").exists():
+        # Owner-distributed source archives have no Git index. Audit the
+        # actual source tree, not a fabricated tracked-file list. Exclude
+        # generated runtimes, caches and dependency installations.
+        out = []
+        skip = {".git", ".venv", "venv", "node_modules", "__pycache__", "dist",
+                "build", ".pytest_cache", ".pytest_tmp", ".ruff_cache",
+                "data", "artifacts", "reports", "evidence"}
+        for directory, dirs, files in os.walk(root):
+            dirs[:] = [d for d in dirs if d not in skip]
+            out.extend(str((Path(directory) / f).relative_to(root))
+                       for f in files if f.endswith(".py"))
+    else:
+        raise RuntimeError("Git import-audit inventory failed; refusing partial audit")
     return [root / f for f in out if f and not f.startswith(EXCLUDE) and (root / f).is_file()]
 
 

@@ -1,0 +1,59 @@
+{
+  "captured_at_utc": "2026-10-22T10:06:09.185508+00:00",
+  "deployment_revision": "source-manifest-sha256:4b0466e8e50b06554a2ba09b9b437dcb694489a763ca46b1ed7ce8f478cfaaf7",
+  "real_external_pool": "braiins",
+  "full_600_nonce_completion_observed": true,
+  "completions": [
+    {
+      "plan_id": "8fc77c0a-2ed6-4613-816d-303567bbca15",
+      "execution_id": "execution:1f86b057-ac5a-473a-a5a1-00bd841d0e08",
+      "toe_frame_id": "d291f111d6a6d6fb5fda7b64ffa031dfdc6380c1f15a3fdb430950540fa24836",
+      "toe_observation_joined": true,
+      "geometry_shards": 600,
+      "nonempty_shards": 600,
+      "assigned_nonces": 600,
+      "hashes": 600,
+      "completion": "COMPLETE",
+      "pool_outcome": "NO_CANDIDATE",
+      "executed_route": "chronus_batch",
+      "source_revision": "source-manifest-sha256:4b0466e8e50b06554a2ba09b9b437dcb694489a763ca46b1ed7ce8f478cfaaf7"
+    },
+    {
+      "plan_id": "5eef6b9a-c47c-4c17-9e6f-6c90a40f74f4",
+      "execution_id": "execution:7b836590-98cd-470c-8846-444bcc9e81b5",
+      "toe_frame_id": "d291f111d6a6d6fb5fda7b64ffa031dfdc6380c1f15a3fdb430950540fa24836",
+      "toe_observation_joined": true,
+      "geometry_shards": 600,
+      "nonempty_shards": 600,
+      "assigned_nonces": 600,
+      "hashes": 600,
+      "completion": "COMPLETE",
+      "pool_outcome": "NO_CANDIDATE",
+      "executed_route": "chronus_batch",
+      "source_revision": "source-manifest-sha256:4b0466e8e50b06554a2ba09b9b437dcb694489a763ca46b1ed7ce8f478cfaaf7"
+    }
+  ],
+  "event_counts": {
+    "cycle_transition": 12,
+    "pool_endpoint_selected": 1,
+    "identity_bound": 2,
+    "lease_authorized": 2,
+    "toe_observation": 2,
+    "plan_created": 6,
+    "execution_started": 2,
+    "decision": 3,
+    "learning_observed": 2,
+    "execution_finished": 2,
+    "chronus107_execution_evidence": 2,
+    "salamander_runtime_observed": 1
+  },
+  "accepted_share_established": false,
+  "physical_parallelism_claimed": false,
+  "production_ready": false,
+  "mining_counters": {
+    "hashes_total": 600,
+    "executions_total": 1,
+    "shares_accepted": 0,
+    "hashrate_hs": 20.0
+  }
+}

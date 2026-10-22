@@ -382,7 +382,10 @@ def build_toe_signal(context: Any) -> TOECausalSignal:
     traj: Mapping[str, Any] = result.get("trajectory_prediction") or {}
 
     coherence = float(tomo.get("coherence", 0.0))
-    entropy = float(tomo.get("entropy", 0.0))
+    # Born-distribution entropy is not density-matrix mixedness: a broad
+    # pure state can have high measurement entropy and zero von Neumann entropy.
+    density_entropy = tomo.get("von_neumann_entropy")
+    entropy = float(tomo.get("entropy", 0.0) if density_entropy is None else density_entropy)
     energy = float(tomo.get("energy", 0.0))
 
     causal_throttle = entropy > _ENTROPY_THROTTLE or coherence < _COHERENCE_FLOOR

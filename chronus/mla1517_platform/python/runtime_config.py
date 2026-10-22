@@ -68,7 +68,7 @@ def default_config() -> dict[str, Any]:
         "pools": [],
         "solvers": {"arms": 1, "workers": 32},
         "execution": {"mode": "independent"},
-        "intelligence": {"seed": 1337, "max_workers": 4, "max_nonces_per_arm": None},
+        "intelligence": {"seed": 1337, "max_workers": 4, "max_nonces_per_arm": None, "require_toe": False},
         "hashrate": {"target_hs": 0.0, "ceiling_hs": HASHRATE_CEILING_HS},
         "live_submit": {"enabled": False, "approval_id": ""},
         "window": 200000,
@@ -327,6 +327,9 @@ def validate(cfg: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("execution.mode must be independent, auto, or scale_stack")
     if not isinstance(intelligence, dict):
         raise ValueError("intelligence must be an object")
+    require_toe = intelligence.get("require_toe", False)
+    if type(require_toe) is not bool:
+        raise ValueError("intelligence.require_toe must be boolean")
     seed = intelligence.get("seed", 1337)
     workers_limit = intelligence.get("max_workers", 4)
     nonce_limit = intelligence.get("max_nonces_per_arm")
@@ -344,6 +347,7 @@ def validate(cfg: dict[str, Any]) -> dict[str, Any]:
         "execution": {"mode": execution.get("mode", "independent")},
         "intelligence": {
             "seed": seed,
+            "require_toe": require_toe,
             "max_workers": workers_limit,
             "max_nonces_per_arm": nonce_limit,
         },

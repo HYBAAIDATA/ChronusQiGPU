@@ -33,20 +33,8 @@ MILLENNIUM_DIR = ROOT / "millennium"
 BSD_EVIDENCE_JSON = MILLENNIUM_DIR / "bsd_evidence.json"
 BSD_EVIDENCE_JSONL = EVIDENCE_DIR / "bsd_evidence.jsonl"
 
-try:
-    from integrations.solvers.bsd_solver import (
-        BSDSolverTeam,
-        BSDTeamReport,
-        EllipticCurve,
-    )
-    from integrations.solvers.bsd_scaffold import BSDScribeConfig
-except ImportError:
-    from build.lib.integrations.solvers.bsd_solver import (
-        BSDSolverTeam,
-        BSDTeamReport,
-        EllipticCurve,
-    )
-    from build.lib.integrations.solvers.bsd_scaffold import BSDScribeConfig
+from integrations.solvers.bsd_solver import BSDSolverTeam, BSDTeamReport, EllipticCurve
+from integrations.solvers.bsd_scaffold import BSDScribeConfig
 
 
 # ---------------------------------------------------------------------------

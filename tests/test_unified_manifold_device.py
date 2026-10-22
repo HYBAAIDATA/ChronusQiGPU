@@ -15,12 +15,8 @@ from Intelligence.four_layer_stack import _double_sha256
 from Intelligence.unified_manifold_device import (
     UnifiedManifoldHashingDevice,
 )
-try:
-    from chronus.mla1517.mining.opencl_driver import OpenCLDevice, OpenCLDriver, OpenCLExecutionResult
-    from chronus.mla1517.mining.pow import sha256d
-except ImportError:
-    from mla1517.mining.opencl_driver import OpenCLDevice, OpenCLDriver, OpenCLExecutionResult
-    from mla1517.mining.pow import sha256d
+from chronus.mla1517.mining.opencl_driver import OpenCLDevice, OpenCLDriver, OpenCLExecutionResult
+from chronus.mla1517.mining.pow import sha256d
 
 HEADER = bytes(range(80))
 TARGET_EASY = b"\xff" * 31 + b"\x7f"

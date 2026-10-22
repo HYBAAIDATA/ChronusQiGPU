@@ -1232,6 +1232,10 @@ class TOEIntelligenceRuntime:
             self._validate_tenant(tenant)
         except (TypeError, ValueError) as exc:
             return self._error(tenant, operation, "invalid_tenant", str(exc))
+        try:
+            self._validate_payload_size(observed)
+        except (TypeError, ValueError) as exc:
+            return self._error(tenant, operation, "payload_invalid", str(exc))
         machine = self.machine_for(tenant)
         episode = machine.episode_record(episode_sha256)
         if episode is None:
@@ -1261,6 +1265,20 @@ class TOEIntelligenceRuntime:
             ok=bool(report.get("learned")),
             tenant_id=tenant.tenant_id,
             operation=operation,
+            receipt=RuntimeReceipt(
+                receipt_id=str(uuid.uuid4()),
+                tenant_id=tenant.tenant_id,
+                operation=operation,
+                payload_digest=self._digest({
+                    "episode_sha256": episode_sha256, "observed": observed,
+                }),
+                result_digest=self._digest(report),
+                timestamp=time.time(),
+                evidence_source="toe.machine.TOEMachine",
+                evidence_status="MEASURED",
+                observe_only=True,
+                production_ready=self.config.production_ready,
+            ) if report.get("learned") else None,
             result=report,
             degraded=self.degraded,
             decision_id=episode_sha256,

@@ -21,7 +21,14 @@ __pycache__
 
 tests
 docs
-artifacts
+# Runtime structural training is mandatory; include only its sealed corpus,
+# not mutable memories, credentials, or generated qualification evidence.
+artifacts/*
+!artifacts/pythia_training/
+artifacts/pythia_training/*
+!artifacts/pythia_training/real_nonces_200.csv
+!artifacts/pythia_training/real_nonces_200.manifest.json
+!artifacts/pythia_training/real_nonce_analysis_200_fresh.json
 blockdata
 data
 experiments

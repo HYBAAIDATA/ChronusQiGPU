@@ -609,9 +609,11 @@ def submit_shares_extended(
     version: int, extranonce: bytes
 ) -> Sv2Frame:
     payload = submit_shares_standard(channel_id, sequence_number, job_id, nonce, ntime, version).payload[4:]
+    # B0_32 is binary, not STR0_32: embedded NUL bytes are valid.
+    extranonce = _b(extranonce, "extranonce", 32)
     return _channel_frame(
         MessageType.SUBMIT_SHARES_EXTENDED, channel_id,
-        payload + _pack_str(_b(extranonce, "extranonce", 32), "extranonce", 32),
+        payload + bytes((len(extranonce),)) + extranonce,
     )
 
 

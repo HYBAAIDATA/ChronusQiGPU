@@ -99,7 +99,7 @@ def test_chronus_route_is_recorded_as_software_not_hardware() -> None:
     execution = snapshot["last_execution"]
     assert execution["executed_route"] == "chronus_batch"
     assert execution["evidence_class"] == "SOFTWARE_VERIFIED"
-    assert execution["device_name"] == "Chronus Virtual iGPU (cpu-emulator)"
+    assert execution["device_name"] == "Chronus Virtual iGPU (chronus-software-fabric)"
 
 
 class _LyingAdapter(CPUEmulatorAdapter):

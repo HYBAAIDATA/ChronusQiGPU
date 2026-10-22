@@ -2086,6 +2086,26 @@ class FileRegistry:
         intent_id = _id(
             "fi", f"{tenant_id}:{object_id}:{digest}:{uuid.uuid4().hex}".encode()
         )
+        # Retain the complete semantic request before crossing either durable
+        # boundary. A digest alone cannot reconstruct provenance or domain
+        # links after a quota error between placement and projection.
+        intent_detail = {
+            "request_schema": "hyba.file-write-request/v1",
+            "request": {
+                "logical_name": logical_name, "file_class": file_class,
+                "semantic_owner": semantic_owner, "domain": domain,
+                "producer": producer, "custody_record_id": custody_record_id,
+                "evidence_state": evidence_state, "producer_version": producer_version,
+                "schema_version": schema_version, "provenance": provenance,
+                "links": list(links), "ovid_lineage_id": ovid_lineage_id,
+                "transform_contract": transform_contract,
+                "transform_version": transform_version, "exactness": exactness,
+                "encryption_key_ref": encryption_key_ref, "compression": compression,
+                "content_encoding": content_encoding,
+            },
+            "theseus_address_id": address.address_id,
+            "theseus_relative_path": address.relative_path,
+        }
         with self.store._tx() as db:
             db.execute(
                 "INSERT INTO file_intents VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -2099,14 +2119,7 @@ class FileRegistry:
                     digest,
                     len(data),
                     "DECLARED",
-                    _json(
-                        {
-                            "logical_name": logical_name,
-                            "producer": producer,
-                            "theseus_address_id": address.address_id,
-                            "theseus_relative_path": address.relative_path,
-                        }
-                    ),
+                    _json(intent_detail),
                     _now(),
                     _now(),
                 ),
@@ -2188,13 +2201,7 @@ class FileRegistry:
                     "UPDATE file_intents SET state='ABANDONED_WITH_EVIDENCE',"
                     "detail_json=?,updated_at=? WHERE tenant_id=? AND intent_id=?",
                     (
-                        _json(
-                            {
-                                "error": f"{type(exc).__name__}: {exc}",
-                                "theseus_address_id": address.address_id,
-                                "theseus_relative_path": address.relative_path,
-                            }
-                        ),
+                        _json({**intent_detail, "error": f"{type(exc).__name__}: {exc}"}),
                         _now(),
                         tenant_id,
                         intent_id,

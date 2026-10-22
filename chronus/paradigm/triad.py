@@ -63,7 +63,7 @@ def _leg_lemma() -> LegResult:
     verdicts = verify_golden_stride()
     ok = all(v.get("verdict") == "HOLDS" for v in verdicts)
     # Scope guard: ordering use only
-    meta = use_ordering_lemma("order_host_probe_walk")
+    meta = use_ordering_lemma("order_host_probe_walk", lemma="golden_stride_bijection")
     assert meta.get("theorem_proven") is False
     # Small uniqueness sweep (full 2^32 is infeasible; 50k is a cross-check)
     seq = list(golden_stride_walk(0xA5A5A5A5, 50_000))

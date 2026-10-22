@@ -259,6 +259,8 @@ class ProductionStratumV2Client:
         if produced is None:
             raise Sv2TransportError("SV2 secure-channel factory returned no channel")
         if not getattr(produced, "secure", False):
+            # The factory may already own a socket: reject without leaking it.
+            await produced.close()
             raise Sv2TransportError(
                 "SV2 secure-channel factory returned an unauthenticated channel"
             )
@@ -279,18 +281,18 @@ class ProductionStratumV2Client:
                 ),
                 require_secure=True,
             )
-            await core.open()
             self._core = core
+            await asyncio.wait_for(core.open(), timeout=self.request_timeout)
             self.runtime_state.connected()
             self.runtime_state.subscribing()
 
-            await core.open_extended_channel(
+            await asyncio.wait_for(core.open_extended_channel(
                 request_id=1,
                 nominal_hash_rate=self.nominal_hash_rate,
                 max_target=self.max_target,
                 user_identity=self.username,
                 min_extranonce_size=self.min_extranonce_size,
-            )
+            ), timeout=self.request_timeout)
             if core.extranonce_size is None:
                 raise Sv2ProtocolError(
                     "extended mining channel did not negotiate extranonce size"

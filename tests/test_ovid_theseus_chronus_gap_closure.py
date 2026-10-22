@@ -144,7 +144,7 @@ def test_virtual_memory_tenant_isolation(tmp_path):
 
 
 def test_virtual_memory_eviction_drops_host_payload(tmp_path):
-    plane = VirtualMemoryPlane(tmp_path / "mem", max_host_bytes=40)
+    plane = VirtualMemoryPlane(tmp_path / "mem", max_host_bytes=30)
     first = plane.store({"blob": "a" * 8}, tenant="t")
     first_size = first.host_resident_bytes
     assert first_size > 0

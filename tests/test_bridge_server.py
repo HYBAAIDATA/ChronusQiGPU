@@ -100,6 +100,31 @@ def test_09_gateway_websocket_grants_execution_for_healthy_node():
         assert msg["stream_type"] == "EXECUTION_GRANTED"
 
 
+def test_gateway_unknown_request_receives_error_instead_of_hanging():
+    with client.websocket_connect("/api/v1/euclid/voice/stream") as ws:
+        ws.send_json({"type": "NOT_A_SUPPORTED_OPERATION"})
+        assert ws.receive_json() == {
+            "stream_type": "ERROR", "status": "INVALID_REQUEST",
+            "reason": "unsupported_message_type",
+        }
+
+
+def test_gateway_internal_error_closes_without_granting(monkeypatch):
+    from starlette.websockets import WebSocketDisconnect
+    from src.api.routers import euclid_voice
+    import pytest
+
+    def fail(_node):
+        raise RuntimeError("injected clearance failure")
+
+    monkeypatch.setattr(euclid_voice.MetacognitiveGatekeeper, "verify_clearance_sync", fail)
+    with client.websocket_connect("/api/v1/euclid/voice/stream") as ws:
+        ws.send_json({"type": "EXECUTION_REQUEST", "target_node": "healthy_kernel"})
+        with pytest.raises(WebSocketDisconnect) as exc:
+            ws.receive_json()
+        assert exc.value.code == 1011
+
+
 def test_10_gateway_reconcile_endpoint_restores_equilibrium():
     reset_cognitive_registry()
     resp = client.post(

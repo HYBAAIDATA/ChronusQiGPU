@@ -14,6 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import copy
+import base64
 import hashlib
 import json
 import os
@@ -32,11 +33,30 @@ def _canonical(value: Any) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
 
 
+def _pack_payload(payload):
+    if isinstance(payload, bytes):
+        return "bytes-base64/v1", base64.b64encode(payload).decode("ascii")
+    # Never stringify opaque objects or nested bytes into lossy identities.
+    json.dumps(payload, allow_nan=False)
+    return "json/v1", payload
+
+
+def _unpack_payload(codec, payload):
+    if codec in (None, "json/v1"):
+        return payload
+    if codec == "bytes-base64/v1" and isinstance(payload, str):
+        return base64.b64decode(payload, validate=True)
+    raise ValueError("unsupported persisted memory payload codec")
+
+
 def content_id_for(payload: Any, *, representation_version: str = "v1") -> str:
     body = {
         "representation_version": representation_version,
         "payload": payload,
     }
+    if isinstance(payload, bytes):
+        body["payload_type"] = "bytes"
+        body["payload"] = base64.b64encode(payload).decode("ascii")
     return hashlib.sha256(_canonical(body)).hexdigest()
 
 
@@ -133,7 +153,7 @@ class VirtualMemoryPlane:
                     folded_bytes=int(item.get("folded_bytes", 0)),
                     host_resident_bytes=int(item.get("host_resident_bytes", 0)),
                     device_resident_bytes=int(item.get("device_resident_bytes", 0)),
-                    payload=item.get("payload"),
+                    payload=_unpack_payload(item.get("payload_codec"), item.get("payload")),
                     metadata=dict(item.get("metadata", {})),
                     adapter_id=item.get("adapter_id"),
                     residency=str(item.get("residency", "host")),
@@ -150,7 +170,8 @@ class VirtualMemoryPlane:
                     rec.payload, representation_version=rec.representation_version
                 ) != rec.content_id:
                     raise ValueError("persisted index payload mismatch")
-                if rec.logical_bytes != len(_canonical(verified_payload)):
+                actual_size = len(verified_payload) if isinstance(verified_payload, bytes) else len(_canonical(verified_payload))
+                if rec.logical_bytes != actual_size:
                     raise ValueError("persisted logical size mismatch")
                 rec.payload = verified_payload if rec.residency == "host" else None
                 if min(rec.logical_bytes, rec.folded_bytes, rec.host_resident_bytes,
@@ -187,7 +208,8 @@ class VirtualMemoryPlane:
                     "folded_bytes": r.folded_bytes,
                     "host_resident_bytes": r.host_resident_bytes,
                     "device_resident_bytes": r.device_resident_bytes,
-                    "payload": r.payload,
+                    "payload_codec": _pack_payload(r.payload)[0],
+                    "payload": _pack_payload(r.payload)[1],
                     "metadata": r.metadata,
                     "adapter_id": r.adapter_id,
                     "residency": r.residency,
@@ -231,6 +253,7 @@ class VirtualMemoryPlane:
                 meta.update(dict(representation))
                 if "version" in representation:
                     representation_version = str(representation.get("version") or representation_version)
+            payload_codec, persisted_payload = _pack_payload(payload)
             cid = content_id_for(payload, representation_version=representation_version)
             if identity and "content_id" in identity and identity["content_id"] != cid:
                 raise ValueError("caller content_id does not match the payload")
@@ -251,7 +274,7 @@ class VirtualMemoryPlane:
                 raise PermissionError("an existing handle cannot change ownership or content")
             blob = self._contained_file(self.objects_dir, f"{oid}.json")
             raw = _canonical(payload)
-            logical = len(raw)
+            logical = len(payload) if isinstance(payload, bytes) else len(raw)
             folded = logical
             if "folded_bytes" in meta:
                 folded = int(meta["folded_bytes"])
@@ -275,8 +298,8 @@ class VirtualMemoryPlane:
                 folded_bytes=folded,
                 host_resident_bytes=host_b,
                 device_resident_bytes=dev_b,
-                payload=payload,
-                metadata=meta,
+                payload=copy.deepcopy(payload),
+                metadata=copy.deepcopy(meta),
                 adapter_id=adapter_id,
                 residency=residency,
             )
@@ -296,7 +319,8 @@ class VirtualMemoryPlane:
                         "object_id": oid,
                         "tenant": tenant_s,
                         "content_id": cid,
-                        "payload": payload,
+                        "payload_codec": payload_codec,
+                        "payload": persisted_payload,
                         "metadata": meta,
                         "representation_version": representation_version,
                     },
@@ -480,11 +504,12 @@ class VirtualMemoryPlane:
                 raise PermissionError("tenant is not authorised for persisted object")
             if not isinstance(data.get("representation_version"), str):
                 raise ValueError("missing persisted representation version")
-            cid = content_id_for(data.get("payload"),
+            restored_payload = _unpack_payload(data.get("payload_codec"), data.get("payload"))
+            cid = content_id_for(restored_payload,
                                  representation_version=data["representation_version"])
             if data.get("content_id") != cid or (rec is not None and rec.content_id != cid):
                 raise ValueError("persisted object content identity mismatch")
-            return copy.deepcopy(data.get("payload"))
+            return copy.deepcopy(restored_payload)
 
     def checkpoint(self) -> dict[str, Any]:
         with self._lock:

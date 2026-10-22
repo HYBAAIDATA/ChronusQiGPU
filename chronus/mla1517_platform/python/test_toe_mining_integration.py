@@ -45,6 +45,8 @@ def test_toe_consumes_kellogg_state_and_job_without_synthetic_input(monkeypatch)
     assert build_toe_decision_frame(context).is_valid()
     signal = build_toe_signal(context)
     assert signal.is_valid()
-    assert signal.causal_throttle
+    # A pure state can have high measurement entropy without being mixed.
+    assert context.result["state_tomography"]["coherence"] > 0.999
+    assert not signal.causal_throttle
     for name in ("state_tomography", "trajectory_prediction", "causal_analysis", "causal_ladder"):
         assert context.result[name]["available"] is True

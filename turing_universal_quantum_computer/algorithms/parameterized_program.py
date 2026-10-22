@@ -12,7 +12,7 @@ import math
 from dataclasses import dataclass
 from typing import Any, Sequence
 
-from .backends.base import Operation, Program
+from turing_universal_quantum_computer.backends.base import Operation, Program
 
 __all__ = [
     "Parameter",

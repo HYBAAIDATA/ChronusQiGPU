@@ -10,7 +10,6 @@ Verifies:
 from __future__ import annotations
 
 import copy
-import time
 import pytest
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,16 +17,13 @@ from types import SimpleNamespace
 
 from chronus.mla1517.mining.closed_loop import ClosedLoopOptimizer
 from chronus.mla1517.mining.coordinator import IntelligentPoolCoordinator
-from chronus.mla1517.mining.recovery_authority import RecoveryGovernor
-from chronus.mla1517.mining.search_plan import WorkIdentity, CompletionState, EvidenceClass
+from chronus.mla1517.mining.search_plan import CompletionState
 from manifold_pool_coordinator import PoolEndpoint
 from salamander.mining_healer import (
-    HealDiagnosis,
-    HealObservation,
     HealerState,
     SalamanderMiningHealer,
 )
-from salamander.runtime import DurableEvidenceLedger, FaultClass
+from salamander.runtime import FaultClass
 
 
 @dataclass
@@ -129,8 +125,16 @@ def test_salamander_heals_stale_identity(mock_coordinator):
     assert healer is not None
     initial_heal_count = healer.heal_count
 
+    # An autonomic rebind must not retain TOE evidence from the old identity.
+    coord.last_toe_context = object()
+    coord.last_toe_frame = object()
+    coord.last_toe_signal = object()
+
     # Execute refresh which invokes healer
     healed_ident = coord._refresh_work_identity()
+    assert coord.last_toe_context is None
+    assert coord.last_toe_frame is None
+    assert coord.last_toe_signal is None
 
     # 5. Verify successful recovery
     assert healed_ident is not None

@@ -494,7 +494,9 @@ def verify_resonance_ordering(lemma: Dict[str, Any] = LEMMA_PHI_RESONANCE
     }]
 
 
-def use_ordering_lemma(usage: str, stride: Optional[int] = None) -> Dict[str, Any]:
+def use_ordering_lemma(
+    usage: str, stride: Optional[int] = None, *, lemma: Optional[str] = None
+) -> Dict[str, Any]:
     """Runtime scope guard. Returns the lemma that authorizes the usage.
     Ambiguous usages (present in more than one lemma) raise ScopeViolation.
     """
@@ -506,6 +508,10 @@ def use_ordering_lemma(usage: str, stride: Optional[int] = None) -> Dict[str, An
     ]
     matches = [name for name, lem in sources
                if usage in lem["scope"]["authorized_uses"]]
+    if lemma is not None:
+        if lemma not in matches:
+            raise ScopeViolation(f"lemma {lemma!r} does not authorize usage {usage!r}")
+        matches = [lemma]
     if not matches:
         raise ScopeViolation(f"usage not authorized: {usage}")
     if len(matches) > 1:

@@ -194,7 +194,12 @@ def certify_dispatch(
     lanes = [int(lane) for lane in lane_order]
     if sorted(lanes) != list(range(LANES)):
         failures.append("lane_order_not_m32_permutation")
-    if window <= 0 or window % LANES:
+    if window <= 0:
+        failures.append(f"window_nonpositive:{window}")
+    elif nonce_order != ORDER_HENDRIX and window % LANES:
+        # Hendrix certifies a bijection over its exact leased count below;
+        # it is not an M32 kernel epoch. A 600-vertex batch need not be
+        # padded, truncated, or rejected as a 32-lane hardware traversal.
         failures.append(f"window_not_whole_m32_epochs:{window}")
     if not (0 <= base_step and base_step + max(window, 0) <= NONCE_SPACE):
         failures.append("nonce_range_outside_uint32")

@@ -1941,7 +1941,7 @@ Owner direction is recorded in `OWNER_DECLARATIONS.md` D10. Implementation ancho
 
 | Requirement | Runtime/evidence anchor | Qualification boundary |
 |---|---|---|
-| Config-bound intelligence | `runtime_config.py`: validated seed, worker and per-arm work budget; `GovernedOctopusAdapter`: per-campaign snapshot/digest; `OctopusExecutionEngine`: bound seed/worker/budget | Reproducible policy/ordering is not proof of predictive advantage or SHA256d inversion |
+| Config-bound intelligence | `runtime_config.py`: validated seed, worker, per-arm work budget and optional `require_toe`; bridge-free pool observations produce generation-bound TOE frames before required dispatch; `GovernedOctopusAdapter`: per-campaign snapshot/digest | Reproducible policy/ordering and TOE participation are not proof of predictive advantage or SHA256d inversion |
 | Governed mining cap | `HashrateGovernor`; bridge cumulative pacing; strict config ceiling validation and approval revocation | Rate cap is not achieved rate; independent deployments require aggregate allocation |
 | Independent Docker GPU | `docker-compose.local.yml`; `ChronusSoftwareFabricAdapter`; real SHA256d known-answer execution | No physical GPU/ASIC/QPU or external pool acceptance claimed |
 | Climb/scale host GPU | config `execution.mode=scale_stack`; preferred physical adapter with software fallback forbidden | Missing executable adapter fails closed; target-host scaling measurements still required |
