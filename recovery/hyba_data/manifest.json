@@ -4,7 +4,7 @@
   "source_inventory": "collection://3ecaf6c7-3d79-81fb-a547-000b2a9be5a9",
   "repository_base_commit": "459b3983701d912558b70a8f1e8a3a341eab4566",
   "expected_files": 867,
-  "recovered_files": 103,
+  "recovered_files": 503,
   "complete": false,
   "qualification": "Source recovery only; no system qualification or runtime execution.",
   "files": [
@@ -711,1077 +711,1507 @@
     {
       "path": "hyba_data/euclid/quantum_core.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817babfcc7e1fafa618a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "3b37dae770658d9f97430955baa073afbd40460d7c82d2052b06b51efc642cc4",
+      "size_bytes": 20855
     },
     {
       "path": "hyba_data/euclid/regenerator.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981959ae0f3bc21267c63",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "798557f103b2ba8e1b407bd5acb201b7f9020bf0c84bf04b16de4d396eaae68f",
+      "size_bytes": 8993
     },
     {
       "path": "hyba_data/euclid/reputation_recovery.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798136b710d41a0026cbc7",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "2e834b1476d10cf957d6e898a03d7022796b887b8aca4f6ab006ae3e822681cd",
+      "size_bytes": 1940
     },
     {
       "path": "hyba_data/euclid/scbc.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798137a7e3f0d020a88385",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7bd1e3439adbee8f34dc6fd1cd865ace1590ab1babe91c35f133ac23e871e840",
+      "size_bytes": 17509
     },
     {
       "path": "hyba_data/euclid/scbc_hardened.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c380bbc85c2e93c292",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "10d64b38a342e0b4af20285660439a2f07140fb18c048d4357bf659e1890809a",
+      "size_bytes": 14832
     },
     {
       "path": "hyba_data/euclid/schema_negotiation.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798100a6f5f7025c493c24",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "cdb510bf282f1c55cf07f7540dc3202aee7bdb7f5e1c64202df79e26247066e6",
+      "size_bytes": 5326
     },
     {
       "path": "hyba_data/euclid/simulation.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814d8be2d51b1eaea387",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e1f86cf557dd280ada02a9877f96b5f0463db43fc66472a1ff5cc7813b6cc999",
+      "size_bytes": 3606
     },
     {
       "path": "hyba_data/euclid/staging_stubs.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798121a7d8eacd6414ce60",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "a3b4a59493edcf7722354dfaecde958884151b06040fd89fed1c39ab9203506a",
+      "size_bytes": 1224
     },
     {
       "path": "hyba_data/euclid/startup_orchestrator.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981008379e6b527f6d162",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "3860fc2651e88ff6f48f39a6e3f42d6838fdead20923b05d236b8fe1b39af631",
+      "size_bytes": 10795
     },
     {
       "path": "hyba_data/euclid/subsystem_registry.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798104bbdfc131875e9a69",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7156929f68cc1fc5041e2f031ce107ff8ac52174d938d0de1d95bf83effa0eb4",
+      "size_bytes": 3554
     },
     {
       "path": "hyba_data/euclid/task_orchestrator.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c68cd8d30aaf0d0b31",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "c1a74722314d53d42c1905bf1f1a2ee60232df6a7a4b3b58c38dacdb5c270dda",
+      "size_bytes": 28250
     },
     {
       "path": "hyba_data/euclid/telemetry_bridge.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d7bf60d1023bd1baba",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ba2d95c75deb94477d8d341263b4d98769529cbffc66e8179bb6461c1cccd9f1",
+      "size_bytes": 1206
     },
     {
       "path": "hyba_data/euclid/test_euclid_delegation.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798152a5d1c95f76197ed1",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1c0fbbd21a58f2e783decd4a54728739f0ce0e14bac9a644155794150a68ce12",
+      "size_bytes": 28931
     },
     {
       "path": "hyba_data/euclid/test_salamander_regeneration.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814ba655fa4c05f652f3",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f11d9b08d66f961d0319448df5d84582af15d152c826fa52efd7d4a967931ecf",
+      "size_bytes": 3915
     },
     {
       "path": "hyba_data/euclid/unsolved_problem_test.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798107be40c4e5233cb510",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "feec6970a553d3ee6890080f5cd75efc839a91327f1533e02142fa7919412e6e",
+      "size_bytes": 9488
     },
     {
       "path": "hyba_data/euclid/v4_planetary_stack.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798198a953d736c0743073",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "dd8613284bc27ef7b286ff08a253deca85d52c5d4f02226aaf1b9811a6d4f5f6",
+      "size_bytes": 10149
     },
     {
       "path": "hyba_data/euclid/zk_chronicle.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79812c906befbf33a1fd0b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "8b6492321773535c6bc84a166385a434cab9c476b5c47b8f521f2610baa67c8f",
+      "size_bytes": 2345
     },
     {
       "path": "hyba_data/frontend/Dockerfile.azure",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798150babcefc2647220f0",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1d0cdd12265f13afafd8d7ee91860906e1c82d8be9772861ff3bd93dba99e3c1",
+      "size_bytes": 2199
     },
     {
       "path": "hyba_data/frontend/app/admin/billing/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981fb9996c466b2acccae",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7a60a8bc360ecece0e9966c7fc854aa03980d11ee322efa754449da2e8cf7bdf",
+      "size_bytes": 4360
     },
     {
       "path": "hyba_data/frontend/app/admin/clients/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c58fa6f6eec54dd02d",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1342ac6276c74c6d1517b0ad146640a629cba468cf8b6dbadf6822d92bfd8b6c",
+      "size_bytes": 4313
     },
     {
       "path": "hyba_data/frontend/app/admin/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798170a46deb47d6a96e45",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "197d93beed1c9563e6ceee34b2c3e2cbdc7c58e4b7b753e9c0f826e6fe726328",
+      "size_bytes": 5718
     },
     {
       "path": "hyba_data/frontend/app/admin/products/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79818aa8fec9564cbf30c7",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "edb731d65272c8769f6d10d68b5d40a5934d118d04e22167bb43a9ea29dd6dcc",
+      "size_bytes": 5262
     },
     {
       "path": "hyba_data/frontend/app/admin/sales/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798157bca3f02a53c0a843",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "5dbb6f48e70978db51a95d1417df15c625b842a4b5da68689b04b7df4869a1c0",
+      "size_bytes": 4146
     },
     {
       "path": "hyba_data/frontend/app/admin/users/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981969c8de40aa7ad4781",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "be884b8285e3095527522ab51239863c45666695771096320b4451a7fc6451db",
+      "size_bytes": 11702
     },
     {
       "path": "hyba_data/frontend/app/al-haras/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79816eb9eecf0778f0dcde",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f3327e49becf89c77c5e93810d8142ed2f9bb380b63365d85ef7489c7c791ebe",
+      "size_bytes": 12905
     },
     {
       "path": "hyba_data/frontend/app/api/[[...path]]/route.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798146833acb987920fee4",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7c4dfd5e77456ef9f8ed1eb87fef1dd7ac9e5f5651c1ba91b1a2bb93755e8eef",
+      "size_bytes": 7835
     },
     {
       "path": "hyba_data/frontend/app/api/auth/login/route.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79818d9e1ad1f1086be3b9",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "492d83ef9a84ade2a537002ec4090b717da810168aeaa71cbac8da6270ee0b00",
+      "size_bytes": 4200
     },
     {
       "path": "hyba_data/frontend/app/api/auth/me/route.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798104953ad2dfb1fa527b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "4e61884a6c986d7733dbb3a83af6abf087236fb9778c264b2e917123fb5b386f",
+      "size_bytes": 1337
     },
     {
       "path": "hyba_data/frontend/app/dashboard/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981098375d15bf40af346",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ebfbe55e5d04906c9383c143bc41544cd2ae873db3e7b5c479cf15184e021432",
+      "size_bytes": 2993
     },
     {
       "path": "hyba_data/frontend/app/globals.css",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798196b12ae8c9b8a1216c",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e741e7529e26fdc4d2c8b36fed0f53d051cbf4e4b661c6d95887bd48c85f9e4d",
+      "size_bytes": 11230
     },
     {
       "path": "hyba_data/frontend/app/home/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981599df1f04042e013b9",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f3c8bd3e23fc77d7ea30f7438173de3914b8babd6c564bdbda763779306ea58d",
+      "size_bytes": 4765
     },
     {
       "path": "hyba_data/frontend/app/layout.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798187bb5cc19fbf52c3ad",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "db8ac9e8c86078b445c12ae17b21bbb55916c72a2a0047d9df9227361ba589ee",
+      "size_bytes": 1103
     },
     {
       "path": "hyba_data/frontend/app/login/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79815581b4da75a6e8c9ef",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "01556bf9e768b2da6191cf785d58906113429db7fe5bc95901161fcd1d03b33f",
+      "size_bytes": 6592
     },
     {
       "path": "hyba_data/frontend/app/millennium/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981369d03fd6ed166cac5",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "067dfbdb19691fb92468fd86d1d1ab0993bf2ecd7c46356aff43ad4966ab2917",
+      "size_bytes": 5159
     },
     {
       "path": "hyba_data/frontend/app/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798153ad8aea5fe5fb7ff4",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ae31acb4179ba179f36eb4ef994ca190d591211dcaafcbcedd84c10f195a575d",
+      "size_bytes": 5037
     },
     {
       "path": "hyba_data/frontend/app/research/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798194b034e459760a1f44",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "4d8caaf25b6a8e6f090b90849fcc0154ec190d051596ba5338dc8540ff16be04",
+      "size_bytes": 2634
     },
     {
       "path": "hyba_data/frontend/app/security/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814eaa57e06500998258",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1b01a01dd833bdf23c6a2238c8042ba3719778621101625176a15bc14aa4f209",
+      "size_bytes": 4293
     },
     {
       "path": "hyba_data/frontend/app/telemetry/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a19c37d9cf125c381e",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "5b6e79695f2108bfbb9d77f524e8f027e9b850f000211e8e5f2453dcb0ad0cd9",
+      "size_bytes": 3185
     },
     {
       "path": "hyba_data/frontend/app/themis/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79818c82a9d1c28d018be5",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "3b7fa7130e5e928fa37a74f6bc0049f8e042ec09e9dd9c1d5c9a65266620d057",
+      "size_bytes": 5314
     },
     {
       "path": "hyba_data/frontend/app/workbench/page.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981968698f52785abc170",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "12a5d689965532fc63a3f0ef8191d394bf202b57fb758f47de22938c3e2419b9",
+      "size_bytes": 8972
     },
     {
       "path": "hyba_data/frontend/components.json",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810ba845c625cb012231",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "5521c2c09b0bcab7230b2f9716e0fd1e74b704cacc8a5b685b9f84c6ba915b77",
+      "size_bytes": 443
     },
     {
       "path": "hyba_data/frontend/components/AIAssistant.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817f9adaf3a162dd1d8b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "054e4a1f3238e738a9eb70831d8b06068fa7ed438a2c80feab501f149a253075",
+      "size_bytes": 17742
     },
     {
       "path": "hyba_data/frontend/components/ErrorBoundary.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817b912ff8edcc1555b3",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e7f8a57d4d5c6af92afa689a3f82c768e0e76538eab10b1eec667e8d90510590",
+      "size_bytes": 2701
     },
     {
       "path": "hyba_data/frontend/components/Nav.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79811e9555c0db3a2336d8",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "16d5416f20379224e05bdd4ae5d7b5678ff0b55f618e2e95e9482e21f358d962",
+      "size_bytes": 3550
     },
     {
       "path": "hyba_data/frontend/components/mining/Dashboard.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d3b4a4db559da74bbb",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "539713e41c404a0def2f723b679ef5add109ad4dfb664a249ecbc44a1c13f60e",
+      "size_bytes": 113341
     },
     {
       "path": "hyba_data/frontend/components/ui/accordion.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981f9ab02dbe7888e8def",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "a14fb150053d59320abb4d609a68e0d8e080e9cb51d867009d1bb61f7ca45cd7",
+      "size_bytes": 1629
     },
     {
       "path": "hyba_data/frontend/components/ui/alert-dialog.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814191d2dfc366debf54",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "6e0d40a7bdf2e8a18fbf4751cf2e9dcbd6c505c390d979ee9efdbf66e9cd9de6",
+      "size_bytes": 3475
     },
     {
       "path": "hyba_data/frontend/components/ui/alert.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79819fa8accdd31326a76a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "c5baf27fb6a4bf130236fa0f336c21084fee192e8215bb6b20c87436c27f3b38",
+      "size_bytes": 1335
     },
     {
       "path": "hyba_data/frontend/components/ui/aspect-ratio.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981ab9b1ce8efde6986aa",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "589c299c27e2ad99c2e96c9a90e6ad49051cf99fc88f0c42a13465177379186f",
+      "size_bytes": 154
     },
     {
       "path": "hyba_data/frontend/components/ui/avatar.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981cc9df1db7d9a4e3f94",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "703fb6852952bd039b68dc494c004eee1d835fa12647b851722ab9b6b3058b32",
+      "size_bytes": 1043
     },
     {
       "path": "hyba_data/frontend/components/ui/badge.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981ddb330f9498fd9a0c2",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "380dcda78ff8fdd80c82b89cb7dd38ffd84c355735fc8f16300ff647e15988aa",
+      "size_bytes": 990
     },
     {
       "path": "hyba_data/frontend/components/ui/breadcrumb.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798110a58eeb047d0765af",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "bb43d4d07119e0cf1a458feac2c9cfb3946b33813b12e11e576d9eb7dcddf189",
+      "size_bytes": 2269
     },
     {
       "path": "hyba_data/frontend/components/ui/button.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798153828bd0a38263279f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "142f7c20fc514464ff6e372ea86cb2d99fb97f1fc09631609617dcf2158eee92",
+      "size_bytes": 1676
     },
     {
       "path": "hyba_data/frontend/components/ui/calendar.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981deb9ecc7aab068086d",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "fd1ce6855bf96c86b21e0e2b81fd2663f94f54de552c84214cbf682070223b32",
+      "size_bytes": 6981
     },
     {
       "path": "hyba_data/frontend/components/ui/card.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79811f88c3ccc71b03eb6d",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "8ab6f42e722e9c51752ce2f14aabb2696bddc0b6818041fb8f313f670955c2c4",
+      "size_bytes": 1440
     },
     {
       "path": "hyba_data/frontend/components/ui/carousel.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814dbdf5cef0eba1ff70",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "518ad601c32e7585f9d50972968af938a9aea7686b0af1224cb153a302a6325a",
+      "size_bytes": 4825
     },
     {
       "path": "hyba_data/frontend/components/ui/chart.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79813ea3d7ffe2671ec1aa",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "cf5dd570212ecbdcb2165aae513f0456cd778f42044f6a3905b518d35ba78eb3",
+      "size_bytes": 8627
     },
     {
       "path": "hyba_data/frontend/components/ui/checkbox.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981048043c88bbc1d467a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "75745849f51ef6e716b2986e867701dc7ccab747c9191ffa4581893a0779228c",
+      "size_bytes": 894
     },
     {
       "path": "hyba_data/frontend/components/ui/collapsible.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c48ce6d2236cf66b66",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f4cdd104de29928bfcd40b865c7d08eed9157a537fbb8b5e6d0921f02b63cc04",
+      "size_bytes": 329
     },
     {
       "path": "hyba_data/frontend/components/ui/command.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814b99d2d37b4634a0a6",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "79dc2aada4c1a7d92809b5a7611779212bf9518c5f0c5451587b6d18cb6a8933",
+      "size_bytes": 3907
     },
     {
       "path": "hyba_data/frontend/components/ui/context-menu.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814dbc55e11f1c8d2fc5",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "a17b59e3ca075a61ecd260a99b397a4f2125c2931a944bd8f59b5dc605212868",
+      "size_bytes": 6189
     },
     {
       "path": "hyba_data/frontend/components/ui/dialog.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810f8c34ee9e576dbdd1",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "50a7cc4ae5ce0f2527662ed9742d35b8c4933d1629a2740b26890793aee00742",
+      "size_bytes": 3228
     },
     {
       "path": "hyba_data/frontend/components/ui/drawer.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79813c85b9cf9d50fe2bdb",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "3d2dce97d3f6bc5dfa887e87c6688228298526bfdc29a28f2edbd6c1dc2eb47a",
+      "size_bytes": 2359
     },
     {
       "path": "hyba_data/frontend/components/ui/dropdown-menu.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810f8680dffc13a36d9f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f9c5772d2cef683672a1fc98e6fcd259efacbb65297441f712de70aff52e569a",
+      "size_bytes": 6359
     },
     {
       "path": "hyba_data/frontend/components/ui/form.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981ee9032d6f3e745204c",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e39d46490656fdb98fb1f00ebf30829ef97856be71860819ec2d2fd21d908e26",
+      "size_bytes": 3135
     },
     {
       "path": "hyba_data/frontend/components/ui/hover-card.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79812e8956f6e7f9ee0e78",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "9dc14e83592cb894d502204934727bd05a902438c4b3bcd0c35268c635b10f78",
+      "size_bytes": 1123
     },
     {
       "path": "hyba_data/frontend/components/ui/input-otp.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798115a50cfe2115a54b78",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "375666810474070f1045124361147bb1c2269bf4c17580bcc6a1c86e82fb0123",
+      "size_bytes": 1823
     },
     {
       "path": "hyba_data/frontend/components/ui/input.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79818b8fb0f69dc085fde8",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7c9f0c756530ae1dbe3b1424f09e32e3f54323826b2f2d817b13c865f96309ad",
+      "size_bytes": 688
     },
     {
       "path": "hyba_data/frontend/components/ui/label.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981449ab7e72120bcc8ba",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "416c4a0cf9f53a20f877d47250eafb5957fd991c0f334e104e3b9c328519e907",
+      "size_bytes": 539
     },
     {
       "path": "hyba_data/frontend/components/ui/menubar.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a1b64bef388acf036d",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "2ea81524ac61af1ba565ad309cd775a5a9a947d9d35d9e768be2a017c6664558",
+      "size_bytes": 6888
     },
     {
       "path": "hyba_data/frontend/components/ui/navigation-menu.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b69832dc3373750431",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "5e4efd6acb3836f19205aeca1373da81cf48c35be6fedd62326d704c2ee2a921",
+      "size_bytes": 4299
     },
     {
       "path": "hyba_data/frontend/components/ui/pagination.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c68b56f018a06a4704",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1d519fc3ba1c8c6cf7f2d30c98739ecba2fa7af35cbc024d6793785e7a6d65c8",
+      "size_bytes": 2322
     },
     {
       "path": "hyba_data/frontend/components/ui/popover.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a19e71d94b10ab036f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "26a602ec7f6e17a4d26a57e2cb07dd124b834dacfaa0f885568d075c4bcca797",
+      "size_bytes": 1230
     },
     {
       "path": "hyba_data/frontend/components/ui/progress.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798188ac34f9c69be3bcb0",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1ad2808d51c365f04f23a4e985b03274dcc30735d74db68e1f78332a6533859c",
+      "size_bytes": 667
     },
     {
       "path": "hyba_data/frontend/components/ui/radio-group.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814f9efbca8e851878fc",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "63ae480638880a198a2e0ee48a5cd024af165d1c3631224c9ea33767b0511690",
+      "size_bytes": 1147
     },
     {
       "path": "hyba_data/frontend/components/ui/resizable.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981e991dcf6f86495bffa",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "4e74fb31b8321012570554dc8c55a58aacf1adcced2fdc43085c67ff96ce9773",
+      "size_bytes": 1570
     },
     {
       "path": "hyba_data/frontend/components/ui/scroll-area.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798165a8eaf3e2b8cee780",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d932a4919d0c2ca50af440cab3e8c8b8ba1dbc2b3bf7583cdfb7a9c8e286e62d",
+      "size_bytes": 1376
     },
     {
       "path": "hyba_data/frontend/components/ui/select.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b7acc3dd94e39b5051",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "765e3a7517a2c4d9a91c3b24707c9a7f70fbba0a6ae044215524d3476fde0960",
+      "size_bytes": 4783
     },
     {
       "path": "hyba_data/frontend/components/ui/separator.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981f6a741cb21fc3880cd",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "79d743646ce35e62bfc4c548e40e3c1049f2a779263c577c959505f05dbb7abe",
+      "size_bytes": 614
     },
     {
       "path": "hyba_data/frontend/components/ui/sheet.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79813485dbdf0b5bcaa3bb",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "33f27d1b55925dbc354d0a61b0cbc6f977352da13f4df519f06e5b5bd9ed2d5c",
+      "size_bytes": 3549
     },
     {
       "path": "hyba_data/frontend/components/ui/sidebar.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a3ba7fea39a1a51ccf",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7328376c75a954416f621da5e7eb62a9707ecc2f6daa399bfa12d31c4a50bdbb",
+      "size_bytes": 20660
     },
     {
       "path": "hyba_data/frontend/components/ui/skeleton.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79811fbce0c1fcb69a02dd",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "78dad1ec71e4fc2c0060dd244ee68b2f9e7fc42ae680dab4f310e2ad8f17b741",
+      "size_bytes": 225
     },
     {
       "path": "hyba_data/frontend/components/ui/slider.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b29f0bc68b9bb39515",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "23ddaf7f6dff26dfe244ce9a7462c07cbc06adc8dda3bc26673f50af93f22939",
+      "size_bytes": 928
     },
     {
       "path": "hyba_data/frontend/components/ui/sonner.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d6a44ed3848d4f5eb7",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "309c182402be92fd03d3955671d7c494c5400556eaf2bf4da02ea45be1d660c3",
+      "size_bytes": 797
     },
     {
       "path": "hyba_data/frontend/components/ui/switch.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814c8ffcc25f5e19b153",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "684f7079fad73f6115b65a1eb046f13395b71f7cca3c2e984e4bc6faf746ee5f",
+      "size_bytes": 1039
     },
     {
       "path": "hyba_data/frontend/components/ui/table.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981de976bf6c9eeb1d35f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "301509bb8337184f1b299cb15b8d4f8ec8f0d3bbc17a2ffdf33ff58f7eaa444e",
+      "size_bytes": 2231
     },
     {
       "path": "hyba_data/frontend/components/ui/tabs.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810f9a49e807ad1d4bec",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "4e2ad38ef4aa6861322b53b86c959eaf7d4f12a61bffa344980574f3da36104e",
+      "size_bytes": 1543
     },
     {
       "path": "hyba_data/frontend/components/ui/textarea.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981429542f3cad624c950",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "6b2c6dd8023a32be3b52af960d7615018488c5601fb05cec97ed76d1141ae2f4",
+      "size_bytes": 585
     },
     {
       "path": "hyba_data/frontend/components/ui/toast.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981fe86b0f549843a534b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1ac5ca58637b6315c987bcec790ffe787c26bfd054aaa4df7d1b608cc7da196f",
+      "size_bytes": 3843
     },
     {
       "path": "hyba_data/frontend/components/ui/toaster.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981198c4cf0f3bdb41405",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "006be21d5f7e97f46ba1b603a65a19e076c244c6feae60cc7697dbee2bd41204",
+      "size_bytes": 788
     },
     {
       "path": "hyba_data/frontend/components/ui/toggle-group.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a48356f76105819158",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "58cf53b4994a89b18ba900dc4259b7174bf393ade2f895bd36a1fec8a4d9e3fa",
+      "size_bytes": 1282
     },
     {
       "path": "hyba_data/frontend/components/ui/toggle.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798175881fe15618306e69",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "8c563045f231bfa2ca8cde62085f00c0600fa558a60d8c14ea3a1cb5c9c644c5",
+      "size_bytes": 1324
     },
     {
       "path": "hyba_data/frontend/components/ui/tooltip.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d7bacad0f895c80d98",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "35239d8f3bfa731947d6ce8c07a49fc4f8a1bec3844c547ab8f32f26883896ac",
+      "size_bytes": 1141
     },
     {
       "path": "hyba_data/frontend/contexts/AIContext.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c39b81c7e633b50cbf",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f7fb1b2cb1ecb8e7ab24554ede20636e861717f2452206c3b851a15c43c3430f",
+      "size_bytes": 6955
     },
     {
       "path": "hyba_data/frontend/contexts/AuthContext.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798124a966d1c8e3aea406",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ca58c7e6058db5af9baf25ef48819c7c4f0992d45a4dd95a83b442aae018e2b9",
+      "size_bytes": 4502
     },
     {
       "path": "hyba_data/frontend/hooks/use-mobile.jsx",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817ca0e5f3565611db07",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "a136217739e79f9d02440e711b9bd1abb6adf60f1a83b45a39a009a09568ad1c",
+      "size_bytes": 545
     },
     {
       "path": "hyba_data/frontend/hooks/use-toast.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981abb083e38e2622f072",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "767e0227c5c9406b5d00e25a57c6d01e9f6e083d36e803ccb0a5e260992a5225",
+      "size_bytes": 3085
     },
     {
       "path": "hyba_data/frontend/infrastructure/configmap.yaml",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981949abadb5ae20d46a8",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "291a223261bde93b857749f66e0caa42b3f280546ddfce54899e2b7f7b40619f",
+      "size_bytes": 753
     },
     {
       "path": "hyba_data/frontend/infrastructure/deployment.yaml",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798148bfdcec651f698fe7",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "cc686eb4fc8d29e1d1bbbfe0b80e91128d14f473fc693bc08bcf92f091add59d",
+      "size_bytes": 3392
     },
     {
       "path": "hyba_data/frontend/infrastructure/hpa.yaml",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798123b044fa70dcab85dc",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "c828275e54598f26fccb0ee06db35f88f60f23439aacc60a39dbec9a93d83e47",
+      "size_bytes": 900
     },
     {
       "path": "hyba_data/frontend/infrastructure/ingress.yaml",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810f9f9ef98459168d77",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "5b532161dbeb0d12a10e2e9c8aa6009d39289f73af72bd00134af60e4c729bfe",
+      "size_bytes": 1585
     },
     {
       "path": "hyba_data/frontend/infrastructure/namespace.yaml",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981fbbc7ec4a25f7bbffc",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "c921e943f2e201f16f555bab21bec6badc947313de7d532eaa7481c58a6d9e21",
+      "size_bytes": 158
     },
     {
       "path": "hyba_data/frontend/infrastructure/service.yaml",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79818d96a2f00cfb06d53e",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "db3d712eb40a8da1f7e2ebc887c8e66f59b398a447772c424355ae6822a568df",
+      "size_bytes": 370
     },
     {
       "path": "hyba_data/frontend/jsconfig.json",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981309004e5c5dd6504e8",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "0d1fec27466087afa67ab9a653c24b850138f56b85b911f572c5950871ef2026",
+      "size_bytes": 258
     },
     {
       "path": "hyba_data/frontend/lib/api-client.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79811eb975d092354c1288",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "5d3c662eff892c8443d324b26c23023c6818b29998e258e6950fc705acbff6f1",
+      "size_bytes": 7694
     },
     {
       "path": "hyba_data/frontend/lib/utils.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c59e0ee665d2f5ae5c",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "5ba0ae526d768600bbfb4a4d345c47f6208cb941adbf456de80804a4cf938350",
+      "size_bytes": 137
     },
     {
       "path": "hyba_data/frontend/lib/websocket-client.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798111b244e178f0368261",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "dc5b4735c58af1ae4161f78f25503434671f5cbd5b812b33f1b02d8ff841f430",
+      "size_bytes": 9240
     },
     {
       "path": "hyba_data/frontend/middleware.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814f8ddcfdae7fd83cf9",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1e7fd473bb5c5ea2daa87a955bef92f789c705e8be6de5dd28b22e443a05433f",
+      "size_bytes": 1096
     },
     {
       "path": "hyba_data/frontend/next.config.azure.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79818ba12cfb43be057a41",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "895906123bbbd6fe1cb04352b1bd58ef01bc3673d1642432f9a67c7c273d6c03",
+      "size_bytes": 5304
     },
     {
       "path": "hyba_data/frontend/next.config.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79811ba13ed11923461b29",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "40e6ec3fcd9a17860549f8389210c81be06d639803730929a92f46575b9dd328",
+      "size_bytes": 1238
     },
     {
       "path": "hyba_data/frontend/package-lock.json",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798111a9e6eebe192e567e",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "0cf87fc54b50103cbee3da451462edec83f9546865d1a8cb632e3b932f816546",
+      "size_bytes": 372194
     },
     {
       "path": "hyba_data/frontend/package.json",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817c8324d3268ba1fadf",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "b8442dbacca1cb7ae29261094f93bca0a45575b4333e52adce624c58c407a369",
+      "size_bytes": 3281
     },
     {
       "path": "hyba_data/frontend/postcss.config.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981449abce938a58f563e",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "313a31170ebfa53925f49a22982f5698940ea19a34f6f357e3842a957b8e2006",
+      "size_bytes": 91
     },
     {
       "path": "hyba_data/frontend/tailwind.config.js",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981349f4cc38968356900",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "de0696bb28f0f68ad7104f71f62ffee76715a4d4352f4dc3d4fe389e2a460815",
+      "size_bytes": 2818
     },
     {
       "path": "hyba_data/frontend/tests/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798172b048f3fefcdd3984",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
     },
     {
       "path": "hyba_data/frontend/yarn.lock",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817992b9ff89bfedeec4",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "028b910e1cf0702b163ee87ddc7772fbfaaaaf2169969b8b3fe4130bf4db26a7",
+      "size_bytes": 169192
     },
     {
       "path": "hyba_data/hermes/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981318e91daa550154695",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "436c57dc0b80a8dd63e1aa8653fcd4417e52f8f36f1d21eccd6c8f41dd0b67ab",
+      "size_bytes": 41
     },
     {
       "path": "hyba_data/hermes/backends/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810c8fc9cd9d21539063",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "56768043eacc86e6b67fb191a3314c361f136e732cbd4b7775a7e64636cf6c65",
+      "size_bytes": 50
     },
     {
       "path": "hyba_data/hermes/backends/macquantum/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798157a54ec816daa0d2ad",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "729407910d357a53e7ed0ab7db649978b95c74ee9ef252c73bfe1c3b8aa5d835",
+      "size_bytes": 6577
     },
     {
       "path": "hyba_data/hermes/backends/macquantum/accelerator_base.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798198997becb89c11b598",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "414528b3bf2421752cc24adda04584822e640bd229377fc227da1f7c13499449",
+      "size_bytes": 13535
     },
     {
       "path": "hyba_data/hermes/backends/macquantum/cpu_fallback.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981f8837de1c13d184da3",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "c422128a4f5e2b838406d68b672306cfbca9d1abcd9a8f301cf6a31b2548eb06",
+      "size_bytes": 5034
     },
     {
       "path": "hyba_data/hermes/backends/macquantum/cuda_accelerator.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810fb7a4e5c27a9332e5",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "669ae7386b70704ac3370dd7ded5e06e7a717ef6ab50e895fd2803b4bc04e658",
+      "size_bytes": 16757
     },
     {
       "path": "hyba_data/hermes/backends/macquantum/factory.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798100a89ff98ce1d8db00",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f7dd76cdc1af05c61fabc3fb5b774b1224e277cd70bbbc54500ba77304715776",
+      "size_bytes": 3259
     },
     {
       "path": "hyba_data/hermes/backends/macquantum/metal_accelerator.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d5817ef09465563160",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d1bac458d51fcd5be1ba75d7ca8bc0d2ad7c58feb7586bc21bc4d7eb145b2e1a",
+      "size_bytes": 18603
     },
     {
       "path": "hyba_data/hermes/backends/macquantum/mlx_tensor_ops.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981f1b3dae7bfbf550c1e",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "9687e638fb7701b3b8f59e8aabcd59d35d122a45a099d87432f9d349ce49968a",
+      "size_bytes": 15881
     },
     {
       "path": "hyba_data/hermes/backends/macquantum/profiling.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798132bbafe467ae3ea1e8",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "6b80d08e34b5f95c96707cc2c9d26d8b2a76f24319245bc43050e4c3da9a5e71",
+      "size_bytes": 19234
     },
     {
       "path": "hyba_data/hermes/backends/macquantum/quantum_backend.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981f19c08fe653d72577c",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "8bd56aa11f51051b728e46133ee495692dfd5808c3f4a29998d7f1daf83b2999",
+      "size_bytes": 17232
     },
     {
       "path": "hyba_data/hermes/backends/macquantum/shaders/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79811fa153e7f5df891d79",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "93e59dd174712ec2e40056a706e2995fe36322b1ad7561b37f68cbf2b6fd5abe",
+      "size_bytes": 428
     },
     {
       "path": "hyba_data/hermes/backends/macquantum/shaders/kernels.metal",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d392a0c79706553446",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d4af27597c77eeb0a711a754bf119657e895bad3fa7036d7add665fdf1ad080c",
+      "size_bytes": 19870
     },
     {
       "path": "hyba_data/hermes/backends/macquantum/shaders/phi_gemm.metal",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d0976cd1c63c9e52e4",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1bf526c183d33f3635831a9f03a237673ac4436d696cfc1947df754290098981",
+      "size_bytes": 3653
     },
     {
       "path": "hyba_data/hermes/backends/macquantum/taxonomy.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798186bc4de966de9a7843",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ca35b8bac5c357253f3f225e6dd18eb3037139da618f5c876d8160a43170a6ba",
+      "size_bytes": 18443
     },
     {
       "path": "hyba_data/hermes/backends/macquantum/unified_accelerator.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a89396f9780bf58dfe",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "fc71fd5fff9c1add0242ea4cbc5e1cf63fc5789d8079c9d71b1b4369a009e4b7",
+      "size_bytes": 11673
     },
     {
       "path": "hyba_data/hermes/backends/metal/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798180b01ee74c2161b47f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "03275cc6a4b76fd6fe20442e5380fc2a027bb666e8b3105b11df4243352c3ed3",
+      "size_bytes": 400
     },
     {
       "path": "hyba_data/hermes/backends/metal/kernels.metal",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981f485efebace5cb2947",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d4af27597c77eeb0a711a754bf119657e895bad3fa7036d7add665fdf1ad080c",
+      "size_bytes": 19870
     },
     {
       "path": "hyba_data/hermes/backends/metal/phi_gemm.metal",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981499895fe83ea4cd53c",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1bf526c183d33f3635831a9f03a237673ac4436d696cfc1947df754290098981",
+      "size_bytes": 3653
     },
     {
       "path": "hyba_data/hermes/backends/metal/phi_metal_kernel.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981acb01ed291e61e2e21",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d78ee3e5c1796546627a575dae1dfab44e38a5b8bd1008fc4a150bc13a5406ae",
+      "size_bytes": 10861
     },
     {
       "path": "hyba_data/hermes/backends/metal/phi_metal_runner.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981e1b7d0e7e08455cba0",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "46bbe337a21817078814d6920d8eb754296627bb3091853ba8144c2ffe5dfc6e",
+      "size_bytes": 6812
     },
     {
       "path": "hyba_data/hermes/gpu_engine.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79818b88fbee6b884699a9",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d1e06c600952d8d5155b518b759ce4fc53ed029402c35a8403993a006f5c3994",
+      "size_bytes": 8689
     },
     {
       "path": "hyba_data/hermes/hybrid.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a09613d4601d2fdcbf",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e76ec3756c9c1ae5b04014dea1b0f2b24058d1f608f621fff640fdd3a72436d7",
+      "size_bytes": 1544
     },
     {
       "path": "hyba_data/hermes/integrations/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79813f99a6f4ff7454d941",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "08dfb3a2d0d4ff089a6c8124e7385ca44296d607c63f72b844575b2684fb224b",
+      "size_bytes": 54
     },
     {
       "path": "hyba_data/hermes/integrations/euclid_v2/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798192b795c38ee3ab8702",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "2e6a9b94123df282b6b49bc261af0ea55f49dc166c5b4019ba93ad31accd5414",
+      "size_bytes": 1187
     },
     {
       "path": "hyba_data/hermes/integrations/euclid_v2/hyperbolic_logic.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798197bb34e544e9b8f6b7",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "32a9d7b0d3d7e07a1c283e0bda07d72794c15cea9f7d46fa07d8d7da9f49f953",
+      "size_bytes": 19203
     },
     {
       "path": "hyba_data/hermes/integrations/euclid_v2/metal_accelerator.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798193ae2feeb9c8a06b5e",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "191c38518058723c76bd145e3ea36665cdf419f4a9288f22149d99849882e299",
+      "size_bytes": 40564
     },
     {
       "path": "hyba_data/hermes/integrations/euclid_v2/substrate_aware_optimizer.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981269e3ef9b563ba4012",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d6d94a6b7bd16eec4bac170c160118c4cf237bca47f51ce57417159532b5d1ac",
+      "size_bytes": 25102
     },
     {
       "path": "hyba_data/hermes/integrations/euclid_v2/unified_memory_entanglement.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981069e3bf048e18bfbca",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ec2bc70070ee0aab8bb2a662948e6099f1af9ba6ccbc70fac529ecc76752adba",
+      "size_bytes": 20111
     },
     {
       "path": "hyba_data/hermes/integrations/pythia_mining/apple_silicon_metal.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a0942ee547e3fd9429",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "2a9f9a8759dbd1c7cfdbb3764f11c6fdcc186b187b1e39cc12588e30dd16e37b",
+      "size_bytes": 8603
     },
     {
       "path": "hyba_data/hermes/integrations/pythia_mining/gpu_acceleration.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798183b6d6e7c89999c1ab",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "066e87b193457fc891510a8773d485bf5d5fad1be782968a48d3a227e8a9490d",
+      "size_bytes": 11517
     },
     {
       "path": "hyba_data/hermes/integrations/pythia_mining/metal_sha256_pipeline.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981749b49f75330b0bbae",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "3044b9a4bbae7216ed9bf171a10cf60bc6eed62c7c4b0e6e48c92650708e0297",
+      "size_bytes": 18138
     },
     {
       "path": "hyba_data/hermes/integrations/pythia_mining/phi_accelerated_formalism.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c0b700eddd7abeda19",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "658e86373ac336bbb0634a03755fc9cf55c91d1d5b7cf10a093edd76afd1bd9e",
+      "size_bytes": 15691
     },
     {
       "path": "hyba_data/hermes/offerings/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79815290c8f39f2ade38a0",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "0413e9dec7ea06c820d5bb9e40d0994b28dd60fc188c695828ac0ae7b03b77cb",
+      "size_bytes": 607
     },
     {
       "path": "hyba_data/hermes/offerings/complete_suite.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817a9196e8c25fddf351",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "133a59a2004921515f9f2c7eea54cdca12aa1acd5159986400753f8556df54c7",
+      "size_bytes": 2251
     },
     {
       "path": "hyba_data/hermes/offerings/impregnable_security.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981e2a307d99221f65f76",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f3aebbea781fcc223c6e77890b6e4d8af06d1e8966fb6809f24d875ab02cfdba",
+      "size_bytes": 7157
     },
     {
       "path": "hyba_data/hermes/offerings/millennium_security.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981bfb179ee067b39b69a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "13c171cc950551ed8ea9baa61b02e3433feb40ce95ebe3cd294df56250338546",
+      "size_bytes": 4637
     },
     {
       "path": "hyba_data/hermes/offerings/national_security.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798180acf8cfb67e5bc4d1",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ddda222aab8e5b8dbbb015cf496e23289cd06f74ae24040d449a1837e3709aa0",
+      "size_bytes": 9337
     },
     {
       "path": "hyba_data/hermes/offerings/physics_offering.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79812a9220fca3c558005a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "fd1f9fbe2f8b43d36567c60f755d0b15b5da552616b20f422f8667f01b5a7286",
+      "size_bytes": 1392
     },
     {
       "path": "hyba_data/hermes/offerings/quantum_offering.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981e68488fe253cc364e4",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "cc7f15c645f3f1cce468287494c1ecb791df93d3ee96cd6349553fda9350ed59",
+      "size_bytes": 2473
     },
     {
       "path": "hyba_data/hermes/quantum_defense/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798124af0cfffbfdbc6df4",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "dd1f00b7eaa4215c7dee716594055b4ac2a83a2a3cadeb5f53e27ba4bf8eb4f5",
+      "size_bytes": 981
     },
     {
       "path": "hyba_data/hermes/quantum_defense/honeypot_swarm.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798186abbac3405dfe5f00",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "0677aacf7327a7844941c210fc629ee2fbd6150ae55a2f41905c154770d00ef0",
+      "size_bytes": 838
     },
     {
       "path": "hyba_data/hermes/quantum_defense/multi_layer.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981658757e89daeefaf9c",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "9f81a8d89e80e29d35cfa58ca02f767bf2d557993419dcdac0229df4f78baace",
+      "size_bytes": 829
     },
     {
       "path": "hyba_data/hermes/quantum_defense/threat_model.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b999efc74abdcd0b33",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "9830f3ace338506e6813c5b53322ed3ef48fd56be9965643bf9911e0942f592b",
+      "size_bytes": 832
     },
     {
       "path": "hyba_data/hermes/quantum_manifesto.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79819cb107da6f903df9eb",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ff03194099503ff47093006e70817c1fc624532c1633c27392c8c8a0892526c3",
+      "size_bytes": 9280
     },
     {
       "path": "hyba_data/hermes/quantum_swarm_mesh.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981e1b4a4d4c6355bf538",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "8d7bd8d24bc7fc4adba4889ef5e68e4b94c5a3461802426b57f26fef7a2d9488",
+      "size_bytes": 21534
     },
     {
       "path": "hyba_data/hermes/service.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798148b4c6d7a3fe406776",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "de7d7e8a40c8aeb1089b938e28b5791fbb98201bc6aa0fc86a1f29a5285778fc",
+      "size_bytes": 1737
     },
     {
       "path": "hyba_data/hermes/sovereignty.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798170bfead1253b0cd215",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7e60af0b9bf425afad4492e7644c32a4a4a33e6a6231dc90128965dc40c290e4",
+      "size_bytes": 5472
     },
     {
       "path": "hyba_data/hermes/strategy/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d2b6a4f57e80947e5b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "0735dd560e30438bd081f17e3c68a25b38b7c4ad3759b81bc5fa766c8228fc05",
+      "size_bytes": 288
     },
     {
       "path": "hyba_data/hermes/strategy/hybrid_architecture.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981ef84b8d04cd1ad746a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "56aae1756faefb9fdc6153e925efa9fbad2b6189ac8a1dcc7bf3f623372a7ad4",
+      "size_bytes": 2043
     },
     {
       "path": "hyba_data/hermes/strategy/implementation_plan.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810bbc49ea0211018fe2",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "631522cd32aa4c39d75b43476e837aed69702cf5e834651ff1856362d3e300d3",
+      "size_bytes": 1970
     },
     {
       "path": "hyba_data/hermes/strategy/language_analysis.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79816fa256e2f4284b44cd",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "be8acb5e93d5e25894ffcaa8cd4d797065c2c1d2c7a387ef91a70470ed69df71",
+      "size_bytes": 2573
     },
     {
       "path": "hyba_data/hermes/topological_counter_offensive.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c68c7fda52c4d24a77",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "6ba78cc615b30bbd6e9d8a6ef08f58ea68ae717ab17e14091f469df1281b6485",
+      "size_bytes": 835
     },
     {
       "path": "hyba_data/hermes/white_paper/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79812b900ed1e3806d5654",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "582ca97b261247d82c87419126ea68d12211f8686c8f38515d7590be978fed4a",
+      "size_bytes": 99
     },
     {
       "path": "hyba_data/hermes/white_paper/enterprise.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d7ace8cc28d2c7ab93",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "a4cfd13c6c7d31f3081267bd6cde0273a51bda02c656e4c574008123a68d0d1b",
+      "size_bytes": 28284
     },
     {
       "path": "hyba_data/hyba_data/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798154875fd10bcb534bf7",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "a573f6209e237317ea1f06852ffb799dbebfa0dc5eb104ff9a94ee5e4c82416d",
+      "size_bytes": 6837
     },
     {
       "path": "hyba_data/hyba_data/adaptive_compressor.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798186850de1e1dd075f9b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "3c73c69e508fd817bb99fa253740167b1169f8d639a03674be19a201ccf9964f",
+      "size_bytes": 19096
     },
     {
       "path": "hyba_data/hyba_data/api/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b4aeb6dfab7a2c212e",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "dfaec531c08e85630d9ccd4369ebd3f26b387062b982f7781a245f6dbb4408cc",
+      "size_bytes": 492
     },
     {
       "path": "hyba_data/hyba_data/api/al_haras_router.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981dd8cb1d592c41f80b8",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "96673d9ce34a4c339dcedeace3352d5d197e4a80d8dbe7023e2a869f63da8319",
+      "size_bytes": 9448
     },
     {
       "path": "hyba_data/hyba_data/api/app.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a4bc51e9a6e73e0c26",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "a2fde183ed385d973582e8302c70a7cf01090cc55bea4937d93f1bb13046efe3",
+      "size_bytes": 7686
     },
     {
       "path": "hyba_data/hyba_data/api/models.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798192a594fb1e18a54bc2",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "498645fa9a18920367848a3679d1c52a95687d9f7b445ceee6724f5336fd589e",
+      "size_bytes": 5263
     },
     {
       "path": "hyba_data/hyba_data/api/routes.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79816887f7ce5dc74ca810",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "6775092be4f475ba8c3d8aa19a0c636ca72b82e7b6c12d2c5657263cf5185fa4",
+      "size_bytes": 11508
     },
     {
       "path": "hyba_data/hyba_data/api/telemetry.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b3afeec251d9674205",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "44aa72e8d23e6dd008a64d399c0b80d16662c66bead1b4ad4d2eaed57dfb4c97",
+      "size_bytes": 4664
     },
     {
       "path": "hyba_data/hyba_data/api/themis_router.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810da4d2ed8c7d711dd6",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "12aa604986fad139775c76ef508a63613bf177ef077bcbc705119e09982b67aa",
+      "size_bytes": 7262
     },
     {
       "path": "hyba_data/hyba_data/api/v2/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798197872de6ceadf07e12",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d36dd3e5a6d875a6b8878cae4cd66ab1f7e2a4d1b006e0f00ea3c542080286f6",
+      "size_bytes": 1003
     },
     {
       "path": "hyba_data/hyba_data/api/v2/endpoints.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981279487d45c2af707b2",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "07d76a88974858e42a9fb668079a54655956b2369215d2212dd798cced051a3d",
+      "size_bytes": 12613
     },
     {
       "path": "hyba_data/hyba_data/api/v2/hermitten_schema.sql",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798179b0cbe55ea5c41db2",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "56c9968d4553e7f2b0bac1df3f9f53e9577881c96abd85277ab4ca2b6d380c66",
+      "size_bytes": 5764
     },
     {
       "path": "hyba_data/hyba_data/api/v2/middleware.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b2950cd46e0829d6f6",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "58dd893d44ca997e3b12d6ba282e0afa71525ca6d1a5b9881755a24e1908e855",
+      "size_bytes": 6401
     },
     {
       "path": "hyba_data/hyba_data/api/v2/schema.sql",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981929fb6e5352a5bd9f1",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "219bd74423bac610a44557f65e6d7cbc2ded4399d5db2026e8310f054990a79e",
+      "size_bytes": 12276
     },
     {
       "path": "hyba_data/hyba_data/api/v2/services.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981078347fafc395c2a2f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1a9cd42d5f2e59dac889e31bea1584eea4dc82115cdc60d15807e690a877fa08",
+      "size_bytes": 12378
     },
     {
       "path": "hyba_data/hyba_data/api/v2/subscription_schema.sql",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817c963cc5d030a216fe",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "07e1f4d893afadfd8b5131e6d57964a20c73d2e50c1796b791a92b274d7c805e",
+      "size_bytes": 6583
     },
     {
       "path": "hyba_data/hyba_data/audit/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79819896c4c2548c06bbfe",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "72f09131c2206df26bf6a7ba3590e417e762ad9d5a6ad4f9603414d3481fe7a1",
+      "size_bytes": 321
     },
     {
       "path": "hyba_data/hyba_data/audit/audit_trail.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798126ba6cc03a77d35bd8",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "07a6f73430140d582b67606c5fa9b44ede9428c393e16f957cbd91f33e237506",
+      "size_bytes": 7899
     },
     {
       "path": "hyba_data/hyba_data/chaos/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981058766c013212a90d2",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "657f22235091ade193101ed479306a1a90dd616356703e1d3c0522fd16ed1864",
+      "size_bytes": 1004
     },
     {
       "path": "hyba_data/hyba_data/chaos/chaos_engine.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981afa27dd188964a312b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "cf8fc646051e432fd8593da8afc9023e47424760ec9bbd682e04223f37035008",
+      "size_bytes": 14838
     },
     {
       "path": "hyba_data/hyba_data/claim_closures.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981feba14c5b6931d647f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "92059517055280ecbeaa9c73d3d6b17202cabe9ab7b8a27b23bc9313f0973deb",
+      "size_bytes": 15603
     },
     {
       "path": "hyba_data/hyba_data/claim_verifier.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79815e81a9fd706e961892",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "cf2f2383167f3713d5b2673182a84b3142b81b5d2ed7f8e143701e58769d1f68",
+      "size_bytes": 11763
     },
     {
       "path": "hyba_data/hyba_data/compliance/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798156b332dade6445483e",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d55ba02bbea4021ee22a19cb1e85428c63301e5c235cb1392e161c2c4246b5dd",
+      "size_bytes": 441
     },
     {
       "path": "hyba_data/hyba_data/compliance/compliance.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79812ab2c9e8627ff129ee",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "08ef07ed94a11fb8057c6ed14bb19355d272fba9a2037c3f76c1fde27d81d23b",
+      "size_bytes": 7993
     },
     {
       "path": "hyba_data/hyba_data/core/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981039d7aee30278ba9ec",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "547844269887568d23bc801c18d08ef382b677e09e5f6520f95c2233ed44a840",
+      "size_bytes": 280
     },
     {
       "path": "hyba_data/hyba_data/core/m32.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79819d821efa483d4ed6bd",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1ba654f8254262f90ca6cac4f45710388301f536766e4a98bf87c149d6ed2153",
+      "size_bytes": 3013
     },
     {
       "path": "hyba_data/hyba_data/data_class_gate.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981619fc9ee838a744ee1",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "a33b94665eab50608dd3733c4ca131e8aa2894779a1a369022bb4e4d169900d2",
+      "size_bytes": 3777
     },
     {
       "path": "hyba_data/hyba_data/data_sovereignty/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981beb090e2c99be21d65",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "277261a5113c0cc1edeeda3c31d5fff73fe4d9cd2d85fe32b5551f3a690e61fb",
+      "size_bytes": 441
     },
     {
       "path": "hyba_data/hyba_data/data_sovereignty/sovereignty.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798152bf0bf16c7002922b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "3e3e3aa7212965e43f6be0518f96f681f140e92652ea3dfa7572e6561c31b3e5",
+      "size_bytes": 8415
     },
     {
       "path": "hyba_data/hyba_data/demo/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798149abd3d6c5d9750a82",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7c7e1f31214b6e536b2d3e50c02757adb070db83473163c05cac3ed138f6a0be",
+      "size_bytes": 156
     },
     {
       "path": "hyba_data/hyba_data/demo/demo.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981fb8a65e1bd5453335d",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "284ebf2aab52ca49a4503a25428201362a1f1ef73749ae60fb8f94db0766b262",
+      "size_bytes": 6396
     },
     {
       "path": "hyba_data/hyba_data/disaster_recovery/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79811eb0dcd8e28d130ced",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "6bd2dabd1a099f8f289e1ec42087dc23b4bbb54fe657ce4a4babd61b73352b6c",
+      "size_bytes": 399
     },
     {
       "path": "hyba_data/hyba_data/disaster_recovery/dr_engine.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798167844afb7a8e1c5064",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "62a785626c1347062a39b3fb93822b34f9f385449e42b912f9c5bc05f0de80b5",
+      "size_bytes": 9107
     },
     {
       "path": "hyba_data/hyba_data/elevation.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981f9b1ffc1fbbcb06c13",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "9e7c7d4d6cad07a127a552d4976c9466f0567f5d0ae07e7a8f9a76809c8daa6d",
+      "size_bytes": 5747
     },
     {
       "path": "hyba_data/hyba_data/emergence.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798124830fd9e01742c24a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "600791ac3d8996b2cc4e2a459f9133130f935e58d21fc2df9f6a292e5aaf1de1",
+      "size_bytes": 8391
     },
     {
       "path": "hyba_data/hyba_data/entanglement_simulator.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79818cb9bae1a4c0e66549",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e50ad0f719a23f1644edf092e71ed40b7301d715a41720f91127b7e0304ac286",
+      "size_bytes": 7023
     },
     {
       "path": "hyba_data/hyba_data/enterprise/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798140ab25dabc2a4a51db",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "23f13387bd5d4d30e11124d70c7813f28bd6765970fd1329903990f56abd355d",
+      "size_bytes": 672
     },
     {
       "path": "hyba_data/hyba_data/enterprise/complete_engine.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981459b46ef84478d2700",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "9eab1838fbc0a1416280efa3afef387e75a19a118af8dfff1436333aba5d38c8",
+      "size_bytes": 22854
     },
     {
       "path": "hyba_data/hyba_data/enterprise/roi.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981848c57f31592d9c6d6",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "2a9dc5ac0c4edb56028fa6c89f9fe7577e32a5607ed16624ab3f42c7e212bfe3",
+      "size_bytes": 7093
     },
     {
       "path": "hyba_data/hyba_data/external_metrics.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798108b4efefc54084154f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ea9274c1ce9137d6ce3b63c87fd0681844dc6a88ed468fc719d9083cb2e8ef5b",
+      "size_bytes": 3643
     },
     {
       "path": "hyba_data/hyba_data/fold_doctrine.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981eba1c0e46b4a5e5661",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "c4908fed0ca75e27217bcd1f895ea685488dd452f00185a47ae06e70a8d6d945",
+      "size_bytes": 2524
     },
     {
       "path": "hyba_data/hyba_data/framework/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981439e60e7807d46ccc2",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7800c29b8fbff1f42dc6a706eb653f3729b330051e8f9ffdf2023e9865d380cf",
+      "size_bytes": 3314
     },
     {
       "path": "hyba_data/hyba_data/framework/manifold.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817d9a8edffb306db96b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "9a92fdcd673042bb612cff99629f9de1953e77e8fec41f7fd57dee704370a481",
+      "size_bytes": 3684
     },
     {
       "path": "hyba_data/hyba_data/framework/manifold_constructors.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981fcac68e2bb861cec37",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "884805fad37f51a132745872edc857b280e8b415e4d6c264f839055e8cf16723",
+      "size_bytes": 17388
     },
     {
       "path": "hyba_data/hyba_data/framework/manifold_search.py",
@@ -1793,432 +2223,604 @@
     {
       "path": "hyba_data/hyba_data/framework/manifolds.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981e3b42ee357e0441e9c",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ccd8c4265f241ab34eff5b5fe3234cb8b544c255200fa74bad9d47150fc227e1",
+      "size_bytes": 13473
     },
     {
       "path": "hyba_data/hyba_data/framework/operator.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79815ea0e3eb44cc27e581",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "206c609954b32236823ad497376911939c3acaad057bbdaf6724244c11eec7f2",
+      "size_bytes": 3648
     },
     {
       "path": "hyba_data/hyba_data/framework/operators.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79815297b9e6c1c7643eea",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "972306bb6ae109a1126c609b5515fdd3402d46149eb0ed6503ebc04c41d3e6d2",
+      "size_bytes": 13886
     },
     {
       "path": "hyba_data/hyba_data/framework/oracle.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798119995de59054bb693b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e4bb26b0ba365bc6f16cdc15a7881a2d9d2a26a205fba57c6ba3ae8fbbb5e23d",
+      "size_bytes": 4143
     },
     {
       "path": "hyba_data/hyba_data/framework/oracles.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798170af94cc23b132b25a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "33616c412313b8596bc627da2fd9acb9d1c39f541b601e70918ba6836ed4b363",
+      "size_bytes": 8941
     },
     {
       "path": "hyba_data/hyba_data/framework/solver.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79811b88aeede529d8eea1",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d46f2e0acaf0439afbae3676bc5f81166704142ac7b52941001f9de4bef0355a",
+      "size_bytes": 3742
     },
     {
       "path": "hyba_data/hyba_data/framework/solvers.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981f5b0fffdb94628852e",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d57999cadfee111615bed7cd86e7c11fc1692a5b546a68e103e951d3c6e505e5",
+      "size_bytes": 13384
     },
     {
       "path": "hyba_data/hyba_data/frontier/depth5_math_tuning.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798134ab57e5f86e723433",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "8f38e2c1293300d57c9edeaf8ab2f586a14e41e06baf69956e37425868daee7a",
+      "size_bytes": 767
     },
     {
       "path": "hyba_data/hyba_data/frontier/topology_search.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981bd8d02c74382ea3b2b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "2d55e03ffc678c022cfb340dda69ac6d235a482b0264f64676a3393f73794158",
+      "size_bytes": 387
     },
     {
       "path": "hyba_data/hyba_data/gpuizer.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814a8f24f79df643c375",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "c014a67c2216397b09b643a64447f1f37b78359554258d3544ab78c775b9e648",
+      "size_bytes": 5009
     },
     {
       "path": "hyba_data/hyba_data/hermitten_billing/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a2b551dae0adfd2d44",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f5ecd888825635f6af8809e483094f781c81c87942bdd24ff5183213ba8ea386",
+      "size_bytes": 580
     },
     {
       "path": "hyba_data/hyba_data/hermitten_billing/billing.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981abb61ed2a306a39e3a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d685435c59246ca23df558594b24b8d0e0308981d1be88f26d03c3feeef1631e",
+      "size_bytes": 22604
     },
     {
       "path": "hyba_data/hyba_data/honest_quantum_demo.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981628da0d0c4a2965bee",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "5f4a63f608bc0f30d5cb7c4c9ff2b49c7de2b715f89d1fb0c754e4d138e58155",
+      "size_bytes": 1583
     },
     {
       "path": "hyba_data/hyba_data/ineffable_benchmark.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798127a86ee2763c9b1c39",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "0d4d9c386c3d86cfaed001decffd0b5b0dfe5c0f12bfce42f949df8fa8da36c8",
+      "size_bytes": 7919
     },
     {
       "path": "hyba_data/hyba_data/learn_to_learn.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798158a4dcd008ceb60df1",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d021bfd43b20b366b9ea372a125573df567fc6fffabda074d00bd46c42519c29",
+      "size_bytes": 19430
     },
     {
       "path": "hyba_data/hyba_data/local_elevation_runner.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981f98fc9f78c2ccecce4",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d5028a93d78dd75333b9d61f0ecd4171652b974e18ae434c01cb214e66d81a9b",
+      "size_bytes": 5927
     },
     {
       "path": "hyba_data/hyba_data/master.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981718e34cf13bf51b4ca",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "b089392e41c428c22a93d09b3d1674253a66b3b1889baa312db86dfed40f3c30",
+      "size_bytes": 13894
     },
     {
       "path": "hyba_data/hyba_data/offerings/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981afa271eb414eff85e2",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "8b3d45bc30965b820cadb884500814f9723780358355ed1730806476591c79cf",
+      "size_bytes": 724
     },
     {
       "path": "hyba_data/hyba_data/offerings/data_offerings.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981269bc1fea90eeb2af5",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "28551c0132791b0315447bd69a34ab489d048844fcfd3b72295906eb2c460e7c",
+      "size_bytes": 3771
     },
     {
       "path": "hyba_data/hyba_data/offerings/quantum_grid_engine.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981e38298f61e6351fc41",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "de413ce9e2bc25308d98111d125da2ba2b062e2e31b010c82231b7fdf5b797cd",
+      "size_bytes": 2885
     },
     {
       "path": "hyba_data/hyba_data/offerings/quantum_risk_engine.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79812d987bcb2e98cfbc93",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "20bb8e1d53b1dfe6f9e27470e16716e6468bffca306b7ecd4ec73462199d5b5a",
+      "size_bytes": 3608
     },
     {
       "path": "hyba_data/hyba_data/offerings/quantum_supply_chain.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798108bdd9d3e096ce3bd5",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f7fa91b4a348fbd828f26907075d6ab41c0c1fe999b11601f588b7ee02bec9e2",
+      "size_bytes": 3374
     },
     {
       "path": "hyba_data/hyba_data/offerings/sovereign_intelligence_engine.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798127a6daf8b613da6ebe",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "329ab346c8acca083cd1fa139036e9b20664df84a666eccc2cb1a9192a5eccc2",
+      "size_bytes": 2852
     },
     {
       "path": "hyba_data/hyba_data/offerings/sovereign_services_engine.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79813aa67dc0fed2f90679",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e3beb894365be5de2a350b5b1df3ca5cb2478d1d9ebe3a5b37631a8b824d7200",
+      "size_bytes": 2378
     },
     {
       "path": "hyba_data/hyba_data/offerings/unified_health_engine.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79819daf9aed46cb47ab23",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "757ace151d239749cd7854f15f08ac595b982df390f80d68892a623e7b49f48e",
+      "size_bytes": 4625
     },
     {
       "path": "hyba_data/hyba_data/phi1_runtime.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810dbee9eab6add47f31",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "08e1040180fec73fbddf70c72edf44da83466a4713d3c7946260c388d4648292",
+      "size_bytes": 12917
     },
     {
       "path": "hyba_data/hyba_data/pilot_telemetry.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79813a904bfdcdb9b673b4",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "b400b091ff9bed8c429d4435e651feff99c05837724570ca6992617d1265c596",
+      "size_bytes": 7331
     },
     {
       "path": "hyba_data/hyba_data/pricing_dashboard.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810eb8b4f67baeda8b4a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "cf60d2365deed27e0fae7d31100e879567b39a4187f4d63f3fc28a9d0c54e712",
+      "size_bytes": 2944
     },
     {
       "path": "hyba_data/hyba_data/pyproject_phi1_core.toml",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b4aff9f59b7869f1d6",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "a1336d1531ec1c1d9fd004388defb5c701ecba736cb27ca1bd76fa5ef586d18b",
+      "size_bytes": 436
     },
     {
       "path": "hyba_data/hyba_data/quantum/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981169b2af15d2c4fca0c",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e55558640acf421bbc136f70b23c5062922c59aef6e26d21845536ee1a1b66ec",
+      "size_bytes": 686
     },
     {
       "path": "hyba_data/hyba_data/quantum/qec.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981faa365cbe1d89a835c",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7bd6be92145c635182275c743a77b979ba535caa861d48011edea09fdcef4dd1",
+      "size_bytes": 13094
     },
     {
       "path": "hyba_data/hyba_data/quantum_adaptive_tensor.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b49987c14266032424",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "3d62499491177c0e12ee65a8eeaf5fc6acebfbe4bf97b4140e733251701ca397",
+      "size_bytes": 30905
     },
     {
       "path": "hyba_data/hyba_data/quantum_complexity.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798191bb96c6205a38faca",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d922b0cfa5ffb048131f43e17268fa0ec27846a143fd922d4264a473c1d4da8a",
+      "size_bytes": 11022
     },
     {
       "path": "hyba_data/hyba_data/quantum_consciousness_field.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79818ca0d3fde1d4e07835",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "c874282c1c55229cc98cb5e574403fcc1827c23cfe585fe1d96c0c007dd41fc7",
+      "size_bytes": 30987
     },
     {
       "path": "hyba_data/hyba_data/quantum_gradient_estimator.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981e7a0a9f6a1d81e50b7",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "c3659ea2fd381ad74cf09fa89f79cd94e5efaffc4eb9a41f776f1793dc55d6f2",
+      "size_bytes": 10224
     },
     {
       "path": "hyba_data/hyba_data/quantum_honest.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981fe8442cfa2187d96e6",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "9ba32772995b95ab68465a1d0bd9e192759e340a7ad3f788aa3f5866a0c890b9",
+      "size_bytes": 7779
     },
     {
       "path": "hyba_data/hyba_data/quantum_neural.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981f0b331ce36111a6b96",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "8458bbd2037df683ad1aba0f2ddd290675475c10d076969023ba3e10e2dcd9fb",
+      "size_bytes": 19493
     },
     {
       "path": "hyba_data/hyba_data/quantum_neural_operator.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814ab3fcded372a84a9b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "c3b7ab331082b15d440fffe872a6d4bbd7a47ad1f2c8f1346a3b0a7728c24136",
+      "size_bytes": 31074
     },
     {
       "path": "hyba_data/hyba_data/quantum_noise.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798145a83ac9c6b99a6dbf",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "76ea25af4e5f50c417393e235b5cc9148e297c644588eedea9e01d322c73a3d1",
+      "size_bytes": 13920
     },
     {
       "path": "hyba_data/hyba_data/quantum_optimization_framework.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798126b396e2853e928dcf",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ee3ce368204c4f5fe48550a8f39ed9a90393e7b7c90b485a274055a4e1000e1a",
+      "size_bytes": 12670
     },
     {
       "path": "hyba_data/hyba_data/quantum_shor.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79815c9fd3eac57701ec2a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "a8dc203f40a692a29aa22d2863845c5cffa7f2f6817c3d4a63b855f7ec5cf258",
+      "size_bytes": 15989
     },
     {
       "path": "hyba_data/hyba_data/quantum_sparse.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798193ba20e785e1d82e54",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "12021c14b635d70f454697c4484b9cee0abb81a49bca85bec669b78299184e0a",
+      "size_bytes": 9206
     },
     {
       "path": "hyba_data/hyba_data/quantum_substrate.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798105ad54f553d1fe58c8",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e05c8b167f5daa1645b7118b87d5f29718956934ef9ad0ae45869e37dae82890",
+      "size_bytes": 12440
     },
     {
       "path": "hyba_data/hyba_data/quantum_supremacy.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b29107c96a962bf790",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "bbe35b5b53aabc220876f7f747cc9e6668132545613ee145cd7c8587dfdda5c9",
+      "size_bytes": 22016
     },
     {
       "path": "hyba_data/hyba_data/savings_metering.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79816283f6f5dc6366e5a3",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "cfbfefdfd53432635da63d1c56716081d1612388bd04982514c415907c6f40e6",
+      "size_bytes": 4069
     },
     {
       "path": "hyba_data/hyba_data/scalability/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79813397bec260131c9207",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "2d29a7eb8b25429195d7e716f40638700e1c337db993f3775c54d0ef777d2f31",
+      "size_bytes": 857
     },
     {
       "path": "hyba_data/hyba_data/scalability/scaling.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c8b9c4ee9a5ffe776c",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d31e0aa3c105f43951de6fb455927d220bf6a58e380e0d33f52c4c6b40f1884f",
+      "size_bytes": 11392
     },
     {
       "path": "hyba_data/hyba_data/sdk/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d98bd0ff1ce1d1b9c4",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "71bb0c93840a05a49862663ec6880ae83422767fb511341f91b51cddd2436306",
+      "size_bytes": 504
     },
     {
       "path": "hyba_data/hyba_data/sdk/client.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798183bc68cfb61c4c070f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "736cda8a9ac16892a20c3d277e21fdbc5a99bb83a474afa5c875aae59ca08e82",
+      "size_bytes": 10817
     },
     {
       "path": "hyba_data/hyba_data/sdk_core.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79816f8409f65a532f4431",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "3a66bfefd6999e535e001f7840f0c27654f82e55c9486b89c8c1267336b50af3",
+      "size_bytes": 2639
     },
     {
       "path": "hyba_data/hyba_data/sealed_claims.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817ab572ce318c8eff3b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7bcd5592f62d6109c1bc3ba9ca6f0481267c1252212e59088a5d74d74efdb2a9",
+      "size_bytes": 9305
     },
     {
       "path": "hyba_data/hyba_data/sealed_metric_card.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798182bb40fd80c839c439",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1636bedf9b01e22d452ddad4ca799cbd64ef1f5fbd172c453920b0c705ca2400",
+      "size_bytes": 4949
     },
     {
       "path": "hyba_data/hyba_data/security/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981ee8307d9dd3b6b9700",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d4f29822f41101e433f48d2bf779ea5a75e7aacc8234c876d3bdf165e834d82d",
+      "size_bytes": 846
     },
     {
       "path": "hyba_data/hyba_data/security/security.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79815591d3c6f4f31a800f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "273845abace5c2f8da6a104bdfe5f1ef9553bf6b1b6f8714bdeee5faa8dd6dde",
+      "size_bytes": 14056
     },
     {
       "path": "hyba_data/hyba_data/storage_engine.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79818f8244e850008dfbf7",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "9322a60e72a6e0e100c2d1b10abe5adfb5245dbb756ef395e762eb6ff12efd94",
+      "size_bytes": 4604
     },
     {
       "path": "hyba_data/hyba_data/subscription/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798144aa83c6fd5aea6655",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "72ed0f1e2a9babd43a3d7f8fcb83c24b209c965153fe133116bd2915b42fe72f",
+      "size_bytes": 861
     },
     {
       "path": "hyba_data/hyba_data/subscription/middleware.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798136b9dfc1cc9d12351b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "0b24567837f0b5e5b95eb365f63c12204a838092bcbb48da73fdd8fe889df11e",
+      "size_bytes": 4973
     },
     {
       "path": "hyba_data/hyba_data/subscription/service.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981cda910d0b9e39c7538",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "6c1a4592654c1f72faff8796f4a156330857e205fc99918f9a97e71385e04916",
+      "size_bytes": 13486
     },
     {
       "path": "hyba_data/hyba_data/subscription/tiers.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79816a8539d14a0f13341c",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "4b4363222f4efdc9a23a0918e1efff93e5f188be387682b0fd35588eee56908d",
+      "size_bytes": 11467
     },
     {
       "path": "hyba_data/hyba_data/system_runtime.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798167962bd8c5a004f0e8",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "57573db446c587be107e0012e070d70324b17acbf6e2067db8802ef3013134a6",
+      "size_bytes": 10722
     },
     {
       "path": "hyba_data/hyba_data/test_adaptive_compressor.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c395a2fa787dc867e3",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7abad26de0d5df0352bcc0cdba0839f8401cf95a4662020e30cbe81813475d4d",
+      "size_bytes": 5739
     },
     {
       "path": "hyba_data/hyba_data/test_autonomy_fabric.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798157aa1ac6a1afcacf0a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f88e9f2b01c2c8bc5cc7d86da92355f4d1482682d102e55c114d7663b6438448",
+      "size_bytes": 1030
     },
     {
       "path": "hyba_data/hyba_data/test_capability_elevation.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981e2b028c06962742cd4",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "6e9910ee5ce8fbb9cca3f788cb1def4c200c5dbbab280147fc9fd5fa5fc0f18e",
+      "size_bytes": 3593
     },
     {
       "path": "hyba_data/hyba_data/test_claim_closures.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817e9840f1d88a7aae5f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "03b63ba3f3d218886041a3675f2fd2c8c6cad29f34f9488b5868e3cb8b8e57e1",
+      "size_bytes": 2054
     },
     {
       "path": "hyba_data/hyba_data/test_depth4_fidelity.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981719763ff39c232e65e",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "818b0629285b49a6a544eb5bd163620f26382f7a384b26bf6489e9775dc3df81",
+      "size_bytes": 4636
     },
     {
       "path": "hyba_data/hyba_data/test_doctrine_compliance.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981239f91f64ff6aacce5",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "9b9cac8744cce17d76284bf245a30434b481cae1a87c2b5c62991086a3a87f5e",
+      "size_bytes": 2325
     },
     {
       "path": "hyba_data/hyba_data/test_elevation_standard.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d88b59fb373ca2ff8e",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "8b9d310b02aa221e22efee7d128bfca120b8fc9ebdd838c1d6561bc9de6a7562",
+      "size_bytes": 3991
     },
     {
       "path": "hyba_data/hyba_data/test_emergence_and_wiring.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981549f7ac22ceeca799a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "95001524d41ced22622cc024184dabc61abea3d9092fd73851c18cd9ff7abfb6",
+      "size_bytes": 2272
     },
     {
       "path": "hyba_data/hyba_data/test_fold_fidelity.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981f8aaa1c706725069cf",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ac483c3d597f4ea4637763cadfbf04643c14f9de38e55b58871da2199f2aeae1",
+      "size_bytes": 2606
     },
     {
       "path": "hyba_data/hyba_data/test_intelligence_product_effects.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981ccb13dc9e277e8ea63",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f7109787141563ba0f4e179c5359b73d09c6d5b7083139a191daba78fa62a30c",
+      "size_bytes": 6745
     },
     {
       "path": "hyba_data/hyba_data/test_learn_to_learn.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798129b1d3d33f602ef96f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "40bc8dbb713e576e5d5461cc75cdb659a10d71963d822340955585798239e8ed",
+      "size_bytes": 2654
     },
     {
       "path": "hyba_data/hyba_data/test_m3_savings_harness.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981ec8bc4dc18cbb1abe5",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "3fa6353261850d1ed6a402b830a03dda9405f8ee11d1323c410fe0a52b202e12",
+      "size_bytes": 2683
     },
     {
       "path": "hyba_data/hyba_data/test_phi1_runtime.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798191a1eec955201a57c9",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "7dcd21ff8b5eea330c30596d6ee37733b780c57d828fea8b6140fd523859da18",
+      "size_bytes": 1955
     },
     {
       "path": "hyba_data/hyba_data/test_portfolio_elevation.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798112bc7de71a18b0401d",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "c71600548f77fb7ea59a428144dcd18a4a568ae187fd78d245f37c08ccbe2d8c",
+      "size_bytes": 2428
     },
     {
       "path": "hyba_data/hyba_data/test_uptime_and_multicloud_packs.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c4afdbd8d841acadf5",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d19e0220882bb48e5073e218f94f52a4c05de12c92f775a97764f7e5e9a5afe1",
+      "size_bytes": 2787
     },
     {
       "path": "hyba_data/hyba_data/vqc/virtual_quantum_computer.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79815eb264ebf253d5e8c9",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "012a084235d66ba7c45e1a81b539b085249a010e4e7a9ef54df7d1245460c650",
+      "size_bytes": 1344
     },
     {
       "path": "hyba_data/hyba_data/zero_trust/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798181ac89eaa21e980e35",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ebd05d5916c682fdaa332cd19a706487e89e19eba86f4dadf5f0b93c810e1f30",
+      "size_bytes": 407
     },
     {
       "path": "hyba_data/hyba_data/zero_trust/zero_trust.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79816b81b4ea84b6f3ac7d",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ec8d76177daf354f2f21ca66df80c2b9c8b249ea7f0a2a725b3ba64943803d0b",
+      "size_bytes": 9565
     },
     {
       "path": "hyba_data/hyba_substrate/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981bebdbed64ff171e6d8",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
     },
     {
       "path": "hyba_data/hyba_substrate/emergence_experiment.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c8b9f6e90b43ec0fbc",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "005d180d51195f785efd869165fe57f12033d193d86ffaac8f59eb6081745b4f",
+      "size_bytes": 7116
     },
     {
       "path": "hyba_data/hyba_substrate/euclid_experience_superlearner.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798139aae0f81618c73ce9",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "bfd0aae954dd02d2aa56d5f33e232faab52b23116b5fe9f5494345dbefb1cefe",
+      "size_bytes": 20875
     },
     {
       "path": "hyba_data/hyba_substrate/euclid_learning_system.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c4aa60c5e23cc130d8",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "b6268e6b3a59dfe4997af565a57c32f16dff89a08a927398283aef51e64ae48f",
+      "size_bytes": 27699
     },
     {
       "path": "hyba_data/hyba_substrate/memory_preservation.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810fa93ef91d8472b5f6",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "04e888314754cebfb71a5c7ec2bc2bab3f17b29fd0e17a593084d41a699b95e1",
+      "size_bytes": 19165
     },
     {
       "path": "hyba_data/hyba_substrate/organism_coherence.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798145b138f128b76671c9",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "85c784b493358314d454144020f5b308ceb5b5252b7b5ea7e7db2800d241d10f",
+      "size_bytes": 4404
     },
     {
       "path": "hyba_data/hyba_substrate/safe_self_modification.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981398a9bf3ea66372980",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "a81d9c32990a42db6f8f1806ab698d897202cab83ec2b224a9b4dd73e977778f",
+      "size_bytes": 10410
     },
     {
       "path": "hyba_data/hyba_substrate/world_system_model.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79818ba093ed5954c91323",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "10cdefdbd366348a29343a65559e2a035527c78ebf49fade6e75247d64016544",
+      "size_bytes": 5488
     },
     {
       "path": "hyba_data/main.py",
@@ -2230,497 +2832,695 @@
     {
       "path": "hyba_data/manifold/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798171aa34da4e88a75455",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "2a9e5c890f0b1eb2e9e2cd5b3e910a3b36f60025c8140faeab3916c7d5972adc",
+      "size_bytes": 177
     },
     {
       "path": "hyba_data/manifold/example.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b38622ef31226786f8",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "0a3731df326c27a78f493c517e1805981b7bf058ecbd94334006e556a7667902",
+      "size_bytes": 11483
     },
     {
       "path": "hyba_data/manifold/hilbert_pricer.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798154b746d2eb7a880f58",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "fcd5d03738b82fb3c3528a1e0b34bc950cfd121b54aa13bd6f5a7d5f27d8736f",
+      "size_bytes": 13511
     },
     {
       "path": "hyba_data/manifold/intelligence_manifold.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d19eb3fe19fb1783eb",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ea40c165fdeea5979a6e00b830e173f2eb1122f26d875bb4bc6c1d87ab373ef9",
+      "size_bytes": 8988
     },
     {
       "path": "hyba_data/manifold/logic.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b79ff1cd8b6d363b62",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "694480e50f6008da0777b2b6473ebfc5279615035cbb4805b911df06c9ef3cc0",
+      "size_bytes": 938
     },
     {
       "path": "hyba_data/manifold/manifold.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981898a30d59c1fb3416c",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "c2bf642c7909e28d93c3ef8fe011b2779955c2d5c2bb09734c069be5ff1f0584",
+      "size_bytes": 5597
     },
     {
       "path": "hyba_data/manifold/manifold_constructors.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817d85c3f9a84ea92a83",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "fc8f06c4c7e793b34e80b712ceec75a09c905260fb9258a4332c97c43610f799",
+      "size_bytes": 23255
     },
     {
       "path": "hyba_data/manifold/manifold_discovery.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814db196c46a6aff76fc",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "2cf1499d5345b25bea56d1f69d9091f5a627db37bf064401cd18026313d9983a",
+      "size_bytes": 71658
     },
     {
       "path": "hyba_data/manifold/manifold_search.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798197ae07d9bba61244d3",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "064651780200535d8eaddb2b2578d86969759d39dba69d97c94c8d9d19492971",
+      "size_bytes": 13876
     },
     {
       "path": "hyba_data/manifold/manifolds.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981ca875ad69c2704a3bf",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ef7a1a6f3e42a4b31c2e90b7186605ed978bb4cdc920d4571285dfd1a98d1baa",
+      "size_bytes": 13289
     },
     {
       "path": "hyba_data/manifold/orchestrator.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d38b96c44e08eb0371",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "5e78b0a5b8478b8e88a5236bb4c09148fb672e922676205c9966f1f6ed230bc4",
+      "size_bytes": 48599
     },
     {
       "path": "hyba_data/manifold/pulvini_manifold.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814198c2e123c5b56500",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "6190b27c97cc213837157f3291c0726627215d9a3877a0ee0e8b4e476e3ba5a0",
+      "size_bytes": 36685
     },
     {
       "path": "hyba_data/manifold/pulvini_manifold_h4.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981e881cde421ca175cc0",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "9bcb0f454c35a8895214d17c6bb9e70135b1ce348703efc34f1c89d2d7d85642",
+      "size_bytes": 17397
     },
     {
       "path": "hyba_data/millennium/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981ac8fcae8dce72562e2",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "73e18ea9e9ca0710c5cf085b4e3cde69fbfcbc2c6fe8884f5714a1f5d841ec91",
+      "size_bytes": 1091
     },
     {
       "path": "hyba_data/millennium/audit_millennium_compression.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981608764cd40426690ac",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e5461c8a1b5eafca9778396db65a54fc3fb4b158a4e7ca87ff9d2b5a7c59ea38",
+      "size_bytes": 1880
     },
     {
       "path": "hyba_data/millennium/audit_millennium_lossless.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a6bc9ece35dea9869e",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e64a1d87e3aa10e246482a126c80c56aac37bd762cd19b4ee03166203213eae4",
+      "size_bytes": 3092
     },
     {
       "path": "hyba_data/millennium/benchmark_millennium_vs_baselines.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79813cb205ccccbfdce6ee",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "b3f5ac1c043ae42bcdbfd4cbd6c02206c49a021a30e4f6b86ebb5702bdd14912",
+      "size_bytes": 13187
     },
     {
       "path": "hyba_data/millennium/evidence/millennium_math_world_harness_20260719.json",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981aeb2f9eb172c1e6eab",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "c62df807841ca8d84448fd352a936bc8794cd4b1150e7f357865bc41f06c459f",
+      "size_bytes": 4357
     },
     {
       "path": "hyba_data/millennium/evidence/millennium_math_world_manifest_20260719.json",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b4ad81c01778e46a2a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "195e082cdd60d030db51e3d8bf5d871a61d8baf44be4b8d393e612ac9e22ba25",
+      "size_bytes": 984
     },
     {
       "path": "hyba_data/millennium/intelligence_mass_gap_bridge.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810f9576de4ae627efd8",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "791e7125727f347510b5b324c6fc1cf95dc4e746a822da063309137c2af7b1ce",
+      "size_bytes": 21227
     },
     {
       "path": "hyba_data/millennium/millennium_correctness_audit.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981e8ad96d6c8685fe84e",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "63ba43708c266edccb1e4e52b69bb690b9b8ed8878f3763e91ceb41c475268c6",
+      "size_bytes": 5534
     },
     {
       "path": "hyba_data/millennium/millennium_math_operations.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b5ac3acdf78c276bf6",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "5b76f1196631ffa5de8e310f03748bfd181d81499db139e38db2c610270566bf",
+      "size_bytes": 13165
     },
     {
       "path": "hyba_data/millennium/millennium_math_world.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810ab7e7d7c162ce1241",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "82913e7518b3bd42af3f414e7994b677374d4877d8285880dcb8aa88787a1eb6",
+      "size_bytes": 3233
     },
     {
       "path": "hyba_data/millennium/millennium_mathematics.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798128b011f1b5f43f982e",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "6e6d7a55acbb1e95c61af4f0502954fcbeb8cc556c3373017a70a579f95d5945",
+      "size_bytes": 29178
     },
     {
       "path": "hyba_data/millennium/millennium_mathematics_enhanced.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79810cb535fdfb86190fc1",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "625816cc783e3003999fab10757066bef8f6af5d1e64b941381762240f8cc828",
+      "size_bytes": 50868
     },
     {
       "path": "hyba_data/millennium/millennium_pulvini_integration.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798181a7b5c7347bff241d",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1fcec109161f801132db52195127e666648bec452e4b5f9c2db0e2e4e035618d",
+      "size_bytes": 27356
     },
     {
       "path": "hyba_data/millennium/test_millennium_correctness_backbone.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981efb3d8e5feac5e4011",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "0677f4d135034566abf92a088846c3a885f96808b6b92463cc840e6682801d4e",
+      "size_bytes": 2812
     },
     {
       "path": "hyba_data/millennium/test_millennium_math_world.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798116b00de285b3cf1c6a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "3fd960314b156e4ae6f0ecf91010be1cb4d56910d11cc650938283cbb1054573",
+      "size_bytes": 1320
     },
     {
       "path": "hyba_data/millennium/test_millennium_security_stack.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981788052f6cd76c69036",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1e0125786c4c445d70fe4365508f4857eeece0153eb9593ebb555caf208ce2c8",
+      "size_bytes": 5234
     },
     {
       "path": "hyba_data/millennium/yang_mills_core.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981ab9863c149403ce36d",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "80aae93eaa00e1d2c87bbe5534e6d928a427ed734d5498332dbebde1ff4481b0",
+      "size_bytes": 4733
     },
     {
       "path": "hyba_data/millennium/yang_mills_integration.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981f88482e50ac88eeffd",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "6acac039b17cedabb69fecfa463073dc13381b4a30b2f9bb64daeb45c80779ed",
+      "size_bytes": 6642
     },
     {
       "path": "hyba_data/millennium/yang_mills_lattice_v3.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814497e9fd09b3e9e780",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "3f87ba8e750d4484978b533de7e96afa1a77e7527459cb527d05f3217504bff1",
+      "size_bytes": 19440
     },
     {
       "path": "hyba_data/phi_folding_engine/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981dfa4f8f1f02138068c",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "287e051246488ba59f57ddc64b1a1bae3f8ea43fee6bcd2390cbecc233e3ad19",
+      "size_bytes": 975
     },
     {
       "path": "hyba_data/phi_folding_engine/ai/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798105a473d1b4ed971d28",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d1b8dff5283c7ed595d10a2d6d7508db18faf5e74b5cefcc5cccca46f2b3b51f",
+      "size_bytes": 984
     },
     {
       "path": "hyba_data/phi_folding_engine/ai/phi_layer_jax.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981cd877ae75c1d33389e",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "63f1b7638348d371a2f927937e99af3ce88d91cd61bca02c299067d3ea3e2b3b",
+      "size_bytes": 838
     },
     {
       "path": "hyba_data/phi_folding_engine/ai/phi_layer_torch.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798184bfa3fee45f027447",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "2a919e5685ea74af03b2fda8d6d0d91c79d4660fdc1b4a80cf3d9d837d4f925e",
+      "size_bytes": 844
     },
     {
       "path": "hyba_data/phi_folding_engine/ai/training_loop_phi_layer.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798167906bcf20ad67260d",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d0c51fc2930dc57481aad305c04595e35fabf0b689c1119305c4734ad4ce51ca",
+      "size_bytes": 868
     },
     {
       "path": "hyba_data/phi_folding_engine/ai_layers.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981208fb1c209c2295666",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "b12f857f0430adbac4767dddfde6b17c25765d1697304f4fecac0cf78f461970",
+      "size_bytes": 817
     },
     {
       "path": "hyba_data/phi_folding_engine/backend_router.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981408524cce153198e61",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "4fdb7aac7c5ab354f3353b67cabcf735ec1dc4aeabff1f387dfe2ad606c0ebd0",
+      "size_bytes": 832
     },
     {
       "path": "hyba_data/phi_folding_engine/backends/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798121bd00ec5d66d0c24a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "8830ec339fc5aad71fda5f600989c0998d130e5e945147eefb0ad28d04c2def3",
+      "size_bytes": 1002
     },
     {
       "path": "hyba_data/phi_folding_engine/backends/router.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981feb395eb3b5da8572b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "4a28f556d057770203482b5d58b6d99868ae89dc07454d0861167fa6cb28eb4d",
+      "size_bytes": 835
     },
     {
       "path": "hyba_data/phi_folding_engine/benchmarks_gpu.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79818183a5fa094bfe788f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "df353d4e3ba420a6ef4eefd587623b7343f86660f3454f2656027a7ab3b4a125",
+      "size_bytes": 832
     },
     {
       "path": "hyba_data/phi_folding_engine/cf_tower_iir.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798193bc46db9b1085b793",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "02b25837750d2bf71f11e8f2e8fa42d95ed43fe6d1f8fabc8607f26431c7c08b",
+      "size_bytes": 826
     },
     {
       "path": "hyba_data/phi_folding_engine/cli/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b1938befb45e56f4be",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "4f3de9ec497bce77fd8ad4126e1b87ec52858f93908667eeb6c69ab6911a8d51",
+      "size_bytes": 987
     },
     {
       "path": "hyba_data/phi_folding_engine/cli/compliance_cli.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798140ad58c5244aad91a5",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "fb1158b080fdf7c4c619b066d8c8eb7aadf6a330ce161afbd803b73c7e163cfa",
+      "size_bytes": 844
     },
     {
       "path": "hyba_data/phi_folding_engine/constants.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981ee98cce8db4fd12de5",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "225e444b39c7c48134aed3c8f4cd75e43951aede94485775a6ddf5d92ec1ec82",
+      "size_bytes": 817
     },
     {
       "path": "hyba_data/phi_folding_engine/corpus/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817a8156c7627f6f8690",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "35ddbd807a3c5f2b5537d51d5e2a82da61921f9adde27893306a4c160d87cecb",
+      "size_bytes": 996
     },
     {
       "path": "hyba_data/phi_folding_engine/corpus/image_adapter.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79819b920bd2b0f324e8df",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1708343582ee318067a1ed7f602def2402aecda188400ec9b1962735d54a1135",
+      "size_bytes": 850
     },
     {
       "path": "hyba_data/phi_folding_engine/corpus/llm_checkpoint_adapter.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981c1ba5cf1923d288ca6",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "929a0b8fcf3b33f965f80d0fab714241877f413a02e2b0193b19344b7545f9b0",
+      "size_bytes": 877
     },
     {
       "path": "hyba_data/phi_folding_engine/corpus/science_adapter.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a58eeaeefefc70a488",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1ca173f707d84994ff9600ff08bd2bd4cc218794075c04e39d45332ae40a50bf",
+      "size_bytes": 856
     },
     {
       "path": "hyba_data/phi_folding_engine/corpus_adapters.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79813d8af8f04774936a6a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "44238eebb31d55efa347ff4a9ff34b5b6e705db5d5df000668cbac84385fa29a",
+      "size_bytes": 835
     },
     {
       "path": "hyba_data/phi_folding_engine/deterministic/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981aab755ea3d26bb2213",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "c77d82095793edc0a7fda6b94cda37c59a907876081aef4eba74f4347cd00af6",
+      "size_bytes": 1017
     },
     {
       "path": "hyba_data/phi_folding_engine/deterministic/audit_trail.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981ca9b9ac0093cb9d83c",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1f6a8b9f7743a60679f7650c5c12fa559835fc930a2652a5d4dc5cabdd20e6d0",
+      "size_bytes": 865
     },
     {
       "path": "hyba_data/phi_folding_engine/deterministic/base.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a0b40cd65e4bd56790",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ee98db8448399a4aaea5a4ed61024a5d3457234851d946993767d2209dab1c49",
+      "size_bytes": 844
     },
     {
       "path": "hyba_data/phi_folding_engine/deterministic/phi_deterministic_mode.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981e1a883e87478bf573b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "dd803330633b1a0d1913d71d6dea849f60e9dcbcfd509d6d7962ea2089ab946f",
+      "size_bytes": 898
     },
     {
       "path": "hyba_data/phi_folding_engine/differentiable.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798130836dd4bfc10511ce",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "b6c1968832101a3c81ea0e45e7a21ca3a9c89bbc3bda6258263ce73efc4700f6",
+      "size_bytes": 832
     },
     {
       "path": "hyba_data/phi_folding_engine/embeddings.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798108b769f0c23a2b47ea",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "104d9c52b90bcd31bf187930d83421e8cb68beafe0601ffed8b9035ebddb70e8",
+      "size_bytes": 820
     },
     {
       "path": "hyba_data/phi_folding_engine/geometry/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981978271d97dfbe70c37",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "28f9a2043ffa8dba6eaef25d8c5c9c292ec06e41fd377926431d79e485148d57",
+      "size_bytes": 1002
     },
     {
       "path": "hyba_data/phi_folding_engine/geometry/base.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79819d9c41fc408bc04e4f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "8b5e480415f2cfe6cdffb18d70b6534bea3fec1f6332caac1ac009cb3faaa23a",
+      "size_bytes": 829
     },
     {
       "path": "hyba_data/phi_folding_engine/geometry/phase_diagrams_ufe.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79813aacc5d6a37d214513",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e7c273223969d757041d969ca83e7c49a004be3f4f4c178bf19441653fe9eb67",
+      "size_bytes": 871
     },
     {
       "path": "hyba_data/phi_folding_engine/geometry/tensor_geometry.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798188b333d1c2d31df4b7",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1b9038a4dc316a669ff5d751777ab855b89cc6e87a54a4a20b443742fcfa5abe",
+      "size_bytes": 862
     },
     {
       "path": "hyba_data/phi_folding_engine/holograph_boundary.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798137beccfd6ee0177c4b",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "edce17a119558b81905b09cf01986542f96aadea8a2500930be40746e8c86e1e",
+      "size_bytes": 844
     },
     {
       "path": "hyba_data/phi_folding_engine/holograph_nd.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79817e9d11d1dfe9c5bf1d",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "43f8bba6d913ccdd7011073f7ff569f7ae2f3ea24a6518fc88b5b5d15f9d008f",
+      "size_bytes": 826
     },
     {
       "path": "hyba_data/phi_folding_engine/hyperbolic_nd.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a9a95de8832c4acbd7",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "6f91d699718b5da08321a0f6f4201abe1cd94e309859407d85b56874e4f5bad4",
+      "size_bytes": 829
     },
     {
       "path": "hyba_data/phi_folding_engine/invariants.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79818884e2ef0409d1081f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "4755376e80232a3a5b5dbe106f700aaa89d370612548c07638c04e02fb402d90",
+      "size_bytes": 820
     },
     {
       "path": "hyba_data/phi_folding_engine/kernels/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79813e847efa17e2757a09",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "780cb210ed6519898c4395e0deb2e2adeb141d5c4d9de3d9484a2d579a88b903",
+      "size_bytes": 999
     },
     {
       "path": "hyba_data/phi_folding_engine/kernels_core.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798126bd32fac7698acb35",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "1748ed76fa3ac825ef2288c436126541812a06d40ebc35e32a338edff4b89752",
+      "size_bytes": 826
     },
     {
       "path": "hyba_data/phi_folding_engine/kernels_specialized.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981a5b722eb6ccd127afc",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "d238ded9b0c33eed8c3ea3c3991210a789f7c26f151bff0f66d111cc2e86e3ae",
+      "size_bytes": 847
     },
     {
       "path": "hyba_data/phi_folding_engine/next_push/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981819f9be86a2768c853",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "81a2e9378d2282b708da8cbbaa9ba6793ece6986f097ff607a007f1b8721b612",
+      "size_bytes": 1005
     },
     {
       "path": "hyba_data/phi_folding_engine/next_push/ai_ab_experiment.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981218302cce7ce4a4af6",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "fc184e817dcc3ddb133c2186d0e75c50ae71558b9cc6c073c0c1645f9446c761",
+      "size_bytes": 868
     },
     {
       "path": "hyba_data/phi_folding_engine/next_push/cuda_wallclock_runner.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79812481f2f7c6700158a9",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "9a74b67775fd4dac48b1a2df0ea79146aabb85484a0783d796e57b00abaa79d1",
+      "size_bytes": 883
     },
     {
       "path": "hyba_data/phi_folding_engine/next_push/real_domain_corpora.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79811ba3baf57e4d02b028",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "36f1d257460ee19ac5318734851857a1379482af9fb463994578ed275e885119",
+      "size_bytes": 877
     },
     {
       "path": "hyba_data/phi_folding_engine/next_push/run_all.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79815dbdf7e4f406151cc9",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "cf828c9548a2a7680c3a063d309f393600d3bfd7655e0fcfd154f1443b9e4cd9",
+      "size_bytes": 841
     },
     {
       "path": "hyba_data/phi_folding_engine/real_workloads.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798174b8aac88e36e98b56",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ef5fb3c6d677b36f1e1308b8bbbd7c27ddaabf917371c82999aceedb480e48be",
+      "size_bytes": 832
     },
     {
       "path": "hyba_data/phi_folding_engine/regime_selector.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981d99e1ecab1516abe65",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "803f717c77a3846e86e5c557d1358348bc575caee1fa661d2a4ae8e018ef7143",
+      "size_bytes": 835
     },
     {
       "path": "hyba_data/phi_folding_engine/scientific.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814b9659c6f1e1417050",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e2fca7ab962e5bebdd09c8e29f52a54147a515d8043eca830db52f032de7ea79",
+      "size_bytes": 820
     },
     {
       "path": "hyba_data/phi_folding_engine/service.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798179b68ac5ccb0179396",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "cee1eaf9c4d633c5c65cf2afb5208c0b2d5799737b02d6a146874b290e220dfc",
+      "size_bytes": 811
     },
     {
       "path": "hyba_data/phi_folding_engine/streaming/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798124a7f9c8d9fdb15e0f",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "880bc99ca0f410a60da53d0f7a53d099c6f1c2eccd9054bcbc59d5abd628b362",
+      "size_bytes": 1005
     },
     {
       "path": "hyba_data/phi_folding_engine/streaming/base.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798184ac1ec2777b8b7845",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "51a6d7c66a084959d96bb6de587bc2789c27aff547c2dbd5b1836216acd9caa1",
+      "size_bytes": 832
     },
     {
       "path": "hyba_data/phi_folding_engine/streaming/phi_stream_engine.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981349a58dd44f6bf2c16",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "777e4c0cbe8e478bb618e189105bd912da2ae8299c10067cdb77c6386d84bfb3",
+      "size_bytes": 871
     },
     {
       "path": "hyba_data/phi_folding_engine/streaming/stream_adapters.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981f8813cef314c5b9d37",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "08c4dd3224fb369626b2ef0f26741dd00649a7f1a5d2ccee788b34747cd3a5ce",
+      "size_bytes": 865
     },
     {
       "path": "hyba_data/phi_folding_engine/training_loop.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981eea3c1df91c527cc0c",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "20832063a399544d5207a6b5921ffd97d08f3705d3254426ab0a62e7d68cc923",
+      "size_bytes": 829
     },
     {
       "path": "hyba_data/phi_folding_engine/ufe.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b6b7a6dc86347fb914",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "a8bb6216f8e26c44c61db58815a2f0a3e9ed0bedd116f817fa6cc26d9334ead9",
+      "size_bytes": 799
     },
     {
       "path": "hyba_data/phi_folding_engine/unitary_gpu.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981e5ae85ff64fa801822",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "69cb9ff5423f51d54a1ea9e7dee476e5e96938b27dea36ec96917d9c2502c41c",
+      "size_bytes": 823
     },
     {
       "path": "hyba_data/phi_folding_engine/zphi_exact.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814bb6b2e2ca3c9f94e5",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "f46e19089d23c6f98502fa6277db0ebb01cf984726527715729138428dd9aded",
+      "size_bytes": 820
     },
     {
       "path": "hyba_data/pulvini/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798147b4f3e41dfa886739",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "41499e4414e711b1e61b85faeb16668daa7a6cbd094995b7264954aa2ea292d2",
+      "size_bytes": 1656
     },
     {
       "path": "hyba_data/pulvini/alerts.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981118122c710a212cac7",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "4632f55180aaa5f4268ec2ae82847dbbf3a43f73fd0fcec4babb1466e1d88176",
+      "size_bytes": 4993
     },
     {
       "path": "hyba_data/pulvini/circuit.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b59ac5ce0d10fda105",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "ba75ab85fa2e11478181ae971835198824f8c2f17ad4a3a8b8862b496405d71e",
+      "size_bytes": 2445
     },
     {
       "path": "hyba_data/pulvini/codecs/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981fc8f1bf8f9fdd8fc02",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "838ff8b323b6b50e40f23e80dfd01ef1e6af51764a693b7eb7eb57c96ed9d98b",
+      "size_bytes": 49
     },
     {
       "path": "hyba_data/pulvini/codecs/pulvini_byte_compression.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981139112f96d000768e9",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "abc36552f61e5d2366c1463209f77b6374a851bdd38f35e630304be7330e84e5",
+      "size_bytes": 15154
     },
     {
       "path": "hyba_data/pulvini/coordinator.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798172bce6d1faae49a4b1",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "85201d3ca4e90922316d62bf2349f8b7c3138423e12c015ce967d0a0819a1946",
+      "size_bytes": 4304
     },
     {
       "path": "hyba_data/pulvini/drift.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798161b8afeefab0787eb4",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "e371207f8c1f86e1c543bd3643c99d794cdd06ef55db3565a4a1404fc559f0e4",
+      "size_bytes": 5589
     },
     {
       "path": "hyba_data/pulvini/drift_protector_tier2.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798124ad3ec4bc8ee07228",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "64837f23debfd75e4200b74372974599494b76acfbc72fc5836ab4c4604eb0df",
+      "size_bytes": 6021
     },
     {
       "path": "hyba_data/pulvini/failover.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981838ffad5843cd41cf5",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "29344d182039f6c4eee18b4c8f2cd97ab68ec8d388681c0134d483f8485478cd",
+      "size_bytes": 3238
     },
     {
       "path": "hyba_data/pulvini/folding_engine/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981ada7e5f18e71658103",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "b85c7fe64c5cf02c63f8c1fffe4965e83c3de148fd22ad562343b0f1578bb716",
+      "size_bytes": 2995
     },
     {
       "path": "hyba_data/pulvini/folding_engine/ai/__init__.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d798116a1d4d8c6a9b27cbb",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "20fb7e5c39ad58837977aa409adee8dc6e3335562368e0e999c44fb9d0a7d0d7",
+      "size_bytes": 596
     },
     {
       "path": "hyba_data/pulvini/folding_engine/ai/phi_layer_jax.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981ab8aabcec7436236e4",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "dfcb0dca5a2f2ec5487755f2950a8b9cbf39d5e0a1029bd3f18365290962d105",
+      "size_bytes": 2612
     },
     {
       "path": "hyba_data/pulvini/folding_engine/ai/phi_layer_torch.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d79814eb2c3e16225812fa4",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "47c2da96b15f9080c209974531de184e0013dc4b261f92d3b874927ddcd3643c",
+      "size_bytes": 2038
     },
     {
       "path": "hyba_data/pulvini/folding_engine/ai/training_loop_phi_layer.py",
       "source_page": "https://app.notion.com/p/3ecaf6c73d7981b98a8bda480bfd551a",
-      "status": "pending"
+      "status": "recovered",
+      "sha256": "4e76dac7cf33ced1be11fe6bd8dd2544613d993fd74b76ae31ceb18233a8ad7c",
+      "size_bytes": 3612
     },
     {
       "path": "hyba_data/pulvini/folding_engine/ai_layers.py",

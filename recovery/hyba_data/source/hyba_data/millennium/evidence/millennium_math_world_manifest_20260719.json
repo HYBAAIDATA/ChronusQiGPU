@@ -1,0 +1,16 @@
+{
+  "claim_boundary": "Bounded hypothesis, invariant, constraint, and counterexample experiments only; no solution, proof, disproof, peer review, or external validation claim.",
+  "files_sha256": {
+    "euclid/MILLENNIUM_MATHEMATICS_WORLD.md": "0572b3e83297d2c8af377cfd1f76a913b9f057b8c70ef6cbf2ee7e9912cc0fbd",
+    "euclid/evidence/millennium_math_world_harness_20260719.json": "c62df807841ca8d84448fd352a936bc8794cd4b1150e7f357865bc41f06c459f",
+    "euclid/evidence/millennium_math_world_test_transcript_20260719.txt": "33865e344a260162b3f71a0e586e8d65142510178d2802d50727bb4e4bffb3e6",
+    "euclid/millennium_math_world.py": "82ec43848d04bbc9c3c9c423ee24e112a86fe9b58e79eb604ef385c3d7eddeb0",
+    "tests/test_millennium_math_world.py": "b0d0298ed48e5b778d03a1fb47e4b5fd55df2bafac3238d169d325e11d5d86d6"
+  },
+  "schema": "EUCLID_MILLENNIUM_MATHEMATICS_WORLD_EVIDENCE_V1",
+  "verification": {
+    "compilation": "passed",
+    "harness": "14/14",
+    "regressions": "53 passed"
+  }
+}
