@@ -15,11 +15,12 @@
 
 The operator audit pack retains both successful and failed qualification logs, including superseded failures. Overlapping suite counts must not be added as though they represented unique tests.
 
-- Integrated gateway/ASIC/telemetry/TOE/policy regression group: 114 passed.
+- All affected test files together after the repairs: **280 passed, 1 skipped**; fatal static checks passed.
+- Earlier integrated gateway/ASIC/telemetry/TOE/policy regression group: 114 passed.
 - Native execution, custody recovery, capability and import-audit group: 33 passed.
 - Explicit authorized restore and existing runtime group: 15 passed.
 - Stratum V2 transport group, including zero-byte encoding and setup timeout: 19 passed.
-- Whole-repository qualification is not green. The interrupted continuation retained 109 failures, 4,487 passes and 15 skips before a protocol test stalled. The transport defect exposed by that stall was subsequently repaired and its suite rerun. These figures are historical results, not a final verdict on the repaired tree.
+- Whole-repository qualification is not green. The interrupted continuation retained 109 failures, 4,487 passes and 15 skips before a protocol test stalled. The transport defect exposed by that stall was subsequently repaired and its suite rerun. The bounded remaining segment completed with 38 failures, 1,430 passes and 1 skip. These figures are historical results, not a final verdict on the repaired tree. The affected-file run above subsequently passed.
 
 ## Live evidence and release boundary
 
