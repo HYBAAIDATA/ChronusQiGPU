@@ -1,0 +1,2 @@
+PASS: normalization rejects invalid state under python -O
+PASS: unitarity rejects invalid state under python -O

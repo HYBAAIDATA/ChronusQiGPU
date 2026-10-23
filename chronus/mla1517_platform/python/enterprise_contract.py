@@ -31,7 +31,7 @@ ROLES = {"founder_ceo", "approver", "operator"}
 CLAIM_BOUNDARY = (
     "Exact integer reference checks are computational evidence only. "
     "Search heuristics and healing telemetry are not proof of yield. "
-    "No mining certificate without hardware, fresh pool acceptance, and readiness."
+    "No mining certificate without measured execution, fresh pool acceptance, and readiness. Host GPUs are optional in independent mode."
 )
 
 
@@ -58,6 +58,20 @@ def number(value: Any, default: Any = None) -> Any:
         return default
 
 
+def mining_execution_available(config: dict, physical: bool) -> bool:
+    """Start/configuration capability, never evidence that a job has executed.
+
+    The mode is server-owned runtime configuration, not a request-body override.
+    Unknown/legacy configurations retain the device-required posture.
+    """
+    if config.get("_policy_error"):
+        return False
+    mode = (config.get("execution") or {}).get("mode")
+    if mode in {"independent", "auto"}:
+        return True
+    return physical is True and mode in {None, "scale_stack"}
+
+
 def qualify_status(observed: dict, *, now: float | None = None) -> dict:
     """One predicate drives both status and /ready-to-mine (no circular HTTP call)."""
     out = copy.deepcopy(observed)
@@ -80,16 +94,43 @@ def qualify_status(observed: dict, *, now: float | None = None) -> dict:
                 and submission.get("last_result") == "ACCEPTED" and fresh)
     ready_before = (out.get("ready_to_mine") or {}).get("ready") is True
     receipt = out.get("execution_receipt") or {}
-    backend = str(receipt.get("execution_backend") or "").lower()
-    measured_execution = (receipt.get("evidence_available") is True and receipt.get("worker_live") is True
-                          and receipt.get("emulated") is False
-                          and backend.startswith(("opencl:", "cuda:", "metal:", "asic:"))
-                          and "cpu" not in backend
-                          and receipt.get("status") in {"PASS", "VERIFIED", "MEASURED"})
-    active = physical and live and armed and pool_ack and accepted > 0 and ready_before and measured_execution
-    gates = {"hardware_present": physical, "worker_live": live, "armed": armed,
+    mode = ((out.get("runtime") or {}).get("execution") or {}).get("mode")
+    native_mode = mode in {"independent", "auto"}
+    hardware_required = not native_mode
+    substrate_available = mining_execution_available(out.get("runtime") or {}, physical)
+    backend_observation = receipt.get("execution_backend") or ""
+    backend_info = backend_observation if isinstance(backend_observation, dict) else {}
+    backend = str(backend_info.get("backend", backend_observation) or "").lower()
+    route = backend_info.get("route")
+    physical_backend = (backend.startswith(("opencl:", "cuda:", "metal:", "asic:"))
+                        and "cpu" not in backend and route != "cpu_reference")
+    native_backend = (backend in {"chronus-software-fabric", "cpu_reference", "cpu", "cpu-exact"}
+                      or backend.startswith(("chronus-software-fabric:", "cpu:")))
+    execution = receipt.get("last_execution") or {}
+    hashing = receipt.get("hashing") or {}
+    observed_at = number(receipt.get("observed_at"))
+    attempts = execution.get("attempts")
+    hashes = hashing.get("hashes_total")
+    # Actual coordinator publishes nested backend/last_execution/hashing, not
+    # the old wrapper's invented top-level PASS/emulated fields.
+    coordinator_measured = (isinstance(backend_observation, dict)
+        and observed_at is not None and 0 <= now - observed_at < 300
+        and execution.get("executed") is True
+        and type(attempts) is int and attempts > 0
+        and type(hashes) is int and hashes >= attempts
+        and execution.get("device_error") is None
+        and receipt.get("emulated") is not True)
+    legacy_measured = (isinstance(backend_observation, str)
+        and receipt.get("emulated") is False
+        and receipt.get("status") in {"PASS", "VERIFIED", "MEASURED"})
+    measured_execution = (receipt.get("evidence_available") is True
+        and receipt.get("worker_live") is True
+        and (coordinator_measured or (legacy_measured and not native_mode))
+        and ((native_mode and native_backend) or (physical and physical_backend)))
+    active = substrate_available and live and armed and pool_ack and accepted > 0 and ready_before and measured_execution
+    gates = {"execution_substrate_available": substrate_available, "worker_live": live, "armed": armed,
              "fresh_pool_ack": pool_ack, "shares_accepted_positive": accepted > 0,
-             "canonical_ready": ready_before, "measured_device_execution": measured_execution}
+             "canonical_ready": ready_before, "measured_execution": measured_execution}
     ready = dict(out.get("ready_to_mine") or {})
     ready.update(ready=bool(active), certificate="ACTIVE" if active else "WITHHELD",
                  certificate_gates=gates)
@@ -100,11 +141,17 @@ def qualify_status(observed: dict, *, now: float | None = None) -> dict:
         release_posture=("VERIFIED_MINING_ACTIVE" if active
                          else "HARDENING_VERIFIED_MINING_WITHHELD"),
         release_scope_label="Chronus computational execution; mining yield requires pool evidence.",
-        status=("MINING ACTIVE" if active else "DAEMON OFFLINE — VERIFY BACKEND SERVICE"),
+        status=("MINING ACTIVE" if active else
+                "DAEMON OFFLINE — VERIFY BACKEND SERVICE" if not live else
+                "EXECUTION VERIFIED — MINING CERTIFICATE WITHHELD" if measured_execution else
+                "EXECUTION NOT QUALIFIED — MINING CERTIFICATE WITHHELD"),
         armed=armed, shares_accepted=accepted, speedup_claimed=False,
         hashrate=number((ready.get("details") or {}).get("hashrate_hs")),
         igpu_present=physical, igpu_status="PRESENT" if physical else "NOT_PRESENT",
-        emulated=not physical, device=gpu.get("detected_device") or "not_observed",
+        execution_mode=mode or "unspecified", physical_gpu_required=hardware_required,
+        execution_status="VERIFIED" if measured_execution else "NOT_QUALIFIED",
+        emulated=(False if measured_execution else receipt.get("emulated") if type(receipt.get("emulated")) is bool else None),
+        device=backend_info.get("device") or gpu.get("detected_device") or (backend if measured_execution else "not_observed"),
     )
     return out
 

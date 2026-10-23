@@ -1,0 +1,34 @@
+FF..........F                                                            [100%]
+=================================== FAILURES ===================================
+___________ test_native_execution_is_not_emulation_when_no_host_gpu ____________
+
+    def test_native_execution_is_not_emulation_when_no_host_gpu():
+        result = qualify_status(observed(), now=1000)
+        assert result['igpu_present'] is False
+>       assert result['emulated'] is False
+E       assert True is False
+
+tests/test_chronus_native_status_qualification.py:25: AssertionError
+_____________ test_native_pool_predicate_does_not_require_host_gpu _____________
+
+    def test_native_pool_predicate_does_not_require_host_gpu():
+>       assert qualify_status(observed(), now=1000)['ready_to_mine_certificate'] == 'ACTIVE'
+E       AssertionError: assert 'WITHHELD' == 'ACTIVE'
+E         
+E         - ACTIVE
+E         + WITHHELD
+
+tests/test_chronus_native_status_qualification.py:31: AssertionError
+_____________ test_offline_does_not_invent_emulation_or_execution ______________
+
+    def test_offline_does_not_invent_emulation_or_execution():
+        result = qualify_status({}, now=1000)
+>       assert result['emulated'] is None
+E       assert True is None
+
+tests/test_chronus_native_status_qualification.py:57: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_chronus_native_status_qualification.py::test_native_execution_is_not_emulation_when_no_host_gpu
+FAILED tests/test_chronus_native_status_qualification.py::test_native_pool_predicate_does_not_require_host_gpu
+FAILED tests/test_chronus_native_status_qualification.py::test_offline_does_not_invent_emulation_or_execution
+3 failed, 10 passed in 0.12s
