@@ -2,6 +2,10 @@
 
 **Decision: outstanding qualification waived by operator; deployment not executed.**
 
+**Current installed-EUCLID acceptance: HOLD.** The newest recovery/artifact
+addendum below records unverified mandatory acceptance. Historical operator
+risk acceptance remains scoped to its original decision, not passing evidence.
+
 This is a decision record, not a maturity badge. TURING is an exact
 quantum-mathematical software system. A physical device, calibration, coherence
 window or cloud-provider subscription is not a release requirement. “Hybrid”
@@ -143,3 +147,96 @@ not manufacture these execution inputs or imply publication rights.
 
 Machine-readable scope and the focused verifier test results are retained at
 `../services/turing-enterprise/evidence/operator-risk-acceptance/`.
+
+
+## Installed-EUCLID recovery and artifact-ownership follow-up (current mandate)
+
+**Decision: HOLD / NOT PRODUCTION-QUALIFIED.** No merge, deployment, publication,
+permission change, or required-check bypass was performed. This addendum does
+not reclassify historical waived gates as passes or cancel the historical risk
+acceptance policy. The current acceptance request requires explicit verification.
+
+### Actual reconciliation, not reopening old PRs
+
+Reviewed baseline: `fedf91ac7b327929a67bc0e5bc167de22080f1b7`. Main advanced by
+one documentation-only commit to `5e00ee1d04bfc6ab9cd36d89dbaad1096354203a`;
+that is this follow-up branch's actual base. Newer service/console/risk-acceptance
+implementations are preserved.
+
+- #96, #97 and #110 are closed **merged**; #110 is no longer a draft/open task.
+- #98 is closed **unmerged as a PR**, but that does not mean its code is absent.
+  GitHub's commit listing from the pinned main revision includes the exact heads
+  `754e46449c89f5f6741032469f364bb59d5c40b6` (#96),
+  `a61a9dd1e34e23d3bcd2533089a001d50bc07c0a` (#97),
+  `9f0e4bb89507be9e141a89f79f05493f7b397362` (#98), and
+  `87dce11dfc84de7d283300ea9921ecd558b9187e` (#110), as well as scope correction
+  `cf56d0aaa7c427e7319c86af979cec1a5d808570`. They must not be blindly reapplied.
+- Later scope reconciliation and the 2026-10-22 completion report retain financial
+  billing/Hermitten as DEFERRED, not mandatory current nonbilling acceptance.
+  No live financial conformance is claimed or fabricated as a release blocker.
+- Repository-wide qualification is **not complete**. MCP source/history searches,
+  owner contracts and targeted source blobs were reviewed; the executable local
+  tree remains selective, not a complete checkout or exhaustive test inventory.
+
+### Repository-side changes in this follow-up
+
+1. Durable PREPARED intent binds a candidate to its receipt, owner, prior state,
+   prior binding and exact envelope hash before custody publication.
+2. Explicit host-authorized recovery validates durable admission/preparation and
+   committed ancestry before recording recovered completion. Missing authority,
+   stale/tampered/legacy-ambiguous state, corrupt audit and conflicting evidence
+   remain closed. No automatic rollback or recovery permission is invented.
+3. Restore now binds completion to the actual custody binding, not merely to a
+   copied receipt. Receipt schema and durable restore requirements are checked.
+4. The enterprise candidate builder preserves CAP-07 ownership: builds the actual
+   TURING and Kellogg project manifests, declares separate owner dependencies,
+   excludes their roots from the EUCLID import closure, rejects wheel overlaps,
+   and records original members of each of the three owner artifacts. Pydantic
+   is declared consistently with the current root runtime dependency contract.
+5. The installed verifier checks member bytes and now includes canonical TURING
+   dispatch/shared replay and actual shared-port uncertain-publication recovery.
+   These expanded native gates are **implemented but not executed here**.
+
+### Fresh executed evidence and precise limits
+
+Retained at `reports/euclid_clean_install/recovery_refresh/`: reproducible runner,
+source SHA-256s, normal/optimized logs, access/preflight failures and JSON summary.
+
+- Linux / Python 3.13: **39 bridge/recovery unit tests normal; 39 under -O**.
+  Real unchanged AL HARAS HashChainAudit; DiskPort custody double. Includes a
+  process deliberately terminated immediately after publication and recovery
+  in a separate fresh process. This is not actual OVID restart qualification.
+- **12 packaging/provenance tests normal; 12 under -O**. Real setuptools/build/pip
+  exercise three explicitly synthetic owner fixtures; not product wheel installs.
+  Negative checks include installed member tampering, wrong source revision,
+  missing owners, vendored owner paths, overlap and dirty/uncommitted source.
+- Focused Black/Ruff/compilation results are retained. No full engine, blanket
+  mathematical, full-repository or cross-platform pass is asserted.
+- A fresh sandbox Git access probe exits 128: `could not read Username` with
+  terminal prompts disabled. MCP read/write access does not authenticate git.
+  The actual clean-install runner exits 1 at ancestry preflight because the
+  selective tree is not a Git checkout. No product wheel is built or installed.
+  Git identity has not been fabricated to defeat that check.
+- GitHub Checks still returns **403 Resource not accessible by personal access
+  token** on #110's head; combined status is pending with zero statuses. This is
+  a permission/visibility denial, not a workflow failure or success. Actions logs,
+  mandatory check names/protection and the remote matrix remain UNVERIFIED.
+
+The prior completion report's 556 VQC tests + 111 subtests and 3 native integration
+passes remain historical results for its recorded source/snapshot. They were
+not rerun here and do not qualify this changed artifact set.
+
+### Outstanding actions / acceptance decision
+
+| Gate | Present status | Action to remove blocker |
+| --- | --- | --- |
+| Full source and installed package | BLOCKED at authentic-checkout preflight | Run the follow-up commit from a complete authenticated checkout with the documented external-environment command; retain exact source, all three wheels, dependency closure, member hashes and normal/-O results |
+| Canonical runtime/math | Expanded native gate NOT RUN; historical evidence retained | Run actual EUCLID/TURING/Kellogg consumer and affected full mathematical suites against final artifacts, including wheel/sdist parity where required |
+| Recovery/security | Focused local regressions PASS only | Run native shared-custody interruption/tamper/stale/failed-recovery gates; review real independent recovery policy, single-writer maintenance and legacy orphan disposition; obtain security/SCA/signing review |
+| CI/platform | Remote UNVERIFIED; Linux Python 3.13 unit evidence only | Authorized CI reader/repository maintainer supplies required-check configuration and actual Actions outputs; execute supported Linux/Windows Python 3.12/3.13 matrix; do not change permissions or bypass checks |
+| Enterprise integration | NOT live-qualified | Approved identity/tenant/entitlement and AL HARAS/Salamander/custody serving composition must run actual sandbox acceptance; host fault/rollback/load/restore drills and accountable owner approvals remain required |
+| Financial integration | DEFERRED in recorded nonbilling scope | Do not resurrect Hermitten requirements without an effective contract/scope change |
+
+Source-only implementation uncertainty and unexecuted affected native gates remain;
+this is not a finding that all repository-side work is complete. Production
+readiness is **NOT ESTABLISHED**. No deployment or publication was attempted.

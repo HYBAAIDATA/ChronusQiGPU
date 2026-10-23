@@ -17,6 +17,13 @@ builder = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(builder)
 
 
+verifier_spec = importlib.util.spec_from_file_location(
+    "installed_verifier", Path(__file__).resolve().parents[1] / "scripts/verify_clean_install.py"
+)
+verifier = importlib.util.module_from_spec(verifier_spec)
+verifier_spec.loader.exec_module(verifier)
+
+
 class EnterprisePackaging(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
@@ -36,6 +43,7 @@ class EnterprisePackaging(unittest.TestCase):
             "Intelligence/capability_fabric.py",
             "euclid/capabilities/empirical_state_bridge.py",
             "euclid/capabilities/empirical_runtime.py",
+            "euclid/capabilities/empirical_recovery.py",
             "al_haras/audit.py",
             "aethel/enterprise/lifecycle.py",
             "euclid/_artifact_provenance.json",
@@ -114,6 +122,7 @@ class EnterprisePackaging(unittest.TestCase):
             "Intelligence/capability_fabric.py",
             "euclid/capabilities/empirical_state_bridge.py",
             "euclid/capabilities/empirical_runtime.py",
+            "euclid/capabilities/empirical_recovery.py",
             "al_haras/audit.py",
             "aethel/enterprise/lifecycle.py",
             "scripts/verify_clean_install.py",
@@ -128,6 +137,29 @@ class EnterprisePackaging(unittest.TestCase):
         assets = source / "euclid/nonpackage-assets"
         assets.mkdir()
         (assets / "fixture.json").write_text('{"fixture": true}')
+        # Three synthetic owner artifacts exercise build plumbing only.
+        owner = source / "kellogg"
+        owner.mkdir()
+        (owner / "__init__.py").write_text('__version__ = "1.0.0"\n')
+        for distribution, project, package in (
+            ("hyba-kellogg-tensor", "packaging/kellogg-tensor", "kellogg"),
+            (
+                "hyba-turing-vqc",
+                "turing_universal_quantum_computer",
+                "turing_universal_quantum_computer",
+            ),
+        ):
+            location = source / project
+            location.mkdir(parents=True, exist_ok=True)
+            if package != "kellogg":
+                (location / package).mkdir()
+                (location / package / "__init__.py").write_text('VERSION = "1.0.0"\n')
+            mapping = '{"kellogg" = "../../kellogg"}' if package == "kellogg" else '{"" = "."}'
+            (location / "pyproject.toml").write_text(
+                '[build-system]\nrequires=["setuptools>=68", "wheel"]\nbuild-backend="setuptools.build_meta"\n'
+                f'[project]\nname="{distribution}"\nversion="1.0.0"\n'
+                f'[tool.setuptools]\npackages=["{package}"]\npackage-dir={mapping}\n'
+            )
         for args in (
             ("init",),
             ("add", "."),
@@ -155,6 +187,11 @@ class EnterprisePackaging(unittest.TestCase):
                 expected_commit=commit, output_dir=output, offline=True, wheelhouse=wheelhouse
             )
         manifest = json.loads((output / "build-manifest.json").read_text())
+        self.assertEqual(
+            set(manifest["owned_distributions"]),
+            {"euclid-engine", "hyba-turing-vqc", "hyba-kellogg-tensor"},
+        )
+        self.assertEqual(len(list(output.glob("*.whl"))), 3)
         self.assertEqual(manifest["source_commit"], commit)
         self.assertEqual(manifest["wheel_sha256"], hashlib.sha256(wheel.read_bytes()).hexdigest())
         with zipfile.ZipFile(wheel) as archive:
@@ -162,6 +199,56 @@ class EnterprisePackaging(unittest.TestCase):
             self.assertNotIn("euclid/ambient.py", archive.namelist())
             provenance = json.loads(archive.read("euclid/_artifact_provenance.json"))
         self.assertEqual(provenance["source_commit"], commit)
+
+    def test_installed_provenance_tampering_and_missing_owners_refused(self):
+        from types import SimpleNamespace
+
+        path = self.root / "member.py"
+        path.write_text("# original")
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        dist = SimpleNamespace(version="1.0.0", locate_file=lambda name: self.root / name)
+        owners = {
+            name: {"wheel": name + ".whl", "members": {"member.py": digest}}
+            for name in ("euclid-engine", "hyba-turing-vqc", "hyba-kellogg-tensor")
+        }
+        manifest = {"source_commit": "candidate", "owned_distributions": owners}
+        with patch.object(verifier.importlib.metadata, "distribution", return_value=dist):
+            self.assertEqual(len(verifier.verify_installed_members(manifest, "candidate")), 3)
+            with self.assertRaises(RuntimeError):
+                verifier.verify_installed_members(manifest, "wrong-commit")
+            path.write_text("# tampered")
+            with self.assertRaises(RuntimeError):
+                verifier.verify_installed_members(manifest, "candidate")
+        manifest["owned_distributions"].pop("hyba-turing-vqc")
+        with self.assertRaises(RuntimeError):
+            verifier.verify_installed_members(manifest, "candidate")
+
+    def test_vendored_owner_rejected(self):
+        wheel = self.wheel()
+        with zipfile.ZipFile(wheel, "a") as archive:
+            archive.writestr("kellogg/__init__.py", "# must belong to canonical owner")
+        with self.assertRaises(RuntimeError):
+            builder.inspect_wheel(wheel)
+
+    def test_member_overlap_rejected(self):
+        a, b = self.root / "a.whl", self.root / "b.whl"
+        for wheel in (a, b):
+            with zipfile.ZipFile(wheel, "w") as archive:
+                archive.writestr("kellogg/__init__.py", "# duplicate")
+        with self.assertRaises(RuntimeError):
+            builder.reject_wheel_overlaps([a, b])
+
+    def test_external_owners_not_vendored_by_import_closure(self):
+        (self.root / "pyproject.toml").write_text("[project]\nname='fixture'\n")
+        self.project("seed", "import kellogg\nimport turing_universal_quantum_computer\n")
+        self.project("kellogg")
+        self.project("turing_universal_quantum_computer")
+        (self.root / "turing_core.py").write_text("")
+        (self.root / "pythia_turing_math.py").write_text("")
+        with patch.object(builder, "REPO", self.root), patch.object(builder, "SEEDS", ("seed",)):
+            builder.stage(self.root / "staged")
+        self.assertFalse((self.root / "staged/kellogg").exists())
+        self.assertFalse((self.root / "staged/turing_universal_quantum_computer").exists())
 
     def test_dirty_source_or_wrong_commit_refused(self):
         from types import SimpleNamespace
