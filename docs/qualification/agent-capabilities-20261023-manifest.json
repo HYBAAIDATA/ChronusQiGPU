@@ -1,0 +1,38 @@
+{
+  "source_commit": "c760cdfc6b5a7c8c9c97dec2493a9a75a1997dbc",
+  "qualification_mode": "PINNED_SOURCE_SNAPSHOT_PACKAGE_INIT_BYPASSED",
+  "reference_modules": {
+    "salamander/models.py": {
+      "sha256": "f5bd2a5c0ceab2a800f771e5bfc655821b875119814c37d992eab7c174a70aa6",
+      "git_blob_sha1": "917a2580b8e86fec068445ae99479fdb12414697"
+    },
+    "salamander/control_plane.py": {
+      "sha256": "a2e387d4c10c2f00d3c2fae69a3beeaafbf22b2eb89a2563b113eec7dc5a9568",
+      "git_blob_sha1": "27dcda92af4c218885ccfeb91f080fb8a4072c30"
+    },
+    "euclid/core/phi_metric.py": {
+      "sha256": "d870aff57c80017150d29d29f4997b55fce77fd99052f340daedac0564114dfd",
+      "git_blob_sha1": "ba37cd4dd924be1cfa40f7f4999a654e928bd252"
+    },
+    "euclid/core/euclid_intelligence.py": {
+      "sha256": "0b99632372c7cab1292c51281175eabcaa6e7467cc48fb6a3475e3016136b27b",
+      "git_blob_sha1": "450ba0121394b4a82e8a501f4915386eb8aa5263"
+    },
+    "euclid/agents/manifold.py": {
+      "sha256": "61ec13129e58883f0e0cbc472b427b55f8a64f1966648981307518400592be9a",
+      "git_blob_sha1": "37701ac06efc84944088e436d898778e563d4619"
+    },
+    "euclid/validation/process_sandbox.py": {
+      "sha256": "f4babb33318241848810b69157b79d14280a203a82150e77c86de72b0aa73594",
+      "git_blob_sha1": "58d67aa9a2be015b4742c995847ee553db662a63"
+    },
+    "kellogg/quantum_tensor.py": {
+      "sha256": "bf3ceec43409b40a7c1830502fd633e3dbdfa3747a00127c0436346a345c0a7f",
+      "git_blob_sha1": "0eaebb2d0e524af260eb326fa318906340b90eb6"
+    },
+    "toe/poincare_golden_11d.py": {
+      "sha256": "16775a748ad1f85b98b2216360aa250df733f49df38d24a13427b7516bf840e1",
+      "git_blob_sha1": "7f2060327e8f076e9e25143fe35b6c572155d938"
+    }
+  }
+}
