@@ -62,55 +62,71 @@ class FailClosed(RuntimeError):
 
 
 class EvidenceLedger:
-    """Hash-chained action evidence that can append to an existing ledger sink."""
+    """Hash-chained evidence; concurrent writers on one instance are serialized.
+
+    The sink runs before in-memory commit. A failing sink leaves this instance
+    unchanged. This lock is not a cross-process file lock or custody guarantee."""
 
     def __init__(self, sink: Callable[[Mapping[str, Any]], None] | None = None) -> None:
+        self._lock = threading.RLock()
+        self._appending = False
         self._records: list[dict[str, Any]] = []
         self._head = "0" * 64
         self._sink = sink
 
     @property
     def head(self) -> str:
-        return self._head
+        with self._lock:
+            return self._head
 
     @property
     def records(self) -> tuple[Mapping[str, Any], ...]:
-        return tuple(copy.deepcopy(self._records))
+        with self._lock:
+            return tuple(copy.deepcopy(self._records))
 
     def append(self, kind: str, payload: Mapping[str, Any], *, at_ns: int) -> str:
-        body = {
-            "schema": EVIDENCE_SCHEMA,
-            "kind": kind,
-            "at_ns": int(at_ns),
-            "previous_sha256": self._head,
-            "payload": copy.deepcopy(dict(payload)),
-        }
-        seal = digest("salamander.autonomic.evidence.v1", body)
-        record = {**body, "evidence_sha256": seal}
-        if self._sink is not None:
-            self._sink(copy.deepcopy(record))
-        self._records.append(record)
-        self._head = seal
-        return seal
+        with self._lock:
+            if self._appending:
+                raise FailClosed("reentrant evidence append from sink is forbidden")
+            body = {
+                "schema": EVIDENCE_SCHEMA,
+                "kind": kind,
+                "at_ns": int(at_ns),
+                "previous_sha256": self._head,
+                "payload": copy.deepcopy(dict(payload)),
+            }
+            seal = digest("salamander.autonomic.evidence.v1", body)
+            record = {**body, "evidence_sha256": seal}
+            if self._sink is not None:
+                self._appending = True
+                try:
+                    self._sink(copy.deepcopy(record))
+                finally:
+                    self._appending = False
+            self._records.append(record)
+            self._head = seal
+            return seal
 
     def verify(self) -> bool:
-        previous = "0" * 64
-        for record in self._records:
-            body = {k: record[k] for k in ("schema", "kind", "at_ns", "previous_sha256", "payload")}
-            if record["schema"] != EVIDENCE_SCHEMA or record["previous_sha256"] != previous:
-                raise FailClosed("autonomic evidence chain discontinuity")
-            if record["evidence_sha256"] != digest("salamander.autonomic.evidence.v1", body):
-                raise FailClosed("autonomic evidence digest mismatch")
-            previous = record["evidence_sha256"]
-        return previous == self._head
+        with self._lock:
+            previous = "0" * 64
+            for record in self._records:
+                body = {k: record[k] for k in ("schema", "kind", "at_ns", "previous_sha256", "payload")}
+                if record["schema"] != EVIDENCE_SCHEMA or record["previous_sha256"] != previous:
+                    raise FailClosed("autonomic evidence chain discontinuity")
+                if record["evidence_sha256"] != digest("salamander.autonomic.evidence.v1", body):
+                    raise FailClosed("autonomic evidence digest mismatch")
+                previous = record["evidence_sha256"]
+            return previous == self._head
 
     def to_payload(self) -> Mapping[str, Any]:
-        body = {
-            "schema": "salamander.autonomic-evidence-checkpoint.v1",
-            "records": copy.deepcopy(self._records),
-            "head": self._head,
-        }
-        return {**body, "seal": digest("salamander.autonomic-evidence-checkpoint.v1", body)}
+        with self._lock:
+            body = {
+                "schema": "salamander.autonomic-evidence-checkpoint.v1",
+                "records": copy.deepcopy(self._records),
+                "head": self._head,
+            }
+            return {**body, "seal": digest("salamander.autonomic-evidence-checkpoint.v1", body)}
 
     @classmethod
     def from_payload(

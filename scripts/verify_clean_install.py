@@ -27,6 +27,42 @@ def require(condition, message):
         raise RuntimeError(message)
 
 
+def verify_installed_members(manifest, expected_commit):
+    """Check installed bytes against this invocation's owner wheel manifests.
+
+    This is local reproducibility evidence, not a signature or release approval.
+    pip rewrites RECORD during installation; all other original wheel members
+    are checked, including package data, METADATA and embedded provenance.
+    """
+    require(manifest.get("source_commit") == expected_commit, "manifest commit mismatch")
+    owners = manifest.get("owned_distributions", {})
+    require(
+        set(owners) == {"euclid-engine", "hyba-turing-vqc", "hyba-kellogg-tensor"},
+        "canonical owner artifacts missing",
+    )
+    checked = {}
+    for name, item in owners.items():
+        distribution = importlib.metadata.distribution(name)
+        require(distribution.version == "1.0.0", f"unexpected owner version: {name}")
+        require(bool(item["members"]), f"empty artifact manifest: {name}")
+        for member, digest in item["members"].items():
+            relative = Path(member)
+            require(
+                not relative.is_absolute() and ".." not in relative.parts,
+                "unsafe artifact member path",
+            )
+            if member.endswith("/") or member.endswith(".dist-info/RECORD"):
+                continue
+            installed = Path(distribution.locate_file(member))
+            require(
+                installed.is_file()
+                and hashlib.sha256(installed.read_bytes()).hexdigest() == digest,
+                f"installed artifact member mismatch: {name}:{member}",
+            )
+        checked[name] = {"wheel": item["wheel"], "version": distribution.version}
+    return checked
+
+
 def isolation(repo, expected_commit):
     require(sys.prefix != sys.base_prefix, "acceptance requires a fresh virtual environment")
     roots = {Path(sysconfig.get_path(name)).resolve() for name in ("purelib", "platlib")}
@@ -38,7 +74,16 @@ def isolation(repo, expected_commit):
             not Path(entry or os.getcwd()).resolve().is_relative_to(repo),
             "checkout present on sys.path",
         )
-    names = ("euclid", "Intelligence", "aethel", "al_haras", "kellogg", "toe", "lucas")
+    names = (
+        "euclid",
+        "Intelligence",
+        "aethel",
+        "al_haras",
+        "kellogg",
+        "toe",
+        "lucas",
+        "turing_universal_quantum_computer",
+    )
     paths = {}
     for name in names:
         module = importlib.import_module(name)
@@ -80,8 +125,92 @@ def state_from_port(port):
     return json.loads(port.read(binding.binding_id))
 
 
+def recover_actual_publication(port, audit):
+    """Inject a post-publication response loss over the actual shared port."""
+    from euclid.capabilities.empirical_state_bridge import (
+        EmpiricalStateBridge,
+        StateTransitionRequest,
+        StateCommitUncertain,
+    )
+    from euclid.capabilities.empirical_recovery import (
+        PublicationRecoveryRequest,
+        reconcile_publication,
+    )
+    import secrets
+
+    secret = secrets.token_urlsafe(32)
+
+    class ResponseLossPort:
+        # Delegate to actual custody. Only the response loss is a fault fixture.
+        latest = port.latest
+        read = port.read
+
+        def put(self, *args, **kwargs):
+            port.put(*args, **kwargs)
+            raise OSError("acceptance fixture: response lost after real publication")
+
+    bridge = EmpiricalStateBridge(
+        audit=audit,
+        data_port=ResponseLossPort(),
+        owner_id="clean-room-owner",
+        authorizer=lambda req: req.caller_id == "fixture-writer"
+        and secrets.compare_digest(req.operator_token, secret),
+    )
+    try:
+        bridge.dispatch(
+            StateTransitionRequest(
+                bridge.APPROVED_CAPABILITY_ID,
+                "fixture-writer",
+                "UPDATE_RELIABILITY",
+                {"domain": "atomic", "weight": 0.99},
+                time.time() + 60,
+                1,
+                secret,
+            )
+        )
+    except StateCommitUncertain:
+        pass
+    else:
+        raise RuntimeError("uncertain actual publication reported success")
+    binding = port.latest(bridge.STATE_KIND)
+    request = PublicationRecoveryRequest(
+        "clean-room-owner",
+        binding.binding_id,
+        hashlib.sha256(port.read(binding.binding_id)).hexdigest(),
+        "fixture-recovery",
+        secret,
+        time.time() + 60,
+    )
+    try:
+        reconcile_publication(request, audit=audit, data_port=port)
+    except PermissionError:
+        pass
+    else:
+        raise RuntimeError("recovery without independent authority accepted")
+    receipt = reconcile_publication(
+        request,
+        audit=audit,
+        data_port=port,
+        recovery_authorizer=lambda req: req.caller_id == "fixture-recovery"
+        and secrets.compare_digest(req.operator_token, secret),
+    )
+    restored = EmpiricalStateBridge(
+        audit=audit,
+        data_port=port,
+        owner_id="clean-room-owner",
+    )
+    require(restored.audit_log[-1] == receipt, "actual publication recovery missing completion")
+    return {
+        "receipt_id": receipt.receipt_id,
+        "custody_binding_id": binding.binding_id,
+        "fault": "response loss after actual shared-port publication",
+        "authority": "ephemeral explicit host-policy fixture, not enterprise approval",
+    }
+
+
 def reader(work):
     from al_haras import HashChainAudit
+    from aethel.enterprise.system_relations import SharedTuring
     from euclid.runtime import EuclidRuntime
 
     prior = json.loads((work / "restart.json").read_text())
@@ -108,12 +237,20 @@ def reader(work):
                 "durable operational receipt missing",
             )
             require(os.getpid() != prior["pid"], "restart did not cross process boundary")
+            turing_replay = SharedTuring(lifecycle.data_port("turing")).replay()
+            require(
+                turing_replay["passed"]
+                and turing_replay["replay_source"] == "durable_graph"
+                and turing_replay["report_binding_id"] == prior["turing_report_binding_id"],
+                "native TURING shared-custody restart failed",
+            )
             return {
                 "pid": os.getpid(),
                 "adaptive": verified,
                 "operational": "RESTORED",
                 "authority": "FRESH_NO_GRANTS",
                 "audit": "RESTORED_AND_VERIFIED",
+                "turing": turing_replay,
             }
         finally:
             with_runtime.close()
@@ -136,6 +273,10 @@ def writer(work, args):
     from Intelligence.repository_review_capability import register_repository_review_capability
     from euclid.cognition.worlds import MechanismWorld, WorldExecutor, generate_task
     from euclid.runtime import EuclidRuntime
+    from euclid.contracts import Authority
+    from euclid.organ_adapters.specialists import TuringQuantumOrgan
+    from aethel.enterprise.system_relations import SharedTuring
+    from turing_universal_quantum_computer.backends import Program
 
     lifecycle = lifecycle_for(work)
     lifecycle.start()
@@ -165,6 +306,13 @@ def writer(work, args):
             capabilities=["proof-conjecture", "repository-review"],
         )
         empirical = runtime.bind_empirical_state(data_port=port)
+        shared_turing = SharedTuring(lifecycle.data_port("turing"))
+        runtime.register_specialist(
+            "turing",
+            TuringQuantumOrgan(pipeline=shared_turing),
+            operations=("run-program",),
+            authority=Authority.PROPOSE,
+        )
         catalog = specialist.catalog() + empirical.catalog()
         require(
             {r["capability_id"] for r in catalog}
@@ -190,6 +338,7 @@ def writer(work, args):
                         "intelligence.repository-review",
                         "empirical-state.UPDATE_RELIABILITY",
                         "empirical-state.INVALID_TRANSITION",
+                        "turing.run-program",
                     }
                 ),
             ),
@@ -228,7 +377,7 @@ def writer(work, args):
             not dispatch("intelligence", "proof-conjecture", proof)["allowed"],
             "missing creator rights not refused",
         )
-        for organ in ("intelligence", "empirical-state"):
+        for organ in ("intelligence", "empirical-state", "turing"):
             runtime.rights.grant(runtime.creator_id, organ, organ + ".request", "dispatch")
         for credential in ("", "arbitrary-not-a-credential"):
             require(
@@ -244,6 +393,29 @@ def writer(work, args):
             and result["result"]["output"]["files"][0]["sha256"] == digest,
             "native source-bound review failed",
         )
+        # Exercise the actual canonical installed pipeline through EUCLID and
+        # its existing SharedTuring custody adapter, not an injected stand-in.
+        program = Program(1).then("H", 0).then("H", 0)
+        turing_request = {"operation": "run-program", "program": program.to_dict()}
+        for credential in ("", "x" * 100, token):
+            turing_result = runtime.dispatch_specialist(
+                "turing",
+                turing_request,
+                tenant_id="clean-room",
+                actor="verifier",
+                subscription_token=credential,
+            )
+            if credential != token:
+                require(not turing_result["allowed"], "invalid TURING authority accepted")
+            else:
+                require(
+                    turing_result["allowed"]
+                    and turing_result["result"]["executed"]
+                    and turing_result["result"]["pipeline_verdict"] == "PASS",
+                    "canonical installed TURING dispatch failed",
+                )
+        turing_replay = shared_turing.replay()
+        require(turing_replay["passed"], "native TURING custody replay failed")
         request = {
             "state_payload": {"domain": "atomic", "weight": 0.99},
             "deadline_epoch": time.time() + 60,
@@ -285,19 +457,26 @@ def writer(work, args):
             "pid": os.getpid(),
             "operational": before,
             "adaptive": runtime.adaptive_restart_receipt(),
+            "turing_report_binding_id": shared_turing.last_bindings["report"].binding_id,
         }
         require(not (runtime.state_dir / "adaptive_knowledge.json").exists(), "private state leak")
         (work / "restart.json").write_text(json.dumps(prior))
         state_audit = HashChainAudit(work / "runtime/empirical/empirical-state.jsonl")
         phases = [r["event"]["phase"] for r in state_audit.records]
         require(
-            phases == ["ADMITTED", "COMMITTED", "ADMITTED", "ROLLED_BACK"],
+            phases == ["ADMITTED", "PREPARED", "COMMITTED", "ADMITTED", "ROLLED_BACK"],
             "missing durable admission/completion/rollback",
         )
         require(
             token not in (work / "runtime/empirical/empirical-state.jsonl").read_text(),
             "credential leaked into empirical audit",
         )
+        # Maintenance begins only after the runtime writer has been closed.
+        runtime.close()
+        runtime = None
+        recovery = recover_actual_publication(port, state_audit)
+        prior["operational"] = state_from_port(port)
+        (work / "restart.json").write_text(json.dumps(prior))
     finally:
         if runtime is not None:
             runtime.close()
@@ -317,6 +496,8 @@ def writer(work, args):
         str(args.repo_root),
         "--expected-commit",
         args.expected_commit,
+        "--build-manifest",
+        str(args.build_manifest),
     ]
     completed = subprocess.run(command, check=True, text=True, capture_output=True, timeout=300)
     restart = json.loads(completed.stdout.strip().splitlines()[-1])
@@ -324,7 +505,9 @@ def writer(work, args):
         "catalog": catalog,
         "profiles": profiles,
         "restart": restart,
-        "native_paths": ["proof-conjecture", "repository-review", "empirical-state"],
+        "native_paths": ["proof-conjecture", "repository-review", "empirical-state", "turing"],
+        "turing": turing_replay,
+        "recovery": recovery,
         "limits": "bounded in-process tests; not independent assurance or production qualification",
     }
 
@@ -335,8 +518,12 @@ def main():
     parser.add_argument("--repo-root", type=Path, required=True)
     parser.add_argument("--reader", action="store_true")
     parser.add_argument("--work", type=Path)
+    parser.add_argument("--build-manifest", type=Path, required=True)
     args = parser.parse_args()
     args.repo_root = args.repo_root.resolve()
+    args.build_manifest = args.build_manifest.resolve()
+    manifest = json.loads(args.build_manifest.read_text())
+    owners = verify_installed_members(manifest, args.expected_commit)
     paths = isolation(args.repo_root, args.expected_commit)
     if args.reader:
         result = reader(args.work)
@@ -348,9 +535,16 @@ def main():
             (work / "custody.key").chmod(0o600)
             result = writer(work, args)
     isolation(args.repo_root, args.expected_commit)
+    verify_installed_members(manifest, args.expected_commit)
     print(
         json.dumps(
-            {"passed": True, "optimized": bool(sys.flags.optimize), "imports": paths, **result},
+            {
+                "passed": True,
+                "optimized": bool(sys.flags.optimize),
+                "imports": paths,
+                "artifacts": owners,
+                **result,
+            },
             sort_keys=True,
         )
     )
