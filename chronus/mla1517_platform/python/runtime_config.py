@@ -71,6 +71,7 @@ def default_config() -> dict[str, Any]:
         "intelligence": {"seed": 1337, "max_workers": 4, "max_nonces_per_arm": None, "require_toe": False},
         "hashrate": {"target_hs": 0.0, "ceiling_hs": HASHRATE_CEILING_HS},
         "live_submit": {"enabled": False, "approval_id": ""},
+        "mining_policy": None,
         "window": 200000,
         "campaign": {"phases": []},
         "bounds": {
@@ -90,6 +91,8 @@ def _persisted_section_ok(key: str, value: Any) -> bool:
     version skew) and must fall back to its default rather than crash
     public_view or downstream readers. Semantic rules (bounds, pool
     references) stay enforced at write time by validate()."""
+    if key == "mining_policy":
+        return value is None or isinstance(value, dict)
     if key == "pools":
         return isinstance(value, list) and all(isinstance(p, dict) for p in value)
     if key in ("solvers", "hashrate", "live_submit", "campaign", "execution", "intelligence"):
@@ -128,6 +131,7 @@ def load() -> dict[str, Any]:
         "solvers",
         "hashrate",
         "live_submit",
+        "mining_policy",
         "window",
         "campaign",
         "execution",
@@ -317,6 +321,16 @@ def validate(cfg: dict[str, Any]) -> dict[str, Any]:
             }
         )
 
+    policy = cfg.get("mining_policy")
+    if policy is not None:
+        from pool_catalog import POOL_CATALOG
+        if (not isinstance(policy, dict) or set(policy) != {"poolId", "shares_target"}
+            or policy.get("poolId") not in POOL_CATALOG
+            or type(policy.get("shares_target")) is not int
+            or not 1 <= policy["shares_target"] <= 10000):
+            raise ValueError("invalid mining_policy")
+        policy = dict(policy)
+
     execution = cfg.get("execution", {})
     intelligence = cfg.get("intelligence", {})
     if not isinstance(execution, dict) or execution.get("mode", "independent") not in (
@@ -356,6 +370,7 @@ def validate(cfg: dict[str, Any]) -> dict[str, Any]:
             "ceiling_hs": ceiling,
         },
         "live_submit": {"enabled": live_enabled, "approval_id": approval_id},
+        "mining_policy": policy,
         "window": window,
         "campaign": {"phases": out_phases},
         "bounds": {
@@ -451,6 +466,7 @@ def public_view(cfg: dict[str, Any] | None = None) -> dict[str, Any]:
             "enabled": cfg.get("live_submit", {}).get("enabled", False),
             "approval_bound": bool(cfg.get("live_submit", {}).get("approval_id")),
         },
+        "mining_policy": cfg.get("mining_policy"),
         "window": cfg.get("window", 200000),
         "campaign": {
             "phases": [

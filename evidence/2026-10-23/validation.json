@@ -1,0 +1,45 @@
+{
+  "R1_R7_release_complete": false,
+  "api_studio_typescript_path": "NOT_APPLICABLE: separate repository",
+  "baseline_commit": "75ece7ed9d66aad22c3e2564e85cb62b00fc8dfb",
+  "customer_ledger_adapter": "UNAVAILABLE",
+  "deployed_proxy_curl": "NOT_RUN",
+  "elevation_sha256": "49a40d5861b7c0536d58924f656a8fa3095086f6297efafd86767685ed6a9b07",
+  "elevation_status": "VERIFIED_SUBSTRATE_AGNOSTIC",
+  "errors": 0,
+  "failures": 0,
+  "focused_tests_pass": true,
+  "frontend_typecheck_build": "NOT_RUN",
+  "full_checkout_ci": "NOT_RUN_LOCALLY",
+  "generated_at": "2026-10-23T14:54:14.327682+00:00",
+  "hardware_pool_treasury_in_http_tests": "explicit test doubles; no external operations",
+  "identical_digest": true,
+  "isolated_boot_modules": [
+    "system_fabric",
+    "autonomous_supervisor",
+    "al_haras_pythia"
+  ],
+  "isolated_handler_imports": true,
+  "legacy_chronos_package_path": "retained filesystem compatibility; not a public release claim",
+  "live_hardware_and_pool": "NOT_RUN",
+  "mining_certificate": "WITHHELD",
+  "ovid_grf2_crt_database_suites": "NOT_RUN",
+  "python": "3.13.15",
+  "quorum_reseal_ceremony": "NOT_RUN",
+  "scope": "focused_local_contract_tests_not_deployment_or_live_mining",
+  "sequential_elevation_reads": 3,
+  "skipped": 0,
+  "source_grep": {
+    "built_bundle": "NOT_RUN",
+    "hits": [],
+    "scope": [
+      "frontend/src/components/Header.tsx",
+      "frontend/src/components/ControlSession.tsx",
+      "frontend/src/lib/api.ts",
+      "frontend/src/lib/status.ts"
+    ]
+  },
+  "tests_run": 80,
+  "treasury_signer_and_observer": "UNAVAILABLE",
+  "zero_alloc_and_independent_authority_suites": "NOT_RUN"
+}

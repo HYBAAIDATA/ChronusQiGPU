@@ -27,7 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
   offline,
   miningAuthorized = true,
 }) => {
-  const readyToMine = ready?.ready === true;
+  const readyToMine = ready?.ready === true && ready?.certificate === "ACTIVE";
   const openclDeviceCount = status?.gpu?.opencl_device_count ?? 0;
   const logicalSubstrateAvailable = Boolean(status?.gpu?.logical_substrate?.available);
   const hostBackend = status?.gpu?.logical_substrate?.host_backend ?? "none";
@@ -83,7 +83,7 @@ export const Header: React.FC<HeaderProps> = ({
               <>
                 <Chip
                   tone={readyToMine ? "green" : "amber"}
-                  label={readyToMine ? "ready to mine" : (ready?.reason ?? "standby")}
+                  label={readyToMine ? "ready to mine" : `WITHHELD · ${ready?.reason ?? "unverified"}`}
                   icon={<Wifi className="w-3 h-3" />}
                 />
                 <Chip

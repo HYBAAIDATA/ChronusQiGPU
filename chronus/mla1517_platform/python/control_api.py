@@ -50,6 +50,9 @@ for _p in (str(_PLATFORM_DIR), str(_REPO_ROOT), str(_CHRONOS_IGPU), str(_PYTHIA_
         sys.path.insert(0, _p)
 
 import runtime_config
+from enterprise_contract import envelope as enterprise_envelope, qualify_status
+from enterprise_api import (CanonicalBackend, EnterpriseService, GET_PATHS as ENTERPRISE_GET_PATHS,
+                            POST_PATHS as ENTERPRISE_POST_PATHS)
 import system_fabric
 import autonomous_supervisor
 import failure_taxonomy
@@ -137,6 +140,20 @@ _AUDIT: AppendOnlyAudit | None = None
 _BOOT_LOCK: BootLock | None = None
 _CONTROL: "ControlPlane" | None = None
 _CONTROL_GUARD = threading.Lock()
+_ENTERPRISE: EnterpriseService | None = None
+_ENTERPRISE_GUARD = threading.Lock()
+
+
+def _enterprise_service() -> EnterpriseService:
+    global _ENTERPRISE
+    with _ENTERPRISE_GUARD:
+        if _ENTERPRISE is None:
+            _ENTERPRISE = EnterpriseService(
+                CanonicalBackend(sys.modules[__name__]),
+                Path(os.getenv("HYBA_ENTERPRISE_STATE", str(_REPO_ROOT / "data" / "enterprise"))),
+                _REPO_ROOT / "evidence",
+            )
+        return _ENTERPRISE
 
 
 class _RequestStats:
@@ -329,7 +346,7 @@ def _idempotency_key(headers: Any) -> str:
 
 _PY_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _PY_DIR.parent.parent.parent
-_REPO_ROOT = _PROJECT_ROOT.parent
+_REPO_ROOT = _PROJECT_ROOT
 
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -632,7 +649,7 @@ class ControlPlane:
         self.stop_event = threading.Event()
         self.lock = threading.RLock()
         self.executor = get_pythia_executor()
-        self.autostart = _is_truthy(os.getenv("PYTHIA_AUTOSTART_WORKERS"), default=True)
+        self.autostart = False  # Only the dual-authorized start route may arm workers.
         self.mmio_device = os.getenv("MLA1517_MMIO_DEVICE", "").strip()
         self.execution_device = _execution_device_env()
         self.audit.append(
@@ -1336,6 +1353,13 @@ def authenticate_control_principal(
     headers: Any,
 ) -> tuple[ControlPrincipal | None, tuple[HTTPStatus, str] | None]:
     """Authenticate a server-mapped operator or the legacy admin-key identity."""
+    if "__Host-hyba_session=" in str(headers.get("Cookie", "")):
+        from enterprise_contract import Refusal, ROLES
+        try:
+            name, role = _enterprise_service().security().principal(headers, ROLES)
+            return ControlPrincipal(name, "ceo" if role == "founder_ceo" else "operator", "http_only_session"), None
+        except Refusal as exc:
+            return None, (HTTPStatus(exc.status), exc.reason)
     principals, mapping_error = _operator_principals()
     if mapping_error:
         return None, (HTTPStatus.SERVICE_UNAVAILABLE, mapping_error)
@@ -1405,6 +1429,7 @@ def console_read_authorization(path: str, headers: Any) -> tuple[HTTPStatus, str
         # Do not replace the guardian bearer: it independently grants (or
         # refuses) the subscription operation after this control-role check.
         control_headers = {
+            "Cookie": str(headers.get("Cookie", "")),
             "Authorization": str(headers.get("X-PYTHIA-Control-Authorization", "")),
             OPERATOR_PRINCIPAL_HEADER: str(headers.get(OPERATOR_PRINCIPAL_HEADER, "")),
         }
@@ -1505,7 +1530,7 @@ def console_sources_payload() -> dict[str, Any]:
     return result
 
 
-def status_payload() -> dict[str, Any]:
+def _observed_status_payload() -> dict[str, Any]:
     """Public status contract for the canonical operator UI."""
     control = _control_plane()
     records = control.records()
@@ -1568,6 +1593,7 @@ def status_payload() -> dict[str, Any]:
             "execution_boundary": "canonical_python_control_api",
         },
         "gpu": gpu,
+        "execution_receipt": mining_evidence_payload(),
         "workers": worker_map,
         "stratum": stratum,
         "identity": _identity_payload(),
@@ -1582,6 +1608,10 @@ def status_payload() -> dict[str, Any]:
             },
         },
     }
+
+
+def status_payload() -> dict[str, Any]:
+    return qualify_status(_observed_status_payload())
 
 
 def _worker_live(records: list[WorkerRecord], worker_id: str = "agentic-mining") -> bool:
@@ -2374,7 +2404,7 @@ def _config_public_payload() -> dict[str, Any]:
     return view
 
 
-def _config_merge_sections(body: dict[str, Any]) -> dict[str, Any]:
+def _config_merge_sections(body: dict[str, Any], *, dual_authority: bool = False) -> dict[str, Any]:
     """Overlay the PUT sections onto the stored config.
 
     Pool rows may omit ``password`` — the stored secret is re-merged by
@@ -2413,6 +2443,8 @@ def _config_merge_sections(body: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(req, dict) or not isinstance(req.get("enabled"), bool):
             raise ValueError("live_submit.enabled must be an explicit JSON boolean")
         enabled = req["enabled"]
+        if enabled and not dual_authority:
+            raise ValueError("DUAL_AUTHORITY_REQUIRED: use the governed mining/start route")
         if enabled and not _is_truthy(os.getenv("PYTHIA_M3_REQUIRED")):
             raise ValueError(
                 "live submission requires PYTHIA_M3_REQUIRED=1 "
@@ -2435,7 +2467,8 @@ def _config_merge_sections(body: dict[str, Any]) -> dict[str, Any]:
                     enabled_pool["endpoint"], enabled_pool["worker"]
                 )
         cfg["live_submit"] = {"enabled": enabled, "approval_id": approval}
-    elif pools_written:
+    elif body:
+        # Any changed execution/config input invalidates the consumed approval.
         cfg["live_submit"] = {"enabled": False, "approval_id": ""}
     return cfg
 
@@ -2455,7 +2488,7 @@ def _apply_runtime_config(cfg: dict[str, Any]) -> dict[str, Any]:
     return applied
 
 
-def _config_put(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
+def _config_put(body: dict[str, Any], *, dual_authority: bool = False) -> tuple[HTTPStatus, dict[str, Any]]:
     unknown = sorted(set(body) - _CONFIG_SECTIONS)
     if unknown:
         return HTTPStatus.BAD_REQUEST, {
@@ -2463,7 +2496,7 @@ def _config_put(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
             "error": f"unknown config sections: {', '.join(unknown)}",
         }
     try:
-        merged = _config_merge_sections(body)
+        merged = _config_merge_sections(body, dual_authority=dual_authority)
         saved = runtime_config.save(merged)
     except ValueError as exc:
         return HTTPStatus.BAD_REQUEST, {"error": str(exc)}
@@ -2960,6 +2993,21 @@ class _Handler(BaseHTTPRequestHandler):
     def _guarded(self, route: Any) -> None:
         """A failing route answers 500 JSON instead of dropping the connection."""
         try:
+            if self.command in {"POST", "PUT", "PATCH", "DELETE"}:
+                try:
+                    _enterprise_service().security().audit.records()
+                    if "__Host-hyba_session=" in str(self.headers.get("Cookie", "")):
+                        _enterprise_service().security().origin(self.headers)
+                except Exception as exc:
+                    self._discard_request_body()
+                    from enterprise_contract import Refusal
+                    if isinstance(exc, Refusal) and exc.reason == "ORIGIN_REQUIRED":
+                        self._json(HTTPStatus.FORBIDDEN, {"error": exc.reason})
+                        return
+                    self._json(HTTPStatus.SERVICE_UNAVAILABLE,
+                               {"error": "AUDIT_UNAVAILABLE", "audit_hash": None,
+                                "audit_status": "UNAVAILABLE"})
+                    return
             route()
         except (BrokenPipeError, ConnectionResetError):
             self.close_connection = True
@@ -2974,7 +3022,38 @@ class _Handler(BaseHTTPRequestHandler):
             except Exception:
                 self.close_connection = True
 
+    def _enterprise_route(self, method: str) -> bool:
+        path = urlparse(self.path).path
+        known = path in (ENTERPRISE_GET_PATHS if method == "GET" else ENTERPRISE_POST_PATHS)
+        if not known and not path.startswith(("/api/treasury/", "/api/beta/")):
+            return False
+        if method == "POST":
+            body, error = self._read_json_body()
+            if body is None:
+                self._json(HTTPStatus.REQUEST_ENTITY_TOO_LARGE if error == "body_too_large"
+                           else HTTPStatus.BAD_REQUEST, {"error": error})
+                return True
+        else:
+            body = {}
+        result = _enterprise_service().dispatch(
+            method, path, self.headers, body,
+            remote=self.client_address[0], guard=self._guardian_preflight,
+        )
+        if result is None:
+            return True  # The canonical guardian has already answered its own refusal.
+        self._enterprise_headers = result.headers
+        try:
+            if result.binary:
+                self._send(result.status, "application/zip", result.payload)
+            else:
+                self._json(HTTPStatus(result.status), result.payload)
+        finally:
+            self._enterprise_headers = {}
+        return True
+
     def _route_get(self) -> None:
+        if self._enterprise_route("GET"):
+            return
         parsed = urlparse(self.path)
         path = parsed.path
         refusal = console_read_authorization(path, self.headers)
@@ -2991,6 +3070,9 @@ class _Handler(BaseHTTPRequestHandler):
                 {
                     "schema_version": _SCHEMA_VERSION,
                     "status": "ok",
+                    "claim_boundary": _enterprise_service().elevation.get()["document"].get("claim_boundary"),
+                    "heuristics": _enterprise_service().elevation.get()["document"].get("heuristics", {}),
+                    "yield_proof": "NOT_RUN",
                     "generated_at": now_iso(),
                 },
             )
@@ -3268,6 +3350,8 @@ class _Handler(BaseHTTPRequestHandler):
         return body, None
 
     def _route_post(self) -> None:
+        if self._enterprise_route("POST"):
+            return
         parsed = urlparse(self.path)
         if parsed.path == "/api/v1/security/evaluate":
             body, err = self._read_json_body()
@@ -3438,6 +3522,9 @@ class _Handler(BaseHTTPRequestHandler):
         self._json(status, payload)
 
     def do_PUT(self) -> None:  # noqa: N802
+        self._guarded(self._route_put)
+
+    def _route_put(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path != "/api/v1/config":
             self._json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
@@ -3733,6 +3820,8 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("X-Correlation-Id", envelope["correlation_id"])
         if envelope["causation_id"]:
             self.send_header("X-Causation-Id", envelope["causation_id"])
+        for name, value in getattr(self, "_enterprise_headers", {}).items():
+            self.send_header(name, value)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", cache_control)
@@ -3754,6 +3843,17 @@ class _Handler(BaseHTTPRequestHandler):
         # Constitution §9: every error body carries a machine-readable
         # failure_class, even forwarded guardian receipts that lack one.
         payload = failure_taxonomy.ensure_failure_class(status, payload)
+        payload = enterprise_envelope(payload, urlparse(self.path).path, int(status))
+        if self.command in {"POST", "PUT", "PATCH", "DELETE"} and "audit_hash" not in payload:
+            try:
+                payload["audit_hash"] = _enterprise_service().security().audit.append(
+                    "HTTP_MUTATION_RECEIPT", path=urlparse(self.path).path,
+                    status=int(status), response_digest=hashlib.sha256(
+                        json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest(),
+                )
+            except Exception:
+                payload["audit_hash"] = None
+                payload["audit_status"] = "UNAVAILABLE"
         _REQUEST_STATS.record(int(status), payload)
         body = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
         self._send(int(status), "application/json; charset=utf-8", body)
@@ -3956,6 +4056,7 @@ def serve(
     web_root: str | Path = "dist/public",
 ) -> None:
     _control_plane()
+    _enterprise_service().boot()
     start_repo_engineer()
     announce_skills()
     if system_fabric.startup_self_repair_enabled():
@@ -3991,6 +4092,7 @@ def serve(
     try:
         server.serve_forever()
     finally:
+        _enterprise_service().close()
         retract_active_port()
         if _CONTROL is not None:
             _CONTROL.shutdown()
