@@ -1,0 +1,38 @@
+[
+  {
+    "path": "frontend/src/components/ControlSession.tsx",
+    "source": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/c760cdfc6b5a7c8c9c97dec2493a9a75a1997dbc/contents/frontend/src/components/ControlSession.tsx"
+  },
+  {
+    "path": "frontend/src/lib/access.ts",
+    "source": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/c760cdfc6b5a7c8c9c97dec2493a9a75a1997dbc/contents/frontend/src/lib/access.ts"
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "source": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/c760cdfc6b5a7c8c9c97dec2493a9a75a1997dbc/contents/frontend/src/lib/api.ts"
+  },
+  {
+    "path": "frontend/src/lib/useConsole.ts",
+    "source": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/c760cdfc6b5a7c8c9c97dec2493a9a75a1997dbc/contents/frontend/src/lib/useConsole.ts"
+  },
+  {
+    "path": "frontend/src/lib/__tests__/access.test.ts",
+    "source": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/6c8d71fc6f41f5b43514039bab3ee83bb55a14c1/contents/frontend/src/lib/__tests__/access.test.ts"
+  },
+  {
+    "path": "frontend/src/lib/__tests__/console-lifecycle.test.tsx",
+    "source": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/6c8d71fc6f41f5b43514039bab3ee83bb55a14c1/contents/frontend/src/lib/__tests__/console-lifecycle.test.tsx"
+  },
+  {
+    "path": "frontend/src/lib/__tests__/api.test.ts",
+    "source": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/6c8d71fc6f41f5b43514039bab3ee83bb55a14c1/contents/frontend/src/lib/__tests__/api.test.ts"
+  },
+  {
+    "path": "frontend/src/lib/console.ts",
+    "source": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/6c8d71fc6f41f5b43514039bab3ee83bb55a14c1/contents/frontend/src/lib/console.ts"
+  },
+  {
+    "path": "frontend/src/test/helpers.ts",
+    "source": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/6c8d71fc6f41f5b43514039bab3ee83bb55a14c1/contents/frontend/src/test/helpers.ts"
+  }
+]

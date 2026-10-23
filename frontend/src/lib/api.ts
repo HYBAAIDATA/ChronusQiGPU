@@ -87,6 +87,7 @@ export function setSubscriptionCreds(creds: SubscriptionCreds | null): void {
   sessionSet(HYBA_TENANT, creds?.tenant ?? null);
   sessionSet(HYBA_ACTOR, creds?.actor ?? null);
   sessionSet(SUBSCRIPTION_TOKEN, creds?.token ?? null);
+  window.dispatchEvent(new Event("pythia-credentials-changed"));
 }
 
 /** Ask the operator for the subscription boundary triple; null = cancelled. */

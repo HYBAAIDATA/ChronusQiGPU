@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useConsole } from "../useConsole";
-import { setOperatorKey, setOperatorPrincipal } from "../api";
+import { setOperatorKey, setSubscriptionCreds } from "../api";
 let host: HTMLDivElement, root: Root;
 const payload = { schema_version:"chronus.mla1517.status/1", generated_at:"2026-10-20T23:00:00Z", ready_to_mine:{ready:true, reason:"backend_fixture_only"} };
 function Probe() { const v=useConsole(); return <pre>{JSON.stringify(v)}</pre>; }
@@ -11,7 +11,7 @@ const json = (body:unknown,status=200) => new Response(JSON.stringify(body),{sta
 beforeEach(() => {
   vi.useFakeTimers(); window.sessionStorage.clear();
   (globalThis as any).IS_REACT_ACT_ENVIRONMENT=true;
-  setOperatorPrincipal("owner");setOperatorKey("test-only");
+  // Authority is supplied only by the mocked server cookie-session endpoint.
   host=document.createElement("div");document.body.append(host);root=createRoot(host);
 });
 afterEach(async()=>{ await act(async()=>root.unmount());host.remove();vi.useRealTimers();vi.unstubAllGlobals(); });
@@ -56,6 +56,7 @@ describe("fail-closed console lifecycle",()=>{
     let resolveStatus:(value:Response)=>void=()=>{};
     const mock=backend();mock.mockImplementation(async(input)=>String(input).endsWith("mla1517/status")?await new Promise<Response>(resolve=>{resolveStatus=resolve;}):json({principal_id:"owner",role:"ceo"}));
     vi.stubGlobal("fetch",mock);await mount();
+    mock.mockImplementation(async()=>json({error:"SESSION_REQUIRED"},401));
     await act(async()=>{setOperatorKey(null);});resolveStatus(json(payload));await flush();
     expect(state().status).toBeNull();expect(state().access.allowed).toBe(false);
   });
@@ -65,4 +66,49 @@ describe("fail-closed console lifecycle",()=>{
     await act(async()=>{await vi.advanceTimersByTimeAsync(15000);});await flush();
     expect(state().status).toBeNull();expect(state().offline).toBe(true);
   });
+  it("rechecks login when cookie identity changes but browser identity stays empty",async()=>{
+    let signedIn=false;
+    const mock=backend();
+    const original=mock.getMockImplementation()!;
+    mock.mockImplementation(async(input)=>String(input).endsWith("control/session")&&!signedIn?json({},401):original(input));
+    vi.stubGlobal("fetch",mock);await mount();expect(state().access.allowed).toBe(false);
+    signedIn=true;
+    await act(async()=>{window.dispatchEvent(new Event("pythia-credentials-changed"));});await flush();
+    expect(state().access.allowed).toBe(true);expect(state().status).not.toBeNull();
+  });
+  it("queues a fresh check after a session change during an in-flight check",async()=>{
+    let resolveCheck:(v:Response)=>void=()=>{};
+    const mock=backend();
+    mock.mockImplementationOnce(async()=>await new Promise<Response>(resolve=>{resolveCheck=resolve;}));
+    vi.stubGlobal("fetch",mock);await mount();
+    await act(async()=>{window.dispatchEvent(new Event("pythia-credentials-changed"));});
+    resolveCheck(json({},401));await flush();
+    expect(state().access.allowed).toBe(true);expect(state().status).not.toBeNull();
+    expect(mock.mock.calls.filter(c=>String(c[0]).endsWith("control/session"))).toHaveLength(2);
+  });
+  it("does not retain one CEO's snapshots when the server switches principal",async()=>{
+    let principal="owner",hold=false;
+    let resolveStatus:(v:Response)=>void=()=>{};
+    const mock=vi.fn(async(input:RequestInfo|URL)=>{
+      if(String(input).endsWith("control/session"))return json({principal_id:principal,role:"ceo"});
+      if(String(input).endsWith("mla1517/status"))return hold?await new Promise<Response>(resolve=>{resolveStatus=resolve;}):json(payload);
+      return json({evidence_available:false});
+    });
+    vi.stubGlobal("fetch",mock);await mount();expect(state().status).not.toBeNull();
+    principal="other-owner";hold=true;
+    await act(async()=>{await vi.advanceTimersByTimeAsync(30000);});await flush();
+    expect(state().access.principalId).toBe("other-owner");expect(state().status).toBeNull();
+    resolveStatus(json(payload));await flush();
+  });
+  it("rejects old tenant evidence after an explicit subscription rebind",async()=>{
+    let hold=false;let resolveEvidence:(v:Response)=>void=()=>{};
+    const mock=backend();const original=mock.getMockImplementation()!;
+    mock.mockImplementation(async(input)=>hold&&String(input).endsWith("mining/evidence")?await new Promise<Response>(resolve=>{resolveEvidence=resolve;}):original(input));
+    vi.stubGlobal("fetch",mock);await mount();hold=true;
+    await act(async()=>{await vi.advanceTimersByTimeAsync(5000);});await flush();
+    await act(async()=>{setSubscriptionCreds({tenant:"new",actor:"actor",token:"fixture"});});
+    resolveEvidence(json({evidence_available:true,tenant:"old"}));await flush();
+    expect(state().evidence?.tenant).not.toBe("old");
+  });
+
 });

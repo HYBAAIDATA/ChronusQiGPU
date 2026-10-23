@@ -1,6 +1,6 @@
 # Console field-to-owner wiring
 
-Base inspected: `4f71b5647e5cacd053e9a9d545ab5f26d38b4f34`. Candidate changes preserve Python as the only control/status service. All paths below are relative to the configured `VITE_PYTHIA_PYTHON_API_URL`. Labels, spacing and user inputs are not runtime measurements.
+Original field map base: `4f71b5647e5cacd053e9a9d545ab5f26d38b4f34`. Cookie-session closeout source base: `6c8d71fc6f41f5b43514039bab3ee83bb55a14c1`. Candidate changes preserve Python as the only control/status service. All paths below are relative to the configured `VITE_PYTHIA_PYTHON_API_URL`. Labels, spacing and user inputs are not runtime measurements.
 
 ## Shared read path
 
@@ -38,7 +38,7 @@ SystemFabricPanel retains POST `/api/v1/system/verify`, `/api/v1/intelligence/se
 
 ## Read authorization compatibility change
 
-Exact console read paths in `_CEO_READ_PATHS` now require a current server-mapped CEO before producing data: status aliases, config, audit tail, Stratum status, telemetry summary/history/causal/events/ops/session/stream and websocket telemetry. Mining evidence additionally retains guardian checks; its CEO bearer is in a separate header. Legacy shared admin-key identity remains operator, not CEO. Unrelated public GETs do not automatically receive control credentials. This is an intentional compatibility change requiring existing automation/proxy/client qualification. The exact-route checks are not a full service-wide read-surface security certification; readiness/metrics and other routes require separate audit.
+Exact console read paths in `_CEO_READ_PATHS` now require a current server-mapped CEO before producing data: status aliases, config, audit tail, Stratum status, telemetry summary/history/causal/events/ops/session/stream and websocket telemetry. Mining evidence additionally retains guardian checks; its CEO identity comes from the HttpOnly session while the subscription bearer remains separate. Legacy shared admin-key identity remains operator, not CEO. Unrelated public GETs do not automatically receive control credentials. This is an intentional compatibility change requiring existing automation/proxy/client qualification. The exact-route checks are not a full service-wide read-surface security certification; readiness/metrics and other routes require separate audit.
 
 ## Product bindings: do not invent edges
 
