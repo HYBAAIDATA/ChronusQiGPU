@@ -1,0 +1,87 @@
+{
+  "branch": "fix/euclid-prepared-publication-recovery",
+  "branch_base": "5e00ee1d04bfc6ab9cd36d89dbaad1096354203a",
+  "candidate_identity": "Exact source SHA-256 below; remote commit identified by follow-up PR/comment after push. No fabricated local Git identity.",
+  "candidate_source_sha256": {
+    "euclid/capabilities/empirical_recovery.py": "032252f3959c1cd56068b93ce08fe45628184303d911c78ab0bed2dae59521f9",
+    "euclid/capabilities/empirical_state_bridge.py": "2065f461bba2eca9d2147446584148134610ae1d5724f328bbe560ada2b92080",
+    "reports/euclid_clean_install/recovery_refresh/run_focused_source.py": "dc3ba45b5a5832046d8ba81101fabfc0bdbcc11eab0c78f5671039ec799397a4",
+    "scripts/build_standalone_wheel.py": "aaeed91907c0a1fa3cbe5c6a0a21766b373bb7c2e36ba12f313a757036b81df8",
+    "scripts/run_clean_install.py": "98a1d7a36a0ae6c002786dbdb9e9ddd194e2143fa3ce84acf30efa213f1fa621",
+    "scripts/verify_clean_install.py": "354e3dab580228caddc09b8f7a5a53c7cf97db2f9aac958dbfbaf4ee8d9aaf54",
+    "tests/test_empirical_state_bridge_hardening.py": "5ad4b89daaf972406608863df71051946a11282a95b4c9f21b7244639647319d",
+    "tests/test_enterprise_packaging.py": "ebc26a18fff538cb2e852b980da1c34bd20b974431e9061999fb39b6bfebfe35"
+  },
+  "ci": {
+    "checks_api": "403 Resource not accessible by personal access token",
+    "combined_status": "pending",
+    "combined_status_count": 0,
+    "matrix": "UNVERIFIED",
+    "observed_head": "87dce11dfc84de7d283300ea9921ecd558b9187e",
+    "required_checks": "UNVERIFIED"
+  },
+  "classification": "SELECTIVE_SOURCE_UNIT_EVIDENCE_NOT_INSTALLED_PRODUCT_QUALIFICATION",
+  "deployed": false,
+  "financial_scope": "DEFERRED per retained scope reconciliation; Hermitten not a current nonbilling gate",
+  "full_acceptance": {
+    "built_product_wheel": false,
+    "exit_code": 1,
+    "installed_product_wheel": false,
+    "native_expanded_gates": "IMPLEMENTED_NOT_EXECUTED",
+    "passed": false,
+    "phase": "ancestry preflight",
+    "reason": "Selective source tree is not an authentic Git checkout; sandbox Git remote authentication probe exits 128."
+  },
+  "historical_evidence_not_rerun": {
+    "native_integrations": 3,
+    "qualified_commit": "411707502fb544c386b9d38112b75792842574e6",
+    "vqc_subtests": 111,
+    "vqc_tests": 556
+  },
+  "local_tree_is_full_git_checkout": false,
+  "merged": false,
+  "original_blobs_checked_before_overwrite": {
+    "euclid/capabilities/empirical_state_bridge.py": "da37431fbf85b73182989688543d91d7498f256f",
+    "scripts/build_standalone_wheel.py": "c125ffb209fa003cb9d4e5f9ad9b555e88c8f465",
+    "scripts/run_clean_install.py": "6d27cd38a629e542037a357359055ed9346cc864",
+    "scripts/verify_clean_install.py": "9923371e4119117550c6488c178391440ac32813",
+    "tests/test_empirical_state_bridge_hardening.py": "9eea5bd32e3e3e5d02e0c7acabe01433c26c2148",
+    "tests/test_enterprise_packaging.py": "5e257e55518ecbe8f81e857c00c7e282482b11a1"
+  },
+  "permissions_changed": false,
+  "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+  "production_readiness": "NOT_ESTABLISHED_HOLD",
+  "published": false,
+  "python": "3.13.14",
+  "quality": {
+    "ast_parse_files": 8,
+    "black_checked_files": 8,
+    "ruff_F_E9_checked_files": 8
+  },
+  "remaining": [
+    "Authentic complete source and affected installed artifact acceptance in normal/-O",
+    "Final artifact mathematical and native consumer qualification",
+    "Authorized remote CI/check configuration evidence and supported OS/Python matrix",
+    "Approved actual identity/entitlement/recovery policy and enterprise serving composition",
+    "Security/supply-chain/signing/operational/independent owner approvals"
+  ],
+  "repository_side_completion_claimed": false,
+  "review_baseline": "fedf91ac7b327929a67bc0e5bc167de22080f1b7",
+  "schema": "euclid.recovery-refresh/1",
+  "terminal_log_sha256": "e75c876f435d2ee2e95a568aed040df4f21c86691e4961ff6e5cb0a8071e07aa",
+  "tests": {
+    "bridge_recovery": {
+      "cross_process": "os._exit immediately after fixture custody publication, separate process recovery",
+      "custody": "DiskPort double; real unchanged AL HARAS audit",
+      "failures": 0,
+      "normal": 39,
+      "optimized": 39
+    },
+    "packaging_provenance": {
+      "artifact_identity": "THREE SYNTHETIC OWNER FIXTURES, not EUCLID/TURING/Kellogg product qualification",
+      "failures": 0,
+      "normal": 12,
+      "optimized": 12
+    }
+  }
+}

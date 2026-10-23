@@ -1,0 +1,8 @@
+{
+  "error_type": "CalledProcessError",
+  "expected_commit": "5e00ee1d04bfc6ab9cd36d89dbaad1096354203a",
+  "passed": false,
+  "required_ancestor": "4226a3c93ca2e045976e0e648ec4a66db064d5a4",
+  "schema": "euclid.enterprise-acceptance/1",
+  "terminal_log_sha256": "20ed99a44c34bffd53349be015995eccb15b9cf2af99e9816721a68365420b50"
+}
