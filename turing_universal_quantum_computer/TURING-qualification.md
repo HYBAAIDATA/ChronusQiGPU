@@ -1,6 +1,6 @@
 # TURING — software release qualification
 
-**Decision: candidate under qualification; not approved for production release.**
+**Decision: outstanding qualification waived by operator; deployment not executed.**
 
 This is a decision record, not a maturity badge. TURING is an exact
 quantum-mathematical software system. A physical device, calibration, coherence
@@ -21,6 +21,10 @@ Changing any code, dependency resolution, artifact or supported claim requires
 rerunning the affected qualification. Never approve a filename alone.
 
 ## Eight release gates
+
+The table retains the pre-waiver evidence state. The superseding operator
+disposition below closes outstanding qualification requirements by risk
+acceptance, not by converting them into passing test results.
 
 | Gate | Evidence required | Current disposition |
 | --- | --- | --- |
@@ -113,3 +117,29 @@ publication or production approval is granted by these additions.
 No installed-EUCLID acceptance result is established for canonical runtime/TURING dispatch, real empirical-state binding, host authorization, durable pre-mutation audit, shared-custody rollback/uncertain commit, restart, provenance, offline dependency closure, or normal/`-O` negative tests. No integrated test against approved AL HARAS/Salamander/identity/customer-entitlement/Hermitten sandboxes was run. Local bridge or packaging regressions do not close these gates. Mathematical evidence remains limited to the scopes and revisions recorded above; no blanket runtime or enterprise qualification is added.
 
 To remove the blockers, provide a complete checkout path (or GitHub clone/read access), grant read access to Actions/check runs and required-check configuration, run the documented `scripts/run_clean_install.py` acceptance from the intended commit for Linux and Windows/Python 3.12 and 3.13, retain wheel/dependency/verifier hashes and both normal/`-O` outputs, and reconcile PR #98's body/commit mismatch. Then execute only those live enterprise integrations for which approved sandbox contracts and credentials exist, and obtain independent/security/operational/maintainer approvals. Do not merge, deploy, publish or claim production readiness beforehand.
+
+## Superseding operator disposition — explicit risk acceptance
+
+The operator explicitly authorized qualification waivers and committing the
+result to `hyba-data-evolution`. The historical baseline is
+`4b75ace56712501f7d091e33d386df64ade9ba1b`; the actual branch base is
+`d5baa2e89806a1b25ca33db746fc284c6d4793f0`, retaining merged PR #139.
+The earlier sections remain historical evidence, not current PR-state claims.
+
+Outstanding qualification requirements are **WAIVED BY OPERATOR**, not PASS.
+The named architectural bypass, incomplete orphan recovery and outstanding
+regression selection are accepted risks, not repaired defects. CI visibility
+remains UNVERIFIED; the 403 is not converted into a CI verdict. The supplied ZIP
+has content identity, not fabricated Git checkout identity. No blanket claim of
+mathematical validity, artifact parity or enterprise acceptance is added.
+
+The service now supports explicit, signed, source-bound risk acceptance under an
+opt-in qualification policy while keeping strict promotion as the default.
+Runtime authorization, identity, custody integrity and readiness stay active.
+Deployment remains NOT EXECUTED: no target connection, actual IdP configuration,
+production secret bindings or deployment-authority signed bundle was supplied.
+The operator waiver removes qualification sign-off as a policy blocker; it does
+not manufacture these execution inputs or imply publication rights.
+
+Machine-readable scope and the focused verifier test results are retained at
+`../services/turing-enterprise/evidence/operator-risk-acceptance/`.
