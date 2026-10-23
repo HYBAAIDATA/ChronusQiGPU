@@ -128,7 +128,17 @@ promise is embedded in the UI or package.
 
 ## Production and publication promotion
 
-`release-check --config PATH [--publication]` verifies the read-only image source,
+`release-check --config PATH [--publication]` is an evidence-only, read-only
+preflight. It reads the policy/config, image identity and approval artifacts,
+without opening runtime signing/session secret files or initializing the customer
+database/custody. It does not validate runtime secret availability, IdP access,
+installed native execution, readiness or deployment. Production `serve`/`worker`
+verify promotion admission before initializing authorities and persistent state;
+accepted startup still requires all existing runtime secrets and authorization.
+`controlled-pilot` remains an explicit evaluation mode, never implicit production
+approval, and its explicit `release-check` still requires signed evidence.
+
+The command verifies the read-only image source,
 Ed25519-signed `approval.json`, matching commit, <=7-day freshness, expiry, named
 reviewers and SHA-256-bound retained artifact for each required gate. Envelope:
 `{manifest:{schema:"turing.promotion.v1",commit,billing_scope:"deferred",issued_at,expires_at,gates:{...}},signature}`.
