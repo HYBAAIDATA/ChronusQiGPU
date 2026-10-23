@@ -1,0 +1,42 @@
+name: Evidence-scoped readiness index
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'tools/tomorrow_readiness.py'
+      - 'tests/test_tomorrow_readiness.py'
+      - 'docs/readiness/TOMORROW_READINESS_INDEX.md'
+      - '.github/workflows/tomorrow-readiness-index.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/tomorrow_readiness.py'
+      - 'tests/test_tomorrow_readiness.py'
+      - '.github/workflows/tomorrow-readiness-index.yml'
+permissions:
+  contents: read
+jobs:
+  assessment-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.12', '3.13', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Exercise scoring and adversarial evidence contracts
+        run: python -m unittest discover -s tests -p test_tomorrow_readiness.py -v
+      - name: Verify CLI fail-closed behavior with an explicitly empty template
+        shell: bash
+        run: |
+          python tools/tomorrow_readiness.py --template > /tmp/empty-assessment.json
+          set +e
+          python tools/tomorrow_readiness.py --input /tmp/empty-assessment.json --output /tmp/empty-report.json
+          status=$?
+          set -e
+          test "$status" -eq 1
+          python -c 'import json; r=json.load(open("/tmp/empty-report.json")); assert r["composite_score"] == 0; assert r["qualification_evidence_complete"] is False'
