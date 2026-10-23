@@ -334,6 +334,35 @@ class EuclidRuntime:
         )
         return AutonomicControlPlane(registry=actions, ledger=ledger)
 
+    def review_repository_capabilities(
+        self, *, tenant_id: str, target: str, source: str,
+        evidence: Mapping[str, Any] | None = None,
+    ) -> Mapping[str, Any]:
+        """Run bounded diagnostics on the canonical Salamander evidence plane.
+
+        No execution, repair, reward, approval or authorization is inferred.
+        Service callers must retain their existing authentication boundary.
+        """
+        if self._closed:
+            raise RuntimeError("runtime is closed")
+        plane = getattr(self, "autonomic", None)
+        if plane is None:
+            raise RuntimeError("Salamander is not composed; call compose_organism first")
+        expected_tenant = getattr(self, "_service_tenant_id", None) or self.creator_id
+        if tenant_id != expected_tenant:
+            raise ValueError("diagnostic tenant does not match this runtime binding")
+        from salamander.agent_capabilities import AgentCapabilitySuite
+
+        with self._adaptive_lock:
+            suite = getattr(self, "_agent_capabilities", None)
+            if suite is None or suite.ledger is not plane.ledger:
+                suite = AgentCapabilitySuite(plane.ledger)
+                self._agent_capabilities = suite
+            return suite.inspect(
+                tenant_id=tenant_id, target=target, source=source,
+                evidence=evidence, at_ns=plane.clock_ns(),
+            )
+
     def record_held_out_generalisation(self, trials: Any) -> Mapping[str, Any]:
         """Seal multi-family held-out transfer evidence for status/readiness."""
         from .cognition.generalisation import evaluate_held_out_generalisation

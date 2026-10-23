@@ -6,6 +6,8 @@ AL HARAS (Security/Safety), and PYTHIA (Oracle Search Strategy) over a shared 11
 """
 
 import ast
+import time
+from salamander.agent_capabilities import AgentCapabilitySuite
 from typing import Dict, List, Any, Optional
 from euclid.core.phi_metric import PhiResonanceCalculator
 from euclid.core.euclid_intelligence import EuclidIntelligenceEngine
@@ -16,15 +18,16 @@ class MultiAgentEntangledOrchestrator:
     Multi-Agent Entangled Orchestrator.
     Executes real agent inspection cycles and updates a unified 11D manifold state.
     """
-    def __init__(self, shared_manifold: Optional[SharedEntangledManifold] = None):
+    def __init__(self, shared_manifold: Optional[SharedEntangledManifold] = None, *, capability_suite=None):
         self.manifold = shared_manifold or SharedEntangledManifold()
         self.calculator = PhiResonanceCalculator()
         self.euclid = EuclidIntelligenceEngine()
+        self.capability_suite = capability_suite if capability_suite is not None else AgentCapabilitySuite()
 
-    def run_multi_agent_cycle(self, targets: List[Dict[str, str]]) -> Dict[str, Any]:
+    def run_multi_agent_cycle(self, targets: List[Dict[str, Any]], *, tenant_id: str = "system") -> Dict[str, Any]:
         """
         Executes an agent cycle across EUCLID, AL HARAS, SALAMANDER, and PYTHIA.
-        Emits 100% measured telemetry and populates the shared manifold.
+        Emits measured metrics and bounded diagnostic findings; not a healing proof.
         """
         cycle_results = {}
 
@@ -32,6 +35,11 @@ class MultiAgentEntangledOrchestrator:
             fname = target.get("name", "target.py")
             code_str = target.get("code_str", "")
             
+            capability_report = self.capability_suite.inspect(
+                tenant_id=tenant_id, target=fname, source=code_str,
+                evidence=target.get("capability_evidence"), at_ns=time.time_ns(),
+            )
+
             # Compute real Phi Score
             phi_score = self.calculator.compute_phi(code_str)
             self.manifold.record_file_mapping(fname, phi_score)
@@ -85,7 +93,10 @@ class MultiAgentEntangledOrchestrator:
                 "owner": "SALAMANDER_SELF_HEALING",
                 "file_path": fname,
                 "phi_score": phi_score,
-                "self_healing_ready": True
+                "self_healing_ready": False,
+                "capability_review": capability_report,
+                "evidence_ref": capability_report["evidence_ref"],
+                "actuation": "NOT_PERFORMED"
             }
             self.manifold.register_agent_projection("SALAMANDER", phi_score, step=4)
 
