@@ -143,3 +143,32 @@ not manufacture these execution inputs or imply publication rights.
 
 Machine-readable scope and the focused verifier test results are retained at
 `../services/turing-enterprise/evidence/operator-risk-acceptance/`.
+
+## Authenticated service-result recovery — bounded implementation delta
+
+Continues the operator-authorized branch from live main
+`fedf91ac7b327929a67bc0e5bc167de22080f1b7`; does not replace the engine,
+reopen billing, or convert prior waivers into passing gates.
+
+| Requirement | Implementation / evidence | Disposition and release impact |
+| --- | --- | --- |
+| Authenticate a durable service report against its original admission before recovery | `ResultCustody.commit_execution/recover`; tenant, job, request, admitted actor/project hash and report digest bound by domain-separated HMAC; private-file configuration and retained-key rotation | Implemented. Unsigned legacy reports and mismatched evidence remain quarantined; service receipt is not a second mathematical authority |
+| Recover the report-durable / database-incomplete window without recomputation | `ControlPlane.recover_result`; existing operator API action `recover-result`; live authorization before read; state/admission recheck in completion transaction | Implemented and tested with actual installed VQC worker and actual process termination followed by fresh-process recovery. No automatic retry or resurrection of operator-resolved failures |
+| Preserve atomic completion, operational usage and audit under races/failures | Shared `_complete_report`, SQLite transaction; repeat completion does not duplicate facts; audit error rolls back; concurrent operators and resolution fences tested | Locally verified. Deferred usage stays non-chargeable; recovered observation time is not claimed as original execution time |
+| Preserve safe refusal, resource and identity boundaries | Tamper, wrong-key, cross-admission, unsigned, symlink, invalid master-key and customer-denial tests; trusted recovery source supplied by server only | Locally verified with real AL HARAS signature verifier and SQLite. Test identities/keys are isolated fixtures, not production identity approval |
+| Qualify exact service distributions | Built wheel and sdist; fresh installed-service consumer runs; retained commands, hashes, source-input scope and results in `../services/turing-enterprise/evidence/authenticated-recovery/` | See machine-readable evidence for actual outcomes. Not full-repository or all-engine qualification; full live service source inputs matched before edits, computational runtime came from supplied archive |
+
+The service still invokes its existing standalone `run_pipeline` adapter rather
+than routing service jobs through the shared `CompositionRoot`. The separate
+shared-custody integration test is not evidence that this service bypass was
+removed. This remains an explicitly accepted architectural risk.
+
+Recovery is intentionally narrow: report **and authenticated receipt** must be
+durable. A crash before receipt durability, unsigned historical output, lost
+keys, invalid evidence, or absent output does not become success. No exactly-once
+computation, complete orphan recovery, privileged-host tamper resistance, cluster
+HA, live IdP acceptance, remote CI pass, publication or deployment is asserted.
+The mandatory production gates have **not all passed**; outstanding qualification
+retains its operator-waived / unverified disposition. Target access, actual IdP
+and secret bindings and a source-bound deployment-authority bundle remain
+execution inputs. The evidence report identifies local failures and reruns.

@@ -2,6 +2,8 @@
 
 import argparse
 import base64
+import hashlib
+import hmac
 import json
 import os
 from pathlib import Path
@@ -32,6 +34,21 @@ def read_secret(path):
         return data.decode().strip()
     finally:
         os.close(fd)
+
+
+def configured_custody(config):
+    """Domain-separated service receipts; no new key crosses into computation."""
+    paths = [config.get("custody_integrity_key_file", config["operator_key_file"])]
+    paths.extend(config.get("previous_custody_integrity_key_files", []))
+    keys = []
+    for path in paths:
+        master = base64.b64decode(read_secret(path), validate=True)
+        if len(master) < 32:
+            raise ValueError("custody key must contain at least 32 random bytes")
+        keys.append(hmac.new(master, b"turing-service-recovery-v1", hashlib.sha256).digest())
+    return ResultCustody(
+        config["custody_root"], integrity_key=keys[0], previous_integrity_keys=keys[1:]
+    )
 
 
 def configuration(path):
@@ -162,6 +179,7 @@ def main():
             lambda: machine_token(["turing.ops.execute"]),
             config["worker_subject"],
             config["custody_root"],
+            custody=configured_custody(config),
         )
         signal.signal(signal.SIGTERM, lambda *_: setattr(supervisor, "stopping", True))
         signal.signal(signal.SIGINT, lambda *_: setattr(supervisor, "stopping", True))
@@ -217,7 +235,7 @@ def main():
             billing,
             ready,
             False,  # Contract, membership and capacity checks remain mandatory.
-            ResultCustody(config["custody_root"]),
+            configured_custody(config),
         )
     )
     import uvicorn

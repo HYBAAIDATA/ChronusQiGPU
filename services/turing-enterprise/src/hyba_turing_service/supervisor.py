@@ -6,11 +6,13 @@ from .runtime import ProcessRuntime, ResultCustody, DurableRuntime
 
 
 class Supervisor:
-    def __init__(self, factory, token_factory, actor, custody_root, *, runtime_factory=None):
+    def __init__(
+        self, factory, token_factory, actor, custody_root, *, runtime_factory=None, custody=None
+    ):
         self.factory = factory
         self.token_factory = token_factory
         self.actor = actor
-        self.custody = ResultCustody(custody_root)
+        self.custody = custody if custody is not None else ResultCustody(custody_root)
         self.stopping = False
         self.runtime_factory = runtime_factory or (
             lambda cancel: ProcessRuntime(cancel_check=cancel)
@@ -24,11 +26,11 @@ class Supervisor:
                 token, self.actor, "__service_ops__", "turing.ops.execute", operator=True
             )
             candidates = plane.db.execute(
-                "SELECT j.tenant,j.job,j.actor FROM jobs j JOIN customers c ON c.tenant=j.tenant WHERE j.state='admitted' AND c.state='active' AND c.starts<=? AND c.expires>? ORDER BY j.rowid LIMIT 100",
+                "SELECT j.tenant,j.job,j.actor,j.request_hash FROM jobs j JOIN customers c ON c.tenant=j.tenant WHERE j.state='admitted' AND c.state='active' AND c.starts<=? AND c.expires>? ORDER BY j.rowid LIMIT 100",
                 (plane.clock(), plane.clock()),
             ).fetchall()
             for row in candidates:
-                tenant, job, submitter = row
+                tenant, job, submitter, admission_hash = row
 
                 def cancelled():
                     if self.stopping:
@@ -43,7 +45,13 @@ class Supervisor:
                     finally:
                         other.close()
 
-                runtime = DurableRuntime(self.runtime_factory(cancelled), self.custody, tenant, job)
+                runtime = DurableRuntime(
+                    self.runtime_factory(cancelled),
+                    self.custody,
+                    tenant,
+                    job,
+                    admission_hash=admission_hash,
+                )
                 try:
                     plane.execute(
                         self.token_factory(), self.actor, tenant=tenant, job=job, runtime=runtime
