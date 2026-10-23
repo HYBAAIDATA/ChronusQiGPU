@@ -15,7 +15,7 @@ from urllib.parse import urlparse
 
 from enterprise_contract import (
     COOKIE, ROLES, ElevationCache, OperatorSecurity, Refusal, SealedAudit,
-    economics, evidence_zip, measure_elevation, sha256,
+    economics, evidence_zip, measure_elevation, mining_execution_available, sha256,
 )
 
 GET_PATHS = frozenset({"/api/mining/status", "/api/mining/pools", "/api/chronus/elevation",
@@ -59,13 +59,13 @@ class CanonicalBackend:
         config.pop("updated_at", None)
         return sha256(config)
 
-    def configure(self, body, hardware):
+    def configure(self, body, execution_available):
         self.stop()
         config = self.config()
         config["live_submit"] = {"enabled": False, "approval_id": ""}
-        config["hashrate"]["target_hs"] = body["hashrate_hps"] if hardware else 0
+        config["hashrate"]["target_hs"] = body["hashrate_hps"] if execution_available else 0
         config["mining_policy"] = {"poolId": body["poolId"], "shares_target": body["shares_target"]}
-        if hardware:
+        if execution_available:
             from pool_catalog import POOL_CATALOG, pool_settings
             pool = pool_settings(body["poolId"], primary=True)
             host = urlparse("//" + (pool.endpoint or "").split("://")[-1]).hostname
@@ -233,7 +233,7 @@ class EnterpriseService:
             public = {k: status[k] for k in (
                 "release_posture", "release_scope_label", "ready_to_mine_certificate", "status",
                 "armed", "shares_accepted", "hashrate", "igpu_present", "igpu_status", "speedup_claimed",
-                "emulated", "device", "ready_to_mine")}
+                "emulated", "device", "ready_to_mine", "execution_mode", "physical_gpu_required", "execution_status")}
             public["ready_to_mine"] = {k: v for k, v in public["ready_to_mine"].items() if k != "details"}
             return Response(200, public)
         if method == "GET" and path == "/api/mining/pools":
@@ -305,24 +305,25 @@ class EnterpriseService:
                         or not 0 <= rate <= self.backend.config()["hashrate"]["ceiling_hs"]
                         or type(target) is not int or not 1 <= target <= 10000):
                         raise Refusal(400, "CONFIG_OUT_OF_BOUNDS")
-                    hardware = self.backend.status()["igpu_present"] is True
-                    digest = self.backend.configure(body, hardware)
+                    physical = self.backend.status()["igpu_present"] is True
+                    available = mining_execution_available(self.backend.config(), physical)
+                    digest = self.backend.configure(body, available)
                     receipt = security.audit.append("MINING_CONFIGURED", principal_id=founder,
                         config_digest=digest, poolId=body["poolId"], shares_target=target, state="DISARMED")
-                    return Response(200 if hardware else 503, {"state": "DISARMED", "config_digest": digest,
-                        "hashrate_hps": rate if hardware else 0, "shares_target": target,
-                        "error": None if hardware else "NO_ATTACHED_MINING_HARDWARE", "audit_hash": receipt})
+                    return Response(200 if available else 503, {"state": "DISARMED", "config_digest": digest,
+                        "hashrate_hps": rate if available else 0, "shares_target": target,
+                        "error": None if available else "NO_ATTACHED_MINING_HARDWARE", "audit_hash": receipt})
                 if path.endswith("start"):
                     config = self.backend.config()
                     if config.get("live_submit", {}).get("enabled"):
                         raise Refusal(409, "ALREADY_ARMED")
                     if config.get("mining_policy") is None:
                         raise Refusal(409, "CONFIGURE_REQUIRED")
-                    if self.backend.status()["igpu_present"] is not True:
+                    if not mining_execution_available(config, self.backend.status()["igpu_present"] is True):
                         raise Refusal(503, "NO_ATTACHED_MINING_HARDWARE")
-                    from lucas.ladder import require_release_rung
                     index = config.get("intelligence", {}).get("lucas_index")
                     if index is not None:
+                        from lucas.ladder import require_release_rung
                         require_release_rung(index)
                     digest = self.backend.config_digest()
                     security.consume(body.get("approval_id"), founder, "mining.start", digest)

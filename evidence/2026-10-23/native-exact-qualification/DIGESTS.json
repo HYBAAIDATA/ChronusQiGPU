@@ -1,0 +1,13 @@
+{
+  "schema": "hyba.native-exact-digests/1",
+  "files": {
+    "adversarial-before.log": "bb93f2f44a35ee8c06fc8317b3c6d00c32eb205df6810b8fcc007e4ecd2e9ecf",
+    "baseline.log": "58f6bee60631908466fce04453b027f61f457390e470abda445ba4b73f0ae40d",
+    "junit.xml": "ead684e954f7d4c122f35647ce590749f917f5835e4130d05c81f32beb5805d7",
+    "native-execution.json": "f4044a0d69ceafb178a2aafc2aa0183d461aca23b85c8479f301ffffbfaffb87",
+    "optimized-invariants.log": "e46dc213802e234db392f951980d99bd6ed9f10482514d38e57dbf7b5f510f32",
+    "qualification.log": "6e9a1f9b04f4025a5edee2e91f154b1f5d5ec7c56c748a1cf8c029f0d11af3bb",
+    "source-digests.json": "8ce2bbaf7c12679039297e8d6e9f3e18c9f1cb3cede6263617e0ad37f66beaa8",
+    "status-before.log": "ba5ccc6be041811834b3b6447ef41df558d65acc5fcd6c3a295fe4eb7cbf1ae4"
+  }
+}

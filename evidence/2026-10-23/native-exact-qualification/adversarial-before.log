@@ -1,0 +1,346 @@
+FFFFFFFFFFFFFFFFF.............                                           [100%]
+=================================== FAILURES ===================================
+________ test_exact_index_rejects_lossy_coercion[True-lucas_transform] _________
+
+native = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccf954050>
+kind = <WorkloadKind.LUCAS_TRANSFORM: 'lucas_transform'>, n = True
+
+    @pytest.mark.parametrize("kind", [WorkloadKind.LUCAS_TRANSFORM, WorkloadKind.PISOT_TRANSFORM])
+    @pytest.mark.parametrize("n", [True, False, 1.5, "10", None])
+    def test_exact_index_rejects_lossy_coercion(native, kind, n):
+        w = Workload(id="invalid", kind=kind, execution_policy="standalone_software", input={"n": n})
+>       with pytest.raises(AdapterUnavailable, match="integer"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE AdapterUnavailable
+
+tests/test_chronus_native_exactness_regressions.py:24: Failed
+________ test_exact_index_rejects_lossy_coercion[True-pisot_transform] _________
+
+native = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccfff9450>
+kind = <WorkloadKind.PISOT_TRANSFORM: 'pisot_transform'>, n = True
+
+    @pytest.mark.parametrize("kind", [WorkloadKind.LUCAS_TRANSFORM, WorkloadKind.PISOT_TRANSFORM])
+    @pytest.mark.parametrize("n", [True, False, 1.5, "10", None])
+    def test_exact_index_rejects_lossy_coercion(native, kind, n):
+        w = Workload(id="invalid", kind=kind, execution_policy="standalone_software", input={"n": n})
+>       with pytest.raises(AdapterUnavailable, match="integer"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE AdapterUnavailable
+
+tests/test_chronus_native_exactness_regressions.py:24: Failed
+________ test_exact_index_rejects_lossy_coercion[False-lucas_transform] ________
+
+native = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccfffa490>
+kind = <WorkloadKind.LUCAS_TRANSFORM: 'lucas_transform'>, n = False
+
+    @pytest.mark.parametrize("kind", [WorkloadKind.LUCAS_TRANSFORM, WorkloadKind.PISOT_TRANSFORM])
+    @pytest.mark.parametrize("n", [True, False, 1.5, "10", None])
+    def test_exact_index_rejects_lossy_coercion(native, kind, n):
+        w = Workload(id="invalid", kind=kind, execution_policy="standalone_software", input={"n": n})
+>       with pytest.raises(AdapterUnavailable, match="integer"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE AdapterUnavailable
+
+tests/test_chronus_native_exactness_regressions.py:24: Failed
+________ test_exact_index_rejects_lossy_coercion[False-pisot_transform] ________
+
+native = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccfffac10>
+kind = <WorkloadKind.PISOT_TRANSFORM: 'pisot_transform'>, n = False
+
+    @pytest.mark.parametrize("kind", [WorkloadKind.LUCAS_TRANSFORM, WorkloadKind.PISOT_TRANSFORM])
+    @pytest.mark.parametrize("n", [True, False, 1.5, "10", None])
+    def test_exact_index_rejects_lossy_coercion(native, kind, n):
+        w = Workload(id="invalid", kind=kind, execution_policy="standalone_software", input={"n": n})
+>       with pytest.raises(AdapterUnavailable, match="integer"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE AdapterUnavailable
+
+tests/test_chronus_native_exactness_regressions.py:24: Failed
+_________ test_exact_index_rejects_lossy_coercion[1.5-lucas_transform] _________
+
+native = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccfffb250>
+kind = <WorkloadKind.LUCAS_TRANSFORM: 'lucas_transform'>, n = 1.5
+
+    @pytest.mark.parametrize("kind", [WorkloadKind.LUCAS_TRANSFORM, WorkloadKind.PISOT_TRANSFORM])
+    @pytest.mark.parametrize("n", [True, False, 1.5, "10", None])
+    def test_exact_index_rejects_lossy_coercion(native, kind, n):
+        w = Workload(id="invalid", kind=kind, execution_policy="standalone_software", input={"n": n})
+>       with pytest.raises(AdapterUnavailable, match="integer"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE AdapterUnavailable
+
+tests/test_chronus_native_exactness_regressions.py:24: Failed
+_________ test_exact_index_rejects_lossy_coercion[1.5-pisot_transform] _________
+
+native = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccfffac10>
+kind = <WorkloadKind.PISOT_TRANSFORM: 'pisot_transform'>, n = 1.5
+
+    @pytest.mark.parametrize("kind", [WorkloadKind.LUCAS_TRANSFORM, WorkloadKind.PISOT_TRANSFORM])
+    @pytest.mark.parametrize("n", [True, False, 1.5, "10", None])
+    def test_exact_index_rejects_lossy_coercion(native, kind, n):
+        w = Workload(id="invalid", kind=kind, execution_policy="standalone_software", input={"n": n})
+>       with pytest.raises(AdapterUnavailable, match="integer"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE AdapterUnavailable
+
+tests/test_chronus_native_exactness_regressions.py:24: Failed
+_________ test_exact_index_rejects_lossy_coercion[10-lucas_transform] __________
+
+native = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccfffa850>
+kind = <WorkloadKind.LUCAS_TRANSFORM: 'lucas_transform'>, n = '10'
+
+    @pytest.mark.parametrize("kind", [WorkloadKind.LUCAS_TRANSFORM, WorkloadKind.PISOT_TRANSFORM])
+    @pytest.mark.parametrize("n", [True, False, 1.5, "10", None])
+    def test_exact_index_rejects_lossy_coercion(native, kind, n):
+        w = Workload(id="invalid", kind=kind, execution_policy="standalone_software", input={"n": n})
+>       with pytest.raises(AdapterUnavailable, match="integer"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE AdapterUnavailable
+
+tests/test_chronus_native_exactness_regressions.py:24: Failed
+_________ test_exact_index_rejects_lossy_coercion[10-pisot_transform] __________
+
+native = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccfffa490>
+kind = <WorkloadKind.PISOT_TRANSFORM: 'pisot_transform'>, n = '10'
+
+    @pytest.mark.parametrize("kind", [WorkloadKind.LUCAS_TRANSFORM, WorkloadKind.PISOT_TRANSFORM])
+    @pytest.mark.parametrize("n", [True, False, 1.5, "10", None])
+    def test_exact_index_rejects_lossy_coercion(native, kind, n):
+        w = Workload(id="invalid", kind=kind, execution_policy="standalone_software", input={"n": n})
+>       with pytest.raises(AdapterUnavailable, match="integer"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE AdapterUnavailable
+
+tests/test_chronus_native_exactness_regressions.py:24: Failed
+________ test_exact_index_rejects_lossy_coercion[None-lucas_transform] _________
+
+native = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccfffa990>
+kind = <WorkloadKind.LUCAS_TRANSFORM: 'lucas_transform'>, n = None
+
+    @pytest.mark.parametrize("kind", [WorkloadKind.LUCAS_TRANSFORM, WorkloadKind.PISOT_TRANSFORM])
+    @pytest.mark.parametrize("n", [True, False, 1.5, "10", None])
+    def test_exact_index_rejects_lossy_coercion(native, kind, n):
+        w = Workload(id="invalid", kind=kind, execution_policy="standalone_software", input={"n": n})
+        with pytest.raises(AdapterUnavailable, match="integer"):
+>           native.submit(w)
+
+tests/test_chronus_native_exactness_regressions.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+chronus/virtual_igpu/runtime.py:502: in submit
+    result = self._execute_with_deadline(adapter, w, deadline_ms)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+chronus/virtual_igpu/runtime.py:756: in _execute_with_deadline
+    return adapter.execute(w)
+           ^^^^^^^^^^^^^^^^^^
+chronus/virtual_igpu/adapters.py:317: in execute
+    return self._phi_family(workload, kind, value, started)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <chronus.virtual_igpu.adapters.ChronusSoftwareFabricAdapter object at 0x7f2ccf979650>
+workload = Workload(id='invalid', kind=<WorkloadKind.LUCAS_TRANSFORM: 'lucas_transform'>, tenant='default', input={'n': None}, co...ent_hash='b318a406007f99b2d0d90590c76a5b117fcc87e53565c6e0485ebddf05a3be46', metadata={}, allow_software_fallback=True)
+kind = <WorkloadKind.LUCAS_TRANSFORM: 'lucas_transform'>, value = {'n': None}
+started = 1792777835992859949
+
+    def _phi_family(
+        self, workload: Workload, kind: WorkloadKind, value: dict[str, Any], started: int
+    ) -> WorkloadResult:
+>       n = int(value.get("n", value.get("index", 10)))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+
+chronus/virtual_igpu/adapters.py:407: TypeError
+________ test_exact_index_rejects_lossy_coercion[None-pisot_transform] _________
+
+native = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccfffa490>
+kind = <WorkloadKind.PISOT_TRANSFORM: 'pisot_transform'>, n = None
+
+    @pytest.mark.parametrize("kind", [WorkloadKind.LUCAS_TRANSFORM, WorkloadKind.PISOT_TRANSFORM])
+    @pytest.mark.parametrize("n", [True, False, 1.5, "10", None])
+    def test_exact_index_rejects_lossy_coercion(native, kind, n):
+        w = Workload(id="invalid", kind=kind, execution_policy="standalone_software", input={"n": n})
+        with pytest.raises(AdapterUnavailable, match="integer"):
+>           native.submit(w)
+
+tests/test_chronus_native_exactness_regressions.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+chronus/virtual_igpu/runtime.py:502: in submit
+    result = self._execute_with_deadline(adapter, w, deadline_ms)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+chronus/virtual_igpu/runtime.py:756: in _execute_with_deadline
+    return adapter.execute(w)
+           ^^^^^^^^^^^^^^^^^^
+chronus/virtual_igpu/adapters.py:317: in execute
+    return self._phi_family(workload, kind, value, started)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <chronus.virtual_igpu.adapters.ChronusSoftwareFabricAdapter object at 0x7f2ccf978e50>
+workload = Workload(id='invalid', kind=<WorkloadKind.PISOT_TRANSFORM: 'pisot_transform'>, tenant='default', input={'n': None}, co...ent_hash='7cdcc203f66b0a47a38aa533e40dce009f0df4ec4a6331650fd44b678feab4b9', metadata={}, allow_software_fallback=True)
+kind = <WorkloadKind.PISOT_TRANSFORM: 'pisot_transform'>, value = {'n': None}
+started = 1792777836040524167
+
+    def _phi_family(
+        self, workload: Workload, kind: WorkloadKind, value: dict[str, Any], started: int
+    ) -> WorkloadResult:
+>       n = int(value.get("n", value.get("index", 10)))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+
+chronus/virtual_igpu/adapters.py:407: TypeError
+___________ test_independent_oracle_rejects_noninteger_lucas[123.5] ____________
+
+native = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccfffac10>
+value = 123.5
+
+    @pytest.mark.parametrize("value", [123.5, 123.0, "123"])
+    def test_independent_oracle_rejects_noninteger_lucas(native, value):
+        w = request()
+        result = native.submit(w)
+        forged = replace(result, output={**result.output, "lucas": value})
+>       assert verify_workload_result(w, forged)["verdict"] == "mismatch"
+E       AssertionError: assert 'match' == 'mismatch'
+E         
+E         - mismatch
+E         ? ---
+E         + match
+
+tests/test_chronus_native_exactness_regressions.py:33: AssertionError
+___________ test_independent_oracle_rejects_noninteger_lucas[123.0] ____________
+
+native = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccfffad50>
+value = 123.0
+
+    @pytest.mark.parametrize("value", [123.5, 123.0, "123"])
+    def test_independent_oracle_rejects_noninteger_lucas(native, value):
+        w = request()
+        result = native.submit(w)
+        forged = replace(result, output={**result.output, "lucas": value})
+>       assert verify_workload_result(w, forged)["verdict"] == "mismatch"
+E       AssertionError: assert 'match' == 'mismatch'
+E         
+E         - mismatch
+E         ? ---
+E         + match
+
+tests/test_chronus_native_exactness_regressions.py:33: AssertionError
+____________ test_independent_oracle_rejects_noninteger_lucas[123] _____________
+
+native = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccfff9d10>
+value = '123'
+
+    @pytest.mark.parametrize("value", [123.5, 123.0, "123"])
+    def test_independent_oracle_rejects_noninteger_lucas(native, value):
+        w = request()
+        result = native.submit(w)
+        forged = replace(result, output={**result.output, "lucas": value})
+>       assert verify_workload_result(w, forged)["verdict"] == "mismatch"
+E       AssertionError: assert 'match' == 'mismatch'
+E         
+E         - mismatch
+E         ? ---
+E         + match
+
+tests/test_chronus_native_exactness_regressions.py:33: AssertionError
+________________________ test_replay_rechecks_authority ________________________
+
+native = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccfff9810>
+
+    def test_replay_rechecks_authority(native):
+        admitted = [True]
+        native.admission_policy = lambda w: admitted[0]
+        w = request(idempotency_key="once")
+        assert native.submit(w).status == "ok"
+        admitted[0] = False
+>       with pytest.raises(AdmissionDenied):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE AdmissionDenied
+
+tests/test_chronus_native_exactness_regressions.py:42: Failed
+____________ test_mutated_request_cannot_replay_stale_content_hash _____________
+
+native = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccfffad50>
+
+    def test_mutated_request_cannot_replay_stale_content_hash(native):
+        w = request(idempotency_key="once")
+        native.submit(w)
+        w.input["n"] = 20
+>       with pytest.raises(ValueError, match="content_hash"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_chronus_native_exactness_regressions.py:50: Failed
+__________________ test_replay_receipt_is_not_caller_mutable ___________________
+
+native = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccfffac10>
+
+    def test_replay_receipt_is_not_caller_mutable(native):
+        w = request(idempotency_key="once")
+        first = native.submit(w)
+        first.output["lucas"] = -999
+        second = native.submit(w)
+>       assert second.output["lucas"] == 123
+E       assert -999 == 123
+
+tests/test_chronus_native_exactness_regressions.py:59: AssertionError
+_____________ test_tenants_have_independent_idempotency_namespaces _____________
+
+native = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccfffa5d0>
+
+    def test_tenants_have_independent_idempotency_namespaces(native):
+        a = native.submit(request(tenant="alice", idempotency_key="same-key"))
+>       b = native.submit(request(tenant="bob", idempotency_key="same-key"))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_chronus_native_exactness_regressions.py:66: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <chronus.virtual_igpu.runtime.RuntimeDaemon object at 0x7f2ccfffa5d0>
+workload = Workload(id='native', kind=<WorkloadKind.LUCAS_TRANSFORM: 'lucas_transform'>, tenant='bob', input={'n': 10}, constrain...ent_hash='ae49d611d9a6e5eed631c977403d757556042369b26dbad23183e07787a5ecae', metadata={}, allow_software_fallback=True)
+
+    def submit(self, workload: Workload | dict[str, Any]) -> WorkloadResult:
+        w = workload if isinstance(workload, Workload) else Workload.from_dict(workload)
+        with self._lock:
+            if self.state != RuntimeState.READY:
+                # auto-attach for embedded convenience
+                if self.state == RuntimeState.DETACHED:
+                    self._lock.release()
+                    try:
+                        self.attach()
+                    finally:
+                        self._lock.acquire()
+                if self.state != RuntimeState.READY:
+                    raise RuntimeInvariantError(f"runtime not ready: {self.state}")
+    
+            # Idempotency
+            key = getattr(w, "idempotency_key", None)
+            if key:
+                if key in self._idempotency:
+                    prev = self._idempotency[key]
+                    prev_hash = self._idempotency_packages.get(key)
+                    if prev_hash and prev_hash != w.content_hash:
+>                       raise RuntimeInvariantError(
+                            "idempotency key reused with a different workload package"
+                        )
+E                       chronus.virtual_igpu.runtime.RuntimeInvariantError: idempotency key reused with a different workload package
+
+chronus/virtual_igpu/runtime.py:427: RuntimeInvariantError
+=========================== short test summary info ============================
+FAILED tests/test_chronus_native_exactness_regressions.py::test_exact_index_rejects_lossy_coercion[True-lucas_transform]
+FAILED tests/test_chronus_native_exactness_regressions.py::test_exact_index_rejects_lossy_coercion[True-pisot_transform]
+FAILED tests/test_chronus_native_exactness_regressions.py::test_exact_index_rejects_lossy_coercion[False-lucas_transform]
+FAILED tests/test_chronus_native_exactness_regressions.py::test_exact_index_rejects_lossy_coercion[False-pisot_transform]
+FAILED tests/test_chronus_native_exactness_regressions.py::test_exact_index_rejects_lossy_coercion[1.5-lucas_transform]
+FAILED tests/test_chronus_native_exactness_regressions.py::test_exact_index_rejects_lossy_coercion[1.5-pisot_transform]
+FAILED tests/test_chronus_native_exactness_regressions.py::test_exact_index_rejects_lossy_coercion[10-lucas_transform]
+FAILED tests/test_chronus_native_exactness_regressions.py::test_exact_index_rejects_lossy_coercion[10-pisot_transform]
+FAILED tests/test_chronus_native_exactness_regressions.py::test_exact_index_rejects_lossy_coercion[None-lucas_transform]
+FAILED tests/test_chronus_native_exactness_regressions.py::test_exact_index_rejects_lossy_coercion[None-pisot_transform]
+FAILED tests/test_chronus_native_exactness_regressions.py::test_independent_oracle_rejects_noninteger_lucas[123.5]
+FAILED tests/test_chronus_native_exactness_regressions.py::test_independent_oracle_rejects_noninteger_lucas[123.0]
+FAILED tests/test_chronus_native_exactness_regressions.py::test_independent_oracle_rejects_noninteger_lucas[123]
+FAILED tests/test_chronus_native_exactness_regressions.py::test_replay_rechecks_authority
+FAILED tests/test_chronus_native_exactness_regressions.py::test_mutated_request_cannot_replay_stale_content_hash
+FAILED tests/test_chronus_native_exactness_regressions.py::test_replay_receipt_is_not_caller_mutable
+FAILED tests/test_chronus_native_exactness_regressions.py::test_tenants_have_independent_idempotency_namespaces
+17 failed, 13 passed in 0.42s
