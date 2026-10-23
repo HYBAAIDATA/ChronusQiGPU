@@ -200,6 +200,8 @@ export type MlaStatus = {
 };
 
 export type ReadyToMine = {
+  certificate?: "ACTIVE" | "WITHHELD";
+  certificate_gates?: Record<string, boolean>;
   ready?: boolean;
   reason?: string;
   details?: Record<string, unknown>;

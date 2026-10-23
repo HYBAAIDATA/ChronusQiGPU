@@ -67,78 +67,28 @@ describe("apiFetch", () => {
   });
 });
 
-describe("operator key", () => {
-  const bearer = (call: unknown[]) => new Headers((call[1] as RequestInit).headers).get("Authorization");
-
-  it("does not send the key on unrelated public reads", async () => {
-    setOperatorKey("k-1");
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(createMockResponse({}));
-    await apiFetch("/readyz");
-    expect(bearer(fetchMock.mock.calls[0]!)).toBeNull();
-  });
-
-  it("sends the session key on state-changing requests", async () => {
-    setOperatorKey("k-1");
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(createMockResponse({ ok: true }));
-    await apiFetch("/api/v1/mining/start", { method: "POST", body: "{}" });
-    expect(bearer(fetchMock.mock.calls[0]!)).toBe("Bearer k-1");
-  });
-
-  it("asks once on 401, retries with the key and keeps it for the session", async () => {
-    const fetchMock = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(createMockResponse({ error: "operator key required" }, { status: 401 }))
-      .mockResolvedValueOnce(createMockResponse({ ok: true }));
-    const prompt = vi.spyOn(window, "prompt").mockReturnValue(" k-2 ");
-    const response = await apiFetch("/api/v1/agentic/start", { method: "POST", body: "{}" });
-    expect(response.ok).toBe(true);
-    expect(prompt).toHaveBeenCalledTimes(1);
-    expect(bearer(fetchMock.mock.calls[1]!)).toBe("Bearer k-2");
-    expect(operatorKey()).toBe("k-2");
-  });
-
-  it("binds a mapped principal to its bearer on retry", async () => {
-    const fetchMock = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(
-        createMockResponse({ error: "operator principal required" }, { status: 401 }),
-      )
-      .mockResolvedValueOnce(createMockResponse({ ok: true }));
-    vi.spyOn(window, "prompt")
-      .mockReturnValueOnce("andre")
-      .mockReturnValueOnce("ceo-token");
-    const response = await apiFetch("/api/v1/agentic/start", {
-      method: "POST",
-      body: "{}",
-    });
-    expect(response.ok).toBe(true);
-    const retry = new Headers((fetchMock.mock.calls[1]![1] as RequestInit).headers);
-    expect(retry.get("Authorization")).toBe("Bearer ceo-token");
-    expect(retry.get("X-PYTHIA-Principal")).toBe("andre");
-    expect(operatorKey()).toBe("ceo-token");
-    expect(operatorPrincipal()).toBe("andre");
-  });
-
-  it("forgets a refused key and returns the refusal when the operator cancels", async () => {
-    setOperatorKey("stale");
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      createMockResponse({ error: "operator key required" }, { status: 401 }),
-    );
-    vi.spyOn(window, "prompt").mockReturnValue(null);
-    const response = await apiFetch("/api/v1/config", { method: "PUT", body: "{}" });
-    expect(response.status).toBe(401);
+describe("HttpOnly operator session migration", () => {
+  it("clears stale operator bearers rather than storing new secrets", () => {
+    window.sessionStorage.setItem("pythia.operatorKey", "stale-fixture");
     expect(operatorKey()).toBeNull();
+    setOperatorKey("new-fixture");
+    expect(operatorKey()).toBeNull();
+    expect(window.sessionStorage.getItem("pythia.operatorKey")).toBeNull();
   });
-
-  it("does not re-prompt after the operator declines once", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      createMockResponse({ error: "operator key required" }, { status: 401 }),
-    );
-    const prompt = vi.spyOn(window, "prompt").mockReturnValue(null);
-    await apiFetch("/api/v1/config", { method: "PUT", body: "{}" });
-    const response = await apiFetch("/api/v1/config", { method: "PUT", body: "{}" });
-    expect(response.status).toBe(401);
-    expect(prompt).toHaveBeenCalledTimes(1);
+  it("uses cookies without an operator bearer on mutations", async () => {
+    setOperatorKey("not-a-grant");
+    const mock = vi.spyOn(globalThis, "fetch").mockResolvedValue(createMockResponse({}));
+    await apiFetch("/api/v1/agentic/start", {method:"POST",body:"{}"});
+    const init = mock.mock.calls[0]![1] as RequestInit;
+    expect(init.credentials).toBe("include");
+    expect(new Headers(init.headers).get("Authorization")).toBeNull();
+  });
+  it("returns 401 without retrying or prompting for a JS-readable bearer", async () => {
+    const mock = vi.spyOn(globalThis, "fetch").mockResolvedValue(createMockResponse({error:"SESSION_REQUIRED"},{status:401}));
+    const prompt = vi.spyOn(window, "prompt");
+    expect((await apiFetch("/api/v1/config",{method:"PUT",body:"{}"})).status).toBe(401);
+    expect(mock).toHaveBeenCalledTimes(1);
+    expect(prompt).not.toHaveBeenCalled();
   });
 });
 
@@ -217,7 +167,7 @@ describe("subscription boundary", () => {
 
 
 describe("console read boundaries", () => {
-  it("carries server-mapped control credentials on protected console reads", async () => {
+  it("carries HttpOnly sessions on protected console reads", async () => {
     setOperatorKey("control-test-only"); setOperatorPrincipal("owner");
     const mock = vi.spyOn(globalThis, "fetch").mockResolvedValue(createMockResponse({}));
     for (const path of ["/api/v1/mla1517/status", "/api/v1/config", "/api/v1/telemetry/summary", "/api/v1/audit/tail"]) {
@@ -225,7 +175,8 @@ describe("console read boundaries", () => {
     }
     for (const call of mock.mock.calls) {
       const h = new Headers((call[1] as RequestInit).headers);
-      expect(h.get("Authorization")).toBe("Bearer control-test-only");
+      expect(h.get("Authorization")).toBeNull();
+      expect((call[1] as RequestInit).credentials).toBe("include");
       expect(h.get("X-PYTHIA-Principal")).toBe("owner");
     }
   });
@@ -235,7 +186,8 @@ describe("console read boundaries", () => {
     const mock = vi.spyOn(globalThis, "fetch").mockResolvedValue(createMockResponse({}));
     await apiFetch("/api/v1/mining/evidence", {}, {interactive:false});
     const h = new Headers((mock.mock.calls[0]![1] as RequestInit).headers);
-    expect(h.get("X-PYTHIA-Control-Authorization")).toBe("Bearer control-test-only");
+    expect(h.get("X-PYTHIA-Control-Authorization")).toBeNull();
+    expect((mock.mock.calls[0]![1] as RequestInit).credentials).toBe("include");
     expect(h.get("X-PYTHIA-Principal")).toBe("owner");
     expect(h.get("Authorization")).toBe("Bearer subscription-test-only");
     expect(h.get("X-HYBA-Tenant")).toBe("tenant-test");

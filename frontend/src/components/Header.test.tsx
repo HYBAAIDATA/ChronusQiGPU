@@ -57,3 +57,21 @@ describe("Header", () => {
     expect(html).not.toContain("Super-GPU · CPU host");
   });
 });
+
+
+describe("mining certificate boundary", () => {
+  it("withholds green readiness when certificate is missing", () => {
+    const html = renderToStaticMarkup(<Header offline={false} ready={{ready:true}} status={null} />);
+    expect(html).toContain("WITHHELD");
+    expect(html).not.toContain("ready to mine");
+  });
+  it("withholds a contradictory certificate", () => {
+    const html = renderToStaticMarkup(<Header offline={false} ready={{ready:true,certificate:"WITHHELD"}} status={null} />);
+    expect(html).toContain("WITHHELD");
+    expect(html).not.toContain("ready to mine");
+  });
+  it("renders ready only from the backend's conjunctive certificate", () => {
+    const html = renderToStaticMarkup(<Header offline={false} ready={{ready:true,certificate:"ACTIVE"}} status={null} />);
+    expect(html).toContain("ready to mine");
+  });
+});

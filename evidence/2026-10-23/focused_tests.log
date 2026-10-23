@@ -1,0 +1,100 @@
+test_body_tamper (test_hyba_enterprise_remediation.AuditTests.test_body_tamper) ... ok
+test_concurrent_chain (test_hyba_enterprise_remediation.AuditTests.test_concurrent_chain) ... ok
+test_no_key (test_hyba_enterprise_remediation.AuditTests.test_no_key) ... ok
+test_reopen_chain (test_hyba_enterprise_remediation.AuditTests.test_reopen_chain) ... ok
+test_wrong_key (test_hyba_enterprise_remediation.AuditTests.test_wrong_key) ... ok
+test_approval_action_bound (test_hyba_enterprise_remediation.AuthTests.test_approval_action_bound) ... ok
+test_approval_digest_and_replay (test_hyba_enterprise_remediation.AuthTests.test_approval_digest_and_replay) ... ok
+test_approval_expiry (test_hyba_enterprise_remediation.AuthTests.test_approval_expiry) ... ok
+test_auth_and_role (test_hyba_enterprise_remediation.AuthTests.test_auth_and_role) ... ok
+test_bad_credentials (test_hyba_enterprise_remediation.AuthTests.test_bad_credentials) ... ok
+test_bad_secrets_fail_closed (test_hyba_enterprise_remediation.AuthTests.test_bad_secrets_fail_closed) ... ok
+test_expiry (test_hyba_enterprise_remediation.AuthTests.test_expiry) ... ok
+test_logout (test_hyba_enterprise_remediation.AuthTests.test_logout) ... ok
+test_missing_cookie (test_hyba_enterprise_remediation.AuthTests.test_missing_cookie) ... ok
+test_origin (test_hyba_enterprise_remediation.AuthTests.test_origin) ... ok
+test_rate_limit (test_hyba_enterprise_remediation.AuthTests.test_rate_limit) ... ok
+test_secret_rotation_revokes_session (test_hyba_enterprise_remediation.AuthTests.test_secret_rotation_revokes_session) ... ok
+test_self_approval_not_independent (test_hyba_enterprise_remediation.AuthTests.test_self_approval_not_independent) ... ok
+test_day_traversal (test_hyba_enterprise_remediation.EvidenceTests.test_day_traversal) ... ok
+test_missing_file (test_hyba_enterprise_remediation.EvidenceTests.test_missing_file) ... ok
+test_missing_manifest (test_hyba_enterprise_remediation.EvidenceTests.test_missing_manifest) ... ok
+test_pack_exact_hashes_and_determinism (test_hyba_enterprise_remediation.EvidenceTests.test_pack_exact_hashes_and_determinism) ... ok
+test_path_traversal_refused (test_hyba_enterprise_remediation.EvidenceTests.test_path_traversal_refused) ... ok
+test_symlink_refused (test_hyba_enterprise_remediation.EvidenceTests.test_symlink_refused) ... ok
+test_tampered_pack_refused (test_hyba_enterprise_remediation.EvidenceTests.test_tampered_pack_refused) ... ok
+test_canonical_offline_config_durable (test_hyba_enterprise_remediation.HandlerTests.test_canonical_offline_config_durable) ... ok
+test_cookie_role_retained_for_guardian_read (test_hyba_enterprise_remediation.HandlerTests.test_cookie_role_retained_for_guardian_read) ... ok
+test_http_elevation_three_and_digest (test_hyba_enterprise_remediation.HandlerTests.test_http_elevation_three_and_digest) ... [pythia-control] 127.0.0.1 - "GET /api/chronus/elevation HTTP/1.1" 200 -
+[pythia-control] 127.0.0.1 - "GET /api/chronus/elevation HTTP/1.1" 200 -
+[pythia-control] 127.0.0.1 - "GET /api/chronus/elevation HTTP/1.1" 200 -
+[pythia-control] 127.0.0.1 - "GET /api/chronus/digest HTTP/1.1" 200 -
+ok
+test_http_guardian_missing_503 (test_hyba_enterprise_remediation.HandlerTests.test_http_guardian_missing_503) ... [pythia-control] 127.0.0.1 - "POST /api/mining/configure HTTP/1.1" 503 -
+ok
+test_http_legacy_cookie_csrf_rejected (test_hyba_enterprise_remediation.HandlerTests.test_http_legacy_cookie_csrf_rejected) ... [pythia-control] 127.0.0.1 - "PUT /api/v1/config HTTP/1.1" 403 -
+ok
+test_http_login_me_logout (test_hyba_enterprise_remediation.HandlerTests.test_http_login_me_logout) ... [pythia-control] 127.0.0.1 - "POST /api/auth/login HTTP/1.1" 200 -
+[pythia-control] 127.0.0.1 - "GET /api/auth/me HTTP/1.1" 200 -
+[pythia-control] 127.0.0.1 - "POST /api/auth/logout HTTP/1.1" 200 -
+[pythia-control] 127.0.0.1 - "GET /api/auth/me HTTP/1.1" 401 -
+ok
+test_http_missing_audit_key_mutation_blocked (test_hyba_enterprise_remediation.HandlerTests.test_http_missing_audit_key_mutation_blocked) ... [pythia-control] 127.0.0.1 - "POST /api/auth/login HTTP/1.1" 503 -
+ok
+test_http_pack_download_exact_hash (test_hyba_enterprise_remediation.HandlerTests.test_http_pack_download_exact_hash) ... [pythia-control] 127.0.0.1 - "GET /api/evidence/pack HTTP/1.1" 200 -
+ok
+test_http_unauthorized_401 (test_hyba_enterprise_remediation.HandlerTests.test_http_unauthorized_401) ... [pythia-control] 127.0.0.1 - "GET /api/treasury/overview HTTP/1.1" 401 -
+ok
+test_legacy_change_revokes_approval (test_hyba_enterprise_remediation.HandlerTests.test_legacy_change_revokes_approval) ... ok
+test_legacy_direct_arm_rejected (test_hyba_enterprise_remediation.HandlerTests.test_legacy_direct_arm_rejected) ... ok
+test_legacy_endpoint_smuggling_refused (test_hyba_enterprise_remediation.HandlerTests.test_legacy_endpoint_smuggling_refused) ... ok
+test_status_and_readiness_agree (test_hyba_enterprise_remediation.HandlerTests.test_status_and_readiness_agree) ... [pythia-control] 127.0.0.1 - "GET /api/mining/status HTTP/1.1" 200 -
+[pythia-control] 127.0.0.1 - "GET /ready-to-mine HTTP/1.1" 503 -
+ok
+test_elevation_three_identical_reads (test_hyba_enterprise_remediation.MathTests.test_elevation_three_identical_reads) ... ok
+test_gain_share (test_hyba_enterprise_remediation.MathTests.test_gain_share) ... ok
+test_heuristics_honesty (test_hyba_enterprise_remediation.MathTests.test_heuristics_honesty) ... ok
+test_initial_error_not_false_verified (test_hyba_enterprise_remediation.MathTests.test_initial_error_not_false_verified) ... ok
+test_invalid_economics (test_hyba_enterprise_remediation.MathTests.test_invalid_economics) ... ok
+test_measured_seeds (test_hyba_enterprise_remediation.MathTests.test_measured_seeds) ... ok
+test_no_mode_b_yield_claim (test_hyba_enterprise_remediation.MathTests.test_no_mode_b_yield_claim) ... ok
+test_release_rungs (test_hyba_enterprise_remediation.MathTests.test_release_rungs) ... ok
+test_sha256_vectors (test_hyba_enterprise_remediation.MathTests.test_sha256_vectors) ... ok
+test_stale_on_error (test_hyba_enterprise_remediation.MathTests.test_stale_on_error) ... ok
+test_zero_fee_gate (test_hyba_enterprise_remediation.MathTests.test_zero_fee_gate) ... ok
+test_retention_and_latch (test_hyba_enterprise_remediation.QuarantineTests.test_retention_and_latch) ... ok
+test_approver_cannot_configure (test_hyba_enterprise_remediation.ServiceTests.test_approver_cannot_configure) ... ok
+test_bad_pool (test_hyba_enterprise_remediation.ServiceTests.test_bad_pool) ... ok
+test_boot_revokes_legacy_live_intent (test_hyba_enterprise_remediation.ServiceTests.test_boot_revokes_legacy_live_intent) ... ok
+test_boot_revokes_persisted_intent (test_hyba_enterprise_remediation.ServiceTests.test_boot_revokes_persisted_intent) ... ok
+test_config_boundaries (test_hyba_enterprise_remediation.ServiceTests.test_config_boundaries) ... ok
+test_csrf_origin (test_hyba_enterprise_remediation.ServiceTests.test_csrf_origin) ... ok
+test_elevation_read_200_identical (test_hyba_enterprise_remediation.ServiceTests.test_elevation_read_200_identical) ... ok
+test_guardian_absence_no_mutation (test_hyba_enterprise_remediation.ServiceTests.test_guardian_absence_no_mutation) ... ok
+test_guardian_denial_no_mutation (test_hyba_enterprise_remediation.ServiceTests.test_guardian_denial_no_mutation) ... ok
+test_independent_start_then_target_disarm_fixture (test_hyba_enterprise_remediation.ServiceTests.test_independent_start_then_target_disarm_fixture) ... ok
+test_login_cookie_flags (test_hyba_enterprise_remediation.ServiceTests.test_login_cookie_flags) ... ok
+test_no_start_offline (test_hyba_enterprise_remediation.ServiceTests.test_no_start_offline) ... ok
+test_nonobject_request (test_hyba_enterprise_remediation.ServiceTests.test_nonobject_request) ... ok
+test_offline_config_saved_disarmed (test_hyba_enterprise_remediation.ServiceTests.test_offline_config_saved_disarmed) ... ok
+test_protected_unauthorized (test_hyba_enterprise_remediation.ServiceTests.test_protected_unauthorized) ... ok
+test_public_pools_only_metadata (test_hyba_enterprise_remediation.ServiceTests.test_public_pools_only_metadata) ... ok
+test_public_status_withheld_redacted (test_hyba_enterprise_remediation.ServiceTests.test_public_status_withheld_redacted) ... ok
+test_treasury_offline_no_numbers (test_hyba_enterprise_remediation.ServiceTests.test_treasury_offline_no_numbers) ... ok
+test_withdraw_no_client_signing (test_hyba_enterprise_remediation.ServiceTests.test_withdraw_no_client_signing) ... ok
+test_withdraw_signer_missing (test_hyba_enterprise_remediation.ServiceTests.test_withdraw_signer_missing) ... ok
+test_accepted_counts (test_hyba_enterprise_remediation.StatusTests.test_accepted_counts) ... ok
+test_ack_boundaries (test_hyba_enterprise_remediation.StatusTests.test_ack_boundaries) ... ok
+test_does_not_mutate_observations (test_hyba_enterprise_remediation.StatusTests.test_does_not_mutate_observations) ... ok
+test_emulated_and_cpu_not_silicon (test_hyba_enterprise_remediation.StatusTests.test_emulated_and_cpu_not_silicon) ... ok
+test_every_gate_required (test_hyba_enterprise_remediation.StatusTests.test_every_gate_required) ... ok
+test_fixture_positive_predicate_only (test_hyba_enterprise_remediation.StatusTests.test_fixture_positive_predicate_only) ... ok
+test_logical_gpu_not_physical (test_hyba_enterprise_remediation.StatusTests.test_logical_gpu_not_physical) ... ok
+test_offline_withheld (test_hyba_enterprise_remediation.StatusTests.test_offline_withheld) ... ok
+test_rejected_ack (test_hyba_enterprise_remediation.StatusTests.test_rejected_ack) ... ok
+test_response_provenance (test_hyba_enterprise_remediation.StatusTests.test_response_provenance) ... ok
+
+----------------------------------------------------------------------
+Ran 80 tests in 7.480s
+
+OK
