@@ -9,6 +9,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import math
 import threading
 from fractions import Fraction
 from pathlib import PurePosixPath
@@ -25,6 +26,64 @@ ROLE_LAYERS = {
 }
 MAX_BYTES = 131072
 MAX_NODES = 10000
+MAX_JSON_DEPTH = 24
+MAX_JSON_ITEMS = 10000
+
+
+def bounded_evidence(value: Any) -> dict[str, Any]:
+    """Reject non-JSON objects, cycles and excessive work before serialization.
+
+    Exact builtins only: custom Mapping/__iter__/JSON callbacks are not an
+    execution surface. Serialized size is checked after bounded traversal.
+    """
+    remaining = MAX_JSON_ITEMS
+    active: set[int] = set()
+
+    def visit(item: Any, depth: int) -> None:
+        nonlocal remaining
+        remaining -= 1
+        if depth > MAX_JSON_DEPTH or remaining < 0:
+            raise ValueError("evidence structure budget exceeded")
+        kind = type(item)
+        if item is None or kind is bool:
+            return
+        if kind is str:
+            if len(item) > MAX_BYTES:
+                raise ValueError("evidence string budget exceeded")
+            return
+        if kind is int:
+            if item.bit_length() > 4096:
+                raise ValueError("evidence integer budget exceeded")
+            return
+        if kind is float:
+            if not math.isfinite(item):
+                raise ValueError("finite JSON numbers required")
+            return
+        if kind not in (dict, list):
+            raise ValueError("plain JSON values required")
+        if id(item) in active or len(item) > MAX_JSON_ITEMS:
+            raise ValueError("cyclic or oversized evidence")
+        active.add(id(item))
+        try:
+            if kind is dict:
+                for key, child in item.items():
+                    if type(key) is not str:
+                        raise ValueError("JSON string keys required")
+                    visit(key, depth + 1)
+                    visit(child, depth + 1)
+            else:
+                for child in item:
+                    visit(child, depth + 1)
+        finally:
+            active.remove(id(item))
+
+    if type(value) is not dict:
+        raise ValueError("plain JSON evidence object required")
+    visit(value, 0)
+    encoded = canonical(value)
+    if len(encoded.encode("utf-8")) > MAX_BYTES:
+        raise ValueError("evidence byte budget exceeded")
+    return json.loads(encoded)
 
 
 def sha(text: str) -> str:
@@ -44,7 +103,7 @@ def safe_path(path: str) -> bool:
 
 def exact_expression(text: str) -> Fraction:
     """Deliberately small exact-rational evaluator; no eval/import/call/power."""
-    if not isinstance(text, str) or len(text) > 2048:
+    if type(text) is not str or len(text) > 2048:
         raise ValueError("bounded rational expression required")
     tree = ast.parse(text, mode="eval")
     if sum(1 for _ in ast.walk(tree)) > 128:
@@ -210,16 +269,13 @@ class AgentCapabilitySuite:
                 evidence: Mapping[str, Any] | None = None, at_ns: int = 0) -> dict[str, Any]:
         if type(at_ns) is not int or at_ns < 0:
             raise ValueError("nonnegative integer evidence timestamp required")
-        if not isinstance(tenant_id, str) or not tenant_id.strip() or len(tenant_id) > 256:
+        if type(tenant_id) is not str or not tenant_id.strip() or len(tenant_id) > 256:
             raise ValueError("explicit bounded tenant identity required")
-        if not isinstance(target, str) or not safe_path(target):
+        if type(target) is not str or not safe_path(target):
             raise ValueError("safe repository-relative target required")
-        if not isinstance(source, str) or len(source.encode()) > MAX_BYTES:
+        if type(source) is not str or len(source.encode()) > MAX_BYTES:
             raise ValueError("source byte budget exceeded")
-        # Strict JSON copying prevents callbacks/custom objects and detaches mutable input.
-        data = json.loads(canonical(dict(evidence or {})))
-        if len(canonical(data).encode()) > MAX_BYTES:
-            raise ValueError("evidence byte budget exceeded")
+        data = bounded_evidence({} if evidence is None else evidence)
         try:
             tree = ast.parse(source)
             if sum(1 for _ in ast.walk(tree)) > MAX_NODES:

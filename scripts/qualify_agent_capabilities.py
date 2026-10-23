@@ -19,6 +19,7 @@ if args.source_snapshot:
         module = types.ModuleType(name)
         module.__path__ = [str(root.joinpath(*name.split('.')))]
         sys.modules[name] = module
-suite = unittest.defaultTestLoader.discover(str(root / 'tests'), pattern='test_agent_capabilities.py')
+pattern = 'test_agent_capabilities.py' if args.source_snapshot else 'test_agent_capabilit*.py'
+suite = unittest.defaultTestLoader.discover(str(root / 'tests'), pattern=pattern)
 result = unittest.TextTestRunner(verbosity=2).run(suite)
 sys.exit(0 if result.wasSuccessful() else 1)

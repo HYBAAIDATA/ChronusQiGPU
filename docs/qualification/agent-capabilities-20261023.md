@@ -2,104 +2,155 @@
 
 ## Outcome
 
-**PARTIAL implementation; focused tests PASS; production qualification HOLD.**
+**Bounded in-process integration and scoped qualification PASS. Full legacy-role
+implementation remains PARTIAL. Production promotion remains HOLD.**
 
-Source base: `c760cdfc6b5a7c8c9c97dec2493a9a75a1997dbc`.
 Branch: `feat/euclid-salamander-agent-capabilities-20261023`.
+Draft review: https://github.com/PhiEnterprise1/EuclidPhiEnterprise/pull/145.
+Initial integration commit: `0c47fd32020b94366b4eca20be73dd4b56c85010`.
+The companion manifest identifies the exact follow-up source candidate by hash.
 
-All ten legacy roles now have executable bounded diagnostic/draft paths. This
-is not a claim that every original mandate has been fulfilled. The legacy
-`.github/agents/DEPRECATED.md` and role documents remain deprecated and unchanged.
-No agent prompt is loaded or executed as authority. No source patch, merge,
-deployment, arbitrary candidate code execution, reward or live recovery occurs.
+This follow-up replaces extracted-method runtime fixtures with actual constructor
+and composition tests, fixes a package startup dependency bug, hardens concurrent
+shared evidence writers and input bounds, and adds a clean-installed feature gate.
+It does not silently redefine these bounded diagnostics as full self-healing.
+Deprecated role documents remain unchanged and are not executed as authority.
 
-## Wiring
+## Integration and functional fixes
 
-1. `salamander.agent_capabilities.AgentCapabilitySuite.inspect` supplies the
-   executable role surface, mandatory tenant/target binding, explicit limits,
-   honest unknown states and hash-chained diagnostic receipts.
-2. The existing `MultiAgentEntangledOrchestrator.run_multi_agent_cycle` invokes
-   the suite for each supplied source target. Old call signatures still work;
-   enterprise callers must explicitly supply the tenant. Its former unconditional
-   `self_healing_ready=True` has been removed. A review is not a recovery proof.
-3. The supported `EuclidRuntime.review_repository_capabilities` requires an open,
-   composed runtime and the runtime-bound tenant (creator for standalone mode).
-   It shares `self.autonomic.ledger` and its existing evidence sink. No second
-   actuator is created and AL HARAS authorization paths are unchanged.
-4. This is an in-process API, not an authenticated HTTP endpoint. Existing
-   service-layer caller authentication remains required. The tenant field alone
-   is not proof of identity. No new production route or startup policy is enabled.
+1. `AgentCapabilitySuite.inspect` runs ten explicit diagnostic/draft roles. It
+   binds tenant, target, source/input/report digests and statuses to a receipt.
+2. `MultiAgentEntangledOrchestrator.run_multi_agent_cycle` invokes the suite for
+   each source target. Old call signatures remain supported; enterprise callers
+   must supply the tenant explicitly. A review never sets self-healing ready.
+3. `EuclidRuntime.review_repository_capabilities` uses the composed Salamander
+   ledger and its existing Euclid evidence sink. An uncomposed, closed or wrongly
+   tenant-bound runtime refuses the request. No second actuator is created.
+4. Normal `import salamander` no longer eagerly imports the optional mining
+   integration (which requires CHRONUS, absent from the standalone distribution).
+   Existing named mining exports remain lazy; requesting one still requires its
+   actual owner dependencies. `AgentCapabilitySuite` is a public lazy export.
+   Wildcard imports can request mining names: use explicit control-plane imports
+   in standalone consumers. No optional subsystem is fabricated or vendored.
+5. `EvidenceLedger` now serializes append/read/verify/checkpoint operations on a
+   shared instance. This covers multiple suites and owner observations, not only
+   one suite's own writes. Its durable JSONL subclass serializes writes too.
+   Sink failure does not commit in-memory state; recursive sink append is denied.
+   The lock is process-local, NOT cross-process coordination or THESEUS custody.
+   A sink which performs an external side effect then raises requires operator
+   reconciliation; no distributed exactly-once guarantee is claimed.
+6. Evidence preflight rejects custom objects/callbacks, cycles, depth >24,
+   >10,000 structural visits, non-string keys, non-finite numbers and >4096-bit
+   integers before serialization. The serialized 128 KiB cap still applies.
+   Tenant/target/source must be plain strings. Source AST and arithmetic budgets
+   remain explicit; supplied source and emitted drafts are never executed by
+   `inspect`, applied, merged or deployed.
 
-## Role scope / remaining gaps
+This is an **in-process API**, not a newly authenticated HTTP service. Caller
+identity/authorization must remain with the service and AL HARAS owner boundary.
+A tenant string is not authentication. Diagnostic PASS cannot authorize action.
 
-| Role | Executable scope | Not established |
+## Capability contract and unfulfilled legacy scope
+
+| Role | Executable supported contract | Still not established |
 |---|---|---|
-| auditor | Source SHA-256 claim binding and mismatch rejection | Semantic evidence tracing across the repository |
-| remediator | Candidate draft bundle validation; four-file / 128 KiB limits; unsafe-path rejection | Autonomous repair discovery, complexity/fanout qualification or correctness |
-| test_engineer | Exact-rational known-answer unittest draft generation | General property/falsification generation or automated production test execution |
-| governance | FAIL/NOT_PROVABLE aggregation over truth results | Approval, merge, release or AL HARAS authority |
-| provenance | Tenant, source/input/report digest receipt in existing evidence ledger | Canonical THESEUS custody, automatic file writes or full seed/version replay |
+| auditor | Supplied claim/source SHA-256 binding and mismatch rejection | Semantic evidence tracing across the repository |
+| remediator | Caller-supplied draft bundle validation; four-file / 128 KiB limits and safe paths | Autonomous repair discovery, complexity/fanout or correctness qualification |
+| test_engineer | Safe exact-rational known-answer unittest draft generation | General property-test generation and automatic production test execution |
+| governance | FAIL/NOT_PROVABLE aggregate over truth diagnostics | Approval, merge, release or AL HARAS authority |
+| provenance | Tenant/source/input/report digest receipt, existing evidence sink and tested local checkpoint integrity | Canonical THESEUS custody and full seed/version replay |
 | math_verifier | Bounded exact rational arithmetic identities and counterexamples | Symbolic theorem proving, quantified ranges or arbitrary expressions |
-| security_verifier | Static dangerous-call, trivial constant-true-verifier and swallowed-exception findings | Comprehensive fail-closed/crypto/key-lifecycle verification |
-| quantum_checker | Exact real-rational square-unitary and Kraus completeness checks | Complex/symbolic gates, measurement formalism or complete channel certification |
-| precision_sentinel | Float/complex literals and constructors on explicitly exact surfaces | Runtime nondeterminism, conditioning, cancellation, full dataflow or oracle checks |
-| pin_verifier | Explicit caller-selected boolean literal assignment invariants | Whole-program invariance or documentary theorem-claim analysis |
+| security_verifier | AST dangerous calls, trivial constant-true verifier and swallowed-exception findings | Comprehensive crypto, key lifecycle or whole-program security proof |
+| quantum_checker | Exact real-rational square-unitary and Kraus completeness checks | Complex/symbolic gates, full measurement formalism or general channel certification |
+| precision_sentinel | Float/complex literals and constructors on explicitly exact surfaces | Runtime conditioning, cancellation, full dataflow or numerical oracle qualification |
+| pin_verifier | Explicit caller-selected boolean literal assignments | Whole-program invariance or documentary theorem-claim analysis |
 
-The deprecated blanket `theorem_proven=False` rule is not silently revived.
-Pins must be explicitly selected. Unsupported/missing/malformed mathematical or
-scientific evidence yields `NOT_PROVABLE`, not a fabricated pass. Security and
-precision scans without findings likewise do not yield comprehensive PASS.
-Governance FAIL means a diagnostic gate failed, not a final adjudication of an
-entire system's security or mathematical validity.
+Missing/unsupported/malformed scientific inputs stay `NOT_PROVABLE`, not PASS.
+Security/precision scans without findings likewise are not comprehensive passes.
+No deprecated blanket `theorem_proven=False` rule is silently revived. Known-answer
+falsification tests really run and fail as expected inside a passing negative test.
 
-## Qualification performed
+## Qualification actually performed
 
-Command:
+Local environment: Linux, CPython 3.13. The workspace contains an MCP-retrieved,
+pinned dependency closure, **not a full Git checkout**. Package initializers were
+not bypassed in the current default qualification. Optional specialist owners
+which are absent remain recorded unavailable; a composed base runtime is not the
+same as a fully deployed `EuclidRuntime.production()` organism.
 
-```sh
-python scripts/qualify_agent_capabilities.py --source-snapshot
-```
+| Command / gate | Observed result |
+|---|---|
+| `python scripts/qualify_agent_capabilities.py` | **80 tests PASS**, zero failures/errors/skips |
+| `python -m pytest -q tests/test_salamander_autonomic.py tests/test_salamander_authority_replay.py tests/test_salamander_outcome_evidence.py` | **67 tests + 26 subtests PASS** |
+| `python scripts/qualify_agent_capability_package.py --output-dir <fresh external directory>` | **PASS**, sdist → wheel → clean venv → installed diagnostic smoke |
+| Changed Python compilation / Python 3.11 grammar inspection | PASS |
+| New workflow YAML parse | PASS; hosted matrix result NOT VERIFIED |
 
-**60 tests passed, zero test-suite failures/errors/skips.**
-- 54 capability/negative/bounds/evidence/concurrency tests.
-- 2 real module integration tests execute the modified orchestrator and actual
-  retrieved Phi, intelligence, manifold, quantum tensor and Poincare modules.
-  Those implementations are not mocked.
-- 4 canonical runtime binding contract tests execute the actual new method AST
-  with an explicitly documented composition fixture and the real EvidenceLedger.
-  These are NOT full EuclidRuntime startup or production integration tests.
-- Generated correct known-answer tests are executed successfully. A deliberately
-  false generated identity is also executed and is required to fail; that
-  expected failure is contained in a passing falsification test.
-- Concurrent use of a single suite preserves its evidence chain across 40 reviews.
-- Existing ActionRegistry still rejects unauthorised direct dispatch.
-- Source and candidate draft contents are not copied to the shared ledger;
-  hashes and status summaries are recorded instead. Returned drafts must still
-  be treated as sensitive by callers.
-- Compilation of modified/new Python files passed.
+The 80 focused tests comprise 56 existing capability/orchestrator tests and 24 new
+actual-runtime, persistence, concurrency and input-boundary tests. The previous
+four AST-extracted runtime fixture tests have been removed, not counted as real
+startup evidence. The 67 regression tests use their existing explicitly labelled
+unit actuators/probes; those results are not production voyages. Local regression
+execution used the retrieved modules rather than the full repo pytest bootstrap.
 
-The isolated source-snapshot runner bypasses package `__init__` startup files
-using namespace packages; it does not replace implementation modules. Git clone
-was attempted but the private repo required credentials unavailable to the local
-Git process. GitHub MCP reads provided the pinned source files. HTTP 429s during
-reads were resolved with cooldown and smaller batches.
+Specific observed coverage:
+- Actual `EuclidRuntime` constructor and `compose_organism`, canonical receipt
+  sink, tenant rejection, re-composition binding, closed/uncomposed refusal.
+- No supplied source execution; no authorization bypass after diagnostics.
+- Concurrent runtime reviews mixed with real control-plane observations.
+- Multiple suites and direct owner writers sharing one ledger: 160 appends.
+- Durable ledger concurrent writes: 80 appends, fresh-process replay, then
+  deliberate record corruption rejected on restart.
+- Actual runtime checkpoint evidence saved and verified in a fresh process;
+  tampered evidence rejected. This is **not** full production runtime restore,
+  specialist recovery, remote custody or deployed tenant reattachment evidence.
+- Source/draft bodies are excluded from ledger receipts; returned drafts may
+  still contain caller-sensitive material and must not be broadly exposed.
+- Clean-installed feature smoke confirms installed module origins, normal public
+  import without CHRONUS, all ten role outputs, positive and negative exact
+  checks, evidence reconstruction and fail-closed registry dispatch.
 
-## Production gates still open
+The package smoke stages the retrieved product sources and existing package
+configuration, builds an sdist, builds its wheel, verifies source-byte equivalence
+and installs into a fresh venv. Its input manifest identifies this **source
+candidate**, not an invented clean-Git release commit. It does not run the
+canonical full-product release verifier, import every optional module or certify
+all Euclid enterprise dependencies. Do not publish these locally built artefacts.
 
-- Full package imports, supported runtime constructor/startup and production CI.
-- Authenticated service exposure and deployed tenant/identity binding.
-- Production persistence, restart, canonical custody and recovery qualification.
-- Broader regression suites, independent security review and owner acceptance.
-- Remaining per-role mandates listed above.
-- Shared-ledger concurrent writers outside a single suite must remain serialized
-  by the owner control plane; the suite's lock covers its own appends only.
+The optional historical `--source-snapshot` runner still runs only the module
+suite; it is not the default and cannot qualify constructor/package startup.
 
-No full-suite, packaged-install, production-ready or completed-self-healing claim
-is made. No PR, merge, release or deployment was performed by this change.
+## Reproducible hosted qualification
 
-## Invocation
+`.github/workflows/agent-capability-qualification.yml` adds Linux/Windows,
+Python 3.12/3.13 jobs for the actual runtime tests, existing authorization/replay
+regressions and installed diagnostic feature check, retaining package evidence.
+It has read-only repository permissions and no deploy/publish step.
 
-With an already composed canonical runtime:
+The draft PR also falls under the existing enterprise clean-install and
+Salamander package workflows. **Their outcomes have not been verified here.**
+The GitHub check-runs endpoint returned HTTP 403 (token cannot read checks).
+The separate commit-status endpoint returned pending with zero legacy statuses
+for `0c47fd3`; that is not proof that Actions passed or even ran. After the new
+commit, an authorized reviewer must inspect the checks on the exact PR head.
+
+## Explicit production blockers / acceptance gates
+
+| Gate | State / required action |
+|---|---|
+| Full intended role mandates | PARTIAL — scope gaps above require implementation/owner acceptance, not relabelling |
+| Hosted full-checkout matrix and existing product CI | UNVERIFIED — authorized CI review required |
+| Full enterprise wheel + complete production startup | UNVERIFIED — canonical clean-install pipeline must pass |
+| Licensing consistency | BLOCKED for publication: root LICENSE says BSD-3-Clause; Salamander package configuration/README say MIT. Owner must reconcile licensing; this change does not relicense the product |
+| Actual specialist owners, credentials and authenticated tenant binding | UNVERIFIED in deployment; owner-provided integration required |
+| Canonical THESEUS custody, full runtime restart, recovery/rollback and independent postconditions | UNVERIFIED; local evidence replay is not a substitute |
+| Independent security review and owner production acceptance | PENDING |
+
+**Release decision: HOLD.** Do not equate a green focused feature check with
+complete legacy-role implementation or production self-healing qualification.
+No merge, registry publication, release, deployment or live recovery was executed.
+
+## Supported invocation
 
 ```python
 review = runtime.review_repository_capabilities(
@@ -114,5 +165,5 @@ review = runtime.review_repository_capabilities(
 )
 ```
 
-Requests do not execute the supplied source. Attach relevant evidence explicitly;
-a role definition or metric cannot manufacture missing evidence.
+Use an already composed, open canonical runtime and plain JSON evidence. Inspect
+per-role status and scope; never infer permission or recovery from a review.

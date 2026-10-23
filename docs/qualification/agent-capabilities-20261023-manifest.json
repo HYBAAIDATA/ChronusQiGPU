@@ -1,38 +1,29 @@
 {
-  "source_commit": "c760cdfc6b5a7c8c9c97dec2493a9a75a1997dbc",
-  "qualification_mode": "PINNED_SOURCE_SNAPSHOT_PACKAGE_INIT_BYPASSED",
-  "reference_modules": {
-    "salamander/models.py": {
-      "sha256": "f5bd2a5c0ceab2a800f771e5bfc655821b875119814c37d992eab7c174a70aa6",
-      "git_blob_sha1": "917a2580b8e86fec068445ae99479fdb12414697"
-    },
-    "salamander/control_plane.py": {
-      "sha256": "a2e387d4c10c2f00d3c2fae69a3beeaafbf22b2eb89a2563b113eec7dc5a9568",
-      "git_blob_sha1": "27dcda92af4c218885ccfeb91f080fb8a4072c30"
-    },
-    "euclid/core/phi_metric.py": {
-      "sha256": "d870aff57c80017150d29d29f4997b55fce77fd99052f340daedac0564114dfd",
-      "git_blob_sha1": "ba37cd4dd924be1cfa40f7f4999a654e928bd252"
-    },
-    "euclid/core/euclid_intelligence.py": {
-      "sha256": "0b99632372c7cab1292c51281175eabcaa6e7467cc48fb6a3475e3016136b27b",
-      "git_blob_sha1": "450ba0121394b4a82e8a501f4915386eb8aa5263"
-    },
-    "euclid/agents/manifold.py": {
-      "sha256": "61ec13129e58883f0e0cbc472b427b55f8a64f1966648981307518400592be9a",
-      "git_blob_sha1": "37701ac06efc84944088e436d898778e563d4619"
-    },
-    "euclid/validation/process_sandbox.py": {
-      "sha256": "f4babb33318241848810b69157b79d14280a203a82150e77c86de72b0aa73594",
-      "git_blob_sha1": "58d67aa9a2be015b4742c995847ee553db662a63"
-    },
-    "kellogg/quantum_tensor.py": {
-      "sha256": "bf3ceec43409b40a7c1830502fd633e3dbdfa3747a00127c0436346a345c0a7f",
-      "git_blob_sha1": "0eaebb2d0e524af260eb326fa318906340b90eb6"
-    },
-    "toe/poincare_golden_11d.py": {
-      "sha256": "16775a748ad1f85b98b2216360aa250df733f49df38d24a13427b7516bf840e1",
-      "git_blob_sha1": "7f2060327e8f076e9e25143fe35b6c572155d938"
-    }
-  }
+  "ci_check_run_read": "HTTP_403",
+  "environment": {
+    "python": "3.13.14",
+    "system": "Linux"
+  },
+  "existing_regression_subtests": 26,
+  "existing_regression_tests": 67,
+  "focused_tests": 80,
+  "full_role_mandates": "PARTIAL",
+  "input_sha256": {
+    ".github/workflows/agent-capability-qualification.yml": "c9bbceab2744142dbdc0d0f6bddd6e3c092ac8308d6511ea722d5dd429fb4e22",
+    "euclid/agents/orchestrator.py": "15a70b421fccbbb3b8bc1716793abd707af989609320022402548e10fe399d4d",
+    "euclid/runtime.py": "abc0cbff2804d99c0948486b7102da75d65b57fdd2b217b3990342600b72df98",
+    "salamander/__init__.py": "902e0d38be95bb92983052228151a62a8995e5d51dc9849106d23196bc51090e",
+    "salamander/agent_capabilities.py": "969a31c719c8353b0b11b12d070edce82dcb5e62325b8e1d47aa50b8b06f0a8c",
+    "salamander/control_plane.py": "e80af0d6cf4faae813dc1d5f61ef658a4d58614f27670b3c7e214709868c2365",
+    "salamander/runtime.py": "cb60bac92981baca74841c63e1037785876c699bf6b05d9c5154dfb63517b3a5",
+    "scripts/qualify_agent_capabilities.py": "e01c8b728cea11917151913d2f7de381005bd70877dd8b3a6bd86dd790037490",
+    "scripts/qualify_agent_capability_package.py": "a8d010169b3ae2aca152002293d407b1a6d8573c7348cf3284bc0091f16c0557",
+    "tests/test_agent_capabilities.py": "e601c70b6d17fe1043cccacefeff0c5d6317e467cce4f8b5345fa8c26e5079be",
+    "tests/test_agent_capability_lifecycle.py": "a8305b96f062d0f4cc606da2f2abccfc67d5208740968c86f379416c316e1873"
+  },
+  "installed_feature_smoke": "PASS",
+  "production_ready": false,
+  "schema": "euclid.agent-capability-qualification/2",
+  "source_base": "0c47fd32020b94366b4eca20be73dd4b56c85010",
+  "workspace": "MCP pinned dependency closure, not full checkout"
 }

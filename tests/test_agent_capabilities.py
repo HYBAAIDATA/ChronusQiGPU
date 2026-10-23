@@ -245,51 +245,5 @@ class RealOrchestratorIntegrationTest(unittest.TestCase):
         self.assertEqual(result['cycle_results']['x.py']['salamander']['capability_review']['tenant_id'], 'system')
 
 
-class RuntimeBindingContractTest(unittest.TestCase):
-    """Execute the unchanged method AST with a binding fixture, not full startup."""
-    def shell(self):
-        import pathlib
-        import threading
-        from types import SimpleNamespace
-        path=pathlib.Path(__file__).resolve().parents[1]/'euclid/runtime.py'
-        module=ast.parse(path.read_text())
-        cls=next(n for n in module.body if isinstance(n,ast.ClassDef) and n.name=='EuclidRuntime')
-        method=next(n for n in cls.body if isinstance(n,ast.FunctionDef) and n.name=='review_repository_capabilities')
-        namespace={}
-        # Postponed annotations match the real module; no production method is mocked.
-        unit=ast.Module(body=[ast.ImportFrom(module='__future__',names=[ast.alias(name='annotations')],level=0), method],type_ignores=[])
-        exec(compile(ast.fix_missing_locations(unit),str(path),'exec'),namespace)
-        class Shell: pass
-        Shell.review_repository_capabilities=namespace['review_repository_capabilities']
-        obj=Shell();obj._closed=False;obj.creator_id='owner';obj._service_tenant_id='enterprise-a'
-        obj._adaptive_lock=threading.RLock()
-        self.sink=[]
-        obj.autonomic=SimpleNamespace(ledger=EvidenceLedger(sink=self.sink.append), clock_ns=lambda:123)
-        return obj
-
-    def test_runtime_binding_uses_canonical_evidence_sink(self):
-        obj=self.shell()
-        result=obj.review_repository_capabilities(tenant_id='enterprise-a',target='x.py',source='x=1')
-        self.assertEqual(self.sink[0]['kind'],'agent-capability-review')
-        self.assertEqual(self.sink[0]['evidence_sha256'],result['evidence_ref'])
-        self.assertIs(obj._agent_capabilities.ledger,obj.autonomic.ledger)
-        self.assertTrue(obj.autonomic.ledger.verify())
-
-    def test_runtime_binding_rejects_cross_tenant(self):
-        obj=self.shell()
-        with self.assertRaises(ValueError):
-            obj.review_repository_capabilities(tenant_id='enterprise-b',target='x.py',source='x=1')
-        self.assertEqual(self.sink,[])
-
-    def test_runtime_binding_requires_composition(self):
-        obj=self.shell();del obj.autonomic
-        with self.assertRaises(RuntimeError):
-            obj.review_repository_capabilities(tenant_id='enterprise-a',target='x.py',source='x=1')
-
-    def test_closed_runtime_rejects_review(self):
-        obj=self.shell();obj._closed=True
-        with self.assertRaises(RuntimeError):
-            obj.review_repository_capabilities(tenant_id='enterprise-a',target='x.py',source='x=1')
-
 
 if __name__ == '__main__': unittest.main()

@@ -1,3 +1,5 @@
+CURRENT NORMAL-IMPORT QUALIFICATION
+$ python scripts/qualify_agent_capabilities.py
 test_all_ten_roles_are_executable (test_agent_capabilities.AgentCapabilitiesTest.test_all_ten_roles_are_executable) ... ok
 test_ast_node_budget (test_agent_capabilities.AgentCapabilitiesTest.test_ast_node_budget) ... ok
 test_audit_digest_binding (test_agent_capabilities.AgentCapabilitiesTest.test_audit_digest_binding) ... ok
@@ -54,12 +56,36 @@ test_unitary_real_exact_pass (test_agent_capabilities.AgentCapabilitiesTest.test
 test_zero_division_is_unproven (test_agent_capabilities.AgentCapabilitiesTest.test_zero_division_is_unproven) ... ok
 test_legacy_call_signature_retained (test_agent_capabilities.RealOrchestratorIntegrationTest.test_legacy_call_signature_retained) ... ok
 test_real_cycle_uses_capabilities_and_evidence (test_agent_capabilities.RealOrchestratorIntegrationTest.test_real_cycle_uses_capabilities_and_evidence) ... ok
-test_closed_runtime_rejects_review (test_agent_capabilities.RuntimeBindingContractTest.test_closed_runtime_rejects_review) ... ok
-test_runtime_binding_rejects_cross_tenant (test_agent_capabilities.RuntimeBindingContractTest.test_runtime_binding_rejects_cross_tenant) ... ok
-test_runtime_binding_requires_composition (test_agent_capabilities.RuntimeBindingContractTest.test_runtime_binding_requires_composition) ... ok
-test_runtime_binding_uses_canonical_evidence_sink (test_agent_capabilities.RuntimeBindingContractTest.test_runtime_binding_uses_canonical_evidence_sink) ... ok
+test_big_integer_rejected (test_agent_capability_lifecycle.BoundedInputTests.test_big_integer_rejected) ... ok
+test_custom_mapping_not_invoked (test_agent_capability_lifecycle.BoundedInputTests.test_custom_mapping_not_invoked) ... ok
+test_custom_scalar_not_invoked (test_agent_capability_lifecycle.BoundedInputTests.test_custom_scalar_not_invoked) ... ok
+test_custom_source_not_invoked (test_agent_capability_lifecycle.BoundedInputTests.test_custom_source_not_invoked) ... ok
+test_cycle_rejected (test_agent_capability_lifecycle.BoundedInputTests.test_cycle_rejected) ... ok
+test_depth_rejected (test_agent_capability_lifecycle.BoundedInputTests.test_depth_rejected) ... ok
+test_detached_input (test_agent_capability_lifecycle.BoundedInputTests.test_detached_input) ... ok
+test_falsey_nonmapping_rejected (test_agent_capability_lifecycle.BoundedInputTests.test_falsey_nonmapping_rejected) ... ok
+test_item_budget_rejected (test_agent_capability_lifecycle.BoundedInputTests.test_item_budget_rejected) ... ok
+test_nonstring_keys_rejected (test_agent_capability_lifecycle.BoundedInputTests.test_nonstring_keys_rejected) ... ok
+test_durable_concurrent_append_and_fresh_process_replay (test_agent_capability_lifecycle.EvidenceConcurrencyTests.test_durable_concurrent_append_and_fresh_process_replay) ... ok
+test_multiple_suites_and_owner_writers_share_one_ledger (test_agent_capability_lifecycle.EvidenceConcurrencyTests.test_multiple_suites_and_owner_writers_share_one_ledger) ... ok
+test_reentrant_sink_append_refused_without_chain_corruption (test_agent_capability_lifecycle.EvidenceConcurrencyTests.test_reentrant_sink_append_refused_without_chain_corruption) ... ok
+test_sink_failure_does_not_commit_in_memory (test_agent_capability_lifecycle.EvidenceConcurrencyTests.test_sink_failure_does_not_commit_in_memory) ... ok
+test_checkpoint_evidence_survives_fresh_process (test_agent_capability_lifecycle.RealRuntimeLifecycleTests.test_checkpoint_evidence_survives_fresh_process) ... ok
+test_checkpoint_evidence_tampering_refused (test_agent_capability_lifecycle.RealRuntimeLifecycleTests.test_checkpoint_evidence_tampering_refused) ... ok
+test_closed_real_runtime_refuses (test_agent_capability_lifecycle.RealRuntimeLifecycleTests.test_closed_real_runtime_refuses) ... ok
+test_cross_tenant_refused_without_evidence_append (test_agent_capability_lifecycle.RealRuntimeLifecycleTests.test_cross_tenant_refused_without_evidence_append) ... ok
+test_diagnostics_do_not_authorize_owner_action (test_agent_capability_lifecycle.RealRuntimeLifecycleTests.test_diagnostics_do_not_authorize_owner_action) ... ok
+test_no_source_execution (test_agent_capability_lifecycle.RealRuntimeLifecycleTests.test_no_source_execution) ... ok
+test_normal_constructor_and_canonical_composition (test_agent_capability_lifecycle.RealRuntimeLifecycleTests.test_normal_constructor_and_canonical_composition) ... ok
+test_real_runtime_concurrent_reviews_and_observations (test_agent_capability_lifecycle.RealRuntimeLifecycleTests.test_real_runtime_concurrent_reviews_and_observations) ... ok
+test_recomposition_drops_old_suite_binding (test_agent_capability_lifecycle.RealRuntimeLifecycleTests.test_recomposition_drops_old_suite_binding) ... ok
+test_uncomposed_real_runtime_refuses (test_agent_capability_lifecycle.RealRuntimeLifecycleTests.test_uncomposed_real_runtime_refuses) ... ok
 
 ----------------------------------------------------------------------
-Ran 60 tests in 0.147s
+Ran 80 tests in 0.390s
 
 OK
+
+$ python -m pytest -q tests/test_salamander_autonomic.py tests/test_salamander_authority_replay.py tests/test_salamander_outcome_evidence.py
+...................................................................                                                    [100%]
+67 passed, 26 subtests passed in 0.23s

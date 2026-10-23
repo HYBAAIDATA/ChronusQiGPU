@@ -95,31 +95,32 @@ class DurableEvidenceLedger(EvidenceLedger):
         self.verify()
 
     def append(self, kind: str, payload: Mapping[str, Any], *, at_ns: int) -> str:
-        if not kind:
-            raise ValueError("evidence kind is required")
-        body = {
-            "schema": EVIDENCE_SCHEMA,
-            "kind": kind,
-            "at_ns": int(at_ns),
-            "previous_sha256": self._head,
-            "payload": copy.deepcopy(dict(payload)),
-        }
-        seal = model_digest("salamander.autonomic.evidence.v1", body)
-        record = {**body, "evidence_sha256": seal}
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        encoded = json.dumps(
-            record,
-            sort_keys=True,
-            separators=(",", ":"),
-            default=str,
-        )
-        with self.path.open("a", encoding="utf-8") as handle:
-            handle.write(encoded + "\n")
-            handle.flush()
-            os.fsync(handle.fileno())
-        self._records.append(record)
-        self._head = seal
-        return seal
+        with self._lock:
+            if not kind:
+                raise ValueError("evidence kind is required")
+            body = {
+                "schema": EVIDENCE_SCHEMA,
+                "kind": kind,
+                "at_ns": int(at_ns),
+                "previous_sha256": self._head,
+                "payload": copy.deepcopy(dict(payload)),
+            }
+            seal = model_digest("salamander.autonomic.evidence.v1", body)
+            record = {**body, "evidence_sha256": seal}
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            encoded = json.dumps(
+                record,
+                sort_keys=True,
+                separators=(",", ":"),
+                default=str,
+            )
+            with self.path.open("a", encoding="utf-8") as handle:
+                handle.write(encoded + "\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            self._records.append(record)
+            self._head = seal
+            return seal
 
 
 class MiningAutonomyBridge:
