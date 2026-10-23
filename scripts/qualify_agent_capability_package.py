@@ -97,6 +97,24 @@ r=suite.inspect(tenant_id='tenant-a',target='x.py',source='pin=False',evidence={
  'pins':{'pin':False},'identities':[{'left':'1/3+2/3','right':'1'}],
  'quantum':{'kind':'unitary','matrices':[[[0,1],[1,0]]]}})
 assert len(r['capabilities'])==10
+phase=suite.inspect(tenant_id='tenant-a',target='x.py',source='pass',evidence={
+ 'quantum':{'kind':'unitary','matrices':[[[{'real':'0','imag':'1'}]]]}})
+assert phase['capabilities']['quantum_checker']['status']=='PASS'
+measurement=suite.inspect(tenant_id='tenant-a',target='x.py',source='pass',evidence={
+ 'quantum':{'kind':'projective_measurement','matrices':[[[1]]],'state':[1]}})
+assert measurement['capabilities']['quantum_checker']['probabilities']==[{'real':'1','imag':'0'}]
+draft=suite.inspect(tenant_id='tenant-a',target='x.py',source='x=1',evidence={'draft_files':{'x.py':'x=2'}})
+assert draft['capabilities']['remediator']['status']=='DRAFT'
+assert draft['capabilities']['remediator']['unified_diffs']['x.py']
+generated=suite.inspect(tenant_id='tenant-a',target='x.py',source='pass',evidence={
+ 'properties':[{'left':'x+x','right':'2*x','variable':'x','samples':['-1','0','1/3']}],
+ 'falsifications':[{'left':'1','right':'2'}]})['capabilities']['test_engineer']
+import unittest
+namespace={}
+exec(compile(next(iter(generated['files'].values())),'<installed-generated-test>','exec'),namespace)
+run=unittest.TestResult()
+unittest.defaultTestLoader.loadTestsFromTestCase(namespace['ExactKnownAnswers']).run(run)
+assert run.testsRun==2 and run.wasSuccessful()
 for role in ('math_verifier','pin_verifier','quantum_checker'):
  assert r['capabilities'][role]['status']=='PASS'
 f=suite.inspect(tenant_id='tenant-a',target='x.py',source='eval("1")',evidence={

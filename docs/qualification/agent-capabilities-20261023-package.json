@@ -1,12 +1,12 @@
 {
   "artifacts": {
     "hyba_salamander_self_healing-1.0.0-py3-none-any.whl": {
-      "bytes": 109809,
-      "sha256": "2ce7cd8741aea48b87d75b0ecc7fc3d3e370da9c7831b618680203193bb28c96"
+      "bytes": 112496,
+      "sha256": "32645892fe2efd6e5f8fac1dbb9764d564ffa95c5b9a0bcc2bb43f8a5e883334"
     },
     "hyba_salamander_self_healing-1.0.0.tar.gz": {
-      "bytes": 92727,
-      "sha256": "4cb9690dc4f9649d0484de4e22c7d2698ccf7eaf5a05cce23dc62e7630456ba8"
+      "bytes": 95492,
+      "sha256": "b726921669e730768dff050feb032c6219e0901acf652fda687220094799644a"
     }
   },
   "checks": {
@@ -60,7 +60,7 @@
     "packaging/salamander/README.md": "6022436288c821c72a34aa333404acade95412c80527a620a6313943be546f38",
     "packaging/salamander/pyproject.toml": "c3c025348cbf390ca9038e090cfd58bf1ced76e9e1cc1a6328e37a992ddf8e51",
     "salamander/__init__.py": "902e0d38be95bb92983052228151a62a8995e5d51dc9849106d23196bc51090e",
-    "salamander/agent_capabilities.py": "969a31c719c8353b0b11b12d070edce82dcb5e62325b8e1d47aa50b8b06f0a8c",
+    "salamander/agent_capabilities.py": "2f87e2c1fbc6b2846d4b6f8ff0f891926069f85bd724d17cedd8c184c0c0fff0",
     "salamander/authority.py": "f56a5995f807738d5560b684d335e3aa8af615c03132a6fe75dae1c49d1a446e",
     "salamander/control_plane.py": "e80af0d6cf4faae813dc1d5f61ef658a4d58614f27670b3c7e214709868c2365",
     "salamander/discovery_optimisation.py": "ef661c9a219291df5eeb10432c2ffa1c34e7612e6f689ae95b1c1b1d895e3398",

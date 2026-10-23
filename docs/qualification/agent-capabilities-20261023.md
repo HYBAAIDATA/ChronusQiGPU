@@ -8,7 +8,8 @@ implementation remains PARTIAL. Production promotion remains HOLD.**
 Branch: `feat/euclid-salamander-agent-capabilities-20261023`.
 Draft review: https://github.com/PhiEnterprise1/EuclidPhiEnterprise/pull/145.
 Initial integration commit: `0c47fd32020b94366b4eca20be73dd4b56c85010`.
-The companion manifest identifies the exact follow-up source candidate by hash.
+Previous hardening commit: `f1d5a27c410fa19a94d0d95356345d59e6e0c135`.
+The companion manifest identifies the current contract-revision-2 candidate by hash.
 
 This follow-up replaces extracted-method runtime fixtures with actual constructor
 and composition tests, fixes a package startup dependency bug, hardens concurrent
@@ -55,13 +56,13 @@ A tenant string is not authentication. Diagnostic PASS cannot authorize action.
 | Role | Executable supported contract | Still not established |
 |---|---|---|
 | auditor | Supplied claim/source SHA-256 binding and mismatch rejection | Semantic evidence tracing across the repository |
-| remediator | Caller-supplied draft bundle validation; four-file / 128 KiB limits and safe paths | Autonomous repair discovery, complexity/fanout or correctness qualification |
-| test_engineer | Safe exact-rational known-answer unittest draft generation | General property-test generation and automatic production test execution |
+| remediator | Python draft bundles, baseline hashes/unified diffs, four-file / full-bundle 128 KiB caps, conservative syntactic complexity ≤10 and direct named-call fanout ≤3 | Autonomous repair discovery, runtime call-graph/fanout or correctness qualification |
+| test_engineer | Known-answer, finite exact-rational property-with-failure-predicate and explicit falsification unittest generation, tests/ only | General program property inference, universal coverage and automatic production execution |
 | governance | FAIL/NOT_PROVABLE aggregate over truth diagnostics | Approval, merge, release or AL HARAS authority |
 | provenance | Tenant/source/input/report digest receipt, existing evidence sink and tested local checkpoint integrity | Canonical THESEUS custody and full seed/version replay |
 | math_verifier | Bounded exact rational arithmetic identities and counterexamples | Symbolic theorem proving, quantified ranges or arbitrary expressions |
 | security_verifier | AST dangerous calls, trivial constant-true verifier and swallowed-exception findings | Comprehensive crypto, key lifecycle or whole-program security proof |
-| quantum_checker | Exact real-rational square-unitary and Kraus completeness checks | Complex/symbolic gates, full measurement formalism or general channel certification |
+| quantum_checker | Exact complex-rational square-unitary checks on both sides, Kraus completeness, orthogonal projective measurements and optional Born probabilities | Irrational/symbolic gates, arbitrary POVMs/general measurement instruments or unbounded channel certification |
 | precision_sentinel | Float/complex literals and constructors on explicitly exact surfaces | Runtime conditioning, cancellation, full dataflow or numerical oracle qualification |
 | pin_verifier | Explicit caller-selected boolean literal assignments | Whole-program invariance or documentary theorem-claim analysis |
 
@@ -80,14 +81,16 @@ same as a fully deployed `EuclidRuntime.production()` organism.
 
 | Command / gate | Observed result |
 |---|---|
-| `python scripts/qualify_agent_capabilities.py` | **80 tests PASS**, zero failures/errors/skips |
+| `python scripts/qualify_agent_capabilities.py` | **120 tests PASS**, zero failures/errors/skips |
 | `python -m pytest -q tests/test_salamander_autonomic.py tests/test_salamander_authority_replay.py tests/test_salamander_outcome_evidence.py` | **67 tests + 26 subtests PASS** |
 | `python scripts/qualify_agent_capability_package.py --output-dir <fresh external directory>` | **PASS**, sdist → wheel → clean venv → installed diagnostic smoke |
 | Changed Python compilation / Python 3.11 grammar inspection | PASS |
 | New workflow YAML parse | PASS; hosted matrix result NOT VERIFIED |
 
-The 80 focused tests comprise 56 existing capability/orchestrator tests and 24 new
-actual-runtime, persistence, concurrency and input-boundary tests. The previous
+The 120 focused tests comprise 56 existing capability/orchestrator tests, 24
+actual-runtime/persistence/concurrency/input-boundary tests, and 40 additional
+contract-revision-2 tests. One oracle test compares 67 matrices against independent
+SymPy results; these are cases inside one test, not 67 additional top-level tests. The previous
 four AST-extracted runtime fixture tests have been removed, not counted as real
 startup evidence. The 67 regression tests use their existing explicitly labelled
 unit actuators/probes; those results are not production voyages. Local regression
@@ -149,6 +152,97 @@ commit, an authorized reviewer must inspect the checks on the exact PR head.
 **Release decision: HOLD.** Do not equate a green focused feature check with
 complete legacy-role implementation or production self-healing qualification.
 No merge, registry publication, release, deployment or live recovery was executed.
+
+## Contract revision 2: next implementation pass
+
+The report now carries `contract_revision: 2`, included in its digest binding.
+This pass narrows three legacy-role gaps without declaring the entire mandate
+complete. It also rejects control characters in target/draft paths, preventing
+newline/tab injection into emitted unified-diff headers.
+
+### Exact quantum contract
+
+- Matrix count and dimension remain bounded to 1..8; intermediate rational
+  arithmetic is bounded to 4096 bits.
+- Entries are integer/rational strings, or objects with exactly `real` and `imag`
+  rational components. Floating-point values are rejected, not rationalized.
+- `unitary` checks both U†U=I and UU†=I using an actual conjugate transpose.
+- `kraus` checks sum K†K=I. Complete positivity follows from the supplied finite
+  Kraus representation; no arbitrary input map is silently certified.
+- `projective_measurement` checks Hermiticity, idempotence, orthogonality and
+  completeness. An optional state must be normalized; exact Born probabilities
+  are checked real, nonnegative and summing to one. No state means that state-
+  specific probabilities are not tested or claimed.
+
+Positive cases cover complex phase/Pauli-Y gates, rational complex phases,
+complex Kraus operators, amplitude damping and complex projectors. Negative
+cases cover nonunitarity, incomplete/non-Hermitian measurements, bad state
+normalization/dimension, malformed complex entries and floats. An independent
+SymPy oracle agrees on 67 deterministic positive/adversarial matrices.
+
+### Remediation contract
+
+`draft_files` still supplies the proposed replacement: this does not discover or
+invent repairs. Python candidates are parsed and bounded. The metric is defined
+as 1 plus syntactic branches (if/conditional, loops, handlers, comprehensions,
+Boolean extra operands, match cases and guards). Module/function scans include
+nested scopes conservatively. Named call-target expressions are counted as a
+set; dynamic computed call targets are refused. These are syntactic metrics,
+not whole-program runtime fanout, alias analysis or a general correctness proof.
+
+The complete emitted bundle—not just replacement text—must fit 128 KiB. It
+contains optional caller `why_this_fix`, supplied/in-request baseline hashes,
+unified diffs where a baseline exists, metrics, and explicit missing-baseline
+paths. A target matching the inspected source uses that source as its baseline;
+other files require `baseline_files` for a diff. No filesystem baseline is
+silently invented. A baseline digest is not evidence of deployed file state.
+
+A temporary Git repository test checks and applies an emitted patch, including
+correct no-final-newline markers. This is qualification-only temporary state;
+`inspect` never writes or applies a patch to the actual repository. Cap violations
+return FAIL with no draft files. Unsupported syntax or non-Python candidates
+remain NOT_PROVABLE. Minimality beyond ordinary unified-diff output is not proved.
+
+### Test-engineer contract
+
+Besides existing `identities`, callers may supply:
+
+```python
+{
+    "properties": [{
+        "variable": "x", "left": "x+x", "right": "2*x",
+        "samples": ["-1", "0", "1/3"]
+    }],
+    "falsifications": [{"left": "1/3", "right": "1/2"}]
+}
+```
+
+Property generation is bounded to eight properties, 1..32 explicit rational
+samples each, and the existing safe arithmetic grammar. Generated failure
+predicate: `left(sample) != right(sample)`. Falsification tests assert the
+supplied expressions differ. The generator makes no universal-proof claim.
+Known-answer/falsification cases are capped at 32 each; generated source stays
+within 128 KiB under `tests/`. No supplied expression is evaluated as Python.
+
+Qualification actually executes the generated trusted test drafts. A false
+property and a false falsification are each required to fail inside passing
+negative tests. The installed-wheel smoke also exercises complex arithmetic,
+projective measurement, bounded diffs and generated property/falsification tests.
+
+### Qualification history and continuing gates
+
+The first independent-oracle run failed because SymPy was absent from the local
+test environment; the next regression attempt found pytest absent. Dependencies
+were installed and the complete final run passed. These were tooling failures,
+not silently skipped tests. SymPy is a test oracle, not a new runtime dependency;
+the existing hosted qualification workflow already installs it and pytest.
+Final logs are retained beside this report.
+
+The status endpoint still reports pending with zero legacy statuses on `f1d5a27`.
+This does not establish hosted Actions success; the known check-read permission
+restriction is not bypassed or treated as a pass. Licensing, canonical product
+CI, deployed identity/custody/recovery, other role gaps and owner/security
+acceptance remain open. No merge, publication or deployment occurred.
 
 ## Supported invocation
 

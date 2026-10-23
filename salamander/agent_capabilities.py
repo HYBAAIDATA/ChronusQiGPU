@@ -7,6 +7,8 @@ and absence of a static finding is not a security proof.
 from __future__ import annotations
 
 import ast
+import difflib
+from dataclasses import dataclass
 import hashlib
 import json
 import math
@@ -18,6 +20,7 @@ from typing import Any, Mapping
 from .control_plane import EvidenceLedger
 
 SCHEMA = "salamander.agent-capabilities.v1"
+CONTRACT_REVISION = 2
 ROLE_LAYERS = {
     "auditor": "TRUTH", "remediator": "CHANGE", "test_engineer": "CHANGE",
     "governance": "CONTROL", "provenance": "CONTROL", "math_verifier": "TRUTH",
@@ -98,7 +101,7 @@ def safe_path(path: str) -> bool:
     p = PurePosixPath(path)
     return bool(path and path.strip()) and str(p) != "." and len(path) <= 1024 and not p.is_absolute() and not any(
         part in ("..", ".git") for part in p.parts
-    ) and "\\" not in path and ":" not in path and "\x00" not in path
+    ) and "\\" not in path and ":" not in path and not any(ord(c) < 32 or ord(c) == 127 for c in path)
 
 
 def exact_expression(text: str) -> Fraction:
@@ -144,28 +147,6 @@ def _math(data: Mapping[str, Any]) -> dict[str, Any]:
     return finding("PASS" if all(outcomes) else "FAIL", "exact rational identities only", outcomes=outcomes)
 
 
-def _quantum(data: Mapping[str, Any]) -> dict[str, Any]:
-    raw = data.get("quantum")
-    if not raw:
-        return finding("NOT_PROVABLE", "no exact real-rational gate/channel supplied")
-    kind, matrices = raw.get("kind"), raw.get("matrices")
-    if kind not in ("unitary", "kraus") or not isinstance(matrices, list) or not 1 <= len(matrices) <= 8:
-        raise ValueError("bounded unitary/Kraus matrix list required")
-    if kind == "unitary" and len(matrices) != 1:
-        raise ValueError("unitary check requires one matrix")
-    n = len(matrices[0])
-    if not 1 <= n <= 8:
-        raise ValueError("matrix dimension must be 1..8")
-    parsed = []
-    for matrix in matrices:
-        if len(matrix) != n or any(len(row) != n for row in matrix):
-            raise ValueError("square, equally sized matrices required")
-        parsed.append([[exact_expression(str(x)) for x in row] for row in matrix])
-    # Real matrices: transpose equals adjoint. Kraus completeness sum K†K=I.
-    holds = all(sum((m[k][i] * m[k][j] for m in parsed for k in range(n)), Fraction(0))
-                == int(i == j) for i in range(n) for j in range(n))
-    return finding("PASS" if holds else "FAIL", "exact real-rational adjoint completeness only",
-                   scope="unitarity" if kind == "unitary" else "Kraus trace preservation; CP by supplied Kraus form")
 
 
 def _security(tree: ast.AST) -> dict[str, Any]:
@@ -227,7 +208,105 @@ def _audit(source: str, data: Mapping[str, Any]) -> dict[str, Any]:
     return finding("PASS" if holds else "FAIL", "claim/source digest binding only; does not prove claim semantics")
 
 
-def _drafts(data: Mapping[str, Any]) -> dict[str, Any]:
+
+
+
+
+@dataclass(frozen=True)
+class ExactComplex:
+    """Complex rationals only; intermediate arithmetic has the same bit cap."""
+    real: Fraction = Fraction(0)
+    imag: Fraction = Fraction(0)
+
+    def __post_init__(self):
+        for value in (self.real, self.imag):
+            if max(value.numerator.bit_length(), value.denominator.bit_length()) > 4096:
+                raise ValueError("complex arithmetic bit budget exceeded")
+
+    def __add__(self, other):
+        return ExactComplex(self.real + other.real, self.imag + other.imag)
+
+    def __mul__(self, other):
+        return ExactComplex(self.real * other.real - self.imag * other.imag,
+                            self.real * other.imag + self.imag * other.real)
+
+    def conjugate(self):
+        return ExactComplex(self.real, -self.imag)
+
+    def as_json(self):
+        return {"real": str(self.real), "imag": str(self.imag)}
+
+
+def _complex(raw: Any) -> ExactComplex:
+    if type(raw) is dict:
+        if set(raw) != {"real", "imag"}:
+            raise ValueError("complex entries require exactly real and imag")
+        return ExactComplex(exact_expression(str(raw["real"])), exact_expression(str(raw["imag"])))
+    if type(raw) not in (int, str):
+        raise ValueError("exact integer/string or complex-rational object required")
+    return ExactComplex(exact_expression(str(raw)))
+
+
+def _quantum(data: Mapping[str, Any]) -> dict[str, Any]:
+    raw = data.get("quantum")
+    if not raw:
+        return finding("NOT_PROVABLE", "no exact rational gate/channel/measurement supplied")
+    kind, matrices = raw.get("kind"), raw.get("matrices")
+    if kind not in ("unitary", "kraus", "projective_measurement") or not isinstance(matrices, list) or not 1 <= len(matrices) <= 8:
+        raise ValueError("bounded unitary/Kraus/projective matrix list required")
+    if kind == "unitary" and len(matrices) != 1:
+        raise ValueError("unitary check requires one matrix")
+    n = len(matrices[0])
+    if not 1 <= n <= 8:
+        raise ValueError("matrix dimension must be 1..8")
+    parsed = []
+    for matrix in matrices:
+        if len(matrix) != n or any(len(row) != n for row in matrix):
+            raise ValueError("square, equally sized matrices required")
+        parsed.append([[_complex(x) for x in row] for row in matrix])
+    zero, one = ExactComplex(), ExactComplex(Fraction(1))
+    identity = [[one if i == j else zero for j in range(n)] for i in range(n)]
+
+    def adjoint(matrix):
+        return [[matrix[j][i].conjugate() for j in range(n)] for i in range(n)]
+
+    def multiply(left, right):
+        return [[sum((left[i][k] * right[k][j] for k in range(n)), zero)
+                 for j in range(n)] for i in range(n)]
+
+    checks = {}
+    probabilities = None
+    if kind == "projective_measurement":
+        checks["hermitian"] = all(adjoint(p) == p for p in parsed)
+        checks["idempotent"] = all(multiply(p, p) == p for p in parsed)
+        checks["complete"] = all(sum((p[i][j] for p in parsed), zero) == identity[i][j]
+                                  for i in range(n) for j in range(n))
+        checks["orthogonal"] = all(all(value == zero for row in multiply(p, q) for value in row)
+                                    for a, p in enumerate(parsed) for b, q in enumerate(parsed) if a != b)
+        if "state" in raw:
+            state = raw["state"]
+            if not isinstance(state, list) or len(state) != n:
+                raise ValueError("state dimension mismatch")
+            state = [_complex(x) for x in state]
+            checks["state_normalized"] = sum((x.conjugate() * x for x in state), zero) == one
+            probabilities = [sum((state[i].conjugate() * p[i][j] * state[j]
+                                  for i in range(n) for j in range(n)), zero) for p in parsed]
+            checks["born_probabilities"] = (all(x.imag == 0 and x.real >= 0 for x in probabilities)
+                                             and sum(probabilities, zero) == one)
+    else:
+        products = [multiply(adjoint(p), p) for p in parsed]
+        checks["adjoint_completeness"] = all(sum((p[i][j] for p in products), zero) == identity[i][j]
+                                              for i in range(n) for j in range(n))
+        if kind == "unitary":
+            checks["right_unitarity"] = multiply(parsed[0], adjoint(parsed[0])) == identity
+    holds = all(checks.values())
+    return finding("PASS" if holds else "FAIL", "exact complex-rational finite-matrix checks only",
+                   scope={"unitary": "unitarity on both sides", "kraus": "Kraus trace preservation; CP by supplied Kraus form",
+                          "projective_measurement": "orthogonal projective measurement; optional normalized-state Born probabilities"}[kind],
+                   checks=checks, probabilities=[p.as_json() for p in probabilities] if probabilities is not None else None)
+
+
+def _drafts(data: Mapping[str, Any], target: str, source: str) -> dict[str, Any]:
     patches = data.get("draft_files", {})
     if not patches:
         return finding("NOT_PROVABLE", "no candidate remediation supplied")
@@ -237,26 +316,123 @@ def _drafts(data: Mapping[str, Any]) -> dict[str, Any]:
         raise ValueError("unsafe draft path or non-text candidate")
     if sum(len(v.encode()) for v in patches.values()) > MAX_BYTES:
         raise ValueError("remediation byte cap exceeded")
-    return finding("DRAFT", "candidate bundle only; complexity, fanout and correctness remain unverified",
-                   files=dict(patches), auto_apply=False)
+    baselines = data.get("baseline_files", {})
+    if not isinstance(baselines, dict) or set(baselines) - set(patches):
+        raise ValueError("baselines must correspond to draft files")
+    metrics, diffs, baselines_sha256, failures = {}, {}, {}, []
+    for path, candidate in patches.items():
+        if not path.endswith('.py'):
+            return finding("NOT_PROVABLE", "complexity/fanout metrics support Python drafts only")
+        tree = ast.parse(candidate)
+        if sum(1 for _ in ast.walk(tree)) > MAX_NODES:
+            raise ValueError("draft AST budget exceeded")
+        scopes = [("<module>", tree)] + [(f"{node.name}@{node.lineno}", node) for node in ast.walk(tree)
+                                         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))]
+        values = []
+        for name, scope in scopes:
+            nodes = list(ast.walk(scope))  # Conservative: nested scopes are included.
+            complexity = 1 + sum(isinstance(node, (ast.If, ast.IfExp, ast.For, ast.AsyncFor, ast.While,
+                                                   ast.ExceptHandler, ast.comprehension)) for node in nodes)
+            complexity += sum(len(node.values) - 1 for node in nodes if isinstance(node, ast.BoolOp))
+            complexity += sum(len(node.ifs) for node in nodes if isinstance(node, ast.comprehension))
+            complexity += sum(len(node.cases) for node in nodes if isinstance(node, ast.Match))
+            complexity += sum(node.guard is not None for node in nodes if isinstance(node, ast.match_case))
+            calls = set()
+            dynamic = False
+            for node in nodes:
+                if isinstance(node, ast.Call):
+                    function = node.func
+                    while isinstance(function, ast.Attribute): function = function.value
+                    if not isinstance(function, ast.Name): dynamic = True
+                    else: calls.add(ast.unparse(node.func))
+            values.append({"scope": name, "cyclomatic_upper_bound": complexity,
+                           "named_call_fanout": len(calls), "dynamic_call_target": dynamic})
+            if complexity > 10 or len(calls) > 3 or dynamic:
+                failures.append({"path": path, **values[-1]})
+        metrics[path] = values
+        baseline = baselines.get(path, source if path == target else None)
+        if baseline is not None:
+            if type(baseline) is not str: raise ValueError("text baseline required")
+            baselines_sha256[path] = sha(baseline)
+            # difflib omits the standard marker for lines without trailing LF.
+            # Include it so the emitted draft remains a valid applyable patch.
+            diff = difflib.unified_diff(baseline.splitlines(keepends=True),
+                                        candidate.splitlines(keepends=True),
+                                        fromfile='a/'+path, tofile='b/'+path)
+            diffs[path] = ''.join(line if line.endswith('\n') else
+                                  line + '\n\\ No newline at end of file\n' for line in diff)
+    if failures:
+        return finding("FAIL", "draft exceeds conservative syntactic complexity/fanout contract", violations=failures)
+    reason = data.get("why_this_fix")
+    if reason is not None and (type(reason) is not str or not reason.strip() or len(reason) > 2048):
+        raise ValueError("bounded nonempty why_this_fix required when supplied")
+    bundle = {"files": dict(patches), "unified_diffs": diffs, "baseline_sha256": baselines_sha256,
+              "missing_baselines": sorted(set(patches) - set(baselines_sha256)), "metrics": metrics,
+              "why_this_fix": reason, "auto_apply": False}
+    if len(canonical(bundle).encode()) > MAX_BYTES:
+        raise ValueError("complete remediation bundle byte cap exceeded")
+    return finding("DRAFT", "bounded Python candidate; syntactic metrics only, no correctness or runtime call-graph proof", **bundle)
+
+
+def _property_expression(text: str, variable: str, sample: Fraction) -> Fraction:
+    # Reuse the exact evaluator after substituting integer-ratio AST constants.
+    if type(text) is not str or len(text) > 2048:
+        raise ValueError("bounded property expression required")
+    tree = ast.parse(text, mode='eval')
+    if sum(1 for _ in ast.walk(tree)) > 128:
+        raise ValueError("property AST budget exceeded")
+    class Substitute(ast.NodeTransformer):
+        def visit_Name(self, node):
+            if node.id != variable: raise ValueError("undeclared property variable")
+            return ast.BinOp(left=ast.Constant(sample.numerator), op=ast.Div(),
+                             right=ast.Constant(sample.denominator))
+    tree = Substitute().visit(tree)
+    return exact_expression(ast.unparse(ast.fix_missing_locations(tree)))
 
 
 def _tests(data: Mapping[str, Any]) -> dict[str, Any]:
     cases = data.get("identities", [])
-    if not cases:
-        return finding("NOT_PROVABLE", "no exact identities for known-answer test generation")
-    _math(data)  # Validate grammar/budgets before emitting any source.
-    def render(node: ast.AST) -> str:
-        if isinstance(node, ast.Constant): return f"Fraction({node.value!r})"
-        if isinstance(node, ast.UnaryOp): return f"({'-' if isinstance(node.op, ast.USub) else '+'}{render(node.operand)})"
+    falsifications = data.get("falsifications", [])
+    properties = data.get("properties", [])
+    if not cases and not properties and not falsifications:
+        return finding("NOT_PROVABLE", "no known-answer/property/falsification cases supplied")
+    for values, cap in ((cases, 32), (falsifications, 32), (properties, 8)):
+        if not isinstance(values, list) or len(values) > cap:
+            raise ValueError("test-case count budget exceeded")
+    def render(node: ast.AST, variable=None) -> str:
+        if isinstance(node, ast.Name) and node.id == variable: return '_sample'
+        if isinstance(node, ast.Constant) and type(node.value) is int: return f"Fraction({node.value!r})"
+        if isinstance(node, ast.UnaryOp): return f"({'-' if isinstance(node.op, ast.USub) else '+'}{render(node.operand, variable)})"
         op = {ast.Add: '+', ast.Sub: '-', ast.Mult: '*', ast.Div: '/'}[type(node.op)]
-        return f"({render(node.left)} {op} {render(node.right)})"
+        return f"({render(node.left, variable)} {op} {render(node.right, variable)})"
     lines = ["from fractions import Fraction", "import unittest", "", "class ExactKnownAnswers(unittest.TestCase):"]
-    for i, case in enumerate(cases):
-        left, right = [render(ast.parse(case[k], mode="eval").body) for k in ("left", "right")]
-        lines.extend([f"    def test_identity_{i}(self):", f"        self.assertEqual({left}, {right})"])
-    return finding("DRAFT", "known-answer tests only; not executed and no property/falsification coverage claimed",
-                   files={"tests/test_agent_exact_known_answers.py": '\n'.join(lines) + '\n'}, auto_apply=False)
+    for values, label, assertion in ((cases, 'identity', 'assertEqual'), (falsifications, 'falsification', 'assertNotEqual')):
+        for i, case in enumerate(values):
+            for key in ('left', 'right'): exact_expression(case[key])
+            left, right = [render(ast.parse(case[k], mode='eval').body) for k in ('left', 'right')]
+            lines.extend([f"    def test_{label}_{i}(self):", f"        self.{assertion}({left}, {right})"])
+    predicates = []
+    for i, prop in enumerate(properties):
+        variable, samples = prop['variable'], prop['samples']
+        if type(variable) is not str or not variable.isidentifier() or len(variable) > 32:
+            raise ValueError("bounded property variable required")
+        if not isinstance(samples, list) or not 1 <= len(samples) <= 32:
+            raise ValueError("property requires 1..32 explicit exact samples")
+        samples = [exact_expression(value) for value in samples]
+        for value in samples:
+            for key in ('left', 'right'): _property_expression(prop[key], variable, value)
+        left, right = [render(ast.parse(prop[k], mode='eval').body, variable) for k in ('left', 'right')]
+        sample_text = ', '.join(f'Fraction({value.numerator}, {value.denominator})' for value in samples)
+        lines.extend([f"    def test_property_{i}(self):", f"        for _sample in [{sample_text}]:",
+                      "            with self.subTest(sample=str(_sample)):", f"                self.assertEqual({left}, {right})"])
+        predicates.append({"property": i, "failure_predicate": "left(sample) != right(sample)",
+                           "sample_count": len(samples), "coverage": "explicit finite samples, not universal proof"})
+    text = '\n'.join(lines) + '\n'
+    if len(text.encode()) > MAX_BYTES: raise ValueError("generated test byte budget exceeded")
+    return finding("DRAFT", "known-answer, finite-property and falsification tests; not executed by inspect",
+                   files={"tests/test_agent_exact_known_answers.py": text}, auto_apply=False,
+                   failure_predicates=predicates,
+                   test_counts={"known_answer": len(cases), "property": len(properties), "falsification": len(falsifications)})
 
 
 class AgentCapabilitySuite:
@@ -285,7 +461,7 @@ class AgentCapabilitySuite:
             syntax_error = type(exc).__name__
         results: dict[str, Any] = {}
         checks = {
-            "auditor": lambda: _audit(source, data), "remediator": lambda: _drafts(data),
+            "auditor": lambda: _audit(source, data), "remediator": lambda: _drafts(data, target, source),
             "test_engineer": lambda: _tests(data), "math_verifier": lambda: _math(data),
             "quantum_checker": lambda: _quantum(data),
             "security_verifier": lambda: _security(tree),
@@ -305,7 +481,8 @@ class AgentCapabilitySuite:
         truth = [v["status"] for k, v in results.items() if ROLE_LAYERS[k] == "TRUTH"]
         results["governance"] = finding("FAIL" if "FAIL" in truth else "PASS" if all(x == "PASS" for x in truth) else "NOT_PROVABLE",
                                            "aggregate diagnostic verdict only; no approval, merge or actuation authority")
-        report = {"schema": SCHEMA, "tenant_id": tenant_id, "target": target,
+        report = {"schema": SCHEMA, "contract_revision": CONTRACT_REVISION,
+                  "tenant_id": tenant_id, "target": target,
                   "source_sha256": sha(source), "capabilities": results,
                   "self_healing_ready": False, "actuation": "NOT_PERFORMED"}
         # Do not put draft source or supplied evidence/secrets into the shared ledger.

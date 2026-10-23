@@ -1,4 +1,4 @@
-CURRENT NORMAL-IMPORT QUALIFICATION
+CONTRACT REVISION 2 — FINAL NORMAL-IMPORT QUALIFICATION
 $ python scripts/qualify_agent_capabilities.py
 test_all_ten_roles_are_executable (test_agent_capabilities.AgentCapabilitiesTest.test_all_ten_roles_are_executable) ... ok
 test_ast_node_budget (test_agent_capabilities.AgentCapabilitiesTest.test_ast_node_budget) ... ok
@@ -56,6 +56,46 @@ test_unitary_real_exact_pass (test_agent_capabilities.AgentCapabilitiesTest.test
 test_zero_division_is_unproven (test_agent_capabilities.AgentCapabilitiesTest.test_zero_division_is_unproven) ... ok
 test_legacy_call_signature_retained (test_agent_capabilities.RealOrchestratorIntegrationTest.test_legacy_call_signature_retained) ... ok
 test_real_cycle_uses_capabilities_and_evidence (test_agent_capabilities.RealOrchestratorIntegrationTest.test_real_cycle_uses_capabilities_and_evidence) ... ok
+test_all_three_test_categories (test_agent_capability_contracts.Contracts.test_all_three_test_categories) ... ok
+test_amplitude_damping_kraus (test_agent_capability_contracts.Contracts.test_amplitude_damping_kraus) ... ok
+test_complex_arithmetic_bound (test_agent_capability_contracts.Contracts.test_complex_arithmetic_bound) ... ok
+test_complex_extra_fields_rejected (test_agent_capability_contracts.Contracts.test_complex_extra_fields_rejected) ... ok
+test_complex_kraus_channel (test_agent_capability_contracts.Contracts.test_complex_kraus_channel) ... ok
+test_complex_nonunitary_counterexample (test_agent_capability_contracts.Contracts.test_complex_nonunitary_counterexample) ... ok
+test_complex_phase_gate (test_agent_capability_contracts.Contracts.test_complex_phase_gate) ... ok
+test_complex_projective_measurement (test_agent_capability_contracts.Contracts.test_complex_projective_measurement) ... ok
+test_complex_rational_unit_norm (test_agent_capability_contracts.Contracts.test_complex_rational_unit_norm) ... ok
+test_contract_revision_is_bound_into_report (test_agent_capability_contracts.Contracts.test_contract_revision_is_bound_into_report) ... ok
+test_control_characters_cannot_inject_diff_headers (test_agent_capability_contracts.Contracts.test_control_characters_cannot_inject_diff_headers) ... ok
+test_false_falsification_is_detected (test_agent_capability_contracts.Contracts.test_false_falsification_is_detected) ... ok
+test_falsification_test_passes_for_actual_inequality (test_agent_capability_contracts.Contracts.test_falsification_test_passes_for_actual_inequality) ... ok
+test_float_not_silently_rationalized (test_agent_capability_contracts.Contracts.test_float_not_silently_rationalized) ... ok
+test_generated_diff_can_be_checked_and_applied_in_temp_repo (test_agent_capability_contracts.Contracts.test_generated_diff_can_be_checked_and_applied_in_temp_repo) ... ok
+test_incomplete_measurement (test_agent_capability_contracts.Contracts.test_incomplete_measurement) ... ok
+test_kraus_incomplete_counterexample (test_agent_capability_contracts.Contracts.test_kraus_incomplete_counterexample) ... ok
+test_nonhermitian_measurement (test_agent_capability_contracts.Contracts.test_nonhermitian_measurement) ... ok
+test_pauli_y_requires_conjugate_transpose (test_agent_capability_contracts.Contracts.test_pauli_y_requires_conjugate_transpose) ... ok
+test_projective_measurement_born_rule (test_agent_capability_contracts.Contracts.test_projective_measurement_born_rule) ... ok
+test_property_and_failure_predicate (test_agent_capability_contracts.Contracts.test_property_and_failure_predicate) ... ok
+test_property_counterexample_really_fails (test_agent_capability_contracts.Contracts.test_property_counterexample_really_fails) ... ok
+test_property_no_code_execution (test_agent_capability_contracts.Contracts.test_property_no_code_execution) ... ok
+test_property_sample_count_cap (test_agent_capability_contracts.Contracts.test_property_sample_count_cap) ... ok
+test_property_zero_division_not_test_success (test_agent_capability_contracts.Contracts.test_property_zero_division_not_test_success) ... ok
+test_remediation_at_fanout_cap (test_agent_capability_contracts.Contracts.test_remediation_at_fanout_cap) ... ok
+test_remediation_complexity_cap (test_agent_capability_contracts.Contracts.test_remediation_complexity_cap) ... ok
+test_remediation_dynamic_call_refused (test_agent_capability_contracts.Contracts.test_remediation_dynamic_call_refused) ... ok
+test_remediation_emits_baseline_bound_diff (test_agent_capability_contracts.Contracts.test_remediation_emits_baseline_bound_diff) ... ok
+test_remediation_fanout_cap (test_agent_capability_contracts.Contracts.test_remediation_fanout_cap) ... ok
+test_remediation_nonpython_not_metric_pass (test_agent_capability_contracts.Contracts.test_remediation_nonpython_not_metric_pass) ... ok
+test_remediation_provided_baseline (test_agent_capability_contracts.Contracts.test_remediation_provided_baseline) ... ok
+test_remediation_syntax_error (test_agent_capability_contracts.Contracts.test_remediation_syntax_error) ... ok
+test_remediation_unknown_baseline_explicit (test_agent_capability_contracts.Contracts.test_remediation_unknown_baseline_explicit) ... ok
+test_remediation_unrelated_baseline_rejected (test_agent_capability_contracts.Contracts.test_remediation_unrelated_baseline_rejected) ... ok
+test_remediation_whole_bundle_byte_cap (test_agent_capability_contracts.Contracts.test_remediation_whole_bundle_byte_cap) ... ok
+test_state_dimension_mismatch_is_not_proven (test_agent_capability_contracts.Contracts.test_state_dimension_mismatch_is_not_proven) ... ok
+test_undeclared_property_name (test_agent_capability_contracts.Contracts.test_undeclared_property_name) ... ok
+test_unitarity_against_independent_sympy_oracle (test_agent_capability_contracts.Contracts.test_unitarity_against_independent_sympy_oracle) ... ok
+test_unnormalized_state_rejected_by_verdict (test_agent_capability_contracts.Contracts.test_unnormalized_state_rejected_by_verdict) ... ok
 test_big_integer_rejected (test_agent_capability_lifecycle.BoundedInputTests.test_big_integer_rejected) ... ok
 test_custom_mapping_not_invoked (test_agent_capability_lifecycle.BoundedInputTests.test_custom_mapping_not_invoked) ... ok
 test_custom_scalar_not_invoked (test_agent_capability_lifecycle.BoundedInputTests.test_custom_scalar_not_invoked) ... ok
@@ -82,10 +122,10 @@ test_recomposition_drops_old_suite_binding (test_agent_capability_lifecycle.Real
 test_uncomposed_real_runtime_refuses (test_agent_capability_lifecycle.RealRuntimeLifecycleTests.test_uncomposed_real_runtime_refuses) ... ok
 
 ----------------------------------------------------------------------
-Ran 80 tests in 0.390s
+Ran 120 tests in 0.695s
 
 OK
 
 $ python -m pytest -q tests/test_salamander_autonomic.py tests/test_salamander_authority_replay.py tests/test_salamander_outcome_evidence.py
 ...................................................................                                                    [100%]
-67 passed, 26 subtests passed in 0.23s
+67 passed, 26 subtests passed in 0.11s

@@ -1,29 +1,32 @@
 {
   "ci_check_run_read": "HTTP_403",
+  "contract_revision": 2,
   "environment": {
     "python": "3.13.14",
     "system": "Linux"
   },
   "existing_regression_subtests": 26,
   "existing_regression_tests": 67,
-  "focused_tests": 80,
+  "focused_tests": 120,
   "full_role_mandates": "PARTIAL",
+  "independent_sympy_matrix_cases": 67,
   "input_sha256": {
     ".github/workflows/agent-capability-qualification.yml": "c9bbceab2744142dbdc0d0f6bddd6e3c092ac8308d6511ea722d5dd429fb4e22",
     "euclid/agents/orchestrator.py": "15a70b421fccbbb3b8bc1716793abd707af989609320022402548e10fe399d4d",
     "euclid/runtime.py": "abc0cbff2804d99c0948486b7102da75d65b57fdd2b217b3990342600b72df98",
     "salamander/__init__.py": "902e0d38be95bb92983052228151a62a8995e5d51dc9849106d23196bc51090e",
-    "salamander/agent_capabilities.py": "969a31c719c8353b0b11b12d070edce82dcb5e62325b8e1d47aa50b8b06f0a8c",
+    "salamander/agent_capabilities.py": "2f87e2c1fbc6b2846d4b6f8ff0f891926069f85bd724d17cedd8c184c0c0fff0",
     "salamander/control_plane.py": "e80af0d6cf4faae813dc1d5f61ef658a4d58614f27670b3c7e214709868c2365",
     "salamander/runtime.py": "cb60bac92981baca74841c63e1037785876c699bf6b05d9c5154dfb63517b3a5",
     "scripts/qualify_agent_capabilities.py": "e01c8b728cea11917151913d2f7de381005bd70877dd8b3a6bd86dd790037490",
-    "scripts/qualify_agent_capability_package.py": "a8d010169b3ae2aca152002293d407b1a6d8573c7348cf3284bc0091f16c0557",
+    "scripts/qualify_agent_capability_package.py": "9116c78a5abe10106a305aab316871a3936d3a8798855360f6341ea4ebfd9b7d",
     "tests/test_agent_capabilities.py": "e601c70b6d17fe1043cccacefeff0c5d6317e467cce4f8b5345fa8c26e5079be",
+    "tests/test_agent_capability_contracts.py": "3134f76f2c42fb78c87c7eba11aba77e5e1bb42568621258847212528f2fff8c",
     "tests/test_agent_capability_lifecycle.py": "a8305b96f062d0f4cc606da2f2abccfc67d5208740968c86f379416c316e1873"
   },
   "installed_feature_smoke": "PASS",
   "production_ready": false,
   "schema": "euclid.agent-capability-qualification/2",
-  "source_base": "0c47fd32020b94366b4eca20be73dd4b56c85010",
+  "source_base": "f1d5a27c410fa19a94d0d95356345d59e6e0c135",
   "workspace": "MCP pinned dependency closure, not full checkout"
 }
