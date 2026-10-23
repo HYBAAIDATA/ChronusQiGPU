@@ -1,0 +1,166 @@
+* Creating isolated environment: venv+pip...
+* Installing packages in isolated environment:
+  - setuptools>=68
+  - wheel
+* Getting build dependencies for sdist...
+running egg_info
+writing src/hyba_turing_service_control.egg-info/PKG-INFO
+writing dependency_links to src/hyba_turing_service_control.egg-info/dependency_links.txt
+writing entry points to src/hyba_turing_service_control.egg-info/entry_points.txt
+writing requirements to src/hyba_turing_service_control.egg-info/requires.txt
+writing top-level names to src/hyba_turing_service_control.egg-info/top_level.txt
+reading manifest file 'src/hyba_turing_service_control.egg-info/SOURCES.txt'
+writing manifest file 'src/hyba_turing_service_control.egg-info/SOURCES.txt'
+* Installed build dependency versions:
+  - setuptools==84.2.1
+  - wheel==0.48.0
+* Building sdist...
+running sdist
+running egg_info
+writing src/hyba_turing_service_control.egg-info/PKG-INFO
+writing dependency_links to src/hyba_turing_service_control.egg-info/dependency_links.txt
+writing entry points to src/hyba_turing_service_control.egg-info/entry_points.txt
+writing requirements to src/hyba_turing_service_control.egg-info/requires.txt
+writing top-level names to src/hyba_turing_service_control.egg-info/top_level.txt
+reading manifest file 'src/hyba_turing_service_control.egg-info/SOURCES.txt'
+writing manifest file 'src/hyba_turing_service_control.egg-info/SOURCES.txt'
+running check
+creating hyba_turing_service_control-0.2.0
+creating hyba_turing_service_control-0.2.0/src/hyba_turing_service
+creating hyba_turing_service_control-0.2.0/src/hyba_turing_service/static
+creating hyba_turing_service_control-0.2.0/src/hyba_turing_service_control.egg-info
+creating hyba_turing_service_control-0.2.0/tests
+copying files to hyba_turing_service_control-0.2.0...
+copying README.md -> hyba_turing_service_control-0.2.0
+copying pyproject.toml -> hyba_turing_service_control-0.2.0
+copying src/hyba_turing_service/__init__.py -> hyba_turing_service_control-0.2.0/src/hyba_turing_service
+copying src/hyba_turing_service/adapters.py -> hyba_turing_service_control-0.2.0/src/hyba_turing_service
+copying src/hyba_turing_service/api.py -> hyba_turing_service_control-0.2.0/src/hyba_turing_service
+copying src/hyba_turing_service/billing.py -> hyba_turing_service_control-0.2.0/src/hyba_turing_service
+copying src/hyba_turing_service/commercial.py -> hyba_turing_service_control-0.2.0/src/hyba_turing_service
+copying src/hyba_turing_service/control.py -> hyba_turing_service_control-0.2.0/src/hyba_turing_service
+copying src/hyba_turing_service/enterprise.py -> hyba_turing_service_control-0.2.0/src/hyba_turing_service
+copying src/hyba_turing_service/identity.py -> hyba_turing_service_control-0.2.0/src/hyba_turing_service
+copying src/hyba_turing_service/main.py -> hyba_turing_service_control-0.2.0/src/hyba_turing_service
+copying src/hyba_turing_service/release.py -> hyba_turing_service_control-0.2.0/src/hyba_turing_service
+copying src/hyba_turing_service/runtime.py -> hyba_turing_service_control-0.2.0/src/hyba_turing_service
+copying src/hyba_turing_service/sessions.py -> hyba_turing_service_control-0.2.0/src/hyba_turing_service
+copying src/hyba_turing_service/supervisor.py -> hyba_turing_service_control-0.2.0/src/hyba_turing_service
+copying src/hyba_turing_service/worker_child.py -> hyba_turing_service_control-0.2.0/src/hyba_turing_service
+copying src/hyba_turing_service/static/portal.css -> hyba_turing_service_control-0.2.0/src/hyba_turing_service/static
+copying src/hyba_turing_service/static/portal.html -> hyba_turing_service_control-0.2.0/src/hyba_turing_service/static
+copying src/hyba_turing_service/static/portal.js -> hyba_turing_service_control-0.2.0/src/hyba_turing_service/static
+copying src/hyba_turing_service_control.egg-info/PKG-INFO -> hyba_turing_service_control-0.2.0/src/hyba_turing_service_control.egg-info
+copying src/hyba_turing_service_control.egg-info/SOURCES.txt -> hyba_turing_service_control-0.2.0/src/hyba_turing_service_control.egg-info
+copying src/hyba_turing_service_control.egg-info/dependency_links.txt -> hyba_turing_service_control-0.2.0/src/hyba_turing_service_control.egg-info
+copying src/hyba_turing_service_control.egg-info/entry_points.txt -> hyba_turing_service_control-0.2.0/src/hyba_turing_service_control.egg-info
+copying src/hyba_turing_service_control.egg-info/requires.txt -> hyba_turing_service_control-0.2.0/src/hyba_turing_service_control.egg-info
+copying src/hyba_turing_service_control.egg-info/top_level.txt -> hyba_turing_service_control-0.2.0/src/hyba_turing_service_control.egg-info
+copying tests/test_control.py -> hyba_turing_service_control-0.2.0/tests
+copying tests/test_enterprise.py -> hyba_turing_service_control-0.2.0/tests
+copying tests/test_release_scope.py -> hyba_turing_service_control-0.2.0/tests
+copying tests/test_release_waivers.py -> hyba_turing_service_control-0.2.0/tests
+copying tests/test_startup_preflight.py -> hyba_turing_service_control-0.2.0/tests
+Writing hyba_turing_service_control-0.2.0/setup.cfg
+Creating tar archive
+removing 'hyba_turing_service_control-0.2.0' (and everything under it)
+* Building wheel from sdist
+* Creating isolated environment: venv+pip...
+* Installing packages in isolated environment:
+  - setuptools>=68
+  - wheel
+* Getting build dependencies for wheel...
+running egg_info
+writing src/hyba_turing_service_control.egg-info/PKG-INFO
+writing dependency_links to src/hyba_turing_service_control.egg-info/dependency_links.txt
+writing entry points to src/hyba_turing_service_control.egg-info/entry_points.txt
+writing requirements to src/hyba_turing_service_control.egg-info/requires.txt
+writing top-level names to src/hyba_turing_service_control.egg-info/top_level.txt
+reading manifest file 'src/hyba_turing_service_control.egg-info/SOURCES.txt'
+writing manifest file 'src/hyba_turing_service_control.egg-info/SOURCES.txt'
+* Installed build dependency versions:
+  - setuptools==84.2.1
+  - wheel==0.48.0
+* Building wheel...
+running bdist_wheel
+running build
+running build_py
+creating build/lib/hyba_turing_service
+copying src/hyba_turing_service/__init__.py -> build/lib/hyba_turing_service
+copying src/hyba_turing_service/adapters.py -> build/lib/hyba_turing_service
+copying src/hyba_turing_service/api.py -> build/lib/hyba_turing_service
+copying src/hyba_turing_service/billing.py -> build/lib/hyba_turing_service
+copying src/hyba_turing_service/commercial.py -> build/lib/hyba_turing_service
+copying src/hyba_turing_service/control.py -> build/lib/hyba_turing_service
+copying src/hyba_turing_service/enterprise.py -> build/lib/hyba_turing_service
+copying src/hyba_turing_service/identity.py -> build/lib/hyba_turing_service
+copying src/hyba_turing_service/main.py -> build/lib/hyba_turing_service
+copying src/hyba_turing_service/release.py -> build/lib/hyba_turing_service
+copying src/hyba_turing_service/runtime.py -> build/lib/hyba_turing_service
+copying src/hyba_turing_service/sessions.py -> build/lib/hyba_turing_service
+copying src/hyba_turing_service/supervisor.py -> build/lib/hyba_turing_service
+copying src/hyba_turing_service/worker_child.py -> build/lib/hyba_turing_service
+running egg_info
+writing src/hyba_turing_service_control.egg-info/PKG-INFO
+writing dependency_links to src/hyba_turing_service_control.egg-info/dependency_links.txt
+writing entry points to src/hyba_turing_service_control.egg-info/entry_points.txt
+writing requirements to src/hyba_turing_service_control.egg-info/requires.txt
+writing top-level names to src/hyba_turing_service_control.egg-info/top_level.txt
+reading manifest file 'src/hyba_turing_service_control.egg-info/SOURCES.txt'
+writing manifest file 'src/hyba_turing_service_control.egg-info/SOURCES.txt'
+creating build/lib/hyba_turing_service/static
+copying src/hyba_turing_service/static/portal.html -> build/lib/hyba_turing_service/static
+copying src/hyba_turing_service/static/portal.css -> build/lib/hyba_turing_service/static
+copying src/hyba_turing_service/static/portal.js -> build/lib/hyba_turing_service/static
+installing to build/bdist.linux-x86_64/wheel
+running install
+running install_lib
+creating build/bdist.linux-x86_64/wheel
+creating build/bdist.linux-x86_64/wheel/hyba_turing_service
+copying build/lib/hyba_turing_service/__init__.py -> build/bdist.linux-x86_64/wheel/./hyba_turing_service
+copying build/lib/hyba_turing_service/adapters.py -> build/bdist.linux-x86_64/wheel/./hyba_turing_service
+copying build/lib/hyba_turing_service/api.py -> build/bdist.linux-x86_64/wheel/./hyba_turing_service
+copying build/lib/hyba_turing_service/billing.py -> build/bdist.linux-x86_64/wheel/./hyba_turing_service
+copying build/lib/hyba_turing_service/commercial.py -> build/bdist.linux-x86_64/wheel/./hyba_turing_service
+copying build/lib/hyba_turing_service/control.py -> build/bdist.linux-x86_64/wheel/./hyba_turing_service
+copying build/lib/hyba_turing_service/enterprise.py -> build/bdist.linux-x86_64/wheel/./hyba_turing_service
+copying build/lib/hyba_turing_service/identity.py -> build/bdist.linux-x86_64/wheel/./hyba_turing_service
+copying build/lib/hyba_turing_service/main.py -> build/bdist.linux-x86_64/wheel/./hyba_turing_service
+copying build/lib/hyba_turing_service/release.py -> build/bdist.linux-x86_64/wheel/./hyba_turing_service
+copying build/lib/hyba_turing_service/runtime.py -> build/bdist.linux-x86_64/wheel/./hyba_turing_service
+copying build/lib/hyba_turing_service/sessions.py -> build/bdist.linux-x86_64/wheel/./hyba_turing_service
+copying build/lib/hyba_turing_service/supervisor.py -> build/bdist.linux-x86_64/wheel/./hyba_turing_service
+copying build/lib/hyba_turing_service/worker_child.py -> build/bdist.linux-x86_64/wheel/./hyba_turing_service
+creating build/bdist.linux-x86_64/wheel/hyba_turing_service/static
+copying build/lib/hyba_turing_service/static/portal.html -> build/bdist.linux-x86_64/wheel/./hyba_turing_service/static
+copying build/lib/hyba_turing_service/static/portal.css -> build/bdist.linux-x86_64/wheel/./hyba_turing_service/static
+copying build/lib/hyba_turing_service/static/portal.js -> build/bdist.linux-x86_64/wheel/./hyba_turing_service/static
+running install_egg_info
+Copying src/hyba_turing_service_control.egg-info to build/bdist.linux-x86_64/wheel/./hyba_turing_service_control-0.2.0-py3.13.egg-info
+running install_scripts
+creating build/bdist.linux-x86_64/wheel/hyba_turing_service_control-0.2.0.dist-info/WHEEL
+creating '/data/completion/dist/.tmp-s8qsexo4/hyba_turing_service_control-0.2.0-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+adding 'hyba_turing_service/__init__.py'
+adding 'hyba_turing_service/adapters.py'
+adding 'hyba_turing_service/api.py'
+adding 'hyba_turing_service/billing.py'
+adding 'hyba_turing_service/commercial.py'
+adding 'hyba_turing_service/control.py'
+adding 'hyba_turing_service/enterprise.py'
+adding 'hyba_turing_service/identity.py'
+adding 'hyba_turing_service/main.py'
+adding 'hyba_turing_service/release.py'
+adding 'hyba_turing_service/runtime.py'
+adding 'hyba_turing_service/sessions.py'
+adding 'hyba_turing_service/supervisor.py'
+adding 'hyba_turing_service/worker_child.py'
+adding 'hyba_turing_service/static/portal.css'
+adding 'hyba_turing_service/static/portal.html'
+adding 'hyba_turing_service/static/portal.js'
+adding 'hyba_turing_service_control-0.2.0.dist-info/METADATA'
+adding 'hyba_turing_service_control-0.2.0.dist-info/WHEEL'
+adding 'hyba_turing_service_control-0.2.0.dist-info/entry_points.txt'
+adding 'hyba_turing_service_control-0.2.0.dist-info/top_level.txt'
+adding 'hyba_turing_service_control-0.2.0.dist-info/RECORD'
+removing build/bdist.linux-x86_64/wheel
+Successfully built hyba_turing_service_control-0.2.0.tar.gz and hyba_turing_service_control-0.2.0-py3-none-any.whl
