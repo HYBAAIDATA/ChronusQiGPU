@@ -2,6 +2,8 @@
 
 import argparse
 import base64
+import hashlib
+import hmac
 import json
 import os
 from pathlib import Path
@@ -190,6 +192,7 @@ def main():
             lambda: machine_token(["turing.ops.execute"]),
             config["worker_subject"],
             config["custody_root"],
+            custody=configured_custody(config),
         )
         signal.signal(signal.SIGTERM, lambda *_: setattr(supervisor, "stopping", True))
         signal.signal(signal.SIGINT, lambda *_: setattr(supervisor, "stopping", True))
@@ -245,7 +248,7 @@ def main():
             billing,
             ready,
             False,  # Contract, membership and capacity checks remain mandatory.
-            ResultCustody(config["custody_root"]),
+            configured_custody(config),
         )
     )
     import uvicorn

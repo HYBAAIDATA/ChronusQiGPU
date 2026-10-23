@@ -204,3 +204,75 @@ The operator's current decision is retained in
 signed promotion bundle and does not start a deployment. Build and sign against
 the final pushed candidate commit, not the historical baseline SHA. A production
 host must supply its real configuration and deployment-authority signature.
+
+## Authenticated recovery of a retained service result
+
+The configured worker writes the original report and then an immutable
+`turing.service-recovery.v1` receipt before returning for SQLite completion.
+The receipt authenticates the tenant, job, original request digest, admission
+hash (including actor/project), and report digest. This is service-output
+integrity, **not** a replacement for canonical mathematical verification or
+shared THESEUS/OVID custody.
+
+After investigating a `running` or `unknown` job, an authorized operator may call:
+
+```text
+POST /api/ops/customers/{tenant}/recover-result
+{"job":"ORIGINAL_JOB_ID","reason":"ACTUAL_INCIDENT_REFERENCE_AND_FINDINGS"}
+```
+
+Use the existing operator identity/session, CSRF and `turing.ops.manage`
+authorization rules. The server supplies its configured custody object; HTTP
+input cannot choose a recovery source. Recovery never runs the computation.
+The same transport-validation rules used for normal completion apply; a retained
+FAIL remains failed. Completion, deferred non-chargeable operational usage,
+delivery reference and audit commit atomically. Repeating a completed recovery
+returns the same report without duplicating usage. An operator-resolved failed
+job is not resurrected. Recovery records observation time explicitly; it does not
+invent the original execution timestamp.
+
+By default, a distinct recovery HMAC key is derived from the private base64
+`operator_key_file` with domain `turing-service-recovery-v1`. Prefer a separate
+private base64 `custody_integrity_key_file` (>=32 random bytes) for independent
+rotation. Both API and worker must receive the same current key configuration.
+`previous_custody_integrity_key_files` is an optional list of private master-key
+files retained for authenticating older receipts. Old receipts are not rewritten
+on rotation. Retain required historical keys until their reports expire; removing
+a key deliberately makes its receipts unrecoverable. Never expose these keys to
+worker children, HTTP requests, logs or source control. HMAC does not protect
+against an attacker who controls the parent service and its keys.
+
+Back up and restore the database, report files, `.receipt` files and appropriate
+key/configuration versions together under the existing maintenance procedure.
+Reports without valid matching receipts (including legacy unsigned reports),
+missing keys, corrupted output and crashes before receipt durability remain
+quarantined. Do not sign old files merely to make recovery pass or automatically
+resubmit unknown work. Existing reasoned `resolve` remains failure resolution,
+not proof of successful execution. Use an incident-specific custody investigation
+for the remaining cases.
+
+Local acceptance evidence and explicit limitations are retained at
+`../evidence/authenticated-recovery/`. This closes only the report-durable /
+database-incomplete service window. It does not close the standalone-vs-shared
+composition-root gap, all orphan windows, target-host recovery/load tests,
+remote CI, live identity acceptance or deployment.
+
+### Distribution dependency boundary
+
+The service wheel is not a self-contained platform distribution. Its configured
+entry point consumes the real `al_haras.entitlements` authority; shared-custody
+integration tests also consume `aethel`. The reference image supplies platform
+source from the full repository, while the computational worker uses installed
+TURING/Kellogg distributions. Installing only the service wheel and server extras
+in an otherwise empty environment is not a supported full deployment: the
+retained standalone test run fails at the two configuration/composition cases
+because AL HARAS is absent. No mock authority, copied verifier or hidden fallback
+was added to disguise this boundary.
+
+The passing artifact runs use a fresh environment, installed wheel/sdist and
+actual TURING/Kellogg, with the supplied platform source on `PYTHONPATH` as in the
+reference topology. Recorded import locations and hashes distinguish these
+inputs. A wholly installed multi-distribution platform needs its own real
+AL HARAS/platform dependency closure and conformance evidence before it can claim
+standalone installation. The complete current-main platform was not substituted
+for the supplied archive or falsely described as installed.

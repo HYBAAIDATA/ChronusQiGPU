@@ -316,6 +316,7 @@ def create_app(deps: Dependencies):
             "renew": ("turing.ops.manage", "renew"),
             "member": ("turing.ops.manage", "set_member"),
             "resolve": ("turing.ops.manage", "resolve_unknown"),
+            "recover-result": ("turing.ops.manage", "recover_result"),
             "adjust": ("turing.ops.billing", "adjust_usage"),
         }
         if action == "purge-data":
@@ -335,6 +336,8 @@ def create_app(deps: Dependencies):
         def call(p, t, a, b):
             if action == "adjust":
                 raise Unavailable("billing is deferred")
+            if action == "recover-result":
+                b = {**b, "source": deps.custody}
             if action == "member":
                 b = {**b, "operator": True}
             return {"result": getattr(p, method)(t, a, tenant=tenant, **b)}
