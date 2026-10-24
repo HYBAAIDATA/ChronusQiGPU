@@ -1,0 +1,565 @@
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF.                                         [100%]
+=================================== FAILURES ===================================
+______________ test_invalid_lease_refused_before_kernel[changes0] ______________
+
+changes = {'tenant': 'other'}
+
+    @pytest.mark.parametrize('changes', [
+        {'tenant': 'other'}, {'worker_id': 'other'}, {'work_id': 'other'},
+        {'fencing_token': 'old'}, {'deadline': time.monotonic() - 1},
+        {'partition': (0, 3)}, {'partition': (1, 5)},
+    ])
+    def test_invalid_lease_refused_before_kernel(changes):
+        worker, _, lease = setup_worker()
+        bad = replace(lease, **changes)
+        calls = []
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:34: Failed
+______________ test_invalid_lease_refused_before_kernel[changes1] ______________
+
+changes = {'worker_id': 'other'}
+
+    @pytest.mark.parametrize('changes', [
+        {'tenant': 'other'}, {'worker_id': 'other'}, {'work_id': 'other'},
+        {'fencing_token': 'old'}, {'deadline': time.monotonic() - 1},
+        {'partition': (0, 3)}, {'partition': (1, 5)},
+    ])
+    def test_invalid_lease_refused_before_kernel(changes):
+        worker, _, lease = setup_worker()
+        bad = replace(lease, **changes)
+        calls = []
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:34: Failed
+______________ test_invalid_lease_refused_before_kernel[changes2] ______________
+
+changes = {'work_id': 'other'}
+
+    @pytest.mark.parametrize('changes', [
+        {'tenant': 'other'}, {'worker_id': 'other'}, {'work_id': 'other'},
+        {'fencing_token': 'old'}, {'deadline': time.monotonic() - 1},
+        {'partition': (0, 3)}, {'partition': (1, 5)},
+    ])
+    def test_invalid_lease_refused_before_kernel(changes):
+        worker, _, lease = setup_worker()
+        bad = replace(lease, **changes)
+        calls = []
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:34: Failed
+______________ test_invalid_lease_refused_before_kernel[changes3] ______________
+
+changes = {'fencing_token': 'old'}
+
+    @pytest.mark.parametrize('changes', [
+        {'tenant': 'other'}, {'worker_id': 'other'}, {'work_id': 'other'},
+        {'fencing_token': 'old'}, {'deadline': time.monotonic() - 1},
+        {'partition': (0, 3)}, {'partition': (1, 5)},
+    ])
+    def test_invalid_lease_refused_before_kernel(changes):
+        worker, _, lease = setup_worker()
+        bad = replace(lease, **changes)
+        calls = []
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:34: Failed
+______________ test_invalid_lease_refused_before_kernel[changes4] ______________
+
+changes = {'deadline': 747.469480327}
+
+    @pytest.mark.parametrize('changes', [
+        {'tenant': 'other'}, {'worker_id': 'other'}, {'work_id': 'other'},
+        {'fencing_token': 'old'}, {'deadline': time.monotonic() - 1},
+        {'partition': (0, 3)}, {'partition': (1, 5)},
+    ])
+    def test_invalid_lease_refused_before_kernel(changes):
+        worker, _, lease = setup_worker()
+        bad = replace(lease, **changes)
+        calls = []
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:34: Failed
+______________ test_invalid_lease_refused_before_kernel[changes5] ______________
+
+changes = {'partition': (0, 3)}
+
+    @pytest.mark.parametrize('changes', [
+        {'tenant': 'other'}, {'worker_id': 'other'}, {'work_id': 'other'},
+        {'fencing_token': 'old'}, {'deadline': time.monotonic() - 1},
+        {'partition': (0, 3)}, {'partition': (1, 5)},
+    ])
+    def test_invalid_lease_refused_before_kernel(changes):
+        worker, _, lease = setup_worker()
+        bad = replace(lease, **changes)
+        calls = []
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:34: Failed
+______________ test_invalid_lease_refused_before_kernel[changes6] ______________
+
+changes = {'partition': (1, 5)}
+
+    @pytest.mark.parametrize('changes', [
+        {'tenant': 'other'}, {'worker_id': 'other'}, {'work_id': 'other'},
+        {'fencing_token': 'old'}, {'deadline': time.monotonic() - 1},
+        {'partition': (0, 3)}, {'partition': (1, 5)},
+    ])
+    def test_invalid_lease_refused_before_kernel(changes):
+        worker, _, lease = setup_worker()
+        bad = replace(lease, **changes)
+        calls = []
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:34: Failed
+_____________________ test_result_bound_to_lease[changes0] _____________________
+
+changes = {'worker_id': 'other'}
+
+    @pytest.mark.parametrize('changes', [
+        {'worker_id': 'other'}, {'lease_id': 'other'}, {'work_id': 'other'},
+        {'generation': 99}, {'partition': (0, 3)}, {'backend': 'invented'},
+        {'output_digest': '0' * 64}, {'result': [99, 99, 99, 99]},
+    ])
+    def test_result_bound_to_lease(changes):
+        worker, scheduler, lease = setup_worker()
+        result = worker.execute('job', lambda x: x, [1, 2, 3, 4], lease=lease)
+        for k, v in changes.items():
+            setattr(result, k, v)
+>       require(not scheduler.register_result(lease_id=lease.lease_id, worker=worker, result=result), 'forged result accepted')
+
+chronus/fleet/test_lease_security.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = False, reason = 'forged result accepted'
+
+    def require(value, reason):
+        if not value:
+>           raise AssertionError(reason)
+E           AssertionError: forged result accepted
+
+chronus/fleet/test_lease_security.py:22: AssertionError
+_____________________ test_result_bound_to_lease[changes1] _____________________
+
+changes = {'lease_id': 'other'}
+
+    @pytest.mark.parametrize('changes', [
+        {'worker_id': 'other'}, {'lease_id': 'other'}, {'work_id': 'other'},
+        {'generation': 99}, {'partition': (0, 3)}, {'backend': 'invented'},
+        {'output_digest': '0' * 64}, {'result': [99, 99, 99, 99]},
+    ])
+    def test_result_bound_to_lease(changes):
+        worker, scheduler, lease = setup_worker()
+        result = worker.execute('job', lambda x: x, [1, 2, 3, 4], lease=lease)
+        for k, v in changes.items():
+            setattr(result, k, v)
+>       require(not scheduler.register_result(lease_id=lease.lease_id, worker=worker, result=result), 'forged result accepted')
+
+chronus/fleet/test_lease_security.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = False, reason = 'forged result accepted'
+
+    def require(value, reason):
+        if not value:
+>           raise AssertionError(reason)
+E           AssertionError: forged result accepted
+
+chronus/fleet/test_lease_security.py:22: AssertionError
+_____________________ test_result_bound_to_lease[changes2] _____________________
+
+changes = {'work_id': 'other'}
+
+    @pytest.mark.parametrize('changes', [
+        {'worker_id': 'other'}, {'lease_id': 'other'}, {'work_id': 'other'},
+        {'generation': 99}, {'partition': (0, 3)}, {'backend': 'invented'},
+        {'output_digest': '0' * 64}, {'result': [99, 99, 99, 99]},
+    ])
+    def test_result_bound_to_lease(changes):
+        worker, scheduler, lease = setup_worker()
+        result = worker.execute('job', lambda x: x, [1, 2, 3, 4], lease=lease)
+        for k, v in changes.items():
+            setattr(result, k, v)
+>       require(not scheduler.register_result(lease_id=lease.lease_id, worker=worker, result=result), 'forged result accepted')
+
+chronus/fleet/test_lease_security.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = False, reason = 'forged result accepted'
+
+    def require(value, reason):
+        if not value:
+>           raise AssertionError(reason)
+E           AssertionError: forged result accepted
+
+chronus/fleet/test_lease_security.py:22: AssertionError
+_____________________ test_result_bound_to_lease[changes3] _____________________
+
+changes = {'generation': 99}
+
+    @pytest.mark.parametrize('changes', [
+        {'worker_id': 'other'}, {'lease_id': 'other'}, {'work_id': 'other'},
+        {'generation': 99}, {'partition': (0, 3)}, {'backend': 'invented'},
+        {'output_digest': '0' * 64}, {'result': [99, 99, 99, 99]},
+    ])
+    def test_result_bound_to_lease(changes):
+        worker, scheduler, lease = setup_worker()
+        result = worker.execute('job', lambda x: x, [1, 2, 3, 4], lease=lease)
+        for k, v in changes.items():
+            setattr(result, k, v)
+>       require(not scheduler.register_result(lease_id=lease.lease_id, worker=worker, result=result), 'forged result accepted')
+
+chronus/fleet/test_lease_security.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = False, reason = 'forged result accepted'
+
+    def require(value, reason):
+        if not value:
+>           raise AssertionError(reason)
+E           AssertionError: forged result accepted
+
+chronus/fleet/test_lease_security.py:22: AssertionError
+_____________________ test_result_bound_to_lease[changes4] _____________________
+
+changes = {'partition': (0, 3)}
+
+    @pytest.mark.parametrize('changes', [
+        {'worker_id': 'other'}, {'lease_id': 'other'}, {'work_id': 'other'},
+        {'generation': 99}, {'partition': (0, 3)}, {'backend': 'invented'},
+        {'output_digest': '0' * 64}, {'result': [99, 99, 99, 99]},
+    ])
+    def test_result_bound_to_lease(changes):
+        worker, scheduler, lease = setup_worker()
+        result = worker.execute('job', lambda x: x, [1, 2, 3, 4], lease=lease)
+        for k, v in changes.items():
+            setattr(result, k, v)
+>       require(not scheduler.register_result(lease_id=lease.lease_id, worker=worker, result=result), 'forged result accepted')
+
+chronus/fleet/test_lease_security.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = False, reason = 'forged result accepted'
+
+    def require(value, reason):
+        if not value:
+>           raise AssertionError(reason)
+E           AssertionError: forged result accepted
+
+chronus/fleet/test_lease_security.py:22: AssertionError
+_____________________ test_result_bound_to_lease[changes5] _____________________
+
+changes = {'backend': 'invented'}
+
+    @pytest.mark.parametrize('changes', [
+        {'worker_id': 'other'}, {'lease_id': 'other'}, {'work_id': 'other'},
+        {'generation': 99}, {'partition': (0, 3)}, {'backend': 'invented'},
+        {'output_digest': '0' * 64}, {'result': [99, 99, 99, 99]},
+    ])
+    def test_result_bound_to_lease(changes):
+        worker, scheduler, lease = setup_worker()
+        result = worker.execute('job', lambda x: x, [1, 2, 3, 4], lease=lease)
+        for k, v in changes.items():
+            setattr(result, k, v)
+>       require(not scheduler.register_result(lease_id=lease.lease_id, worker=worker, result=result), 'forged result accepted')
+
+chronus/fleet/test_lease_security.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = False, reason = 'forged result accepted'
+
+    def require(value, reason):
+        if not value:
+>           raise AssertionError(reason)
+E           AssertionError: forged result accepted
+
+chronus/fleet/test_lease_security.py:22: AssertionError
+_____________________ test_result_bound_to_lease[changes6] _____________________
+
+changes = {'output_digest': '0000000000000000000000000000000000000000000000000000000000000000'}
+
+    @pytest.mark.parametrize('changes', [
+        {'worker_id': 'other'}, {'lease_id': 'other'}, {'work_id': 'other'},
+        {'generation': 99}, {'partition': (0, 3)}, {'backend': 'invented'},
+        {'output_digest': '0' * 64}, {'result': [99, 99, 99, 99]},
+    ])
+    def test_result_bound_to_lease(changes):
+        worker, scheduler, lease = setup_worker()
+        result = worker.execute('job', lambda x: x, [1, 2, 3, 4], lease=lease)
+        for k, v in changes.items():
+            setattr(result, k, v)
+>       require(not scheduler.register_result(lease_id=lease.lease_id, worker=worker, result=result), 'forged result accepted')
+
+chronus/fleet/test_lease_security.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = False, reason = 'forged result accepted'
+
+    def require(value, reason):
+        if not value:
+>           raise AssertionError(reason)
+E           AssertionError: forged result accepted
+
+chronus/fleet/test_lease_security.py:22: AssertionError
+_____________________ test_result_bound_to_lease[changes7] _____________________
+
+changes = {'result': [99, 99, 99, 99]}
+
+    @pytest.mark.parametrize('changes', [
+        {'worker_id': 'other'}, {'lease_id': 'other'}, {'work_id': 'other'},
+        {'generation': 99}, {'partition': (0, 3)}, {'backend': 'invented'},
+        {'output_digest': '0' * 64}, {'result': [99, 99, 99, 99]},
+    ])
+    def test_result_bound_to_lease(changes):
+        worker, scheduler, lease = setup_worker()
+        result = worker.execute('job', lambda x: x, [1, 2, 3, 4], lease=lease)
+        for k, v in changes.items():
+            setattr(result, k, v)
+>       require(not scheduler.register_result(lease_id=lease.lease_id, worker=worker, result=result), 'forged result accepted')
+
+chronus/fleet/test_lease_security.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = False, reason = 'forged result accepted'
+
+    def require(value, reason):
+        if not value:
+>           raise AssertionError(reason)
+E           AssertionError: forged result accepted
+
+chronus/fleet/test_lease_security.py:22: AssertionError
+_____________ test_result_from_unregistered_worker_object_refused ______________
+
+    def test_result_from_unregistered_worker_object_refused():
+        worker, scheduler, lease = setup_worker()
+        result = worker.execute('job', lambda x: x, [1, 2, 3, 4], lease=lease)
+        impostor = NativeIGPUWorker(worker.identity, worker.plan)
+>       require(not scheduler.register_result(lease_id=lease.lease_id, worker=impostor, result=result), 'unregistered worker accepted')
+
+chronus/fleet/test_lease_security.py:56: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = False, reason = 'unregistered worker accepted'
+
+    def require(value, reason):
+        if not value:
+>           raise AssertionError(reason)
+E           AssertionError: unregistered worker accepted
+
+chronus/fleet/test_lease_security.py:22: AssertionError
+_____________________ test_nonfinite_deadline_refused[nan] _____________________
+
+deadline = nan
+
+    @pytest.mark.parametrize('deadline', [float('nan'), float('inf'), -float('inf')])
+    def test_nonfinite_deadline_refused(deadline):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:61: Failed
+_____________________ test_nonfinite_deadline_refused[inf] _____________________
+
+deadline = inf
+
+    @pytest.mark.parametrize('deadline', [float('nan'), float('inf'), -float('inf')])
+    def test_nonfinite_deadline_refused(deadline):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:61: Failed
+____________________ test_nonfinite_deadline_refused[-inf] _____________________
+
+deadline = -inf
+
+    @pytest.mark.parametrize('deadline', [float('nan'), float('inf'), -float('inf')])
+    def test_nonfinite_deadline_refused(deadline):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:61: Failed
+______________ test_invalid_resource_budget_refused[cpu_cores-0] _______________
+
+field = 'cpu_cores', value = 0
+
+    @pytest.mark.parametrize('field,value', [('cpu_cores', 0), ('memory_mb', -1), ('concurrency', 0), ('cpu_cores', True), ('memory_mb', 1.5)])
+    def test_invalid_resource_budget_refused(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:67: Failed
+______________ test_invalid_resource_budget_refused[memory_mb--1] ______________
+
+field = 'memory_mb', value = -1
+
+    @pytest.mark.parametrize('field,value', [('cpu_cores', 0), ('memory_mb', -1), ('concurrency', 0), ('cpu_cores', True), ('memory_mb', 1.5)])
+    def test_invalid_resource_budget_refused(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:67: Failed
+_____________ test_invalid_resource_budget_refused[concurrency-0] ______________
+
+field = 'concurrency', value = 0
+
+    @pytest.mark.parametrize('field,value', [('cpu_cores', 0), ('memory_mb', -1), ('concurrency', 0), ('cpu_cores', True), ('memory_mb', 1.5)])
+    def test_invalid_resource_budget_refused(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:67: Failed
+_____________ test_invalid_resource_budget_refused[cpu_cores-True] _____________
+
+field = 'cpu_cores', value = True
+
+    @pytest.mark.parametrize('field,value', [('cpu_cores', 0), ('memory_mb', -1), ('concurrency', 0), ('cpu_cores', True), ('memory_mb', 1.5)])
+    def test_invalid_resource_budget_refused(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:67: Failed
+_____________ test_invalid_resource_budget_refused[memory_mb-1.5] ______________
+
+field = 'memory_mb', value = 1.5
+
+    @pytest.mark.parametrize('field,value', [('cpu_cores', 0), ('memory_mb', -1), ('concurrency', 0), ('cpu_cores', True), ('memory_mb', 1.5)])
+    def test_invalid_resource_budget_refused(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:67: Failed
+______________________ test_deadline_boundary_is_expired _______________________
+
+    def test_deadline_boundary_is_expired():
+        lease = WorkLease(lease_id='l', work_id='j', tenant='t', partition=(0, 1), deadline=123.)
+>       require(lease.is_expired(123.), 'deadline equality accepted')
+
+chronus/fleet/test_lease_security.py:73: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = False, reason = 'deadline equality accepted'
+
+    def require(value, reason):
+        if not value:
+>           raise AssertionError(reason)
+E           AssertionError: deadline equality accepted
+
+chronus/fleet/test_lease_security.py:22: AssertionError
+__________________ test_rotation_requires_newer_generation[0] __________________
+
+generation = 0
+
+    @pytest.mark.parametrize('generation', [0, 1, -1, True])
+    def test_rotation_requires_newer_generation(generation):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:78: Failed
+__________________ test_rotation_requires_newer_generation[1] __________________
+
+generation = 1
+
+    @pytest.mark.parametrize('generation', [0, 1, -1, True])
+    def test_rotation_requires_newer_generation(generation):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:78: Failed
+_________________ test_rotation_requires_newer_generation[-1] __________________
+
+generation = -1
+
+    @pytest.mark.parametrize('generation', [0, 1, -1, True])
+    def test_rotation_requires_newer_generation(generation):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:78: Failed
+________________ test_rotation_requires_newer_generation[True] _________________
+
+generation = True
+
+    @pytest.mark.parametrize('generation', [0, 1, -1, True])
+    def test_rotation_requires_newer_generation(generation):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:78: Failed
+_______________________ test_rotation_cannot_reuse_token _______________________
+
+    def test_rotation_cannot_reuse_token():
+        identity = WorkerIdentity(worker_id='w')
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:84: Failed
+________________ test_completion_requires_active_matching_lease ________________
+
+    def test_completion_requires_active_matching_lease():
+        worker, _, lease = setup_worker()
+        result = worker.execute('job', lambda x: x, [1, 2, 3, 4], lease=lease)
+        worker._active_leases.clear()
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+chronus/fleet/test_lease_security.py:92: Failed
+=========================== short test summary info ============================
+FAILED chronus/fleet/test_lease_security.py::test_invalid_lease_refused_before_kernel[changes0]
+FAILED chronus/fleet/test_lease_security.py::test_invalid_lease_refused_before_kernel[changes1]
+FAILED chronus/fleet/test_lease_security.py::test_invalid_lease_refused_before_kernel[changes2]
+FAILED chronus/fleet/test_lease_security.py::test_invalid_lease_refused_before_kernel[changes3]
+FAILED chronus/fleet/test_lease_security.py::test_invalid_lease_refused_before_kernel[changes4]
+FAILED chronus/fleet/test_lease_security.py::test_invalid_lease_refused_before_kernel[changes5]
+FAILED chronus/fleet/test_lease_security.py::test_invalid_lease_refused_before_kernel[changes6]
+FAILED chronus/fleet/test_lease_security.py::test_result_bound_to_lease[changes0]
+FAILED chronus/fleet/test_lease_security.py::test_result_bound_to_lease[changes1]
+FAILED chronus/fleet/test_lease_security.py::test_result_bound_to_lease[changes2]
+FAILED chronus/fleet/test_lease_security.py::test_result_bound_to_lease[changes3]
+FAILED chronus/fleet/test_lease_security.py::test_result_bound_to_lease[changes4]
+FAILED chronus/fleet/test_lease_security.py::test_result_bound_to_lease[changes5]
+FAILED chronus/fleet/test_lease_security.py::test_result_bound_to_lease[changes6]
+FAILED chronus/fleet/test_lease_security.py::test_result_bound_to_lease[changes7]
+FAILED chronus/fleet/test_lease_security.py::test_result_from_unregistered_worker_object_refused
+FAILED chronus/fleet/test_lease_security.py::test_nonfinite_deadline_refused[nan]
+FAILED chronus/fleet/test_lease_security.py::test_nonfinite_deadline_refused[inf]
+FAILED chronus/fleet/test_lease_security.py::test_nonfinite_deadline_refused[-inf]
+FAILED chronus/fleet/test_lease_security.py::test_invalid_resource_budget_refused[cpu_cores-0]
+FAILED chronus/fleet/test_lease_security.py::test_invalid_resource_budget_refused[memory_mb--1]
+FAILED chronus/fleet/test_lease_security.py::test_invalid_resource_budget_refused[concurrency-0]
+FAILED chronus/fleet/test_lease_security.py::test_invalid_resource_budget_refused[cpu_cores-True]
+FAILED chronus/fleet/test_lease_security.py::test_invalid_resource_budget_refused[memory_mb-1.5]
+FAILED chronus/fleet/test_lease_security.py::test_deadline_boundary_is_expired
+FAILED chronus/fleet/test_lease_security.py::test_rotation_requires_newer_generation[0]
+FAILED chronus/fleet/test_lease_security.py::test_rotation_requires_newer_generation[1]
+FAILED chronus/fleet/test_lease_security.py::test_rotation_requires_newer_generation[-1]
+FAILED chronus/fleet/test_lease_security.py::test_rotation_requires_newer_generation[True]
+FAILED chronus/fleet/test_lease_security.py::test_rotation_cannot_reuse_token
+FAILED chronus/fleet/test_lease_security.py::test_completion_requires_active_matching_lease
+31 failed, 1 passed in 0.20s

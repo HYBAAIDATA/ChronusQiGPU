@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 import time
+import math
 import uuid
 from typing import Any, Dict, Optional
 
-from chronus.fleet.native_worker import ExecutionResult, NativeIGPUWorker
+from chronus.fleet.native_worker import (
+    ExecutionResult,
+    NativeIGPUWorker,
+    result_matches_lease,
+)
 from chronus.fleet.worker_identity import WorkerIdentity, WorkLease
 from chronus.igpu.host import HostGPUPlan
 
@@ -17,18 +22,27 @@ class FleetScheduler:
 
     Design decisions:
     - ONE iGPU per worker (device_count == 1) preserved
-    - Leases carry partition ranges to guarantee no gaps/overlap
+    - Leases bind partition ranges; complete coverage is a capacity-planner duty
     - Fencing tokens rotate on worker restart, invalidating old leases
     - Idempotency: same work_id + same output_digest accepted; different digest rejected
     """
 
-    def __init__(self, workers: Dict[str, NativeIGPUWorker], default_ttl: float = 300.0):
+    def __init__(
+        self, workers: Dict[str, NativeIGPUWorker], default_ttl: float = 300.0
+    ):
         """Initialize scheduler with a mapping of worker_id -> NativeIGPUWorker."""
         self._workers: Dict[str, NativeIGPUWorker] = dict(workers)
         self._allow_ephemeral_workers: bool = len(self._workers) == 0
         self._default_ttl = float(default_ttl)
+        if not math.isfinite(self._default_ttl) or self._default_ttl <= 0:
+            raise ValueError("default_ttl must be positive and finite")
+        for key, worker in self._workers.items():
+            if key != worker.identity.worker_id or worker.device_count != 1:
+                raise ValueError(
+                    "worker mapping must bind its ONE logical-device identity"
+                )
         self._active_leases: Dict[str, WorkLease] = {}
-        self._work_id_history: Dict[str, list[tuple[str, str]]] = {}
+        self._work_id_history: Dict[tuple[str, str], list[tuple[str, str]]] = {}
         self._tenant_partition_cursor: Dict[str, int] = {}
         self._revoked_fencing_tokens: set[str] = set()
 
@@ -39,7 +53,12 @@ class FleetScheduler:
     def register_worker(self, worker: NativeIGPUWorker) -> None:
         """Register or replace a worker in the fleet pool."""
         if worker.device_count != 1:
-            raise ValueError("FleetScheduler requires ONE iGPU per worker (device_count == 1)")
+            raise ValueError(
+                "FleetScheduler requires ONE iGPU per worker (device_count == 1)"
+            )
+        existing = self._workers.get(worker.identity.worker_id)
+        if existing is not None and existing is not worker:
+            raise ValueError("replace workers only through fenced termination")
         self._workers[worker.identity.worker_id] = worker
 
     def issue_lease(
@@ -57,9 +76,9 @@ class FleetScheduler:
         """Issue a bounded expiring work lease.
 
         Enforces:
-        - Tenant authorization (tenant must match worker assignment)
+        - Tenant assignment binding (external authorization remains AL HARAS)
         - Partition coverage (no gaps/overlap via contiguous cursor or explicit range)
-        - Resource budget (cpu_cores, memory_mb, concurrency)
+        - Positive declared budgets (not OS-level resource enforcement)
         - String fencing token from worker identity
         """
         items_len = len(input_data) if hasattr(input_data, "__len__") else 0
@@ -106,16 +125,18 @@ class FleetScheduler:
             tenant=tenant,
             partition=partition,
             deadline=effective_deadline,
-            cpu_cores=int(rb.get("cpu_cores", 1)),
-            memory_mb=int(rb.get("memory_mb", 256)),
-            concurrency=int(rb.get("concurrency", 1)),
+            cpu_cores=rb.get("cpu_cores", 1),
+            memory_mb=rb.get("memory_mb", 256),
+            concurrency=rb.get("concurrency", 1),
             fencing_token=identity.current_fencing_token,
             worker_id=identity.worker_id,
         )
 
-        self._active_leases[lease.lease_id] = lease
         worker.assign_lease(lease)
-        self._work_id_history.setdefault(work_id, []).append((lease.lease_id, ""))
+        self._active_leases[lease.lease_id] = lease
+        self._work_id_history.setdefault((tenant, work_id), []).append(
+            (lease.lease_id, "")
+        )
         return lease
 
     def _assign_worker(
@@ -181,13 +202,17 @@ class FleetScheduler:
             del self._active_leases[lease_id]
             return False
 
-        if result.fencing_token != lease.fencing_token:
+        if self._workers.get(lease.worker_id) is not worker:
+            return False
+        if not result_matches_lease(
+            result, lease, worker.identity, worker.plan.backend
+        ):
             return False
 
         if result.tenant != lease.tenant or worker.identity.tenant != lease.tenant:
             return False
 
-        history = self._work_id_history.get(result.work_id, [])
+        history = self._work_id_history[(lease.tenant, lease.work_id)]
         for prev_lease_id, prev_digest in history:
             if prev_digest and prev_digest != result.output_digest:
                 return False
@@ -209,9 +234,13 @@ class FleetScheduler:
 
         worker = self._workers[worker_id]
         old_token = worker.identity.current_fencing_token
-        self._revoked_fencing_tokens.add(old_token)
-
+        if (
+            fencing_token is not None
+            and str(fencing_token) in self._revoked_fencing_tokens
+        ):
+            raise ValueError("cannot reuse a revoked fencing token")
         new_identity = worker.identity.rotated(fencing_token=fencing_token)
+        self._revoked_fencing_tokens.add(old_token)
         self._workers[worker_id] = type(worker)(new_identity, worker.plan)
 
         leases_to_remove = [
