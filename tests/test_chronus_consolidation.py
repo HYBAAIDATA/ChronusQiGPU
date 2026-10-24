@@ -283,3 +283,57 @@ def test_one_igpu_canonical_execution_mode():
     # Attestation receipt contains honest execution identity
     assert result.evidence is not None
     assert result.plan["executor"] == "cpu_reference"
+
+
+@pytest.mark.unit
+def test_fleet_multi_device_topology_and_capacity_consolidation():
+    """Chronus fleet execution topology enforces ONE-iGPU per worker, zero gaps, and zero overlap."""
+    from chronus.fleet import (
+        FleetCapacityPlan,
+        GPUWorkerSpec,
+        WorkloadSpec,
+        plan_gpu_fleet_capacity,
+    )
+
+    # Multi-worker fleet topology under unified Chronus architecture
+    dev1 = ChronusDevice(
+        id="opencl:node1:iris",
+        name="Node 1 iGPU",
+        vendor="intel",
+        device_type=ChronusDeviceType.INTEGRATED_GPU,
+        backend=ChronusBackend.OPENCL,
+        memory=ChronusMemory(total_bytes=8 * 1024**3, is_unified=True, memory_type="UMA"),
+        capabilities=ChronusCapabilities(compute_units=32, has_unified_memory=True, is_integrated=True),
+        is_integrated=True,
+    )
+    dev2 = ChronusDevice(
+        id="cuda:node2:rtx",
+        name="Node 2 Discrete GPU",
+        vendor="nvidia",
+        device_type=ChronusDeviceType.DISCRETE_GPU,
+        backend=ChronusBackend.CUDA,
+        memory=ChronusMemory(total_bytes=16 * 1024**3, is_unified=False, memory_type="VRAM"),
+        capabilities=ChronusCapabilities(compute_units=64, has_unified_memory=False, is_integrated=False),
+        is_integrated=False,
+    )
+
+    scheduler = ChronusScheduler(devices=[dev1, dev2])
+    workload = WorkloadSpec(
+        work_id="consolidation-fleet-1",
+        tenant="tenant_core",
+        operation="batch_poly",
+        total_items=64,
+        scale_index=10,
+    )
+
+    # Topology FLEET plan via ChronusScheduler
+    plan = scheduler.plan_fleet(workload, tenant="tenant_core", proportional_by_lanes=True)
+    assert isinstance(plan, FleetCapacityPlan)
+    assert plan.admitted is True
+    assert plan.one_igpu_per_worker is True
+    assert plan.zero_gaps is True
+    assert plan.zero_overlap is True
+    assert plan.total_workers == 2
+    assert plan.total_items == 64
+    assert sum(a.item_count for a in plan.allocations) == 64
+    assert [a.partition for a in plan.allocations] == [(0, 21), (21, 64)]
