@@ -1,0 +1,264 @@
+{
+  "source_commit": "cd80d0371e50979cb5d1e704bafd41f70f0044d8",
+  "scope": "36 top-level aethel Python modules plus seven listed runtime/test files; not full-repository checkout parity",
+  "checks": [
+    {
+      "path": "aethel/__init__.py",
+      "expected_git_blob": "07aeef1f00dfa3a861eddf17fdc9df42e3b6e01c",
+      "actual_git_blob": "07aeef1f00dfa3a861eddf17fdc9df42e3b6e01c",
+      "match": true
+    },
+    {
+      "path": "aethel/__main__.py",
+      "expected_git_blob": "f41747555eceeceeb6049324d76c6bfc36b7c152",
+      "actual_git_blob": "f41747555eceeceeb6049324d76c6bfc36b7c152",
+      "match": true
+    },
+    {
+      "path": "aethel/cassini.py",
+      "expected_git_blob": "5a5693fb0c691db45ba27a4dfda913bdff3cd7be",
+      "actual_git_blob": "5a5693fb0c691db45ba27a4dfda913bdff3cd7be",
+      "match": true
+    },
+    {
+      "path": "aethel/chronus.py",
+      "expected_git_blob": "dfdecbb5a5ff7de9f6ee21a42a84440f779451d0",
+      "actual_git_blob": "dfdecbb5a5ff7de9f6ee21a42a84440f779451d0",
+      "match": true
+    },
+    {
+      "path": "aethel/compute.py",
+      "expected_git_blob": "6342d9824ae5e6f223550a8e6e039d74e1885e0b",
+      "actual_git_blob": "6342d9824ae5e6f223550a8e6e039d74e1885e0b",
+      "match": true
+    },
+    {
+      "path": "aethel/constants.py",
+      "expected_git_blob": "9bacd0df972e8f9ac3ee0a0382fd9a7c3cf4f6be",
+      "actual_git_blob": "9bacd0df972e8f9ac3ee0a0382fd9a7c3cf4f6be",
+      "match": true
+    },
+    {
+      "path": "aethel/costs.py",
+      "expected_git_blob": "8616908ec36620579e7b39b4a09158f1800d58a0",
+      "actual_git_blob": "8616908ec36620579e7b39b4a09158f1800d58a0",
+      "match": true
+    },
+    {
+      "path": "aethel/device.py",
+      "expected_git_blob": "3912d0bbb806a72aca7eb875477159a7c14b34f8",
+      "actual_git_blob": "3912d0bbb806a72aca7eb875477159a7c14b34f8",
+      "match": true
+    },
+    {
+      "path": "aethel/encoding.py",
+      "expected_git_blob": "e7e682ea9f801bba088d34c6f5d7b4eac33d5854",
+      "actual_git_blob": "e7e682ea9f801bba088d34c6f5d7b4eac33d5854",
+      "match": true
+    },
+    {
+      "path": "aethel/enterprise_bridge.py",
+      "expected_git_blob": "356862d0fd69141b479c768f318fd40319cfa6f0",
+      "actual_git_blob": "356862d0fd69141b479c768f318fd40319cfa6f0",
+      "match": true
+    },
+    {
+      "path": "aethel/errors.py",
+      "expected_git_blob": "ab19672c47fb660bdc5f9b82eb6f03e35cc67cf6",
+      "actual_git_blob": "ab19672c47fb660bdc5f9b82eb6f03e35cc67cf6",
+      "match": true
+    },
+    {
+      "path": "aethel/fibonacci.py",
+      "expected_git_blob": "5851a09efea4965a81e8ef51310ce8470533d802",
+      "actual_git_blob": "5851a09efea4965a81e8ef51310ce8470533d802",
+      "match": true
+    },
+    {
+      "path": "aethel/filesystem_paths.py",
+      "expected_git_blob": "0c41c4046aa3ed6235542144d023f9ad1cc03eee",
+      "actual_git_blob": "0c41c4046aa3ed6235542144d023f9ad1cc03eee",
+      "match": true
+    },
+    {
+      "path": "aethel/fold_store.py",
+      "expected_git_blob": "6eb97cd0965a4957fdb4c9da59390d89169549df",
+      "actual_git_blob": "6eb97cd0965a4957fdb4c9da59390d89169549df",
+      "match": true
+    },
+    {
+      "path": "aethel/geodesic.py",
+      "expected_git_blob": "266d8ac9275bc9b5e52035a5d3f13f681044e41e",
+      "actual_git_blob": "266d8ac9275bc9b5e52035a5d3f13f681044e41e",
+      "match": true
+    },
+    {
+      "path": "aethel/gpu.py",
+      "expected_git_blob": "b333052652f16f6a3b1c904aa072be8e51e1dc61",
+      "actual_git_blob": "b333052652f16f6a3b1c904aa072be8e51e1dc61",
+      "match": true
+    },
+    {
+      "path": "aethel/hardened_unified_substrate.py",
+      "expected_git_blob": "2883f44dcd9b4f26759caca85b3aeebfe4f34e07",
+      "actual_git_blob": "2883f44dcd9b4f26759caca85b3aeebfe4f34e07",
+      "match": true
+    },
+    {
+      "path": "aethel/hyperscaler.py",
+      "expected_git_blob": "c08dd4da9b14dbf8107d633f65475524686e75da",
+      "actual_git_blob": "c08dd4da9b14dbf8107d633f65475524686e75da",
+      "match": true
+    },
+    {
+      "path": "aethel/manifold.py",
+      "expected_git_blob": "6f25070608372534b70a1f5bf1fd88c9fac967b4",
+      "actual_git_blob": "6f25070608372534b70a1f5bf1fd88c9fac967b4",
+      "match": true
+    },
+    {
+      "path": "aethel/overhead.py",
+      "expected_git_blob": "7c26c748e778e3a68c77662b22c767c63463a8cd",
+      "actual_git_blob": "7c26c748e778e3a68c77662b22c767c63463a8cd",
+      "match": true
+    },
+    {
+      "path": "aethel/ovid.py",
+      "expected_git_blob": "136cdf6f1fc55e6ad47e546a07b95c8b4c45d1c2",
+      "actual_git_blob": "136cdf6f1fc55e6ad47e546a07b95c8b4c45d1c2",
+      "match": true
+    },
+    {
+      "path": "aethel/ovid_authority.py",
+      "expected_git_blob": "e169c4fe06d7e1186973aef4e305626ce872e077",
+      "actual_git_blob": "e169c4fe06d7e1186973aef4e305626ce872e077",
+      "match": true
+    },
+    {
+      "path": "aethel/phi_fold.py",
+      "expected_git_blob": "0fa4d823b10aed6dc676630ddd11c2ab03c25e1d",
+      "actual_git_blob": "0fa4d823b10aed6dc676630ddd11c2ab03c25e1d",
+      "match": true
+    },
+    {
+      "path": "aethel/phi_memory.py",
+      "expected_git_blob": "f6ce586ac8036da1b06a6f41019fcb5642a1f492",
+      "actual_git_blob": "f6ce586ac8036da1b06a6f41019fcb5642a1f492",
+      "match": true
+    },
+    {
+      "path": "aethel/phyllotaxis.py",
+      "expected_git_blob": "e37309e2d141423967f26db9b4dbacb2b4b792b5",
+      "actual_git_blob": "e37309e2d141423967f26db9b4dbacb2b4b792b5",
+      "match": true
+    },
+    {
+      "path": "aethel/primes.py",
+      "expected_git_blob": "05d63bf844fea691342e37c0f347f30a4fbe64ab",
+      "actual_git_blob": "05d63bf844fea691342e37c0f347f30a4fbe64ab",
+      "match": true
+    },
+    {
+      "path": "aethel/punch.py",
+      "expected_git_blob": "7aeb2c44cec5c5ddac62283fecbbc59c0900c82b",
+      "actual_git_blob": "7aeb2c44cec5c5ddac62283fecbbc59c0900c82b",
+      "match": true
+    },
+    {
+      "path": "aethel/selftest.py",
+      "expected_git_blob": "f3f670d6b5b2eb8ff589754af847381360f22d56",
+      "actual_git_blob": "f3f670d6b5b2eb8ff589754af847381360f22d56",
+      "match": true
+    },
+    {
+      "path": "aethel/shm.py",
+      "expected_git_blob": "c9e7ab1daf5130b33b4ba4e7cd60e34182a54923",
+      "actual_git_blob": "c9e7ab1daf5130b33b4ba4e7cd60e34182a54923",
+      "match": true
+    },
+    {
+      "path": "aethel/storage.py",
+      "expected_git_blob": "164d97d00343939580cc3938702896a9befa274c",
+      "actual_git_blob": "164d97d00343939580cc3938702896a9befa274c",
+      "match": true
+    },
+    {
+      "path": "aethel/storage_topology.py",
+      "expected_git_blob": "43fb17afb40f5eac9c37aa40d43f56eeb93ea0f2",
+      "actual_git_blob": "43fb17afb40f5eac9c37aa40d43f56eeb93ea0f2",
+      "match": true
+    },
+    {
+      "path": "aethel/theseus.py",
+      "expected_git_blob": "3cd320b699436f9feb09efd06d5c067e5af9c8f2",
+      "actual_git_blob": "3cd320b699436f9feb09efd06d5c067e5af9c8f2",
+      "match": true
+    },
+    {
+      "path": "aethel/theseus_projection.py",
+      "expected_git_blob": "31d19c17b23bec7aab120e685905aaa9b0ae42e8",
+      "actual_git_blob": "31d19c17b23bec7aab120e685905aaa9b0ae42e8",
+      "match": true
+    },
+    {
+      "path": "aethel/triad.py",
+      "expected_git_blob": "a484bac2144c3af1a7259d17425b71f046cb9912",
+      "actual_git_blob": "a484bac2144c3af1a7259d17425b71f046cb9912",
+      "match": true
+    },
+    {
+      "path": "aethel/unified.py",
+      "expected_git_blob": "f48532c41cb38217c54c862bd27f050eb97068f9",
+      "actual_git_blob": "f48532c41cb38217c54c862bd27f050eb97068f9",
+      "match": true
+    },
+    {
+      "path": "aethel/zeckendorf.py",
+      "expected_git_blob": "86de68aa63ffcf8e0edeca23891039c3d5db9bd6",
+      "actual_git_blob": "86de68aa63ffcf8e0edeca23891039c3d5db9bd6",
+      "match": true
+    },
+    {
+      "path": "tensor/folded_inference.py",
+      "expected_git_blob": "1cf4fa308be6089fa2ab39665dc7377c450d7cda",
+      "actual_git_blob": "1cf4fa308be6089fa2ab39665dc7377c450d7cda",
+      "match": true
+    },
+    {
+      "path": "tensor/api.py",
+      "expected_git_blob": "afd3cc657d30b98632aace7d59b236014c48a633",
+      "actual_git_blob": "afd3cc657d30b98632aace7d59b236014c48a633",
+      "match": true
+    },
+    {
+      "path": "tensor/pulvini_bridge.py",
+      "expected_git_blob": "faedf5a20c192d27a5e2c80d6dc96fb1344ec832",
+      "actual_git_blob": "faedf5a20c192d27a5e2c80d6dc96fb1344ec832",
+      "match": true
+    },
+    {
+      "path": "python_backend/core_modules/geodesic_tensor_engine.py",
+      "expected_git_blob": "cdee9c371fd5a323e934944fc8e21bee67319465",
+      "actual_git_blob": "cdee9c371fd5a323e934944fc8e21bee67319465",
+      "match": true
+    },
+    {
+      "path": "tests/test_region_decode.py",
+      "expected_git_blob": "40d35669704c9ddc2e80ed64d8a1b14c275a0f7e",
+      "actual_git_blob": "40d35669704c9ddc2e80ed64d8a1b14c275a0f7e",
+      "match": true
+    },
+    {
+      "path": "tests/test_ovid_exactness_verification.py",
+      "expected_git_blob": "8d6e0cae21ee29e700a5469541c9a51e79cfdfe8",
+      "actual_git_blob": "8d6e0cae21ee29e700a5469541c9a51e79cfdfe8",
+      "match": true
+    },
+    {
+      "path": "tests/test_folded_inference.py",
+      "expected_git_blob": "0662c16012538fa738a336cd67107a328d7a65ac",
+      "actual_git_blob": "0662c16012538fa738a336cd67107a328d7a65ac",
+      "match": true
+    }
+  ]
+}
