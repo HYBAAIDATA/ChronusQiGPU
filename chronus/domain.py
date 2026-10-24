@@ -81,6 +81,7 @@ class ChronusDeviceTopology(StrEnum):
     SINGLE = "single"
     MULTI = "multi"
     ALL = "all"
+    FLEET = "fleet"
 
 
 class ChronusExecutionError(RuntimeError):
@@ -249,6 +250,23 @@ class ChronusDevice:
             "version": self.version,
             "identity": [self.identity[0], self.identity[1]],
         }
+
+    def to_worker_spec(self, *, tenant: str = "default", worker_id: Optional[str] = None) -> Any:
+        """Convert this ChronusDevice into a formal GPUWorkerSpec for fleet capacity planning."""
+        from chronus.fleet.capacity import GPUWorkerSpec
+        wid = worker_id or self.id
+        lanes = max(1, self.capabilities.compute_units // 2) if self.capabilities.compute_units else 8
+        compute_units = self.capabilities.compute_units if self.capabilities.compute_units else 16
+        clock_mhz = int(getattr(self.capabilities, "clock_rate_mhz", 0)) or 1500
+        mem_bytes = self.memory.total_bytes if self.memory.total_bytes else 8 * 1024**3
+        return GPUWorkerSpec(
+            worker_id=wid,
+            tenant=tenant,
+            lanes=lanes,
+            compute_units=compute_units,
+            clock_mhz=clock_mhz,
+            global_memory_bytes=mem_bytes,
+        )
 
 
 class ChronusExecutionContext:
@@ -443,6 +461,28 @@ class ChronusScheduler:
         if device is None:
             device = self.select(policy=policy)
         return ChronusExecutionContext(device, policy=policy)
+
+    def plan_fleet(
+        self,
+        workload: Any,
+        *,
+        tenant: str = "default",
+        proportional_by_lanes: bool = True,
+    ) -> Any:
+        """Plan capacity across registered devices as an isolated ONE-iGPU fleet."""
+        from chronus.fleet.capacity import plan_gpu_fleet_capacity
+        fleet_specs = [
+            d.to_worker_spec(tenant=tenant)
+            for d in self._devices
+            if d.is_gpu or d.is_integrated
+        ]
+        if not fleet_specs:
+            fleet_specs = [d.to_worker_spec(tenant=tenant) for d in self._devices]
+        return plan_gpu_fleet_capacity(
+            fleet_specs,
+            workload,
+            proportional_by_lanes=proportional_by_lanes,
+        )
 
     def select_multi(
         self,

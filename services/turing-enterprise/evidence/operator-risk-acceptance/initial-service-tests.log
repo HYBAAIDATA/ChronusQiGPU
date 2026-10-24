@@ -1,0 +1,40 @@
+........................................................................ [ 63%]
+.................F.......................                      [100%]
+=================================== FAILURES ===================================
+_________ test_production_composition_readiness_independent_of_billing _________
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-0/test_production_composition_re0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f4d4c5158c0>
+
+    def test_production_composition_readiness_independent_of_billing(tmp_path, monkeypatch):
+        module = importlib.import_module("hyba_turing_service.main")
+        config = config_file(tmp_path)
+        captured = {}
+        approval_calls = []
+        # Composition-only doubles: not real runtime, IdP or deployment acceptance.
+        monkeypatch.setattr(module, "OIDCVerifier", lambda *a: object())
+        monkeypatch.setattr(module, "Sessions", lambda *a, **k: object())
+    
+        class Probe:
+            def __init__(self, **kwargs):
+                pass
+    
+            def run(self, request):
+                return {"verdict": "PASS", "certificate": {"fixture": True}}
+    
+        monkeypatch.setattr(module, "ProcessRuntime", Probe)
+        monkeypatch.setattr(module, "verify_bundle", lambda *a, **k: approval_calls.append(True))
+        monkeypatch.setattr(module, "create_app", lambda deps: captured.setdefault("deps", deps))
+>       import uvicorn
+E       ModuleNotFoundError: No module named 'uvicorn'
+
+services/turing-enterprise/tests/test_release_scope.py:178: ModuleNotFoundError
+=============================== warnings summary ===============================
+../../risk-acceptance/venv/lib64/python3.13/site-packages/fastapi/testclient.py:1
+  /data/risk-acceptance/venv/lib64/python3.13/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED services/turing-enterprise/tests/test_release_scope.py::test_production_composition_readiness_independent_of_billing
+1 failed, 112 passed, 1 warning, 10 subtests passed in 3.75s

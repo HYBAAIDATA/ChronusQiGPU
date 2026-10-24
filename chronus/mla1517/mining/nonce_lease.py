@@ -71,11 +71,13 @@ class LeaseRecord:
         )
 
 
-def lease_span(window: int) -> int:
-    """Nonces a lane-aligned M32 sweep of ``window`` steps may touch."""
+def lease_span(window: int, alignment: int = LANE_ALIGN) -> int:
+    """Lease extent: exact for explicit batches, padded for M32 kernels."""
     if window <= 0:
         raise ValueError("window must be positive")
-    return -(-window // LANE_ALIGN) * LANE_ALIGN
+    if type(alignment) is not int or alignment not in (1, LANE_ALIGN):
+        raise ValueError("lease alignment must be 1 or 32")
+    return -(-window // alignment) * alignment
 
 
 class NonceLeaseLedger:
@@ -83,10 +85,13 @@ class NonceLeaseLedger:
         self,
         *,
         max_active: int = ladder_capacity(16),
+        alignment: int = LANE_ALIGN,
         terminal_memory: int = ladder_capacity(512),
     ) -> None:
         if max_active <= 0 or terminal_memory <= 0:
             raise ValueError("ledger bounds must be positive")
+        lease_span(1, alignment)  # validate before recording any work
+        self._alignment = alignment
         self._max_active = max_active
         self._terminal_memory = terminal_memory
         self._identity_key: Hashable | None = None
@@ -176,7 +181,7 @@ class NonceLeaseLedger:
         """Reserve the next fresh lane-aligned range covering ``window`` steps."""
         if self._identity_key is None:
             raise LeaseConflict("no Stratum work identity is bound")
-        span = lease_span(window)
+        span = lease_span(window, self._alignment)
         if span > NONCE_SPACE:
             raise LeaseConflict("window exceeds the nonce space")
         if not self._units or self._cursor + span > NONCE_SPACE:
@@ -201,7 +206,7 @@ class NonceLeaseLedger:
             raise LeaseConflict(f"lease id {lease_id!r} is not fresh")
         if count <= 0 or start < 0 or start + count > NONCE_SPACE:
             raise LeaseConflict("lease range outside the uint32 nonce space")
-        if start % LANE_ALIGN:
+        if start % self._alignment:
             raise LeaseConflict("lease start must be lane-aligned")
         if len(self._active) >= self._max_active:
             raise LeaseConflict("active lease bound reached")

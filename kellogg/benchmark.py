@@ -503,13 +503,32 @@ class Block(importlib.abc.MetaPathFinder):
 sys.meta_path.insert(0, Block())
 import kellogg
 mods = sorted(m.name for m in pkgutil.iter_modules(kellogg.__path__))
+# Consumer adapters are not the standalone tensor core. Exercise all modules,
+# retaining each unavailable adapter rather than hiding import failures.
+optional = {{'canonical_tensor': {{'chronus'}}, 'mother_tensor': {{'chronus'}},
+            'lane_scorer': {{'chronus'}}, 'toe_superposition': {{'toe'}}}}
 failed = {{}}
+unavailable_integrations = {{}}
 for m in mods:
     try:
         importlib.import_module('kellogg.' + m)
     except Exception as e:
-        failed[m] = type(e).__name__ + ': ' + str(e)[:120]
-bad = [n for n in kellogg.__all__ if not hasattr(kellogg, n)]
+        dependency = str(e).removeprefix('blocked sibling product: ').split('.')[0]
+        if (isinstance(e, ModuleNotFoundError)
+            and str(e).startswith('blocked sibling product: ')
+            and dependency in optional.get(m, set())):
+            unavailable_integrations[m] = type(e).__name__ + ': ' + str(e)[:120]
+        else:
+            failed[m] = type(e).__name__ + ': ' + str(e)[:120]
+optional_exports = set(kellogg._LAZY_SUBMODULE_ATTRS['canonical_tensor']) | set(kellogg._LAZY_SUBMODULE_ATTRS['lane_scorer'])
+bad = []
+for n in kellogg.__all__:
+    if n in optional_exports:
+        continue
+    try:
+        getattr(kellogg, n)
+    except Exception as e:
+        bad.append(n + ': ' + type(e).__name__)
 from kellogg.custody import default_custody
 from kellogg.phi_tensor_core import PhiTensorCore, FoldCustodyUnavailable, MetricTensor
 try:
@@ -518,7 +537,10 @@ except FoldCustodyUnavailable:
     core = 'FoldCustodyUnavailable'
 from kellogg.exact_network import ghz_circuit
 psi = ghz_circuit(16)
-print(json.dumps({{'modules': len(mods), 'failed': failed, 'unresolved_all': bad,
+print(json.dumps({{'scope': 'standalone_tensor_core_not_optional_consumer_adapters',
+    'modules': len(mods), 'failed': failed, 'unresolved_all': bad,
+    'unavailable_integrations': unavailable_integrations,
+    'optional_consumer_exports': sorted(optional_exports),
     'custody': default_custody().provider, 'phi_tensor_core_without_aethel': core,
     'metric_tensor': MetricTensor.phi_scaled(3) is not None, 'ghz16_bonds': psi.bonds()}}))
 """

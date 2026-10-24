@@ -1,0 +1,24 @@
+{
+  "acceptance_commit": "f58ccc7c4f1d406f1cc1c190faace72d1c6b57cd",
+  "acceptance_blob": "90316ee121da0299de9b554e924467d3a23f28f7",
+  "new_tests": 16,
+  "software_passed": 107,
+  "agent_regressions_passed": 135,
+  "files": {
+    "chronus/mla1517/mining/recovery_authority.py": "fc178d7930590ee34ad312bf1fc473bbbb85707b2b83898368a48be65fea7fde",
+    "tests/test_mining_recovery_dispatch_boundary.py": "75f340c273629be8a5dfd6dab9ea405dcf94612b64f111bcda4ba30fef553fbe",
+    "docs/qualification/mining-recovery-dispatch-qualification.md": "9d278f91bbf377f659bed50d5caa9efde66936b99de8c74be5c6892443b96d2e",
+    "docs/qualification/mining-recovery-before.txt": "0622b827ea856babce8d56dcc43518518e8f049bf788ed269f6101bee70a2800",
+    "docs/qualification/mining-software-tests.txt": "ff59dbea92808e7859cd6efeaed5274d1997186da180e1a62f3bbfa4871e533a",
+    "docs/qualification/mining-agent-regressions.txt": "0a60f3f6db93e25ee07dacc54e19363d8e9fb0e617fc10e109e616541b6531f2"
+  },
+  "parent_recovery_sha256": "d3c7669ae7bf9f61e6fd36a98c228373f6dfffb5cd0b91fe0f76ef7e2015f18e",
+  "acceptance_sha256": "0c0a5b4d7440bb950e10e9eadc1dfc6c5eed4b2ce70abbb199a138ca66230dd8",
+  "physical_opencl": "NOT_RUN_UNAVAILABLE",
+  "live_pool": "NOT_RUN",
+  "ci": "NOT_VERIFIED",
+  "production": "HOLD",
+  "source_baseline": "668ade9f2a8297d5f27ac10e016c128d847c71b9",
+  "repair_commit": "6bf95069424d6234896d3f9d3fa46f300263a5d0",
+  "concurrent_custody_commit_not_requalified": "46ae67c7c84d97f470e8ff91d061e8a487f7f6c5"
+}

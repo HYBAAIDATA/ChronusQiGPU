@@ -1,9 +1,10 @@
 """Autonomous Agentic Mining — Cold Start to Cool Down Workflow.
 
 STATUS: Research/simulation lifecycle — not the production miner.
-The production mining path is the TypeScript server (server.ts +
-src/lib/stratum_*): it owns the pool socket, the consensus check, and
-share submission. Phase 4 here performs local target checks against
+The canonical production mining path is the Python Stratum and PYTHIA
+search stack (chronus/mla1517/mining/coordinator.py and
+chronus/mla1517/mining/geodesic_support.py): it owns the pool socket,
+the consensus check, SearchPlan execution, and share submission. Phase 4 here performs local target checks against
 precomputed candidates; it does not transmit shares to a pool. This
 module is exercised by tests and training scripts only and must not
 be presented as a live submission path.

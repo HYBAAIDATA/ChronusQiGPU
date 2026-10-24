@@ -26,9 +26,10 @@ from toe.system import TOESystem  # noqa: E402
 
 
 class _Cand:
-    def __init__(self, nonce=1, mask=0b1010101, born=0.9, galois=10**12):
+    def __init__(self, nonce=1, mask=None, born=0.9, galois=10**12):
+        from aethel.hardened_unified_substrate import HardenedZeckendorfCodec
         self.nonce = nonce
-        self.zeckendorf_mask = mask
+        self.zeckendorf_mask = HardenedZeckendorfCodec.encode(nonce) if mask is None else mask
         self.born_probability = born
         self.galois_composite = galois
 

@@ -191,6 +191,27 @@ class TestStratumV2(unittest.TestCase):
         self.assertEqual(extended.message_type, MessageType.SUBMIT_SHARES_EXTENDED)
         self.assertEqual(extended.payload[-3:], b"\x02\xaa\xbb")
 
+    def test_extended_share_extranonce_is_binary_b0_32(self):
+        for nonce in (b"", b"\x00" * 4, bytes(range(32))):
+            frame = submit_shares_extended(7, 3, 11, 1, 2, 3, nonce)
+            self.assertEqual(frame.payload[24:], bytes((len(nonce),)) + nonce)
+        with self.assertRaises(Sv2ProtocolError):
+            submit_shares_extended(7, 3, 11, 1, 2, 3, bytes(33))
+
+    def test_secure_setup_timeout_closes_owned_channel(self):
+        async def run():
+            channel = BlockingSecureChannel()
+            client = ProductionStratumV2Client(
+                PoolEndpoint("pool.example", 34254, "timeout-test", protocol="v2"),
+                username="worker-1", password="x",
+                channel_factory=lambda **kwargs: channel, request_timeout=0.02,
+            )
+            with self.assertRaises(asyncio.TimeoutError):
+                await client.connect()
+            self.assertTrue(channel.closed)
+            self.assertFalse(client.connected)
+        asyncio.run(run())
+
     def test_production_endpoint_parser_marks_sv2_without_tls_downgrade(self):
         endpoint = parse_endpoint("stratum+v2://pool.example:34254", "sv2")
         self.assertEqual(endpoint.protocol, "v2")
@@ -425,7 +446,13 @@ class TestStratumV2(unittest.TestCase):
                     ["worker-1", "12", "00000000", "00000064", "00000009"]
                 )
             )
+            deadline = asyncio.get_running_loop().time() + 2.0
             while client.wire_writes_for("mining.submit") == 0:
+                if submit_task.done():
+                    await submit_task  # surface pre-write errors, never wait forever
+                if asyncio.get_running_loop().time() >= deadline:
+                    submit_task.cancel()
+                    self.fail("SV2 share never reached the secure channel")
                 await asyncio.sleep(0.001)
             success_payload = (
                 (77).to_bytes(4, "little")

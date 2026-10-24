@@ -74,6 +74,113 @@ class EnterprisePlane(ControlPlane):
         if enforce_membership:
             self.customer_authority = MembershipAuthority(self.customer_authority, self)
 
+    def activation_status(self, token, actor, *, tenant, project, job=None):
+        """Authorized point-in-time first-outcome view; never provisions or executes.
+
+        Completion facts are service envelope acceptance, not independent proof of
+        mathematics, customer acceptance, business value or deployment readiness.
+        This uses the same tenant/project/membership boundary as ordinary work.
+        """
+        self._authorize(token, actor, tenant, "turing.customer.read")
+        text(project)
+        if job is not None:
+            text(job)
+        with self._transaction():
+            now = self.clock()
+            c = self._customer(tenant)
+            p = self._project_access(tenant, actor, project)
+            self.require_member(tenant, actor, "turing.jobs.submit")
+            rows = self.db.execute(
+                "SELECT state,COUNT(*) AS n FROM jobs WHERE tenant=? AND contract=? GROUP BY state",
+                (tenant, c["contract"]),
+            ).fetchall()
+            customer_counts = {r["state"]: r["n"] for r in rows}
+            rows = self.db.execute(
+                "SELECT j.state,COUNT(*) AS n FROM jobs j JOIN job_projects p USING(tenant,job) "
+                "WHERE j.tenant=? AND p.project=? AND j.contract=? GROUP BY j.state",
+                (tenant, project, c["contract"]),
+            ).fetchall()
+            project_counts = {r["state"]: r["n"] for r in rows}
+            blockers = []
+            if c["state"] != "active":
+                blockers.append("contract_not_active")
+            if not c["starts"] <= now < c["expires"]:
+                blockers.append("outside_contract_window")
+            for scope, counts, slots, allowance in (
+                ("customer", customer_counts, c["allocated"], c["allowance"]),
+                ("project", project_counts, p["slots"], p["allowance"]),
+            ):
+                busy = sum(counts.get(s, 0) for s in ("admitted", "running", "unknown"))
+                if slots <= busy:
+                    blockers.append(scope + "_capacity_exhausted")
+                if busy + counts.get("completed", 0) >= allowance:
+                    blockers.append(scope + "_allowance_exhausted")
+            if self.require_spend:
+                # A read must not invent or acquire financial authorization.
+                blockers.append("per_job_spend_authorization_required")
+            outcome = None
+            if job is not None:
+                binding = self.db.execute(
+                    "SELECT project FROM job_projects WHERE tenant=? AND job=?", (tenant, job)
+                ).fetchone()
+                row = self._job(tenant, job)
+                if not binding or binding["project"] != project or row["contract"] != c["contract"]:
+                    raise Denied("job unavailable in current project and contract")
+                outcome = dict(job=job, state=row["state"], completion_fact=None)
+                if row["state"] == "completed":
+                    usage = self.db.execute(
+                        "SELECT payload FROM usage WHERE tenant=? AND job=?", (tenant, job)
+                    ).fetchone()
+                    if usage is None or row["report"] is None:
+                        raise Conflict("completed job has no retained completion evidence")
+                    fact = json.loads(usage["payload"])
+                    report = json.loads(row["report"])
+                    if (
+                        fact.get("tenant") != tenant
+                        or fact.get("job") != job
+                        or fact.get("contract") != c["contract"]
+                        or fact.get("report_digest") != digest(report)
+                    ):
+                        raise Conflict("completion evidence identity mismatch")
+                    outcome["completion_fact"] = dict(
+                        event_id=fact["event_id"],
+                        report_digest=fact["report_digest"],
+                        program_digest=fact["program_digest"],
+                        recorded_at=fact["occurred_at"],
+                        recovered=fact.get("recovered", False),
+                        evidence_class="service_accepted_runtime_envelope",
+                    )
+            state = "blocked" if blockers else "ready_to_submit"
+            if outcome is not None:
+                state = {
+                    "admitted": "queued",
+                    "running": "executing",
+                    "unknown": "reconciliation_required",
+                    "failed": "execution_failed",
+                    "cancelled": "cancelled",
+                    "completed": "result_available",
+                }[outcome["state"]]
+            snapshot = dict(
+                schema="turing.activation-status.v1",
+                tenant=tenant,
+                project=project,
+                contract=c["contract"],
+                observed_at=now,
+                state=state,
+                ready_to_submit=not blockers,
+                blockers=blockers,
+                outcome=outcome,
+                runtime_health="not_probed",
+                signature_status="not_assessed",
+                customer_acceptance="not_recorded",
+                business_value="not_established",
+                deployment_qualification="not_assessed",
+                billing_scope="deferred",
+            )
+            # Content identity only: not a signature, policy grant or capacity lease.
+            snapshot["snapshot_digest"] = digest(snapshot)
+            return snapshot
+
     def require_member(self, tenant, actor, capability="turing.customer.read"):
         row = self.db.execute(
             "SELECT role,active FROM members WHERE tenant=? AND actor=?", (tenant, actor)
@@ -104,6 +211,7 @@ class EnterprisePlane(ControlPlane):
             "cancel_request",
             "policy_cancel_before_dispatch",
             "fail",
+            "recover_fail",
             "resolve_without_billing",
         } and detail.get("job"):
             row = self.db.execute(

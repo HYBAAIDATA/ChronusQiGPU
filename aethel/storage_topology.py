@@ -20,6 +20,7 @@ import tempfile
 import threading
 import time
 from collections import OrderedDict
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
@@ -432,12 +433,79 @@ class TheseusPhysicalStore:
                 return data
         raise StorageTopologyError("no verified primary or replica for THESEUS address")
 
+    @staticmethod
+    def _journal_signature(path: Path) -> tuple[Any, ...] | None:
+        try:
+            stat = path.stat()
+        except FileNotFoundError:
+            return None
+        content_hash = None
+        if os.name == "nt":
+            try:
+                with open(os.fspath(path), "rb") as stream:
+                    content_hash = hashlib.sha256(stream.read()).digest()
+            except OSError:
+                pass
+        return (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns, content_hash)
+
+    @contextmanager
+    def verification_batch(self, tenant_id: str):
+        """One journal scan per reconciliation, never a cross-pass trust cache.
+
+        Every object still verifies both physical replicas and its mathematical
+        address. A journal replacement, append, truncation or edit invalidates
+        the snapshot; no successful batch may outlive a changed journal.
+        """
+        path = self.journal_path(tenant_id)
+        signature = self._journal_signature(path)
+        committed: set[str] = set()
+        if signature is not None:
+            try:
+                with path.open("r", encoding="utf-8") as handle:
+                    for line in handle:
+                        row = json.loads(line)
+                        if not isinstance(row, dict):
+                            raise StorageTopologyError("THESEUS address journal row is not an object")
+                        if row.get("state") == "COMMITTED":
+                            if row.get("tenant_id") != tenant_id:
+                                raise StorageTopologyError("cross-tenant address found in journal")
+                            address_id = row.get("address_id")
+                            if not isinstance(address_id, str) or not address_id:
+                                raise StorageTopologyError("THESEUS committed journal row lacks address")
+                            committed.add(address_id)
+            except (OSError, ValueError) as exc:
+                raise StorageTopologyError("THESEUS address journal failed batch replay") from exc
+
+        active = True
+
+        def unchanged() -> None:
+            if self._journal_signature(path) != signature:
+                raise StorageTopologyError("THESEUS address journal changed during verification batch")
+
+        def verify(address: TheseusStorageAddress, payload: bytes | None = None) -> bool:
+            if not active:
+                raise StorageTopologyError("THESEUS verification batch is closed")
+            unchanged()
+            if address.tenant_id != tenant_id or address.address_id not in committed:
+                return False
+            return self._verify_physical(address, payload)
+
+        unchanged()
+        try:
+            yield verify
+            unchanged()
+        finally:
+            active = False
+
     def verify(self, address: TheseusStorageAddress, payload: bytes | None = None) -> bool:
+        if not self._journal_contains(self.journal_path(address.tenant_id), address.address_id):
+            return False
+        return self._verify_physical(address, payload)
+
+    def _verify_physical(self, address: TheseusStorageAddress, payload: bytes | None = None) -> bool:
         primary = self.primary_path(address)
         replica = self.replica_path(address)
         if payload is not None and not verify_storage_address(address, bytes(payload)):
-            return False
-        if not self._journal_contains(self.journal_path(address.tenant_id), address.address_id):
             return False
         if not primary.is_file() or not replica.is_file():
             return False

@@ -33,6 +33,7 @@ permissions:
 jobs:
   verify-wheel:
     name: Build + installed verification / Python ${{ matrix.python }}
+    timeout-minutes: 45
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -45,17 +46,16 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Build TOE (+ exact KELLOGG 1.0.0) and verify from clean installs
         run: python packaging/toe/build_and_verify.py
-      - name: Retain interpreter evidence
-        uses: actions/upload-artifact@v7
+      - name: Retain qualification evidence, including failed attempts
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: toe-evidence-${{ matrix.python }}
-          path: |
-            packaging/toe/dist/artifact-verdict.json
-            packaging/toe/dist/wheel-manifest.json
+          path: packaging/toe/dist/
           if-no-files-found: error
       - name: Retain the canonical release archives (built once, on 3.12)
         if: matrix.python == '3.12'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: toe-dist
           path: |
@@ -74,7 +74,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install test dependencies
-        run: python -m pip install --disable-pip-version-check "numpy>=1.26,<3" "pytest>=7.4,<10" "sympy"
+        run: python -m pip install --disable-pip-version-check "numpy>=1.26,<3" "pytest>=7.4,<10" "sympy" "PyYAML>=6,<7"
       - name: TOE + EUCLID integration suites
         env:
           PYTHONPATH: .
@@ -83,6 +83,7 @@ jobs:
           tests/test_toe_machine.py tests/test_toe_cross_domain.py tests/test_toe_geometry.py
           tests/test_toe_learning_persistence.py tests/test_toe_runtime_solve.py tests/test_toe_runtime.py
           tests/test_toe_ciaas_api.py tests/test_euclid_toe_capabilities.py
+          tests/test_toe_package_qualification.py
 
   mining-integration:
     name: PYTHIA mining voyage against the INSTALLED TOE wheel
@@ -111,7 +112,7 @@ jobs:
           assert r["execution"]["candidates_found_by_check_pow"] == r["execution"]["candidates_rechecked_valid"]
           print(json.dumps(r["decision_effect"], indent=2))
           PY
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: toe-mining-voyage
           path: mining-voyage.json
@@ -168,7 +169,7 @@ jobs:
               "distribution": name,
               "distribution_name_status": artifact["distribution_name_status"],
               "version": version,
-              "repository": "QuantumPhiRedux/PhiMiner",
+              "repository": "PhiEnterprise1/EuclidPhiEnterprise",
               "git_sha": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
               "wheel": artifact["wheel"],
               "sdist": artifact["sdist"],
@@ -185,7 +186,7 @@ jobs:
           }
           Path("verified-dist/release-verdict.json").write_text(json.dumps(verdict, indent=2, sort_keys=True))
           print(json.dumps(verdict, indent=2, sort_keys=True))
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: toe-verified-release
           path: verified-dist/*
@@ -356,7 +357,7 @@ jobs:
           gh release create toe-intelligence-v1.0.0 --target "$(git rev-parse HEAD)" \
             --title "hyba-toe-intelligence 1.0.0" --notes-file release-notes.md \
             release/*.whl release/*.tar.gz publication.json
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: toe-final-publication
           path: publication.json

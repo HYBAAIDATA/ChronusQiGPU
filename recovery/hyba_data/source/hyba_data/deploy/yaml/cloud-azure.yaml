@@ -1,0 +1,97 @@
+# HYBA_DATA — Azure Cloud Deployment
+# McKinsey-grade configuration for Azure hosted environments.
+
+deployment:
+  name: hyba-data-azure
+  environment: production
+  classification: confidential
+  network_mode: vnet-isolated
+
+infrastructure:
+  provider: azure
+  region: uksouth
+  availability_zones: [1, 2, 3]
+  vm_size: Standard_D32s_v5
+  gpu_vm_size: Standard_NC96ads_A100_v4
+  vmss:
+    min_size: 3
+    max_size: 12
+    target_cpu: 70
+  storage:
+    disk_type: PremiumSSD
+    disk_iops: 16000
+    encryption: azure-disk-encryption
+    key_vault: hyba-data-kv
+  network:
+    vnet_cidr: 10.60.0.0/16
+    private_subnets: true
+    nsg_rules:
+      - name: hyba-api
+        destination_port: 443
+        source: 10.60.0.0/16
+      - name: hyba-internal
+        destination_port: 9090
+        source: 10.60.0.0/16
+
+engine:
+  manifold: M32
+  search_space: 32-bit
+  workers: auto
+  cache_size: 150000
+  precision: float64
+  gpu_acceleration: true
+  checkpoint_interval: 500
+  blob_mount: /mnt/hyba/checkpoints
+
+security:
+  abac:
+    enabled: true
+    default_deny: true
+    policy_file: https://hybakv.vault.azure.net/secrets/abac-policy
+  tls:
+    enabled: true
+    cert_source: azure-key-vault
+    min_version: TLSv1.3
+  data_residency:
+    region: uksouth
+    egress_blocked: false
+    allowed_egress: [blob.core.windows.net]
+  audit:
+    enabled: true
+    destination: azure-monitor
+    retention_days: 365
+  identity:
+    type: managed-identity
+    role: HYBA-Data-Operator
+  secrets:
+    backend: azure-key-vault
+
+finops:
+  cost_tracking: true
+  flop_metering: true
+  chargeback_model: tag-based
+  cost_allocation_tags: [Project, Environment, Owner]
+  budget_alerts:
+    threshold_pct: 80
+    notification: event-grid
+  spot_instances:
+    enabled: true
+    eviction_policy: delete
+  reserved_instances: 3-year
+
+mlops:
+  drift_monitoring: true
+  calibration_interval: 1000
+  zero_downtime_reindex: true
+  canary_pct: 10
+  model_registry: azureml://workspaces/hyba-data
+
+compliance:
+  framework: ISO-27001
+  data_classification: confidential
+  encryption_at_rest: azure-disk-encryption
+  encryption_in_transit: tls-1.3
+  backup: azure-backup-vault
+  dr_strategy: pilot-light
+  rto: 14400
+  rpo: 300

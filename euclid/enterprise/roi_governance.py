@@ -67,3 +67,16 @@ class EnterpriseROIGovernanceEngine:
     @classmethod
     def calculate_technical_debt_reduction(cls, **kwargs) -> Dict[str, Any]:
         return cls.calculate_governance_report(**kwargs)
+
+    @classmethod
+    def get_Governance_Summary(cls, **kwargs) -> Dict[str, Any]:
+        return cls.calculate_governance_report(
+            total_evaluations=kwargs.get("total_evaluations", 1),
+            valid_evaluations=kwargs.get("valid_evaluations", 1),
+            initial_phi=kwargs.get("initial_phi", 0.5),
+            final_phi=kwargs.get("final_phi", 1.0),
+            wall_time_ms=kwargs.get("wall_time_ms", 10.0),
+        )
+
+    def get_governance_summary(self, **kwargs) -> Dict[str, Any]:
+        return self.get_Governance_Summary(**kwargs)

@@ -16,9 +16,7 @@ from __future__ import annotations
 import hashlib
 import os
 import struct
-import sys
 from dataclasses import asdict, dataclass, field
-from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 import numpy as np
@@ -35,12 +33,8 @@ from toe.poincare_golden_11d import (
 from .search_crystal import UINT32_SPACE, cassini_permutation, partition_interval
 
 
-_PYTHON_ROOT = Path(__file__).resolve().parents[1] / "mla1517_platform_v3.4" / "python"
-if str(_PYTHON_ROOT) not in sys.path:
-    sys.path.insert(0, str(_PYTHON_ROOT))
-
-from mla1517.mining.opencl_driver import OpenCLDriver, OpenCLExecutionResult
-from mla1517.mining.pow import check_pow, sha256d
+from chronus.mla1517.mining.opencl_driver import OpenCLDriver, OpenCLExecutionResult
+from chronus.mla1517.mining.pow import check_pow, sha256d
 
 DEVICE_ID = "unified_hyba_manifold_device"
 CLAIM_BOUNDARY = (

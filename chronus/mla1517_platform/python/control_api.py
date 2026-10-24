@@ -4,9 +4,7 @@
 from __future__ import annotations
 
 import argparse
-import argparse
 import base64
-import hashlib
 import hashlib
 import hmac
 import json
@@ -52,6 +50,9 @@ for _p in (str(_PLATFORM_DIR), str(_REPO_ROOT), str(_CHRONOS_IGPU), str(_PYTHIA_
         sys.path.insert(0, _p)
 
 import runtime_config
+from enterprise_contract import envelope as enterprise_envelope, qualify_status
+from enterprise_api import (CanonicalBackend, EnterpriseService, GET_PATHS as ENTERPRISE_GET_PATHS,
+                            POST_PATHS as ENTERPRISE_POST_PATHS)
 import system_fabric
 import autonomous_supervisor
 import failure_taxonomy
@@ -139,6 +140,20 @@ _AUDIT: AppendOnlyAudit | None = None
 _BOOT_LOCK: BootLock | None = None
 _CONTROL: "ControlPlane" | None = None
 _CONTROL_GUARD = threading.Lock()
+_ENTERPRISE: EnterpriseService | None = None
+_ENTERPRISE_GUARD = threading.Lock()
+
+
+def _enterprise_service() -> EnterpriseService:
+    global _ENTERPRISE
+    with _ENTERPRISE_GUARD:
+        if _ENTERPRISE is None:
+            _ENTERPRISE = EnterpriseService(
+                CanonicalBackend(sys.modules[__name__]),
+                Path(os.getenv("HYBA_ENTERPRISE_STATE", str(_REPO_ROOT / "data" / "enterprise"))),
+                _REPO_ROOT / "evidence",
+            )
+        return _ENTERPRISE
 
 
 class _RequestStats:
@@ -331,7 +346,7 @@ def _idempotency_key(headers: Any) -> str:
 
 _PY_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _PY_DIR.parent.parent.parent
-_REPO_ROOT = _PROJECT_ROOT.parent
+_REPO_ROOT = _PROJECT_ROOT
 
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -634,7 +649,7 @@ class ControlPlane:
         self.stop_event = threading.Event()
         self.lock = threading.RLock()
         self.executor = get_pythia_executor()
-        self.autostart = _is_truthy(os.getenv("PYTHIA_AUTOSTART_WORKERS"), default=True)
+        self.autostart = False  # Only the dual-authorized start route may arm workers.
         self.mmio_device = os.getenv("MLA1517_MMIO_DEVICE", "").strip()
         self.execution_device = _execution_device_env()
         self.audit.append(
@@ -1215,6 +1230,22 @@ def _m3_dependency_reason() -> tuple[bool, str]:
     return True, "ok"
 
 
+def _readiness_qualification(scope: str) -> dict[str, Any]:
+    """Disclose probe scope without claiming an end-to-end release verdict.
+
+    Non-strict shadow runs deliberately omit submission dependencies. Their
+    successful probe must not be mistaken for production authorization.
+    Even a strict probe is not a Docker, hardware, or pool-acceptance test.
+    """
+    strict = _is_truthy(os.getenv("PYTHIA_M3_REQUIRED"))
+    return {
+        "scope": scope,
+        "governance_mode": "strict" if strict else "non_strict",
+        "submission_dependencies_required": strict,
+        "production_qualification": "not_established_by_this_probe",
+    }
+
+
 def _ready_to_mine_reason(
     records: list[WorkerRecord],
     stratum: dict[str, Any],
@@ -1322,6 +1353,13 @@ def authenticate_control_principal(
     headers: Any,
 ) -> tuple[ControlPrincipal | None, tuple[HTTPStatus, str] | None]:
     """Authenticate a server-mapped operator or the legacy admin-key identity."""
+    if "__Host-hyba_session=" in str(headers.get("Cookie", "")):
+        from enterprise_contract import Refusal, ROLES
+        try:
+            name, role = _enterprise_service().security().principal(headers, ROLES)
+            return ControlPrincipal(name, "ceo" if role == "founder_ceo" else "operator", "http_only_session"), None
+        except Refusal as exc:
+            return None, (HTTPStatus(exc.status), exc.reason)
     principals, mapping_error = _operator_principals()
     if mapping_error:
         return None, (HTTPStatus.SERVICE_UNAVAILABLE, mapping_error)
@@ -1391,6 +1429,7 @@ def console_read_authorization(path: str, headers: Any) -> tuple[HTTPStatus, str
         # Do not replace the guardian bearer: it independently grants (or
         # refuses) the subscription operation after this control-role check.
         control_headers = {
+            "Cookie": str(headers.get("Cookie", "")),
             "Authorization": str(headers.get("X-PYTHIA-Control-Authorization", "")),
             OPERATOR_PRINCIPAL_HEADER: str(headers.get(OPERATOR_PRINCIPAL_HEADER, "")),
         }
@@ -1477,6 +1516,7 @@ def console_sources_payload() -> dict[str, Any]:
         "audit": lambda: audit_tail_payload(30),
         "intelligence": system_fabric.intelligence_status,
         "cognition": system_fabric.euclid_cognition_status,
+        "collaborative_automation": collaborative_automation_status_payload,
     }
     result: dict[str, Any] = {"unavailable": {}}
     for key, producer in producers.items():
@@ -1491,7 +1531,7 @@ def console_sources_payload() -> dict[str, Any]:
     return result
 
 
-def status_payload() -> dict[str, Any]:
+def _observed_status_payload() -> dict[str, Any]:
     """Public status contract for the canonical operator UI."""
     control = _control_plane()
     records = control.records()
@@ -1554,10 +1594,12 @@ def status_payload() -> dict[str, Any]:
             "execution_boundary": "canonical_python_control_api",
         },
         "gpu": gpu,
+        "execution_receipt": mining_evidence_payload(),
         "workers": worker_map,
         "stratum": stratum,
         "identity": _identity_payload(),
         "ready_to_mine": {
+            **_readiness_qualification("mining_runtime"),
             "ready": ready,
             "reason": reason,
             "details": {
@@ -1567,6 +1609,10 @@ def status_payload() -> dict[str, Any]:
             },
         },
     }
+
+
+def status_payload() -> dict[str, Any]:
+    return qualify_status(_observed_status_payload())
 
 
 def _worker_live(records: list[WorkerRecord], worker_id: str = "agentic-mining") -> bool:
@@ -2328,7 +2374,7 @@ def metrics_payload() -> str:
 # endpoint reports the gate instead of fabricating a result.
 # ---------------------------------------------------------------------------
 
-_CONFIG_SECTIONS = {"pools", "solvers", "hashrate", "live_submit", "window", "campaign"}
+_CONFIG_SECTIONS = {"pools", "solvers", "hashrate", "live_submit", "window", "campaign", "execution", "intelligence"}
 
 
 def _desired_arms() -> int:
@@ -2359,7 +2405,7 @@ def _config_public_payload() -> dict[str, Any]:
     return view
 
 
-def _config_merge_sections(body: dict[str, Any]) -> dict[str, Any]:
+def _config_merge_sections(body: dict[str, Any], *, dual_authority: bool = False) -> dict[str, Any]:
     """Overlay the PUT sections onto the stored config.
 
     Pool rows may omit ``password`` — the stored secret is re-merged by
@@ -2382,11 +2428,12 @@ def _config_merge_sections(body: dict[str, Any]) -> dict[str, Any]:
                 entry["password"] = stored.get(f"{entry.get('endpoint')}|{entry.get('worker')}", "")
             merged_pools.append(entry)
         cfg["pools"] = merged_pools
-    for key in ("solvers", "hashrate"):
+    for key in ("solvers", "hashrate", "execution", "intelligence"):
         if key in body:
             section = dict(cfg.get(key) or {})
-            if isinstance(body[key], dict):
-                section.update(body[key])
+            if not isinstance(body[key], dict):
+                raise ValueError(f"{key} must be an object")
+            section.update(body[key])
             cfg[key] = section
     if "window" in body:
         cfg["window"] = body["window"]
@@ -2397,6 +2444,8 @@ def _config_merge_sections(body: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(req, dict) or not isinstance(req.get("enabled"), bool):
             raise ValueError("live_submit.enabled must be an explicit JSON boolean")
         enabled = req["enabled"]
+        if enabled and not dual_authority:
+            raise ValueError("DUAL_AUTHORITY_REQUIRED: use the governed mining/start route")
         if enabled and not _is_truthy(os.getenv("PYTHIA_M3_REQUIRED")):
             raise ValueError(
                 "live submission requires PYTHIA_M3_REQUIRED=1 "
@@ -2419,7 +2468,8 @@ def _config_merge_sections(body: dict[str, Any]) -> dict[str, Any]:
                     enabled_pool["endpoint"], enabled_pool["worker"]
                 )
         cfg["live_submit"] = {"enabled": enabled, "approval_id": approval}
-    elif pools_written:
+    elif body:
+        # Any changed execution/config input invalidates the consumed approval.
         cfg["live_submit"] = {"enabled": False, "approval_id": ""}
     return cfg
 
@@ -2439,7 +2489,7 @@ def _apply_runtime_config(cfg: dict[str, Any]) -> dict[str, Any]:
     return applied
 
 
-def _config_put(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
+def _config_put(body: dict[str, Any], *, dual_authority: bool = False) -> tuple[HTTPStatus, dict[str, Any]]:
     unknown = sorted(set(body) - _CONFIG_SECTIONS)
     if unknown:
         return HTTPStatus.BAD_REQUEST, {
@@ -2447,7 +2497,7 @@ def _config_put(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
             "error": f"unknown config sections: {', '.join(unknown)}",
         }
     try:
-        merged = _config_merge_sections(body)
+        merged = _config_merge_sections(body, dual_authority=dual_authority)
         saved = runtime_config.save(merged)
     except ValueError as exc:
         return HTTPStatus.BAD_REQUEST, {"error": str(exc)}
@@ -2732,6 +2782,118 @@ def _salamander_fault(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]
     return HTTPStatus.OK, {"ok": True, "recorded": True}
 
 
+_COLLAB_ENGINE_GUARD = threading.Lock()
+_COLLAB_ENGINE: Any = None
+
+
+def _collaborative_engine() -> Any:
+    global _COLLAB_ENGINE
+    with _COLLAB_ENGINE_GUARD:
+        if _COLLAB_ENGINE is None:
+            from salamander.collaborative_automation import CollaborativeAutomationEngine
+
+            _COLLAB_ENGINE = CollaborativeAutomationEngine()
+        return _COLLAB_ENGINE
+
+
+def collaborative_automation_status_payload() -> dict[str, Any]:
+    """GET /api/v1/automation/collaborative/status — Single Pane of Glass dashboard."""
+    from tools.collaborative_automation import full_runbook_catalogue
+
+    engine = _collaborative_engine()
+    all_runbooks = full_runbook_catalogue()
+    dashboard = engine.single_pane_dashboard(all_runbooks.values())
+    return {
+        **dashboard,
+        "generated_at": now_iso(),
+    }
+
+
+def collaborative_runbooks_payload() -> dict[str, Any]:
+    """GET /api/v1/automation/runbooks — Unified Collaborative Automation runbook catalogue."""
+    from tools.collaborative_automation import catalogue_payload
+
+    return {
+        **catalogue_payload(),
+        "generated_at": now_iso(),
+    }
+
+
+def _collaborative_human_decision(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
+    """POST /api/v1/automation/collaborative/decision — Record human-in-the-loop judgment."""
+    from salamander.collaborative_automation import HumanDecision, TeamRole
+
+    runbook_id = str(body.get("runbook_id") or "").strip()
+    step_id = str(body.get("step_id") or "").strip()
+    actor_id = str(body.get("actor_id") or "").strip()
+    rationale = str(body.get("rationale") or "").strip()
+    role_raw = str(body.get("team_role") or "sre").strip().lower()
+    approved = body.get("approved")
+    if not isinstance(approved, bool):
+        raise ValueError("approved must be an explicit boolean")
+    try:
+        role = TeamRole(role_raw)
+    except ValueError as exc:
+        raise ValueError(f"unsupported team_role: {role_raw!r}") from exc
+    decision = HumanDecision(
+        decision_id=str(body.get("decision_id") or f"dec:{runbook_id}:{step_id}:{int(time.time_ns())}"),
+        runbook_id=runbook_id,
+        step_id=step_id,
+        actor_id=actor_id,
+        team_role=role,
+        approved=approved,
+        rationale=rationale,
+        at_ns=int(time.time_ns()),
+        scope_revision_approved=bool(body.get("scope_revision_approved", False)),
+    )
+    seal = _collaborative_engine().record_human_decision(decision)
+    _audit().append(
+        "collaborative_human_decision",
+        runbook_id=runbook_id,
+        step_id=step_id,
+        actor_id=actor_id,
+        team_role=role.value,
+        approved=approved,
+        audit_sha256=seal,
+    )
+    return HTTPStatus.OK, {
+        "ok": True,
+        "decision": decision.to_dict(),
+        "audit_sha256": seal,
+    }
+
+
+def _collaborative_runbook_execute(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
+    """POST /api/v1/automation/collaborative/run — Execute a collaborative runbook."""
+    from tools.collaborative_automation import full_runbook_catalogue
+
+    runbook_id = str(body.get("runbook_id") or "").strip()
+    if not runbook_id:
+        raise ValueError("runbook_id is required")
+    all_runbooks = full_runbook_catalogue()
+    runbook = all_runbooks.get(runbook_id)
+    if runbook is None:
+        return HTTPStatus.NOT_FOUND, {
+            "ok": False,
+            "failure_class": "NOT_CONFIGURED",
+            "error": f"runbook {runbook_id!r} is not registered",
+            "available_runbooks": sorted(all_runbooks),
+        }
+    report = _collaborative_engine().execute_runbook(
+        runbook,
+        context=body.get("context") if isinstance(body.get("context"), dict) else None,
+        available_operators=int(body.get("available_operators", 2)),
+        action_budget_remaining=int(body.get("action_budget_remaining", 32)),
+    )
+    _audit().append(
+        "collaborative_runbook_executed",
+        runbook_id=runbook_id,
+        status=report.status.value,
+        audit_head_sha256=report.audit_head_sha256,
+    )
+    return HTTPStatus.OK, {"ok": True, **report.to_dict()}
+
+
 _TENSOR_RUNTIME_GUARD = threading.Lock()
 _TENSOR_RUNTIME: Any = None
 
@@ -2944,6 +3106,21 @@ class _Handler(BaseHTTPRequestHandler):
     def _guarded(self, route: Any) -> None:
         """A failing route answers 500 JSON instead of dropping the connection."""
         try:
+            if self.command in {"POST", "PUT", "PATCH", "DELETE"}:
+                try:
+                    _enterprise_service().security().audit.records()
+                    if "__Host-hyba_session=" in str(self.headers.get("Cookie", "")):
+                        _enterprise_service().security().origin(self.headers)
+                except Exception as exc:
+                    self._discard_request_body()
+                    from enterprise_contract import Refusal
+                    if isinstance(exc, Refusal) and exc.reason == "ORIGIN_REQUIRED":
+                        self._json(HTTPStatus.FORBIDDEN, {"error": exc.reason})
+                        return
+                    self._json(HTTPStatus.SERVICE_UNAVAILABLE,
+                               {"error": "AUDIT_UNAVAILABLE", "audit_hash": None,
+                                "audit_status": "UNAVAILABLE"})
+                    return
             route()
         except (BrokenPipeError, ConnectionResetError):
             self.close_connection = True
@@ -2958,7 +3135,38 @@ class _Handler(BaseHTTPRequestHandler):
             except Exception:
                 self.close_connection = True
 
+    def _enterprise_route(self, method: str) -> bool:
+        path = urlparse(self.path).path
+        known = path in (ENTERPRISE_GET_PATHS if method == "GET" else ENTERPRISE_POST_PATHS)
+        if not known and not path.startswith(("/api/treasury/", "/api/beta/")):
+            return False
+        if method == "POST":
+            body, error = self._read_json_body()
+            if body is None:
+                self._json(HTTPStatus.REQUEST_ENTITY_TOO_LARGE if error == "body_too_large"
+                           else HTTPStatus.BAD_REQUEST, {"error": error})
+                return True
+        else:
+            body = {}
+        result = _enterprise_service().dispatch(
+            method, path, self.headers, body,
+            remote=self.client_address[0], guard=self._guardian_preflight,
+        )
+        if result is None:
+            return True  # The canonical guardian has already answered its own refusal.
+        self._enterprise_headers = result.headers
+        try:
+            if result.binary:
+                self._send(result.status, "application/zip", result.payload)
+            else:
+                self._json(HTTPStatus(result.status), result.payload)
+        finally:
+            self._enterprise_headers = {}
+        return True
+
     def _route_get(self) -> None:
+        if self._enterprise_route("GET"):
+            return
         parsed = urlparse(self.path)
         path = parsed.path
         refusal = console_read_authorization(path, self.headers)
@@ -2975,6 +3183,9 @@ class _Handler(BaseHTTPRequestHandler):
                 {
                     "schema_version": _SCHEMA_VERSION,
                     "status": "ok",
+                    "claim_boundary": _enterprise_service().elevation.get()["document"].get("claim_boundary"),
+                    "heuristics": _enterprise_service().elevation.get()["document"].get("heuristics", {}),
+                    "yield_proof": "NOT_RUN",
                     "generated_at": now_iso(),
                 },
             )
@@ -2992,6 +3203,7 @@ class _Handler(BaseHTTPRequestHandler):
                 HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE,
                 {
                     "schema_version": _READY_SCHEMA_VERSION,
+                    **_readiness_qualification("control_plane"),
                     "ready": ready,
                     "reason": reason,
                     "components": _readiness_components(),
@@ -3140,6 +3352,12 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/v1/tensor/capabilities":
             self._json(HTTPStatus.OK, tensor_capabilities_payload())
             return
+        if path == "/api/v1/automation/collaborative/status":
+            self._json(HTTPStatus.OK, collaborative_automation_status_payload())
+            return
+        if path == "/api/v1/automation/runbooks":
+            self._json(HTTPStatus.OK, collaborative_runbooks_payload())
+            return
         if path == "/api/v1/security/subscribe":
             code, security = security_status_payload()
             if code != HTTPStatus.OK:
@@ -3193,6 +3411,8 @@ class _Handler(BaseHTTPRequestHandler):
         "/api/v1/mining/elevate": _mining_elevate,
         "/api/v1/mining/escalate": _mining_escalate,
         "/api/v1/salamander/fault": _salamander_fault,
+        "/api/v1/automation/collaborative/decision": _collaborative_human_decision,
+        "/api/v1/automation/collaborative/run": _collaborative_runbook_execute,
         "/api/v1/tensor/execute": _tensor_execute,
     }
 
@@ -3251,6 +3471,8 @@ class _Handler(BaseHTTPRequestHandler):
         return body, None
 
     def _route_post(self) -> None:
+        if self._enterprise_route("POST"):
+            return
         parsed = urlparse(self.path)
         if parsed.path == "/api/v1/security/evaluate":
             body, err = self._read_json_body()
@@ -3421,6 +3643,9 @@ class _Handler(BaseHTTPRequestHandler):
         self._json(status, payload)
 
     def do_PUT(self) -> None:  # noqa: N802
+        self._guarded(self._route_put)
+
+    def _route_put(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path != "/api/v1/config":
             self._json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
@@ -3716,6 +3941,8 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("X-Correlation-Id", envelope["correlation_id"])
         if envelope["causation_id"]:
             self.send_header("X-Causation-Id", envelope["causation_id"])
+        for name, value in getattr(self, "_enterprise_headers", {}).items():
+            self.send_header(name, value)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", cache_control)
@@ -3737,6 +3964,17 @@ class _Handler(BaseHTTPRequestHandler):
         # Constitution §9: every error body carries a machine-readable
         # failure_class, even forwarded guardian receipts that lack one.
         payload = failure_taxonomy.ensure_failure_class(status, payload)
+        payload = enterprise_envelope(payload, urlparse(self.path).path, int(status))
+        if self.command in {"POST", "PUT", "PATCH", "DELETE"} and "audit_hash" not in payload:
+            try:
+                payload["audit_hash"] = _enterprise_service().security().audit.append(
+                    "HTTP_MUTATION_RECEIPT", path=urlparse(self.path).path,
+                    status=int(status), response_digest=hashlib.sha256(
+                        json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest(),
+                )
+            except Exception:
+                payload["audit_hash"] = None
+                payload["audit_status"] = "UNAVAILABLE"
         _REQUEST_STATS.record(int(status), payload)
         body = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
         self._send(int(status), "application/json; charset=utf-8", body)
@@ -3939,6 +4177,7 @@ def serve(
     web_root: str | Path = "dist/public",
 ) -> None:
     _control_plane()
+    _enterprise_service().boot()
     start_repo_engineer()
     announce_skills()
     if system_fabric.startup_self_repair_enabled():
@@ -3974,6 +4213,7 @@ def serve(
     try:
         server.serve_forever()
     finally:
+        _enterprise_service().close()
         retract_active_port()
         if _CONTROL is not None:
             _CONTROL.shutdown()

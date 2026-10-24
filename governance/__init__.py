@@ -201,3 +201,21 @@ __all__ = [
 
 
 
+
+from .agent_governance import (
+    DemocratizedSecurityAppliance,
+    DemocratizedSuperintelligenceEngine,
+    InfrastructureBetAndCommunityGovernor,
+    RevenueAlignedWorkflowEngine,
+    UniversalAdvisorArchetype,
+    WorkflowCategory,
+)
+
+__all__.extend([
+    "DemocratizedSecurityAppliance",
+    "DemocratizedSuperintelligenceEngine",
+    "InfrastructureBetAndCommunityGovernor",
+    "RevenueAlignedWorkflowEngine",
+    "UniversalAdvisorArchetype",
+    "WorkflowCategory",
+])

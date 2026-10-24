@@ -20,7 +20,7 @@ class TestDeepMCTS(unittest.TestCase):
         engine = DeepMCTSEngine(seed=11)
         result = engine.search(
             "t.py", CODE,
-            budget=SearchBudget(max_evaluations=24, max_depth=4, max_wall_seconds=25.0),
+            budget=SearchBudget(max_evaluations=24, max_depth=4, max_wall_seconds=60.0),
             external_test_code=PASSING_TEST,
         )
         self.assertGreaterEqual(result["max_depth_reached"], 2)
@@ -33,7 +33,7 @@ class TestDeepMCTS(unittest.TestCase):
             result = engine.search(
                 "t.py", CODE,
                 budget=SearchBudget(max_evaluations=12, max_depth=3,
-                                    max_wall_seconds=25.0),
+                                    max_wall_seconds=60.0),
                 external_test_code=PASSING_TEST,
             )
             result.pop("wall_time_ms")

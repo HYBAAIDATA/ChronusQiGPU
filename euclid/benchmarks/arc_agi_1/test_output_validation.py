@@ -1,6 +1,14 @@
 """Evaluator unit tests only; not evidence of EUCLID instantiation."""
 import unittest
-from output_validation import grid_error, public_task, score_grid, score_submission
+try:
+    from output_validation import grid_error, public_task, score_grid, score_submission
+except ImportError:
+    from euclid.benchmarks.arc_agi_1.output_validation import (
+        grid_error,
+        public_task,
+        score_grid,
+        score_submission,
+    )
 
 class OutputValidationTests(unittest.TestCase):
     def test_exact(self):

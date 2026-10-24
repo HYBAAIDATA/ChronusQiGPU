@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hyba-frontend
+  labels:
+    app.kubernetes.io/name: hyba-frontend
+    app.kubernetes.io/part-of: hyba-mining

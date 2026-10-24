@@ -28,9 +28,14 @@ def main() -> int:
     from aethel.enterprise.custody import EnterpriseCustody
     from euclid.runtime import EuclidRuntime
 
+    from organism_test_authority import configured_authority
+    guardian, token, provider = configured_authority()
     custody = EnterpriseCustody(custody_root, hmac_key=bytes.fromhex(key_hex))
     try:
-        runtime = EuclidRuntime.restore_from_custody(custody, record_id, state_dir=state_dir)
+        runtime = EuclidRuntime.restore_from_custody(
+            custody, record_id, state_dir=state_dir, guardian=guardian,
+            subscription_token_provider=provider,
+        )
     finally:
         custody.close()
 
@@ -58,6 +63,7 @@ def main() -> int:
             {"operation": "capability-matrix"},
             tenant_id="tenant-a",
             actor="user-1",
+            subscription_token=token,
         )
         result["post_restart_dispatch"] = {
             "allowed": out["allowed"],

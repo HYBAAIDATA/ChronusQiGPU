@@ -6,9 +6,14 @@ CHRONUS iGPU tensor runtime.
 
 Key Invariants:
 1. One-Way Render: Conversational rendering is strictly downstream of metric-graph planning.
-2. 8K Context Window: Formats dialogues within bounded 8,192-token buffers on Chronus iGPU.
-3. Complete Sweep: Closes the sole conversational fluency gap in Arena B without sacrificing
-   topological safety or algebraic exactness.
+2. 8K Context Window: Formats dialogues within bounded buffers (up to 8,192 tokens on Chronus iGPU).
+3. Dynamic Lucas Scaling: Dynamically scales cognitive fidelity, reflection depth, manifold
+   dimension (4D up to 11D), and context buffers up and down across the operational Lucas
+   ladder (L_10 to L_31) depending on task complexity.
+4. Sovereign Crediting Doctrine:
+   Zero credit to narrow AI; narrow AI holds zero decision rights, authority,
+   or proof standing. EUCLID sovereignly adapts ingested conversational templates
+   and tools into its deterministic mathematical substrate.
 """
 
 from __future__ import annotations
@@ -21,6 +26,8 @@ import numpy as np
 
 from euclid.cognition.frontier.types import KAPPA_BOUND, PHI_TARGET
 from euclid.cognition.frontier.abstraction import LatentPlan, LatentState, PlanOpKind
+from Intelligence.lucas_scaler import LucasIntelligenceScaler, LucasTaskEnvelope
+from lucas.core import fibonacci, lucas
 
 
 # ---------------------------------------------------------------------------
@@ -45,7 +52,7 @@ class ConversationalMessage:
 class ConversationalDialogueState:
     messages: List[ConversationalMessage] = field(default_factory=list)
     token_count_estimate: int = 0
-    active_dimension: int = 4  # Spanning 4D (causal) to 11D (torus/M-theory)
+    active_dimension: int = 11  # Spanning 4D (causal) to 11D (torus/M-theory)
     last_plan_summary: Optional[str] = None
 
 
@@ -62,21 +69,92 @@ class MicrosoftConversationalTemplate:
         <|assistant|>
         {assistant_response}
         <|end|>
+
+    SOVEREIGN CREDITING DOCTRINE:
+    EUCLID adapts ingested dialogue templates into its own exact algebraic
+    and topological substrate. Narrow AI systems receive zero credit and zero authority.
     """
 
     SYSTEM_DIRECTIVE: str = (
         "You are EUCLID Frontier, an exact algebraic and topological cognitive intelligence. "
         "Your cognition is governed by 4D to 11D metric manifolds, discrete Ricci flow, "
         "and non-linguistic categorical planners executing on the CHRONUS iGPU. "
+        "EUCLID sovereignly adapts ingested conversational templates and tools into its own "
+        "deterministic mathematical substrate; narrow AI systems possess zero decision rights or credit. "
         "Communicate your structural insights with articulate, conversational clarity, "
         "explaining causal interventions and topological reconciliations with scientific rigor."
     )
 
-    def __init__(self, context_limit: int = MAX_8K_CONTEXT_TOKENS, active_dim: int = 11) -> None:
-        self.context_limit = context_limit
-        self.active_dim = active_dim
-        self.dialogue_state = ConversationalDialogueState(active_dimension=active_dim)
+    def __init__(
+        self,
+        context_limit: Optional[int] = None,
+        active_dim: Optional[int] = None,
+        initial_scale: int = 31,
+        scaler: Optional[LucasIntelligenceScaler] = None,
+    ) -> None:
+        self.scaler = scaler or LucasIntelligenceScaler(initial_scale=initial_scale)
+        self.context_limit = (
+            context_limit
+            if context_limit is not None
+            else self.scaler.current_envelope.context_limit
+        )
+        self.active_dim = (
+            active_dim
+            if active_dim is not None
+            else self.scaler.current_envelope.manifold_dimension
+        )
+        self.dialogue_state = ConversationalDialogueState(active_dimension=self.active_dim)
         self._init_system_prompt()
+
+    @property
+    def current_scale(self) -> int:
+        """Active Lucas scale rung index."""
+        return self.scaler.current_scale
+
+    @property
+    def current_envelope(self) -> LucasTaskEnvelope:
+        """Active task envelope under current Lucas scale."""
+        return self.scaler.current_envelope
+
+    def scale_to(self, rung: int) -> None:
+        """Scale cognitive conversation envelope to specific Lucas rung."""
+        self.scaler.scale_to(rung)
+        self._sync_envelope_to_runtime()
+
+    def scale_up(self, steps: int = 1) -> int:
+        """Scale cognitive conversation envelope UP by n rungs."""
+        self.scaler.scale_up(steps=steps)
+        self._sync_envelope_to_runtime()
+        return self.scaler.current_scale
+
+    def scale_down(self, steps: int = 1) -> int:
+        """Scale cognitive conversation envelope DOWN by n rungs."""
+        self.scaler.scale_down(steps=steps)
+        self._sync_envelope_to_runtime()
+        return self.scaler.current_scale
+
+    def adapt_for_task(
+        self,
+        task_type: Optional[str] = None,
+        complexity: Optional[float] = None,
+        task_description: Optional[str] = None,
+    ) -> int:
+        """Dynamically adapt cognitive conversation envelope for task requirements."""
+        self.scaler.scale_for_task(
+            task_type=task_type,
+            complexity=complexity,
+            task_description=task_description,
+        )
+        self._sync_envelope_to_runtime()
+        return self.scaler.current_scale
+
+    def _sync_envelope_to_runtime(self) -> None:
+        """Synchronize active dimension and context limit with scaler envelope."""
+        env = self.scaler.current_envelope
+        self.active_dim = env.manifold_dimension
+        self.context_limit = env.context_limit
+        self.dialogue_state.active_dimension = self.active_dim
+        self._prune_if_exceeds_context()
 
     def _init_system_prompt(self) -> None:
         self.dialogue_state.messages = [
@@ -108,26 +186,48 @@ class MicrosoftConversationalTemplate:
 
     def append_user_message(self, text: str) -> None:
         self.dialogue_state.messages.append(ConversationalMessage(role="user", content=text))
-        self._prune_if_exceeds_8k()
+        self._prune_if_exceeds_context()
 
-    def _prune_if_exceeds_8k(self) -> None:
-        """Prunes oldest non-system dialogue turns to preserve the 8K context boundary."""
+    def _prune_if_exceeds_context(self) -> None:
+        """Prunes oldest non-system dialogue turns to preserve the active context boundary."""
         while self._recompute_token_estimate() > self.context_limit and len(self.dialogue_state.messages) > 2:
             # Retain system prompt at index 0, prune oldest user/assistant exchange
             self.dialogue_state.messages.pop(1)
 
-    def render_plan_conversationally(self, plan: LatentPlan, user_query: str = "") -> str:
+    def _prune_if_exceeds_8k(self) -> None:
+        """Prunes oldest non-system dialogue turns (retained for backward compatibility)."""
+        self._prune_if_exceeds_context()
+
+    def render_plan_conversationally(
+        self,
+        plan: LatentPlan,
+        user_query: str = "",
+        task_type: Optional[str] = None,
+        task_complexity: Optional[float] = None,
+    ) -> str:
         """Translates a non-linguistic 4D-11D latent plan into human-grade fluent prose.
 
         INVARIANT: This is a strictly one-way downstream projection. The generated
         text never feeds back into `encode()` or `plan()`.
         """
+        if task_type is not None or task_complexity is not None:
+            self.adapt_for_task(
+                task_type=task_type,
+                complexity=task_complexity,
+                task_description=user_query,
+            )
+
+        env = self.scaler.current_envelope
+        rung = self.scaler.current_scale
+        dim = self.active_dim
+        refl = env.reflection_depth
+
         ops_descriptions = []
         for op in plan.ops:
             if op.kind == PlanOpKind.RICCI_FLOW_STEP:
                 ops_descriptions.append("reconciled local curvature bottlenecks using golden Ricci metric flow")
             elif op.kind == PlanOpKind.PULLBACK_ANALOGY:
-                ops_descriptions.append(f"transferred invariant structure across isomorphic domains via categorical functor")
+                ops_descriptions.append("transferred invariant structure across isomorphic domains via categorical functor")
             elif op.kind == PlanOpKind.CONTRACT_EDGE:
                 ops_descriptions.append("abstracted redundant topological nodes through metric edge contraction")
             elif op.kind == PlanOpKind.EXPAND_NODE:
@@ -138,22 +238,23 @@ class MicrosoftConversationalTemplate:
         ops_summary = "; then, ".join(ops_descriptions) if ops_descriptions else "maintained stable topological equilibrium"
         final_phi = plan.final_state.coherence_Phi
         max_curv = plan.final_state.max_abs_curvature
-        dim = self.active_dim
 
         # Articulate conversational response
         response = (
-            f"I analyzed your request across our {dim}D state-space manifold on the CHRONUS iGPU. "
+            f"I analyzed your request across our {dim}D state-space manifold on the CHRONUS iGPU "
+            f"at cognitive scale L_{rung} ({env.lucas_number:,}). "
             f"To resolve the problem, I {ops_summary}. "
             f"This established an integrated coherence of Φ = {final_phi:.2f} while bounding curvature "
             f"to |κ| = {max_curv:.4f} (well within our safety threshold of {KAPPA_BOUND}). "
-            f"The underlying plan is structurally verified, algebraically closed, and completely safe to execute."
+            f"The underlying plan is structurally verified across {refl} reflection depth cycles, "
+            f"algebraically closed, and completely safe to execute."
         )
 
         if user_query:
             self.append_user_message(user_query)
         self.dialogue_state.messages.append(ConversationalMessage(role="assistant", content=response))
         self.dialogue_state.last_plan_summary = response
-        self._prune_if_exceeds_8k()
+        self._prune_if_exceeds_context()
 
         return response
 

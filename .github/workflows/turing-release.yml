@@ -84,7 +84,7 @@ jobs:
           run-id: ${{ inputs.kellogg_release_run_id }}
           github-token: ${{ github.token }}
           path: packaging/kellogg-tensor/dist/
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: kellogg-1.0.0-release
           path: packaging/kellogg-tensor/dist/
@@ -107,7 +107,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install build twine
           python packaging/turing/build_wheel.py
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: turing-1.0.0-release
           path: packaging/turing/dist/
@@ -145,7 +145,7 @@ jobs:
           test -n "$KELLOGG_WHEEL"
           test -n "$TURING_WHEEL"
           python packaging/verify_release_candidates.py             --kellogg "$KELLOGG_WHEEL"             --turing "$TURING_WHEEL"             --python python             --out "release/verify-${{ matrix.python }}"
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: turing-installed-${{ matrix.python }}
           path: release/verify-${{ matrix.python }}/
@@ -230,7 +230,7 @@ jobs:
               raise SystemExit("source release evidence is not green: " + json.dumps(record))
           (root / "source-gate.json").write_text(json.dumps(record, indent=2, sort_keys=True))
           PY
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: turing-source-gate
           path: release/source-gate/
@@ -355,7 +355,7 @@ jobs:
           Path("turing-release-verdict.json").write_text(json.dumps(verdict, indent=2, sort_keys=True))
           print(json.dumps(verdict, indent=2, sort_keys=True))
           PY
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: turing-release-verdict
           path: turing-release-verdict.json
@@ -480,7 +480,7 @@ jobs:
     - name: Execute fresh registry install, import, CLI and replay
       run: python packaging/verify_registry_release.py --product hyba-turing-vqc --registry testpypi
         --sha "$RC_SHA" --verdict release/turing-release-verdict.json --out receipts --dependency-manifest release/kellogg/artifact-verdict.json
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@v7.0.2
       with:
         name: turing-testpypi-smoke-${{ matrix.python }}
         path: receipts/
@@ -508,7 +508,7 @@ jobs:
         path: receipts
     - run: python packaging/verify_registry_release.py --product hyba-turing-vqc --registry testpypi
         --sha "$RC_SHA" --verdict release/turing-release-verdict.json --receipts receipts --out publication.json
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@v7.0.2
       with:
         name: turing-testpypi-verified
         path: publication.json
@@ -547,7 +547,7 @@ jobs:
     - name: Execute fresh registry install, import, CLI and replay
       run: python packaging/verify_registry_release.py --product hyba-turing-vqc --registry pypi
         --sha "$RC_SHA" --verdict release/turing-release-verdict.json --out receipts --dependency-manifest release/kellogg/artifact-verdict.json
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@v7.0.2
       with:
         name: turing-pypi-smoke-${{ matrix.python }}
         path: receipts/
@@ -575,7 +575,7 @@ jobs:
         path: receipts
     - run: python packaging/verify_registry_release.py --product hyba-turing-vqc --registry pypi
         --sha "$RC_SHA" --verdict release/turing-release-verdict.json --receipts receipts --out publication.json
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@v7.0.2
       with:
         name: turing-pypi-verified
         path: publication.json
@@ -688,7 +688,7 @@ jobs:
         PYCODE
         tar -czf registry-execution-logs.tar.gz execution-logs
         gh release create turing-universal-quantum-computer-v1.0.0 --target "$RC_SHA" --title "hyba-turing-vqc 1.0.0" --notes-file release-notes.md release/*.whl release/*.tar.gz publication.json registry-execution-logs.tar.gz
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@v7.0.2
       with:
         name: turing-final-publication
         path: publication.json

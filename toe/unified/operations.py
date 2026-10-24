@@ -8,6 +8,7 @@ worker count from queue depth. Model rollback lives in the registry.
 from __future__ import annotations
 
 import math
+import time
 from dataclasses import dataclass, field
 
 
@@ -37,8 +38,13 @@ class Operations:
     probe_failures: int = 0
     unplanned_downtime: int = 0
     ratings: list[float] = field(default_factory=list)
+    last_probe_at: float | None = None
+    probe_ttl_seconds: float = 60.0
 
     def note_probe(self, ok: bool) -> None:
+        if type(ok) is not bool:
+            raise TypeError("probe result must be a measured boolean")
+        self.last_probe_at = time.monotonic()
         self.probes += 1
         if not ok:
             self.probe_failures += 1
@@ -48,9 +54,13 @@ class Operations:
             raise ValueError("rating must be between 0 and 1")
         self.ratings.append(score)
 
-    def availability(self) -> float:
+    def probes_fresh(self) -> bool:
+        return (self.last_probe_at is not None and self.probes > 0
+                and 0 <= time.monotonic() - self.last_probe_at <= self.probe_ttl_seconds)
+
+    def availability(self) -> float | None:
         if self.probes == 0:
-            return 1.0
+            return None
         return (self.probes - self.probe_failures) / self.probes
 
     def satisfaction(self) -> float | None:
@@ -72,7 +82,9 @@ class Operations:
         for connector_id, bound in list(platform.connections().items()):
             try:
                 probe = bound.probe()
-                platform.operations_note(probe.ok)
+                # Driver preflight/configuration checks are NOT availability.
+                if probe.measured:
+                    platform.operations_note(probe.ok)
                 actions.append(HealAction("reprobe", connector_id, probe.detail, probe.ok))
             except Exception as exc:
                 platform.operations_note(False)

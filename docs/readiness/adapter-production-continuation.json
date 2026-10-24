@@ -1,0 +1,784 @@
+{
+  "deploy_sentry": {
+    "warning": 8
+  },
+  "frontend": {
+    "build": "PASS",
+    "new_run_after_backend_only_changes": false,
+    "tests_passed": 129,
+    "typecheck": "PASS"
+  },
+  "full_root_snapshot": {
+    "failed": 154,
+    "failing_cases": [
+      {
+        "suite": "tests.test_asic_protocol",
+        "test": "test_remote_measure_failure_is_unsupported"
+      },
+      {
+        "suite": "tests.test_asic_protocol",
+        "test": "test_remote_dispatches_run_one_at_a_time"
+      },
+      {
+        "suite": "tests.test_asic_protocol",
+        "test": "test_remote_dispatch_error_is_failed_not_exhausted"
+      },
+      {
+        "suite": "tests.test_bridge_server",
+        "test": "test_09_gateway_websocket_grants_execution_for_healthy_node"
+      },
+      {
+        "suite": "tests.test_bsd_solver.TestFullSwarmAndExternalAGI",
+        "test": "test_external_agi_explore_bsd_team"
+      },
+      {
+        "suite": "tests.test_capability_fabric",
+        "test": "test_salamander_engine_capability_fabric_integration"
+      },
+      {
+        "suite": "tests.test_chronus_first_workload",
+        "test": "test_contract_declared"
+      },
+      {
+        "suite": "tests.test_chronus_namespace",
+        "test": "test_no_active_igpu_namespace_or_compatibility_shim"
+      },
+      {
+        "suite": "tests.test_chronus_namespace",
+        "test": "test_mla1517_is_folded_under_chronus"
+      },
+      {
+        "suite": "tests.test_chronus_native_batch_route",
+        "test": "test_chronus_batch_executes_exact_600_vertex_itinerary_without_vendor_route_name"
+      },
+      {
+        "suite": "tests.test_chronus_native_batch_route",
+        "test": "test_pythia_router_reaches_promoted_h4_fabric_and_preserves_ordered_membership"
+      },
+      {
+        "suite": "tests.test_chronus_native_batch_route",
+        "test": "test_refused_plan_clears_prior_h4_execution_evidence"
+      },
+      {
+        "suite": "tests.test_chronus_native_batch_route",
+        "test": "test_missing_batch_contract_falls_back_explicitly_without_relabelling"
+      },
+      {
+        "suite": "tests.test_chronus_native_batch_route",
+        "test": "test_coordinator_bound_plan_requests_chronus_batch_and_falls_back_end_to_end"
+      },
+      {
+        "suite": "tests.test_chronus_native_batch_route",
+        "test": "test_coordinator_bound_plan_executes_chronus_batch_when_capability_bound"
+      },
+      {
+        "suite": "tests.test_chronus_native_batch_route",
+        "test": "test_plan_binding_declares_chronus_authority_not_vendor_runtime"
+      },
+      {
+        "suite": "tests.test_chronus_v33.test_research_registry",
+        "test": "test_academic_cases_stay_inside_the_chronus_tree"
+      },
+      {
+        "suite": "tests.test_chronus_vigpu_fail_closed_contract",
+        "test": "test_daemon_denies_cross_tenant_retrieve_and_isolates_identical_bytes"
+      },
+      {
+        "suite": "tests.test_deploy_sentry",
+        "test": "test_this_repository_has_no_deploy_path_errors"
+      },
+      {
+        "suite": "tests.test_deployment_claims_gate",
+        "test": "test_repository_deployment_material_passes_the_gate"
+      },
+      {
+        "suite": "tests.test_enterprise_custody_substrate",
+        "test": "test_a18_journal_incomplete_tail"
+      },
+      {
+        "suite": "tests.test_enterprise_custody_substrate",
+        "test": "test_multiprocess_attach_reopen_materialise"
+      },
+      {
+        "suite": "tests.test_enterprise_distributed_substrate",
+        "test": "test_simultaneous_multiprocess_attach_reopen"
+      },
+      {
+        "suite": "tests.test_enterprise_packaging.EnterprisePackaging",
+        "test": "test_real_build_pipeline_on_synthetic_committed_fixture"
+      },
+      {
+        "suite": "tests.test_euclid_training_genetic_healing.EvidenceTrainingGeneticHealingTests",
+        "test": "test_training_pipeline_has_holdout_null_and_durable_evidence"
+      },
+      {
+        "suite": "tests.test_euclid_voice_router",
+        "test": "test_websocket_trauma_isolation"
+      },
+      {
+        "suite": "tests.test_euclid_voice_router",
+        "test": "test_websocket_reflection_loop_reconciles_and_unlocks_node"
+      },
+      {
+        "suite": "tests.test_external_public_benchmarks",
+        "test": "test_ihdp_causal_estimation_benchmark"
+      },
+      {
+        "suite": "tests.test_external_public_benchmarks",
+        "test": "test_arc_agi_relational_induction_benchmark"
+      },
+      {
+        "suite": "tests.test_fault_injection.WireFaultInjectionTests",
+        "test": "test_fi_stratum_disconnect"
+      },
+      {
+        "suite": "tests.test_golden_stride",
+        "test": "test_ordering_lemma_scope_guard"
+      },
+      {
+        "suite": "tests.test_import_audit",
+        "test": "test_the_repository_has_no_broken_imports"
+      },
+      {
+        "suite": "tests.test_isolated_repair",
+        "test": "test_authorization_token_enforcement"
+      },
+      {
+        "suite": "tests.test_isolated_repair",
+        "test": "test_scope_confinement_protections"
+      },
+      {
+        "suite": "tests.test_isolated_repair",
+        "test": "test_pre_change_defect_reproduction_requirement"
+      },
+      {
+        "suite": "tests.test_isolated_repair",
+        "test": "test_syntax_validation_of_candidate"
+      },
+      {
+        "suite": "tests.test_isolated_repair",
+        "test": "test_sandbox_probe_failure_rollback"
+      },
+      {
+        "suite": "tests.test_isolated_repair",
+        "test": "test_validator_failure_rollback"
+      },
+      {
+        "suite": "tests.test_isolated_repair",
+        "test": "test_successful_closed_loop_repair_and_atomic_publication"
+      },
+      {
+        "suite": "tests.test_journal_closeout_recovery",
+        "test": "test_concurrent_process_journal_append_and_recovery"
+      },
+      {
+        "suite": "tests.test_kellogg_product",
+        "test": "test_correctness_benchmarks_pass_quick[boundary_isolation]"
+      },
+      {
+        "suite": "tests.test_mining_scaled_execution.ScaledExecutionTests",
+        "test": "test_adapter_accepts_any_width"
+      },
+      {
+        "suite": "tests.test_mla1517_prime_db_gap_analysis",
+        "test": "test_contracts_do_not_promote_prime_db_over_theseus"
+      },
+      {
+        "suite": "tests.test_operating_model",
+        "test": "test_replay_across_cycle_boundary"
+      },
+      {
+        "suite": "tests.test_operating_model",
+        "test": "test_goal_stack_starvation"
+      },
+      {
+        "suite": "tests.test_operating_model",
+        "test": "test_deployed_paths_have_no_bypass_or_ladder_drift"
+      },
+      {
+        "suite": "tests.test_operating_model",
+        "test": "test_pin_violated_somewhere"
+      },
+      {
+        "suite": "tests.test_oracle",
+        "test": "test_toe_scale_program_passes_at_every_rung"
+      },
+      {
+        "suite": "tests.test_oracle",
+        "test": "test_toe_theorems_live_through_the_oracle"
+      },
+      {
+        "suite": "tests.test_organism_integration",
+        "test": "test_turing_workload_reaches_turing_with_exact_truth_class"
+      },
+      {
+        "suite": "tests.test_organism_integration",
+        "test": "test_turing_hardware_preference_is_refused_not_simulated"
+      },
+      {
+        "suite": "tests.test_organism_integration",
+        "test": "test_chronus_substrate_selection_preserves_sha256d_semantics"
+      },
+      {
+        "suite": "tests.test_organism_integration",
+        "test": "test_chronus_unprobed_lane_is_never_bound"
+      },
+      {
+        "suite": "tests.test_organism_integration",
+        "test": "test_triad_custody_and_transformation_keep_owners"
+      },
+      {
+        "suite": "tests.test_organism_integration",
+        "test": "test_restart_restores_the_whole_organism_not_just_state"
+      },
+      {
+        "suite": "tests.test_organism_integration",
+        "test": "test_salamander_detects_repairs_and_verifies_bounded_fault"
+      },
+      {
+        "suite": "tests.test_organism_integration",
+        "test": "test_salamander_does_not_mark_unverifiable_repair_verified"
+      },
+      {
+        "suite": "tests.test_organism_integration",
+        "test": "test_reachability_evidence_survives_restart"
+      },
+      {
+        "suite": "tests.test_organism_integration",
+        "test": "test_unconstructable_owner_is_recorded_unavailable"
+      },
+      {
+        "suite": "tests.test_organism_integration",
+        "test": "test_route_specialist_selects_organ_without_caller_naming_it"
+      },
+      {
+        "suite": "tests.test_organism_integration",
+        "test": "test_route_specialist_history_steers_pick_and_verifies_transfer"
+      },
+      {
+        "suite": "tests.test_organism_integration",
+        "test": "test_restart_through_theseus_custody_verified_cross_process"
+      },
+      {
+        "suite": "tests.test_ovid_theseus_chronus_gap_closure",
+        "test": "test_virtual_memory_tenant_isolation"
+      },
+      {
+        "suite": "tests.test_ovid_theseus_chronus_gap_closure",
+        "test": "test_virtual_memory_eviction_drops_host_payload"
+      },
+      {
+        "suite": "tests.test_package_layout",
+        "test": "test_chronus_and_l_hras_are_explicit_distribution_packages"
+      },
+      {
+        "suite": "tests.test_package_layout",
+        "test": "test_runtime_resources_are_declared_as_package_data"
+      },
+      {
+        "suite": "tests.test_paradigm_spine",
+        "test": "test_triad_green_and_persists"
+      },
+      {
+        "suite": "tests.test_parity_surface.WsTelemetryTests",
+        "test": "test_plain_get_documents_the_contract"
+      },
+      {
+        "suite": "tests.test_parity_surface.WsTelemetryTests",
+        "test": "test_upgrade_streams_ops_frame_and_closes_cleanly"
+      },
+      {
+        "suite": "tests.test_phi_klein",
+        "test": "test_realize_both_twelves"
+      },
+      {
+        "suite": "tests.test_phi_shared_state",
+        "test": "test_candidate_update_uses_shared_lock"
+      },
+      {
+        "suite": "tests.test_production_api_contract.RouteParityTests",
+        "test": "test_implemented_surface_equals_declared_surface"
+      },
+      {
+        "suite": "tests.test_production_api_contract.RouteParityTests",
+        "test": "test_reserved_namespaces_have_no_implementation"
+      },
+      {
+        "suite": "tests.test_production_api_contract.HttpVoyageTests",
+        "test": "test_every_unauthenticated_get_voyage"
+      },
+      {
+        "suite": "tests.test_production_api_contract.HttpVoyageTests",
+        "test": "test_privileged_voyages_with_subscription"
+      },
+      {
+        "suite": "tests.test_production_api_contract.HttpVoyageTests",
+        "test": "test_sse_stream_is_a_real_event_stream"
+      },
+      {
+        "suite": "tests.test_production_api_contract.FrontendParityTests",
+        "test": "test_every_frontend_call_lands_on_a_declared_route"
+      },
+      {
+        "suite": "tests.test_production_api_contract.MutationGateTests",
+        "test": "test_gate_detects_a_declared_but_unimplemented_route"
+      },
+      {
+        "suite": "tests.test_production_api_contract.MutationGateTests",
+        "test": "test_gate_detects_an_implemented_but_undeclared_route"
+      },
+      {
+        "suite": "tests.test_production_api_contract.MutationGateTests",
+        "test": "test_gate_detects_registry_regression"
+      },
+      {
+        "suite": "tests.test_publication_catalog.PublicationCatalogTests",
+        "test": "test_counts_are_derived_and_not_readiness"
+      },
+      {
+        "suite": "tests.test_pythia_search_precompute",
+        "test": "test_precompute_builds_full_dual32_11d_600_vertex_hilbert_lattice"
+      },
+      {
+        "suite": "tests.test_pythia_search_precompute",
+        "test": "test_itinerary_visits_every_dual_vertex_once_and_is_job_deterministic"
+      },
+      {
+        "suite": "tests.test_pythia_search_precompute",
+        "test": "test_hendrix_is_default_traversal_over_complete_structured_itinerary"
+      },
+      {
+        "suite": "tests.test_pythia_search_precompute",
+        "test": "test_pythia_preferred_face_steers_start_without_pruning_vertices"
+      },
+      {
+        "suite": "tests.test_pythia_search_precompute",
+        "test": "test_nonce_schedule_is_exact_full_lease_permutation"
+      },
+      {
+        "suite": "tests.test_pythia_search_precompute",
+        "test": "test_workforce_manifest_places_pythia_at_mining_composition_root"
+      },
+      {
+        "suite": "tests.test_pythia_search_precompute",
+        "test": "test_canonical_itinerary_executes_as_explicit_nonce_batch_on_proven_device"
+      },
+      {
+        "suite": "tests.test_pythia_structure_advisor",
+        "test": "test_learned_face_scores_reorder_without_losing_any_of_600_vertices"
+      },
+      {
+        "suite": "tests.test_pythia_structure_advisor",
+        "test": "test_explicit_preferred_face_remains_above_learned_refinement"
+      },
+      {
+        "suite": "tests.test_pythia_structure_advisor",
+        "test": "test_invalid_structural_scores_fail_closed"
+      },
+      {
+        "suite": "tests.test_quantum_cuda_scale",
+        "test": "test_grover_style_search_scales_k_star"
+      },
+      {
+        "suite": "tests.test_quantum_cuda_scale",
+        "test": "test_grover_style_search_rejects_off_ladder"
+      },
+      {
+        "suite": "tests.test_quantum_cuda_scale",
+        "test": "test_emit_grover_iterate_forwards_scale_index"
+      },
+      {
+        "suite": "tests.test_repository_review",
+        "test": "test_actual_dispatch_runs_native_adapter_with_discovered_local_skill"
+      },
+      {
+        "suite": "tests.test_repository_review",
+        "test": "test_dispatch_refuses_unequipped_and_unknown_skill"
+      },
+      {
+        "suite": "tests.test_salamander_mining_healer",
+        "test": "test_salamander_fail_closed_on_unresolvable_state"
+      },
+      {
+        "suite": "tests.test_sequential_contracts",
+        "test": "test_claims_registry_loads_and_evaluates_clean"
+      },
+      {
+        "suite": "tests.test_service_fabric_constitution.TypedClientTests",
+        "test": "test_client_reads_canonical_surfaces"
+      },
+      {
+        "suite": "tests.test_skill_graft",
+        "test": "test_a_graft_that_changes_is_rejected_and_never_equipped"
+      },
+      {
+        "suite": "tests.test_skill_graft",
+        "test": "test_the_repository_grafts_verify_against_the_plan"
+      },
+      {
+        "suite": "tests.test_skill_graft",
+        "test": "test_salamander_repairs_with_the_grafted_discipline"
+      },
+      {
+        "suite": "tests.test_skill_graft",
+        "test": "test_salamander_hands_back_guidance_not_a_claimed_execution"
+      },
+      {
+        "suite": "tests.test_stateful_recovery.StatefulRecoveryTests",
+        "test": "test_rc_partial_write_config"
+      },
+      {
+        "suite": "tests.test_stratum_v2.TestStratumV2",
+        "test": "test_ambiguous_sv2_send_failure_is_non_retryable_unknown"
+      },
+      {
+        "suite": "tests.test_stratum_v2.TestStratumV2",
+        "test": "test_explicit_sv2_zero_write_proof_is_retryable_not_submitted"
+      },
+      {
+        "suite": "tests.test_stratum_v2.TestStratumV2",
+        "test": "test_production_coordinator_refuses_insecure_sv2_without_fallback"
+      },
+      {
+        "suite": "tests.test_stratum_v2.TestStratumV2",
+        "test": "test_production_v2_adapter_runs_canonical_extended_share_voyage"
+      },
+      {
+        "suite": "tests.test_system_fabric",
+        "test": "test_forensic_map_marks_every_named_subsystem"
+      },
+      {
+        "suite": "tests.test_tensor_package",
+        "test": "test_chronus_adapter_is_not_imported_merely_by_importing_tensor"
+      },
+      {
+        "suite": "tests.test_toe_loop",
+        "test": "test_realize_runs_the_twelve_theorems"
+      },
+      {
+        "suite": "tests.test_toe_package.ToeNoShimsTests",
+        "test": "test_retired_paths_do_not_resolve"
+      },
+      {
+        "suite": "tests.test_toe_runtime_solve",
+        "test": "test_problem_content_round_trips_through_the_api"
+      },
+      {
+        "suite": "tests.test_turing_acceptance_gate",
+        "test": "test_gate_accepts_report_describing_current_checkout"
+      },
+      {
+        "suite": "tests.test_turing_acceptance_gate",
+        "test": "test_gate_rejects_report_with_an_altered_module_digest"
+      },
+      {
+        "suite": "tests.test_turing_release_packaging",
+        "test": "test_turing_public_identity_and_repository_are_canonical"
+      },
+      {
+        "suite": "tests.test_unified_platform",
+        "test": "test_model_transfer_and_rollback"
+      },
+      {
+        "suite": "tests.test_unified_platform",
+        "test": "test_phase_gates_open_only_on_measured_state"
+      },
+      {
+        "suite": "tests.test_virtual_igpu",
+        "test": "test_checkpoint_and_migration"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_actual_child_timeout"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_added_source_rejected"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_cli_failed_validation_returns_nonzero"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_cli_missing_key_nonzero_preserves_existing_artifact"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_cli_verification_valid_then_tampered"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_empty_command_list_cannot_pass"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_failed_command_is_recorded_not_success"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_legacy_public_key_artifact_not_accepted"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_log_tampering_rejected"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_missing_executable_recorded"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_payload_tampering_rejected"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_private_key_required_before_any_write_or_command"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_public_historical_key_refused"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_publication_failure_preserves_existing_directory_and_cleans_temp"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_real_generation_and_roundtrip"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_resigned_inconsistent_success_rejected"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_short_and_invalid_keys_refused"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_signed_traversal_log_rejected"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_signer_metadata_tampering_rejected"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_signing_key_not_in_child_environment_or_logs"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_source_drift_rejected"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_source_mutation_during_command_cannot_pass"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_symlink_publication_refused_without_overwrite"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_symlink_source_refused"
+      },
+      {
+        "suite": "tests.validation_custody.test_validation_custody.CustodyRegression",
+        "test": "test_wrong_private_key_rejected"
+      }
+    ],
+    "passed": 7088,
+    "scope": "earlier tree, before later repairs; not a verdict on final payload",
+    "skipped": 18,
+    "subtests_passed": 939,
+    "unresolved_without_final_rerun": true
+  },
+  "not_executed": [
+    "Docker image build/container voyage: Docker unavailable",
+    "external Braiins/ViaBTC authorization or share submission",
+    "physical GPU climb/scaling benchmarks",
+    "registry publication",
+    "final full-root suite against pushed commit"
+  ],
+  "open_requirements": [
+    "full repository green on committed source",
+    "solve-first analytical capability evidence beyond bounded nonce traversal",
+    "host GPU executable adapter and measured scaling",
+    "aggregate multi-host rate allocation/coordination",
+    "per-offering end-to-end qualification",
+    "exact VOI certification and trusted publisher prerequisites"
+  ],
+  "overall": "NOT_READY",
+  "production_ready": false,
+  "provenance": {
+    "commit_bound_ci_required": true,
+    "local_git_sha": "UNAVAILABLE",
+    "pr": 134,
+    "remote_base_head_before_push": "70ca9f79c7bb32c009bb524add45bf26cc7bd0bf",
+    "source": "owner-supplied repository ZIP plus PR #134 changes"
+  },
+  "publication_ready": false,
+  "qualifications": [
+    {
+      "junit_counts": {
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "tests": 667
+      },
+      "junit_sha256": "4e2960391d432706e38224c06286d0f4c436ac3f4470e7c3a3d658c09ea0f6ea",
+      "scope": "turing-qualified"
+    },
+    {
+      "junit_counts": {
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "tests": 488
+      },
+      "junit_sha256": "d5f4e6829c8ada7cd7852e6a4badf538dedf871161f420351a23009fc417e9e2",
+      "scope": "toe-complete-final"
+    },
+    {
+      "junit_counts": {
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "tests": 259
+      },
+      "junit_sha256": "cf38813f2acfaa99ee95d063ca007d6c310384dfaf5fa0f91a556285003ef978",
+      "scope": "release-qualified-isolated"
+    },
+    {
+      "junit_counts": {
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "tests": 129
+      },
+      "junit_sha256": "7ec676ee8f8a998955ce3f52e33de92e76e85d06e7841d63131e2a223a7b58f4",
+      "scope": "policy-final-qualified"
+    },
+    {
+      "junit_counts": {
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "tests": 32
+      },
+      "junit_sha256": "df8fc95f3d4d2f93a464a8f102706a67fa4e3d31bce50a877beada2381ddceda",
+      "scope": "policy-deploy-qualified"
+    }
+  ],
+  "schema": "euclid.local-readiness/1",
+  "source_sha256": {
+    ".dockerignore": "bc0fe659935e8a305727f2746c1db7d8586f1dd89ef69f22b6fad5a6e5a1421d",
+    ".github/workflows/pure-quantum-math.yml": "673c14db3614fe86f680eb053fd945bd8b5b2c8ba67c91979633b85103c34123",
+    "OWNER_DECLARATIONS.md": "07cf65e8e23fde2664b2c0a57d7829a286c4bd5b8c2eaab9acca9451f34e6051",
+    "UNIVERSAL_PRINCIPLE_MAP.md": "eb2f1c54d2c8db5c1a9efae20815ffa6862d69e9bfbaa7626f0ff8917dfc6520",
+    "chronus/entangled_hashing.py": "c0d0f51ee6c90ed55b86b755bc5d89c497e81e222dbf1232507cd14d2d138232",
+    "chronus/mla1517/mining/coordinator.py": "f6ee461879e485157aad7c50c6b0057c7ba3d5a5976e920bbeaea1608c752e41",
+    "chronus/mla1517/mining/m3_coordinator.py": "bae6d95abdfd6226c66ebaffeec5b550fd4e9f36066594ee7696789b6abb9334",
+    "chronus/mla1517/mining/octopus_adapter.py": "d00333fdda62303a03ea8d0290d366107e850249d79a85eeb083b2063f36a675",
+    "chronus/mla1517_platform/python/control_api.py": "97d481ac7ce00bc02bc82ecbc127a8aa771cf711843d3527e7a04215b45d6881",
+    "chronus/mla1517_platform/python/runtime_config.py": "8e399f66a753794026a95bb3949ae8b6bed0e133b78506d294093a76f64177e2",
+    "chronus/octopus_execution.py": "37511e48f0df5963f207d2f70db343c975cd8ab19cb8da760fbf8533224c144c",
+    "chronus/virtual_igpu/adapters.py": "76c90d192a6a198238732da4cc307c770e2d5502e8ab1ba1966875ca34e78410",
+    "chronus/virtual_igpu/mining_hasher.py": "836747745bd965435fa39e89820adeda0907ba380e95cef50fd0fa0062204bd2",
+    "docker-compose.local.yml": "c332920052d6d5e01a120b0ec7a0dc0c6817326bdf386dea2b99478c6749113a",
+    "docs/DOCKER_DUAL_POOL_DEPLOYMENT.md": "dfe82345cdf2618bddaef9d7b245624e301643f014f6df374be6a3a4941d54e7",
+    "docs/mining/OCTOPUS_GOVERNED_ADAPTER.md": "f8388fd56f25d0a5989a82930d0a9e831e51d2e0fa3e12481119ef987288d5c9",
+    "euclid/emergence/models/candidate.py": "d9575072ed78398f3afb6c7e8214b685829e4a35d598a0ace0c28cb7adf9e797",
+    "euclid/emergence/models/manifest.py": "d89f5fb0245b8809a938e09cc414c3b6b8e88e470ad602ed6a48d6c61aedc4ce",
+    "euclid/emergence/models/substrate.py": "862493804ad34e9b5e6800cbed209c8a90a4dc2ef73fa6acd29059ff1fc43487",
+    "euclid/emergence/models/telemetry.py": "5e2eb222522ff602105cfd545001ec56d4d6f914e711f23157b4f06cad51bdf8",
+    "kellogg/__init__.py": "1b01237445ae024bb2c04137b52620b80199b40336efffc46f1a3daf5169acf8",
+    "kellogg/ansatz_v3.py": "f8fca6e1aa85db8a437063799a789a221eb59d2684fcb35da058a89ac5167794",
+    "kellogg/canonical_tensor.py": "bd6ca40f131d2d442ec16716f14095591d97a31cf193f8652898a83e5812e88e",
+    "kellogg/lane_scorer.py": "ba585ad8cd8db8a9f97a9665d3aa0b92b768bfb0ab32f5a595fe4cdc4a3f70ce",
+    "legacy/mining/euclid_multarm_probe.py": "3a475d15824345b0d4015b3e12791e6867db93d4ed638ef1dfea766fb1e3f6fc",
+    "legacy/mining/live_handshake.py": "7e09152ccd567046a96a641d5bbad4b2702d8c2f5e19205de92a60769dfe3259",
+    "legacy/mining/order_counterfactual.py": "86d10a27a6facbc47fa6a5a28640fdb3de36dad05aa8d8ad9f8e74e67f814d6b",
+    "legacy/mining/resonance_probe.py": "13f8b5e23493080bb8d9d7eb6acb40412935a99a1330121e0d1b8c891fa188dc",
+    "mining/stratum_bridge.py": "e491abcb2791e4fa13cfe96d7dff1ee5c7314ba3d9cb4ff35f0a0885de6fe6db",
+    "package-lock.json": "59781da0a9e234aa8f0f132142fadbd02c78d4f334811c35de712be96b99e0e2",
+    "package.json": "02c11fdf829275132a31e082c142233bf6845fe9dda0647bf403eebafacf44b0",
+    "packaging/toe/build_and_verify.py": "0b06cc7dd7202e80bbacebc7aff8cff37a729376818624891f6c3d2a634bda58",
+    "pyproject.toml": "deb2cdabd9dd63a867eaf3ebd94daa8d582944994ea7e74e554bcd2c0b86420e",
+    "scripts/deploy_sentry.py": "2d46c9b61e508bd0fd85d5959cdcc040a36dfeb2384ce7656237657b404702f5",
+    "tensor/canonical_tensor.py": "12d3449a6a195afc2453e2e891adc383f5531f722ffc02a5e578ea1bd8b2f423",
+    "tests/emergence_contracts/test_reconstructed_contracts.py": "5d8b23b518f4585fd233cc849fb4565a75797a7d50e5f04572012f07c0e060c8",
+    "tests/test_600_octopus_execution.py": "949da330990350e6bbb32d97e26d4e1839e949ff300f5a543e5f75ce28cc8628",
+    "tests/test_600_readiness_regressions.py": "647d730d8b84210cd9f885ded32efbb458e87172bcae6b5ea1c77f324f42e150",
+    "tests/test_b_lifecycle_boundary.py": "fc02d815330b6a33c9fc5bffa0c439850cfd080fdbaa2e669b15c18fd8e3a78c",
+    "tests/test_chronus_production_route.py": "aced90503ba9f3e6bdbbf6682df705e1800865f63229f3cb4e3e538cdf0cb052",
+    "tests/test_deploy_sentry.py": "1741000e9b181ecaf0012751dda9ac9e669d8ad89d07f037c026fd13cf411c42",
+    "tests/test_mining_closure.py": "bc8da876aa01232ced8ec44fc8db32b11d736280d6f444bb87b3c38bb3b70486",
+    "tests/test_octopus_governed_adapter.py": "a902814b1dd21ed6a69db953d3c079e2718a0c3d6ddb7561f7cfddf032b29fcc",
+    "tests/test_runtime_policy_readiness.py": "2cb40832a97351b411bf902ddf187e67b643c5e7f34ffaaa42f5bdb7adfaf712",
+    "tests/test_toe_unified_readiness_regressions.py": "f024c88dda304738c9c6d1d207b60703667ffa29836abd2693eb1e84df2f2c47",
+    "toe/unified/intelligence.py": "667d29a7b38fd79b6af97dda3a63677b915ac21f0ce55d538569d1bc1e7b187a",
+    "turing_universal_quantum_computer/conftest.py": "132d0472851a1b4598d07badf24f11f15b39cbd1b05e6bd55107f1f084b77f9c",
+    "turing_universal_quantum_computer/pyproject.toml": "2393bd4ee2437b6c169ad77dba1c58cb487bb58b2bbb8179281cae42dcfd1e36",
+    "turing_universal_quantum_computer/tests/test_exact_readiness_regressions.py": "5e8733a4616c6c9720e47bd294e19530610427c911f6f53486915238a28f59ec",
+    "turing_universal_quantum_computer/tests/test_lucas_vendor_parity.py": "a9d767dd28c3b5d79488864ed55eedb94b149ba77935cbd5118e80ed1d1c69e1",
+    "turing_universal_quantum_computer/tests/test_phi_quantum_machine_consolidation.py": "ee593f6af1e96bb453b2e4c7310ada4fa4b61c338d96b6e18d019bf8cdbb95a1",
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/lucas/__init__.py": "d2c090effff57d4d7a20ae8b61cc18d9a2362941d55239c46cea420c65336379",
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/lucas/scale_model.py": "0ffc60ff2b055a894cae466e2a6a07c348cf14b2f108ae646762a7bf04cee53f",
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py": "563d9ad5796ccf0404895e2ac796d5cb28f0beccbbebe2305b0bcff1d543dc30",
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_walk.py": "6c3291c58df8132cbe2e0ccf2df2dc0f1b2611785a003689458643fa156a3716",
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/stabilizer.py": "e640d02869e6dbb01b8386b35af2b1ae8ac65eb7c8178041f60b12ce191f4257",
+    "turing_universal_quantum_computer/uv.lock": "6e09005fcf0ae877e7838654d5db09a10ef362142d14c9f4a02e23628a852ac7"
+  },
+  "toe_artifact": {
+    "publication_blockers": [
+      "final publication requires the commit-bound toe-release workflow verdict",
+      "final publication requires exact VOI certification",
+      "final publication requires deploy sentry clean",
+      "final publication requires the full repository suite",
+      "final publication requires registry prerequisites and trusted publishers"
+    ],
+    "publishable": false,
+    "published": false,
+    "sdist": {
+      "file": "hyba_toe_intelligence-1.0.0.tar.gz",
+      "sha256": "cb8764071f1cfa353dd4683640d57fe865a82209e0061ddfec4e1ada3678dccd"
+    },
+    "sdist_rebuilt_checks": {
+      "release_tests": {
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "tests": 40
+      },
+      "unified_tests": {
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "tests": 244
+      }
+    },
+    "verified": true,
+    "wheel": {
+      "file": "hyba_toe_intelligence-1.0.0-py3-none-any.whl",
+      "sha256": "302fc8612a60c0528f72a5518db6fa843a4069b15b08fec13d614cad3385d06f"
+    },
+    "wheel_checks": [
+      {
+        "release_tests": {
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0,
+          "tests": 40
+        },
+        "unified_tests": {
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0,
+          "tests": 244
+        }
+      }
+    ]
+  }
+}

@@ -73,7 +73,13 @@ class _BridgeHandler(socketserver.StreamRequestHandler):
                 self.server.received.append(msg)
                 if getattr(self.server, "drop_dispatch", False):
                     return  # hang up mid-window: a channel failure, not a reply
-                self.wfile.write(json.dumps(self._grind(msg)).encode() + b"\n")
+                reply = json.dumps(self._grind(msg)).encode() + b"\n"
+                if getattr(self.server, "fragment_reply", False):
+                    self.wfile.write(reply[:12])
+                    self.wfile.flush()
+                    time.sleep(0.03)
+                    reply = reply[12:]
+                self.wfile.write(reply)
                 self.wfile.flush()
 
     def _grind(self, msg: dict) -> dict:
@@ -273,9 +279,29 @@ def test_share_probe_index_is_contiguous_depth(bridge):
             break
     handle = solver.dispatch(_window("j-probe", base=4096, span=256, target=b"\xff" * 32))
     share = solver.poll(handle)
+    deadline = time.monotonic() + 2.0
+    while share is None and not solver.is_done(handle) and time.monotonic() < deadline:
+        time.sleep(0.001)
+        share = solver.poll(handle)
     assert share is not None
     assert share.nonce == winner
     assert share.probe_index == winner - 4096 + 1
+
+
+def test_fragmented_asic_reply_survives_poll_timeouts(bridge):
+    bridge.fragment_reply = True
+    solver = ASICSolver(endpoint=bridge.endpoint)
+    solver.prepare("j-fragment", bytes(range(80)))
+    handle = solver.dispatch(_window("j-fragment", base=0, span=32, target=b"\xff" * 32))
+    share = None
+    deadline = time.monotonic() + 2.0
+    while share is None and not solver.is_done(handle) and time.monotonic() < deadline:
+        share = solver.poll(handle)
+        time.sleep(0.001)
+    assert share is not None
+    assert share.nonce == 0 and share.probe_index == 1
+    assert solver.is_done(handle)
+    assert solver.hashed_count(handle) == 1
 
 
 def test_mixed_asic_and_cpu_job_reports_exact_sum(bridge):

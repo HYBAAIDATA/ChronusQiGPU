@@ -1,0 +1,622 @@
+SELECTIVE SOURCE VALIDATION. NOT AN INSTALLED EUCLID ACCEPTANCE PASS.
+
+========================================================================
+recovery-tests-normal.log
+========================================================================
+test_arbitrary_long_token_and_wrong_caller_refused (test_empirical_hardening.EmpiricalHardening.test_arbitrary_long_token_and_wrong_caller_refused) ... ok
+test_audit_failure_before_execution_prevents_mutation (test_empirical_hardening.EmpiricalHardening.test_audit_failure_before_execution_prevents_mutation) ... ok
+test_authorizer_exception_refuses (test_empirical_hardening.EmpiricalHardening.test_authorizer_exception_refuses) ... ok
+test_authorizer_observation_cannot_substitute_payload (test_empirical_hardening.EmpiricalHardening.test_authorizer_observation_cannot_substitute_payload) ... ok
+test_commit_has_durable_admission_and_completion (test_empirical_hardening.EmpiricalHardening.test_commit_has_durable_admission_and_completion) ... ok
+test_concurrent_calls_are_serialized (test_empirical_hardening.EmpiricalHardening.test_concurrent_calls_are_serialized) ... ok
+test_corrupt_audit_refuses_reopen (test_empirical_hardening.EmpiricalHardening.test_corrupt_audit_refuses_reopen) ... ok
+test_cross_process_orphan_recovery_preserves_operational_state (test_empirical_hardening.EmpiricalHardening.test_cross_process_orphan_recovery_preserves_operational_state) ... ok
+test_custody_cannot_be_adopted_by_another_owner (test_empirical_hardening.EmpiricalHardening.test_custody_cannot_be_adopted_by_another_owner) ... ok
+test_custody_is_required (test_empirical_hardening.EmpiricalHardening.test_custody_is_required) ... ok
+test_deadline_expires_during_custody_without_false_success (test_empirical_hardening.EmpiricalHardening.test_deadline_expires_during_custody_without_false_success) ... ok
+test_full_state_restored_after_partial_execution_failure (test_empirical_hardening.EmpiricalHardening.test_full_state_restored_after_partial_execution_failure) ... ok
+test_in_memory_audit_is_not_durable_authority (test_empirical_hardening.EmpiricalHardening.test_in_memory_audit_is_not_durable_authority) ... ok
+test_invalid_budget_deadline_and_capability (test_empirical_hardening.EmpiricalHardening.test_invalid_budget_deadline_and_capability) ... ok
+test_invalid_numeric_weights_never_persist (test_empirical_hardening.EmpiricalHardening.test_invalid_numeric_weights_never_persist) ... ok
+test_no_configured_authority_fails_closed (test_empirical_hardening.EmpiricalHardening.test_no_configured_authority_fails_closed) ... ok
+test_no_prior_memories_or_identity_in_state_schema (test_empirical_hardening.EmpiricalHardening.test_no_prior_memories_or_identity_in_state_schema) ... ok
+test_prepared_failure_restores_local_state_without_custody_effect (test_empirical_hardening.EmpiricalHardening.test_prepared_failure_restores_local_state_without_custody_effect) ... ok
+test_recover_publish_then_raise_and_reopen (test_empirical_hardening.EmpiricalHardening.test_recover_publish_then_raise_and_reopen) ... ok
+test_recovery_append_failure_remains_quarantined (test_empirical_hardening.EmpiricalHardening.test_recovery_append_failure_remains_quarantined) ... ok
+test_recovery_completion_failure_before_write_can_retry (test_empirical_hardening.EmpiricalHardening.test_recovery_completion_failure_before_write_can_retry) ... ok
+test_recovery_completion_failure_retry_is_idempotent (test_empirical_hardening.EmpiricalHardening.test_recovery_completion_failure_retry_is_idempotent) ... ok
+test_recovery_corrupt_audit_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_corrupt_audit_refused) ... ok
+test_recovery_custody_changes_after_admission_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_custody_changes_after_admission_refused) ... ok
+test_recovery_deadline_and_shape_validation (test_empirical_hardening.EmpiricalHardening.test_recovery_deadline_and_shape_validation) ... ok
+test_recovery_duplicate_intent_and_rolled_back_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_duplicate_intent_and_rolled_back_refused) ... ok
+test_recovery_hash_and_foreign_owner_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_hash_and_foreign_owner_refused) ... ok
+test_recovery_independent_authority_is_required (test_empirical_hardening.EmpiricalHardening.test_recovery_independent_authority_is_required) ... ok
+test_recovery_legacy_orphan_without_prepared_intent_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_legacy_orphan_without_prepared_intent_refused) ... ok
+test_recovery_memory_only_audit_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_memory_only_audit_refused) ... ok
+test_recovery_missing_prior_completion_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_missing_prior_completion_refused) ... ok
+test_recovery_requires_prior_committed_lineage (test_empirical_hardening.EmpiricalHardening.test_recovery_requires_prior_committed_lineage) ... ok
+test_recovery_stale_target_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_stale_target_refused) ... ok
+test_recovery_tampered_state_even_with_recomputed_request_hash_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_tampered_state_even_with_recomputed_request_hash_refused) ... ok
+test_reopen_restores_operational_state_and_durable_receipts (test_empirical_hardening.EmpiricalHardening.test_reopen_restores_operational_state_and_durable_receipts) ... ok
+test_restore_receipt_cannot_be_copied_to_a_new_binding (test_empirical_hardening.EmpiricalHardening.test_restore_receipt_cannot_be_copied_to_a_new_binding) ... ok
+test_stale_writer_refused (test_empirical_hardening.EmpiricalHardening.test_stale_writer_refused) ... ok
+test_store_publish_then_raise_is_uncertain_not_false_rollback (test_empirical_hardening.EmpiricalHardening.test_store_publish_then_raise_is_uncertain_not_false_rollback) ... ok
+test_uncertain_completion_never_reports_success_or_allows_retry (test_empirical_hardening.EmpiricalHardening.test_uncertain_completion_never_reports_success_or_allows_retry) ... ok
+
+----------------------------------------------------------------------
+Ran 39 tests in 0.287s
+
+OK
+
+========================================================================
+recovery-tests-optimized.log
+========================================================================
+test_arbitrary_long_token_and_wrong_caller_refused (test_empirical_hardening.EmpiricalHardening.test_arbitrary_long_token_and_wrong_caller_refused) ... ok
+test_audit_failure_before_execution_prevents_mutation (test_empirical_hardening.EmpiricalHardening.test_audit_failure_before_execution_prevents_mutation) ... ok
+test_authorizer_exception_refuses (test_empirical_hardening.EmpiricalHardening.test_authorizer_exception_refuses) ... ok
+test_authorizer_observation_cannot_substitute_payload (test_empirical_hardening.EmpiricalHardening.test_authorizer_observation_cannot_substitute_payload) ... ok
+test_commit_has_durable_admission_and_completion (test_empirical_hardening.EmpiricalHardening.test_commit_has_durable_admission_and_completion) ... ok
+test_concurrent_calls_are_serialized (test_empirical_hardening.EmpiricalHardening.test_concurrent_calls_are_serialized) ... ok
+test_corrupt_audit_refuses_reopen (test_empirical_hardening.EmpiricalHardening.test_corrupt_audit_refuses_reopen) ... ok
+test_cross_process_orphan_recovery_preserves_operational_state (test_empirical_hardening.EmpiricalHardening.test_cross_process_orphan_recovery_preserves_operational_state) ... ok
+test_custody_cannot_be_adopted_by_another_owner (test_empirical_hardening.EmpiricalHardening.test_custody_cannot_be_adopted_by_another_owner) ... ok
+test_custody_is_required (test_empirical_hardening.EmpiricalHardening.test_custody_is_required) ... ok
+test_deadline_expires_during_custody_without_false_success (test_empirical_hardening.EmpiricalHardening.test_deadline_expires_during_custody_without_false_success) ... ok
+test_full_state_restored_after_partial_execution_failure (test_empirical_hardening.EmpiricalHardening.test_full_state_restored_after_partial_execution_failure) ... ok
+test_in_memory_audit_is_not_durable_authority (test_empirical_hardening.EmpiricalHardening.test_in_memory_audit_is_not_durable_authority) ... ok
+test_invalid_budget_deadline_and_capability (test_empirical_hardening.EmpiricalHardening.test_invalid_budget_deadline_and_capability) ... ok
+test_invalid_numeric_weights_never_persist (test_empirical_hardening.EmpiricalHardening.test_invalid_numeric_weights_never_persist) ... ok
+test_no_configured_authority_fails_closed (test_empirical_hardening.EmpiricalHardening.test_no_configured_authority_fails_closed) ... ok
+test_no_prior_memories_or_identity_in_state_schema (test_empirical_hardening.EmpiricalHardening.test_no_prior_memories_or_identity_in_state_schema) ... ok
+test_prepared_failure_restores_local_state_without_custody_effect (test_empirical_hardening.EmpiricalHardening.test_prepared_failure_restores_local_state_without_custody_effect) ... ok
+test_recover_publish_then_raise_and_reopen (test_empirical_hardening.EmpiricalHardening.test_recover_publish_then_raise_and_reopen) ... ok
+test_recovery_append_failure_remains_quarantined (test_empirical_hardening.EmpiricalHardening.test_recovery_append_failure_remains_quarantined) ... ok
+test_recovery_completion_failure_before_write_can_retry (test_empirical_hardening.EmpiricalHardening.test_recovery_completion_failure_before_write_can_retry) ... ok
+test_recovery_completion_failure_retry_is_idempotent (test_empirical_hardening.EmpiricalHardening.test_recovery_completion_failure_retry_is_idempotent) ... ok
+test_recovery_corrupt_audit_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_corrupt_audit_refused) ... ok
+test_recovery_custody_changes_after_admission_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_custody_changes_after_admission_refused) ... ok
+test_recovery_deadline_and_shape_validation (test_empirical_hardening.EmpiricalHardening.test_recovery_deadline_and_shape_validation) ... ok
+test_recovery_duplicate_intent_and_rolled_back_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_duplicate_intent_and_rolled_back_refused) ... ok
+test_recovery_hash_and_foreign_owner_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_hash_and_foreign_owner_refused) ... ok
+test_recovery_independent_authority_is_required (test_empirical_hardening.EmpiricalHardening.test_recovery_independent_authority_is_required) ... ok
+test_recovery_legacy_orphan_without_prepared_intent_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_legacy_orphan_without_prepared_intent_refused) ... ok
+test_recovery_memory_only_audit_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_memory_only_audit_refused) ... ok
+test_recovery_missing_prior_completion_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_missing_prior_completion_refused) ... ok
+test_recovery_requires_prior_committed_lineage (test_empirical_hardening.EmpiricalHardening.test_recovery_requires_prior_committed_lineage) ... ok
+test_recovery_stale_target_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_stale_target_refused) ... ok
+test_recovery_tampered_state_even_with_recomputed_request_hash_refused (test_empirical_hardening.EmpiricalHardening.test_recovery_tampered_state_even_with_recomputed_request_hash_refused) ... ok
+test_reopen_restores_operational_state_and_durable_receipts (test_empirical_hardening.EmpiricalHardening.test_reopen_restores_operational_state_and_durable_receipts) ... ok
+test_restore_receipt_cannot_be_copied_to_a_new_binding (test_empirical_hardening.EmpiricalHardening.test_restore_receipt_cannot_be_copied_to_a_new_binding) ... ok
+test_stale_writer_refused (test_empirical_hardening.EmpiricalHardening.test_stale_writer_refused) ... ok
+test_store_publish_then_raise_is_uncertain_not_false_rollback (test_empirical_hardening.EmpiricalHardening.test_store_publish_then_raise_is_uncertain_not_false_rollback) ... ok
+test_uncertain_completion_never_reports_success_or_allows_retry (test_empirical_hardening.EmpiricalHardening.test_uncertain_completion_never_reports_success_or_allows_retry) ... ok
+
+----------------------------------------------------------------------
+Ran 39 tests in 0.292s
+
+OK
+
+========================================================================
+recovery-packaging-normal.log
+========================================================================
+........$ git rev-parse HEAD
+$ git status --porcelain --untracked-files=normal
+$ git ls-files --cached -z
+$ /usr/local/bin/python -m build --wheel --no-isolation --outdir /tmp/euclid-build-5oh0k2uf/built /tmp/euclid-build-5oh0k2uf/owner-source/packaging/kellogg-tensor
+* Getting build dependencies for wheel...
+running egg_info
+creating hyba_kellogg_tensor.egg-info
+writing hyba_kellogg_tensor.egg-info/PKG-INFO
+writing dependency_links to hyba_kellogg_tensor.egg-info/dependency_links.txt
+writing top-level names to hyba_kellogg_tensor.egg-info/top_level.txt
+writing manifest file 'hyba_kellogg_tensor.egg-info/SOURCES.txt'
+reading manifest file 'hyba_kellogg_tensor.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'hyba_kellogg_tensor.egg-info/SOURCES.txt'
+* Building wheel...
+running bdist_wheel
+running build
+running build_py
+creating build/lib/kellogg
+copying ../../kellogg/__init__.py -> build/lib/kellogg
+running egg_info
+writing hyba_kellogg_tensor.egg-info/PKG-INFO
+writing dependency_links to hyba_kellogg_tensor.egg-info/dependency_links.txt
+writing top-level names to hyba_kellogg_tensor.egg-info/top_level.txt
+reading manifest file 'hyba_kellogg_tensor.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'hyba_kellogg_tensor.egg-info/SOURCES.txt'
+installing to build/bdist.linux-x86_64/wheel
+running install
+running install_lib
+creating build/bdist.linux-x86_64/wheel
+creating build/bdist.linux-x86_64/wheel/kellogg
+copying build/lib/kellogg/__init__.py -> build/bdist.linux-x86_64/wheel/./kellogg
+running install_egg_info
+Copying hyba_kellogg_tensor.egg-info to build/bdist.linux-x86_64/wheel/./hyba_kellogg_tensor-1.0.0-py3.13.egg-info
+running install_scripts
+creating build/bdist.linux-x86_64/wheel/hyba_kellogg_tensor-1.0.0.dist-info/WHEEL
+creating '/tmp/euclid-build-5oh0k2uf/built/.tmp-7uqenlis/hyba_kellogg_tensor-1.0.0-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+adding 'hyba_kellogg_tensor-1.0.0.dist-info/licenses/LICENSE'
+adding 'kellogg/__init__.py'
+adding 'hyba_kellogg_tensor-1.0.0.dist-info/METADATA'
+adding 'hyba_kellogg_tensor-1.0.0.dist-info/WHEEL'
+adding 'hyba_kellogg_tensor-1.0.0.dist-info/top_level.txt'
+adding 'hyba_kellogg_tensor-1.0.0.dist-info/RECORD'
+removing build/bdist.linux-x86_64/wheel
+Successfully built hyba_kellogg_tensor-1.0.0-py3-none-any.whl
+$ /usr/local/bin/python -m build --wheel --no-isolation --outdir /tmp/euclid-build-5oh0k2uf/built /tmp/euclid-build-5oh0k2uf/owner-source/turing_universal_quantum_computer
+* Getting build dependencies for wheel...
+running egg_info
+creating hyba_turing_vqc.egg-info
+writing hyba_turing_vqc.egg-info/PKG-INFO
+writing dependency_links to hyba_turing_vqc.egg-info/dependency_links.txt
+writing top-level names to hyba_turing_vqc.egg-info/top_level.txt
+writing manifest file 'hyba_turing_vqc.egg-info/SOURCES.txt'
+reading manifest file 'hyba_turing_vqc.egg-info/SOURCES.txt'
+writing manifest file 'hyba_turing_vqc.egg-info/SOURCES.txt'
+* Building wheel...
+running bdist_wheel
+running build
+running build_py
+creating build/lib/turing_universal_quantum_computer
+copying ./turing_universal_quantum_computer/__init__.py -> build/lib/turing_universal_quantum_computer
+running egg_info
+writing hyba_turing_vqc.egg-info/PKG-INFO
+writing dependency_links to hyba_turing_vqc.egg-info/dependency_links.txt
+writing top-level names to hyba_turing_vqc.egg-info/top_level.txt
+reading manifest file 'hyba_turing_vqc.egg-info/SOURCES.txt'
+writing manifest file 'hyba_turing_vqc.egg-info/SOURCES.txt'
+installing to build/bdist.linux-x86_64/wheel
+running install
+running install_lib
+creating build/bdist.linux-x86_64/wheel
+creating build/bdist.linux-x86_64/wheel/turing_universal_quantum_computer
+copying build/lib/turing_universal_quantum_computer/__init__.py -> build/bdist.linux-x86_64/wheel/./turing_universal_quantum_computer
+running install_egg_info
+Copying hyba_turing_vqc.egg-info to build/bdist.linux-x86_64/wheel/./hyba_turing_vqc-1.0.0-py3.13.egg-info
+running install_scripts
+creating build/bdist.linux-x86_64/wheel/hyba_turing_vqc-1.0.0.dist-info/WHEEL
+creating '/tmp/euclid-build-5oh0k2uf/built/.tmp-nd1ajsfe/hyba_turing_vqc-1.0.0-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+adding 'turing_universal_quantum_computer/__init__.py'
+adding 'hyba_turing_vqc-1.0.0.dist-info/METADATA'
+adding 'hyba_turing_vqc-1.0.0.dist-info/WHEEL'
+adding 'hyba_turing_vqc-1.0.0.dist-info/top_level.txt'
+adding 'hyba_turing_vqc-1.0.0.dist-info/RECORD'
+removing build/bdist.linux-x86_64/wheel
+Successfully built hyba_turing_vqc-1.0.0-py3-none-any.whl
+$ /usr/local/bin/python -m build --wheel --no-isolation --outdir /tmp/euclid-build-5oh0k2uf/built /tmp/euclid-build-5oh0k2uf/project
+* Getting build dependencies for wheel...
+running egg_info
+creating src/euclid_engine.egg-info
+writing src/euclid_engine.egg-info/PKG-INFO
+writing dependency_links to src/euclid_engine.egg-info/dependency_links.txt
+writing top-level names to src/euclid_engine.egg-info/top_level.txt
+writing manifest file 'src/euclid_engine.egg-info/SOURCES.txt'
+reading manifest file 'src/euclid_engine.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'src/euclid_engine.egg-info/SOURCES.txt'
+* Building wheel...
+running bdist_wheel
+running build
+running build_py
+creating build/lib
+copying src/pythia_turing_math.py -> build/lib
+copying src/turing_core.py -> build/lib
+creating build/lib/Intelligence
+copying src/Intelligence/__init__.py -> build/lib/Intelligence
+copying src/Intelligence/capability_fabric.py -> build/lib/Intelligence
+creating build/lib/aethel
+copying src/aethel/__init__.py -> build/lib/aethel
+creating build/lib/al_haras
+copying src/al_haras/__init__.py -> build/lib/al_haras
+copying src/al_haras/audit.py -> build/lib/al_haras
+creating build/lib/euclid
+copying src/euclid/__init__.py -> build/lib/euclid
+copying src/euclid/runtime.py -> build/lib/euclid
+creating build/lib/hyba_euclid_intelligence
+copying src/hyba_euclid_intelligence/__init__.py -> build/lib/hyba_euclid_intelligence
+creating build/lib/hyba_substrate
+copying src/hyba_substrate/__init__.py -> build/lib/hyba_substrate
+creating build/lib/hyba_toe_intelligence
+copying src/hyba_toe_intelligence/__init__.py -> build/lib/hyba_toe_intelligence
+creating build/lib/lucas
+copying src/lucas/__init__.py -> build/lib/lucas
+creating build/lib/resonance_intelligence
+copying src/resonance_intelligence/__init__.py -> build/lib/resonance_intelligence
+creating build/lib/toe
+copying src/toe/__init__.py -> build/lib/toe
+creating build/lib/aethel/enterprise
+copying src/aethel/enterprise/__init__.py -> build/lib/aethel/enterprise
+copying src/aethel/enterprise/lifecycle.py -> build/lib/aethel/enterprise
+creating build/lib/euclid/capabilities
+copying src/euclid/capabilities/__init__.py -> build/lib/euclid/capabilities
+copying src/euclid/capabilities/empirical_recovery.py -> build/lib/euclid/capabilities
+copying src/euclid/capabilities/empirical_runtime.py -> build/lib/euclid/capabilities
+copying src/euclid/capabilities/empirical_state_bridge.py -> build/lib/euclid/capabilities
+running egg_info
+writing src/euclid_engine.egg-info/PKG-INFO
+writing dependency_links to src/euclid_engine.egg-info/dependency_links.txt
+writing top-level names to src/euclid_engine.egg-info/top_level.txt
+reading manifest file 'src/euclid_engine.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'src/euclid_engine.egg-info/SOURCES.txt'
+copying src/euclid/_artifact_provenance.json -> build/lib/euclid
+creating build/lib/euclid/nonpackage-assets
+copying src/euclid/nonpackage-assets/fixture.json -> build/lib/euclid/nonpackage-assets
+copying src/euclid/nonpackage-assets/fixture.json -> build/lib/euclid/nonpackage-assets
+installing to build/bdist.linux-x86_64/wheel
+running install
+running install_lib
+creating build/bdist.linux-x86_64/wheel
+copying build/lib/pythia_turing_math.py -> build/bdist.linux-x86_64/wheel/.
+copying build/lib/turing_core.py -> build/bdist.linux-x86_64/wheel/.
+creating build/bdist.linux-x86_64/wheel/Intelligence
+copying build/lib/Intelligence/__init__.py -> build/bdist.linux-x86_64/wheel/./Intelligence
+copying build/lib/Intelligence/capability_fabric.py -> build/bdist.linux-x86_64/wheel/./Intelligence
+creating build/bdist.linux-x86_64/wheel/aethel
+copying build/lib/aethel/__init__.py -> build/bdist.linux-x86_64/wheel/./aethel
+creating build/bdist.linux-x86_64/wheel/aethel/enterprise
+copying build/lib/aethel/enterprise/__init__.py -> build/bdist.linux-x86_64/wheel/./aethel/enterprise
+copying build/lib/aethel/enterprise/lifecycle.py -> build/bdist.linux-x86_64/wheel/./aethel/enterprise
+creating build/bdist.linux-x86_64/wheel/al_haras
+copying build/lib/al_haras/__init__.py -> build/bdist.linux-x86_64/wheel/./al_haras
+copying build/lib/al_haras/audit.py -> build/bdist.linux-x86_64/wheel/./al_haras
+creating build/bdist.linux-x86_64/wheel/euclid
+copying build/lib/euclid/__init__.py -> build/bdist.linux-x86_64/wheel/./euclid
+copying build/lib/euclid/runtime.py -> build/bdist.linux-x86_64/wheel/./euclid
+creating build/bdist.linux-x86_64/wheel/euclid/capabilities
+copying build/lib/euclid/capabilities/__init__.py -> build/bdist.linux-x86_64/wheel/./euclid/capabilities
+copying build/lib/euclid/capabilities/empirical_recovery.py -> build/bdist.linux-x86_64/wheel/./euclid/capabilities
+copying build/lib/euclid/capabilities/empirical_runtime.py -> build/bdist.linux-x86_64/wheel/./euclid/capabilities
+copying build/lib/euclid/capabilities/empirical_state_bridge.py -> build/bdist.linux-x86_64/wheel/./euclid/capabilities
+copying build/lib/euclid/_artifact_provenance.json -> build/bdist.linux-x86_64/wheel/./euclid
+creating build/bdist.linux-x86_64/wheel/euclid/nonpackage-assets
+copying build/lib/euclid/nonpackage-assets/fixture.json -> build/bdist.linux-x86_64/wheel/./euclid/nonpackage-assets
+creating build/bdist.linux-x86_64/wheel/hyba_euclid_intelligence
+copying build/lib/hyba_euclid_intelligence/__init__.py -> build/bdist.linux-x86_64/wheel/./hyba_euclid_intelligence
+creating build/bdist.linux-x86_64/wheel/hyba_substrate
+copying build/lib/hyba_substrate/__init__.py -> build/bdist.linux-x86_64/wheel/./hyba_substrate
+creating build/bdist.linux-x86_64/wheel/hyba_toe_intelligence
+copying build/lib/hyba_toe_intelligence/__init__.py -> build/bdist.linux-x86_64/wheel/./hyba_toe_intelligence
+creating build/bdist.linux-x86_64/wheel/lucas
+copying build/lib/lucas/__init__.py -> build/bdist.linux-x86_64/wheel/./lucas
+creating build/bdist.linux-x86_64/wheel/resonance_intelligence
+copying build/lib/resonance_intelligence/__init__.py -> build/bdist.linux-x86_64/wheel/./resonance_intelligence
+creating build/bdist.linux-x86_64/wheel/toe
+copying build/lib/toe/__init__.py -> build/bdist.linux-x86_64/wheel/./toe
+running install_egg_info
+Copying src/euclid_engine.egg-info to build/bdist.linux-x86_64/wheel/./euclid_engine-1.0.0-py3.13.egg-info
+running install_scripts
+creating build/bdist.linux-x86_64/wheel/euclid_engine-1.0.0.dist-info/WHEEL
+creating '/tmp/euclid-build-5oh0k2uf/built/.tmp-u7kdz25f/euclid_engine-1.0.0-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+adding 'pythia_turing_math.py'
+adding 'turing_core.py'
+adding 'Intelligence/__init__.py'
+adding 'Intelligence/capability_fabric.py'
+adding 'aethel/__init__.py'
+adding 'aethel/enterprise/__init__.py'
+adding 'aethel/enterprise/lifecycle.py'
+adding 'al_haras/__init__.py'
+adding 'al_haras/audit.py'
+adding 'euclid/__init__.py'
+adding 'euclid/_artifact_provenance.json'
+adding 'euclid/runtime.py'
+adding 'euclid/capabilities/__init__.py'
+adding 'euclid/capabilities/empirical_recovery.py'
+adding 'euclid/capabilities/empirical_runtime.py'
+adding 'euclid/capabilities/empirical_state_bridge.py'
+adding 'euclid/nonpackage-assets/fixture.json'
+adding 'euclid_engine-1.0.0.dist-info/licenses/LICENSE'
+adding 'hyba_euclid_intelligence/__init__.py'
+adding 'hyba_substrate/__init__.py'
+adding 'hyba_toe_intelligence/__init__.py'
+adding 'lucas/__init__.py'
+adding 'resonance_intelligence/__init__.py'
+adding 'toe/__init__.py'
+adding 'euclid_engine-1.0.0.dist-info/METADATA'
+adding 'euclid_engine-1.0.0.dist-info/WHEEL'
+adding 'euclid_engine-1.0.0.dist-info/top_level.txt'
+adding 'euclid_engine-1.0.0.dist-info/RECORD'
+removing build/bdist.linux-x86_64/wheel
+Successfully built euclid_engine-1.0.0-py3-none-any.whl
+$ /usr/local/bin/python -m pip download --only-binary=:all: --dest /tmp/euclid-build-5oh0k2uf/built --find-links /tmp/euclid-build-5oh0k2uf/built --no-index --find-links /tmp/tmppyg_up0m/empty-wheelhouse /tmp/euclid-build-5oh0k2uf/built/hyba_kellogg_tensor-1.0.0-py3-none-any.whl /tmp/euclid-build-5oh0k2uf/built/hyba_turing_vqc-1.0.0-py3-none-any.whl /tmp/euclid-build-5oh0k2uf/built/euclid_engine-1.0.0-py3-none-any.whl
+Looking in links: /tmp/euclid-build-5oh0k2uf/built, /tmp/tmppyg_up0m/empty-wheelhouse
+Processing ./built/hyba_kellogg_tensor-1.0.0-py3-none-any.whl
+  File was already downloaded /tmp/euclid-build-5oh0k2uf/built/hyba_kellogg_tensor-1.0.0-py3-none-any.whl
+Processing ./built/hyba_turing_vqc-1.0.0-py3-none-any.whl
+  File was already downloaded /tmp/euclid-build-5oh0k2uf/built/hyba_turing_vqc-1.0.0-py3-none-any.whl
+Processing ./built/euclid_engine-1.0.0-py3-none-any.whl
+  File was already downloaded /tmp/euclid-build-5oh0k2uf/built/euclid_engine-1.0.0-py3-none-any.whl
+Successfully downloaded hyba-kellogg-tensor hyba-turing-vqc euclid-engine
+$ git rev-parse HEAD
+$ git status --porcelain --untracked-files=normal
+....
+----------------------------------------------------------------------
+Ran 12 tests in 2.169s
+
+OK
+WHEEL=/tmp/tmppyg_up0m/output/euclid_engine-1.0.0-py3-none-any.whl
+
+========================================================================
+recovery-packaging-optimized.log
+========================================================================
+........$ git rev-parse HEAD
+$ git status --porcelain --untracked-files=normal
+$ git ls-files --cached -z
+$ /usr/local/bin/python -m build --wheel --no-isolation --outdir /tmp/euclid-build-3h2f85fs/built /tmp/euclid-build-3h2f85fs/owner-source/packaging/kellogg-tensor
+* Getting build dependencies for wheel...
+running egg_info
+creating hyba_kellogg_tensor.egg-info
+writing hyba_kellogg_tensor.egg-info/PKG-INFO
+writing dependency_links to hyba_kellogg_tensor.egg-info/dependency_links.txt
+writing top-level names to hyba_kellogg_tensor.egg-info/top_level.txt
+writing manifest file 'hyba_kellogg_tensor.egg-info/SOURCES.txt'
+reading manifest file 'hyba_kellogg_tensor.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'hyba_kellogg_tensor.egg-info/SOURCES.txt'
+* Building wheel...
+running bdist_wheel
+running build
+running build_py
+creating build/lib/kellogg
+copying ../../kellogg/__init__.py -> build/lib/kellogg
+running egg_info
+writing hyba_kellogg_tensor.egg-info/PKG-INFO
+writing dependency_links to hyba_kellogg_tensor.egg-info/dependency_links.txt
+writing top-level names to hyba_kellogg_tensor.egg-info/top_level.txt
+reading manifest file 'hyba_kellogg_tensor.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'hyba_kellogg_tensor.egg-info/SOURCES.txt'
+installing to build/bdist.linux-x86_64/wheel
+running install
+running install_lib
+creating build/bdist.linux-x86_64/wheel
+creating build/bdist.linux-x86_64/wheel/kellogg
+copying build/lib/kellogg/__init__.py -> build/bdist.linux-x86_64/wheel/./kellogg
+running install_egg_info
+Copying hyba_kellogg_tensor.egg-info to build/bdist.linux-x86_64/wheel/./hyba_kellogg_tensor-1.0.0-py3.13.egg-info
+running install_scripts
+creating build/bdist.linux-x86_64/wheel/hyba_kellogg_tensor-1.0.0.dist-info/WHEEL
+creating '/tmp/euclid-build-3h2f85fs/built/.tmp-6poz9ynt/hyba_kellogg_tensor-1.0.0-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+adding 'hyba_kellogg_tensor-1.0.0.dist-info/licenses/LICENSE'
+adding 'kellogg/__init__.py'
+adding 'hyba_kellogg_tensor-1.0.0.dist-info/METADATA'
+adding 'hyba_kellogg_tensor-1.0.0.dist-info/WHEEL'
+adding 'hyba_kellogg_tensor-1.0.0.dist-info/top_level.txt'
+adding 'hyba_kellogg_tensor-1.0.0.dist-info/RECORD'
+removing build/bdist.linux-x86_64/wheel
+Successfully built hyba_kellogg_tensor-1.0.0-py3-none-any.whl
+$ /usr/local/bin/python -m build --wheel --no-isolation --outdir /tmp/euclid-build-3h2f85fs/built /tmp/euclid-build-3h2f85fs/owner-source/turing_universal_quantum_computer
+* Getting build dependencies for wheel...
+running egg_info
+creating hyba_turing_vqc.egg-info
+writing hyba_turing_vqc.egg-info/PKG-INFO
+writing dependency_links to hyba_turing_vqc.egg-info/dependency_links.txt
+writing top-level names to hyba_turing_vqc.egg-info/top_level.txt
+writing manifest file 'hyba_turing_vqc.egg-info/SOURCES.txt'
+reading manifest file 'hyba_turing_vqc.egg-info/SOURCES.txt'
+writing manifest file 'hyba_turing_vqc.egg-info/SOURCES.txt'
+* Building wheel...
+running bdist_wheel
+running build
+running build_py
+creating build/lib/turing_universal_quantum_computer
+copying ./turing_universal_quantum_computer/__init__.py -> build/lib/turing_universal_quantum_computer
+running egg_info
+writing hyba_turing_vqc.egg-info/PKG-INFO
+writing dependency_links to hyba_turing_vqc.egg-info/dependency_links.txt
+writing top-level names to hyba_turing_vqc.egg-info/top_level.txt
+reading manifest file 'hyba_turing_vqc.egg-info/SOURCES.txt'
+writing manifest file 'hyba_turing_vqc.egg-info/SOURCES.txt'
+installing to build/bdist.linux-x86_64/wheel
+running install
+running install_lib
+creating build/bdist.linux-x86_64/wheel
+creating build/bdist.linux-x86_64/wheel/turing_universal_quantum_computer
+copying build/lib/turing_universal_quantum_computer/__init__.py -> build/bdist.linux-x86_64/wheel/./turing_universal_quantum_computer
+running install_egg_info
+Copying hyba_turing_vqc.egg-info to build/bdist.linux-x86_64/wheel/./hyba_turing_vqc-1.0.0-py3.13.egg-info
+running install_scripts
+creating build/bdist.linux-x86_64/wheel/hyba_turing_vqc-1.0.0.dist-info/WHEEL
+creating '/tmp/euclid-build-3h2f85fs/built/.tmp-6bf36apl/hyba_turing_vqc-1.0.0-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+adding 'turing_universal_quantum_computer/__init__.py'
+adding 'hyba_turing_vqc-1.0.0.dist-info/METADATA'
+adding 'hyba_turing_vqc-1.0.0.dist-info/WHEEL'
+adding 'hyba_turing_vqc-1.0.0.dist-info/top_level.txt'
+adding 'hyba_turing_vqc-1.0.0.dist-info/RECORD'
+removing build/bdist.linux-x86_64/wheel
+Successfully built hyba_turing_vqc-1.0.0-py3-none-any.whl
+$ /usr/local/bin/python -m build --wheel --no-isolation --outdir /tmp/euclid-build-3h2f85fs/built /tmp/euclid-build-3h2f85fs/project
+* Getting build dependencies for wheel...
+running egg_info
+creating src/euclid_engine.egg-info
+writing src/euclid_engine.egg-info/PKG-INFO
+writing dependency_links to src/euclid_engine.egg-info/dependency_links.txt
+writing top-level names to src/euclid_engine.egg-info/top_level.txt
+writing manifest file 'src/euclid_engine.egg-info/SOURCES.txt'
+reading manifest file 'src/euclid_engine.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'src/euclid_engine.egg-info/SOURCES.txt'
+* Building wheel...
+running bdist_wheel
+running build
+running build_py
+creating build/lib
+copying src/pythia_turing_math.py -> build/lib
+copying src/turing_core.py -> build/lib
+creating build/lib/Intelligence
+copying src/Intelligence/__init__.py -> build/lib/Intelligence
+copying src/Intelligence/capability_fabric.py -> build/lib/Intelligence
+creating build/lib/aethel
+copying src/aethel/__init__.py -> build/lib/aethel
+creating build/lib/al_haras
+copying src/al_haras/__init__.py -> build/lib/al_haras
+copying src/al_haras/audit.py -> build/lib/al_haras
+creating build/lib/euclid
+copying src/euclid/__init__.py -> build/lib/euclid
+copying src/euclid/runtime.py -> build/lib/euclid
+creating build/lib/hyba_euclid_intelligence
+copying src/hyba_euclid_intelligence/__init__.py -> build/lib/hyba_euclid_intelligence
+creating build/lib/hyba_substrate
+copying src/hyba_substrate/__init__.py -> build/lib/hyba_substrate
+creating build/lib/hyba_toe_intelligence
+copying src/hyba_toe_intelligence/__init__.py -> build/lib/hyba_toe_intelligence
+creating build/lib/lucas
+copying src/lucas/__init__.py -> build/lib/lucas
+creating build/lib/resonance_intelligence
+copying src/resonance_intelligence/__init__.py -> build/lib/resonance_intelligence
+creating build/lib/toe
+copying src/toe/__init__.py -> build/lib/toe
+creating build/lib/aethel/enterprise
+copying src/aethel/enterprise/__init__.py -> build/lib/aethel/enterprise
+copying src/aethel/enterprise/lifecycle.py -> build/lib/aethel/enterprise
+creating build/lib/euclid/capabilities
+copying src/euclid/capabilities/__init__.py -> build/lib/euclid/capabilities
+copying src/euclid/capabilities/empirical_recovery.py -> build/lib/euclid/capabilities
+copying src/euclid/capabilities/empirical_runtime.py -> build/lib/euclid/capabilities
+copying src/euclid/capabilities/empirical_state_bridge.py -> build/lib/euclid/capabilities
+running egg_info
+writing src/euclid_engine.egg-info/PKG-INFO
+writing dependency_links to src/euclid_engine.egg-info/dependency_links.txt
+writing top-level names to src/euclid_engine.egg-info/top_level.txt
+reading manifest file 'src/euclid_engine.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file 'src/euclid_engine.egg-info/SOURCES.txt'
+copying src/euclid/_artifact_provenance.json -> build/lib/euclid
+creating build/lib/euclid/nonpackage-assets
+copying src/euclid/nonpackage-assets/fixture.json -> build/lib/euclid/nonpackage-assets
+copying src/euclid/nonpackage-assets/fixture.json -> build/lib/euclid/nonpackage-assets
+installing to build/bdist.linux-x86_64/wheel
+running install
+running install_lib
+creating build/bdist.linux-x86_64/wheel
+copying build/lib/pythia_turing_math.py -> build/bdist.linux-x86_64/wheel/.
+copying build/lib/turing_core.py -> build/bdist.linux-x86_64/wheel/.
+creating build/bdist.linux-x86_64/wheel/Intelligence
+copying build/lib/Intelligence/__init__.py -> build/bdist.linux-x86_64/wheel/./Intelligence
+copying build/lib/Intelligence/capability_fabric.py -> build/bdist.linux-x86_64/wheel/./Intelligence
+creating build/bdist.linux-x86_64/wheel/aethel
+copying build/lib/aethel/__init__.py -> build/bdist.linux-x86_64/wheel/./aethel
+creating build/bdist.linux-x86_64/wheel/aethel/enterprise
+copying build/lib/aethel/enterprise/__init__.py -> build/bdist.linux-x86_64/wheel/./aethel/enterprise
+copying build/lib/aethel/enterprise/lifecycle.py -> build/bdist.linux-x86_64/wheel/./aethel/enterprise
+creating build/bdist.linux-x86_64/wheel/al_haras
+copying build/lib/al_haras/__init__.py -> build/bdist.linux-x86_64/wheel/./al_haras
+copying build/lib/al_haras/audit.py -> build/bdist.linux-x86_64/wheel/./al_haras
+creating build/bdist.linux-x86_64/wheel/euclid
+copying build/lib/euclid/__init__.py -> build/bdist.linux-x86_64/wheel/./euclid
+copying build/lib/euclid/runtime.py -> build/bdist.linux-x86_64/wheel/./euclid
+creating build/bdist.linux-x86_64/wheel/euclid/capabilities
+copying build/lib/euclid/capabilities/__init__.py -> build/bdist.linux-x86_64/wheel/./euclid/capabilities
+copying build/lib/euclid/capabilities/empirical_recovery.py -> build/bdist.linux-x86_64/wheel/./euclid/capabilities
+copying build/lib/euclid/capabilities/empirical_runtime.py -> build/bdist.linux-x86_64/wheel/./euclid/capabilities
+copying build/lib/euclid/capabilities/empirical_state_bridge.py -> build/bdist.linux-x86_64/wheel/./euclid/capabilities
+copying build/lib/euclid/_artifact_provenance.json -> build/bdist.linux-x86_64/wheel/./euclid
+creating build/bdist.linux-x86_64/wheel/euclid/nonpackage-assets
+copying build/lib/euclid/nonpackage-assets/fixture.json -> build/bdist.linux-x86_64/wheel/./euclid/nonpackage-assets
+creating build/bdist.linux-x86_64/wheel/hyba_euclid_intelligence
+copying build/lib/hyba_euclid_intelligence/__init__.py -> build/bdist.linux-x86_64/wheel/./hyba_euclid_intelligence
+creating build/bdist.linux-x86_64/wheel/hyba_substrate
+copying build/lib/hyba_substrate/__init__.py -> build/bdist.linux-x86_64/wheel/./hyba_substrate
+creating build/bdist.linux-x86_64/wheel/hyba_toe_intelligence
+copying build/lib/hyba_toe_intelligence/__init__.py -> build/bdist.linux-x86_64/wheel/./hyba_toe_intelligence
+creating build/bdist.linux-x86_64/wheel/lucas
+copying build/lib/lucas/__init__.py -> build/bdist.linux-x86_64/wheel/./lucas
+creating build/bdist.linux-x86_64/wheel/resonance_intelligence
+copying build/lib/resonance_intelligence/__init__.py -> build/bdist.linux-x86_64/wheel/./resonance_intelligence
+creating build/bdist.linux-x86_64/wheel/toe
+copying build/lib/toe/__init__.py -> build/bdist.linux-x86_64/wheel/./toe
+running install_egg_info
+Copying src/euclid_engine.egg-info to build/bdist.linux-x86_64/wheel/./euclid_engine-1.0.0-py3.13.egg-info
+running install_scripts
+creating build/bdist.linux-x86_64/wheel/euclid_engine-1.0.0.dist-info/WHEEL
+creating '/tmp/euclid-build-3h2f85fs/built/.tmp-vh9jm8zq/euclid_engine-1.0.0-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+adding 'pythia_turing_math.py'
+adding 'turing_core.py'
+adding 'Intelligence/__init__.py'
+adding 'Intelligence/capability_fabric.py'
+adding 'aethel/__init__.py'
+adding 'aethel/enterprise/__init__.py'
+adding 'aethel/enterprise/lifecycle.py'
+adding 'al_haras/__init__.py'
+adding 'al_haras/audit.py'
+adding 'euclid/__init__.py'
+adding 'euclid/_artifact_provenance.json'
+adding 'euclid/runtime.py'
+adding 'euclid/capabilities/__init__.py'
+adding 'euclid/capabilities/empirical_recovery.py'
+adding 'euclid/capabilities/empirical_runtime.py'
+adding 'euclid/capabilities/empirical_state_bridge.py'
+adding 'euclid/nonpackage-assets/fixture.json'
+adding 'euclid_engine-1.0.0.dist-info/licenses/LICENSE'
+adding 'hyba_euclid_intelligence/__init__.py'
+adding 'hyba_substrate/__init__.py'
+adding 'hyba_toe_intelligence/__init__.py'
+adding 'lucas/__init__.py'
+adding 'resonance_intelligence/__init__.py'
+adding 'toe/__init__.py'
+adding 'euclid_engine-1.0.0.dist-info/METADATA'
+adding 'euclid_engine-1.0.0.dist-info/WHEEL'
+adding 'euclid_engine-1.0.0.dist-info/top_level.txt'
+adding 'euclid_engine-1.0.0.dist-info/RECORD'
+removing build/bdist.linux-x86_64/wheel
+Successfully built euclid_engine-1.0.0-py3-none-any.whl
+$ /usr/local/bin/python -m pip download --only-binary=:all: --dest /tmp/euclid-build-3h2f85fs/built --find-links /tmp/euclid-build-3h2f85fs/built --no-index --find-links /tmp/tmppayc2bg1/empty-wheelhouse /tmp/euclid-build-3h2f85fs/built/hyba_kellogg_tensor-1.0.0-py3-none-any.whl /tmp/euclid-build-3h2f85fs/built/hyba_turing_vqc-1.0.0-py3-none-any.whl /tmp/euclid-build-3h2f85fs/built/euclid_engine-1.0.0-py3-none-any.whl
+Looking in links: /tmp/euclid-build-3h2f85fs/built, /tmp/tmppayc2bg1/empty-wheelhouse
+Processing ./built/hyba_kellogg_tensor-1.0.0-py3-none-any.whl
+  File was already downloaded /tmp/euclid-build-3h2f85fs/built/hyba_kellogg_tensor-1.0.0-py3-none-any.whl
+Processing ./built/hyba_turing_vqc-1.0.0-py3-none-any.whl
+  File was already downloaded /tmp/euclid-build-3h2f85fs/built/hyba_turing_vqc-1.0.0-py3-none-any.whl
+Processing ./built/euclid_engine-1.0.0-py3-none-any.whl
+  File was already downloaded /tmp/euclid-build-3h2f85fs/built/euclid_engine-1.0.0-py3-none-any.whl
+Successfully downloaded hyba-kellogg-tensor hyba-turing-vqc euclid-engine
+$ git rev-parse HEAD
+$ git status --porcelain --untracked-files=normal
+....
+----------------------------------------------------------------------
+Ran 12 tests in 2.210s
+
+OK
+WHEEL=/tmp/tmppayc2bg1/output/euclid_engine-1.0.0-py3-none-any.whl
+
+========================================================================
+recovery-format-check.log
+========================================================================
+All done! ✨ 🍰 ✨
+8 files would be left unchanged.
+
+========================================================================
+recovery-lint.log
+========================================================================
+All checks passed!
+
+========================================================================
+euclid-remote-access.log
+========================================================================
+fatal: could not read Username for 'https://github.com': terminal prompts disabled
+
+========================================================================
+euclid-full-acceptance-attempt.log
+========================================================================
+$ git merge-base --is-ancestor 4226a3c93ca2e045976e0e648ec4a66db064d5a4 HEAD
+fatal: not a git repository (or any of the parent directories): .git
+EVIDENCE=/data/euclid-full-acceptance-attempt/verification.json
+Traceback (most recent call last):
+  File "/data/euclid-hardening/scripts/run_clean_install.py", line 171, in <module>
+    main()
+    ~~~~^^
+  File "/data/euclid-hardening/scripts/run_clean_install.py", line 60, in main
+    run(
+    ~~~^
+        ["git", "merge-base", "--is-ancestor", args.required_ancestor, "HEAD"],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        cwd=REPO,
+        ^^^^^^^^^
+        log=log,
+        ^^^^^^^^
+    )
+    ^
+  File "/data/euclid-hardening/scripts/run_clean_install.py", line 33, in run
+    raise subprocess.CalledProcessError(completed.returncode, command)
+subprocess.CalledProcessError: Command '['git', 'merge-base', '--is-ancestor', '4226a3c93ca2e045976e0e648ec4a66db064d5a4', 'HEAD']' returned non-zero exit status 128.

@@ -1,0 +1,255 @@
+FFFFFFF...FFF.F.                                                         [100%]
+=================================== FAILURES ===================================
+____________________ test_completed_record_cannot_reexecute ____________________
+
+    def test_completed_record_cannot_reexecute():
+        governor = RecoveryGovernor()
+        record = proposal(governor)
+        calls = []
+        steps = [("RESTART_LANE", lambda: calls.append(1) or "RESTART_LANE")]
+        governor.dispatch(record, steps)
+        governor.observe(True)
+>       with pytest.raises(ValueError, match="active owned"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_recovery_dispatch_boundary.py:26: Failed
+__________ test_dispatched_record_cannot_reexecute_before_observation __________
+
+    def test_dispatched_record_cannot_reexecute_before_observation():
+        governor = RecoveryGovernor()
+        record = proposal(governor)
+        governor.dispatch(record, [("RESTART_LANE", lambda: "RESTART_LANE")])
+        with pytest.raises(ValueError, match="already been dispatched"):
+>           governor.dispatch(record, [("RESTART_LANE", lambda: pytest.fail("replayed"))])
+
+tests/test_mining_recovery_dispatch_boundary.py:38: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+chronus/mla1517/mining/recovery_authority.py:245: in dispatch
+    routed = action()
+             ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+>   governor.dispatch(record, [("RESTART_LANE", lambda: pytest.fail("replayed"))])
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: replayed
+
+tests/test_mining_recovery_dispatch_boundary.py:38: Failed
+______________________ test_foreign_record_cannot_execute ______________________
+
+    def test_foreign_record_cannot_execute():
+        governor = RecoveryGovernor()
+        record = proposal(RecoveryGovernor())
+        with pytest.raises(ValueError, match="active owned"):
+>           governor.dispatch(record, [("RESTART_LANE", lambda: pytest.fail("foreign"))])
+
+tests/test_mining_recovery_dispatch_boundary.py:45: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+chronus/mla1517/mining/recovery_authority.py:245: in dispatch
+    routed = action()
+             ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+>   governor.dispatch(record, [("RESTART_LANE", lambda: pytest.fail("foreign"))])
+                                                        ^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: foreign
+
+tests/test_mining_recovery_dispatch_boundary.py:45: Failed
+___________________ test_copied_identity_is_not_owned_record ___________________
+
+    def test_copied_identity_is_not_owned_record():
+        governor = RecoveryGovernor()
+        record = proposal(governor)
+        forged = RecoveryRecord(record.recovery_id, record.origin, record.commands, record.reason)
+        with pytest.raises(ValueError, match="active owned"):
+>           governor.dispatch(forged, [("RESTART_LANE", lambda: pytest.fail("forged"))])
+
+tests/test_mining_recovery_dispatch_boundary.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+chronus/mla1517/mining/recovery_authority.py:245: in dispatch
+    routed = action()
+             ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+>   governor.dispatch(forged, [("RESTART_LANE", lambda: pytest.fail("forged"))])
+                                                        ^^^^^^^^^^^^^^^^^^^^^
+E   Failed: forged
+
+tests/test_mining_recovery_dispatch_boundary.py:54: Failed
+__________________ test_reentrant_action_cannot_execute_twice __________________
+
+    def test_reentrant_action_cannot_execute_twice():
+        governor = RecoveryGovernor()
+        record = proposal(governor)
+        calls = []
+    
+        def action():
+            calls.append(1)
+            with pytest.raises(ValueError, match="already been dispatched"):
+                governor.dispatch(record, [("RESTART_LANE", lambda: pytest.fail("recursive"))])
+            return "RESTART_LANE"
+    
+>       governor.dispatch(record, [("RESTART_LANE", action)])
+
+tests/test_mining_recovery_dispatch_boundary.py:69: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+chronus/mla1517/mining/recovery_authority.py:245: in dispatch
+    routed = action()
+             ^^^^^^^^
+tests/test_mining_recovery_dispatch_boundary.py:66: in action
+    governor.dispatch(record, [("RESTART_LANE", lambda: pytest.fail("recursive"))])
+chronus/mla1517/mining/recovery_authority.py:245: in dispatch
+    routed = action()
+             ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+>   governor.dispatch(record, [("RESTART_LANE", lambda: pytest.fail("recursive"))])
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: recursive
+
+tests/test_mining_recovery_dispatch_boundary.py:66: Failed
+________________ test_concurrent_duplicate_has_one_side_effect _________________
+
+    def test_concurrent_duplicate_has_one_side_effect():
+        governor = RecoveryGovernor()
+        record = proposal(governor)
+        entered, release = Event(), Event()
+        calls = []
+    
+        def action():
+            calls.append(1)
+            entered.set()
+            assert release.wait(5)
+            return "RESTART_LANE"
+    
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            first = pool.submit(governor.dispatch, record, [("RESTART_LANE", action)])
+            assert entered.wait(5)
+            second = pool.submit(governor.dispatch, record, [("RESTART_LANE", action)])
+            release.set()
+            first.result(timeout=5)
+>           with pytest.raises(ValueError, match="already been dispatched"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE ValueError
+
+tests/test_mining_recovery_dispatch_boundary.py:91: Failed
+__________________ test_ack_exception_cannot_become_verified ___________________
+
+    def test_ack_exception_cannot_become_verified():
+        governor = RecoveryGovernor()
+        record = proposal(governor, "FLUSH_LANE")
+    
+        def ack():
+            raise OSError("transport lost")
+    
+        with pytest.raises(OSError, match="transport lost"):
+            governor.dispatch(record, [("FLUSH_LANE", lambda: "FLUSH_LANE")], ack=ack)
+>       assert record.state is RecoveryState.FAILED
+E       AssertionError: assert <RecoveryState.DISPATCHED: 'DISPATCHED'> is <RecoveryState.FAILED: 'FAILED'>
+E        +  where <RecoveryState.DISPATCHED: 'DISPATCHED'> = RecoveryRecord(recovery_id='recovery:07157c9f-c108-43c1-93a1-baf723c5a72f', origin='self_healing_agent', commands=('FL...], ack=None, unhealthy_observations=0, closed_at=None, failure=None, target='pythia.mining.runtime', authorizations=[]).state
+E        +  and   <RecoveryState.FAILED: 'FAILED'> = RecoveryState.FAILED
+
+tests/test_mining_recovery_dispatch_boundary.py:105: AssertionError
+_________________ test_live_supervisor_still_defers_lane_write _________________
+
+    def test_live_supervisor_still_defers_lane_write():
+        governor = RecoveryGovernor(clock=lambda: 10)
+        governor.external_mode("NORMAL")
+        record = proposal(governor, "FLUSH_LANE")
+        governor.dispatch(record, [("FLUSH_LANE", lambda: pytest.fail("two writers"))])
+        assert record.state is RecoveryState.DEFERRED
+        assert record.deferred == ["FLUSH_LANE"]
+>       with pytest.raises(ValueError, match="already been dispatched"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_recovery_dispatch_boundary.py:130: Failed
+______________ test_entire_plan_validated_before_any_side_effect _______________
+
+    def test_entire_plan_validated_before_any_side_effect():
+        governor = RecoveryGovernor()
+        record = proposal(governor)
+        with pytest.raises(ValueError, match="not proposed"):
+>           governor.dispatch(record, [("RESTART_LANE", lambda: pytest.fail("partial effect")),
+                                       ("FLUSH_LANE", lambda: "FLUSH_LANE")])
+
+tests/test_mining_recovery_dispatch_boundary.py:138: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+chronus/mla1517/mining/recovery_authority.py:245: in dispatch
+    routed = action()
+             ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+>   governor.dispatch(record, [("RESTART_LANE", lambda: pytest.fail("partial effect")),
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                               ("FLUSH_LANE", lambda: "FLUSH_LANE")])
+E   Failed: partial effect
+
+tests/test_mining_recovery_dispatch_boundary.py:138: Failed
+___________________ test_broken_step_iterator_closes_failed ____________________
+
+    def test_broken_step_iterator_closes_failed():
+        governor = RecoveryGovernor()
+        record = proposal(governor)
+    
+        def steps():
+            yield "RESTART_LANE", lambda: pytest.fail("partial effect")
+            raise RuntimeError("broken step iterator")
+    
+        with pytest.raises(RuntimeError, match="broken step iterator"):
+>           governor.dispatch(record, steps())
+
+tests/test_mining_recovery_dispatch_boundary.py:152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+chronus/mla1517/mining/recovery_authority.py:245: in dispatch
+    routed = action()
+             ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+>   yield "RESTART_LANE", lambda: pytest.fail("partial effect")
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: partial effect
+
+tests/test_mining_recovery_dispatch_boundary.py:148: Failed
+_______ test_observation_inside_action_cannot_verify_unfinished_dispatch _______
+
+    def test_observation_inside_action_cannot_verify_unfinished_dispatch():
+        governor = RecoveryGovernor()
+        record = proposal(governor)
+    
+        def action():
+            assert governor.observe(True) == []
+            assert record.state is RecoveryState.DISPATCHED
+            raise OSError("action failed after observation")
+    
+        with pytest.raises(OSError):
+>           governor.dispatch(record, [("RESTART_LANE", action)])
+
+tests/test_mining_recovery_dispatch_boundary.py:176: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+chronus/mla1517/mining/recovery_authority.py:245: in dispatch
+    routed = action()
+             ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def action():
+        assert governor.observe(True) == []
+>       assert record.state is RecoveryState.DISPATCHED
+E       AssertionError: assert <RecoveryState.PROPOSED: 'PROPOSED'> is <RecoveryState.DISPATCHED: 'DISPATCHED'>
+E        +  where <RecoveryState.PROPOSED: 'PROPOSED'> = RecoveryRecord(recovery_id='recovery:c6aa1f41-52ca-421c-8d4d-fae80f04e934', origin='self_healing_agent', commands=('RE...], ack=None, unhealthy_observations=0, closed_at=None, failure=None, target='pythia.mining.runtime', authorizations=[]).state
+E        +  and   <RecoveryState.DISPATCHED: 'DISPATCHED'> = RecoveryState.DISPATCHED
+
+tests/test_mining_recovery_dispatch_boundary.py:172: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_mining_recovery_dispatch_boundary.py::test_completed_record_cannot_reexecute
+FAILED tests/test_mining_recovery_dispatch_boundary.py::test_dispatched_record_cannot_reexecute_before_observation
+FAILED tests/test_mining_recovery_dispatch_boundary.py::test_foreign_record_cannot_execute
+FAILED tests/test_mining_recovery_dispatch_boundary.py::test_copied_identity_is_not_owned_record
+FAILED tests/test_mining_recovery_dispatch_boundary.py::test_reentrant_action_cannot_execute_twice
+FAILED tests/test_mining_recovery_dispatch_boundary.py::test_concurrent_duplicate_has_one_side_effect
+FAILED tests/test_mining_recovery_dispatch_boundary.py::test_ack_exception_cannot_become_verified
+FAILED tests/test_mining_recovery_dispatch_boundary.py::test_live_supervisor_still_defers_lane_write
+FAILED tests/test_mining_recovery_dispatch_boundary.py::test_entire_plan_validated_before_any_side_effect
+FAILED tests/test_mining_recovery_dispatch_boundary.py::test_broken_step_iterator_closes_failed
+FAILED tests/test_mining_recovery_dispatch_boundary.py::test_observation_inside_action_cannot_verify_unfinished_dispatch
+11 failed, 5 passed in 0.27s

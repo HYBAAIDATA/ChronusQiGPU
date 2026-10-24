@@ -160,7 +160,21 @@ def test_grafts_are_taken_one_at_a_time_and_halt_on_a_rejected_one(upstream, tmp
 
 def test_the_repository_grafts_verify_against_the_plan():
     grafts = verify()
-    assert grafts and all(problems == [] for problems in grafts.values()), grafts
+    assert grafts
+    equipped = load_skills(str(skill_graft.SKILLS_DIR))
+    for name, problems in grafts.items():
+        retired = (skill_graft.SKILLS_DIR / name / "DEPRECATED.md").exists()
+        if retired:
+            # Retired instructions are not silently re-admitted by ignoring
+            # the extra file or rewriting the pinned upstream manifest.
+            expected = sorted(
+                f"{p.relative_to(skill_graft.SKILLS_DIR / name).as_posix()}: not part of the graft"
+                for p in (skill_graft.SKILLS_DIR / name).rglob("DEPRECATED.md")
+            )
+            assert sorted(problems) == expected
+            assert name not in equipped
+        else:
+            assert problems == []
     plan = [spec.name for spec in skill_graft.GRAFT_PLAN]
     # Grafted in plan order: a prefix of the plan, nothing outside it.
     assert list(grafts) == sorted(plan[: len(grafts)])
@@ -182,18 +196,33 @@ def test_salamander_repairs_with_the_grafted_discipline():
     cf = ClassifiedFailure(failure, "unclassified", "n/a", "no rule applies")
     prompt = _build_repair_prompt(cf, "x = 1\n", "tests/t.py")
     for name in ("systematic-debugging", "verification-before-completion"):
-        body = _parse_frontmatter(
-            (skill_graft.SKILLS_DIR / name / "SKILL.md").read_text(encoding="utf-8")
-        )[1]
-        assert f"### Skill: {name} (from https://github.com/obra/superpowers@" in prompt
-        assert body[:300] in prompt
-    assert prompt.index("### Skill:") < prompt.index("Respond in exactly two parts")
+        assert f"### Skill: {name}" not in prompt  # explicitly retired grafts
+    assert "Respond in exactly two parts" in prompt
 
 
 def test_salamander_hands_back_guidance_not_a_claimed_execution():
     from Intelligence.salamander import SalamanderEngine
 
-    result = SalamanderEngine().execute_skill("verification-before-completion")
+    engine = SalamanderEngine()
+    with pytest.raises(KeyError):
+        engine.execute_skill("verification-before-completion")
+    result = engine.execute_skill("assess-landscape")
     assert result["status"] == "GUIDANCE"
-    assert result["provenance"]["repo"] == "https://github.com/obra/superpowers"
-    assert result["instructions"].startswith("# Verification Before Completion")
+    assert result["instructions"]
+    assert result["skill"] == "assess-landscape"
+
+
+def test_repair_prompt_includes_a_verified_graft(upstream, tmp_path, monkeypatch):
+    from Intelligence import skill_loader
+    from Intelligence.self_healing.self_repair import ClassifiedFailure, PytestFailure, _build_repair_prompt
+    repo, commit = upstream
+    monkeypatch.setattr(skill_graft, "GRAFT_PLAN", (_spec(commit),))
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    graft(_spec(commit), repo, skills)
+    original = skill_loader.skills_for
+    monkeypatch.setattr(skill_loader, "skills_for", lambda purpose: original(purpose, str(skills)))
+    failure = PytestFailure("tests/t.py::t", "tests/t.py", 3, "failure", "boom", "Trace", "suite")
+    prompt = _build_repair_prompt(ClassifiedFailure(failure, "unclassified", "n/a", "none"), "x=1", "tests/t.py")
+    assert "### Skill: alpha (from https://example.invalid/upstream@" in prompt
+    assert "Find the root cause first." in prompt

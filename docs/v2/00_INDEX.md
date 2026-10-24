@@ -16,6 +16,11 @@ Historical documentation, superseded research notes, and legacy audit documents 
 
 ## 2. Document Map
 
+The source/seeds/status banner above records the original v2 baseline, not a
+current qualification of every subsequent addition. The readiness supplement
+below documents the engine merged in PR #142; its local assessment tests are not
+whole-system production, hardware, pool or publication verification.
+
 | Document | Title | Primary Source of Truth | Status |
 | :--- | :--- | :--- | :--- |
 | [`01_SYSTEM_TRUTH.md`](file:///c:/Users/leonn/OneDrive/Desktop/PhiEnterprise-main/docs/v2/01_SYSTEM_TRUTH.md) | System Truth & Authority Boundaries | [`toe/intelligences/authority_boundary.py:1-100`](file:///c:/Users/leonn/OneDrive/Desktop/PhiEnterprise-main/toe/intelligences/authority_boundary.py#L1-L100), [`src/api/main.py`](file:///c:/Users/leonn/OneDrive/Desktop/PhiEnterprise-main/src/api/main.py), [`chronus/mla1517_platform/python/control_api.py`](file:///c:/Users/leonn/OneDrive/Desktop/PhiEnterprise-main/chronus/mla1517_platform/python/control_api.py) | **MEASURED** |
@@ -24,6 +29,18 @@ Historical documentation, superseded research notes, and legacy audit documents 
 | [`04_MILLENNIUM_EVIDENCE.md`](file:///c:/Users/leonn/OneDrive/Desktop/PhiEnterprise-main/docs/v2/04_MILLENNIUM_EVIDENCE.md) | Millennium Probes & Discrete Computations | [`millennium/discrete/`](file:///c:/Users/leonn/OneDrive/Desktop/PhiEnterprise-main/millennium/discrete/), [`Intelligence/theoretical_foundations.py:380-450`](file:///c:/Users/leonn/OneDrive/Desktop/PhiEnterprise-main/Intelligence/theoretical_foundations.py#L380-L450) | **FINITE COMPUTATIONS** |
 | [`05_RUNBOOKS.md`](file:///c:/Users/leonn/OneDrive/Desktop/PhiEnterprise-main/docs/v2/05_RUNBOOKS.md) | Operational Runbooks & Execution Harness | [`scripts/execute_sprint_1_to_4_pipeline.py`](file:///c:/Users/leonn/OneDrive/Desktop/PhiEnterprise-main/scripts/execute_sprint_1_to_4_pipeline.py), [`tests/`](file:///c:/Users/leonn/OneDrive/Desktop/PhiEnterprise-main/tests/) | **MEASURED** |
 | [`06_GLOSSARY_BOUNDARIES.md`](file:///c:/Users/leonn/OneDrive/Desktop/PhiEnterprise-main/docs/v2/06_GLOSSARY_BOUNDARIES.md) | Epistemic Glossary & Truth Classes | [`toe/intelligences/authority_boundary.py`](file:///c:/Users/leonn/OneDrive/Desktop/PhiEnterprise-main/toe/intelligences/authority_boundary.py), [`chronus/readiness.py:165`](file:///c:/Users/leonn/OneDrive/Desktop/PhiEnterprise-main/chronus/readiness.py#L165) | **MEASURED** |
+| [`07_EVIDENCE_SCOPED_READINESS.md`](07_EVIDENCE_SCOPED_READINESS.md) | Evidence-scoped readiness: system impact and product distinction | [`tools/tomorrow_readiness.py`](../../tools/tomorrow_readiness.py), [`tests/test_tomorrow_readiness.py`](../../tests/test_tomorrow_readiness.py), [technical contract](../readiness/TOMORROW_READINESS_INDEX.md) | **IMPLEMENTED — assessment layer; not production certification** |
+| [`08_COLLABORATIVE_AUTOMATION.md`](08_COLLABORATIVE_AUTOMATION.md) | Collaborative Automation & Automated Runbook Orchestration | [`salamander/collaborative_automation.py`](../../salamander/collaborative_automation.py), [`tools/collaborative_automation.py`](../../tools/collaborative_automation.py), [`tests/test_collaborative_automation.py`](../../tests/test_collaborative_automation.py) | **MEASURED — governed human-in-the-loop runbook orchestration** |
+
+### Readiness documentation path
+
+- Start with [system impact and product distinction](07_EVIDENCE_SCOPED_READINESS.md)
+  for what changed, its relationship to TOE/EUCLID/PYTHIA/CHRONUS/SALAMANDER/
+  AL HARAS/THESEUS, and supported product language.
+- Use the [technical contract](../readiness/TOMORROW_READINESS_INDEX.md) for
+  scoring, evidence scope, dependency rules, gate checks and CLI operation.
+- Treat receipt-exporter integration and target-system validation as separate
+  work. A maturity score or a healthy readiness probe is not release approval.
 
 ---
 

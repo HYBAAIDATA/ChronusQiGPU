@@ -1,0 +1,11 @@
+{
+  "files": {
+    "REMEDIATION_STATUS.md": "6e9502c3a8757cb2e597570faadd50cbc59b07fda813c198252109ad62ba5d7f",
+    "SOURCE_DIGESTS.json": "85f337a37436ab58ed6202cfe0484833f748709573d086bd2f75d4e0b625c1f6",
+    "chronus_elevation.json": "85c045550852b5f3a6822c47394c2193a3538746468be8cc833fa915b7f6d5c0",
+    "focused_tests.log": "1003c3f1b210d76879681e811c81d7c372830ffa1219cb18ce347733953fc702",
+    "journey.log": "af0eeceba3c4f84ba7f6cb3b9b504c5d1a4577b9ab2283de23d545d2361a80c8",
+    "validation.json": "a29ed7e283d616a002a2d6ec8521c4f1e2e2d273c27caf201ae9eeb6aa657777"
+  },
+  "schema_version": "hyba.evidence/1"
+}

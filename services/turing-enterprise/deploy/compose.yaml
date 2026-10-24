@@ -1,6 +1,6 @@
 # Single-host bounded pilot/reference topology. Not HA or autoscaling.
 # Host config/secret files must be owned by uid 10001; secrets mode 0600.
-# Behind an authenticated TLS ingress; restrict egress to IdP/Hermitten.
+# Behind an authenticated TLS ingress; restrict egress to IdP/JWKS; billing is deferred.
 x-runtime: &runtime
   image: hyba/turing-enterprise:${TURING_IMAGE_TAG:?set immutable approved image tag}
   user: '10001:10001'

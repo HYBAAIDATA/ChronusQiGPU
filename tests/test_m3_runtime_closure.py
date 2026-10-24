@@ -296,6 +296,9 @@ def test_baseline_fallback_custodies_plan_before_execution(tmp_path):
     coord._search_lifecycle_open = lambda: True
     coord._refresh_work_identity = lambda: identity
     coord._refresh_governor = lambda: None
+    # __new__ bypasses the constructor. This fixture exercises the legacy
+    # queue-empty fallback, not the separately covered required-TOE route.
+    coord._require_toe = False
     coord.governor = SimpleNamespace(
         observe_network=lambda n: None, admit=lambda: True, cap_hs=0
     )

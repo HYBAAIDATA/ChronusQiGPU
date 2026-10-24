@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
+import tempfile
 import os
 import threading
 import time
@@ -65,8 +67,11 @@ def default_config() -> dict[str, Any]:
         "updated_at": None,
         "pools": [],
         "solvers": {"arms": 1, "workers": 32},
+        "execution": {"mode": "independent"},
+        "intelligence": {"seed": 1337, "max_workers": 4, "max_nonces_per_arm": None, "require_toe": False},
         "hashrate": {"target_hs": 0.0, "ceiling_hs": HASHRATE_CEILING_HS},
         "live_submit": {"enabled": False, "approval_id": ""},
+        "mining_policy": None,
         "window": 200000,
         "campaign": {"phases": []},
         "bounds": {
@@ -86,9 +91,11 @@ def _persisted_section_ok(key: str, value: Any) -> bool:
     version skew) and must fall back to its default rather than crash
     public_view or downstream readers. Semantic rules (bounds, pool
     references) stay enforced at write time by validate()."""
+    if key == "mining_policy":
+        return value is None or isinstance(value, dict)
     if key == "pools":
         return isinstance(value, list) and all(isinstance(p, dict) for p in value)
-    if key in ("solvers", "hashrate", "live_submit", "campaign"):
+    if key in ("solvers", "hashrate", "live_submit", "campaign", "execution", "intelligence"):
         if not isinstance(value, dict):
             return False
         if key == "campaign":
@@ -116,14 +123,32 @@ def load() -> dict[str, Any]:
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return cfg
+        return {**cfg, "_policy_error": "invalid_persisted_config"}
     if not isinstance(raw, dict):
-        return cfg
-    for key in ("pools", "solvers", "hashrate", "live_submit", "window", "campaign"):
-        if key in raw and _persisted_section_ok(key, raw[key]):
+        return {**cfg, "_policy_error": "invalid_persisted_config"}
+    for key in (
+        "pools",
+        "solvers",
+        "hashrate",
+        "live_submit",
+        "mining_policy",
+        "window",
+        "campaign",
+        "execution",
+        "intelligence",
+    ):
+        if key in raw:
+            if not _persisted_section_ok(key, raw[key]):
+                return {**default_config(), "_policy_error": "invalid_persisted_config"}
             cfg[key] = raw[key]
-    cfg["updated_at"] = raw.get("updated_at")
-    return cfg
+    # A correctly shaped but out-of-policy file is still untrusted. Validate
+    # all merged sections together: a corrupt dependency cannot retain live intent.
+    try:
+        normalized = validate(cfg)
+    except (TypeError, ValueError, OverflowError):
+        return {**default_config(), "_policy_error": "invalid_persisted_config"}
+    normalized["updated_at"] = raw.get("updated_at")
+    return normalized
 
 
 def _validate_endpoint(endpoint: Any) -> str:
@@ -176,7 +201,9 @@ def validate(cfg: dict[str, Any]) -> dict[str, Any]:
         if key in seen:
             raise ValueError(f"pools[{i}] duplicates {endpoint} {worker}")
         seen.add(key)
-        enabled = bool(p.get("enabled", False))
+        enabled = p.get("enabled", False)
+        if type(enabled) is not bool:
+            raise ValueError(f"pools[{i}].enabled must be boolean")
         if enabled and enabled_seen:
             raise ValueError("exactly one pool may be enabled")
         enabled_seen = enabled_seen or enabled
@@ -194,9 +221,9 @@ def validate(cfg: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("solvers must be an object")
     arms = solvers.get("arms", 1)
     workers = solvers.get("workers", 32)
-    if not isinstance(arms, int) or not ARMS_MIN <= arms <= ARMS_MAX:
+    if type(arms) is not int or not ARMS_MIN <= arms <= ARMS_MAX:
         raise ValueError(f"solvers.arms must be an integer in [{ARMS_MIN},{ARMS_MAX}]")
-    if not isinstance(workers, int) or not WORKERS_MIN <= workers <= WORKERS_MAX:
+    if type(workers) is not int or not WORKERS_MIN <= workers <= WORKERS_MAX:
         raise ValueError(f"solvers.workers must be an integer in [{WORKERS_MIN},{WORKERS_MAX}]")
 
     hashrate = cfg.get("hashrate", {})
@@ -205,25 +232,39 @@ def validate(cfg: dict[str, Any]) -> dict[str, Any]:
     target = hashrate.get("target_hs", 0.0)
     if not isinstance(target, (int, float)) or isinstance(target, bool):
         raise ValueError("hashrate.target_hs must be a number")
-    target = float(target)
-    if not 0.0 <= target <= HASHRATE_CEILING_HS:
+    try:
+        target = float(target)
+    except OverflowError as exc:
+        raise ValueError("hashrate.target_hs must be in [0, 1e19]") from exc
+    ceiling = hashrate.get("ceiling_hs", HASHRATE_CEILING_HS)
+    if (
+        isinstance(ceiling, bool)
+        or not isinstance(ceiling, (int, float))
+        or not 0 < ceiling <= HASHRATE_CEILING_HS
+        or not math.isfinite(ceiling)
+    ):
+        raise ValueError("hashrate.ceiling_hs must be in (0, 1e19]")
+    ceiling = float(ceiling)
+    if not 0.0 <= target <= ceiling:
         raise ValueError("hashrate.target_hs must be in [0, 1e19] (10 EH/s ceiling)")
 
     live = cfg.get("live_submit", {})
     if not isinstance(live, dict):
         raise ValueError("live_submit must be an object")
-    live_enabled = bool(live.get("enabled", False))
+    live_enabled = live.get("enabled", False)
+    if type(live_enabled) is not bool:
+        raise ValueError("live_submit.enabled must be boolean")
     approval_id = live.get("approval_id", "")
     if not isinstance(approval_id, str):
         raise ValueError("live_submit.approval_id must be a string")
     if live_enabled:
         if not out_pools or not any(p["enabled"] for p in out_pools):
             raise ValueError("live_submit requires an enabled pool")
-        if len(approval_id) != 64:
+        if len(approval_id) != 64 or any(c not in "0123456789abcdef" for c in approval_id):
             raise ValueError("live_submit requires an approval_id bound to the pool identity")
 
     window = cfg.get("window", 200000)
-    if not isinstance(window, int) or not WINDOW_MIN <= window <= WINDOW_MAX:
+    if type(window) is not int or not WINDOW_MIN <= window <= WINDOW_MAX:
         raise ValueError(f"window must be an integer in [{WINDOW_MIN},{WINDOW_MAX}]")
 
     campaign = cfg.get("campaign", {})
@@ -252,7 +293,7 @@ def validate(cfg: dict[str, Any]) -> dict[str, Any]:
                 f"campaign.phases[{i}].duration_s must be an integer in "
                 f"[{CAMPAIGN_DURATION_MIN_S},{CAMPAIGN_DURATION_MAX_S}]"
             )
-        phase_target = ph.get("target_hs", HASHRATE_CEILING_HS)
+        phase_target = ph.get("target_hs", ceiling)
         if not isinstance(phase_target, (int, float)) or isinstance(phase_target, bool):
             raise ValueError(f"campaign.phases[{i}].target_hs must be a number")
         phase_target = float(phase_target)
@@ -261,30 +302,75 @@ def validate(cfg: dict[str, Any]) -> dict[str, Any]:
                 f"campaign.phases[{i}].target_hs must be in (0, 1e19] (10 EH/s ceiling)"
             )
         phase_arms = ph.get("arms", ARMS_MIN)
-        if not isinstance(phase_arms, int) or not ARMS_MIN <= phase_arms <= ARMS_MAX:
+        if type(phase_arms) is not int or not ARMS_MIN <= phase_arms <= ARMS_MAX:
             raise ValueError(
                 f"campaign.phases[{i}].arms must be an integer in [{ARMS_MIN},{ARMS_MAX}]"
             )
+        phase_live = ph.get("live_submit", False)
+        if type(phase_live) is not bool:
+            raise ValueError(f"campaign.phases[{i}].live_submit must be boolean")
+        if phase_target > ceiling:
+            raise ValueError(f"campaign.phases[{i}].target_hs exceeds configured ceiling")
         out_phases.append(
             {
                 "pool": pool_key,
                 "duration_s": duration,
                 "target_hs": phase_target,
                 "arms": phase_arms,
-                "live_submit": bool(ph.get("live_submit", False)),
+                "live_submit": phase_live,
             }
         )
 
+    policy = cfg.get("mining_policy")
+    if policy is not None:
+        from pool_catalog import POOL_CATALOG
+        if (not isinstance(policy, dict) or set(policy) != {"poolId", "shares_target"}
+            or policy.get("poolId") not in POOL_CATALOG
+            or type(policy.get("shares_target")) is not int
+            or not 1 <= policy["shares_target"] <= 10000):
+            raise ValueError("invalid mining_policy")
+        policy = dict(policy)
+
+    execution = cfg.get("execution", {})
+    intelligence = cfg.get("intelligence", {})
+    if not isinstance(execution, dict) or execution.get("mode", "independent") not in (
+        "independent",
+        "auto",
+        "scale_stack",
+    ):
+        raise ValueError("execution.mode must be independent, auto, or scale_stack")
+    if not isinstance(intelligence, dict):
+        raise ValueError("intelligence must be an object")
+    require_toe = intelligence.get("require_toe", False)
+    if type(require_toe) is not bool:
+        raise ValueError("intelligence.require_toe must be boolean")
+    seed = intelligence.get("seed", 1337)
+    workers_limit = intelligence.get("max_workers", 4)
+    nonce_limit = intelligence.get("max_nonces_per_arm")
+    if type(seed) is not int or not 0 <= seed < 2**32:
+        raise ValueError("intelligence.seed must be a u32 integer")
+    if type(workers_limit) is not int or not 1 <= workers_limit <= 32:
+        raise ValueError("intelligence.max_workers must be in [1,32]")
+    if nonce_limit is not None and (type(nonce_limit) is not int or not 1 <= nonce_limit <= 2**20):
+        raise ValueError("intelligence.max_nonces_per_arm must be null or in [1,2^20]")
     return {
         "schema": SCHEMA,
         "updated_at": time.time(),
         "pools": out_pools,
         "solvers": {"arms": arms, "workers": workers},
+        "execution": {"mode": execution.get("mode", "independent")},
+        "intelligence": {
+            "seed": seed,
+            "require_toe": require_toe,
+            "max_workers": workers_limit,
+            "max_nonces_per_arm": nonce_limit,
+        },
         "hashrate": {
             "target_hs": target,
-            "ceiling_hs": HASHRATE_CEILING_HS,
+            "ceiling_hs": ceiling,
         },
         "live_submit": {"enabled": live_enabled, "approval_id": approval_id},
+        "mining_policy": policy,
         "window": window,
         "campaign": {"phases": out_phases},
         "bounds": {
@@ -304,9 +390,19 @@ def save(cfg: dict[str, Any]) -> dict[str, Any]:
     path = config_path()
     with _LOCK:
         path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(".json.tmp")
-        tmp.write_text(json.dumps(normalized, indent=2, sort_keys=True), encoding="utf-8")
-        os.replace(tmp, path)
+        # Config contains pool secrets. Unique same-directory temporary files
+        # avoid cross-process collisions and never expose group/world permissions.
+        fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+        tmp = Path(temporary)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as stream:
+                os.fchmod(stream.fileno(), 0o600)
+                json.dump(normalized, stream, indent=2, sort_keys=True, allow_nan=False)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(tmp, path)
+        finally:
+            tmp.unlink(missing_ok=True)
     return normalized
 
 
@@ -351,6 +447,7 @@ def public_view(cfg: dict[str, Any] | None = None) -> dict[str, Any]:
     cfg = cfg if cfg is not None else load()
     return {
         "schema": SCHEMA,
+        "policy_valid": not bool(cfg.get("_policy_error")),
         "updated_at": cfg.get("updated_at"),
         "pools": [
             {
@@ -362,11 +459,14 @@ def public_view(cfg: dict[str, Any] | None = None) -> dict[str, Any]:
             for p in cfg.get("pools", [])
         ],
         "solvers": dict(cfg.get("solvers", {})),
+        "execution": dict(cfg.get("execution", {})),
+        "intelligence": dict(cfg.get("intelligence", {})),
         "hashrate": dict(cfg.get("hashrate", {})),
         "live_submit": {
             "enabled": cfg.get("live_submit", {}).get("enabled", False),
             "approval_bound": bool(cfg.get("live_submit", {}).get("approval_id")),
         },
+        "mining_policy": cfg.get("mining_policy"),
         "window": cfg.get("window", 200000),
         "campaign": {
             "phases": [

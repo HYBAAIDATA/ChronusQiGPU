@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/EuclidPhiEnterprise-qualification/packaging/toe/build_and_verify.py", line 712, in main
+    result = _qualify(args, attempt)
+  File "/vercel/sandbox/data/EuclidPhiEnterprise-qualification/packaging/toe/build_and_verify.py", line 572, in _qualify
+    validate_source_inputs()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/vercel/sandbox/data/EuclidPhiEnterprise-qualification/packaging/toe/build_and_verify.py", line 428, in validate_source_inputs
+    raise RuntimeError("incomplete declared build inputs: " + ", ".join(missing))
+RuntimeError: incomplete declared build inputs: LICENSE, kellogg/quantum_tensor.py, packaging/kellogg-tensor/README.md, packaging/kellogg-tensor/pyproject.toml, packaging/toe/OWNER_DECISIONS.md, packaging/toe/README.md, tests/test_toe_geometry.py, tests/test_toe_learning_persistence.py, tests/test_toe_machine.py, toe/bridge.py, toe/machine.py, toe/problem.py

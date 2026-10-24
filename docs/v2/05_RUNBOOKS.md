@@ -148,3 +148,27 @@ curl -X GET http://127.0.0.1:8000/api/v1/euclid/validation/readiness
   "curriculum_phase": "Phase 2: Scaffolded Dialogue"
 }
 ```
+
+---
+
+## 4. Collaborative Automation & Human-in-the-Loop Runbook Orchestration
+
+**Source**: `salamander/collaborative_automation.py` | `tools/collaborative_automation.py` | `tests/test_collaborative_automation.py`  
+**Canonical Specification**: [`docs/v2/08_COLLABORATIVE_AUTOMATION.md`](08_COLLABORATIVE_AUTOMATION.md)
+
+Executes the four canonical Collaborative Automation workflows (`cyber_it_disaster_recovery`, `cloud_migration`, `application_release_management`, `technology_implementation`) plus the seven operational recovery runbooks in `runbooks/catalogue.json` with Bathtub-effect guardrails, cross-team task deduplication (`DevOps`, `SRE`, `TechOps`), human-in-the-loop checkpoints, and hash-chained audit trails:
+
+```powershell
+# Inspect unified collaborative runbook catalogue
+python -m tools.collaborative_automation --catalogue
+
+# Emit Single Pane of Glass operational dashboard
+python -m tools.collaborative_automation --dashboard
+
+# Run Cyber & IT Disaster Recovery with explicit human-in-the-loop approvals
+python -m tools.collaborative_automation --run cyber_it_disaster_recovery --approve-all-human --actor sec-lead-01
+
+# Run verification suite
+python -m pytest tests/test_collaborative_automation.py -v
+```
+

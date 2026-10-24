@@ -1,0 +1,49 @@
+{
+  "claim_boundary": "No network listener, public API, external authentication, pool/Stratum/wallet/credential handling, miner operation, share submission, hashrate, revenue/profitability, SDK, distributed persistence, or external evaluation is asserted.",
+  "date": "2026-07-19",
+  "environment": {
+    "platform": "Linux-5.10.174-x86_64-with-glibc2.34",
+    "python": "3.13.13"
+  },
+  "files_sha256": {
+    "euclid/KAIROS_MINING_LAB_SERVICE.md": "cac9987aad256336861943ecb6f96d207a7802223d2f045d1c195a613051e20d",
+    "euclid/__init__.py": "acb8f568947c67bb93b0a1d7bfcc5b438fb9ab84c7aafb37675a799f29aa3cb5",
+    "euclid/evidence/kairos_mining_lab_harness_20260719.json": "8ce9b1f5a5cf76c23e118936ed2aa6d7ab5c736bb39f35b9a3b1f528a9305717",
+    "euclid/evidence/kairos_mining_lab_test_transcript_20260719.txt": "6657c52b3df9476de96938ad1ddd993f52796efd3cc1e2662304085131991829",
+    "euclid/kairos_execution.py": "ad400f9d5b2468661590dc87994a407cc2edfade39387124a9b6d1ecd862ec7f",
+    "euclid/kairos_mining_lab_service.py": "b7bb42539e23b5a6e07c466529c8a2a138b40280bd0f65471554661e37ef7036",
+    "euclid/kairos_runtime.py": "9fc761c8514e8bd46cde45b77fb3759e25ae9770418697b2d1b2ded36c128d36",
+    "euclid/production_harness.py": "15665e5138230cdbdc3eb7f70e71408375c82d2285f51c490ac0794224157ab9",
+    "tests/test_kairos_mining_lab_service.py": "e21c39a7182fac555883c8ef108ccea9ac1013be563db02a3368c2d9ce90a191"
+  },
+  "schema": "EUCLID_KAIROS_MINING_LAB_SERVICE_EVIDENCE_V1",
+  "scope": "sealed, versioned, single-operator, in-process mining-orchestration laboratory service contract",
+  "service_contract": {
+    "api_version": "v1",
+    "external_identity": false,
+    "external_providers": false,
+    "live_mining": false,
+    "multi_user": false,
+    "network_listener": false,
+    "performance_claims": false,
+    "route_count": 4
+  },
+  "source_paths": [
+    "euclid/kairos_mining_lab_service.py",
+    "euclid/KAIROS_MINING_LAB_SERVICE.md",
+    "euclid/kairos_execution.py",
+    "euclid/kairos_runtime.py",
+    "euclid/production_harness.py",
+    "euclid/__init__.py",
+    "tests/test_kairos_mining_lab_service.py"
+  ],
+  "verification": {
+    "compilation": "passed",
+    "focused_and_adjacent_regressions": "50 passed",
+    "production_harness": {
+      "passed": true,
+      "passed_count": 13,
+      "total": 13
+    }
+  }
+}

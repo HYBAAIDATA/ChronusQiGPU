@@ -1,0 +1,26 @@
+{
+  "algorithm": "sha256",
+  "scope": "focused-client-authentication-not-complete-production",
+  "files": {
+    "frontend/src/lib/access.ts": "1f694c5d2e71f353209ded8f7b2e0200fb35655b63db6bc1fe1825fcde6700f9",
+    "frontend/src/lib/api.ts": "d6bf71d20487ea52c1889e206065e6f0e814897937b217966ba32a3f1d41dcfe",
+    "frontend/src/lib/useConsole.ts": "9bd3af9fdc7c92a3c3f094eae390bad04d077f733ec84814b46a1c506a490a0b",
+    "frontend/src/lib/__tests__/access.test.ts": "d27114680870bc8df48e15879496f46f96248cbee25be8b36b15df8004fafcdc",
+    "frontend/src/lib/__tests__/console-lifecycle.test.tsx": "c1733454374026d5a29d4fa6f798a7774c7c30e5dafac101cd46e157fb47f099",
+    "frontend/src/components/__tests__/ControlSession.journey.test.tsx": "43b82521b33ed38177674f6f8f1dd61b4c7d8ac02ed4c542ee35f876f60d7160",
+    "frontend/JOURNEYS.md": "993be3cbdc61cc5a91a222b307a86081608f4286d2391b4f2400767bd89b5ed5",
+    "frontend/WIRING.md": "0b9a61f8852df332f9012b3c9386336daf8419cf6b47233ce379c6f32093f501",
+    "docs/PRODUCTION_CLOSEOUT.md": "54d495f5c0e49ec3a0b4dc974d5d9c640d994e930aa7ed6fc3c07267175e5b4f",
+    "evidence/2026-10-23/production-closeout-auth/before.log": "3d33b2d19b7ae023457b2315c8eaed3cbde0f66981372cf320558948238dbe99",
+    "evidence/2026-10-23/production-closeout-auth/environment.json": "4dfd46a7fca6be2bdfad56cf14497f7a716484cce5f65fe3a479818ab100f83c",
+    "evidence/2026-10-23/production-closeout-auth/harness-env.d.ts": "7fb307b701e822bb91183f5c55b710de76d75eda8269800a5bcb66c42f949e06",
+    "evidence/2026-10-23/production-closeout-auth/harness-package.json": "06b1e8505fac1746e2429e274586e281d9dbb2a9666f5e74d7ecf091a59a1f53",
+    "evidence/2026-10-23/production-closeout-auth/harness-tsconfig.json": "8c0cb48a6824c4e87a505c1c427fbb9a162b729ded9e2823a06cb207439fbbaf",
+    "evidence/2026-10-23/production-closeout-auth/harness-vitest.config.ts": "874cc4c747a19fcfce86703aa358c50d2358e0fcda32b41f40bcc943e93446e9",
+    "evidence/2026-10-23/production-closeout-auth/junit.xml": "f39fed88e522d5eee6383e06e892e3c6400e170a3b57e86895185caade093483",
+    "evidence/2026-10-23/production-closeout-auth/qualification.log": "3b22f28d6d8d360ba2566b52cfd34a90773c5d7accc1a52e55751fe44229d059",
+    "evidence/2026-10-23/production-closeout-auth/retrieved-sources.json": "d9fcfdb1617b19fb5db53016a6f479cdb7ba8a43fa2925017ebc121bc4d5e61e",
+    "evidence/2026-10-23/production-closeout-auth/source-digests.json": "c3dac3b767c668543053a85b1c82cbecd51898dfb7ddd986b7898497bebca7d6",
+    "evidence/2026-10-23/production-closeout-auth/typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

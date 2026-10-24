@@ -1,0 +1,170 @@
+[
+  {
+    "path": "services/turing-enterprise/README.md",
+    "sha256": "1d9edf088610c8b25ce422644b63af260508cccf194cb06744e6d3ac16672aea",
+    "git_blob": "91967790106f0e16491e5763a5aa28cea502e29d",
+    "bytes": 7028,
+    "old_git_blob": "c16711d6dcfce8a6fde8ded2edbf23889627d430"
+  },
+  {
+    "path": "services/turing-enterprise/usage-event.schema.json",
+    "sha256": "67a5fe0e30504ef0e7d85d2f438e384b19fc9e70913942fec47be07d462c1527",
+    "git_blob": "5302f231f9673513602006d8f9d4f1037d9f17f1",
+    "bytes": 1404,
+    "old_git_blob": "a3a6ac215806724842a529eef2dbafe45dcfe09d"
+  },
+  {
+    "path": "services/turing-enterprise/deploy/HERMITTEN_CONTRACT.md",
+    "sha256": "a9ba31704b38333de49a85fadb9ccf2ec41a5dfffe9e666d3ecd097e57b1443e",
+    "git_blob": "d7fe3f6b0b5ea38bfb1337b5a4b9854a65e1cea7",
+    "bytes": 1596,
+    "old_git_blob": "627217c81bf4e7410c1a1ac4e11dba109af8a045"
+  },
+  {
+    "path": "services/turing-enterprise/deploy/OPERATIONS.md",
+    "sha256": "ff0dd8c7b41b7b34dd274dbda1a3824e452a3eb4647d5df90e937e1516ca9d0a",
+    "git_blob": "0cd8cd4a786823c0b9ee714977316751e41da21c",
+    "bytes": 11103,
+    "old_git_blob": "d4fbb87c55998ed78b1f5237602f9b11151cf15f"
+  },
+  {
+    "path": "services/turing-enterprise/deploy/compose.yaml",
+    "sha256": "2e811d09886436c3775f2ee90dd8f0d10763d36eea5432d0da7dc1630bb53239",
+    "git_blob": "34e4df49fecd980d7f7528e3908e40d71fa9046e",
+    "bytes": 1523,
+    "old_git_blob": "6789726a7e3d74cae24def6cd9ad44cef84140dc"
+  },
+  {
+    "path": "services/turing-enterprise/deploy/service.example.json",
+    "sha256": "760aa38e4717815d1df991470c6f365a15d94beca34f87ee5bc86ea1c11215b3",
+    "git_blob": "63998b193532ccfdd9ff420962f81d6ad0aeedec",
+    "bytes": 1098,
+    "old_git_blob": "93165ec2e2629125f56ac0d3a6be2da154f01910"
+  },
+  {
+    "path": "services/turing-enterprise/tests/portal-smoke.cjs",
+    "sha256": "6d695b44ec2820f346190b2d151c00f507c61d6b9c73dae7ff90d986fea2822e",
+    "git_blob": "97ad934e3a77323e666d26f0491bab8ac3e35680",
+    "bytes": 6758,
+    "old_git_blob": "267f0abb44b39b772a516eee5f835e13c7b98247"
+  },
+  {
+    "path": "services/turing-enterprise/tests/test_control.py",
+    "sha256": "667bff5381f862dedb12235d4f532babce8ba52e14a24dc0586405f1e4610853",
+    "git_blob": "6ee203cdfc5d4e460d404bc4ccf218a5261dd7c3",
+    "bytes": 18623,
+    "old_git_blob": "e9f6b855093ed47176f0358294bb529db55d8ef4"
+  },
+  {
+    "path": "services/turing-enterprise/tests/test_enterprise.py",
+    "sha256": "9c5df8601412df25fa6384542630b20044d40a4647a50720b98c48e7ba29aa41",
+    "git_blob": "827f640aadcb87e7f89d588749f7d76608b13c2e",
+    "bytes": 26644,
+    "old_git_blob": "a8a6c64d2e995a26f34b79721d2aa715c8ce23d4"
+  },
+  {
+    "path": "services/turing-enterprise/tests/test_release_scope.py",
+    "sha256": "611586c58911b80e1c2d46cf3b58744a352e2053a9bfdecf9ddfa696e35bd3cf",
+    "git_blob": "a049a9ff1a075e58828a9a7229b07594789ded04",
+    "bytes": 11359,
+    "old_git_blob": null
+  },
+  {
+    "path": "services/turing-enterprise/tests/portal-release-scope.cjs",
+    "sha256": "0e218966c0df1e7bb0375e782cc960d89922952e438aa2243e919c3748c575dd",
+    "git_blob": "836f44f1bd404883fbfc9fc3dd1f5ae3a00f5acc",
+    "bytes": 5937,
+    "old_git_blob": null
+  },
+  {
+    "path": "services/turing-enterprise/tests/qualify_stabilizer_isolated.py",
+    "sha256": "e8256351a7bfb7542838b63f9d2ca5b096d6aec74c34477243f9dce5af968a28",
+    "git_blob": "19ed91d7d764a8f642cda78a6fa444fb7b07446b",
+    "bytes": 1146,
+    "old_git_blob": null
+  },
+  {
+    "path": "services/turing-enterprise/src/hyba_turing_service/api.py",
+    "sha256": "befafc192b47ce305a0aa146eb6af9739c4e9c79547ff86c67f4b70a08bc8c19",
+    "git_blob": "369aedfb50c0f9fb72f9f0856eaaafb5a14d5c6b",
+    "bytes": 21738,
+    "old_git_blob": "66c9a13e71cbd049b5e6304dbb90b65f7b694a52"
+  },
+  {
+    "path": "services/turing-enterprise/src/hyba_turing_service/control.py",
+    "sha256": "2ee9a5fd920a5d7a0604b5ec882bea14caeab50aa18f637b6c44c8b1f3ace198",
+    "git_blob": "4ef3bc6f915b85d9766ea0d350f8208a5fc08b67",
+    "bytes": 27462,
+    "old_git_blob": "9ab14591b3b4df9732d9281f8ba06a8d6e82084d"
+  },
+  {
+    "path": "services/turing-enterprise/src/hyba_turing_service/main.py",
+    "sha256": "a572f8c24a4f20f29d5ab1cead7e5d1434d917a0cae38fe932196afeff997bc5",
+    "git_blob": "ab17aa92fb144811ed04e5384b9f360a4666b377",
+    "bytes": 8057,
+    "old_git_blob": "c6143f58f5f942ddda6245dfac908d4992ddd105"
+  },
+  {
+    "path": "services/turing-enterprise/src/hyba_turing_service/release.py",
+    "sha256": "4fc57da924a77303db08e30c0c6f2425d1016b5af285b272919d830f71c4c319",
+    "git_blob": "0f31f0496ae812cf50544f709b6ec3190a4df528",
+    "bytes": 2649,
+    "old_git_blob": "18eded5602ea863f10cc2c9cfadcfb84daacb91d"
+  },
+  {
+    "path": "services/turing-enterprise/src/hyba_turing_service/commercial.py",
+    "sha256": "edd362a1ca7279c899739e523293a0b019c72788de9aa63a9fcaa60b99589a77",
+    "git_blob": "c3bbf6cc755bd3cc625d1f31cf9f5dc32110601b",
+    "bytes": 721,
+    "old_git_blob": null
+  },
+  {
+    "path": "services/turing-enterprise/src/hyba_turing_service/static/portal.html",
+    "sha256": "c58d1d9403b4e819702683041729766cfe914e6e5ae05cd0accfe0a62d346af8",
+    "git_blob": "c9c26e5fe8135972382f4510368cc5dde4686b23",
+    "bytes": 2913,
+    "old_git_blob": "17c13287d123d1de395e8b61f670e54770abc46d"
+  },
+  {
+    "path": "services/turing-enterprise/src/hyba_turing_service/static/portal.js",
+    "sha256": "51efaa923c4ea86a9153613332c5bf59795a8cd85fb04bf6e7912916872d6267",
+    "git_blob": "872ebd77dd64a4862f18d7c98c9b8acef0211881",
+    "bytes": 15751,
+    "old_git_blob": "cc296ee899dd77914d720fe7c0838b32ced0f7e0"
+  },
+  {
+    "path": "docs/turing/ACCEPTANCE_REGISTER.md",
+    "sha256": "70d1a1a58f0c34401487a0656312ba6e64815ea7546cbad3c10d4d9ac455f896",
+    "git_blob": "8a79bb5179741d10cfe63894b6036c9b9b5862ec",
+    "bytes": 98701,
+    "old_git_blob": "8f6063d163a1cdff6a8bf607591c2e5762e9781f"
+  },
+  {
+    "path": "docs/turing/CONTRACTS_AND_BILLING.md",
+    "sha256": "aee9829f403d30d888dac27bccd99bf77218564c0588c6d2ff5ae2883ca6b34d",
+    "git_blob": "05e47b5fc1e7c268847947e9e1def9ed1d51d59a",
+    "bytes": 9813,
+    "old_git_blob": "56e651c771e4e339aaf999e14e5e13e59cc02e97"
+  },
+  {
+    "path": "docs/turing/OPERATIONS_AND_QUALIFICATION.md",
+    "sha256": "40c490c15507c2c9e175c9bbe7cda31749b793a5c04be3fdcaeef43be430cb0d",
+    "git_blob": "2ab4095bb0f6087a1faeda567153ced154a939e6",
+    "bytes": 11646,
+    "old_git_blob": "d934cde9381cf347d2fe3b44f7284a3f2cdd7066"
+  },
+  {
+    "path": "docs/TURING_ENTERPRISE_SERVICE_DELIVERY.md",
+    "sha256": "81a7e129652ece1d31d6be8d8ba858219c7f84d620ac65a735a03caa5eb46b79",
+    "git_blob": "7b2d813a0d056ddbbb3473b22c2fb021296ce418",
+    "bytes": 7422,
+    "old_git_blob": "1ce01b6afc2c288e9edb63fde2eeb66373d6b082"
+  },
+  {
+    "path": "docs/turing/requirements-evidence.json",
+    "sha256": "66ce81e0b2aaab72fff193954430cb70638e0bb5161d9280d5f4dff87127601c",
+    "git_blob": "66a3dbe50d160c7203674efe2e41e6fb8ade1e99",
+    "bytes": 89173,
+    "old_git_blob": null
+  }
+]

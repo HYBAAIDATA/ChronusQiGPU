@@ -1220,8 +1220,8 @@ def check_first_principles_lucas_scaling() -> Dict[str, Any]:
     root = Path(__file__).resolve().parent.parent
     tsx = root / "node_modules" / "tsx" / "dist" / "cli.mjs"
     script = root / "experiments" / "quantum_lucas_scaling.ts"
-    if not script.is_file():
-        # A missing harness is a precondition gap, not a failed assertion —
+    if not script.is_file() or not tsx.is_file():
+        # A missing harness or runner is a precondition gap, not a failed assertion —
         # report SKIP so the verdict distinguishes "benchmark absent from
         # this checkout" from "engine math failed".
         return {
@@ -1229,8 +1229,7 @@ def check_first_principles_lucas_scaling() -> Dict[str, Any]:
             "passed": False,
             "skipped": True,
             "reason": "benchmark harness experiments/quantum_lucas_scaling.ts "
-            "and its TS substrate (first_principles_quantum.ts, "
-            "lucas_quantum_algorithms.ts) are absent from this checkout",
+            "or runner node_modules/tsx is absent from this checkout",
             "security": _security_assessment(),
         }
     out_path = root / "experiments" / "quantum_lucas_scaling_results.json"

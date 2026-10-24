@@ -359,14 +359,17 @@ _M32_SOLVER = None
 def _m32_solver():
     global _M32_SOLVER
     if _M32_SOLVER is None:
-        platform_py = (
-            Path(__file__).resolve().parent.parent
-            / "mla1517_platform_v3.4"
-            / "python"
-        )
-        if str(platform_py) not in sys.path:
-            sys.path.insert(0, str(platform_py))
-        from mla1517.mining.solver import M32SearchSolver
+        try:
+            from chronus.mla1517.mining.solver import M32SearchSolver
+        except ImportError:
+            platform_py = (
+                Path(__file__).resolve().parent.parent
+                / "mla1517_platform_v3.4"
+                / "python"
+            )
+            if str(platform_py) not in sys.path:
+                sys.path.insert(0, str(platform_py))
+            from mla1517.mining.solver import M32SearchSolver
 
         _M32_SOLVER = M32SearchSolver()
     return _M32_SOLVER

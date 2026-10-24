@@ -2,6 +2,8 @@
 
 import argparse
 import base64
+import hashlib
+import hmac
 import json
 import os
 from pathlib import Path
@@ -14,7 +16,7 @@ from .api import Dependencies, create_app
 from .enterprise import EnterprisePlane
 from .identity import OIDCVerifier
 from .sessions import Sessions
-from .billing import HermittenClient, deliver_commercial
+from .commercial import validate_scope
 from .release import verify_bundle
 from .runtime import ProcessRuntime, ResultCustody
 from .supervisor import Supervisor
@@ -34,11 +36,27 @@ def read_secret(path):
         os.close(fd)
 
 
+def load_configuration(path):
+    """Read policy without opening secrets or initializing persistent state."""
+    config = json.loads(Path(path).read_text())
+    validate_scope(config)
+    if config.get("qualification_policy", "strict") not in {
+        "strict",
+        "operator-risk-acceptance",
+    }:
+        raise ValueError("unsupported qualification policy")
+    return config
+
+
 def configuration(path):
+    return runtime_configuration(load_configuration(path))
+
+
+def runtime_configuration(config):
+    """Initialize runtime authorities/state only after CLI promotion admission."""
+    os.umask(0o077)
     from al_haras.entitlements import SubscriptionAuthority, SubscriptionClaims
 
-    os.umask(0o077)
-    config = json.loads(Path(path).read_text())
     if set(config["operator_subjects"]) & set(config["approver_subjects"]):
         raise ValueError("operator and commercial approver identities must be distinct")
     if read_secret(config["customer_key_file"]) == read_secret(config["operator_key_file"]):
@@ -66,7 +84,7 @@ def configuration(path):
             customer_authority=customer,
             operator_authority=operator,
             capacity_slots=config["capacity_slots"],
-            require_spend=config.get("mode") != "controlled-pilot",
+            require_spend=False,
         )
 
     plane = factory()
@@ -87,61 +105,31 @@ def configuration(path):
             )
         )
 
-    billing = (
-        HermittenClient(
-            config["billing_url"],
-            read_secret(config["billing_token_file"]),
-            import_path=config.get("billing_import_path", "/v1/usage/import"),
-        )
-        if config.get("billing_url")
-        else None
+    billing = None  # No approved current-release financial service.
+    return (
+        config,
+        customer,
+        operator,
+        SubscriptionClaims,
+        factory,
+        machine_token,
+        billing,
     )
-    return config, customer, operator, SubscriptionClaims, factory, machine_token, billing
 
 
 def main():
     parser = argparse.ArgumentParser(description="TURING enterprise service operations")
     parser.add_argument(
-        "command", choices=["serve", "worker", "billing", "backup", "restore", "release-check"]
+        "command",
+        choices=["serve", "worker", "billing", "backup", "restore", "release-check"],
     )
     parser.add_argument("--config", required=True)
     parser.add_argument("--destination")
     parser.add_argument("--publication", action="store_true")
     args = parser.parse_args()
-    config, customer, operator, Claims, factory, machine_token, billing = configuration(args.config)
-    if args.command == "restore":
-        if not args.destination or Path(args.destination).exists():
-            raise ValueError("restore requires a new destination")
-        source = sqlite3.connect("file:" + config["backup_source"] + "?mode=ro", uri=True)
-        target = sqlite3.connect(args.destination)
-        try:
-            if source.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
-                raise ValueError("backup integrity failure")
-            source.backup(target)
-        finally:
-            source.close()
-            target.close()
-        return
-    if args.command in {"backup", "billing"}:
-        plane = factory()
-        try:
-            if args.command == "backup":
-                if not args.destination or Path(args.destination).exists():
-                    raise ValueError("new backup destination required")
-                plane.backup(
-                    machine_token(["turing.ops.manage"]), config["worker_subject"], args.destination
-                )
-                os.chmod(args.destination, 0o600)
-            else:
-                plane.deliver_usage(
-                    machine_token(["turing.ops.billing"]), config["worker_subject"], sink=billing
-                )
-                deliver_commercial(
-                    plane, machine_token(["turing.ops.billing"]), config["worker_subject"], billing
-                )
-        finally:
-            plane.close()
-        return
+    config = load_configuration(args.config)
+    if args.command == "billing":
+        raise ValueError("billing is deferred; no provider is authorised")
 
     def approval():
         # Build identity is baked into the read-only image, not supplied by HTTP.
@@ -157,20 +145,54 @@ def main():
             config["approval_public_key"],
             config["source_commit"],
             publication=args.publication,
+            allow_waivers=config.get("qualification_policy") == "operator-risk-acceptance",
         )
         return True
 
     if args.command == "release-check":
         approval()
         return
-    if config.get("mode") != "controlled-pilot":
+    if args.command in {"serve", "worker"} and config.get("mode") != "controlled-pilot":
         approval()
+    config, customer, operator, Claims, factory, machine_token, billing = runtime_configuration(
+        config
+    )
+    if args.command == "restore":
+        if not args.destination or Path(args.destination).exists():
+            raise ValueError("restore requires a new destination")
+        source = sqlite3.connect("file:" + config["backup_source"] + "?mode=ro", uri=True)
+        target = sqlite3.connect(args.destination)
+        try:
+            if source.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+                raise ValueError("backup integrity failure")
+            source.backup(target)
+        finally:
+            source.close()
+            target.close()
+        return
+    if args.command == "backup":
+        plane = factory()
+        try:
+            if args.command == "backup":
+                if not args.destination or Path(args.destination).exists():
+                    raise ValueError("new backup destination required")
+                plane.backup(
+                    machine_token(["turing.ops.manage"]),
+                    config["worker_subject"],
+                    args.destination,
+                )
+                os.chmod(args.destination, 0o600)
+        finally:
+            plane.close()
+        return
+
     if args.command == "worker":
         supervisor = Supervisor(
             factory,
             lambda: machine_token(["turing.ops.execute"]),
             config["worker_subject"],
             config["custody_root"],
+            custody=configured_custody(config),
         )
         signal.signal(signal.SIGTERM, lambda *_: setattr(supervisor, "stopping", True))
         signal.signal(signal.SIGINT, lambda *_: setattr(supervisor, "stopping", True))
@@ -206,15 +228,6 @@ def main():
                 {"qasm": "OPENQASM 2.0; qreg q[1]; h q[0];", "shots": 8, "seed": 1}
             )
             good = report.get("verdict") == "PASS" and bool(report.get("certificate"))
-            if billing:
-                capabilities = billing.capabilities()
-                if (
-                    config.get("mode") != "controlled-pilot"
-                    and capabilities.get("spend_authorisation") is not True
-                ):
-                    good = False
-            elif config.get("mode") != "controlled-pilot":
-                good = False
         except Exception:
             good = False
         ready_cache[:] = [time.monotonic(), good]
@@ -234,8 +247,8 @@ def main():
             sessions,
             billing,
             ready,
-            config.get("mode") != "controlled-pilot",
-            ResultCustody(config["custody_root"]),
+            False,  # Contract, membership and capacity checks remain mandatory.
+            configured_custody(config),
         )
     )
     import uvicorn

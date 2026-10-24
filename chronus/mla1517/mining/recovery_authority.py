@@ -19,6 +19,7 @@ observation verifies it.
 from __future__ import annotations
 
 import time
+import threading
 import uuid
 from collections import deque
 from dataclasses import dataclass, field
@@ -105,6 +106,8 @@ class RecoveryGovernor:
             raise ValueError("required recovery authorization has no authorizer")
         if not str(recovery_target).strip():
             raise ValueError("recovery target is required")
+        self._dispatch_lock = threading.RLock()
+        self._dispatching: set[str] = set()
         self._fail_after = fail_after
         self._ttl = salamander_ttl_s
         self._clock = clock
@@ -233,38 +236,65 @@ class RecoveryGovernor:
         *,
         ack: Callable[[], bool | None] | None = None,
     ) -> RecoveryRecord:
-        """Run ``(command, action)`` steps; lane-mask steps defer to Salamander."""
-        for command, action in steps:
-            if command == "HOLD":
-                continue
-            if self.defers(command):
-                record.deferred.append(command)
-                continue
+        """Dispatch one owned proposal once, including reentrant/concurrent callers.
+
+        A deferred or failed proposal is not retried implicitly: a fresh proposal
+        and authorization are required. An ACK exception is failed evidence, not
+        permission to verify the action on a later healthy observation.
+        """
+        with self._dispatch_lock:
+            if self._records.get(record.recovery_id) is not record:
+                raise ValueError("recovery record is not an active owned proposal")
+            if record.state is not RecoveryState.PROPOSED:
+                raise ValueError("recovery proposal has already been dispatched")
+            # Claim before invoking iterable/user callbacks; recursive dispatch
+            # must not enter the side-effect path a second time.
+            record.state = RecoveryState.DISPATCHED
+            self._dispatching.add(record.recovery_id)
+            phase = "prepare dispatch"
             try:
-                self._authorize_dispatch(record, command)
-                routed = action()
-            except Exception as exc:
-                record.failure = f"{command}: {exc}"
-                self._close(record, RecoveryState.FAILED)
-                raise
-            if routed is not None:
-                record.dispatched.append(routed)
-        if not record.dispatched:
-            record.state = RecoveryState.DEFERRED if record.deferred else RecoveryState.DISPATCHED
-            self._emit("recovery_" + record.state.value.lower(), record)
-            return record
-        record.state = RecoveryState.DISPATCHED
-        self._emit("recovery_dispatched", record)
-        if ack is not None and any(c in LANE_MASK_COMMANDS for c in record.dispatched):
-            record.ack = ack()
-            if record.ack is False:
-                record.failure = "supervisor commit was not acknowledged"
-                self._close(record, RecoveryState.FAILED)
+                prepared = list(steps)
+                for command, action in prepared:
+                    if command != "HOLD" and command not in record.commands:
+                        raise ValueError("dispatch command was not proposed")
+                    if not callable(action):
+                        raise ValueError("dispatch action must be callable")
+                for command, action in prepared:
+                    phase = command
+                    if command == "HOLD":
+                        continue
+                    if self.defers(command):
+                        record.deferred.append(command)
+                        continue
+                    self._authorize_dispatch(record, command)
+                    routed = action()
+                    if routed is not None:
+                        record.dispatched.append(routed)
+                if not record.dispatched:
+                    record.state = (
+                        RecoveryState.DEFERRED if record.deferred else RecoveryState.DISPATCHED
+                    )
+                    self._emit("recovery_" + record.state.value.lower(), record)
+                    return record
+                self._emit("recovery_dispatched", record)
+                if ack is not None and any(c in LANE_MASK_COMMANDS for c in record.dispatched):
+                    phase = "supervisor acknowledgement"
+                    record.ack = ack()
+                    if record.ack is False:
+                        record.failure = "supervisor commit was not acknowledged"
+                        self._close(record, RecoveryState.FAILED)
+                        return record
+                    if record.ack is True:
+                        record.state = RecoveryState.ACKED
+                        self._emit("recovery_acked", record)
                 return record
-            if record.ack is True:
-                record.state = RecoveryState.ACKED
-                self._emit("recovery_acked", record)
-        return record
+            except Exception as exc:
+                record.failure = f"{phase}: {exc}"
+                if record.open:
+                    self._close(record, RecoveryState.FAILED)
+                raise
+            finally:
+                self._dispatching.discard(record.recovery_id)
 
     def observe(self, healthy: bool, *, recovery_id: str | None = None) -> list[RecoveryRecord]:
         """Advance open internal recoveries from a fresh post-action observation."""
@@ -274,7 +304,8 @@ class RecoveryGovernor:
                 continue
             if not record.open or record.origin != "self_healing_agent":
                 continue
-            if record.state is RecoveryState.PROPOSED:
+            if (record.state is RecoveryState.PROPOSED
+                    or record.recovery_id in self._dispatching):
                 continue
             if healthy:
                 self._close(record, RecoveryState.VERIFIED)

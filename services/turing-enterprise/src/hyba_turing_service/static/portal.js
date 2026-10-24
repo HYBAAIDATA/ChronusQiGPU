@@ -3,6 +3,8 @@ const $ = (id) => document.getElementById(id);
 const surface = location.pathname.slice(1),
   ops = surface === "ops",
   admin = surface === "admin";
+let history = { q: "", state: "", project: "", after: "", previous: [] };
+let refreshEpoch = 0;
 let user = null,
   section = ops ? "customers" : admin ? "overview" : "jobs";
 const names = {
@@ -10,7 +12,7 @@ const names = {
   customers: "Enterprise customers",
   projects: "Projects and capacity",
   members: "Users and permissions",
-  usage: "Usage and costs",
+  usage: "Operational usage",
   audit: "Provisioning and audit history",
   jobs: "Computational jobs",
   reconcile: "Service reconciliation",
@@ -76,11 +78,19 @@ function table(rows) {
       const cell = element("td");
       const inspect = element("button", "Inspect result");
       inspect.onclick = async () => {
+        const epoch = refreshEpoch, org = tenant();
         try {
           const report = await api(
             `/api/customer/${encodeURIComponent(tenant())}/jobs/${encodeURIComponent(row.job)}`,
           );
-          host.replaceChildren(element("pre", JSON.stringify(report, null, 2)));
+          if (epoch !== refreshEpoch || org !== tenant()) return;
+          const download = element("button", "Export returned report JSON");
+          download.onclick = () => {
+            const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], {type: "application/json"}));
+            const link = element("a"); link.href = url; link.download = "turing-report.json";
+            link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+          };
+          host.replaceChildren(download, element("pre", JSON.stringify(report, null, 2)));
         } catch (error) {
           message(error.message, true);
         }
@@ -89,6 +99,7 @@ function table(rows) {
       if (["admitted", "running"].includes(row.state)) {
         const cancel = element("button", "Request cancellation");
         cancel.onclick = async () => {
+          if (!window.confirm("Request cancellation of " + row.job + "? Running work may remain in flight until fenced.")) return;
           try {
             await api(
               `/api/customer/${encodeURIComponent(tenant())}/jobs/${encodeURIComponent(row.job)}/cancel`,
@@ -146,7 +157,13 @@ function form(fields, submit, label) {
 }
 async function refresh() {
   if (!user) return;
+  const epoch = ++refreshEpoch;
   const org = tenant();
+  async function currentApi(path, body) {
+    const value = await api(path, body);
+    if (epoch !== refreshEpoch || org !== tenant()) throw Error("stale_view");
+    return value;
+  }
   $("sectionTitle").textContent = names[section];
   $("actions").replaceChildren();
   $("data").replaceChildren();
@@ -156,7 +173,7 @@ async function refresh() {
     if (ops) {
       if (section === "customers") {
         const data = user.operator
-          ? await api("/api/ops/customers")
+          ? await currentApi("/api/ops/customers")
           : { customers: [] };
         table(data.customers);
         form(
@@ -212,18 +229,10 @@ async function refresh() {
           "Apply lifecycle change",
         );
       } else {
-        const data = await api("/api/ops/reconcile");
+        const data = await currentApi("/api/ops/reconcile");
         $("data").append(element("pre", JSON.stringify(data, null, 2)));
-        const b = element("button", "Deliver pending billing events");
-        b.onclick = async () => {
-          try {
-            const result = await api("/api/ops/billing/deliver", {});
-            message(JSON.stringify(result));
-          } catch (error) {
-            message(error.message, true);
-          }
-        };
-        $("actions").append(b);
+        $("explanation").textContent =
+          "Billing is deferred. Retained usage and lifecycle facts are not invoices or charges.";
       }
       return;
     }
@@ -232,7 +241,7 @@ async function refresh() {
         "No active customer membership. Contact your nominated administrator.",
       );
     const base = `/api/customer/${encodeURIComponent(org)}`;
-    const overview = await api(base + "/overview");
+    const overview = await currentApi(base + "/overview");
     for (const [key, label] of [
       ["allocated", "Reserved slots"],
       ["available", "Available slots"],
@@ -252,38 +261,36 @@ async function refresh() {
       return;
     }
     if (section === "usage") {
-      if (admin)
-        form(
-          [
-            {
-              name: "amount",
-              label: "Expenditure ceiling (decimal, no inferred rate)",
-            },
-            { name: "currency", label: "ISO currency (e.g. GBP)" },
-            { name: "command", label: "Unique change identifier" },
-          ],
-          (d) => api(base + "/spend-limit", d),
-          "Set commercial ceiling",
-        );
-      table((await api(base + "/usage")).usage);
-      try {
-        const statement = await api(base + "/billing");
-        $("data").append(
-          element("h3", "Commercial statement"),
-          element("pre", JSON.stringify(statement, null, 2)),
-        );
-      } catch {
-        $("data").append(
-          element(
-            "p",
-            "Commercial statement unavailable. No cost or invoice amount has been inferred.",
-          ),
-        );
-      }
+      table((await currentApi(base + "/usage")).usage);
+      $("explanation").textContent =
+        "Operational completion facts only. Contractual usage-based billing is deferred; no chargeable unit, rate or invoice is implied.";
       return;
     }
-    const data = await api(base + "/" + section);
+    if (section === "jobs") {
+      const filters = element("form"); filters.setAttribute("aria-label", "Execution history filters");
+      for (const [name, label] of [["q", "Search job identifier"], ["state", "State (admitted, running, completed, failed, cancelled, unknown)"], ["project", "Project identifier filter"]]) {
+        const wrapper = element("label", label), input = element("input");
+        input.name = name; input.value = history[name]; input.maxLength = name === "q" ? 200 : 256;
+        wrapper.append(input); filters.append(wrapper);
+      }
+      const search = element("button", "Apply filters"); search.type = "submit"; filters.append(search);
+      filters.onsubmit = event => {
+        event.preventDefault(); const values = Object.fromEntries(new FormData(filters));
+        history = {...values, after: "", previous: []}; refresh();
+      };
+      $("actions").append(filters);
+    }
+    const query = section === "jobs" ? "?" + new URLSearchParams({q: history.q, state: history.state, project: history.project, after: history.after, limit: "50"}) : "";
+    const data = await currentApi(base + "/" + section + query);
     table(data[section]);
+    if (section === "jobs") {
+      const pagination = element("nav"); pagination.setAttribute("aria-label", "Execution history pages");
+      const previous = element("button", "Previous page"); previous.disabled = history.previous.length === 0;
+      previous.onclick = () => { history.after = history.previous.pop(); refresh(); };
+      const next = element("button", "Next page"); next.disabled = !data.next_cursor;
+      next.onclick = () => { history.previous.push(history.after); history.after = data.next_cursor; refresh(); };
+      pagination.append(previous, next); $("data").append(pagination);
+    }
     $("explanation").textContent =
       "Up to 50 records. Full cursor-based access is available through the authenticated API.";
     if (
@@ -357,19 +364,19 @@ async function refresh() {
         "Allocate project capacity",
       );
   } catch (error) {
-    message(error.message, true);
+    if (error.message !== "stale_view" && epoch === refreshEpoch) message(error.message, true);
   }
 }
 async function boot() {
   const headings = ops
     ? [
         "Service operations",
-        "Privileged provisioning, commercial reconciliation and accountable lifecycle changes.",
+        "Privileged provisioning, operational reconciliation and accountable lifecycle changes.",
       ]
     : admin
       ? [
           "Customer administration",
-          "Manage customer access, allocate capacity and review commercial records.",
+          "Manage customer access, allocate capacity and review operational records.",
         ]
       : [
           "Your computational workspace",
@@ -414,7 +421,7 @@ async function boot() {
       message("");
       refresh();
     };
-    $("tenant").onchange = refresh;
+    $("tenant").onchange = () => { history = {q: "", state: "", project: "", after: "", previous: []}; refresh(); };
     $("target").onchange = refresh;
     $("logout").onclick = async () => {
       try {

@@ -1,0 +1,3 @@
+# Pin exact raw bytes for vendored ARC-AGI-1 task data and manifest
+data/** text eol=lf
+dataset_manifest.json text eol=lf

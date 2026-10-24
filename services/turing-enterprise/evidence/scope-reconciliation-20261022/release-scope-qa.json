@@ -1,0 +1,34 @@
+[
+  {
+    "width": 1280,
+    "fixture": true,
+    "interactionGroups": [
+      "history-cursors",
+      "server-filter-query",
+      "cancel-confirmation",
+      "unchanged-export",
+      "stale-tenant-inspection",
+      "tenant-filter-reset"
+    ],
+    "errors": [],
+    "overflow": false,
+    "axeRun": true,
+    "violations": []
+  },
+  {
+    "width": 390,
+    "fixture": true,
+    "interactionGroups": [
+      "history-cursors",
+      "server-filter-query",
+      "cancel-confirmation",
+      "unchanged-export",
+      "stale-tenant-inspection",
+      "tenant-filter-reset"
+    ],
+    "errors": [],
+    "overflow": false,
+    "axeRun": true,
+    "violations": []
+  }
+]

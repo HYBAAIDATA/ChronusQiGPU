@@ -1,0 +1,42 @@
+{
+  "chronus/fleet/worker_identity.py": {
+    "git_blob_sha1": "c70e07203523614f9e069c50d407a3b49049e5e0",
+    "sha256": "8c7950016dfdd72b6fd332470b69caa16beccea53dde3d5b966bc23b141ac915"
+  },
+  "chronus/fleet/scheduler.py": {
+    "git_blob_sha1": "7f19cfb49b740462a6158cd237411c202c6b6400",
+    "sha256": "db9a0bc3f6be64ed76017b7b75cb6e2fb843c7b96dbedc5d7c15bb86c4a8524a"
+  },
+  "chronus/fleet/native_worker.py": {
+    "git_blob_sha1": "a580bec46112de4ce570ac989c83c03903fcd989",
+    "sha256": "d342e95dd4cc29a45684e67058e2d1738940b811f800c9f83f0c271dc5300a50"
+  },
+  "chronus/fleet/custody.py": {
+    "git_blob_sha1": "02aa8c46a8c866203dd14d5a45231bfb0fec9a54",
+    "sha256": "48c474eac43ee5a947c3a17f7b63a6f17564335f78085390f80a8313f4256ac6"
+  },
+  "chronus/igpu/host.py": {
+    "git_blob_sha1": "b02e904f71e241b5f5376e5d2b477fe8ea32e0ee",
+    "sha256": "2e0c2b5ef3445ee782129e3ee42138ae125772f02b3e3d3a1b2b28625e22350b"
+  },
+  "chronus/fleet/test_duplicates.py": {
+    "git_blob_sha1": "6052041e13734d61895eddb26bcdef5e5884954a",
+    "sha256": "b624d2717ebfdc1ad11f2ae4fba2efc3f74f30a3f1ec486ff33f08002061cbf0"
+  },
+  "chronus/fleet/test_termination.py": {
+    "git_blob_sha1": "1664c9151c337cb9d0e840f3667b8ffbb04e7884",
+    "sha256": "48bf8844cc0182a6c90b3d4e4d6f573b99ca83c8c32af17444f5e60d76c10cfb"
+  },
+  "chronus/fleet/test_partitions.py": {
+    "git_blob_sha1": "4951eb1d21876232affc6014359bd43c7f654a94",
+    "sha256": "364f23003ef02b4adf5f3e40c13b1031032051e4edd6ded8fd9a11de501cba22"
+  },
+  "chronus/fleet/test_tenants.py": {
+    "git_blob_sha1": "9a3a916ea57b69b60543917f4fbc2f5f557551a6",
+    "sha256": "2f09f5a282c940984142a0cf719ad94fcd081dfac1a594f4745732b82e15b312"
+  },
+  "chronus/fleet/test_agreement.py": {
+    "git_blob_sha1": "c5706798df39d33549d6a915c4fdda209a619442",
+    "sha256": "553bd5584903ce9efba58334130e6db9b046274071469f84737f41d67c0bdfc7"
+  }
+}

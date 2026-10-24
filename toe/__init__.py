@@ -354,6 +354,16 @@ if _ilu.find_spec(__name__ + ".system") is None:  # pragma: no cover - standalon
     for _name in ("TOESystem", "TOEProvenanceRecord"):
         _LAZY_SURFACES.pop(_name)
         __all__.remove(_name)
+if _ilu.find_spec(__name__ + ".mining_decision_plane") is None:  # pragma: no cover - standalone wheel
+    for _name in (
+        "ChainFuture",
+        "IntelligenceStage",
+        "StageIntelligenceLog",
+        "SuperpositionHold",
+        "TOEMiningDecisionPlane",
+    ):
+        _LAZY_SURFACES.pop(_name)
+        __all__.remove(_name)
 del _ilu
 
 

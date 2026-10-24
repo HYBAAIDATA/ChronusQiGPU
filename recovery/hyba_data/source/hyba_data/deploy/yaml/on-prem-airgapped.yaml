@@ -1,0 +1,77 @@
+# HYBA_DATA — On-Premise Air-Gapped Deployment
+# McKinsey-grade configuration for sovereign, disconnected environments.
+# No external network access. All artifacts pre-staged.
+
+deployment:
+  name: hyba-data-airgapped
+  environment: production
+  classification: restricted
+  network_mode: air-gapped
+
+# ── Infrastructure ──────────────────────────────────────────────
+infrastructure:
+  nodes: 3                      # Minimum 3-node HA cluster
+  cpu_per_node: 32              # cores
+  memory_per_node: 128          # GB
+  gpu_per_node: 2               # A100/H100
+  storage:
+    type: nvme-local             # No SAN — local NVMe only
+    capacity_per_node: 4TB
+    encryption: aes-256
+  network:
+    external_access: false
+    internal_cidr: 10.0.0.0/8
+    ports: [8080, 9090, 2379]    # API, metrics, etcd
+
+# ── HYBA_DATA Engine ────────────────────────────────────────────
+engine:
+  manifold: M32
+  search_space: 32-bit
+  workers: 8
+  cache_size: 150000
+  precision: float64
+  gpu_acceleration: true
+  checkpoint_interval: 500
+
+# ── Security ────────────────────────────────────────────────────
+security:
+  abac:
+    enabled: true
+    default_deny: true
+    policy_file: /etc/hyba/abac-policy.json
+  tls:
+    enabled: true
+    cert_source: internal-ca     # Internal CA only
+    min_version: TLSv1.3
+  data_residency:
+    region: on-premise
+    egress_blocked: true
+  audit:
+    enabled: true
+    log_path: /var/log/hyba/audit
+    retention_days: 2555         # 7 years
+  fips_mode: true
+
+# ── FinOps ──────────────────────────────────────────────────────
+finops:
+  cost_tracking: true
+  flop_metering: true
+  chargeback_model: departmental
+  budget_alerts:
+    threshold_pct: 80
+    notification: syslog
+
+# ── MLOps ───────────────────────────────────────────────────────
+mlops:
+  drift_monitoring: true
+  calibration_interval: 1000
+  zero_downtime_reindex: true
+  canary_pct: 10
+
+# ── Compliance ───────────────────────────────────────────────────
+compliance:
+  framework: NIST-800-171
+  data_classification: CUI
+  export_control: EAR99
+  supply_chain: SBOM-required
+  attestation: signed-hash

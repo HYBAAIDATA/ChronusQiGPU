@@ -1,0 +1,70 @@
+[
+  {
+    "path": "hyba_turing_service/__init__.py",
+    "identical": true
+  },
+  {
+    "path": "hyba_turing_service/adapters.py",
+    "identical": true
+  },
+  {
+    "path": "hyba_turing_service/api.py",
+    "identical": true
+  },
+  {
+    "path": "hyba_turing_service/billing.py",
+    "identical": true
+  },
+  {
+    "path": "hyba_turing_service/control.py",
+    "identical": true
+  },
+  {
+    "path": "hyba_turing_service/enterprise.py",
+    "identical": true
+  },
+  {
+    "path": "hyba_turing_service/identity.py",
+    "identical": true
+  },
+  {
+    "path": "hyba_turing_service/main.py",
+    "identical": true
+  },
+  {
+    "path": "hyba_turing_service/release.py",
+    "identical": true
+  },
+  {
+    "path": "hyba_turing_service/runtime.py",
+    "identical": true
+  },
+  {
+    "path": "hyba_turing_service/sessions.py",
+    "identical": true
+  },
+  {
+    "path": "hyba_turing_service/supervisor.py",
+    "identical": true
+  },
+  {
+    "path": "hyba_turing_service/worker_child.py",
+    "identical": true
+  },
+  {
+    "path": "hyba_turing_service/commercial.py",
+    "identical": true
+  },
+  {
+    "path": "hyba_turing_service/static/portal.css",
+    "identical": true
+  },
+  {
+    "path": "hyba_turing_service/static/portal.html",
+    "identical": true
+  },
+  {
+    "path": "hyba_turing_service/static/portal.js",
+    "identical": true
+  }
+]

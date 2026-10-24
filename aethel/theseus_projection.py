@@ -1,9 +1,10 @@
-"""THESEUS rebuildable projection over an OVID authority root.
+"""Legacy TheseusProjection over an Ovid-root store, not Theseus custody.
 
 THESEUS here is not the durable source of truth. Deleting this projection
 must not destroy OVID objects. Rebuild compares query outputs against the
 OVID generation/digest set.
 """
+
 from __future__ import annotations
 
 import json
@@ -11,14 +12,13 @@ import os
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
-from .ovid_authority import OvidAuthority, OvidObject
-
+from .ovid_authority import OvidAuthority
 
 SCHEMA = "theseus-projection/v1"
 CLAIM_BOUNDARY = (
-    "THESEUS is a rebuildable query/index/lineage projection bound to an "
+    "In legacy-ovid-root/v1 only, TheseusProjection is a rebuildable index bound to an "
     "OVID object generation and source digest. It is not required to "
     "establish authoritative stored-state existence or integrity."
 )
@@ -80,7 +80,9 @@ class TheseusProjection:
                 "raw_len": obj.raw_len,
                 "folded_units": obj.folded_units,
             }
-        material = json.dumps(rows, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        material = json.dumps(rows, sort_keys=True, separators=(",", ":")).encode(
+            "utf-8"
+        )
         generation = hashlib.sha256(material).hexdigest()
         for row in rows.values():
             row["ovid_generation"] = generation
@@ -130,24 +132,47 @@ class TheseusProjection:
             return tuple(sorted(self._rows))
 
     def compare_to_ovid(self) -> Dict[str, Any]:
-        ovid_ids = set(self.ovid.list_ids())
+        import hashlib
+
+        expected = {}
+        for obj in self.ovid.objects():
+            # Validate source metadata against the actual stored payload first.
+            self.ovid.get_bytes(obj.object_id)
+            expected[obj.object_id] = {
+                "object_id": obj.object_id,
+                "digest": obj.digest,
+                "working_digest": obj.working_digest,
+                "raw_len": obj.raw_len,
+                "folded_units": obj.folded_units,
+            }
+        expected_generation = hashlib.sha256(
+            json.dumps(expected, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        for row in expected.values():
+            row["ovid_generation"] = expected_generation
         with self._lock:
-            proj_ids = set(self._rows)
+            rows = {k: dict(v) for k, v in self._rows.items()}
             generation = self.generation
-        missing = sorted(ovid_ids - proj_ids)
-        extra = sorted(proj_ids - ovid_ids)
-        digest_mismatch = []
-        for oid in sorted(ovid_ids & proj_ids):
-            if self._rows[oid]["digest"] != oid:
-                digest_mismatch.append(oid)
+        ovid_ids, proj_ids = set(expected), set(rows)
+        mismatch = [
+            oid
+            for oid in sorted(ovid_ids & proj_ids)
+            if json.dumps(rows[oid], sort_keys=True)
+            != json.dumps(expected[oid], sort_keys=True)
+        ]
+        missing, extra = sorted(ovid_ids - proj_ids), sorted(proj_ids - ovid_ids)
         return {
-            "equal": not missing and not extra and not digest_mismatch,
+            "equal": not missing
+            and not extra
+            and not mismatch
+            and generation == expected_generation,
             "ovid_generation": generation,
+            "expected_generation": expected_generation,
             "ovid_count": len(ovid_ids),
             "projection_count": len(proj_ids),
             "missing_from_projection": missing,
             "extra_in_projection": extra,
-            "digest_mismatch": digest_mismatch,
+            "digest_mismatch": mismatch,
         }
 
     def health(self) -> Dict[str, Any]:
@@ -156,6 +181,8 @@ class TheseusProjection:
             "owner": "theseus",
             "status": "ok" if cmp["equal"] else "stale",
             "schema": SCHEMA,
+            "storage_profile": "legacy-ovid-root/v1",
+            "component": "aethel.theseus_projection.TheseusProjection",
             "claim_boundary": CLAIM_BOUNDARY,
             "rebuildable": True,
             "authoritative": False,

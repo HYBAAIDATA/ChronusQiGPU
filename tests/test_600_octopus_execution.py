@@ -12,18 +12,12 @@ Phase P5 unit test suite:
 - Soak campaign execution over Braiins jobs 00-06 logging jobs, difficulties, invalidations, heals, and rechecks
 """
 
-import math
-import struct
-import pytest
-
-from chronus.entangled_hashing import EntangledNonceCandidate, EntangledQubitHasher, LaneHashingReceipt
+from chronus.entangled_hashing import EntangledQubitHasher
 from chronus.exact_geometry import build_600_partition
 from chronus.octopus_execution import (
-    OctopusCampaignReceipt,
     OctopusExecutionEngine,
     run_10min_soak_campaign,
 )
-from kellogg.ansatz_v3 import LANES
 
 
 def test_entangled_qubit_hasher_direct():
@@ -58,7 +52,7 @@ def test_entangled_qubit_hasher_direct():
 def test_octopus_campaign_execution_600_arms(tmp_path):
     engine = OctopusExecutionEngine(shadow_dir=tmp_path / "shadow", max_workers=4)
     prefix = b"C" * 76
-    target = (1 << 240)  # moderate difficulty
+    target = 1 << 240  # moderate difficulty
 
     receipt = engine.run_campaign(
         job_id="braiins_job_01",
@@ -84,7 +78,7 @@ def test_octopus_campaign_execution_600_arms(tmp_path):
     assert len(receipt.lane_receipts) == 600
 
 
-def test_octopus_campaign_live_submit_authorization(tmp_path):
+def test_octopus_campaign_approval_without_transport_stays_shadow(tmp_path):
     engine = OctopusExecutionEngine(shadow_dir=tmp_path / "shadow", max_workers=4)
     prefix = b"D" * 76
     target = (1 << 256) - 1  # win guaranteed
@@ -101,7 +95,13 @@ def test_octopus_campaign_live_submit_authorization(tmp_path):
         max_nonces_per_arm=1,
     )
 
-    assert receipt.submitted_live is True
+    assert receipt.submitted_live is False
+    assert receipt.shadow_logged is True
+    import json
+
+    record = json.loads(next((tmp_path / "shadow").glob("octopus_*.jsonl")).read_text())
+    assert record["approval_requested"] is True
+    assert record["submission_status"] == "unavailable_no_governed_transport"
     assert receipt.winning_share is not None
     assert receipt.winning_share.recheck_passed is True
 

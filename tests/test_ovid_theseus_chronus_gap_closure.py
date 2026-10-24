@@ -2,12 +2,13 @@
 
 Locks:
   - the transfer notes exist in the repository in their entirety
-  - OVID is the durable authority and survives THESEUS deletion
-  - THESEUS is rebuildable from OVID
+  - legacy-ovid-root/v1 keeps OVID bytes across projection deletion
+  - the legacy TheseusProjection is rebuildable from OVID
   - Chronus is optional and is ONE iGPU
   - folded working-form verify checks digest, owner, and sparse witness
   - Chronus virtual memory cannot overwrite another tenant's handle
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -23,14 +24,15 @@ from chronus.igpu.fabric import ComputeFabric
 from chronus.igpu.host import HostGPUPlan
 from chronus.virtual_igpu.memory import VirtualMemoryPlane
 
-
 ROOT = Path(__file__).resolve().parents[1]
 TRANSFER_NOTES = ROOT / "docs" / "MLA1517_PRIME_DB_TRANSFER_NOTES.md"
 
 
 def test_transfer_notes_present_in_entirety():
     text = TRANSFER_NOTES.read_text(encoding="utf-8")
-    assert text.startswith("# MLA1517 + PRIME-DB — Transfer Notes, Specifications & Build Start")
+    assert text.startswith(
+        "# MLA1517 + PRIME-DB — Transfer Notes, Specifications & Build Start"
+    )
     required = [
         "## 1. Purpose",
         "## 4. 11D state model",
@@ -67,12 +69,17 @@ def test_ovid_authority_survives_theseus_delete(tmp_path):
 
 
 def test_ovid_works_with_chronus_unbound(tmp_path):
-    triad = open_triad(durable=True, bind_chronus=False, ovid_root=tmp_path / "ovid")
+    triad = open_triad(
+        durable=True,
+        bind_chronus=False,
+        ovid_root=tmp_path / "ovid",
+        storage_profile="legacy-ovid-root/v1",
+    )
     payload = b"no-chronus-required"
     obj = triad.ovid_put(payload)
     assert triad.ovid_get(obj.object_id) == payload
     health = triad.health()
-    assert health["owners"]["ovid"]["chronus_required"] is False
+    assert health["owners"]["legacy_ovid_root"]["chronus_required"] is False
     assert health["owners"]["chronus"]["bound"] is False
     assert health["owners"]["chronus"]["device_count"] == 0
     assert health["one_igpu"]["required"] is True
@@ -144,7 +151,7 @@ def test_virtual_memory_tenant_isolation(tmp_path):
 
 
 def test_virtual_memory_eviction_drops_host_payload(tmp_path):
-    plane = VirtualMemoryPlane(tmp_path / "mem", max_host_bytes=40)
+    plane = VirtualMemoryPlane(tmp_path / "mem", max_host_bytes=30)
     first = plane.store({"blob": "a" * 8}, tenant="t")
     first_size = first.host_resident_bytes
     assert first_size > 0

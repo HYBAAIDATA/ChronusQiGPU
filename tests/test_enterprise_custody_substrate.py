@@ -260,7 +260,7 @@ def test_a18_journal_incomplete_tail(root: Path, key: bytes) -> None:
     c.put(b"stable", record_id="r18")
     # Append incomplete intent without seal
     with open(c.journal_path, "a", encoding="utf-8") as fh:
-        fh.write('{"op_id":"dangling","status":"intent","op":"put"\n')  # broken JSON tail
+        fh.write('{"op_id":"dangling","status":"intent","op":"put"')  # unterminated tail, no newline
     c2 = compose(root, hmac_key=key)
     assert c2.get("r18") == b"stable"
 

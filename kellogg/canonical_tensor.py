@@ -28,11 +28,9 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Mapping, Sequence, Tuple
+from typing import Any
 
 from chronus.mla1517.mining.search_plan import (
-    EvidenceClass,
-    ExecutionRoute,
     PlanSource,
     SearchPlan,
     WorkIdentity,
@@ -130,9 +128,13 @@ class CanonicalKelloggTensor:
         if abs(prob_sum - 1.0) > 1e-6:
             raise ValueError(f"Probabilities must normalize to 1.0, got {prob_sum}")
         if self.window <= 0 or self.window % self.lanes != 0:
-            raise ValueError(f"Window {self.window} must be positive and divisible by {self.lanes} lanes")
+            raise ValueError(
+                f"Window {self.window} must be positive and divisible by {self.lanes} lanes"
+            )
         if self.base_step < 0 or self.base_step + self.window > 0x100000000:
-            raise ValueError(f"Interval [{self.base_step}, {self.base_step + self.window}) exceeds uint32 domain")
+            raise ValueError(
+                f"Interval [{self.base_step}, {self.base_step + self.window}) exceeds uint32 domain"
+            )
 
         subwindow = self.window // self.lanes
         if math.gcd(self.stride, subwindow) != 1:
@@ -147,11 +149,14 @@ class CanonicalKelloggTensor:
                 "algebraic_field": (
                     "Q(sqrt2, i) [Clifford+T exact]"
                     if self.representation is RepresentationChoice.EXACT_CLIFFORD_T
-                    else "Z[phi] [Lucas-Cassini ring]"
-                    if self.representation is RepresentationChoice.EXACT_CYCLOTOMIC_ZPHI
-                    else "C^N [Complex Hilbert]"
+                    else (
+                        "Z[phi] [Lucas-Cassini ring]"
+                        if self.representation is RepresentationChoice.EXACT_CYCLOTOMIC_ZPHI
+                        else "C^N [Complex Hilbert]"
+                    )
                 ),
-                "is_exact": self.representation in (
+                "is_exact": self.representation
+                in (
                     RepresentationChoice.EXACT_CLIFFORD_T,
                     RepresentationChoice.EXACT_CYCLOTOMIC_ZPHI,
                 ),
@@ -340,3 +345,23 @@ __all__ = [
     "kellogg_state_600",
 ]
 
+
+# Keep monorepo scoring dependencies out of the standalone tensor import path.
+def __getattr__(name: str):
+    if name in _LANE_SCORER_EXPORTS:
+        from kellogg import lane_scorer
+
+        value = getattr(lane_scorer, name)
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+_LANE_SCORER_EXPORTS = (
+    "PerLaneScoreLog",
+    "FutureSuperpositionEntry",
+    "SuperpositionHoldLRU",
+    "QuantumArsenal",
+    "score_600_lanes",
+)
+__all__.extend(_LANE_SCORER_EXPORTS)

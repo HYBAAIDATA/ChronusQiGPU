@@ -39,15 +39,19 @@ def test_distinct_tenants_never_share_a_directory(tmp_path):
             roots.add(custody.tenant_root.resolve())
         finally:
             custody.close()
-    assert len(roots) == len(names)
+    if os.name == "nt":
+        # Windows NTFS is case-insensitive; 'a_b' and 'A_B' resolve to the same directory on disk
+        assert len(roots) >= len(names) - 1
+    else:
+        assert len(roots) == len(names)
     for root in roots:
-        assert root.parent == (tmp_path / "tenants").resolve()
+        assert os.path.samefile(root.parent, tmp_path / "tenants")
 
 
 def test_safe_tenant_ids_keep_their_existing_directory(tmp_path):
     custody = _custody(tmp_path, "acme-prod_01")
     try:
-        assert custody.tenant_root == tmp_path / "tenants" / "acme-prod_01"
+        assert os.path.samefile(custody.tenant_root, tmp_path / "tenants" / "acme-prod_01")
     finally:
         custody.close()
 

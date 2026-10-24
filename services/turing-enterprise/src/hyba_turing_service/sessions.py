@@ -30,7 +30,7 @@ class Sessions:
         token_url,
         verifier,
         encryption_key,
-        client_secret=None
+        client_secret=None,
     ):
         for url in (origin, redirect_uri, authorization_url, token_url):
             p = urllib.parse.urlsplit(url)

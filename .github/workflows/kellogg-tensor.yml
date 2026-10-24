@@ -71,7 +71,7 @@ jobs:
       - name: Build wheel + sdist and verify from clean installs
         run: python packaging/kellogg-tensor/build_and_verify.py
       - name: Retain interpreter evidence
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: kellogg-fixture-${{ matrix.python }}
           path: |
@@ -81,7 +81,7 @@ jobs:
           if-no-files-found: error
       - name: Retain canonical release archives
         if: matrix.python == '3.12'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: kellogg-tensor-dist
           path: |
@@ -114,7 +114,7 @@ jobs:
         run: python packaging/kellogg-tensor/run_release_gate.py
       - name: Retain source and benchmark evidence
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: kellogg-source-evidence
           path: |
@@ -161,7 +161,7 @@ jobs:
           out = Path("cross-version.json")
           out.write_text(json.dumps(verdict, indent=2, sort_keys=True), encoding="utf-8")
           print(out.read_text())
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: kellogg-cross-version
           path: cross-version.json
@@ -281,7 +281,7 @@ jobs:
         run: |
           cp release-verdict.json verified-dist/release-verdict.json
           cp pypi-state.json verified-dist/pypi-state.json
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: kellogg-tensor-verified-release
           path: verified-dist/*
@@ -351,7 +351,7 @@ jobs:
     - name: Execute fresh registry install, import, CLI and replay
       run: python packaging/verify_registry_release.py --product hyba-kellogg-tensor --registry testpypi --sha "$RC_SHA"
         --verdict release/release-verdict.json --out receipts
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@v7.0.2
       with:
         name: kellogg-testpypi-smoke-${{ matrix.python }}
         path: receipts/
@@ -375,7 +375,7 @@ jobs:
         path: receipts
     - run: python packaging/verify_registry_release.py --product hyba-kellogg-tensor --registry testpypi --sha "$RC_SHA"
         --verdict release/release-verdict.json --receipts receipts --out publication.json
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@v7.0.2
       with:
         name: kellogg-testpypi-verified
         path: publication.json
@@ -407,7 +407,7 @@ jobs:
     - name: Execute fresh registry install, import, CLI and replay
       run: python packaging/verify_registry_release.py --product hyba-kellogg-tensor --registry pypi --sha "$RC_SHA" --verdict
         release/release-verdict.json --out receipts
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@v7.0.2
       with:
         name: kellogg-pypi-smoke-${{ matrix.python }}
         path: receipts/
@@ -431,7 +431,7 @@ jobs:
         path: receipts
     - run: python packaging/verify_registry_release.py --product hyba-kellogg-tensor --registry pypi --sha "$RC_SHA" --verdict
         release/release-verdict.json --receipts receipts --out publication.json
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@v7.0.2
       with:
         name: kellogg-pypi-verified
         path: publication.json
@@ -536,7 +536,7 @@ jobs:
         PYCODE
         tar -czf registry-execution-logs.tar.gz execution-logs
         gh release create kellogg-tensor-v1.0.0 --target "$RC_SHA" --title "hyba-kellogg-tensor 1.0.0" --notes-file release-notes.md release/*.whl release/*.tar.gz publication.json registry-execution-logs.tar.gz
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@v7.0.2
       with:
         name: kellogg-final-publication
         path: publication.json

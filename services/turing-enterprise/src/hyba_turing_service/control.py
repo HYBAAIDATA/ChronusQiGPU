@@ -439,6 +439,19 @@ class ControlPlane:
                 )
                 self._audit(tenant, actor, "execution_unknown", dict(job=job))
             raise Unavailable("execution outcome unknown; reconcile before release") from None
+        return self._complete_report(actor, tenant=tenant, job=job, report=report)
+
+    def _complete_report(
+        self,
+        actor,
+        *,
+        tenant,
+        job,
+        report,
+        expected_states=("running",),
+        expected_request_hash=None,
+        recovery_reason=None,
+    ):
         raw_stages = report.get("stages")
         stages = {}
         if isinstance(raw_stages, list):
@@ -465,7 +478,14 @@ class ControlPlane:
             # Trusted adapter owns certificate verification; this is a transport
             # admission check, not an independent mathematical proof verifier.
             c = self._customer(tenant)
-            if self._job(tenant, job)["state"] != "running":
+            row = self._job(tenant, job)
+            if expected_request_hash is not None and row["request_hash"] != expected_request_hash:
+                raise Conflict("admission identity changed during recovery")
+            if row["state"] == "completed" and expected_request_hash is not None:
+                if row["report"] != canonical(report):
+                    raise Conflict("completed report conflicts with recovery evidence")
+                return json.loads(row["report"])
+            if row["state"] not in expected_states:
                 raise Conflict(
                     "execution was fenced by operator resolution; recover evidence manually"
                 )
@@ -483,12 +503,20 @@ class ControlPlane:
                     contract=c["contract"],
                     billing_account=c["billing_account"],
                     unit="verified_execution.v1",
+                    billing_scope="deferred",
+                    chargeable=False,
                     quantity=1,
                     occurred_at=self.clock(),
                     program_digest=report["program_digest"],
                     report_digest=digest(report),
                 )
                 payload.update(self._usage_details(tenant, job))
+                if recovery_reason is not None:
+                    payload.update(
+                        recovered=True,
+                        recovered_at=self.clock(),
+                        execution_time_source="not_established_by_service_receipt",
+                    )
                 self.db.execute(
                     "INSERT INTO usage VALUES(?,?,?,?)", (event, tenant, job, canonical(payload))
                 )
@@ -496,19 +524,57 @@ class ControlPlane:
             self._audit(
                 tenant,
                 actor,
-                "complete" if passed else "fail",
-                dict(job=job, digest=digest(report)),
+                (
+                    ("recover_complete" if passed else "recover_fail")
+                    if recovery_reason is not None
+                    else ("complete" if passed else "fail")
+                ),
+                dict(
+                    job=job,
+                    digest=digest(report),
+                    **({"reason": recovery_reason} if recovery_reason is not None else {}),
+                ),
             )
         return report
 
     def _usage_details(self, tenant, job):
         return {}
 
+    def recover_result(self, token, actor, *, tenant, job, reason, source):
+        """Operator-only recovery of an authenticated durable service report.
+
+        Does not execute work, infer an exactly-once computation guarantee or
+        claim shared THESEUS semantic replay. Unsigned legacy files stay closed.
+        """
+        self._authorize(token, actor, tenant, "turing.ops.manage", operator=True)
+        text(reason)
+        if source is None:
+            raise Unavailable("recovery source is not configured")
+        with self._transaction():
+            row = dict(self._job(tenant, job))
+            if row["state"] not in {"running", "unknown", "completed"}:
+                raise Conflict("job is not eligible for result recovery")
+        report = source.recover(
+            tenant, job, json.loads(row["request"]), admission_hash=row["request_hash"]
+        )
+        report = json.loads(canonical(report))
+        if not isinstance(report, dict):
+            raise Unavailable("recovery source returned no report")
+        return self._complete_report(
+            actor,
+            tenant=tenant,
+            job=job,
+            report=report,
+            expected_states=("running", "unknown"),
+            expected_request_hash=row["request_hash"],
+            recovery_reason=reason,
+        )
+
     def resolve_unknown(self, token, actor, *, tenant, job, reason):
         """Release a quarantined job only after operator investigation.
 
-        No usage is inferred and no success fabricated. A verified successful
-        orphan needs a future evidence-recovery workflow before billing.
+        No usage is inferred and no success fabricated. Authenticated retained
+        service reports may instead use recover_result; billing stays deferred.
         """
         self._authorize(token, actor, tenant, "turing.ops.manage", operator=True)
         text(reason)
@@ -609,7 +675,7 @@ class ControlPlane:
         self._authorize(token, actor, "__service_ops__", "turing.ops.billing", operator=True)
         integer(limit, 1, 1000)
         if sink is None:
-            raise Unavailable("Hermitten usage sink not configured")
+            raise Unavailable("usage sink is not configured")
         rows = self.db.execute(
             "SELECT u.event,u.tenant,u.payload FROM usage u JOIN delivery d ON u.event=d.event "
             "WHERE d.receipt IS NULL ORDER BY u.event LIMIT ?",

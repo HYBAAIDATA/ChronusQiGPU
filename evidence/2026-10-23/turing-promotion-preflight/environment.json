@@ -1,0 +1,11 @@
+{
+  "python": "3.13.14",
+  "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+  "scope": "GitHub-blob-verified partial service source, not a full git checkout; no developer-machine access",
+  "test_authority": "ephemeral TEST-only Ed25519 fixtures; no live IdP/production credentials",
+  "deployment_tools_available": [],
+  "mcp_connections": [
+    "GitHub",
+    "Notion"
+  ]
+}

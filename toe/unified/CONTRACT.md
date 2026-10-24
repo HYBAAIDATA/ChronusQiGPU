@@ -10,7 +10,7 @@ What a call does:
 - Payload bytes are zlib-compressed under that digest. `restore_payload` returns the original object.
 - Reads by entity use an index. `benchmark_processing` records index visits against a full scan. The processing gate opens when the reduction is at least 0.90.
 - Models are `kellogg` `exact_linear`. `retrain` keeps the live model when held-out accuracy falls. Transfer zero-fills missing features and reports the overlap. `predict` during `retrain` still returns a class.
-- `watch` plus `HealthMonitor` retrains when accuracy on the watched rows is below 0.5. `start` ticks without a further `heal()` call.
+- `watch` plus `HealthMonitor` proposes retraining when observed accuracy is below 0.5; automatic replacement additionally requires disjoint held-out evaluation, non-regression, the configured minimum accuracy and an unchanged incumbent version. A watch without evaluation remains blocked. `monitor.start()` ticks without a further `heal()` call; platform `start()` alone does not start the monitor.
 - `ConsciousnessState.observe` weights widgets. `correct` sets the threshold to the midpoint of the corrected class scores.
 - Questions accept the grammar in `toe/unified/bi.py`. Anything else raises `QueryError`. `optimize` orders filters by measured selectivity.
 - Dashboards reorder the widgets the caller supplied.
@@ -19,7 +19,7 @@ What a call does:
 - `assess`, `document_fortune500_scenario`, and `financial_services_case` compute from declared inputs. The 23-system case saves 45,000,000.
 - Reference workloads live in `productivity.REFERENCE`. Live timings are whatever `record` is given.
 - `recognize_value` appends one ledger entry. Outcomes divide the allocated amount by the unit cost of 50,000.
-- With enforcement on, one role table allows or denies `connect`, `ingest`, `train`, `ask`, `export`, `heal`, and `reload`.
+- With enforcement on, the role table guards the facade data, prediction, dashboard, governance and operational methods. `security_enforced=True` selects that mode at construction. Actor selection is trusted host integration, not credential authentication. Enforced monitor threads require an explicitly provisioned `monitor_actor`; they use the same authorized heal/retrain methods.
 - Phase gates include connector count 50, enterprise systems 500, satisfaction 0.95, processing reduction 0.90, three-year ROI 4.0, and 10 filed patents.
 - Sensor batches return an operator digest and a maintenance slope. Fraud lift on the separable fixture is 3.0 against flag-all precision.
 - Risk labels start at the register defaults and follow the observed failure rate after `observe`.
@@ -31,3 +31,64 @@ Implementation status is the second: `IMPLEMENTED_REAL`, `IMPLEMENTED_FIXTURE`,
 The rendered coverage map is `reports/toe_unified_coverage_map.md`.
 `make verify-unified` runs the seven layers in order.
 
+
+## Enterprise execution and evidence boundary
+
+See `SYSTEM_CONTRACT.md` at repository root for the layer ownership map,
+governance stack, evidence matrix and open deployment qualification work.
+`analyze(entity)` runs the existing TOE bridge's state tomography on a snapshot
+of non-quarantined records and issues an existing-format TOE receipt binding the
+analysis to compiled input and ingestion lineage. Empty input or unavailable
+analysis raises `AnalysisUnavailable`, without a success receipt. Outputs are
+descriptive, not causal findings or action approvals. `analysis_receipts()`
+requires export permission. Receipts remain in-process.
+
+Availability is `None` until a probe exists; its phase gate remains closed and
+`require_gate("availability")` raises `GateUnavailable`. Afterwards it is a probe
+success ratio, not a time-window SLA. ROI gates carry `evidence_kind="modeled"`;
+connector count gates carry `bound_inventory`; processing reduction carries
+`fixture_row_visits`. No phase gate certifies an enterprise deployment.
+Retirement requires admin reload authority and removes the active binding;
+reconnection clears the retired marker. Null-rate policy limits must be finite
+numbers between zero and one.
+
+`python scripts/verify_unified_enterprise.py` retains executed test evidence,
+including failures. The CI workflow runs the unified suites on Python 3.12/3.13;
+a fresh passing result must be inspected, not inferred from this contract.
+
+Imports now publish all groups and quarantine flags in one in-process data-layer
+transaction. Every envelope/digest is checked and every group compiled before
+publication; failed staging leaves live rows, batch IDs, indexes, blobs, audit and
+receipts unchanged. Exports and ingest inputs detach nested payloads.
+
+`watch(name, rows, eval_rows=held_out, min_accuracy=0.8)` supplies independent model
+inputs for automatic promotion. The holdout must avoid both incumbent and
+candidate training inputs, contain both binary classes and have finite complete
+features. `health()["drift"]` reports blocked/promoted/rejected state and scoring
+evidence. Direct manual training remains trusted; it is not made production-safe
+merely by the presence of the automatic-promotion gate.
+
+
+Installed-artifact verification is a separate gate: the existing TOE build verifier
+runs `test_toe_unified_authority.py`, `test_toe_unified_atomic.py`,
+`test_toe_unified_promotion.py` and `test_toe_unified_tenancy.py` in clean wheel
+and rebuilt-sdist environments.
+Imports must originate in the environment's installed packages; source-path
+fallback, skipped tests, empty runs and failures cannot qualify. Evidence is
+retained in `packaging/toe/dist/installed-unified/`. This is a four-suite runtime
+regression scope, not full-package success inferred from a source test or a
+production-readiness declaration. The workflow must actually pass for the
+candidate commit before any installed-artifact claim is made.
+
+
+`TenantGateway` adds a host-composed tenant entry point. Each tenant owns a separate
+role-enforced platform; every session call rechecks current membership and role.
+Revocation waits for an in-flight same-tenant call and blocks later calls through
+already-issued sessions. Data/model/policy/connector/governance/receipt state is
+not shared between provisioned tenants. Tenant outputs are detached and tagged;
+analysis receipts include the tenant ID in their hash-bound configuration.
+Connector configuration and all grant/provision/revoke methods remain trusted
+host controls, never tenant API operations. Tenant selection is not identity
+verification. The host must authenticate first; neither this gateway nor a tenant
+label secures adversarial Python code, external vendor resources or a deployment.
+See `SYSTEM_CONTRACT.md` for isolation limits and remaining qualification gates.

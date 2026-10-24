@@ -112,8 +112,14 @@ class EuclidTopologicalPhysicsController:
         return float(np.clip(action, -1.0, 1.0))
 
 
-def run_double_pendulum_benchmark(num_episodes: int = 10, mass_perturbation: float = 1.0) -> Dict[str, Any]:
+def run_double_pendulum_benchmark(
+    num_episodes: int = 10,
+    mass_perturbation: float = 1.0,
+    seed: int | None = 42,
+) -> Dict[str, Any]:
     """Runs continuous control benchmark with optional OOD mass perturbation."""
+    if seed is not None:
+        np.random.seed(seed)
     env = AnalyticDoublePendulumDynamics(mass_perturbation=mass_perturbation)
     controller = EuclidTopologicalPhysicsController()
 

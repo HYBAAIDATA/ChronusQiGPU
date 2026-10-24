@@ -1,0 +1,26 @@
+{
+  "artifacts": {
+    "hyba_turing_service_control-0.2.0-py3-none-any.whl": "b867f47d128f14168c107cd4a35ea2727373d5a900f1f9cc6187c95f81671e06",
+    "hyba_turing_service_control-0.2.0.tar.gz": "3c2923ca60c196e069cdf0bc80d16cf113dceeb1ad1a7518a0a0da623a9d1da0"
+  },
+  "payload_files": {
+    "hyba_turing_service/__init__.py": "f7639ed7d9976e80ada28e920bd69d272e71efb826dc46b0d8570e8af1ffe258",
+    "hyba_turing_service/adapters.py": "faa300185a5c02b1632e21017b58cac0468028b28418f80aea8d833fadcaea12",
+    "hyba_turing_service/api.py": "c96a48fd6f668b305566f82d5600b19f1b7dce419474a704decf11c0202a7b8d",
+    "hyba_turing_service/billing.py": "5e392750228ea3246663a5b375ec8899151200b8bc21715a63747e2d3e9e2166",
+    "hyba_turing_service/commercial.py": "edd362a1ca7279c899739e523293a0b019c72788de9aa63a9fcaa60b99589a77",
+    "hyba_turing_service/control.py": "900f37cf81dc76a9df3f4435faa1fe0dc87403fe1a3d86190e07bf8a58115529",
+    "hyba_turing_service/enterprise.py": "b95280cade9c217f78d4296651d4763b8b1959203b9de5e3142624fe050a99b5",
+    "hyba_turing_service/identity.py": "b556d0faceca4f5be843793d2857636dea7ec581b4651e72ae93375ac8ef39a1",
+    "hyba_turing_service/main.py": "be47aca5d062b5c6301da7d2682eceb19ff7393858553bc3146653e849620a59",
+    "hyba_turing_service/release.py": "7c5884a800934670f3c16347ac86c368d3936f0a4e9f2a1ec27728d55c2b9bdb",
+    "hyba_turing_service/runtime.py": "ae5cc391a2b469cee9c6527f5f0b2881eef74197a95ae5f0a6aad7bc7abe3a69",
+    "hyba_turing_service/sessions.py": "8f206d968a38d4f53b21a9fd49d710ed3eace58ffe49e15c82c73868a6d556eb",
+    "hyba_turing_service/static/portal.css": "7dbeaf862fe9bc0c48d057d0a90da18a4ca0fd064bdcb9e54a81c85aa4455440",
+    "hyba_turing_service/static/portal.html": "c58d1d9403b4e819702683041729766cfe914e6e5ae05cd0accfe0a62d346af8",
+    "hyba_turing_service/static/portal.js": "51efaa923c4ea86a9153613332c5bf59795a8cd85fb04bf6e7912916872d6267",
+    "hyba_turing_service/supervisor.py": "26a5c210b5be2ef141c95cc023336a486fed49193b0d30ab283ec6f82f0dbfe6",
+    "hyba_turing_service/worker_child.py": "f7bd7194d2b60fbf96473b66cddaaa27eeed28ad00928ae35aa79c12a49b74c6"
+  },
+  "payload_parity": true
+}

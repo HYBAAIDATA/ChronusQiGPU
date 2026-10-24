@@ -35,7 +35,11 @@ def test_int_2_drift_retrain_crosses_monitor_and_models():
     platform = UnifiedAnalyticsPlatform()
     platform.train("setosa", rows, ["petal_length"], "setosa")
     flipped = [{**row, "setosa": 1 - row["setosa"]} for row in rows]
-    platform.watch("setosa", flipped)
+    held_out = [
+        {"petal_length": row["petal_length"] + 0.001 * (index + 1), "setosa": 1 - row["setosa"]}
+        for index, row in enumerate(rows)
+    ]
+    platform.watch("setosa", flipped, eval_rows=held_out)
     platform.monitor.tick_once()
     assert platform.drift_retrains == 1
     assert platform.models.get("setosa").version == 2

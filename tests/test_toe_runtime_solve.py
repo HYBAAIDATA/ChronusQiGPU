@@ -88,6 +88,20 @@ def test_problem_content_round_trips_through_the_api():
         metadata={"episode_sha256": resp.decision_id},
     )
     assert status2 == 200 and resp2.ok
+    receipt = resp2.receipt
+    assert receipt is not None
+    assert receipt.tenant_id == "acme" and receipt.operation == "learn"
+    assert receipt.evidence_source == "toe.machine.TOEMachine"
+    assert receipt.payload_digest == svc.runtime._digest({
+        "episode_sha256": resp.decision_id,
+        "observed": [{"x": 1.0, "z": 0.1, "y": 0.6}],
+    })
+    assert receipt.result_digest == svc.runtime._digest(resp2.result)
+    assert receipt.payload_digest != svc.runtime._digest({
+        "episode_sha256": "different-episode",
+        "observed": [{"x": 1.0, "z": 0.1, "y": 0.6}],
+    })
+    assert resp2.result["persisted"]["available"] is False
     _, missing = svc.handle_request(
         "learn", [], "acme", api_key=key, metadata={"episode_sha256": "nope"}
     )
@@ -109,3 +123,15 @@ def test_tenant_custody_survives_runtime_restart(tmp_path):
     again = rt2.solve(voyage_problem(z_state=0.25), tenant)
     assert again.result["identity"]["model_revision"] == 1
     assert rt2.machine_for(tenant).recovered_from["recovered"] is True
+
+
+def test_learning_refuses_oversize_observations_before_model_mutation():
+    rt = _runtime()
+    tenant = TenantContext("acme")
+    solved = rt.solve(voyage_problem(), tenant)
+    machine = rt.machine_for(tenant)
+    before = rt._digest(machine.snapshot())
+    refused = rt.learn(solved.decision_id, {"x": "x" * 1_000_001}, tenant)
+    assert not refused.ok and refused.error.code == "payload_invalid"
+    assert refused.receipt is None
+    assert rt._digest(machine.snapshot()) == before

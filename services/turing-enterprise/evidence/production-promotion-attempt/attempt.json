@@ -1,0 +1,45 @@
+{
+  "schema": "turing.production-promotion-attempt.v1",
+  "authorization": "User explicitly requested continuation and production promotion. This authorizes deployment, not fabrication of acceptance or bypass of security controls.",
+  "baseline_main": "4b75ace56712501f7d091e33d386df64ade9ba1b",
+  "prior_review_head": "62bf633493ab35282dcdc15c22d60e96d7e7c766",
+  "implemented": [
+    "Enterprise CI now formats integration tests too",
+    "Enterprise portal CI installs pinned test-only axe-core and runs the existing 12-group recovery/tenant-switch/accessibility regression script with a required axe path"
+  ],
+  "qualification": [
+    {
+      "command": "/data/completion/venv/bin/python -m pytest services/turing-enterprise/tests services/turing-enterprise/integration -q --junitxml=/data/completion/promotion-evidence/service-and-integration.xml",
+      "result": "96 passed, 0 failures/errors/skips, 1 deprecation warning, 6.84s; 93 local unit/security/recovery plus 3 actual local integrations"
+    },
+    {
+      "command": "CHROMIUM_PATH=/usr/local/bin/chromium AXE_CORE_PATH=/data/completion/qa/node_modules/axe-core/axe.min.js TURING_PREVIEW_DIR=/data/completion/promotion-evidence/portal node services/turing-enterprise/tests/portal-release-scope.cjs",
+      "result": "exit0; 2 viewport fixture workflows, 12 interaction groups, 2 axe scans with zero violations; not live SSO or full WCAG"
+    },
+    {
+      "command": "python -m black --check --line-length 100 services/turing-enterprise/src services/turing-enterprise/tests services/turing-enterprise/integration",
+      "result": "exit0, 21 files unchanged"
+    },
+    {
+      "command": "python -m hyba_turing_service.main release-check --config services/turing-enterprise/deploy/service.example.json",
+      "result": "exit1; FileNotFoundError /run/service-secrets/customer-key. Template only, production authority not available; no approval generated"
+    }
+  ],
+  "production_readiness": "BLOCKED, NOT DEPLOYED",
+  "missing": [
+    "Approved production host/environment and actual service origin",
+    "Approved IdP client, audiences, issuer/callback and credential-provider configuration",
+    "Deployment-owned secret mount and independently signed source-bound approval bundle",
+    "Required remote CI evidence and target-host identity/security/recovery qualification"
+  ],
+  "observations": [
+    "Only GitHub and Notion connections are available; no deployment connection",
+    "No Docker/kubectl/helm/aws/gh command available in this sandbox; git is available",
+    "No local /run/service-secrets, /approval, kube config or AWS config found",
+    "Current main unchanged and no open PRs before preparing this candidate review",
+    "No production workflow dispatched, image published, cloud resource changed or customer traffic routed",
+    "The repository production.yml references mining credentials and is not assumed to be a TURING service deployment target",
+    "Future contractual usage-based billing remains deferred; Hermitten avoided-cost data billing remains separate and is not a blocker"
+  ],
+  "ci_scope": "Workflow wiring and YAML structure verified locally; remote execution/results not yet established. permissions and trigger scope unchanged."
+}

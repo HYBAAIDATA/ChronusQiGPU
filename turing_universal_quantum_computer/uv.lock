@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -58,6 +58,7 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
+    { name = "hypothesis" },
     { name = "pytest" },
 ]
 discovery = [
@@ -84,6 +85,7 @@ research = [
 [package.metadata]
 requires-dist = [
     { name = "hyba-kellogg-tensor", directory = "../packaging/kellogg-tensor" },
+    { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.100,<7" },
     { name = "networkx", marker = "extra == 'discovery'", specifier = ">=3.0" },
     { name = "numpy", specifier = ">=1.26,<3" },
     { name = "pyopencl", marker = "extra == 'hardware'", specifier = ">=2024.1" },

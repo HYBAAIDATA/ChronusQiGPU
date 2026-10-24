@@ -1,20 +1,27 @@
 {
   "mcp_spec_version": "1.0",
-  "name": "Euclid_MCP",
-  "version": "0.4.3",
-  "description": "Top-level MCP manifest for EuclidQuantumPhi/EuclidPhiEnterprise. Provides server registration hints for local agent hosts.",
+  "name": "HYBA_Sovereign_MCP",
+  "version": "1.0.0",
+  "description": "Top-level sovereign MCP manifest for HYBA / EUCLID / PhiEnterprise. Provides server registration for sovereign tools and exact mathematical kernels. Narrow AI does not receive credit, authority, or decision rights.",
   "servers": [
+    {
+      "name": "hyba-mcp",
+      "command": "python",
+      "args": ["-m", "hyba_mcp.server"],
+      "env": { "PYTHONPATH": "${REPO_ROOT}" },
+      "description": "Production HYBA sovereign MCP server — fast-doubling Lucas, Fibonacci, Cassini, Zeckendorf, tile scaling, and SHA256d verification."
+    },
     {
       "name": "exact-kernel",
       "command": "python",
-      "args": ["-m", "mcp.exact_kernel.server"],
+      "args": ["mcp/exact_kernel/server.py"],
       "env": { "PYTHONPATH": "${REPO_ROOT}" },
-      "description": "Exact kernel (stable) — recommended for internal Notion agents"
+      "description": "Exact kernel (stable) — standalone file runner"
     },
     {
       "name": "cogito",
       "command": "python",
-      "args": ["-m", "mcp.cogito.server"],
+      "args": ["mcp/cogito/server.py"],
       "env": { "PYTHONPATH": "${REPO_ROOT}" },
       "description": "Cogito capability surface (experimental) — use for internal review only"
     }
@@ -36,5 +43,10 @@
       }
     }
   ],
-  "notes": "This top-level .mcp.json is intended for internal agent registration. Replace ${REPO_ROOT} with the absolute filesystem path where the repository is checked out on the agent host. exact-kernel is stable; cogito is experimental."
+  "sovereignty_doctrine": {
+    "narrow_ai_policy": "NO_NARROW_AI_AUGMENTATION",
+    "credit_assignment": "ZERO_CREDIT_TO_NARROW_AI",
+    "authority": "HYBA_EUCLID_AUTONOMOUS_CNS"
+  },
+  "notes": "This top-level .mcp.json is intended for internal agent registration. Replace ${REPO_ROOT} with the absolute filesystem path where the repository is checked out on the agent host."
 }

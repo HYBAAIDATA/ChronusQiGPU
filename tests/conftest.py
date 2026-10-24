@@ -70,6 +70,16 @@ hyba_compat.install()
 
 
 if pytest is not None:
+    import tempfile as _tempfile
+
+    def pytest_configure(config):
+        basetemp = getattr(config.option, "basetemp", None)
+        if not basetemp or str(basetemp) == ".pytest_tmp" or Path(basetemp).exists():
+            local_base = Path(os.environ.get("LOCALAPPDATA") or _tempfile.gettempdir())
+            base_root = local_base / "pythia" / "pytest_tmp"
+            base_root.mkdir(parents=True, exist_ok=True)
+            run_dir = Path(_tempfile.mkdtemp(prefix="session-", dir=str(base_root)))
+            config.option.basetemp = str(run_dir / "basetemp")
 
     @pytest.fixture(autouse=True)
     def _hermetic_runtime_config(monkeypatch, tmp_path):

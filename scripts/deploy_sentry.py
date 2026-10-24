@@ -59,6 +59,7 @@ SKIP_DIRS = {
     "build",
     "dist",
     "legacy",
+    "external",
     "__pycache__",
     ".venv",
     "venv",
@@ -93,6 +94,8 @@ SHELL_WORDS = {
     "npm",
     "npx",
     "node",
+    "python",
+    "python3",
     "rm",
     "cp",
     "mkdir",
@@ -560,6 +563,10 @@ def check_python_deps(root: Path) -> list[Finding]:
                 imported.update(a.name.split(".")[0] for a in node.names)
             elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
                 imported.add(node.module.split(".")[0])
+                # Starlette's TestClient consumes httpx through FastAPI's
+                # public test facade; it is a real test dependency, not unused.
+                if node.module in {"fastapi.testclient", "starlette.testclient"}:
+                    imported.add("httpx")
     for dist in sorted(declared_any - TOOL_DISTS):
         if _import_name(dist) not in imported:
             findings.append(
@@ -1075,8 +1082,16 @@ def check_frontend_deps(root: Path) -> list[Finding]:
                     )
                 )
         declared_bins = set().union(*bins.values()) if bins else set()
-        for command in re.split(r"&&|\|\||;", scripts):
-            words = [w for w in command.split() if "=" not in w]
+        lexer = shlex.shlex(scripts, posix=True, punctuation_chars=";&|")
+        lexer.whitespace_split = True
+        commands: list[list[str]] = [[]]
+        for word in lexer:
+            if word in {"&&", "||", ";", "&", "|"}:
+                commands.append([])
+            else:
+                commands[-1].append(word)
+        for tokens in commands:
+            words = [w for w in tokens if "=" not in w]
             if not words:
                 continue
             binary = words[0]
@@ -1135,6 +1150,8 @@ def _commands(path: Path) -> list[str]:
 def _local_module(root: Path, dotted: str) -> tuple[bool, bool]:
     """(is_local, exists) for ``dotted`` against the repository's source roots."""
     top = dotted.split(".")[0]
+    if top in SKIP_DIRS:
+        return False, False
     local = exists = False
     for base in source_roots(root):
         if (base / top).is_dir() or (base / f"{top}.py").is_file():
@@ -1149,45 +1166,34 @@ def _local_module(root: Path, dotted: str) -> tuple[bool, bool]:
 
 def check_entry_points(root: Path) -> list[Finding]:
     findings = []
-    for path in _walk(root):
-        rel = _rel(path, root)
-        is_deploy = path.name.startswith("Dockerfile") or (
-            path.suffix in {".yml", ".yaml"}
-            and ("compose" in path.name or rel.startswith(".github/workflows/"))
-        )
-        if not is_deploy:
-            continue
-        try:
-            commands = _commands(path)
-        except (OSError, UnicodeDecodeError, yaml.YAMLError):
-            continue
-        for command in commands:
-            for match in _PY_RUN.finditer(command):
-                module, script = match.group(2), match.group(3)
-                if module:
-                    local, exists = _local_module(root, module)
-                    if local and not exists:
-                        findings.append(
-                            Finding(
-                                "DS07",
-                                _severity(rel),
-                                rel,
+    for rel, commands in _deploy_units(root):
+        for initial_cwd, command in commands:
+            cwd = initial_cwd
+            for part in _split_commands(command):
+                words = _words(part)
+                if len(words) == 2 and words[0] == "cd":
+                    candidate = (cwd / words[1]).resolve()
+                    if candidate.is_relative_to(root.resolve()):
+                        cwd = candidate
+                    continue
+                for match in _PY_RUN.finditer(part):
+                    module, script = match.group(2), match.group(3)
+                    if module:
+                        local, exists = _local_module(root, module)
+                        if local and not exists:
+                            findings.append(Finding(
+                                "DS07", _severity(rel), rel,
                                 f"runs python -m {module}, which does not exist",
                                 f"point it at the module that replaced {module}, or remove it",
-                            )
-                        )
-                elif script and not script.startswith(("/", "$")):
-                    candidates = [root / script, root / PLATFORM / script]
-                    if "/" in script and not any(c.is_file() for c in candidates):
-                        findings.append(
-                            Finding(
-                                "DS07",
-                                _severity(rel),
-                                rel,
+                            ))
+                    elif script and not script.startswith(("/", "$")):
+                        candidates = [cwd / script, root / script, root / PLATFORM / script]
+                        if "/" in script and not any(c.is_file() for c in candidates):
+                            findings.append(Finding(
+                                "DS07", _severity(rel), rel,
                                 f"runs {script}, which does not exist",
                                 f"point it at the script that replaced {script}, or remove it",
-                            )
-                        )
+                            ))
     return findings
 
 

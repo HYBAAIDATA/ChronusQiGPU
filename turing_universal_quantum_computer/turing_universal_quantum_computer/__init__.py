@@ -146,6 +146,7 @@ _LAZY_MODULES = {
     "custody",
     "chronus_lane",
     "pipeline",
+    "software_stack",
 }
 
 _LAZY_SYMBOLS = {
@@ -301,6 +302,34 @@ _LAZY_SYMBOLS = {
     "StageEvidence": "pipeline",
     "VQCPipeline": "pipeline",
     "run_pipeline": "pipeline",
+    # six-phase software stack
+    "DEFAULT_BASIS_GATES": "software_stack",
+    "CouplingMap": "software_stack",
+    "RoutingResult": "software_stack",
+    "TranspilationReport": "software_stack",
+    "QECCycleReport": "software_stack",
+    "HybridJobSpec": "software_stack",
+    "HybridIterationReceipt": "software_stack",
+    "HybridOrchestrationReport": "software_stack",
+    "HybridWorkloadOrchestrator": "software_stack",
+    "GPUFleetQuantumWorkloadReport": "software_stack",
+    "PulseInstruction": "software_stack",
+    "PulseSchedule": "software_stack",
+    "PulseCompiler": "software_stack",
+    "SoftwareStackReport": "software_stack",
+    "build_ansatz_program": "software_stack",
+    "program_to_qasm": "software_stack",
+    "program_from_qasm": "software_stack",
+    "qasm_roundtrip_report": "software_stack",
+    "decompose_to_basis": "software_stack",
+    "route_program": "software_stack",
+    "optimize_program": "software_stack",
+    "transpile_program": "software_stack",
+    "run_surface_code_qec_cycle": "software_stack",
+    "run_hybrid_workload": "software_stack",
+    "run_gpu_fleet_hybrid_workload": "software_stack",
+    "compile_pulse_schedule": "software_stack",
+    "run_quantum_software_stack": "software_stack",
 }
 
 __version__ = "1.0.0"

@@ -12,6 +12,7 @@ import threading
 import time
 from http import HTTPStatus
 from pathlib import Path
+from types import SimpleNamespace
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PY_DIR = REPO_ROOT / "chronus/mla1517_platform" / "python"
@@ -25,16 +26,26 @@ import system_fabric
 def _campaign_cfg(tmp_path):
     cfg = {
         "pools": [
-            {"endpoint": "stratum+tcp://a:3333", "worker": "w-a", "enabled": True},
-            {"endpoint": "stratum+tcp://b:3333", "worker": "w-b", "enabled": False},
+            {
+                "endpoint": "stratum+tcp://a:3333",
+                "worker": "w-a",
+                "password": "fixture",
+                "enabled": True,
+            },
+            {
+                "endpoint": "stratum+tcp://b:3333",
+                "worker": "w-b",
+                "password": "fixture",
+                "enabled": False,
+            },
         ],
         "solvers": {"arms": 2, "workers": 2},
         "hashrate": {"target_hs": 1_000.0, "ceiling_hs": 1_000.0},
         "live_submit": {"enabled": False, "approval_id": ""},
         "campaign": {
             "phases": [
-                {"pool": "w-a", "duration_s": 0.3, "arms": 1},
-                {"pool": "w-b", "duration_s": 0.3, "arms": 1},
+                {"pool": "w-a", "duration_s": 10, "arms": 1},
+                {"pool": "w-b", "duration_s": 10, "arms": 1},
             ]
         },
     }
@@ -46,6 +57,17 @@ def _campaign_cfg(tmp_path):
 class _CampaignDeps:
     def __init__(self, tmp_path, monkeypatch, counters=None, single_phase=False):
         path = _campaign_cfg(tmp_path)
+        # Keep production-valid durations; accelerate only this module's clock.
+        monkeypatch.setattr(
+            system_fabric,
+            "time",
+            SimpleNamespace(
+                time=lambda: time.time() * 40,
+                sleep=time.sleep,
+                monotonic=time.monotonic,
+                perf_counter=time.perf_counter,
+            ),
+        )
         if single_phase:
             cfg = json.loads(path.read_text(encoding="utf-8"))
             cfg["campaign"]["phases"] = cfg["campaign"]["phases"][:1]
