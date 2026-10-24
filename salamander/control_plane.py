@@ -151,6 +151,25 @@ class EvidenceLedger:
             raise FailClosed("autonomic evidence checkpoint head mismatch")
         return ledger
 
+    @classmethod
+    def from_records(
+        cls, records: Iterable[Mapping[str, Any]], *,
+        sink: Callable[[Mapping[str, Any]], None] | None = None,
+    ) -> "EvidenceLedger":
+        """Rebuild an independently verified chain from a durable host mirror.
+
+        Hash links detect corruption, not authenticity. The host must validate
+        its enclosing custody/checkpoint and bind operator authority separately.
+        Existing records are NOT sent to the sink a second time.
+        """
+        ledger = cls(sink=sink)
+        ledger._records = copy.deepcopy([dict(record) for record in records])
+        ledger._head = (str(ledger._records[-1]["evidence_sha256"])
+                        if ledger._records else "0" * 64)
+        if not ledger.verify():
+            raise FailClosed("autonomic mirror head mismatch")
+        return ledger
+
 
 class CircuitBreaker:
     def __init__(self, failure_limit: int = 3, cooldown_ns: int = 1_000_000_000) -> None:
