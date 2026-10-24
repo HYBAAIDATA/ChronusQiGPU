@@ -20,6 +20,26 @@ one product's score as proof for the entire portfolio. The current gate set is f
 the integrated mining/intelligence/storage/GPU system, not a configurable shortcut
 for declaring a standalone library production-qualified.
 
+## System impact and product distinction
+
+The index adds a common assessment model beside the existing operational stack:
+31 criteria, evidence coverage, dependency-constrained maturity, nine distinct
+integrated-system gates, accepted-risk disclosure and a deterministic roadmap.
+It connects AI ambitions to security, continuity, residency and capacity conditions
+without transferring execution, proof, security, custody or recovery authority.
+
+The product distinction is the combination of intelligence-led execution and
+inspectable, deployment-scoped readiness—not an unsupported claim of market
+exclusivity or faster computation. A dedicated TOE gate makes analytical execution
+and learning evidence explicit; a separate Salamander gate makes exercised
+recovery evidence explicit. Neither is established by the assessor itself.
+
+See [system impact, architecture and supported product language](../v2/07_EVIDENCE_SCOPED_READINESS.md)
+for the full account. Receipt collection/adaptation is an upstream integration
+step, not an already automatic end-to-end feature of this CLI. This addition
+changes assessment/reporting capability; it does not itself increase hashrate,
+create external acceptance evidence, certify compliance or publish a package.
+
 ## Running
 
 From the repository root:
