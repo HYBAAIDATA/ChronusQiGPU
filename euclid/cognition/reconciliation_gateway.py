@@ -729,10 +729,13 @@ class ClearanceResult(dict):
 class MetacognitiveGatekeeper:
     """Enforces privilege isolation on traumatized or low-confidence cognitive nodes."""
 
+<<<<<<< Updated upstream
     def __init__(self, capability_tokens: bool = True) -> None:
         self.capability_tokens = capability_tokens
 
 
+=======
+>>>>>>> Stashed changes
     def process_interruption(
         self,
         node: str = "auth_module",
