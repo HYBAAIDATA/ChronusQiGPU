@@ -42,7 +42,9 @@ class TuringQuantumOrgan:
     organ_id = "turing"
     owner = "TURING"
 
-    def __init__(self, *, max_amplitudes: int | None = None, pipeline: Any | None = None) -> None:
+    def __init__(
+        self, *, max_amplitudes: int | None = None, pipeline: Any | None = None
+    ) -> None:
         try:  # installed distribution (pyproject: pip install ./turing_universal_quantum_computer)
             from turing_universal_quantum_computer import backends
         except ImportError:  # in-tree checkout resolved from the repository root
@@ -63,7 +65,9 @@ class TuringQuantumOrgan:
                 {
                     "owner": self.owner,
                     "operation": operation,
-                    "backends": self._backends.backend_matrix(max_amplitudes=self._max_amplitudes),
+                    "backends": self._backends.backend_matrix(
+                        max_amplitudes=self._max_amplitudes
+                    ),
                 }
             )
         if operation != "run-program":
@@ -93,18 +97,26 @@ class TuringQuantumOrgan:
             # owner, not another executor or a private custody instance.
             from turing_universal_quantum_computer.pipeline import VQCRequest
 
-            report = self._pipeline.run(VQCRequest(
-                program=program, prefer_backend=prefer,
-                max_amplitudes=self._max_amplitudes,
-            ))
+            report = self._pipeline.run(
+                VQCRequest(
+                    program=program,
+                    prefer_backend=prefer,
+                    max_amplitudes=self._max_amplitudes,
+                )
+            )
             result = dict(report.result or {})
             payload = dict(result.pop("payload", {}))
             payload.pop("state", None)
-            return _jsonable({
-                **base, **result, "executed": report.result is not None,
-                "payload": payload, "pipeline_verdict": report.verdict,
-                "pipeline_report": report.as_dict(),
-            })
+            return _jsonable(
+                {
+                    **base,
+                    **result,
+                    "executed": report.result is not None,
+                    "payload": payload,
+                    "pipeline_verdict": report.verdict,
+                    "pipeline_report": report.as_dict(),
+                }
+            )
         result = backend.execute(program).as_dict()
         payload = dict(result.pop("payload", {}))
         payload.pop("state", None)  # live object; amplitudes/dirac carry the answer
@@ -187,22 +199,38 @@ class TriadCustodyOrgan:
     organ_id = "triad"
     owner = "THESEUS/OVID"
 
-    def __init__(self, triad: Any | None = None) -> None:
-        if triad is None:
-            from aethel.triad import open_triad
+    def __init__(
+        self, triad: Any | None = None, *, durable_dir: Any | None = None
+    ) -> None:
+        from aethel.triad import THESEUS_CUSTODY_PROFILE, open_triad
 
-            triad = open_triad(durable=True, bind_chronus=False)
+        if triad is not None and durable_dir is not None:
+            raise ValueError("supply the existing Triad or a directory, not both")
+        if triad is None:
+            triad = open_triad(
+                durable=True, durable_dir=durable_dir, bind_chronus=False
+            )
+        if getattr(triad, "storage_profile", None) != THESEUS_CUSTODY_PROFILE:
+            raise ValueError("EUCLID custody organ requires theseus-custody/v1")
         self.triad = triad
+
+    def _custody_status(self) -> dict[str, Any]:
+        return dict(self.triad.health()["custody"])
 
     def execute(self, request: Mapping[str, Any]) -> dict[str, Any]:
         operation = str(request.get("operation", "verify"))
         if operation == "put":
+            if not self._custody_status()["disk_bound"]:
+                raise RuntimeError(
+                    "persistent THESEUS custody is not bound; put refused"
+                )
             data = _payload_bytes(request)
             record = self.triad.put(data)
             return {
                 "owner": "THESEUS",
                 "operation": operation,
                 "uuid": record.uuid,
+                "custody": self._custody_status(),
                 "digest": record.digest,
                 "raw_len": record.raw_len,
                 "folded_units": record.folded_units,
@@ -233,5 +261,6 @@ class TriadCustodyOrgan:
                 "owner": "THESEUS",
                 "operation": operation,
                 "verified": bool(self.triad.verify()),
+                "custody": self._custody_status(),
             }
         raise ValueError(f"unsupported Triad operation: {operation}")

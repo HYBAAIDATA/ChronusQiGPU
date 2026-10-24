@@ -143,3 +143,30 @@ not manufacture these execution inputs or imply publication rights.
 
 Machine-readable scope and the focused verifier test results are retained at
 `../services/turing-enterprise/evidence/operator-risk-acceptance/`.
+
+
+## Current EUCLID whole-system validation increment — PR #153 custody repair
+
+The current request requires actual whole-system validation; no earlier waiver
+text is counted as a test pass. Main `cd80d037` and draft #153 parent `668ade9`
+were reviewed. Runtime/SALAMANDER restart repairs are preserved.
+
+The new custody increment separates enterprise Theseus custody from the explicit
+legacy Ovid-root profile, removes ambiguous dual writes, forwards disk directories,
+refuses memory-only persistent EUCLID writes, fsyncs the Theseus index, latches
+uncertain publication, and rejects orphan/stale/inconsistent custody admission.
+Legacy folded representation, lineage and projection metadata checks are repaired.
+
+Fresh actual-source custody tests: **35 passed normal and the same 35 passed
+under -O**; selective-source initializer bypass is explicit, so this is not
+installed enterprise acceptance. Existing PR #148 bridge subset: **39 passed
+normal and the same 39 under -O**, using DiskPort, not native custody proof.
+Full closeout preflight freshly returned **BLOCKED exit 2**, because the local
+source subset is not a complete Git checkout. Check-runs at the parent were 403;
+combined pending/zero statuses is not a CI pass. Paid CI remains deferred.
+
+See `../docs/qualification/custody-authority-qualification.md` and its hash/log
+evidence for exact scope, compatibility changes, per-product states, commands
+and remaining dependencies. The ten main product locks are not advanced by an
+unmerged draft. **Whole-system validation incomplete; production HOLD.** No merge,
+deployment, publication, security approval or new qualification waiver is implied.

@@ -1,0 +1,2 @@
+fatal: not a git repository (or any of the parent directories): .git
+BLOCKED: Command '['git', '-C', '/data/whole-system', 'rev-parse', '--show-toplevel']' returned non-zero exit status 128.
