@@ -42,7 +42,7 @@ jobs:
         run: python scripts/qualify_agent_capability_package.py --output-dir "${{ runner.temp }}/agent-capability-package"
       - name: Retain scoped package evidence even on failure
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: agent-capability-${{ matrix.os }}-${{ matrix.python }}
           path: ${{ runner.temp }}/agent-capability-package

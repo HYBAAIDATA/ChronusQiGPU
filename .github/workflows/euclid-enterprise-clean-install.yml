@@ -54,7 +54,7 @@ jobs:
             --output-dir "${{ runner.temp }}/euclid-enterprise-evidence"
       - name: Retain wheels, provenance, failure evidence and terminal output
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: euclid-enterprise-${{ matrix.os }}-py${{ matrix.python }}
           path: ${{ runner.temp }}/euclid-enterprise-evidence
