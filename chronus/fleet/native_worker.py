@@ -1,4 +1,7 @@
-"""Native iGPU worker running in isolated process with ONE iGPU runtime."""
+"""In-process native ONE-iGPU worker; process isolation is a deployment concern.
+
+ONE is a logical native execution contract, not a physical GPU prerequisite.
+"""
 
 from __future__ import annotations
 
@@ -72,7 +75,7 @@ class ExecutionResult:
 
 
 class NativeIGPUWorker:
-    """ONE iGPU worker running in an isolated process.
+    """In-process ONE logical-iGPU worker; no accelerator attachment required.
 
     Each worker has exactly one iGPU runtime (device_count == 1),
     preserving HostGPUPlan mathematics. The worker enforces tenant
@@ -82,7 +85,9 @@ class NativeIGPUWorker:
 
     def __init__(self, identity: WorkerIdentity, plan: HostGPUPlan):
         if plan.device_count != 1:
-            raise ValueError("NativeIGPUWorker requires device_count == 1 (ONE iGPU contract)")
+            raise ValueError(
+                "NativeIGPUWorker requires device_count == 1 (ONE iGPU contract)"
+            )
         self._identity = identity
         self._plan = plan
         self._running = False
@@ -101,12 +106,37 @@ class NativeIGPUWorker:
     def device_count(self) -> int:
         return 1
 
+    def _validate_lease(self, lease: WorkLease, work_id: str, item_count: int) -> None:
+        """Check scope and freshness before invoking any user kernel.
+
+        This binds a trusted in-process dispatch; it does not authenticate callers,
+        enforce OS memory/CPU quotas, or provide a security sandbox.
+        """
+        if (
+            lease.tenant != self.identity.tenant
+            or lease.worker_id != self.identity.worker_id
+            or lease.work_id != work_id
+            or lease.fencing_token != self.identity.current_fencing_token
+        ):
+            raise ValueError("lease identity, tenant, work or fencing mismatch")
+        if lease.is_expired(time.monotonic()):
+            raise ValueError("lease expired")
+        start, end = lease.partition
+        if end > self.plan.total_items or end - start != item_count:
+            raise ValueError("lease partition does not match input or worker plan")
+
     def assign_lease(self, lease: WorkLease) -> None:
         """Register an active lease on this worker."""
         if lease.tenant != self._identity.tenant:
             raise ValueError(
                 f"Tenant mismatch: lease tenant {lease.tenant!r} != worker tenant {self._identity.tenant!r}"
             )
+        self._validate_lease(
+            lease, lease.work_id, lease.partition[1] - lease.partition[0]
+        )
+        existing = self._active_leases.get(lease.lease_id)
+        if existing is not None and existing != lease:
+            raise ValueError("lease id already bound to different scope")
         self._active_leases[lease.lease_id] = lease
 
     def _find_lease_for_work(self, work_id: str) -> Optional[WorkLease]:
@@ -126,7 +156,8 @@ class NativeIGPUWorker:
         """Execute a kernel on the worker's iGPU plan.
 
         The result is fully provenance'd: tenant, partition, generation,
-        fencing token, backend, and sha256d digest are all recorded.
+        fencing token, backend, and SHA-256 output digest are recorded.
+        Generic kernels do not establish any SHA-256d evaluation count.
         """
         if self._running:
             raise RuntimeError(f"Worker {self._identity.worker_id} already running")
@@ -135,37 +166,30 @@ class NativeIGPUWorker:
 
         try:
             items = list(input_data) if not isinstance(input_data, list) else input_data
-            if len(items) == self._plan.total_items:
-                exec_plan = self._plan
-            else:
-                exec_plan = HostGPUPlan(
-                    total_items=len(items),
-                    lanes=max(1, min(self._plan.lanes, max(1, len(items)))),
-                    mode=self._plan.mode,
-                    backend=self._plan.backend,
-                    device_count=1,
-                )
-
-            output = execute_reference(items, exec_plan, kernel)
-            raw = repr(output).encode("utf-8")
-            output_digest = hashlib.sha256(raw).hexdigest()
-
             lease_used = lease or self._find_lease_for_work(work_id)
             if lease_used is None:
-                default_part = (0, len(items))
+                # Compatibility path for trusted local library use, not remote authority.
                 lease_used = WorkLease(
                     lease_id=uuid.uuid4().hex[:12],
                     work_id=work_id,
-                    tenant=self._identity.tenant,
-                    partition=default_part,
+                    tenant=self.identity.tenant,
+                    partition=(0, len(items)),
                     deadline=time.monotonic() + 300.0,
-                    cpu_cores=1,
-                    memory_mb=256,
-                    concurrency=1,
-                    fencing_token=self._identity.current_fencing_token,
-                    worker_id=self._identity.worker_id,
+                    fencing_token=self.identity.current_fencing_token,
+                    worker_id=self.identity.worker_id,
                 )
-            self._active_leases[lease_used.lease_id] = lease_used
+            self._validate_lease(lease_used, work_id, len(items))
+            self.assign_lease(lease_used)
+            exec_plan = HostGPUPlan(
+                total_items=len(items),
+                lanes=max(1, min(self.plan.lanes, max(1, len(items)))),
+                mode=self.plan.mode,
+                backend=self.plan.backend,
+                device_count=1,
+            )
+            output = execute_reference(items, exec_plan, kernel)
+            self._validate_lease(lease_used, work_id, len(items))
+            output_digest = hashlib.sha256(repr(output).encode("utf-8")).hexdigest()
 
             elapsed = time.perf_counter() - t0
             return ExecutionResult(
@@ -178,7 +202,7 @@ class NativeIGPUWorker:
                 generation=self._identity.generation,
                 fencing_token=lease_used.fencing_token,
                 backend=self._plan.backend,
-                sha256d_evaluations=len(items),
+                sha256d_evaluations=0,
                 elapsed_seconds=elapsed,
                 result=output,
             )
@@ -191,13 +215,37 @@ class NativeIGPUWorker:
         Validates that the result's lease_id matches and that the tenant
         boundary and fencing token are preserved.
         """
-        if result.lease_id != lease_id:
-            raise ValueError(f"lease_id mismatch: {result.lease_id} != {lease_id}")
-        if result.tenant != self._identity.tenant:
-            raise ValueError("tenant mismatch in lease completion")
         lease = self._active_leases.get(lease_id)
-        if lease is not None:
-            if result.fencing_token != lease.fencing_token:
-                raise ValueError("fencing token mismatch in lease completion")
-            self._completed_leases[lease_id] = lease
+        if lease is None:
+            raise ValueError("completion requires an active lease")
+        self._validate_lease(
+            lease, lease.work_id, lease.partition[1] - lease.partition[0]
+        )
+        if not result_matches_lease(result, lease, self.identity, self.plan.backend):
+            raise ValueError("result provenance or output digest mismatch")
+        self._completed_leases[lease_id] = lease
         return result
+
+
+def result_matches_lease(result, lease, identity, backend) -> bool:
+    """Bind all local result provenance and output bytes to the issued lease.
+
+    Hash agreement detects accidental/tampered payloads, not malicious authorized
+    kernel behavior. Kernel verification and external authorization remain separate.
+    """
+    return (
+        result.worker_id == lease.worker_id == identity.worker_id
+        and result.lease_id == lease.lease_id
+        and result.work_id == lease.work_id
+        and result.tenant == lease.tenant == identity.tenant
+        and result.partition == lease.partition
+        and result.generation == identity.generation
+        and result.fencing_token
+        == lease.fencing_token
+        == identity.current_fencing_token
+        and result.backend == backend
+        and isinstance(result.result, list)
+        and len(result.result) == lease.partition[1] - lease.partition[0]
+        and result.output_digest
+        == hashlib.sha256(repr(result.result).encode("utf-8")).hexdigest()
+    )

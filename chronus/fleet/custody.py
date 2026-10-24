@@ -1,4 +1,4 @@
-"""Authoritative custody verification for fleet execution results."""
+"""In-memory fleet result verification; not durable Theseus custody."""
 
 from __future__ import annotations
 
@@ -8,11 +8,11 @@ from chronus.fleet.native_worker import ExecutionResult
 
 
 class FleetCustody:
-    """Authoritative result path verifying tenant boundaries, duplicate detection
-    (idempotent re-delivery), and stale result rejection before durable commitment.
+    """Process-local duplicate/stale-result ledger, not a durable custody owner.
 
-    Custody does NOT silently create a competing storage authority; it integrates
-    with the canonical custody owner and enforces fail-closed operations.
+    No Theseus write, persistence, restart recovery or authorization decision is
+    performed here. A True result is only local acceptance. External services
+    must independently bind AL HARAS authority and the canonical durable owner.
     """
 
     def __init__(self) -> None:
@@ -44,7 +44,7 @@ class FleetCustody:
         *,
         expected_fencing_token: Optional[str] = None,
     ) -> bool:
-        """Verify a result before durable commitment.
+        """Verify metadata before process-local acceptance, not durable commitment.
 
         Returns True if the result passes all custody checks and is committed.
         Returns False otherwise (result rejected, not committed).
@@ -61,13 +61,19 @@ class FleetCustody:
         if result.fencing_token in self._revoked_fencing_tokens:
             return False
 
-        if expected_fencing_token is not None and result.fencing_token != expected_fencing_token:
+        if (
+            expected_fencing_token is not None
+            and result.fencing_token != expected_fencing_token
+        ):
             return False
 
         work_id = result.work_id
         existing = self._committed.get(work_id)
         if existing is not None:
-            if existing.output_digest == result.output_digest:
+            if (
+                existing.tenant == result.tenant
+                and existing.output_digest == result.output_digest
+            ):
                 return True
             return False
 
@@ -76,8 +82,14 @@ class FleetCustody:
 
     def reject_stale(self, result: ExecutionResult, expected_tenant: str) -> bool:
         """Explicitly reject a stale or cross-tenant result."""
-        if result.tenant != expected_tenant or result.fencing_token in self._revoked_fencing_tokens:
-            if result.work_id in self._committed and self._committed[result.work_id] is result:
+        if (
+            result.tenant != expected_tenant
+            or result.fencing_token in self._revoked_fencing_tokens
+        ):
+            if (
+                result.work_id in self._committed
+                and self._committed[result.work_id] is result
+            ):
                 del self._committed[result.work_id]
             return True
         if self.check_stale(result.work_id, result.output_digest):

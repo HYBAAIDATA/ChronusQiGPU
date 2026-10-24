@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Optional
+import math
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -24,6 +25,16 @@ class WorkerIdentity:
     tenant: str = "default"
     fencing_token: str = ""
 
+    def __post_init__(self) -> None:
+        for name in ("worker_id", "instance_id", "tenant"):
+            value = getattr(self, name)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{name} must be non-empty")
+        if type(self.generation) is not int or self.generation < 1:
+            raise ValueError("generation must be a positive integer")
+        if not isinstance(self.fencing_token, str):
+            raise ValueError("fencing_token must be a string")
+
     @property
     def current_fencing_token(self) -> str:
         """Return the active string fencing token for this worker generation."""
@@ -39,7 +50,15 @@ class WorkerIdentity:
     ) -> WorkerIdentity:
         """Return a new identity with an incremented generation (e.g. after worker restart)."""
         gen = generation if generation is not None else self.generation + 1
-        token = str(fencing_token) if fencing_token is not None else f"fence-{self.worker_id}-gen{gen}"
+        if type(gen) is not int or gen <= self.generation:
+            raise ValueError("generation must strictly increase")
+        token = (
+            str(fencing_token)
+            if fencing_token is not None
+            else f"fence-{self.worker_id}-gen{gen}"
+        )
+        if not token.strip() or token == self.current_fencing_token:
+            raise ValueError("rotation requires a new non-empty fencing token")
         return WorkerIdentity(
             worker_id=self.worker_id,
             generation=gen,
@@ -53,7 +72,8 @@ class WorkerIdentity:
 class WorkLease:
     """Bounded, expiring work lease with partition, budget, and fencing token.
 
-    A work lease grants a worker the right to execute a bounded piece of work.
+    A lease binds local dispatch metadata; it is not an AL HARAS authorization grant.
+    Resource fields are declared budgets, not OS-level resource enforcement.
     The lease expires at `deadline`, and the `fencing_token` changes on worker
     restart to prevent stale results from being committed.
     """
@@ -70,18 +90,34 @@ class WorkLease:
     worker_id: str = ""
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "fencing_token", str(self.fencing_token))
-        p0, p1 = int(self.partition[0]), int(self.partition[1])
+        for name in ("lease_id", "work_id", "tenant", "fencing_token"):
+            value = getattr(self, name)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{name} must be non-empty")
+        if len(self.partition) != 2 or any(type(x) is not int for x in self.partition):
+            raise ValueError("partition must contain two integers")
+        p0, p1 = self.partition
         if p0 < 0 or p1 < p0:
             raise ValueError(f"invalid partition range: {self.partition}")
         object.__setattr__(self, "partition", (p0, p1))
+        if isinstance(self.deadline, bool) or not math.isfinite(self.deadline):
+            raise ValueError("deadline must be finite")
+        for name in ("cpu_cores", "memory_mb", "concurrency"):
+            value = getattr(self, name)
+            if type(value) is not int or value < 1:
+                raise ValueError(f"{name} must be a positive integer")
 
     def is_expired(self, now: float) -> bool:
-        return now > self.deadline
+        """Fail closed at the deadline or when the clock value is non-finite."""
+        return not math.isfinite(now) or now >= self.deadline
 
-    def rotated(self, *, new_token: Optional[str] = None, **lease_overrides: object) -> WorkLease:
+    def rotated(
+        self, *, new_token: Optional[str] = None, **lease_overrides: object
+    ) -> WorkLease:
         """Return a new lease with rotated fencing token and/or overridden fields."""
-        token = str(new_token) if new_token is not None else f"{self.fencing_token}.rotated"
+        token = (
+            str(new_token) if new_token is not None else f"{self.fencing_token}.rotated"
+        )
         merged = {**self.__dict__, "fencing_token": token}
         merged.update(lease_overrides)
         return WorkLease(**{k: v for k, v in merged.items() if k in WorkLease.__dataclass_fields__})  # type: ignore[arg-type]

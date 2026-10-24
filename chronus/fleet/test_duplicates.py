@@ -1,4 +1,5 @@
 """Fleet qualification test - stale and duplicate result prevention."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -24,6 +25,7 @@ def test_no_duplicate_commit():
         wid,
         HostGPUPlan(total_items=4, lanes=2, mode="host_gpu_overlay"),
     )
+    scheduler.register_worker(worker)
     lease = scheduler.issue_lease(
         work_id="dup1",
         tenant="ta",
