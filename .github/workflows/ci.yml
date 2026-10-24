@@ -6,6 +6,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   PYTHONUNBUFFERED: "1"
   PYTHONIOENCODING: "utf-8"

@@ -20,9 +20,15 @@ def digest(value):
     return hashlib.sha256(canonical(value)).hexdigest()
 
 
+_CACHED_ENV_HASH = None
+
+
 def environment_hash():
-    return digest({"python": platform.python_version(), "system": platform.system(),
-                   "machine": platform.machine(), "engine": artifact_hash()})
+    global _CACHED_ENV_HASH
+    if _CACHED_ENV_HASH is None:
+        _CACHED_ENV_HASH = digest({"python": platform.python_version(), "system": platform.system(),
+                                   "machine": platform.machine(), "engine": artifact_hash()})
+    return _CACHED_ENV_HASH
 
 
 def artifact_hash():

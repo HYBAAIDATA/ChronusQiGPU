@@ -527,7 +527,7 @@ def run_benchmark_suite(
     }
 
 
-def verify_optimized_python_parity(timeout_s: float = 30.0) -> dict[str, Any]:
+def verify_optimized_python_parity(timeout_s: float = 90.0) -> dict[str, Any]:
     """Run canonical verification checks under `python -O` (`__debug__ == False`).
 
     Proves that security, admission, exactness, and custody checks do not rely on

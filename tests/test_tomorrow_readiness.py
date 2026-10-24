@@ -262,7 +262,24 @@ class ReadinessTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as outside:
             target = Path(outside) / "evidence.json"
             target.write_text("{}")
-            (self.root / "escape").symlink_to(target)
+            escape = self.root / "escape"
+            try:
+                escape.symlink_to(target)
+            except OSError as exc:
+                if getattr(exc, "winerror", None) != 1314:
+                    raise
+                escape.write_text("{}")
+                orig_resolve = Path.resolve
+
+                def _resolve(path_obj, *args, **kwargs):
+                    if orig_resolve(path_obj) == orig_resolve(escape):
+                        return orig_resolve(target)
+                    return orig_resolve(path_obj, *args, **kwargs)
+
+                with patch.object(Path, "resolve", autospec=True, side_effect=_resolve):
+                    with self.assertRaises(ValueError):
+                        r.bounded_file(self.root, "escape")
+                return
             with self.assertRaises(ValueError):
                 r.bounded_file(self.root, "escape")
 
