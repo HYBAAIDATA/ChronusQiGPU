@@ -1,0 +1,124 @@
+................FF                                                       [100%]
+=================================== FAILURES ===================================
+_ test_actual_production_authority_seam_rewrites_both_plan_sources[AGENTIC_PRECOMPUTED] _
+
+geometry = ExactSearchState(architecture_id='pythia_dual32_11d_h4_600_hilbert', coarse_frames_11d=(ExactRay(numerator=(PhiElement...,1,2],[1,2,0,1],[0,1,-1,2]],[[0,1,0,1],[-1,2,1,2],[1,2,0,1],[0,1,1,2]]]}', math_domain='exact_q_phi_positive_radicals')
+source = <PlanSource.AGENTIC_PRECOMPUTED: 'AGENTIC_PRECOMPUTED'>
+
+    @pytest.mark.parametrize("source", list(PlanSource))
+    def test_actual_production_authority_seam_rewrites_both_plan_sources(geometry, source):
+        # Boundary fixture only: no fake endpoint is connected and no submission runs.
+        root = PythiaProductionMiningCoordinator.__new__(PythiaProductionMiningCoordinator)
+        root.execution_hasher = SimpleNamespace(backend="cpu")
+        root.pythia_search_precompute = geometry
+        root.pythia_authority = PythiaAgenticMiningAuthority()
+        adapter = SimpleNamespace(current_job=SimpleNamespace(job_id="fixture-job", target=7),
+                                  build_header=lambda *args: HEADER)
+        root.client = SimpleNamespace(proof_adapter=adapter)
+        plan = SearchPlan(job_fingerprint="fixture-fp", pool_session_id="fixture-session",
+                          generation=1, base_step=17, window=601, extranonce2="00000000",
+                          lane_order=tuple(range(32)), preferred_face=0, dispatch_breadth=32,
+                          executor_route="cpu_reference", policy_id="fixture-policy", source=source,
+                          evidence_refs={}, created_at=time.monotonic())
+>       bound = root._apply_pythia_authority(plan, SimpleNamespace(job_id="fixture-job"))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_mining_thesis_wiring.py:105: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <chronus.mla1517.mining.geodesic_support.PythiaProductionMiningCoordinator object at 0x7f464d97cad0>
+plan = SearchPlan(job_fingerprint='fixture-fp', pool_session_id='fixture-session', generation=1, base_step=17, window=601, ex...ource=<PlanSource.AGENTIC_PRECOMPUTED: 'AGENTIC_PRECOMPUTED'>, schedule=(), expires_at=None, plan_fallback_reason=None)
+identity = namespace(job_id='fixture-job')
+
+    def _apply_pythia_authority(self, plan, identity):
+        """Run every production/fallback plan through PYTHIA without replacing the canonical itinerary."""
+        self._chronus_fabric_state = chronus_fabric_state_for(self.execution_hasher)
+        client = self.client
+        adapter = getattr(client, "proof_adapter", None) if client is not None else None
+        job = getattr(adapter, "current_job", None) if adapter is not None else None
+        if job is None or job.job_id != identity.job_id:
+            raise RuntimeError(
+                "PYTHIA planning requires the current authoritative Stratum job"
+            )
+>       header = adapter.build_header(job.job_id, plan.extranonce2, job.ntime, 0)
+                                                                    ^^^^^^^^^
+E       AttributeError: 'types.SimpleNamespace' object has no attribute 'ntime'
+
+chronus/mla1517/mining/geodesic_support.py:247: AttributeError
+------------------------------ Captured log call -------------------------------
+WARNING  Intelligence.registry:registry.py:119 Intelligence module euclid_frontier_agent failed to import: ModuleNotFoundError: No module named 'chronus.agent'
+WARNING  Intelligence.registry:registry.py:119 Intelligence module bsd_scribe failed to import: ModuleNotFoundError: No module named 'integrations'
+WARNING  Intelligence.registry:registry.py:111 Intelligence module cortex_intelligence_ts file missing: file not found: /data/euclid-agent-work/frontend/src/lib/cortex_intelligence.ts
+WARNING  Intelligence.registry:registry.py:111 Intelligence module lucas_pisot_separate_ts file missing: file not found: /data/euclid-agent-work/frontend/src/lib/lucas_pisot_separate.ts
+WARNING  Intelligence.registry:registry.py:119 Intelligence module exact_yangmills_gap failed to import: ModuleNotFoundError: No module named 'millennium'
+WARNING  Intelligence.skill_loader:skill_loader.py:138 Skills directory not found: /data/euclid-agent-work/Intelligence/skills
+WARNING  root:engine.py:1398 PredictiveEngine: no observed training data — channels ['rf', 'xgb', 'lgbm', 'gb'] remain uncalibrated; predictions report available=False.
+WARNING  Intelligence.orchestrator:orchestrator.py:353 PredictiveEngine bootstrap calibration skipped: No module named 'python_backend'
+WARNING  Intelligence.skill_loader:skill_loader.py:138 Skills directory not found: /data/euclid-agent-work/Intelligence/skills
+_ test_actual_production_authority_seam_rewrites_both_plan_sources[BASELINE_FALLBACK] _
+
+geometry = ExactSearchState(architecture_id='pythia_dual32_11d_h4_600_hilbert', coarse_frames_11d=(ExactRay(numerator=(PhiElement...,1,2],[1,2,0,1],[0,1,-1,2]],[[0,1,0,1],[-1,2,1,2],[1,2,0,1],[0,1,1,2]]]}', math_domain='exact_q_phi_positive_radicals')
+source = <PlanSource.BASELINE_FALLBACK: 'BASELINE_FALLBACK'>
+
+    @pytest.mark.parametrize("source", list(PlanSource))
+    def test_actual_production_authority_seam_rewrites_both_plan_sources(geometry, source):
+        # Boundary fixture only: no fake endpoint is connected and no submission runs.
+        root = PythiaProductionMiningCoordinator.__new__(PythiaProductionMiningCoordinator)
+        root.execution_hasher = SimpleNamespace(backend="cpu")
+        root.pythia_search_precompute = geometry
+        root.pythia_authority = PythiaAgenticMiningAuthority()
+        adapter = SimpleNamespace(current_job=SimpleNamespace(job_id="fixture-job", target=7),
+                                  build_header=lambda *args: HEADER)
+        root.client = SimpleNamespace(proof_adapter=adapter)
+>       plan = SearchPlan(job_fingerprint="fixture-fp", pool_session_id="fixture-session",
+                          generation=1, base_step=17, window=601, extranonce2="00000000",
+                          lane_order=tuple(range(32)), preferred_face=0, dispatch_breadth=32,
+                          executor_route="cpu_reference", policy_id="fixture-policy", source=source,
+                          evidence_refs={}, created_at=time.monotonic())
+
+tests/test_mining_thesis_wiring.py:100: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+<string>:23: in __init__
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = SearchPlan(job_fingerprint='fixture-fp', pool_session_id='fixture-session', generation=1, base_step=17, window=601, ex...e, source=<PlanSource.BASELINE_FALLBACK: 'BASELINE_FALLBACK'>, schedule=(), expires_at=None, plan_fallback_reason=None)
+
+    def __post_init__(self) -> None:
+        if not self.job_fingerprint or not self.pool_session_id:
+            raise ValueError("job_fingerprint and pool_session_id are required")
+        if self.generation <= 0:
+            raise ValueError("generation must be a positive Stratum generation")
+        if self.base_step < 0 or self.base_step > 0xFFFFFFFF:
+            raise ValueError("base_step must be a valid uint32")
+        if type(self.window) is not int or self.window <= 0:
+            raise ValueError("window must be a positive integer")
+        if type(self.base_step) is not int or self.base_step + self.window > 1 << 32:
+            raise ValueError("plan lease must remain inside uint32")
+        if len(self.lane_order) != _LANES or sorted(self.lane_order) != list(range(_LANES)):
+            raise ValueError("lane_order must contain every M32 lane exactly once")
+        if not (0 <= self.preferred_face < _LANES):
+            raise ValueError("preferred_face must be in [0, 31]")
+        if self.dispatch_breadth <= 0:
+            raise ValueError("dispatch_breadth must be positive")
+        if self.executor_route not in _VALID_ROUTES:
+            raise ValueError(f"unsupported executor_route: {self.executor_route!r}")
+        if self.nonce_order not in _VALID_NONCE_ORDERS:
+            raise ValueError(f"unsupported nonce_order: {self.nonce_order!r}")
+        if not self.policy_id:
+            raise ValueError("policy_id is required")
+        if self.created_at <= 0:
+            raise ValueError("created_at must be a positive monotonic timestamp")
+        if self.expires_at is not None and self.expires_at <= self.created_at:
+            raise ValueError("expires_at must be after created_at")
+        object.__setattr__(self, "source", PlanSource(self.source))
+        object.__setattr__(self, "executor_route", ExecutionRoute(self.executor_route))
+        if self.source is PlanSource.BASELINE_FALLBACK and not self.plan_fallback_reason:
+>           raise ValueError("a baseline plan must say why no agentic plan ran")
+E           ValueError: a baseline plan must say why no agentic plan ran
+
+chronus/mla1517/mining/search_plan.py:290: ValueError
+=========================== short test summary info ============================
+FAILED tests/test_mining_thesis_wiring.py::test_actual_production_authority_seam_rewrites_both_plan_sources[AGENTIC_PRECOMPUTED]
+FAILED tests/test_mining_thesis_wiring.py::test_actual_production_authority_seam_rewrites_both_plan_sources[BASELINE_FALLBACK]
+2 failed, 16 passed in 17.90s

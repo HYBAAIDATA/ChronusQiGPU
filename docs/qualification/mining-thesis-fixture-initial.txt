@@ -1,0 +1,60 @@
+................FF                                                       [100%]
+=================================== FAILURES ===================================
+_ test_actual_production_authority_seam_rewrites_both_plan_sources[AGENTIC_PRECOMPUTED] _
+
+geometry = ExactSearchState(architecture_id='pythia_dual32_11d_h4_600_hilbert', coarse_frames_11d=(ExactRay(numerator=(PhiElement...,1,2],[1,2,0,1],[0,1,-1,2]],[[0,1,0,1],[-1,2,1,2],[1,2,0,1],[0,1,1,2]]]}', math_domain='exact_q_phi_positive_radicals')
+source = <PlanSource.AGENTIC_PRECOMPUTED: 'AGENTIC_PRECOMPUTED'>
+
+    @pytest.mark.parametrize("source", list(PlanSource))
+    def test_actual_production_authority_seam_rewrites_both_plan_sources(geometry, source):
+        # Boundary fixture only: no fake endpoint is connected and no submission runs.
+        root = PythiaProductionMiningCoordinator.__new__(PythiaProductionMiningCoordinator)
+        root.execution_hasher = SimpleNamespace(backend="cpu")
+        root.pythia_search_precompute = geometry
+        root.pythia_authority = PythiaAgenticMiningAuthority()
+        adapter = SimpleNamespace(current_job=SimpleNamespace(job_id="fixture-job", target=7),
+                                  build_header=lambda *args: HEADER)
+        root.client = SimpleNamespace(proof_adapter=adapter)
+>       plan = SearchPlan(job_fingerprint="fixture-fp", pool_session_id="fixture-session",
+                          generation=1, base_step=17, window=601, extranonce2="00000000",
+                          lane_order=tuple(range(32)), preferred_face=0, dispatch_breadth=32,
+                          executor_route="cpu_reference", policy_id="fixture-policy", source=source)
+E       TypeError: SearchPlan.__init__() missing 2 required positional arguments: 'evidence_refs' and 'created_at'
+
+tests/test_mining_thesis_wiring.py:99: TypeError
+------------------------------ Captured log call -------------------------------
+WARNING  Intelligence.registry:registry.py:119 Intelligence module euclid_frontier_agent failed to import: ModuleNotFoundError: No module named 'chronus.agent'
+WARNING  Intelligence.registry:registry.py:119 Intelligence module bsd_scribe failed to import: ModuleNotFoundError: No module named 'integrations'
+WARNING  Intelligence.registry:registry.py:111 Intelligence module cortex_intelligence_ts file missing: file not found: /data/euclid-agent-work/frontend/src/lib/cortex_intelligence.ts
+WARNING  Intelligence.registry:registry.py:111 Intelligence module lucas_pisot_separate_ts file missing: file not found: /data/euclid-agent-work/frontend/src/lib/lucas_pisot_separate.ts
+WARNING  Intelligence.registry:registry.py:119 Intelligence module exact_yangmills_gap failed to import: ModuleNotFoundError: No module named 'millennium'
+WARNING  Intelligence.skill_loader:skill_loader.py:138 Skills directory not found: /data/euclid-agent-work/Intelligence/skills
+WARNING  root:engine.py:1398 PredictiveEngine: no observed training data — channels ['rf', 'xgb', 'lgbm', 'gb'] remain uncalibrated; predictions report available=False.
+WARNING  Intelligence.orchestrator:orchestrator.py:353 PredictiveEngine bootstrap calibration skipped: No module named 'python_backend'
+WARNING  Intelligence.skill_loader:skill_loader.py:138 Skills directory not found: /data/euclid-agent-work/Intelligence/skills
+_ test_actual_production_authority_seam_rewrites_both_plan_sources[BASELINE_FALLBACK] _
+
+geometry = ExactSearchState(architecture_id='pythia_dual32_11d_h4_600_hilbert', coarse_frames_11d=(ExactRay(numerator=(PhiElement...,1,2],[1,2,0,1],[0,1,-1,2]],[[0,1,0,1],[-1,2,1,2],[1,2,0,1],[0,1,1,2]]]}', math_domain='exact_q_phi_positive_radicals')
+source = <PlanSource.BASELINE_FALLBACK: 'BASELINE_FALLBACK'>
+
+    @pytest.mark.parametrize("source", list(PlanSource))
+    def test_actual_production_authority_seam_rewrites_both_plan_sources(geometry, source):
+        # Boundary fixture only: no fake endpoint is connected and no submission runs.
+        root = PythiaProductionMiningCoordinator.__new__(PythiaProductionMiningCoordinator)
+        root.execution_hasher = SimpleNamespace(backend="cpu")
+        root.pythia_search_precompute = geometry
+        root.pythia_authority = PythiaAgenticMiningAuthority()
+        adapter = SimpleNamespace(current_job=SimpleNamespace(job_id="fixture-job", target=7),
+                                  build_header=lambda *args: HEADER)
+        root.client = SimpleNamespace(proof_adapter=adapter)
+>       plan = SearchPlan(job_fingerprint="fixture-fp", pool_session_id="fixture-session",
+                          generation=1, base_step=17, window=601, extranonce2="00000000",
+                          lane_order=tuple(range(32)), preferred_face=0, dispatch_breadth=32,
+                          executor_route="cpu_reference", policy_id="fixture-policy", source=source)
+E       TypeError: SearchPlan.__init__() missing 2 required positional arguments: 'evidence_refs' and 'created_at'
+
+tests/test_mining_thesis_wiring.py:99: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_mining_thesis_wiring.py::test_actual_production_authority_seam_rewrites_both_plan_sources[AGENTIC_PRECOMPUTED]
+FAILED tests/test_mining_thesis_wiring.py::test_actual_production_authority_seam_rewrites_both_plan_sources[BASELINE_FALLBACK]
+2 failed, 16 passed in 18.31s
