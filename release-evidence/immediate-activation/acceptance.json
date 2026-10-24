@@ -1,0 +1,58 @@
+{
+  "schema": "hyba.activation-acceptance.v1",
+  "base_commit": "f58ccc7c4f1d406f1cc1c190faace72d1c6b57cd",
+  "scope": "Source-subset local service and real FastAPI-route tests; not full-checkout or canonical runtime qualification",
+  "python": "3.13.14",
+  "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+  "results": {
+    "pytest": {
+      "passed": 33,
+      "failed": 0,
+      "warnings": 1
+    },
+    "unittest_independent_runner_rerun": {
+      "passed": 33,
+      "failed": 0
+    },
+    "black_check": "PASS"
+  },
+  "test_peers": [
+    "identity verifier",
+    "capability issuer/authority transport",
+    "runtime envelopes"
+  ],
+  "actual_components": [
+    "EnterprisePlane",
+    "ControlPlane",
+    "SQLite WAL",
+    "FastAPI create_app and operation boundary"
+  ],
+  "not_run": [
+    "Full service regression suite",
+    "EUCLID instantiation",
+    "TURING canonical execution",
+    "Real OIDC",
+    "Signature-provider integration",
+    "CI",
+    "Deployment",
+    "Customer onboarding/value measurement"
+  ],
+  "warning": "Starlette TestClient: anyio.abc.BlockingPortal alias deprecated; retained in pytest.log",
+  "original_git_blob_sha1": {
+    "control.py": "e3e653793ea4088248c2d50324e805b518398a25",
+    "enterprise.py": "d37809c026d23f3ecfbd141b05f4bf4655fd5285",
+    "api.py": "20aa82033ae4244b5ffd4040422c5887318bce0a"
+  },
+  "candidate_sha256": {
+    "services/turing-enterprise/src/hyba_turing_service/enterprise.py": "ba80642939ddc10e4e21d6ab6aa83f6d127c171c315083f70717c65e4de2ba1d",
+    "services/turing-enterprise/src/hyba_turing_service/api.py": "553e8bf35389e9b318707b4030a4fdc5dd39519317e9367e3165e98fff7698e1",
+    "services/turing-enterprise/tests/test_activation_status.py": "91d29eb4ef7906909f0bca05abd242227c59aaf3b2218efb5c1ba7645c64ce61",
+    "services/turing-enterprise/tests/test_activation_status_api.py": "6447827d3821e8c5f8c4411b7d1e47aa588658dc6b6eccb5d9762417b913e692",
+    "docs/IMMEDIATE_VALUE_SERVICE.md": "facc59d6b301e396ae8eb2fbdffbb7f3029b96e5d177612d4338c7e8c3ff9aa5"
+  },
+  "commands": [
+    "python -m pytest services/turing-enterprise/tests/test_activation_status.py services/turing-enterprise/tests/test_activation_status_api.py -q",
+    "python -m unittest discover -s <scoped-tests> -q",
+    "black --check --line-length 100 <changed-source-and-tests>"
+  ]
+}
