@@ -104,7 +104,7 @@ jobs:
         run: python scripts/repo_closure.py defects --output reports/DEFECT_REGISTER.json
       - name: Retain Agent H closure inventories
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: agent-h-closure-inventories
           path: |
@@ -138,7 +138,7 @@ jobs:
         run: python -m compileall -q Intelligence core_engine mining hyba pythagoras scripts tests chronus aethel l_hras bench experiments quantum_compute_substrate python_backend tensor
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: pythia-coverage-report
           path: coverage.xml

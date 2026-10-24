@@ -48,14 +48,14 @@ jobs:
         run: python packaging/toe/build_and_verify.py
       - name: Retain qualification evidence, including failed attempts
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: toe-evidence-${{ matrix.python }}
           path: packaging/toe/dist/
           if-no-files-found: error
       - name: Retain the canonical release archives (built once, on 3.12)
         if: matrix.python == '3.12'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: toe-dist
           path: |
@@ -112,7 +112,7 @@ jobs:
           assert r["execution"]["candidates_found_by_check_pow"] == r["execution"]["candidates_rechecked_valid"]
           print(json.dumps(r["decision_effect"], indent=2))
           PY
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: toe-mining-voyage
           path: mining-voyage.json
@@ -186,7 +186,7 @@ jobs:
           }
           Path("verified-dist/release-verdict.json").write_text(json.dumps(verdict, indent=2, sort_keys=True))
           print(json.dumps(verdict, indent=2, sort_keys=True))
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: toe-verified-release
           path: verified-dist/*
@@ -357,7 +357,7 @@ jobs:
           gh release create toe-intelligence-v1.0.0 --target "$(git rev-parse HEAD)" \
             --title "hyba-toe-intelligence 1.0.0" --notes-file release-notes.md \
             release/*.whl release/*.tar.gz publication.json
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: toe-final-publication
           path: publication.json
