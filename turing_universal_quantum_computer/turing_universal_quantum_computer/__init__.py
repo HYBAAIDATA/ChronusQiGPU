@@ -312,6 +312,7 @@ _LAZY_SYMBOLS = {
     "HybridIterationReceipt": "software_stack",
     "HybridOrchestrationReport": "software_stack",
     "HybridWorkloadOrchestrator": "software_stack",
+    "GPUFleetQuantumWorkloadReport": "software_stack",
     "PulseInstruction": "software_stack",
     "PulseSchedule": "software_stack",
     "PulseCompiler": "software_stack",
@@ -326,6 +327,7 @@ _LAZY_SYMBOLS = {
     "transpile_program": "software_stack",
     "run_surface_code_qec_cycle": "software_stack",
     "run_hybrid_workload": "software_stack",
+    "run_gpu_fleet_hybrid_workload": "software_stack",
     "compile_pulse_schedule": "software_stack",
     "run_quantum_software_stack": "software_stack",
 }

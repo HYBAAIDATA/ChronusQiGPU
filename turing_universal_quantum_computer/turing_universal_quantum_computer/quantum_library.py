@@ -463,6 +463,11 @@ class QuantumLibrary:
                 "lane": "six_phase_exact_lifecycle",
                 "scale": "end-to-end Phase 1..6 authoring, OpenQASM, transpilation, QEC, orchestration, and pulse schedule",
             },
+            "gpu_fleet_workload": {
+                "owner": "chronus.fleet.capacity + software_stack.run_gpu_fleet_hybrid_workload",
+                "lane": "distributed_one_igpu_fleet_exact",
+                "scale": "multi-worker ONE-iGPU capacity planning, Lucas L_n scaling, disjoint partitioning, fencing tokens, and custody",
+            },
         }
 
     @staticmethod
@@ -1108,4 +1113,33 @@ class QuantumLibrary:
                 z_error_qubits=z_error_qubits,
             ).as_dict(),
             owner="software_stack.run_quantum_software_stack",
+        )
+
+    @staticmethod
+    def gpu_fleet_workload(
+        n_qubits: int = 2,
+        *,
+        J: Any = 1,
+        g: Any = 1,
+        worker_count: int = 3,
+        lanes_per_worker: int = 4,
+        scale_index: int = 15,
+        fail_worker_ids: Sequence[str] = (),
+    ) -> LibraryResult:
+        """Capacity-plan, partition, lease, and execute a hybrid quantum workload across a Chronus GPU/iGPU fleet."""
+        from .software_stack import run_gpu_fleet_hybrid_workload
+
+        return _timed(
+            "gpu_fleet_workload",
+            "distributed_one_igpu_fleet_exact",
+            lambda: run_gpu_fleet_hybrid_workload(
+                n_qubits=n_qubits,
+                J=J,
+                g=g,
+                worker_count=worker_count,
+                lanes_per_worker=lanes_per_worker,
+                scale_index=scale_index,
+                fail_worker_ids=fail_worker_ids,
+            ).as_dict(),
+            owner="chronus.fleet.capacity+software_stack.run_gpu_fleet_hybrid_workload",
         )

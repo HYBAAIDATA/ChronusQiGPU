@@ -334,3 +334,32 @@ def test_full_six_phase_software_stack_and_quantum_library_surface():
     # Lazy export from top-level package
     direct_report = tqc.run_quantum_software_stack(3)
     assert direct_report.all_phases_verified is True
+
+
+def test_gpu_fleet_hybrid_quantum_workload_and_failover():
+    res_fleet = QuantumLibrary.gpu_fleet_workload(
+        n_qubits=2,
+        J=1,
+        g=1,
+        worker_count=3,
+        lanes_per_worker=4,
+        scale_index=15,
+        fail_worker_ids=("gpu-worker-1",),
+    )
+    assert res_fleet.truth_class == TRUTH_EXACT
+    assert res_fleet.verify_exactness().exact is True
+    payload = res_fleet.payload
+    assert payload["total_candidates"] == 8
+    fleet_rep = payload["fleet_report"]
+    assert fleet_rep["certificate_verified"] is True
+    assert fleet_rep["single_vs_distributed_agree"] is True
+    assert fleet_rep["custody_committed_count"] == 3
+    assert len(fleet_rep["failover_events"]) == 1
+    assert fleet_rep["failover_events"][0]["worker_id"] == "gpu-worker-1"
+    assert fleet_rep["failover_events"][0]["stale_rejected"] is True
+
+    # Must match the optimal energy and optimal turns of single-node run_hybrid_workload
+    single_hyb = QuantumLibrary.hybrid_orchestrate(2, J=1, g=1).payload
+    assert payload["optimal_energy_exact"] == single_hyb["optimal_energy_exact"]
+    assert payload["optimal_turns"] == single_hyb["optimal_turns"]
+

@@ -84,6 +84,7 @@ __all__ = [
     "HybridIterationReceipt",
     "HybridOrchestrationReport",
     "HybridWorkloadOrchestrator",
+    "GPUFleetQuantumWorkloadReport",
     "PulseInstruction",
     "PulseSchedule",
     "PulseCompiler",
@@ -98,6 +99,7 @@ __all__ = [
     "transpile_program",
     "run_surface_code_qec_cycle",
     "run_hybrid_workload",
+    "run_gpu_fleet_hybrid_workload",
     "compile_pulse_schedule",
     "run_quantum_software_stack",
 ]
@@ -1586,6 +1588,180 @@ def run_hybrid_workload(
     orchestrator = HybridWorkloadOrchestrator()
     orchestrator.submit(spec)
     return orchestrator.run_next()
+
+
+@dataclass(frozen=True)
+class GPUFleetQuantumWorkloadReport:
+    """Complete report from a distributed GPU/iGPU fleet quantum workload execution."""
+
+    work_id: str
+    tenant: str
+    n_qubits: int
+    total_candidates: int
+    optimal_turns: str
+    optimal_energy_exact: str
+    optimal_program_digest: str
+    fleet_report: Dict[str, Any]
+    report_digest: str
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "work_id": self.work_id,
+            "tenant": self.tenant,
+            "n_qubits": self.n_qubits,
+            "total_candidates": self.total_candidates,
+            "optimal_turns": self.optimal_turns,
+            "optimal_energy_exact": self.optimal_energy_exact,
+            "optimal_program_digest": self.optimal_program_digest,
+            "fleet_report": self.fleet_report,
+            "report_digest": self.report_digest,
+        }
+
+
+def run_gpu_fleet_hybrid_workload(
+    n_qubits: int = 2,
+    *,
+    J: Any = 1,
+    g: Any = 1,
+    candidate_turns: Sequence[Any] = (
+        Fraction(0, 1),
+        Fraction(1, 8),
+        Fraction(1, 4),
+        Fraction(3, 8),
+        Fraction(1, 2),
+        Fraction(5, 8),
+        Fraction(3, 4),
+        Fraction(7, 8),
+    ),
+    worker_count: int = 3,
+    lanes_per_worker: int = 4,
+    scale_index: int = 15,
+    tenant: str = "turing_quantum_tenant",
+    fail_worker_ids: Sequence[str] = (),
+    work_id: str = "gpu-fleet-vqe-ising",
+) -> GPUFleetQuantumWorkloadReport:
+    """Capacity-plan, partition, lease, and execute a hybrid quantum workload across a Chronus GPU/iGPU fleet."""
+    from chronus.fleet.capacity import (
+        GPUWorkerSpec,
+        WorkloadSpec,
+        execute_fleet_workload,
+    )
+
+    if worker_count < 1 or lanes_per_worker < 1:
+        raise ValueError("worker_count and lanes_per_worker must be >= 1")
+
+    turns_list = [_frac(t) for t in candidate_turns]
+    terms = [
+        (_frac(coeff), tuple((int(q), str(p).lower()) for q, p in ops))
+        for coeff, ops in QuantumLibrary.ising_terms(n_qubits, J=J, g=g)
+    ]
+    cmap = CouplingMap.line(n_qubits)
+
+    workers = [
+        GPUWorkerSpec(
+            worker_id=f"gpu-worker-{i}",
+            tenant=tenant,
+            lanes=lanes_per_worker,
+            compute_units=32,
+            clock_mhz=1500,
+            global_memory_bytes=8 * 1024**3,
+        )
+        for i in range(worker_count)
+    ]
+    workload = WorkloadSpec(
+        work_id=work_id,
+        tenant=tenant,
+        operation="hybrid_vqe_circuit_batch",
+        total_items=len(turns_list),
+        bytes_per_item=256,
+        cycles_per_item=16,
+        scale_index=scale_index,
+        state_qubits=n_qubits,
+        required_floor_ops_per_second=1_000_000_000,
+    )
+
+    def evaluate_candidate(theta: Fraction) -> Dict[str, Any]:
+        raw_prog = build_ansatz_program(
+            n_qubits,
+            [theta] * n_qubits,
+            layers=1,
+            axis="y",
+            entangler="cx",
+            entanglement="linear",
+        )
+        trans_report = transpile_program(
+            raw_prog,
+            coupling_map=cmap,
+            basis_gates=DEFAULT_BASIS_GATES,
+            optimize=True,
+            restore_layout=True,
+            verify_equivalence=(n_qubits <= DEFAULT_VERIFY_WIDTH),
+        )
+        compiled = trans_report.transpiled_program
+        reg = _program_to_quantum_register(compiled)
+        energy_expr = sp.simplify(
+            sum(coeff * pauli_expectation(reg, ops) for coeff, ops in terms)
+        )
+        pulse_sched = compile_pulse_schedule(compiled, include_readout=True)
+        return {
+            "parameter_turns": str(theta),
+            "raw_gate_count": len(raw_prog.operations),
+            "transpiled_gate_count": len(compiled.operations),
+            "inserted_swaps": trans_report.inserted_swaps,
+            "program_digest": compiled.digest(),
+            "pulse_duration_ns": pulse_sched.total_duration_ns,
+            "energy_exact": str(energy_expr),
+        }
+
+    fleet_report = execute_fleet_workload(
+        workers,
+        workload,
+        turns_list,
+        evaluate_candidate,
+        fail_worker_ids=fail_worker_ids,
+    )
+    if not fleet_report.single_vs_distributed_agree:
+        raise ExactLaneError("Distributed GPU fleet output differed from single-node reference")
+
+    best_val: Optional[sp.Expr] = None
+    best_turns = ""
+    best_digest = ""
+    for item_out in fleet_report.reassembled_output:
+        e_val = sp.sympify(item_out["energy_exact"])
+        if best_val is None or sp.simplify(e_val - best_val) < 0:
+            best_val = e_val
+            best_turns = str(item_out["parameter_turns"])
+            best_digest = str(item_out["program_digest"])
+
+    fleet_exact_dict = fleet_report.as_exact_dict()
+    unsigned = {
+        "work_id": work_id,
+        "tenant": tenant,
+        "n_qubits": n_qubits,
+        "total_candidates": len(turns_list),
+        "optimal_turns": best_turns,
+        "optimal_energy_exact": str(best_val),
+        "optimal_program_digest": best_digest,
+        "fleet_report": fleet_exact_dict,
+    }
+    audit = audit_exactness(unsigned)
+    if not audit.exact:
+        raise ExactLaneError(
+            "run_gpu_fleet_hybrid_workload failed exactness audit: "
+            + "; ".join(audit.violations)
+        )
+
+    return GPUFleetQuantumWorkloadReport(
+        work_id=work_id,
+        tenant=tenant,
+        n_qubits=n_qubits,
+        total_candidates=len(turns_list),
+        optimal_turns=best_turns,
+        optimal_energy_exact=str(best_val),
+        optimal_program_digest=best_digest,
+        fleet_report=fleet_exact_dict,
+        report_digest=_canonical_digest(unsigned),
+    )
 
 
 # ======================================================================
