@@ -1,75 +1,41 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { miningDashboardAccess } from "../access";
-import {
-  setOperatorKey,
-  setOperatorPrincipal,
-} from "../api";
-
-describe("miningDashboardAccess", () => {
-  beforeEach(() => {
-    window.sessionStorage.clear();
-    setOperatorKey(null);
-    setOperatorPrincipal(null);
+const json = (body:unknown,status=200) => new Response(JSON.stringify(body),{status});
+describe("HttpOnly mining dashboard entitlement", () => {
+  beforeEach(() => window.sessionStorage.clear());
+  it("checks the server with cookies and no JavaScript-readable credential", async () => {
+    const controller=new AbortController();
+    const mock=vi.fn(async(_input:RequestInfo|URL,_init?:RequestInit)=>json({principal_id:"owner",role:"ceo"}));
+    expect(await miningDashboardAccess(mock as typeof fetch,controller.signal)).toEqual({allowed:true,principalId:"owner",role:"ceo",reason:"authorized"});
+    expect(mock).toHaveBeenCalledWith("/api/v1/control/session",expect.objectContaining({credentials:"include",cache:"no-store",signal:controller.signal}));
+    const init=mock.mock.calls[0][1] as RequestInit;
+    expect(new Headers(init.headers).get("Authorization")).toBeNull();
+    expect(new Headers(init.headers).get("X-PYTHIA-Principal")).toBeNull();
   });
-
-  it("fails closed when no trusted control credentials are present", async () => {
-    const fetchMock = vi.fn();
-    const access = await miningDashboardAccess(fetchMock as typeof fetch);
-    expect(access.allowed).toBe(false);
-    expect(access.reason).toBe("trusted_control_identity_unavailable");
-    expect(fetchMock).not.toHaveBeenCalled();
+  it("does not treat stale browser identity as authority or reject the actual cookie identity", async()=>{
+    window.sessionStorage.setItem("pythia.operatorPrincipal","old-user");
+    window.sessionStorage.setItem("pythia.operatorKey","old-secret");
+    const mock=vi.fn(async(_input:RequestInfo|URL,_init?:RequestInit)=>json({principal_id:"new-user",role:"ceo"}));
+    expect((await miningDashboardAccess(mock as typeof fetch)).principalId).toBe("new-user");
   });
-
-  it("allows only a server-confirmed CEO bound to the same principal", async () => {
-    setOperatorKey("secret");
-    setOperatorPrincipal("andre");
-    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
-      const headers = new Headers(init?.headers);
-      expect(headers.get("Authorization")).toBe("Bearer secret");
-      expect(headers.get("X-PYTHIA-Principal")).toBe("andre");
-      return new Response(
-        JSON.stringify({ principal_id: "andre", role: "ceo" }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    });
-    const access = await miningDashboardAccess(fetchMock as typeof fetch);
-    expect(access).toEqual({
-      allowed: true,
-      principalId: "andre",
-      role: "ceo",
-      reason: "authorized",
-    });
+  it.each(["operator","analyst","auditor","founder_ceo","CEO"])("refuses noncanonical/unprivileged role %s",async(role)=>{
+    const mock=vi.fn(async(_input:RequestInfo|URL,_init?:RequestInit)=>json({principal_id:"owner",role}));
+    expect((await miningDashboardAccess(mock as typeof fetch)).reason).toBe("ceo_role_required");
   });
-
-  it("denies an authenticated operator and a mismatched CEO identity", async () => {
-    setOperatorKey("secret");
-    setOperatorPrincipal("andre");
-
-    const operator = vi.fn(async () =>
-      new Response(JSON.stringify({ principal_id: "andre", role: "operator" }), {
-        status: 200,
-      }),
-    );
-    expect((await miningDashboardAccess(operator as typeof fetch)).reason).toBe(
-      "ceo_role_required",
-    );
-
-    const mismatch = vi.fn(async () =>
-      new Response(JSON.stringify({ principal_id: "someone-else", role: "ceo" }), {
-        status: 200,
-      }),
-    );
-    expect((await miningDashboardAccess(mismatch as typeof fetch)).reason).toBe(
-      "control_identity_mismatch",
-    );
+  it.each([null,[],{}, {principal_id:"",role:"ceo"}, {principal_id:"  ",role:"ceo"},{principal_id:123,role:"ceo"},{principal_id:"owner",role:123}])("refuses malformed session %j",async(body)=>{
+    const mock=vi.fn(async(_input:RequestInfo|URL,_init?:RequestInit)=>json(body));
+    expect((await miningDashboardAccess(mock as typeof fetch)).reason).toBe("invalid_control_session");
   });
-
-  it("treats a missing control entitlement endpoint as unavailable", async () => {
-    setOperatorKey("secret");
-    setOperatorPrincipal("andre");
-    const fetchMock = vi.fn(async () => new Response("not found", { status: 404 }));
-    const access = await miningDashboardAccess(fetchMock as typeof fetch);
-    expect(access.allowed).toBe(false);
-    expect(access.reason).toBe("control_session_entitlement_unavailable");
+  it.each([401,403,500,503])("fails closed on HTTP %i",async(code)=>{
+    const mock=vi.fn(async(_input:RequestInfo|URL,_init?:RequestInit)=>json({},code));
+    expect((await miningDashboardAccess(mock as typeof fetch)).allowed).toBe(false);
+  });
+  it("reports a missing endpoint",async()=>{
+    const mock=vi.fn(async(_input:RequestInfo|URL,_init?:RequestInit)=>json({},404));
+    expect((await miningDashboardAccess(mock as typeof fetch)).reason).toBe("control_session_entitlement_unavailable");
+  });
+  it("fails closed on a transport exception",async()=>{
+    const mock=vi.fn(async(_input:RequestInfo|URL,_init?:RequestInit)=>{throw new Error("offline");});
+    expect((await miningDashboardAccess(mock as typeof fetch)).reason).toBe("control_session_unreachable");
   });
 });

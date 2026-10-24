@@ -1,0 +1,767 @@
+{
+  "backend": "chronus-software-fabric",
+  "claim": "Native mathematical execution verified on the tested software substrate.",
+  "hardware_rooted": false,
+  "host_gpu_required": false,
+  "jobs_executed": 12,
+  "measurements": [
+    {
+      "evidence_sha256": "a9e9cab058534b0412e8158a3e57da04876464facbdc365c7a09036af63b24a4",
+      "kind": "lucas_transform",
+      "output_sha256": "ab6631f962840150905ea9ad3a84e4391bd14c059e607abccf70f966ed02f5c2",
+      "receipt": {
+        "actual_backend": "chronus-software-fabric",
+        "actual_device": "chronus-software-fabric",
+        "attempt_id": "3660af11-c137-4c64-9b37-0bf38ec57bdb",
+        "build_identity": "source-tree",
+        "content_hash": "454df87ea856d3c01b7245813396d28f525629c5515f0a24e7dbe2ab76f47224",
+        "delivery_mode": "embedded",
+        "hardware_rooted": false,
+        "input_digest": "24ba31dfb4cad077aec1f0ca02238559c2d6532c135acc9d3a5b9b4b831abfd1",
+        "kernel_identity": "exact_recurrence",
+        "metadata": {
+          "route_reason": "policy:standalone_software"
+        },
+        "output_digest": "ab6631f962840150905ea9ad3a84e4391bd14c059e607abccf70f966ed02f5c2",
+        "package_version": "24ba31dfb4cad077aec1f0ca02238559c2d6532c135acc9d3a5b9b4b831abfd1",
+        "protocol_version": "virtual_igpu_v1",
+        "receipt_id": "4aefd287937f994ef1e11b1caa6d749b",
+        "recorded_at": "2026-10-23T17:57:50.327369+00:00",
+        "requested_policy": "standalone_software",
+        "runtime_identity": "chronus.virtual_igpu:virtual_igpu_v1",
+        "seed": null,
+        "timing": {
+          "device_time_ns": null,
+          "total_ns": 1999966,
+          "wall_time_ns": 952267
+        },
+        "trust_class": "runtime_signed",
+        "verification": {
+          "admission": {
+            "adapter_id": "chronus-software-fabric",
+            "admitted": true,
+            "deadline_ms": null,
+            "queue_depth": 0,
+            "reason": "policy:standalone_software",
+            "reserved_bytes": 0
+          },
+          "recomputed": true,
+          "status": "ok",
+          "verdict": "match",
+          "verifier": "recompute:lucas_transform:exact_recurrence"
+        },
+        "verified_work_count": 0,
+        "workload_id": "1337/lucas_transform"
+      },
+      "seed": 1337,
+      "status": "ok",
+      "workload": {
+        "n": 7060
+      }
+    },
+    {
+      "evidence_sha256": "ba14b5622a744d91c8aea96fa4a0bb81a7caf8e1701dde5e688590bac64bb773",
+      "kind": "pisot_transform",
+      "output_sha256": "e590d4b8d9f1df6cf5942d03309b00a9bb62ea2222e88dea2f3eb9154ebdb897",
+      "receipt": {
+        "actual_backend": "chronus-software-fabric",
+        "actual_device": "chronus-software-fabric",
+        "attempt_id": "a85ca937-751f-414a-9ba8-42275e5c45c3",
+        "build_identity": "source-tree",
+        "content_hash": "7757adac65ed4f5feae1cbf561e4e7e40c79a9a395c280f0ac9c08d7773bc26b",
+        "delivery_mode": "embedded",
+        "hardware_rooted": false,
+        "input_digest": "1975a613d907db35c743c9af4c6b9ddbd9e3ff6dac8ee3f4359d26014d99b8f1",
+        "kernel_identity": "exact_pisot_via_lucas",
+        "metadata": {
+          "route_reason": "policy:standalone_software"
+        },
+        "output_digest": "e590d4b8d9f1df6cf5942d03309b00a9bb62ea2222e88dea2f3eb9154ebdb897",
+        "package_version": "1975a613d907db35c743c9af4c6b9ddbd9e3ff6dac8ee3f4359d26014d99b8f1",
+        "protocol_version": "virtual_igpu_v1",
+        "receipt_id": "37ba120c99d8892dc27e77bc3d1d9555",
+        "recorded_at": "2026-10-23T17:57:50.331386+00:00",
+        "requested_policy": "standalone_software",
+        "runtime_identity": "chronus.virtual_igpu:virtual_igpu_v1",
+        "seed": null,
+        "timing": {
+          "device_time_ns": null,
+          "total_ns": 2074255,
+          "wall_time_ns": 935997
+        },
+        "trust_class": "runtime_signed",
+        "verification": {
+          "admission": {
+            "adapter_id": "chronus-software-fabric",
+            "admitted": true,
+            "deadline_ms": null,
+            "queue_depth": 0,
+            "reason": "policy:standalone_software",
+            "reserved_bytes": 0
+          },
+          "recomputed": true,
+          "status": "ok",
+          "tolerance": {
+            "atol": 1e-12,
+            "rtol": 1e-09
+          },
+          "verdict": "match",
+          "verifier": "recompute:pisot_transform:exact_integer_with_float64_diagnostic"
+        },
+        "verified_work_count": 0,
+        "workload_id": "1337/pisot_transform"
+      },
+      "seed": 1337,
+      "status": "ok",
+      "workload": {
+        "n": 7060
+      }
+    },
+    {
+      "evidence_sha256": "e5e0d4842025014fda66f3125bc5206c502f66db86bbdc254048f8ab47a7f557",
+      "kind": "sha256d_scan",
+      "output_sha256": "ae1771972d95dffb15933ad07a35f1b8223218939f442984b9cbf79703208b20",
+      "receipt": {
+        "actual_backend": "chronus-software-fabric",
+        "actual_device": "chronus-software-fabric",
+        "attempt_id": "3e3562f4-ad95-4277-a1a4-fcefab97cb33",
+        "build_identity": "source-tree",
+        "content_hash": "5982e1ca9a9d12f50d6df9f5d09f34458af338773f8026d6c0a8ab7cbd3a5b93",
+        "delivery_mode": "embedded",
+        "hardware_rooted": false,
+        "input_digest": "28d476b206bbf54e39858e13b8940fb2f3e84e166264af9f9bd2977dbe20cb26",
+        "kernel_identity": "hashlib_sha256d",
+        "metadata": {
+          "route_reason": "policy:standalone_software"
+        },
+        "output_digest": "ae1771972d95dffb15933ad07a35f1b8223218939f442984b9cbf79703208b20",
+        "package_version": "28d476b206bbf54e39858e13b8940fb2f3e84e166264af9f9bd2977dbe20cb26",
+        "protocol_version": "virtual_igpu_v1",
+        "receipt_id": "0ee41837015b669d9ba375aedfc08bf3",
+        "recorded_at": "2026-10-23T17:57:50.334958+00:00",
+        "requested_policy": "standalone_software",
+        "runtime_identity": "chronus.virtual_igpu:virtual_igpu_v1",
+        "seed": null,
+        "timing": {
+          "device_time_ns": null,
+          "total_ns": 114033,
+          "wall_time_ns": 25104
+        },
+        "trust_class": "runtime_signed",
+        "verification": {
+          "admission": {
+            "adapter_id": "chronus-software-fabric",
+            "admitted": true,
+            "deadline_ms": null,
+            "queue_depth": 0,
+            "reason": "policy:standalone_software",
+            "reserved_bytes": 0
+          },
+          "recomputed": true,
+          "status": "ok",
+          "verdict": "match",
+          "verifier": "recompute:sha256d_scan:hashlib"
+        },
+        "verified_work_count": 1,
+        "workload_id": "1337/sha256d_scan"
+      },
+      "seed": 1337,
+      "status": "ok",
+      "workload": {
+        "count": 1,
+        "prefix_hex": "7be3efeca5178488cdb1bab5ff3ca85db0ad2b92f228f695b8755dbb5f7b6a2a8b7b73c66e280ad36dae3155757a3a62e51887a2fd1024ca5fd31e5cbb44f6eb539fe2fec60fc14e6db53c64",
+        "start_nonce": 3918321625,
+        "target_hex": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      }
+    },
+    {
+      "evidence_sha256": "a0fde8d82e21161161d97cc3c2b20e53b26bddfc92ce422c64af0f506f9718ef",
+      "kind": "tensor_op",
+      "output_sha256": "e410c7b3cf89a296f22c6eb257223135a85be7d1070df830e771d74013b33ebc",
+      "receipt": {
+        "actual_backend": "chronus-software-fabric",
+        "actual_device": "chronus-software-fabric",
+        "attempt_id": "ea93f7dc-a373-4d62-9914-af79b3c78825",
+        "build_identity": "source-tree",
+        "content_hash": "30381808cdce0321ac6fef80c1cd6d3a41186b801b0e7226b8f821d51155db9a",
+        "delivery_mode": "embedded",
+        "hardware_rooted": false,
+        "input_digest": "f339eab70cf4766cc6007782ba9eff9ae3469cc95ff8efb0b399a89eac6365d7",
+        "kernel_identity": "software",
+        "metadata": {
+          "route_reason": "policy:standalone_software"
+        },
+        "output_digest": "e410c7b3cf89a296f22c6eb257223135a85be7d1070df830e771d74013b33ebc",
+        "package_version": "f339eab70cf4766cc6007782ba9eff9ae3469cc95ff8efb0b399a89eac6365d7",
+        "protocol_version": "virtual_igpu_v1",
+        "receipt_id": "55277bd0c835cf207d93a6474f1cd9e6",
+        "recorded_at": "2026-10-23T17:57:50.341552+00:00",
+        "requested_policy": "standalone_software",
+        "runtime_identity": "chronus.virtual_igpu:virtual_igpu_v1",
+        "seed": null,
+        "timing": {
+          "device_time_ns": null,
+          "total_ns": 530784,
+          "wall_time_ns": 109526
+        },
+        "trust_class": "runtime_signed",
+        "verification": {
+          "admission": {
+            "adapter_id": "chronus-software-fabric",
+            "admitted": true,
+            "deadline_ms": null,
+            "queue_depth": 0,
+            "reason": "policy:standalone_software",
+            "reserved_bytes": 0
+          },
+          "recomputed": true,
+          "status": "ok",
+          "tolerance": {
+            "atol": 1e-12,
+            "rtol": 1e-09
+          },
+          "verdict": "match",
+          "verifier": "recompute:tensor_op:float64"
+        },
+        "verified_work_count": 0,
+        "workload_id": "1337/tensor_op"
+      },
+      "seed": 1337,
+      "status": "ok",
+      "workload": {
+        "a": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "b": [
+          [
+            2,
+            0
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "op": "matmul",
+        "output_shape": [
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "evidence_sha256": "fe9854641825337a5983a1f5a75d41bf66b4fac99901c010c3148c92953af9bd",
+      "kind": "lucas_transform",
+      "output_sha256": "80f38cc3c38a9ad224242cfa2fc3734f002161129a3296002b7756dcf76819d6",
+      "receipt": {
+        "actual_backend": "chronus-software-fabric",
+        "actual_device": "chronus-software-fabric",
+        "attempt_id": "cbaa43da-9266-4048-8285-2e07be796618",
+        "build_identity": "source-tree",
+        "content_hash": "1b27a421d0048a98c4c894ba69c1a3c640605d895e2df0549db030a775ab91c1",
+        "delivery_mode": "embedded",
+        "hardware_rooted": false,
+        "input_digest": "92751f09533367f51a4a492599bf152a95003d33fccf7fdc1121274f3c424791",
+        "kernel_identity": "exact_recurrence",
+        "metadata": {
+          "route_reason": "policy:standalone_software"
+        },
+        "output_digest": "80f38cc3c38a9ad224242cfa2fc3734f002161129a3296002b7756dcf76819d6",
+        "package_version": "92751f09533367f51a4a492599bf152a95003d33fccf7fdc1121274f3c424791",
+        "protocol_version": "virtual_igpu_v1",
+        "receipt_id": "efb0df98246a4f0ad6c6c20eb03c4b51",
+        "recorded_at": "2026-10-23T17:57:50.346288+00:00",
+        "requested_policy": "standalone_software",
+        "runtime_identity": "chronus.virtual_igpu:virtual_igpu_v1",
+        "seed": null,
+        "timing": {
+          "device_time_ns": null,
+          "total_ns": 1967088,
+          "wall_time_ns": 936980
+        },
+        "trust_class": "runtime_signed",
+        "verification": {
+          "admission": {
+            "adapter_id": "chronus-software-fabric",
+            "admitted": true,
+            "deadline_ms": null,
+            "queue_depth": 0,
+            "reason": "policy:standalone_software",
+            "reserved_bytes": 0
+          },
+          "recomputed": true,
+          "status": "ok",
+          "verdict": "match",
+          "verifier": "recompute:lucas_transform:exact_recurrence"
+        },
+        "verified_work_count": 0,
+        "workload_id": "42/lucas_transform"
+      },
+      "seed": 42,
+      "status": "ok",
+      "workload": {
+        "n": 7238
+      }
+    },
+    {
+      "evidence_sha256": "8d7128c2c56b4407a798f315afdbff87b864763268d4fa4f2c5d019945fcaccc",
+      "kind": "pisot_transform",
+      "output_sha256": "e4d114b0fc9bf93b232944fe1331323f268f5f8d1a0fc47dbf5c72b07daad6ef",
+      "receipt": {
+        "actual_backend": "chronus-software-fabric",
+        "actual_device": "chronus-software-fabric",
+        "attempt_id": "9ae1a3e6-d1a5-48a2-b15a-65593b829625",
+        "build_identity": "source-tree",
+        "content_hash": "9981bb5f9ce1c1986f46dbd852cd5b09d8f9ed1ca75ff5fe3f00c747ca4036db",
+        "delivery_mode": "embedded",
+        "hardware_rooted": false,
+        "input_digest": "f5fcd68367bdb939617d41ca6266048da8f08892b1cc6533a88f658ad8910842",
+        "kernel_identity": "exact_pisot_via_lucas",
+        "metadata": {
+          "route_reason": "policy:standalone_software"
+        },
+        "output_digest": "e4d114b0fc9bf93b232944fe1331323f268f5f8d1a0fc47dbf5c72b07daad6ef",
+        "package_version": "f5fcd68367bdb939617d41ca6266048da8f08892b1cc6533a88f658ad8910842",
+        "protocol_version": "virtual_igpu_v1",
+        "receipt_id": "725b1e2d3a6d586bc358a65509bdaf09",
+        "recorded_at": "2026-10-23T17:57:50.349707+00:00",
+        "requested_policy": "standalone_software",
+        "runtime_identity": "chronus.virtual_igpu:virtual_igpu_v1",
+        "seed": null,
+        "timing": {
+          "device_time_ns": null,
+          "total_ns": 1917938,
+          "wall_time_ns": 912562
+        },
+        "trust_class": "runtime_signed",
+        "verification": {
+          "admission": {
+            "adapter_id": "chronus-software-fabric",
+            "admitted": true,
+            "deadline_ms": null,
+            "queue_depth": 0,
+            "reason": "policy:standalone_software",
+            "reserved_bytes": 0
+          },
+          "recomputed": true,
+          "status": "ok",
+          "tolerance": {
+            "atol": 1e-12,
+            "rtol": 1e-09
+          },
+          "verdict": "match",
+          "verifier": "recompute:pisot_transform:exact_integer_with_float64_diagnostic"
+        },
+        "verified_work_count": 0,
+        "workload_id": "42/pisot_transform"
+      },
+      "seed": 42,
+      "status": "ok",
+      "workload": {
+        "n": 7238
+      }
+    },
+    {
+      "evidence_sha256": "d2590fd950044bdd9b8256c31f7a7daf9bbb6a70e6931c52eaa99e1de96f586c",
+      "kind": "sha256d_scan",
+      "output_sha256": "c36fa39ff1d5dbb5490ef0dec73eea65c1b1b35f0b77bb7c7f5ea88c9bfe897e",
+      "receipt": {
+        "actual_backend": "chronus-software-fabric",
+        "actual_device": "chronus-software-fabric",
+        "attempt_id": "1deb321b-5c44-456b-9fb8-f7ca7c6bc566",
+        "build_identity": "source-tree",
+        "content_hash": "882dfe48cc76e3e59ac827ffec1db13e3f1e5546343514b23a79068960e5b41f",
+        "delivery_mode": "embedded",
+        "hardware_rooted": false,
+        "input_digest": "348df245c40bb510c1a90c0a81cca644d8531880ea93b00fa5a52341986d6117",
+        "kernel_identity": "hashlib_sha256d",
+        "metadata": {
+          "route_reason": "policy:standalone_software"
+        },
+        "output_digest": "c36fa39ff1d5dbb5490ef0dec73eea65c1b1b35f0b77bb7c7f5ea88c9bfe897e",
+        "package_version": "348df245c40bb510c1a90c0a81cca644d8531880ea93b00fa5a52341986d6117",
+        "protocol_version": "virtual_igpu_v1",
+        "receipt_id": "9937e568edec9a2d2f68bb4e70df378c",
+        "recorded_at": "2026-10-23T17:57:50.352946+00:00",
+        "requested_policy": "standalone_software",
+        "runtime_identity": "chronus.virtual_igpu:virtual_igpu_v1",
+        "seed": null,
+        "timing": {
+          "device_time_ns": null,
+          "total_ns": 98283,
+          "wall_time_ns": 23737
+        },
+        "trust_class": "runtime_signed",
+        "verification": {
+          "admission": {
+            "adapter_id": "chronus-software-fabric",
+            "admitted": true,
+            "deadline_ms": null,
+            "queue_depth": 0,
+            "reason": "policy:standalone_software",
+            "reserved_bytes": 0
+          },
+          "recomputed": true,
+          "status": "ok",
+          "verdict": "match",
+          "verifier": "recompute:sha256d_scan:hashlib"
+        },
+        "verified_work_count": 1,
+        "workload_id": "42/sha256d_scan"
+      },
+      "seed": 42,
+      "status": "ok",
+      "workload": {
+        "count": 1,
+        "prefix_hex": "7f31801cd11a6706fb40d6bd57526846903bb13ede562439e9c1b823a96089bca71f3d1a6d2d3cadb3669cbd50e165e434249d8b829f411669842a979911036cf3e822086ecaa0075a69fc17",
+        "start_nonce": 939042955,
+        "target_hex": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      }
+    },
+    {
+      "evidence_sha256": "37ffb8bb92927e87a7eb480ca6ed28da2a9b3b90264cdd959e22d63eacfa5e35",
+      "kind": "tensor_op",
+      "output_sha256": "947d8b87562db80eb24afe20b89f3274dc88ad0dc90863d1ae5f30479ad8affd",
+      "receipt": {
+        "actual_backend": "chronus-software-fabric",
+        "actual_device": "chronus-software-fabric",
+        "attempt_id": "8ce09eab-aca9-4169-87bd-788eef9bab5a",
+        "build_identity": "source-tree",
+        "content_hash": "42181938e0a203f2e5eb5e4d6d0fa1f808942ee20c1203b597716acbcc734bc6",
+        "delivery_mode": "embedded",
+        "hardware_rooted": false,
+        "input_digest": "e84457f7413d2fab4918f0fba61650ab8790163af859961e65ed8343e4787a91",
+        "kernel_identity": "software",
+        "metadata": {
+          "route_reason": "policy:standalone_software"
+        },
+        "output_digest": "947d8b87562db80eb24afe20b89f3274dc88ad0dc90863d1ae5f30479ad8affd",
+        "package_version": "e84457f7413d2fab4918f0fba61650ab8790163af859961e65ed8343e4787a91",
+        "protocol_version": "virtual_igpu_v1",
+        "receipt_id": "d519d51579fa5e7b8a18036213d335b5",
+        "recorded_at": "2026-10-23T17:57:50.354737+00:00",
+        "requested_policy": "standalone_software",
+        "runtime_identity": "chronus.virtual_igpu:virtual_igpu_v1",
+        "seed": null,
+        "timing": {
+          "device_time_ns": null,
+          "total_ns": 421252,
+          "wall_time_ns": 55552
+        },
+        "trust_class": "runtime_signed",
+        "verification": {
+          "admission": {
+            "adapter_id": "chronus-software-fabric",
+            "admitted": true,
+            "deadline_ms": null,
+            "queue_depth": 0,
+            "reason": "policy:standalone_software",
+            "reserved_bytes": 0
+          },
+          "recomputed": true,
+          "status": "ok",
+          "tolerance": {
+            "atol": 1e-12,
+            "rtol": 1e-09
+          },
+          "verdict": "match",
+          "verifier": "recompute:tensor_op:float64"
+        },
+        "verified_work_count": 0,
+        "workload_id": "42/tensor_op"
+      },
+      "seed": 42,
+      "status": "ok",
+      "workload": {
+        "a": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "b": [
+          [
+            2,
+            0
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "op": "matmul",
+        "output_shape": [
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "evidence_sha256": "34a54a4a1372005a3d06e96b145f9d7804f2342cca8cf03a9730ae74e6c05613",
+      "kind": "lucas_transform",
+      "output_sha256": "d74660ddf338539ddcb14481d207d2ff064250fc598fc39f8fc01e769c5c0057",
+      "receipt": {
+        "actual_backend": "chronus-software-fabric",
+        "actual_device": "chronus-software-fabric",
+        "attempt_id": "25baf0a3-9b3b-4839-ae43-0158d4faef34",
+        "build_identity": "source-tree",
+        "content_hash": "7b0561d9d516dcb65df71127df02ea123c577f906eebae8f9ce82f163d37b081",
+        "delivery_mode": "embedded",
+        "hardware_rooted": false,
+        "input_digest": "2b4a719d79c9b2fe6bb293fbdc4a34e2a8a5696f4805a09d05340598ffa32392",
+        "kernel_identity": "exact_recurrence",
+        "metadata": {
+          "route_reason": "policy:standalone_software"
+        },
+        "output_digest": "d74660ddf338539ddcb14481d207d2ff064250fc598fc39f8fc01e769c5c0057",
+        "package_version": "2b4a719d79c9b2fe6bb293fbdc4a34e2a8a5696f4805a09d05340598ffa32392",
+        "protocol_version": "virtual_igpu_v1",
+        "receipt_id": "0de0f02bfe60bbee028c78ce5456026d",
+        "recorded_at": "2026-10-23T17:57:50.357691+00:00",
+        "requested_policy": "standalone_software",
+        "runtime_identity": "chronus.virtual_igpu:virtual_igpu_v1",
+        "seed": null,
+        "timing": {
+          "device_time_ns": null,
+          "total_ns": 679495,
+          "wall_time_ns": 317784
+        },
+        "trust_class": "runtime_signed",
+        "verification": {
+          "admission": {
+            "adapter_id": "chronus-software-fabric",
+            "admitted": true,
+            "deadline_ms": null,
+            "queue_depth": 0,
+            "reason": "policy:standalone_software",
+            "reserved_bytes": 0
+          },
+          "recomputed": true,
+          "status": "ok",
+          "verdict": "match",
+          "verifier": "recompute:lucas_transform:exact_recurrence"
+        },
+        "verified_work_count": 0,
+        "workload_id": "2026/lucas_transform"
+      },
+      "seed": 2026,
+      "status": "ok",
+      "workload": {
+        "n": 2975
+      }
+    },
+    {
+      "evidence_sha256": "8f3159064bad99ac39604aa8abe49473e64c3f892f57ab67f2b7f349722e6cac",
+      "kind": "pisot_transform",
+      "output_sha256": "c8ec73812c03f92af69416db5054953b2b4ab81ef9cbb8821b0e315861857926",
+      "receipt": {
+        "actual_backend": "chronus-software-fabric",
+        "actual_device": "chronus-software-fabric",
+        "attempt_id": "99b7e342-0b24-46ec-80d3-e60ae2b7878c",
+        "build_identity": "source-tree",
+        "content_hash": "eb739d84163c7b9620c35fd01d11d4297ed3b24ae1f72207e797dd94881c91ba",
+        "delivery_mode": "embedded",
+        "hardware_rooted": false,
+        "input_digest": "0dd9b55d201ba208dc986c498dcf8ef4a5c0274b0cad1d602b5cf76c2f4b35ee",
+        "kernel_identity": "exact_pisot_via_lucas",
+        "metadata": {
+          "route_reason": "policy:standalone_software"
+        },
+        "output_digest": "c8ec73812c03f92af69416db5054953b2b4ab81ef9cbb8821b0e315861857926",
+        "package_version": "0dd9b55d201ba208dc986c498dcf8ef4a5c0274b0cad1d602b5cf76c2f4b35ee",
+        "protocol_version": "virtual_igpu_v1",
+        "receipt_id": "b37766924205f0ae27886deb9c871291",
+        "recorded_at": "2026-10-23T17:57:50.359946+00:00",
+        "requested_policy": "standalone_software",
+        "runtime_identity": "chronus.virtual_igpu:virtual_igpu_v1",
+        "seed": null,
+        "timing": {
+          "device_time_ns": null,
+          "total_ns": 657700,
+          "wall_time_ns": 292544
+        },
+        "trust_class": "runtime_signed",
+        "verification": {
+          "admission": {
+            "adapter_id": "chronus-software-fabric",
+            "admitted": true,
+            "deadline_ms": null,
+            "queue_depth": 0,
+            "reason": "policy:standalone_software",
+            "reserved_bytes": 0
+          },
+          "recomputed": true,
+          "status": "ok",
+          "tolerance": {
+            "atol": 1e-12,
+            "rtol": 1e-09
+          },
+          "verdict": "match",
+          "verifier": "recompute:pisot_transform:exact_integer_with_float64_diagnostic"
+        },
+        "verified_work_count": 0,
+        "workload_id": "2026/pisot_transform"
+      },
+      "seed": 2026,
+      "status": "ok",
+      "workload": {
+        "n": 2975
+      }
+    },
+    {
+      "evidence_sha256": "332756692c7fe84e88de586ae6741c8fbc15da13c34c2ebc8a8c528298e5ffc7",
+      "kind": "sha256d_scan",
+      "output_sha256": "a6cf1340ae837d3f393fe321a9c81eca6af083cc19ac89f8b0ae4c0c7b8fa462",
+      "receipt": {
+        "actual_backend": "chronus-software-fabric",
+        "actual_device": "chronus-software-fabric",
+        "attempt_id": "df18a166-9593-4cc4-b51b-70df1447b24b",
+        "build_identity": "source-tree",
+        "content_hash": "1e56a1e910048b2d4346c08f344f7215ddaaf31283165b33b4c1ebb8373ff491",
+        "delivery_mode": "embedded",
+        "hardware_rooted": false,
+        "input_digest": "9fa74c2732975998a8a28136d4980e78230b3438e40dfa058fe91d5535e449d8",
+        "kernel_identity": "hashlib_sha256d",
+        "metadata": {
+          "route_reason": "policy:standalone_software"
+        },
+        "output_digest": "a6cf1340ae837d3f393fe321a9c81eca6af083cc19ac89f8b0ae4c0c7b8fa462",
+        "package_version": "9fa74c2732975998a8a28136d4980e78230b3438e40dfa058fe91d5535e449d8",
+        "protocol_version": "virtual_igpu_v1",
+        "receipt_id": "99b7f48a3ff175657c070d19929572dc",
+        "recorded_at": "2026-10-23T17:57:50.367956+00:00",
+        "requested_policy": "standalone_software",
+        "runtime_identity": "chronus.virtual_igpu:virtual_igpu_v1",
+        "seed": null,
+        "timing": {
+          "device_time_ns": null,
+          "total_ns": 93030,
+          "wall_time_ns": 18346
+        },
+        "trust_class": "runtime_signed",
+        "verification": {
+          "admission": {
+            "adapter_id": "chronus-software-fabric",
+            "admitted": true,
+            "deadline_ms": null,
+            "queue_depth": 0,
+            "reason": "policy:standalone_software",
+            "reserved_bytes": 0
+          },
+          "recomputed": true,
+          "status": "ok",
+          "verdict": "match",
+          "verifier": "recompute:sha256d_scan:hashlib"
+        },
+        "verified_work_count": 1,
+        "workload_id": "2026/sha256d_scan"
+      },
+      "seed": 2026,
+      "status": "ok",
+      "workload": {
+        "count": 1,
+        "prefix_hex": "70bcc9515adfa480fc2f8bf33bd0068397c7aea590ff28dc4992f4f38468461acbac55e2222d2939821412e51d25dd990495199fe9a67a8ee26bad6b75288bc88fde9392165f3d8ccca3a7d7",
+        "start_nonce": 3299030207,
+        "target_hex": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      }
+    },
+    {
+      "evidence_sha256": "b25b09fd6b36868dfe93413eebe9055140b220b5e3b69ecc217dcb690d74ddd0",
+      "kind": "tensor_op",
+      "output_sha256": "d58c063ae2c23492921c7b47a5c040ea3d4082fccaf6a539e941415ced14c4e2",
+      "receipt": {
+        "actual_backend": "chronus-software-fabric",
+        "actual_device": "chronus-software-fabric",
+        "attempt_id": "d76917a9-45a3-4d11-b033-a3ff115a5862",
+        "build_identity": "source-tree",
+        "content_hash": "e33edc41663e6f64d0463795bc93d362cc82b6c50eea738bffa9283ce81b9493",
+        "delivery_mode": "embedded",
+        "hardware_rooted": false,
+        "input_digest": "158f7c8fe80ed705ad8b6d2ff60070f51b17586f653a7ecfce307fc26942707b",
+        "kernel_identity": "software",
+        "metadata": {
+          "route_reason": "policy:standalone_software"
+        },
+        "output_digest": "d58c063ae2c23492921c7b47a5c040ea3d4082fccaf6a539e941415ced14c4e2",
+        "package_version": "158f7c8fe80ed705ad8b6d2ff60070f51b17586f653a7ecfce307fc26942707b",
+        "protocol_version": "virtual_igpu_v1",
+        "receipt_id": "41cca46426e360ea4a74da4b0128a1cb",
+        "recorded_at": "2026-10-23T17:57:50.369911+00:00",
+        "requested_policy": "standalone_software",
+        "runtime_identity": "chronus.virtual_igpu:virtual_igpu_v1",
+        "seed": null,
+        "timing": {
+          "device_time_ns": null,
+          "total_ns": 409138,
+          "wall_time_ns": 53535
+        },
+        "trust_class": "runtime_signed",
+        "verification": {
+          "admission": {
+            "adapter_id": "chronus-software-fabric",
+            "admitted": true,
+            "deadline_ms": null,
+            "queue_depth": 0,
+            "reason": "policy:standalone_software",
+            "reserved_bytes": 0
+          },
+          "recomputed": true,
+          "status": "ok",
+          "tolerance": {
+            "atol": 1e-12,
+            "rtol": 1e-09
+          },
+          "verdict": "match",
+          "verifier": "recompute:tensor_op:float64"
+        },
+        "verified_work_count": 0,
+        "workload_id": "2026/tensor_op"
+      },
+      "seed": 2026,
+      "status": "ok",
+      "workload": {
+        "a": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "b": [
+          [
+            2,
+            0
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "op": "matmul",
+        "output_shape": [
+          2,
+          2
+        ]
+      }
+    }
+  ],
+  "mining_certificate": "WITHHELD",
+  "pool_contacted": false,
+  "recorded_at": "2026-10-23T17:57:50.372726+00:00",
+  "schema": "hyba.native-exact-qualification/1",
+  "status": "PASS"
+}

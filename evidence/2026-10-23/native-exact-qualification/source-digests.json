@@ -1,0 +1,26 @@
+{
+  "baseline_commit": "c760cdfc6b5a7c8c9c97dec2493a9a75a1997dbc",
+  "qualification_scope": "partial-source native execution and direct exact operator module",
+  "files": {
+    "chronus/__init__.py": "539f5876a1f588d7657740d7f2aa85e85ff3edee96a6b40c91b0f9dba609a4ca",
+    "chronus/mla1517_platform/python/enterprise_api.py": "bb735c5cabb98e9674f6d8637c9f215d26865ec2862db9c71af91561982fedc0",
+    "chronus/mla1517_platform/python/enterprise_contract.py": "521be13151a283520f188a5a88cf993358d64331c5a40d91cb0d4556b37507b3",
+    "chronus/virtual_igpu/__init__.py": "a7eb47168da9c6458b660a3827409a1414918811d5f476cb662d0f81ade53f9e",
+    "chronus/virtual_igpu/abi.py": "4e7076a0a690501384dc087fe9dfb67a3d5cb5b5ad067361ac15572d85c143ff",
+    "chronus/virtual_igpu/adapters.py": "66b3531f9be19c0b08bc512f971cb65e4d39b04d3ec04e41be01f8c7043b316e",
+    "chronus/virtual_igpu/attestation.py": "7de2291f774dddb3006bd900869f03da96f2a6b9f43c08e030e70b45302da73b",
+    "chronus/virtual_igpu/evidence.py": "2ea4abf7e332ebc70f199721e0891aa2118e828c071121f0770578c5ff8d0479",
+    "chronus/virtual_igpu/host_verify.py": "47e055d138d83fae050efc4559ba16a9c73dc291016a7ddaaabf8d9bec26aae6",
+    "chronus/virtual_igpu/memory.py": "424f47b0951354e3ec35a276779c8e69c105785f24e3db6760e2d39a1b7fdae9",
+    "chronus/virtual_igpu/runtime.py": "774b247080e58b6640c894850901fb782b22787ce6e83fcd0fb1a648b908559c",
+    "chronus/virtual_igpu/verifier.py": "745a3760746efd7c01a6eb3013c6550406a3a0e4509d61c38c20fd4fd8e1b121",
+    "tests/test_chronus_native_enterprise_journey.py": "699d940294f336b106336f885641e43560360e0e6bdec9ef9e3f276640d3a7d2",
+    "tests/test_chronus_native_exactness_regressions.py": "94689f8a2e0611987749b84737eb5c7a29a758d74ba35eabccd99ff6beee4e1b",
+    "tests/test_chronus_native_status_qualification.py": "9e47310956f2ffe5bacc8c4e4e8895f58893f31ef61ed0e05d0bdee235cef288",
+    "tests/test_chronus_vigpu_sha256d_contract.py": "70280bfe2a601cf6e172f6b8bfeea6b4647d3ce6821c7b9c92cf0dbaff811a2e",
+    "tests/test_chronus_vigpu_verification.py": "179f97daf5b42bfc086c3be4bb663b0f34cf2973e749c9fe4ed6408dc27918ed",
+    "tests/test_turing_hilbert_source_qualification.py": "aef82db0d8b74aefb51fd9dc9897d65d557b66473bf4252caffb6d2531753e64",
+    "tools/qualify_native_backend.py": "a25d55393ae974d19faa84869f283f6dcb59da34d7da9f74ab75fd31ee161825",
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/hilbert.py": "e7ebb9cf72b55baf93d68aede52872ecb4a7a8b279b51d904439f74bf0a2559d"
+  }
+}

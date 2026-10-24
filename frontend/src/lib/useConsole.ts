@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { miningDashboardAccess, type MiningDashboardAccess } from "./access";
-import { apiFetch, operatorKey, operatorPrincipal } from "./api";
+import { apiFetch } from "./api";
 import { parseConsoleStatus, type ConsoleData } from "./console";
 import type { MiningEvidence } from "./evidence";
 const INITIAL: MiningDashboardAccess = { allowed: false, principalId: null, role: null, reason: "checking_control_entitlement" };
@@ -11,11 +11,9 @@ export function useConsole() {
   const refreshRef = useRef<() => void>(() => {});
   const refresh = useCallback(() => refreshRef.current(), []);
   useEffect(() => {
-    let disposed = false, epoch = 0, polling = false, checking = false;
+    let disposed = false, epoch = 0, polling = false, checking = false, recheck = false;
     let current = INITIAL;
     const controllers = new Set<AbortController>();
-    const identity = () => `${operatorPrincipal() ?? ""}\0${operatorKey() ?? ""}`;
-    let credentialIdentity = identity();
     const request = async <T,>(run: (signal: AbortSignal) => Promise<T>): Promise<T> => {
       const controller = new AbortController(); controllers.add(controller);
       const timeout = window.setTimeout(() => controller.abort(), 10_000);
@@ -55,33 +53,39 @@ export function useConsole() {
         }
       } catch {
         if (!disposed && ticket === epoch) setData({ ...EMPTY, offline: true });
-      } finally { polling = false; }
+      } finally {
+        polling = false;
+        if (!disposed && ticket !== epoch && current.allowed) void poll();
+      }
     };
     const check = async () => {
-      if (disposed || checking) return;
+      if (disposed) return;
+      if (checking) { recheck = true; return; }
       checking = true; const ticket = epoch;
       try {
         const next = await request(signal => miningDashboardAccess(fetch, signal));
         if (disposed || ticket !== epoch) return;
         if (!next.allowed) clear(next);
         else {
+          if (current.allowed && current.principalId !== next.principalId) clear(next);
           current = next; setAccess(next);
           setData(old => ({ ...old, loading: old.status === null && !old.offline }));
           void poll();
         }
       } catch {
         if (!disposed && ticket === epoch) clear({ ...INITIAL, reason: "control_session_unreachable" });
-      } finally { checking = false; }
+      } finally {
+        checking = false;
+        if (recheck && !disposed) { recheck = false; void check(); }
+      }
     };
     const changed = () => {
-      const nextIdentity = identity();
-      if (nextIdentity === credentialIdentity) return;
-      credentialIdentity = nextIdentity;
+      // HttpOnly cookies cannot be inspected. Every session/binding event
+      // invalidates old requests, even when browser identity fields stay null.
       clear({ ...INITIAL, reason: "checking_control_entitlement" });
-      // An older check will finish aborted; then perform the new check.
-      window.setTimeout(() => { if (!disposed) void check(); }, 0);
+      void check();
     };
-    refreshRef.current = () => { void poll(); };
+    refreshRef.current = () => { void check(); };
     window.addEventListener("pythia-credentials-changed", changed);
     void check();
     const entitlementTimer = window.setInterval(() => { void check(); }, 30_000);

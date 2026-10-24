@@ -1,0 +1,66 @@
+
+ RUN  v5.0.5 /data/hyba-production-closeout
+
+ ✓ src/components/__tests__/ControlSession.journey.test.tsx > rendered cookie-session journey (transport fixture, not deployed proof) > signs in, loads authorized data, and signs out without a JS operator key 80ms
+ ✓ src/components/__tests__/ControlSession.journey.test.tsx > rendered cookie-session journey (transport fixture, not deployed proof) > surfaces a refused login and clears the password without fetching mining status 15ms
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > renders only a backend-confirmed verdict 33ms
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > does not read any mining endpoint without CEO role 4ms
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > clears stale green on status HTTP 401 6ms
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > clears stale green on status HTTP 403 5ms
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > clears stale green on status HTTP 500 4ms
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > clears stale green on status HTTP 503 4ms
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > clears stale green on transport failure 4ms
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > hides all snapshots on the 30s role revocation check 6ms
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > rejects late in-flight data after sign-out 4ms
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > aborts a hung request rather than keeping a green snapshot forever 5ms
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > rechecks login when cookie identity changes but browser identity stays empty 4ms
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > queues a fresh check after a session change during an in-flight check 3ms
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > does not retain one CEO's snapshots when the server switches principal 5ms
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > rejects old tenant evidence after an explicit subscription rebind 6ms
+ ✓ src/lib/__tests__/api.test.ts > apiUrl > keeps absolute URLs unchanged 3ms
+ ✓ src/lib/__tests__/api.test.ts > apiUrl > normalizes a relative control-plane path 0ms
+ ✓ src/lib/__tests__/api.test.ts > apiUrl > accepts an empty path without inventing a route 0ms
+ ✓ src/lib/__tests__/api.test.ts > apiFetch > fetches a relative route with copied headers 7ms
+ ✓ src/lib/__tests__/api.test.ts > apiFetch > propagates transport errors instead of fabricating a response 1ms
+ ✓ src/lib/__tests__/api.test.ts > apiFetch > uses the shared offline factories without Firebase or a real database 1ms
+ ✓ src/lib/__tests__/api.test.ts > HttpOnly operator session migration > clears stale operator bearers rather than storing new secrets 1ms
+ ✓ src/lib/__tests__/api.test.ts > HttpOnly operator session migration > uses cookies without an operator bearer on mutations 1ms
+ ✓ src/lib/__tests__/api.test.ts > HttpOnly operator session migration > returns 401 without retrying or prompting for a JS-readable bearer 1ms
+ ✓ src/lib/__tests__/api.test.ts > subscription boundary > sends the subscription triple and injects observation on privileged POSTs 1ms
+ ✓ src/lib/__tests__/api.test.ts > subscription boundary > keeps subscription headers on privileged GETs without a body 1ms
+ ✓ src/lib/__tests__/api.test.ts > subscription boundary > asks for creds on TENANT_AND_ACTOR_REQUIRED, retries, keeps them 2ms
+ ✓ src/lib/__tests__/api.test.ts > subscription boundary > returns the denial when the operator cancels the cred prompt 1ms
+ ✓ src/lib/__tests__/api.test.ts > subscription boundary > does not re-prompt on every denied poll after declining 1ms
+ ✓ src/lib/__tests__/api.test.ts > console read boundaries > carries HttpOnly sessions on protected console reads 1ms
+ ✓ src/lib/__tests__/api.test.ts > console read boundaries > keeps CEO and guardian subscription credentials independent 1ms
+ ✓ src/lib/__tests__/api.test.ts > console read boundaries > never opens credential prompts or retries denied background polls 1ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > checks the server with cookies and no JavaScript-readable credential 7ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > does not treat stale browser identity as authority or reject the actual cookie identity 1ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > refuses noncanonical/unprivileged role operator 1ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > refuses noncanonical/unprivileged role analyst 1ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > refuses noncanonical/unprivileged role auditor 0ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > refuses noncanonical/unprivileged role founder_ceo 0ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > refuses noncanonical/unprivileged role CEO 0ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > refuses malformed session null 0ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > refuses malformed session undefined 0ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > refuses malformed session {} 1ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > refuses malformed session {"principal_id":"","role":"ceo"} 0ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > refuses malformed session {"principal_id":"  ","role":"ceo"} 0ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > refuses malformed session {"principal_id":123,"role":"ceo"} 0ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > refuses malformed session {"principal_id":"owner","role":123} 0ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > fails closed on HTTP 401 0ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > fails closed on HTTP 403 0ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > fails closed on HTTP 500 0ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > fails closed on HTTP 503 0ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > reports a missing endpoint 0ms
+ ✓ src/lib/__tests__/access.test.ts > HttpOnly mining dashboard entitlement > fails closed on a transport exception 0ms
+
+ Test Files  4 passed (4)
+      Tests  53 passed (53)
+   Start at  18:39:53
+   Duration  3.42s (environment 86%, tests 8%, import 4%, transform 1%, worker 1%)
+
+    Isolate  4 workers spawned · ~736ms startup each (spawn + environment, per file)
+             at least ~2.21s faster with isolate: false — reuses workers across files instead of one per file
+
+JUNIT report written to /data/hyba-production-closeout/evidence/junit.xml

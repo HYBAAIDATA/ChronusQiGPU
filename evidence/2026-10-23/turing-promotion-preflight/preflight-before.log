@@ -1,0 +1,462 @@
+FFFFFFFFF..FFFFF                                                         [100%]
+=================================== FAILURES ===================================
+_______ test_release_check_is_read_only_without_runtime_keys[production] _______
+
+approved_config = (PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_release_check_is_read_onl0/config.json'), {'mode': 'production...ody_root': '/tmp/pytest-of-vercel-sandbox/pytest-3/test_release_check_is_read_onl0/custody', 'capacity_slots': 1, ...})
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2a79c24e90>
+mode = 'production'
+
+    @pytest.mark.parametrize("mode", ["production", "controlled-pilot"])
+    def test_release_check_is_read_only_without_runtime_keys(approved_config, monkeypatch, mode):
+        path, config = approved_config
+        config["mode"] = mode
+        path.write_text(json.dumps(config))
+        before = {
+            p.relative_to(path.parent): p.read_bytes() for p in path.parent.rglob("*") if p.is_file()
+        }
+>       invoke(monkeypatch, path, "release-check")
+
+services/turing-enterprise/tests/test_startup_preflight.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/turing-enterprise/tests/test_startup_preflight.py:66: in invoke
+    entrypoint.main()
+services/turing-enterprise/src/hyba_turing_service/main.py:106: in main
+    config, customer, operator, Claims, factory, machine_token, billing = configuration(args.config)
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/turing-enterprise/src/hyba_turing_service/main.py:47: in configuration
+    if read_secret(config["customer_key_file"]) == read_secret(config["operator_key_file"]):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = '/tmp/pytest-of-vercel-sandbox/pytest-3/test_release_check_is_read_onl0/customer_key_file'
+
+    def read_secret(path):
+>       fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-vercel-sandbox/pytest-3/test_release_check_is_read_onl0/customer_key_file'
+
+services/turing-enterprise/src/hyba_turing_service/main.py:24: FileNotFoundError
+____ test_release_check_is_read_only_without_runtime_keys[controlled-pilot] ____
+
+approved_config = (PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_release_check_is_read_onl1/config.json'), {'mode': 'controlled...ody_root': '/tmp/pytest-of-vercel-sandbox/pytest-3/test_release_check_is_read_onl1/custody', 'capacity_slots': 1, ...})
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2a79c242b0>
+mode = 'controlled-pilot'
+
+    @pytest.mark.parametrize("mode", ["production", "controlled-pilot"])
+    def test_release_check_is_read_only_without_runtime_keys(approved_config, monkeypatch, mode):
+        path, config = approved_config
+        config["mode"] = mode
+        path.write_text(json.dumps(config))
+        before = {
+            p.relative_to(path.parent): p.read_bytes() for p in path.parent.rglob("*") if p.is_file()
+        }
+>       invoke(monkeypatch, path, "release-check")
+
+services/turing-enterprise/tests/test_startup_preflight.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/turing-enterprise/tests/test_startup_preflight.py:66: in invoke
+    entrypoint.main()
+services/turing-enterprise/src/hyba_turing_service/main.py:106: in main
+    config, customer, operator, Claims, factory, machine_token, billing = configuration(args.config)
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/turing-enterprise/src/hyba_turing_service/main.py:47: in configuration
+    if read_secret(config["customer_key_file"]) == read_secret(config["operator_key_file"]):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = '/tmp/pytest-of-vercel-sandbox/pytest-3/test_release_check_is_read_onl1/customer_key_file'
+
+    def read_secret(path):
+>       fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-vercel-sandbox/pytest-3/test_release_check_is_read_onl1/customer_key_file'
+
+services/turing-enterprise/src/hyba_turing_service/main.py:24: FileNotFoundError
+______ test_missing_approval_fails_before_secrets_or_state[release-check] ______
+
+approved_config = (PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_missing_approval_fails_be0/config.json'), {'mode': 'production...ody_root': '/tmp/pytest-of-vercel-sandbox/pytest-3/test_missing_approval_fails_be0/custody', 'capacity_slots': 1, ...})
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2a79a30dd0>
+command = 'release-check'
+
+    @pytest.mark.parametrize("command", ["release-check", "serve", "worker"])
+    def test_missing_approval_fails_before_secrets_or_state(approved_config, monkeypatch, command):
+        path, config = approved_config
+        (Path(config["approval_bundle"]) / "approval.json").unlink()
+        with pytest.raises(Unavailable, match="signed promotion evidence"):
+>           invoke(monkeypatch, path, command)
+
+services/turing-enterprise/tests/test_startup_preflight.py:91: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/turing-enterprise/tests/test_startup_preflight.py:66: in invoke
+    entrypoint.main()
+services/turing-enterprise/src/hyba_turing_service/main.py:106: in main
+    config, customer, operator, Claims, factory, machine_token, billing = configuration(args.config)
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/turing-enterprise/src/hyba_turing_service/main.py:47: in configuration
+    if read_secret(config["customer_key_file"]) == read_secret(config["operator_key_file"]):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = '/tmp/pytest-of-vercel-sandbox/pytest-3/test_missing_approval_fails_be0/customer_key_file'
+
+    def read_secret(path):
+>       fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-vercel-sandbox/pytest-3/test_missing_approval_fails_be0/customer_key_file'
+
+services/turing-enterprise/src/hyba_turing_service/main.py:24: FileNotFoundError
+__________ test_missing_approval_fails_before_secrets_or_state[serve] __________
+
+approved_config = (PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_missing_approval_fails_be1/config.json'), {'mode': 'production...ody_root': '/tmp/pytest-of-vercel-sandbox/pytest-3/test_missing_approval_fails_be1/custody', 'capacity_slots': 1, ...})
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2a79b14160>
+command = 'serve'
+
+    @pytest.mark.parametrize("command", ["release-check", "serve", "worker"])
+    def test_missing_approval_fails_before_secrets_or_state(approved_config, monkeypatch, command):
+        path, config = approved_config
+        (Path(config["approval_bundle"]) / "approval.json").unlink()
+        with pytest.raises(Unavailable, match="signed promotion evidence"):
+>           invoke(monkeypatch, path, command)
+
+services/turing-enterprise/tests/test_startup_preflight.py:91: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/turing-enterprise/tests/test_startup_preflight.py:66: in invoke
+    entrypoint.main()
+services/turing-enterprise/src/hyba_turing_service/main.py:106: in main
+    config, customer, operator, Claims, factory, machine_token, billing = configuration(args.config)
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/turing-enterprise/src/hyba_turing_service/main.py:47: in configuration
+    if read_secret(config["customer_key_file"]) == read_secret(config["operator_key_file"]):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = '/tmp/pytest-of-vercel-sandbox/pytest-3/test_missing_approval_fails_be1/customer_key_file'
+
+    def read_secret(path):
+>       fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-vercel-sandbox/pytest-3/test_missing_approval_fails_be1/customer_key_file'
+
+services/turing-enterprise/src/hyba_turing_service/main.py:24: FileNotFoundError
+_________ test_missing_approval_fails_before_secrets_or_state[worker] __________
+
+approved_config = (PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_missing_approval_fails_be2/config.json'), {'mode': 'production...ody_root': '/tmp/pytest-of-vercel-sandbox/pytest-3/test_missing_approval_fails_be2/custody', 'capacity_slots': 1, ...})
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2a79b146b0>
+command = 'worker'
+
+    @pytest.mark.parametrize("command", ["release-check", "serve", "worker"])
+    def test_missing_approval_fails_before_secrets_or_state(approved_config, monkeypatch, command):
+        path, config = approved_config
+        (Path(config["approval_bundle"]) / "approval.json").unlink()
+        with pytest.raises(Unavailable, match="signed promotion evidence"):
+>           invoke(monkeypatch, path, command)
+
+services/turing-enterprise/tests/test_startup_preflight.py:91: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/turing-enterprise/tests/test_startup_preflight.py:66: in invoke
+    entrypoint.main()
+services/turing-enterprise/src/hyba_turing_service/main.py:106: in main
+    config, customer, operator, Claims, factory, machine_token, billing = configuration(args.config)
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/turing-enterprise/src/hyba_turing_service/main.py:47: in configuration
+    if read_secret(config["customer_key_file"]) == read_secret(config["operator_key_file"]):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = '/tmp/pytest-of-vercel-sandbox/pytest-3/test_missing_approval_fails_be2/customer_key_file'
+
+    def read_secret(path):
+>       fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-vercel-sandbox/pytest-3/test_missing_approval_fails_be2/customer_key_file'
+
+services/turing-enterprise/src/hyba_turing_service/main.py:24: FileNotFoundError
+________ test_wrong_image_fails_before_secrets_or_state[release-check] _________
+
+approved_config = (PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_wrong_image_fails_before_0/config.json'), {'mode': 'production...ody_root': '/tmp/pytest-of-vercel-sandbox/pytest-3/test_wrong_image_fails_before_0/custody', 'capacity_slots': 1, ...})
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2a79af4d50>
+command = 'release-check'
+
+    @pytest.mark.parametrize("command", ["release-check", "serve", "worker"])
+    def test_wrong_image_fails_before_secrets_or_state(approved_config, monkeypatch, command):
+        path, config = approved_config
+        Path(config["build_identity_file"]).write_text("b" * 40)
+        with pytest.raises(ValueError, match="running image source"):
+>           invoke(monkeypatch, path, command)
+
+services/turing-enterprise/tests/test_startup_preflight.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/turing-enterprise/tests/test_startup_preflight.py:66: in invoke
+    entrypoint.main()
+services/turing-enterprise/src/hyba_turing_service/main.py:106: in main
+    config, customer, operator, Claims, factory, machine_token, billing = configuration(args.config)
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/turing-enterprise/src/hyba_turing_service/main.py:47: in configuration
+    if read_secret(config["customer_key_file"]) == read_secret(config["operator_key_file"]):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = '/tmp/pytest-of-vercel-sandbox/pytest-3/test_wrong_image_fails_before_0/customer_key_file'
+
+    def read_secret(path):
+>       fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-vercel-sandbox/pytest-3/test_wrong_image_fails_before_0/customer_key_file'
+
+services/turing-enterprise/src/hyba_turing_service/main.py:24: FileNotFoundError
+____________ test_wrong_image_fails_before_secrets_or_state[serve] _____________
+
+approved_config = (PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_wrong_image_fails_before_1/config.json'), {'mode': 'production...ody_root': '/tmp/pytest-of-vercel-sandbox/pytest-3/test_wrong_image_fails_before_1/custody', 'capacity_slots': 1, ...})
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2a79af5150>
+command = 'serve'
+
+    @pytest.mark.parametrize("command", ["release-check", "serve", "worker"])
+    def test_wrong_image_fails_before_secrets_or_state(approved_config, monkeypatch, command):
+        path, config = approved_config
+        Path(config["build_identity_file"]).write_text("b" * 40)
+        with pytest.raises(ValueError, match="running image source"):
+>           invoke(monkeypatch, path, command)
+
+services/turing-enterprise/tests/test_startup_preflight.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/turing-enterprise/tests/test_startup_preflight.py:66: in invoke
+    entrypoint.main()
+services/turing-enterprise/src/hyba_turing_service/main.py:106: in main
+    config, customer, operator, Claims, factory, machine_token, billing = configuration(args.config)
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/turing-enterprise/src/hyba_turing_service/main.py:47: in configuration
+    if read_secret(config["customer_key_file"]) == read_secret(config["operator_key_file"]):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = '/tmp/pytest-of-vercel-sandbox/pytest-3/test_wrong_image_fails_before_1/customer_key_file'
+
+    def read_secret(path):
+>       fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-vercel-sandbox/pytest-3/test_wrong_image_fails_before_1/customer_key_file'
+
+services/turing-enterprise/src/hyba_turing_service/main.py:24: FileNotFoundError
+____________ test_wrong_image_fails_before_secrets_or_state[worker] ____________
+
+approved_config = (PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_wrong_image_fails_before_2/config.json'), {'mode': 'production...ody_root': '/tmp/pytest-of-vercel-sandbox/pytest-3/test_wrong_image_fails_before_2/custody', 'capacity_slots': 1, ...})
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2a79be3200>
+command = 'worker'
+
+    @pytest.mark.parametrize("command", ["release-check", "serve", "worker"])
+    def test_wrong_image_fails_before_secrets_or_state(approved_config, monkeypatch, command):
+        path, config = approved_config
+        Path(config["build_identity_file"]).write_text("b" * 40)
+        with pytest.raises(ValueError, match="running image source"):
+>           invoke(monkeypatch, path, command)
+
+services/turing-enterprise/tests/test_startup_preflight.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/turing-enterprise/tests/test_startup_preflight.py:66: in invoke
+    entrypoint.main()
+services/turing-enterprise/src/hyba_turing_service/main.py:106: in main
+    config, customer, operator, Claims, factory, machine_token, billing = configuration(args.config)
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/turing-enterprise/src/hyba_turing_service/main.py:47: in configuration
+    if read_secret(config["customer_key_file"]) == read_secret(config["operator_key_file"]):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = '/tmp/pytest-of-vercel-sandbox/pytest-3/test_wrong_image_fails_before_2/customer_key_file'
+
+    def read_secret(path):
+>       fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-vercel-sandbox/pytest-3/test_wrong_image_fails_before_2/customer_key_file'
+
+services/turing-enterprise/src/hyba_turing_service/main.py:24: FileNotFoundError
+_____________ test_publication_still_requires_its_additional_gate ______________
+
+approved_config = (PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_publication_still_require0/config.json'), {'mode': 'production...ody_root': '/tmp/pytest-of-vercel-sandbox/pytest-3/test_publication_still_require0/custody', 'capacity_slots': 1, ...})
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2a79be2a80>
+
+    def test_publication_still_requires_its_additional_gate(approved_config, monkeypatch):
+        path, config = approved_config
+        with pytest.raises(Unavailable, match="signed promotion evidence"):
+>           invoke(monkeypatch, path, "release-check", "--publication")
+
+services/turing-enterprise/tests/test_startup_preflight.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/turing-enterprise/tests/test_startup_preflight.py:66: in invoke
+    entrypoint.main()
+services/turing-enterprise/src/hyba_turing_service/main.py:106: in main
+    config, customer, operator, Claims, factory, machine_token, billing = configuration(args.config)
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/turing-enterprise/src/hyba_turing_service/main.py:47: in configuration
+    if read_secret(config["customer_key_file"]) == read_secret(config["operator_key_file"]):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = '/tmp/pytest-of-vercel-sandbox/pytest-3/test_publication_still_require0/customer_key_file'
+
+    def read_secret(path):
+>       fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-vercel-sandbox/pytest-3/test_publication_still_require0/customer_key_file'
+
+services/turing-enterprise/src/hyba_turing_service/main.py:24: FileNotFoundError
+____________________ test_pilot_is_not_implicitly_promoted _____________________
+
+approved_config = (PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_pilot_is_not_implicitly_p0/config.json'), {'mode': 'controlled...ody_root': '/tmp/pytest-of-vercel-sandbox/pytest-3/test_pilot_is_not_implicitly_p0/custody', 'capacity_slots': 1, ...})
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2a79961b20>
+
+    def test_pilot_is_not_implicitly_promoted(approved_config, monkeypatch):
+        path, config = approved_config
+        config["mode"] = "controlled-pilot"
+        path.write_text(json.dumps(config))
+        (Path(config["approval_bundle"]) / "approval.json").unlink()
+        # Pilot runtime still requires secrets; explicit release-check still rejects.
+        with pytest.raises(FileNotFoundError):
+            invoke(monkeypatch, path, "worker")
+        with pytest.raises(Unavailable):
+>           invoke(monkeypatch, path, "release-check")
+
+services/turing-enterprise/tests/test_startup_preflight.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/turing-enterprise/tests/test_startup_preflight.py:66: in invoke
+    entrypoint.main()
+services/turing-enterprise/src/hyba_turing_service/main.py:106: in main
+    config, customer, operator, Claims, factory, machine_token, billing = configuration(args.config)
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/turing-enterprise/src/hyba_turing_service/main.py:47: in configuration
+    if read_secret(config["customer_key_file"]) == read_secret(config["operator_key_file"]):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = '/tmp/pytest-of-vercel-sandbox/pytest-3/test_pilot_is_not_implicitly_p0/customer_key_file'
+
+    def read_secret(path):
+>       fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-vercel-sandbox/pytest-3/test_pilot_is_not_implicitly_p0/customer_key_file'
+
+services/turing-enterprise/src/hyba_turing_service/main.py:24: FileNotFoundError
+____________ test_deferred_billing_refuses_without_touching_secrets ____________
+
+approved_config = (PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_deferred_billing_refuses_0/config.json'), {'mode': 'production...ody_root': '/tmp/pytest-of-vercel-sandbox/pytest-3/test_deferred_billing_refuses_0/custody', 'capacity_slots': 1, ...})
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2a79aeca10>
+
+    def test_deferred_billing_refuses_without_touching_secrets(approved_config, monkeypatch):
+        path, config = approved_config
+        with pytest.raises(ValueError, match="billing is deferred"):
+>           invoke(monkeypatch, path, "billing")
+
+services/turing-enterprise/tests/test_startup_preflight.py:137: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/turing-enterprise/tests/test_startup_preflight.py:66: in invoke
+    entrypoint.main()
+services/turing-enterprise/src/hyba_turing_service/main.py:106: in main
+    config, customer, operator, Claims, factory, machine_token, billing = configuration(args.config)
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/turing-enterprise/src/hyba_turing_service/main.py:47: in configuration
+    if read_secret(config["customer_key_file"]) == read_secret(config["operator_key_file"]):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = '/tmp/pytest-of-vercel-sandbox/pytest-3/test_deferred_billing_refuses_0/customer_key_file'
+
+    def read_secret(path):
+>       fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-vercel-sandbox/pytest-3/test_deferred_billing_refuses_0/customer_key_file'
+
+services/turing-enterprise/src/hyba_turing_service/main.py:24: FileNotFoundError
+_ test_rejected_startup_does_not_initialize_database_with_valid_keys[release-check] _
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_rejected_startup_does_not0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2a79aed9d0>
+command = 'release-check'
+
+    @pytest.mark.parametrize("command", ["release-check", "serve", "worker"])
+    def test_rejected_startup_does_not_initialize_database_with_valid_keys(
+        tmp_path, monkeypatch, command
+    ):
+        path = config_file(tmp_path)
+        config = json.loads(path.read_text())
+        # Image matches, keys are present, but there is no signed approval bundle.
+        config["approval_bundle"] = str(tmp_path / "absent-approval")
+        path.write_text(json.dumps(config))
+        with pytest.raises(Unavailable):
+            invoke(monkeypatch, path, command)
+>       assert not Path(config["database"]).exists()
+E       AssertionError: assert not True
+E        +  where True = exists()
+E        +    where exists = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_rejected_startup_does_not0/service.db').exists
+E        +      where PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_rejected_startup_does_not0/service.db') = Path('/tmp/pytest-of-vercel-sandbox/pytest-3/test_rejected_startup_does_not0/service.db')
+
+services/turing-enterprise/tests/test_startup_preflight.py:152: AssertionError
+__ test_rejected_startup_does_not_initialize_database_with_valid_keys[serve] ___
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_rejected_startup_does_not1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2a79a43960>
+command = 'serve'
+
+    @pytest.mark.parametrize("command", ["release-check", "serve", "worker"])
+    def test_rejected_startup_does_not_initialize_database_with_valid_keys(
+        tmp_path, monkeypatch, command
+    ):
+        path = config_file(tmp_path)
+        config = json.loads(path.read_text())
+        # Image matches, keys are present, but there is no signed approval bundle.
+        config["approval_bundle"] = str(tmp_path / "absent-approval")
+        path.write_text(json.dumps(config))
+        with pytest.raises(Unavailable):
+            invoke(monkeypatch, path, command)
+>       assert not Path(config["database"]).exists()
+E       AssertionError: assert not True
+E        +  where True = exists()
+E        +    where exists = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_rejected_startup_does_not1/service.db').exists
+E        +      where PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_rejected_startup_does_not1/service.db') = Path('/tmp/pytest-of-vercel-sandbox/pytest-3/test_rejected_startup_does_not1/service.db')
+
+services/turing-enterprise/tests/test_startup_preflight.py:152: AssertionError
+__ test_rejected_startup_does_not_initialize_database_with_valid_keys[worker] __
+
+tmp_path = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_rejected_startup_does_not2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2a79a43120>
+command = 'worker'
+
+    @pytest.mark.parametrize("command", ["release-check", "serve", "worker"])
+    def test_rejected_startup_does_not_initialize_database_with_valid_keys(
+        tmp_path, monkeypatch, command
+    ):
+        path = config_file(tmp_path)
+        config = json.loads(path.read_text())
+        # Image matches, keys are present, but there is no signed approval bundle.
+        config["approval_bundle"] = str(tmp_path / "absent-approval")
+        path.write_text(json.dumps(config))
+        with pytest.raises(Unavailable):
+            invoke(monkeypatch, path, command)
+>       assert not Path(config["database"]).exists()
+E       AssertionError: assert not True
+E        +  where True = exists()
+E        +    where exists = PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_rejected_startup_does_not2/service.db').exists
+E        +      where PosixPath('/tmp/pytest-of-vercel-sandbox/pytest-3/test_rejected_startup_does_not2/service.db') = Path('/tmp/pytest-of-vercel-sandbox/pytest-3/test_rejected_startup_does_not2/service.db')
+
+services/turing-enterprise/tests/test_startup_preflight.py:152: AssertionError
+=============================== warnings summary ===============================
+../completion/venv/lib64/python3.13/site-packages/fastapi/testclient.py:1
+  /data/completion/venv/lib64/python3.13/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED services/turing-enterprise/tests/test_startup_preflight.py::test_release_check_is_read_only_without_runtime_keys[production]
+FAILED services/turing-enterprise/tests/test_startup_preflight.py::test_release_check_is_read_only_without_runtime_keys[controlled-pilot]
+FAILED services/turing-enterprise/tests/test_startup_preflight.py::test_missing_approval_fails_before_secrets_or_state[release-check]
+FAILED services/turing-enterprise/tests/test_startup_preflight.py::test_missing_approval_fails_before_secrets_or_state[serve]
+FAILED services/turing-enterprise/tests/test_startup_preflight.py::test_missing_approval_fails_before_secrets_or_state[worker]
+FAILED services/turing-enterprise/tests/test_startup_preflight.py::test_wrong_image_fails_before_secrets_or_state[release-check]
+FAILED services/turing-enterprise/tests/test_startup_preflight.py::test_wrong_image_fails_before_secrets_or_state[serve]
+FAILED services/turing-enterprise/tests/test_startup_preflight.py::test_wrong_image_fails_before_secrets_or_state[worker]
+FAILED services/turing-enterprise/tests/test_startup_preflight.py::test_publication_still_requires_its_additional_gate
+FAILED services/turing-enterprise/tests/test_startup_preflight.py::test_pilot_is_not_implicitly_promoted
+FAILED services/turing-enterprise/tests/test_startup_preflight.py::test_deferred_billing_refuses_without_touching_secrets
+FAILED services/turing-enterprise/tests/test_startup_preflight.py::test_rejected_startup_does_not_initialize_database_with_valid_keys[release-check]
+FAILED services/turing-enterprise/tests/test_startup_preflight.py::test_rejected_startup_does_not_initialize_database_with_valid_keys[serve]
+FAILED services/turing-enterprise/tests/test_startup_preflight.py::test_rejected_startup_does_not_initialize_database_with_valid_keys[worker]
+14 failed, 2 passed, 1 warning in 0.52s

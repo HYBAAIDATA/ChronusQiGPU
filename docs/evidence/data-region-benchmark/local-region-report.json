@@ -1,0 +1,108 @@
+{
+  "schema_version": "hyba.data-region-benchmark/1",
+  "workload": "bit-exact owned region retrieval",
+  "plane": "aethel.numeric_partition",
+  "synthetic": true,
+  "shape": [
+    256,
+    256
+  ],
+  "dtype": "<f8",
+  "region": [
+    [
+      8,
+      16,
+      null
+    ],
+    [
+      8,
+      16,
+      null
+    ]
+  ],
+  "depth": 3,
+  "repetitions": 10,
+  "warmups": 2,
+  "input_sha256": "71202e10aa79e4949c7ab91111c5fa9768f0f18995a33d39cffd5f0757f5ecc4",
+  "output_sha256": "3d883a7cb0b59a41aa22765d7bb343f46dd5df0b7514bd4ea56db4ba5e865c71",
+  "output_shape": [
+    8,
+    8
+  ],
+  "output_bytes": 512,
+  "bit_exact_all_calls": true,
+  "fold_setup_ns": 620363,
+  "timing_boundary": "call and output allocation; runner validation excluded; fold setup separate",
+  "elapsed_ns": {
+    "dense_direct_region": [
+      1865,
+      2333,
+      1687,
+      1516,
+      2340,
+      1718,
+      1494,
+      2351,
+      1677,
+      1543
+    ],
+    "full_decode_then_region": [
+      320231,
+      330438,
+      303713,
+      311360,
+      303915,
+      310044,
+      313742,
+      302116,
+      322512,
+      312150
+    ],
+    "folded_selective_region": [
+      74553,
+      105462,
+      93499,
+      65219,
+      96398,
+      94211,
+      68275,
+      97802,
+      92992,
+      65390
+    ]
+  },
+  "median_elapsed_ns": {
+    "dense_direct_region": 1702.5,
+    "full_decode_then_region": 311755.0,
+    "folded_selective_region": 93245.5
+  },
+  "full_decode_over_selective_time_ratio": 3.3433785008391825,
+  "dense_direct_over_selective_time_ratio": 0.0182582537495107,
+  "selective_read": {
+    "requested_values": 64,
+    "source_values_read": 64,
+    "decoded_bytes": 512,
+    "full_length": 65536
+  },
+  "resident_array_payload_bytes": 524288,
+  "input_array_payload_bytes": 524288,
+  "retained_working_values": 15471,
+  "storage_scope": "array payload only; excludes Python objects, hashes and allocator overhead",
+  "physical_compression_ratio": null,
+  "peak_memory_bytes": null,
+  "energy_joules": null,
+  "statistical_significance": null,
+  "claim_boundary": "local region-retrieval measurements only; no fleet, CapEx or exponential-speed claim",
+  "provenance": {
+    "checkout_commit": null,
+    "source_sha256": {
+      "scripts/benchmark_data_region.py": "936844066023faa0d487c58254a406f2931241a047e70882091b46a938a28ad3",
+      "aethel/phi_fold.py": "ab13ffcb3d612fdc8c4bab37a3e62d63a13e60ecd26afe68a040265065a6cacb",
+      "aethel/__init__.py": "61efa2ca34606cfd0dfd5b6891f642db02ea5ea38db7bd86018985bf8ead9015"
+    },
+    "python": "3.13.14",
+    "numpy": "2.5.4",
+    "platform": "Linux-6.18.49-x86_64-with-glibc2.34"
+  },
+  "seed": 42
+}

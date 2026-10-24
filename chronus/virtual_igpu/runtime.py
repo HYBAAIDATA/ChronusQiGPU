@@ -21,6 +21,7 @@ Trust:
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+import copy
 from datetime import datetime, timezone
 import os
 import threading
@@ -171,8 +172,8 @@ class RuntimeDaemon:
         self._pending: set[str] = set()
         self._cancelled: set[str] = set()
         self._results: dict[str, WorkloadResult] = {}
-        self._idempotency: dict[str, WorkloadResult] = {}
-        self._idempotency_packages: dict[str, str] = {}
+        self._idempotency: dict[tuple[str, str], WorkloadResult] = {}
+        self._idempotency_packages: dict[tuple[str, str], str] = {}
         self._attached_at: str | None = None
         self._last_error: str | None = None
         self.quotas: dict[str, Quota] = {}
@@ -404,7 +405,10 @@ class RuntimeDaemon:
     # --- submit / poll / cancel -------------------------------------------
 
     def submit(self, workload: Workload | dict[str, Any]) -> WorkloadResult:
-        w = workload if isinstance(workload, Workload) else Workload.from_dict(workload)
+        # Re-validate a detached snapshot at dispatch. Workload is mutable: its
+        # construction-time content_hash cannot authenticate later nested edits.
+        serialized = workload.as_dict() if isinstance(workload, Workload) else workload
+        w = Workload.from_dict(copy.deepcopy(serialized))
         with self._lock:
             if self.state != RuntimeState.READY:
                 # auto-attach for embedded convenience
@@ -417,17 +421,31 @@ class RuntimeDaemon:
                 if self.state != RuntimeState.READY:
                     raise RuntimeInvariantError(f"runtime not ready: {self.state}")
 
-            # Idempotency
-            key = getattr(w, "idempotency_key", None)
-            if key:
-                if key in self._idempotency:
-                    prev = self._idempotency[key]
-                    prev_hash = self._idempotency_packages.get(key)
-                    if prev_hash and prev_hash != w.content_hash:
-                        raise RuntimeInvariantError(
-                            "idempotency key reused with a different workload package"
-                        )
-                    return prev
+            # Authority is re-evaluated even for cached reads: revocation must
+            # not be bypassed by a previously admitted idempotency key.
+            if self.admission_policy is not None:
+                try:
+                    verdict = self.admission_policy(w)
+                except Exception as exc:
+                    raise AdmissionDenied(f"admission policy refused workload: {exc}") from exc
+                if verdict is False:
+                    raise AdmissionDenied("admission policy refused workload")
+            custody_required = (w.constraints or {}).get("custody") == "required"
+            if custody_required and self.custody is None:
+                raise CustodyError("custody required but no THESEUS custody is configured")
+
+            # Keys belong to the tenant, not the process-wide key namespace.
+            raw_key = getattr(w, "idempotency_key", None)
+            if raw_key is not None and (not isinstance(raw_key, str) or not raw_key):
+                raise RuntimeInvariantError("idempotency key must be a nonempty string")
+            key = (w.tenant, raw_key) if raw_key else None
+            if key in self._idempotency:
+                prev_hash = self._idempotency_packages[key]
+                if prev_hash != w.content_hash:
+                    raise RuntimeInvariantError(
+                        "idempotency key reused with a different workload package"
+                    )
+                return copy.deepcopy(self._idempotency[key])
 
             if self.in_flight.get(w.tenant, 0) >= self._max_per_tenant:
                 raise RuntimeInvariantError(f"tenant oversubscribed: {w.tenant}")
@@ -446,17 +464,6 @@ class RuntimeDaemon:
             deadline_ms = getattr(w, "deadline_ms", None)
             if deadline_ms is not None and int(deadline_ms) <= 0:
                 raise RuntimeInvariantError("deadline_ms must be positive when declared")
-
-            if self.admission_policy is not None:
-                try:
-                    verdict = self.admission_policy(w)
-                except Exception as exc:
-                    raise AdmissionDenied(f"admission policy refused workload: {exc}") from exc
-                if verdict is False:
-                    raise AdmissionDenied("admission policy refused workload")
-            custody_required = (w.constraints or {}).get("custody") == "required"
-            if custody_required and self.custody is None:
-                raise CustodyError("custody required but no THESEUS custody is configured")
 
             try:
                 adapter, reason, admission = self._select_adapter(w)
@@ -670,7 +677,7 @@ class RuntimeDaemon:
             with self._lock:
                 self._results[w.id] = result
                 if key:
-                    self._idempotency[key] = result
+                    self._idempotency[key] = copy.deepcopy(result)
                     self._idempotency_packages[key] = w.content_hash or ""
                 self._pending.discard(w.id)
                 if q is not None:

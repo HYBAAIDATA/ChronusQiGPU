@@ -73,6 +73,38 @@ def _state(value: Any) -> dict:
     return copy.deepcopy(value)
 
 
+def _decode_envelope(raw: bytes, owner_id: str) -> tuple[dict, AuditReceipt]:
+    envelope = json.loads(raw)
+    if (
+        type(envelope) is not dict
+        or set(envelope) != {"schema", "state", "receipt", "owner_id"}
+        or envelope["schema"] != EmpiricalStateBridge.STATE_KIND
+        or envelope["owner_id"] != owner_id
+    ):
+        raise ValueError("invalid empirical custody envelope")
+    state = _state(envelope["state"])
+    if type(envelope["receipt"]) is not dict:
+        raise ValueError("invalid empirical receipt")
+    receipt = AuditReceipt(**envelope["receipt"])
+    if (
+        type(receipt.receipt_id) is not str
+        or re.fullmatch(r"rcpt_[0-9a-f]{32}", receipt.receipt_id) is None
+        or receipt.status != "COMMITTED"
+        or receipt.new_state_hash != _hash(state)
+        or receipt.capability_id != EmpiricalStateBridge.APPROVED_CAPABILITY_ID
+        or type(receipt.caller_id) is not str
+        or not 1 <= len(receipt.caller_id) <= 128
+        or type(receipt.timestamp_epoch) not in (int, float)
+        or not math.isfinite(receipt.timestamp_epoch)
+        or receipt.timestamp_epoch <= 0
+        or receipt.transition_type != "UPDATE_RELIABILITY"
+        or type(receipt.budget_consumed) is not int
+        or receipt.budget_consumed != 1
+    ):
+        raise ValueError("empirical custody receipt mismatch")
+    return state, receipt
+
+
 class EmpiricalStateController:
     """Operational weights only; no prior memories or identity are imported."""
 
@@ -89,7 +121,10 @@ class EmpiricalStateController:
     def apply(self, req: StateTransitionRequest) -> None:
         if req.transition_type != "UPDATE_RELIABILITY":
             raise ValueError("unsupported transition")
-        if type(req.state_payload) is not dict or set(req.state_payload) != {"domain", "weight"}:
+        if type(req.state_payload) is not dict or set(req.state_payload) != {
+            "domain",
+            "weight",
+        }:
             raise ValueError("domain and weight are required")
         domain, weight = req.state_payload["domain"], req.state_payload["weight"]
         candidate = copy.deepcopy(self.state)
@@ -135,25 +170,24 @@ class EmpiricalStateBridge:
             for r in self.audit.records
             if r["event"].get("schema") == "euclid.empirical-transition/1"
             and r["event"].get("phase") == "COMMITTED"
+            and r["event"].get("owner_id", self.owner_id) == self.owner_id
         ]
 
     def _restore(self) -> None:
         binding = self.data_port.latest(self.STATE_KIND)
         if binding is None:
             return
-        envelope = json.loads(self.data_port.read(binding.binding_id))
-        if (
-            type(envelope) is not dict
-            or set(envelope) != {"schema", "state", "receipt", "owner_id"}
-            or envelope["schema"] != self.STATE_KIND
-            or envelope["owner_id"] != self.owner_id
+        if self.audit is None or getattr(self.audit, "path", None) is None:
+            raise StateCommitUncertain("durable audit required to restore custody state")
+        state, receipt = _decode_envelope(self.data_port.read(binding.binding_id), self.owner_id)
+        if not any(
+            r["event"].get("schema") == "euclid.empirical-transition/1"
+            and r["event"].get("phase") == "COMMITTED"
+            and r["event"].get("owner_id", self.owner_id) == self.owner_id
+            and r["event"].get("receipt") == asdict(receipt)
+            and r["event"].get("custody_binding_id") == binding.binding_id
+            for r in self.audit.records
         ):
-            raise ValueError("invalid empirical custody envelope")
-        state = _state(envelope["state"])
-        receipt = AuditReceipt(**envelope["receipt"])
-        if receipt.status != "COMMITTED" or receipt.new_state_hash != _hash(state):
-            raise ValueError("empirical custody state digest mismatch")
-        if receipt not in self.audit_log:
             raise StateCommitUncertain("custody publication has no matching durable completion")
         self.controller.state = state
         self._binding_id = binding.binding_id
@@ -167,6 +201,7 @@ class EmpiricalStateBridge:
                 "execution_id": execution_id,
                 "capability_id": req.capability_id,
                 "caller_id": req.caller_id,
+                "owner_id": self.owner_id,
                 **fields,
             }
         )
@@ -246,6 +281,22 @@ class EmpiricalStateBridge:
             "state": candidate,
             "receipt": asdict(receipt),
         }
+        # Durable intent binds the exact candidate before custody is touched.
+        # Recovery must not infer intent from an orphan's self-reported receipt.
+        try:
+            self._event(
+                "PREPARED",
+                req,
+                execution_id,
+                prior_state_hash=_hash(before),
+                prior_binding_id=self._binding_id,
+                envelope_sha256=hashlib.sha256(_bytes(envelope)).hexdigest(),
+                receipt=asdict(receipt),
+            )
+        except Exception as exc:
+            self.controller.state = copy.deepcopy(before)
+            self._uncertain = True
+            raise StateCommitUncertain("intent audit uncertain; reopen before retry") from exc
         try:
             binding = self.data_port.put(
                 self.STATE_KIND,

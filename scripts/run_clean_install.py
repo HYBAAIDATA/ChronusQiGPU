@@ -97,6 +97,8 @@ def main():
             outside.mkdir()
             script = work / "verify_clean_install.py"
             shutil.copy2(verifier, script)
+            installed_manifest = work / "build-manifest.json"
+            shutil.copy2(output / "build-manifest.json", installed_manifest)
             run(
                 [python, "-I", "-m", "pip", "install", "--no-index", "--find-links", output, wheel],
                 cwd=outside,
@@ -146,6 +148,8 @@ def main():
                     args.expected_commit,
                     "--repo-root",
                     REPO,
+                    "--build-manifest",
+                    installed_manifest,
                 ]
                 stdout = run(command, cwd=outside, log=log)
                 result = json.loads(stdout.strip().splitlines()[-1])

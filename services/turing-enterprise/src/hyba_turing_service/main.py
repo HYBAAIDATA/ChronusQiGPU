@@ -2,6 +2,8 @@
 
 import argparse
 import base64
+import hashlib
+import hmac
 import json
 import os
 from pathlib import Path
@@ -34,12 +36,25 @@ def read_secret(path):
         os.close(fd)
 
 
-def configuration(path):
-    os.umask(0o077)
+def load_configuration(path):
+    """Read policy without opening secrets or initializing persistent state."""
     config = json.loads(Path(path).read_text())
     validate_scope(config)
-    if config.get("qualification_policy", "strict") not in {"strict", "operator-risk-acceptance"}:
+    if config.get("qualification_policy", "strict") not in {
+        "strict",
+        "operator-risk-acceptance",
+    }:
         raise ValueError("unsupported qualification policy")
+    return config
+
+
+def configuration(path):
+    return runtime_configuration(load_configuration(path))
+
+
+def runtime_configuration(config):
+    """Initialize runtime authorities/state only after CLI promotion admission."""
+    os.umask(0o077)
     from al_haras.entitlements import SubscriptionAuthority, SubscriptionClaims
 
     if set(config["operator_subjects"]) & set(config["approver_subjects"]):
@@ -91,47 +106,30 @@ def configuration(path):
         )
 
     billing = None  # No approved current-release financial service.
-    return config, customer, operator, SubscriptionClaims, factory, machine_token, billing
+    return (
+        config,
+        customer,
+        operator,
+        SubscriptionClaims,
+        factory,
+        machine_token,
+        billing,
+    )
 
 
 def main():
     parser = argparse.ArgumentParser(description="TURING enterprise service operations")
     parser.add_argument(
-        "command", choices=["serve", "worker", "billing", "backup", "restore", "release-check"]
+        "command",
+        choices=["serve", "worker", "billing", "backup", "restore", "release-check"],
     )
     parser.add_argument("--config", required=True)
     parser.add_argument("--destination")
     parser.add_argument("--publication", action="store_true")
     args = parser.parse_args()
-    config, customer, operator, Claims, factory, machine_token, billing = configuration(args.config)
+    config = load_configuration(args.config)
     if args.command == "billing":
         raise ValueError("billing is deferred; no provider is authorised")
-    if args.command == "restore":
-        if not args.destination or Path(args.destination).exists():
-            raise ValueError("restore requires a new destination")
-        source = sqlite3.connect("file:" + config["backup_source"] + "?mode=ro", uri=True)
-        target = sqlite3.connect(args.destination)
-        try:
-            if source.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
-                raise ValueError("backup integrity failure")
-            source.backup(target)
-        finally:
-            source.close()
-            target.close()
-        return
-    if args.command == "backup":
-        plane = factory()
-        try:
-            if args.command == "backup":
-                if not args.destination or Path(args.destination).exists():
-                    raise ValueError("new backup destination required")
-                plane.backup(
-                    machine_token(["turing.ops.manage"]), config["worker_subject"], args.destination
-                )
-                os.chmod(args.destination, 0o600)
-        finally:
-            plane.close()
-        return
 
     def approval():
         # Build identity is baked into the read-only image, not supplied by HTTP.
@@ -154,14 +152,47 @@ def main():
     if args.command == "release-check":
         approval()
         return
-    if config.get("mode") != "controlled-pilot":
+    if args.command in {"serve", "worker"} and config.get("mode") != "controlled-pilot":
         approval()
+    config, customer, operator, Claims, factory, machine_token, billing = runtime_configuration(
+        config
+    )
+    if args.command == "restore":
+        if not args.destination or Path(args.destination).exists():
+            raise ValueError("restore requires a new destination")
+        source = sqlite3.connect("file:" + config["backup_source"] + "?mode=ro", uri=True)
+        target = sqlite3.connect(args.destination)
+        try:
+            if source.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+                raise ValueError("backup integrity failure")
+            source.backup(target)
+        finally:
+            source.close()
+            target.close()
+        return
+    if args.command == "backup":
+        plane = factory()
+        try:
+            if args.command == "backup":
+                if not args.destination or Path(args.destination).exists():
+                    raise ValueError("new backup destination required")
+                plane.backup(
+                    machine_token(["turing.ops.manage"]),
+                    config["worker_subject"],
+                    args.destination,
+                )
+                os.chmod(args.destination, 0o600)
+        finally:
+            plane.close()
+        return
+
     if args.command == "worker":
         supervisor = Supervisor(
             factory,
             lambda: machine_token(["turing.ops.execute"]),
             config["worker_subject"],
             config["custody_root"],
+            custody=configured_custody(config),
         )
         signal.signal(signal.SIGTERM, lambda *_: setattr(supervisor, "stopping", True))
         signal.signal(signal.SIGINT, lambda *_: setattr(supervisor, "stopping", True))
@@ -217,7 +248,7 @@ def main():
             billing,
             ready,
             False,  # Contract, membership and capacity checks remain mandatory.
-            ResultCustody(config["custody_root"]),
+            configured_custody(config),
         )
     )
     import uvicorn

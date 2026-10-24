@@ -104,6 +104,7 @@ class EnterprisePlane(ControlPlane):
             "cancel_request",
             "policy_cancel_before_dispatch",
             "fail",
+            "recover_fail",
             "resolve_without_billing",
         } and detail.get("job"):
             row = self.db.execute(
