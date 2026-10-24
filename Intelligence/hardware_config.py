@@ -252,6 +252,7 @@ def _detect_amd_gpu() -> tuple[bool, str]:
             result = subprocess.run(
                 [
                     "powershell",
+                    "-NoProfile",
                     "-Command",
                     "Get-CimInstance Win32_VideoController | "
                     "Where-Object {$_.Name -match 'AMD|Radeon'} | "
@@ -259,7 +260,7 @@ def _detect_amd_gpu() -> tuple[bool, str]:
                 ],
                 capture_output=True,
                 text=True,
-                timeout=5,
+                timeout=10,
             )
             if result.returncode == 0 and result.stdout.strip():
                 gpu_name = result.stdout.strip().split("\n")[0].strip()

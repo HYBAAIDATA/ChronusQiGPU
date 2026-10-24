@@ -13,10 +13,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-try:
-    from .hardened_unified_substrate import ManifoldCurvature
-except ImportError:  # pragma: no cover - top-level script use
-    from hardened_unified_substrate import ManifoldCurvature
+from aethel.hardened_unified_substrate import ManifoldCurvature
 
 from .agentic_controller_search import AgenticSearchController
 from .search_api import SearchAPI

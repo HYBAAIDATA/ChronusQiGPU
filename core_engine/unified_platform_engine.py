@@ -51,31 +51,22 @@ import copy
 try:
     from .universal_predictor.universal_predictor import UniversalPredictor
     from .enhanced_agi_interface import create_agi_interface
-    from ..p_vs_np_attack.enhanced_algorithm import RevolutionaryNPSolver
-    from ..hyba_analytics.quantum_pure_mathematics.quantum_consciousness_system import (
-        create_quantum_consciousness_system,
-    )
+    from .quantum_consciousness_system import create_quantum_consciousness_system
     from .enhanced_powerhouse_mining_system import RevolutionaryQuantumMiningPowerhouse
 except ImportError:
-    # Fallback imports for standalone execution
     from core_engine.universal_predictor.universal_predictor import UniversalPredictor
     from core_engine.enhanced_agi_interface import (
         create_enhanced_agi_interface as create_agi_interface,
     )
-
-    try:
-        from p_vs_np_attack.enhanced_algorithm import RevolutionaryNPSolver
-    except ImportError:
-        RevolutionaryNPSolver = None
-    try:
-        from hyba_analytics.quantum_pure_mathematics.quantum_consciousness_system import (
-            create_quantum_consciousness_system,
-        )
-    except ImportError:
-        create_quantum_consciousness_system = lambda x: None
+    from core_engine.quantum_consciousness_system import (
+        create_quantum_consciousness_system,
+    )
     from core_engine.enhanced_powerhouse_mining_system import (
         RevolutionaryQuantumMiningPowerhouse,
     )
+
+RevolutionaryNPSolver = None
+
 
 logger = logging.getLogger(__name__)
 

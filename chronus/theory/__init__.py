@@ -15,6 +15,7 @@ from . import (
     control,
     error_correction,
     chemistry,
+    emergent_time,
 )
 from .report import run_unbuilt_maths, self_test_all
 
@@ -29,6 +30,7 @@ __all__ = [
     "control",
     "error_correction",
     "chemistry",
+    "emergent_time",
     "run_unbuilt_maths",
     "self_test_all",
 ]

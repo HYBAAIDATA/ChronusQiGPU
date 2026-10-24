@@ -192,6 +192,12 @@ def _make_alias(fullname: str, target: str) -> ModuleType:
 def _make_removed(fullname: str) -> ModuleType:
     mod = _RemovedModule(fullname)
     mod.__doc__ = f"Removed legacy namespace: ``{fullname}``. No canonical successor."
+    if fullname == "src":
+        from pathlib import Path
+
+        src_dir = Path(__file__).resolve().parents[1] / "src"
+        if src_dir.is_dir():
+            mod.__path__ = [str(src_dir)]  # type: ignore[attr-defined]
     return mod
 
 

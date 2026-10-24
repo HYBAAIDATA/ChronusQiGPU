@@ -1,0 +1,67 @@
+{
+  "schema": "euclid.notion-reconciliation-validation/1",
+  "date": "2026-10-14",
+  "baseline_commit": "5c608b09bad8dd5d3bc29e0388bcf6ff148d3870",
+  "baseline_delegation_blob": "cdb54e1657cab41c924dd8252babc3cc86174565",
+  "python": "3.13.14",
+  "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+  "commands": [
+    {
+      "command": "python scripts/verify_euclid_delegation_refusal.py . 'test_euclid_delegation_execution_refusal.py'",
+      "revision": "baseline with same new regression file",
+      "exit": 1,
+      "tests": 8,
+      "failures": 5,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "command": "python scripts/verify_euclid_delegation_refusal.py . 'test_euclid_delegation*.py'",
+      "revision": "patch",
+      "exit": 0,
+      "tests": 45,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "command": "python -O scripts/verify_euclid_delegation_refusal.py . 'test_euclid_delegation*.py'",
+      "revision": "patch",
+      "exit": 0,
+      "tests": 45,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "command": "python -m compileall -q euclid/delegation.py tests/test_euclid_delegation.py tests/test_euclid_delegation_execution_refusal.py",
+      "exit": 0
+    }
+  ],
+  "sha256": {
+    "euclid/delegation.py": "edc4a7a06e91740a673ba04fa57371736905f20c1d47a2cf0378c7ba5b9bf5d8",
+    "tests/test_euclid_delegation.py": "e5ca3943dfc1fc43b1d17e40114fe21e9f4089c24428e3a7410602950e089b0b",
+    "tests/test_euclid_delegation_execution_refusal.py": "bf6e6711403ab6238a54c91964212e868de84685e2f3794141f0ae341f22d2d6",
+    "scripts/verify_euclid_delegation_refusal.py": "adedd30266c464a2a8242db22c037ce73eab7d4c7a1f32ab96fc25ce116a1696",
+    "OWNER_DECLARATIONS.md": "72f15e71cb6f07485c892b5c4c6e71e41b12897ac268b887f1ed33747f9864ce",
+    "docs/EUCLID_NOTION_RECONCILIATION_20261014.md": "15fbe27591c41fd6790cc6625a75103e6b70e4f3e210aa3e98fe75477a73219d",
+    "docs/euclid_notion_reconciliation_test_output.txt": "8b653c4403c36cc21dbee00052d48385b9bcbdaf570d855a4e9773801c475b07"
+  },
+  "execution_scope": "Entire actual retrieved delegation module loaded under historical euclid_delegation alias. No extracted methods/classes, no alternative implementation. All 37 legacy tests maintained; positive fixtures now have executing handlers and blueprint/error expectations now require veto. Eight new cases include five baseline behavioral failures.",
+  "exclusions": [
+    "full euclid package initializer and actual compatibility-wrapper import",
+    "repository conftests and whole-repository pytest",
+    "canonical EuclidRuntime and full Intelligence/Chronus/TUQC composition",
+    "installed wheel/sdist qualification",
+    "black/ruff/flake8 unavailable locally",
+    "PHILOS local source and coverage artifacts unavailable through connector",
+    "OS sandbox, containers, devices, external providers, live mining/pools",
+    "independent scientific/security review and deployment"
+  ],
+  "ci": {
+    "PR68_combined": "failure: chronus/mla1517/gates incomplete or invalid mandatory assurance evidence",
+    "PR69_combined": "failure: chronus/mla1517/gates incomplete or invalid mandatory assurance evidence",
+    "PR69_check_runs": "HTTP403 resource not accessible by token"
+  },
+  "production_qualified": false
+}

@@ -175,6 +175,8 @@ class DelegationResult:
     confidence_profile: ConfidenceProfile
     produced_at: float
     output_hash: str
+    execution_succeeded: bool = True
+    execution_failure: Optional[str] = None
 
 
 @dataclass
@@ -467,6 +469,20 @@ class WorldIntegrationGate:
         If any gate is missing → VETOED.
         No silent integration. No implicit trust. No accidental world mutation.
         """
+        # Dispatch failure is not eligible for validation, even by permissive ports.
+        if result.execution_succeeded is not True:
+            return IntegrationAssessment(
+                task_id=result.task_id,
+                verdict=DelegationVerdict.VETOED,
+                coherence_passed=False,
+                truth_evidence_supplied=False,
+                causal_attribution_supplied=False,
+                feedback_processing_completed=False,
+                veto_reason="VETOED: organ execution failed or unavailable: "
+                + (result.execution_failure or "execution_not_successful"),
+                assessed_at=time.time(),
+                assessment_hash=self._hash_assessment(result, {}, {}),
+            )
         gates: Dict[str, Tuple[bool, str]] = {}
         sources: Dict[str, EvidenceSource] = {
             "coherence": EvidenceSource.EXTERNAL_SUBSYSTEM if self._external_coherence_validator is not None else EvidenceSource.INTERNAL_HEURISTIC,
@@ -608,6 +624,8 @@ class WorldIntegrationGate:
             "task_id": result.task_id,
             "organ_id": result.organ_id,
             "output_hash": result.output_hash,
+            "execution_succeeded": result.execution_succeeded,
+            "execution_failure": result.execution_failure,
             "gates": {k: v[0] for k, v in gates.items()},
             "evidence_sources": {k: v.value for k, v in sources.items()},
         }, sort_keys=True)
@@ -702,14 +720,17 @@ class DelegationController:
         start_time = time.perf_counter()
 
         output = None
+        execution_failure = None
         if organ.handler is not None:
             try:
                 output = organ.handler(task.payload)
             except Exception as e:
-                output = {"error": str(e), "status": "organ_execution_failed"}
+                execution_failure = "organ_execution_failed"
+                output = {"error": str(e), "status": execution_failure}
         else:
+            execution_failure = "no_handler"
             output = {
-                "status": "no_handler",
+                "status": execution_failure,
                 "task_id": task.task_id,
                 "domain": task.domain.value,
                 "organ": organ.organ_id,
@@ -732,6 +753,8 @@ class DelegationController:
             confidence_profile=confidence_profile,
             produced_at=time.time(),
             output_hash=output_hash,
+            execution_succeeded=execution_failure is None,
+            execution_failure=execution_failure,
         )
 
     def _record_chronicle(

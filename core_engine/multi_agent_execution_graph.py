@@ -34,7 +34,7 @@ from core_engine.unified_platform_engine import (
     QuantumMath
 )
 
-from core_engine.agi_substrate import (
+from Intelligence.agi_substrate import (
     CanonicalAGISubstrate,
     AGIRequest,
     AGICapability,

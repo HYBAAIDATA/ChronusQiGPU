@@ -694,9 +694,12 @@ constitutions:
   interface: EVENT_STREAM
   consumer:
   - frontend ops.ts EventSource
+  - WebSocket telemetry clients
   schema:
     request: none
-    response: 'text/event-stream frames {type:ops, seq, ops, new_events} + : keepalive'
+    response: 'SSE: text/event-stream frames {type:ops, seq, ops, new_events} + : keepalive; WS: RFC 6455
+      text frames {type:ws, seq, ops, new_events}; plain GET on /ws/telemetry answers the 200 contract
+      descriptor pythia.telemetry.ws/1'
     version: pythia.ops_telemetry/1
   dependency:
   - pythia.worker_heartbeat
@@ -825,6 +828,90 @@ constitutions:
     append audit events
   lifecycle_owner: *id003
   version: pythia.hardware_status/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.customer.health
+  capability: customer-facing aggregate health status projection
+  authority: PYTHIA
+  interface: HTTP_PUBLIC
+  consumer:
+  - customer-monitoring
+  - external-probes
+  schema:
+    request: none
+    response: '{schema_version, status, components{api, identity, readiness, stratum, worker}, generated_at}'
+    version: pythia.customer.health/1
+  dependency: []
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: subsystem degradation reports degraded with per-component truth; never a green lie
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; boot audit records
+    plane state
+  lifecycle_owner: *id001
+  version: pythia.customer.health/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: pythia.substrate.latency
+  capability: measured substrate proxy round-trip latency observation
+  authority: PYTHIA
+  interface: HTTP_OPERATOR
+  consumer:
+  - operator-console
+  - applet-latency-monitor
+  schema:
+    request: none
+    response: '{schema_version, probe, measured, ok, reason, latency_ms, generated_at}'
+    version: pythia.substrate.latency/1
+  dependency: []
+  criticality: R4
+  slo: degradation is local to the projection; a stale or unavailable view is marked as such rather than
+    presenting last-known state as current
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: probe failure reports ok:false with reason and measured round-trip time
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: PYTHIA
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: *id001
+  version: pythia.substrate.latency/1
+  deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
+    change requires a new schema_version plus a deprecation window
+- api_id: salamander.veritas.status
+  capability: veritas self-repair ledger integrity projection
+  authority: SALAMANDER
+  interface: HTTP_OPERATOR
+  consumer:
+  - operator-console
+  - veritas-monitor
+  schema:
+    request: none
+    response: '{schema_version, ledger, ledger_path, governance, available, load_status, entries_total,
+      entries_verified, verification_ratio, statuses, last_entry_at, integrity_report, generated_at}'
+    version: pythia.veritas.status/1
+  dependency: []
+  criticality: R3
+  slo: degradation stays inside the declared bound; every intervention leaves a ledger entry; no verdict
+    of another subsystem is rewritten
+  slo_state: DECLARED_NOT_MEASURED (measured in Phase 4B)
+  failure_mode: absent ledger reports available:true with NO_LEDGER_FILE; unreadable fails closed to available:false
+  retry_idempotency:
+    retry: freely retryable
+    idempotency: read-only
+  evidence_owner: SALAMANDER
+  observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
+    append audit events
+  lifecycle_owner: &id006
+    accountable: '@bollingertm'
+    authority: SALAMANDER
+  version: pythia.veritas.status/1
   deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
     change requires a new schema_version plus a deprecation window
 - api_id: al_haras.security.status
@@ -1024,9 +1111,7 @@ constitutions:
   evidence_owner: SALAMANDER
   observability: X-Request-Id correlation on every response; /api/v1/metrics counters; operator mutations
     append audit events
-  lifecycle_owner: &id007
-    accountable: '@bollingertm'
-    authority: SALAMANDER
+  lifecycle_owner: *id006
   version: pythia.salamander_fault/1
   deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
     change requires a new schema_version plus a deprecation window
@@ -1189,7 +1274,7 @@ constitutions:
     idempotency: n/a
   evidence_owner: TURING
   observability: signed denial receipts audited at the boundary
-  lifecycle_owner: &id006
+  lifecycle_owner: &id007
     accountable: '@bollingertm'
     authority: TURING
   version: none
@@ -1273,7 +1358,7 @@ constitutions:
     idempotency: deterministic per request
   evidence_owner: TURING
   observability: typed verdict/evidence objects; producer-side evidence ledger where declared in custody_requirement
-  lifecycle_owner: *id006
+  lifecycle_owner: *id007
   version: turing.vqc/1
   deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
     change requires a new schema_version plus a deprecation window
@@ -1449,7 +1534,7 @@ constitutions:
     idempotency: ActionRequest.idempotency_key required and enforced
   evidence_owner: SALAMANDER
   observability: typed verdict/evidence objects; producer-side evidence ledger where declared in custody_requirement
-  lifecycle_owner: *id007
+  lifecycle_owner: *id006
   version: salamander.autonomic-control-plane.v1
   deprecation_policy: per docs/API_LIFECYCLE_POLICY.md — additive changes within the major version; breaking
     change requires a new schema_version plus a deprecation window

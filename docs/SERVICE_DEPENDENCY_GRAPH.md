@@ -130,6 +130,7 @@ other.
 - `pythia.config.read` (R4): depends on `pythia.runtime_config_file`; depended on by —
 - `pythia.config.update` (R1): depends on `pythia.runtime_config_file`, `pythia.boot_audit`; depended on by —
 - `pythia.control.session` (R4): depends on `pythia.boot_audit`; depended on by —
+- `pythia.customer.health` (R4): depends on —; depended on by —
 - `pythia.gpu` (R4): depends on `chronus.execution`; depended on by —
 - `pythia.hardware.status` (R4): depends on `chronus.execution`; depended on by —
 - `pythia.health` (R4): depends on —; depended on by `legacy.api_health`
@@ -149,6 +150,7 @@ other.
 - `pythia.static_spa` (R4): depends on —; depended on by —
 - `pythia.status` (R4): depends on `pythia.worker_heartbeat`, `stratum.v1`, `pythia.boot_audit`; depended on by —
 - `pythia.stratum.status` (R4): depends on `stratum.v1`; depended on by —
+- `pythia.substrate.latency` (R4): depends on —; depended on by —
 - `pythia.system.map` (R4): depends on `pythia.boot_audit`; depended on by —
 - `pythia.system.verify.read` (R4): depends on `euclid.orchestration`, `pythia.boot_audit`; depended on by —
 - `pythia.system.verify.start` (R1): depends on `euclid.orchestration`, `pythia.boot_audit`; depended on by —
@@ -157,6 +159,7 @@ other.
 - `pythia.worker_heartbeat` (R1): depends on —; depended on by `pythia.agentic`, `pythia.campaign`, `pythia.metrics`, `pythia.mining.control`, `pythia.mining.evidence`, `pythia.readiness`, `pythia.ready_to_mine`, `pythia.status`, `pythia.telemetry`, `pythia.telemetry.stream`
 - `salamander.control_plane` (R3): depends on `theseus.custody`; depended on by `salamander.fault`
 - `salamander.fault` (R3): depends on `salamander.control_plane`, `theseus.custody`; depended on by —
+- `salamander.veritas.status` (R3): depends on —; depended on by —
 - `stratum.v1` (R1): depends on —; depended on by `pythia.agentic`, `pythia.cli.miner`, `pythia.metrics`, `pythia.mining.control`, `pythia.ready_to_mine`, `pythia.status`, `pythia.stratum.status`, `pythia.telemetry`, `pythia.telemetry.stream`
 - `theseus.custody` (R0): depends on —; depended on by `chronus.execution`, `euclid.orchestration`, `kellogg.tensor.execute`, `kellogg.tensor.runtime`, `ovid.transform`, `pythia.mining.control`, `salamander.control_plane`, `salamander.fault`, `turing.vqc_pipeline`
 - `toe.collapse` (R2): depends on `al_haras.guardian`, `euclid.orchestration`; depended on by —

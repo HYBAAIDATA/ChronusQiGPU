@@ -88,6 +88,7 @@ SCALE_NAMES: Dict[int, str] = {
 # lucas.ladder and re-exported here so the Intelligence profile surface is
 # unchanged for existing consumers.
 PISOT_EXACT_N: int = _PISOT_EXACT_N
+IGPU_SCALE_RUNGS = CHRONUS_SCALE_RUNGS
 
 
 PHI = (1 + math.sqrt(5)) / 2

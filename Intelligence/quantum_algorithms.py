@@ -10,19 +10,10 @@ import math
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-try:
-    from kellogg.quantum_tensor import Complex, ComplexMatrix, QuantumState
-    from lucas import core as lucas_core
-    from lucas import pool as lucas_pool
-except ImportError:
-    try:
-        from .quantum_tensor import Complex, ComplexMatrix, QuantumState
-        from lucas import core as lucas_core
-        from lucas import pool as lucas_pool
-    except (ImportError, SystemError, Exception):  # pragma: no cover
-        from quantum_tensor import Complex, ComplexMatrix, QuantumState  # type: ignore[no-redef]
-        import lucas.core as lucas_core  # type: ignore[no-redef]
-        import lucas.pool as lucas_pool  # type: ignore[no-redef]
+from kellogg.quantum_tensor import Complex, ComplexMatrix, QuantumState
+from lucas import core as lucas_core
+from lucas import pool as lucas_pool
+
 
 
 # ---------------------------------------------------------------------------

@@ -760,6 +760,16 @@ def euclid_cognition_status() -> dict[str, Any]:
             "a stalled episode is never reported as successful cognition",
         ],
     })
+    try:
+        from euclid.cognition.reconciliation_gateway import (
+            KNOWLEDGE_MANIFOLD,
+            get_widget_spec_sync,
+        )
+
+        status["topological_manifold"] = KNOWLEDGE_MANIFOLD.snapshot()
+        status["widget_spec"] = get_widget_spec_sync()
+    except Exception:
+        pass
     return status
 
 

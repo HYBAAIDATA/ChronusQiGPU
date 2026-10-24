@@ -33,7 +33,7 @@ from .constants import (
     PSI,
     SQRT5,
 )
-from .gpu import ChronusContext
+from .gpu import ChronusContext, TensorCoreGPU_Context
 from .manifold import (
     GeodesicNavigator,
     ManifoldCurvature,
@@ -78,10 +78,11 @@ __all__ = [
     # Layer 5: DAG
     "DAGNode", "DependencyDAG",
     # GPU context
-    "ChronusContext",
+    "ChronusContext", "TensorCoreGPU_Context",
     # Manifold
     "ManifoldCurvature", "ManifoldSector", "TopologicalTensor",
     "GeodesicNavigator", "SelfHealingSubstrate", "PrimeStorageManifold",
     # Unified substrate
     "UnifiedSubstrate", "HardenedUnifiedSubstrate",
 ]
+

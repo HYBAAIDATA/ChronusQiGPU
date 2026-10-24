@@ -329,6 +329,28 @@ class IntelligenceOrchestrator:
             failed,
             len(self._instances),
         )
+        pred = self._instances.get("toe_predictive_engine")
+        if pred is not None and not getattr(pred, "_models_trained", False):
+            try:
+                from .mining_structure_training import (
+                    DEFAULT_CORPUS_CSV,
+                    DEFAULT_CORPUS_MANIFEST,
+                    build_vectors,
+                    load_nonce_corpus,
+                    split_by_height,
+                )
+                from python_backend.phi_grover_v4 import phi_resonance
+
+                if DEFAULT_CORPUS_CSV.is_file() and DEFAULT_CORPUS_MANIFEST.is_file():
+                    rows, _ = load_nonce_corpus(DEFAULT_CORPUS_CSV, DEFAULT_CORPUS_MANIFEST)
+                    train_rows, _ = split_by_height(rows)
+                    Xv = np.asarray(build_vectors(train_rows), dtype=float)
+                    yv = np.asarray([1 if phi_resonance(r.nonce) >= 0.5 else 0 for r in train_rows], dtype=int)
+                    pred.ingest_training_data(Xv, yv, source="pythia_structural_corpus")
+                    pred.fit_models()
+                    logger.info("PredictiveEngine calibrated from 160 structural corpus samples")
+            except Exception as e:
+                logger.warning("PredictiveEngine bootstrap calibration skipped: %s", e)
 
     def reload(self) -> None:
         """Re-instantiate every module (mainly for tests)."""

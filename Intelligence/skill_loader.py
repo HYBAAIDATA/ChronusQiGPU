@@ -124,8 +124,14 @@ def _extract_tools(body: str) -> List[str]:
     return tools
 
 
-def discover_skills(skills_dir: str = SKILLS_DIR) -> List[PythiaSkill]:
+_LOGGED_SKILLS: set[str] = set()
+_SKILLS_CACHE: dict[str, List[PythiaSkill]] = {}
+
+
+def discover_skills(skills_dir: str = SKILLS_DIR, reload: bool = False) -> List[PythiaSkill]:
     """Discover all SKILL.md files in the skills directory."""
+    if not reload and skills_dir in _SKILLS_CACHE:
+        return list(_SKILLS_CACHE[skills_dir])
     skills: List[PythiaSkill] = []
     if not os.path.isdir(skills_dir):
         logger.warning("Skills directory not found: %s", skills_dir)
@@ -165,9 +171,12 @@ def discover_skills(skills_dir: str = SKILLS_DIR) -> List[PythiaSkill]:
                 provenance=provenance,
             )
             skills.append(skill)
-            logger.info("Discovered skill: %s (%s)", skill.name, skill.description[:60])
+            if skill.name not in _LOGGED_SKILLS:
+                _LOGGED_SKILLS.add(skill.name)
+                logger.info("Discovered skill: %s (%s)", skill.name, skill.description[:60])
         except Exception as e:
             logger.warning("Failed to load skill %s: %s", entry, e)
+    _SKILLS_CACHE[skills_dir] = skills
     return skills
 
 

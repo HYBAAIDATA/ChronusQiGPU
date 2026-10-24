@@ -1,38 +1,31 @@
+**/node_modules
 node_modules
 dist
+**/dist
 .git
 *.log
 .env
 .venv
 __pycache__
+**/__pycache__
 *.pyc
 *.pyo
+.pytest_cache
+**/.pytest_cache
+.mypy_cache
+**/.mypy_cache
+.ruff_cache
+**/.ruff_cache
 
-# Experiment test results (large JSON files, not needed at runtime)
-experiments/hyba_test_results*.json
-experiments/phi_scaling_results.json
-experiments/patch_v3.py
-experiments/patch_v4.py
-experiments/hyba_nature_first_tests.py
-experiments/hyba_nature_first_v2.py
-experiments/hyba_nature_first_v3.py
-experiments/hyba_nature_first_v4.py
-experiments/lgt_su2_phi_resonance.py
-experiments/lgt_su2_phi_resonance_original.py
-experiments/phi_scaling_experiment.py
-experiments/phi_scaling_experiment_fixed.py
-
-# Block data (mounted as volume, not baked into image)
+tests
+docs
+artifacts
 blockdata
 data
+experiments
 
-# Build artifacts
 *.tsbuildinfo
 .vite
-
-# Desktop / temp files
 *.tmp
 *.bak
-
-# Development-only signing material never enters an image (dev-signing.key.README).
 manifests/dev-signing.key

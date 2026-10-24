@@ -1,0 +1,82 @@
+{
+  "title": "EUCLID: Reflection Is Law \u2014 Digital Brain Surgery Replay",
+  "widget_type": "COGNITIVE_GRAPH_VIZ",
+  "no_apology_rule_enforced": true,
+  "states": {
+    "GREEN": {
+      "label": "HOMEOTYPIC_EQUILIBRIUM",
+      "kappa": 0.0,
+      "entropy": 3.0
+    },
+    "RED": {
+      "label": "SINGULARITY INSUFFICIENTLY_MAP_MATCHED",
+      "kappa": -1.62,
+      "entropy": 9.357552,
+      "reflex_ms": 3.275,
+      "banner": "REFUSED TO WRITE - TOPOLOGICAL CONSTRAINT, NOT PROMPT FILTER"
+    },
+    "GOLD": {
+      "label": "TRAUMA-HARDENED MASTERY",
+      "kappa": -0.034483,
+      "entropy": 3.001782,
+      "entropy_drop_bits": 6.35577,
+      "steps": 8
+    }
+  },
+  "trace": [
+    {
+      "k": 0,
+      "kappa": -1.62,
+      "entropy": 9.357552,
+      "disorder_bits": 6.357552
+    },
+    {
+      "k": 1,
+      "kappa": -1.001215,
+      "entropy": 7.409391,
+      "disorder_bits": 4.409391
+    },
+    {
+      "k": 2,
+      "kappa": -0.618785,
+      "entropy": 5.599913,
+      "disorder_bits": 2.599913
+    },
+    {
+      "k": 3,
+      "kappa": -0.38243,
+      "entropy": 4.179909,
+      "disorder_bits": 1.179909
+    },
+    {
+      "k": 4,
+      "kappa": -0.236355,
+      "entropy": 3.396605,
+      "disorder_bits": 0.396605
+    },
+    {
+      "k": 5,
+      "kappa": -0.146075,
+      "entropy": 3.109831,
+      "disorder_bits": 0.109831
+    },
+    {
+      "k": 6,
+      "kappa": -0.090279,
+      "entropy": 3.028251,
+      "disorder_bits": 0.028251
+    },
+    {
+      "k": 7,
+      "kappa": -0.055795,
+      "entropy": 3.007115,
+      "disorder_bits": 0.007115
+    },
+    {
+      "k": 8,
+      "kappa": -0.034483,
+      "entropy": 3.001782,
+      "disorder_bits": 0.001782
+    }
+  ]
+}

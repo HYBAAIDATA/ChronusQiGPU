@@ -13,8 +13,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from Intelligence.four_layer_stack import FourLayerMiningStack
-from Intelligence.strict_quantum import certify_work_window, verify_certificate
-from Intelligence.toe_system import TOESystem
+from toe.strict_quantum import certify_work_window, verify_certificate
+from toe.system import TOESystem
 from lucas.pisot import (
     HendrixStructuredSearch,
     QuantumTensorManifest,

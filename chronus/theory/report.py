@@ -22,6 +22,7 @@ from . import (
     control,
     error_correction,
     chemistry,
+    emergent_time,
 )
 from ..academic.caltech import Caltech_Surface_Code
 
@@ -38,6 +39,7 @@ def self_test_all() -> Dict[str, str]:
         "control": control._self_test(),
         "error_correction": error_correction._self_test(),
         "chemistry": chemistry._self_test(),
+        "emergent_time": emergent_time._self_test(),
     }
 
 
@@ -126,6 +128,12 @@ def run_unbuilt_maths() -> Dict[str, Any]:
         "n_electrons_integrated": scf.n_electrons_integrated,
         "converged": scf.converged,
         "iterations": scf.iterations,
+    }
+
+    report["emergent_time"] = {
+        "page_wootters_self_test": emergent_time._self_test(),
+        "coppo_magnetic_clock_scaling_j1000": emergent_time.CoppoMagneticClock.simulate_scaling(J=1000, n_max=5),
+        "zero_entanglement_check": emergent_time.test_zero_entanglement_absence_of_time(dim_S=8),
     }
 
     return report

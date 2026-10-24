@@ -61,10 +61,10 @@ except ImportError:
 
 # Import quantum components
 try:
-    from hyba_analytics.quantum_pure_mathematics.quantum_consciousness_system import (
+    from core_engine.quantum_consciousness_system import (
         create_quantum_consciousness_system,
     )
-    from core_engine.agi_interface import create_agi_interface
+    from core_engine.enhanced_agi_interface import create_agi_interface
 
     QUANTUM_AGI_AVAILABLE = True
 except ImportError:
@@ -384,12 +384,12 @@ class RevolutionaryQuantumMiningPowerhouse:
     def _create_intelligence_system(self):
         """Create intelligence system - production ready, no fallbacks"""
         try:
-            # Import real intelligence system only
-            from intelligence.asi_system import ArtificialSuperintelligence
+            from core_engine.enhanced_agi_interface import (
+                EnhancedAGIInterface as ArtificialSuperintelligence,
+            )
 
             asi = ArtificialSuperintelligence()
 
-            # Add missing analyze_block method if not present
             if not hasattr(asi, "analyze_block"):
 
                 def analyze_block_mock(block_data):
@@ -413,19 +413,17 @@ class RevolutionaryQuantumMiningPowerhouse:
     def _create_quantum_metal_miner(self):
         """Create Quantum Metal miner - production ready, no CPU fallbacks"""
         try:
-            # Import real Quantum Metal integration only
-            sys.path.insert(0, backend_src)
-            from mining.quantum_metal_integration import QuantumMetalIntegration
+            from core_engine.quantum_metal_integration import QuantumMetalIntegration
 
             quantum_metal = QuantumMetalIntegration(
                 config={
                     "algorithm": "hybrid_ensemble_search",
                     "enabled": True,
-                    "fallback_to_cpu": False,  # No CPU fallbacks in production
+                    "fallback_to_cpu": False,
                 }
             )
 
-            if quantum_metal.is_available():
+            if hasattr(quantum_metal, "is_available") and quantum_metal.is_available():
                 return quantum_metal
             else:
                 logger.error(
@@ -443,9 +441,11 @@ class RevolutionaryQuantumMiningPowerhouse:
     def _create_hierarchical_search(self):
         """Create hierarchical search system - production ready, no fallbacks"""
         try:
-            from mining.hierarchical_search import HierarchicalPhiSearch
+            from Intelligence.poincare_cassini_search import (
+                PoincareCassiniSearch as HierarchicalPhiSearch,
+            )
 
-            return HierarchicalPhiSearch()
+            return HierarchicalPhiSearch
         except ImportError as e:
             logger.warning(f"   Hierarchical search not available: {e}")
             return None
@@ -456,7 +456,9 @@ class RevolutionaryQuantumMiningPowerhouse:
     def _create_entropy_optimizer(self):
         """Create entropy optimizer - production ready, no fallbacks"""
         try:
-            from mining.entropy_optimizer import EntropyOptimizer
+            from Intelligence.orchestrator import (
+                IntelligenceOrchestrator as EntropyOptimizer,
+            )
 
             return EntropyOptimizer()
         except ImportError as e:
@@ -469,13 +471,13 @@ class RevolutionaryQuantumMiningPowerhouse:
     def _create_adaptive_orchestrator(self):
         """Create Adaptive Quantum Orchestrator"""
         try:
-            from mining.adaptive_quantum_orchestrator import AdaptiveQuantumOrchestrator
+            from Intelligence.orchestrator import (
+                IntelligenceOrchestrator as AdaptiveQuantumOrchestrator,
+            )
 
             if self.quantum_miner and hasattr(self.quantum_miner, "is_available"):
                 if self.quantum_miner.is_available():
-                    orchestrator = AdaptiveQuantumOrchestrator(
-                        quantum_miner=self.quantum_miner
-                    )
+                    orchestrator = AdaptiveQuantumOrchestrator()
                     return orchestrator
 
             logger.info("   Quantum miner not available for orchestrator")

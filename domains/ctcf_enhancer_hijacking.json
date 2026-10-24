@@ -1,0 +1,36 @@
+{
+  "schema": "euclid.domain_schema/1",
+  "id": "CTCF_Enhancer_Hijacking_v1",
+  "name": "Molecular Biology & Epigenomics (CTCF Insulator Loss / Enhancer Hijacking)",
+  "nodes": {
+    "StateContainer": "SuperEnhancerTranscriptionalHub",
+    "BoundaryGate": "CTCF_CohesinInsulatorLoopBoundary",
+    "ConservedQuantityLeak": "EctopicProtoOncogeneActivation",
+    "RemediationInvariant": "RestoreConvergentCTCFMotifBoundaryInsulation"
+  },
+  "relations": [
+    {
+      "source": "SuperEnhancerTranscriptionalHub",
+      "relation": "guarded_by",
+      "target": "CTCF_CohesinInsulatorLoopBoundary",
+      "structural_role": "unbounded_state_lifetime"
+    },
+    {
+      "source": "CTCF_CohesinInsulatorLoopBoundary",
+      "relation": "hijacks_when_lost",
+      "target": "EctopicProtoOncogeneActivation",
+      "structural_role": "missing_boundary_mediation"
+    },
+    {
+      "source": "EctopicProtoOncogeneActivation",
+      "relation": "remediated_by",
+      "target": "RestoreConvergentCTCFMotifBoundaryInsulation",
+      "structural_role": "conserved_measure_leakage"
+    }
+  ],
+  "structural_triad": [
+    "unbounded_state_lifetime",
+    "missing_boundary_mediation",
+    "conserved_measure_leakage"
+  ]
+}

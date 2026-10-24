@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import os
+for _var in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+    os.environ[_var] = "1"
+
 import asyncio
 import contextlib
 import hashlib
 import json
 import logging
-import os
 import signal
 import sys
 from dataclasses import replace
@@ -701,6 +704,19 @@ async def _main_async(args) -> None:
             coordinator.set_agentic_state_path(
                 os.getenv("PYTHIA_AGENTIC_STATE_PATH", "data/agentic_policy.json")
             )
+            try:
+                publish_stratum_status({
+                    "state": "CONNECTING",
+                    "status": "connecting",
+                    "connected": False,
+                    "primary": {
+                        "pool_id": getattr(endpoints[0], "name", "braiins"),
+                        "endpoint": getattr(endpoints[0], "endpoint", str(endpoints[0])),
+                        "configured": True,
+                    },
+                })
+            except Exception:
+                pass
             if not args.device:
                 hasher = coordinator.execution_hasher
                 LOG.info(

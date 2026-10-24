@@ -666,9 +666,13 @@ def predict_with_enhanced_agi(
     return agi.predict_enhanced_intelligence(entity_data, domain, context=context)
 
 
+create_agi_interface = create_enhanced_agi_interface
+
 # Export enhanced AGI interface
 __all__ = [
     "EnhancedAGIInterface",
+    "create_agi_interface",
     "create_enhanced_agi_interface",
     "predict_with_enhanced_agi",
 ]
+
