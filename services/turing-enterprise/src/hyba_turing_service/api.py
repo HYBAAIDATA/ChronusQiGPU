@@ -377,6 +377,17 @@ def create_app(deps: Dependencies):
             lambda p, t, a, b: p.overview(t, a, tenant=tenant),
         )
 
+    @app.get("/api/customer/{tenant}/activation-status")
+    async def activation_status(
+        request: Request, tenant: str, project: str, job: str | None = None
+    ):
+        return await operation(
+            request,
+            tenant,
+            "turing.customer.read",
+            lambda p, t, a, b: p.activation_status(t, a, tenant=tenant, project=project, job=job),
+        )
+
     @app.get("/api/customer/{tenant}/{resource}")
     async def customer_list(
         request: Request,
