@@ -189,7 +189,6 @@ Evaluates exact algebraic and topological control against failure modes of large
    - **Where EUCLID Dominates:** Deterministic algebraic verification, zero numerical drift, sub-10ms reflex safety lockouts, and rapid sample transfer across formally isomorphic topologies.
    - **Where Frontier Models / Deep RL Dominate:** Broad multi-modal open-domain generalisation, raw conversational fluency, complex pixel/audio perception, and unstructured environments lacking clear mathematical graph representations.
 3. **CI/CD Isolation:** Benchmarks execute inside `tests/euclid_arena/` under isolated seeds `[1337, 42, 2026]` and temporary storage without mutating repository source manifests or tripping integration gatekeepers.
-<<<<<<< Updated upstream
 
 ---
 
@@ -237,5 +236,3 @@ $$\text{Miss Cost} = \text{Subset Size} + (\text{Rank} - \text{Subset Size}) + 1
 - **Subspace Concentration:** As $n \in \{15, 18, 20\}$, the Pisot damping factor $d(n) \to 1.0$ ($0.999267 \to 0.999827 \to 0.999934$), achieving $>99.99\%$ hit rates and eliminating miss rescan penalties without violating conservation laws.
 - **Elevation of Benchmark Tests:** All benchmark test suites (`tests/test_benchmark_*.py`) have been elevated from trivial smoke tests to verify mathematical invariants, permutation parities, and non-claims boundaries per `lucas/scaling_research.py`.
 
-=======
->>>>>>> Stashed changes
