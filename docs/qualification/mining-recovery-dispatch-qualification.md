@@ -14,8 +14,15 @@ Continuation of draft PR #153; no merge, deployment or live actuation performed.
 
 ## Provenance
 
-- Implementation parent: `668ade9f2a8297d5f27ac10e016c128d847c71b9`.
-- User's acceptance suite retrieved unchanged from `f58ccc7c`;
+- Mining source/testing baseline: `668ade9f2a8297d5f27ac10e016c128d847c71b9`.
+- Repair committed as `6bf95069424d6234896d3f9d3fa46f300263a5d0`.
+- Concurrent custody continuation `46ae67c7c84d97f470e8ff91d061e8a487f7f6c5`
+  was present on the shared review branch when the repair was pushed and was
+  preserved. Its changed files were not in this local test closure; the 135-test
+  rerun is NOT a new qualification of that concurrent custody implementation.
+  The final combined branch still needs a clean-checkout integration run.
+- User's acceptance suite retrieved unchanged from
+  `f58ccc7c4f1d406f1cc1c190faace72d1c6b57cd`;
   Git blob `90316ee121da0299de9b554e924467d3a23f28f7`.
 - That suite was added AFTER pinned base `cd80d037`; the earlier file-not-found
   result at the base is reconciled, not evidence the new commit is absent.
