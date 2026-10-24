@@ -4,7 +4,9 @@
 
 **Local restart repairs PASS; full enterprise qualification PARTIAL; production HOLD.**
 
-Continuation on `feat/euclid-salamander-agent-capabilities-20261023`, draft PR #145.
+Continuation on `feat/euclid-salamander-agent-capabilities-20261023`, draft PR #153.
+PR #145 was already merged before this continuation; its merged head is the
+baseline below. The restart repair commit is separate and was not merged here.
 Baseline commit: `337c979c878e1077f7f97dfbb9eb769e5b29ef5d`.
 The companion manifest binds the repaired candidate by file hashes.
 This does not merge, publish, deploy, run live actuation, or certify AGI.
