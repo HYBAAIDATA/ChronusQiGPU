@@ -1,0 +1,41 @@
+{
+  "base_branch": "feat/euclid-salamander-agent-capabilities-20261023",
+  "base_commit": "668ade9f2a8297d5f27ac10e016c128d847c71b9",
+  "changed_sha256": {
+    "aethel/ovid_authority.py": "32e4dd2b504f20e11d9ae99f6aaa32fa61cdd5aaded9a1f7e0e641e2bc6c09ec",
+    "aethel/theseus.py": "d38da08522de3f3ba5b5fe8234d21c803181dbd6ef36ad56835882a11e58dad7",
+    "aethel/theseus_projection.py": "bb27ee25f8f88536ea2001e42fcd90818d69548b71ce11cd3630f2073ec26c00",
+    "aethel/triad.py": "c999079a402c9c04aea73f01b30fb436fece7078aadfc00aaea1ad4cf0e43c65",
+    "euclid/organ_adapters/specialists.py": "530791e2c8864b6ee359dbcaaeee3f45dfc4c813363c84fb88ed3cd8d9a55823",
+    "tests/test_ovid_theseus_chronus_gap_closure.py": "966d9ea1f62ebb5ea336c0370708eb7cbfc2b1e381730cf5cad41e26a2446150",
+    "tests/test_triad_authority_profiles.py": "896cf3369f1e7714f18fff00330d1001aa7eb5735c19b916ca8a59a4af602370"
+  },
+  "evidence_sha256": {
+    "custody-normal.txt": "bc9c36acc5440fa547b9b2fd206e3e4cb73647d02e5cd87189c7bb632811b6e2",
+    "custody-optimized.txt": "cee0f94a7027534e90e08d5477ef2b89cb7fe251c4bc94081937cba502857632",
+    "full-preflight.txt": "0cab535eb78eccc90c29f6fbedc55eea7b7305bffd0f5a835545aa70b3bce510",
+    "inherited-bridge-normal.txt": "92cb7959915497f2c6c62d356affbb8359c87713534abe99631def28f519a990",
+    "inherited-bridge-optimized.txt": "5d59349e58488d2a8d3bc66c64c8df1fb7828b6e1340bc6cab3e847be9e731bc",
+    "scoped-lint.txt": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "test-tooling-install.txt": "1707e09631eb9f68ab238777a37d0672265dfb429293d9025fc9e75dbf88c0fd"
+  },
+  "non_custody_specialist_AST_unchanged": true,
+  "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+  "python": "3.13.14",
+  "results": {
+    "actual_custody_normal": "PASS",
+    "actual_custody_optimized": "PASS",
+    "actual_custody_tests": 35,
+    "ci": "UNVERIFIED_403",
+    "inherited_bridge_normal": "PASS",
+    "inherited_bridge_optimized": "PASS",
+    "inherited_bridge_tests": 39,
+    "installed_enterprise": "NOT_RUN",
+    "production_ready": false,
+    "whole_closeout_preflight": "BLOCKED_EXIT_2_NOT_A_GIT_CHECKOUT"
+  },
+  "schema": "hyba.custody-profile-qualification/v1",
+  "source_checkout": "MCP selective source, no local Git checkout identity",
+  "source_scope": "20 byte-verified Aethel modules and actual specialist adapter; package initializer bypass is explicit",
+  "source_subset_import_bootstrap": "\"\"\"LOCAL SOURCE-SUBSET TEST BOOTSTRAP, NOT INSTALLED-PACKAGE ACCEPTANCE.\"\"\"\nimport sys,types,runpy,os\nbootstrap=\"import sys,types;p=types.ModuleType('aethel');p.__path__=['/data/whole-system/aethel'];p.__version__='1.0.0';sys.modules['aethel']=p\"\nexec(bootstrap)\ne=types.ModuleType('euclid');e.__path__=['/data/whole-system/euclid'];sys.modules['euclid']=e\na=types.ModuleType('euclid.organ_adapters');a.__path__=['/data/whole-system/euclid/organ_adapters'];sys.modules['euclid.organ_adapters']=a\nos.environ['AETHEL_SUBSET_BOOTSTRAP']=bootstrap\nrunpy.run_module('pytest',run_name='__main__')\n"
+}

@@ -65,16 +65,18 @@ class RealRuntimeLifecycleTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'closed'):
             self.review()
 
-    def test_recomposition_drops_old_suite_binding(self):
+    def test_recomposition_cannot_discard_history_or_rebind_tenant(self):
         runtime = self.compose()
         self.review()
         old = runtime._agent_capabilities
-        runtime.compose_organism(tenant_id='tenant-b')
-        self.review(tenant_id='tenant-b')
-        self.assertIsNot(old, runtime._agent_capabilities)
-        self.assertIs(runtime._agent_capabilities.ledger, runtime.autonomic.ledger)
+        head = runtime.autonomic.ledger.head
+        with self.assertRaisesRegex(RuntimeError, 'already composed'):
+            runtime.compose_organism(tenant_id='tenant-b')
+        self.assertIs(old, runtime._agent_capabilities)
+        self.assertEqual(head, runtime.autonomic.ledger.head)
+        self.review()
         with self.assertRaises(ValueError):
-            self.review()
+            self.review(tenant_id='tenant-b')
 
     def test_no_source_execution(self):
         runtime = self.compose()

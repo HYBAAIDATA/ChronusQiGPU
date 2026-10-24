@@ -1,0 +1,5 @@
+Baseline commit: 337c979c878e1077f7f97dfbb9eb769e5b29ef5d
+Original Salamander record count: 1
+Restored Salamander record count: 0
+Restored cognitive evidence is runtime evidence: False
+Search repository path: var/euclid/registry/primitive_repository.json

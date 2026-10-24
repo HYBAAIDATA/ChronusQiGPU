@@ -1,0 +1,102 @@
+{
+  "aethel/theseus.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/cd80d0371e50979cb5d1e704bafd41f70f0044d8/contents/aethel/theseus.py",
+    "git_blob": "3cd320b699436f9feb09efd06d5c067e5af9c8f2",
+    "sha256": "b057318fa5491d83f132dfe3ff338b041b083891d9e55d1e68aa551035c04bf9"
+  },
+  "aethel/triad.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/cd80d0371e50979cb5d1e704bafd41f70f0044d8/contents/aethel/triad.py",
+    "git_blob": "a484bac2144c3af1a7259d17425b71f046cb9912",
+    "sha256": "ea1929be2502d5a8e576e50e9e870efc1f5a1b64d5ece875409b140ad24f2f34"
+  },
+  "aethel/ovid_authority.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/cd80d0371e50979cb5d1e704bafd41f70f0044d8/contents/aethel/ovid_authority.py",
+    "git_blob": "e169c4fe06d7e1186973aef4e305626ce872e077",
+    "sha256": "6abeb7bdedddd14fd81367b086f0a7e34115db5f693536901c88ccdfdb3c1272"
+  },
+  "aethel/cassini.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/668ade9f2a8297d5f27ac10e016c128d847c71b9/contents/aethel/cassini.py",
+    "git_blob": "5a5693fb0c691db45ba27a4dfda913bdff3cd7be",
+    "sha256": "d112435f3a811e149d409428326b48618a39456201f744096e205ce94c7d5c82"
+  },
+  "aethel/theseus_projection.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/cd80d0371e50979cb5d1e704bafd41f70f0044d8/contents/aethel/theseus_projection.py",
+    "git_blob": "31d19c17b23bec7aab120e685905aaa9b0ae42e8",
+    "sha256": "dbf7e01393f63eda932c3bc6aff60c7853e6a2c8687fcec0ac6bcf75241bc88c"
+  },
+  "aethel/primes.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/668ade9f2a8297d5f27ac10e016c128d847c71b9/contents/aethel/primes.py",
+    "git_blob": "05d63bf844fea691342e37c0f347f30a4fbe64ab",
+    "sha256": "ed3a0ea5cadebbde7fbb750f6d070852de474e151c47b1f74fa57f9015769245"
+  },
+  "aethel/ovid.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/668ade9f2a8297d5f27ac10e016c128d847c71b9/contents/aethel/ovid.py",
+    "git_blob": "136cdf6f1fc55e6ad47e546a07b95c8b4c45d1c2",
+    "sha256": "217848b0e39930adf049edcd2edac8d69890bf18a94268f9d778c22fc8bab573"
+  },
+  "aethel/storage.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/668ade9f2a8297d5f27ac10e016c128d847c71b9/contents/aethel/storage.py",
+    "git_blob": "164d97d00343939580cc3938702896a9befa274c",
+    "sha256": "a4058685808d35e966cdb735d566ea7cea507e400c89c2e72024ec83eb57a248"
+  },
+  "aethel/geodesic.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/668ade9f2a8297d5f27ac10e016c128d847c71b9/contents/aethel/geodesic.py",
+    "git_blob": "266d8ac9275bc9b5e52035a5d3f13f681044e41e",
+    "sha256": "c022a61d9f382858b730a175cffe6230e20492a9fdbd70488dba91c2a98daa66"
+  },
+  "aethel/constants.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/668ade9f2a8297d5f27ac10e016c128d847c71b9/contents/aethel/constants.py",
+    "git_blob": "9bacd0df972e8f9ac3ee0a0382fd9a7c3cf4f6be",
+    "sha256": "866f0fa34b257780fe3d51310c003cfb7a9c4e3a0f171952dd4a82857769b5d2"
+  },
+  "aethel/fibonacci.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/668ade9f2a8297d5f27ac10e016c128d847c71b9/contents/aethel/fibonacci.py",
+    "git_blob": "5851a09efea4965a81e8ef51310ce8470533d802",
+    "sha256": "2e0963bbf5945dc9f2c5a864f6d09f5a13ef29e7d8ede7063f070331c5bacbbe"
+  },
+  "aethel/zeckendorf.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/668ade9f2a8297d5f27ac10e016c128d847c71b9/contents/aethel/zeckendorf.py",
+    "git_blob": "86de68aa63ffcf8e0edeca23891039c3d5db9bd6",
+    "sha256": "137540d3b9f65d9b4b8fcac8be0c750884016a0fff774cc9a24bd1ae76cb580c"
+  },
+  "aethel/encoding.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/668ade9f2a8297d5f27ac10e016c128d847c71b9/contents/aethel/encoding.py",
+    "git_blob": "e7e682ea9f801bba088d34c6f5d7b4eac33d5854",
+    "sha256": "a1e1165d0710eb9700197f6813ecbc4827a7fbab612667382bfd460cac9a700e"
+  },
+  "aethel/errors.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/668ade9f2a8297d5f27ac10e016c128d847c71b9/contents/aethel/errors.py",
+    "git_blob": "ab19672c47fb660bdc5f9b82eb6f03e35cc67cf6",
+    "sha256": "8eaeafc1e0a5c3d5f66c01f52af9b0c9716c8f97eae63e94ec8c09c0987dd2d9"
+  },
+  "aethel/costs.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/668ade9f2a8297d5f27ac10e016c128d847c71b9/contents/aethel/costs.py",
+    "git_blob": "8616908ec36620579e7b39b4a09158f1800d58a0",
+    "sha256": "96ee02dc86eca17a6f79f1dcd8b7f1f3ab3a907e6e56398aefd271426969ccd8"
+  },
+  "aethel/phyllotaxis.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/668ade9f2a8297d5f27ac10e016c128d847c71b9/contents/aethel/phyllotaxis.py",
+    "git_blob": "e37309e2d141423967f26db9b4dbacb2b4b792b5",
+    "sha256": "765b08132c9e366b90ce4242b9be8a40e701bdb6944267696da3ded90d65395b"
+  },
+  "aethel/manifold.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/668ade9f2a8297d5f27ac10e016c128d847c71b9/contents/aethel/manifold.py",
+    "git_blob": "6f25070608372534b70a1f5bf1fd88c9fac967b4",
+    "sha256": "51433a859089be602f1c1c79aebdff923db59f185d1aa59b94cb349923b8f918"
+  },
+  "aethel/gpu.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/668ade9f2a8297d5f27ac10e016c128d847c71b9/contents/aethel/gpu.py",
+    "git_blob": "b333052652f16f6a3b1c904aa072be8e51e1dc61",
+    "sha256": "2425e2b47af6bb3f9ef85d44a7e504d79b6ba1ce64a34662c2b67a3c085599e0"
+  },
+  "aethel/punch.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/668ade9f2a8297d5f27ac10e016c128d847c71b9/contents/aethel/punch.py",
+    "git_blob": "7aeb2c44cec5c5ddac62283fecbbc59c0900c82b",
+    "sha256": "b43ba940277f188f21b1252b373e88ae6b40ae07be142ebc1461954a1c5cb044"
+  },
+  "aethel/compute.py": {
+    "uri": "repo://PhiEnterprise1/EuclidPhiEnterprise/sha/668ade9f2a8297d5f27ac10e016c128d847c71b9/contents/aethel/compute.py",
+    "git_blob": "6342d9824ae5e6f223550a8e6e039d74e1885e0b",
+    "sha256": "723433b0a649eafdaa4bc1ac69c135f906316118309c6787ac5398e433df6ce2"
+  }
+}

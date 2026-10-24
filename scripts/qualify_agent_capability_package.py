@@ -123,6 +123,10 @@ assert f['capabilities']['math_verifier']['status']=='FAIL'
 assert f['capabilities']['security_verifier']['status']=='FAIL'
 assert f['capabilities']['governance']['status']=='FAIL'
 assert ledger.verify() and EvidenceLedger.from_payload(ledger.to_payload()).verify()
+mirror=EvidenceLedger.from_records(ledger.records)
+assert mirror.verify() and mirror.head==ledger.head
+mirror.append('installed-restart-continuation',{},at_ns=1)
+assert mirror.verify() and mirror.head!=ledger.head
 assert r['actuation']=='NOT_PERFORMED' and not r['self_healing_ready']
 try:
  ActionRegistry().execute(ActionRequest('x',ActionKind.REPLAN,'x','tenant-a','x','test',{},idempotency_key='x'))
