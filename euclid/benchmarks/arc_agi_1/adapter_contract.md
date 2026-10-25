@@ -87,8 +87,11 @@ Budgets are declared in the protocol and enforced by the WorldExecutor.
 ## 7. Scoring Rules
 
 - **Exact-match**: Candidate grid must match the withheld test output grid element-for-element
-- **Partial accuracy**: Not presented as "solved"; exact-match is the only reported outcome
-- **Scoring denominator**: Number of tasks where a valid candidate was generated and submitted within budgets
+- **Partial accuracy**: Never presented as "solved"; exact-match is the only reported solve outcome
+- **Two Attempts Policy**: For each test input, the submission provides up to two attempts (`attempt_1` and `attempt_2`). If either matches exactly, that test input is counted as solved
+- **Multi-Test-Input Protocol**: For tasks with multiple test inputs ($\ge 2$), `strict_task_accuracy` requires that *all* test inputs of that task match exactly. Partial solves contribute proportionally to `arc_prize_score` (test input accuracy) but produce $0$ for `strict_task_accuracy`
+- **Scoring Denominator**: The denominator is ALWAYS **all tasks in the split** ($N=400$ for training, $N=400$ for evaluation). Tasks unattempted, aborted, or producing no candidate score $0.0$ against the full $N=400$ denominator. Subsets or attempted-only fractions must never be reported as full-split scores
+- **Independent Scorer**: Withheld test outputs are never read by the runner, adapter, or EUCLID runtime; scoring is performed exclusively by `score_arc.py` or official benchmark evaluators
 - **Adaptation accounting**: Each run version is distinct; outcomes from different versions are not merged
 
 ## 8. Checkpoint/Resume Behaviour
@@ -100,11 +103,17 @@ Budgets are declared in the protocol and enforced by the WorldExecutor.
 ## 9. External Tool and Model Permissions
 
 - **Network access**: None required — all computation is local
-- **Model providers**: EUCLID's internal engines (MCTS, evolutionary) only
+- **Model providers**: EUCLID's internal engines (MCTS, evolutionary, analogy) only
 - **External services**: None — fail closed on unavailable dependency
+
+## 10. Geometric Symmetries, Invariants & Worker Isolation
+
+- **Dihedral Symmetries ($D_4$)**: Grids obey the 8 transformations of the dihedral group $D_4$ (rotations $R_0, R_{90}, R_{180}, R_{270}$ and reflections $H, V, \text{transpose}, \text{transpose}_2$) and Klein-4 subgroup properties ($H \circ V = V \circ H = R_{180}$, $H \circ R_{90} \circ H = R_{270}$). Color multi-set counts and topology are strictly conserved under all $D_4$ operations
+- **Worker Memory Isolation**: To prevent state accumulation and memory leaks across sequential episodes on memory-constrained environments, runners enforce worker isolation (`fresh_runtime` with garbage collection or `subprocess` execution)
+- **Hard Wall-Clock Bounds**: Each task enforces an operating system process boundary or in-loop timeout guard matching `budget.wall_clock_seconds` (default: 300s), preventing runaway search episodes
 
 ---
 
-**Adapter Contract Version**: 1.0
-**Generated**: 2026-10-23
-**Protocol**: ARC-AGI-1 administration v1
+**Adapter Contract Version**: 2.0 (Elevated ARC Specification)
+**Generated**: 2026-10-25
+**Protocol**: ARC-AGI-1 administration v2 (Governed EUCLID Specification)
