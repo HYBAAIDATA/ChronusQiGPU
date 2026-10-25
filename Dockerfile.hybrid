@@ -1,11 +1,8 @@
 # PYTHIA hybrid solver-fleet image (EHS T10).
 # Runs hyba.hybrid (GPUSolver / ASICSolver / HybridCoordinator) plus the
-# paired benchmark harness. The image carries vendor-portable OpenCL ICDs:
-#   - PoCL    : real CPU OpenCL device — the GPU-solver arm executes on
-#               silicon even with no discrete GPU attached.
-#   - Intel NEO / ROCm ICDs : picked up when the host exposes /dev/dri.
-# ASIC channels are pass-through only: ASICSolver stays fail-closed
-# (ASICNotPresent) unless a real device node is mapped in.
+# paired benchmark harness. PoCL provides a real CPU OpenCL fallback; Intel
+# runtime support is included where available. ASIC remains fail-closed until
+# a real device node is mapped in.
 FROM python:3.12-slim-bookworm AS runtime
 WORKDIR /app
 
@@ -15,7 +12,7 @@ COPY . .
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-       ocl-icd-libopencl1 intel-opencl-icd pocl-opencl-icd rocm-opencl-icd clinfo \
+       ocl-icd-libopencl1 intel-opencl-icd pocl-opencl-icd clinfo \
     && rm -rf /var/lib/apt/lists/* \
     && PIP_NO_CACHE_DIR=1 bash scripts/ci_install.sh "hardware,dev"
 
@@ -28,7 +25,6 @@ ENV HYBA_REPORTS_DIR=/app/reports
 RUN mkdir -p /app/reports
 VOLUME ["/app/reports"]
 
-# Default: the paired benchmark on a modest synthetic corpus (labeled
-# SYNTHETIC in the artifacts). Override with --headers for a real corpus.
+# Default: paired benchmark on a modest synthetic corpus, labeled SYNTHETIC.
 ENTRYPOINT ["python3", "scripts/benchmark_hybrid.py"]
 CMD ["--n", "32", "--nonce-space", "65536", "--resamples", "500"]

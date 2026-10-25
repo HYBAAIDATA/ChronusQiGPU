@@ -1,5 +1,5 @@
 # PYTHIA image: Vite builds the frontend; Python owns the runtime.
-FROM node:22-slim AS frontend
+FROM node:24-slim AS frontend
 WORKDIR /build/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
@@ -10,11 +10,11 @@ FROM python:3.12-slim-bookworm AS runtime
 WORKDIR /app
 COPY . .
 COPY --from=frontend /build/dist/public ./dist/public
-# Vendor-portable OpenCL ICDs: Intel NEO (iGPU/dGPU), PoCL (CPU fallback),
-# ROCm ICD (AMD/HPE, no-op when absent). NVIDIA CUDA comes from the host
-# toolkit via docker-compose.cuda.yml, never baked in. clinfo = probe tool.
+# Vendor-portable OpenCL ICDs: Intel NEO (iGPU/dGPU) and PoCL (CPU fallback).
+# Vendor GPU runtimes should be supplied by the host where available; CUDA
+# comes from the host toolkit via docker-compose.cuda.yml, never baked in.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ocl-icd-libopencl1 intel-opencl-icd pocl-opencl-icd rocm-opencl-icd clinfo \
+    && apt-get install -y --no-install-recommends ocl-icd-libopencl1 intel-opencl-icd pocl-opencl-icd clinfo \
     && rm -rf /var/lib/apt/lists/*
 # hyba-kellogg-tensor and hyba-chronos-one-igpu are in-tree only (not on PyPI);
 # ci_install.sh stages them so resolution never reaches PyPI for them.
