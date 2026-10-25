@@ -53,6 +53,12 @@ node the pool's own jobs are the chain evidence; a configured `PYTHIA_BITCOIN_RP
 (HTTPS when remote) takes precedence. Protect pool/node credentials and back up the
 session; removing it can remove the external-block safety history.
 
+### Hardware Gate & Fail-Closed Rules
+- **Authentication**: Control API refuses boot without `stratumUser` and `adminApiKey`.
+- **Fail-Closed Mining**: When mining device (`MLA1517_MMIO_DEVICE` or OpenCL device) is absent, mining endpoints fail-closed (`/ready-to-mine` returns 503 unavailable); they NEVER silently fall back to CPU mining.
+- **Horizontal Scaling Prohibited**: Horizontal scaling of file-backed mining sessions is FORBIDDEN (`minReplicas=1`, `maxReplicas=1`).
+- **HTTP Health vs Mining Readiness**: `/healthz` PASS indicates control liveness only; it does NOT indicate mining readiness.
+
 ## Live smoke
 
 `python scripts/docker_smoke.py --image <image>` runs the image as deployed against a
