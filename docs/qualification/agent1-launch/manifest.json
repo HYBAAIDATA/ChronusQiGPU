@@ -1,0 +1,45 @@
+{
+  "scope": "selected source and scoped unit evidence, NOT a full checkout or installed qualification",
+  "main_observed": "b131edc408a37ff7c03534d694bfcdaf0c827abb",
+  "branch_base": "d11f3bb5e8b42066152a6661c179b5bd64f17d22",
+  "input_blobs": {
+    "aethel/enterprise_bridge.py": "356862d0fd69141b479c768f318fd40319cfa6f0",
+    "aethel/enterprise/custody.py": "f008fb6af86a5dc899e8f365654128595dbc5c4a",
+    "tests/test_enterprise_capability_bridge.py": "5c4d2dd992a659b0e4ceb14438379b49fa3783f4",
+    "aethel/__init__.py": "07aeef1f00dfa3a861eddf17fdc9df42e3b6e01c"
+  },
+  "environment": {
+    "python": "3.13.15 (main, Aug 24 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+    "platform": "Linux-6.18.49-x86_64-with-glibc2.34"
+  },
+  "files": {
+    "aethel/enterprise_bridge.py": "357dd0a281171ff052d61cb6e467f8c0992dc60a0dd33c30a3d7ccfc626f971f",
+    "aethel/enterprise/custody.py": "71e6061f93ade776d19fea65e8d07750c2f69c8875a4efda0d7c7cf5b11b8590",
+    "tests/test_enterprise_bridge_durable.py": "58cade21e51cf141b19da23f66d6d61c7f7904fabdded5c6a02636f407c3e22b",
+    "tests/test_enterprise_backup_no_clobber.py": "f764fb70a38b146e389b82b2958248dca2af8b9bb0733b555ab40b88b73ac1ab",
+    "tests/test_enterprise_capability_bridge.py": "42d1b1b156abcb16b605461e0bf72243ae9f39c1d878b062c041f4861dfc9383",
+    "docs/qualification/agent1-launch/run_boundary_unit.py": "6f852cc4fc43410cd87342ca96ccf4679aa7e75e4349c34329c0f2702534f065",
+    "docs/qualification/agent1-launch/unit-before.log": "bf7f3cf0fe4a08f785cc8e27ae57c87dac808cd7ae6048fd69e0abe59611e3fd",
+    "docs/qualification/agent1-launch/unit-after.log": "41b6f89b299dd952a30b4e330943075a8e75eaabdd0383f2ce6a4d5a3f85f4a2",
+    "docs/qualification/agent1-launch/unit-optimized.log": "169b0a3ab32dfbaaf8b50d3ac664f73bb2165efd786b3d7ecc0f498588ae16a7",
+    "docs/qualification/agent1-launch/installed-attempt.log": "de406f2d02c0d66bcae913bedcf8cd0e7f9f5aa6da1ece8f8c2bf88be6b7e4b1",
+    "docs/qualification/agent1-launch/qualify.py": "9943433d3218ec958251fdd04557e5e58f501fdcafcf138d163e91678491e95e",
+    "docs/qualification/agent1-launch/unit-before-expanded.log": "af3be45036da05153dc049f7ba5c4324d7e74530ca921feec23cf495d26803fd",
+    "docs/qualification/agent1-launch/unit-after-expanded.log": "eba3d09ca8432bf202dd40c56ab57d56591e76ab8f6e40c287f1b08a10d85cea",
+    "docs/qualification/agent1-launch/unit-optimized-expanded.log": "eba3d09ca8432bf202dd40c56ab57d56591e76ab8f6e40c287f1b08a10d85cea",
+    "docs/qualification/agent1-launch/normal-import-final-attempt.log": "3bd5daf03ceb45eaf3ad99d8fd40fabd011f7f2362f9e396608c9b8cf1049a00",
+    "docs/qualification/agent1-launch/isolated-installed-attempt.log": "4d39ee86dde127343624f0830efc9cac47df6c7b2dc435ae3124df877d24af5e",
+    "docs/qualification/agent1-launch/qualification-attempt.log": "b3580759f42494319d4d13c1bf470b122e4800e3242ee10b9315eef363b96912",
+    "docs/qualification/agent1-launch/prerequisite-attempt.json": "c6a2097e7970191d9ba78e3440bb25c5b3867db79e0d51b7b8a31b393519a7b5",
+    "docs/qualification/agent1-launch/git-head-attempt.log": "4a7f0e4452645f813097088971e904a7dbae37d58a48d80efa45c284233924c8",
+    "docs/qualification/agent1-launch/run_backup_unit.py": "4952c7e803c5340d50e66ca5128716d9dbe1875e250bd1517c7ceffea1c28aea",
+    "docs/qualification/agent1-launch/backup-unit-before.log": "c8f22d9273ba7ce46e5aaaceb443e5935e357b47794fe4aca47bab193ce4bbe1",
+    "docs/qualification/agent1-launch/backup-unit-after.log": "c3ad28ce775f40fdd673e19d15c31e753c2b07e3853de251e765a7fea7644fd4",
+    "docs/qualification/agent1-launch/backup-unit-optimized.log": "f6b4ab25739cc7eef18a4d5e7d5645d2988952141036990f7126e25292e0e19c",
+    "docs/qualification/agent1-launch/isolated-backup-attempt.log": "408faec1344c4820c5a3b66bc396a669ee1e7b67911250a85315037bd9e6f960",
+    "docs/qualification/agent1-launch/README.md": "5093ab0adeaae8111f665d326ad1dd97426a922a710cc05a746692eca34ef908",
+    "docs/qualification/agent1-launch/requirements.csv": "64393672ebcc372804884e069333914eb4603d17af88852c77ba4fc1f8857f64",
+    "docs/qualification/agent1-launch/enterprise_bridge-review.diff": "e47cc2f544d064dc99b92df12c57ad8fd16e65c1134b8e7c80ea49384313c8a3",
+    "docs/qualification/agent1-launch/custody-review.diff": "40916dfb010a59ccd34423e85ea2657bbed4e613dd37b0807fd78f66acccd96d"
+  }
+}
