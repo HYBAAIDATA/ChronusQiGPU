@@ -2156,7 +2156,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             dispatch_breadth=self._dispatch_breadth,
             executor_route=self._execution_route(),
             policy_id=_BASELINE_POLICY,
-            nonce_order=(NONCE_ORDER_M32 if solve_first is not None else self._nonce_order),
+            nonce_order=self._nonce_order,
             evidence_refs={
                 "lane_order_source": order_source,
                 "chronus107": self.production_integration.plan_evidence(
@@ -2280,7 +2280,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 dispatch_breadth=self._dispatch_breadth,
                 executor_route=self._execution_route(),
                 policy_id=decision.lead if decision is not None else "flat_exhaustive",
-                nonce_order=(NONCE_ORDER_M32 if solve_first is not None else self._nonce_order),
+                nonce_order=self._nonce_order,
                 evidence_refs={
                     "lane_order_source": order_source,
                     "chronus107": self.production_integration.plan_evidence(

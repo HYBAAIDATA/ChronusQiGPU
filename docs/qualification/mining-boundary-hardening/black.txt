@@ -1,0 +1,6 @@
+reformatted tests/test_mining_boundary_hardening.py
+
+All done! ✨ 🍰 ✨
+1 file reformatted, 1 file left unchanged.
+All done! ✨ 🍰 ✨
+2 files would be left unchanged.
