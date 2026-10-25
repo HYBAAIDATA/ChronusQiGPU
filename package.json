@@ -1,17 +1,17 @@
 {
   "name": "pythia-operator",
-  "private": true,
   "version": "0.1.0",
-  "description": "PYTHIA consolidated stack \u2014 Python control plane + frontend/ operator app.",
-  "type": "module",
+  "private": true,
+  "description": "Production operator application for PYTHIA mining and node cluster",
   "scripts": {
     "dev": "npm --prefix frontend run dev",
     "build": "npm --prefix frontend run build",
-    "start": "python main.py --host 0.0.0.0 --port 3000 --web-root dist/public",
     "preview": "npm --prefix frontend run preview",
-    "clean": "python -c \"import shutil; shutil.rmtree('dist', ignore_errors=True)\"",
     "lint": "npm --prefix frontend run lint",
-    "lint:py": "python -m flake8",
+    "lint:all": "npm run lint && npm run lint:py",
+    "lint:py": "flake8 Intelligence/ aethel/ theseus/ mining/ tests/ scripts/",
+    "typecheck": "npm --prefix frontend run typecheck",
+    "typecheck:py": "mypy Intelligence/ aethel/ theseus/ mining/ tests/ scripts/",
     "format": "npm --prefix frontend run format",
     "format:py": "python -m black .",
     "test:py": "python -m pytest tests/",
@@ -23,5 +23,8 @@
   },
   "engines": {
     "node": ">=22.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.6"
   }
 }

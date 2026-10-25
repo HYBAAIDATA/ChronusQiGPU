@@ -653,7 +653,7 @@
     {
       "name": "T8_single_engine_instance",
       "passed": true,
-      "engine_id": 139952355759776,
+      "engine_id": 1265094596736,
       "status": "kellogg.quantum_tensor (Kellogg-owned deterministic Complex/ComplexMatrix/QuantumState)"
     },
     {
@@ -767,7 +767,7 @@
           "L_18 \u00b7 abstraction": {
             "index": 18,
             "value": 5778,
-            "autocorr_lag1": 0.05342943786605176,
+            "autocorr_lag1": 0.053429437866051886,
             "n_blocks": 5
           },
           "L_20 \u00b7 metacognition": {
@@ -812,14 +812,14 @@
           "test": 3,
           "accuracy": 0.9666666666666667,
           "samples": 60,
-          "wall_time_seconds": 0.01636028289794922
+          "wall_time_seconds": 0.03623819351196289
         },
         "scaled_L15": {
           "train": 22,
           "test": 33,
           "accuracy": 0.9833333333333333,
           "samples": 660,
-          "wall_time_seconds": 1.2772388458251953
+          "wall_time_seconds": 1.4182307720184326
         }
       },
       "algorithm_projections": [
@@ -923,59 +923,59 @@
         "qft": {
           "base": {
             "unitaryError": 2.220446049250313e-16,
-            "runtimeSeconds": 0.0016449830000000165
+            "runtimeSeconds": 0.0015080000000000648
           },
           "lucas": {
             "unitaryError": 2.220446049250313e-16,
-            "runtimeSeconds": 0.0013899549999999705
+            "runtimeSeconds": 0.0007999999999999119
           }
         },
         "grover": {
           "base": {
             "peakSuccessProbability": 0.9613189697265625,
             "optimalIterations": 3,
-            "runtimeSeconds": 0.0002249669999999926
+            "runtimeSeconds": 0.0003301999999998362
           },
           "lucas": {
             "peakSuccessProbability": 0.68359375,
             "optimalIterations": 1,
-            "runtimeSeconds": 0.00011915900000000756
+            "runtimeSeconds": 0.0009238000000000302
           }
         },
         "qpe": {
           "base": {
             "phaseError": 0,
             "precisionQubits": 6,
-            "runtimeSeconds": 0.002946633000000004
+            "runtimeSeconds": 0.005678300000000025
           },
           "lucas": {
             "phaseError": 0,
             "precisionQubits": 4,
-            "runtimeSeconds": 0.0007784070000000087
+            "runtimeSeconds": 0.00022540000000015326
           }
         },
         "quantumWalk": {
           "base": {
             "quantumVariance": 7.999999999999992,
             "classicalVariance": 5,
-            "runtimeSeconds": 0.0003907670000000141
+            "runtimeSeconds": 0.0008684999999999388
           },
           "lucas": {
             "quantumVariance": 19.12499999999998,
             "classicalVariance": 8,
-            "runtimeSeconds": 0.00015207099999997586
+            "runtimeSeconds": 0.00020679999999995147
           }
         },
         "vqe": {
           "base": {
             "finalEnergy": -1.343599627988694,
             "exactGroundEnergy": -1.414213562373095,
-            "runtimeSeconds": 0.005518180000000011
+            "runtimeSeconds": 0.004749200000000009
           },
           "lucas": {
             "finalEnergy": -1.374124567260898,
             "exactGroundEnergy": -1.414213562373095,
-            "runtimeSeconds": 0.018228063000000017
+            "runtimeSeconds": 0.020517599999999803
           }
         }
       },
@@ -999,5 +999,5 @@
   "required_check_count": 16,
   "executed_check_count": 16,
   "production_ready": false,
-  "elapsed_seconds": 9.733532667160034
+  "elapsed_seconds": 13.272040843963623
 }
