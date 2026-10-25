@@ -17,4 +17,4 @@ jobs:
         with:
           app-name: ${{ vars.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: ghcr.io/${{ github.repository_owner }}/pythia-control:latest
+          images: ghcr.io/hyb-aphidata/pythia-control:latest
