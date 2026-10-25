@@ -178,8 +178,10 @@ class ProofService:
         invariants: Mapping[str, Callable[[Any, Any], bool]],
         backend,
     ):
-        results = tuple(bool(fn(input_obj, output_obj)) for fn in invariants.values())
-        if not all(results):
+        if not invariants:
+            raise ValueError("at least one invariant is required")
+        results = tuple(fn(input_obj, output_obj) for fn in invariants.values())
+        if not all(result is True for result in results):
             raise ValueError("invariant failed")
         unsigned = {
             "proof_id": str(uuid.uuid4()),

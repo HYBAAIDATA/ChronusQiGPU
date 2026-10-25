@@ -1,0 +1,33 @@
+{
+  "source_revision": "b131edc408a37ff7c03534d694bfcdaf0c827abb",
+  "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+  "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+  "scope": "Non-mining partial-export module tests; actual hyba_contracts initializer; hyba_services initializer bypassed; no backend doubles for repaired functions; synthetic test data; not installed package, HTTP, device, CI or deployment validation",
+  "runs": {
+    "baseline-readiness": {
+      "tests_run": 34,
+      "outcome": "PASS",
+      "log": "baseline-readiness.log"
+    },
+    "red-guardrails": {
+      "tests_run": 14,
+      "outcome": "FAIL",
+      "log": "red-guardrails.log"
+    },
+    "green-guardrails": {
+      "tests_run": 14,
+      "outcome": "PASS",
+      "log": "green-guardrails.log"
+    },
+    "optimized-guardrails": {
+      "tests_run": 14,
+      "outcome": "PASS",
+      "log": "optimized-guardrails.log"
+    },
+    "unchanged-readiness": {
+      "tests_run": 34,
+      "outcome": "PASS",
+      "log": "unchanged-readiness.log"
+    }
+  }
+}

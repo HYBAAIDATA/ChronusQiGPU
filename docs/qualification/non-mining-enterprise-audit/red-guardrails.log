@@ -1,0 +1,91 @@
+test_approval_still_requires_evidence (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_approval_still_requires_evidence) ... ok
+test_cannot_move_backwards (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_cannot_move_backwards) ... FAIL
+test_cannot_skip_to_deployment (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_cannot_skip_to_deployment) ... FAIL
+test_capture_preserves_provenance (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_capture_preserves_provenance) ... ok
+test_empty_checks_cannot_promote (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_empty_checks_cannot_promote) ... FAIL
+test_empty_generator_cannot_promote (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_empty_generator_cannot_promote) ... FAIL
+test_empty_invariants_cannot_be_certified (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_empty_invariants_cannot_be_certified) ... FAIL
+test_exception_leaves_state_unchanged (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_exception_leaves_state_unchanged) ... ok
+test_failed_check_leaves_state_unchanged (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_failed_check_leaves_state_unchanged) ... ok
+test_literal_invariant_success_still_signs (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_literal_invariant_success_still_signs) ... ok
+test_notebook_capture_does_not_claim_replay (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_notebook_capture_does_not_claim_replay) ... FAIL
+test_sequential_promotion (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_sequential_promotion) ... ok
+test_truthy_non_boolean_check_is_not_approval (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_truthy_non_boolean_check_is_not_approval) ... FAIL
+test_truthy_non_boolean_is_not_invariant_proof (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_truthy_non_boolean_is_not_invariant_proof) ... FAIL
+
+======================================================================
+FAIL: test_cannot_move_backwards (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_cannot_move_backwards)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/hyba-enterprise-audit/tests/test_enterprise_audit_guardrails.py", line 52, in test_cannot_move_backwards
+    with self.assertRaises(PromotionBlocked):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: PromotionBlocked not raised
+
+======================================================================
+FAIL: test_cannot_skip_to_deployment (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_cannot_skip_to_deployment)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/hyba-enterprise-audit/tests/test_enterprise_audit_guardrails.py", line 40, in test_cannot_skip_to_deployment
+    with self.assertRaises(PromotionBlocked):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: PromotionBlocked not raised
+
+======================================================================
+FAIL: test_empty_checks_cannot_promote (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_empty_checks_cannot_promote)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/hyba-enterprise-audit/tests/test_enterprise_audit_guardrails.py", line 27, in test_empty_checks_cannot_promote
+    with self.assertRaises(PromotionBlocked):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: PromotionBlocked not raised
+
+======================================================================
+FAIL: test_empty_generator_cannot_promote (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_empty_generator_cannot_promote)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/hyba-enterprise-audit/tests/test_enterprise_audit_guardrails.py", line 32, in test_empty_generator_cannot_promote
+    with self.assertRaises(PromotionBlocked):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: PromotionBlocked not raised
+
+======================================================================
+FAIL: test_empty_invariants_cannot_be_certified (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_empty_invariants_cannot_be_certified)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/hyba-enterprise-audit/tests/test_enterprise_audit_guardrails.py", line 89, in test_empty_invariants_cannot_be_certified
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_notebook_capture_does_not_claim_replay (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_notebook_capture_does_not_claim_replay)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/hyba-enterprise-audit/tests/test_enterprise_audit_guardrails.py", line 76, in test_notebook_capture_does_not_claim_replay
+    self.assertFalse(result['reproducible'])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_truthy_non_boolean_check_is_not_approval (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_truthy_non_boolean_check_is_not_approval)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/hyba-enterprise-audit/tests/test_enterprise_audit_guardrails.py", line 36, in test_truthy_non_boolean_check_is_not_approval
+    with self.assertRaises(PromotionBlocked):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: PromotionBlocked not raised
+
+======================================================================
+FAIL: test_truthy_non_boolean_is_not_invariant_proof (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_truthy_non_boolean_is_not_invariant_proof)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/hyba-enterprise-audit/tests/test_enterprise_audit_guardrails.py", line 94, in test_truthy_non_boolean_is_not_invariant_proof
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.012s
+
+FAILED (failures=8)

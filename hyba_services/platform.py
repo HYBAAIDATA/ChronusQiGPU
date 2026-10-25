@@ -42,6 +42,12 @@ class ModelRegistry:
         if target not in self.STATES[1:]:
             raise ValueError("invalid target")
         base = self.root / tenant / sha
+        current = json.loads((base / "state.json").read_text()).get("state")
+        if current not in self.STATES[:-1] or target != self.STATES[self.STATES.index(current) + 1]:
+            raise PromotionBlocked("promotion must follow the declared lifecycle")
+        checks = tuple(checks)
+        if not checks:
+            raise PromotionBlocked("promotion requires at least one explicit check")
         card = json.loads((base / "card.json").read_text())
         evidence = json.loads((base / "evidence.json").read_text())
         if target in self.STATES[self.STATES.index("APPROVED") :]:
@@ -54,7 +60,7 @@ class ModelRegistry:
             )
             if any(not evidence.get(k) for k in required):
                 raise PromotionBlocked("approval evidence incomplete")
-        if not all(check(card, evidence) for check in checks):
+        if not all(check(card, evidence) is True for check in checks):
             raise PromotionBlocked("promotion check failed")
         (base / "state.json").write_text(
             json.dumps({"state": target, "promoted_at": int(time.time())})
