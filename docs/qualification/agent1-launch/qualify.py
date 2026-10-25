@@ -33,6 +33,15 @@ REGRESSIONS = (
 
 
 def main():
+    """Run CLI prerequisites and retain logs plus an artifact-hashed summary.
+
+    Require an exact, clean ``--candidate`` checkout, matching separately
+    installed artifacts via ``--python``, and a new ``--evidence`` directory
+    outside the checkout. Return 0 for scoped success or 2 for a recorded
+    blocked, failed or incomplete result. Invalid arguments exit with status 2.
+    Errors creating the evidence directory, writing the summary or parsing
+    JUnit propagate.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--candidate', required=True)
     parser.add_argument('--python', default=sys.executable)
@@ -48,12 +57,20 @@ def main():
         'scope': 'local runtime prerequisites only; no HTTP/customer/hardware acceptance',
         'launch_status': 'OPEN', 'checks': [], 'status': 'BLOCKED'}
     def save():
+        """Write summary.json with SHA-256 digests of the other evidence files."""
         summary['artifacts'] = {
             str(p.relative_to(output)): hashlib.sha256(p.read_bytes()).hexdigest()
             for p in output.rglob('*') if p.is_file() and p.name != 'summary.json'
         }
         (output / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
     def run(name, command, timeout=300, cwd=ROOT):
+        """Run a command with a timeout in seconds and retain stdout/stderr.
+
+        Return the completed process, recording nonzero exits as failures.
+        Record OS errors and timeouts as blocked checks and return None,
+        retaining partial output when available. Errors writing the blocked-check
+        log propagate.
+        """
         check = {'name': name, 'command': command, 'cwd': str(cwd)}
         summary['checks'].append(check)
         try:
@@ -69,6 +86,7 @@ def main():
             (output / (name + '.log')).write_text(partial + '\n' + str(exc) + '\n')
             return None
     def fail(reason):
+        """Persist the failure reason, print the current status and return 2."""
         summary['reason'] = reason
         save()
         print(json.dumps({'status': summary['status'], 'reason': reason, 'launch_status': 'OPEN'}))

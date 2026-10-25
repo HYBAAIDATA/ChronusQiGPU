@@ -572,12 +572,21 @@ def open_enterprise_store(
     durable_dir: str | Path | None = None,
     bind_chronus: bool = False,
 ):
-    """Open canonical enterprise custody with an explicit persistence boundary.
+    """Return a Triad with canonical Theseus custody and explicit persistence.
 
-    ``durable=True`` requires a real directory binding. Callers intentionally
-    using memory-only custody must pass ``durable=False``. The low-level
-    ``open_triad`` / ``open_theseus`` compatibility contracts are unchanged.
-    No legacy root migration, tenant identity or network admission is implied.
+    ``durable=True`` requires a nonblank ``durable_dir``. An indexed store is
+    attached; a fresh store is written on its first durable commit. Callers
+    intentionally using memory-only custody must pass ``durable=False`` without
+    a directory. ``bind_chronus`` requests execution binding; binding failures
+    are reported in the returned store's health rather than raised.
+
+    Raise ``TypeError`` for non-boolean ``durable`` and ``ValueError`` for a
+    missing directory in durable mode or any directory in memory mode.
+    ``TheseusError`` from custody admission and filesystem errors propagate.
+
+    The low-level ``open_triad`` / ``open_theseus`` compatibility contracts are
+    unchanged. No legacy root migration, tenant identity or network admission
+    is implied.
     """
     if type(durable) is not bool:
         raise TypeError("durable must be a bool")
@@ -602,9 +611,15 @@ def smoke_measured_put(
 ) -> Dict[str, Any]:
     """Commit, read and reattach a directory-bound Theseus/Ovid store.
 
-    Retain the supplied directory for inspection. This is local integrity
-    evidence, not independent attestation, authentication, a process-restart
-    test, a commercial savings measurement or launch qualification.
+    The nonblank ``durable_dir`` receives the payload and is retained for
+    inspection. Return a measured envelope with record metadata, custody health
+    and ``restart_evidence="reattach_same_process"`` after verifying the bytes,
+    digest and disk-bound custody. Raise ``RuntimeError`` if those checks fail;
+    directory validation, custody and filesystem errors propagate.
+
+    This is local integrity evidence, not independent attestation,
+    authentication, a process-restart test, a commercial savings measurement
+    or launch qualification.
     """
     db = open_enterprise_store(durable_dir=durable_dir, bind_chronus=False)
     rec = db.put(payload, durable=True)

@@ -39,6 +39,21 @@ class ModelRegistry:
         return sha
 
     def promote(self, tenant, sha, target, checks: Iterable[Callable[[dict, dict], bool]]):
+        """Advance a registered model by one lifecycle state and persist it.
+
+        ``sha`` identifies the model within ``tenant``. Transitions follow
+        DRAFT, EVALUATED, APPROVED, DEPLOYED, then RETIRED. ``checks`` must be
+        nonempty; each receives the stored card and evidence and must return
+        the literal ``True``. APPROVED and later states also require truthy
+        dataset snapshot, code/environment, backend certificate, evaluation
+        suite and baseline evidence fields.
+
+        Return the model hash, new state and loaded evidence. Raise ``ValueError``
+        for an invalid target and ``PromotionBlocked`` for invalid transitions,
+        missing checks/evidence or failed checks. File access, JSON decoding and
+        check exceptions propagate. The state file is written only after the
+        admission checks succeed.
+        """
         if target not in self.STATES[1:]:
             raise ValueError("invalid target")
         base = self.root / tenant / sha

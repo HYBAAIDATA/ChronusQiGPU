@@ -815,6 +815,13 @@ class EnterpriseCustody:
     def backup(self, dest: Path | str) -> Path:
         """Copy to a new, disjoint destination; never delete an existing backup.
 
+        Copy this tenant's tree without advisory lock files, record a backup
+        event in the live store, and return the destination path.
+        ``AuthorityBoundaryError`` rejects the tenant root, its ancestors and
+        descendants after resolving symlinks. ``FileExistsError`` rejects an
+        existing destination, including a dangling symlink. Path resolution,
+        copy and event-write errors propagate, even if files were already copied.
+
         This is a local operator API, not a network authorization boundary.
         A failed copy may leave a partial destination for investigation. It is
         not safe to promote that directory as a verified backup automatically.
