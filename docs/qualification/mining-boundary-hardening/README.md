@@ -105,7 +105,7 @@ its backend dependencies. Failure evidence is retained, not hidden.
 
 The final formatted-code combined run (focused + transport/receipts) also passes
 122 tests with 4 skips normally and under optimized Python; the separate
-39 resident/protocol tests bring the unique selected total to 154.
+39 resident/protocol tests bring the unique selected total to 161.
 
 ## Reproduction
 
