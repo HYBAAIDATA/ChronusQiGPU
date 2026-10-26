@@ -1,6 +1,6 @@
 .assessment error: non-finite JSON constant: NaN
 .................................
 ----------------------------------------------------------------------
-Ran 34 tests in 0.066s
+Ran 34 tests in 0.079s
 
 OK

@@ -21,7 +21,7 @@ Planning sources:
 
 1. `capture_notebook` previously marked every captured session `reproducible=True`, including contradictory outputs, without replay. It now preserves capture/provenance but reports `reproducible=False`, `replay_status=NOT_RUN`. This does not implement a replay engine.
 2. `ProofService.certify` accepted an empty invariant mapping and coerced arbitrary truthy values into proof success. It now refuses empty invariants and requires literal boolean `True`. A local signature is not independent attestation.
-3. `ModelRegistry.promote` accepted an empty check iterable, arbitrary truthy check results and direct jumps to deployment when metadata fields were present. It now requires nonempty checks, literal `True`, and the declared sequential lifecycle. Rejections leave persisted state unchanged in the tested serial cases. This is not a substitute for tenant/principal authorization, signed approvals, concurrency control or crash-safe registry publication. Re-registering an existing model and filesystem tenant/path boundaries need further adversarial review.
+3. `ModelRegistry.promote` accepted an empty check iterable, arbitrary truthy check results and direct jumps to deployment when metadata fields were present. It now requires nonempty checks, literal `True`, and the declared sequential lifecycle. A per-model file lock serializes state reads, lifecycle validation, checks and writes across registry instances, threads and processes. Rejections leave persisted state unchanged. This is not a substitute for tenant/principal authorization, signed approvals or crash-safe registry publication. Re-registering an existing model and filesystem tenant/path boundaries need further adversarial review.
 
 Compatibility: notebook evidence is intentionally more conservative; callers must not equate capture with successful replay. Promotion callers that skipped lifecycle states or used integer/string success values must migrate to explicit validated stages and booleans. No existing data migration, deletion, authority reassignment or provider activation is included.
 
@@ -102,6 +102,15 @@ Differentiation should be demonstrated by the closed loop: governed reasoning â†
 - No full-system production/publication approval, deployment, tag or release is performed by this audit.
 
 ### Evidence files and reproduction
+
+The run records and logs were re-executed for the review fixes. Baseline readiness
+and the 14-test red run use the recorded baseline revision; the red run explicitly
+records its test and harness overlays from the first repair revision. The current
+27-test green and optimized runs and 34-test readiness rerun identify their exact
+executed source files with SHA-256 manifests and the checkout's base revision.
+These records replace the earlier logs; they do not infer the original runs'
+missing revision metadata. The original audit counts above describe that earlier pass.
+The partial harness now exits with an error when discovery finds no guardrail tests.
 
 See `source-manifest.json` (input file identities), `test-evidence.json`, failed-first/passing logs, `requirements.csv`, and the adjacent explicit partial harness. From repository root:
 

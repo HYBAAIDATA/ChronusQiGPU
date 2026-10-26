@@ -1,9 +1,11 @@
 """Non-mining regressions: synthetic fixtures, not deployment qualification."""
 from dataclasses import asdict
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import hmac
 import json
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -269,6 +271,33 @@ class ModelPromotionUnits(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "check source failed"):
             self.registry.promote("tenant", self.sha, "EVALUATED", checks())
         self.assertEqual(self.state_path.read_bytes(), before)
+
+    def test_concurrent_registry_instances_cannot_accept_the_same_transition(self):
+        rendezvous = threading.Barrier(2)
+        read_text = Path.read_text
+        check = Mock(return_value=True)
+
+        def read_state(path, *args, **kwargs):
+            result = read_text(path, *args, **kwargs)
+            if path == self.state_path:
+                try:
+                    rendezvous.wait(timeout=0.5)
+                except threading.BrokenBarrierError:
+                    pass
+            return result
+
+        def promote():
+            registry = ModelRegistry(str(self.registry.root))
+            try:
+                return registry.promote("tenant", self.sha, "EVALUATED", [check])["state"]
+            except PromotionBlocked:
+                return "BLOCKED"
+
+        with patch.object(Path, "read_text", read_state), ThreadPoolExecutor(2) as pool:
+            results = list(pool.map(lambda _: promote(), range(2)))
+        self.assertCountEqual(results, ["EVALUATED", "BLOCKED"])
+        check.assert_called_once_with(self.card, self.evidence)
+        self.assertEqual(json.loads(self.state_path.read_text())["state"], "EVALUATED")
 
 
 class NotebookCaptureUnits(unittest.TestCase):

@@ -12,8 +12,21 @@ test_notebook_capture_does_not_claim_replay (test_enterprise_audit_guardrails.En
 test_sequential_promotion (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_sequential_promotion) ... ok
 test_truthy_non_boolean_check_is_not_approval (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_truthy_non_boolean_check_is_not_approval) ... ok
 test_truthy_non_boolean_is_not_invariant_proof (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_truthy_non_boolean_is_not_invariant_proof) ... ok
+test_all_invalid_lifecycle_edges_refuse_before_running_checks (test_enterprise_audit_guardrails.ModelPromotionUnits.test_all_invalid_lifecycle_edges_refuse_before_running_checks) ... ok
+test_concurrent_registry_instances_cannot_accept_the_same_transition (test_enterprise_audit_guardrails.ModelPromotionUnits.test_concurrent_registry_instances_cannot_accept_the_same_transition) ... ok
+test_empty_checks_preserve_state_at_every_stage (test_enterprise_audit_guardrails.ModelPromotionUnits.test_empty_checks_preserve_state_at_every_stage) ... ok
+test_failed_checks_preserve_each_stage_and_allow_a_valid_retry (test_enterprise_audit_guardrails.ModelPromotionUnits.test_failed_checks_preserve_each_stage_and_allow_a_valid_retry) ... ok
+test_generator_failure_preserves_state (test_enterprise_audit_guardrails.ModelPromotionUnits.test_generator_failure_preserves_state) ... ok
+test_partial_approval_evidence_is_rejected_before_checks (test_enterprise_audit_guardrails.ModelPromotionUnits.test_partial_approval_evidence_is_rejected_before_checks) ... ok
+test_unknown_or_missing_current_state_is_blocked (test_enterprise_audit_guardrails.ModelPromotionUnits.test_unknown_or_missing_current_state_is_blocked) ... ok
+test_capture_retains_hashes_and_references_without_replay (test_enterprise_audit_guardrails.NotebookCaptureUnits.test_capture_retains_hashes_and_references_without_replay) ... ok
+test_empty_or_unverified_outputs_never_claim_replay (test_enterprise_audit_guardrails.NotebookCaptureUnits.test_empty_or_unverified_outputs_never_claim_replay) ... ok
+test_invariant_exception_propagates_without_signing (test_enterprise_audit_guardrails.ProofCertificationUnits.test_invariant_exception_propagates_without_signing) ... ok
+test_invariant_truthiness_is_never_coerced (test_enterprise_audit_guardrails.ProofCertificationUnits.test_invariant_truthiness_is_never_coerced) ... ok
+test_mixed_invariants_reject_nonliteral_success_without_signing (test_enterprise_audit_guardrails.ProofCertificationUnits.test_mixed_invariants_reject_nonliteral_success_without_signing) ... ok
+test_multiple_invariants_preserve_names_inputs_and_signed_metadata (test_enterprise_audit_guardrails.ProofCertificationUnits.test_multiple_invariants_preserve_names_inputs_and_signed_metadata) ... ok
 
 ----------------------------------------------------------------------
-Ran 14 tests in 0.009s
+Ran 27 tests in 0.553s
 
 OK

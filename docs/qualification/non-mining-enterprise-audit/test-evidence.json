@@ -1,32 +1,102 @@
 {
-  "source_revision": "b131edc408a37ff7c03534d694bfcdaf0c827abb",
-  "python": "3.13.14 (main, Jul 15 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
-  "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+  "baseline_revision": "b131edc408a37ff7c03534d694bfcdaf0c827abb",
+  "record_kind": "Re-executed qualification records; logs replaced by these observed runs, not retroactive attribution of the original logs.",
+  "executed_at_utc": "2026-10-26T00:45:08.241847+00:00",
+  "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+  "platform": "Linux-6.18.49-x86_64-with-glibc2.43",
   "scope": "Non-mining partial-export module tests; actual hyba_contracts initializer; hyba_services initializer bypassed; no backend doubles for repaired functions; synthetic test data; not installed package, HTTP, device, CI or deployment validation",
+  "source_manifests": {
+    "source-manifest-sha256:1bebeba1addfb6ec799138db33d17886b5c8009b85a3c83d3d4271923e941c18": {
+      "base_revision": "0236d699c8ea251af7a1aad7f2d1fe2448004b9d",
+      "files_sha256": {
+        "docs/qualification/non-mining-enterprise-audit/run_partial.py": "d8bb42452dcab45430f90baa76ab31a0fe6fafafb0ca531f67d22b9a7eae8548",
+        "hyba_contracts/__init__.py": "0f8db222ffbd7527972a11f8aa46a4c8f4fdb8b01b2b4ead9bd1738440efcd22",
+        "hyba_contracts/packs.py": "1106ca2ee04cfe81aa2b509d859b49f6b897da7199cd9d72d7b42c5af5ec23e9",
+        "hyba_contracts/planning.py": "c264d15176393f0885359eae8bbca98e58fab6485eeae9cf5c6a017d6fa23180",
+        "hyba_contracts/types.py": "047ee23d0653ab73370503f0a3c1b67989e4fd27098ce2f9cf2448ac726d7548",
+        "hyba_contracts/versioning.py": "1c742a7cb4e8592f0f494ab984235850cc069c556c89d1f7e85be779ba5735cd",
+        "hyba_services/catalogue.py": "ea950ec9b0605fd62eac35fb8a375dd0b630594dff430bbe708054d9fa8b0c29",
+        "hyba_services/core.py": "f257f6757e310bd687f36ed16d9253a783e483848d883b7ee44f645aebf20f5e",
+        "hyba_services/observability.py": "e87efd52b99be45847d4b5d66b1a02d9d581c1bea0df19202bb7279c8cbcc0b1",
+        "hyba_services/platform.py": "6e587ddf2d4a10fa052274354c3f3b1185363bf38975f67319033a520157ef25",
+        "tests/test_enterprise_audit_guardrails.py": "20a4ef444bfe389d40f90d1834f06f8183fca8b8fc26cfee7c209b3891b88d47",
+        "tests/test_tomorrow_readiness.py": "88583dd4abda667b7a209be51a36706325bc41884dd400f7e2172abb74ca156e",
+        "tools/tomorrow_readiness.py": "f0718e605190df52dfe63f60459539ff1be538f72288fff19fdf49166debd188"
+      }
+    }
+  },
   "runs": {
     "baseline-readiness": {
+      "source_revision": "b131edc408a37ff7c03534d694bfcdaf0c827abb",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_tomorrow_readiness.py"
+      ],
       "tests_run": 34,
       "outcome": "PASS",
+      "exit_code": 0,
       "log": "baseline-readiness.log"
     },
     "red-guardrails": {
+      "source_revision": "b131edc408a37ff7c03534d694bfcdaf0c827abb",
+      "command": [
+        "python",
+        "docs/qualification/non-mining-enterprise-audit/run_partial.py"
+      ],
       "tests_run": 14,
       "outcome": "FAIL",
-      "log": "red-guardrails.log"
+      "exit_code": 1,
+      "log": "red-guardrails.log",
+      "source_overlays": {
+        "docs/qualification/non-mining-enterprise-audit/run_partial.py": "d11f3bb5e8b42066152a6661c179b5bd64f17d22",
+        "tests/test_enterprise_audit_guardrails.py": "d11f3bb5e8b42066152a6661c179b5bd64f17d22"
+      },
+      "expected_failures": 8
     },
     "green-guardrails": {
-      "tests_run": 14,
+      "source_revision": "source-manifest-sha256:1bebeba1addfb6ec799138db33d17886b5c8009b85a3c83d3d4271923e941c18",
+      "command": [
+        "python",
+        "docs/qualification/non-mining-enterprise-audit/run_partial.py"
+      ],
+      "tests_run": 27,
       "outcome": "PASS",
+      "exit_code": 0,
       "log": "green-guardrails.log"
     },
     "optimized-guardrails": {
-      "tests_run": 14,
+      "source_revision": "source-manifest-sha256:1bebeba1addfb6ec799138db33d17886b5c8009b85a3c83d3d4271923e941c18",
+      "command": [
+        "python",
+        "-O",
+        "docs/qualification/non-mining-enterprise-audit/run_partial.py"
+      ],
+      "tests_run": 27,
       "outcome": "PASS",
+      "exit_code": 0,
       "log": "optimized-guardrails.log"
     },
     "unchanged-readiness": {
+      "source_revision": "source-manifest-sha256:1bebeba1addfb6ec799138db33d17886b5c8009b85a3c83d3d4271923e941c18",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_tomorrow_readiness.py"
+      ],
       "tests_run": 34,
       "outcome": "PASS",
+      "exit_code": 0,
       "log": "unchanged-readiness.log"
     }
   }

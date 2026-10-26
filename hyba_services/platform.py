@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -17,6 +19,25 @@ from hyba_contracts import EvidenceObject
 
 class PromotionBlocked(RuntimeError):
     pass
+
+
+@contextmanager
+def _promotion_lock(base: Path):
+    """Serialize promotions across registry instances, threads and processes."""
+    with (base / ".promotion.lock").open("a+b") as lock:
+        if os.name == "nt":
+            import msvcrt
+
+            if lock.tell() == 0:
+                lock.write(b"\0")
+                lock.flush()
+            lock.seek(0)
+            msvcrt.locking(lock.fileno(), msvcrt.LK_LOCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        yield
 
 
 class ModelRegistry:
@@ -52,35 +73,40 @@ class ModelRegistry:
         for an invalid target and ``PromotionBlocked`` for invalid transitions,
         missing checks/evidence or failed checks. File access, JSON decoding and
         check exceptions propagate. The state file is written only after the
-        admission checks succeed.
+        admission checks succeed. A per-model file lock serializes the state
+        read, lifecycle validation, checks and write across callers.
         """
         if target not in self.STATES[1:]:
             raise ValueError("invalid target")
         base = self.root / tenant / sha
-        current = json.loads((base / "state.json").read_text()).get("state")
-        if current not in self.STATES[:-1] or target != self.STATES[self.STATES.index(current) + 1]:
-            raise PromotionBlocked("promotion must follow the declared lifecycle")
-        checks = tuple(checks)
-        if not checks:
-            raise PromotionBlocked("promotion requires at least one explicit check")
-        card = json.loads((base / "card.json").read_text())
-        evidence = json.loads((base / "evidence.json").read_text())
-        if target in self.STATES[self.STATES.index("APPROVED") :]:
-            required = (
-                "dataset_snapshot_hash",
-                "code_and_environment_hash",
-                "backend_certificate",
-                "evaluation_suite",
-                "baselines",
+        with _promotion_lock(base):
+            current = json.loads((base / "state.json").read_text()).get("state")
+            if (
+                current not in self.STATES[:-1]
+                or target != self.STATES[self.STATES.index(current) + 1]
+            ):
+                raise PromotionBlocked("promotion must follow the declared lifecycle")
+            checks = tuple(checks)
+            if not checks:
+                raise PromotionBlocked("promotion requires at least one explicit check")
+            card = json.loads((base / "card.json").read_text())
+            evidence = json.loads((base / "evidence.json").read_text())
+            if target in self.STATES[self.STATES.index("APPROVED") :]:
+                required = (
+                    "dataset_snapshot_hash",
+                    "code_and_environment_hash",
+                    "backend_certificate",
+                    "evaluation_suite",
+                    "baselines",
+                )
+                if any(not evidence.get(k) for k in required):
+                    raise PromotionBlocked("approval evidence incomplete")
+            if not all(check(card, evidence) is True for check in checks):
+                raise PromotionBlocked("promotion check failed")
+            (base / "state.json").write_text(
+                json.dumps({"state": target, "promoted_at": int(time.time())})
             )
-            if any(not evidence.get(k) for k in required):
-                raise PromotionBlocked("approval evidence incomplete")
-        if not all(check(card, evidence) is True for check in checks):
-            raise PromotionBlocked("promotion check failed")
-        (base / "state.json").write_text(
-            json.dumps({"state": target, "promoted_at": int(time.time())})
-        )
-        return {"sha": sha, "state": target, "evidence": evidence}
+            return {"sha": sha, "state": target, "evidence": evidence}
 
 
 @dataclass
