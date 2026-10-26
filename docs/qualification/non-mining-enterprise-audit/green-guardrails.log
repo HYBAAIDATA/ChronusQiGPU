@@ -1,0 +1,24 @@
+Fresh reproduction: 2026-10-26T01:59:34.934758+00:00
+Tested source: {"manifest": "tested-source-after.json", "manifest_sha256": "2541e6997122874c9b233c63e8b11441ddc030ebd57a1afa1549a8e1113fd4f3"}
+Command (from export root): python docs/qualification/non-mining-enterprise-audit/run_partial.py
+Exit status: 0
+
+test_approval_still_requires_evidence (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_approval_still_requires_evidence) ... ok
+test_cannot_move_backwards (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_cannot_move_backwards) ... ok
+test_cannot_skip_to_deployment (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_cannot_skip_to_deployment) ... ok
+test_capture_preserves_provenance (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_capture_preserves_provenance) ... ok
+test_empty_checks_cannot_promote (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_empty_checks_cannot_promote) ... ok
+test_empty_generator_cannot_promote (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_empty_generator_cannot_promote) ... ok
+test_empty_invariants_cannot_be_certified (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_empty_invariants_cannot_be_certified) ... ok
+test_exception_leaves_state_unchanged (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_exception_leaves_state_unchanged) ... ok
+test_failed_check_leaves_state_unchanged (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_failed_check_leaves_state_unchanged) ... ok
+test_literal_invariant_success_still_signs (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_literal_invariant_success_still_signs) ... ok
+test_notebook_capture_does_not_claim_replay (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_notebook_capture_does_not_claim_replay) ... ok
+test_sequential_promotion (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_sequential_promotion) ... ok
+test_truthy_non_boolean_check_is_not_approval (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_truthy_non_boolean_check_is_not_approval) ... ok
+test_truthy_non_boolean_is_not_invariant_proof (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_truthy_non_boolean_is_not_invariant_proof) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.013s
+
+OK

@@ -1,0 +1,97 @@
+{
+  "repository": "HYB-APHIDATA/HYBAEnterprise",
+  "revision": "b131edc408a37ff7c03534d694bfcdaf0c827abb",
+  "scope": "Selected source export, not full checkout. Manifest includes read source; test dependency closure is a subset.",
+  "files": [
+    {
+      "path": "tools/tomorrow_readiness.py",
+      "git_blob_sha1": "035293e037127c65ab63aab5df5dd67c901900c9",
+      "sha256": "f0718e605190df52dfe63f60459539ff1be538f72288fff19fdf49166debd188"
+    },
+    {
+      "path": "tests/test_tomorrow_readiness.py",
+      "git_blob_sha1": "709336d357027e420bb743a7b9e6b0b05654f434",
+      "sha256": "88583dd4abda667b7a209be51a36706325bc41884dd400f7e2172abb74ca156e"
+    },
+    {
+      "path": "hyba_services/platform.py",
+      "git_blob_sha1": "601daf13f6e078a0c57ac53ffa84d8784b49abfc",
+      "sha256": "c82604b4e308f37b1af57950069f083ca252bdd8034a647041eccbe280351226"
+    },
+    {
+      "path": "hyba_services/catalogue.py",
+      "git_blob_sha1": "de9d15159876b24f73bdf964bf40779085e5e782",
+      "sha256": "0759c554df2b0f79e2088d60db0480aee900844560ee09c98081a09a26fdeb62"
+    },
+    {
+      "path": "hyba_services/core.py",
+      "git_blob_sha1": "773fa4c23d9d1e8b7173288c8a6cd29621c5a50b",
+      "sha256": "1215c52b1882bf9cf85f04095c587160ef1f97c93a9850893e818eda45195d69"
+    },
+    {
+      "path": "hyba_services/observability.py",
+      "git_blob_sha1": "c4fbb593818a67cc135002cbdd49b8cb350f0950",
+      "sha256": "e87efd52b99be45847d4b5d66b1a02d9d581c1bea0df19202bb7279c8cbcc0b1"
+    },
+    {
+      "path": "hyba_contracts/__init__.py",
+      "git_blob_sha1": "643616551f8250d98094ec9757481eaa9cb98ae0",
+      "sha256": "0f8db222ffbd7527972a11f8aa46a4c8f4fdb8b01b2b4ead9bd1738440efcd22"
+    },
+    {
+      "path": "hyba_contracts/types.py",
+      "git_blob_sha1": "3f542f17b599fecc69dcf0a7ed3cbd1ef3130081",
+      "sha256": "047ee23d0653ab73370503f0a3c1b67989e4fd27098ce2f9cf2448ac726d7548"
+    },
+    {
+      "path": "hyba_contracts/versioning.py",
+      "git_blob_sha1": "660f0cea48032d65ad5c2ba3c8c097e2a14049a0",
+      "sha256": "1c742a7cb4e8592f0f494ab984235850cc069c556c89d1f7e85be779ba5735cd"
+    },
+    {
+      "path": "hyba_contracts/packs.py",
+      "git_blob_sha1": "4c64121d3dee892d4ee035354c07843bd009bd07",
+      "sha256": "1106ca2ee04cfe81aa2b509d859b49f6b897da7199cd9d72d7b42c5af5ec23e9"
+    },
+    {
+      "path": "hyba_contracts/planning.py",
+      "git_blob_sha1": "dc731d3fbe9b35a5f3309c1fc4807680558f18f8",
+      "sha256": "c264d15176393f0885359eae8bbca98e58fab6485eeae9cf5c6a017d6fa23180"
+    },
+    {
+      "path": "aethel/ovid_authority.py",
+      "git_blob_sha1": "096ffc7e6791759706a9c606bd258ce93e73c5fa",
+      "sha256": "32e4dd2b504f20e11d9ae99f6aaa32fa61cdd5aaded9a1f7e0e641e2bc6c09ec"
+    },
+    {
+      "path": "docs/HYBA_STYLE_GUIDE_FRONTEND_PRODUCT.md",
+      "git_blob_sha1": "021e6b971c9a2db212c3477a3a55fee321e29eba",
+      "sha256": "e2c488d4f53a98b73c819b8d06f231338a3df4c302854fa30ea49346e0368208"
+    },
+    {
+      "path": "toe/CAPABILITY_MANIFEST.json",
+      "git_blob_sha1": "ccb293b8e44d41b33623031d4e16b7bc174d5742",
+      "sha256": "d640ff4ec75e40e4ff6d0167a70190ca4e8e5b828c7d08a4b1b31d4de7c24ed9"
+    },
+    {
+      "path": "kellogg/CAPABILITY_MANIFEST.json",
+      "git_blob_sha1": "55ec30929ceecd3e48f4d08459364fe5a059a79c",
+      "sha256": "f6dda5b94bef3d5d48a769193980da5d8b38b99f49cf8280effe6a66990d568a"
+    },
+    {
+      "path": "services/turing-enterprise/deploy/HERMITTEN_CONTRACT.md",
+      "git_blob_sha1": "d7fe3f6b0b5ea38bfb1337b5a4b9854a65e1cea7",
+      "sha256": "a9ba31704b38333de49a85fadb9ccf2ec41a5dfffe9e666d3ecd097e57b1443e"
+    },
+    {
+      "path": "frontend/src/App.tsx",
+      "git_blob_sha1": "627a8041a42346d7a36778183118ec589ee6bd21",
+      "sha256": "806af97be0df8cde1895b915cd67894f3bfa4e19fc4d0c229be94652eba4da4a"
+    },
+    {
+      "path": "frontend/src/index.css",
+      "git_blob_sha1": "72302de8f16825858b34c4338497a8fa07693cb5",
+      "sha256": "efd889dc07243555ee7e91278506f5aeae23745f20e3d3d1f38052506ee61022"
+    }
+  ]
+}

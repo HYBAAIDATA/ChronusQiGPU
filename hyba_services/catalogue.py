@@ -319,7 +319,9 @@ def capture_notebook(session, environment) -> dict:
         "outputs": session["outputs"],
         "env_hash": hashlib.sha256(json.dumps(environment, sort_keys=True).encode()).hexdigest(),
         "data_refs": session.get("data_references", ()),
-        "reproducible": True,
+        # Capture records provenance; it does not execute or replay cells.
+        "reproducible": False,
+        "replay_status": "NOT_RUN",
     }
 
 
