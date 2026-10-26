@@ -23,33 +23,31 @@ for _var in (
 ):
     os.environ.setdefault(_var, "1")
 
-_PROJECT_ROOT = Path(__file__).resolve().parent
-_CANONICAL_PYTHON = _PROJECT_ROOT / "chronus/mla1517_platform" / "python"
-_CHRONOS_IGPU = _PROJECT_ROOT / "packages" / "chronos-one-igpu" / "src"
-_PYTHIA_CONSUMER = _PROJECT_ROOT / "packages" / "pythia-consumer" / "src"
-_TURING = _PROJECT_ROOT / "turing_universal_quantum_computer"
-_PROJECT_PATHS = (
-    str(_PROJECT_ROOT),
-    str(_CANONICAL_PYTHON),
-    str(_CHRONOS_IGPU),
-    str(_PYTHIA_CONSUMER),
-    str(_TURING),
-)
-for _path in _PROJECT_PATHS:
-    if _path not in sys.path:
-        sys.path.insert(0, _path)
+
+def _add_project_paths() -> list[str]:
+    """Register only real project roots so PYTHONPATH stays predictable."""
+    base = Path(__file__).resolve().parent
+    candidate_dirs = [
+        base,
+        base / "chronus/mla1517_platform/python",
+        base / "packages/chronos-one-igpu/src",
+        base / "packages/pythia-consumer/src",
+        base / "turing_universal_quantum_computer",
+    ]
+    verified = [str(path) for path in candidate_dirs if path.exists()]
+    for path in verified:
+        if path not in sys.path:
+            sys.path.insert(0, path)
+    return verified
+
+
+_project_roots = _add_project_paths()
 
 _existing_pp = os.environ.get("PYTHONPATH", "")
 _pp_parts = _existing_pp.split(os.pathsep) if _existing_pp else []
-for _p in (
-    str(_CHRONOS_IGPU),
-    str(_PYTHIA_CONSUMER),
-    str(_CANONICAL_PYTHON),
-    str(_PROJECT_ROOT),
-    str(_TURING),
-):
-    if _p not in _pp_parts:
-        _pp_parts.insert(0, _p)
+for _path in _project_roots:
+    if _path not in _pp_parts:
+        _pp_parts.insert(0, _path)
 os.environ["PYTHONPATH"] = os.pathsep.join(_pp_parts)
 
 # Sovereign deployments (HYBA_SOVEREIGN_MODE=private|air_gapped) install the
