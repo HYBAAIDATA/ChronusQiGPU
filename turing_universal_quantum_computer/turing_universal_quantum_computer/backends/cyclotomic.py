@@ -63,7 +63,11 @@ class CyclotomicBackend:
                 order = lcm(order, phase[1].denominator * (2 if phase[0] == "rz" else 1))
                 cyclotomic_polynomial(order)
         degree = len(cyclotomic_polynomial(order)) - 1
-        work = len(program.operations) * (1 << program.n_qubits) * degree * degree
+        operation_cost = sum(
+            6 if op.gate == "magic_t" else 1
+            for op in program.operations
+        )
+        work = operation_cost * (1 << program.n_qubits) * degree * degree
         if work > (1 << 26):
             raise ValueError("cyclotomic arithmetic work exceeds admission budget")
         return order
