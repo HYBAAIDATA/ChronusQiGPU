@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "privateImportRejected": true,
+  "publicDirectoryCanaryExcluded": true,
+  "environmentCanaryExcluded": true,
+  "outputCanaryRejected": true,
+  "outputAudit": {
+    "status": "PASS",
+    "scope": "static-output pattern audit, not repository/history secret certification",
+    "files": [
+      {
+        "path": ".vite/manifest.json",
+        "bytes": 185,
+        "sha256": "f16ff0c3ae18aed1788710202c143fa3234f8095459472a5efa67286fe2c43c2"
+      },
+      {
+        "path": "assets/index-Cvi5fWEj.js",
+        "bytes": 235369,
+        "sha256": "00873397cd2410613ddd3be47ea8b187ca1bc0704e9585fb6a64aef1a6e3330f"
+      },
+      {
+        "path": "assets/index-DInNCFb1.css",
+        "bytes": 7581,
+        "sha256": "e570887cfe9142a73f79cae0c6af229f3aa5d75eae93c983907cef0afe99f29c"
+      },
+      {
+        "path": "index.html",
+        "bytes": 898,
+        "sha256": "d028500c3a26321319c744e130e1bf4707373434b9e1f1465d444458f283208f"
+      }
+    ]
+  }
+}
