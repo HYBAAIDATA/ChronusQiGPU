@@ -1,0 +1,18 @@
+
+==================================== ERRORS ====================================
+___________ ERROR collecting tests/test_pulvini_production_wiring.py ___________
+ImportError while importing test module '/data/hyba-mining-current/tests/test_pulvini_production_wiring.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib64/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_pulvini_production_wiring.py:10: in <module>
+    from Intelligence.pulvini_runtime import PulviniRuntime
+Intelligence/pulvini_runtime.py:48: in <module>
+    from python_backend.pythia_mining.golden_constants import GOLDEN_CONSTANTS
+E   ModuleNotFoundError: No module named 'python_backend'
+=========================== short test summary info ============================
+ERROR tests/test_pulvini_production_wiring.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.76s

@@ -1,0 +1,68 @@
+[
+  {
+    "file": "denied-desktop.png",
+    "sha256": "17154fc9dcd57934a60db72704426805d2f4de1af35d71f8ff30af1bc9afd35f",
+    "bytes": 240141,
+    "scope": "COMPONENT FIXTURE, not runtime service evidence"
+  },
+  {
+    "file": "evidence-expanded-desktop.png",
+    "sha256": "c24af497edc6343f9eb629fb51e49cbf1e2e5fb266d4e2f2c3f641ec6ad629a9",
+    "bytes": 317113,
+    "scope": "COMPONENT FIXTURE, not runtime service evidence"
+  },
+  {
+    "file": "expired-desktop.png",
+    "sha256": "9d612e2ef3064afd967a0586391fc3503e977d6b015ca270eb359b8fa57c4b02",
+    "bytes": 242033,
+    "scope": "COMPONENT FIXTURE, not runtime service evidence"
+  },
+  {
+    "file": "failure-desktop.png",
+    "sha256": "4dda5e5d4429d1ac6381056c13c96350d01d401b86de5cc0fc775b6e65a3efc0",
+    "bytes": 241043,
+    "scope": "COMPONENT FIXTURE, not runtime service evidence"
+  },
+  {
+    "file": "loading-desktop.png",
+    "sha256": "195644281af12c89e8b6b06c334367ec1f6e1c3db6663066e926ec5a680a6ec9",
+    "bytes": 266158,
+    "scope": "COMPONENT FIXTURE, not runtime service evidence"
+  },
+  {
+    "file": "revoked-desktop.png",
+    "sha256": "76e0712db02e05981e9dbc7ec63df77d68dba5991a6296044e68c21cf54c92ff",
+    "bytes": 240276,
+    "scope": "COMPONENT FIXTURE, not runtime service evidence"
+  },
+  {
+    "file": "success-desktop.png",
+    "sha256": "56c8bd6709f47f872ad4feff1d56efeff7a7080d01268668176a7f18734692ac",
+    "bytes": 309183,
+    "scope": "COMPONENT FIXTURE, not runtime service evidence"
+  },
+  {
+    "file": "success-mobile.png",
+    "sha256": "2ac2d46b50de1f084ca9774a1411786c79f1adbdc88f03000ec8ef1851f26991",
+    "bytes": 308509,
+    "scope": "COMPONENT FIXTURE, not runtime service evidence"
+  },
+  {
+    "file": "unbound-desktop.png",
+    "sha256": "8f3d58dcffb3d46f746f123807add22b0217d7c906c612b68f8ed2cf541bb15e",
+    "bytes": 245962,
+    "scope": "COMPONENT FIXTURE, not runtime service evidence"
+  },
+  {
+    "file": "unbound-mobile.png",
+    "sha256": "f88d4472dfb1cfb4678574b509d74e77f9e48d06cf1695cf6eb81fba9ad9e3b0",
+    "bytes": 239806,
+    "scope": "COMPONENT FIXTURE, not runtime service evidence"
+  },
+  {
+    "file": "unknown-desktop.png",
+    "sha256": "367c6eec83297cc1ba451dbd929d8a666412a0dbe78a9ed3ab0605cee80bb6ab",
+    "bytes": 256545,
+    "scope": "COMPONENT FIXTURE, not runtime service evidence"
+  }
+]
