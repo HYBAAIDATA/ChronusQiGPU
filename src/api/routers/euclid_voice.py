@@ -14,8 +14,6 @@ from fastapi import APIRouter, BackgroundTasks, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
 
 from euclid.cognition.reconciliation_gateway import (
-    ACTIVE_COGNITIVE_STATES,
-    EPISODIC_MEMORY,
     GLOBAL_COGNITIVE_MANIFOLD,
     KNOWLEDGE_MANIFOLD,
     CrossDomainAnalogyEngine,
@@ -24,7 +22,6 @@ from euclid.cognition.reconciliation_gateway import (
     ProvocationExperimentsSuite,
     fast_reflex_interrupt_arc,
     get_curriculum_sync,
-    get_node_state,
     get_reflection_trace_sync,
     get_state_matrix_sync,
     get_widget_spec_sync,
@@ -48,10 +45,17 @@ class AnalogyTransferRequest(BaseModel):
     target_domain: str = "dark_matter_decay"
 
 
-def _get_required_mapping(payload: Any) -> dict[str, Any]:
+def _require_mapping(payload: Any) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError("websocket payload must be a JSON object")
     return payload
+
+
+def _require_non_empty_text(value: Any, *, field_name: str) -> str:
+    text = str(value or "")
+    if not text.strip():
+        raise ValueError(f"{field_name} must be a non-empty string")
+    return text
 
 
 @router.websocket("/voice/stream")
@@ -63,12 +67,12 @@ async def voice_stream_gateway(
     try:
         while True:
             data = await websocket.receive_json()
-            payload = _get_required_mapping(data)
+            payload = _require_mapping(data)
+            kind = str(payload.get("type") or "").upper()
 
-            message_type = str(payload.get("type") or "").upper()
-
-            if message_type == "INTERRUPTION":
-                if "payload" not in payload or not isinstance(payload["payload"], dict):
+            if kind == "INTERRUPTION":
+                interruption = payload.get("payload")
+                if not isinstance(interruption, dict):
                     await websocket.send_json(
                         {
                             "stream_type": "ERROR",
@@ -77,7 +81,7 @@ async def voice_stream_gateway(
                         }
                     )
                     continue
-                payload_obj = ERNSpikePayload(**payload["payload"])
+                payload_obj = ERNSpikePayload(**interruption)
                 receipt = fast_reflex_interrupt_arc(payload_obj)
                 await websocket.send_json(
                     {
@@ -90,8 +94,8 @@ async def voice_stream_gateway(
                 )
                 process_ern_spike_signal_sync(payload_obj)
 
-            elif message_type == "EXECUTION_REQUEST":
-                node = str(payload.get("target_node") or "")
+            elif kind == "EXECUTION_REQUEST":
+                node = _require_non_empty_text(payload.get("target_node"), field_name="target_node")
                 gate = MetacognitiveGatekeeper.verify_clearance_sync(node)
 
                 if not gate["allow_write"]:
@@ -111,13 +115,13 @@ async def voice_stream_gateway(
                         }
                     )
 
-            elif message_type == "RECONCILE_REQUEST":
-                node = str(payload.get("target_node") or "")
-                constraint = str(
-                    payload.get("remediation_constraint")
-                    or f"Verified structural remap of {node}"
+            elif kind == "RECONCILE_REQUEST":
+                node = _require_non_empty_text(payload.get("target_node"), field_name="target_node")
+                constraint = _require_non_empty_text(
+                    payload.get("remediation_constraint") or f"Verified structural remap of {node}",
+                    field_name="remediation_constraint",
                 )
-                user_id = str(payload.get("user_id") or "coach_prime")
+                user_id = _require_non_empty_text(payload.get("user_id") or "coach_prime", field_name="user_id")
                 smoothed = KNOWLEDGE_MANIFOLD.reconcile_node_after_reflection(
                     target_node=node,
                     remediation_constraint=constraint,
@@ -241,11 +245,9 @@ async def run_provocation_experiments() -> dict[str, Any]:
 
 __all__ = [
     "ACTIVE_COGNITIVE_STATES",
-    "EPISODIC_MEMORY",
     "ERNSpikePayload",
     "MetacognitiveGatekeeper",
     "get_curriculum",
-    "get_node_state",
     "get_reflection_trace",
     "get_state_matrix",
     "get_validation_readiness",
