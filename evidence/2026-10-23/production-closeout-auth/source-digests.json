@@ -1,0 +1,11 @@
+{
+  "baseline_commit": "6c8d71fc6f41f5b43514039bab3ee83bb55a14c1",
+  "sha256": {
+    "frontend/src/lib/access.ts": "1f694c5d2e71f353209ded8f7b2e0200fb35655b63db6bc1fe1825fcde6700f9",
+    "frontend/src/lib/api.ts": "d6bf71d20487ea52c1889e206065e6f0e814897937b217966ba32a3f1d41dcfe",
+    "frontend/src/lib/useConsole.ts": "9bd3af9fdc7c92a3c3f094eae390bad04d077f733ec84814b46a1c506a490a0b",
+    "frontend/src/lib/__tests__/access.test.ts": "d27114680870bc8df48e15879496f46f96248cbee25be8b36b15df8004fafcdc",
+    "frontend/src/lib/__tests__/console-lifecycle.test.tsx": "c1733454374026d5a29d4fa6f798a7774c7c30e5dafac101cd46e157fb47f099",
+    "frontend/src/components/__tests__/ControlSession.journey.test.tsx": "43b82521b33ed38177674f6f8f1dd61b4c7d8ac02ed4c542ee35f876f60d7160"
+  }
+}

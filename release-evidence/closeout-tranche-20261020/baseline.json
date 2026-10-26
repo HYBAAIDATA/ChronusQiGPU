@@ -1,0 +1,46 @@
+{
+  "schema": "hyba.scoped-closeout-baseline/1",
+  "base_commit": "2bc45bd4f9c45a29fea00aa1f6ed34222ed58f07",
+  "full_checkout": false,
+  "clean_git_status": "NOT_AVAILABLE",
+  "baseline_tag": "NOT_CREATED",
+  "worktrees": "NOT_CREATED",
+  "claims_gate": "NOT_RUN",
+  "root_source_identity": "NOT_AVAILABLE",
+  "files": [
+    {
+      "path": "aethel/enterprise/journal.py",
+      "base_git_blob": "a43de0bac9262f3fd3853c25b15aa7ebb35f9544",
+      "base_sha256": "264748b1ed55c7b92db374fa7cf773c9c5f6c0cd7c400c17cb35095dde19f8b4",
+      "tested_sha256": "fa069f2467f4f2f41c1a061443913f622f1627b81b28ed6bd3e8176f33e116fc",
+      "changed": true
+    },
+    {
+      "path": "chronus/virtual_igpu/memory.py",
+      "base_git_blob": "5f9e9019919a68eb2ce1c697b7447d997b46f2dd",
+      "base_sha256": "2e85a025efef4258ca2713568560adca9818bd2114cc8c31d2557db1bba40f36",
+      "tested_sha256": "b2aab0c514c0be82ffe8d3c090a5765b117d7301c11f7e40d816208c43319131",
+      "changed": true
+    },
+    {
+      "path": "hyba_db/store.py",
+      "base_git_blob": "413cab1853d612cd760aec22356546d0d79a3bb9",
+      "base_sha256": "4764723503c01029cc03cc5ceb3523ea3ce6ce451b98c8064c61242f0892de2e",
+      "tested_sha256": "4764723503c01029cc03cc5ceb3523ea3ce6ce451b98c8064c61242f0892de2e",
+      "changed": false
+    },
+    {
+      "path": "aethel/enterprise/custody.py",
+      "base_git_blob": "aef7e02953924bbd9f6275a46b412cf3259ca9f5",
+      "base_sha256": "cb6886b1187d1ca7b5738ad189f7c3052982685c3c7791d924d9e51fdf374bd8",
+      "tested_sha256": "cb6886b1187d1ca7b5738ad189f7c3052982685c3c7791d924d9e51fdf374bd8",
+      "changed": false
+    }
+  ],
+  "environment": {
+    "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+    "python": "3.13.14",
+    "pytest": "9.1.1",
+    "test_scope": "actual source modules loaded directly via importlib; full repository initializers/dependency closure not loaded"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "arxiv_1706_01781v1",
+  "title": "Remarks on the Birch-Swinnerton-Dyer conjecture",
+  "authors": [
+    "Jae-Hyun Yang"
+  ],
+  "year": 2017,
+  "source_url": "http://arxiv.org/abs/1706.01781v1",
+  "license": "Open Access (arXiv preprint)",
+  "retrieved_date": "2026-10-24T21:45:11.029045+00:00",
+  "sha256": "cfa6db54397cba290f968be430d1890ee4ce829fd4809e466abc7b7ae8a0281d",
+  "category": "arXiv:math.NT",
+  "problem_focus": [
+    "BSD"
+  ],
+  "definitions": [
+    {
+      "term": "BSD Literature Concept",
+      "statement": "We give a brief description of the Birch-Swinnerton-Dyer conjecture and present related conjectures. We describe the relation between the nilpotent orbits of SL(2,R) and CM points."
+    }
+  ],
+  "theorems": [
+    {
+      "label": "arXiv:1706_01781v1 Claim",
+      "statement": "We give a brief description of the Birch-Swinnerton-Dyer conjecture and present related conjectures. We describe the relation between the nilpotent orbits of SL(2,R) and CM points.",
+      "status": "PREPRINT"
+    }
+  ],
+  "conjectures": [
+    {
+      "label": "BSD Problem Horizon",
+      "statement": "Investigates behavior related to BSD in math.NT.",
+      "status": "OPEN"
+    }
+  ],
+  "open_gaps": [
+    "Finite or specialized scope in arXiv:1706_01781v1; general continuum proof remains unproven."
+  ],
+  "computational_handles": [
+    "Literature algorithmic bounds for Remarks on the Birch-Swinnerton-Dyer con",
+    "Independent cross-reference of BSD asymptotic identities"
+  ],
+  "citations": [
+    {
+      "ref": "Jae-Hyun Yang (2017). Remarks on the Birch-Swinnerton-Dyer conjecture. arXiv preprint 1706_01781v1.",
+      "url": "http://arxiv.org/abs/1706.01781v1"
+    }
+  ]
+}

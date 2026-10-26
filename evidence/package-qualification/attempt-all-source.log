@@ -1,0 +1,83 @@
+........................................................................ [ 27%]
+...............FF....................................................... [ 54%]
+..................................F..................................... [ 81%]
+..................................................                       [100%]
+=================================== FAILURES ===================================
+___________ test_ingestion_to_real_toe_tomography_and_bound_receipt ____________
+
+    def test_ingestion_to_real_toe_tomography_and_bound_receipt():
+        platform = secured()
+        rows = [{"reading": 1, "time": 0}, {"reading": 2, "time": 1}]
+        ingest = platform.ingest_rows("sensor", "events", rows)["receipt"]
+        platform.govern("events", "internal", 30, "root", max_null_rate=0)
+        platform.heal()
+>       answer = platform.analyze("events")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_toe_unified_authority.py:193: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <toe.unified.platform.UnifiedAnalyticsPlatform object at 0x7ff09f102490>
+entity = 'events'
+
+    def analyze(self, entity: str) -> dict:
+        """Run existing TOE state tomography on non-quarantined entity records.
+    
+        This is a descriptive representation, not causal identification or an
+        action approval. Receipts remain in-process, using the existing TOE format.
+        """
+        self.security.authorize("ask")
+>       from toe.bridge import TOEBridge
+E       ModuleNotFoundError: No module named 'toe.bridge'
+
+toe/unified/platform.py:289: ModuleNotFoundError
+_______________ test_failed_tomography_issues_no_success_receipt _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff09f1b6c10>
+
+    def test_failed_tomography_issues_no_success_receipt(monkeypatch):
+        from types import SimpleNamespace
+>       from toe.bridge import TOEBridge
+E       ModuleNotFoundError: No module named 'toe.bridge'
+
+tests/test_toe_unified_authority.py:224: ModuleNotFoundError
+________ test_actual_tomography_receipts_are_tenant_bound_and_separate _________
+
+gateway = <toe.unified.tenancy.TenantGateway object at 0x7ff09f1f17f0>
+
+    def test_actual_tomography_receipts_are_tenant_bound_and_separate(gateway):
+        alpha, beta = session(gateway), session(gateway, "beta")
+        # Identical content is deliberate: tenant binding must not rely on different inputs.
+        for client in (alpha, beta):
+            client.call("ingest_rows", "s", "events", [{"x": 1.0}, {"x": 2.0}])
+>           result = client.call("analyze", "events")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_toe_unified_tenancy.py:100: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+toe/unified/tenancy.py:101: in call
+    return self._gateway._invoke(
+toe/unified/tenancy.py:196: in _invoke
+    value = getattr(tenant.platform, operation)(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <toe.unified.platform.UnifiedAnalyticsPlatform object at 0x7ff09e008410>
+entity = 'events'
+
+    def analyze(self, entity: str) -> dict:
+        """Run existing TOE state tomography on non-quarantined entity records.
+    
+        This is a descriptive representation, not causal identification or an
+        action approval. Receipts remain in-process, using the existing TOE format.
+        """
+        self.security.authorize("ask")
+>       from toe.bridge import TOEBridge
+E       ModuleNotFoundError: No module named 'toe.bridge'
+
+toe/unified/platform.py:289: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED tests/test_toe_unified_authority.py::test_ingestion_to_real_toe_tomography_and_bound_receipt
+FAILED tests/test_toe_unified_authority.py::test_failed_tomography_issues_no_success_receipt
+FAILED tests/test_toe_unified_tenancy.py::test_actual_tomography_receipts_are_tenant_bound_and_separate
+3 failed, 263 passed in 2.09s

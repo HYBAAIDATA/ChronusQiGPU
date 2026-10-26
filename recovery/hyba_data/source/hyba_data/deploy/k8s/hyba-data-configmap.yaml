@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hyba-data-config
+data:
+  HYBA_MANIFOLD: "M32"
+  HYBA_SEARCH_SPACE: "32-bit"
+  HYBA_WORKERS: "4"
+  HYBA_CACHE_SIZE: "150000"
+  HYBA_PRECISION: "float64"
+  HYBA_GPU_ACCELERATION: "true"
+  HYBA_CHECKPOINT_INTERVAL: "500"
+  HYBA_ADAPTIVE_PRECISION: "true"
+  HYBA_LOG_LEVEL: "INFO"
+  HYBA_AUDIT_ENABLED: "true"
+  HYBA_FLOP_METERING: "true"

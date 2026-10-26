@@ -1,0 +1,64 @@
+{
+  "id": "gross_zagier_1986",
+  "title": "Heegner points and derivatives of L-series",
+  "authors": [
+    "Benedict H. Gross",
+    "Don B. Zagier"
+  ],
+  "year": 1986,
+  "source_url": "https://link.springer.com/article/10.1007/BF01388805",
+  "license": "Open Access (Springer / Inventiones)",
+  "retrieved_date": "2026-10-24T21:45:11.029045+00:00",
+  "sha256": "ca6e7633a7724f67d809630fcf8a49a84ee776414acc8170303aae4f15739e2f",
+  "category": "Automorphic Forms & Heegner Points",
+  "problem_focus": [
+    "BSD"
+  ],
+  "definitions": [
+    {
+      "term": "Heegner Point",
+      "statement": "CM point y_K on modular curve X_0(N) associated to imaginary quadratic field K with discriminant D coprime to N."
+    },
+    {
+      "term": "Néron-Tate Canonical Height",
+      "statement": "Quadratic form h_hat: E(Q) -> R measuring arithmetic complexity of rational points."
+    },
+    {
+      "term": "Rankin-Selberg Convolution",
+      "statement": "L-function L(f, chi_K, s) twisted by quadratic character of K."
+    }
+  ],
+  "theorems": [
+    {
+      "label": "Gross-Zagier Formula",
+      "statement": "L'(E, 1) * L(E^(D), 1) = (u^2 / (8 pi^2 sqrt(|D|))) * (f, f) * h_hat(P_K) where P_K is the Trace of the Heegner point.",
+      "status": "PROVEN"
+    },
+    {
+      "label": "Rank 1 BSD Partial Resolution",
+      "statement": "If L(E, 1) = 0 and L'(E, 1) != 0, there exists a rational point P in E(Q) of infinite order, so rank E(Q) >= 1.",
+      "status": "PROVEN"
+    }
+  ],
+  "conjectures": [
+    {
+      "label": "Higher Rank BSD Analogue",
+      "statement": "Generalization of Gross-Zagier formula to L^((r))(E, 1) for r >= 2 using higher algebraic cycles.",
+      "status": "OPEN"
+    }
+  ],
+  "open_gaps": [
+    "Heegner points only produce points of rank 1 in E(K); cannot construct rank 2 or higher subspaces directly."
+  ],
+  "computational_handles": [
+    "Numerical evaluation of canonical height h_hat(P) via Tate's series.",
+    "CM point construction on X_0(N) via Weber modular functions.",
+    "L'(E, 1) high-precision computation via rapid exponential sum."
+  ],
+  "citations": [
+    {
+      "ref": "Gross, B.H., Zagier, D.B. (1986). Heegner points and derivatives of L-series, Invent. Math., 84, 225-320.",
+      "url": "https://link.springer.com/article/10.1007/BF01388805"
+    }
+  ]
+}

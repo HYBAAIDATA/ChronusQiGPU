@@ -130,8 +130,9 @@ _SKILLS_CACHE: dict[str, List[PythiaSkill]] = {}
 
 def discover_skills(skills_dir: str = SKILLS_DIR, reload: bool = False) -> List[PythiaSkill]:
     """Discover all SKILL.md files in the skills directory."""
-    if not reload and skills_dir in _SKILLS_CACHE:
-        return list(_SKILLS_CACHE[skills_dir])
+    # A cached discovery is not authority to equip mutable instructions.
+    # Re-read and re-verify graft resources on every admission, including
+    # when a previous call successfully loaded the same directory.
     skills: List[PythiaSkill] = []
     if not os.path.isdir(skills_dir):
         logger.warning("Skills directory not found: %s", skills_dir)

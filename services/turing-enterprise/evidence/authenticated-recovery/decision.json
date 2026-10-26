@@ -1,0 +1,120 @@
+{
+  "acceptance_scope": {
+    "crash_test": "Actual os._exit(73) after authenticated result receipt, before completion transaction commits; fresh process recovers without executing computation.",
+    "installed_artifacts": "Fresh artifact-venv, service wheel then service sdist installed sequentially; source platform supplied via PYTHONPATH=repository root. Service imports remain in site-packages; imports recorded.",
+    "normalization": "Matching 17 package payload files in wheel/sdist; does not establish byte-for-byte reproducible archives.",
+    "platform": "Real AL HARAS verifier/SQLite and real shared lifecycle modules from supplied repository source. Isolated TEST keys/identities only.",
+    "runtime": "Actual installed hyba-turing-vqc 1.0.0 and hyba-kellogg-tensor 1.0.0 from supplied source/wheelhouse; not fake computation."
+  },
+  "artifact_payloads": {
+    "artifacts": {
+      "hyba_turing_service_control-0.2.0-py3-none-any.whl": "b867f47d128f14168c107cd4a35ea2727373d5a900f1f9cc6187c95f81671e06",
+      "hyba_turing_service_control-0.2.0.tar.gz": "3c2923ca60c196e069cdf0bc80d16cf113dceeb1ad1a7518a0a0da623a9d1da0"
+    },
+    "payload_files": {
+      "hyba_turing_service/__init__.py": "f7639ed7d9976e80ada28e920bd69d272e71efb826dc46b0d8570e8af1ffe258",
+      "hyba_turing_service/adapters.py": "faa300185a5c02b1632e21017b58cac0468028b28418f80aea8d833fadcaea12",
+      "hyba_turing_service/api.py": "c96a48fd6f668b305566f82d5600b19f1b7dce419474a704decf11c0202a7b8d",
+      "hyba_turing_service/billing.py": "5e392750228ea3246663a5b375ec8899151200b8bc21715a63747e2d3e9e2166",
+      "hyba_turing_service/commercial.py": "edd362a1ca7279c899739e523293a0b019c72788de9aa63a9fcaa60b99589a77",
+      "hyba_turing_service/control.py": "900f37cf81dc76a9df3f4435faa1fe0dc87403fe1a3d86190e07bf8a58115529",
+      "hyba_turing_service/enterprise.py": "b95280cade9c217f78d4296651d4763b8b1959203b9de5e3142624fe050a99b5",
+      "hyba_turing_service/identity.py": "b556d0faceca4f5be843793d2857636dea7ec581b4651e72ae93375ac8ef39a1",
+      "hyba_turing_service/main.py": "be47aca5d062b5c6301da7d2682eceb19ff7393858553bc3146653e849620a59",
+      "hyba_turing_service/release.py": "7c5884a800934670f3c16347ac86c368d3936f0a4e9f2a1ec27728d55c2b9bdb",
+      "hyba_turing_service/runtime.py": "ae5cc391a2b469cee9c6527f5f0b2881eef74197a95ae5f0a6aad7bc7abe3a69",
+      "hyba_turing_service/sessions.py": "8f206d968a38d4f53b21a9fd49d710ed3eace58ffe49e15c82c73868a6d556eb",
+      "hyba_turing_service/static/portal.css": "7dbeaf862fe9bc0c48d057d0a90da18a4ca0fd064bdcb9e54a81c85aa4455440",
+      "hyba_turing_service/static/portal.html": "c58d1d9403b4e819702683041729766cfe914e6e5ae05cd0accfe0a62d346af8",
+      "hyba_turing_service/static/portal.js": "51efaa923c4ea86a9153613332c5bf59795a8cd85fb04bf6e7912916872d6267",
+      "hyba_turing_service/supervisor.py": "26a5c210b5be2ef141c95cc023336a486fed49193b0d30ab283ec6f82f0dbfe6",
+      "hyba_turing_service/worker_child.py": "f7bd7194d2b60fbf96473b66cddaaa27eeed28ad00928ae35aa79c12a49b74c6"
+    },
+    "payload_parity": true
+  },
+  "base_commit": "fedf91ac7b327929a67bc0e5bc167de22080f1b7",
+  "branch": "hyba-data-evolution",
+  "decision": "Bounded service recovery implemented and locally qualified in documented source/installed-artifact topology. Mandatory production gates have not all passed; outstanding qualification remains operator-waived/unverified, not PASS.",
+  "formatting": {
+    "command": "python -m black --check --line-length 100 services/turing-enterprise/src services/turing-enterprise/tests services/turing-enterprise/integration",
+    "correction": "Existing sessions.py formatting-only correction; no test selection or assertion weakened.",
+    "result": "PASS; 24 files unchanged"
+  },
+  "observed_at_utc": "2026-10-23T19:10:02.232863+00:00",
+  "observed_failures_and_corrections": [
+    {
+      "kind": "environment",
+      "result": "Initial stripped-environment consumers failed collection on missing _cffi_backend, then annotated_doc and platform imports. Replaced inherited environment with a fresh venv and declared server/test dependencies; no source test weakened."
+    },
+    {
+      "kind": "standalone deployment boundary",
+      "result": "137 passed, 2 failed plus 10 subtests with only wheel/server/test dependencies. Missing al_haras at two real configuration/composition cases. Standalone result retained; not reclassified as pass."
+    },
+    {
+      "kind": "formatting",
+      "result": "Existing sessions.py failed actual CI Black policy; formatting-only correction applied; full service format check now passes."
+    }
+  ],
+  "remaining": {
+    "canonical_service_path": "Standalone run_pipeline remains; not wired through CompositionRoot. Accepted architectural risk, not fixed by separate shared-custody test.",
+    "distribution": "Standalone multi-package AL HARAS/platform installation closure not qualified. Passing service artifact tests explicitly use real supplied platform source.",
+    "production": "No host access, actual IdP/secret bindings or final-source-bound deployment authority bundle. No deploy, merge, public release, tag or registry upload.",
+    "recovery": "Pre-receipt crashes, unsigned history, missing or invalid output/keys remain quarantined. No exactly-once computation claim.",
+    "remote_ci": "Unverified; no remote check pass claimed. Prior access failure is not a CI verdict."
+  },
+  "results": {
+    "combined": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 154
+    },
+    "sdist-consumer": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 154
+    },
+    "standalone-wheel": {
+      "errors": 0,
+      "failures": 2,
+      "skipped": 0,
+      "tests": 149
+    },
+    "wheel-consumer": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 154
+    }
+  },
+  "schema": "turing.authenticated-service-recovery.evidence.v1",
+  "source_identity": {
+    "archive_sha256": "1575dbeb13dca7cdaed11e0020889515b5bad4d02a491c6939c44ff20d4cd709",
+    "candidate_files_sha256": {
+      "services/turing-enterprise/integration/test_authenticated_recovery.py": "fbba320a25a60351b022eeb85bc86c0cd486434779c805b5eb47ad5242d29e0b",
+      "services/turing-enterprise/src/hyba_turing_service/api.py": "c96a48fd6f668b305566f82d5600b19f1b7dce419474a704decf11c0202a7b8d",
+      "services/turing-enterprise/src/hyba_turing_service/control.py": "900f37cf81dc76a9df3f4435faa1fe0dc87403fe1a3d86190e07bf8a58115529",
+      "services/turing-enterprise/src/hyba_turing_service/enterprise.py": "b95280cade9c217f78d4296651d4763b8b1959203b9de5e3142624fe050a99b5",
+      "services/turing-enterprise/src/hyba_turing_service/main.py": "be47aca5d062b5c6301da7d2682eceb19ff7393858553bc3146653e849620a59",
+      "services/turing-enterprise/src/hyba_turing_service/runtime.py": "ae5cc391a2b469cee9c6527f5f0b2881eef74197a95ae5f0a6aad7bc7abe3a69",
+      "services/turing-enterprise/src/hyba_turing_service/sessions.py": "8f206d968a38d4f53b21a9fd49d710ed3eace58ffe49e15c82c73868a6d556eb",
+      "services/turing-enterprise/src/hyba_turing_service/supervisor.py": "26a5c210b5be2ef141c95cc023336a486fed49193b0d30ab283ec6f82f0dbfe6",
+      "services/turing-enterprise/tests/test_result_recovery.py": "0294cbf87a504f441cae9926f94308519646b6fd29c87fb45a857f8906a9d3c7"
+    },
+    "kind": "supplied archive plus selected live blob-verified service inputs and candidate edits; not a complete live Git checkout",
+    "live_before_edits": "All 14 service Python modules, service pyproject and 3 static assets matched live main; main/release restored from GitHub before editing. Existing service tests and isolated qualifier were also verified. Broader platform and computational sources are from supplied archive."
+  },
+  "subtests": {
+    "combined": 10,
+    "sdist-consumer": 10,
+    "standalone-wheel": 10,
+    "wheel-consumer": 10
+  },
+  "targeted_github_secret_scan": {
+    "blobsScanned": 9,
+    "numBytesScanned": 128317,
+    "scope": "nine changed Python files; not full SAST/SCA/license approval",
+    "secrets": []
+  }
+}

@@ -153,13 +153,17 @@ class HardenedZeckendorfCodec:
         """Decode a Zeckendorf mask back to an integer."""
         if mask == 0:
             return 0
+        if mask < 0:
+            raise ValueError("Negative Zeckendorf masks are not supported")
+        table = cls.FIBONACCI
+        if mask.bit_length() >= len(table):
+            raise ValueError(f"Mask bit {mask.bit_length() - 1} exceeds table size")
         n = 0
-        for i in range(mask.bit_length()):
-            if (mask >> i) & 1:
-                fib_idx = i + 1
-                if fib_idx >= len(cls.FIBONACCI):
-                    raise ValueError(f"Mask bit {i} exceeds table size")
-                n += cls.FIBONACCI[fib_idx]
+        remaining = mask
+        while remaining:
+            lowest = remaining & -remaining
+            n += table[lowest.bit_length()]
+            remaining ^= lowest
         return n
 
     @classmethod
@@ -231,11 +235,11 @@ def reverse_zeckendorf_expansion(sparse: SparseTopology, host=None) -> bytes:
             int(out[i * _PUNCH_OUT_BLOCK]).to_bytes(8, "big") for i in range(len(offsets))
         )
         return data[: sparse.total_bytes]
-    data = b""
+    data = bytearray()
     for offset in offsets:
         n = HardenedZeckendorfCodec.decode(sparse.blocks[offset])
-        data += n.to_bytes(8, "big")
-    return data[: sparse.total_bytes]
+        data.extend(n.to_bytes(8, "big"))
+    return bytes(data[: sparse.total_bytes])
 
 
 def sparse_from_blocks(blocks: Optional[Dict[int, int]], total_bytes: int = 0) -> SparseTopology:

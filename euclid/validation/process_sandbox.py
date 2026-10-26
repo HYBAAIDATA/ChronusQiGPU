@@ -125,6 +125,9 @@ def _spawn_worker_entry(code_str: str, external_test_code: Optional[str], conn):
 
         # Restricted execution namespace with Whitelisted Builtins ONLY
         restricted_ns = {"__builtins__": SAFE_BUILTINS, "__name__": "__main__"}
+
+        # Signal to parent that child process spawn/import has completed
+        conn.send({"stage": "started"})
         
         # Compile and execute candidate code string
         compiled = compile(code_str, filename="<candidate>", mode="exec")
@@ -191,8 +194,21 @@ class IsolatedProcessEvaluator:
             p.start()
             child_conn.close()  # Close child end in parent
 
-            if parent_conn.poll(timeout=self.timeout_sec):
-                res = parent_conn.recv()
+            # Wait for Windows/OS process spawn handshake first so import overhead
+            # does not consume the candidate code's execution timeout budget.
+            spawn_grace_sec = max(self.timeout_sec, 10.0)
+            if parent_conn.poll(timeout=spawn_grace_sec):
+                first_msg = parent_conn.recv()
+                if isinstance(first_msg, dict) and first_msg.get("stage") == "started":
+                    if parent_conn.poll(timeout=self.timeout_sec):
+                        res = parent_conn.recv()
+                    else:
+                        res = {"success": False, "error": f"TimeoutError: Execution exceeded {self.timeout_sec}s threshold"}
+                        if p.is_alive():
+                            p.terminate()
+                            p.join(timeout=0.5)
+                else:
+                    res = first_msg
             else:
                 res = {"success": False, "error": f"TimeoutError: Execution exceeded {self.timeout_sec}s threshold"}
                 if p.is_alive():

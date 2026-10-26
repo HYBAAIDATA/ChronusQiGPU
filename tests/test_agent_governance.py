@@ -523,3 +523,205 @@ def test_board_readiness_assessor(sample_manifest):
     assert answers["q3_verified_identities_and_least_privileged_access"] is True
     assert answers["q4_can_reconstruct_decisions_end_to_end"] is True
     assert answers["q5_real_rollback_plan_in_place"] is True
+
+
+
+# ==============================================================================
+# TAYLOR & KUTCHER DOCTRINE: TOKENOMICS, CISO DILEMMA, WORKFLOWS, INFRA & ADVISORS
+# ==============================================================================
+
+from governance import (
+    DemocratizedSecurityAppliance,
+    DemocratizedSuperintelligenceEngine,
+    InfrastructureBetAndCommunityGovernor,
+    ModelTierRouter,
+    RevenueAlignedWorkflowEngine,
+    SafePatchOrchestrator,
+    UniversalAdvisorArchetype,
+    VulnerabilityCandidate,
+    WorkflowCategory,
+)
+
+
+def test_model_tier_router_and_open_weight_vs_frontier():
+    # 1. Strict sovereign local routing
+    r_sov = ModelTierRouter.select_model(
+        task_ambiguity_score=0.90,
+        requires_deep_reasoning=True,
+        sovereignty_mode=SovereigntyMode.STRICT_SOVEREIGN_LOCAL,
+    )
+    assert r_sov["tier"] == "open_weight_sovereign"
+    assert r_sov["estimated_cost_usd"] == 0.0
+
+    # 2. Specialized task with post-training fine-tuned weights
+    r_ft = ModelTierRouter.select_model(
+        task_ambiguity_score=0.20,
+        requires_deep_reasoning=False,
+        sovereignty_mode=SovereigntyMode.ZERO_RETENTION_CONTRACTUAL,
+        has_domain_finetuned_weights=True,
+    )
+    assert r_ft["tier"] == "open_weight_finetuned_specialist"
+
+    # 3. High-volume specialized evaluation favors hybrid fine-tuned + frontier reasoning
+    eval_hybrid = ModelTierRouter.evaluate_open_weight_vs_frontier(
+        monthly_token_volume_millions=8000.0,
+        task_specialization_ratio=0.75,
+        requires_air_gapped_sovereignty=False,
+        contractual_zdr_accepted=True,
+    )
+    assert eval_hybrid["recommended_strategy"] == "HYBRID_FRONTIER_REASONING_PLUS_FINETUNED_OPEN_WEIGHT"
+    assert eval_hybrid["cio_open_weight_pillars"]["cost_efficiency_favorable"] is True
+    assert eval_hybrid["cio_open_weight_pillars"]["post_training_fine_tuning_viable"] is True
+    assert eval_hybrid["monthly_net_savings_with_hybrid_usd"] > 0.0
+
+
+def test_ciso_dilemma_safe_patch_backlog_and_smb_security_appliance():
+    candidates = [
+        VulnerabilityCandidate(
+            vuln_id="CVE-2026-0001",
+            component="auth_gateway",
+            exploitability_score=0.92,
+            system_breakage_risk=0.10,
+            proposed_patch_diff="patch_clean_auth",
+        ),
+        VulnerabilityCandidate(
+            vuln_id="CVE-2026-0002",
+            component="legacy_billing_core",
+            exploitability_score=0.85,
+            system_breakage_risk=0.60,
+            proposed_patch_diff="patch_high_blast_radius",
+        ),
+        VulnerabilityCandidate(
+            vuln_id="CVE-2026-0003",
+            component="cobol_bridge_adapter",
+            exploitability_score=0.78,
+            system_breakage_risk=0.80,
+            proposed_patch_diff="patch_breaks_regression",
+        ),
+    ]
+
+    def sandbox_runner(diff: str) -> bool:
+        return diff != "patch_breaks_regression"
+
+    triage = SafePatchOrchestrator.triage_vulnerability_backlog(candidates, sandbox_runner)
+    assert triage["total_discovered_vulnerabilities"] == 3
+    assert triage["production_uptime_preserved"] is True
+    assert triage["canary_auto_patched_count"] == 1
+    assert triage["staged_for_human_approval_count"] == 1
+    assert triage["quarantined_with_virtual_shield_count"] == 1
+    assert triage["quarantined_with_virtual_shield"][0]["virtual_shield_applied"] is True
+
+    # Verify post-patch canary telemetry rollback when error rate spikes
+    telemetry_bad = SafePatchOrchestrator.verify_post_patch_telemetry(
+        vuln_id="CVE-2026-0001",
+        baseline_error_rate=0.001,
+        observed_error_rate=0.025,
+        baseline_latency_ms=40.0,
+        observed_latency_ms=42.0,
+    )
+    assert telemetry_bad["canary_healthy"] is False
+    assert telemetry_bad["action"] == "AUTO_ROLLBACK_PATCH_AND_ENGAGE_VIRTUAL_SHIELD"
+
+    # Out-of-the-box security appliance for a local medical clinic
+    clinic_shield = DemocratizedSecurityAppliance.deploy_out_of_the_box_shield(
+        organization_name="Valley Community Medical Clinic",
+        cohort_type="LOCAL_MEDICAL_CLINIC",
+        endpoint_count=45,
+        legacy_unpatched_systems=6,
+    )
+    assert clinic_shield["protection_status"] == "ZERO_CONFIG_AUTONOMOUS_PROTECTION_ACTIVE"
+    assert clinic_shield["requires_in_house_ciso"] is False
+    assert clinic_shield["legacy_endpoints_virtually_shielded"] == 6
+
+
+def test_revenue_aligned_workflows_kutcher_80_20_and_competitive_reinvestment():
+    # 1. Sierra digital front-door >90% resolution with redesigned business workflow
+    front_door = RevenueAlignedWorkflowEngine.evaluate_workflow_deployment(
+        workflow_category=WorkflowCategory.CUSTOMER_SERVICE_FRONT_DOOR,
+        monthly_case_volume=100000,
+        autonomous_resolution_rate=0.92,
+        legacy_cost_per_case_usd=15.0,
+        agentic_cost_per_case_usd=1.20,
+        process_redesign_score=0.85,
+        technology_readiness_score=0.90,
+    )
+    assert front_door["meets_90pct_front_door_benchmark"] is True
+    assert front_door["growth_decoupled_from_cost"] is True
+    assert front_door["kutcher_80_20_assessment"]["in_individual_productivity_trap"] is False
+    assert front_door["unit_economics"]["projected_cac_usd"] < front_door["unit_economics"]["baseline_cac_usd"]
+    assert (
+        front_door["unit_economics"]["projected_annual_retention_rate"]
+        > front_door["unit_economics"]["baseline_annual_retention_rate"]
+    )
+
+    # 2. Individual productivity trap when 80% business process redesign is neglected
+    kyc_trap = RevenueAlignedWorkflowEngine.evaluate_workflow_deployment(
+        workflow_category=WorkflowCategory.KYC_COMPLIANCE,
+        monthly_case_volume=10000,
+        autonomous_resolution_rate=0.70,
+        legacy_cost_per_case_usd=45.0,
+        agentic_cost_per_case_usd=5.0,
+        process_redesign_score=0.25,
+        technology_readiness_score=0.95,
+    )
+    assert kyc_trap["kutcher_80_20_assessment"]["in_individual_productivity_trap"] is True
+
+    # 3. Competitive reinvestment & Jevons effect on software engineering
+    reinv = RevenueAlignedWorkflowEngine.simulate_competitive_reinvestment(
+        annual_ai_efficiency_savings_usd=50_000_000.0,
+        market_competitiveness_index=0.85,
+        current_software_engineering_headcount=400,
+        coding_agent_productivity_multiplier=2.5,
+    )
+    assert reinv["strategic_posture"] == "COMPETITIVE_IMPERATIVE_NOT_OPTIONAL"
+    assert reinv["software_engineering_jevons_effect"]["effective_software_output_fte_equivalent"] == 1000.0
+    assert reinv["software_engineering_jevons_effect"]["net_software_demand_trajectory"] == "EXPANDING_MORE_SOFTWARE_BUILT"
+
+
+def test_infrastructure_bet_and_community_accountability():
+    bet = InfrastructureBetAndCommunityGovernor.evaluate_infrastructure_bet(
+        planned_capex_billions_usd=120.0,
+        funded_by_operating_cash_flow_pct=0.70,
+        funded_by_debt_pct=0.30,
+        enterprise_inference_workload_share=0.55,
+        enterprise_inference_gross_margin=0.65,
+    )
+    assert bet["strategic_recommendation"] == "NECESSARY_ASYMMETRIC_BET_PROCEED_WITH_DISCIPLINE"
+    assert bet["financing_and_margin_equilibrium"]["durable_long_term_equilibrium"] is True
+    assert bet["time_horizon_impedance_mismatch"]["lead_time_to_innovation_ratio"] > 50.0
+
+    community = InfrastructureBetAndCommunityGovernor.evaluate_community_accountability(
+        facility_region="Midwest Grid Zone A",
+        protects_residential_power_rates=True,
+        behind_the_meter_or_new_clean_generation_mw=850.0,
+        closed_loop_water_stewardship=True,
+        local_skilled_trades_jobs_created=1400,
+        annual_local_tax_contribution_millions_usd=48.5,
+        proactive_town_hall_engagement=True,
+    )
+    assert community["community_social_license_status"] == "APPROVED_COMMUNITY_PARTNER"
+    assert community["accountability_score_pct"] == 100.0
+    assert community["two_core_questions"]["will_ai_benefit_me_broadly"] is True
+    assert community["two_core_questions"]["will_this_datacenter_benefit_my_community"] is True
+
+
+def test_democratized_superintelligence_advisors_and_macro_demographics():
+    for archetype in UniversalAdvisorArchetype:
+        bundle = DemocratizedSuperintelligenceEngine.provision_universal_advisor(
+            archetype=archetype,
+            beneficiary_id="user_001",
+            accountable_human_guardian="guardian_lead@enterprise.org",
+        )
+        assert bundle["democratized_access_verified"] is True
+        assert bundle["manifest"].accountable_owner == "guardian_lead@enterprise.org"
+
+    macro = DemocratizedSuperintelligenceEngine.project_macro_demographic_productivity(
+        baseline_working_age_population_millions=165.0,
+        annual_demographic_contraction_rate=0.008,
+        ai_augmented_productivity_gain_per_worker=0.35,
+        startup_creation_cost_reduction_pct=0.80,
+        projection_years=10,
+    )
+    assert macro["demographic_drag_overcome"] is True
+    assert macro["ai_augmented_gdp_output_index"] > 100.0
+    assert macro["new_business_formation_multiplier"] == 5.0

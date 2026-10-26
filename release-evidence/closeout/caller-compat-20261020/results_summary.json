@@ -1,0 +1,26 @@
+{
+  "callers-final": {
+    "tests": 21,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "all-normal": {
+    "tests": 85,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "all-optimized": {
+    "tests": 85,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "caller-negative-final": {
+    "tests": 21,
+    "failures": 12,
+    "errors": 0,
+    "skipped": 0
+  }
+}

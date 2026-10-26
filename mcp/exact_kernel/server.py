@@ -179,7 +179,9 @@ TOOLS = {
 
 
 def _extract_meta(params: dict[str, Any]) -> dict[str, Any]:
-    return params.get("_meta") if isinstance(params, dict) else {}
+    if isinstance(params, dict):
+        return params.get("_meta") or {}
+    return {}
 
 
 def main() -> None:

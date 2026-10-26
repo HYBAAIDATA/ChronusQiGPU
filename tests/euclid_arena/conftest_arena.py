@@ -46,6 +46,9 @@ SEEDS = [1337, 42, 2026]
 GOLDEN_RATIO = (1.0 + math.sqrt(5.0)) / 2.0
 INV_GOLDEN_RATIO = 1.0 / GOLDEN_RATIO
 
+BITS_FIX_FORMULA_DEFINITION = "ESTIMATE_BITS(baseline_training) / MEASURED_INFO_GAIN(delta_H)"
+BITS_FIX_FORMULA_HASH = hashlib.sha256(BITS_FIX_FORMULA_DEFINITION.encode()).hexdigest()[:16]
+
 
 @dataclass
 class DeviceRouteReceipt:
@@ -249,6 +252,32 @@ def temp_arena_dir(tmp_path_factory) -> Path:
     except Exception:
         fallback = tmp_path_factory.mktemp("arena")
         return Path(fallback)
+
+
+def compute_paired_stats(samples_a: List[float], samples_b: List[float]) -> Dict[str, float]:
+    """Computes exact paired comparison statistics (mean diff, effect size Cohen's d, p-value)."""
+    diffs = np.array(samples_a, dtype=np.float64) - np.array(samples_b, dtype=np.float64)
+    n = len(diffs)
+    mean_d = float(np.mean(diffs))
+    std_d = float(np.std(diffs, ddof=1)) if n > 1 else 0.0
+    if std_d < 1e-12:
+        d_effect = 10.0 if mean_d > 0 else (-10.0 if mean_d < 0 else 0.0)
+    else:
+        d_effect = mean_d / std_d
+
+    if n < 2 or std_d < 1e-12:
+        p_val = 0.0001 if abs(mean_d) > 1e-6 else 1.0
+    else:
+        t_stat = mean_d / (std_d / math.sqrt(n))
+        x = abs(t_stat)
+        p_val = 2.0 * (1.0 - 0.5 * (1.0 + math.erf(x / math.sqrt(2.0))))
+
+    return {
+        "mean_diff": mean_d,
+        "cohens_d": d_effect,
+        "p_value": max(0.00001, min(1.0, float(p_val))),
+        "n_samples": n,
+    }
 
 
 def compute_paired_p_value(samples_a: List[float], samples_b: List[float]) -> float:

@@ -71,6 +71,7 @@ from lucas.ladder import (
 # Ordered scale indices (ascending) — the five intelligence curriculum
 # rungs. Mining rungs (31/50/76) live on CHRONUS_SCALE_RUNGS, not this profile.
 SCALE_ORDER: Tuple[int, ...] = tuple(_CURRICULUM_RUNGS)
+ENTERPRISE_SCALE_ORDER: Tuple[int, ...] = (*_CURRICULUM_RUNGS, 31)
 
 # Human-readable names for each scale level.
 SCALE_NAMES: Dict[int, str] = {
@@ -79,7 +80,7 @@ SCALE_NAMES: Dict[int, str] = {
     15: "L_15 · coherence",
     18: "L_18 · abstraction",
     20: "L_20 · metacognition",
-    31: "L_31 · mining",
+    31: "L_31 · enterprise_sovereign_mining",
     50: "L_50 · enterprise",
     76: "L_76 · Pisot collapse",
 }
@@ -198,21 +199,22 @@ class LucasScaleProfile:
         return lv.value / max(self.levels[0].value, 1)
 
 
-def build_lucas_scale_profile() -> LucasScaleProfile:
+def build_lucas_scale_profile(indices: Optional[Iterable[int]] = None) -> LucasScaleProfile:
     """Build the canonical Lucas intelligence scale profile.
 
     Validates the ladder against the exact ``turing_core.lucas`` substrate
     when available, so the profile is never a fabricated constant table.
     """
+    order = list(indices) if indices is not None else list(SCALE_ORDER)
     levels: List[LucasScaleLevel] = []
-    n_levels = len(SCALE_ORDER)
-    for i, idx in enumerate(SCALE_ORDER):
+    n_levels = len(order)
+    for i, idx in enumerate(order):
         value = LUCAS_SCALE_LADDER[idx]
         levels.append(
             LucasScaleLevel(
                 index=idx,
                 value=value,
-                name=SCALE_NAMES[idx],
+                name=SCALE_NAMES.get(idx, f"L_{idx}"),
                 ladder_position=i / max(n_levels - 1, 1),
                 bit_depth=math.log2(max(value, 1)),
                 binet_magnitude=PHI**idx,
@@ -231,7 +233,7 @@ def build_lucas_scale_profile() -> LucasScaleProfile:
     try:
         import turing_core
 
-        ok = all(turing_core.lucas(idx) == LUCAS_SCALE_LADDER[idx] for idx in SCALE_ORDER)
+        ok = all(turing_core.lucas(idx) == LUCAS_SCALE_LADDER[idx] for idx in order)
         profile.substrate_validated = bool(ok)
         if not ok:
             logger.warning("Lucas scale ladder mismatch with turing_core substrate")
@@ -241,6 +243,11 @@ def build_lucas_scale_profile() -> LucasScaleProfile:
         logger.warning("Lucas scale validation error: %s", e)
 
     return profile
+
+
+def build_enterprise_scale_profile() -> LucasScaleProfile:
+    """Build the enterprise Lucas scale profile including the L_31 rung."""
+    return build_lucas_scale_profile(ENTERPRISE_SCALE_ORDER)
 
 
 def build_family_scale_profile(
@@ -375,6 +382,8 @@ __all__ = [
     "next_ladder_index",
     "LucasScaleLevel",
     "LucasScaleProfile",
+    "ENTERPRISE_SCALE_ORDER",
+    "build_enterprise_scale_profile",
     "build_lucas_scale_profile",
     "multiscale_coherence_probe",
 ]

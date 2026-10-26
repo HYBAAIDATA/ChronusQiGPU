@@ -254,6 +254,17 @@ class MiningStorageRecorder:
         )
         recorder._store = store  # keep the connection reachable via the recorder
         try:
+            # New-format writes retain their semantic request before placement.
+            # Resume only those exact requests; legacy incomplete writes remain
+            # fail-closed until an operator supplies explicit reconstruction.
+            pending = store._db.execute(
+                "SELECT intent_id,detail_json FROM file_intents "
+                "WHERE tenant_id=? AND state!='COMMITTED' ORDER BY rowid",
+                (tenant_id,),
+            ).fetchall()
+            for intent in pending:
+                if json.loads(intent["detail_json"]).get("request_schema") == "hyba.file-write-request/v1":
+                    store.files.resume_write_intent(tenant_id, intent["intent_id"], root)
             recorder.recover()
         except Exception:
             store.close()
@@ -746,9 +757,10 @@ class MiningStorageRecorder:
                 if report is not None
                 else bool((self._last_health or {}).get("reconciliation_ok", False))
             )
+            mining_chain_ok = bool(self.files.verify_mining(self.tenant_id))
             healthy = bool(
                 verification.get("passed")
-                and self.files.verify_mining(self.tenant_id)
+                and mining_chain_ok
                 and reconciliation_ok
                 and self.errors == 0
             )
@@ -760,7 +772,7 @@ class MiningStorageRecorder:
                 "errors": self.errors,
                 "last_error": self.last_error,
                 "file_plane_ok": bool(verification.get("file_plane_ok")),
-                "mining_chain_ok": bool(self.files.verify_mining(self.tenant_id)),
+                "mining_chain_ok": mining_chain_ok,
                 "reconciliation_ok": bool(reconciliation_ok),
                 "verification": "incremental" if incremental else "full",
                 "unresolved": (

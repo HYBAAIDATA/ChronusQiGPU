@@ -104,6 +104,7 @@ class AgenticMiningController:
         queue_depth: int = _DEFAULT_QUEUE_DEPTH,
         initial_lookahead: int = _DEFAULT_LOOKAHEAD,
         scale_classifier: ScaleStateClassifier | None = None,
+        lease_alignment: int = 32,
     ) -> None:
         if not (1 <= queue_depth <= _MAX_QUEUE_DEPTH):
             raise ValueError(f"queue_depth must be 1..{_MAX_QUEUE_DEPTH}")
@@ -111,7 +112,7 @@ class AgenticMiningController:
         self._queue: Queue[SearchPlan] = Queue(maxsize=queue_depth)
         self._lookahead = max(1, min(initial_lookahead, queue_depth))
         self._policy_depth = False
-        self._leases = NonceLeaseLedger(max_active=queue_depth + 2)
+        self._leases = NonceLeaseLedger(max_active=queue_depth + 2, alignment=lease_alignment)
         self._scale_classifier = scale_classifier or ScaleStateClassifier()
         self._lock = threading.Lock()
         self._identity: WorkIdentity | None = None

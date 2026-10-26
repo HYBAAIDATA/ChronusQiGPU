@@ -1,0 +1,48 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hyba-frontend
+  namespace: hyba-frontend
+  labels:
+    app.kubernetes.io/name: hyba-frontend
+    app.kubernetes.io/part-of: hyba-mining
+  annotations:
+    # Azure Application Gateway Ingress Controller
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/ssl-redirect: "true"
+    appgw.ingress.kubernetes.io/backend-protocol: "http"
+    # Health probe path
+    appgw.ingress.kubernetes.io/health-probe-path: "/api/health"
+    appgw.ingress.kubernetes.io/health-probe-status-codes: "200-399"
+    # Connection draining
+    appgw.ingress.kubernetes.io/connection-draining: "true"
+    appgw.ingress.kubernetes.io/connection-draining-timeout: "30"
+    # WAF policy (update to your WAF policy resource ID)
+    # appgw.ingress.kubernetes.io/waf-policy-for-path: "/subscriptions/<sub>/resourceGroups/hyba-production/providers/Microsoft.Network/applicationGatewayWebApplicationFirewallPolicies/hyba-waf"
+spec:
+  tls:
+    - hosts:
+        - hybamine.com
+        - www.hybamine.com
+      secretName: hyba-tls-secret
+  rules:
+    - host: hybamine.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hyba-frontend
+                port:
+                  name: http
+    - host: www.hybamine.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hyba-frontend
+                port:
+                  name: http

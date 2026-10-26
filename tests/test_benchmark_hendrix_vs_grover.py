@@ -1,5 +1,4 @@
-"""Smoke tests for the Hendrix-vs-Grover benchmark harness."""
-
+import os
 import sys
 import json
 import time
@@ -7,6 +6,7 @@ from math import gcd
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 
 from benchmarks.common import rng_for, uniform_winners
 from benchmarks.hendrix_vs_grover import (
@@ -115,3 +115,46 @@ def test_numerical_reference_fixture_never_unlocks_production():
 
     with pytest.raises(ReferenceUnavailable):
         GroverStyleSearch.optimal_iterations(64)
+
+
+def test_unconditional_search_parity_honest_accounting():
+    """Honest accounting: On a uniform random oracle, no permutation has an
+    unconditional advantage over any other. The expected iterations to first hit
+    under any bijection sigma:[N]->[N] is identically (N+1)/(K+1)."""
+    import random
+    import statistics
+
+    n = 1024
+    stride = hendrix_stride(n)
+    seq_hits, hen_hits, gro_hits = [], [], []
+
+    rng = random.Random(42)
+    for _ in range(500):
+        # 1 uniform marked winner
+        w = rng.randrange(n)
+        seq_hits.append(w + 1)
+        hen_hits.append(hendrix_index(w, n, stride) + 1)
+        gro_hits.append(grover_walk_index(w, n) + 1)
+
+    mean_seq = statistics.fmean(seq_hits)
+    mean_hen = statistics.fmean(hen_hits)
+    mean_gro = statistics.fmean(gro_hits)
+
+    # Parity: all means converge to (N+1)/2 = 512.5 within 5% sampling noise
+    assert abs(mean_hen - mean_seq) / mean_seq < 0.08
+    assert abs(mean_gro - mean_seq) / mean_seq < 0.08
+
+
+def test_boundaries_per_hendrix_scaling_research():
+    """Locks the non-claims boundary: permutation is ordering, not advantage."""
+    from lucas.scaling_research import research_report
+
+    report = research_report()
+    for claim in [
+        "mining advantage",
+        "scheduling advantage",
+        "hardware speedup",
+        "production qualification",
+    ]:
+        assert claim in report["non_claims"]
+

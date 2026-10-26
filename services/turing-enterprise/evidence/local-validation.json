@@ -1,0 +1,72 @@
+{
+  "schema": "turing.service.local-validation.v1",
+  "recorded_at": "2026-10-19T15:27:08.602915+00:00",
+  "inspected_base_commit": "af4e34a3c9463750dc32bcd1eae41f7310944833",
+  "python": "3.13.14",
+  "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+  "runs": [
+    {
+      "name": "service-source",
+      "passed": 48,
+      "failed": 0,
+      "skipped": 0,
+      "xfailed": 0,
+      "output": "................................................                         [100%]\n48 passed in 0.38s"
+    },
+    {
+      "name": "service-clean-wheel",
+      "passed": 48,
+      "failed": 0,
+      "skipped": 0,
+      "xfailed": 0,
+      "output": "................................................                         [100%]\n48 passed in 0.41s"
+    },
+    {
+      "name": "verbatim-stabilizer-measurement-isolated-namespace",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "xfailed": 0,
+      "output": "...........                                                              [100%]\n11 passed in 1.22s"
+    }
+  ],
+  "scope_exclusions": [
+    "full repository checkout/gauntlet",
+    "full installed TURING pipeline integration",
+    "real Hermitten",
+    "physical provisioning",
+    "production deployment",
+    "public publication",
+    "remote CI acceptance"
+  ],
+  "source_sha256": {
+    "services/turing-enterprise/src/hyba_turing_service/__init__.py": "f7639ed7d9976e80ada28e920bd69d272e71efb826dc46b0d8570e8af1ffe258",
+    "services/turing-enterprise/src/hyba_turing_service/control.py": "063e42fc86ff37add7ae168d399f7b8b82898fe5e25f57fbae61e5fa267d104b",
+    "services/turing-enterprise/src/hyba_turing_service/adapters.py": "faa300185a5c02b1632e21017b58cac0468028b28418f80aea8d833fadcaea12"
+  },
+  "upstream_verbatim_sources": {
+    "al_haras/entitlements.py": {
+      "git_blob": "ab23780e0c309c05d782cd4eed35590020242ca3",
+      "sha256": "03ee0c80b7bec8a8932ea7ac900dc64125b06c1bee7870a596eda1e9c6129fcf"
+    },
+    "turing_universal_quantum_computer/stabilizer.py": {
+      "git_blob": "c2444b60f36275f341293e0a6a5767eab273a220",
+      "sha256": "a797ffb00561a6db4344bfe1de8cd72784dc76b097b530a39e63a783085ab69d"
+    },
+    "tests/test_stabilizer_measurement.py": {
+      "git_blob": "a02320b751def33eb024691570c578ef07c2ed56",
+      "sha256": "b8e78b0a033f074c06bb79eb207cd1c55d3341c42b9b116c8a0b8be6da6b1794"
+    }
+  },
+  "tests_sha256": "ac35be5a697039f5517735a4bdd2e7552ac171d0b5e962e2f2febf7766af396b",
+  "wheel_sha256": {
+    "hyba_turing_service_control-0.1.0-py3-none-any.whl": "68484017fc032aec41303f8a9cc9a089a1b0fa66358a71b5e95da70568d1e1b1"
+  },
+  "wheel_import_location": "isolated venv site-packages; verified, not src",
+  "secret_scan": {
+    "github_advanced_security": "unavailable: repository does not have GitHub Advanced Security enabled",
+    "local_scanner": "detect-secrets",
+    "disposition": "12 entropy findings manually inspected: Git blob / content / wheel hashes only; no credential finding",
+    "limitation": "targeted proposed-file scan, not full repository security certification"
+  }
+}

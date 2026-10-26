@@ -150,12 +150,30 @@ class HypercubeWalk:
     def hamming_distribution(self, t) -> Dict[int, Any]:
         """Exact P(Hamming weight = w) = C(n,w) cos^{2(n-w)} t sin^{2w} t."""
         t = sp.sympify(t)
-        return {
-            w: sp.binomial(self.n_qubits, w)
-            * sp.cos(t) ** (2 * (self.n_qubits - w))
-            * sp.sin(t) ** (2 * w)
-            for w in range(self.n_qubits + 1)
-        }
+        n = self.n_qubits
+        c2, s2 = sp.cos(t) ** 2, sp.sin(t) ** 2
+        if c2 == 0:
+            return {w: sp.Integer(w == n) for w in range(n + 1)}
+        if s2 == 0:
+            return {w: sp.Integer(w == 0) for w in range(n + 1)}
+        if c2.is_Rational and s2.is_Rational:
+            probability = c2 ** n
+            ratio = s2 / c2
+            distribution = {}
+            for w in range(n + 1):
+                distribution[w] = probability
+                if w < n:
+                    probability *= sp.Rational(n - w, w + 1) * ratio
+            return distribution
+        # Exact symbolic form, with an integer binomial recurrence rather than
+        # recomputing all factorial products independently at every weight.
+        coefficient = 1
+        distribution = {}
+        for w in range(n + 1):
+            distribution[w] = sp.Mul(coefficient, c2 ** (n - w), s2 ** w, evaluate=False)
+            if w < n:
+                coefficient = coefficient * (n - w) // (w + 1)
+        return distribution
 
     def expected_hamming_weight(self, t) -> Any:
         """E[w] = n sin^2 t — exact closed form."""

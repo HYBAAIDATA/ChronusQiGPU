@@ -1,45 +1,63 @@
-# MCP + SDK Packaging for EUCLID / PYTHIA Augmentation
+# HYBA Sovereign Model Context Protocol (MCP) Suite
 
-This branch adds the Phase 0 skeleton for packaging the EUCLID aptitude (PYTHIA skills, evidence model, session gates) as a discoverable MCP bundle plus a supporting SDK.
+## Sovereignty & Crediting Doctrine (Mandatory)
 
-## Components added
+HYBA MCP is a sovereign tool and exact-mathematical-kernel interface.
+**We do NOT serve or augment narrow AI.**
+- Narrow AI models obtain **zero credit, zero authority, and zero decision rights**.
+- HYBA / EUCLID adapts tools, training environments, and curricula into its own deterministic cognitive and mathematical substrate.
+- All actions are subject to **AL HARAS zero-trust containment**, situational access leases, and cryptographic evidence logging.
+- `theorem_proven` remains `False` until verified against consensus gates.
 
-- `mcp/mcp_config.json` — template for connectors (Notion, storage) and owner-approval metadata. Secrets via env / MCP secrets only.
-- `sdk/euclid_mcp/` — Python SDK skeleton with:
-  - `start_session()` / `end_session()`
-  - `invoke_skill()`
-  - `produce_pack()` (evidence digest)
-  - `require_owner_approval()` stub
-- Existing `plugins/pythia/.mcp.json` remains the primary manifest (to be extended in follow-ups).
+---
 
-## Why this design
+## Architectural Components
 
-- MCP bundle = versioned, installable unit for hyperscalers and Notion agents.
-- SDK = enforces session lifecycle, mandatory skills, evidence collection, and gates without leaking transport details.
-- Separates delivery from authority (EUCLID contracts, THESEUS custody, CHRONUS execution).
+1. **`hyba_mcp` (Production Package)**:
+   - `hyba_mcp.server`: High-throughput Model Context Protocol server exposing verified tools:
+     - `lucas`: Exact fast-doubling Lucas numbers ($L_n$) with Cassini witness.
+     - `fibonacci`: Exact fast-doubling Fibonacci numbers ($F_n$).
+     - `cassini`: Exact $L_n^2 - 5 F_n^2 = 4(-1)^n$ certificate.
+     - `zeckendorf`: Canonical non-adjacent Zeckendorf representation.
+     - `ladder_verify`: Complete Lucas ladder stops.
+     - `ladder_capacity`: Exact envelope and capacity snapping.
+     - `largest_feasible_tile`: Power-of-two work tiling under alignment.
+     - `sha256d_verify`: Independent double-SHA256 evaluation against uint256 targets.
+   - `hyba_mcp.client`: Session-managed client providing cryptographic evidence packaging and digest signing.
+2. **`mcp/` & `.mcp.json`**:
+   - Standard top-level server registration for local agent hosts and client interfaces.
+3. **`euclid.enterprise.superintelligence_governance.MCPGateway`**:
+   - Institutional gatekeeper managing agent registration, tool containment, situational access leases, and automated kill-switch integration.
 
-## Phased roadmap (from design)
+---
 
-**Phase 0 (this PR)** — skeleton: manifests, SDK stubs, README.
-**Phase 1** — Notion connector + canonical retrieval + evidence digests.
-**Phase 2** — Docker/Helm, CI publish, owner-approval gate.
-**Phase 3** — training pipeline templates (Kubeflow/Vertex/SageMaker) + THESEUS provenance.
-**Phase 4** — hyperscaler pilot, observability, anti-hallucination hardening.
+## Running the Sovereign MCP Server
 
-## Anti-hallucination controls (enforced by SDK + gates)
+To start the production stdio server:
 
-- Grounding required for factual claims.
-- Verification before completion.
-- `theorem_proven` remains `False`.
-- Owner approval for high-risk / canonical promotion.
+```bash
+python -m hyba_mcp.server
+```
 
-## Next steps
+### JSON-RPC Verification Example
 
-1. Merge this skeleton after owner review.
-2. Implement Notion connector (Phase 1).
-3. Wire session_start / stop_gate to SDK.
-4. Add CI job for MCP artifact build.
+```json
+{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}
+{"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}
+{"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "lucas", "arguments": {"n": 15}}}
+{"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "lucas", "arguments": {"n": 20}}}
+```
 
-Owner approval required: @EuclidUltimaPhi
+Responses are returned with bit-exact Cassini invariants:
+- $L_{15} = 1364$ (Cassini: $-4$)
+- $L_{20} = 15127$ (Cassini: $+4$)
 
-theorem_proven remains False.
+---
+
+## Anti-Hallucination & Provenance Invariants
+
+- Mathematical truth is verified through integer arithmetic; no floating-point approximations in the exact core (Rule 7).
+- Cryptographic proof boundaries remain inviolable (SHA-256d + target).
+- Evidence packs carry deterministic session digests:
+  $$\text{Digest} = \text{SHA256}(\text{CanonicalJSON}(\text{EvidencePack}))$$
+- Authority remains exclusively with the HYBA / EUCLID CNS.

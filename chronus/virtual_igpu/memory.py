@@ -13,9 +13,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+import copy
+import base64
 import hashlib
 import json
 import os
+import re
 import threading
 import urllib.parse
 from pathlib import Path
@@ -30,11 +33,30 @@ def _canonical(value: Any) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
 
 
+def _pack_payload(payload):
+    if isinstance(payload, bytes):
+        return "bytes-base64/v1", base64.b64encode(payload).decode("ascii")
+    # Never stringify opaque objects or nested bytes into lossy identities.
+    json.dumps(payload, allow_nan=False)
+    return "json/v1", payload
+
+
+def _unpack_payload(codec, payload):
+    if codec in (None, "json/v1"):
+        return payload
+    if codec == "bytes-base64/v1" and isinstance(payload, str):
+        return base64.b64decode(payload, validate=True)
+    raise ValueError("unsupported persisted memory payload codec")
+
+
 def content_id_for(payload: Any, *, representation_version: str = "v1") -> str:
     body = {
         "representation_version": representation_version,
         "payload": payload,
     }
+    if isinstance(payload, bytes):
+        body["payload_type"] = "bytes"
+        body["payload"] = base64.b64encode(payload).decode("ascii")
     return hashlib.sha256(_canonical(body)).hexdigest()
 
 
@@ -79,6 +101,34 @@ class VirtualMemoryPlane:
         self._device_bytes = 0
         self._load_index()
 
+    @staticmethod
+    def _checked_object_id(object_id: str) -> str:
+        if not isinstance(object_id, str) or not re.fullmatch(r"[0-9a-f]{64}", object_id):
+            raise ValueError("object_id must be a canonical SHA-256 handle")
+        return object_id
+
+    def _contained_file(self, directory: Path, filename: str) -> Path:
+        if directory.is_symlink() or not directory.resolve().is_relative_to(self.root.resolve()):
+            raise PermissionError("memory path is outside its owned root")
+        path = directory / filename
+        if path.is_symlink() or path.resolve().parent != directory.resolve():
+            raise PermissionError("memory path escapes its owned directory")
+        return path
+
+    def _artifact_path(self, tenant: str, workload_id: str) -> Path:
+        if not isinstance(tenant, str) or not tenant or len(tenant) > 256:
+            raise ValueError("tenant must be a bounded nonempty string")
+        # Safe legacy tenant names retain their paths. Unsafe ids get an exact-id
+        # digest suffix, never lossy slash/question-mark replacement or traversal.
+        name = tenant if re.fullmatch(r"[A-Za-z0-9_-]{1,128}", tenant) else (
+            "tenant~" + hashlib.sha256(tenant.encode()).hexdigest()
+        )
+        parent = self.root / "artifacts"
+        if parent.is_symlink():
+            raise PermissionError("artifact root must not be a symlink")
+        directory = parent / name
+        return self._contained_file(directory, self._artifact_filename(workload_id))
+
     def _index_path(self) -> Path:
         return self.root / "memory_index.json"
 
@@ -88,9 +138,11 @@ class VirtualMemoryPlane:
             return
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            return
-        for item in data.get("objects", []):
+        except Exception as exc:
+            raise ValueError("invalid persisted memory index") from exc
+        if not isinstance(data, dict) or not isinstance(data.get("objects"), list):
+            raise ValueError("invalid persisted memory index schema")
+        for item in data["objects"]:
             try:
                 rec = ObjectRecord(
                     object_id=str(item["object_id"]),
@@ -101,20 +153,48 @@ class VirtualMemoryPlane:
                     folded_bytes=int(item.get("folded_bytes", 0)),
                     host_resident_bytes=int(item.get("host_resident_bytes", 0)),
                     device_resident_bytes=int(item.get("device_resident_bytes", 0)),
-                    payload=item.get("payload"),
+                    payload=_unpack_payload(item.get("payload_codec"), item.get("payload")),
                     metadata=dict(item.get("metadata", {})),
                     adapter_id=item.get("adapter_id"),
                     residency=str(item.get("residency", "host")),
                     created_at=str(item.get("created_at", _utc_now())),
                     refs=int(item.get("refs", 1)),
                 )
+                self._checked_object_id(rec.object_id)
+                verified_payload = self._retrieve_object(rec.object_id, tenant=rec.tenant)
+                if not rec.tenant or rec.content_id != content_id_for(
+                    verified_payload, representation_version=rec.representation_version
+                ):
+                    raise ValueError("persisted content identity mismatch")
+                if rec.payload is not None and content_id_for(
+                    rec.payload, representation_version=rec.representation_version
+                ) != rec.content_id:
+                    raise ValueError("persisted index payload mismatch")
+                actual_size = len(verified_payload) if isinstance(verified_payload, bytes) else len(_canonical(verified_payload))
+                if rec.logical_bytes != actual_size:
+                    raise ValueError("persisted logical size mismatch")
+                rec.payload = verified_payload if rec.residency == "host" else None
+                if min(rec.logical_bytes, rec.folded_bytes, rec.host_resident_bytes,
+                       rec.device_resident_bytes, rec.refs) < 0:
+                    raise ValueError("negative persisted accounting")
+                if rec.object_id in self._objects:
+                    raise ValueError("duplicate persisted object handle")
+                if rec.residency not in {"host", "folded"} or rec.device_resident_bytes:
+                    # A persisted label cannot reattach a real device allocation.
+                    rec.residency = "unbound"
+                    rec.adapter_id = None
+                    rec.device_resident_bytes = 0
+                    rec.host_resident_bytes = 0
+                    rec.payload = None
+                if self._host_bytes + rec.host_resident_bytes > self.max_host_bytes:
+                    raise MemoryError("persisted host residency exceeds budget")
                 self._objects[rec.object_id] = rec
                 self.residency[rec.object_id] = rec.residency
                 self.memory_tiers[rec.object_id] = rec.residency
                 self._host_bytes += rec.host_resident_bytes
                 self._device_bytes += rec.device_resident_bytes
-            except Exception:
-                continue
+            except Exception as exc:
+                raise ValueError("invalid persisted memory record") from exc
 
     def _save_index(self) -> None:
         payload = {
@@ -128,7 +208,8 @@ class VirtualMemoryPlane:
                     "folded_bytes": r.folded_bytes,
                     "host_resident_bytes": r.host_resident_bytes,
                     "device_resident_bytes": r.device_resident_bytes,
-                    "payload": r.payload,
+                    "payload_codec": _pack_payload(r.payload)[0],
+                    "payload": _pack_payload(r.payload)[1],
                     "metadata": r.metadata,
                     "adapter_id": r.adapter_id,
                     "residency": r.residency,
@@ -162,17 +243,20 @@ class VirtualMemoryPlane:
         """Store payload; return object_id (str) or legacy SimpleNamespace with fields."""
         with self._lock:
             tenant_s = str(tenant or tenant_id or "default")
-            meta = dict(metadata or {})
+            if residency not in {"host", "folded"}:
+                raise NotImplementedError("physical device residency requires a bound transfer adapter")
+            payload = copy.deepcopy(payload)
+            meta = copy.deepcopy(dict(metadata or {}))
             if kind:
                 meta.setdefault("kind", kind)
             if representation:
                 meta.update(dict(representation))
                 if "version" in representation:
                     representation_version = str(representation.get("version") or representation_version)
-            if identity and "content_id" in identity:
-                cid = str(identity["content_id"])
-            else:
-                cid = content_id_for(payload, representation_version=representation_version)
+            payload_codec, persisted_payload = _pack_payload(payload)
+            cid = content_id_for(payload, representation_version=representation_version)
+            if identity and "content_id" in identity and identity["content_id"] != cid:
+                raise ValueError("caller content_id does not match the payload")
             requested_oid = object_id or (
                 str(identity.get("object_id"))
                 if identity and identity.get("object_id")
@@ -184,8 +268,13 @@ class VirtualMemoryPlane:
             oid = hashlib.sha256(
                 _canonical({"tenant": tenant_s, "object_id": requested_oid})
             ).hexdigest()
+            prev = self._objects.get(oid)
+            if prev is not None and (prev.tenant != tenant_s or prev.content_id != cid
+                                     or prev.representation_version != representation_version):
+                raise PermissionError("an existing handle cannot change ownership or content")
+            blob = self._contained_file(self.objects_dir, f"{oid}.json")
             raw = _canonical(payload)
-            logical = len(raw)
+            logical = len(payload) if isinstance(payload, bytes) else len(raw)
             folded = logical
             if "folded_bytes" in meta:
                 folded = int(meta["folded_bytes"])
@@ -197,6 +286,8 @@ class VirtualMemoryPlane:
 
             if host_b and self._host_bytes + host_b > self.max_host_bytes:
                 self._evict_until(host_b)
+            if host_b and self._host_bytes + host_b > self.max_host_bytes:
+                raise MemoryError("host residency budget exceeded")
 
             rec = ObjectRecord(
                 object_id=oid,
@@ -207,8 +298,8 @@ class VirtualMemoryPlane:
                 folded_bytes=folded,
                 host_resident_bytes=host_b,
                 device_resident_bytes=dev_b,
-                payload=payload,
-                metadata=meta,
+                payload=copy.deepcopy(payload),
+                metadata=copy.deepcopy(meta),
                 adapter_id=adapter_id,
                 residency=residency,
             )
@@ -221,14 +312,15 @@ class VirtualMemoryPlane:
             self.memory_tiers[oid] = residency
             self._host_bytes += host_b
             self._device_bytes += dev_b
-            blob = self.objects_dir / f"{oid}.json"
+            blob = self._contained_file(self.objects_dir, f"{oid}.json")
             blob.write_text(
                 json.dumps(
                     {
                         "object_id": oid,
                         "tenant": tenant_s,
                         "content_id": cid,
-                        "payload": payload,
+                        "payload_codec": payload_codec,
+                        "payload": persisted_payload,
                         "metadata": meta,
                         "representation_version": representation_version,
                     },
@@ -251,13 +343,14 @@ class VirtualMemoryPlane:
                 host_resident_bytes=host_b,
                 device_resident_bytes=dev_b,
                 residency=residency,
-                payload=payload,
+                payload=copy.deepcopy(payload),
             )
 
     def lookup(
         self, object_id: str, *, tenant: str | None = None, tenant_id: str | None = None
     ) -> ObjectRecord:
         tenant = tenant or tenant_id or "default"
+        self._checked_object_id(object_id)
         with self._lock:
             rec = self._objects.get(object_id)
             if rec is None:
@@ -266,7 +359,23 @@ class VirtualMemoryPlane:
                 raise PermissionError(
                     f"tenant {tenant!r} not authorized for object {object_id}"
                 )
-            return rec
+            # Return a copy so callers cannot mutate occupancy or ownership.
+            return ObjectRecord(
+                object_id=rec.object_id,
+                tenant=rec.tenant,
+                content_id=rec.content_id,
+                representation_version=rec.representation_version,
+                logical_bytes=rec.logical_bytes,
+                folded_bytes=rec.folded_bytes,
+                host_resident_bytes=rec.host_resident_bytes,
+                device_resident_bytes=rec.device_resident_bytes,
+                payload=copy.deepcopy(rec.payload),
+                metadata=copy.deepcopy(rec.metadata),
+                adapter_id=rec.adapter_id,
+                residency=rec.residency,
+                created_at=rec.created_at,
+                refs=rec.refs,
+            )
 
     def sizes(
         self, object_id: str, *, tenant: str | None = None, tenant_id: str | None = None
@@ -289,21 +398,25 @@ class VirtualMemoryPlane:
         target_adapter_id: str | None = None,
     ) -> None:
         target = target_tier or target_adapter_id or "host"
+        if target not in {"host", "folded"}:
+            raise NotImplementedError("physical device residency requires a bound transfer adapter")
         with self._lock:
             rec = self.lookup(object_id, tenant=tenant, tenant_id=tenant_id)
+            host_b = rec.logical_bytes if target == "host" else 0
+            if self._host_bytes - rec.host_resident_bytes + host_b > self.max_host_bytes:
+                raise MemoryError("host residency budget exceeded")
+            payload = self._retrieve_object(object_id, tenant=rec.tenant) if target == "host" else None
             self._host_bytes -= rec.host_resident_bytes
             self._device_bytes -= rec.device_resident_bytes
-            host_b = rec.logical_bytes if target == "host" else 0
-            dev_b = 0 if target == "host" else rec.logical_bytes
             rec.host_resident_bytes = host_b
-            rec.device_resident_bytes = dev_b
+            rec.device_resident_bytes = 0
+            rec.payload = payload
             rec.residency = target
-            if target_adapter_id:
-                rec.adapter_id = target_adapter_id
+            rec.adapter_id = None
+            self._objects[object_id] = rec
             self.residency[object_id] = target
             self.memory_tiers[object_id] = target
             self._host_bytes += host_b
-            self._device_bytes += dev_b
             self._save_index()
 
     def _evict_until(self, need: int) -> None:
@@ -317,6 +430,7 @@ class VirtualMemoryPlane:
                 break
             self._host_bytes -= rec.host_resident_bytes
             rec.host_resident_bytes = 0
+            rec.payload = None
             if rec.device_resident_bytes == 0:
                 rec.residency = "folded"
                 self.residency[rec.object_id] = "folded"
@@ -345,13 +459,13 @@ class VirtualMemoryPlane:
     def store_artifact(self, *, tenant: str, workload_id: str, artifact: Mapping[str, Any]) -> None:
         """Persist tenant/workload artifact for retrieve(tenant, workload_id)."""
         with self._lock:
-            path = self.root / "artifacts" / tenant
-            path.mkdir(parents=True, exist_ok=True)
-            (path / self._artifact_filename(workload_id)).write_text(
+            path = self._artifact_path(tenant, workload_id)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
                 json.dumps(artifact, sort_keys=True, default=str),
                 encoding="utf-8",
             )
-            self._artifacts[(tenant, workload_id)] = dict(artifact)
+            self._artifacts[(tenant, workload_id)] = copy.deepcopy(dict(artifact))
 
     def retrieve(self, *args: Any, **kwargs: Any) -> Any:
         """
@@ -364,13 +478,8 @@ class VirtualMemoryPlane:
             with self._lock:
                 art = self._artifacts.get((tenant, workload_id))
                 if art is not None:
-                    return art
-                path = (
-                    self.root
-                    / "artifacts"
-                    / tenant
-                    / self._artifact_filename(workload_id)
-                )
+                    return copy.deepcopy(art)
+                path = self._artifact_path(tenant, workload_id)
                 if path.exists():
                     return json.loads(path.read_text(encoding="utf-8"))
                 raise KeyError(f"artifact not found: {tenant}/{workload_id}")
@@ -380,23 +489,27 @@ class VirtualMemoryPlane:
         return self._retrieve_object(object_id, tenant=str(tenant))
 
     def _retrieve_object(self, object_id: str, *, tenant: str) -> Any:
+        self._checked_object_id(object_id)
         with self._lock:
             rec = self._objects.get(object_id)
-            if rec is None:
-                path = self.objects_dir / f"{object_id}.json"
-                if not path.exists():
-                    raise KeyError(f"object not found: {object_id}")
-                data = json.loads(path.read_text(encoding="utf-8"))
-                if str(data.get("tenant")) != tenant:
-                    raise PermissionError(
-                        f"tenant {tenant!r} not authorized for object {object_id}"
-                    )
-                return data.get("payload")
-            if rec.tenant != tenant:
-                raise PermissionError(
-                    f"tenant {tenant!r} not authorized for object {object_id}"
-                )
-            return rec.payload
+            if rec is not None and rec.tenant != tenant:
+                raise PermissionError("tenant is not authorised for object")
+            path = self._contained_file(self.objects_dir, f"{object_id}.json")
+            if not path.exists():
+                raise KeyError(f"object not found: {object_id}")
+            data = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(data, dict) or data.get("object_id") != object_id:
+                raise ValueError("persisted object handle mismatch")
+            if data.get("tenant") != tenant:
+                raise PermissionError("tenant is not authorised for persisted object")
+            if not isinstance(data.get("representation_version"), str):
+                raise ValueError("missing persisted representation version")
+            restored_payload = _unpack_payload(data.get("payload_codec"), data.get("payload"))
+            cid = content_id_for(restored_payload,
+                                 representation_version=data["representation_version"])
+            if data.get("content_id") != cid or (rec is not None and rec.content_id != cid):
+                raise ValueError("persisted object content identity mismatch")
+            return copy.deepcopy(restored_payload)
 
     def checkpoint(self) -> dict[str, Any]:
         with self._lock:
@@ -413,12 +526,7 @@ class VirtualMemoryPlane:
 
     def migrate(self, object_id: str, target_adapter_id: str) -> None:
         """Legacy migrate(object_id, adapter_id) used by unit tests."""
-        # Find tenant from record
-        rec = self._objects.get(object_id)
-        tenant = rec.tenant if rec else "default"
-        self.migrate_residency(
-            object_id, tenant=tenant, target_adapter_id=target_adapter_id
-        )
+        raise PermissionError("legacy migration lacks an explicit caller tenant; use migrate_residency")
 
 
 # Back-compat alias used by older imports

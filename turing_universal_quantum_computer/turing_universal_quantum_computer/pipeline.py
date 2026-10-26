@@ -742,14 +742,8 @@ class VQCPipeline:
 
 
 def _program_from_qasm(qasm: str) -> Program:
-    """Parse the Clifford QASM subset into a canonical ``Program``."""
-    from .phi_machine import PhiQuantumCircuit
-
-    circuit = PhiQuantumCircuit.from_qasm(qasm)
-    program = Program(n_qubits=circuit.num_qubits)
-    for gate in circuit.gates:
-        program = program.then(gate.name, *gate.qubits)
-    return program
+    """Parse the OpenQASM 2.0 Clifford+T subset into a canonical ``Program``."""
+    return Program.from_qasm(qasm, decompose_toffoli=True)
 
 
 def _result_payload(result: ExecutionResult) -> dict[str, Any]:

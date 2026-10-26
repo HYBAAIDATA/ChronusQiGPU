@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -31,7 +31,7 @@ jobs:
         run: python -m pytest tests/ -x -q --junitxml=canonical-results.xml
       - name: Retain actual test evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: resident-hendrix-test-evidence
           path: |
@@ -50,7 +50,7 @@ jobs:
       CHRONOS_DISABLE_NATIVE: ${{ matrix.variant == 'portable' && '1' || '0' }}
       CC: gcc
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -84,7 +84,7 @@ jobs:
         run: python -m pytest chronus/mla1517_platform/python/test_production_loop_e2e.py chronus/mla1517_platform/python/test_production_replacements.py -q --junitxml=installed-platform.xml
       - name: Preserve local-scope artifacts without certification
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: pr140-installed-${{ matrix.variant }}-${{ github.sha }}
           path: |

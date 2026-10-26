@@ -79,6 +79,41 @@ class TOEMiningAdapter:
             "3": int(node_id),
             "4": int(sequence),
         }
+        return self._analyse_observed(
+            job_id=job_id, observed=observed, node_id=node_id,
+            sequence=sequence, source="mla1517_vault",
+        )
+
+    def analyse_pool_job(self, *, job: Any, generation: int) -> TOEMiningContext:
+        """Observe a real normalized pool job without fabricating MMIO state.
+
+        node_id=-1 explicitly denotes no hardware node. Sequence is the
+        authoritative pool generation, not an invented vault sequence.
+        """
+        job_id = str(getattr(job, "job_id", ""))
+        if not job_id or type(generation) is not int or generation < 0:
+            raise TOEUnavailable("pool observation requires job id and generation")
+        fields = ("version", "prevhash", "coinb1", "coinb2", "nbits", "ntime")
+        payload = []
+        try:
+            for name in fields:
+                value = getattr(job, name)
+                if not isinstance(value, str) or not value or len(value) % 2:
+                    raise ValueError(name)
+                payload.extend(bytes.fromhex(value))
+            for branch in job.merkle_branch:
+                payload.extend(bytes.fromhex(branch))
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise TOEUnavailable("normalized pool observation is incomplete") from exc
+        observed = {"0": payload, "1": list(job_id.encode("utf-8")),
+                    "2": generation}
+        return self._analyse_observed(
+            job_id=job_id, observed=observed, node_id=-1,
+            sequence=generation, source="stratum_job",
+        )
+
+    def _analyse_observed(self, *, job_id: str, observed: Mapping[str, Any],
+                          node_id: int, sequence: int, source: str) -> TOEMiningContext:
         result = self.bridge.predict(observed)
         if not isinstance(result, Mapping) or not result.get("available", False):
             raise TOEUnavailable("TOE returned no available mining context")
@@ -118,6 +153,8 @@ class TOEMiningAdapter:
         evidence = self.bridge.execution_evidence()
         if not isinstance(evidence, Mapping):
             raise TOEUnavailable("TOE returned no execution evidence")
+        evidence = dict(evidence)
+        evidence["observation_source"] = source
         return TOEMiningContext(
             job_id=job_id,
             node_id=int(node_id),

@@ -1,0 +1,27 @@
+{
+  "schema": "toe.domain-qualification/v1",
+  "domain": "healthcare",
+  "seed": 495,
+  "planted_effect": -1.0,
+  "fixture_type": "synthetic confounded numeric decision-support fixture",
+  "backend": "toe.machine.TOEMachine",
+  "adapter": "toe.adapters.TabularAdapter",
+  "checks": [
+    "planted_effect_recovery",
+    "latent_confounding_refusal",
+    "reversed_relation_sensitivity"
+  ],
+  "human_signoff": {
+    "status": "PENDING",
+    "required_role": "IRB and clinical reviewer",
+    "owner": null,
+    "evidence": null
+  },
+  "production_ready": false,
+  "limitations": [
+    "Not a real-world dataset or domain-specialist validation",
+    "No domain-specific language/financial/clinical/security performance is inferred",
+    "Drift sensitivity is not deployed online drift alerting"
+  ],
+  "usage": "decision-support-only"
+}

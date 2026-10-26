@@ -404,7 +404,9 @@ class CPUEmulatorAdapter(Adapter):
     def _phi_family(
         self, workload: Workload, kind: WorkloadKind, value: dict[str, Any], started: int
     ) -> WorkloadResult:
-        n = int(value.get("n", value.get("index", 10)))
+        n = value.get("n", value.get("index", 10))
+        if type(n) is not int:
+            raise AdapterUnavailable("transform index must be an integer, not a coerced value")
         if n < 0 or n > 10_000:
             raise AdapterUnavailable(f"n out of supported domain 0..10000: {n}")
         phi = (1.0 + 5.0**0.5) / 2.0
@@ -673,7 +675,7 @@ class ChronusSoftwareFabricAdapter(CPUEmulatorAdapter):
 
 def default_adapters(*, include_cpu_emulator: bool = True) -> list[Adapter]:
     """Build the adapter ladder. Missing SDKs → typed UnavailableAdapter."""
-    adapters: list[Adapter] = []
+    adapters: list[Adapter] = [ChronusSoftwareFabricAdapter()] if include_cpu_emulator else []
     if include_cpu_emulator:
         adapters.append(CPUEmulatorAdapter())
     # Optional physical OpenCL probe (may be unavailable)

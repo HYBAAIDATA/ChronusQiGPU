@@ -1,0 +1,49 @@
+name: Euclid Salamander agent capability qualification
+
+on:
+  pull_request:
+    paths:
+      - "salamander/**"
+      - "al_haras/**"
+      - "euclid/**"
+      - "packaging/salamander/**"
+      - "tests/test_agent_capabilit*.py"
+      - "tests/test_salamander_*.py"
+      - "scripts/qualify_agent_capabilit*.py"
+      - ".github/workflows/agent-capability-qualification.yml"
+  push:
+    branches: [main, feat/euclid-salamander-agent-capabilities-20261023]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capability-contracts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install test and build dependencies
+        run: python -m pip install numpy scipy sympy PyYAML "cryptography>=46,<51" "pytest>=9.1,<10" hypothesis "build>=1.2,<2" "setuptools>=77,<81" wheel
+      - name: Real-constructor capability lifecycle and negative tests
+        run: python scripts/qualify_agent_capabilities.py
+      - name: Existing authorization, replay and evidence regressions
+        run: python -m pytest -q tests/test_salamander_autonomic.py tests/test_salamander_authority_replay.py tests/test_salamander_outcome_evidence.py
+      - name: Sdist to wheel and clean-installed diagnostic feature
+        run: python scripts/qualify_agent_capability_package.py --output-dir "${{ runner.temp }}/agent-capability-package"
+      - name: Retain scoped package evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: agent-capability-${{ matrix.os }}-${{ matrix.python }}
+          path: ${{ runner.temp }}/agent-capability-package
+          if-no-files-found: warn

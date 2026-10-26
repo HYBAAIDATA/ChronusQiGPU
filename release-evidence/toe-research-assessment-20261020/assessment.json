@@ -1,0 +1,34 @@
+{
+  "source_base": "2bc45bd4f9c45a29fea00aa1f6ed34222ed58f07",
+  "runtime_candidate": "123d744ff93a11e0ad1df8f27af5ed9ff3a969fe",
+  "source_form": "Partial authenticated MCP export, not full Git checkout",
+  "capabilities": 24,
+  "capability_status": {
+    "IMPLEMENTED": 23,
+    "LEGACY": 1
+  },
+  "historical_research_cells": 17,
+  "fresh_suites": {
+    "research-complete": {
+      "cases": 124,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "omitted-complete": {
+      "cases": 16,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "unique_new_cases": 140,
+  "vendor_brands": 18,
+  "count_verified_by": [
+    "Python set",
+    "SQLite COUNT DISTINCT"
+  ],
+  "count_scope": "Selected comparable brands, not exhaustive competitors, legal entities, partnerships or proven replacements",
+  "production_ready": false,
+  "visual_plan": "Categorical mapping table; no common quantitative performance unit, no chart warranted."
+}

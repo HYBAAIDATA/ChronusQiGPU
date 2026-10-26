@@ -22,3 +22,13 @@ from pathlib import Path
 _PACKAGE_ROOT = Path(__file__).resolve().parent
 if str(_PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(_PACKAGE_ROOT))
+
+# importlib-mode pytest may register the outer workspace directory as this
+# namespace while importing this conftest. Do not leave that placeholder ahead
+# of the real nested package, even when its directory was already on sys.path.
+if str(_PACKAGE_ROOT) in sys.path:
+    sys.path.remove(str(_PACKAGE_ROOT))
+sys.path.insert(0, str(_PACKAGE_ROOT))
+_placeholder = sys.modules.get("turing_universal_quantum_computer")
+if _placeholder is not None and getattr(_placeholder, "__file__", None) is None:
+    del sys.modules["turing_universal_quantum_computer"]

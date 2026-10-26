@@ -8,14 +8,13 @@ const HYBA_TENANT = "pythia.hybaTenant";
 const HYBA_ACTOR = "pythia.hybaActor";
 // Cancelled credential prompts are remembered for the session — otherwise
 // every denied poll would re-ask forever.
-const OPERATOR_KEY_DECLINED = "pythia.operatorKeyDeclined";
 const SUBSCRIPTION_DECLINED = "pythia.subscriptionDeclined";
 
 // Mirrors control_api._PRIVILEGED_PREFIXES: these routes are mediated by the
 // subscription guardian — X-HYBA tenant/actor headers plus the subscription
 // token as bearer — rather than by the operator key alone.
 const PRIVILEGED_RE =
-  /^\/api\/v1\/(mining|policy|worker|recovery|admin|toe|quantum|scale|assembly|security)\//;
+  /^\/api\/v1\/(mining|policy|worker|recovery|admin|toe|quantum|scale|assembly|security|tensor)\//;
 
 export function apiUrl(input: string): string {
   return input.startsWith("/") ? `${API_BASE}${input}` : input;
@@ -47,13 +46,17 @@ function sessionSet(key: string, value: string | null): void {
   }
 }
 
-/** The operator key for this browser session only (never localStorage). */
+/** Migration compatibility: operator secrets are no longer JavaScript-readable. */
 export function operatorKey(): string | null {
-  return sessionGet(OPERATOR_KEY);
+  sessionSet(OPERATOR_KEY, null);
+  return null;
 }
 
 export function setOperatorKey(key: string | null): void {
-  sessionSet(OPERATOR_KEY, key);
+  // Bearer migration is server-side only; never persist operator secrets in JS.
+  sessionSet(OPERATOR_KEY, null);
+  void key;
+  window.dispatchEvent(new Event("pythia-credentials-changed"));
 }
 
 /** Server-mapped operator identity claimed alongside the session bearer. */
@@ -63,6 +66,7 @@ export function operatorPrincipal(): string | null {
 
 export function setOperatorPrincipal(principal: string | null): void {
   sessionSet(OPERATOR_PRINCIPAL, principal);
+  window.dispatchEvent(new Event("pythia-credentials-changed"));
 }
 
 export interface SubscriptionCreds {
@@ -83,6 +87,7 @@ export function setSubscriptionCreds(creds: SubscriptionCreds | null): void {
   sessionSet(HYBA_TENANT, creds?.tenant ?? null);
   sessionSet(HYBA_ACTOR, creds?.actor ?? null);
   sessionSet(SUBSCRIPTION_TOKEN, creds?.token ?? null);
+  window.dispatchEvent(new Event("pythia-credentials-changed"));
 }
 
 /** Ask the operator for the subscription boundary triple; null = cancelled. */
@@ -133,31 +138,21 @@ async function reasonIs(response: Response, wanted: string): Promise<boolean> {
   }
 }
 
-async function controlError(response: Response): Promise<string | null> {
-  try {
-    const body = (await response.clone().json()) as { error?: string };
-    return typeof body.error === "string" ? body.error : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Reads pass through. State-changing requests carry the operator credential
- * and, when configured, its server-mapped principal id — or, on
- * guardian-mediated routes, the subscription boundary (X-HYBA headers +
- * subscription bearer, and the POST body's `observation`). On the matching
- * denial the operator is asked for the missing credential once and the
- * request is retried with it. Cancelling the prompt declines for the rest of
- * the session — denied responses then surface honestly without re-asking.
+/** HttpOnly operator sessions and independently mediated guardian credentials.
+ * No client persona, role claim, or operator bearer fallback grants authority.
  */
-export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {}, options: { interactive?: boolean } = {}): Promise<Response> {
   const target = typeof input === "string" ? apiUrl(input) : input;
   const headers = new Headers(init.headers || {});
   const method = (init.method || "GET").toUpperCase();
   const mutating = method !== "GET" && method !== "HEAD";
 
   if (PRIVILEGED_RE.test(requestPath(input))) {
+    if (requestPath(input) === "/api/v1/mining/evidence") {
+      const controlKey = operatorKey(), controlPrincipal = operatorPrincipal();
+      if (controlKey) headers.set("X-PYTHIA-Control-Authorization", `Bearer ${controlKey}`);
+      if (controlPrincipal) headers.set("X-PYTHIA-Principal", controlPrincipal);
+    }
     const creds = subscriptionCreds();
     if (creds) {
       applySubscriptionHeaders(headers, creds);
@@ -166,8 +161,8 @@ export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {})
       if (key) headers.set("Authorization", `Bearer ${key}`);
     }
     const sendInit = mutating && creds ? withObservation(init, creds.actor) : init;
-    const response = await fetch(target, { ...sendInit, headers });
-    if (typeof window.prompt !== "function") return response;
+    const response = await fetch(target, { ...sendInit, credentials: "include", headers });
+    if (options.interactive === false || typeof window.prompt !== "function") return response;
     const retryable =
       response.status === 402 ||
       response.status === 403 ||
@@ -183,44 +178,16 @@ export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {})
     setSubscriptionCreds(entered);
     applySubscriptionHeaders(headers, entered);
     const retryInit = mutating ? withObservation(init, entered.actor) : init;
-    return fetch(target, { ...retryInit, headers });
+    return fetch(target, { ...retryInit, credentials: "include", headers });
   }
 
-  const key = mutating ? operatorKey() : null;
-  const principal = mutating ? operatorPrincipal() : null;
+  const consoleRead = /^\/api\/v1\/(?:mla1517\/status|status|control\/session|config|audit\/tail|stratum\/status|telemetry\/(?:summary|history|causal|events|ops|session|stream))$/.test(requestPath(input));
+  const key = mutating || consoleRead ? operatorKey() : null;
+  const principal = mutating || consoleRead ? operatorPrincipal() : null;
   if (key) headers.set("Authorization", `Bearer ${key}`);
   if (principal) headers.set("X-PYTHIA-Principal", principal);
-  const response = await fetch(target, { ...init, headers });
-  if (
-    !mutating ||
-    response.status !== 401 ||
-    typeof window.prompt !== "function" ||
-    sessionGet(OPERATOR_KEY_DECLINED) === "1"
-  ) {
-    return response;
-  }
-  const error = await controlError(response);
-  let enteredPrincipal = principal;
-  if (error === "operator principal required") {
-    enteredPrincipal = window.prompt("Operator principal id (X-PYTHIA-Principal)")?.trim() || null;
-    if (!enteredPrincipal) {
-      sessionSet(OPERATOR_KEY_DECLINED, "1");
-      return response;
-    }
-    setOperatorPrincipal(enteredPrincipal);
-  }
-  let enteredKey = key;
-  if (!enteredKey || error !== "operator principal required") {
-    if (key) setOperatorKey(null); // the stored key was refused
-    enteredKey = window.prompt("Operator credential")?.trim() || null;
-  }
-  if (!enteredKey) {
-    sessionSet(OPERATOR_KEY_DECLINED, "1");
-    return response;
-  }
-  sessionSet(OPERATOR_KEY_DECLINED, null);
-  setOperatorKey(enteredKey);
-  headers.set("Authorization", `Bearer ${enteredKey}`);
-  if (enteredPrincipal) headers.set("X-PYTHIA-Principal", enteredPrincipal);
-  return fetch(target, { ...init, headers });
+  const response = await fetch(target, { ...init, credentials: "include", headers });
+  // Operator login is exclusively the HttpOnly-session form. A denied mutation
+  // must not fall back to a JavaScript-readable bearer or client role/persona.
+  return response;
 }

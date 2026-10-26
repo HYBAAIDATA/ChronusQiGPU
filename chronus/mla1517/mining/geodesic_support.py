@@ -109,6 +109,8 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         pythia_authority = kwargs.pop("pythia_authority", None)
+        # Explicit-batch Hendrix leases exact counts, not padded M32 epochs.
+        kwargs.setdefault("lease_alignment", 1)
         # Static topology/Hilbert work is complete before the inherited runtime
         # can connect to Stratum. Failure is therefore a startup failure, not a
         # half-live miner constructing its search substrate after mining.notify.
@@ -156,6 +158,27 @@ class PythiaProductionMiningCoordinator(EuclidProductionMiningCoordinator):
         mining-local topology without crossing the PULVINI data boundary.
         """
         return super()._observed_candidate_window()
+
+    def _next_window(self) -> int:
+        """Give the independent Chronus batch a full logical topology wave.
+
+        The inherited 32-lane bootstrap window left most H4 vertices empty.
+        A full wave is 600 actual nonce assignments, never 600 times the
+        measured work. Operator caps and a safety de-rate still take precedence.
+        """
+        proposed = super()._next_window()
+        if _backend_name(self.execution_hasher) != "chronus_vigpu":
+            return proposed
+        from chronus.mla1517_platform.python import runtime_config
+
+        config = runtime_config.load()
+        if config.get("_policy_error"):
+            raise PermissionError("invalid runtime policy; topology dispatch refused")
+        cap = config["window"]
+        derated = self.tuning.last_decision is not None and (
+            self.tuning.last_decision.action == "DE_RATE"
+        )
+        return min(cap, proposed if derated else max(600, proposed))
 
     def _execution_route(self) -> str:
         """Select an executable route from measured capability, never a label."""

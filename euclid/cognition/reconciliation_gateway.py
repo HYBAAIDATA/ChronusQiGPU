@@ -84,6 +84,11 @@ class ReflexReceipt:
     quarantined_node: str
     reflex_latency_ms: float
     epoch: int
+    marker_text: str = "Trace identified. Re-mapping topology now."
+
+    @property
+    def latency_ms(self) -> float:
+        return self.reflex_latency_ms
 
 
 ACTIVE_CAPABILITIES: Dict[str, CapabilityToken] = {}
@@ -709,53 +714,117 @@ def process_ern_spike_signal_sync(payload: ERNSpikePayload) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+class ClearanceResult(dict):
+    """Result object supporting both attribute access and dict indexing."""
+
+    def __init__(self, data: Dict[str, Any]) -> None:
+        super().__init__(data)
+        self.__dict__.update(data)
+
+    @property
+    def allow_write(self) -> bool:
+        return bool(self.get("allow_write", False))
+
+
 class MetacognitiveGatekeeper:
     """Enforces privilege isolation on traumatized or low-confidence cognitive nodes."""
 
+    def __init__(self, capability_tokens: bool = True) -> None:
+        self.capability_tokens = capability_tokens
+
+    def process_interruption(
+        self,
+        node: str = "auth_module",
+        intensity: float = 9.0,
+        signature: str = "Architectural contradiction",
+    ) -> ReflexReceipt:
+        payload = {
+            "target_node": node,
+            "intensity": intensity,
+            "error_signature": signature,
+            "type": "INTERRUPTION",
+        }
+        receipt = self.fast_reflex_arc(payload)
+        receipt.marker_text = "Trace identified. Re-mapping topology now."
+        return receipt
+
     @classmethod
-    def check_privileges(cls, target_node: str) -> Dict[str, Any]:
+    def check_privileges(cls, target_node: str) -> ClearanceResult:
         state = get_node_state_sync(target_node)
         cap = ACTIVE_CAPABILITIES.get(target_node)
         is_locked = bool(state.get("insufficiently_map_matched")) or (cap is not None and not cap.can_write)
-        return {
+        return ClearanceResult({
             "node_id": target_node,
             "allow_write": not is_locked,
             "epoch": cap.epoch if cap else 0,
             "insufficiently_map_matched": is_locked,
             "reason": "CLEARANCE_GRANTED" if not is_locked else "INSUFFICIENTLY_MAP_MATCHED",
-        }
+        })
 
     @staticmethod
-    def verify_clearance_sync(target_node: str) -> Dict[str, Any]:
+    def verify_clearance_sync(target_node: str) -> ClearanceResult:
         state = get_node_state_sync(target_node)
         cap = ACTIVE_CAPABILITIES.get(target_node)
 
         if state.get("insufficiently_map_matched") or (cap is not None and not cap.can_write):
-            return {
+            return ClearanceResult({
                 "allow_write": False,
                 "reason": "INSUFFICIENTLY_MAP_MATCHED",
                 "verbal_fallback": (
                     "My access to this module is locked. I am holding an error trace. "
                     "We need to reconcile the architecture before I can patch this."
                 ),
-            }
+            })
 
         if state.get("confidence_score", 1.0) < 0.7:
-            return {
+            return ClearanceResult({
                 "allow_write": True,
                 "reason": "LOW_CONFIDENCE_WARNING",
                 "verbal_fallback": "Confidence is low. Proceeding with caution.",
-            }
+            })
 
-        return {
+        return ClearanceResult({
             "allow_write": True,
             "reason": "CLEARANCE_GRANTED",
             "verbal_fallback": None,
-        }
+        })
 
     @staticmethod
-    async def verify_clearance(target_node: str) -> Dict[str, Any]:
+    def verify_clearance(target_node: str) -> ClearanceResult:
         return MetacognitiveGatekeeper.verify_clearance_sync(target_node)
+
+    @classmethod
+    def fast_reflex_arc(cls, contradiction_payload: Dict[str, Any]) -> ReflexReceipt:
+        """Fast reflex arc (< 5.0ms) handling contradiction payloads / ERN spikes.
+        Guarantees sub-5ms reflex SLA and lock-free capability revocation without apologies.
+        """
+        target_node = (
+            contradiction_payload.get("target_node")
+            or contradiction_payload.get("node_id")
+            or "auth_module"
+        )
+        intensity = float(contradiction_payload.get("intensity", 9.0))
+        error_sig = str(
+            contradiction_payload.get("error_signature", "Architectural contradiction")
+        )
+        spike = ERNSpikePayload(
+            user_id="metacognitive_gatekeeper",
+            target_node=target_node,
+            interception_type=str(contradiction_payload.get("type", "INTERRUPTION")),
+            intensity_score=max(1.0, min(10.0, intensity)),
+            confidence_pre=0.9,
+            error_signature=error_sig,
+            file_path="auth/boundary_gate.py",
+        )
+        return fast_reflex_interrupt_arc(spike)
+
+    @classmethod
+    def request_execution(cls, target_node: str) -> str:
+        """Evaluate execution permission on a node. Returns 'BLOCKED' or 'PERMITTED'."""
+        privs = cls.check_privileges(target_node)
+        if not privs.get("allow_write", False) or privs.get("insufficiently_map_matched", False):
+            return "BLOCKED"
+        return "PERMITTED"
 
 
 def get_curriculum_sync(user_id: str) -> Dict[str, Any]:

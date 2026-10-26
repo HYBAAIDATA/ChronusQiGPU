@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-import re
+import ast
 import subprocess
 import sys
 
@@ -32,30 +32,28 @@ def test_chronus_is_real_public_namespace():
 
 def test_no_active_igpu_namespace_or_compatibility_shim():
     assert not (ROOT / "igpu").exists()
+    assert _retired_imports("igpu") == []
+
+
+def _retired_imports(namespace):
     offenders = []
-    # Identifier-boundary matching: the retired top-level ``igpu`` package is
-    # forbidden, while the live ``chronus.virtual_igpu`` module (a different,
-    # real namespace) must not false-positive on the "igpu." token.
-    forbidden = tuple(
-        re.compile(r"(?<![A-Za-z0-9_])" + re.escape(token))
-        for token in (
-            "from igpu",
-            "import igpu",
-            "igpu.",
-            "igpu/",
-            "IGPUOpenCL",
-            "IgpuTelemetry",
-            "ResidentIGPU",
-            "IGpuSku",
-        )
-    )
-    for path in ROOT.rglob("*"):
-        if not path.is_file() or not _active(path) or path.suffix.lower() not in TEXT_SUFFIXES:
+    # Import syntax, not historical prose, vendor names or string literals,
+    # determines whether the retired top-level Python namespace is active.
+    for path in ROOT.rglob("*.py"):
+        if not _active(path):
             continue
-        text = path.read_text(encoding="utf-8", errors="ignore")
-        if any(pattern.search(text) for pattern in forbidden):
-            offenders.append(str(path.relative_to(ROOT)))
-    assert offenders == []
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (SyntaxError, UnicodeError):
+            continue
+        for node in ast.walk(tree):
+            modules = ([alias.name for alias in node.names] if isinstance(node, ast.Import)
+                       else [node.module] if isinstance(node, ast.ImportFrom) and node.level == 0
+                       else [])
+            if any(m and (m == namespace or m.startswith(namespace + ".")) for m in modules):
+                offenders.append(str(path.relative_to(ROOT)))
+                break
+    return offenders
 
 
 def test_mla1517_is_folded_under_chronus():
@@ -63,21 +61,7 @@ def test_mla1517_is_folded_under_chronus():
     assert (ROOT / "chronus" / "mla1517_platform").is_dir()
     assert chronus.mla1517.__name__ == "chronus.mla1517"
     assert chronus.mla1517.fib(10) == 55
-    offenders = []
-    forbidden = (
-        "from mla1517 ",
-        "from mla1517.",
-        "import mla1517 ",
-        "import mla1517.",
-        "mla1517_platform_v3.4",
-    )
-    for path in ROOT.rglob("*"):
-        if not path.is_file() or not _active(path) or path.suffix.lower() not in TEXT_SUFFIXES:
-            continue
-        text = path.read_text(encoding="utf-8", errors="ignore")
-        if any(token in text for token in forbidden):
-            offenders.append(str(path.relative_to(ROOT)))
-    assert offenders == []
+    assert _retired_imports("mla1517") == []
 
 
 def test_turing_remains_separate_compute_substrate():

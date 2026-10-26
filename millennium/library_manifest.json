@@ -1,0 +1,330 @@
+{
+  "schema": "euclid.millennium.library_manifest/1",
+  "generated_utc": "2026-10-24T21:45:11.029045+00:00",
+  "count": 19,
+  "licenses": [
+    "Academic Research & Educational Fair Use",
+    "Academic Research Fair Use",
+    "Open Access (Annals of Mathematics)",
+    "Open Access (Clay / ICM)",
+    "Open Access (GDZ Göttingen)",
+    "Open Access (NUMDAM / IHÉS)",
+    "Open Access (Springer / Inventiones)",
+    "Open Access (arXiv preprint)",
+    "Public Domain"
+  ],
+  "treatises": [
+    {
+      "id": "euclid_elements",
+      "title": "The Thirteen Books of Euclid's Elements",
+      "authors": [
+        "Euclid of Alexandria",
+        "Thomas L. Heath (Trans. & Comm.)"
+      ],
+      "year": 1908,
+      "sha256": "747bdd7e13f011737a2a5752bbcdae98690f39ccb93a237b2f2e62213f4599d8",
+      "license": "Public Domain",
+      "problem_focus": [
+        "FOUNDATIONAL",
+        "RH",
+        "BSD"
+      ]
+    },
+    {
+      "id": "gauss_disquisitiones",
+      "title": "Disquisitiones Arithmeticae",
+      "authors": [
+        "Carl Friedrich Gauss"
+      ],
+      "year": 1801,
+      "sha256": "236bca63792e5cc1cc47cfdb7f5372868fa704333f623d572e636e4718bbde7c",
+      "license": "Public Domain",
+      "problem_focus": [
+        "FOUNDATIONAL",
+        "BSD",
+        "RH"
+      ]
+    },
+    {
+      "id": "riemann_1859",
+      "title": "Ueber die Anzahl der Primzahlen unter einer gegebenen Grösse",
+      "authors": [
+        "Bernhard Riemann"
+      ],
+      "year": 1859,
+      "sha256": "a3a946a1b023029342a0e65e31d1b6d38d19995a179f3584329ec496f0265112",
+      "license": "Public Domain",
+      "problem_focus": [
+        "RH"
+      ]
+    },
+    {
+      "id": "hodge_1950",
+      "title": "The Topological Invariants of Algebraic Varieties",
+      "authors": [
+        "William V.D. Hodge"
+      ],
+      "year": 1950,
+      "sha256": "ab6181f8b94a3f6c2f6c7e5b51ad0f59ddaf9cf940b78ac576ec45173c90d043",
+      "license": "Open Access (Clay / ICM)",
+      "problem_focus": [
+        "HODGE"
+      ]
+    },
+    {
+      "id": "deligne_hodge",
+      "title": "Théorie de Hodge: I, II, III",
+      "authors": [
+        "Pierre Deligne"
+      ],
+      "year": 1971,
+      "sha256": "4ae5f88296092b247ab79bd4a2a6b2a683c60b43ab969343cdd17de2ef66e092",
+      "license": "Open Access (NUMDAM / IHÉS)",
+      "problem_focus": [
+        "HODGE"
+      ]
+    },
+    {
+      "id": "voisin_hodge",
+      "title": "Hodge Theory and Complex Algebraic Geometry I & II",
+      "authors": [
+        "Claire Voisin"
+      ],
+      "year": 2002,
+      "sha256": "a682eb566bd617ea953c64a160feb41e1ed90044f87580f5b9e4b1038f8a3c41",
+      "license": "Academic Research & Educational Fair Use",
+      "problem_focus": [
+        "HODGE"
+      ]
+    },
+    {
+      "id": "bsd_1965",
+      "title": "Notes on Elliptic Curves I & II",
+      "authors": [
+        "Bryan J. Birch",
+        "Peter Swinnerton-Dyer"
+      ],
+      "year": 1965,
+      "sha256": "284fa5e08c47c0af148882bc284115c2aef5fe64eccbea98b756b177d82eb5ac",
+      "license": "Open Access (GDZ Göttingen)",
+      "problem_focus": [
+        "BSD"
+      ]
+    },
+    {
+      "id": "gross_zagier_1986",
+      "title": "Heegner points and derivatives of L-series",
+      "authors": [
+        "Benedict H. Gross",
+        "Don B. Zagier"
+      ],
+      "year": 1986,
+      "sha256": "ca6e7633a7724f67d809630fcf8a49a84ee776414acc8170303aae4f15739e2f",
+      "license": "Open Access (Springer / Inventiones)",
+      "problem_focus": [
+        "BSD"
+      ]
+    },
+    {
+      "id": "kolyvagin_1990",
+      "title": "Euler systems",
+      "authors": [
+        "Victor A. Kolyvagin"
+      ],
+      "year": 1990,
+      "sha256": "84ce37a1e98f9d0ab8f58717045911838c27485b5217b3bdb365917340bd8e79",
+      "license": "Academic Research Fair Use",
+      "problem_focus": [
+        "BSD"
+      ]
+    },
+    {
+      "id": "wiles_1995",
+      "title": "Modular elliptic curves and Fermat's Last Theorem",
+      "authors": [
+        "Andrew Wiles",
+        "Richard Taylor"
+      ],
+      "year": 1995,
+      "sha256": "5d02de920cd844cbe31378df8aa9ea9d6edc58d1efe6863663f07069da10669d",
+      "license": "Open Access (Annals of Mathematics)",
+      "problem_focus": [
+        "BSD",
+        "FOUNDATIONAL"
+      ]
+    },
+    {
+      "id": "arxiv_2406_08121v2",
+      "title": "Moments of derivatives of the Riemann zeta function: Characteristic polynomials and the hybrid formula",
+      "authors": [
+        "Christopher Hughes",
+        "Andrew Pearce-Crump"
+      ],
+      "year": 2024,
+      "sha256": "cbace1c4d39d56cb8b60124eaced55f293a596b7507fff6f7875ae5ae1a62b6d",
+      "license": "Open Access (arXiv preprint)",
+      "problem_focus": [
+        "RH"
+      ]
+    },
+    {
+      "id": "arxiv_0905_1527v4",
+      "title": "Riemann Zeta Function",
+      "authors": [
+        "Dorin Ghisa"
+      ],
+      "year": 2009,
+      "sha256": "877cd9c1b3a5bcf04a714dbe8af44145ea3b35fc936cb10e02f548a1d2003ad9",
+      "license": "Open Access (arXiv preprint)",
+      "problem_focus": [
+        "RH"
+      ]
+    },
+    {
+      "id": "arxiv_2204_13891v1",
+      "title": "The eighth moment of the Riemann zeta function",
+      "authors": [
+        "Nathan Ng",
+        "Quanli Shen",
+        "Peng-Jie Wong"
+      ],
+      "year": 2022,
+      "sha256": "89916001b037ade9d7ea77ee922f9ba0e468124f5151263e01eea7c770f4b844",
+      "license": "Open Access (arXiv preprint)",
+      "problem_focus": [
+        "RH"
+      ]
+    },
+    {
+      "id": "arxiv_2509_25273v1",
+      "title": "Hodge Conjecture via Singular Varieties",
+      "authors": [
+        "Ananyo Dan",
+        "Inder Kaur"
+      ],
+      "year": 2025,
+      "sha256": "1469a678fdadae8679c9dcfcaf06740d8eb4e0370e374facdb9d0ac60521d62a",
+      "license": "Open Access (arXiv preprint)",
+      "problem_focus": [
+        "HODGE"
+      ]
+    },
+    {
+      "id": "arxiv_math_0608265v2",
+      "title": "Counterexample to the Hodge Conjecture",
+      "authors": [
+        "K. H. Kim",
+        "F. W. Roush"
+      ],
+      "year": 2006,
+      "sha256": "46fd3fbad65f8df2d22fea2f241c6d532e93debb600b25fa5e315f96d85f9b14",
+      "license": "Open Access (arXiv preprint)",
+      "problem_focus": [
+        "HODGE"
+      ]
+    },
+    {
+      "id": "arxiv_alg-geom_9709030v1",
+      "title": "A Survey of the Hodge Conjecture for Abelian Varieties",
+      "authors": [
+        "B. Brent Gordon"
+      ],
+      "year": 1997,
+      "sha256": "991ee8d763626bbd4defe93e400408e6231d8aad2c89f9f4e9ac3821d1ca06bd",
+      "license": "Open Access (arXiv preprint)",
+      "problem_focus": [
+        "HODGE"
+      ]
+    },
+    {
+      "id": "arxiv_1706_01781v1",
+      "title": "Remarks on the Birch-Swinnerton-Dyer conjecture",
+      "authors": [
+        "Jae-Hyun Yang"
+      ],
+      "year": 2017,
+      "sha256": "cfa6db54397cba290f968be430d1890ee4ce829fd4809e466abc7b7ae8a0281d",
+      "license": "Open Access (arXiv preprint)",
+      "problem_focus": [
+        "BSD"
+      ]
+    },
+    {
+      "id": "arxiv_2101_10222v5",
+      "title": "The conjectures of Artin-Tate and Birch-Swinnerton-Dyer",
+      "authors": [
+        "S. Lichtenbaum",
+        "N. Ramachandran",
+        "T. Suzuki"
+      ],
+      "year": 2021,
+      "sha256": "461ddb9d82c03291079855f565d2dbbf65bdc625b8ac89d82499548fb877613a",
+      "license": "Open Access (arXiv preprint)",
+      "problem_focus": [
+        "BSD"
+      ]
+    },
+    {
+      "id": "arxiv_1708_01807v1",
+      "title": "On the Birch--Swinnerton-Dyer conjecture and Schur indices",
+      "authors": [
+        "Matthew Bisatt",
+        "Vladimir Dokchitser"
+      ],
+      "year": 2017,
+      "sha256": "925ff15b32101d0aed5362cc3a1b53599c3ba0c03f012e8b615048fe1e9a2b25",
+      "license": "Open Access (arXiv preprint)",
+      "problem_focus": [
+        "BSD"
+      ]
+    }
+  ],
+  "hashes": {
+    "euclid_elements": "747bdd7e13f011737a2a5752bbcdae98690f39ccb93a237b2f2e62213f4599d8",
+    "gauss_disquisitiones": "236bca63792e5cc1cc47cfdb7f5372868fa704333f623d572e636e4718bbde7c",
+    "riemann_1859": "a3a946a1b023029342a0e65e31d1b6d38d19995a179f3584329ec496f0265112",
+    "hodge_1950": "ab6181f8b94a3f6c2f6c7e5b51ad0f59ddaf9cf940b78ac576ec45173c90d043",
+    "deligne_hodge": "4ae5f88296092b247ab79bd4a2a6b2a683c60b43ab969343cdd17de2ef66e092",
+    "voisin_hodge": "a682eb566bd617ea953c64a160feb41e1ed90044f87580f5b9e4b1038f8a3c41",
+    "bsd_1965": "284fa5e08c47c0af148882bc284115c2aef5fe64eccbea98b756b177d82eb5ac",
+    "gross_zagier_1986": "ca6e7633a7724f67d809630fcf8a49a84ee776414acc8170303aae4f15739e2f",
+    "kolyvagin_1990": "84ce37a1e98f9d0ab8f58717045911838c27485b5217b3bdb365917340bd8e79",
+    "wiles_1995": "5d02de920cd844cbe31378df8aa9ea9d6edc58d1efe6863663f07069da10669d",
+    "arxiv_2406_08121v2": "cbace1c4d39d56cb8b60124eaced55f293a596b7507fff6f7875ae5ae1a62b6d",
+    "arxiv_0905_1527v4": "877cd9c1b3a5bcf04a714dbe8af44145ea3b35fc936cb10e02f548a1d2003ad9",
+    "arxiv_2204_13891v1": "89916001b037ade9d7ea77ee922f9ba0e468124f5151263e01eea7c770f4b844",
+    "arxiv_2509_25273v1": "1469a678fdadae8679c9dcfcaf06740d8eb4e0370e374facdb9d0ac60521d62a",
+    "arxiv_math_0608265v2": "46fd3fbad65f8df2d22fea2f241c6d532e93debb600b25fa5e315f96d85f9b14",
+    "arxiv_alg-geom_9709030v1": "991ee8d763626bbd4defe93e400408e6231d8aad2c89f9f4e9ac3821d1ca06bd",
+    "arxiv_1706_01781v1": "cfa6db54397cba290f968be430d1890ee4ce829fd4809e466abc7b7ae8a0281d",
+    "arxiv_2101_10222v5": "461ddb9d82c03291079855f565d2dbbf65bdc625b8ac89d82499548fb877613a",
+    "arxiv_1708_01807v1": "925ff15b32101d0aed5362cc3a1b53599c3ba0c03f012e8b615048fe1e9a2b25"
+  },
+  "coverage_gaps": [
+    "[euclid_elements] Discrete geometry in Elements assumes continuous magnitude trichotomy without Dedekind completeness.",
+    "[euclid_elements] Asymptotic distribution of primes pi(x) is completely absent in Greek synthetic geometry.",
+    "[gauss_disquisitiones] Connection between quadratic form class numbers and analytic L-functions (later established by Dirichlet 1839).",
+    "[gauss_disquisitiones] Generalization to cubic and higher reciprocity laws.",
+    "[riemann_1859] Riemann's hand calculations gave the first three zeros (14.1347, 21.0220, 25.0108) on Re(s)=1/2 but could not prove global confinement.",
+    "[riemann_1859] Non-vanishing of zeta(s) for Re(s) in (1/2, 1) remains completely unproven across the continuum.",
+    "[hodge_1950] Atiyah and Hirzebruch (1962) found torsion counterexamples to the integral version, forcing restriction to Q-coefficients.",
+    "[hodge_1950] For codimension p >= 2, no general analytic inversion mechanism exists to construct algebraic cycles from harmonic (p,p)-forms.",
+    "[deligne_hodge] Absolute Hodge property does not automatically deliver algebraic cycles without Grothendieck's standard conjectures on algebraic cycles.",
+    "[voisin_hodge] Mumford's theorem (1968) proves Chow groups CH_0(X) can be infinite-dimensional, creating obstruction to geometric representation.",
+    "[bsd_1965] Conjecture formulation was purely empirical based on EDSAC-2 computations on Mordell curves y^2 = x^3 - Dx.",
+    "[bsd_1965] Analytic continuation of L(E, s) to s=1 was unproven in 1965 (later established by Wiles et al. 1995-2001).",
+    "[gross_zagier_1986] Heegner points only produce points of rank 1 in E(K); cannot construct rank 2 or higher subspaces directly.",
+    "[kolyvagin_1990] Euler systems constructed from Heegner points control Selmer groups only when analytic rank is 0 or 1. No Euler system is known for rank >= 2.",
+    "[wiles_1995] Modularity guarantees that L(E, s) is defined at s=1 and differentiable, enabling BSD to be rigorously posed, but does not prove rank equality ord_{s=1} L(E, s) = rank E(Q) for r >= 2.",
+    "[arxiv_2406_08121v2] Finite or specialized scope in arXiv:2406_08121v2; general continuum proof remains unproven.",
+    "[arxiv_0905_1527v4] Finite or specialized scope in arXiv:0905_1527v4; general continuum proof remains unproven.",
+    "[arxiv_2204_13891v1] Finite or specialized scope in arXiv:2204_13891v1; general continuum proof remains unproven.",
+    "[arxiv_2509_25273v1] Finite or specialized scope in arXiv:2509_25273v1; general continuum proof remains unproven.",
+    "[arxiv_math_0608265v2] Finite or specialized scope in arXiv:math_0608265v2; general continuum proof remains unproven.",
+    "[arxiv_alg-geom_9709030v1] Finite or specialized scope in arXiv:alg-geom_9709030v1; general continuum proof remains unproven.",
+    "[arxiv_1706_01781v1] Finite or specialized scope in arXiv:1706_01781v1; general continuum proof remains unproven.",
+    "[arxiv_2101_10222v5] Finite or specialized scope in arXiv:2101_10222v5; general continuum proof remains unproven.",
+    "[arxiv_1708_01807v1] Finite or specialized scope in arXiv:1708_01807v1; general continuum proof remains unproven."
+  ],
+  "manifest_hash": "a779c942b4bb16564cbcd9d99300b62ed07481300261494b81566e05581cc041"
+}

@@ -9,11 +9,11 @@ Retrieval is **not** Theseus's job — geodesic search is handed off via
 
 Production database surface for the Chronus · Theseus · Ovid triad.
 """
+
 from __future__ import annotations
 
 import hashlib
 import json
-import os
 import threading
 import uuid as uuid_lib
 from dataclasses import dataclass, field
@@ -33,8 +33,13 @@ from .phyllotaxis import (
     verify_golden_angle_constant,
 )
 from .primes import GaloisPrimeSubstrate
-from .storage import AddressSpace, FibonacciAddress, JOURNAL_NAME
-
+from .storage import (
+    AddressSpace,
+    FibonacciAddress,
+    JOURNAL_NAME,
+    _atomic_write,
+    _validate_regular_file,
+)
 
 OWNER_ID = "theseus"
 CLAIM_BOUNDARY = (
@@ -91,6 +96,8 @@ class Theseus:
     _by_digest: Dict[str, str] = field(default_factory=dict)
     _payloads: Dict[str, bytes] = field(default_factory=dict)
     _replicas: Dict[str, bytes] = field(default_factory=dict)
+    _forms: Dict[str, FoldedWorkingForm] = field(default_factory=dict)
+    _commit_uncertain: bool = False
     _metrics: Dict[str, int] = field(
         default_factory=lambda: {
             "put_ok": 0,
@@ -104,9 +111,7 @@ class Theseus:
 
     def __post_init__(self) -> None:
         if self.require_phyllotaxis and not verify_golden_angle_constant():
-            raise TheseusError(
-                "golden-angle constant failed first-principles check"
-            )
+            raise TheseusError("golden-angle constant failed first-principles check")
 
     @property
     def claim_boundary(self) -> str:
@@ -127,6 +132,10 @@ class Theseus:
         """
         del sector  # lane comes from phyllotaxis packing
         with self._lock:
+            if self._commit_uncertain:
+                raise TheseusError(
+                    "uncertain custody commit; reattach or owner reconciliation required"
+                )
             try:
                 if isinstance(payload, FoldedWorkingForm):
                     form = payload
@@ -137,9 +146,7 @@ class Theseus:
                     data = bytes(payload)
                     form = self.ovid.metamorphose(data)
                 else:
-                    raise TypeError(
-                        "Theseus.put requires bytes or FoldedWorkingForm"
-                    )
+                    raise TypeError("Theseus.put requires bytes or FoldedWorkingForm")
             except TheseusError:
                 self._metrics["put_reject"] += 1
                 raise
@@ -176,9 +183,7 @@ class Theseus:
                     durable_index = addr.index
                     if not space.verify():
                         self._metrics["put_reject"] += 1
-                        raise TheseusError(
-                            "durable AddressSpace failed Cassini verify"
-                        )
+                        raise TheseusError("durable AddressSpace failed Cassini verify")
                 except TheseusError:
                     raise
                 except Exception as exc:
@@ -190,6 +195,7 @@ class Theseus:
             # Primary + replica parts of the ship
             self._payloads[uid] = data
             self._replicas[uid] = bytes(data)
+            self._forms[uid] = form
 
             curv_name = (
                 curvature.value if hasattr(curvature, "value") else str(curvature)
@@ -212,13 +218,19 @@ class Theseus:
                 # A durable commit is only durable if it survives this
                 # process: publish the block store and record index before
                 # the receipt is issued.
+                self._commit_uncertain = True
                 self._persist_locked()
+                self._commit_uncertain = False
             self._metrics["put_ok"] += 1
             return record
 
     def get(self, uid: str) -> bytes:
         """Read payload; heal once on digest failure; fail-closed thereafter."""
         with self._lock:
+            if self._commit_uncertain:
+                raise TheseusError(
+                    "uncertain custody commit; reattach or owner reconciliation required"
+                )
             record = self._records.get(uid)
             if record is None:
                 self._metrics["get_miss"] += 1
@@ -241,10 +253,7 @@ class Theseus:
     def _heal(self, uid: str, record: TheseusRecord) -> Optional[bytes]:
         # 1) Replica part of the ship
         replica = self._replicas.get(uid)
-        if (
-            replica is not None
-            and hashlib.sha256(replica).hexdigest() == record.digest
-        ):
+        if replica is not None and hashlib.sha256(replica).hexdigest() == record.digest:
             self._payloads[uid] = replica
             self._metrics["heal_ok"] += 1
             return bytes(replica)
@@ -293,6 +302,12 @@ class Theseus:
             self._payloads[uid] = junk
 
     def get_working_form(self, uid: str) -> FoldedWorkingForm:
+        with self._lock:
+            if self._commit_uncertain:
+                raise TheseusError("uncertain custody commit; working form refused")
+            form = self._forms.get(uid)
+            if form is not None and form.verify():
+                return form
         return self.ovid.metamorphose(self.get(uid))
 
     def lookup_digest(self, digest: str) -> Optional[TheseusRecord]:
@@ -401,12 +416,11 @@ class Theseus:
 
     def _write_index(self, directory: Path) -> None:
         path = directory / "theseus_index.json"
-        tmp = directory / "theseus_index.json.tmp"
-        tmp.write_text(
-            json.dumps(self._record_index(), indent=2, sort_keys=True),
-            encoding="utf-8",
+        _validate_regular_file(path, required=False)
+        _atomic_write(
+            path,
+            json.dumps(self._record_index(), indent=2, sort_keys=True).encode("utf-8"),
         )
-        os.replace(tmp, path)
 
     def _persist_locked(self) -> None:
         """Publish durable blocks + record index under ``durable_dir``.
@@ -414,7 +428,8 @@ class Theseus:
         Caller must hold ``self._lock`` (re-entrant); called automatically
         after every durable commit on a directory-bound owner.
         """
-        assert self.durable_dir is not None
+        if self.durable_dir is None:
+            raise TheseusError("durable directory is not bound")
         directory = Path(self.durable_dir)
         directory.mkdir(parents=True, exist_ok=True)
         if self.durable is not None:
@@ -425,6 +440,8 @@ class Theseus:
         directory = Path(directory)
         directory.mkdir(parents=True, exist_ok=True)
         with self._lock:
+            if self._commit_uncertain:
+                raise TheseusError("uncertain custody commit; snapshot refused")
             if self.durable is not None:
                 self.durable.snapshot(directory / "durable")
             self._write_index(directory)
@@ -444,15 +461,16 @@ class Theseus:
         index_path = directory / "theseus_index.json"
         if not index_path.is_file():
             raise TheseusError(f"no THESEUS record index at {index_path}")
+        _validate_regular_file(index_path)
         durable = AddressSpace.attach(directory / "durable")
         try:
             index = json.loads(index_path.read_text(encoding="utf-8"))
         except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise TheseusError(f"unreadable THESEUS record index: {exc}") from exc
+        if not isinstance(index, dict):
+            raise TheseusError("THESEUS index must be an object")
         if index.get("owner") != OWNER_ID:
-            raise TheseusError(
-                f"unexpected THESEUS index owner {index.get('owner')!r}"
-            )
+            raise TheseusError(f"unexpected THESEUS index owner {index.get('owner')!r}")
         raw_records = index.get("records")
         if not isinstance(raw_records, dict):
             raise TheseusError("THESEUS index has no record table")
@@ -461,6 +479,16 @@ class Theseus:
         theseus.handoff = GeodesicHandoff(durable)
         for uid, entry in raw_records.items():
             try:
+                integer_fields = (
+                    "prime_key",
+                    "anchor",
+                    "lane",
+                    "raw_len",
+                    "folded_units",
+                    "durable_index",
+                )
+                if any(type(entry.get(key)) is not int for key in integer_fields):
+                    raise ValueError("invalid integer metadata")
                 site = entry["phyllotaxis"]
                 record = TheseusRecord(
                     uuid=str(entry["uuid"]),
@@ -488,18 +516,42 @@ class Theseus:
                 ) from exc
             if record.uuid != uid or not isinstance(record.durable_index, int):
                 raise TheseusError(
-                    f"THESEUS index entry {uid!r} is inconsistent or "
-                    "not durable"
+                    f"THESEUS index entry {uid!r} is inconsistent or " "not durable"
                 )
             theseus._records[uid] = record
             theseus._by_digest[record.digest] = uid
+
+        indices = [r.durable_index for r in theseus._records.values()]
+        if len(set(indices)) != len(indices) or set(indices) != {
+            e.index for e in durable.ledger.entries
+        }:
+            raise TheseusError(
+                "custody index/journal mismatch; owner reconciliation required"
+            )
 
         # Prove re-admission for every restored record now: an index row
         # whose block is missing or digests wrong is a corrupt store, not a
         # store that happens to look empty.
         for uid in list(theseus._records):
             try:
-                theseus.get(uid)
+                payload = theseus.get(uid)
+                record = theseus._records[uid]
+                expected_anchor = int(record.digest[:16], 16) % 90
+                expected_site = pack_from_anchor(expected_anchor)
+                form = theseus.ovid.metamorphose(payload)
+                expected_key = GaloisPrimeSubstrate().commit(
+                    expected_anchor, uid, payload
+                )
+                if (
+                    record.raw_len != len(payload)
+                    or record.folded_units != form.folded_units
+                    or record.anchor != expected_anchor
+                    or record.phyllotaxis != expected_site
+                    or record.lane != sector_lane(expected_site)
+                    or record.prime_key != expected_key
+                    or record.curvature not in {c.value for c in ManifoldCurvature}
+                ):
+                    raise TheseusError("custody metadata differs from verified payload")
             except TheseusError as exc:
                 raise TheseusError(
                     f"attached THESEUS store cannot re-admit record {uid}: {exc}"
@@ -526,22 +578,21 @@ def open_theseus(
         kwargs["ovid"] = ovid
     if durable_dir is not None:
         directory = Path(durable_dir)
-        if (directory / "theseus_index.json").is_file():
+        index = directory / "theseus_index.json"
+        if index.exists() or index.is_symlink():
             return Theseus.attach(directory, **kwargs)
         journal = directory / "durable" / JOURNAL_NAME
         if journal.is_file():
-            # Orphaned block store without a record index: keep the verified
-            # sequence (writer cursors, ledger) rather than overwriting it.
-            theseus = Theseus(
-                durable=AddressSpace.attach(directory / "durable"),
-                durable_dir=directory,
-                **kwargs,
+            # An unindexed durable journal may be an interrupted commit.
+            # Preserve all files; never turn uncertainty into a fresh empty owner.
+            raise TheseusError(
+                "orphaned custody journal; owner reconciliation required"
             )
-            theseus.handoff = GeodesicHandoff(theseus.durable)
-            return theseus
-        return Theseus(
-            durable=AddressSpace(), durable_dir=directory, **kwargs
-        )
+        if directory.exists() and any(directory.iterdir()):
+            raise TheseusError(
+                "non-empty custody directory lacks a complete index; reconciliation required"
+            )
+        return Theseus(durable=AddressSpace(), durable_dir=directory, **kwargs)
     if durable:
         kwargs["durable"] = AddressSpace()
     return Theseus(**kwargs)

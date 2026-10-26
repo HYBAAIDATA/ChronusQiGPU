@@ -32,7 +32,7 @@ sys.path.insert(0, str(ROOT / "turing_universal_quantum_computer"))
 PSI = (1.0 - math.sqrt(5.0)) / 2.0
 TRIALS = 2000
 SIZES = (1 << 8, 1 << 10, 1 << 12, 1 << 14, 1 << 16, 1 << 18)
-NS = (3, 4, 5, 6)
+NS = (3, 4, 5, 6, 15, 18, 20)
 
 
 def pisot_damp(n: int) -> float:

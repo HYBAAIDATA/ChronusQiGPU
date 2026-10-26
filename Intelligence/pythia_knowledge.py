@@ -342,14 +342,22 @@ def seed_memory(memory_system) -> Dict[str, Any]:
     """Seed PYTHIA's semantic memory with domain knowledge.
 
     Loads all KNOWLEDGE_FACTS as semantic concepts and all
-    KNOWLEDGE_ASSOCIATIONS as semantic associations. Returns a summary
-    of what was seeded.
+    KNOWLEDGE_ASSOCIATIONS as semantic associations. Also incorporates
+    GitHub Docs knowledge facts and associations.
     """
     sem = memory_system.semantic
     concepts_added = 0
     associations_added = 0
 
-    for fact in KNOWLEDGE_FACTS:
+    from Intelligence.github_docs_adapter import (
+        GITHUB_KNOWLEDGE_FACTS,
+        GITHUB_KNOWLEDGE_ASSOCIATIONS,
+    )
+
+    all_facts = KNOWLEDGE_FACTS + GITHUB_KNOWLEDGE_FACTS
+    all_associations = KNOWLEDGE_ASSOCIATIONS + GITHUB_KNOWLEDGE_ASSOCIATIONS
+
+    for fact in all_facts:
         try:
             sem.add_concept(
                 fact["concept"],
@@ -363,7 +371,7 @@ def seed_memory(memory_system) -> Dict[str, Any]:
         except Exception as e:
             logger.warning("Failed to seed concept %s: %s", fact["concept"], e)
 
-    for assoc in KNOWLEDGE_ASSOCIATIONS:
+    for assoc in all_associations:
         try:
             sem.add_association(
                 assoc["from"],

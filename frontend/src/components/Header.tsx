@@ -27,7 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
   offline,
   miningAuthorized = true,
 }) => {
-  const readyToMine = ready?.ready === true;
+  const readyToMine = ready?.ready === true && ready?.certificate === "ACTIVE";
   const openclDeviceCount = status?.gpu?.opencl_device_count ?? 0;
   const logicalSubstrateAvailable = Boolean(status?.gpu?.logical_substrate?.available);
   const hostBackend = status?.gpu?.logical_substrate?.host_backend ?? "none";
@@ -43,12 +43,12 @@ export const Header: React.FC<HeaderProps> = ({
       ? `Chronus · ${contractDeviceName}`
       : logicalSubstrateAvailable
         ? `Super-GPU · ${hostBackend === "cpu" ? "CPU host" : hostBackend}`
-        : "no device";
+        : "device not reported";
 
   return (
     <header className="sticky top-0 z-50 border-b border-[rgba(10,37,64,0.13)] bg-[rgba(255,255,255,0.86)] backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between min-h-16 py-3 gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 clip-hex bg-[#635bff] text-[#f5f7fa] flex items-center justify-center">
               <Hexagon className="w-5 h-5" strokeWidth={2.4} />
@@ -70,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {!miningAuthorized ? (
               <Chip
                 tone="dim"
@@ -83,7 +83,7 @@ export const Header: React.FC<HeaderProps> = ({
               <>
                 <Chip
                   tone={readyToMine ? "green" : "amber"}
-                  label={readyToMine ? "ready to mine" : (ready?.reason ?? "standby")}
+                  label={readyToMine ? "ready to mine" : `WITHHELD · ${ready?.reason ?? "unverified"}`}
                   icon={<Wifi className="w-3 h-3" />}
                 />
                 <Chip

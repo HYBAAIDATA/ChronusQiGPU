@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, BackgroundTasks, WebSocket
+from fastapi import APIRouter, BackgroundTasks, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
 
 from euclid.cognition.reconciliation_gateway import (
@@ -81,7 +81,7 @@ async def voice_stream_gateway(websocket: WebSocket, background_tasks: Backgroun
             # 2. Handle Execution Request
             elif data.get("type") == "EXECUTION_REQUEST":
                 node = str(data.get("target_node") or "")
-                gate = await MetacognitiveGatekeeper.verify_clearance(node)
+                gate = MetacognitiveGatekeeper.verify_clearance_sync(node)
 
                 if not gate["allow_write"]:
                     await websocket.send_json(
@@ -120,9 +120,17 @@ async def voice_stream_gateway(websocket: WebSocket, background_tasks: Backgroun
                         "manifold": smoothed,
                     }
                 )
-
+            else:
+                await websocket.send_json(
+                    {"stream_type": "ERROR", "status": "INVALID_REQUEST",
+                     "reason": "unsupported_message_type"}
+                )
+    except WebSocketDisconnect:
+        return
     except Exception:
-        pass
+        # Never swallow an error and leave the peer waiting indefinitely.
+        # No clearance is granted after a failed request.
+        await websocket.close(code=1011)
 
 
 @router.get("/learning/curriculum/{user_id}")

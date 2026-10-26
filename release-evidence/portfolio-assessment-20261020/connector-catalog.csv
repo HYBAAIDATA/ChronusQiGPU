@@ -1,0 +1,1064 @@
+id,vendor_label,product,system_class,protocol,auth,qualification
+sap.s_4hana,SAP,S/4HANA,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.s_4hana_cloud,SAP,S/4HANA Cloud,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.ecc,SAP,ECC,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.business_one,SAP,Business One,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.business_bydesign,SAP,Business ByDesign,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.ariba_buying,SAP,Ariba Buying,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.ariba_sourcing,SAP,Ariba Sourcing,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.concur_expense,SAP,Concur Expense,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.concur_invoice,SAP,Concur Invoice,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.concur_travel,SAP,Concur Travel,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.fieldglass,SAP,Fieldglass,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.ibp,SAP,IBP,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.ewm,SAP,EWM,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.tm,SAP,TM,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.digital_manufacturing,SAP,Digital Manufacturing,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.group_reporting,SAP,Group Reporting,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.central_finance,SAP,Central Finance,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.treasury_and_risk_management,SAP,Treasury and Risk Management,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.subscription_billing,SAP,Subscription Billing,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.commerce_cloud,SAP,Commerce Cloud,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.cpq,SAP,CPQ,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.business_network,SAP,Business Network,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.build_process_automation,SAP,Build Process Automation,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.sustainability_control_tower,SAP,Sustainability Control Tower,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.product_footprint_management,SAP,Product Footprint Management,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.industry_cloud_utilities,SAP,Industry Cloud Utilities,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.industry_cloud_retail,SAP,Industry Cloud Retail,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.industry_cloud_banking,SAP,Industry Cloud Banking,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.industry_cloud_insurance,SAP,Industry Cloud Insurance,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.industry_cloud_healthcare,SAP,Industry Cloud Healthcare,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.plant_connectivity,SAP,Plant Connectivity,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.asset_performance_management,SAP,Asset Performance Management,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.field_service_management,SAP,Field Service Management,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.commodity_management,SAP,Commodity Management,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.profitability_and_performance_management,SAP,Profitability and Performance Management,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.green_ledger,SAP,Green Ledger,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.responsible_design_and_production,SAP,Responsible Design and Production,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.farm_management,SAP,Farm Management,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.rise,SAP,RISE,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.grow,SAP,GROW,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.private_link,SAP,Private Link,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.successfactors_employee_central,SAP,SuccessFactors Employee Central,hcm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.successfactors_recruiting,SAP,SuccessFactors Recruiting,hcm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.successfactors_learning,SAP,SuccessFactors Learning,hcm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.successfactors_compensation,SAP,SuccessFactors Compensation,hcm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.successfactors_onboarding,SAP,SuccessFactors Onboarding,hcm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.successfactors_time,SAP,SuccessFactors Time,hcm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.successfactors_payroll,SAP,SuccessFactors Payroll,hcm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.successfactors_performance,SAP,SuccessFactors Performance,hcm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.qualtrics_employeexm,SAP,Qualtrics EmployeeXM,hcm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.sales_cloud,SAP,Sales Cloud,crm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.service_cloud,SAP,Service Cloud,crm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.marketing_cloud,SAP,Marketing Cloud,crm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.customer_data_cloud,SAP,Customer Data Cloud,crm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.emarsys,SAP,Emarsys,crm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.qualtrics_customerxm,SAP,Qualtrics CustomerXM,crm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.datasphere,SAP,Datasphere,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.bw_4hana,SAP,BW/4HANA,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.hana_cloud,SAP,HANA Cloud,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.iq,SAP,IQ,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.ase,SAP,ASE,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.data_intelligence,SAP,Data Intelligence,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.integration_suite,SAP,Integration Suite,etl,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.cloud_integration,SAP,Cloud Integration,etl,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.data_services,SAP,Data Services,etl,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.event_mesh,SAP,Event Mesh,etl,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.api_management,SAP,API Management,etl,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.data_intelligence_pipelines,SAP,Data Intelligence Pipelines,etl,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.analytics_cloud,SAP,Analytics Cloud,bi,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.businessobjects,SAP,BusinessObjects,bi,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.crystal_reports,SAP,Crystal Reports,bi,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.web_intelligence,SAP,Web Intelligence,bi,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.lumira,SAP,Lumira,bi,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.analysis_for_office,SAP,Analysis for Office,bi,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.mdg,SAP,MDG,mdm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.information_steward,SAP,Information Steward,mdm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.master_data_integration,SAP,Master Data Integration,mdm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.grc_access_control,SAP,GRC Access Control,governance,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.grc_process_control,SAP,GRC Process Control,governance,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.cloud_alm,SAP,Cloud ALM,governance,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.solution_manager,SAP,Solution Manager,governance,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.focused_run,SAP,Focused Run,governance,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.signavio,SAP,Signavio,governance,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.leanix,SAP,LeanIX,governance,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.identity_authentication,SAP,Identity Authentication,iam,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.identity_provisioning,SAP,Identity Provisioning,iam,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.joule,SAP,Joule,ai_framework,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.conversational_ai,SAP,Conversational AI,ai_framework,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.predictive_analytics,SAP,Predictive Analytics,ai_framework,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.fusion_cloud_erp,Oracle,Fusion Cloud ERP,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.fusion_cloud_scm,Oracle,Fusion Cloud SCM,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.netsuite,Oracle,NetSuite,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.netsuite_oneworld,Oracle,NetSuite OneWorld,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.jd_edwards_enterpriseone,Oracle,JD Edwards EnterpriseOne,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.peoplesoft_financials,Oracle,PeopleSoft Financials,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.procurement_cloud,Oracle,Procurement Cloud,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.inventory_management,Oracle,Inventory Management,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.manufacturing_cloud,Oracle,Manufacturing Cloud,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.maintenance_cloud,Oracle,Maintenance Cloud,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.order_management,Oracle,Order Management,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.product_hub,Oracle,Product Hub,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.transportation_management,Oracle,Transportation Management,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.warehouse_management,Oracle,Warehouse Management,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.global_trade_management,Oracle,Global Trade Management,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.subscription_management,Oracle,Subscription Management,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.revenue_management,Oracle,Revenue Management,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.billing_and_revenue_management,Oracle,Billing and Revenue Management,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.fusion_cloud_hcm,Oracle,Fusion Cloud HCM,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.peoplesoft_hcm,Oracle,PeopleSoft HCM,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.peoplesoft_campus,Oracle,PeopleSoft Campus,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.taleo,Oracle,Taleo,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.fusion_cx_sales,Oracle,Fusion CX Sales,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.fusion_cx_service,Oracle,Fusion CX Service,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.siebel,Oracle,Siebel,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.eloqua,Oracle,Eloqua,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.responsys,Oracle,Responsys,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.cpq_cloud,Oracle,CPQ Cloud,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.commerce,Oracle,Commerce,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.unity_cdp_sales,Oracle,Unity CDP Sales,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.autonomous_data_warehouse,Oracle,Autonomous Data Warehouse,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.exadata,Oracle,Exadata,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.database_19c,Oracle,Database 19c,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.database_23ai,Oracle,Database 23ai,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.mysql_heatwave,Oracle,MySQL HeatWave,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.essbase,Oracle,Essbase,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.goldengate,Oracle,GoldenGate,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.data_integrator,Oracle,Data Integrator,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.oci_data_integration,Oracle,OCI Data Integration,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.oci_data_flow,Oracle,OCI Data Flow,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.integration_cloud,Oracle,Integration Cloud,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.analytics_cloud,Oracle,Analytics Cloud,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.bi_publisher,Oracle,BI Publisher,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.hyperion_planning,Oracle,Hyperion Planning,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.hyperion_financial_management,Oracle,Hyperion Financial Management,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.oci_data_science,Oracle,OCI Data Science,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.heatwave_automl,Oracle,HeatWave AutoML,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.unity_cdp,Oracle,Unity CDP,cdp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.infinity,Oracle,Infinity,cdp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.oci_data_catalog,Oracle,OCI Data Catalog,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle.apex,Oracle,APEX,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.dynamics_365_finance,Microsoft,Dynamics 365 Finance,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.dynamics_365_supply_chain,Microsoft,Dynamics 365 Supply Chain,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.dynamics_365_commerce,Microsoft,Dynamics 365 Commerce,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.dynamics_365_project_operations,Microsoft,Dynamics 365 Project Operations,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.dynamics_365_business_central,Microsoft,Dynamics 365 Business Central,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.dynamics_ax,Microsoft,Dynamics AX,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.dynamics_nav,Microsoft,Dynamics NAV,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.dynamics_gp,Microsoft,Dynamics GP,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.dynamics_sl,Microsoft,Dynamics SL,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.dynamics_365_sales,Microsoft,Dynamics 365 Sales,crm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.dynamics_365_customer_service,Microsoft,Dynamics 365 Customer Service,crm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.dynamics_365_field_service,Microsoft,Dynamics 365 Field Service,crm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.dynamics_365_customer_insights,Microsoft,Dynamics 365 Customer Insights,crm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.dynamics_365_fraud_protection,Microsoft,Dynamics 365 Fraud Protection,crm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.dynamics_365_human_resources,Microsoft,Dynamics 365 Human Resources,hcm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.viva_insights,Microsoft,Viva Insights,hcm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.viva_learning,Microsoft,Viva Learning,hcm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.fabric_warehouse,Microsoft,Fabric Warehouse,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.synapse_analytics,Microsoft,Synapse Analytics,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.sql_server,Microsoft,SQL Server,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.azure_sql,Microsoft,Azure SQL,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.analysis_services,Microsoft,Analysis Services,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.azure_data_factory,Microsoft,Azure Data Factory,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.ssis,Microsoft,SSIS,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.logic_apps,Microsoft,Logic Apps,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.power_automate,Microsoft,Power Automate,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.power_bi,Microsoft,Power BI,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.ssrs,Microsoft,SSRS,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.ssas,Microsoft,SSAS,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.power_pages,Microsoft,Power Pages,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.azure_machine_learning,Microsoft,Azure Machine Learning,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.azure_databricks,Microsoft,Azure Databricks,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.azure_openai,Microsoft,Azure OpenAI,ai_framework,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.cognitive_services,Microsoft,Cognitive Services,ai_framework,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.event_hubs,Microsoft,Event Hubs,streaming,kafka,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.stream_analytics,Microsoft,Stream Analytics,streaming,kafka,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.service_bus,Microsoft,Service Bus,streaming,kafka,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.purview,Microsoft,Purview,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.master_data_services,Microsoft,Master Data Services,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.dataverse,Microsoft,Dataverse,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.entra_id,Microsoft,Entra ID,iam,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.intune,Microsoft,Intune,iam,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.azure_monitor,Microsoft,Azure Monitor,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.log_analytics,Microsoft,Log Analytics,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.application_insights,Microsoft,Application Insights,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.sentinel,Microsoft,Sentinel,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.defender_for_cloud,Microsoft,Defender for Cloud,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microsoft.common_data_model,Microsoft,Common Data Model,mdm,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.sales_cloud,Salesforce,Sales Cloud,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.service_cloud,Salesforce,Service Cloud,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.marketing_cloud,Salesforce,Marketing Cloud,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.commerce_cloud,Salesforce,Commerce Cloud,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.experience_cloud,Salesforce,Experience Cloud,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.data_cloud,Salesforce,Data Cloud,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.revenue_cloud,Salesforce,Revenue Cloud,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.cpq,Salesforce,CPQ,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.field_service,Salesforce,Field Service,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.industries_health,Salesforce,Industries Health,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.industries_financial_services,Salesforce,Industries Financial Services,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.industries_manufacturing,Salesforce,Industries Manufacturing,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.pardot,Salesforce,Pardot,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.tableau_crm,Salesforce,Tableau CRM,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.mulesoft_anypoint,Salesforce,MuleSoft Anypoint,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.slack,Salesforce,Slack,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.heroku_connect,Salesforce,Heroku Connect,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.platform_events,Salesforce,Platform Events,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.change_data_capture,Salesforce,Change Data Capture,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.bulk_api,Salesforce,Bulk API,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.data_cloud_profiles,Salesforce,Data Cloud Profiles,cdp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.data_cloud_segments,Salesforce,Data Cloud Segments,cdp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesforce.data_cloud_activations,Salesforce,Data Cloud Activations,cdp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.human_capital_management,Workday,Human Capital Management,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.recruiting,Workday,Recruiting,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.learning,Workday,Learning,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.payroll,Workday,Payroll,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.time_tracking,Workday,Time Tracking,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.talent,Workday,Talent,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.people_analytics,Workday,People Analytics,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.adaptive_planning,Workday,Adaptive Planning,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.prism,Workday,Prism,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.financial_management,Workday,Financial Management,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.procurement,Workday,Procurement,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.projects,Workday,Projects,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.grants,Workday,Grants,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.student,Workday,Student,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.extend,Workday,Extend,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.core_financials,Workday,Core Financials,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.expenses,Workday,Expenses,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.inventory,Workday,Inventory,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workday.revenue_management,Workday,Revenue Management,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+servicenow.it_service_management,ServiceNow,IT Service Management,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+servicenow.it_operations_management,ServiceNow,IT Operations Management,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+servicenow.hr_service_delivery,ServiceNow,HR Service Delivery,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+servicenow.customer_service_management,ServiceNow,Customer Service Management,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+servicenow.security_operations,ServiceNow,Security Operations,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+servicenow.governance_risk_compliance,ServiceNow,Governance Risk Compliance,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+servicenow.strategic_portfolio_management,ServiceNow,Strategic Portfolio Management,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+servicenow.field_service_management,ServiceNow,Field Service Management,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+servicenow.integration_hub,ServiceNow,Integration Hub,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+servicenow.flow_designer,ServiceNow,Flow Designer,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+servicenow.cmdb,ServiceNow,CMDB,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+servicenow.discovery,ServiceNow,Discovery,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+servicenow.app_engine,ServiceNow,App Engine,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+servicenow.now_assist,ServiceNow,Now Assist,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+servicenow.event_management,ServiceNow,Event Management,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+servicenow.health_log_analytics,ServiceNow,Health Log Analytics,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+servicenow.cmdb_classes,ServiceNow,CMDB Classes,mdm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+adobe.experience_platform,Adobe,Experience Platform,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+adobe.real_time_cdp,Adobe,Real-Time CDP,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+adobe.journey_optimizer,Adobe,Journey Optimizer,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+adobe.campaign,Adobe,Campaign,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+adobe.marketo,Adobe,Marketo,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+adobe.analytics,Adobe,Analytics,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+adobe.target,Adobe,Target,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+adobe.audience_manager,Adobe,Audience Manager,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+adobe.commerce,Adobe,Commerce,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+adobe.workfront,Adobe,Workfront,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.bigquery,Google,BigQuery,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.bigquery_omni,Google,BigQuery Omni,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.alloydb,Google,AlloyDB,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.cloud_sql,Google,Cloud SQL,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.spanner,Google,Spanner,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.cloud_dataflow,Google,Cloud Dataflow,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.cloud_data_fusion,Google,Cloud Data Fusion,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.datastream,Google,Datastream,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.dataproc,Google,Dataproc,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.pub_sub,Google,Pub/Sub,streaming,kafka,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.kafka_for_bigquery,Google,Kafka for BigQuery,streaming,kafka,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.vertex_ai,Google,Vertex AI,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.vertex_feature_store,Google,Vertex Feature Store,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.vertex_experiments,Google,Vertex Experiments,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.gemini_enterprise,Google,Gemini Enterprise,ai_framework,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.document_ai,Google,Document AI,ai_framework,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.vision_ai,Google,Vision AI,ai_framework,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.natural_language,Google,Natural Language,ai_framework,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.looker,Google,Looker,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.looker_studio,Google,Looker Studio,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.dataplex,Google,Dataplex,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.data_catalog,Google,Data Catalog,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.cloud_identity,Google,Cloud Identity,iam,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.iam,Google,IAM,iam,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.cloud_monitoring,Google,Cloud Monitoring,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.cloud_logging,Google,Cloud Logging,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+google.cloud_trace,Google,Cloud Trace,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.redshift,Amazon,Redshift,data_warehouse,jdbc,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.redshift_serverless,Amazon,Redshift Serverless,data_warehouse,jdbc,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.aurora,Amazon,Aurora,data_warehouse,jdbc,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.rds,Amazon,RDS,data_warehouse,jdbc,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.athena,Amazon,Athena,data_warehouse,jdbc,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.dynamodb,Amazon,DynamoDB,data_warehouse,jdbc,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.glue,Amazon,Glue,etl,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.glue_databrew,Amazon,Glue DataBrew,etl,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.appflow,Amazon,AppFlow,etl,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.data_pipeline,Amazon,Data Pipeline,etl,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.emr,Amazon,EMR,etl,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.kinesis_data_streams,Amazon,Kinesis Data Streams,streaming,kafka,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.kinesis_firehose,Amazon,Kinesis Firehose,streaming,kafka,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.managed_kafka,Amazon,Managed Kafka,streaming,kafka,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.sqs,Amazon,SQS,streaming,kafka,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.sns,Amazon,SNS,streaming,kafka,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.eventbridge,Amazon,EventBridge,streaming,kafka,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.sagemaker,Amazon,SageMaker,ml_platform,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.sagemaker_feature_store,Amazon,SageMaker Feature Store,ml_platform,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.sagemaker_experiments,Amazon,SageMaker Experiments,ml_platform,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.sagemaker_pipelines,Amazon,SageMaker Pipelines,ml_platform,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.bedrock,Amazon,Bedrock,ai_framework,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.comprehend,Amazon,Comprehend,ai_framework,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.textract,Amazon,Textract,ai_framework,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.forecast,Amazon,Forecast,ai_framework,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.personalize,Amazon,Personalize,ai_framework,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.fraud_detector,Amazon,Fraud Detector,ai_framework,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.quicksight,Amazon,QuickSight,bi,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.glue_catalog,Amazon,Glue Catalog,governance,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.lake_formation,Amazon,Lake Formation,governance,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.datazone,Amazon,DataZone,governance,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.macie,Amazon,Macie,governance,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.iam,Amazon,IAM,iam,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.identity_center,Amazon,Identity Center,iam,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.cloudwatch,Amazon,CloudWatch,observability,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.cloudwatch_logs,Amazon,CloudWatch Logs,observability,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amazon.x_ray,Amazon,X-Ray,observability,rest,aws_sigv4,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+snowflake.snowflake,Snowflake,Snowflake,data_warehouse,jdbc,key_pair,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+snowflake.snowpark,Snowflake,Snowpark,data_warehouse,jdbc,key_pair,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+snowflake.unistore,Snowflake,Unistore,data_warehouse,jdbc,key_pair,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+snowflake.iceberg_tables,Snowflake,Iceberg Tables,data_warehouse,jdbc,key_pair,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+snowflake.data_sharing,Snowflake,Data Sharing,data_warehouse,jdbc,key_pair,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+snowflake.marketplace,Snowflake,Marketplace,data_warehouse,jdbc,key_pair,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+snowflake.cortex,Snowflake,Cortex,ml_platform,rest,key_pair,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+snowflake.model_registry,Snowflake,Model Registry,ml_platform,rest,key_pair,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+snowflake.feature_store,Snowflake,Feature Store,ml_platform,rest,key_pair,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+snowflake.horizon,Snowflake,Horizon,governance,jdbc,key_pair,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+snowflake.data_clean_rooms,Snowflake,Data Clean Rooms,governance,jdbc,key_pair,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+databricks.lakehouse,Databricks,Lakehouse,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+databricks.unity_catalog,Databricks,Unity Catalog,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+databricks.delta_live_tables,Databricks,Delta Live Tables,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+databricks.sql_warehouse,Databricks,SQL Warehouse,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+databricks.mlflow,Databricks,MLflow,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+databricks.feature_store,Databricks,Feature Store,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+databricks.model_serving,Databricks,Model Serving,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+databricks.automl,Databricks,AutoML,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+databricks.workflows,Databricks,Workflows,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+databricks.lakeflow_connect,Databricks,Lakeflow Connect,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+informatica.powercenter,Informatica,PowerCenter,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+informatica.intelligent_data_management_cloud,Informatica,Intelligent Data Management Cloud,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+informatica.cloud_data_integration,Informatica,Cloud Data Integration,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+informatica.cloud_application_integration,Informatica,Cloud Application Integration,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+informatica.b2b_gateway,Informatica,B2B Gateway,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+informatica.mass_ingestion,Informatica,Mass Ingestion,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+informatica.cloud_data_quality,Informatica,Cloud Data Quality,data_quality,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+informatica.data_as_a_service,Informatica,Data as a Service,data_quality,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+informatica.address_verification,Informatica,Address Verification,data_quality,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+informatica.mdm_customer_360,Informatica,MDM Customer 360,mdm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+informatica.mdm_product_360,Informatica,MDM Product 360,mdm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+informatica.mdm_supplier_360,Informatica,MDM Supplier 360,mdm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+informatica.mdm_reference_360,Informatica,MDM Reference 360,mdm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+informatica.axon,Informatica,Axon,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+informatica.enterprise_data_catalog,Informatica,Enterprise Data Catalog,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+informatica.data_marketplace,Informatica,Data Marketplace,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fivetran.fivetran,Fivetran,Fivetran,etl,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fivetran.hvr,Fivetran,HVR,etl,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+airbyte.airbyte,Airbyte,Airbyte,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+dbt.dbt_cloud,dbt,dbt Cloud,etl,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+dbt.dbt_core,dbt,dbt Core,etl,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+talend.data_fabric,Talend,Data Fabric,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+talend.studio,Talend,Studio,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+talend.stitch,Talend,Stitch,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+talend.pipeline_designer,Talend,Pipeline Designer,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+boomi.integration,Boomi,Integration,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+boomi.master_data_hub,Boomi,Master Data Hub,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+boomi.api_management,Boomi,API Management,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+boomi.flow,Boomi,Flow,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+boomi.b2b_edi,Boomi,B2B/EDI,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+mulesoft.anypoint,MuleSoft,Anypoint,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+mulesoft.composer,MuleSoft,Composer,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+mulesoft.rpa,MuleSoft,RPA,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.db2,IBM,Db2,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.db2_warehouse,IBM,Db2 Warehouse,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.netezza,IBM,Netezza,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.informix,IBM,Informix,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.datastage,IBM,DataStage,etl,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.watsonx_data,IBM,Watsonx.data,etl,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.app_connect,IBM,App Connect,etl,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.mq,IBM,MQ,etl,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.aspera,IBM,Aspera,etl,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.watsonx_ai,IBM,watsonx.ai,ai_framework,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.watson_discovery,IBM,Watson Discovery,ai_framework,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.watson_nlp,IBM,Watson NLP,ai_framework,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.watson_assistant,IBM,Watson Assistant,ai_framework,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.watson_studio,IBM,Watson Studio,ml_platform,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.watson_ml,IBM,Watson ML,ml_platform,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.knowledge_catalog,IBM,Knowledge Catalog,governance,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.openpages,IBM,OpenPages,governance,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.guardium,IBM,Guardium,governance,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.infosphere_mdm,IBM,InfoSphere MDM,mdm,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.match_360,IBM,Match 360,mdm,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.instana,IBM,Instana,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.turbonomic,IBM,Turbonomic,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.event_streams,IBM,Event Streams,streaming,kafka,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ibm.streamsets,IBM,StreamSets,streaming,kafka,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+cloudera.data_platform,Cloudera,Data Platform,data_warehouse,jdbc,kerberos,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+cloudera.data_warehouse,Cloudera,Data Warehouse,data_warehouse,jdbc,kerberos,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+cloudera.operational_database,Cloudera,Operational Database,data_warehouse,jdbc,kerberos,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+cloudera.data_flow,Cloudera,Data Flow,streaming,kafka,kerberos,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+cloudera.kafka,Cloudera,Kafka,streaming,kafka,kerberos,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+cloudera.machine_learning,Cloudera,Machine Learning,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+teradata.vantage,Teradata,Vantage,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+teradata.querygrid,Teradata,QueryGrid,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+clickhouse.clickhouse,ClickHouse,ClickHouse,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+clickhouse.clickhouse_cloud,ClickHouse,ClickHouse Cloud,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+duckdb.duckdb,DuckDB,DuckDB,data_warehouse,jdbc,none,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+postgresql.postgresql,PostgreSQL,PostgreSQL,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+postgresql.enterprisedb,PostgreSQL,EnterpriseDB,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+mysql.mysql,MySQL,MySQL,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+mysql.mariadb,MySQL,MariaDB,data_warehouse,jdbc,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+mongodb.atlas,MongoDB,Atlas,data_warehouse,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+mongodb.enterprise,MongoDB,Enterprise,data_warehouse,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+redis.redis,Redis,Redis,feature_store,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+redis.redis_cloud,Redis,Redis Cloud,feature_store,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+elastic.elasticsearch,Elastic,Elasticsearch,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+elastic.observability,Elastic,Observability,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+elastic.security,Elastic,Security,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+elastic.enterprise_search,Elastic,Enterprise Search,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+confluent.cloud,Confluent,Cloud,streaming,kafka,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+confluent.platform,Confluent,Platform,streaming,kafka,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+confluent.stream_designer,Confluent,Stream Designer,streaming,kafka,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+confluent.schema_registry,Confluent,Schema Registry,streaming,kafka,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+confluent.flink,Confluent,Flink,streaming,kafka,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+apache.kafka,Apache,Kafka,streaming,kafka,none,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+apache.pulsar,Apache,Pulsar,streaming,kafka,none,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+apache.flink,Apache,Flink,streaming,kafka,none,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+apache.spark_structured_streaming,Apache,Spark Structured Streaming,streaming,kafka,none,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+apache.nifi,Apache,NiFi,streaming,kafka,none,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+apache.airflow,Apache,Airflow,streaming,kafka,none,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+tableau.cloud,Tableau,Cloud,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+tableau.server,Tableau,Server,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+tableau.prep,Tableau,Prep,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+tableau.pulse,Tableau,Pulse,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+qlik.sense,Qlik,Sense,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+qlik.cloud,Qlik,Cloud,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+qlik.replicate,Qlik,Replicate,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+qlik.compose,Qlik,Compose,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microstrategy.platform,MicroStrategy,Platform,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+microstrategy.cloud,MicroStrategy,Cloud,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+thoughtspot.thoughtspot,ThoughtSpot,ThoughtSpot,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+thoughtspot.spotter,ThoughtSpot,Spotter,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sisense.fusion,Sisense,Fusion,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+domo.domo,Domo,Domo,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+mode.mode,Mode,Mode,bi,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sigma.sigma,Sigma,Sigma,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+hex.hex,Hex,Hex,bi,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+datarobot.datarobot,DataRobot,DataRobot,ml_platform,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+dataiku.dss,Dataiku,DSS,ml_platform,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+h2o.driverless_ai,H2O,Driverless AI,ml_platform,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+h2o.hydrogen,H2O,Hydrogen,ml_platform,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+weights_and_biases.w_b,Weights and Biases,W&B,experiment_tracking,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+neptune.neptune,Neptune,Neptune,experiment_tracking,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+mlflow.tracking,MLflow,Tracking,experiment_tracking,rest,none,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+mlflow.registry,MLflow,Registry,experiment_tracking,rest,none,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+feast.feast,Feast,Feast,feature_store,rest,none,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+tecton.tecton,Tecton,Tecton,feature_store,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+hopsworks.hopsworks,Hopsworks,Hopsworks,feature_store,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+census.census,Census,Census,reverse_etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+hightouch.hightouch,Hightouch,Hightouch,reverse_etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+rudderstack.rudderstack,RudderStack,RudderStack,cdp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+rudderstack.reverse_etl,RudderStack,Reverse ETL,cdp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+segment.connections,Segment,Connections,cdp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+segment.protocols,Segment,Protocols,cdp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+segment.personas,Segment,Personas,cdp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+segment.functions,Segment,Functions,cdp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+mparticle.mparticle,mParticle,mParticle,cdp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+tealium.audiencestream,Tealium,AudienceStream,cdp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+tealium.eventstream,Tealium,EventStream,cdp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+tealium.iq,Tealium,iQ,cdp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amperity.amperity,Amperity,Amperity,cdp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+collibra.data_intelligence,Collibra,Data Intelligence,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+collibra.data_quality,Collibra,Data Quality,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+collibra.data_lineage,Collibra,Data Lineage,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+collibra.protect,Collibra,Protect,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+alation.data_catalog,Alation,Data Catalog,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+alation.analytics,Alation,Analytics,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+atlan.atlan,Atlan,Atlan,governance,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+great_expectations.gx_cloud,Great Expectations,GX Cloud,data_quality,rest,none,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+great_expectations.gx_core,Great Expectations,GX Core,data_quality,rest,none,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+monte_carlo.monte_carlo,Monte Carlo,Monte Carlo,data_quality,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+soda.soda,Soda,Soda,data_quality,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+anomalo.anomalo,Anomalo,Anomalo,data_quality,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+bigeye.bigeye,Bigeye,Bigeye,data_quality,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+precisely.spectrum,Precisely,Spectrum,data_quality,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+precisely.trillium,Precisely,Trillium,data_quality,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+okta.workforce_identity,Okta,Workforce Identity,iam,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+okta.customer_identity,Okta,Customer Identity,iam,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+cyberark.privilege_cloud,CyberArk,Privilege Cloud,iam,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+cyberark.endpoint_privilege_manager,CyberArk,Endpoint Privilege Manager,iam,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sailpoint.identitynow,SailPoint,IdentityNow,iam,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sailpoint.identityiq,SailPoint,IdentityIQ,iam,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ping.pingone,Ping,PingOne,iam,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ping.pingfederate,Ping,PingFederate,iam,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+forgerock.identity_platform,ForgeRock,Identity Platform,iam,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+hashicorp.vault,HashiCorp,Vault,iam,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+datadog.infrastructure,Datadog,Infrastructure,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+datadog.apm,Datadog,APM,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+datadog.logs,Datadog,Logs,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+datadog.rum,Datadog,RUM,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+datadog.security,Datadog,Security,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+new_relic.new_relic,New Relic,New Relic,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+dynatrace.davis,Dynatrace,Davis,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+dynatrace.grail,Dynatrace,Grail,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+splunk.enterprise,Splunk,Enterprise,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+splunk.observability_cloud,Splunk,Observability Cloud,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+splunk.soar,Splunk,SOAR,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+splunk.attack_analyzer,Splunk,Attack Analyzer,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+grafana.grafana,Grafana,Grafana,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+grafana.mimir,Grafana,Mimir,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+grafana.loki,Grafana,Loki,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+grafana.tempo,Grafana,Tempo,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+grafana.oncall,Grafana,OnCall,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pagerduty.pagerduty,PagerDuty,PagerDuty,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+crowdstrike.falcon,CrowdStrike,Falcon,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+palo_alto.cortex_xdr,Palo Alto,Cortex XDR,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+palo_alto.cortex_xsoar,Palo Alto,Cortex XSOAR,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+palo_alto.prisma_cloud,Palo Alto,Prisma Cloud,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+bloomberg.terminal,Bloomberg,Terminal,data_warehouse,sdk,terminal,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+bloomberg.b_pipe,Bloomberg,B-PIPE,data_warehouse,sdk,terminal,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+bloomberg.data_license,Bloomberg,Data License,data_warehouse,sdk,terminal,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+bloomberg.hapi,Bloomberg,HAPI,data_warehouse,sdk,terminal,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+bloomberg.ibval,Bloomberg,IBVAL,data_warehouse,sdk,terminal,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+bloomberg.port,Bloomberg,PORT,data_warehouse,sdk,terminal,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+lseg.workspace,LSEG,Workspace,data_warehouse,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+lseg.datascope,LSEG,DataScope,data_warehouse,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+lseg.tick_history,LSEG,Tick History,data_warehouse,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+lseg.world_check,LSEG,World-Check,data_warehouse,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+lseg.fxall,LSEG,FXall,data_warehouse,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+murex.mx_3,Murex,MX.3,erp,sdk,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+finastra.fusion_essence,Finastra,Fusion Essence,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+finastra.fusion_loan_iq,Finastra,Fusion Loan IQ,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+finastra.fusion_kondor,Finastra,Fusion Kondor,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+finastra.fusion_phoenix,Finastra,Fusion Phoenix,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+finastra.fusion_treasury,Finastra,Fusion Treasury,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+finastra.fusion_payments,Finastra,Fusion Payments,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+finastra.fusion_risk,Finastra,Fusion Risk,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+finastra.fusion_equation,Finastra,Fusion Equation,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fis.profile,FIS,Profile,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fis.systematics,FIS,Systematics,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fis.quantum,FIS,Quantum,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fis.clear2pay,FIS,Clear2Pay,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fis.worldpay,FIS,Worldpay,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fis.trax,FIS,Trax,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fiserv.dna,Fiserv,DNA,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fiserv.signature,Fiserv,Signature,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fiserv.premier,Fiserv,Premier,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fiserv.cleartouch,Fiserv,Cleartouch,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fiserv.commercial_center,Fiserv,Commercial Center,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+temenos.transact,Temenos,Transact,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+temenos.infinity,Temenos,Infinity,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+temenos.payments,Temenos,Payments,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+temenos.financial_crime_mitigation,Temenos,Financial Crime Mitigation,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+thought_machine.vault_core,Thought Machine,Vault Core,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+mambu.mambu,Mambu,Mambu,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ncino.bank_operating_system,nCino,Bank Operating System,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+swift.fin,SWIFT,FIN,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+swift.iso_20022,SWIFT,ISO 20022,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+swift.gpi,SWIFT,gpi,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+swift.alliance_access,SWIFT,Alliance Access,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+stripe.payments,Stripe,Payments,erp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+stripe.billing,Stripe,Billing,erp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+stripe.connect,Stripe,Connect,erp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+stripe.treasury,Stripe,Treasury,erp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+stripe.radar,Stripe,Radar,erp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+stripe.sigma,Stripe,Sigma,erp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+adyen.adyen,Adyen,Adyen,erp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+plaid.plaid,Plaid,Plaid,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+moody.riskbench,Moody,RiskBench,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+moody.creditlens,Moody,CreditLens,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+moody.early_warning,Moody,Early Warning,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+s_p.capital_iq,S&P,Capital IQ,data_warehouse,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+s_p.ratings,S&P,Ratings,data_warehouse,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+s_p.market_intelligence,S&P,Market Intelligence,data_warehouse,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+factset.factset,FactSet,FactSet,data_warehouse,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+msci.barra,MSCI,Barra,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+msci.riskmanager,MSCI,RiskManager,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+msci.esg,MSCI,ESG,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ss_c.geneva,SS&C,Geneva,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ss_c.eze,SS&C,Eze,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ss_c.algorithmics,SS&C,Algorithmics,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ss_c.intrinsiq,SS&C,Intrinsiq,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+broadridge.bps,Broadridge,BPS,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+broadridge.post_trade,Broadridge,Post Trade,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+broadridge.proxy,Broadridge,Proxy,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+calypso.calypso,Calypso,Calypso,erp,sdk,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+axiomsl.controllerview,AxiomSL,ControllerView,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+wolters_kluwer.onesumx,Wolters Kluwer,OneSumX,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.cadence,Epic,Cadence,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.mychart,Epic,MyChart,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.optime,Epic,OpTime,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.beacon,Epic,Beacon,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.willow,Epic,Willow,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.beaker,Epic,Beaker,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.radiant,Epic,Radiant,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.cupid,Epic,Cupid,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.stork,Epic,Stork,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.asap,Epic,ASAP,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.bugsy,Epic,Bugsy,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.healthy_planet,Epic,Healthy Planet,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.resolute,Epic,Resolute,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.grand_central,Epic,Grand Central,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.prelude,Epic,Prelude,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.haiku,Epic,Haiku,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.rover,Epic,Rover,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.bones,Epic,Bones,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.lumens,Epic,Lumens,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.phoenix,Epic,Phoenix,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.clarity,Epic,Clarity,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.caboodle,Epic,Caboodle,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.cogito,Epic,Cogito,erp,sdk,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle_health.millennium,Oracle Health,Millennium,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle_health.powerchart,Oracle Health,PowerChart,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle_health.revelate,Oracle Health,RevElate,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+oracle_health.healtheintent,Oracle Health,HealtheIntent,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+meditech.expanse,MEDITECH,Expanse,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+meditech.magic,MEDITECH,Magic,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+meditech.client_server,MEDITECH,Client Server,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+veradigm.ehr,Veradigm,EHR,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+veradigm.practice_fusion,Veradigm,Practice Fusion,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+veradigm.followmyhealth,Veradigm,FollowMyHealth,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+athenahealth.athenaone,athenahealth,athenaOne,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+veeva.crm,Veeva,CRM,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+veeva.vault_clinical,Veeva,Vault Clinical,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+veeva.vault_quality,Veeva,Vault Quality,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+veeva.vault_rim,Veeva,Vault RIM,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+veeva.vault_safety,Veeva,Vault Safety,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+veeva.link,Veeva,Link,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iqvia.orchestrated_customer_engagement,IQVIA,Orchestrated Customer Engagement,data_warehouse,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iqvia.midas,IQVIA,MIDAS,data_warehouse,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iqvia.channeldynamics,IQVIA,ChannelDynamics,data_warehouse,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+philips.intellivue,Philips,IntelliVue,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+philips.capsule,Philips,Capsule,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+philips.healthsuite,Philips,HealthSuite,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+philips.tasy,Philips,Tasy,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ge_healthcare.edison,GE HealthCare,Edison,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ge_healthcare.centricity,GE HealthCare,Centricity,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ge_healthcare.vue_pacs,GE HealthCare,Vue PACS,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ge_healthcare.carescape,GE HealthCare,CARESCAPE,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+siemens_healthineers.teamplay,Siemens Healthineers,Teamplay,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+siemens_healthineers.syngo,Siemens Healthineers,syngo,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+siemens_healthineers.atellica,Siemens Healthineers,Atellica,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+change_healthcare.clearinghouse,Change Healthcare,Clearinghouse,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+change_healthcare.interqual,Change Healthcare,InterQual,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+change_healthcare.revenue_cycle,Change Healthcare,Revenue Cycle,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.caboodle_warehouse,Epic,Caboodle Warehouse,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic.clarity_warehouse,Epic,Clarity Warehouse,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+siemens.opcenter,Siemens,Opcenter,erp,opcua,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+siemens.teamcenter,Siemens,Teamcenter,erp,opcua,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+siemens.nx,Siemens,NX,erp,opcua,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+siemens.tecnomatix,Siemens,Tecnomatix,erp,opcua,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+siemens.mindsphere,Siemens,MindSphere,erp,opcua,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+siemens.insights_hub,Siemens,Insights Hub,erp,opcua,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+siemens.simatic,Siemens,SIMATIC,erp,opcua,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+siemens.pcs_7,Siemens,PCS 7,erp,opcua,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+siemens.wincc,Siemens,WinCC,erp,opcua,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+siemens.comos,Siemens,COMOS,erp,opcua,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+siemens.gproms,Siemens,gPROMS,erp,opcua,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+rockwell.factorytalk,Rockwell,FactoryTalk,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+rockwell.plex,Rockwell,Plex,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+rockwell.fiix,Rockwell,Fiix,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+rockwell.emulate3d,Rockwell,Emulate3D,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ptc.windchill,PTC,Windchill,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ptc.thingworx,PTC,ThingWorx,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ptc.kepware,PTC,Kepware,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ptc.vuforia,PTC,Vuforia,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ptc.creo,PTC,Creo,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+dassault.3dexperience,Dassault,3DEXPERIENCE,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+dassault.delmia,Dassault,DELMIA,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+dassault.enovia,Dassault,ENOVIA,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+dassault.simulia,Dassault,SIMULIA,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+dassault.catia,Dassault,CATIA,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+aveva.pi_system,AVEVA,PI System,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+aveva.pi_vision,AVEVA,PI Vision,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+aveva.unified_operations_center,AVEVA,Unified Operations Center,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+aveva.predictive_analytics,AVEVA,Predictive Analytics,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+osisoft.pi_data_archive,OSIsoft,PI Data Archive,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+osisoft.pi_af,OSIsoft,PI AF,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+aspentech.aspen_mtell,AspenTech,Aspen Mtell,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+aspentech.aspen_dmc3,AspenTech,Aspen DMC3,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+aspentech.aspen_hysys,AspenTech,Aspen HYSYS,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+aspentech.aspen_infoplus_21,AspenTech,Aspen InfoPlus.21,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+honeywell.experion,Honeywell,Experion,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+honeywell.forge,Honeywell,Forge,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+honeywell.uniformance,Honeywell,Uniformance,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+emerson.deltav,Emerson,DeltaV,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+emerson.ovation,Emerson,Ovation,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+emerson.ams,Emerson,AMS,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+emerson.plantweb,Emerson,Plantweb,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+schneider.ecostruxure,Schneider,EcoStruxure,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+schneider.aveva_edge,Schneider,AVEVA edge,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+schneider.wonderware,Schneider,Wonderware,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+abb.ability,ABB,Ability,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+abb.800xa,ABB,800xA,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+abb.ellipse,ABB,Ellipse,observability,opcua,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+infor.m3,Infor,M3,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+infor.ln,Infor,LN,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+infor.cloudsuite_industrial,Infor,CloudSuite Industrial,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+infor.wms,Infor,WMS,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+infor.eam,Infor,EAM,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epicor.kinetic,Epicor,Kinetic,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epicor.prophet_21,Epicor,Prophet 21,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+plex.smart_manufacturing,Plex,Smart Manufacturing,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+qad.adaptive_erp,QAD,Adaptive ERP,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+metabase.metabase,Metabase,Metabase,visualization,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+metabase.embedded,Metabase,Embedded,visualization,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+apache_superset.superset,Apache Superset,Superset,visualization,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+redash.redash,Redash,Redash,visualization,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+evidence.evidence,Evidence,Evidence,visualization,rest,none,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+lightdash.lightdash,Lightdash,Lightdash,visualization,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+observable.observable,Observable,Observable,visualization,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+observable.framework,Observable,Framework,visualization,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+plotly.dash,Plotly,Dash,visualization,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+plotly.chart_studio,Plotly,Chart Studio,visualization,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+streamlit.streamlit,Streamlit,Streamlit,visualization,rest,none,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+holistics.holistics,Holistics,Holistics,visualization,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+omni.omni_analytics,Omni,Omni Analytics,visualization,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+count.count,Count,Count,visualization,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.plant_connectivity_stream,SAP,Plant Connectivity Stream,streaming,opcua,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap.digital_manufacturing_events,SAP,Digital Manufacturing Events,streaming,opcua,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ukg.pro,UKG,Pro,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ukg.dimensions,UKG,Dimensions,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ukg.ready,UKG,Ready,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+adp.workforce_now,ADP,Workforce Now,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+adp.vantage,ADP,Vantage,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+adp.lyric,ADP,Lyric,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+adp.run,ADP,RUN,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+bamboohr.bamboohr,BambooHR,BambooHR,hcm,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+greenhouse.greenhouse,Greenhouse,Greenhouse,hcm,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+lever.lever,Lever,Lever,hcm,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+zendesk.support,Zendesk,Support,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+zendesk.sell,Zendesk,Sell,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+zendesk.sunshine,Zendesk,Sunshine,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+freshworks.freshdesk,Freshworks,Freshdesk,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+freshworks.freshsales,Freshworks,Freshsales,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+intercom.intercom,Intercom,Intercom,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+shopify.admin,Shopify,Admin,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+shopify.pos,Shopify,POS,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+shopify.plus,Shopify,Plus,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+bigcommerce.bigcommerce,BigCommerce,BigCommerce,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+magento.adobe_commerce,Magento,Adobe Commerce,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+magento.open_source,Magento,Open Source,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+atlassian.jira,Atlassian,Jira,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+atlassian.confluence,Atlassian,Confluence,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+atlassian.jira_service_management,Atlassian,Jira Service Management,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+asana.asana,Asana,Asana,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+monday.monday_com,Monday,monday.com,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+zoom.meetings,Zoom,Meetings,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+zoom.contact_center,Zoom,Contact Center,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+twilio.communications,Twilio,Communications,streaming,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+twilio.segment_engage,Twilio,Segment Engage,streaming,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sendgrid.email,SendGrid,Email,reverse_etl,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+braze.braze,Braze,Braze,cdp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iterable.iterable,Iterable,Iterable,cdp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+klaviyo.klaviyo,Klaviyo,Klaviyo,cdp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+hubspot.crm,HubSpot,CRM,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+hubspot.marketing_hub,HubSpot,Marketing Hub,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+hubspot.sales_hub,HubSpot,Sales Hub,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+hubspot.service_hub,HubSpot,Service Hub,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+hubspot.cms_hub,HubSpot,CMS Hub,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+hubspot.operations_hub,HubSpot,Operations Hub,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+zendesk.explore,Zendesk,Explore,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+coupa.business_spend,Coupa,Business Spend,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ariba.network,Ariba,Network,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+basware.ap_automation,Basware,AP Automation,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+blackline.account_reconciliations,BlackLine,Account Reconciliations,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+blackline.transaction_matching,BlackLine,Transaction Matching,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+workiva.wdesk,Workiva,Wdesk,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+anaplan.anaplan,Anaplan,Anaplan,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+onestream.xf,OneStream,XF,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+board.board,Board,Board,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pigment.pigment,Pigment,Pigment,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+visier.people,Visier,People,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+eightfold.talent_intelligence,Eightfold,Talent Intelligence,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+phenom.talent_experience,Phenom,Talent Experience,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+cornerstone.ondemand,Cornerstone,OnDemand,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+dayforce.dayforce,Dayforce,Dayforce,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ceridian.dayforce_hcm,Ceridian,Dayforce HCM,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+paychex.flex,Paychex,Flex,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+gusto.gusto,Gusto,Gusto,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+rippling.rippling,Rippling,Rippling,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+deel.deel,Deel,Deel,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+remote.remote,Remote,Remote,hcm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+docusign.esignature,DocuSign,eSignature,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+docusign.clm,DocuSign,CLM,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ironclad.ironclad,Ironclad,Ironclad,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+icertis.contract_intelligence,Icertis,Contract Intelligence,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pega.platform,Pega,Platform,ai_framework,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pega.customer_decision_hub,Pega,Customer Decision Hub,ai_framework,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pega.customer_service,Pega,Customer Service,ai_framework,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+appian.appian,Appian,Appian,ai_framework,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+uipath.orchestrator,UiPath,Orchestrator,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+uipath.automation_cloud,UiPath,Automation Cloud,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+automation_anywhere.control_room,Automation Anywhere,Control Room,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+blue_prism.blue_prism,Blue Prism,Blue Prism,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+celonis.process_mining,Celonis,Process Mining,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+celonis.execution_management,Celonis,Execution Management,ml_platform,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+alteryx.designer,Alteryx,Designer,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+alteryx.server,Alteryx,Server,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+alteryx.analytics_cloud,Alteryx,Analytics Cloud,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+trifacta.cloud_dataprep,Trifacta,Cloud Dataprep,data_quality,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+talend.data_quality,Talend,Data Quality,data_quality,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+ataccama.one,Ataccama,ONE,data_quality,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+profisee.profisee,Profisee,Profisee,mdm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+reltio.reltio,Reltio,Reltio,mdm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+semarchy.xdm,Semarchy,xDM,mdm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+stibo.step,Stibo,STEP,mdm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+contentsquare.contentsquare,Contentsquare,Contentsquare,bi,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+amplitude.amplitude,Amplitude,Amplitude,bi,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+mixpanel.mixpanel,Mixpanel,Mixpanel,bi,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+heap.heap,Heap,Heap,cdp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pendo.pendo,Pendo,Pendo,bi,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+gainsight.cs,Gainsight,CS,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+totango.totango,Totango,Totango,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+clari.clari,Clari,Clari,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+gong.gong,Gong,Gong,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+outreach.outreach,Outreach,Outreach,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+salesloft.salesloft,Salesloft,Salesloft,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+marketo.engagement,Marketo,Engagement,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+eloqua.eloqua,Eloqua,Eloqua,crm,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+braze.currents,Braze,Currents,reverse_etl,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+airship.airship,Airship,Airship,cdp,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+onesignal.onesignal,OneSignal,OneSignal,reverse_etl,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+kafka.apache_kafka_connect,Kafka,Apache Kafka Connect,streaming,kafka,none,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+redpanda.redpanda,Redpanda,Redpanda,streaming,kafka,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+rabbitmq.rabbitmq,RabbitMQ,RabbitMQ,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+nats.nats,NATS,NATS,streaming,sdk,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+nats.jetstream,NATS,JetStream,streaming,sdk,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+solace.pubsub,Solace,PubSub+,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+tibco.businessworks,TIBCO,BusinessWorks,etl,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+tibco.ems,TIBCO,EMS,etl,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+tibco.spotfire,TIBCO,Spotfire,etl,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+software_ag.webmethods,Software AG,webMethods,etl,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+software_ag.aris,Software AG,ARIS,etl,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+software_ag.alfabet,Software AG,Alfabet,etl,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+axway.amplify,Axway,Amplify,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+kong.gateway,Kong,Gateway,etl,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+kong.konnect,Kong,Konnect,etl,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+apigee.apigee,Apigee,Apigee,etl,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+mulesoft.api_manager,MuleSoft,API Manager,governance,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+postman.postman,Postman,Postman,governance,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+snyk.snyk,Snyk,Snyk,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+wiz.wiz,Wiz,Wiz,observability,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+orca.orca,Orca,Orca,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+qualys.vmdr,Qualys,VMDR,observability,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+tenable.io,Tenable,io,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+tenable.sc,Tenable,sc,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+rapid7.insightvm,Rapid7,InsightVM,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+rapid7.insightidr,Rapid7,InsightIDR,observability,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+snyk.snyk_code,Snyk,Snyk Code,governance,rest,api_key,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_business_partner,SAP S/4,API Business Partner,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_journal_entry,SAP S/4,API Journal Entry,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_sales_order,SAP S/4,API Sales Order,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_billing_document,SAP S/4,API Billing Document,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_purchase_order,SAP S/4,API Purchase Order,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_supplier_invoice,SAP S/4,API Supplier Invoice,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_product,SAP S/4,API Product,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_outbound_delivery,SAP S/4,API Outbound Delivery,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_inbound_delivery,SAP S/4,API Inbound Delivery,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_production_order,SAP S/4,API Production Order,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_planned_order,SAP S/4,API Planned Order,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_quality_notification,SAP S/4,API Quality Notification,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_maintenance_order,SAP S/4,API Maintenance Order,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_equipment,SAP S/4,API Equipment,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_functional_location,SAP S/4,API Functional Location,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_cost_center,SAP S/4,API Cost Center,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_profit_center,SAP S/4,API Profit Center,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_gl_account,SAP S/4,API GL Account,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_asset,SAP S/4,API Asset,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_bank,SAP S/4,API Bank,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_payment_advice,SAP S/4,API Payment Advice,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_customer_return,SAP S/4,API Customer Return,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_debit_memo,SAP S/4,API Debit Memo,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_credit_memo,SAP S/4,API Credit Memo,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_pricing_condition,SAP S/4,API Pricing Condition,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_sales_quotation,SAP S/4,API Sales Quotation,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_sales_contract,SAP S/4,API Sales Contract,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_purchase_requisition,SAP S/4,API Purchase Requisition,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_purchase_contract,SAP S/4,API Purchase Contract,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_supplier_quotation,SAP S/4,API Supplier Quotation,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_physical_inventory,SAP S/4,API Physical Inventory,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_material_document,SAP S/4,API Material Document,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_batch,SAP S/4,API Batch,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_inspection_lot,SAP S/4,API Inspection Lot,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_defect,SAP S/4,API Defect,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_service_order,SAP S/4,API Service Order,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_service_confirmation,SAP S/4,API Service Confirmation,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_workforce_timesheet,SAP S/4,API Workforce Timesheet,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_workforce_person,SAP S/4,API Workforce Person,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_commercial_project,SAP S/4,API Commercial Project,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_wbs_element,SAP S/4,API WBS Element,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_settlement,SAP S/4,API Settlement,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_allocation,SAP S/4,API Allocation,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_universal_journal,SAP S/4,API Universal Journal,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_cash_flow,SAP S/4,API Cash Flow,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_treasury_position,SAP S/4,API Treasury Position,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_hedge_accounting,SAP S/4,API Hedge Accounting,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_lease_contract,SAP S/4,API Lease Contract,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_real_estate_contract,SAP S/4,API Real Estate Contract,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_billing_plan,SAP S/4,API Billing Plan,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_subscription_contract,SAP S/4,API Subscription Contract,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_provider_contract,SAP S/4,API Provider Contract,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_convergent_invoicing,SAP S/4,API Convergent Invoicing,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_dispute_case,SAP S/4,API Dispute Case,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_collections_worklist,SAP S/4,API Collections Worklist,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_credit_management,SAP S/4,API Credit Management,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_trade_finance,SAP S/4,API Trade Finance,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_letter_of_credit,SAP S/4,API Letter of Credit,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_bank_guarantee,SAP S/4,API Bank Guarantee,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_commodity_contract,SAP S/4,API Commodity Contract,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_agriculture_contract,SAP S/4,API Agriculture Contract,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_utility_contract,SAP S/4,API Utility Contract,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_meter_reading,SAP S/4,API Meter Reading,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_billing_simulation,SAP S/4,API Billing Simulation,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_public_sector_fund,SAP S/4,API Public Sector Fund,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_grant,SAP S/4,API Grant,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_earmarked_funds,SAP S/4,API Earmarked Funds,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_budget_document,SAP S/4,API Budget Document,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_travel_request,SAP S/4,API Travel Request,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_concur_posting,SAP S/4,API Concur Posting,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_ariba_requisition,SAP S/4,API Ariba Requisition,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_fieldglass_timesheet,SAP S/4,API Fieldglass Timesheet,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_successfactors_replication,SAP S/4,API SuccessFactors Replication,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_idoc_orders,SAP S/4,API IDoc ORDERS,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_idoc_invoic,SAP S/4,API IDoc INVOIC,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_idoc_desadv,SAP S/4,API IDoc DESADV,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_idoc_matmas,SAP S/4,API IDoc MATMAS,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_idoc_debmas,SAP S/4,API IDoc DEBMAS,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_idoc_cremas,SAP S/4,API IDoc CREMAS,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_idoc_wmmbxy,SAP S/4,API IDoc WMMBXY,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_bapi_goods_movement,SAP S/4,API BAPI Goods Movement,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_bapi_acc_document,SAP S/4,API BAPI Acc Document,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_bapi_sales_order,SAP S/4,API BAPI Sales Order,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_bapi_po_create,SAP S/4,API BAPI PO Create,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_bapi_material_save,SAP S/4,API BAPI Material Save,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_soap_credit_commitment,SAP S/4,API SOAP Credit Commitment,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_soap_available_to_promise,SAP S/4,API SOAP Available to Promise,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_soap_pricing,SAP S/4,API SOAP Pricing,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_event_sales_order_changed,SAP S/4,API Event Sales Order Changed,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_event_journal_entry_posted,SAP S/4,API Event Journal Entry Posted,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_event_delivery_created,SAP S/4,API Event Delivery Created,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_event_invoice_posted,SAP S/4,API Event Invoice Posted,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_event_quality_decision,SAP S/4,API Event Quality Decision,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+sap_s_4.api_event_equipment_installed,SAP S/4,API Event Equipment Installed,erp,odata,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.patient,Epic Clarity,PATIENT,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.pat_enc,Epic Clarity,PAT_ENC,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.order_proc,Epic Clarity,ORDER_PROC,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.order_med,Epic Clarity,ORDER_MED,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.clarity_dep,Epic Clarity,CLARITY_DEP,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.clarity_ser,Epic Clarity,CLARITY_SER,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.clarity_emp,Epic Clarity,CLARITY_EMP,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.hsp_account,Epic Clarity,HSP_ACCOUNT,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.hsp_transactions,Epic Clarity,HSP_TRANSACTIONS,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.arpb_transactions,Epic Clarity,ARPB_TRANSACTIONS,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.coverage,Epic Clarity,COVERAGE,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.pat_enc_dx,Epic Clarity,PAT_ENC_DX,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.problem_list,Epic Clarity,PROBLEM_LIST,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.allergy,Epic Clarity,ALLERGY,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.mar_admin_info,Epic Clarity,MAR_ADMIN_INFO,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.ip_flwsht_meas,Epic Clarity,IP_FLWSHT_MEAS,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.lab_result,Epic Clarity,LAB_RESULT,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.img_study,Epic Clarity,IMG_STUDY,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.or_log,Epic Clarity,OR_LOG,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.or_case,Epic Clarity,OR_CASE,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.ed_iev,Epic Clarity,ED_IEV,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.billing_account,Epic Clarity,BILLING_ACCOUNT,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.clm_claim,Epic Clarity,CLM_CLAIM,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.referral,Epic Clarity,REFERRAL,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.appt,Epic Clarity,APPT,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.zc_specialty,Epic Clarity,ZC_SPECIALTY,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.identity_id,Epic Clarity,IDENTITY_ID,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.hno_info,Epic Clarity,HNO_INFO,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.order_results,Epic Clarity,ORDER_RESULTS,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+epic_clarity.flowsheet,Epic Clarity,FLOWSHEET,data_warehouse,jdbc,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.patient,FHIR,Patient,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.encounter,FHIR,Encounter,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.observation,FHIR,Observation,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.condition,FHIR,Condition,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.procedure,FHIR,Procedure,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.medicationrequest,FHIR,MedicationRequest,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.medicationadministration,FHIR,MedicationAdministration,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.allergyintolerance,FHIR,AllergyIntolerance,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.diagnosticreport,FHIR,DiagnosticReport,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.imagingstudy,FHIR,ImagingStudy,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.servicerequest,FHIR,ServiceRequest,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.appointment,FHIR,Appointment,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.schedule,FHIR,Schedule,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.coverage,FHIR,Coverage,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.claim,FHIR,Claim,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.explanationofbenefit,FHIR,ExplanationOfBenefit,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.careplan,FHIR,CarePlan,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.goal,FHIR,Goal,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.immunization,FHIR,Immunization,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.device,FHIR,Device,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.practitioner,FHIR,Practitioner,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.organization,FHIR,Organization,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.location,FHIR,Location,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.specimen,FHIR,Specimen,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.documentreference,FHIR,DocumentReference,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.questionnaireresponse,FHIR,QuestionnaireResponse,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.careteam,FHIR,CareTeam,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.relatedperson,FHIR,RelatedPerson,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.adverseevent,FHIR,AdverseEvent,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+fhir.detectedissue,FHIR,DetectedIssue,erp,rest,oauth2,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.pain_001,ISO 20022,pain.001,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.pain_002,ISO 20022,pain.002,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.pacs_008,ISO 20022,pacs.008,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.pacs_009,ISO 20022,pacs.009,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.pacs_002,ISO 20022,pacs.002,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.pacs_004,ISO 20022,pacs.004,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.camt_052,ISO 20022,camt.052,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.camt_053,ISO 20022,camt.053,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.camt_054,ISO 20022,camt.054,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.camt_056,ISO 20022,camt.056,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.camt_029,ISO 20022,camt.029,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.camt_026,ISO 20022,camt.026,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.setr_012,ISO 20022,setr.012,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.setr_016,ISO 20022,setr.016,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.sese_023,ISO 20022,sese.023,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.sese_024,ISO 20022,sese.024,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.semt_002,ISO 20022,semt.002,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.seev_031,ISO 20022,seev.031,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.seev_033,ISO 20022,seev.033,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.colr_003,ISO 20022,colr.003,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.fxtr_014,ISO 20022,fxtr.014,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.tsmt_009,ISO 20022,tsmt.009,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.auth_001,ISO 20022,auth.001,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.admi_004,ISO 20022,admi.004,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.head_001,ISO 20022,head.001,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+iso_20022.reda_002,ISO 20022,reda.002,streaming,sdk,certificate,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.boiler_efficiency,PI AF,Boiler Efficiency,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.compressor_health,PI AF,Compressor Health,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.pump_curve,PI AF,Pump Curve,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.heat_exchanger_fouling,PI AF,Heat Exchanger Fouling,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.reactor_temperature,PI AF,Reactor Temperature,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.distillation_overhead,PI AF,Distillation Overhead,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.tank_inventory,PI AF,Tank Inventory,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.flare_flow,PI AF,Flare Flow,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.steam_header,PI AF,Steam Header,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.cooling_tower,PI AF,Cooling Tower,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.extruder_torque,PI AF,Extruder Torque,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.furnace_draft,PI AF,Furnace Draft,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.kiln_shell,PI AF,Kiln Shell,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.turbine_vibration,PI AF,Turbine Vibration,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.generator_load,PI AF,Generator Load,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.conveyor_current,PI AF,Conveyor Current,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.crusher_power,PI AF,Crusher Power,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.mill_charge,PI AF,Mill Charge,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.batch_yield,PI AF,Batch Yield,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.cip_conductivity,PI AF,CIP Conductivity,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.clean_room_pressure,PI AF,Clean Room Pressure,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.hvac_valve,PI AF,HVAC Valve,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.chiller_load,PI AF,Chiller Load,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.energy_meter,PI AF,Energy Meter,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.water_quality,PI AF,Water Quality,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.emissions_stack,PI AF,Emissions Stack,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.safety_interlock,PI AF,Safety Interlock,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.line_oee,PI AF,Line OEE,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.changeover_clock,PI AF,Changeover Clock,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT
+pi_af.spc_chart,PI AF,SPC Chart,streaming,rest,basic,CATALOG_SPEC_NOT_LIVE_ENDPOINT

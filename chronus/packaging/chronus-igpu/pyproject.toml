@@ -64,7 +64,7 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/QuantumPhiRedux/PhiMiner"
+Homepage = "https://github.com/PhiEnterprise1/EuclidPhiEnterprise"
 
 [tool.setuptools]
 include-package-data = false

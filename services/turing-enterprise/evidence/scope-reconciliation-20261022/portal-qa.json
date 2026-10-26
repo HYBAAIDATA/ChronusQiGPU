@@ -1,0 +1,74 @@
+[
+  {
+    "surface": "workspace",
+    "width": 1280,
+    "state": "default",
+    "errors": [],
+    "overflow": false,
+    "status": ""
+  },
+  {
+    "surface": "admin",
+    "width": 1280,
+    "state": "default",
+    "errors": [],
+    "overflow": false,
+    "status": ""
+  },
+  {
+    "surface": "admin",
+    "width": 1280,
+    "state": "Projects and capacity",
+    "overflow": false
+  },
+  {
+    "surface": "admin",
+    "width": 1280,
+    "state": "Operational usage",
+    "overflow": false
+  },
+  {
+    "surface": "ops",
+    "width": 1280,
+    "state": "default",
+    "errors": [],
+    "overflow": false,
+    "status": ""
+  },
+  {
+    "surface": "workspace",
+    "width": 390,
+    "state": "default",
+    "errors": [],
+    "overflow": false,
+    "status": ""
+  },
+  {
+    "surface": "admin",
+    "width": 390,
+    "state": "default",
+    "errors": [],
+    "overflow": false,
+    "status": ""
+  },
+  {
+    "surface": "admin",
+    "width": 390,
+    "state": "Projects and capacity",
+    "overflow": false
+  },
+  {
+    "surface": "admin",
+    "width": 390,
+    "state": "Operational usage",
+    "overflow": false
+  },
+  {
+    "surface": "ops",
+    "width": 390,
+    "state": "default",
+    "errors": [],
+    "overflow": false,
+    "status": ""
+  }
+]

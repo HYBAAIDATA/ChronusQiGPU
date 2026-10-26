@@ -4,8 +4,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-import test_canonical_bridge as fixtures
-from test_canonical_bridge import manifest
+from tests.intelligence_consolidation import test_canonical_bridge as fixtures
+from tests.intelligence_consolidation.test_canonical_bridge import manifest
 from Intelligence.capability_fabric import CapabilityRegistry, ExecutionProfile, _digest_data
 from al_haras import ALHaras, GuardianPolicy, HashChainAudit
 
@@ -151,7 +151,10 @@ class CanonicalCustodyIntegration(unittest.TestCase):
             self.review({"review_id": "approved"})
         self.source.unlink()
         outside = self.root/"outside.py"; outside.write_text("value = 3\n")
-        self.source.symlink_to(outside)
+        try:
+            self.source.symlink_to(outside)
+        except OSError:
+            self.skipTest("Symlinks require privilege on Windows")
         with self.assertRaises((ValueError, OSError)):
             self.review({"review_id": "approved"})
         self.assertTrue(self.source.is_symlink())

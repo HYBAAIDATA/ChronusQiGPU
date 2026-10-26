@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hyba-data
+  labels:
+    app: hyba-data
+    version: "9.0.0"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hyba-data
+  template:
+    metadata:
+      labels:
+        app: hyba-data
+        version: "9.0.0"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: hyba-data
+        image: hyba/data:9.0.0
+        ports:
+        - containerPort: 8080
+          name: api
+        - containerPort: 9090
+          name: metrics
+        envFrom:
+        - configMapRef:
+            name: hyba-data-config
+        resources:
+          requests:
+            cpu: "2"
+            memory: 4Gi
+          limits:
+            cpu: "8"
+            memory: 16Gi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+        - name: data
+          mountPath: /home/hyba/data
+        - name: config
+          mountPath: /etc/hyba
+          readOnly: true
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: hyba-data-pvc
+      - name: config
+        configMap:
+          name: hyba-data-config
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hyba-data-pvc
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: fast-ssd

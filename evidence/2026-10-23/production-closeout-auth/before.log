@@ -1,0 +1,207 @@
+
+ RUN  v5.0.5 /data/hyba-production-closeout
+
+ ✓ src/lib/__tests__/api.test.ts > apiUrl > keeps absolute URLs unchanged 3ms
+ ✓ src/lib/__tests__/api.test.ts > apiUrl > normalizes a relative control-plane path 0ms
+ ✓ src/lib/__tests__/api.test.ts > apiUrl > accepts an empty path without inventing a route 0ms
+ ✓ src/lib/__tests__/api.test.ts > apiFetch > fetches a relative route with copied headers 7ms
+ ✓ src/lib/__tests__/api.test.ts > apiFetch > propagates transport errors instead of fabricating a response 1ms
+ ✓ src/lib/__tests__/api.test.ts > apiFetch > uses the shared offline factories without Firebase or a real database 1ms
+ ✓ src/lib/__tests__/api.test.ts > HttpOnly operator session migration > clears stale operator bearers rather than storing new secrets 1ms
+ ✓ src/lib/__tests__/api.test.ts > HttpOnly operator session migration > uses cookies without an operator bearer on mutations 1ms
+ ✓ src/lib/__tests__/api.test.ts > HttpOnly operator session migration > returns 401 without retrying or prompting for a JS-readable bearer 1ms
+ ✓ src/lib/__tests__/api.test.ts > subscription boundary > sends the subscription triple and injects observation on privileged POSTs 1ms
+ ✓ src/lib/__tests__/api.test.ts > subscription boundary > keeps subscription headers on privileged GETs without a body 1ms
+ ✓ src/lib/__tests__/api.test.ts > subscription boundary > asks for creds on TENANT_AND_ACTOR_REQUIRED, retries, keeps them 2ms
+ ✓ src/lib/__tests__/api.test.ts > subscription boundary > returns the denial when the operator cancels the cred prompt 1ms
+ ✓ src/lib/__tests__/api.test.ts > subscription boundary > does not re-prompt on every denied poll after declining 1ms
+ ✓ src/lib/__tests__/api.test.ts > console read boundaries > carries HttpOnly sessions on protected console reads 1ms
+ ✓ src/lib/__tests__/api.test.ts > console read boundaries > keeps CEO and guardian subscription credentials independent 1ms
+ ✓ src/lib/__tests__/api.test.ts > console read boundaries > never opens credential prompts or retries denied background polls 1ms
+ × src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > renders only a backend-confirmed verdict 32ms
+   → Cannot read properties of null (reading 'ready_to_mine')
+ × src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > does not read any mining endpoint without CEO role 5ms
+   → expected "vi.fn()" to be called 1 times, but got 0 times
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > clears stale green on status HTTP 401 4ms
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > clears stale green on status HTTP 403 3ms
+ × src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > clears stale green on status HTTP 500 7ms
+   → expected false to be true // Object.is equality
+ × src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > clears stale green on status HTTP 503 3ms
+   → expected false to be true // Object.is equality
+ × src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > clears stale green on transport failure 3ms
+   → expected false to be true // Object.is equality
+ × src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > hides all snapshots on the 30s role revocation check 5ms
+   → expected 'trusted_control_identity_unavailable' to be 'ceo_role_required' // Object.is equality
+ ✓ src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > rejects late in-flight data after sign-out 6ms
+ × src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > aborts a hung request rather than keeping a green snapshot forever 4ms
+   → expected false to be true // Object.is equality
+ ✓ src/lib/__tests__/access.test.ts > miningDashboardAccess > fails closed when no trusted control credentials are present 4ms
+ × src/lib/__tests__/access.test.ts > miningDashboardAccess > allows only a server-confirmed CEO bound to the same principal 9ms
+   → expected { allowed: false, …(3) } to deeply equal { allowed: true, …(3) }
+ × src/lib/__tests__/access.test.ts > miningDashboardAccess > denies an authenticated operator and a mismatched CEO identity 3ms
+   → expected 'trusted_control_identity_unavailable' to be 'ceo_role_required' // Object.is equality
+ × src/lib/__tests__/access.test.ts > miningDashboardAccess > treats a missing control entitlement endpoint as unavailable 1ms
+   → expected 'trusted_control_identity_unavailable' to be 'control_session_entitlement_unavailab…' // Object.is equality
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 10 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/__tests__/access.test.ts > miningDashboardAccess > allows only a server-confirmed CEO bound to the same principal
+AssertionError: expected { allowed: false, …(3) } to deeply equal { allowed: true, …(3) }
+
+- Expected
++ Received
+
+  {
+-   "allowed": true,
++   "allowed": false,
+    "principalId": "andre",
+-   "reason": "authorized",
+-   "role": "ceo",
++   "reason": "trusted_control_identity_unavailable",
++   "role": null,
+  }
+
+ ❯ src/lib/__tests__/access.test.ts:36:20
+     34|     });
+     35|     const access = await miningDashboardAccess(fetchMock as typeof fet…
+     36|     expect(access).toEqual({
+       |                    ^
+     37|       allowed: true,
+     38|       principalId: "andre",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/10]⎯
+
+ FAIL  src/lib/__tests__/access.test.ts > miningDashboardAccess > denies an authenticated operator and a mismatched CEO identity
+AssertionError: expected 'trusted_control_identity_unavailable' to be 'ceo_role_required' // Object.is equality
+
+Expected: "ceo_role_required"
+Received: "trusted_control_identity_unavailable"
+
+ ❯ src/lib/__tests__/access.test.ts:53:76
+     51|       }),
+     52|     );
+     53|     expect((await miningDashboardAccess(operator as typeof fetch)).rea…
+       |                                                                            ^
+     54|       "ceo_role_required",
+     55|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/10]⎯
+
+ FAIL  src/lib/__tests__/access.test.ts > miningDashboardAccess > treats a missing control entitlement endpoint as unavailable
+AssertionError: expected 'trusted_control_identity_unavailable' to be 'control_session_entitlement_unavailab…' // Object.is equality
+
+Expected: "control_session_entitlement_unavailable"
+Received: "trusted_control_identity_unavailable"
+
+ ❯ src/lib/__tests__/access.test.ts:73:27
+     71|     const access = await miningDashboardAccess(fetchMock as typeof fet…
+     72|     expect(access.allowed).toBe(false);
+     73|     expect(access.reason).toBe("control_session_entitlement_unavailabl…
+       |                           ^
+     74|   });
+     75| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/10]⎯
+
+ FAIL  src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > renders only a backend-confirmed verdict
+TypeError: Cannot read properties of null (reading 'ready_to_mine')
+ ❯ src/lib/__tests__/console-lifecycle.test.tsx:31:20
+     29|   it("renders only a backend-confirmed verdict", async()=>{
+     30|     const mock=backend();vi.stubGlobal("fetch",mock);await mount();
+     31|     expect(state().status.ready_to_mine.ready).toBe(true);
+       |                    ^
+     32|     expect(mock.mock.calls.filter(c=>String(c[0]).endsWith("mla1517/st…
+     33|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/10]⎯
+
+ FAIL  src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > does not read any mining endpoint without CEO role
+AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times
+ ❯ src/lib/__tests__/console-lifecycle.test.tsx:36:95
+     34|   it("does not read any mining endpoint without CEO role", async()=>{
+     35|     const mock=backend({role:"operator"});vi.stubGlobal("fetch",mock);…
+     36|     expect(state().access.allowed).toBe(false);expect(state().status).…
+       |                                                                                               ^
+     37|   });
+     38|   it.each([401,403,500,503])("clears stale green on status HTTP %i",as…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/10]⎯
+
+ FAIL  src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > clears stale green on status HTTP 500
+ FAIL  src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > clears stale green on status HTTP 503
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/lib/__tests__/console-lifecycle.test.tsx:42:61
+     40|     options.status=code;await act(async()=>{await vi.advanceTimersByTi…
+     41|     expect(state().status).toBeNull();expect(state().evidence).toBeNul…
+     42|     expect(code<500?state().access.allowed:state().offline).toBe(code>…
+       |                                                             ^
+     43|   });
+     44|   it("clears stale green on transport failure",async()=>{
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/10]⎯
+
+ FAIL  src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > clears stale green on transport failure
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/lib/__tests__/console-lifecycle.test.tsx:48:29
+     46|     mock.mockImplementation(async()=>{throw new Error("backend stopped…
+     47|     await act(async()=>{await vi.advanceTimersByTimeAsync(5000);});awa…
+     48|     expect(state().offline).toBe(true);expect(state().status).toBeNull…
+       |                             ^
+     49|   });
+     50|   it("hides all snapshots on the 30s role revocation check",async()=>{
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/10]⎯
+
+ FAIL  src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > hides all snapshots on the 30s role revocation check
+AssertionError: expected 'trusted_control_identity_unavailable' to be 'ceo_role_required' // Object.is equality
+
+Expected: "ceo_role_required"
+Received: "trusted_control_identity_unavailable"
+
+ ❯ src/lib/__tests__/console-lifecycle.test.tsx:53:35
+     51|     const options={role:"ceo"};vi.stubGlobal("fetch",backend(options))…
+     52|     await act(async()=>{await vi.advanceTimersByTimeAsync(30000);});aw…
+     53|     expect(state().access.reason).toBe("ceo_role_required");expect(sta…
+       |                                   ^
+     54|   });
+     55|   it("rejects late in-flight data after sign-out",async()=>{
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/10]⎯
+
+ FAIL  src/lib/__tests__/console-lifecycle.test.tsx > fail-closed console lifecycle > aborts a hung request rather than keeping a green snapshot forever
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/lib/__tests__/console-lifecycle.test.tsx:66:63
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/10]⎯
+
+
+ Test Files  2 failed | 1 passed (3)
+      Tests  10 failed | 21 passed (31)
+   Start at  18:36:04
+   Duration  2.60s (environment 85%, transform 6%, tests 5%, import 3%, worker 1%)
+
+    Isolate  3 workers spawned · ~720ms startup each (spawn + environment, per file)
+             at least ~1.44s faster with isolate: false — reuses workers across files instead of one per file
+

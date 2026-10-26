@@ -1,0 +1,35 @@
+# Hardware-free local qualification. This is a complete profile, not an
+# override of docker-compose.yml (which declares /dev/uio0 passthrough).
+services:
+  pythia:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:${PYTHIA_PORT:-3000}:3000"
+    environment:
+      PYTHIA_HOST: 0.0.0.0
+      PYTHIA_PORT: 3000
+      PYTHIA_WEB_ROOT: /app/dist/public
+      EUCLID_ADMIN_API_KEY: "${EUCLID_ADMIN_API_KEY:?set a strong local admin key}"
+      PYTHIA_POOLS: braiins,viabtc
+      PYTHIA_POOL_PROFILE: braiins
+      MLA1517_STRATUM_USER: "${MLA1517_BRAIINS_USER:?set the private Braiins worker identity}"
+      MLA1517_STRATUM_PASSWORD: "${MLA1517_BRAIINS_PASSWORD:?set the private Braiins worker password}"
+      MLA1517_VIABTC_USER: "${MLA1517_VIABTC_USER:?set the private ViaBTC worker identity}"
+      MLA1517_VIABTC_PASSWORD: "${MLA1517_VIABTC_PASSWORD:?set the private ViaBTC worker password}"
+      PYTHIA_IDENTITY_HMAC_SECRET: "${PYTHIA_IDENTITY_HMAC_SECRET:?set a private 32-byte hex heartbeat key}"
+      PYTHIA_EXECUTION_DEVICE: chronus
+      PYTHIA_BACKEND_ORDER: chronus
+      HYBA_REQUIRE_HYBA: "0"
+      PYTHIA_SOLVER_ARMS: "1"
+      PYTHIA_RUNTIME_CONFIG: /app/data/runtime_config.json
+      CHRONUS_VIGPU_STORE: /app/data/chronus-local
+      # No live authority is provisioned by this qualification profile.
+      PYTHIA_M3_REQUIRED: "0"
+    volumes:
+      - pythia_local:/app/data
+    init: true
+    stop_grace_period: 30s
+volumes:
+  pythia_local:

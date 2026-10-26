@@ -1,7 +1,7 @@
 from fractions import Fraction as F
 import pytest
 from chronus.agent._contracts import ContractError
-from conftest import trial
+from tests.frontier_agent.conftest import trial
 from chronus.agent.reliability import measure_reliability, lower_success_bound
 
 

@@ -47,6 +47,38 @@ except SovereignConfigError as _exc:
 
 from control_api import main  # noqa: E402
 
+import asyncio
+import concurrent.futures
+from typing import Any, Callable
+
+_ML_EXECUTOR: concurrent.futures.ThreadPoolExecutor | None = None
+
+
+def get_ml_executor(max_workers: int = 4) -> concurrent.futures.ThreadPoolExecutor:
+    """Return a shared ThreadPoolExecutor for offloading CPU-heavy ML tree/tensor operations."""
+    global _ML_EXECUTOR
+    if _ML_EXECUTOR is None:
+        _ML_EXECUTOR = concurrent.futures.ThreadPoolExecutor(
+            max_workers=max_workers,
+            thread_name_prefix="pythia-ml-worker",
+        )
+    return _ML_EXECUTOR
+
+
+async def evaluate_tree_channels_async(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+    """Offloads heavy tree/channel evaluation to the asynchronous ML thread executor,
+    preventing event loop lag and eliminating slow-heartbeat warnings.
+    """
+    loop = asyncio.get_running_loop()
+    executor = get_ml_executor()
+    if kwargs:
+        import functools
+
+        p_fn = functools.partial(fn, *args, **kwargs)
+        return await loop.run_in_executor(executor, p_fn)
+    return await loop.run_in_executor(executor, fn, *args)
+
 
 if __name__ == "__main__":
     main()
+

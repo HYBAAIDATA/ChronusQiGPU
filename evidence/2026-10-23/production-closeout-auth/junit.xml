@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="53" failures="0" errors="0" time="0.235002754">
+    <testsuite name="src/components/__tests__/ControlSession.journey.test.tsx" timestamp="2026-10-23T18:39:57.215Z" hostname="b5818738-e0e" tests="2" failures="0" errors="0" skipped="0" time="0.09751198">
+        <testcase classname="src/components/__tests__/ControlSession.journey.test.tsx" name="rendered cookie-session journey (transport fixture, not deployed proof) &gt; signs in, loads authorized data, and signs out without a JS operator key" time="0.080380643">
+        </testcase>
+        <testcase classname="src/components/__tests__/ControlSession.journey.test.tsx" name="rendered cookie-session journey (transport fixture, not deployed proof) &gt; surfaces a refused login and clears the password without fetching mining status" time="0.015355244">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/lib/__tests__/access.test.ts" timestamp="2026-10-23T18:39:57.216Z" hostname="b5818738-e0e" tests="20" failures="0" errors="0" skipped="0" time="0.016914931">
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; checks the server with cookies and no JavaScript-readable credential" time="0.007197856">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; does not treat stale browser identity as authority or reject the actual cookie identity" time="0.001025375">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; refuses noncanonical/unprivileged role operator" time="0.000628733">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; refuses noncanonical/unprivileged role analyst" time="0.000502783">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; refuses noncanonical/unprivileged role auditor" time="0.000464564">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; refuses noncanonical/unprivileged role founder_ceo" time="0.000418448">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; refuses noncanonical/unprivileged role CEO" time="0.000420611">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; refuses malformed session null" time="0.000486916">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; refuses malformed session undefined" time="0.000492504">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; refuses malformed session {}" time="0.000566321">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; refuses malformed session {&quot;principal_id&quot;:&quot;&quot;,&quot;role&quot;:&quot;ceo&quot;}" time="0.000365789">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; refuses malformed session {&quot;principal_id&quot;:&quot;  &quot;,&quot;role&quot;:&quot;ceo&quot;}" time="0.000292433">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; refuses malformed session {&quot;principal_id&quot;:123,&quot;role&quot;:&quot;ceo&quot;}" time="0.000238916">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; refuses malformed session {&quot;principal_id&quot;:&quot;owner&quot;,&quot;role&quot;:123}" time="0.000241396">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; fails closed on HTTP 401" time="0.00031039">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; fails closed on HTTP 403" time="0.000211844">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; fails closed on HTTP 500" time="0.00019617">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; fails closed on HTTP 503" time="0.000172431">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; reports a missing endpoint" time="0.000263566">
+        </testcase>
+        <testcase classname="src/lib/__tests__/access.test.ts" name="HttpOnly mining dashboard entitlement &gt; fails closed on a transport exception" time="0.00032193">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/lib/__tests__/api.test.ts" timestamp="2026-10-23T18:39:57.219Z" hostname="b5818738-e0e" tests="17" failures="0" errors="0" skipped="0" time="0.025476342">
+        <testcase classname="src/lib/__tests__/api.test.ts" name="apiUrl &gt; keeps absolute URLs unchanged" time="0.002803413">
+        </testcase>
+        <testcase classname="src/lib/__tests__/api.test.ts" name="apiUrl &gt; normalizes a relative control-plane path" time="0.000469262">
+        </testcase>
+        <testcase classname="src/lib/__tests__/api.test.ts" name="apiUrl &gt; accepts an empty path without inventing a route" time="0.000354868">
+        </testcase>
+        <testcase classname="src/lib/__tests__/api.test.ts" name="apiFetch &gt; fetches a relative route with copied headers" time="0.006570972">
+        </testcase>
+        <testcase classname="src/lib/__tests__/api.test.ts" name="apiFetch &gt; propagates transport errors instead of fabricating a response" time="0.001421934">
+        </testcase>
+        <testcase classname="src/lib/__tests__/api.test.ts" name="apiFetch &gt; uses the shared offline factories without Firebase or a real database" time="0.001257362">
+        </testcase>
+        <testcase classname="src/lib/__tests__/api.test.ts" name="HttpOnly operator session migration &gt; clears stale operator bearers rather than storing new secrets" time="0.000649458">
+        </testcase>
+        <testcase classname="src/lib/__tests__/api.test.ts" name="HttpOnly operator session migration &gt; uses cookies without an operator bearer on mutations" time="0.000746989">
+        </testcase>
+        <testcase classname="src/lib/__tests__/api.test.ts" name="HttpOnly operator session migration &gt; returns 401 without retrying or prompting for a JS-readable bearer" time="0.0010898">
+        </testcase>
+        <testcase classname="src/lib/__tests__/api.test.ts" name="subscription boundary &gt; sends the subscription triple and injects observation on privileged POSTs" time="0.001136845">
+        </testcase>
+        <testcase classname="src/lib/__tests__/api.test.ts" name="subscription boundary &gt; keeps subscription headers on privileged GETs without a body" time="0.000732876">
+        </testcase>
+        <testcase classname="src/lib/__tests__/api.test.ts" name="subscription boundary &gt; asks for creds on TENANT_AND_ACTOR_REQUIRED, retries, keeps them" time="0.002458447">
+        </testcase>
+        <testcase classname="src/lib/__tests__/api.test.ts" name="subscription boundary &gt; returns the denial when the operator cancels the cred prompt" time="0.000804632">
+        </testcase>
+        <testcase classname="src/lib/__tests__/api.test.ts" name="subscription boundary &gt; does not re-prompt on every denied poll after declining" time="0.000801948">
+        </testcase>
+        <testcase classname="src/lib/__tests__/api.test.ts" name="console read boundaries &gt; carries HttpOnly sessions on protected console reads" time="0.000820317">
+        </testcase>
+        <testcase classname="src/lib/__tests__/api.test.ts" name="console read boundaries &gt; keeps CEO and guardian subscription credentials independent" time="0.000677623">
+        </testcase>
+        <testcase classname="src/lib/__tests__/api.test.ts" name="console read boundaries &gt; never opens credential prompts or retries denied background polls" time="0.000529934">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/lib/__tests__/console-lifecycle.test.tsx" timestamp="2026-10-23T18:39:57.221Z" hostname="b5818738-e0e" tests="14" failures="0" errors="0" skipped="0" time="0.095099501">
+        <testcase classname="src/lib/__tests__/console-lifecycle.test.tsx" name="fail-closed console lifecycle &gt; renders only a backend-confirmed verdict" time="0.032725541">
+        </testcase>
+        <testcase classname="src/lib/__tests__/console-lifecycle.test.tsx" name="fail-closed console lifecycle &gt; does not read any mining endpoint without CEO role" time="0.003972175">
+        </testcase>
+        <testcase classname="src/lib/__tests__/console-lifecycle.test.tsx" name="fail-closed console lifecycle &gt; clears stale green on status HTTP 401" time="0.006197354">
+        </testcase>
+        <testcase classname="src/lib/__tests__/console-lifecycle.test.tsx" name="fail-closed console lifecycle &gt; clears stale green on status HTTP 403" time="0.004735465">
+        </testcase>
+        <testcase classname="src/lib/__tests__/console-lifecycle.test.tsx" name="fail-closed console lifecycle &gt; clears stale green on status HTTP 500" time="0.004155019">
+        </testcase>
+        <testcase classname="src/lib/__tests__/console-lifecycle.test.tsx" name="fail-closed console lifecycle &gt; clears stale green on status HTTP 503" time="0.004415896">
+        </testcase>
+        <testcase classname="src/lib/__tests__/console-lifecycle.test.tsx" name="fail-closed console lifecycle &gt; clears stale green on transport failure" time="0.004000307">
+        </testcase>
+        <testcase classname="src/lib/__tests__/console-lifecycle.test.tsx" name="fail-closed console lifecycle &gt; hides all snapshots on the 30s role revocation check" time="0.005865228">
+        </testcase>
+        <testcase classname="src/lib/__tests__/console-lifecycle.test.tsx" name="fail-closed console lifecycle &gt; rejects late in-flight data after sign-out" time="0.004426754">
+        </testcase>
+        <testcase classname="src/lib/__tests__/console-lifecycle.test.tsx" name="fail-closed console lifecycle &gt; aborts a hung request rather than keeping a green snapshot forever" time="0.004621909">
+        </testcase>
+        <testcase classname="src/lib/__tests__/console-lifecycle.test.tsx" name="fail-closed console lifecycle &gt; rechecks login when cookie identity changes but browser identity stays empty" time="0.003758215">
+        </testcase>
+        <testcase classname="src/lib/__tests__/console-lifecycle.test.tsx" name="fail-closed console lifecycle &gt; queues a fresh check after a session change during an in-flight check" time="0.003442272">
+        </testcase>
+        <testcase classname="src/lib/__tests__/console-lifecycle.test.tsx" name="fail-closed console lifecycle &gt; does not retain one CEO&apos;s snapshots when the server switches principal" time="0.00456821">
+        </testcase>
+        <testcase classname="src/lib/__tests__/console-lifecycle.test.tsx" name="fail-closed console lifecycle &gt; rejects old tenant evidence after an explicit subscription rebind" time="0.006217059">
+        </testcase>
+    </testsuite>
+</testsuites>

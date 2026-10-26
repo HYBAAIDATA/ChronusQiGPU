@@ -1,0 +1,154 @@
+FFFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+________ test_success_without_complete_receipt_is_rejected[receipt_id] _________
+
+field = 'receipt_id'
+
+    @pytest.mark.parametrize("field", ["receipt_id", "tenant_id", "payload_digest", "result_digest", "evidence_status", "receipt"])
+    def test_success_without_complete_receipt_is_rejected(field):
+        from types import SimpleNamespace
+        from toe.runtime import RuntimeResponse, RuntimeReceipt
+        receipt = RuntimeReceipt("r", "tenant-a", "predict", "a"*64, "b"*64, 0.0,
+                                 "test", "MEASURED", True, False)
+        response = RuntimeResponse(ok=True, tenant_id="tenant-a", operation="predict", receipt=receipt)
+        if field == "receipt":
+            response.receipt = None
+        else:
+            from dataclasses import replace
+            response.receipt = replace(receipt, **{field: ""})
+        runtime = SimpleNamespace(predict=lambda *args, **kwargs: response)
+        service = CIaaSService(runtime=runtime, api_key="x"*40)
+        service.register_tenant("tenant-a")
+        result, status = service.handle_request("predict", {"x": 1}, "tenant-a", "x"*40)
+>       assert status == 502 and result.error.code == "receipt_invalid"
+E       assert (200 == 502)
+
+tests/test_toe_http_closeout.py:88: AssertionError
+_________ test_success_without_complete_receipt_is_rejected[tenant_id] _________
+
+field = 'tenant_id'
+
+    @pytest.mark.parametrize("field", ["receipt_id", "tenant_id", "payload_digest", "result_digest", "evidence_status", "receipt"])
+    def test_success_without_complete_receipt_is_rejected(field):
+        from types import SimpleNamespace
+        from toe.runtime import RuntimeResponse, RuntimeReceipt
+        receipt = RuntimeReceipt("r", "tenant-a", "predict", "a"*64, "b"*64, 0.0,
+                                 "test", "MEASURED", True, False)
+        response = RuntimeResponse(ok=True, tenant_id="tenant-a", operation="predict", receipt=receipt)
+        if field == "receipt":
+            response.receipt = None
+        else:
+            from dataclasses import replace
+            response.receipt = replace(receipt, **{field: ""})
+        runtime = SimpleNamespace(predict=lambda *args, **kwargs: response)
+        service = CIaaSService(runtime=runtime, api_key="x"*40)
+        service.register_tenant("tenant-a")
+        result, status = service.handle_request("predict", {"x": 1}, "tenant-a", "x"*40)
+>       assert status == 502 and result.error.code == "receipt_invalid"
+E       assert (200 == 502)
+
+tests/test_toe_http_closeout.py:88: AssertionError
+______ test_success_without_complete_receipt_is_rejected[payload_digest] _______
+
+field = 'payload_digest'
+
+    @pytest.mark.parametrize("field", ["receipt_id", "tenant_id", "payload_digest", "result_digest", "evidence_status", "receipt"])
+    def test_success_without_complete_receipt_is_rejected(field):
+        from types import SimpleNamespace
+        from toe.runtime import RuntimeResponse, RuntimeReceipt
+        receipt = RuntimeReceipt("r", "tenant-a", "predict", "a"*64, "b"*64, 0.0,
+                                 "test", "MEASURED", True, False)
+        response = RuntimeResponse(ok=True, tenant_id="tenant-a", operation="predict", receipt=receipt)
+        if field == "receipt":
+            response.receipt = None
+        else:
+            from dataclasses import replace
+            response.receipt = replace(receipt, **{field: ""})
+        runtime = SimpleNamespace(predict=lambda *args, **kwargs: response)
+        service = CIaaSService(runtime=runtime, api_key="x"*40)
+        service.register_tenant("tenant-a")
+        result, status = service.handle_request("predict", {"x": 1}, "tenant-a", "x"*40)
+>       assert status == 502 and result.error.code == "receipt_invalid"
+E       assert (200 == 502)
+
+tests/test_toe_http_closeout.py:88: AssertionError
+_______ test_success_without_complete_receipt_is_rejected[result_digest] _______
+
+field = 'result_digest'
+
+    @pytest.mark.parametrize("field", ["receipt_id", "tenant_id", "payload_digest", "result_digest", "evidence_status", "receipt"])
+    def test_success_without_complete_receipt_is_rejected(field):
+        from types import SimpleNamespace
+        from toe.runtime import RuntimeResponse, RuntimeReceipt
+        receipt = RuntimeReceipt("r", "tenant-a", "predict", "a"*64, "b"*64, 0.0,
+                                 "test", "MEASURED", True, False)
+        response = RuntimeResponse(ok=True, tenant_id="tenant-a", operation="predict", receipt=receipt)
+        if field == "receipt":
+            response.receipt = None
+        else:
+            from dataclasses import replace
+            response.receipt = replace(receipt, **{field: ""})
+        runtime = SimpleNamespace(predict=lambda *args, **kwargs: response)
+        service = CIaaSService(runtime=runtime, api_key="x"*40)
+        service.register_tenant("tenant-a")
+        result, status = service.handle_request("predict", {"x": 1}, "tenant-a", "x"*40)
+>       assert status == 502 and result.error.code == "receipt_invalid"
+E       assert (200 == 502)
+
+tests/test_toe_http_closeout.py:88: AssertionError
+______ test_success_without_complete_receipt_is_rejected[evidence_status] ______
+
+field = 'evidence_status'
+
+    @pytest.mark.parametrize("field", ["receipt_id", "tenant_id", "payload_digest", "result_digest", "evidence_status", "receipt"])
+    def test_success_without_complete_receipt_is_rejected(field):
+        from types import SimpleNamespace
+        from toe.runtime import RuntimeResponse, RuntimeReceipt
+        receipt = RuntimeReceipt("r", "tenant-a", "predict", "a"*64, "b"*64, 0.0,
+                                 "test", "MEASURED", True, False)
+        response = RuntimeResponse(ok=True, tenant_id="tenant-a", operation="predict", receipt=receipt)
+        if field == "receipt":
+            response.receipt = None
+        else:
+            from dataclasses import replace
+            response.receipt = replace(receipt, **{field: ""})
+        runtime = SimpleNamespace(predict=lambda *args, **kwargs: response)
+        service = CIaaSService(runtime=runtime, api_key="x"*40)
+        service.register_tenant("tenant-a")
+        result, status = service.handle_request("predict", {"x": 1}, "tenant-a", "x"*40)
+>       assert status == 502 and result.error.code == "receipt_invalid"
+E       assert (200 == 502)
+
+tests/test_toe_http_closeout.py:88: AssertionError
+__________ test_success_without_complete_receipt_is_rejected[receipt] __________
+
+field = 'receipt'
+
+    @pytest.mark.parametrize("field", ["receipt_id", "tenant_id", "payload_digest", "result_digest", "evidence_status", "receipt"])
+    def test_success_without_complete_receipt_is_rejected(field):
+        from types import SimpleNamespace
+        from toe.runtime import RuntimeResponse, RuntimeReceipt
+        receipt = RuntimeReceipt("r", "tenant-a", "predict", "a"*64, "b"*64, 0.0,
+                                 "test", "MEASURED", True, False)
+        response = RuntimeResponse(ok=True, tenant_id="tenant-a", operation="predict", receipt=receipt)
+        if field == "receipt":
+            response.receipt = None
+        else:
+            from dataclasses import replace
+            response.receipt = replace(receipt, **{field: ""})
+        runtime = SimpleNamespace(predict=lambda *args, **kwargs: response)
+        service = CIaaSService(runtime=runtime, api_key="x"*40)
+        service.register_tenant("tenant-a")
+        result, status = service.handle_request("predict", {"x": 1}, "tenant-a", "x"*40)
+>       assert status == 502 and result.error.code == "receipt_invalid"
+E       assert (200 == 502)
+
+tests/test_toe_http_closeout.py:88: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_toe_http_closeout.py::test_success_without_complete_receipt_is_rejected[receipt_id]
+FAILED tests/test_toe_http_closeout.py::test_success_without_complete_receipt_is_rejected[tenant_id]
+FAILED tests/test_toe_http_closeout.py::test_success_without_complete_receipt_is_rejected[payload_digest]
+FAILED tests/test_toe_http_closeout.py::test_success_without_complete_receipt_is_rejected[result_digest]
+FAILED tests/test_toe_http_closeout.py::test_success_without_complete_receipt_is_rejected[evidence_status]
+FAILED tests/test_toe_http_closeout.py::test_success_without_complete_receipt_is_rejected[receipt]
+6 failed, 14 deselected in 0.29s

@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React from "react";
 import { Activity, History, Radio } from "lucide-react";
-import { apiFetch } from "../lib/api";
 import type { AuditTail, TelemetrySummary } from "../lib/status";
 
 const fmtUptime = (s: number | undefined): string => {
@@ -37,34 +36,7 @@ const eventDetail = (r: Record<string, unknown>): string => {
  * append-only audit trail. Every number is read from the Python control
  * plane; nothing is sampled or synthesized in the browser.
  */
-export const TelemetryPanel: React.FC = () => {
-  const [summary, setSummary] = useState<TelemetrySummary | null>(null);
-  const [audit, setAudit] = useState<AuditTail | null>(null);
-  const [unreachable, setUnreachable] = useState(false);
-  const timer = useRef<number | null>(null);
-
-  const refresh = useCallback(async () => {
-    try {
-      const [sumRes, auditRes] = await Promise.all([
-        apiFetch("/api/v1/telemetry/summary"),
-        apiFetch("/api/v1/audit/tail?n=30"),
-      ]);
-      if (sumRes.ok) setSummary((await sumRes.json()) as TelemetrySummary);
-      if (auditRes.ok) setAudit((await auditRes.json()) as AuditTail);
-      setUnreachable(!sumRes.ok && !auditRes.ok);
-    } catch {
-      setUnreachable(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    refresh();
-    timer.current = window.setInterval(refresh, 4000);
-    return () => {
-      if (timer.current !== null) window.clearInterval(timer.current);
-    };
-  }, [refresh]);
-
+export const TelemetryPanel: React.FC<{ summary: TelemetrySummary | null; audit: AuditTail | null; unreachable: boolean }> = ({ summary, audit, unreachable }) => {
   const workers = summary?.workers ?? {};
   const events = [...(audit?.records ?? [])].reverse();
 
@@ -78,7 +50,7 @@ export const TelemetryPanel: React.FC = () => {
           Telemetry — live, session, historical
         </h2>
         <span className="text-[10px] font-telemetry-mono text-[#6b7c93]">
-          {unreachable ? "control plane unreachable" : "measured · polled every 4s"}
+          {unreachable ? "control plane unreachable" : summary ? "backend snapshot · polled every 5s" : "not reported · UNAVAILABLE"}
         </span>
       </header>
       <div className="p-5 grid gap-4 lg:grid-cols-3">

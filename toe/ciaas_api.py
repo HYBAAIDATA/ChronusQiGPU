@@ -43,6 +43,7 @@ import json
 import logging
 import os
 import time
+import threading
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -94,9 +95,15 @@ class RateLimiter:
     window_seconds: int = _RATE_WINDOW_SECONDS
     _buckets: dict[str, deque[float]] = field(default_factory=lambda: defaultdict(deque))
 
+    _lock: Any = field(default_factory=threading.RLock, repr=False)
+
     def check(self, tenant_id: str) -> bool:
+        with self._lock:
+            return self._check_locked(tenant_id)
+
+    def _check_locked(self, tenant_id: str) -> bool:
         """Return True if the request is within the rate limit."""
-        now = time.time()
+        now = time.monotonic()
         bucket = self._buckets[tenant_id]
         # Evict expired entries
         while bucket and now - bucket[0] > self.window_seconds:
@@ -107,8 +114,12 @@ class RateLimiter:
         return True
 
     def remaining(self, tenant_id: str) -> int:
+        with self._lock:
+            return self._remaining_locked(tenant_id)
+
+    def _remaining_locked(self, tenant_id: str) -> int:
         """Remaining requests in the current window."""
-        now = time.time()
+        now = time.monotonic()
         bucket = self._buckets[tenant_id]
         while bucket and now - bucket[0] > self.window_seconds:
             bucket.popleft()
@@ -314,6 +325,23 @@ class CIaaSService:
         else:
             return self._error_response(tenant_id, operation, "unknown_operation", f"Unknown operation: {operation}", 400), 400
 
+        if response.ok:
+            receipt = response.receipt
+            required = ("receipt_id", "tenant_id", "payload_digest", "result_digest", "evidence_status")
+            valid = receipt is not None and all(
+                isinstance(getattr(receipt, field, None), str) and getattr(receipt, field).strip()
+                for field in required
+            )
+            if valid:
+                valid = receipt.tenant_id == tenant.tenant_id and all(
+                    len(value) == 64 and all(c in "0123456789abcdef" for c in value)
+                    for value in (receipt.payload_digest, receipt.result_digest)
+                )
+            if not valid:
+                self._metrics["errors_total"] += 1
+                return self._error_response(tenant_id, operation, "receipt_invalid",
+                                            "Successful TOE output requires a tenant-bound evidence receipt", 502), 502
+
         if not response.ok:
             self._metrics["errors_total"] += 1
 
@@ -428,14 +456,23 @@ class CIaaSHTTPHandler(BaseHTTPRequestHandler):
 
     def _read_body(self) -> tuple[Optional[dict[str, Any]], Optional[str]]:
         """Read and parse the JSON body.  Returns (body, error)."""
-        content_length = int(self.headers.get("Content-Length", 0))
+        if self.headers.get("Transfer-Encoding") is not None:
+            self.close_connection = True
+            return None, "Transfer-Encoding is not supported"
+        lengths = self.headers.get_all("Content-Length", [])
+        if len(lengths) != 1 or not lengths[0].isascii() or not lengths[0].isdigit():
+            self.close_connection = True
+            return None, "Exactly one unsigned Content-Length is required"
+        content_length = int(lengths[0])
         if content_length == 0:
-            return None, None
+            return None, "Request body must be a JSON object"
         if content_length > _MAX_BODY_BYTES:
+            self.close_connection = True
             return None, "Payload exceeds 1MB limit"
         raw = self.rfile.read(content_length)
-        if not raw:
-            return None, None
+        if len(raw) != content_length:
+            self.close_connection = True
+            return None, "Truncated request body"
         try:
             body = json.loads(raw.decode("utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError) as exc:
@@ -526,6 +563,11 @@ class CIaaSHTTPHandler(BaseHTTPRequestHandler):
             self._send_error(401, "missing_tenant", "X-CIAAS-Tenant header required")
             return
 
+        # Authenticate before any potentially blocking body read.
+        if not self._authorize_non_health(operation):
+            self.close_connection = True
+            return
+
         # Read body
         body, body_error = self._read_body()
         if body_error:
@@ -533,8 +575,11 @@ class CIaaSHTTPHandler(BaseHTTPRequestHandler):
             return
 
         # Extract payload and metadata
-        payload = body.get("payload") or body.get("data") or body
-        metadata = body.get("metadata") or {}
+        payload = body["payload"] if "payload" in body else body.get("data", body)
+        metadata = body.get("metadata", {})
+        if not isinstance(metadata, dict):
+            self._send_error(400, "metadata_invalid", "metadata must be a JSON object")
+            return
 
         # Handle operation
         response, status = self.service.handle_request(

@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "C:\Users\leonn\OneDrive\Desktop\PhiEnterprise-closeout\chronus\mla1517_platform\python\main.py", line 42, in <module>
+    main()
+  File "C:\Users\leonn\OneDrive\Desktop\PhiEnterprise-closeout\chronus\mla1517_platform\python\main.py", line 31, in main
+    serve(host=args.host, port=args.port, web_root=args.web_root)
+  File "C:\Users\leonn\OneDrive\Desktop\PhiEnterprise-closeout\chronus\mla1517_platform\python\control_api.py", line 3941, in serve
+    _control_plane()
+  File "C:\Users\leonn\OneDrive\Desktop\PhiEnterprise-closeout\chronus\mla1517_platform\python\control_api.py", line 936, in _control_plane
+    _CONTROL = ControlPlane()
+               ^^^^^^^^^^^^^^
+  File "C:\Users\leonn\OneDrive\Desktop\PhiEnterprise-closeout\chronus\mla1517_platform\python\control_api.py", line 622, in __init__
+    self.identity = resolve_stratum_identity()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leonn\OneDrive\Desktop\PhiEnterprise-closeout\chronus\mla1517_platform\python\startup_contract.py", line 165, in resolve_stratum_identity
+    raise StartupConfigError("MLA1517_STRATUM_USER is required")
+startup_contract.StartupConfigError: MLA1517_STRATUM_USER is required

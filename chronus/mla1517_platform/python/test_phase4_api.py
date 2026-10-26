@@ -45,6 +45,19 @@ class Phase4ApiTests(unittest.TestCase):
         control_api._BOOT_LOCK = None
         control_api._LOCK_HELD = False
 
+    def test_readiness_probe_does_not_claim_production_qualification(self) -> None:
+        for strict in ("0", "1"):
+            with self.subTest(strict=strict), patch.dict(
+                os.environ, {"PYTHIA_M3_REQUIRED": strict}
+            ):
+                result = control_api._readiness_qualification("control_plane")
+                self.assertEqual(result["scope"], "control_plane")
+                self.assertEqual(result["submission_dependencies_required"], strict == "1")
+                self.assertEqual(result["governance_mode"],
+                                 "strict" if strict == "1" else "non_strict")
+                self.assertEqual(result["production_qualification"],
+                                 "not_established_by_this_probe")
+
     def test_status_payload_exposes_canonical_backend_contract(self) -> None:
         payload = control_api.status_payload()
         self.assertEqual(payload["backend"], "Python/C/OpenCL")

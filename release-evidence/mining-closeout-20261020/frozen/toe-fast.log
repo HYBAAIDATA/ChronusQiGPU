@@ -1,0 +1,4 @@
+RC_SHA=80fe0d413255c45b910da4599e4d276bc9098321
+COMMAND=["python", "-m", "pytest", "tests/test_toe_runtime.py", "tests/test_toe_ciaas_api.py", "tests/test_asi_core.py", "-p", "no:cacheprovider", "--basetemp=/data/mining-closeout/tmp/frozen-toe-fast", "--junitxml=/data/mining-closeout/evidence/frozen/toe-fast.xml", "-q"]
+...................................................................      [100%]
+67 passed in 0.31s

@@ -1,0 +1,16 @@
+Processing ./completion/dist/hyba_turing_service_control-0.2.0.tar.gz
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: hyba-turing-service-control
+  Building wheel for hyba-turing-service-control (pyproject.toml): started
+  Building wheel for hyba-turing-service-control (pyproject.toml): finished with status 'done'
+  Created wheel for hyba-turing-service-control: filename=hyba_turing_service_control-0.2.0-py3-none-any.whl size=44016 sha256=4141bbf0d6f543b5145b2357fe6ec51d992741d5401d453cd134a18d85c06b9c
+  Stored in directory: /home/vercel-sandbox/.cache/pip/wheels/c7/6b/bd/c8cbc6ea43344296001c681443d040adf1f067b5a9b499d6d6
+Successfully built hyba-turing-service-control
+
+[notice] A new release of pip is available: 24.2 -> 26.2.2
+[notice] To update, run: python -m pip install --upgrade pip

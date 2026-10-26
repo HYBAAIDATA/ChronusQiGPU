@@ -20,7 +20,7 @@ DEMONSTRATIONS:
 from ..results import CheckRegistry
 from ..sequences import fibonacci, lucas, binet_l
 from ..constants import INTEGER_BASES, PHI_D
-from decimal import Decimal
+from decimal import Decimal, localcontext
 
 
 def run(registry: CheckRegistry, max_n: int = 10000, bases: list[int] = None) -> None:
@@ -113,17 +113,19 @@ def run(registry: CheckRegistry, max_n: int = 10000, bases: list[int] = None) ->
         # Verify the identity φ^n = F(n)·φ + F(n-1) for small n
         # (this is the key algebraic step in the proof)
         identity_holds = True
-        for n in range(1, 50):
-            fn = fibonacci(n)
-            fn_1 = fibonacci(n - 1)
-            # φ^n should equal F(n)·φ + F(n-1)
-            # Check: φ^n = F(n)·φ + F(n-1)
-            # Rearrange: φ^n - F(n)·φ = F(n-1)
-            lhs = PHI_D ** n - Decimal(fn) * PHI_D
-            rhs = Decimal(fn_1)
-            if abs(lhs - rhs) > Decimal("1e-100"):
-                identity_holds = False
-                break
+        with localcontext() as ctx:
+            ctx.prec = 2000
+            for n in range(1, 50):
+                fn = fibonacci(n)
+                fn_1 = fibonacci(n - 1)
+                # φ^n should equal F(n)·φ + F(n-1)
+                # Check: φ^n = F(n)·φ + F(n-1)
+                # Rearrange: φ^n - F(n)·φ = F(n-1)
+                lhs = PHI_D ** n - Decimal(fn) * PHI_D
+                rhs = Decimal(fn_1)
+                if abs(lhs - rhs) > Decimal("1e-100"):
+                    identity_holds = False
+                    break
         if not identity_holds:
             all_irrational = False
             registry.add_check(

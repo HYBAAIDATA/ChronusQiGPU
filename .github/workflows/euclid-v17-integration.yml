@@ -54,7 +54,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
@@ -78,7 +78,7 @@ jobs:
         run: python packaging/euclid-engine/build_and_verify.py
       - name: Retain integrity evidence without declaring production readiness
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: euclid-integrity-evidence-${{ matrix.os }}
           if-no-files-found: error

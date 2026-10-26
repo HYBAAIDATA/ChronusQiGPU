@@ -32,7 +32,7 @@ jobs:
         run: python scripts/repo_closure.py defects --output reports/DEFECT_REGISTER.json
       - name: Retain closure evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: production-closure-evidence
           path: |

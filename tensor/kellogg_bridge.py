@@ -38,10 +38,17 @@ def load_kellogg_tensor_ml() -> Any:
     return import_module("kellogg.tensor_ml")
 
 
+def load_kellogg_canonical_tensor() -> Any:
+    """Kellogg's canonical tensor substrate and coverage-proven search plan builder."""
+    return import_module("kellogg.canonical_tensor")
+
+
 __all__ = [
     "load_exact_tensor_module",
     "load_quantum_tensor_module",
     "load_kellogg_exact_tensor",
     "load_kellogg_quantum_tensor",
     "load_kellogg_tensor_ml",
+    "load_kellogg_canonical_tensor",
 ]
+

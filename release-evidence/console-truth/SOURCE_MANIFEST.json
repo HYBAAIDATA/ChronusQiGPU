@@ -1,0 +1,161 @@
+{
+  "baseline_sha": "4f71b5647e5cacd053e9a9d545ab5f26d38b4f34",
+  "scope": "partial pinned GitHub export; not a clean git checkout or full ROOT hash",
+  "files": [
+    {
+      "path": "frontend/src/App.tsx",
+      "sha256": "806af97be0df8cde1895b915cd67894f3bfa4e19fc4d0c229be94652eba4da4a",
+      "bytes": 3263
+    },
+    {
+      "path": "frontend/src/components/BackendLens.tsx",
+      "sha256": "9deb1845f89708f91f039d44e19affb8509189ec6888bad626e770bb25161674",
+      "bytes": 1921
+    },
+    {
+      "path": "frontend/src/components/ConsoleMissingData.test.tsx",
+      "sha256": "87c91f1dba886b56567a7a16d7de36d376a5e3e54b54162df481c39111d51ffe",
+      "bytes": 1296
+    },
+    {
+      "path": "frontend/src/components/ConsolePrimitives.tsx",
+      "sha256": "05e627f23be0dc65003b9eec6d64140389633f89882bb476403ec1a965b7ae0b",
+      "bytes": 717
+    },
+    {
+      "path": "frontend/src/components/ControlSession.tsx",
+      "sha256": "be0693b356c0100ee3408b44b5e84b05696340a392566fa7f494ebfab1a50ca6",
+      "bytes": 2468
+    },
+    {
+      "path": "frontend/src/components/Header.tsx",
+      "sha256": "c940d798db75f09d9b4fbdc7efb1b427600b0daabdc17c0a7b873f2438f99d77",
+      "bytes": 4032
+    },
+    {
+      "path": "frontend/src/components/MiningEvidencePanel.tsx",
+      "sha256": "1624f49d851f0767230499584c30d0cc67a4f6c9675eb3a2a0ffc9daf74ca4be",
+      "bytes": 5003
+    },
+    {
+      "path": "frontend/src/components/Mla1517MiningPanel.tsx",
+      "sha256": "c8b66dca4f4eae7eb159a16ce45b65af6f94e49dbc91bbe4798c89cc775000c4",
+      "bytes": 15232
+    },
+    {
+      "path": "frontend/src/components/RuntimeControlPanel.tsx",
+      "sha256": "4ba3307940529d41362cfb18bf7156e4d7daccebce1a567951b7787694657e72",
+      "bytes": 11617
+    },
+    {
+      "path": "frontend/src/components/SystemFabricPanel.tsx",
+      "sha256": "7e1166b712f15fa82beceaf534d4135d61bc1d7e53d3909ed58e099c2e6a8b07",
+      "bytes": 15284
+    },
+    {
+      "path": "frontend/src/components/TelemetryPanel.tsx",
+      "sha256": "d1fe2a6f8f4d717f4ad0f64586eb655f004399614c4aef4b2304ba8db3a034fe",
+      "bytes": 6060
+    },
+    {
+      "path": "frontend/src/index.css",
+      "sha256": "efd889dc07243555ee7e91278506f5aeae23745f20e3d3d1f38052506ee61022",
+      "bytes": 5995
+    },
+    {
+      "path": "frontend/src/lib/__tests__/api.test.ts",
+      "sha256": "1739141b79dccd75dbe39271f73f7a93b08fab1ba2233f45db5f612415ee8a10",
+      "bytes": 10801
+    },
+    {
+      "path": "frontend/src/lib/__tests__/console-contract.test.ts",
+      "sha256": "696ff778939dd6d48a1a9faf2be7ec08ff7bd0a29883ed047f072e8fe67c0c81",
+      "bytes": 780
+    },
+    {
+      "path": "frontend/src/lib/__tests__/console-lifecycle.test.tsx",
+      "sha256": "bf8ee250aa628e6b69d4fe3e4691a0cbfeb096597836885e603cf6f86706cf00",
+      "bytes": 4497
+    },
+    {
+      "path": "frontend/src/lib/__tests__/no-mock-data.test.ts",
+      "sha256": "06f51196d7a1a2335e1483958891b1ec9250f1d10b7cdd757fdc1d72b094363e",
+      "bytes": 1875
+    },
+    {
+      "path": "frontend/src/lib/__tests__/stratum.test.ts",
+      "sha256": "9e6e616ac9c7a9e2645055ddad8a1ea2edea4d2cf449473ac43847b0fde724dd",
+      "bytes": 2010
+    },
+    {
+      "path": "frontend/src/lib/access.ts",
+      "sha256": "646e4039c2be6e5f8b2b7143f5fc159e613f3c7ff1d9dad129409352b1f246e1",
+      "bytes": 2246
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "sha256": "c254473de40c8db38de612b7632fee35a26a3b8b67adc44aa7ca6e23e1252bbd",
+      "bytes": 9275
+    },
+    {
+      "path": "frontend/src/lib/console.ts",
+      "sha256": "fa0c931126109c63a58ebf38305dba1f4126398c9433365cd1f47dfa3b8a6dd9",
+      "bytes": 1673
+    },
+    {
+      "path": "frontend/src/lib/evidence.ts",
+      "sha256": "0509600d51d63935fff64a8fe13e31e743014ff83c4bf302435973eb767c7f34",
+      "bytes": 13277
+    },
+    {
+      "path": "frontend/src/lib/stratum.ts",
+      "sha256": "53d03dbde79de688dcc6ac4c6c7526b6ca6391b329c3cb281c5172cc70782025",
+      "bytes": 2954
+    },
+    {
+      "path": "frontend/src/lib/useConsole.ts",
+      "sha256": "8883e769c2a1f88c676c91b5241c753565f38e7ba7b3f3d3130327baa58aa133",
+      "bytes": 5541
+    },
+    {
+      "path": "frontend/index.html",
+      "sha256": "7335faf1e51bb23359575a5258340c9f3aa296b0d446599d2c70105712deb119",
+      "bytes": 938
+    },
+    {
+      "path": "chronus/mla1517_platform/python/control_api.py",
+      "sha256": "5799f30adc19bae9a03b63e448765ff5152122b749b7f6fe93495a9e357691cb",
+      "bytes": 158461
+    },
+    {
+      "path": "frontend/scripts/console_schema.py",
+      "sha256": "4413d895d833dccfda67b3e95b288adc10851deed0073120f0c3a082616b3328",
+      "bytes": 1228
+    },
+    {
+      "path": "frontend/scripts/test_console_contract.py",
+      "sha256": "70d448e4945645effdaf249d8b5328e5c1f9d5245bdfe1ad6158dcf9c8c868bd",
+      "bytes": 6230
+    },
+    {
+      "path": "frontend/scripts/serve_console_fixture.py",
+      "sha256": "36c2b2c99e8ea5b8861aa95102708d5668130a550d39261dbd6acac1ba9ea832",
+      "bytes": 2550
+    },
+    {
+      "path": "frontend/requirements-contract.txt",
+      "sha256": "6e1ab74049213fd172ab63ac9271d654d789cfba30ef4ca5217c59957f7293f5",
+      "bytes": 31
+    },
+    {
+      "path": "frontend/contracts/console.fixture.json",
+      "sha256": "b9c9225f85d95d9a43d7b1254adeb92189aea117cfada02a7230a2e52432df1b",
+      "bytes": 1704
+    },
+    {
+      "path": "frontend/contracts/console.schema.json",
+      "sha256": "302cb2c17a209f7090471cb356b779c66e1d354bd0edcf79420e59c3631738b6",
+      "bytes": 4207
+    }
+  ]
+}

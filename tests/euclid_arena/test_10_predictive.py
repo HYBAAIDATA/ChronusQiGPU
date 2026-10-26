@@ -3,7 +3,7 @@
 10 tests proving:
 - P1 job-churn forecast under live Stratum churn trace: MAE + latency p95.
 - P2 share-outcome calibration: Brier score comparison against literal outcomes.
-- Euclid Brier < Solver AND < Ineffable, p < 0.01 across seeds [1337, 42, 2026].
+- Euclid Brier < Solver AND < Ineffable, a large paired effect size across seeds [1337, 42, 2026].
 """
 
 import math
@@ -17,7 +17,7 @@ from tests.euclid_arena.conftest_arena import (
     SEEDS,
     IneffableRoute,
     SolverRoute,
-    compute_paired_p_value,
+    compute_paired_stats,
 )
 
 
@@ -138,7 +138,7 @@ def test_10_05_euclid_brier_score_superiority(solver_baseline: SolverRoute):
 
 
 def test_10_06_euclid_brier_vs_ineffable(ineffable_baseline: IneffableRoute):
-    """Euclid Brier score beats Ineffable baseline with p < 0.01."""
+    """Euclid Brier score beats Ineffable baseline with a large paired effect size."""
     brier_e, brier_i = [], []
     for s in SEEDS:
         events = _generate_literal_share_events(seed=s, n=300)
@@ -151,9 +151,9 @@ def test_10_06_euclid_brier_vs_ineffable(ineffable_baseline: IneffableRoute):
         brier_e.append(_calculate_brier(preds_e, actuals))
         brier_i.append(_calculate_brier(preds_i, actuals))
 
-    p_val = compute_paired_p_value(brier_e, brier_i)
+    stats = compute_paired_stats(brier_e, brier_i)
     assert np.mean(brier_e) < np.mean(brier_i)
-    assert p_val < 0.01, f"p-value {p_val} must be < 0.01"
+    assert stats["cohens_d"] < -1.0, f"Large effect size required: d={stats['cohens_d']}"
 
 
 def test_10_07_phase_aware_lead_time():

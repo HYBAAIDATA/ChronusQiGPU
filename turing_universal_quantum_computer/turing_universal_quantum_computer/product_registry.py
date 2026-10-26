@@ -52,6 +52,15 @@ def _m(name: str, role: str, purpose: str, **kw: Any) -> ModuleEntry:
 
 
 MODULES: Tuple[ModuleEntry, ...] = (
+    _m("config", "boundary", "Validated native public API configuration and fail-closed unsupported modes."),
+    _m("contracts", "boundary", "Immutable typed IR, named finite parameters, artifacts, jobs and estimates."),
+    _m("exceptions", "boundary", "Typed input, capability, execution, timeout and provenance failures."),
+    _m("interfaces", "boundary", "Compiler/backend/estimator/optimizer/error-plan extension protocols."),
+    _m("native_adapter", "adapter", "Typed native admission, local jobs and certified-result Z estimation.",
+       consumes=["pipeline", "backends"]),
+    _m("optimizer", "algorithm", "Bounded exhaustive finite-ansatz optimizer with exact radical comparison."),
+    _m("public_api", "pipeline", "Additive QuantumPipeline facade over the canonical native computation path."),
+    _m("lucas_metallic_walk", "research", "Existing Lucas-metallic walk research surface with exact operators over Q(phi)."),
     _m("__init__", "core", "Package surface: eager exact substrate, lazy engines."),
     _m("turing_core", "core", "Exact arithmetic, deterministic scheduling and certification."),
     _m("turing_core.core", "core", "Zero-dependency exact Q[sqrt 5] algebra, Zeckendorf, T_phi fold, "
@@ -97,6 +106,10 @@ MODULES: Tuple[ModuleEntry, ...] = (
     _m("representation", "boundary", "Proof-shaped representation planning (WF02), incl. mps_exact."),
     _m("pipeline", "pipeline", "Production composition path: validate, plan, execute, certify, "
        "custody, replay."),
+    _m("software_stack", "pipeline", "Six-phase quantum software stack: high-level ansatz authoring, "
+       "OpenQASM 2.0 IR, topology SWAP routing/basis transpilation, surface-code QEC cycle, hybrid "
+       "workload orchestration, and Virtual-Z/DRAG/ECR pulse compilation.",
+       consumes=["kellogg", "backends", "stabilizer", "hilbert", "verify"]),
     _m("console", "pipeline", "Operator console (turing-vqc): dense, tableau and MPS registers."),
     _m("phi_gate", "pipeline", "CLI production gate for the 1,000-qubit phi machine."),
     _m("quantum_algorithms", "algorithm", "First-principles quantum algorithms with Lucas scaling.",
@@ -145,6 +158,7 @@ MODULES: Tuple[ModuleEntry, ...] = (
     _m("lucas.core", "substrate", "Exact Lucas and Fibonacci numbers via fast doubling."),
     _m("lucas.ladder", "substrate", "Lucas ladder: the canonical scale sequence."),
     _m("lucas.pool", "substrate", "Lucas pool registry: the only legal shared import."),
+    _m("lucas.scale_model", "substrate", "Canonical Lucas capacity, precision and stride model."),
     _m("lucas.trace", "substrate", "tr(M^n) = L_n verification and bounding."),
     _m("unified_theory", "research", "Executable unified-theory foundation contract."),
     _m("july_compat", "compat", "Bounded compatibility adapters for retained July facades.",

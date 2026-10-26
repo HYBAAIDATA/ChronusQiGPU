@@ -45,15 +45,20 @@ Every execution returns an `ExecutionResult` carrying:
 - `measured_qpu` — true **only** for a completed provider job;
 - `payload` — backend-specific exact values.
 
-Two representations, both exact, both first class:
+Exact representation examples (admission remains backend-specific):
 
 - **dense_algebraic** — universal Clifford+T with amplitudes in
   `Q(sqrt(2)) + i*Q(sqrt(2))`. Bounded by `max_amplitudes`; exposes the full
   amplitude list.
-- **tableau** — the Clifford state as its stabilizer tableau, `2n` bits, exact
+- **tableau** — the Clifford state as its stabilizer tableau, `O(n^2)` tableau bits, exact
   at any width including `n = 10_000`. Gates, shot sampling, measurement
   distributions, marginals, expectation values and entanglement are all
   available. It has no amplitude list, and neither does hardware.
+
+- **mps_exact** — canonical Clifford+T execution over `Q(zeta_8)` when the
+  static Schmidt bound stays within `chi_max` at every cut. The representation
+  planner and registry bind this backend; it is not currently a typed-facade
+  target. Source presence is not independent release qualification.
 
 `materialised = False` is **not** a degraded mode. It is the correct
 representation for that state class.
@@ -65,8 +70,11 @@ Refusal is a supported outcome, not an error path.
 - A program outside every backend's exact domain is refused with the reason
   from the nearest backend. `execute` raises `StatevectorTooLargeError`
   (a `MemoryError` subclass).
-- A non-Clifford gate above the materialisation budget is refused. It is never
-  approximated, truncated, sampled down, or answered by a dense fallback.
+- A non-Clifford gate outside the dense materialisation budget requires another
+  admitted exact representation. The canonical registry includes `mps_exact`
+  under its static Schmidt bound; tableau alone does not admit non-Clifford
+  gates. If no exact backend admits, the program is refused, never truncated
+  or answered by a hidden dense fallback. The typed facade has narrower bindings.
 - `max_amplitudes` is enforced at construction and at admission. There is no
   path that silently reduces precision.
 
@@ -77,7 +85,8 @@ generic error destroys the contract's only useful signal.
 
 - `shots` samples the exact Born distribution. The distribution is exact; the
   draw is a labelled classical sampling of it.
-- A fixed `seed` replays identically on any platform.
+- A fixed `seed` supports replay within the qualified environment. Cross-version
+  or cross-platform bitstream identity requires retained evidence, not assumption.
 - `readout=[...]` selects which qubits are wired to detectors, as on a device.
   Bitstring keys follow the order of `readout`.
 - Reading out more than `StabilizerBackend.READOUT_LIMIT` qubits is refused:

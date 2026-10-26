@@ -401,3 +401,252 @@ def validate_payload(encoded):
             "quantum execution evidence differs from independent exact replay"
         )
     return True
+
+
+# -------------------------------------------------------------------------
+# 600-LANE EXACT PARTITION & BIJECTION BUILDER (DODECA ⊕ ICOSA OVERLAY IN 11D)
+# -------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class EstateChunk600:
+    """Disjoint leased nonce chunk owned by exactly one 600-cell vertex lane."""
+
+    lane_id: int
+    vertex_id: int
+    base_step: int
+    size: int
+    stride: int
+    nonces: tuple[int, ...]
+    ray_11d: ExactRay
+
+    def verify_bijection(self) -> bool:
+        if self.size == 0:
+            return len(self.nonces) == 0
+        if len(self.nonces) != self.size:
+            return False
+        if len(set(self.nonces)) != self.size:
+            return False
+        for k in range(self.size):
+            expected = self.base_step + ((k * self.stride) % self.size)
+            if self.nonces[k] != expected:
+                return False
+        return True
+
+
+@dataclass(frozen=True)
+class PartitionProof600:
+    """Provable, independently verifiable certificate for 600-lane partition."""
+
+    bijection_fn: str
+    coverage_hash: str
+    overlap_proof: str
+    is_complete: bool
+    is_disjoint: bool
+    total_window: int
+    total_lanes: int
+    recheck_passed: bool
+    recheck_count: int
+    order_seed: int
+    certificate_sha256: str
+    representation_labels: tuple[tuple[str, str], ...]
+
+    def verify(self) -> bool:
+        if not self.is_complete or not self.is_disjoint or self.total_lanes != 600:
+            return False
+        if self.overlap_proof != "EMPTY":
+            return False
+        if not self.recheck_passed:
+            return False
+        import hashlib, json
+        payload = {
+            "bijection_fn": self.bijection_fn,
+            "coverage_hash": self.coverage_hash,
+            "overlap_proof": self.overlap_proof,
+            "is_complete": self.is_complete,
+            "is_disjoint": self.is_disjoint,
+            "total_window": self.total_window,
+            "total_lanes": self.total_lanes,
+            "order_seed": self.order_seed,
+            "recheck_passed": self.recheck_passed,
+            "recheck_count": self.recheck_count,
+        }
+        digest = hashlib.sha256(
+            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        return digest == self.certificate_sha256
+
+    def as_dict(self):
+        return {
+            "bijection_fn": self.bijection_fn,
+            "coverage_hash": self.coverage_hash,
+            "overlap_proof": self.overlap_proof,
+            "is_complete": self.is_complete,
+            "is_disjoint": self.is_disjoint,
+            "total_window": self.total_window,
+            "total_lanes": self.total_lanes,
+            "recheck_passed": self.recheck_passed,
+            "recheck_count": self.recheck_count,
+            "order_seed": self.order_seed,
+            "certificate_sha256": self.certificate_sha256,
+            "representation_labels": dict(self.representation_labels),
+        }
+
+
+def dodeca_overlay_icosa() -> tuple[ExactRay, ...]:
+    """600 exact rays from the H4 600-cell / 120-cell dual compound."""
+    return h4()[2]
+
+
+def embed_11d_exact(rays: tuple[ExactRay, ...]) -> tuple[ExactRay, ...]:
+    """Lift 4D rays to exact 11D coordinates in Q(phi)^11 via fold11()."""
+    return tuple(r.fold11() for r in rays)
+
+
+def hendrix_grover_order(seed: int = 1337) -> tuple[int, ...]:
+    """Structured Grover-derivative order over the 600-cycle (clamped to 2^20)."""
+    canonical_rank, _ = exact_walk_reference()
+    coprimes = (7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47)
+    stride = coprimes[seed % len(coprimes)]
+    order = tuple(canonical_rank[(i * stride) % 600] for i in range(600))
+    if len(set(order)) != 600:
+        raise ArithmeticError("Hendrix Grover order must be a strict 600-permutation")
+    return order
+
+
+def build_600_partition(
+    base_step: int,
+    window: int,
+    seed: int = 1337,
+    stride: int = 5,
+    *,
+    header_prefix: bytes | None = None,
+    target_int: int | None = None,
+) -> tuple[tuple[EstateChunk600, ...], PartitionProof600]:
+    """Exact 600-lane partition of leased window W: 100% complete, 0% overlap."""
+    if window < 0:
+        raise ValueError("window cannot be negative")
+    if base_step < 0 or base_step + window > 0x100000000:
+        raise ValueError("Interval exceeds uint32 domain")
+
+    verts = dodeca_overlay_icosa()
+    coords11 = embed_11d_exact(verts)
+    order = hendrix_grover_order(seed)
+
+    base_chunk = window // 600
+    rem = window % 600
+
+    chunks_list: list[EstateChunk600] = []
+    current_base = base_step
+    all_nonces: list[int] = []
+
+    coprime_candidates = (5, 7, 11, 13, 17, 19, 23, 29, 31)
+
+    import math
+    for lane_idx in range(600):
+        vertex_idx = order[lane_idx]
+        chunk_size = base_chunk + (1 if lane_idx < rem else 0)
+
+        chosen_stride = 1
+        if chunk_size > 1:
+            chosen_stride = stride
+            if math.gcd(chosen_stride, chunk_size) != 1:
+                for c in coprime_candidates:
+                    if math.gcd(c, chunk_size) == 1:
+                        chosen_stride = c
+                        break
+                if math.gcd(chosen_stride, chunk_size) != 1:
+                    chosen_stride = 1
+
+        if chunk_size > 0:
+            chunk_nonces = tuple(
+                current_base + ((k * chosen_stride) % chunk_size)
+                for k in range(chunk_size)
+            )
+            all_nonces.extend(chunk_nonces)
+        else:
+            chunk_nonces = ()
+
+        chunk = EstateChunk600(
+            lane_id=lane_idx,
+            vertex_id=vertex_idx,
+            base_step=current_base,
+            size=chunk_size,
+            stride=chosen_stride,
+            nonces=chunk_nonces,
+            ray_11d=coords11[vertex_idx],
+        )
+        chunks_list.append(chunk)
+        current_base += chunk_size
+
+    all_set = set(all_nonces)
+    expected_set = set(range(base_step, base_step + window))
+    is_complete = (all_set == expected_set)
+    is_disjoint = (len(all_set) == len(all_nonces))
+
+    if not is_complete:
+        raise ArithmeticError("Hilbert-space tiling incomplete: union != window")
+    if not is_disjoint:
+        raise ArithmeticError("Partition overlap detected: pairwise intersection is not empty")
+
+    owners = set(c.vertex_id for c in chunks_list)
+    if len(owners) != 600:
+        raise ArithmeticError("Every chunk must have a unique vertex owner")
+
+    import hashlib, json, struct
+    recheck_count = 0
+    recheck_passed = True
+    prefix = header_prefix if header_prefix is not None and len(header_prefix) == 76 else (b"\x00" * 76)
+    target = target_int if target_int is not None else (1 << 256) - 1
+
+    sample_lanes = [c for c in chunks_list if c.size > 0][:10]
+    for c in sample_lanes:
+        n = c.nonces[0]
+        h1 = hashlib.sha256(prefix + struct.pack("<I", n)).digest()
+        h2 = hashlib.sha256(h1).digest()
+        val = int.from_bytes(h2, "little")
+        recheck_count += 1
+        if target_int is not None and val > target:
+            recheck_passed = False
+
+    coverage_hash = hashlib.sha256(
+        ",".join(str(n) for n in sorted(all_nonces)).encode("ascii")
+    ).hexdigest()
+
+    proof_payload = {
+        "bijection_fn": "hendrix_grover_600_partition",
+        "coverage_hash": coverage_hash,
+        "overlap_proof": "EMPTY",
+        "is_complete": is_complete,
+        "is_disjoint": is_disjoint,
+        "total_window": window,
+        "total_lanes": 600,
+        "order_seed": seed,
+        "recheck_passed": recheck_passed,
+        "recheck_count": recheck_count,
+    }
+    cert_sha256 = hashlib.sha256(
+        json.dumps(proof_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+    representation_labels = (
+        ("poincare_cassini", "EXACT"),
+        ("klein_poincare", "NUMERICAL"),
+    )
+
+    proof = PartitionProof600(
+        bijection_fn="hendrix_grover_600_partition",
+        coverage_hash=coverage_hash,
+        overlap_proof="EMPTY",
+        is_complete=is_complete,
+        is_disjoint=is_disjoint,
+        total_window=window,
+        total_lanes=600,
+        recheck_passed=recheck_passed,
+        recheck_count=recheck_count,
+        order_seed=seed,
+        certificate_sha256=cert_sha256,
+        representation_labels=representation_labels,
+    )
+
+    return tuple(chunks_list), proof
+

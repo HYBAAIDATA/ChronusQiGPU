@@ -314,7 +314,7 @@ class ASICSolver:
         sock = state["sock"]
         try:
             sock.settimeout(0.001)
-            line = sock.makefile("rb").readline()
+            chunk = sock.recv(65536)
         except socket.timeout:
             return None
         except Exception as exc:
@@ -322,17 +322,35 @@ class ASICSolver:
             # window's nonces were NOT covered and the record must say so.
             self._attest("failed", handle, reason=f"asic_channel_error: {exc}")
             self._finished[handle.handle_id] = 0
-            self._pending.pop(handle.handle_id, None)
+            self._close_channel(handle)
             return None
-        if not line:
+        if not chunk:
             # Orderly close with no payload — same story: uncovered window.
             self._attest("failed", handle, reason="asic_channel_eof")
             self._finished[handle.handle_id] = 0
-            self._pending.pop(handle.handle_id, None)
+            self._close_channel(handle)
             return None
+        buffered = state.get("buffer", b"") + chunk
+        if len(buffered) > 65536:
+            self._attest("failed", handle, reason="asic_response_too_large")
+            self._finished[handle.handle_id] = 0
+            self._close_channel(handle)
+            return None
+        state["buffer"] = buffered
+        if b"\n" not in buffered:
+            return None
+        line = buffered.split(b"\n", 1)[0]
         try:
             msg = json.loads(line.decode("utf-8", "replace"))
         except Exception:
+            self._attest("failed", handle, reason="asic_invalid_json")
+            self._finished[handle.handle_id] = 0
+            self._close_channel(handle)
+            return None
+        if not isinstance(msg, dict) or msg.get("type") not in {"share", "exhausted"}:
+            self._attest("failed", handle, reason="asic_invalid_response_type")
+            self._finished[handle.handle_id] = 0
+            self._close_channel(handle)
             return None
         if msg.get("type") == "share":
             nonce = int(msg["nonce"])
@@ -349,7 +367,7 @@ class ASICSolver:
             )
             self._attest("share", handle, nonces_tried=tried, found=True)
             self._finished[handle.handle_id] = tried
-            self._pending.pop(handle.handle_id, None)
+            self._close_channel(handle)
             return share
         if msg.get("type") == "exhausted":
             # An exhausted declaration is a coverage claim: it asserts the whole
@@ -372,8 +390,12 @@ class ASICSolver:
             else:
                 self._attest("exhausted", handle, nonces_tried=tried, reason="window_exhausted")
             self._finished[handle.handle_id] = tried
-            self._pending.pop(handle.handle_id, None)
-        return None
+            self._close_channel(handle)
+
+    def _close_channel(self, handle: DispatchHandle) -> None:
+        state = self._pending.pop(handle.handle_id, None)
+        if state is not None:
+            state["sock"].close()
 
     def cancel(self, handle: DispatchHandle, reason: str = "cancelled") -> None:
         state = self._pending.pop(handle.handle_id, None)

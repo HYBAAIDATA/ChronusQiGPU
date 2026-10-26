@@ -1,0 +1,16 @@
+LOCAL HTTP FIXTURE TESTS ONLY. See focused_tests.log and validation.json.
+test_http_elevation_three_and_digest (test_hyba_enterprise_remediation.HandlerTests.test_http_elevation_three_and_digest) ... [pythia-control] 127.0.0.1 - "GET /api/chronus/elevation HTTP/1.1" 200 -
+[pythia-control] 127.0.0.1 - "GET /api/chronus/elevation HTTP/1.1" 200 -
+[pythia-control] 127.0.0.1 - "GET /api/chronus/elevation HTTP/1.1" 200 -
+[pythia-control] 127.0.0.1 - "GET /api/chronus/digest HTTP/1.1" 200 -
+test_http_guardian_missing_503 (test_hyba_enterprise_remediation.HandlerTests.test_http_guardian_missing_503) ... [pythia-control] 127.0.0.1 - "POST /api/mining/configure HTTP/1.1" 503 -
+test_http_legacy_cookie_csrf_rejected (test_hyba_enterprise_remediation.HandlerTests.test_http_legacy_cookie_csrf_rejected) ... [pythia-control] 127.0.0.1 - "PUT /api/v1/config HTTP/1.1" 403 -
+test_http_login_me_logout (test_hyba_enterprise_remediation.HandlerTests.test_http_login_me_logout) ... [pythia-control] 127.0.0.1 - "POST /api/auth/login HTTP/1.1" 200 -
+[pythia-control] 127.0.0.1 - "GET /api/auth/me HTTP/1.1" 200 -
+[pythia-control] 127.0.0.1 - "POST /api/auth/logout HTTP/1.1" 200 -
+[pythia-control] 127.0.0.1 - "GET /api/auth/me HTTP/1.1" 401 -
+test_http_missing_audit_key_mutation_blocked (test_hyba_enterprise_remediation.HandlerTests.test_http_missing_audit_key_mutation_blocked) ... [pythia-control] 127.0.0.1 - "POST /api/auth/login HTTP/1.1" 503 -
+test_http_pack_download_exact_hash (test_hyba_enterprise_remediation.HandlerTests.test_http_pack_download_exact_hash) ... [pythia-control] 127.0.0.1 - "GET /api/evidence/pack HTTP/1.1" 200 -
+test_http_unauthorized_401 (test_hyba_enterprise_remediation.HandlerTests.test_http_unauthorized_401) ... [pythia-control] 127.0.0.1 - "GET /api/treasury/overview HTTP/1.1" 401 -
+test_status_and_readiness_agree (test_hyba_enterprise_remediation.HandlerTests.test_status_and_readiness_agree) ... [pythia-control] 127.0.0.1 - "GET /api/mining/status HTTP/1.1" 200 -
+[pythia-control] 127.0.0.1 - "GET /ready-to-mine HTTP/1.1" 503 -

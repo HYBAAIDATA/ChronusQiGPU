@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hyba-data
+  labels:
+    app: hyba-data
+spec:
+  type: ClusterIP
+  selector:
+    app: hyba-data
+  ports:
+  - name: api
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hyba-data-netpol
+spec:
+  podSelector:
+    matchLabels:
+      app: hyba-data
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: internal
+    ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 9090
+  egress:
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443

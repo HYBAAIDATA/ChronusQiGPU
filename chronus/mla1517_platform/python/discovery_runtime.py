@@ -22,7 +22,6 @@ that then also wins in shadow on live measurements is ever applied.
 from __future__ import annotations
 
 import logging
-import os
 import sys
 import time
 from dataclasses import replace
@@ -47,9 +46,9 @@ LOG = logging.getLogger("pythia.discovery")
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 def _default_base_regime() -> Regime:
-    device = os.getenv("PYTHIA_EXECUTION_DEVICE", "chronus").strip().lower()
-    if device in {"chronus", "one_igpu", "gpu", "opencl", "cuda"}:
-        return next((r for r in REGIMES if r.name == "chronus_mainnet_top_rung"), REGIMES[0])
+    # Backend selection is not a performance measurement. Without a live
+    # world model use the historical measured reference, never the hypothetical
+    # 30 MH/s GPU scenario simply because a GPU backend was requested.
     return next((r for r in REGIMES if r.name == "cpu_mainnet_rung10_ladder_ceiling"), REGIMES[0])
 
 
@@ -82,7 +81,7 @@ def twin_regime(world: Fact | None) -> tuple[Regime, dict[str, Any]]:
         if BASE_REGIME.name.startswith("chronus"):
             basis_desc = f"declared: Chronus GPU route ({round(BASE_REGIME.hash_rate / 1e6, 1)} MH/s, {round(BASE_REGIME.overhead_s * 1e3, 3)} ms per window)"
         else:
-            basis_desc = f"declared: the measured CPU route ({round(BASE_REGIME.hash_rate / 1e3, 0):.0f} kH/s, {round(BASE_REGIME.overhead_s * 1e3, 3)} ms per window)"
+            basis_desc = f"declared: historical CPU reference, not current-device throughput ({round(BASE_REGIME.hash_rate / 1e3, 0):.0f} kH/s, {round(BASE_REGIME.overhead_s * 1e3, 3)} ms per window)"
         basis = {
             "basis": basis_desc,
             "route": BASE_REGIME.route,
@@ -282,31 +281,40 @@ def main() -> None:
     fabric = KnowledgeFabric(default_journal_path())
     last_basis: str | None = None
     last_campaign = float("-inf")
+    import concurrent.futures
+
     with HeartbeatEmitter("discovery") as heartbeat:
-        try:
-            while True:
-                fabric.sync()
-                world = fabric.observe("mining.world")
-                basis = world.fact_id if world is not None else "declared"
-                campaign = fabric.observe("discovery.campaign")
-                stale = campaign is not None and fabric.stale(campaign)
-                if campaign_due(basis, stale, last_basis, time.monotonic() - last_campaign):
-                    summary = run_campaign(fabric)
-                    last_basis, last_campaign = basis, time.monotonic()
-                    heartbeat.report(
-                        discoveries=summary["discoveries"],
-                        hypotheses_tested=summary["hypotheses_tested"],
-                    )
-                    LOG.info(
-                        "campaign on %s: %d hypotheses, %d discoveries",
-                        summary["twin"]["basis"],
-                        summary["hypotheses_tested"],
-                        summary["discoveries"],
-                    )
-                time.sleep(POLL_S)
-        except KeyboardInterrupt:
-            LOG.info("discovery runtime stopped by operator interrupt")
-            return
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=1, thread_name_prefix="pythia-discovery-campaign"
+        ) as executor:
+            try:
+                while True:
+                    fabric.sync()
+                    world = fabric.observe("mining.world")
+                    basis = world.fact_id if world is not None else "declared"
+                    campaign = fabric.observe("discovery.campaign")
+                    stale = campaign is not None and fabric.stale(campaign)
+                    if campaign_due(basis, stale, last_basis, time.monotonic() - last_campaign):
+                        future = executor.submit(run_campaign, fabric)
+                        while not future.done():
+                            heartbeat.tick()
+                            time.sleep(0.5)
+                        summary = future.result()
+                        last_basis, last_campaign = basis, time.monotonic()
+                        heartbeat.report(
+                            discoveries=summary["discoveries"],
+                            hypotheses_tested=summary["hypotheses_tested"],
+                        )
+                        LOG.info(
+                            "campaign on %s: %d hypotheses, %d discoveries",
+                            summary["twin"]["basis"],
+                            summary["hypotheses_tested"],
+                            summary["discoveries"],
+                        )
+                    time.sleep(POLL_S)
+            except KeyboardInterrupt:
+                LOG.info("discovery runtime stopped by operator interrupt")
+                return
 
 
 if __name__ == "__main__":

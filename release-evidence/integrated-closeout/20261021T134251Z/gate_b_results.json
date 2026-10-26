@@ -1,0 +1,1003 @@
+{
+  "engine": "toe.bridge.TOEBridge",
+  "substrate": "kellogg.quantum_tensor (stdlib only, no external ML)",
+  "dim": 32,
+  "hbar": 1.0,
+  "mass": 1.0,
+  "omega": 0.5,
+  "sector_summary": {
+    "workforce_hr": {
+      "confidence": 0.25370768461036275,
+      "energy": 12.426161264059457,
+      "position": -1.968433141042183,
+      "entropy": 4.690316744450433,
+      "top_factor": "compensation_ratio",
+      "trend": "stable",
+      "intervention_points": 6
+    },
+    "capital_markets": {
+      "confidence": 0.18613298392160274,
+      "energy": 9.74944699670649,
+      "position": -1.5895267462260536,
+      "entropy": 4.897718176322063,
+      "top_factor": "mid_price",
+      "trend": "stable",
+      "intervention_points": 6
+    },
+    "industrial_iot": {
+      "confidence": 0.1566573401041023,
+      "energy": 11.811032079095243,
+      "position": -0.39277805438983426,
+      "entropy": 4.914730477559743,
+      "top_factor": "rpm",
+      "trend": "stable",
+      "intervention_points": 6
+    },
+    "bitcoin_mining": {
+      "confidence": 0.43657776728826775,
+      "energy": 1.3590486416722753,
+      "position": -1.8472029226176827,
+      "entropy": 2.403933618579634,
+      "top_factor": "block_height",
+      "trend": "stable",
+      "intervention_points": 6
+    },
+    "ecommerce_funnel": {
+      "confidence": 0.48669963605153266,
+      "energy": 12.247709482626524,
+      "position": 9.270604836369534,
+      "entropy": 2.8399001942921727,
+      "top_factor": "impressions",
+      "trend": "stable",
+      "intervention_points": 6
+    },
+    "supply_chain": {
+      "confidence": 0.2468954463360919,
+      "energy": 11.482744074552182,
+      "position": -2.5145765091940695,
+      "entropy": 4.5101959001140175,
+      "top_factor": "fill_rate",
+      "trend": "stable",
+      "intervention_points": 6
+    },
+    "energy_grid": {
+      "confidence": 0.1767360912296068,
+      "energy": 26.959375274531936,
+      "position": 14.37939103816733,
+      "entropy": 1.0986005768504963,
+      "top_factor": "grid_frequency_hz",
+      "trend": "stable",
+      "intervention_points": 6
+    },
+    "cybersecurity": {
+      "confidence": 0.460092784956356,
+      "energy": 4.501285794283788,
+      "position": -1.252323400368613,
+      "entropy": 4.0962761269824215,
+      "top_factor": "packets_per_s",
+      "trend": "stable",
+      "intervention_points": 6
+    },
+    "aerospace": {
+      "confidence": 0.36702830349298887,
+      "energy": 1.4554752672712696,
+      "position": -2.4579038268641975,
+      "entropy": 2.5872956003769083,
+      "top_factor": "mach",
+      "trend": "stable",
+      "intervention_points": 6
+    },
+    "clinical_vitals": {
+      "confidence": 0.20695475318376372,
+      "energy": 10.252583440034146,
+      "position": -2.1092104139991465,
+      "entropy": 4.813938910267605,
+      "top_factor": "spo2_pct",
+      "trend": "stable",
+      "intervention_points": 6
+    }
+  },
+  "checks": [
+    {
+      "name": "T1_ingest_any_shape_to_unit_state",
+      "passed": true,
+      "norms": {
+        "dict": 0.9999999999999999,
+        "list": 0.9999999999999999,
+        "nested_list": 0.9999999999999999,
+        "bytes": 0.9999999999999999,
+        "scalar": 1.0,
+        "none": 0.9999999999999999
+      }
+    },
+    {
+      "name": "T2_born_distribution",
+      "passed": true,
+      "sectors": {
+        "workforce_hr": {
+          "born_sum": 1.0,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.25370768461036275
+        },
+        "capital_markets": {
+          "born_sum": 1.0,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.18613298392160274
+        },
+        "industrial_iot": {
+          "born_sum": 1.0,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.1566573401041023
+        },
+        "bitcoin_mining": {
+          "born_sum": 0.9999999999999999,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.43657776728826775
+        },
+        "ecommerce_funnel": {
+          "born_sum": 1.0,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.48669963605153266
+        },
+        "supply_chain": {
+          "born_sum": 1.0,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.2468954463360919
+        },
+        "energy_grid": {
+          "born_sum": 1.0,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.1767360912296068
+        },
+        "cybersecurity": {
+          "born_sum": 0.9999999999999999,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.460092784956356
+        },
+        "aerospace": {
+          "born_sum": 0.9999999999999999,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.36702830349298887
+        },
+        "clinical_vitals": {
+          "born_sum": 1.0,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.20695475318376372
+        }
+      }
+    },
+    {
+      "name": "T3_schema_collapse",
+      "passed": true,
+      "sectors": {
+        "workforce_hr": {
+          "born_sum": 1.0,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.25370768461036275
+        },
+        "capital_markets": {
+          "born_sum": 1.0,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.18613298392160274
+        },
+        "industrial_iot": {
+          "born_sum": 1.0,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.1566573401041023
+        },
+        "bitcoin_mining": {
+          "born_sum": 0.9999999999999999,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.43657776728826775
+        },
+        "ecommerce_funnel": {
+          "born_sum": 1.0,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.48669963605153266
+        },
+        "supply_chain": {
+          "born_sum": 1.0,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.2468954463360919
+        },
+        "energy_grid": {
+          "born_sum": 1.0,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.1767360912296068
+        },
+        "cybersecurity": {
+          "born_sum": 0.9999999999999999,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.460092784956356
+        },
+        "aerospace": {
+          "born_sum": 0.9999999999999999,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.36702830349298887
+        },
+        "clinical_vitals": {
+          "born_sum": 1.0,
+          "born_valid": true,
+          "all_capabilities_available": true,
+          "schema_match": true,
+          "confidence": 0.20695475318376372
+        }
+      }
+    },
+    {
+      "name": "T4_schrodinger_evolution_laws",
+      "passed": true,
+      "unitary": {
+        "is_unitary": true,
+        "max_error": 6.228351168147128e-14
+      },
+      "sectors": {
+        "workforce_hr": {
+          "x0": -1.968433141042183,
+          "x_t": [
+            -1.9062684834983505,
+            -1.7895393137498312,
+            -1.609621006808727,
+            -1.4909507753687006
+          ],
+          "norms": [
+            0.9999999999999983,
+            0.9999999999999967,
+            0.9999999999999931,
+            0.9999999999999859
+          ],
+          "energies": [
+            12.426161264059441,
+            12.426161264059422,
+            12.426161264059386,
+            12.426161264059306
+          ],
+          "norm_conserved": true,
+          "energy_conserved": true,
+          "mean_reversion": true
+        },
+        "capital_markets": {
+          "x0": -1.5895267462260536,
+          "x_t": [
+            -1.55458570046705,
+            -1.530287052395411,
+            -1.5974489351298309,
+            -1.5830128694059136
+          ],
+          "norms": [
+            0.9999999999999976,
+            0.9999999999999951,
+            0.9999999999999906,
+            0.9999999999999808
+          ],
+          "energies": [
+            9.749446996706457,
+            9.749446996706425,
+            9.749446996706354,
+            9.749446996706222
+          ],
+          "norm_conserved": true,
+          "energy_conserved": true,
+          "mean_reversion": true
+        },
+        "industrial_iot": {
+          "x0": -0.39277805438983426,
+          "x_t": [
+            -0.38299991793799004,
+            -0.38307710427834873,
+            -0.3975215008950107,
+            -0.3638829224428938
+          ],
+          "norms": [
+            0.9999999999999981,
+            0.9999999999999961,
+            0.9999999999999922,
+            0.9999999999999845
+          ],
+          "energies": [
+            11.811032079095227,
+            11.811032079095206,
+            11.811032079095165,
+            11.811032079095087
+          ],
+          "norm_conserved": true,
+          "energy_conserved": true,
+          "mean_reversion": null
+        },
+        "bitcoin_mining": {
+          "x0": -1.8472029226176827,
+          "x_t": [
+            -1.8122370004124222,
+            -1.704582247404624,
+            -1.2892340243498954,
+            -0.14041724270727945
+          ],
+          "norms": [
+            0.9999999999999972,
+            0.9999999999999947,
+            0.9999999999999901,
+            0.9999999999999821
+          ],
+          "energies": [
+            1.3590486416722682,
+            1.3590486416722625,
+            1.359048641672253,
+            1.359048641672238
+          ],
+          "norm_conserved": true,
+          "energy_conserved": true,
+          "mean_reversion": true
+        },
+        "ecommerce_funnel": {
+          "x0": 9.270604836369534,
+          "x_t": [
+            9.104693376162146,
+            8.81867249010652,
+            8.96320012991987,
+            8.950430797570554
+          ],
+          "norms": [
+            0.9999999999999976,
+            0.999999999999995,
+            0.9999999999999903,
+            0.9999999999999802
+          ],
+          "energies": [
+            12.247709482626476,
+            12.247709482626417,
+            12.247709482626314,
+            12.247709482626094
+          ],
+          "norm_conserved": true,
+          "energy_conserved": true,
+          "mean_reversion": true
+        },
+        "supply_chain": {
+          "x0": -2.5145765091940695,
+          "x_t": [
+            -2.451623498991176,
+            -2.38786161505202,
+            -2.4423224699451738,
+            -2.3433124645831835
+          ],
+          "norms": [
+            0.9999999999999977,
+            0.9999999999999951,
+            0.99999999999999,
+            0.9999999999999799
+          ],
+          "energies": [
+            11.482744074552144,
+            11.482744074552103,
+            11.482744074552015,
+            11.482744074551851
+          ],
+          "norm_conserved": true,
+          "energy_conserved": true,
+          "mean_reversion": true
+        },
+        "energy_grid": {
+          "x0": 14.37939103816733,
+          "x_t": [
+            14.346506556936898,
+            14.317943188761554,
+            14.380222352322516,
+            14.378393329749064
+          ],
+          "norms": [
+            1.000000000000003,
+            1.0000000000000062,
+            1.0000000000000122,
+            1.0000000000000244
+          ],
+          "energies": [
+            26.959375274532114,
+            26.959375274532277,
+            26.95937527453262,
+            26.959375274533304
+          ],
+          "norm_conserved": true,
+          "energy_conserved": true,
+          "mean_reversion": true
+        },
+        "cybersecurity": {
+          "x0": -1.252323400368613,
+          "x_t": [
+            -1.2201807048397546,
+            -1.149608793766678,
+            -0.9551039986545489,
+            -0.5271609599407362
+          ],
+          "norms": [
+            0.9999999999999977,
+            0.9999999999999957,
+            0.999999999999991,
+            0.9999999999999818
+          ],
+          "energies": [
+            4.501285794283774,
+            4.5012857942837625,
+            4.501285794283736,
+            4.501285794283683
+          ],
+          "norm_conserved": true,
+          "energy_conserved": true,
+          "mean_reversion": true
+        },
+        "aerospace": {
+          "x0": -2.4579038268641975,
+          "x_t": [
+            -2.4065655368992878,
+            -2.259017675189807,
+            -1.7595684264631468,
+            -0.6677159041026092
+          ],
+          "norms": [
+            0.9999999999999969,
+            0.9999999999999942,
+            0.9999999999999892,
+            0.9999999999999796
+          ],
+          "energies": [
+            1.4554752672712594,
+            1.4554752672712503,
+            1.4554752672712334,
+            1.455475267271203
+          ],
+          "norm_conserved": true,
+          "energy_conserved": true,
+          "mean_reversion": true
+        },
+        "clinical_vitals": {
+          "x0": -2.1092104139991465,
+          "x_t": [
+            -2.0623901203631783,
+            -2.0251315302577693,
+            -2.106904242606492,
+            -2.0513557465420247
+          ],
+          "norms": [
+            0.9999999999999977,
+            0.9999999999999952,
+            0.9999999999999906,
+            0.9999999999999809
+          ],
+          "energies": [
+            10.252583440034114,
+            10.25258344003408,
+            10.252583440034009,
+            10.252583440033874
+          ],
+          "norm_conserved": true,
+          "energy_conserved": true,
+          "mean_reversion": true
+        }
+      }
+    },
+    {
+      "name": "T5_fidelity_kernel_classification",
+      "passed": true,
+      "overall_accuracy": 0.99,
+      "chance_level": 0.5,
+      "sectors": {
+        "workforce_hr": {
+          "accuracy": 1.0,
+          "n_test": 20
+        },
+        "capital_markets": {
+          "accuracy": 1.0,
+          "n_test": 20
+        },
+        "industrial_iot": {
+          "accuracy": 0.9,
+          "n_test": 20
+        },
+        "bitcoin_mining": {
+          "accuracy": 1.0,
+          "n_test": 20
+        },
+        "ecommerce_funnel": {
+          "accuracy": 1.0,
+          "n_test": 20
+        },
+        "supply_chain": {
+          "accuracy": 1.0,
+          "n_test": 20
+        },
+        "energy_grid": {
+          "accuracy": 1.0,
+          "n_test": 20
+        },
+        "cybersecurity": {
+          "accuracy": 1.0,
+          "n_test": 20
+        },
+        "aerospace": {
+          "accuracy": 1.0,
+          "n_test": 20
+        },
+        "clinical_vitals": {
+          "accuracy": 1.0,
+          "n_test": 20
+        }
+      }
+    },
+    {
+      "name": "T6_anomaly_fidelity_drift",
+      "passed": true,
+      "sectors": {
+        "workforce_hr": {
+          "fidelity_in_distribution": 0.9999999952598193,
+          "fidelity_anomaly": 0.9999944871208074,
+          "separated": true
+        },
+        "capital_markets": {
+          "fidelity_in_distribution": 0.9999392140909544,
+          "fidelity_anomaly": 0.006234390985401008,
+          "separated": true
+        },
+        "industrial_iot": {
+          "fidelity_in_distribution": 0.9999822473340029,
+          "fidelity_anomaly": 0.9996363003208771,
+          "separated": true
+        },
+        "bitcoin_mining": {
+          "fidelity_in_distribution": 0.999885821209585,
+          "fidelity_anomaly": 0.010324825105623759,
+          "separated": true
+        },
+        "ecommerce_funnel": {
+          "fidelity_in_distribution": 0.9996984165887718,
+          "fidelity_anomaly": 0.9674303601350199,
+          "separated": true
+        },
+        "supply_chain": {
+          "fidelity_in_distribution": 0.999999998670491,
+          "fidelity_anomaly": 0.840983102902799,
+          "separated": true
+        },
+        "energy_grid": {
+          "fidelity_in_distribution": 0.9995888835102972,
+          "fidelity_anomaly": 0.008253194352915072,
+          "separated": true
+        },
+        "cybersecurity": {
+          "fidelity_in_distribution": 0.9997961448701077,
+          "fidelity_anomaly": 0.00012961337692423108,
+          "separated": true
+        },
+        "aerospace": {
+          "fidelity_in_distribution": 0.9997895039278171,
+          "fidelity_anomaly": 0.00021819575258971783,
+          "separated": true
+        },
+        "clinical_vitals": {
+          "fidelity_in_distribution": 0.9999729610340549,
+          "fidelity_anomaly": 0.11921643306103345,
+          "separated": true
+        }
+      }
+    },
+    {
+      "name": "T7_causal_do_calculus",
+      "passed": true,
+      "planted_factor_ranked_first": true,
+      "top_factor": "driver_dominant",
+      "association": {
+        "y_0": 0.03994326290631854,
+        "y_1": 0.051910264473051575,
+        "y_2": 0.044037447354216185,
+        "y_3": 0.05561699927075793,
+        "y_4": 0.04074612249073554,
+        "y_5": 0.051910264473051575,
+        "y_6": 0.036048794772952475,
+        "y_7": 0.03994326290631854,
+        "y_8": 0.049214094226875074,
+        "y_9": 0.04745659065899705
+      },
+      "intervention_distribution": {
+        "y_0": 0.0,
+        "y_1": 0.0,
+        "y_2": 0.0,
+        "y_3": 0.0,
+        "y_4": 0.0,
+        "y_5": 0.0,
+        "y_6": 1.0,
+        "y_7": 0.0,
+        "y_8": 0.0,
+        "y_9": 0.0
+      },
+      "association_vs_do_total_variation": 0.6923647569936848,
+      "counterfactual_value": 5.2,
+      "identifiable": true,
+      "is_dag": true
+    },
+    {
+      "name": "T8_single_engine_instance",
+      "passed": true,
+      "engine_id": 1265094596736,
+      "status": "kellogg.quantum_tensor (Kellogg-owned deterministic Complex/ComplexMatrix/QuantumState)"
+    },
+    {
+      "name": "T9_causal_beyond_correlational",
+      "passed": true,
+      "rung_1_association": {
+        "y_0": 0.03994326290631854,
+        "y_1": 0.051910264473051575,
+        "y_2": 0.044037447354216185,
+        "y_3": 0.05561699927075793,
+        "y_4": 0.04074612249073554,
+        "y_5": 0.051910264473051575,
+        "y_6": 0.036048794772952475,
+        "y_7": 0.03994326290631854,
+        "y_8": 0.049214094226875074,
+        "y_9": 0.04745659065899705
+      },
+      "rung_2_intervention": {
+        "y_0": 0.0,
+        "y_1": 0.0,
+        "y_2": 0.0,
+        "y_3": 0.0,
+        "y_4": 0.0,
+        "y_5": 0.0,
+        "y_6": 1.0,
+        "y_7": 0.0,
+        "y_8": 0.0,
+        "y_9": 0.0
+      },
+      "separation_tv": 0.6923647569936848,
+      "correlational_baseline_tv": 0.0,
+      "counterfactual_value": 5.2
+    },
+    {
+      "name": "T10_emergent_breadth_single_call",
+      "passed": true,
+      "distinct_outputs": 22,
+      "outputs_produced": 21,
+      "output_inventory": [
+        "association_P(Y|X)",
+        "backdoor_set",
+        "born_distribution",
+        "causal_factor_ranking",
+        "causal_graph",
+        "central_tendency_<x>",
+        "coherence_Tr(rho^2)",
+        "confidence_bound_F_Q",
+        "confidence_score",
+        "counterfactual",
+        "data_quality_entropy",
+        "effective_dimension_32face",
+        "energy_level_<H>",
+        "forecast_trajectory",
+        "intervention_P(Y|doX)",
+        "model_agreement",
+        "optimal_intervention_times",
+        "recommendations",
+        "time_sensitivity",
+        "trend_<p>",
+        "trend_direction",
+        "volatility_kinetic"
+      ],
+      "note": "21/22 intelligence outputs from ONE predict() on ONE |\u03c8\u27e9, zero task-specific code paths"
+    },
+    {
+      "name": "T11_zero_domain_vocabulary_in_engine",
+      "passed": true,
+      "vocabulary_terms_scanned": 40,
+      "engine_files_scanned": [
+        "quantum_tensor.py",
+        "bridge.py",
+        "causal_ladder.py"
+      ],
+      "hits": {}
+    },
+    {
+      "name": "T12_exact_support_family",
+      "passed": true,
+      "witness_count": 754,
+      "scope": "bounded integer identities and Float64 Binet/overlay/Pisot tolerances, not physical hardware"
+    },
+    {
+      "name": "T13_lucas_ladder_and_confidence",
+      "passed": true,
+      "exact_ladder": true,
+      "monotonic_values": true,
+      "coherence_measured": true,
+      "coherence": {
+        "scale_invariant": false,
+        "mean_coherence": 0.2562512490306481,
+        "coherence_variance": 0.2535374912924611,
+        "per_scale": {
+          "L_10 \u00b7 pattern": {
+            "index": 10,
+            "value": 123,
+            "autocorr_lag1": 0.5797478905307533,
+            "n_blocks": 245
+          },
+          "L_12 \u00b7 structure": {
+            "index": 12,
+            "value": 322,
+            "autocorr_lag1": 0.991176155790041,
+            "n_blocks": 93
+          },
+          "L_15 \u00b7 coherence": {
+            "index": 15,
+            "value": 1364,
+            "autocorr_lag1": 0.1569027609663944,
+            "n_blocks": 22
+          },
+          "L_18 \u00b7 abstraction": {
+            "index": 18,
+            "value": 5778,
+            "autocorr_lag1": 0.053429437866051886,
+            "n_blocks": 5
+          },
+          "L_20 \u00b7 metacognition": {
+            "index": 20,
+            "value": 15127,
+            "autocorr_lag1": -0.5,
+            "n_blocks": 2
+          }
+        },
+        "n_scales": 5
+      },
+      "scaled_confidence_formula": [
+        0.9959346906221083,
+        0.9984471899924291,
+        0.9996334312820713,
+        0.9999134648641439,
+        0.999966946519324
+      ],
+      "scope": "canonical mathematical confidence transformation; not measured predictive accuracy or evidence of consciousness"
+    },
+    {
+      "name": "T14_scale_fold_store",
+      "passed": true,
+      "stats": {
+        "hamiltonian_computations": 1,
+        "propagator_computations": 1,
+        "propagator_uses": 10,
+        "state_encodings": 2,
+        "state_fold_hits": 1
+      },
+      "coarse_collision_witness": true,
+      "scope": "exact input cache identity, not approximate telemetry equivalence"
+    },
+    {
+      "name": "T15_quantum_algorithm_lucas_scaling",
+      "passed": true,
+      "lucas_scale_profile_validated": true,
+      "monotonic": true,
+      "quantum_kernel": {
+        "base": {
+          "train": 2,
+          "test": 3,
+          "accuracy": 0.9666666666666667,
+          "samples": 60,
+          "wall_time_seconds": 0.03623819351196289
+        },
+        "scaled_L15": {
+          "train": 22,
+          "test": 33,
+          "accuracy": 0.9833333333333333,
+          "samples": 660,
+          "wall_time_seconds": 1.4182307720184326
+        }
+      },
+      "algorithm_projections": [
+        {
+          "algorithm": "Grover Search",
+          "priority": "P0",
+          "base_efficiency": 1.0,
+          "scaled_efficiency": 1.4,
+          "note": "30-50% improvement, Lucas attractor oracle"
+        },
+        {
+          "algorithm": "VQE 2025",
+          "priority": "P0",
+          "base_efficiency": 1.0,
+          "scaled_efficiency": 1.32,
+          "note": "25-40% convergence improvement"
+        },
+        {
+          "algorithm": "QAOA 2025",
+          "priority": "P0",
+          "base_efficiency": 1.0,
+          "scaled_efficiency": 1.4,
+          "note": "35-45% optimization improvement"
+        },
+        {
+          "algorithm": "Quantum Simulation 2025",
+          "priority": "P0",
+          "base_efficiency": 1.0,
+          "scaled_efficiency": 1.5,
+          "note": "40-60% accuracy improvement"
+        },
+        {
+          "algorithm": "Quantum Fourier Transform",
+          "priority": "P1",
+          "base_efficiency": 1.0,
+          "scaled_efficiency": 1.2,
+          "note": "15-25% precision improvement"
+        },
+        {
+          "algorithm": "Quantum Phase Estimation",
+          "priority": "P1",
+          "base_efficiency": 1.0,
+          "scaled_efficiency": 1.25,
+          "note": "20-30% accuracy improvement"
+        },
+        {
+          "algorithm": "Shor's Factoring",
+          "priority": "P1",
+          "base_efficiency": 1.0,
+          "scaled_efficiency": 1.3,
+          "note": "25-35% efficiency improvement"
+        },
+        {
+          "algorithm": "Quantum Annealing",
+          "priority": "P1",
+          "base_efficiency": 1.0,
+          "scaled_efficiency": 1.35,
+          "note": "30-40% ground-state improvement"
+        },
+        {
+          "algorithm": "Quantum Machine Learning 2025",
+          "priority": "P1",
+          "base_efficiency": 1.0,
+          "scaled_efficiency": 1.25,
+          "note": "20-30% accuracy/training improvement"
+        },
+        {
+          "algorithm": "Quantum Walk 2025",
+          "priority": "P1",
+          "base_efficiency": 1.0,
+          "scaled_efficiency": 1.3,
+          "note": "25-35% walk efficiency improvement"
+        },
+        {
+          "algorithm": "Quantum Kernel Methods",
+          "priority": "P2",
+          "base_efficiency": 1.0,
+          "scaled_efficiency": 1.18,
+          "note": "15-20% kernel efficiency improvement"
+        }
+      ],
+      "security": {
+        "classification": "algorithmic_primitives_not_cryptosystems",
+        "post_quantum_safe": "not_applicable",
+        "cryptanalysis_relevance": {
+          "QFT/QPE": "subroutines of Shor \u2014 a fault-tolerant quantum computer running them breaks RSA/ECC; they confer no defence",
+          "Grover": "generic quadratic speedup against symmetric keys and hashing; mitigated by doubling key lengths",
+          "QuantumWalk/VQE/kernels": "no known cryptanalytic impact"
+        },
+        "lucas_scaling_security_effect": "none \u2014 Lucas scaling is an arithmetic/resource transformation on the simulation, not a cryptographic primitive; it neither weakens nor strengthens any cryptosystem",
+        "threat_model": "classical simulation on commodity hardware; no adversary model applies because no keys or secrets exist here",
+        "recommendation": "for real deployments use NIST-standardized PQC (ML-KEM-1024, ML-DSA-87, SLH-DSA); do not rely on any flag in this report for cryptographic assurance",
+        "theorem_proven": false
+      },
+      "interpretation": "Lucas scaling raises resource budget without breaking unitarity; projections are from the analysis document."
+    },
+    {
+      "name": "T16_first_principles_quantum_lucas_scaling",
+      "passed": true,
+      "benchmark": {
+        "qft": {
+          "base": {
+            "unitaryError": 2.220446049250313e-16,
+            "runtimeSeconds": 0.0015080000000000648
+          },
+          "lucas": {
+            "unitaryError": 2.220446049250313e-16,
+            "runtimeSeconds": 0.0007999999999999119
+          }
+        },
+        "grover": {
+          "base": {
+            "peakSuccessProbability": 0.9613189697265625,
+            "optimalIterations": 3,
+            "runtimeSeconds": 0.0003301999999998362
+          },
+          "lucas": {
+            "peakSuccessProbability": 0.68359375,
+            "optimalIterations": 1,
+            "runtimeSeconds": 0.0009238000000000302
+          }
+        },
+        "qpe": {
+          "base": {
+            "phaseError": 0,
+            "precisionQubits": 6,
+            "runtimeSeconds": 0.005678300000000025
+          },
+          "lucas": {
+            "phaseError": 0,
+            "precisionQubits": 4,
+            "runtimeSeconds": 0.00022540000000015326
+          }
+        },
+        "quantumWalk": {
+          "base": {
+            "quantumVariance": 7.999999999999992,
+            "classicalVariance": 5,
+            "runtimeSeconds": 0.0008684999999999388
+          },
+          "lucas": {
+            "quantumVariance": 19.12499999999998,
+            "classicalVariance": 8,
+            "runtimeSeconds": 0.00020679999999995147
+          }
+        },
+        "vqe": {
+          "base": {
+            "finalEnergy": -1.343599627988694,
+            "exactGroundEnergy": -1.414213562373095,
+            "runtimeSeconds": 0.004749200000000009
+          },
+          "lucas": {
+            "finalEnergy": -1.374124567260898,
+            "exactGroundEnergy": -1.414213562373095,
+            "runtimeSeconds": 0.020517599999999803
+          }
+        }
+      },
+      "security": {
+        "classification": "algorithmic_primitives_not_cryptosystems",
+        "post_quantum_safe": "not_applicable",
+        "cryptanalysis_relevance": {
+          "QFT/QPE": "subroutines of Shor \u2014 a fault-tolerant quantum computer running them breaks RSA/ECC; they confer no defence",
+          "Grover": "generic quadratic speedup against symmetric keys and hashing; mitigated by doubling key lengths",
+          "QuantumWalk/VQE/kernels": "no known cryptanalytic impact"
+        },
+        "lucas_scaling_security_effect": "none \u2014 Lucas scaling is an arithmetic/resource transformation on the simulation, not a cryptographic primitive; it neither weakens nor strengthens any cryptosystem",
+        "threat_model": "classical simulation on commodity hardware; no adversary model applies because no keys or secrets exist here",
+        "recommendation": "for real deployments use NIST-standardized PQC (ML-KEM-1024, ML-DSA-87, SLH-DSA); do not rely on any flag in this report for cryptographic assurance",
+        "theorem_proven": false
+      },
+      "interpretation": "QFT/Grover/QPE/QuantumWalk/VQE execute on the exact TS substrate with Lucas scaling and remain unitary."
+    }
+  ],
+  "all_passed": true,
+  "required_check_count": 16,
+  "executed_check_count": 16,
+  "production_ready": false,
+  "elapsed_seconds": 13.272040843963623
+}

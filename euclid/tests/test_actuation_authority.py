@@ -1,178 +1,144 @@
-"""Adversarial regressions for authorized Salamander actuation (F->A).
+"""EUCLID's real AL HARAS / Salamander actuation seam.
 
-QC contract: the canonical EUCLID->SALAMANDER healing route must compose
-through ``salamander.authority.build_authorized_control_plane`` bound to an
-evidence-bearing AL HARAS verdict plus an out-of-band subscription-token
-provider, and must refuse before any handler invocation when authorization
-is absent.  ``salamander.authority`` lands when Agent F's branch merges; the
-authorized-path tests inject a test double for that module (production code
-still calls the canonical constructor by name — no bypass).
+The obsolete whole-module authority doubles are intentionally gone. Positive
+checks use a signed local fixture token, the canonical authorizer/control plane,
+and TURING's actual read-only probe. They do not certify a deployed service.
 """
 
 from __future__ import annotations
 
-import sys
-import types
+import json
+import time
 
 import pytest
 
-from euclid.contracts import Health
-from euclid.runtime import EuclidRuntime
-from salamander.control_plane import (
-    ActionRegistry,
-    AutonomicControlPlane,
-    EvidenceLedger,
-    FailClosed,
+from al_haras import (
+    ALHaras,
+    GuardianPolicy,
+    HashChainAudit,
+    SubscriptionAuthority,
+    SubscriptionClaims,
 )
+from euclid.contracts import Health
+from euclid.organ_adapters.specialists import TuringQuantumOrgan
+from euclid.runtime import EuclidRuntime
+from salamander.control_plane import ActionRegistry, FailClosed
+from salamander.models import ActionKind
 
 
-def _authorized_module(plane_fn):
-    module = types.ModuleType("salamander.authority")
-    module.build_authorized_control_plane = plane_fn
-    return module
-
-
-def _spy_execute(rt):
-    calls = []
-    original = rt.autonomic.execute
-
-    def wrapped(*args, **kwargs):
-        calls.append((args, kwargs))
-        return original(*args, **kwargs)
-
-    rt.autonomic.execute = wrapped
-    return calls
-
-
-def _real_authorized_plane(**kwargs):
-    """Test double: F's constructor shape, real plane behaviour."""
-    return AutonomicControlPlane(
-        registry=kwargs["registry"], ledger=kwargs["ledger"]
+@pytest.fixture
+def runtime(tmp_path):
+    authority = SubscriptionAuthority(
+        {"fixture": b"euclid-actuation-local-fixture-key-32"}, "euclid-actuation-test"
     )
-
-
-def test_no_guardian_actuation_refused_before_handler(tmp_path):
-    rt = EuclidRuntime.production(creator_id="c", state_dir=tmp_path)
-    try:
-        calls = _spy_execute(rt)
-        with pytest.raises(FailClosed):
-            rt.heal_organ("chronus", reason="degraded", actor="ops-1")
-        assert calls == []
-        assert "guardian" in rt._actuation_reason
-        assert any(
-            r.kind == "salamander-actuation-unavailable" for r in rt.evidence.records
+    guardian = ALHaras(
+        authority,
+        GuardianPolicy(version="fixture", allowed_operations=frozenset({"salamander.requalify"})),
+        HashChainAudit(tmp_path / "guardian.jsonl"),
+    )
+    now = int(time.time())
+    credential = authority.issue(
+        SubscriptionClaims(
+            "fixture",
+            "c",
+            "euclid-actuation-test",
+            "fixture",
+            ("hyba.security",),
+            ("ops-1",),
+            now - 5,
+            now + 300,
         )
-    finally:
-        rt.close()
-
-
-def test_guardian_without_token_provider_refused(tmp_path):
-    rt = EuclidRuntime.production(
-        creator_id="c", state_dir=tmp_path, guardian=object()
     )
+    rt = EuclidRuntime(creator_id="c", state_dir=tmp_path / "euclid")
+    rt.register_specialist("turing", TuringQuantumOrgan())
+    rt.rights.grant("c", "turing", "turing.request", "dispatch")
+    rt._organ_probes = {"turing": {"operation": "capability-matrix"}}
     try:
-        calls = _spy_execute(rt)
-        with pytest.raises(FailClosed):
-            rt.heal_organ("chronus", reason="degraded", actor="ops-1")
-        assert calls == []
-        assert "token provider" in rt._actuation_reason
+        yield rt, guardian, credential
     finally:
         rt.close()
 
 
-def test_missing_actor_refused_before_handler(tmp_path, monkeypatch):
-    monkeypatch.setitem(
-        sys.modules, "salamander.authority", _authorized_module(_real_authorized_plane)
+def wire(rt, guardian, provider):
+    actions = ActionRegistry()
+    actions.register(
+        "requalify-organ",
+        {ActionKind.REQUALIFY},
+        rt._requalify_organ,
+        verifier_id="euclid.delegator-redispatch",
+        verifier=rt._verify_requalified,
     )
-    rt = EuclidRuntime.production(
-        creator_id="c",
-        state_dir=tmp_path,
-        guardian=object(),
-        subscription_token_provider=lambda tenant, actor: "tok",
+    rt.autonomic = rt._compose_actuation_plane(
+        actions,
+        guardian,
+        provider,
+        ledger_sink=lambda record: rt.evidence.append("salamander-action", record),
     )
-    try:
-        calls = _spy_execute(rt)
-        for bad in (None, "", "   "):
-            with pytest.raises(FailClosed):
-                rt.heal_organ("chronus", reason="degraded", actor=bad)
-        assert calls == []
-    finally:
-        rt.close()
 
 
-def test_authorized_heal_executes_and_verifies(tmp_path, monkeypatch):
-    monkeypatch.setitem(
-        sys.modules, "salamander.authority", _authorized_module(_real_authorized_plane)
-    )
-    rt = EuclidRuntime.production(
-        creator_id="c",
-        state_dir=tmp_path,
-        guardian=object(),
-        subscription_token_provider=lambda tenant, actor: "tok",
-    )
-    try:
-        rt.registry.get("chronus").health = Health.DEGRADED
-        result = rt.heal_organ("chronus", reason="injected", actor="ops-1")
-        assert result.verified
-        assert rt.registry.get("chronus").health is Health.HEALTHY
-        assert any(
-            r.kind == "heal-attempt" and r.payload.get("actor") == "ops-1"
-            for r in rt.evidence.records
-        )
-    finally:
-        rt.close()
+def assert_no_dispatch(rt):
+    assert not any(r.kind == "delegation-result" for r in rt.evidence.records)
 
 
-def test_constructor_refusal_leaves_actuation_unavailable(tmp_path, monkeypatch):
+def test_no_guardian_actuation_refused_before_handler(runtime):
+    rt, _, _ = runtime
+    wire(rt, None, None)
+    with pytest.raises(FailClosed, match="guardian"):
+        rt.heal_organ("turing", reason="degraded", actor="ops-1")
+    assert_no_dispatch(rt)
+    assert any(r.kind == "salamander-actuation-unavailable" for r in rt.evidence.records)
+
+
+def test_guardian_without_token_provider_refused(runtime):
+    rt, guardian, _ = runtime
+    wire(rt, guardian, None)
+    with pytest.raises(FailClosed, match="token provider"):
+        rt.heal_organ("turing", reason="degraded", actor="ops-1")
+    assert_no_dispatch(rt)
+
+
+def test_missing_actor_refused_before_handler(runtime):
+    rt, guardian, credential = runtime
+    wire(rt, guardian, lambda tenant, actor: credential)
+    for actor in (None, "", "   "):
+        with pytest.raises(FailClosed, match="actor"):
+            rt.heal_organ("turing", reason="degraded", actor=actor)
+    assert_no_dispatch(rt)
+
+
+def test_authorized_heal_executes_and_verifies(runtime):
+    rt, guardian, credential = runtime
+    wire(rt, guardian, lambda tenant, actor: credential)
+    rt.registry.get("turing").health = Health.DEGRADED
+    result = rt.heal_organ("turing", reason="degraded", actor="ops-1")
+    assert result.verified is True
+    assert rt.registry.get("turing").health is Health.HEALTHY
+    assert any(
+        r.kind == "heal-attempt" and r.payload["actor"] == "ops-1" for r in rt.evidence.records
+    )
+    assert any(r["kind"] == "action-authorization" for r in rt.autonomic.ledger.records)
+
+
+def test_constructor_refusal_leaves_actuation_unavailable(runtime, monkeypatch):
+    import salamander.authority
+
     def refusing(**kwargs):
-        raise PermissionError("invalid subscription credential")
+        raise PermissionError("fixture constructor refusal")
 
-    monkeypatch.setitem(
-        sys.modules, "salamander.authority", _authorized_module(refusing)
-    )
-    rt = EuclidRuntime.production(
-        creator_id="c",
-        state_dir=tmp_path,
-        guardian=object(),
-        subscription_token_provider=lambda tenant, actor: "tok",
-    )
-    try:
-        calls = _spy_execute(rt)
-        with pytest.raises(FailClosed):
-            rt.heal_organ("chronus", reason="degraded", actor="ops-1")
-        assert calls == []
-        assert "unavailable" in rt._actuation_reason
-    finally:
-        rt.close()
+    # Only this negative path injects a failure. The actual authority module
+    # and canonical authorizer class remain available to the observe-only plane.
+    monkeypatch.setattr(salamander.authority, "build_authorized_control_plane", refusing)
+    rt, guardian, credential = runtime
+    wire(rt, guardian, lambda tenant, actor: credential)
+    with pytest.raises(FailClosed, match="unavailable"):
+        rt.heal_organ("turing", reason="degraded", actor="ops-1")
+    assert_no_dispatch(rt)
 
 
-def test_token_never_enters_evidence_or_payload(tmp_path, monkeypatch):
-    monkeypatch.setitem(
-        sys.modules, "salamander.authority", _authorized_module(_real_authorized_plane)
-    )
-    sentinel = "SENTINEL-SECRET-TOKEN-9f3a"
-    captured = []
-
-    def provider(tenant, actor):
-        return sentinel
-
-    monkeypatch.setitem(
-        sys.modules,
-        "salamander.authority",
-        _authorized_module(_real_authorized_plane),
-    )
-    rt = EuclidRuntime.production(
-        creator_id="c",
-        state_dir=tmp_path,
-        guardian=object(),
-        subscription_token_provider=provider,
-    )
-    try:
-        rt.registry.get("chronus").health = Health.DEGRADED
-        rt.heal_organ("chronus", reason="injected", actor="ops-1")
-        for record in rt.evidence.records:
-            assert sentinel not in str(record.payload)
-        for request_record in rt.autonomic.ledger.records:
-            assert sentinel not in str(request_record)
-    finally:
-        rt.close()
+def test_token_never_enters_evidence_or_payload(runtime):
+    rt, guardian, credential = runtime
+    wire(rt, guardian, lambda tenant, actor: credential)
+    rt.registry.get("turing").health = Health.DEGRADED
+    assert rt.heal_organ("turing", reason="degraded", actor="ops-1").verified
+    assert credential not in json.dumps(rt.evidence.to_payload())
+    assert credential not in json.dumps(rt.autonomic.ledger.records)

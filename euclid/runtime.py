@@ -106,45 +106,84 @@ class EuclidRuntime:
         organism: bool = True,
         guardian: Any | None = None,
         subscription_token_provider: Any | None = None,
+        tenant_id: str | None = None,
     ) -> "EuclidRuntime":
+        if tenant_id is not None and (
+            not isinstance(tenant_id, str) or not tenant_id.strip()
+        ):
+            raise ValueError("tenant_id must be a non-empty string when bound")
         root = Path(state_dir)
         root.mkdir(parents=True, exist_ok=True)
         database = MemoryDatabase(root / "euclid_memory.sqlite3")
-        if memory is None or pythia is None or store is None:
-            from Intelligence.pythia_learning import PythiaLearning
-            from Intelligence.pythia_memory import PythiaMemorySystem
-            from Intelligence.pythia_store import PythiaStore
+        owns_store = False
+        try:
+            if memory is None or pythia is None or store is None:
+                from Intelligence.pythia_learning import PythiaLearning
+                from Intelligence.pythia_memory import PythiaMemorySystem
+                from Intelligence.pythia_store import PythiaStore
 
-            memory = memory or PythiaMemorySystem()
-            pythia = pythia or PythiaLearning(n_units=32)
-            store = store or PythiaStore(memory, pythia, store_dir=root / "pythia")
-            store.load()
-        if experience_learner is None:
-            from hyba_substrate.euclid_experience_superlearner import (
-                ExperienceSuperlearner,
-            )
+                memory = memory or PythiaMemorySystem()
+                pythia = pythia or PythiaLearning(n_units=32)
+                if store is None:
+                    store = PythiaStore(memory, pythia, store_dir=root / "pythia")
+                    owns_store = True
+                store.load()
+            if experience_learner is None:
+                from hyba_substrate.euclid_experience_superlearner import (
+                    ExperienceSuperlearner,
+                )
 
-            experience_learner = ExperienceSuperlearner(root / "experience_superlearner.json")
-        runtime = cls(
-            creator_id=creator_id,
-            state_dir=root,
-            pythia=pythia,
-            memory=memory,
-            store=store,
-            experience_learner=experience_learner,
-            memory_database=database,
-        )
-        if adaptive_data_port is not None:
-            runtime.bind_adaptive_data_port(adaptive_data_port)
-        runtime._compose_cognition()
-        if organism:
-            runtime.compose_organism(
-                guardian=guardian,
-                subscription_token_provider=subscription_token_provider,
+                experience_learner = ExperienceSuperlearner(root / "experience_superlearner.json")
+            runtime = cls(
+                creator_id=creator_id,
+                state_dir=root,
+                pythia=pythia,
+                memory=memory,
+                store=store,
+                experience_learner=experience_learner,
+                memory_database=database,
             )
-        for organ_id, implementation in dict(specialists or {}).items():
-            runtime.register_specialist(organ_id, implementation)
-        return runtime
+            runtime._owns_store = owns_store
+            runtime._service_tenant_id = tenant_id
+            if adaptive_data_port is not None:
+                runtime.bind_adaptive_data_port(adaptive_data_port)
+            runtime._compose_cognition()
+            if organism:
+                runtime.compose_organism(
+                    guardian=guardian,
+                    subscription_token_provider=subscription_token_provider,
+                    tenant_id=tenant_id,
+                )
+            for organ_id, implementation in dict(specialists or {}).items():
+                runtime.register_specialist(organ_id, implementation)
+            return runtime
+        except BaseException:
+            # Failed composition must not save partially loaded state or leave
+            # a SQLite handle / owned atexit writer alive.
+            import atexit
+            import contextlib
+            if owns_store:
+                atexit.unregister(store._flush_on_exit)
+            with contextlib.suppress(Exception):
+                database.close()
+            raise
+
+    def training_pipeline(self, *, mission_id: str, provenance: str) -> Any:
+        """One training boundary over the same learner used by this runtime."""
+        if self._closed:
+            raise RuntimeError("runtime is closed")
+        from .training_pipeline import TrainingPipeline
+
+        learner = self.learning.experience_learner
+        if learner is None:
+            raise RuntimeError("runtime has no experience learner; use production()")
+        return TrainingPipeline(learner, self.learning,
+                                mission_id=mission_id, provenance=provenance)
+
+    def consolidate_learning(self, *, replay_limit: int = 64) -> dict[str, Any]:
+        if self._closed:
+            raise RuntimeError("runtime is closed")
+        return self.learning.consolidate(replay_limit=replay_limit)
 
     def training_pipeline(self, *, mission_id: str, provenance: str) -> Any:
         """One training boundary over the same learner used by this runtime."""
@@ -185,6 +224,7 @@ class EuclidRuntime:
         guardian: Any | None = None,
         implementations: Mapping[str, Any] | None = None,
         subscription_token_provider: Any | None = None,
+        tenant_id: str | None = None,
     ) -> None:
         """Register TURING/CHRONUS/Triad specialists, the AL HARAS boundary and
         the Salamander bounded-recovery plane on this composition root.
@@ -192,12 +232,26 @@ class EuclidRuntime:
         Authority stays with each owner; EUCLID only gains governed dispatch.
         An organ whose owner cannot be constructed is recorded unavailable
         with its reason instead of being registered."""
+        if getattr(self, "autonomic", None) is not None:
+            raise RuntimeError(
+                "organism already composed; create a new runtime for a different binding"
+            )
         from salamander.control_plane import ActionRegistry
         from salamander.models import ActionKind
 
         from .cognition.reachability import ReachabilityStage
         from .organ_adapters import specialists as adapters
 
+        if tenant_id is not None and (
+            not isinstance(tenant_id, str) or not tenant_id.strip()
+        ):
+            raise ValueError("tenant_id must be a non-empty string when bound")
+        if subscription_token_provider is not None and not callable(subscription_token_provider):
+            raise TypeError("subscription_token_provider must be callable")
+        # A shared enterprise fabric belongs to one tenant. Creator identity is
+        # a delegation owner, not an implicit customer identity. Standalone
+        # callers without a bound tenant retain their existing behavior.
+        self._service_tenant_id = tenant_id
         self.guardian = guardian
         self.organism_unavailable: dict[str, str] = {}
         self._organ_probes: dict[str, dict[str, Any]] = {}
@@ -253,6 +307,7 @@ class EuclidRuntime:
         token_provider: Any | None,
         *,
         ledger_sink: Any,
+        restored_records: Any | None = None,
     ) -> Any:
         """Compose the Salamander plane; actuation only via the authorized path.
 
@@ -271,7 +326,8 @@ class EuclidRuntime:
             EvidenceLedger as AutonomicLedger,
         )
 
-        ledger = AutonomicLedger(sink=ledger_sink)
+        ledger = (AutonomicLedger(sink=ledger_sink) if restored_records is None
+                  else AutonomicLedger.from_records(restored_records, sink=ledger_sink))
         self._actuation_ready = False
         self._subscription_token_provider = token_provider
         if guardian is None:
@@ -292,7 +348,12 @@ class EuclidRuntime:
                     "guardian": guardian,
                     "authorizer": guardian,
                     "subscription_token_provider": token_provider,
-                    "token_provider": token_provider,
+                    # EUCLID's public provider accepts (tenant, actor); the
+                    # canonical Salamander authorizer accepts ActionRequest.
+                    # Translate here, not in the security/actuation owners.
+                    "token_provider": lambda request: token_provider(
+                        request.tenant_id, request.actor_id
+                    ),
                 }
                 signature = inspect.signature(build_authorized_control_plane)
                 if any(
@@ -317,6 +378,35 @@ class EuclidRuntime:
             {"reason": self._actuation_reason},
         )
         return AutonomicControlPlane(registry=actions, ledger=ledger)
+
+    def review_repository_capabilities(
+        self, *, tenant_id: str, target: str, source: str,
+        evidence: Mapping[str, Any] | None = None,
+    ) -> Mapping[str, Any]:
+        """Run bounded diagnostics on the canonical Salamander evidence plane.
+
+        No execution, repair, reward, approval or authorization is inferred.
+        Service callers must retain their existing authentication boundary.
+        """
+        if self._closed:
+            raise RuntimeError("runtime is closed")
+        plane = getattr(self, "autonomic", None)
+        if plane is None:
+            raise RuntimeError("Salamander is not composed; call compose_organism first")
+        expected_tenant = getattr(self, "_service_tenant_id", None) or self.creator_id
+        if tenant_id != expected_tenant:
+            raise ValueError("diagnostic tenant does not match this runtime binding")
+        from salamander.agent_capabilities import AgentCapabilitySuite
+
+        with self._adaptive_lock:
+            suite = getattr(self, "_agent_capabilities", None)
+            if suite is None or suite.ledger is not plane.ledger:
+                suite = AgentCapabilitySuite(plane.ledger)
+                self._agent_capabilities = suite
+            return suite.inspect(
+                tenant_id=tenant_id, target=target, source=source,
+                evidence=evidence, at_ns=plane.clock_ns(),
+            )
 
     def record_held_out_generalisation(self, trials: Any) -> Mapping[str, Any]:
         """Seal multi-family held-out transfer evidence for status/readiness."""
@@ -372,6 +462,15 @@ class EuclidRuntime:
         return bind_intelligence(self, registry, profile=profile,
                                  capabilities=capabilities, organ_id=organ_id)
 
+    def bind_empirical_state(self, *, data_port, organ_id="empirical-state"):
+        """Bind operational reliability state to existing shared custody.
+
+        Grants no rights or entitlements; dispatch remains AL HARAS-mediated.
+        """
+        from .capabilities.empirical_runtime import bind_empirical_state
+
+        return bind_empirical_state(self, data_port=data_port, organ_id=organ_id)
+
     def dispatch_specialist(
         self,
         organ_id: str,
@@ -391,6 +490,14 @@ class EuclidRuntime:
         # Detach caller-owned nested data before authorization. The guardian
         # receives its own observation, not a mutable dispatch authority handle.
         request = copy.deepcopy(dict(request))
+        bound_tenant = getattr(self, "_service_tenant_id", None)
+        if bound_tenant is not None and tenant_id != bound_tenant:
+            self.evidence.append("governance-denial", {
+                "organ": organ_id, "reason": "TENANT_BOUNDARY_MISMATCH",
+            })
+            return {"allowed": False, "organ": organ_id,
+                    "operation": f"{organ_id}.{request.get('operation', 'default')}",
+                    "governance": {"allowed": False, "reason": "TENANT_BOUNDARY_MISMATCH"}}
         if getattr(self, "guardian", None) is None:
             # Creator-scoped grants are necessary but are not a substitute
             # for the security owner's authorisation of specialist effects.
@@ -411,7 +518,8 @@ class EuclidRuntime:
         episode = f"dispatch:{operation}"
         governance: dict[str, Any] = {"guardian": "not-configured"}
         if getattr(self, "guardian", None) is not None:
-            from al_haras import GuardianRequest
+            from al_haras import GuardianRequest, GuardianVerdict
+            from al_haras.audit import digest as guardian_digest
 
             verdict = self.guardian.evaluate(
                 GuardianRequest(
@@ -423,6 +531,18 @@ class EuclidRuntime:
                 ),
                 subscription_token=subscription_token or "",
             )
+            if (
+                not isinstance(verdict, GuardianVerdict)
+                or type(verdict.allowed) is not bool
+                or verdict.tenant_id != tenant_id
+                or verdict.operation != operation
+                or verdict.payload_hash != guardian_digest(request)
+                or any(not isinstance(value, str) or not value.strip() for value in (
+                    verdict.reason, verdict.evidence_id, verdict.policy_version,
+                ))
+            ):
+                self.evidence.append("governance-invalid-response", {"organ": organ_id})
+                raise ValueError("invalid or unbound AL HARAS verdict")
             governance = {
                 "guardian": "al_haras",
                 "allowed": verdict.allowed,
@@ -627,7 +747,7 @@ class EuclidRuntime:
             action_id=f"requalify:{organ_id}:{uuid.uuid4().hex[:12]}",
             kind=ActionKind.REQUALIFY,
             handler="requalify-organ",
-            tenant_id=self.creator_id,
+            tenant_id=getattr(self, "_service_tenant_id", None) or self.creator_id,
             target=organ_id,
             reason=reason,
             bounds={"max_attempts": 1},
@@ -641,12 +761,15 @@ class EuclidRuntime:
             "heal-attempt",
             {"actor": actor, "organ": organ_id, "action_id": request.action_id},
         )
-        token = (
-            self._subscription_token_provider(self.creator_id, actor)
-            if self._subscription_token_provider is not None
-            else None
-        )
         if "subscription_token" in inspect.signature(self.autonomic.execute).parameters:
+            # Legacy planes take the credential explicitly. The canonical
+            # plane fetches it through its bound authorizer; do not fetch twice
+            # or bypass its fail-closed credential-provider error handling.
+            token = (
+                self._subscription_token_provider(request.tenant_id, actor)
+                if self._subscription_token_provider is not None
+                else None
+            )
             result = self.autonomic.execute(request, subscription_token=token or "")
         else:
             result = self.autonomic.execute(request)
@@ -698,6 +821,7 @@ class EuclidRuntime:
 
     def _compose_cognition(self) -> None:
         """Wire canonical implementations once; no parallel state histories."""
+        from euclid.transfer.persistent_repository import PersistentPrimitiveRepository
         from Intelligence.repo_engineer import RepoEngineer
 
         from .cognition.adaptive import (
@@ -743,7 +867,11 @@ class EuclidRuntime:
             metacontroller=TOEMetaController(),
             metalearner=PersistentStrategyLearner(self.state_dir / "strategy_learning.json"),
             planner=TOECognitivePlanner(),
-            skills=V16SkillSearchAdapter(),
+            skills=V16SkillSearchAdapter(
+                repository=PersistentPrimitiveRepository(
+                    storage_path=str(self.state_dir / "primitive_repository.json")
+                )
+            ),
             objective=WeightedObjective(
                 {
                     "correctness_estimate": 0.55,
@@ -1328,6 +1456,16 @@ class EuclidRuntime:
             },
         )
 
+    def _abort_startup(self) -> None:
+        """Release resources without saving a partially restored runtime."""
+        import atexit
+        import contextlib
+        self._closed = True
+        if getattr(self, "_owns_store", False):
+            atexit.unregister(self.learning.store._flush_on_exit)
+        with contextlib.suppress(Exception):
+            self.learning.memory_database.close()
+
     def close(self) -> None:
         """Release durable resources.  Safe to call twice, and never raises.
 
@@ -1361,6 +1499,9 @@ class EuclidRuntime:
                         "error": type(exc).__name__,
                     })
         finally:
+            if getattr(self, "_owns_store", False):
+                import atexit
+                atexit.unregister(self.learning.store._flush_on_exit)
             database = self.learning.memory_database
             if database is not None:
                 try:
@@ -1493,13 +1634,26 @@ class EuclidRuntime:
             "rights": self.rights.snapshot(),
             "evidence": self.evidence.to_payload(),
         }
+        # Tenant binding is routing context, not restored authorization.
+        if getattr(self, "_service_tenant_id", None) is not None:
+            body["tenant_id"] = self._service_tenant_id
         return {**body, "seal": domain_hash("euclid.runtime-checkpoint.seal.v1", body)}
 
     def save(self, path: str | Path) -> None:
         atomic_write(Path(path), self.snapshot())
 
     @classmethod
-    def restore(cls, path: str | Path, *, state_dir: str | Path) -> "EuclidRuntime":
+    def restore(
+        cls, path: str | Path, *, state_dir: str | Path,
+        guardian: Any | None = None,
+        subscription_token_provider: Any | None = None,
+        tenant_id: str | None = None,
+    ) -> "EuclidRuntime":
+        """Restore state while reattaching operator-owned authority out of band.
+
+        Credentials and guardian configuration are deliberately not checkpointed.
+        Without explicit authority, restored actuation and dispatch stay closed.
+        """
         payload = load_json(Path(path))
         body = {
             "schema": payload.get("schema"),
@@ -1511,35 +1665,64 @@ class EuclidRuntime:
         # Older checkpoints still restore, but carry no process-bound proof.
         if "producer_process" in payload:
             body["producer_process"] = payload["producer_process"]
+        if "tenant_id" in payload:
+            body["tenant_id"] = payload["tenant_id"]
         if body["schema"] != "euclid.runtime-checkpoint/1":
             raise ValueError("unsupported EUCLID runtime checkpoint schema")
         if payload.get("seal") != domain_hash("euclid.runtime-checkpoint.seal.v1", body):
             raise ValueError("EUCLID runtime checkpoint seal mismatch")
-        runtime = cls.production(creator_id=str(body["creator_id"]), state_dir=state_dir)
-        runtime.evidence = EvidenceChain.from_payload(body["evidence"])
-        runtime.kairos = KairosRuntime(runtime.creator_id, runtime.evidence)
-        runtime.kairos.worlds = {key: World(**value) for key, value in dict(body["worlds"]).items()}
-        runtime.rights = RightsLedger.restore(
-            runtime.evidence,
-            dict(body["rights"]),
-            creator_id=runtime.creator_id,
+        bound_tenant = body.get("tenant_id")
+        if bound_tenant is not None and (
+            not isinstance(bound_tenant, str) or not bound_tenant.strip()
+        ):
+            raise ValueError("checkpoint tenant_id must be a non-empty string")
+        if tenant_id is not None and tenant_id != bound_tenant:
+            raise ValueError("checkpoint tenant differs from expected tenant")
+        # Validate checkpoint state BEFORE opening databases or composing owners.
+        evidence = EvidenceChain.from_payload(body["evidence"])
+        worlds = {key: World(**value) for key, value in dict(body["worlds"]).items()}
+        rights = RightsLedger.restore(
+            evidence, dict(body["rights"]), creator_id=str(body["creator_id"]),
         )
-        if runtime.rights.creator_id != runtime.creator_id:
+        if rights.creator_id != str(body["creator_id"]):
             raise ValueError("rights creator differs from runtime creator")
-        # Rebuild the delegator against the registry production() already
-        # composed.  Re-creating OrganRegistry() here would silently discard
-        # every registered specialist (TURING/CHRONUS/Triad), leaving a
-        # restored runtime that persisted its state but could no longer reach
-        # any organ.  Restore replaces the evidence chain and the rights
-        # ledger; the organ surface itself is composed, not reconstructed.
-        runtime.delegator = Delegator(runtime.registry, runtime.evidence, runtime.rights)
-        runtime.learning.evidence = runtime.evidence
-        # The durable memory database is already attached by production()
-        # at state_dir/euclid_memory.sqlite3; opening a second connection
-        # here would leak the first handle (and break tempdir cleanup on
-        # platforms that lock open database files).
-        runtime.kairos.replay_verify()
-        return runtime
+        kairos = KairosRuntime(str(body["creator_id"]), evidence)
+        kairos.worlds = worlds
+        kairos.replay_verify()
+        mirrored_records = [dict(record.payload) for record in evidence.records
+                            if record.kind == "salamander-action"]
+        from salamander.control_plane import EvidenceLedger
+        # The enclosing chain protects the exact mirror; the owner independently
+        # validates Salamander's own chain before any runtime is constructed.
+        EvidenceLedger.from_records(mirrored_records)
+        runtime = cls.production(
+            creator_id=str(body["creator_id"]), state_dir=state_dir,
+            guardian=guardian, subscription_token_provider=subscription_token_provider,
+            tenant_id=bound_tenant,
+        )
+        try:
+            runtime.evidence = evidence
+            runtime.kairos = kairos
+            runtime.rights = rights
+            runtime.delegator = Delegator(runtime.registry, evidence, rights)
+            runtime.learning.evidence = evidence
+            runtime.cognition.evidence = evidence
+            # Rebuild through the canonical constructor, which restores budgets,
+            # idempotency/in-doubt requests and circuits; never restore credentials
+            # or stale liveness. Preserve the production-owned action registry.
+            runtime.autonomic = runtime._compose_actuation_plane(
+                runtime.autonomic.registry, guardian, subscription_token_provider,
+                ledger_sink=lambda record: runtime.evidence.append(
+                    "salamander-action", dict(record)
+                ),
+                restored_records=mirrored_records,
+            )
+            from salamander.discovery_optimisation import DiscoveryOptimisationBridge
+            runtime.discovery_optimisation = DiscoveryOptimisationBridge(runtime.autonomic)
+            return runtime
+        except BaseException:
+            runtime._abort_startup()
+            raise
 
     def save_to_custody(self, custody: Any, *, meta: Mapping[str, Any] | None = None) -> dict[str, Any]:
         """Persist the sealed runtime checkpoint into THESEUS enterprise custody.
@@ -1575,7 +1758,10 @@ class EuclidRuntime:
 
     @classmethod
     def restore_from_custody(
-        cls, custody: Any, record_id: str, *, state_dir: str | Path
+        cls, custody: Any, record_id: str, *, state_dir: str | Path,
+        guardian: Any | None = None,
+        subscription_token_provider: Any | None = None,
+        tenant_id: str | None = None,
     ) -> "EuclidRuntime":
         """Restore a runtime from a THESEUS-custodied checkpoint.
 
@@ -1589,7 +1775,10 @@ class EuclidRuntime:
         checkpoint_path = Path(state_dir) / "custody_checkpoint.json"
         checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
         checkpoint_path.write_bytes(payload)
-        runtime = cls.restore(checkpoint_path, state_dir=state_dir)
+        runtime = cls.restore(
+            checkpoint_path, state_dir=state_dir, guardian=guardian,
+            subscription_token_provider=subscription_token_provider, tenant_id=tenant_id,
+        )
         runtime.evidence.append(
             "custody-restart",
             {"record_id": record_id, "restored_evidence_head": runtime.evidence.head},

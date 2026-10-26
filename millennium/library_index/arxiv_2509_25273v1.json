@@ -1,0 +1,50 @@
+{
+  "id": "arxiv_2509_25273v1",
+  "title": "Hodge Conjecture via Singular Varieties",
+  "authors": [
+    "Ananyo Dan",
+    "Inder Kaur"
+  ],
+  "year": 2025,
+  "source_url": "http://arxiv.org/abs/2509.25273v1",
+  "license": "Open Access (arXiv preprint)",
+  "retrieved_date": "2026-10-24T21:45:11.029045+00:00",
+  "sha256": "1469a678fdadae8679c9dcfcaf06740d8eb4e0370e374facdb9d0ac60521d62a",
+  "category": "arXiv:math.AG",
+  "problem_focus": [
+    "HODGE"
+  ],
+  "definitions": [
+    {
+      "term": "HODGE Literature Concept",
+      "statement": "In this article we study the cohomological and homological (due to Jannsen) Hodge conjecture for singular varieties. The motivation for studying singular varieties comes from the fact that any smooth projective variety X is birational to a ..."
+    }
+  ],
+  "theorems": [
+    {
+      "label": "arXiv:2509_25273v1 Claim",
+      "statement": "In this article we study the cohomological and homological (due to Jannsen) Hodge conjecture for singular varieties. The motivation for studying singular varieties comes from the fact that any smooth projective variety X is birational to a (possibly singular) hypersurface Y in a projective space. We prove that odd dime...",
+      "status": "PREPRINT"
+    }
+  ],
+  "conjectures": [
+    {
+      "label": "HODGE Problem Horizon",
+      "statement": "Investigates behavior related to HODGE in math.AG.",
+      "status": "OPEN"
+    }
+  ],
+  "open_gaps": [
+    "Finite or specialized scope in arXiv:2509_25273v1; general continuum proof remains unproven."
+  ],
+  "computational_handles": [
+    "Literature algorithmic bounds for Hodge Conjecture via Singular Varieties",
+    "Independent cross-reference of HODGE asymptotic identities"
+  ],
+  "citations": [
+    {
+      "ref": "Ananyo Dan, Inder Kaur (2025). Hodge Conjecture via Singular Varieties. arXiv preprint 2509_25273v1.",
+      "url": "http://arxiv.org/abs/2509.25273v1"
+    }
+  ]
+}

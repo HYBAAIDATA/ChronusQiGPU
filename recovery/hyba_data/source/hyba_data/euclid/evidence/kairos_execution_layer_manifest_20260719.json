@@ -1,0 +1,45 @@
+{
+  "claim_boundary": "No public service, external authentication, distributed persistence, multi-user execution, provider deployment, rendering, physics engine, SDK, simulation of real-world political/ecological/physical systems, or external comparative evaluation is asserted.",
+  "date": "2026-07-19",
+  "environment": {
+    "platform": "Linux-5.10.174-x86_64-with-glibc2.34",
+    "python": "3.13.13"
+  },
+  "files_sha256": {
+    "euclid/KAIROS_RUNTIME_EXECUTION_LAYER.md": "b88da360d7d71264ad27898f11a2262834a40c9b9c7ee138ed0ccc915b51c0d3",
+    "euclid/__init__.py": "f17e8364366bc4be0bb3cd924d599495df54c31639509ec6117be72f67889b12",
+    "euclid/evidence/kairos_execution_harness_20260719.json": "6dd5b240df29d56e4d4e1796fdf2796073b905739a6fc86faa239468b3011fc6",
+    "euclid/evidence/kairos_execution_test_transcript_20260719.txt": "a4e8d295d83e42b96635d412f82551880ffa22968eacfacf750642dbdf85ea16",
+    "euclid/kairos_execution.py": "ad400f9d5b2468661590dc87994a407cc2edfade39387124a9b6d1ecd862ec7f",
+    "euclid/kairos_runtime.py": "9fc761c8514e8bd46cde45b77fb3759e25ae9770418697b2d1b2ded36c128d36",
+    "euclid/production_harness.py": "c26f6e34c3de14cbf5f3031f50ccd94488bb2988c9be4dd49b3b583657701c7b",
+    "tests/test_kairos_execution.py": "62c8c80facea28f99533cf2c4719b3e59ab4e7604f4722114875b742eea618d8",
+    "tests/test_kairos_runtime.py": "a0110a60b282b909ab62939576bf9144591726691f7287b8ace6978c71930fee"
+  },
+  "runtime_boundary": {
+    "external_providers_enabled": false,
+    "multi_user_enabled": false,
+    "network_enabled": false,
+    "runtime_mode": "LABORATORY"
+  },
+  "schema": "EUCLID_KAIROS_EXECUTION_LAYER_EVIDENCE_V1",
+  "scope": "deterministic in-process single-operator laboratory world evolution",
+  "source_paths": [
+    "euclid/kairos_execution.py",
+    "euclid/kairos_runtime.py",
+    "euclid/KAIROS_RUNTIME_EXECUTION_LAYER.md",
+    "euclid/production_harness.py",
+    "euclid/__init__.py",
+    "tests/test_kairos_execution.py",
+    "tests/test_kairos_runtime.py"
+  ],
+  "verification": {
+    "compilation": "passed",
+    "focused_and_adjacent_regressions": "46 passed",
+    "production_harness": {
+      "passed": true,
+      "passed_count": 12,
+      "total": 12
+    }
+  }
+}

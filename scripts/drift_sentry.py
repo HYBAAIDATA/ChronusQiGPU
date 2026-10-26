@@ -83,7 +83,7 @@ class DriftSentry:
             for file_path in root_dir.rglob(f"*{ext}"):
                 if any(
                     p in file_path.parts
-                    for p in ("node_modules", ".git", "__pycache__", "dist", ".gemini")
+                    for p in ("node_modules", ".git", "__pycache__", "dist", ".gemini", "legacy_implementations")
                 ):
                     continue
                 try:

@@ -197,7 +197,9 @@ def test_actual_dispatch_runs_native_adapter_with_discovered_local_skill(tmp_pat
     engine.skills = skills
     files = {"a.py": b"x=1"}
     place(tmp_path, files)
-    result = engine.execute_skill("repository-review", repo_root=tmp_path, policy=policy_for(files))
+    engine.repo_root = tmp_path
+    engine.repository_review_policies = {"fixture": policy_for(files)}
+    result = engine.execute_skill("repository-review", review_id="fixture")
     assert result["status"] == "REVIEWED_READ_ONLY"
     assert engine.skills["repository-review"].name == "repository-review"
 
@@ -208,6 +210,7 @@ def test_dispatch_refuses_unequipped_and_unknown_skill():
 
     engine = SalamanderEngine.__new__(SalamanderEngine)
     engine.skills = {"other": PythiaSkill("other", "guidance", instructions="Do not execute me")}
+    engine.repo_root = Path(__file__).resolve().parents[1]
     with pytest.raises(KeyError, match="not equipped"):
         engine.execute_skill("repository-review")
     assert engine.execute_skill("other")["status"] == "GUIDANCE"

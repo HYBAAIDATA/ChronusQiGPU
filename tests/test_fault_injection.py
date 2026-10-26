@@ -16,6 +16,7 @@ reports NOT_CONFIGURED rather than fabricating an answer.
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import tempfile
 import threading
@@ -108,6 +109,8 @@ class WireFaultInjectionTests(unittest.TestCase):
         root = Path(self.tempdir.name)
         (root / "index.html").write_text("<html>pythia</html>", encoding="utf-8")
         self.env_patch = {
+            "PYTHIA_OPERATOR_PRINCIPALS_JSON": json.dumps({"fault-test": {
+                "role": "ceo", "token_sha256": hashlib.sha256(b"fault-control-fixture").hexdigest()}}),
             "MLA1517_STRATUM_USER": "fault.injection",
             "MLA1517_STRATUM_PASSWORD": "x",
             "MLA1517_VIABTC_ENDPOINT": "127.0.0.1:9",
@@ -173,7 +176,10 @@ class WireFaultInjectionTests(unittest.TestCase):
             url,
             data=data,
             method=method,
-            headers={"Content-Type": "application/json", **(headers or {})},
+            headers={"Content-Type": "application/json",
+                     "Authorization": "Bearer fault-control-fixture",
+                     "X-PYTHIA-Control-Authorization": "Bearer fault-control-fixture",
+                     "X-PYTHIA-Principal": "fault-test", **(headers or {})},
         )
         try:
             with urlopen(request, timeout=timeout) as response:

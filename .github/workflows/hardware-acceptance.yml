@@ -32,7 +32,7 @@ jobs:
           export MLA1517_HARDWARE_REPORT="$GITHUB_WORKSPACE/results/remote_gpu_report.json"
           cd /tmp
           /tmp/pythia-hardware-wheel/bin/python             "$GITHUB_WORKSPACE/scripts/remote_gpu_hardware_acceptance.py"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: 'strict-hardware-report-${{ inputs.device_id }}'
           path: |

@@ -136,6 +136,19 @@ class Program:
             tuple(Operation(o["gate"], tuple(o["qubits"])) for o in payload.get("operations", [])),
         )
 
+    def to_qasm(self, *, register_name: str = "q") -> str:
+        """Serialize this program to canonical OpenQASM 2.0 text."""
+        from ..software_stack import program_to_qasm
+
+        return program_to_qasm(self, register_name=register_name)
+
+    @classmethod
+    def from_qasm(cls, qasm: str, *, decompose_toffoli: bool = False) -> "Program":
+        """Parse an OpenQASM 2.0 Clifford+T(+Toffoli) program into ``Program``."""
+        from ..software_stack import program_from_qasm
+
+        return program_from_qasm(qasm, decompose_toffoli=decompose_toffoli)
+
     def digest(self) -> str:
         """Stable SHA-256 over the canonical program form.
 

@@ -6,6 +6,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   PYTHONUNBUFFERED: "1"
   PYTHONIOENCODING: "utf-8"
@@ -15,7 +18,7 @@ jobs:
     name: Node — typecheck, unit tests, build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
@@ -104,7 +107,7 @@ jobs:
         run: python scripts/repo_closure.py defects --output reports/DEFECT_REGISTER.json
       - name: Retain Agent H closure inventories
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: agent-h-closure-inventories
           path: |
@@ -138,7 +141,7 @@ jobs:
         run: python -m compileall -q Intelligence core_engine mining hyba pythagoras scripts tests chronus aethel l_hras bench experiments quantum_compute_substrate python_backend tensor
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: pythia-coverage-report
           path: coverage.xml
@@ -148,7 +151,7 @@ jobs:
     name: Deploy sentry — config, dependency, native-build and CI wiring
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
@@ -163,7 +166,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"

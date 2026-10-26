@@ -1,0 +1,78 @@
+{
+  "id": "hodge_1950",
+  "title": "The Topological Invariants of Algebraic Varieties",
+  "authors": [
+    "William V.D. Hodge"
+  ],
+  "year": 1950,
+  "source_url": "https://www.claymath.org/wp-content/uploads/2022/06/hodge.pdf",
+  "license": "Open Access (Clay / ICM)",
+  "retrieved_date": "2026-10-24T21:45:11.029045+00:00",
+  "sha256": "ab6181f8b94a3f6c2f6c7e5b51ad0f59ddaf9cf940b78ac576ec45173c90d043",
+  "category": "Algebraic Geometry & Differential Topology",
+  "problem_focus": [
+    "HODGE"
+  ],
+  "definitions": [
+    {
+      "term": "Harmonic Form",
+      "statement": "Differential form omega on compact Riemannian/Kähler manifold satisfying Delta omega = (d delta + delta d) omega = 0."
+    },
+    {
+      "term": "Hodge Decomposition",
+      "statement": "H^k(X, C) = oplus_{p+q=k} H^(p,q)(X) with H^(p,q) conjugate to H^(q,p)."
+    },
+    {
+      "term": "Hodge Class",
+      "statement": "Rational cohomology class in H^(2p)(X, Q) cap H^(p,p)(X)."
+    }
+  ],
+  "theorems": [
+    {
+      "label": "Hodge Theorem for Compact Kähler Manifolds",
+      "statement": "De Rham cohomology decomposes into harmonic forms of type (p,q), and Hodge diamond is symmetric.",
+      "status": "PROVEN"
+    },
+    {
+      "label": "Kähler Identities",
+      "statement": "[L, Lambda] = (p+q-n) I and [d, Lambda] = i d^c_* relating Lefschetz operator and dual operator.",
+      "status": "PROVEN"
+    },
+    {
+      "label": "Lefschetz (1,1) Theorem",
+      "statement": "Every integral Hodge class of type (1,1) is the first Chern class of a holomorphic line bundle (algebraic cycle).",
+      "status": "PROVEN"
+    }
+  ],
+  "conjectures": [
+    {
+      "label": "Hodge Conjecture",
+      "statement": "On a projective non-singular complex algebraic variety, every Hodge class in H^(2p)(X, Q) cap H^(p,p)(X) is a rational linear combination of cohomology classes of algebraic subvarieties of codimension p.",
+      "status": "OPEN"
+    },
+    {
+      "label": "Integral Hodge Conjecture",
+      "statement": "Every integral Hodge class is algebraic.",
+      "status": "REFUTED_BY_ATIYAH_HIRZEBRUCH_1962"
+    }
+  ],
+  "open_gaps": [
+    "Atiyah and Hirzebruch (1962) found torsion counterexamples to the integral version, forcing restriction to Q-coefficients.",
+    "For codimension p >= 2, no general analytic inversion mechanism exists to construct algebraic cycles from harmonic (p,p)-forms."
+  ],
+  "computational_handles": [
+    "Exact Hodge diamond calculation for Fermat hypersurfaces and complete intersections.",
+    "Intersection form evaluation on H^2 of K3 surfaces (even unimodular lattice II_3,19).",
+    "Period matrix computation for abelian varieties and identification of endomorphism algebras."
+  ],
+  "citations": [
+    {
+      "ref": "Deligne, P. (2000). The Hodge Conjecture - Official Clay Mathematics Institute Problem Description.",
+      "url": "https://www.claymath.org/wp-content/uploads/2022/06/hodge.pdf"
+    },
+    {
+      "ref": "Hodge, W.V.D. (1950). The Topological Invariants of Algebraic Varieties, Proc. Int. Congr. Math., Vol. 1, 182-192.",
+      "url": "https://www.mathunion.org/icm/proceedings"
+    }
+  ]
+}

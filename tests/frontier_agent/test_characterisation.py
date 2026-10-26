@@ -7,7 +7,7 @@ from chronus.agent.characterisation import (
     characterise,
     predict_success,
 )
-from conftest import H
+from tests.frontier_agent.conftest import H
 
 
 def test_m1_uncalibrated_fields_not_used_at_face_value(task):

@@ -1,0 +1,9 @@
+.................................                                        [100%]
+=============================== warnings summary ===============================
+service-activation/.venv/lib64/python3.13/site-packages/starlette/testclient.py:37
+  /data/service-activation/.venv/lib64/python3.13/site-packages/starlette/testclient.py:37: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = typing.Callable[[], typing.ContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+------- generated xml file: /data/service-activation/evidence/junit.xml --------
+33 passed, 1 warning in 0.60s

@@ -1,0 +1,26 @@
+test_all_audience_outputs_and_links (test_turing_docs.DocumentationTests.test_all_audience_outputs_and_links) ... ok
+test_audience_leak (test_turing_docs.DocumentationTests.test_audience_leak) ... ok
+test_broken_anchor (test_turing_docs.DocumentationTests.test_broken_anchor) ... ok
+test_current_manifest (test_turing_docs.DocumentationTests.test_current_manifest) ... ok
+test_due_before_review (test_turing_docs.DocumentationTests.test_due_before_review) ... ok
+test_duplicate_slug (test_turing_docs.DocumentationTests.test_duplicate_slug) ... ok
+test_expired_review (test_turing_docs.DocumentationTests.test_expired_review) ... ok
+test_fictional_approval (test_turing_docs.DocumentationTests.test_fictional_approval) ... ok
+test_future_verification (test_turing_docs.DocumentationTests.test_future_verification) ... ok
+test_invalid_python_sample (test_turing_docs.DocumentationTests.test_invalid_python_sample) ... ok
+test_missing_link (test_turing_docs.DocumentationTests.test_missing_link) ... ok
+test_missing_owner (test_turing_docs.DocumentationTests.test_missing_owner) ... ok
+test_missing_page (test_turing_docs.DocumentationTests.test_missing_page) ... ok
+test_no_overwrite (test_turing_docs.DocumentationTests.test_no_overwrite) ... ok
+test_no_publication_mode (test_turing_docs.DocumentationTests.test_no_publication_mode) ... ok
+test_public_to_internal_link (test_turing_docs.DocumentationTests.test_public_to_internal_link) ... ok
+test_raw_script (test_turing_docs.DocumentationTests.test_raw_script) ... ok
+test_review_date_not_mutated (test_turing_docs.DocumentationTests.test_review_date_not_mutated) ... ok
+test_secret_pattern (test_turing_docs.DocumentationTests.test_secret_pattern) ... ok
+test_stale_version (test_turing_docs.DocumentationTests.test_stale_version) ... ok
+test_unsafe_slug (test_turing_docs.DocumentationTests.test_unsafe_slug) ... ok
+
+----------------------------------------------------------------------
+Ran 21 tests in 1.220s
+
+OK

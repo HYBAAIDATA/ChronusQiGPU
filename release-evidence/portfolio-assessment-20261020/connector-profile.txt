@@ -1,0 +1,21 @@
+## /data/raw/hyba-portfolio/connector_catalog.jsonl
+
+- Shape: 1,063 rows x 8 columns
+- Duplicate rows: 0
+- Candidate key columns (distinct == rows): id
+
+| column | type | non-null | distinct | values |
+| --- | --- | --- | --- | --- |
+| id | text | 100% | 1,063 | top: sap.s_4hana (1), sap.s_4hana_cloud (1), sap.ecc (1), sap.business_one (1), sap.business_bydesign (1) |
+| vendor | text | 100% | 232 | top: SAP S/4 (94), SAP (91), Oracle (51), Microsoft (48), Amazon (37) |
+| product | mixed | 100% | 1,029 | top: Cloud (4), Analytics Cloud (3), Platform (3), Commerce Cloud (2), CPQ (2) |
+| category | text | 100% | 19 | top: erp (324), data_warehouse (106), streaming (98), observability (83), crm (76) |
+| protocol | text | 100% | 6 | top: rest (657), odata (193), jdbc (88), sdk (63), opcua (34) |
+| auth | text | 100% | 9 | top: oauth2 (733), basic (108), api_key (105), certificate (43), aws_sigv4 (37) |
+| entities | text | 100% | 267 | top: ["Document"] (94), ["BusinessPartner", "JournalEntry", "Sal (41), ["Fact"] (30), ["Resource"] (30), ["Attribute"] (30) |
+| industries | text | 100% | 8 | top: ["cross_industry"] (560), ["cross_industry", "manufacturing", "fin (135), ["healthcare"] (119), ["financial_services"] (91), ["manufacturing"] (89) |
+
+**Warnings:**
+
+- ⚠️ `product` mixes value types
+

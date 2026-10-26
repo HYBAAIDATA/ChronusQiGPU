@@ -1,5 +1,6 @@
 node_modules/
 .pnpm-store/
+scratch_pseudocode.txt
 build/
 dist/
 dist-public/
@@ -79,6 +80,7 @@ _tiny/
 _win/
 _rp/
 _inv_out/
+_archive*/
 # Agent working directory: git/diff/status dumps, *.done markers, pid files and
 # one-off scan scripts. Only the hook config and skills are source; inventory
 # files committed earlier stay tracked (ignore rules never untrack).
@@ -134,4 +136,17 @@ scratch_pseudocode.txt
 
 # Re-include PHILOS Python contracts hidden by broad models/ ignore
 !euclid/emergence/models/
+
+
+# Provenance-preserving HYBA import recovery, not a vendored runtime clone.
+!/recovery/hyba_data/
+!/recovery/hyba_data/source/hyba_data/
+
+# Preserve imported source directories, including nested package names.
+!/recovery/hyba_data/source/**/
+
+hyba.vhd
+
+
+legacy_implementations/
 

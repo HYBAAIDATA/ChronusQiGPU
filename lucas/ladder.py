@@ -108,3 +108,14 @@ def verify_ladder() -> dict[str, object]:
         "valid": all(lucas(i) == v for i, v in zip(FULL_LADDER, values)),
         "theorem_proven": False,
     }
+
+
+def require_release_rung(index: int) -> int:
+    """Governed execution uses exact declared rungs, not arbitrary multiples.
+
+    Legacy capacity rounding remains a separate engineering policy; membership
+    never proves a physical speedup or reduces required SHA-256 trials.
+    """
+    if type(index) is not int or index not in SCALE_RUNGS:
+        raise ValueError("RELEASE_LUCAS_RUNG_NOT_ALLOWLISTED")
+    return index

@@ -1,7 +1,7 @@
 from dataclasses import replace
 import pytest
 from chronus.agent._contracts import ContractError
-from conftest import H
+from tests.frontier_agent.conftest import H
 from chronus.agent.capability_creation import Attempt, detect_capability_gap, CapabilityCandidate
 from chronus.agent.trust import TrustLevel
 

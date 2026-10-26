@@ -66,7 +66,8 @@ def test_drift_retrains_without_calling_retrain():
     rows = [{"amount": float(i), "defaulted": int(i > 5)} for i in range(12)]
     platform.train("risk", rows, ["amount"], "defaulted")
     flipped = [{**row, "defaulted": 1 - row["defaulted"]} for row in rows]
-    platform.watch("risk", flipped)
+    held_out = [{"amount": float(i) + 0.25, "defaulted": int(i <= 5)} for i in range(12)]
+    platform.watch("risk", flipped, eval_rows=held_out)
     platform.monitor.tick_once()
     assert platform.drift_retrains == 1
     assert platform.models.get("risk").version == 2
@@ -98,7 +99,8 @@ def test_predict_during_swap():
     threads = [threading.Thread(target=read) for _ in range(4)]
     for thread in threads:
         thread.start()
-    platform.retrain("risk", rows)
+    held_out = [{"amount": float(i) + 0.25, "defaulted": int(i > 5)} for i in range(12)]
+    platform.retrain("risk", rows, eval_rows=held_out)
     platform.reload("confluent.cloud", {"events": [{"entity": "Event", "id": 2}]})
     for thread in threads:
         thread.join()

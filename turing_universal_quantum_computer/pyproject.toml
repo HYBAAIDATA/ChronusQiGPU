@@ -30,6 +30,12 @@ dependencies = [
     "hyba-kellogg-tensor>=1.0",
 ]
 
+[dependency-groups]
+research = ["pytest>=7.4,<10", "build>=1.2,<2", "setuptools>=77,<84", "wheel>=0.45,<1", "hypothesis>=6.100,<7", "mypy>=1.15,<2", "ruff>=0.11,<1"]
+
+[tool.uv.sources]
+hyba-kellogg-tensor = { path = "../packaging/kellogg-tensor" }
+
 [project.optional-dependencies]
 discovery = [
     "scipy>=1.11",
@@ -40,15 +46,16 @@ hardware = [
 ]
 dev = [
     "pytest>=7.4,<10",
+    "hypothesis>=6.100,<7",
 ]
 
 [project.scripts]
 turing-vqc = "turing_universal_quantum_computer.console:main"
 
 [project.urls]
-Homepage = "https://github.com/QuantumPhiRedux/PhiMiner"
-Repository = "https://github.com/QuantumPhiRedux/PhiMiner"
-Issues = "https://github.com/QuantumPhiRedux/PhiMiner/issues"
+Homepage = "https://github.com/PhiEnterprise1/EuclidPhiEnterprise"
+Repository = "https://github.com/PhiEnterprise1/EuclidPhiEnterprise"
+Issues = "https://github.com/PhiEnterprise1/EuclidPhiEnterprise/issues"
 
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]

@@ -383,3 +383,55 @@ def test_a_distribution_installed_beside_another_supplies_its_declared_imports(t
     findings = _messages(sentry.check_distribution_deps(root), "DS02")
     # sympy comes with the VQC; yaml is still the miner's to declare.
     assert [f[2].split(",")[0] for f in findings] == ["imports 'yaml' unguarded"], findings
+
+
+def test_quoted_python_script_is_not_split_at_embedded_semicolon(tmp_path):
+    root = _repo(tmp_path)
+    _write(root, "package.json", json.dumps({
+        "devDependencies": {"vite": "^6"},
+        "scripts": {"build": "vite build", "clean": 'python -c "import shutil; shutil.rmtree(\'dist\', ignore_errors=True)"'},
+    }))
+    assert sentry.check_frontend_deps(root) == []
+
+
+def test_vendored_external_manifests_are_outside_product_deployment_scope(tmp_path):
+    root = _repo(tmp_path)
+    _write(root, "external/vendor/package.json", json.dumps({"dependencies": {"unused": "1"}}))
+    assert sentry.check_frontend_deps(root) == []
+
+
+def test_entry_point_resolves_cd_in_its_own_workflow_step(tmp_path):
+    root = _repo(tmp_path)
+    _write(root, "vqc/experiments/reference.py", "print('reference')")
+    _write(root, ".github/workflows/reference.yml", """
+        jobs:
+          check:
+            steps:
+              - run: |
+                  cd vqc
+                  .venv/bin/python experiments/reference.py --check
+              - run: python experiments/reference.py
+    """)
+    findings = sentry.check_entry_points(root)
+    assert len(findings) == 1
+    assert "does not exist" in findings[0].message
+
+
+def test_fastapi_testclient_consumes_declared_httpx(tmp_path):
+    root = _repo(tmp_path)
+    p = root / "pyproject.toml"
+    p.write_text(PYPROJECT.replace('dev = ["pytest>=7"]', 'dev = ["pytest>=7", "httpx>=0.27"]'))
+    _write(root, "tests/test_api.py", "from fastapi.testclient import TestClient\n")
+    assert not any("declares 'httpx'" in f.message for f in sentry.check_python_deps(root))
+
+
+def test_build_output_directory_is_not_the_installed_build_module(tmp_path):
+    root = _repo(tmp_path)
+    _write(root, "build/lib/package.py", "")
+    _write(root, ".github/workflows/build.yml", """
+        jobs:
+          build:
+            steps:
+              - run: python -m build
+    """)
+    assert sentry.check_entry_points(root) == []

@@ -88,7 +88,10 @@ def _payload_bytes(value: Mapping[str, Any]) -> bytes:
 
 
 def _n_value(value: Mapping[str, Any]) -> int:
-    return int(value.get("n", value.get("index", 10)))
+    n = value.get("n", value.get("index", 10))
+    if type(n) is not int:
+        raise ValueError("transform index must be an integer")
+    return n
 
 
 # --- per-kind recompute verifiers -------------------------------------------
@@ -185,9 +188,9 @@ def _verify_lucas(value: Mapping[str, Any], out: Mapping[str, Any]) -> list[str]
             a, b = b, a + b
         expected = b
     problems: list[str] = []
-    if int(out.get("lucas", -1)) != expected:
+    if type(out.get("lucas")) is not int or out["lucas"] != expected:
         problems.append(f"lucas({n}) reported {out.get('lucas')} != {expected}")
-    if int(out.get("n", -1)) != n:
+    if type(out.get("n")) is not int or out["n"] != n:
         problems.append("reported n mismatch")
     return problems
 
@@ -216,7 +219,7 @@ def _verify_pisot(value: Mapping[str, Any], out: Mapping[str, Any]) -> list[str]
     # n in {0, 1} are literal-rounding boundary cases.
     expected = 1 if n == 0 else 2 if n == 1 else _lucas(n)
     problems: list[str] = []
-    if int(out.get("pisot_nearest", -1)) != expected:
+    if type(out.get("pisot_nearest")) is not int or out["pisot_nearest"] != expected:
         problems.append(
             f"pisot_nearest reported {out.get('pisot_nearest')} != {expected}"
         )
@@ -246,7 +249,7 @@ def _verify_phi(value: Mapping[str, Any], out: Mapping[str, Any]) -> list[str]:
         return [f"phi_transform scalar reported ok outside float64 domain: n={n}"]
     if not _float_close(out.get("phi_pow"), phi**n):
         return ["phi_pow mismatch"]
-    if int(out.get("n", -1)) != n:
+    if type(out.get("n")) is not int or out["n"] != n:
         return ["reported n mismatch"]
     return []
 
@@ -434,7 +437,7 @@ def _verify_fold(value: Mapping[str, Any], out: Mapping[str, Any]) -> list[str]:
 _VERIFIERS: dict[WorkloadKind, tuple[str, Callable[[Mapping[str, Any], Mapping[str, Any]], list[str]]]] = {
     WorkloadKind.SHA256D_SCAN: ("recompute:sha256d_scan:hashlib", _verify_sha256d_scan),
     WorkloadKind.LUCAS_TRANSFORM: ("recompute:lucas_transform:exact_recurrence", _verify_lucas),
-    WorkloadKind.PISOT_TRANSFORM: ("recompute:pisot_transform:float64", _verify_pisot),
+    WorkloadKind.PISOT_TRANSFORM: ("recompute:pisot_transform:exact_integer_with_float64_diagnostic", _verify_pisot),
     WorkloadKind.PHI_TRANSFORM: ("recompute:phi_transform:float64", _verify_phi),
     WorkloadKind.CGEMV: ("recompute:cgemv:complex128", _verify_cgemv),
     WorkloadKind.TENSOR_OP: ("recompute:tensor_op:float64", _verify_tensor_op),

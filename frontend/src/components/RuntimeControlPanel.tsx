@@ -22,8 +22,7 @@ const formatHs = (v: number): string => {
 };
 
 /** Config-bounded operator controls: pools, solver arms, hashrate pacing, live submit. */
-export const RuntimeControlPanel: React.FC<{ onChanged?: () => void }> = ({ onChanged }) => {
-  const [config, setConfig] = useState<RuntimeConfig | null>(null);
+export const RuntimeControlPanel: React.FC<{ config: RuntimeConfig | null; offline: boolean; onChanged?: () => void }> = ({ config, offline, onChanged }) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -32,23 +31,6 @@ export const RuntimeControlPanel: React.FC<{ onChanged?: () => void }> = ({ onCh
   const [password, setPassword] = useState("");
   const [hashrateInput, setHashrateInput] = useState("");
   const [armsInput, setArmsInput] = useState("");
-
-  const refresh = useCallback(async () => {
-    try {
-      const res = await apiFetch("/api/v1/config");
-      if (res.ok) setConfig((await res.json()) as RuntimeConfig);
-    } catch {
-      /* offline — panel stays on last known config */
-    }
-  }, []);
-
-  useEffect(() => {
-    refresh();
-    // Out-of-band writers (mining verbs, campaign phases) mutate the same
-    // config — poll so this panel never shows a stale pool/arm/arming view.
-    const t = window.setInterval(refresh, 8000);
-    return () => window.clearInterval(t);
-  }, [refresh]);
 
   const put = useCallback(
     async (body: Record<string, unknown>) => {
@@ -66,7 +48,7 @@ export const RuntimeControlPanel: React.FC<{ onChanged?: () => void }> = ({ onCh
           setError(payload?.error ?? `config rejected (${res.status})`);
           return;
         }
-        setConfig(payload.config as RuntimeConfig);
+        // Only the next canonical status snapshot updates the read view.
         const applied = payload.applied ?? {};
         const bits = [
           applied.spawned?.length ? `+${applied.spawned.length} arm(s)` : null,
@@ -87,7 +69,7 @@ export const RuntimeControlPanel: React.FC<{ onChanged?: () => void }> = ({ onCh
 
   const pools = config?.pools ?? [];
   const bounds = config?.bounds ?? {};
-  const armRange = bounds.arms ?? [1, 600];
+  const armRange = bounds.arms;
   const ceiling = bounds.hashrate_ceiling_hs;
   const live = config?.live_submit;
 
@@ -129,11 +111,11 @@ export const RuntimeControlPanel: React.FC<{ onChanged?: () => void }> = ({ onCh
 
   const setArms = () => {
     const v = Number(armsInput);
-    if (!Number.isInteger(v) || v < armRange[0] || v > armRange[1]) {
-      setError(`arms must be an integer in [${armRange[0]}, ${armRange[1]}]`);
+    if (!armRange || config?.solvers?.workers == null || !Number.isInteger(v) || v < armRange[0] || v > armRange[1]) {
+      setError(`arms must be an integer in [${armRange?.[0]}, ${armRange?.[1]}]`);
       return;
     }
-    put({ solvers: { arms: v, workers: config?.solvers?.workers ?? 32 } });
+    put({ solvers: { arms: v, workers: config!.solvers!.workers } });
     setArmsInput("");
   };
 
@@ -141,6 +123,7 @@ export const RuntimeControlPanel: React.FC<{ onChanged?: () => void }> = ({ onCh
     put({ live_submit: { enabled: !(live?.enabled ?? false) } });
 
   return (
+    <fieldset disabled={offline || !config} className="min-w-0 border-0 p-0">
     <section className="console-surface">
       <header className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[rgba(10,37,64,0.10)]">
         <h2 className="text-[11px] font-telemetry-mono uppercase tracking-[0.2em] text-[#42566f] flex items-center gap-2">
@@ -158,7 +141,7 @@ export const RuntimeControlPanel: React.FC<{ onChanged?: () => void }> = ({ onCh
           </p>
           {pools.length === 0 ? (
             <p className="text-[12px] font-telemetry-mono text-[#6b7c93]">
-              no runtime pools — arms use boot env credentials
+              runtime pools not reported; no pool identity is inferred
             </p>
           ) : (
             pools.map((p, i) => (
@@ -230,7 +213,7 @@ export const RuntimeControlPanel: React.FC<{ onChanged?: () => void }> = ({ onCh
               </button>
             </div>
             <p className="mt-1 text-[11px] font-telemetry-mono text-[#42566f]">
-              current {formatHs(config?.hashrate?.target_hs ?? 0)} · ceiling{" "}
+              current {config?.hashrate?.target_hs == null ? "not reported" : formatHs(config.hashrate.target_hs)} · ceiling{" "}
               {ceiling == null ? "Unavailable" : formatHs(ceiling)} · measured rate is reported separately
             </p>
           </div>
@@ -242,18 +225,17 @@ export const RuntimeControlPanel: React.FC<{ onChanged?: () => void }> = ({ onCh
             <div className="mt-2 flex items-center gap-2">
               <input
                 className={inputCls}
-                placeholder={`arms ${armRange[0]}–${armRange[1]}`}
+                placeholder={armRange ? `arms ${armRange[0]}–${armRange[1]}` : "arm bounds not reported"}
                 value={armsInput}
                 onChange={(e) => setArmsInput(e.target.value)}
               />
-              <button className={btnCls} disabled={busy} onClick={setArms}>
+              <button className={btnCls} disabled={busy || !armRange || config?.solvers?.workers == null} onClick={setArms}>
                 apply
               </button>
             </div>
             <p className="mt-1 text-[11px] font-telemetry-mono text-[#42566f]">
-              configured {config?.solvers?.arms ?? 1} · live{" "}
-              {(config?.live_arms ?? []).length} · each arm = 32 lanes, own pool
-              connection, own disjoint nonce space
+              configured {config?.solvers?.arms ?? "not reported"} · live{" "}
+              {config?.live_arms?.length ?? "not reported"} · workers per arm {config?.solvers?.workers ?? "not reported"}
             </p>
           </div>
 
@@ -263,14 +245,14 @@ export const RuntimeControlPanel: React.FC<{ onChanged?: () => void }> = ({ onCh
                 <Power className="w-3.5 h-3.5 text-[#b45309]" /> Live share submission
               </p>
               <p className="mt-1 text-[11px] font-telemetry-mono text-[#42566f]">
-                {live?.enabled
+                {live?.enabled == null ? "not reported" : live.enabled
                   ? `armed — bound to ${pools.find((p) => p.enabled)?.endpoint ?? "enabled pool"}`
                   : "off — arms observe and grind, submit gate stays closed"}
               </p>
             </div>
             <button
               className={live?.enabled ? btnDangerCls : btnCls}
-              disabled={busy}
+              disabled={busy || live?.enabled == null}
               onClick={toggleLive}
             >
               {live?.enabled ? "disarm" : "arm live"}
@@ -288,5 +270,6 @@ export const RuntimeControlPanel: React.FC<{ onChanged?: () => void }> = ({ onCh
         </p>
       )}
     </section>
+    </fieldset>
   );
 };

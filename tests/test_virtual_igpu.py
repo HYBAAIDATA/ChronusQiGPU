@@ -88,5 +88,13 @@ def test_checkpoint_and_migration(tmp_path):
     result = daemon.submit(workload(WorkloadKind.FOLD, {"payload_utf8": "x"}))
     checkpoint = daemon.memory.checkpoint()
     assert Path(checkpoint["path"]).is_file()
-    daemon.memory.migrate(result.object_id, "next-adapter")
-    assert daemon.memory.residency[result.object_id] == "next-adapter"
+    with pytest.raises(PermissionError, match="explicit caller tenant"):
+        daemon.memory.migrate(result.object_id, "next-adapter")
+    with pytest.raises(NotImplementedError, match="bound transfer adapter"):
+        daemon.memory.migrate_residency(
+            result.object_id, tenant="tenant-a", target_adapter_id="next-adapter"
+        )
+    daemon.memory.migrate_residency(result.object_id, tenant="tenant-a", target_tier="folded")
+    assert daemon.memory.residency[result.object_id] == "folded"
+    daemon.memory.migrate_residency(result.object_id, tenant="tenant-a", target_tier="host")
+    assert daemon.memory.residency[result.object_id] == "host"

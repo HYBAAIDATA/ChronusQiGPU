@@ -1,0 +1,51 @@
+{
+  "id": "arxiv_2204_13891v1",
+  "title": "The eighth moment of the Riemann zeta function",
+  "authors": [
+    "Nathan Ng",
+    "Quanli Shen",
+    "Peng-Jie Wong"
+  ],
+  "year": 2022,
+  "source_url": "http://arxiv.org/abs/2204.13891v1",
+  "license": "Open Access (arXiv preprint)",
+  "retrieved_date": "2026-10-24T21:45:11.029045+00:00",
+  "sha256": "89916001b037ade9d7ea77ee922f9ba0e468124f5151263e01eea7c770f4b844",
+  "category": "arXiv:math.NT",
+  "problem_focus": [
+    "RH"
+  ],
+  "definitions": [
+    {
+      "term": "RH Literature Concept",
+      "statement": "In this article, we establish an asymptotic formula for the eighth moment of the Riemann zeta function, assuming the Riemann hypothesis and a quaternary additive divisor conjecture. This builds on the work of the first author on the sixth m..."
+    }
+  ],
+  "theorems": [
+    {
+      "label": "arXiv:2204_13891v1 Claim",
+      "statement": "In this article, we establish an asymptotic formula for the eighth moment of the Riemann zeta function, assuming the Riemann hypothesis and a quaternary additive divisor conjecture. This builds on the work of the first author on the sixth moment of the Riemann zeta function and work of Conrey-Gonek and Ivić. A key inpu...",
+      "status": "PREPRINT"
+    }
+  ],
+  "conjectures": [
+    {
+      "label": "RH Problem Horizon",
+      "statement": "Investigates behavior related to RH in math.NT.",
+      "status": "OPEN"
+    }
+  ],
+  "open_gaps": [
+    "Finite or specialized scope in arXiv:2204_13891v1; general continuum proof remains unproven."
+  ],
+  "computational_handles": [
+    "Literature algorithmic bounds for The eighth moment of the Riemann zeta fu",
+    "Independent cross-reference of RH asymptotic identities"
+  ],
+  "citations": [
+    {
+      "ref": "Nathan Ng, Quanli Shen, Peng-Jie Wong (2022). The eighth moment of the Riemann zeta function. arXiv preprint 2204_13891v1.",
+      "url": "http://arxiv.org/abs/2204.13891v1"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { apiUrl, operatorKey, operatorPrincipal } from "./api";
+import { apiUrl } from "./api";
 
 export interface MiningDashboardAccess {
   allowed: boolean;
@@ -7,77 +7,30 @@ export interface MiningDashboardAccess {
   reason: string;
 }
 
-/**
- * Mining telemetry is CEO-only. The browser never infers this entitlement from
- * a locally stored principal name or from possession of an operator key.
- * Authorization must come from the authenticated control-plane session
- * endpoint. Missing/unavailable evidence therefore fails closed.
- */
+/** The HttpOnly session, not browser storage, supplies identity and authority. */
 export async function miningDashboardAccess(
   fetchImpl: typeof fetch = fetch,
+  signal?: AbortSignal,
 ): Promise<MiningDashboardAccess> {
-  const key = operatorKey();
-  const principal = operatorPrincipal();
-  if (!key || !principal) {
-    return {
-      allowed: false,
-      principalId: principal,
-      role: null,
-      reason: "trusted_control_identity_unavailable",
-    };
-  }
-
-  const headers = new Headers({
-    Authorization: `Bearer ${key}`,
-    "X-PYTHIA-Principal": principal,
+  const denied = (reason: string): MiningDashboardAccess => ({
+    allowed: false, principalId: null, role: null, reason,
   });
-
   try {
     const response = await fetchImpl(apiUrl("/api/v1/control/session"), {
-      method: "GET",
-      headers,
-      cache: "no-store",
-      credentials: "same-origin",
+      method: "GET", signal, cache: "no-store", credentials: "include",
     });
-    if (!response.ok) {
-      return {
-        allowed: false,
-        principalId: principal,
-        role: null,
-        reason:
-          response.status === 404
-            ? "control_session_entitlement_unavailable"
-            : "control_session_not_authorized",
-      };
-    }
-
-    const body = (await response.json()) as {
-      principal_id?: unknown;
-      role?: unknown;
-    };
-    const principalId =
-      typeof body.principal_id === "string" ? body.principal_id : null;
-    const role = typeof body.role === "string" ? body.role.toLowerCase() : null;
-    if (principalId !== principal || role !== "ceo") {
-      return {
-        allowed: false,
-        principalId,
-        role,
-        reason: role === "ceo" ? "control_identity_mismatch" : "ceo_role_required",
-      };
-    }
-    return {
-      allowed: true,
-      principalId,
-      role,
-      reason: "authorized",
-    };
+    if (!response.ok) return denied(response.status === 404
+      ? "control_session_entitlement_unavailable" : "control_session_not_authorized");
+    const body: unknown = await response.json();
+    if (!body || typeof body !== "object" || Array.isArray(body)) return denied("invalid_control_session");
+    const session = body as { principal_id?: unknown; role?: unknown };
+    const principalId = typeof session.principal_id === "string" ? session.principal_id : null;
+    const role = typeof session.role === "string" ? session.role : null;
+    if (!principalId?.trim() || !role) return denied("invalid_control_session");
+    // control_api maps founder_ceo to this canonical role after authentication.
+    if (role !== "ceo") return { allowed: false, principalId, role, reason: "ceo_role_required" };
+    return { allowed: true, principalId, role, reason: "authorized" };
   } catch {
-    return {
-      allowed: false,
-      principalId: principal,
-      role: null,
-      reason: "control_session_unreachable",
-    };
+    return denied("control_session_unreachable");
   }
 }

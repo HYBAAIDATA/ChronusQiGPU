@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    from turing_universal_quantum_computer.product_registry import verify_registry; r=verify_registry(); print(r); raise SystemExit(0 if r.get('ok') is True else 1)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/toe-production/repo/turing_universal_quantum_computer/turing_universal_quantum_computer/__init__.py", line 51, in <module>
+    from . import turing_core  # noqa: F401
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'turing_core' from partially initialized module 'turing_universal_quantum_computer' (most likely due to a circular import) (/data/toe-production/repo/turing_universal_quantum_computer/turing_universal_quantum_computer/__init__.py)

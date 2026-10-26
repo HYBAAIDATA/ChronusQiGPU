@@ -43,3 +43,58 @@ def test_closed_form_is_rational_and_matches_float():
 
 def test_digest_deterministic():
     assert grover_f4(2, [3])["state_seq_sha256"] == grover_f4(2, [3])["state_seq_sha256"]
+
+
+def test_grover_quadratic_bound_no_exponential_speedup():
+    """Honest accounting: Grover query complexity is strictly Omega(sqrt(N)).
+    Claims of exponential or super-quadratic speedup are categorically false."""
+    import math
+
+    # Check k_opt scaling for increasing search spaces
+    for n in (4, 8, 12, 16):
+        N = 1 << n
+        theta = math.asin(math.sqrt(1.0 / N))
+        k = int(math.floor(math.pi / (4.0 * theta)))
+        # Quadratic ratio k / sqrt(N) must be bounded near pi/4 ≈ 0.785
+        ratio = k / math.sqrt(N)
+        assert 0.70 < ratio < 0.85, f"Scaling deviated from quadratic: ratio={ratio}"
+
+
+def test_grover_lucas_pisot_folded_state_scaling_15_18_20():
+    """Folded Grover state evolution across the Lucas-Pisot rungs 15, 18, 20.
+    Verifies Cassini invariant conservation and Pisot damp convergence."""
+    from turing_universal_quantum_computer.grover_exact_scale import (
+        pisot_damp,
+        run_folded,
+        binet_residual,
+        LUCAS_LADDER,
+    )
+    from lucas.core import lucas
+
+    # Verify rungs are in the canonical ladder
+    for rung in (15, 18, 20):
+        assert rung in LUCAS_LADDER
+        damp = pisot_damp(rung)
+        assert 0.999 < damp < 1.0  # High-order Pisot damping
+        residual = binet_residual(rung)
+        assert residual < 1e-3
+
+    # Exact folded evolution on scaled search spaces
+    for rung in (15, 18, 20):
+        L_n = lucas(rung)
+        N_eff = 64 * L_n
+        damp = pisot_damp(rung)
+        res = run_folded(N_eff, 1, iterations=10, damp=damp)
+        # Cassini witness invariant M|a|^2 + (N-M)|b|^2 must equal 1.0 within float64 precision
+        assert res["cassini_drift"] < 1e-14
+        assert 0.0 <= res["P_marked"] <= 1.0
+
+
+def test_boundaries_per_grover_scaling_research():
+    """Locks the non-claims boundary: Grover provides quadratic speedup only."""
+    from lucas.scaling_research import research_report
+
+    report = research_report()
+    for claim in ["mining advantage", "scheduling advantage", "hardware speedup"]:
+        assert claim in report["non_claims"]
+

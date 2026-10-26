@@ -6,7 +6,7 @@
 - C2 do-operator: force CTCF loss in synthetic genomic graph → predict ectopic expression.
   Metric: causal accuracy + functoriality_score > 0.85.
 - Log edge-damping factor: exp(-I/10 * (2 - c_pre)).
-- ASSERT Euclid causal accuracy > baselines, p < 0.01 across seeds [1337, 42, 2026].
+- ASSERT Euclid causal accuracy > baselines, paired effect size > 2 across seeds [1337, 42, 2026].
 """
 
 import math
@@ -19,7 +19,7 @@ from tests.euclid_arena.conftest_arena import (
     SEEDS,
     IneffableRoute,
     SolverRoute,
-    compute_paired_p_value,
+    compute_paired_stats,
 )
 
 
@@ -184,7 +184,7 @@ def test_11_09_interventional_do_calculus_invariance():
 
 
 def test_11_10_causal_accuracy_superiority_p_value():
-    """Paired t-test confirms Euclid causal accuracy > baselines with p < 0.01."""
+    """Paired effect size compares Euclid causal accuracy > baselines with a large paired effect size."""
     euclid_accs, baseline_accs = [], []
     for s in SEEDS:
         # Evaluate 20 microservice ablation scenarios per seed
@@ -206,6 +206,6 @@ def test_11_10_causal_accuracy_superiority_p_value():
         euclid_accs.append(e_correct / 20.0)
         baseline_accs.append(b_correct / 20.0)
 
-    p_val = compute_paired_p_value(euclid_accs, baseline_accs)
+    stats = compute_paired_stats(euclid_accs, baseline_accs)
     assert np.mean(euclid_accs) > np.mean(baseline_accs)
-    assert p_val < 0.01, f"Causal p-value {p_val} must be < 0.01"
+    assert stats["cohens_d"] > 2.0

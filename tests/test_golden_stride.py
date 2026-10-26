@@ -195,9 +195,14 @@ def test_ordering_lemma_scope_guard():
         GOLDEN_STRIDE,
     )
 
-    assert use_ordering_lemma("order_device_probe_walk")["authorized"] is True
+    assert use_ordering_lemma(
+        "order_device_probe_walk", lemma="golden_stride_bijection"
+    )["authorized"] is True
     with pytest.raises(ScopeViolation):
-        use_ordering_lemma("order_device_probe_walk", stride=0xDEADBEEF)
+        use_ordering_lemma("order_device_probe_walk", stride=0xDEADBEEF,
+                           lemma="golden_stride_bijection")
+    with pytest.raises(ScopeViolation):
+        use_ordering_lemma("order_device_probe_walk")
     with pytest.raises(ScopeViolation):
         use_ordering_lemma("predict_sha256d_output")
     assert GOLDEN_STRIDE == _GOLDEN_STRIDE == 0x9E3779B9

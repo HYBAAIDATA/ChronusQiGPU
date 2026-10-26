@@ -8,10 +8,11 @@ through quantum-mathematical first principles (Born rule, Heisenberg
 uncertainty, Schrödinger evolution, path integrals, von Neumann entropy,
 quantum Fisher information).
 
-The HR vocabulary in ``toe.engine`` ("employee", "churn", "performance score",
+The HR-shaped vocabulary in ``toe.engine`` ("employee", "churn", "performance score",
 "login_time", "promotion_history", "compensation ratio", "survey_text") is a
-**semantic disguise layer** — a domain metaphor projected over a quantum state
-tomography and evolution engine:
+**legacy demonstration schema** — a compatibility fixture translated into quantum-state
+tomography and evolution concepts, not the engine's canonical domain model. New domains
+should enter through explicit sector adapters into ``toe.problem``:
 
 - "Employee"          → quantum state vector |ψ⟩ in Hilbert space
 - "Churn risk"        → quantum decoherence probability
@@ -262,6 +263,7 @@ class TOEStateTomography:
     fidelity: float = 0.0
     entropy: float = 0.0
     coherence: float = 0.0
+    von_neumann_entropy: Optional[float] = None
     fisher_info: float = 0.0
     state_vector: Optional[List[float]] = None
     factor_weights: Dict[str, float] = field(default_factory=dict)
@@ -276,6 +278,8 @@ class TOEStateTomography:
             "volatility": self.volatility,
             "fidelity": self.fidelity,
             "entropy": self.entropy,
+            "measurement_entropy": self.entropy,
+            "von_neumann_entropy": self.von_neumann_entropy,
             "coherence": self.coherence,
             "fisher_info": self.fisher_info,
             "state_vector": self.state_vector,
@@ -688,7 +692,13 @@ class TOEBridge:
             # Confidence reports a measured substrate quantity — the
             # encoded state's density-matrix purity Tr(rho^2) — not an
             # invented blend of unrelated quantities.
-            confidence = float(tomo["purity"])
+            raw_purity = float(tomo["purity"])
+            # Preserve the raw observable below. At a probability boundary,
+            # permit only a small IEEE-754 roundoff envelope, not invalid data.
+            tolerance = 8 * math.ulp(1.0)
+            if not math.isfinite(raw_purity) or not -tolerance <= raw_purity <= 1 + tolerance:
+                raise ValueError("density-matrix purity outside probability bounds")
+            confidence = min(1.0, max(0.0, raw_purity))
 
             return TOEStateTomography(
                 available=True,
@@ -699,6 +709,7 @@ class TOEBridge:
                 fidelity=float(fidelity),
                 entropy=float(tomo["measurement_entropy"]),
                 coherence=float(tomo["purity"]),
+                von_neumann_entropy=float(tomo["von_neumann_entropy"]),
                 fisher_info=float(tomo["fisher_information"]),
                 state_vector=probs[:20],  # Born probabilities as the state summary
                 factor_weights=factor_weights,
@@ -709,6 +720,9 @@ class TOEBridge:
                     "effective_dimension": float(tomo["effective_dimension"]),
                     "norm": float(tomo["norm"]),
                     "confidence_measure": "measured density-matrix purity Tr(rho^2)",
+                    "raw_purity": raw_purity,
+                    "probability_roundoff_correction": confidence - raw_purity,
+                    "probability_roundoff_tolerance": tolerance,
                     "engine": "quantum_tensor (exact Complex/ComplexMatrix/QuantumState)",
                 },
             )

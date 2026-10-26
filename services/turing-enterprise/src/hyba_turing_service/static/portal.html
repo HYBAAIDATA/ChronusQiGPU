@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TURING · Enterprise service</title>
+    <link rel="stylesheet" href="/assets/portal.css" />
+    <script src="/assets/portal.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <a href="/workspace" class="brand">HYBA <span>/ TURING</span></a>
+      <nav aria-label="Service surfaces">
+        <a href="/workspace">Workspace</a><a href="/admin">Administration</a
+        ><a href="/ops">Service operations</a>
+      </nav>
+      <button id="logout" hidden>Sign out</button>
+    </header>
+    <main>
+      <div class="eyebrow">COMPUTATIONAL INTELLIGENCE · GOVERNED DELIVERY</div>
+      <h1 id="title">Your computational workspace</h1>
+      <p id="subtitle">
+        Submit admitted programs, inspect trusted results and retain provenance.
+      </p>
+      <div id="status" role="status" aria-live="polite"></div>
+      <section id="signin">
+        <h2>Enterprise access</h2>
+        <p>
+          Sign in with your organisation’s identity provider. Membership and
+          service entitlements are checked on every operation.
+        </p>
+        <a class="button" href="/login">Continue with enterprise SSO</a>
+        <p class="muted">
+          No API tokens or service signing keys are stored in browser storage.
+        </p>
+      </section>
+      <section id="app" hidden>
+        <div class="toolbar">
+          <label>Customer organisation<select id="tenant"></select></label
+          ><label id="opsTenant" hidden
+            >Target customer<input
+              id="target"
+              placeholder="Customer identifier"
+              maxlength="256" /></label
+          ><button id="refresh">Refresh</button
+          ><span id="principal" class="muted"></span>
+        </div>
+        <div id="metrics" class="metrics"></div>
+        <nav id="tabs" aria-label="Workspace sections"></nav>
+        <section class="panel">
+          <h2 id="sectionTitle"></h2>
+          <p id="explanation" class="muted"></p>
+          <div id="actions"></div>
+          <div
+            id="data"
+            class="table-scroll"
+            tabindex="0"
+            role="region"
+            aria-label="Records; scroll horizontally for additional columns"
+          ></div>
+        </section>
+        <aside>
+          <strong>Service boundary</strong>
+          <p>
+            Reserved capacity is measured in logical concurrent job slots, not
+            physical devices. Unsupported programs are refused. Contractual
+            usage-based billing is deferred. Operational usage facts are not
+            charges, invoices, or a zero-cost service promise.
+          </p>
+        </aside>
+      </section>
+    </main>
+    <footer>
+      HYBA / TURING · Exact capability. Explicit boundaries. Auditable delivery.
+    </footer>
+  </body>
+</html>

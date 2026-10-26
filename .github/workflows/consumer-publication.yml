@@ -74,7 +74,7 @@ jobs:
           Path("dist/artifact-digests.json").write_text(json.dumps(record, indent=1, sort_keys=True))
           print(json.dumps(record, indent=1))
           PY
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: consumer-candidate
           path: packages/pythia-consumer/dist/
@@ -125,7 +125,7 @@ jobs:
               "status": "PASS",
           }
           Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: consumer-smoke-${{ matrix.python }}
           path: receipts/receipt.json
@@ -193,7 +193,7 @@ jobs:
           Path("verdicts/consumer-release-verdict.json").write_text(
               json.dumps(verdict, indent=2, sort_keys=True))
           print(json.dumps(verdict, indent=2, sort_keys=True))
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: consumer-release-verdict
           path: verdicts/*
@@ -229,7 +229,7 @@ jobs:
               assert hashlib.sha256(f.read_bytes()).hexdigest() == d, n
               shutil.copy(f, "upload/")
           PY
-      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
         with:
           packages-dir: upload/
           repository-url: https://test.pypi.org/legacy/
@@ -278,7 +278,7 @@ jobs:
               "status": "PASS",
           }
           Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: consumer-testpypi-smoke-${{ matrix.python }}
           path: receipts/receipt.json
@@ -324,7 +324,7 @@ jobs:
               assert hashlib.sha256(f.read_bytes()).hexdigest() == d, n
               shutil.copy(f, "upload/")
           PY
-      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
         with:
           packages-dir: upload/
 
@@ -371,7 +371,7 @@ jobs:
               "status": "PASS",
           }
           Path("receipts/receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True))
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: consumer-pypi-smoke-${{ matrix.python }}
           path: receipts/receipt.json
@@ -445,7 +445,7 @@ jobs:
           ], check=True)
           Path("consumer-publication.json").write_text(Path("publication.json").read_text())
           PY
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: consumer-final-publication
           path: "*-publication.json"

@@ -1,0 +1,499 @@
+EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE                                        [100%]
+==================================== ERRORS ====================================
+____________ ERROR at setup of test_valid_history_does_not_rewrite _____________
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+_ ERROR at setup of test_tail_without_pending_is_repaired_and_second_restart_sees_append _
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+_ ERROR at setup of test_dangling_intent_is_removed_without_dropping_other_commit _
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+___ ERROR at setup of test_complete_final_row_without_newline_is_normalised ____
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+________ ERROR at setup of test_append_refuses_unrecovered_partial_tail ________
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+______ ERROR at setup of test_malformed_interior_refuses_without_rewrite _______
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+_____ ERROR at setup of test_invalid_schema_refuses_without_rewrite[row0] ______
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+_____ ERROR at setup of test_invalid_schema_refuses_without_rewrite[row1] ______
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+_____ ERROR at setup of test_invalid_schema_refuses_without_rewrite[row2] ______
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+_____ ERROR at setup of test_invalid_schema_refuses_without_rewrite[row3] ______
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+_____ ERROR at setup of test_invalid_schema_refuses_without_rewrite[row4] ______
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+_____ ERROR at setup of test_invalid_schema_refuses_without_rewrite[row5] ______
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+_____ ERROR at setup of test_invalid_schema_refuses_without_rewrite[row6] ______
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+______ ERROR at setup of test_duplicate_json_keys_are_not_last_value_wins ______
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+___________ ERROR at setup of test_orphan_seal_cannot_invent_commit ____________
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+___________ ERROR at setup of test_duplicate_intent_id_is_ambiguous ____________
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+____________ ERROR at setup of test_mismatched_seal_binding_refuses ____________
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+__ ERROR at setup of test_seal_extras_cannot_override_reserved_fields[op_id] ___
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+__ ERROR at setup of test_seal_extras_cannot_override_reserved_fields[status] __
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+____ ERROR at setup of test_seal_extras_cannot_override_reserved_fields[ts] ____
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+__________ ERROR at setup of test_append_intent_rejects_sealed_status __________
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+________ ERROR at setup of test_read_budgets_fail_without_repair[bytes] ________
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+________ ERROR at setup of test_read_budgets_fail_without_repair[rows] _________
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+________ ERROR at setup of test_read_budgets_fail_without_repair[line] _________
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+___________ ERROR at setup of test_append_size_limit_is_fail_closed ____________
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+_ ERROR at setup of test_atomic_replace_failure_preserves_original_and_evidence _
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+________ ERROR at setup of test_evidence_failure_never_rewrites_journal ________
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+________ ERROR at setup of test_iter_rows_is_snapshot_and_never_repairs ________
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+______ ERROR at setup of test_recover_holds_lock_across_parse_and_repair _______
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+____ ERROR at setup of test_filelock_reentrant_and_released_after_exception ____
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+_ ERROR at setup of test_lock_acquire_setup_failure_does_not_leak_thread_lock __
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+____ ERROR at setup of test_concurrent_process_journal_append_and_recovery _____
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+_______________ ERROR at setup of test_symlink_journal_rejected ________________
+
+self = PosixPath('/data/closeout-implementation/tmp/journal'), mode = 448
+parents = False, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileNotFoundError: [Errno 2] No such file or directory: '/data/closeout-implementation/tmp/journal'
+
+/usr/lib64/python3.13/pathlib/_local.py:722: FileNotFoundError
+=========================== short test summary info ============================
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_valid_history_does_not_rewrite
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_tail_without_pending_is_repaired_and_second_restart_sees_append
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_dangling_intent_is_removed_without_dropping_other_commit
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_complete_final_row_without_newline_is_normalised
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_append_refuses_unrecovered_partial_tail
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_malformed_interior_refuses_without_rewrite
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_invalid_schema_refuses_without_rewrite[row0]
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_invalid_schema_refuses_without_rewrite[row1]
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_invalid_schema_refuses_without_rewrite[row2]
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_invalid_schema_refuses_without_rewrite[row3]
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_invalid_schema_refuses_without_rewrite[row4]
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_invalid_schema_refuses_without_rewrite[row5]
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_invalid_schema_refuses_without_rewrite[row6]
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_duplicate_json_keys_are_not_last_value_wins
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_orphan_seal_cannot_invent_commit
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_duplicate_intent_id_is_ambiguous
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_mismatched_seal_binding_refuses
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_seal_extras_cannot_override_reserved_fields[op_id]
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_seal_extras_cannot_override_reserved_fields[status]
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_seal_extras_cannot_override_reserved_fields[ts]
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_append_intent_rejects_sealed_status
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_read_budgets_fail_without_repair[bytes]
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_read_budgets_fail_without_repair[rows]
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_read_budgets_fail_without_repair[line]
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_append_size_limit_is_fail_closed
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_atomic_replace_failure_preserves_original_and_evidence
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_evidence_failure_never_rewrites_journal
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_iter_rows_is_snapshot_and_never_repairs
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_recover_holds_lock_across_parse_and_repair
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_filelock_reentrant_and_released_after_exception
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_lock_acquire_setup_failure_does_not_leak_thread_lock
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_concurrent_process_journal_append_and_recovery
+ERROR closeout-implementation/source/tests/test_journal_closeout_recovery.py::test_symlink_journal_rejected
+33 errors in 0.60s

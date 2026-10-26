@@ -1,0 +1,1545 @@
+{
+  "baseline": "4b75ace56712501f7d091e33d386df64ade9ba1b",
+  "files": {
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/__init__.py": {
+      "git_blob": "d88dfffc0e5259a9c7c5b0593c709d804d1dda5e",
+      "sha256": "c9d761656c9d33407b25401ff58823b03700746ec102836ec79a4da57c9eb6d3"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/annealing.py": {
+      "git_blob": "870b77841acd3518e1274015d12dd100d832c42b",
+      "sha256": "9d93e141fd5299e15a0cdc77aee9f3c2486b663caf96d6694a765ac07bf04374"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/benchmark.py": {
+      "git_blob": "1d54515dd93f1e0eddf9245823a784166d2073a5",
+      "sha256": "e0e20e637d225d61ffaf30c5e1693bf6e39b5bcdbefa3174d40e124351a0b07d"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/canonical_serialization.py": {
+      "git_blob": "d51f6c107575d26b1e0d689cd95c97d1698a64f0",
+      "sha256": "a9e106f699810ce94f59004fba6ff977bd4ddc159d76a527f34719a1599bdd8d"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/capabilities.py": {
+      "git_blob": "98f7e022105116b9e07a991cd2d3496389c587c1",
+      "sha256": "56e2d33cf7b780a53420c13ddbb1e993559f7b2cec6634723ac518ea496a7d56"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/certificates.py": {
+      "git_blob": "b1bc62ed48ea61ca4d338ee4c8e2c807348cdb12",
+      "sha256": "97e3a7cd1e3f71d2bf50a4f6ae358af628a1d822e5b8e497109176d136895998"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py": {
+      "git_blob": "9769a7492097d4816b2ce8a496dc1f2983e8e5f2",
+      "sha256": "1836c290bb8cb125c3dd1a12c2c161538d0fb5cf450511e02d0258da7f2824b6"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/config.py": {
+      "git_blob": "a1fbe63aa1fe681075045e3c091029a8eef87a0c",
+      "sha256": "f54b88b7084f14d2d199fb872e95258fb953b643283883ae38e0d0135d143610"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/console.py": {
+      "git_blob": "af05335d2a25d750cf906bde425886554fca1dd0",
+      "sha256": "02740c6dda0e8b250ebcdf4715d2009f073ce472b52638577856732c4d80bddd"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/contracts.py": {
+      "git_blob": "7568f0c6f9a89cd53622087792cecc13800601e7",
+      "sha256": "9f26aeca31307bf6c5a54fa20d3dc425bce166d348e9ee7ea8a0b5abbee848b2"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/custody.py": {
+      "git_blob": "dc3733ab2caf104f6beb0b4f2a58250640b8f5fb",
+      "sha256": "f247e7082baa080ca9a2c7a66dfad76df25e076f41cf28f04a628b18fc809355"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/deep_variational.py": {
+      "git_blob": "048e2fbc63eae17d0947157e8cc682448478f260",
+      "sha256": "c549b4433fc1a8e3fb4073b44aaa292b98702bacc7f33da576f4cd8b132de7f1"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/exact_field.py": {
+      "git_blob": "74c784164ad4f38ecee2d70e702c1e3060a6a432",
+      "sha256": "ecb2a18cf082bbf18f1a266aad8e68083452a5007615c36ffa592967dc4b5045"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/exact_field_registry.py": {
+      "git_blob": "cad7093395feaf9f907d7ef4c53b017ae9982ecb",
+      "sha256": "4676ff3e891e73c74d60ef599bef1f2bfef96da33b6372dbe788c174ae26a1eb"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/exact_state_vector.py": {
+      "git_blob": "4d4ac75c5308330256a2321300ad53a537e66919",
+      "sha256": "8926833dfb9e73416a8e7ebdf1697377388a9e81ef0b6dc5ee481ce43da7aa8c"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/exact_tensor.py": {
+      "git_blob": "63e5fb4ea15bac2b7530f7c623545ebe86ca35cb",
+      "sha256": "8ccec296064103692310197671d381573bc9882c96facad37f4444c7fba05aab"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/exceptions.py": {
+      "git_blob": "5879c58473c1271191458bfaa333c0c0edf7b5ea",
+      "sha256": "9a4b56fb79a286e5d719c295c9b3f36c288047c5f436e881a2f322dfb519e121"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/golden_quantum.py": {
+      "git_blob": "8772be072f6f7d6b783999452cd712da2e92ad43",
+      "sha256": "8599f1b80cce2b1ecc00b995cd9f1df13bf5556c5b31d079b38d1701ca13cd4d"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/grover_exact_scale.py": {
+      "git_blob": "a1f6427efa4fd5da65e9f8f81d82fb58d744eb53",
+      "sha256": "55b87e1fba45cc668192d7a9eb87b65eb038470e3740d6cdfdfe813970c55f24"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/hendrix.py": {
+      "git_blob": "d4b57af04f4d40b52da7ff6794ee5e4fd758dd30",
+      "sha256": "6834cb169f8d0c0f969dbd355704d5a0961c951b2b000cbeb1bafd7f683887fa"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/hilbert.py": {
+      "git_blob": "272f8ec5d1cfa3611da64dbb607d08b118e18d97",
+      "sha256": "e7ebb9cf72b55baf93d68aede52872ecb4a7a8b279b51d904439f74bf0a2559d"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/interfaces.py": {
+      "git_blob": "f21aa76a5204be50bd476dd63e14b81ad86562cd",
+      "sha256": "133bc446c36f69c68613734fb0df4a1be9282f139684dd216d38d296ad07e966"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/july_compat.py": {
+      "git_blob": "9d33928339b090832602b7919734d4cbfb8f9d38",
+      "sha256": "cd481e22be695eb2eb078e319b3108a238b053d3915067365d92739d84e5691a"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/lucas_metallic_walk.py": {
+      "git_blob": "3d238262871e3eba6150b14421e7e9edcc92ee15",
+      "sha256": "dd6c7bca33ae4b275b4ab134d7e5728e3e1fa3abc08805f796f9be5bf7fc68a2"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/midas_vqc.py": {
+      "git_blob": "92afe19abd09d06ca0f0d38a2ee164add5017e53",
+      "sha256": "a190c0b87a88945bc609bf542ef7a8992c972eb290f36db510411a9dad959420"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/native_adapter.py": {
+      "git_blob": "27035dce05355229767c68dc1386857289f49649",
+      "sha256": "aff5f3b38a474d8291648a86d51877f1cef9a7ce62ff5fae586ccda41427f604"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/optimizer.py": {
+      "git_blob": "af09577f2d823fe4ec6d89fb0b96c7f1d7e15f7b",
+      "sha256": "b2638ebafa7525a9bc2c234566a13dd92ee909cd9233c7053734c78130cbebef"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/phi_gate.py": {
+      "git_blob": "90ee00a4310f9380de72191bb91b1a0281d8316b",
+      "sha256": "9d3966bc892f48f71f321981f16de6a5758859f429992e5138b0e96138080ac3"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/phi_machine.py": {
+      "git_blob": "215910bbd4be38c73f1d55821d74684f84cfff6b",
+      "sha256": "520eca8b7c002fc495e1431777f90834a20fd8b4fd7555f46aba92b4247aee88"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/phi_quantum_machine.py": {
+      "git_blob": "2f475dd500b2b5c4222f015c1dc9972286080049",
+      "sha256": "78269542179b4efa46a206e05152fd50284a1fda6ff0d3272f4b617d4d95a8ae"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/phi_verification.py": {
+      "git_blob": "b2fc1328b85e0d3e41b9f99d2915dc8373499dc7",
+      "sha256": "6c2365b7cea96f45457ef4bbb58df7c533eaa5de128e0246513be8fb781aebdd"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/phi_vqc.py": {
+      "git_blob": "e363eb153c1ca361dfc604959a67a1431d21b820",
+      "sha256": "e3a4a5ddbe9620bd783cd7226d758c5e713011898f5306dcf7388a8b9a0c8cdf"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/pipeline.py": {
+      "git_blob": "55290ecbada603e2730a0acedc2f8d6c5d845d2c",
+      "sha256": "4e327d9617d312b415a7e0318c624307f3958006c3a2c4c19e5190105df06a5c"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py": {
+      "git_blob": "70769e439c3e719f9e4a9765b40f76dd9b153276",
+      "sha256": "b80cfb19a6f777373e24d71d196691ebbdf7429c3b4a6f2684d3da01b785e77a"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py": {
+      "git_blob": "603ad34a0df624e2c370e73781da818a3da51d22",
+      "sha256": "563d9ad5796ccf0404895e2ac796d5cb28f0beccbbebe2305b0bcff1d543dc30"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/property_invariants.py": {
+      "git_blob": "3f36f899d4e12adc050ec98af579cd38ff0389ef",
+      "sha256": "c7e74e4ebaf87ba300cf0bccfc63963a0cedf2d10efea312a3215575593e0dec"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/public_api.py": {
+      "git_blob": "6690af6abdc60f9ea2a601f500e653d13c12d404",
+      "sha256": "f67dbc6e368e5415e1e15d6042549e25c8d3668b041668d6158874e59f9f44f1"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/py.typed": {
+      "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_algorithms.py": {
+      "git_blob": "479452f77fb8b56b35f265b3b504b6c5b2de3caa",
+      "sha256": "d387c60a06fd77de23f4b9fb1597a77be03434426f215f618d970093decb66e5"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py": {
+      "git_blob": "d44acc7883c391814a4ea227f28107b7b992d9ad",
+      "sha256": "28d727b51d0336fe6a1ed9406cbd9f1b810ac6dc3d6d26874db77b5a3f1e85c2"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py": {
+      "git_blob": "d361ef4140fb4ca31382833975fed5de20bc32db",
+      "sha256": "06a4ae52634655a11921a18f33d1f3321b966d4b0e78b27e811e27aec826ba41"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_tensor.py": {
+      "git_blob": "d6c9eb41287deac50ad9473b770f9ed1888c0d10",
+      "sha256": "c037d3205dce3c993a4d177e1a131d480895a6729bc02338ee8a8fe9bc31cd9f"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_walk.py": {
+      "git_blob": "e472d17c0bea762b50abb4399034822f15a817ce",
+      "sha256": "6c3291c58df8132cbe2e0ccf2df2dc0f1b2611785a003689458643fa156a3716"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/register_tensor.py": {
+      "git_blob": "318054e6b44f5774da8952e765d64c0bfcf84cf8",
+      "sha256": "4b89de08db888824ac5fe138df5776689e5bf20549afa1578f088d52f2551bd6"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/representation.py": {
+      "git_blob": "6e5b751c00745128ee31cd6a8411a91371e537f3",
+      "sha256": "1e614b9c2c54bb85faff66114fd0df4ad5fa86c1cfb2dd97d47f09d4358a9f31"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/stabilizer.py": {
+      "git_blob": "09576540081bf2d1a6a4bbae5f6830325e889cd4",
+      "sha256": "e640d02869e6dbb01b8386b35af2b1ae8ac65eb7c8178041f60b12ce191f4257"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/surface_code_exact.py": {
+      "git_blob": "9571d02e78c19338b9335431c3c8bf7d2bfe680d",
+      "sha256": "fd102427fade5c5b0acfe66ac61609a15cafb1277b57a2988d719012677180f3"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/swarm.py": {
+      "git_blob": "38329afab031cecf1cf9c6f56540b793237f0fd6",
+      "sha256": "95160f661ab67bf916cbc11972c66c5e5bf7f68e88239f8c716b72f815679e28"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py": {
+      "git_blob": "e87f97dba6e175038cae252f4daf6d4329bbc9fd",
+      "sha256": "4e646eceeb23ff20f7a311b8b6b34cce1259fc33f66dcde36a712eaf97d679b6"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/transform.py": {
+      "git_blob": "b86a4724e815d791b9ba4118db50d3cba96134ab",
+      "sha256": "d3591103423208cca7e074cfb95648f513bf77323513ee1dd7516aa735391ad8"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/trotter_simulation.py": {
+      "git_blob": "fec07429b74c581883f48d6c833483c73ea552b1",
+      "sha256": "25f623925b58146d3c94ab6b0421f4d686b16f263267b89cbd3a1e0af263c267"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/unified_theory.py": {
+      "git_blob": "1918c79fd2a6d2bccc377133c8692fcced0cb112",
+      "sha256": "434e98261a79dc8aa8eb22f297b7265b9388850d0ffd6264d07b1ae288be658e"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/variational.py": {
+      "git_blob": "f1c15c8459916913c74387800cfc12fff9c594c8",
+      "sha256": "fe11a41c37d4589f7866419131f9053de29f3b1f797fd156b39f42df961ac496"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/verify.py": {
+      "git_blob": "cd2f33478993c926fab27bf313add9cb13411e35",
+      "sha256": "33bd074bdf9b80938d0a988c391d0b52a47995bc02d79401eef89287e8a4aca2"
+    },
+    "turing_universal_quantum_computer/tests/test_backend_boundary.py": {
+      "git_blob": "13bc46cfd9b3a032ab12b0fc05767ec3137b0bda",
+      "sha256": "c084d19f196ba8c448f12811440a59e508c2ae5dae8fd892fb8acbecc1522baf"
+    },
+    "turing_universal_quantum_computer/tests/test_canonical_serialization.py": {
+      "git_blob": "20f07c9b4fd4c377159e058d7521251a2771941d",
+      "sha256": "f4527497c64c2a585dd6a22deb3f201cf09d468bb923eaf1cc1281a3ca9b84bd"
+    },
+    "turing_universal_quantum_computer/tests/test_computation_certificates.py": {
+      "git_blob": "215a89834de008681a9a4f23c17c71065a47d32d",
+      "sha256": "6ad2abc7a0fd53fd1340c1e1c0b2436b716c7f6c985c774780f454cc3ce37722"
+    },
+    "turing_universal_quantum_computer/tests/test_console_session.py": {
+      "git_blob": "effa95ced8accdbc7733478af39a3a00a87a5e9f",
+      "sha256": "cbd8d288fec12a5c37cfdda95dd42bf36044389aacfcabcf61c2f87455212e18"
+    },
+    "turing_universal_quantum_computer/tests/test_deep_variational.py": {
+      "git_blob": "853bb51651e1af21f85b0424dd7cb551d2da1fe8",
+      "sha256": "476ad770d44622b42e294831ba7c88f7b5df7d61156b8084d9eff4550480958a"
+    },
+    "turing_universal_quantum_computer/tests/test_exact_field_registry.py": {
+      "git_blob": "a082099241411448502624d36340311cf0dd6528",
+      "sha256": "6cec6900c71be9f1addd4a66e1d15b4546d81a972599522557a5b9293ee78e94"
+    },
+    "turing_universal_quantum_computer/tests/test_exact_operator_contracts.py": {
+      "git_blob": "88da0fe6de8551f767d5c40cd4b929f9d8b4c4d5",
+      "sha256": "91cdbc05b6471c71ca0c0e22d5f777d19e15dae07d673986d85644d66e01e300"
+    },
+    "turing_universal_quantum_computer/tests/test_exact_readiness_regressions.py": {
+      "git_blob": "289f9615c64b237e4514019323ffe8f4c8ee1db5",
+      "sha256": "5e8733a4616c6c9720e47bd294e19530610427c911f6f53486915238a28f59ec"
+    },
+    "turing_universal_quantum_computer/tests/test_exact_state_vector.py": {
+      "git_blob": "67f92fa89b02b0d267758de1a2c7bbe8c3c6e076",
+      "sha256": "b79787df12da595605c0d710ae5c63672a5b2cee48ba0c86d03daec06c9de77b"
+    },
+    "turing_universal_quantum_computer/tests/test_exact_subregister_contracts.py": {
+      "git_blob": "2914a8651b3c10d54a9918a8cdadbdd0a180322d",
+      "sha256": "96d73421dc4b546913178fc2f10ca006a894af8fd37c70179a9ae0eca6f6d98d"
+    },
+    "turing_universal_quantum_computer/tests/test_exactness_admission_audit.py": {
+      "git_blob": "481d524298526ca1495058ad3ac9d86d6f21e10d",
+      "sha256": "d8beb1ee36c71b1219694920acff4cc0604bd619b0f9a9f653aea7380403d713"
+    },
+    "turing_universal_quantum_computer/tests/test_fold_certificate_exhaustive.py": {
+      "git_blob": "967b2e7633cdcab7482192e42afe217abfd983c5",
+      "sha256": "3acb9eb64a4c40d81f885d3d41f61341959e70f9f398fdddd3aa7e59d3c5570a"
+    },
+    "turing_universal_quantum_computer/tests/test_golden_quantum_core.py": {
+      "git_blob": "51266d7a2453b7228ff53c3381039a0ed468577e",
+      "sha256": "ad48a9ce0b89f4aecb731d43a2a239c06d1db7c1e638e114b13818c6f9c8f38c"
+    },
+    "turing_universal_quantum_computer/tests/test_grover_controller_budget.py": {
+      "git_blob": "e9d81dfe19deefc8c61024448266ec08484085ba",
+      "sha256": "97b38c58abee5ba821d3198dbc28ae9354a509874fc810a08b50df6ec1eb07b6"
+    },
+    "turing_universal_quantum_computer/tests/test_hendrix_execution_receipts.py": {
+      "git_blob": "c8ed619042da984ba9dc141f6b719dfb8f0de58c",
+      "sha256": "f5deac6f530cc08475858539dd920998f1a15be63048f2ffad87e63ac86f2373"
+    },
+    "turing_universal_quantum_computer/tests/test_large_scale.py": {
+      "git_blob": "b9bc64f10e1e0f225117241aab85fe83c3be5b0f",
+      "sha256": "466b82ecdd55e573f54be2ea3a52d08f399510629f772289224bf94609ec8a63"
+    },
+    "turing_universal_quantum_computer/tests/test_lucas_vendor_parity.py": {
+      "git_blob": "c073c5b3773608dd5e6e7e3c56514718d2500839",
+      "sha256": "a9d767dd28c3b5d79488864ed55eedb94b149ba77935cbd5118e80ed1d1c69e1"
+    },
+    "turing_universal_quantum_computer/tests/test_mps_exact_backend.py": {
+      "git_blob": "167cf810bbb94f888abaa0cb46a7268ec911d78f",
+      "sha256": "b55d79662c78ef3a393aa228ccb52c24e19d1af46e396b4b1d014baacab2117f"
+    },
+    "turing_universal_quantum_computer/tests/test_package_organization.py": {
+      "git_blob": "b869c603352b092edbf43adb6808858616a6af21",
+      "sha256": "4fbda611cd5a59bba9facc5a80bd30f45b162a59f8bd797bc52142ac802d36c7"
+    },
+    "turing_universal_quantum_computer/tests/test_phi_machine_profile.py": {
+      "git_blob": "863f9d0474b0e67504b2302c618c8dad3d1c7fa8",
+      "sha256": "d3f55b3781152078dca162457ec085c5327aa12d014e38e29b03adbc53166cb6"
+    },
+    "turing_universal_quantum_computer/tests/test_phi_quantum_machine_consolidation.py": {
+      "git_blob": "b7ebdfe11879dc7875c8e5a569150f748899bd01",
+      "sha256": "ee593f6af1e96bb453b2e4c7310ada4fa4b61c338d96b6e18d019bf8cdbb95a1"
+    },
+    "turing_universal_quantum_computer/tests/test_product_boundary.py": {
+      "git_blob": "dbdc404c11bcd3f5570335039ebd3125849b05d4",
+      "sha256": "0466a1465968c58a4857c0bd4efbdb55bc5714e67ff681236efbf043e4f43ad5"
+    },
+    "turing_universal_quantum_computer/tests/test_product_release.py": {
+      "git_blob": "b8981aa48df1eabbd63e608765a2c77fa380c497",
+      "sha256": "2686e5b8937b95568710b69512bc3d688ba6a0f60c474d587e69a3b6c1157219"
+    },
+    "turing_universal_quantum_computer/tests/test_production_release_gate.py": {
+      "git_blob": "bc1caa8ed8edc15c9aa3b6d54f6e60ad662170ae",
+      "sha256": "9ef905ac929285d6e4a37e0613f02e8f673592ea5aff427cbcf283b7d9cd9bf1"
+    },
+    "turing_universal_quantum_computer/tests/test_public_api_dropin.py": {
+      "git_blob": "53b80dcdaf615ab787aff31731af0c5355ea7be1",
+      "sha256": "66019346cf14a5928197b8694ca8782d6f96b53664e8f837d8f23e4715a2cb71"
+    },
+    "turing_universal_quantum_computer/tests/test_quantum_library.py": {
+      "git_blob": "68f6536d7259a6b5d4d1752e0178f58fe2944e97",
+      "sha256": "8cac6be795037705243b05743c1dda59b0c12c81a2a4b78a2a3b545c1b7bf73c"
+    },
+    "turing_universal_quantum_computer/tests/test_release_qualification.py": {
+      "git_blob": "0d103a5a862fc8bb21cedd36b63e5172b27acf66",
+      "sha256": "f8c691501a0bd54b91562ea8b64dfb127b5e4f38f44ef5527935343bf431b414"
+    },
+    "turing_universal_quantum_computer/tests/test_stabilizer_measurement.py": {
+      "git_blob": "a02320b751def33eb024691570c578ef07c2ed56",
+      "sha256": "b8e78b0a033f074c06bb79eb207cd1c55d3341c42b9b116c8a0b8be6da6b1794"
+    },
+    "turing_universal_quantum_computer/tests/test_structural_research_claim_gates.py": {
+      "git_blob": "d98fa89aa532fc0990491f3c09d451b644123f93",
+      "sha256": "eeccdaa7e7bf08c42ab2a9d6541f00b4a347297fdcd579fb97be9beb01f411c4"
+    },
+    "turing_universal_quantum_computer/tests/test_surface_code_exact.py": {
+      "git_blob": "782fa36c3e06d92741d30b77fe67fbb59c974f2b",
+      "sha256": "762b5fb740382893b0eb73a311316d5d301818c0e789fcebaf8c64b549adc223"
+    },
+    "turing_universal_quantum_computer/tests/test_turing_core.py": {
+      "git_blob": "4a22b3011f06701b4089df4b78e29856e3ac78ba",
+      "sha256": "da1dfa97f4a3b639b13916d4bcafb5120c9eccdc9f0dac22b380b7291056bc33"
+    },
+    "turing_universal_quantum_computer/tests/test_turing_inventory.py": {
+      "git_blob": "c98098241419210d8075a248a079b66654cc6350",
+      "sha256": "976b22afc393fcb08dab19cc04aa9da5dcf1a55a630c54e619b131bbb9a8eb2e"
+    },
+    "turing_universal_quantum_computer/tests/test_turing_specification.py": {
+      "git_blob": "f5c668ccc9c33c8539c6c71f94f2eb9147f4d996",
+      "sha256": "244e92d3f41cd7600110f72fa6578055616e0111378c8b38bf9685ca3c688282"
+    },
+    "turing_universal_quantum_computer/tests/test_variational.py": {
+      "git_blob": "77b67a27dbe9c32f05d6061f25368d4a24155904",
+      "sha256": "b01936e894cbdb393123ad39c7ae6d86dbaff0df1b2c63d61dd2639807319ff2"
+    },
+    "turing_universal_quantum_computer/tests/test_vqc.py": {
+      "git_blob": "f57e0c4a697eacc671c4e778f049cfc6047db1ef",
+      "sha256": "2039c1de44ae4c33410caa6f588f6dc2340520383cf4bc4b55eaaf1d449a016c"
+    },
+    "turing_universal_quantum_computer/tests/test_vqc_custody_durable.py": {
+      "git_blob": "ae7926636a10254d35422114049fbc6c91f588b5",
+      "sha256": "8d71e1a08f268ab084d882209c2950d3ec7a9d766ad497a7ff1362368ad2008d"
+    },
+    "turing_universal_quantum_computer/tests/turing_custody_restart_child.py": {
+      "git_blob": "9f1a75978986e5d2f31e2f728ff4b4bb01cd7bab",
+      "sha256": "e6ce22b581020966032a3c0d85bf9507e6228d8add5e0b3276c7ff0b4e444832"
+    },
+    "turing_universal_quantum_computer/.gitignore": {
+      "git_blob": "383cc655bd4878b2345f5ef0b891eef1a3c2a4cd",
+      "sha256": "5d62bc36b8fb4b40fce10aa64f71249e6833acd707342fea3b534fef80d72e48"
+    },
+    "turing_universal_quantum_computer/CHANGELOG.md": {
+      "git_blob": "d29e52780b83cfcc76485949a1c0ea6c8b9965f6",
+      "sha256": "b6ff0fc3719e62aa5691b3b4a7728376e4a98761dfce7b0ed77ec9787f79bc1c"
+    },
+    "turing_universal_quantum_computer/CIAAS_REQUIREMENTS.md": {
+      "git_blob": "e35f76141b8552eaafc469639adf29640a0618f8",
+      "sha256": "5cd6328ddf2a4f61cce1cbbb3908e19fa7bb407447b5b2bfd59734861e9c1d0d"
+    },
+    "turing_universal_quantum_computer/CITATION.cff": {
+      "git_blob": "514ae907602b842b26fb6c9540ef56219a936ba6",
+      "sha256": "08c4c105fd3534f1776ca9bdc28ba779a6c4c3483c45f3c72871f7b8eec1276f"
+    },
+    "turing_universal_quantum_computer/CONTRIBUTING.md": {
+      "git_blob": "7cce3fde7da84617f275735493d603cb576f45bd",
+      "sha256": "521adcdb85c8169b401fc331066b0e4d2135023e302288bcc761c9d132e2cc8e"
+    },
+    "turing_universal_quantum_computer/DEPRECATED.md": {
+      "git_blob": "478ef0fa83e3629ae2bce3dee8dbeac616c50cba",
+      "sha256": "cee948aa55cfd7e711d5294ae7a5d1850f4a7ccf61c917959bb62ad041ff0392"
+    },
+    "turing_universal_quantum_computer/LICENSE": {
+      "git_blob": "f0e532eefa8fb7b67b892fa14240277b639c7bdf",
+      "sha256": "d0af89af6b62f25edabf3385411a61260db34c8c9bce86b76606071b61372f48"
+    },
+    "turing_universal_quantum_computer/MANIFEST.in": {
+      "git_blob": "9cc236c3efb0ddd6165a478a6058cef3e2196a6f",
+      "sha256": "dfd82647a6d036a782d880d0b1099d01924b6ca6b85f08c0bba6381d8c9bdf98"
+    },
+    "turing_universal_quantum_computer/README.md": {
+      "git_blob": "1ab3f04c692622f8d7a458270582e71fc2548a22",
+      "sha256": "39a2e6c453ae9c45c96fd05dc72a1ffbf877b020fafb2d43612190f2937b5f5e"
+    },
+    "turing_universal_quantum_computer/SECURITY.md": {
+      "git_blob": "52438c029bd93e7d3eb6304c8e74fab58e84bdcd",
+      "sha256": "f4a9940306eb5baf6d038940132be107f587cc94ff66f974464e7c4901856f38"
+    },
+    "turing_universal_quantum_computer/SPEC.md": {
+      "git_blob": "eae9596d3a0db232f8a45a31d020f5a0f9a77117",
+      "sha256": "fc8bb18f8445b27b410ee8d48873677c43a88d8ae45884c0989f39e5e62bc4cf"
+    },
+    "turing_universal_quantum_computer/TURING-qualification.md": {
+      "git_blob": "700f25da0db31960db816269f20acb07a3695580",
+      "sha256": "274dca189b809e2fb26692c7f7437762fc9afabd3a8b523f103901036b0a5c28"
+    },
+    "turing_universal_quantum_computer/conftest.py": {
+      "git_blob": "32d09f723bca3667b628fc4e35c49230e4e424b1",
+      "sha256": "132d0472851a1b4598d07badf24f11f15b39cbd1b05e6bd55107f1f084b77f9c"
+    },
+    "turing_universal_quantum_computer/mypy.ini": {
+      "git_blob": "75f959028ff7b13a1f3ee85863d0da9fe3c6df07",
+      "sha256": "340c21ac71cde4562d68d0c7cdea8c3f8f6c2480d48b37f067bf984bec65d107"
+    },
+    "turing_universal_quantum_computer/pyproject.toml": {
+      "git_blob": "f49e7bb211d4df501503a94e6fd8da35e209e408",
+      "sha256": "2393bd4ee2437b6c169ad77dba1c58cb487bb58b2bbb8179281cae42dcfd1e36"
+    },
+    "turing_universal_quantum_computer/uv.lock": {
+      "git_blob": "b3b0606a650c6e54de0b81b1f03250bed805ec40",
+      "sha256": "6e09005fcf0ae877e7838654d5db09a10ef362142d14c9f4a02e23628a852ac7"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/lucas/__init__.py": {
+      "git_blob": "742094ba199a630773f1603c499b3a16eb2c8383",
+      "sha256": "d2c090effff57d4d7a20ae8b61cc18d9a2362941d55239c46cea420c65336379"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/lucas/algebra.py": {
+      "git_blob": "21142c1191c5fa2b3fb5b7f87a8cf37c7564fd94",
+      "sha256": "a4539e1f5ce763ac52049a9d599e845f3705a802cad479b684600aca22276f45"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/lucas/bound.py": {
+      "git_blob": "3b13dca60aa3e01775c3fbee46d639b01c82ebc4",
+      "sha256": "fd572b3c99c5426ef2c466bc4e1a94d7112d58d04fb9ee89663d8d6c83eebcba"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/lucas/cassini.py": {
+      "git_blob": "eaf8e9cae94066a5c50b6fba4f4b4d59759ed1ed",
+      "sha256": "1bee9c3ef5f7be05d344898edaa86ed1002f3890d8175af43f498db3ce9461fd"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/lucas/core.py": {
+      "git_blob": "a37e9a739bda4042f9af56ac35864cba509c20bb",
+      "sha256": "3dc92ab4cb59833ab1930b855adf7014432c202096d94aea75fbb05f8737eb0b"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/lucas/ladder.py": {
+      "git_blob": "41f0e736ff57b2ca2c50e8e17b9fd05f624561ee",
+      "sha256": "d6b650938eb4d2e6f5480cc0734c6dcde427e0ff80feb07eb4017a836750c3d2"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/lucas/pool.py": {
+      "git_blob": "f9d3396d404fde6a9f20373f4a287b980f289473",
+      "sha256": "a43d213f6fbf018fa377b783031099e2ac34500b9d618f5a845c999f37ef9e32"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/lucas/scale_model.py": {
+      "git_blob": "a0d68b02d3875e53267975bf9a11bd3bb5f1da24",
+      "sha256": "0ffc60ff2b055a894cae466e2a6a07c348cf14b2f108ae646762a7bf04cee53f"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/lucas/trace.py": {
+      "git_blob": "2fc93f0c950d08255f5bc6ca9a4f99bb97571e91",
+      "sha256": "3241a280a00be8bd558e5265cf6ec589b6d2b16a61e7e3e1e3cf2ca7e7956b3b"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/backends/__init__.py": {
+      "git_blob": "55c0617ff5f39de8f586a173f73589c9a6ef86ea",
+      "sha256": "426cb3020545af7b9ee14492caa9bb5baed0f6b7a8ea2c6e3cd1abee03f9c712"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/backends/algebraic.py": {
+      "git_blob": "3e1ee67f7bc11cbd6445b79fd62414c83ca57d06",
+      "sha256": "0503d25a9a8edb4d7c1452e37f735f4f41c5554058c7492ae976d433118d20c9"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/backends/base.py": {
+      "git_blob": "d67da54df39373ee0c23326bfd839b70dfd554d3",
+      "sha256": "0c03efbdc8e1cda80898c564f9b48e0cadd7e1eafe2b32cf78a33e4134ec974d"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/backends/exact_algebra.py": {
+      "git_blob": "9603a0302484d601f5f98ccb5d8d196e1c0af723",
+      "sha256": "992ced12776fb3f2a1c53b5f55416936d01a7465be920d6b77560b9fe1de7821"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/backends/mps.py": {
+      "git_blob": "b9e10591cc8e8508c89610cd1b22cab68aa847c9",
+      "sha256": "5bc50647a9f01c7e218caf9bd86b2f1c92d3566946fca1cb461a30ada77ae53f"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/backends/native.py": {
+      "git_blob": "d618b2de930208816b94a0af606c2905de8ee4a1",
+      "sha256": "ea8c65190c013705081782f5a9f2604b537ff4fcad3db8ef84f55408dd8377cd"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/backends/qpu.py": {
+      "git_blob": "b6691f878b8af095f9fb084c4ff661db71edd60e",
+      "sha256": "1b0bc84b98c9e25b37690565e7fc40319e513a0f76213d05edf4009e43be7aea"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/backends/reference.py": {
+      "git_blob": "2a657380a18d66b04558d8f0f5d9265e9291acbf",
+      "sha256": "28f58d6b3d218a5b3f26a595a6f3e7dcdfb108472e9f9c821b3b4a6d78a5d649"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/__init__.py": {
+      "git_blob": "ebf2aad19587a019dec5edcda80612068dc161d7",
+      "sha256": "fa0787e47811c7e65b16890700e7af2475f7ada2c5eeefa7fa0ad9fb160844d2"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py": {
+      "git_blob": "be362217ddd2a812d2efbc193b9a046d90ae47e6",
+      "sha256": "6d82bcfe46c0ecd06e5604e385fc5d7ba700576a3fc6d076b1cdd79a8628dd6b"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py": {
+      "git_blob": "776557689c84bde1464aba2dce6dd468f000e88a",
+      "sha256": "22273fc15bb5444b8181d5ab6f875f609eb0f2c37eaa6a0b6b7ff3668a4f5727"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/inventory.py": {
+      "git_blob": "ee2b557f665d6e84d1585b8efaf1673528f466cb",
+      "sha256": "151beb0030dfa0c24b54efd3856a51656e270c7095088e1839ca35ecbb5df926"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/schedule.py": {
+      "git_blob": "070efdd5ea8c8bf4c638e6445265fad0b32661af",
+      "sha256": "181577e2e7b1b945e61a86e2ef81689a498af10e47d6a34ef722bced9837b24a"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/specification.py": {
+      "git_blob": "8f9f3e7d8a3aa00cb0207cf0064578d2ca4d2083",
+      "sha256": "1e82d8564002fc543be84d66846fe01da065386b4c2453cfc7f1ba2e98ef071f"
+    },
+    "turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/ten_thousand.py": {
+      "git_blob": "6b63423038f48abda6646089b79363361bd0505b",
+      "sha256": "e3150e7bd92900800f455353790cf58932bca5bccd5a6a1eb48bca4cdee629d2"
+    },
+    "kellogg/CAPABILITY_MANIFEST.json": {
+      "git_blob": "55ec30929ceecd3e48f4d08459364fe5a059a79c",
+      "sha256": "f6dda5b94bef3d5d48a769193980da5d8b38b99f49cf8280effe6a66990d568a"
+    },
+    "kellogg/__init__.py": {
+      "git_blob": "8c4792a81536687984f2486428425c90481a53eb",
+      "sha256": "1b01237445ae024bb2c04137b52620b80199b40336efffc46f1a3daf5169acf8"
+    },
+    "kellogg/ansatz_v3.py": {
+      "git_blob": "87867f0f6fc1a48a1c4152fe9fcb84a9ec8bf038",
+      "sha256": "f8fca6e1aa85db8a437063799a789a221eb59d2684fcb35da058a89ac5167794"
+    },
+    "kellogg/attest.py": {
+      "git_blob": "b1613d879405daa0313f28dc02382255c20b17eb",
+      "sha256": "bfc4012201686ec5909c7df0ca6210c47ad41e24b6e3153afebccd32e4bcc2d9"
+    },
+    "kellogg/benchmark.py": {
+      "git_blob": "295cc658f6c1f4cc0d09f8c30b3ad41459692f11",
+      "sha256": "5cb70d4a9919e44646ea192a6c56b471d57d25cb4016d3cdc5bbeede0d0a1768"
+    },
+    "kellogg/canonical_tensor.py": {
+      "git_blob": "82c875a8e14801a5cabcedb455058d6856ee57a9",
+      "sha256": "bd6ca40f131d2d442ec16716f14095591d97a31cf193f8652898a83e5812e88e"
+    },
+    "kellogg/certificate.py": {
+      "git_blob": "63b3ef151af3abe954a07b552d3e671f8109f56f",
+      "sha256": "0643df2cb8593eebf4031195b89837d77ad18140e1419158cc617d10a4195f8f"
+    },
+    "kellogg/channels.py": {
+      "git_blob": "240b74aff656a5343d316c7489833dfe6846c206",
+      "sha256": "84de00b53b8e65106b84dcab7bcb6c32849ee8dae424293051b1ec74a6af5afc"
+    },
+    "kellogg/compressed_tensor.py": {
+      "git_blob": "1b33f6d1a62fe76fc7b396c64cee93533c14be64",
+      "sha256": "6c7ce6d9759f2d18275bfdfedb128503931345272d45d70b32eb9f0b0f9d7a11"
+    },
+    "kellogg/custody.py": {
+      "git_blob": "ad4bc9ab06651c8f49cac0887c70fc4b71e7816f",
+      "sha256": "7490dfd79928bb7cd79451a0895ae341ebf95f1170f3fe84d65107db1050b7e2"
+    },
+    "kellogg/cyclotomic.py": {
+      "git_blob": "873825a07ae76a3bffd47aae78e70eea1ea471a3",
+      "sha256": "481ed799917499d4c000caba3e2ee3c65c9fd8e6b45ee46b2de29dc8b806eefc"
+    },
+    "kellogg/dmrg.py": {
+      "git_blob": "dcfc142817baccd792159702ef6752afe470b452",
+      "sha256": "7e978b439d96f7e00d5e145bcf7606919a5750c7fec218b492d09da38cf8f2a5"
+    },
+    "kellogg/dphi_transform.py": {
+      "git_blob": "17a685f4259366afa9068e42547ca30320f82205",
+      "sha256": "8f42df6016986638ae8acab190e7a4148dd755ad0a9eac25b5ecf3620bd63bef"
+    },
+    "kellogg/exact_field.py": {
+      "git_blob": "c4293d05d1f1a6d24919532e45e929f8bcfd789a",
+      "sha256": "e736f40072216eebfdfcce0d31a8ee9d6678b9a9fc09138d6f6d4b4e0ca4da6a"
+    },
+    "kellogg/exact_linalg.py": {
+      "git_blob": "2cbb36d53999c2bfbaa12d8e290249d41b0b0181",
+      "sha256": "4bd871550dd93d1ed0e40605d54b0467759535d931be98b17937389b1028491b"
+    },
+    "kellogg/exact_network.py": {
+      "git_blob": "65f56eec660a4fee1fe4da0dd3596c6b9405ed9f",
+      "sha256": "b9b6906955ea998343084d31f1bc9013fa77b9f84a52ae04ddd1338e260b8c82"
+    },
+    "kellogg/exact_tensor.py": {
+      "git_blob": "e4d13d3b465b095a7511c5f94cbc7146a58c0335",
+      "sha256": "919fa8b6ab305cf8cd91678aff2748b93d39efb8f07d397dd78bea1d2f4d4dd4"
+    },
+    "kellogg/first_principles.py": {
+      "git_blob": "e8173124f1c04e53ee27456ebca6ea979a7037d0",
+      "sha256": "5d00772c4d2cf2746e19db2876a5a27045dead9887c791c1a13ed100a5252add"
+    },
+    "kellogg/golden_convolution.py": {
+      "git_blob": "88853bf5e142deca2f982363bd272abf5bbbb449",
+      "sha256": "ee7ce90cfd69f5a5eefec81fee0e830cb285523298f5f425fef6f9cfa45f5e58"
+    },
+    "kellogg/golden_stealth.py": {
+      "git_blob": "a8e463a88a51d2ca885f500606ef6df78f9a3c0d",
+      "sha256": "6a15a5986cb2f0f6e34aaee7d80950ad4f7af33e362280b91c2ccf88c8034b30"
+    },
+    "kellogg/golden_stride.py": {
+      "git_blob": "304b9996a9fe8da9538d5299a0e4c2df23f586e2",
+      "sha256": "abe58a6cb368308b43e24c6e575b0b662fbfcbb4e7ae66b2900b44decc3a2c9d"
+    },
+    "kellogg/lane_scorer.py": {
+      "git_blob": "f75f43251e1558cb25f70770640cd5a7de056492",
+      "sha256": "ba585ad8cd8db8a9f97a9665d3aa0b92b768bfb0ab32f5a595fe4cdc4a3f70ce"
+    },
+    "kellogg/mother_tensor.py": {
+      "git_blob": "752c24636afc3d7cad46899a18541aeccc6f3bd7",
+      "sha256": "1436a8c95796824ab41b9b3dac359b400c0376a2ad5ef422e289a5285d85ed5a"
+    },
+    "kellogg/phi_dynamics.py": {
+      "git_blob": "9cd6a78f1d9b34d81311a75a4816002561963807",
+      "sha256": "a6463ba9c590632a09091379944b26dc130edc24608656ed6ca85115008ac3c2"
+    },
+    "kellogg/phi_renormalizer.py": {
+      "git_blob": "8b9fd58f09236b0958560f35eeb1fe4caae194ee",
+      "sha256": "004ad5e6745ce806568a89459e409d49a8de1c92acea52876fcb96c9c8d70cf5"
+    },
+    "kellogg/phi_stability.py": {
+      "git_blob": "42ba002a70b5a7fe6da64027d28e95ff07c8036d",
+      "sha256": "003e9278c971ed325ed913d678a02a67c3bc462d295ac70ebd425bcf6b01b516"
+    },
+    "kellogg/phi_tensor_core.py": {
+      "git_blob": "fb510783b559451564374162ca0841bb0cf2d058",
+      "sha256": "04df5eaaf97095332f14d3960e468b26d6c75ae0e4b5af79cf5aef05a3398db6"
+    },
+    "kellogg/py.typed": {
+      "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "kellogg/quantum_tensor.py": {
+      "git_blob": "0eaebb2d0e524af260eb326fa318906340b90eb6",
+      "sha256": "bf3ceec43409b40a7c1830502fd633e3dbdfa3747a00127c0436346a345c0a7f"
+    },
+    "kellogg/scales.py": {
+      "git_blob": "5120ca627773ae72f7dc375459a91b218e8299c1",
+      "sha256": "9de2c51472b8613b5f030e001c24892f7412af6c3f22da490af464d9bbbfc450"
+    },
+    "kellogg/spec.py": {
+      "git_blob": "1ed038ac599016596b3592c656c42092146db7a4",
+      "sha256": "332d63ce0072db700b229f75ae9950f3d0e794e7a3bfb1a3ad9b0d2874a6036f"
+    },
+    "kellogg/substrate.py": {
+      "git_blob": "721562ea95517b0f51bbb03c6596ab79b274517d",
+      "sha256": "94f594ce06151ca7ee2843c3995db56da518f3a68259ddbec48be5c28af177a6"
+    },
+    "kellogg/surface_code.py": {
+      "git_blob": "126accb803c7c66031492894fe1939d0681c18f8",
+      "sha256": "cfaad7534d6f269cc5fc34c9ec1cec685b59f8229172b16f94329486b0288d2c"
+    },
+    "kellogg/tensor_ml.py": {
+      "git_blob": "24b3568ca11e0c9b8e16af4250ee16ad190d6738",
+      "sha256": "663256d0a1c271cfc6d38590ec111ba06de054cab7de6130a08e863fc711b3be"
+    },
+    "kellogg/tensor_network.py": {
+      "git_blob": "1629d6e2d60b4030837a5e91501c9eab43462b52",
+      "sha256": "4973489ae700731d50f6e2e03be4ee6bb6002dbe8c65460076240afa0ebb75fc"
+    },
+    "kellogg/tensor_serialization.py": {
+      "git_blob": "6557276e350710c462542247fddb1b74f9c614ce",
+      "sha256": "bfd24be0e648d947db94b95351451b86e1c08d90c8fc85e0b9f8c07d823e3e60"
+    },
+    "kellogg/toe_superposition.py": {
+      "git_blob": "5abf937db597ae7b2996e8d8b93569a564bdf62b",
+      "sha256": "66bfc78e7f141c78df66f7eb0797c447c972d0ca1897cf1f7c9ff847aec60fb0"
+    },
+    "kellogg/traversal.py": {
+      "git_blob": "eb3422b165247022d5c32dfbc7bac775a040d8d6",
+      "sha256": "f64e8abb344a91e4a5bdea248e47a304bf7f1af3fa29018486e2c7ef27119954"
+    },
+    "kellogg/vector11.py": {
+      "git_blob": "b37d4af7ea71899e1dc36e8a9a5be7263e0a251f",
+      "sha256": "e2e4cd95a2ff0b76033a2b7e0b674a3649c3adbf37a2315d9bb93fb3fd7996ad"
+    },
+    "packaging/kellogg-tensor/DEPRECATED.md": {
+      "git_blob": "cad9cac2b1b0de970f5a6425f52e6c948fb55a2b",
+      "sha256": "9a956abb32a7ec4d13e704fa956de149100476739d1f9b46e9ab7909a5600a18"
+    },
+    "packaging/kellogg-tensor/README.md": {
+      "git_blob": "c920890624bf9b567157ad77cbcfef439f6e3828",
+      "sha256": "e35a713385d83eeab0603873942ddde75f070b80082fcc7f294ec85d3be84184"
+    },
+    "packaging/kellogg-tensor/build_and_verify.py": {
+      "git_blob": "64bd5ef077e6a0dec8fe63b929b4c792848805c1",
+      "sha256": "a592f6a1726b2664814a43b4caeffecee607b8c400a6859c98edb02ec97417b5"
+    },
+    "packaging/kellogg-tensor/pyproject.toml": {
+      "git_blob": "19f04170e607dbd71897764458fcfd5e6068d26d",
+      "sha256": "fea414c6eac4c17d09c4d9a02140fb6a11562cb16909d41d4ab497454d99c1be"
+    },
+    "packaging/kellogg-tensor/run_release_gate.py": {
+      "git_blob": "2d06ec28fe93b281744f8a70567903ba4fb2a8d3",
+      "sha256": "a6d8361967c0cb4eeb07da627f8c5afcf4e15d58dcf25dc76377079abb5b2c6d"
+    },
+    "chronus/lucas/DEPRECATED.md": {
+      "git_blob": "98d397979812b0fc5916091a49be26e1855414f6",
+      "sha256": "5e0e9eb3a7de5d9fd0d3a0de9742df803e11a1ff11b2614fac2b437af30cc793"
+    },
+    "chronus/lucas/__init__.py": {
+      "git_blob": "742094ba199a630773f1603c499b3a16eb2c8383",
+      "sha256": "d2c090effff57d4d7a20ae8b61cc18d9a2362941d55239c46cea420c65336379"
+    },
+    "chronus/lucas/algebra.py": {
+      "git_blob": "21142c1191c5fa2b3fb5b7f87a8cf37c7564fd94",
+      "sha256": "a4539e1f5ce763ac52049a9d599e845f3705a802cad479b684600aca22276f45"
+    },
+    "chronus/lucas/bound.py": {
+      "git_blob": "3b13dca60aa3e01775c3fbee46d639b01c82ebc4",
+      "sha256": "fd572b3c99c5426ef2c466bc4e1a94d7112d58d04fb9ee89663d8d6c83eebcba"
+    },
+    "chronus/lucas/core.py": {
+      "git_blob": "a37e9a739bda4042f9af56ac35864cba509c20bb",
+      "sha256": "3dc92ab4cb59833ab1930b855adf7014432c202096d94aea75fbb05f8737eb0b"
+    },
+    "chronus/lucas/fold.py": {
+      "git_blob": "9ab3367b68e10d966cad19f8dae61d9a3de1daab",
+      "sha256": "6e5e28937a78483db1afd54aef7d9bfcc69076f916dc986cbd163751784fd083"
+    },
+    "chronus/lucas/ladder.py": {
+      "git_blob": "41f0e736ff57b2ca2c50e8e17b9fd05f624561ee",
+      "sha256": "d6b650938eb4d2e6f5480cc0734c6dcde427e0ff80feb07eb4017a836750c3d2"
+    },
+    "chronus/lucas/pool.py": {
+      "git_blob": "f9d3396d404fde6a9f20373f4a287b980f289473",
+      "sha256": "a43d213f6fbf018fa377b783031099e2ac34500b9d618f5a845c999f37ef9e32"
+    },
+    "chronus/lucas/routing.md": {
+      "git_blob": "1770d07ea4ae2d1a10727eb46226a9390d0fb945",
+      "sha256": "e9667b792a4481889d4ce72398ea91ce3b5ad8e7ba127c5b0fd010a65514709c"
+    },
+    "chronus/lucas/scale_model.py": {
+      "git_blob": "a0d68b02d3875e53267975bf9a11bd3bb5f1da24",
+      "sha256": "0ffc60ff2b055a894cae466e2a6a07c348cf14b2f108ae646762a7bf04cee53f"
+    },
+    "chronus/lucas/scaling_research.py": {
+      "git_blob": "b0a3870914dbbf29c9efdcf9f7931d9d4943c545",
+      "sha256": "e4133b68ea7ac97a1d7c186f5b8987653076b0f8c11f160b727bfc39d8bf0879"
+    },
+    "chronus/lucas/trace.py": {
+      "git_blob": "2fc93f0c950d08255f5bc6ca9a4f99bb97571e91",
+      "sha256": "3241a280a00be8bd558e5265cf6ec589b6d2b16a61e7e3e1e3cf2ca7e7956b3b"
+    },
+    "turing_universal_quantum_computer/experiments/README.md": {
+      "git_blob": "10693cf6566e78e37adce474e80db4f10752e150",
+      "sha256": "ee574b9fb13c046784f780bdf0dc720a4ae9e325cfaab0e41c2dffcf6a4893ec"
+    },
+    "turing_universal_quantum_computer/experiments/analyze_results.py": {
+      "git_blob": "ddec6312965c892e7f450942f519c14638661e36",
+      "sha256": "d5ea1e88bc180eeeca0a4d4a01876601451f7555fd5740ec79da5d634109abaf"
+    },
+    "turing_universal_quantum_computer/experiments/generate_api_reference.py": {
+      "git_blob": "61dfc58e66072911b5892aa03d8a825d0a6092b7",
+      "sha256": "8990ba5a5ea2ef52372cdb9db3ee11cb0b3c89c37ffd3cdba63db17fbc6110c1"
+    },
+    "turing_universal_quantum_computer/experiments/platform-qualification.in": {
+      "git_blob": "b37af33e7f4f555c8bf684a829468ff525ec83b5",
+      "sha256": "ba9d76e99363db31c58d80ff2cfade0db53825939cbafdfbfd80da196e3f48b8"
+    },
+    "turing_universal_quantum_computer/experiments/platform-qualification.txt": {
+      "git_blob": "f7fff906c7debba2b49c26c2a31c9ed66bbb449d",
+      "sha256": "410412c2ee616b01fb01a36b9daf56ec179bc58d3fc223e472aeabd22a6715ce"
+    },
+    "turing_universal_quantum_computer/experiments/qualify_artifacts.py": {
+      "git_blob": "102463e857f2d5f8968230b6f4fa75f7a3485d26",
+      "sha256": "e2d57af66e24b0e42b7dad4d6f1ffb459c56627b58a827235fc22dfca91c0cd3"
+    },
+    "turing_universal_quantum_computer/experiments/qualify_capability_installation.py": {
+      "git_blob": "fd628b360f348755ec78a8980086d842020a8d09",
+      "sha256": "c41e21083c28ed9015044d3c3d4b6745fbcc6f77d9874927a1111477b9bded3f"
+    },
+    "turing_universal_quantum_computer/experiments/run_experiment.py": {
+      "git_blob": "d22a840d49535c96c126d5ab32247a6ff37a7621",
+      "sha256": "061f89176ac4724e839143f604172ab417b6827088f4441ebce88a82c2557957"
+    },
+    "turing_universal_quantum_computer/experiments/run_targeted_mutations.py": {
+      "git_blob": "a264708950f889cc3eb962afe00070f3682c88a9",
+      "sha256": "a169e77a3399f09bd599de37d83ee7efb1ed13e6382f7081e36fc44da1aa8e2d"
+    },
+    "aethel/API.md": {
+      "git_blob": "c0a2bb7a5b2ebe6b5e738b6bdf7aed78f3b52d1d",
+      "sha256": "cdc39789062782aa6ef406c21e2319d7f02b296362d49105aeb759563e72301f"
+    },
+    "aethel/CONTRACT.md": {
+      "git_blob": "3c14a1f3bafa12515c759e84be79a0dd1332024d",
+      "sha256": "5b3196a76598cc077e5608accdbfea2ebd142942a4b07f8c086d9d5f1ddb1600"
+    },
+    "aethel/DEPRECATED.md": {
+      "git_blob": "2081cb3b026b9104aa2eec857e4ec00553d42c59",
+      "sha256": "63a3fd467b69650c7132a98f7580346e6c441c6814895f12111d66dd1b1ed64a"
+    },
+    "aethel/FAILURES.md": {
+      "git_blob": "cdb2b41ec6383199f4005875edd0ef252dba351f",
+      "sha256": "81971247025481614e3c30d0b39ce10b977355c958258f1e26a505466d168ab2"
+    },
+    "aethel/README.md": {
+      "git_blob": "abfc7aaabce89af6420eb988c2bec237cb690ed9",
+      "sha256": "f437d5b3193db104bd1009941dd64860db53cc009f663bdfff85384195aca3e4"
+    },
+    "aethel/SKU.md": {
+      "git_blob": "ab97bef26d1abc98c3172cd574701ee2ca986dad",
+      "sha256": "19e5cc8b14ff33c70cafece6bf37caeea014722e07754e82879a1e8f5e3bb96a"
+    },
+    "aethel/__init__.py": {
+      "git_blob": "07aeef1f00dfa3a861eddf17fdc9df42e3b6e01c",
+      "sha256": "61efa2ca34606cfd0dfd5b6891f642db02ea5ea38db7bd86018985bf8ead9015"
+    },
+    "aethel/__main__.py": {
+      "git_blob": "f41747555eceeceeb6049324d76c6bfc36b7c152",
+      "sha256": "31d21524b1b1badeadf72c01f75bf67a6ad5491af17ea8ace827b16d9c724152"
+    },
+    "aethel/capabilities.json": {
+      "git_blob": "1986c2b4c12dc9aeea37d2c90c2e161c4e4a7f9a",
+      "sha256": "3a160d3d4fb446ca64a68a437e902d4d9a3fcd23fd7f63dc7100d666589e7a7b"
+    },
+    "aethel/cassini.py": {
+      "git_blob": "5a5693fb0c691db45ba27a4dfda913bdff3cd7be",
+      "sha256": "d112435f3a811e149d409428326b48618a39456201f744096e205ce94c7d5c82"
+    },
+    "aethel/chronus.py": {
+      "git_blob": "dfdecbb5a5ff7de9f6ee21a42a84440f779451d0",
+      "sha256": "794b50ff53b1a5bc728b647e085925c7c0597b8ef9b33214ea642a6866c4f9cc"
+    },
+    "aethel/compute.py": {
+      "git_blob": "6342d9824ae5e6f223550a8e6e039d74e1885e0b",
+      "sha256": "723433b0a649eafdaa4bc1ac69c135f906316118309c6787ac5398e433df6ce2"
+    },
+    "aethel/constants.py": {
+      "git_blob": "9bacd0df972e8f9ac3ee0a0382fd9a7c3cf4f6be",
+      "sha256": "866f0fa34b257780fe3d51310c003cfb7a9c4e3a0f171952dd4a82857769b5d2"
+    },
+    "aethel/costs.py": {
+      "git_blob": "8616908ec36620579e7b39b4a09158f1800d58a0",
+      "sha256": "96ee02dc86eca17a6f79f1dcd8b7f1f3ab3a907e6e56398aefd271426969ccd8"
+    },
+    "aethel/device.py": {
+      "git_blob": "3912d0bbb806a72aca7eb875477159a7c14b34f8",
+      "sha256": "b70aa4ff48f174ca510ba8ddd4d58b7054288fdbea9779a7094ac63ecb39501a"
+    },
+    "aethel/encoding.py": {
+      "git_blob": "e7e682ea9f801bba088d34c6f5d7b4eac33d5854",
+      "sha256": "a1e1165d0710eb9700197f6813ecbc4827a7fbab612667382bfd460cac9a700e"
+    },
+    "aethel/enterprise_bridge.py": {
+      "git_blob": "356862d0fd69141b479c768f318fd40319cfa6f0",
+      "sha256": "2d2754689131c2ecd2f8bc8b4f55f577137f51c4691f3c1cadb063a7f1bfcd35"
+    },
+    "aethel/errors.py": {
+      "git_blob": "ab19672c47fb660bdc5f9b82eb6f03e35cc67cf6",
+      "sha256": "8eaeafc1e0a5c3d5f66c01f52af9b0c9716c8f97eae63e94ec8c09c0987dd2d9"
+    },
+    "aethel/fibonacci.py": {
+      "git_blob": "5851a09efea4965a81e8ef51310ce8470533d802",
+      "sha256": "2e0963bbf5945dc9f2c5a864f6d09f5a13ef29e7d8ede7063f070331c5bacbbe"
+    },
+    "aethel/filesystem_paths.py": {
+      "git_blob": "0c41c4046aa3ed6235542144d023f9ad1cc03eee",
+      "sha256": "0d51e9948c41d33dcd52e594275081ae8474456d016e948f56896c48f86ff5f7"
+    },
+    "aethel/fold_store.py": {
+      "git_blob": "6eb97cd0965a4957fdb4c9da59390d89169549df",
+      "sha256": "ac18795d51f19cfa062a5baa07b8a938829d51aed95ce41c64fbcfba519ffc1d"
+    },
+    "aethel/geodesic.py": {
+      "git_blob": "266d8ac9275bc9b5e52035a5d3f13f681044e41e",
+      "sha256": "c022a61d9f382858b730a175cffe6230e20492a9fdbd70488dba91c2a98daa66"
+    },
+    "aethel/gpu.py": {
+      "git_blob": "b333052652f16f6a3b1c904aa072be8e51e1dc61",
+      "sha256": "2425e2b47af6bb3f9ef85d44a7e504d79b6ba1ce64a34662c2b67a3c085599e0"
+    },
+    "aethel/hardened_unified_substrate.py": {
+      "git_blob": "2883f44dcd9b4f26759caca85b3aeebfe4f34e07",
+      "sha256": "3bf14c90c6ed586fd3d45af41d51f75795027d7aef5a787dd3ede3615a0113e2"
+    },
+    "aethel/hyperscaler.py": {
+      "git_blob": "c08dd4da9b14dbf8107d633f65475524686e75da",
+      "sha256": "9213097a6eff33d767bdd5ac67b71b43aa6c42d997a8e59bf3761e34f32b1de7"
+    },
+    "aethel/manifold.py": {
+      "git_blob": "6f25070608372534b70a1f5bf1fd88c9fac967b4",
+      "sha256": "51433a859089be602f1c1c79aebdff923db59f185d1aa59b94cb349923b8f918"
+    },
+    "aethel/overhead.py": {
+      "git_blob": "7c26c748e778e3a68c77662b22c767c63463a8cd",
+      "sha256": "a25b0b94c151388b049d099f3127f8be1e18660ca7c03b3320f57df4edffe5a0"
+    },
+    "aethel/ovid.py": {
+      "git_blob": "136cdf6f1fc55e6ad47e546a07b95c8b4c45d1c2",
+      "sha256": "217848b0e39930adf049edcd2edac8d69890bf18a94268f9d778c22fc8bab573"
+    },
+    "aethel/ovid_authority.py": {
+      "git_blob": "e169c4fe06d7e1186973aef4e305626ce872e077",
+      "sha256": "6abeb7bdedddd14fd81367b086f0a7e34115db5f693536901c88ccdfdb3c1272"
+    },
+    "aethel/phi_fold.py": {
+      "git_blob": "0fa4d823b10aed6dc676630ddd11c2ab03c25e1d",
+      "sha256": "ab13ffcb3d612fdc8c4bab37a3e62d63a13e60ecd26afe68a040265065a6cacb"
+    },
+    "aethel/phi_memory.py": {
+      "git_blob": "f6ce586ac8036da1b06a6f41019fcb5642a1f492",
+      "sha256": "85b1db5dcc27bdfae355cb469665ee93a0b5ea7928619f21a8ccfd7dbc59d8d6"
+    },
+    "aethel/phyllotaxis.py": {
+      "git_blob": "e37309e2d141423967f26db9b4dbacb2b4b792b5",
+      "sha256": "765b08132c9e366b90ce4242b9be8a40e701bdb6944267696da3ded90d65395b"
+    },
+    "aethel/primes.py": {
+      "git_blob": "05d63bf844fea691342e37c0f347f30a4fbe64ab",
+      "sha256": "ed3a0ea5cadebbde7fbb750f6d070852de474e151c47b1f74fa57f9015769245"
+    },
+    "aethel/punch.py": {
+      "git_blob": "7aeb2c44cec5c5ddac62283fecbbc59c0900c82b",
+      "sha256": "b43ba940277f188f21b1252b373e88ae6b40ae07be142ebc1461954a1c5cb044"
+    },
+    "aethel/py.typed": {
+      "git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "aethel/selftest.py": {
+      "git_blob": "f3f670d6b5b2eb8ff589754af847381360f22d56",
+      "sha256": "9f8062231802d0018bd48617b0d0be29766ddf36dcba07fcd3c3d1741393dc0f"
+    },
+    "aethel/shm.py": {
+      "git_blob": "c9e7ab1daf5130b33b4ba4e7cd60e34182a54923",
+      "sha256": "e365634d0edc44bdfc19103ca56c6927b6a1e400132ea4481c76c1bb83ebea11"
+    },
+    "aethel/storage.py": {
+      "git_blob": "164d97d00343939580cc3938702896a9befa274c",
+      "sha256": "a4058685808d35e966cdb735d566ea7cea507e400c89c2e72024ec83eb57a248"
+    },
+    "aethel/storage_topology.py": {
+      "git_blob": "43fb17afb40f5eac9c37aa40d43f56eeb93ea0f2",
+      "sha256": "ea76439dd2ff6c978f268fc1fd45e8362c1e4dfc5f2ab4ccbb1ed5820f60e2da"
+    },
+    "aethel/theseus.py": {
+      "git_blob": "3cd320b699436f9feb09efd06d5c067e5af9c8f2",
+      "sha256": "b057318fa5491d83f132dfe3ff338b041b083891d9e55d1e68aa551035c04bf9"
+    },
+    "aethel/theseus_projection.py": {
+      "git_blob": "31d19c17b23bec7aab120e685905aaa9b0ae42e8",
+      "sha256": "dbf7e01393f63eda932c3bc6aff60c7853e6a2c8687fcec0ac6bcf75241bc88c"
+    },
+    "aethel/triad.py": {
+      "git_blob": "a484bac2144c3af1a7259d17425b71f046cb9912",
+      "sha256": "ea1929be2502d5a8e576e50e9e870efc1f5a1b64d5ece875409b140ad24f2f34"
+    },
+    "aethel/unified.py": {
+      "git_blob": "f48532c41cb38217c54c862bd27f050eb97068f9",
+      "sha256": "e956285ed90381b653bcde52bf6e3221e379ae7356fee8dc74f80d2e90d26f20"
+    },
+    "aethel/zeckendorf.py": {
+      "git_blob": "86de68aa63ffcf8e0edeca23891039c3d5db9bd6",
+      "sha256": "137540d3b9f65d9b4b8fcac8be0c750884016a0fff774cc9a24bd1ae76cb580c"
+    },
+    "euclid/intelligence/__init__.py": {
+      "git_blob": "c81f11f2b11085bf47792f0dd51de721990a32ae",
+      "sha256": "48fb4114fa7407e4c1d3d891610043eb7cd9c84b4dba648a6b0310800464cea1"
+    },
+    "turing_universal_quantum_computer/docs/api.md": {
+      "git_blob": "01222ddc35e09b5d28dcf9bed81acf84f7a7f576",
+      "sha256": "71caa975854edd6fb23ddde1e565353b612a4463ac1f8516f684be095bfc4339"
+    },
+    "turing_universal_quantum_computer/docs/architecture.md": {
+      "git_blob": "483b6d388c9d60784efa12c59bbd60b0786d7d4a",
+      "sha256": "b9e139f053507112558ef74f50811cfd5dac3601b9b077449fa334fd1d06369a"
+    },
+    "turing_universal_quantum_computer/docs/capability-architecture.md": {
+      "git_blob": "b69d307cc5163e224990e61504f7e959b80d6d23",
+      "sha256": "6541aba3743c74d076ac4e082bd475dd8a0826a4497f9c11bf33eabf6e443be5"
+    },
+    "turing_universal_quantum_computer/docs/capability-integration.md": {
+      "git_blob": "b73d06a8f0f1978c5586d9106446aab0c3e1129a",
+      "sha256": "cade66dce52facf8cf50051ca9ea0d072304fc00cdbb705eca7fd893b12e1bdc"
+    },
+    "turing_universal_quantum_computer/docs/compatibility.md": {
+      "git_blob": "ee8999eaa72c8928ab59473851b737439997b7dc",
+      "sha256": "04a7a23275805a45da58bf0199597161f8403493ba1437ae3986d0c4289febd0"
+    },
+    "turing_universal_quantum_computer/docs/dependency-contracts.md": {
+      "git_blob": "8d80de48d86ffe67bf08b0a1d5e35a57259466b1",
+      "sha256": "46873ef8b6ff10fa16eecdb7192a5e39706d2e61a8b2212381e14ac6d56eaf75"
+    },
+    "turing_universal_quantum_computer/docs/installation.md": {
+      "git_blob": "2979a8f1107d2fe3e5620812ff7af46dbc27ee38",
+      "sha256": "67c3900bc5cc1434e6ecbb0d205a254d8af870901beac3dfef6578e041760b9e"
+    },
+    "turing_universal_quantum_computer/docs/mathematical-contracts.md": {
+      "git_blob": "a4ebf31603e85f200726d45a1e57689762402cdc",
+      "sha256": "d4d18a347d7dc81252787eef373796d26c8f9326b83dc24316b7dee9ae8c7e03"
+    },
+    "turing_universal_quantum_computer/docs/operations.md": {
+      "git_blob": "d5e42d995a0e9b5c2f46a86aa85184e6db1b1562",
+      "sha256": "b42d7becc1346361f0594e90ecd7d341d9c8dd406ff2a3438465fe3ebde8b2a2"
+    },
+    "turing_universal_quantum_computer/docs/reference.md": {
+      "git_blob": "950a16e28ea7b2388046ee907183733663eef306",
+      "sha256": "2736fbccfdc58a2f337e47e4dba0da9a133d79aa75135cfa49f2676d3e87c53e"
+    },
+    "turing_universal_quantum_computer/docs/release-policy.md": {
+      "git_blob": "3adde5334ce0162322b418a169a43c164db41df5",
+      "sha256": "e3cad0c0ff3b83f544b8168ac9f11db56ae1752e3d43118c7287b44068651ca1"
+    },
+    "turing_universal_quantum_computer/docs/reproducibility.md": {
+      "git_blob": "e576388ab360af209935e08076f66b0792658754",
+      "sha256": "d0a10b08cd77f3f76c8af026bb4c6d7265747da2f4e2cce8782d63ff4f78c017"
+    },
+    "turing_universal_quantum_computer/docs/security-boundaries.md": {
+      "git_blob": "b091d5f39310433b52640cc19a62c00cf7222251",
+      "sha256": "6507b696ee11666549c6811db4a801c62e994ec01b3c3558aad05e31097fb3f4"
+    },
+    "turing_universal_quantum_computer/docs/validation.md": {
+      "git_blob": "e738fd787904ad1536b26919d52e0fa275d3c63f",
+      "sha256": "b05915f092ed3d85e243cd6888e9df8b0f7d7b6178fe64255626e03b8b26737c"
+    },
+    "turing_universal_quantum_computer/experiments/configs/exact_package_validation.json": {
+      "git_blob": "b0a3eaabc38be87fa209c3bcc872cc083c9af812",
+      "sha256": "55840e44ce9ef7577def7845fdcb0b1c4c3449e75d10f05a02b78cc7636810bc"
+    },
+    "aethel/enterprise/__init__.py": {
+      "git_blob": "3429800419ddbe9f435fa99817e86602ac323c84",
+      "sha256": "0df97e2d7d71253fee48167f6a88e6537415dc15b5a7f1898c878503068406c1"
+    },
+    "aethel/enterprise/adapters.py": {
+      "git_blob": "8124205fcdba9bd8551dc8c53eb78507de63005d",
+      "sha256": "2b67b79f4bd38d35e67ed9cdc2a446487f1524246692ef8d11e2f4c02e89cd9e"
+    },
+    "aethel/enterprise/authenticity.py": {
+      "git_blob": "9caf9cabf4c393345c117208dbfd97e672471c11",
+      "sha256": "d4632f43262a9f97c62b5f9655d3ebe8284bcea81e85e269aaa8ec952f4e2f54"
+    },
+    "aethel/enterprise/checkpoint.py": {
+      "git_blob": "72a3225490ac95ac5be743fce93e6511f9d75a65",
+      "sha256": "804348b6953a236686275005899d44a7a5934f3c7fc1977701319bfb6e4cbfb4"
+    },
+    "aethel/enterprise/custody.py": {
+      "git_blob": "e2427f7df7b10cad4170fae2bb4a77624860c5a4",
+      "sha256": "d12d6cbb54b15fb1128b85a2409346f62f3d5081c5ae560d6645fc8bfea7cd8f"
+    },
+    "aethel/enterprise/distributed.py": {
+      "git_blob": "cb2be272c66e9f52199f0409c4b4cec22315d2ae",
+      "sha256": "d99ea0ea923dc7dae1347887d0473ebed60b4bac124d164c313b20d901b06633"
+    },
+    "aethel/enterprise/entangled_custody.py": {
+      "git_blob": "ab1833548c93ed986f8b582920646aebfff93c8d",
+      "sha256": "a03d4b6171ff4d11f02b54d58fd260d9a58e74bc09c13f88bd2e105e318f1445"
+    },
+    "aethel/enterprise/errors.py": {
+      "git_blob": "ddc100b467e357786d6547323eaeb850bbc93b85",
+      "sha256": "54c891a45cf00c4411296b49f4a24c957cee1081d08e9949812fcc1cb48ed29e"
+    },
+    "aethel/enterprise/governance.py": {
+      "git_blob": "808aa92ddbc38122e805794ccd8b81617c141dc1",
+      "sha256": "4bbb1718023298bf22dd2087a3bcc2290357a23452a6a36423645cf7b5a9450a"
+    },
+    "aethel/enterprise/hooks.py": {
+      "git_blob": "db8e630fdaa561d5dbcc8569041d544aee0ea98f",
+      "sha256": "3a00b952b2f9873c8ab72d49eec0cc8dd78684104dda0da68ee9763e6d3eff1f"
+    },
+    "aethel/enterprise/journal.py": {
+      "git_blob": "caae4136baa01bd096d6d020f0a9506d3b646088",
+      "sha256": "fa069f2467f4f2f41c1a061443913f622f1627b81b28ed6bd3e8176f33e116fc"
+    },
+    "aethel/enterprise/lifecycle.py": {
+      "git_blob": "b693eb5a00b06d8e125f8a8ee06b4e30d3cfe4f0",
+      "sha256": "a0f895995dd1ee798d937a5f0a15816e15d2041feabf4c77c4d53180d7238dcb"
+    },
+    "aethel/enterprise/ovid_registry.py": {
+      "git_blob": "26d1a3b7bb8096cc3f3a79a9cb75ac714b1c20f7",
+      "sha256": "1db6be04455a183f211210629b536b4a31411121e15bb541886befd41089609b"
+    },
+    "aethel/enterprise/parity.py": {
+      "git_blob": "a887dfcd122f688b2e7d9ef0db0feb85bf0f1ab8",
+      "sha256": "19eb0cce94e1a68854a425e995471ef08c62b094ad662f38a2b54570000e406d"
+    },
+    "aethel/enterprise/persistent_entangled_custody.py": {
+      "git_blob": "94ea1630ca644106f68fcb230516e4201637b7ca",
+      "sha256": "a3d2c314932a488441cb8b1374e61388f8388ab7219c141692686c72947f6006"
+    },
+    "aethel/enterprise/production_organism.py": {
+      "git_blob": "c57ae4dc28ca941de94e51cb3bd29e8743b52bc6",
+      "sha256": "dbee28735d6eb6197f6fe04e00c2bb9fe4b91435778102570bc9ddd14b5af81b"
+    },
+    "aethel/enterprise/records.py": {
+      "git_blob": "817ea6c6b5333a24b356e20a7e5667d264a60d8f",
+      "sha256": "66d791d4395da4a05679cd8b0dd28860f57e6a08b8cb1fd0924c86d3603ffe00"
+    },
+    "aethel/enterprise/recovery.py": {
+      "git_blob": "e49211c7459db2c4df652ce0f36a185ad7c2b5ed",
+      "sha256": "a16564a1066b936425ebd0becb57c47821a866113dcbdc1362a10bbd9406b332"
+    },
+    "aethel/enterprise/retention.py": {
+      "git_blob": "81b8e73ec9423e4bd8ef8b847e9ce9cf6f0c59d3",
+      "sha256": "15d70c875f2129ff57addff5dfdfec80df87badced85dfada8d52f7877207a05"
+    },
+    "aethel/enterprise/schema.py": {
+      "git_blob": "03fc6dede905f9c1035c83aaa6c341f84ea5e799",
+      "sha256": "3990564af1d6f652b6214d69907e9425c3c6a89fffa02a35b4085473172905a5"
+    },
+    "aethel/enterprise/solutions_api.py": {
+      "git_blob": "61f954f9c66380c085472b38b17a6b52339896c3",
+      "sha256": "0a150452de7b126e9e396cc9a6b32931ab34dd62a22a58a2c003c14b2d0d922e"
+    },
+    "aethel/enterprise/system_relations.py": {
+      "git_blob": "6e941075162b351fd656a9ae484c454caa1c2276",
+      "sha256": "0a5e0dd29d0ae4e0bb40165d5ea9c8fb8c111ea14142d6cecef325f601ce7366"
+    },
+    "aethel/enterprise/telemetry.py": {
+      "git_blob": "9c7d434b3ebd9f619aa961bd70f5567f33555a3d",
+      "sha256": "1004bf61f0c287924126413421c170b099cbe70aee2810d2fbeb66a646b2f4cc"
+    },
+    "Intelligence/__init__.py": {
+      "git_blob": "863bad86ab29c75e8ce969113f13756251a55f22",
+      "sha256": "f0a65690bc85f869078d8406cb63067803265bc33afdd144e7d1981dca2f81a3"
+    },
+    "Intelligence/_born.py": {
+      "git_blob": "56a37ffcb6d40d78b6df6098ebee29e56b55bdff",
+      "sha256": "c19ded47a06d4e793afaa25864a8978cfb64e5da72a693a2386d4aaa5b500a3d"
+    },
+    "Intelligence/agentic_controller.py": {
+      "git_blob": "c660c6ae2fe846019641b2329e963c6e7257857d",
+      "sha256": "237f4eb9012b531fe8595f81040205bf62d424005507b83915d130d3cd64a844"
+    },
+    "Intelligence/agentic_controller_search.py": {
+      "git_blob": "0de2fb588484baf4cc7563bccdc34de95ed2beed",
+      "sha256": "b863c4ff2a1d732fff0264a8175f3110340493c3b636c22dc93cb2bdd43a107e"
+    },
+    "Intelligence/agentic_mining.py": {
+      "git_blob": "c355559da39728bf720fc6d1ddf84be5244baba2",
+      "sha256": "d30a0b1d7acee9b00d8ce20b5b68ef37eeac201dd239316ee97cabc4ac0c4da2"
+    },
+    "Intelligence/agentic_mining_evals.py": {
+      "git_blob": "d1f2b5814bea6b79f63822a04f7630511150768b",
+      "sha256": "760a04a1c261bf74b6974993d6491805207c94058a318fc0ef5b236e81e61b4b"
+    },
+    "Intelligence/agi_substrate.py": {
+      "git_blob": "6bf3745ea434fa105ba37cb7d0912574b10f1862",
+      "sha256": "4b000884f9c4b859b9a82073e6e74c31e12301a25c2fee2ad1a5b24ace382a89"
+    },
+    "Intelligence/apple_features.py": {
+      "git_blob": "63f6b0d1ac54fb7337ea9040ab682d18780085d7",
+      "sha256": "8c6da94f817e96d2f3cdbd1bf785ee45557ce9ecf8f3d6b485fa03b74a7ef80a"
+    },
+    "Intelligence/apple_plasticity.py": {
+      "git_blob": "235e32271cbe04ebf5cd1582c453616f4e26fca8",
+      "sha256": "2fda7755188f4cafa57b98150c43f4eb1ae9a7fc4de29b89f1132045e1a42929"
+    },
+    "Intelligence/autonomous_capabilities.py": {
+      "git_blob": "68b1d4f277c7dd85faeea4c63b6062cc1a3c02ed",
+      "sha256": "3b1d2c57d2bef45562816e645ad72b72b380975d81b72d17589f872765c2c7c4"
+    },
+    "Intelligence/autonomy_governance.py": {
+      "git_blob": "9ea32e898030f1cff36143e578212de8968250bf",
+      "sha256": "eed46317a5a07e0744599b71eeb4c64c3aa5b83ef4fe4626202fac6a241b5398"
+    },
+    "Intelligence/backend_binding.py": {
+      "git_blob": "dc92e66d8cbeb351fc2fbd50c202ef297c88203f",
+      "sha256": "e8161f151c70b4453b2ac6aa3bee72893a839004730d7994363c0516580c27ef"
+    },
+    "Intelligence/bitcoin_corpus.py": {
+      "git_blob": "3443ff36d0c6465ef9ce715368f41f79336b8186",
+      "sha256": "45e8734016a45dbc35f14448c49f449b58e9075c1a1f121c4267d3326e705ca8"
+    },
+    "Intelligence/bitcoin_vqc_training.py": {
+      "git_blob": "50f768bf502094f4a9a18d169301a40af631bd28",
+      "sha256": "722bd1e971ab114ed9379ebcc88e7b04fc19ee7ee3a469195ef3ce5151d61d12"
+    },
+    "Intelligence/capability_fabric.py": {
+      "git_blob": "41f693495ce9835ed0541d0e4dada2a2bfa11de6",
+      "sha256": "edb8e224b935f25fc0de296f2408a37f64899eec01046a29f67b0d75a401cb3f"
+    },
+    "Intelligence/chain_verification.py": {
+      "git_blob": "77133e291c3fc0c8f1bd1cce56242380571c718f",
+      "sha256": "99b0c2e1e2e11b3b6a4cf0ab746ca9a0b780996f7899eb844c618773666c9237"
+    },
+    "Intelligence/coherence_gate.py": {
+      "git_blob": "a58c17ae263230a120e20b4bce856da0049164f5",
+      "sha256": "7f2df7189cea19c0c2f1aadd1821c29ed73bf2708b827bc67c638c2742d83d57"
+    },
+    "Intelligence/cortex_context.py": {
+      "git_blob": "d79bfac46f36e9087a105ac60097fabdc3202f87",
+      "sha256": "d53ab618a7c4b8616d07e42ca18f3ce2231391ed9218c3ac540945d9962d2e05"
+    },
+    "Intelligence/counterfactual_intelligence.py": {
+      "git_blob": "27e5cb1b7c10939b2a0cb03e9fc5e908b47c9cee",
+      "sha256": "6b5ca4e3c015c8d803a84395d52d7ba7d66311127ed34b23cb8de42c733fc3cd"
+    },
+    "Intelligence/discovery.py": {
+      "git_blob": "c6656dbe5d2c4dc5e29956f38a70fcef06e29718",
+      "sha256": "3277c34f8ed7db2f0a564b1cb8214f6d5235bae192ffbab2ecde83982044000f"
+    },
+    "Intelligence/empirical_state_controller.py": {
+      "git_blob": "aaa69b593975dae52a75c196259f83ed67c8836e",
+      "sha256": "d0dbf40dc614a3703303a4790d4a3de733933184733a734cd8ab23d9dc38cef1"
+    },
+    "Intelligence/endpoint_wrapper.py": {
+      "git_blob": "02dac94b551aac42b94d850b85a9d3a24e9a122c",
+      "sha256": "8369ce95c85165c475fd2af1a3f854a8c4b4b993771ec80d1f7c8ca522bdebf3"
+    },
+    "Intelligence/engineering_agent_adapter.py": {
+      "git_blob": "eb7bad0945cdfdc94f6b9a8f777fcfc2910266af",
+      "sha256": "8b3c6c644743a084863864ab9ed59e7ffb53a75e6a297d29c638d091f3b0108f"
+    },
+    "Intelligence/exact_tensor_bridge.py": {
+      "git_blob": "e82db85e1d783ad5c7b6f45c857fcf3ab1744274",
+      "sha256": "17e4b9a14cde1a3c0b7b75d151212b5e0c38acb9cbf687e6606390c35ae3bd9a"
+    },
+    "Intelligence/first_principles_quantum.py": {
+      "git_blob": "5c80a54d2f87cd2b4d61a65d01f2376c4b02428e",
+      "sha256": "fc1de43e487ba9b9efb245865a4b618dc5241ffa73f32ce7e03568803ef47e92"
+    },
+    "Intelligence/folded_state.py": {
+      "git_blob": "887e67e50bf650587f1c12a89b63470a7b1d4069",
+      "sha256": "d07d6557d653e0fc1af4e0e425ee4f6518b1e96987a2098212e0dffbc26cd338"
+    },
+    "Intelligence/four_layer_stack.py": {
+      "git_blob": "011eee185097482d52768bdb4835a0b6e7220de0",
+      "sha256": "84c93b6da1e2fa240b3459106e568f12debf103c67c66befbc1dce298073d638"
+    },
+    "Intelligence/grover_exact_scale.py": {
+      "git_blob": "063fe1e6880aab79a2c793b9d4000b95cde9a804",
+      "sha256": "9fae520f73c3c786a58f8cb4b10718024bea1a377927377ad27b3e7756cc85e6"
+    },
+    "Intelligence/hardened_unified_substrate.py": {
+      "git_blob": "929546ddd83306deb5fe0384617876ea432948b4",
+      "sha256": "04d04330c626e25433b78c818fdcc67583ef57e494d709094c9c01ed8de6a40b"
+    },
+    "Intelligence/hardware_config.py": {
+      "git_blob": "da3604298295d2234ea65e35e471d97bb76abb35",
+      "sha256": "5eb6c4a8e3659b4836512768364eba435c8a4b0c70d7de5c74fef276ece14762"
+    },
+    "Intelligence/intelligence_bus.py": {
+      "git_blob": "44d390b12a14dba7a3876f27d9abe93d2c86ad51",
+      "sha256": "d03f32abca3b02f64ddbf324077ef274b27e1270d7e53c330ffbb988c8005dab"
+    },
+    "Intelligence/intelligence_integration.py": {
+      "git_blob": "d67b8f66b65207f78f84cc0326938f1502545b56",
+      "sha256": "8712360fdacf4277b308c0accbae86e56023d6e3401f8c72e6a2855520f1f1bf"
+    },
+    "Intelligence/intelligent_endpoint.py": {
+      "git_blob": "25b23dabd337e1036abc4ceb458df6cc80bfcee8",
+      "sha256": "5856514f0d308b26a8919aa51ad7e91de3c7533900c9d2daa56f59ed8ca661a9"
+    },
+    "Intelligence/intelligent_wrappers.py": {
+      "git_blob": "898a9087150068e6d5632ab1f39209d5ea922a37",
+      "sha256": "5b13be22f22d0caa968e215615593eed5774509a0d8ee14f1a81b0998a03e565"
+    },
+    "Intelligence/intent_compiler.py": {
+      "git_blob": "58015b0dc5374bbc76fe61d3f729a63d3d9c15b2",
+      "sha256": "a00fc186fd865935a5baf0240d2d2699cb0ab9fb70f9252d60757ff08944570f"
+    },
+    "Intelligence/isolated_repair.py": {
+      "git_blob": "2d2ae951053b5626d161feb69ccca04394d602cc",
+      "sha256": "ebc3d871c47be7875cb1a0cf1ec13bfb407083ae40e7e811eeb94a132f552793"
+    },
+    "Intelligence/layered_intelligence_substrate.py": {
+      "git_blob": "8ea46a2656b0f35fd8da9e5b8c714b27429ba397",
+      "sha256": "55b8e33983686a267b2d3ec11782813f7fc686a37c1eaece94a1bf828d2d0f23"
+    },
+    "Intelligence/lucas_attractor.py": {
+      "git_blob": "e49826b244ebb51c45cab4fe5fff36c097a8d53d",
+      "sha256": "f91db59d83d4906123edc07468c550ca3ebd12171ddcbd30637cf86cba58a838"
+    },
+    "Intelligence/lucas_scaler.py": {
+      "git_blob": "ab2bf9d9039bff5b684d45e8715a3022ca308f0c",
+      "sha256": "103c9fb780b5daddd66265276c5ba7fc65d4b3868ba8bdcf4091ee63483bf852"
+    },
+    "Intelligence/lucas_scales.py": {
+      "git_blob": "6d442f16ddfc66b56672a05e8258e91c0965d5d3",
+      "sha256": "344d832cd7330347f94ccbca41b69ff6307b0e025f141a4e497e8bae20edd5d4"
+    },
+    "Intelligence/mandelbrot_resonance.py": {
+      "git_blob": "997089226cb279d36b28dc2218b035598c877ddd",
+      "sha256": "bc8a11a32ce73a87f26f4a5d11f0aad6380312d3c02a93909950de85c9456c94"
+    },
+    "Intelligence/mathematical_discovery.py": {
+      "git_blob": "61fedf7f4b0e876e528efb651d070d11bf6f7d94",
+      "sha256": "2b215a82a03ebff82480fdcbf54076127db31eea79c41890bb81f049846c0cc4"
+    },
+    "Intelligence/mathematical_research.py": {
+      "git_blob": "d143701a84db419a3f9f004909af410637a7c4e2",
+      "sha256": "a0000176aa35979bd1ab3087818e1b633da64957f23a146aa8860e68f7648d70"
+    },
+    "Intelligence/meta_evolution.py": {
+      "git_blob": "32e89a27c044a611dce0015531c10b4d1d0f00f8",
+      "sha256": "908ae5cc11bbb80ba512da32cf0fca76fd5f54342afb06b79a877d5de02acf84"
+    },
+    "Intelligence/metacognitive_intelligence.py": {
+      "git_blob": "881fa2119398e4c4be6bc1663b787d4ed16d9929",
+      "sha256": "07ee8c555c05d390305350f434ef90eab5b3b12c5d9f433a2efe52b09c5ccc4f"
+    },
+    "Intelligence/millennium_suite.py": {
+      "git_blob": "e6426f45ba5db87b2676a5496e82992e9ff549ef",
+      "sha256": "7aeb1068e760babb531cd46ab29a932adfed0c2d42a5933569890103269b378e"
+    },
+    "Intelligence/mining_api_intelligence.py": {
+      "git_blob": "8907068bc4af6bd6d53e0e0dbf412ec46eaca956",
+      "sha256": "06a15b3a4921933c30b50c813c81fc94bb226cd500daa979e18bbfd4701f8c78"
+    },
+    "Intelligence/mining_bridge.py": {
+      "git_blob": "7fd89a8773b3061f4ef785e69d4ce7ecbeba6804",
+      "sha256": "04d5ec91a177f3d47bd310eb69dd690d61dc0499d7b2bfa4c7bc2ec6510b30e2"
+    },
+    "Intelligence/mining_bridge_ontology.py": {
+      "git_blob": "eef0c27829889ced19ac48719f637cfabf329428",
+      "sha256": "ac2833746bf65a7e6123b2071e3788e4bd3250bfcdfb5deb4783b403841628c8"
+    },
+    "Intelligence/mining_native.py": {
+      "git_blob": "e9ab553d934585ba7941e5bb0cdf28ec8ec6b502",
+      "sha256": "a70408da3db16eb7d53ee67b80159e2439d13cb4c1ccb5c2c60f9bddfb04c572"
+    },
+    "Intelligence/mining_structure_advisor.py": {
+      "git_blob": "7eae004571119172344e512fbf32dc0c5e266d8e",
+      "sha256": "ef6c924fee0a3678843630aed4df001682440487b8f27e62b17dd7e8be3d593a"
+    },
+    "Intelligence/mining_structure_training.py": {
+      "git_blob": "c8a575c08cec055d1fff6714d738cee19d136c25",
+      "sha256": "94bf7489d1ef771ec6f9034076121ef8742e436759039921c3808bfc5ef36baa"
+    },
+    "Intelligence/neural_plasticity.py": {
+      "git_blob": "6e8f8ebc25b4a54b9b825e38e7fd9b653a014d95",
+      "sha256": "0327e8ef7dd4ff19c5dc5469b0514dbb48e398be6a4d3b9608fa7e7eac6d9564"
+    },
+    "Intelligence/neural_plasticity_integration.py": {
+      "git_blob": "6dfe744b94e57c549c98dc7e47383425e1535c09",
+      "sha256": "63ddcaaaacb362add471ae174eacf5f7f624cb2b8516a83889d5b3034308e659"
+    },
+    "Intelligence/neural_plasticity_quantum.py": {
+      "git_blob": "33a8b4bca2af52021457c746d431588b05e8c50b",
+      "sha256": "409d9c8536e10e77b414c517883d8b3f6955c2b49972b900db61ab0b7408318a"
+    },
+    "Intelligence/ontology_mining_engine.py": {
+      "git_blob": "1281e2983b76c3ae9677f8f06989b420dcfcdf5e",
+      "sha256": "40f135ea9030c82d6d8c471acbadcf2ae888f7addb2ba82ce0d0494a9cbe8c55"
+    },
+    "Intelligence/orchestrator.py": {
+      "git_blob": "f692f7505d4510c8f6fa73500c390e0588326601",
+      "sha256": "56746c817f9bd61cf882d031dd05de804cbb550bba7cbef2d73fdaffb7af3b70"
+    },
+    "Intelligence/orchestrator_search.py": {
+      "git_blob": "6f309ad5fc77151eef390319e0237ab23733427e",
+      "sha256": "af518da676c93eb72f36ef076b7fa96b750846ded1744a86b96f839ebdfc6a1a"
+    },
+    "Intelligence/pathfinder.py": {
+      "git_blob": "7c311ce45794e261593643264ffdcecbc5817721",
+      "sha256": "b3b8e6fc0e9e9552a6550ffd2e48580a8d575254ef6f2a49b88a2a43b0d0fe7f"
+    },
+    "Intelligence/pde_substrate.py": {
+      "git_blob": "11f3cff3bdea242f8a4223861b46d00f8a0eab74",
+      "sha256": "c3c91d4fbaf8d1782dc93413a93ca591127fcf57a91f7a4feecea111b4572ca2"
+    },
+    "Intelligence/phi_resonance.py": {
+      "git_blob": "6004024f997ad014efca5930265962706d0f26c8",
+      "sha256": "a2b599e0c2b1400442cb98ad1611fdaf44a28f88354fc6db2ef63f3a9fac53ad"
+    },
+    "Intelligence/plasticity_search.py": {
+      "git_blob": "0e319cb5c557e17c2d292429fab10a0669d48097",
+      "sha256": "4898016d349377d87602e782327a7ab75e73036f78f049142f5ffde2c0f151f7"
+    },
+    "Intelligence/poincare_cassini_search.py": {
+      "git_blob": "fa557dbe9e7a16288700461e213db4ef519b8f15",
+      "sha256": "6c10a04338ed372f57e167c31d1f74e29457664ad8bb87deab53d867d87d0337"
+    },
+    "Intelligence/pool_aware_miner.py": {
+      "git_blob": "15d9da7f5f18bf0bf25318f81457daed8af72fd2",
+      "sha256": "5cac65655690cff2d82a9dfa1f120d23ebe91fb9774e6ade7869fc4ebdd7a12d"
+    },
+    "Intelligence/predictive_solver.py": {
+      "git_blob": "d9919299084f41305edcc544449415bfc8501150",
+      "sha256": "bb7acdb90cddda9d460b655fd414c606792e1df169cd16febde8c1f9e868c438"
+    },
+    "Intelligence/prime_memory.py": {
+      "git_blob": "8fed836edb07b62bb37edc4b8f5f200879bd2c2f",
+      "sha256": "280e1a3ec99202c70c0d9ff0697874a95f0bd1f205d1ca303166b10355ffc87a"
+    },
+    "Intelligence/proof_capability.py": {
+      "git_blob": "9c2dc8581f5c9611f41b9bb02cd0242ebbe3bf6e",
+      "sha256": "80d1f9693d1343e56f871512978bc5827a559de1ad3b9db3d61214d60268280e"
+    },
+    "Intelligence/pulvini_runtime.py": {
+      "git_blob": "f41953f65e3d6261172ef500e41362d7913822b2",
+      "sha256": "17813a67de391285946b44b42bcf80daa5cf40af96cfb7996dc3aa3a08863f62"
+    },
+    "Intelligence/pvsnp_memory.py": {
+      "git_blob": "c1b4f578ee6fbdaf58a492fc8b525ab0c8d1e580",
+      "sha256": "8a048b0e8ca800bef27529d3bc6d7909b3bd8e4fa98ed88fc6030defa2bb987a"
+    },
+    "Intelligence/pythia_knowledge.py": {
+      "git_blob": "5b5da69b569b7223919506c0591a1725ff4f4d3c",
+      "sha256": "b69d9d6e7322140013ec4b439f2b0d4387c0ad239e65e06160d9696c46ce326f"
+    },
+    "Intelligence/pythia_learning.py": {
+      "git_blob": "1a41ed032cd4d498d8fe0b13f910f5d20fd422ea",
+      "sha256": "53bebc4314c94b2349cc5ee36d14f60fd38074439e0d49df97f46cf05ee2bda4"
+    },
+    "Intelligence/pythia_memory.py": {
+      "git_blob": "53d9a3ff6f8a339a7f59c7870f52e4d73fa77957",
+      "sha256": "a15f98e5cc681dfc817908495475a998be4fb77e8b6f7f8f2f78d7b518dae5f0"
+    },
+    "Intelligence/pythia_store.py": {
+      "git_blob": "7b4c1ada0e4c059cd59f34505d573ca9840d5e7b",
+      "sha256": "e7fa6831f06ee31774618811a3143ab4a51e786d1568cafa9bc7b9c38b0f73ef"
+    },
+    "Intelligence/pythia_tools.py": {
+      "git_blob": "755442ad5747d429809751ce64a003820892cf23",
+      "sha256": "343ba5a39fae1b0102fbc6bfe106fe515b704729c027b61ecb42ac516285596a"
+    },
+    "Intelligence/quantum_algorithms.py": {
+      "git_blob": "663b6eec438e248a07e268636594532513624404",
+      "sha256": "ddcae0996e317c0358c1ae5890d85b3ddad5928d3f09cbd4aedf2ddeefcb3ac7"
+    },
+    "Intelligence/quantum_stack.py": {
+      "git_blob": "37f5b2d1134658af77a4572b0ed2dd45fe3df706",
+      "sha256": "b44dbb64c847654b6c2fb5488c91cf7c0ed82c8c1eec626a9c656c2ea0e4d364"
+    },
+    "Intelligence/recursive_self_learning.py": {
+      "git_blob": "10c7cf167e848c1f7b7a8dd265f0eb77744a19f2",
+      "sha256": "6a44b98af62f666c55d9c8a7fb361dd0f965e25cedc4807c92b86303cc99f2d9"
+    },
+    "Intelligence/registry.py": {
+      "git_blob": "8f00176713454e4389cf5139424eab2f2b56322a",
+      "sha256": "31d26d843d0368ddea11dcadec46d0df31bb565bc3eba2a931f811d16da5c6dc"
+    },
+    "Intelligence/repair_learning_capability.py": {
+      "git_blob": "72e32045aa8bf26d7c1fd30a9f4cdb917ac1785d",
+      "sha256": "1c0c1a241274235a573469f3d5aae417d4f8ca46b4b66ecb2b0857624ef9b241"
+    },
+    "Intelligence/repo_engineer.py": {
+      "git_blob": "6fbc204cf3209f90dad8878e825eab2dd095cf1a",
+      "sha256": "1cfd49fe3c04ef1766d08b1feb16b9f134a16e35cc84bc057f2ac2dbf59889f6"
+    },
+    "Intelligence/repository_review.py": {
+      "git_blob": "8a93861017ece94bb658681ac4c5c3edaf1846e4",
+      "sha256": "bd087f1cb4628f41acbcbe8977aa7f2a7c9bcddfca80e52afa461f89f9fa181c"
+    },
+    "Intelligence/repository_review_capability.py": {
+      "git_blob": "d675981f76e06239ad85438964eb508c921ea6e3",
+      "sha256": "fbb9dd65a611fbc2681c435878d87bf9538ced6255b4526dd30eaa13fe200829"
+    },
+    "Intelligence/requirements.py": {
+      "git_blob": "a0f6263c67cdba5d52668f012dccfc93bda8bda6",
+      "sha256": "30f8ab83a91931e7d8412bc26afdc3e8f9b7292887606e8b440331142db5dace"
+    },
+    "Intelligence/research_calibration.py": {
+      "git_blob": "6f1f7461a9dcdc13619cbde5e24c775c0eaa1fe3",
+      "sha256": "95b73a92533b0e5e70f8224bf85b51691a1c665efe46c3a15f5f6c25debf41de"
+    },
+    "Intelligence/research_coherence.py": {
+      "git_blob": "57055b95c4943c16e26eb5695883897f1941e98b",
+      "sha256": "970bbb4852c74c93530a550cfca47b80240a4e32b9ea0e09b55afe88388211f1"
+    },
+    "Intelligence/research_evaluation.py": {
+      "git_blob": "d4409750c4ef3057aefbe8dbfe34bf69daf679fd",
+      "sha256": "d99348d719f59c014d1866b51e00cdfeaca2de1ecea6c02a3898e440f904ad55"
+    },
+    "Intelligence/safety_constraints.py": {
+      "git_blob": "4f73921e571b1a6ae4b870eaf2dbd3084ed7a04c",
+      "sha256": "10fa6d1599e701aea7b01b862b1481422cd6bb84b509496e56c1c182ebe1ba97"
+    },
+    "Intelligence/salamander.py": {
+      "git_blob": "516db947d077d87c2f04d3851329f89da2612075",
+      "sha256": "6629371f62cd9014d549a59f5a28fef63580de121ba6ad35d165dcc51d24a9c5"
+    },
+    "Intelligence/salamander_agentic.py": {
+      "git_blob": "96622dcba76d9ea3baf8cd22abcec2faa1e6d4bf",
+      "sha256": "902e396e701d8306147aca64008f767cb2bc39e02c3d07d1e949d98893afc53d"
+    },
+    "Intelligence/salamander_transaction.py": {
+      "git_blob": "68b1e8a5676ce92a6c1ae036c73b740354e188b7",
+      "sha256": "e82d02dd8396d8d0391c2e682f02012a16943c5d597e8680caaf00d3a6693f5e"
+    },
+    "Intelligence/search_api.py": {
+      "git_blob": "2bcf9a8191ef0e683b228839e6921422949c97e6",
+      "sha256": "eeb2c82fdbca51728331cdcbfa513aab90bb67d3d5de9783dc27ac24b1045065"
+    },
+    "Intelligence/search_crystal.py": {
+      "git_blob": "fb3105885bb127dd3c3e0e9fd8d27488c8a73cfc",
+      "sha256": "393a255b3f1fb2abbd6a84ea6cdbfaf9c29deb2eb4f7b2526bd9b45f5e8883be"
+    },
+    "Intelligence/search_database.py": {
+      "git_blob": "aed26997f796525d930f52a96da5b3b18b59b6df",
+      "sha256": "5078499807474a6da8ba8c4a2f309ae0aa32993f4df775169f2625aa7564d885"
+    },
+    "Intelligence/security_swarm.py": {
+      "git_blob": "2fcbdee1e15e6bde4f2d14c59be7c5a46b6ce213",
+      "sha256": "e8d1203f0a3a5e3ef7098f3f49856568820799eff81ae9d38352d607c97c44fb"
+    },
+    "Intelligence/self_test.py": {
+      "git_blob": "951f39eb93c5d9a058532b58d4fd05fd980d8e63",
+      "sha256": "005ba964ee3dde8da30f5dff68fe606dd26f69941883f50f45d01c95571a8714"
+    },
+    "Intelligence/self_test_search.py": {
+      "git_blob": "c9ae78790d7a520901647e5a434529286394093e",
+      "sha256": "d39d8476c55f941839d662c9fbc19c13e55513a877a8135d8c774a404b45e82e"
+    },
+    "Intelligence/skill_graft.py": {
+      "git_blob": "2568aa9bc301d06307337ff7a6c6155d2b19fe64",
+      "sha256": "422a34c3a515fa7b449440f921bc5a2ec2a72352f0b05f14d4204de378f0a08d"
+    },
+    "Intelligence/skill_loader.py": {
+      "git_blob": "99ed856124877b27595bb790ace47cf2c474a57b",
+      "sha256": "54d11c4649761e2d250dad3f993d0d9f4e0a9f2961c70519363b744e3742722d"
+    },
+    "Intelligence/theoretical_foundations.py": {
+      "git_blob": "6a5e04c59bc97796f64421bec7cfcd02c8def41e",
+      "sha256": "2b62db9b7952e38554f914fe51a4e16d5e02bde7ed165eb23df88101eb32549b"
+    },
+    "Intelligence/unified_manifold_device.py": {
+      "git_blob": "b3ca6da4a2ca5dbb5aea6f2ed747cb17bd91bb20",
+      "sha256": "46a86e19346e49d0729ada2d65f35c901f303f07e39e8a0bd376ff058e91403a"
+    },
+    "Intelligence/unified_punch.py": {
+      "git_blob": "597926606c6fc136c387039b7513d4274aa0b80e",
+      "sha256": "15cc9b20907869bdcfa065d9a780dce05f5ffd6d601c22bf7d3a94a7aefea104"
+    },
+    "Intelligence/verification_gate.py": {
+      "git_blob": "08dffd3436c909348a1965ea6b4b56f749e79423",
+      "sha256": "9f22a0669eac8d6910f711d5c4b027050d5707dbd3686ea5b12c26aee40b0756"
+    },
+    "turing_universal_quantum_computer/paper/README.md": {
+      "git_blob": "98b20b4a259bc806ad7a635ff9e962d6719e6316",
+      "sha256": "3e9922a483f73aa58ed01299d2403daa05135b77d0312e757150d08369c98794"
+    },
+    "turing_universal_quantum_computer/paper/main.tex": {
+      "git_blob": "376d66e768aba7e622d995df7317e5707c817133",
+      "sha256": "9a88e949819c7e9b9e90989116732df63ad12f92b9457f3059341258a9d5a9d2"
+    },
+    "turing_universal_quantum_computer/paper/references.bib": {
+      "git_blob": "88da7c35a5566e76e431c898c714c4c72e21a16d",
+      "sha256": "bf6b224c4a3d57b071a6256b36a4b3520e450b4737c31adeaf2e8e54c216ff50"
+    },
+    "turing_universal_quantum_computer/results/README.md": {
+      "git_blob": "e348a63573d28fbe99e0de0e46614595b1248fdb",
+      "sha256": "d21c65e386fd452cc410c19b89b0c41fc7b94e8f266c69651e38e561d853cc70"
+    }
+  }
+}

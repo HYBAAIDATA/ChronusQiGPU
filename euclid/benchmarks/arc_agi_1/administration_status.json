@@ -1,0 +1,36 @@
+{
+  "schema": "euclid.arc_agi_1.administration_status.v1",
+  "outcome": "B_BLOCKED_NOT_ADMINISTERED",
+  "withdrawn_commit": "f4b48c884a4afaf8885a524e930e600d3d477d8c",
+  "cleanup_complete_commit": "82aba774bf32ca2581a2ee9e0f5f956073d706bc",
+  "baseline_directory_removed": true,
+  "dataset": {
+    "upstream_commit": "399030444e0ab0cc8b4e199870fb20b863846f34",
+    "training_tasks": 400,
+    "evaluation_tasks": 400,
+    "training_tree": "c00693818df744970c1cd3e201a559e30b070bbe",
+    "evaluation_tree": "4a19f8327d45dda5e1809ee47be08bf1484b493b",
+    "remote_trees_match_upstream": true,
+    "local_sha256_checks_passed": 800
+  },
+  "runtime_instantiated": false,
+  "runtime_tasks_attempted": 0,
+  "exact_solves": null,
+  "invalid_outputs": null,
+  "execution_errors": null,
+  "timeouts": null,
+  "public_evaluation_executed": false,
+  "adaptations": [],
+  "ablations": [],
+  "runtime_tests_executed": false,
+  "access_preflight": {
+    "command": "GIT_TERMINAL_PROMPT=0 git ls-remote https://github.com/PhiEnterprise1/EuclidPhiEnterprise.git HEAD",
+    "exit_code": 128,
+    "stderr": "fatal: could not read Username for 'https://github.com': terminal prompts disabled",
+    "euclid_installed": false
+  },
+  "blockers": [
+    "No authenticated local checkout/installed EUCLID runtime or provided remote execution endpoint",
+    "ARC demonstration/hidden-target contract not established on the traced native adaptive task path"
+  ]
+}

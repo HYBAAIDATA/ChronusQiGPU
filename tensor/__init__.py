@@ -60,11 +60,38 @@ from .receipts import ExecutionReceipt
 from .router import RouteDecision, default_registry, route
 from .runtime import CancellationToken, Deadline, preflight_memory, telemetry_record, timed_execute
 from .verification import VerificationVerdict
+# Search-plan integration is optional: importing the logical tensor product
+# must not instantiate or import mining/GPU owners.
+_CANONICAL_EXPORTS = frozenset({'CoverageProofCertificate', 'CanonicalKelloggTensor', 'build_600_partition', 'host_sha256d_recheck', 'build_kellogg_search_plan', 'KelloggMotherTensor', 'EstateChunk600', 'kellogg_state_600', 'PartitionProof600', 'RepresentationChoice'})
+
+
+def __getattr__(name):
+    if name in _CANONICAL_EXPORTS:
+        from importlib import import_module
+        value = getattr(import_module(".canonical_tensor", __name__), name)
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted(set(globals()) | _CANONICAL_EXPORTS)
 
 __all__ = [
     "BackendIdentity",
     "BenchmarkReport",
     "BenchmarkRow",
+    "CanonicalKelloggTensor",
+    "CoverageProofCertificate",
+    "RepresentationChoice",
+    "build_kellogg_search_plan",
+    "host_sha256d_recheck",
+    "EstateChunk600",
+    "KelloggMotherTensor",
+    "PartitionProof600",
+    "build_600_partition",
+    "kellogg_state_600",
+
     "CancellationToken",
     "DEFAULT_MAX_TENSOR_BYTES",
     "Deadline",

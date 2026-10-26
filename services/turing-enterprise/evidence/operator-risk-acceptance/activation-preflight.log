@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/data/override-source/EuclidPhiEnterprise-main/services/turing-enterprise/src/hyba_turing_service/main.py", line 235, in <module>
+    main()
+    ~~~~^^
+  File "/data/override-source/EuclidPhiEnterprise-main/services/turing-enterprise/src/hyba_turing_service/main.py", line 106, in main
+    config, customer, operator, Claims, factory, machine_token, billing = configuration(args.config)
+                                                                          ~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/data/override-source/EuclidPhiEnterprise-main/services/turing-enterprise/src/hyba_turing_service/main.py", line 47, in configuration
+    if read_secret(config["customer_key_file"]) == read_secret(config["operator_key_file"]):
+       ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/override-source/EuclidPhiEnterprise-main/services/turing-enterprise/src/hyba_turing_service/main.py", line 24, in read_secret
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+FileNotFoundError: [Errno 2] No such file or directory: '/run/service-secrets/customer-key'

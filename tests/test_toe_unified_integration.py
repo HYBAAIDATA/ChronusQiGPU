@@ -5,7 +5,7 @@ import sqlite3
 from toe.unified import UnifiedAnalyticsPlatform
 from toe.unified.catalog import CATALOG
 
-from test_toe_unified_invariants import SEED, load_iris
+from tests.test_toe_unified_invariants import SEED, load_iris
 
 TOUCHED = {"A1", "A4", "C1", "C5", "C7", "C12", "E3", "F4", "G5", "I1", "I4"}
 assert SEED == 1517
@@ -35,7 +35,11 @@ def test_int_2_drift_retrain_crosses_monitor_and_models():
     platform = UnifiedAnalyticsPlatform()
     platform.train("setosa", rows, ["petal_length"], "setosa")
     flipped = [{**row, "setosa": 1 - row["setosa"]} for row in rows]
-    platform.watch("setosa", flipped)
+    held_out = [
+        {"petal_length": row["petal_length"] + 0.001 * (index + 1), "setosa": 1 - row["setosa"]}
+        for index, row in enumerate(rows)
+    ]
+    platform.watch("setosa", flipped, eval_rows=held_out)
     platform.monitor.tick_once()
     assert platform.drift_retrains == 1
     assert platform.models.get("setosa").version == 2

@@ -1,5 +1,10 @@
 # PYTHIA
 
+> **CANONICAL DOCUMENTATION (v2 — 2026-10-19):**  
+> All legacy narrative and marketing documents have been safely relocated to `_archive_docs_legacy_20261019/`.  
+> The fresh, code-verified, falsifiable system documentation is located in [`docs/v2/`](docs/v2/00_INDEX.md).  
+> All documentation claims are strictly bound to code reality (`path:line`), measured test runs, and immutable evidence logs.
+
 > **PUBLICATION IDENTITIES:** HYBA uses `hyba-<system>-<capability>`.
 > The current catalog contains **11 distinct existing Python distribution
 > candidates**, plus **2 planned CHRONUS splits** (13-package roadmap).
@@ -16,6 +21,50 @@
 > transfers PYTHIA's final SearchPlan authority, or weakens SHA256d/target proof
 > semantics is not authorised without explicit written repository-owner approval.
 
+> **CANONICAL DOCUMENTATION BASELINE (v2):**
+> All architecture, cognitive mechanics, and execution runbooks are canonically documented in [`docs/v2/`](docs/v2/00_INDEX.md).
+> - [00_INDEX.md](docs/v2/00_INDEX.md) — Documentation index and legacy archive map
+> - [01_SYSTEM_TRUTH.md](docs/v2/01_SYSTEM_TRUTH.md) — System truth and seven canonical authority boundaries
+> - [02_EUCLID_IMPLEMENTED.md](docs/v2/02_EUCLID_IMPLEMENTED.md) — Implemented EUCLID cognitive mechanics
+> - [03_QUANTUM_TENSOR_STATUS.md](docs/v2/03_QUANTUM_TENSOR_STATUS.md) — Quantum substrate reality and closed claims
+> - [04_MILLENNIUM_EVIDENCE.md](docs/v2/04_MILLENNIUM_EVIDENCE.md) — Millennium computational probes (not theorems)
+> - [05_RUNBOOKS.md](docs/v2/05_RUNBOOKS.md) — Automated test sweeps and execution runbooks
+> - [06_GLOSSARY_BOUNDARIES.md](docs/v2/06_GLOSSARY_BOUNDARIES.md) — Epistemic glossary, truth classes, and measurement contract
+> - [07_EVIDENCE_SCOPED_READINESS.md](docs/v2/07_EVIDENCE_SCOPED_READINESS.md) — Readiness layer, system impact, authority boundaries and product distinction
+> - [08_COLLABORATIVE_AUTOMATION.md](docs/v2/08_COLLABORATIVE_AUTOMATION.md) — Collaborative automation, human-in-the-loop runbooks, Bathtub guardrails, and Single Pane of Glass visibility
+>
+> **FALSIFIABILITY & MEASUREMENT CONTRACT:**
+> Code, tests, and logged evidence are the sole source of truth. Every performance claim must be MEASURED on executing silicon; unmeasured hardware defaults strictly to `NOT_RUN`. CPU fallbacks are never disguised as device execution (`requested_route`/`executed_route`/`fallback_reason`). Quantum amplitude amplification claims on flat search spaces are closed. Probes of mathematical conjectures are finite numerical computations, not general analytic proofs.
+
+## Evidence-scoped readiness
+
+**Intelligence-led execution. Evidence-scoped readiness.**
+
+The merged readiness engine adds an executable assessment layer beside HYBA's
+intelligence, execution, security, custody and recovery capabilities. It evaluates
+**31 criteria across five operational areas**—AI infrastructure, cyber security,
+resilience, sovereignty and energy/scaling—for a declared offering, environment
+and source revision.
+
+Its contribution is not another blanket green status. It separates claimed
+capability from locally validated supporting evidence, applies dependency
+constraints without awarding extra evidence credit, and generates a phased
+engineering roadmap. Nine distinct gates cover regression execution, Docker,
+actual GPU work, external pool acceptance, failover, custody, TOE, Salamander
+recovery and release artifacts. Accepted risks remain visible without becoming
+passing checks.
+
+This strengthens our product distinction: intelligence-led computation is paired
+with a concrete model of the conditions needed to operate, govern, recover and
+scale it. That is an implemented architectural characteristic—not a claim of
+exclusive market novelty, measured performance advantage or production approval.
+The assessor is read-only; it does not replace subsystem verifiers, authenticate
+signers, actuate repairs or override existing runtime authorities. Upstream
+receipt exporters still require integration where absent.
+
+- [System impact and product distinction](docs/v2/07_EVIDENCE_SCOPED_READINESS.md)
+- [Technical contract and CLI](docs/readiness/TOMORROW_READINESS_INDEX.md)
+- [Implementation](tools/tomorrow_readiness.py) and [assessment tests](tests/test_tomorrow_readiness.py)
 
 ## Deterministic hashrate — solving, not searching
 
@@ -28,8 +77,10 @@ operators.
   The schedule is a deterministic bijection (golden stride or Hendrix coprime
   stride) over the leased window. Every nonce is visited exactly once; there is
   no probabilistic probe.
-- **Hashrate is measured, not declared.** The floor is 10 EH/s once physical
-  ASIC channels are bound and the self-check passes. Until a device reports
+- **Hashrate is measured, not declared.** `hashrate.ceiling_hs` is an upper
+  policy bound, not a floor, throughput guarantee, or performance measurement.
+  Binding a device and passing a self-check does not establish a rate.
+  Until a device reports
   `silicon_status()["device_run"] == PASS`, the hashrate figure is
   `NOT_RUN`. No module self-declares SUCCESS.
 - **Composition.** `SuperAsicHasher` partitions windows by measured throughput

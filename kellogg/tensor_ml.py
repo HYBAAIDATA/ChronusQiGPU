@@ -1104,6 +1104,12 @@ class TensorClassifier:
             row_commit(row, state.schema, "predict") for row in state.rows
         ]
         self.commit_log.append(("predict", self.last_predict_commitment_))
+        if len(state.rows) > 64:
+            from concurrent.futures import ThreadPoolExecutor
+            def _eval_row(r):
+                return sum((v * w for v, w in zip(r, self.weights_exact_)), ZERO) + self.bias_exact_
+            with ThreadPoolExecutor(max_workers=4) as pool:
+                return tuple(pool.map(_eval_row, state.rows))
         return tuple(
             sum((value * weight for value, weight in zip(row, self.weights_exact_)), ZERO)
             + self.bias_exact_

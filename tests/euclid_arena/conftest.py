@@ -16,6 +16,9 @@ from tests.euclid_arena.conftest_arena import (
     frontier_models,
     temp_arena_dir,
     compute_paired_p_value,
+    compute_paired_stats,
+    BITS_FIX_FORMULA_DEFINITION,
+    BITS_FIX_FORMULA_HASH,
 )
 
 __all__ = [
@@ -34,4 +37,7 @@ __all__ = [
     "frontier_models",
     "temp_arena_dir",
     "compute_paired_p_value",
+    "compute_paired_stats",
+    "BITS_FIX_FORMULA_DEFINITION",
+    "BITS_FIX_FORMULA_HASH",
 ]

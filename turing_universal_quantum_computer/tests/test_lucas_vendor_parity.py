@@ -24,6 +24,7 @@ SHARED_MODULES = [
     "ladder.py",
     "pool.py",
     "trace.py",
+    "scale_model.py",
 ]
 
 # Vendored-only module kept for grover_exact_scale; it is byte-identical to

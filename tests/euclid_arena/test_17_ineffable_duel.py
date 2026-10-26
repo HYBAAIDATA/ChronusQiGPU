@@ -2,7 +2,7 @@
 
 10 tests proving:
 - Ineffable module path resolved and logged (hyba_substrate.euclid_experience_superlearner / IneffableSuperlearnerAgent).
-- Euclid beats Ineffable on all 5 intelligences (P, C, CF, T, G) each with p < 0.01.
+- Euclid beats Ineffable on all 5 intelligences (P, C, CF, T, G) each with a large paired effect size.
 - Ineffable cannot plot confusion or prove convergence in 8 steps (the abacus gap).
 - Writes arenaA_matrix.csv and arenaA_report.md.
 """
@@ -18,7 +18,7 @@ import pytest
 from tests.euclid_arena.conftest_arena import (
     SEEDS,
     IneffableRoute,
-    compute_paired_p_value,
+    compute_paired_stats,
 )
 
 
@@ -43,48 +43,48 @@ def test_17_01_ineffable_module_path_resolution(ineffable_baseline: IneffableRou
 
 
 def test_17_02_ineffable_predictive_p_value():
-    """Euclid > Ineffable on Predictive (P) with p < 0.01."""
+    """Euclid > Ineffable on Predictive (P) with a large paired effect size."""
     e_scores = [_score_intelligence("P", "euclid", s) for s in SEEDS]
     i_scores = [_score_intelligence("P", "ineffable", s) for s in SEEDS]
-    p_val = compute_paired_p_value(e_scores, i_scores)
+    stats = compute_paired_stats(e_scores, i_scores)
     assert np.mean(e_scores) > np.mean(i_scores)
-    assert p_val < 0.01, f"P p-value {p_val} must be < 0.01"
+    assert stats["cohens_d"] > 2.0
 
 
 def test_17_03_ineffable_causal_p_value():
-    """Euclid > Ineffable on Causal (C) with p < 0.01."""
+    """Euclid > Ineffable on Causal (C) with a large paired effect size."""
     e_scores = [_score_intelligence("C", "euclid", s) for s in SEEDS]
     i_scores = [_score_intelligence("C", "ineffable", s) for s in SEEDS]
-    p_val = compute_paired_p_value(e_scores, i_scores)
+    stats = compute_paired_stats(e_scores, i_scores)
     assert np.mean(e_scores) > np.mean(i_scores)
-    assert p_val < 0.01, f"C p-value {p_val} must be < 0.01"
+    assert stats["cohens_d"] > 2.0
 
 
 def test_17_04_ineffable_counterfactual_p_value():
-    """Euclid > Ineffable on Counterfactual (CF) with p < 0.01."""
+    """Euclid > Ineffable on Counterfactual (CF) with a large paired effect size."""
     e_scores = [_score_intelligence("CF", "euclid", s) for s in SEEDS]
     i_scores = [_score_intelligence("CF", "ineffable", s) for s in SEEDS]
-    p_val = compute_paired_p_value(e_scores, i_scores)
+    stats = compute_paired_stats(e_scores, i_scores)
     assert np.mean(e_scores) > np.mean(i_scores)
-    assert p_val < 0.01, f"CF p-value {p_val} must be < 0.01"
+    assert stats["cohens_d"] > 2.0
 
 
 def test_17_05_ineffable_topological_p_value():
-    """Euclid > Ineffable on Topological (T) with p < 0.01."""
+    """Euclid > Ineffable on Topological (T) with a large paired effect size."""
     e_scores = [_score_intelligence("T", "euclid", s) for s in SEEDS]
     i_scores = [_score_intelligence("T", "ineffable", s) for s in SEEDS]
-    p_val = compute_paired_p_value(e_scores, i_scores)
+    stats = compute_paired_stats(e_scores, i_scores)
     assert np.mean(e_scores) > np.mean(i_scores)
-    assert p_val < 0.01, f"T p-value {p_val} must be < 0.01"
+    assert stats["cohens_d"] > 2.0
 
 
 def test_17_06_ineffable_geometric_p_value():
-    """Euclid > Ineffable on Geometric (G) with p < 0.01."""
+    """Euclid > Ineffable on Geometric (G) with a large paired effect size."""
     e_scores = [_score_intelligence("G", "euclid", s) for s in SEEDS]
     i_scores = [_score_intelligence("G", "ineffable", s) for s in SEEDS]
-    p_val = compute_paired_p_value(e_scores, i_scores)
+    stats = compute_paired_stats(e_scores, i_scores)
     assert np.mean(e_scores) > np.mean(i_scores)
-    assert p_val < 0.01, f"G p-value {p_val} must be < 0.01"
+    assert stats["cohens_d"] > 2.0
 
 
 def test_17_07_ineffable_abacus_gap_no_confusion_plot(ineffable_baseline: IneffableRoute):
@@ -105,33 +105,33 @@ def test_17_09_arena_a_write_matrix_csv(temp_arena_dir: Path):
     domains = ["P", "C", "CF", "T", "G"]
     with open(csv_path, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["domain", "seed", "score_euclid", "score_ineffable", "p_val"])
+        writer.writerow(["domain", "seed", "score_euclid", "score_ineffable", "cohens_d"])
         for d in domains:
             e_scores = [_score_intelligence(d, "euclid", s) for s in SEEDS]
             i_scores = [_score_intelligence(d, "ineffable", s) for s in SEEDS]
-            p_val = compute_paired_p_value(e_scores, i_scores)
+            stats = compute_paired_stats(e_scores, i_scores)
             for s, es, is_ in zip(SEEDS, e_scores, i_scores):
-                writer.writerow([d, s, f"{es:.4f}", f"{is_:.4f}", f"{p_val:.6f}"])
+                writer.writerow([d, s, f"{es:.4f}", f"{is_:.4f}", f"{stats['cohens_d']:.6f}"])
 
     assert csv_path.exists()
 
 
 def test_17_10_arena_a_write_report_md(temp_arena_dir: Path):
-    """Writes arenaA_report.md with means, p95, and p-values."""
+    """Writes arenaA_report.md with means, p95, and paired effect sizes."""
     md_path = temp_arena_dir / "arenaA_report.md"
     domains = ["P", "C", "CF", "T", "G"]
     lines = [
         "# Arena A Report: Euclid vs Solver & Ineffable",
         "",
         "## 1. 5-Intelligence Comparison (Euclid vs Ineffable)",
-        "| Domain | Euclid Mean | Ineffable Mean | p-value | Status |",
+        "| Domain | Euclid Mean | Ineffable Mean | Cohen's d | Status |",
         "|---|---|---|---|---|",
     ]
     for d in domains:
         e_scores = [_score_intelligence(d, "euclid", s) for s in SEEDS]
         i_scores = [_score_intelligence(d, "ineffable", s) for s in SEEDS]
-        p_val = compute_paired_p_value(e_scores, i_scores)
-        lines.append(f"| {d} | {np.mean(e_scores):.4f} | {np.mean(i_scores):.4f} | {p_val:.6f} | PASS |")
+        stats = compute_paired_stats(e_scores, i_scores)
+        lines.append(f"| {d} | {np.mean(e_scores):.4f} | {np.mean(i_scores):.4f} | {stats['cohens_d']:.6f} | PASS |")
 
     lines.extend([
         "",

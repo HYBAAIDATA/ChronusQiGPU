@@ -1,0 +1,81 @@
+{
+  "candidate_commit": "7a2e749ef5f4c62299fed14eaac2ebf5e6927bde",
+  "full_checkout": false,
+  "files": [
+    {
+      "path": "tests/test_chronus_production_readiness_fixes.py",
+      "git_blob": "dd44d48aaf910ec79a865ec60a7344bb5cb251e7",
+      "sha256": "139b390813b2face93809f616a107edcd341dd64d98e5847cbcecc22fe4d84f8"
+    },
+    {
+      "path": "docs/reviews/OVID_THESEUS_CHRONUS_PRODUCTION_20261004.md",
+      "git_blob": "3609cceb5c85508e609798cc87b3b0d278f8c829",
+      "sha256": "86214ff8272c2154fdb4a6dfaeb0c407739118b5e244c904a723604dc61dba3c"
+    },
+    {
+      "path": "chronus/virtual_igpu/runtime.py",
+      "git_blob": "f3cdeec42d296a8939b937fadce94a478ffab745",
+      "sha256": "5760bc25a10a0d3b7a1cc463c27cfeda9e923d5f1c726efccba06ba3a49630fa"
+    },
+    {
+      "path": "tests/test_chronus_vigpu_fail_closed_contract.py",
+      "git_blob": "aa34108308163f238b79e2cdfa6b75b2192c48d7",
+      "sha256": "026d86e7ab6d2f792ab1bb2b7fc37900a45aed072e68cd0482a01372eb9b6f59"
+    },
+    {
+      "path": "tests/test_ovid_theseus_chronus_gap_closure.py",
+      "git_blob": "49c85d2f8482c1dc3dd08cdb7ef7ba56b971a81e",
+      "sha256": "73b0c1cd3abd735116629b8e820ce4001ef84e4d50b7d5d634c71dda87ff36ea"
+    },
+    {
+      "path": "chronus/virtual_igpu/verifier.py",
+      "git_blob": "325645008e43af01871f9bf777f5fb96daef189d",
+      "sha256": "800ab941eea8933a126e91f17d79670878f86aade2a4fbc7d149a7dd5a4f4a14"
+    },
+    {
+      "path": "chronus/virtual_igpu/evidence.py",
+      "git_blob": "070e9eada2176eb26d2056572bbfcb594c31b200",
+      "sha256": "2ea4abf7e332ebc70f199721e0891aa2118e828c071121f0770578c5ff8d0479"
+    },
+    {
+      "path": "chronus/virtual_igpu/adapters.py",
+      "git_blob": "8418dc9909c01d65508a170cae0bf7101a7c315e",
+      "sha256": "14c1cc22ac471f4faa689c0bc10e0802c0eb30ba7b2a5f41a0e2c5e0bd44bf4e"
+    },
+    {
+      "path": "chronus/virtual_igpu/abi.py",
+      "git_blob": "342ac568200095d7d17104e86fc58ff89b2be277",
+      "sha256": "4e7076a0a690501384dc087fe9dfb67a3d5cb5b5ad067361ac15572d85c143ff"
+    },
+    {
+      "path": "chronus/virtual_igpu/__init__.py",
+      "git_blob": "02665fb09c62150df5c0c7c0b152a1c719d28b56",
+      "sha256": "a7eb47168da9c6458b660a3827409a1414918811d5f476cb662d0f81ade53f9e"
+    },
+    {
+      "path": "chronus/__init__.py",
+      "git_blob": "36aedf3b04e535847341c65b6db7b8f4f6700345",
+      "sha256": "539f5876a1f588d7657740d7f2aa85e85ff3edee96a6b40c91b0f9dba609a4ca"
+    },
+    {
+      "path": "chronus/virtual_igpu/attestation.py",
+      "git_blob": "7e81517acf21365338436791621cfff8da3ad2c6",
+      "sha256": "7de2291f774dddb3006bd900869f03da96f2a6b9f43c08e030e70b45302da73b"
+    },
+    {
+      "path": "chronus/virtual_igpu/memory.py",
+      "git_blob": "9167f36eac57651eeaae30f8d0ef81ba4e55b388",
+      "sha256": "b2aab0c514c0be82ffe8d3c090a5765b117d7301c11f7e40d816208c43319131"
+    },
+    {
+      "path": "chronus/virtual_igpu/client.py",
+      "git_blob": "f67d3d7bf5aa522cbd71d51e96578f1448445119",
+      "sha256": "de827882df87b5d3d97c3451d9e9016cf366f1f9e4ebc853e47aa52473c70f3b"
+    },
+    {
+      "path": "chronus/virtual_igpu/wire.py",
+      "git_blob": "40d23f558dbb373b7be9e3b47da2c244aa85226a",
+      "sha256": "938c48d5b12045c8152b9cdd7fbcbc0dcb2c364a15a5e8bd3e33bb8464ba7bf3"
+    }
+  ]
+}

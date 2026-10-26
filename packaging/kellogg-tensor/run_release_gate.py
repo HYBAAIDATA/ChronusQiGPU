@@ -31,6 +31,7 @@ TEST_FILES = (
     "tests/test_kellogg_exact_linear_algorithm_audit.py",
     "tests/test_kellogg_exact_linear_field_audit.py",
     "tests/test_kellogg_product.py",
+    "tests/test_kellogg_plan_admission.py",
     "tests/test_kellogg_production_evidence_boundary.py",
     "tests/test_kellogg_tensor.py",
     "tests/test_kellogg_tensor_network_convergence.py",

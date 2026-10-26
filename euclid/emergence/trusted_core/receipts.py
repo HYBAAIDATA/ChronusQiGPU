@@ -88,12 +88,16 @@ class QualificationReceiptAdmission:
         self.keys, self.audience = MappingProxyType(dict(trusted_issuers)), audience
         self.path, self.clock, self.is_active = replay_path.absolute(), clock, is_active
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        with sqlite3.connect(self.path) as db:
-            db.execute('CREATE TABLE IF NOT EXISTS context (id INTEGER PRIMARY KEY CHECK(id=1), audience TEXT NOT NULL, last_seen INTEGER NOT NULL)')
-            db.execute('INSERT OR IGNORE INTO context VALUES (1, ?, 0)', (audience,))
-            if db.execute('SELECT audience FROM context WHERE id=1').fetchone()[0] != audience:
-                raise ValueError('receipt audience binding mismatch')
-            db.execute('CREATE TABLE IF NOT EXISTS receipts (issuer TEXT NOT NULL, nonce TEXT NOT NULL, expires_at INTEGER NOT NULL, PRIMARY KEY(issuer, nonce))')
+        db = sqlite3.connect(self.path)
+        try:
+            with db:
+                db.execute('CREATE TABLE IF NOT EXISTS context (id INTEGER PRIMARY KEY CHECK(id=1), audience TEXT NOT NULL, last_seen INTEGER NOT NULL)')
+                db.execute('INSERT OR IGNORE INTO context VALUES (1, ?, 0)', (audience,))
+                if db.execute('SELECT audience FROM context WHERE id=1').fetchone()[0] != audience:
+                    raise ValueError('receipt audience binding mismatch')
+                db.execute('CREATE TABLE IF NOT EXISTS receipts (issuer TEXT NOT NULL, nonce TEXT NOT NULL, expires_at INTEGER NOT NULL, PRIMARY KEY(issuer, nonce))')
+        finally:
+            db.close()
         os.chmod(self.path, 0o600)
 
     def consume(self, encoded, *, candidate, gates_digest):

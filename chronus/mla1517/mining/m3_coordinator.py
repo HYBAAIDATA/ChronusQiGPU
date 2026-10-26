@@ -333,3 +333,8 @@ class M3PythiaProductionMiningCoordinator(PythiaProductionMiningCoordinator):
 
 
 __all__ = ["M3PythiaProductionMiningCoordinator"]
+
+
+# Neutral public name for the existing authorization/custody integration.
+# M3 is a governance milestone, not a CPU/GPU vendor or device requirement.
+GovernedProductionMiningCoordinator = M3PythiaProductionMiningCoordinator

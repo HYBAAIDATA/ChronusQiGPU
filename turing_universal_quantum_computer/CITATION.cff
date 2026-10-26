@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use TURING, cite the exact reviewed version and experiment artifacts."
+type: software
+title: "TURING Virtual Quantum Computer"
+authors:
+  - name: "HYBA Software Limited"
+repository-code: "https://github.com/PhiEnterprise1/EuclidPhiEnterprise"
+url: "https://github.com/PhiEnterprise1/EuclidPhiEnterprise/tree/main/turing_universal_quantum_computer"
+license: MIT
+abstract: >-
+  Exact quantum-mathematical execution with representation admission,
+  reproducible computation evidence and independently organized research artifacts.
+# Version/date/DOI must be added from an actual approved release, not invented.

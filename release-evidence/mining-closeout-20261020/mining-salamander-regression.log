@@ -1,0 +1,71 @@
+............F......................                                      [100%]
+=================================== FAILURES ===================================
+___ ExecutionIdentityTests.test_execute_receipt_labels_classical_end_to_end ____
+
+self = <mining.tests.test_agent_b_regressions.ExecutionIdentityTests testMethod=test_execute_receipt_labels_classical_end_to_end>
+
+    def test_execute_receipt_labels_classical_end_to_end(self):
+>       from mining.scaled_execution import LucasScaledAethelExecutionAdapter
+
+mining/tests/test_agent_b_regressions.py:326: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+mining/scaled_execution.py:15: in <module>
+    from mining.four_layer_stack import FourLayerMiningStack
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """Four-layer mining stack — Aethel → Tensor → TURING → iGPU, wired end to end.
+    
+    Implements the "Wiring" role map as ONE pipeline with four honest layers:
+    
+        LAYER 1  AethelStore   folded storage (Zeckendorf SparseTopology + Galois
+                               persistence + hot cache). Fold ratios are MEASURED
+                               per store — never asserted.
+        LAYER 2  TensorFold    golden-basis fold (t_phi_fold / 11D Poincaré fold)
+                               + amplitude (Schmidt) spectrum over the candidate
+                               distribution. Lossless roundtrip verified.
+        LAYER 3  TuringLayer   virtual quantum substrate (turing_core): the exact
+                               candidate schedule (state space), exact family
+                               limbs, Cassini integrity. Hilbert dimension is
+                               SYMBOLIC (2^n) — never materialized.
+        LAYER 4  NearStateIGpu exact-ALU execution: φ-filter Born scoring, Grover
+                               analogue = amplitude REORDERING of the probe order,
+                               then the real double-SHA256 grind — the sole accept
+                               authority, bit-exact rechecked.
+    
+    Truth discipline (AGENTS.md §4.5, DRIFT-03, simulation gate):
+    - Grover's quadratic speedup needs a quantum oracle substrate. On this
+      classical substrate the honest role of the "quantum stage" is
+      reordering/pruning the probe order; it NEVER replaces hash evaluation.
+    - Capacity multipliers (e.g. the folklore "20× fold") are reported as
+      ``measured_ratio`` — the ratio this run actually produced — and never
+      asserted as a property of the substrate.
+    - Consensus: sha256d(header[:76] + LE(nonce))[::-1] < target. Nothing in
+      these four layers can accept a share without it.
+    
+    LUCAS WIRING: coordinator module (same class as toe_system/orchestrator).
+    Wires live modules across the substrate map; exempt from the sibling purity
+    rule; each wired module keeps its own Lucas pool route.
+    Substrate route: gap
+    """
+    
+    # LUCAS WIRING: coordinator — see module docstring.
+    # Substrate route: gap
+    
+    from __future__ import annotations
+    
+    import hashlib
+    import logging
+    import os
+    import struct
+    import time
+    from typing import Any, Dict, List, Optional, Tuple
+    
+    import numpy as np
+    
+>   from Intelligence.backend_binding import get_compute_backend
+E   ModuleNotFoundError: No module named 'Intelligence.backend_binding'
+
+mining/four_layer_stack.py:50: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED mining/tests/test_agent_b_regressions.py::ExecutionIdentityTests::test_execute_receipt_labels_classical_end_to_end
+1 failed, 34 passed in 1.16s

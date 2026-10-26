@@ -1,0 +1,101 @@
+{
+  "kind": "UI TEST FIXTURES; not live mining or production evidence",
+  "manual_review": "19 images inspected; final 4 changed captures reinspected; other 15 byte-identical to inspected captures",
+  "files": [
+    {
+      "path": "screenshots/backend-down-1440.png",
+      "sha256": "a320a255c1ce21aa7681d817de069b90ff5ef63c913d16994ea6d58094eda4a7",
+      "bytes": 267964
+    },
+    {
+      "path": "screenshots/backend-down-390.png",
+      "sha256": "09077e6e52da6250d40bb18dc1c1472365caa6f05fee802dc0b35254f7f5b9e6",
+      "bytes": 260459
+    },
+    {
+      "path": "screenshots/ceo-algebra-1440.png",
+      "sha256": "a866e15331f8085ae8fb9584173836888becdd3a31a645b7cfdeaac290aff909",
+      "bytes": 58770
+    },
+    {
+      "path": "screenshots/ceo-algebra-390.png",
+      "sha256": "5976dd62b5805faa0196f9cb8a7587650852a466ab48a9fe663ebe8c5457a496",
+      "bytes": 50152
+    },
+    {
+      "path": "screenshots/ceo-audit-1440.png",
+      "sha256": "065a6088746b7ca2e097467a310c47cec6de58c0e1e0478dcd6517ceba4430e3",
+      "bytes": 63396
+    },
+    {
+      "path": "screenshots/ceo-audit-390.png",
+      "sha256": "88a1d49eef521dd74c256a3edac9aba458f4ec54c1f66be76c19849b3922968c",
+      "bytes": 54802
+    },
+    {
+      "path": "screenshots/ceo-denied-1440.png",
+      "sha256": "bfe46e46fc89b0ef0dc0a25deaa42ade3479d05a596af683ba7b4ff041b89f3a",
+      "bytes": 47741
+    },
+    {
+      "path": "screenshots/ceo-denied-390.png",
+      "sha256": "1721196d9941d56455d077fb8dddcb416046b90ce9256033069336fbdad76e7a",
+      "bytes": 39560
+    },
+    {
+      "path": "screenshots/ceo-intelligence-1440.png",
+      "sha256": "5935a1bd7732b2f1c27e07e6dd9f94b8f38ddd5aa45d3b060f14db2ff5276c86",
+      "bytes": 58411
+    },
+    {
+      "path": "screenshots/ceo-intelligence-390.png",
+      "sha256": "84ff2c36ef5433ab36d8205e6ad8c6db12953d3f68e53a62227ef7c7e26c99ff",
+      "bytes": 49328
+    },
+    {
+      "path": "screenshots/ceo-manifold-1440.png",
+      "sha256": "9ad85b1cd3545a0d0ebf7393b5dd4914fd3e1d6f7921bebc4e001a63d7bfac03",
+      "bytes": 58655
+    },
+    {
+      "path": "screenshots/ceo-manifold-390.png",
+      "sha256": "4706758525a52bb444a2d00bcf06272b2aadfd184204168ea89c577dafe3105b",
+      "bytes": 49280
+    },
+    {
+      "path": "screenshots/ceo-observability-1440.png",
+      "sha256": "28af9c770fa851c72aee09c9a311bf2676d532402343ac7e56e6889d7b7bb1f8",
+      "bytes": 57894
+    },
+    {
+      "path": "screenshots/ceo-observability-390.png",
+      "sha256": "859215b7068cca89e4f8ec68ee35edf3e8c8759efc577b082f03073b31d39933",
+      "bytes": 48827
+    },
+    {
+      "path": "screenshots/ceo-operations-1440.png",
+      "sha256": "8abf6c7edc4ffd997cd61eef0b6f5f5d8d6fb4bc17ff043ca929255e07521e4f",
+      "bytes": 296109
+    },
+    {
+      "path": "screenshots/ceo-operations-390.png",
+      "sha256": "ae93a2dc1252edb78c06effa97e5ef071db4257ae422f361e728c6336b458cd1",
+      "bytes": 289459
+    },
+    {
+      "path": "screenshots/denied-independent-capture.png",
+      "sha256": "58dcdb9c7fc02707dacdcf963f4107e2e8a5b64c0de607de0be8b6c14985e214",
+      "bytes": 42792
+    },
+    {
+      "path": "screenshots/session-and-audit-expanded-1440.png",
+      "sha256": "c6d0f2ed5712cd429d3ccb78ad67663698b0292e12a1212ea4268e6ba23c112c",
+      "bytes": 90410
+    },
+    {
+      "path": "screenshots/session-and-audit-expanded-390.png",
+      "sha256": "f5d2fc5ea11c0df50d498d9c991c2ec6795955c69f91f31247f6ab897d998049",
+      "bytes": 85217
+    }
+  ]
+}

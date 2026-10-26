@@ -44,3 +44,12 @@ describe("Stratum evidence ladder", () => {
     expect(stage(status, "accepted")).toBe("blocked");
   });
 });
+
+describe("missing and historical evidence", () => {
+  it("does not fill absent stages with an invented blocked or complete verdict", () => {
+    expect(stratumStages(null).every(s => s.state === "unavailable")).toBe(true);
+  });
+  it("does not promote a historical accepted counter into current submission acceptance", () => {
+    expect(stage({counters:{accepted:9}, submission:{last_result:"REJECTED"}}, "accepted")).toBe("blocked");
+  });
+});

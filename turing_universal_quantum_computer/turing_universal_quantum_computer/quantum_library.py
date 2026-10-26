@@ -443,6 +443,31 @@ class QuantumLibrary:
                 "lane": "exact_algebraic | stabilizer | sparse | mps_exact | closed_form",
                 "scale": "fail-closed admission per lane",
             },
+            "transpile": {
+                "owner": "software_stack.transpile_program + verify.program_unitary_columns",
+                "lane": "exact_algebraic_compiler",
+                "scale": "exact basis synthesis, shortest-path SWAP routing, and modulo-8 phase folding",
+            },
+            "qec": {
+                "owner": "kellogg.surface_code.PlanarSurfaceCode + stabilizer.StabilizerState",
+                "lane": "gf2_css_stabilizer_tableau",
+                "scale": "exact syndrome extraction, MWM & Union-Find decoding on distance-d planar codes",
+            },
+            "pulse_control": {
+                "owner": "software_stack.PulseCompiler",
+                "lane": "exact_rational_waveform_schedule",
+                "scale": "Virtual-Z 0-ns frame tracking, DRAG 1Q, and ECR/CZ-flux 2Q schedules",
+            },
+            "software_stack": {
+                "owner": "software_stack.run_quantum_software_stack",
+                "lane": "six_phase_exact_lifecycle",
+                "scale": "end-to-end Phase 1..6 authoring, OpenQASM, transpilation, QEC, orchestration, and pulse schedule",
+            },
+            "gpu_fleet_workload": {
+                "owner": "chronus.fleet.capacity + software_stack.run_gpu_fleet_hybrid_workload",
+                "lane": "distributed_one_igpu_fleet_exact",
+                "scale": "multi-worker ONE-iGPU capacity planning, Lucas L_n scaling, disjoint partitioning, fencing tokens, and custody",
+            },
         }
 
     @staticmethod
@@ -949,4 +974,172 @@ class QuantumLibrary:
             wall_ms=res.wall_ms,
             arithmetic_domain=res.arithmetic_domain,
             lane_owner=res.lane_owner,
+        )
+
+    # ------------------------------------------------------------------
+    # six-phase software stack — QASM IR, transpiler, QEC, hybrid, pulse
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def qasm_roundtrip(n_qubits: int, ops: Sequence[Tuple]) -> LibraryResult:
+        """Assemble ``ops`` to OpenQASM 2.0, parse back to ``Program``, and verify digest parity."""
+        from .backends import Operation, Program
+        from .software_stack import qasm_roundtrip_report
+
+        program = Program(
+            n_qubits,
+            tuple(Operation(str(op[0]).lower(), tuple(op[1:])) for op in ops),
+        )
+        return _timed(
+            "qasm_ir",
+            "openqasm2_exact",
+            lambda: qasm_roundtrip_report(program),
+            owner="software_stack.qasm_roundtrip_report",
+        )
+
+    @staticmethod
+    def transpile(
+        n_qubits: int,
+        ops: Sequence[Tuple],
+        *,
+        coupling_edges: Optional[Sequence[Tuple[int, int]]] = None,
+        basis_gates: Optional[Sequence[str]] = None,
+        optimize: bool = True,
+    ) -> LibraryResult:
+        """Compile, route, optimize, and verify exact unitary equivalence of a circuit."""
+        from .backends import Operation, Program
+        from .software_stack import CouplingMap, DEFAULT_BASIS_GATES, transpile_program
+
+        program = Program(
+            n_qubits,
+            tuple(Operation(str(op[0]).lower(), tuple(op[1:])) for op in ops),
+        )
+        cmap = (
+            CouplingMap(n_qubits, tuple((int(u), int(v)) for u, v in coupling_edges))
+            if coupling_edges is not None
+            else CouplingMap.line(n_qubits)
+        )
+        basis = tuple(basis_gates) if basis_gates is not None else DEFAULT_BASIS_GATES
+        return _timed(
+            "transpile",
+            "exact_algebraic_compiler",
+            lambda: transpile_program(
+                program,
+                coupling_map=cmap,
+                basis_gates=basis,
+                optimize=optimize,
+            ).as_dict(),
+            owner="software_stack.transpile_program",
+        )
+
+    @staticmethod
+    def qec_surface_cycle(
+        distance: int = 3,
+        x_error_qubits: Iterable[int] = (),
+        z_error_qubits: Iterable[int] = (),
+    ) -> LibraryResult:
+        """Run an exact planar surface-code syndrome extraction, decoding, and recovery cycle."""
+        from .software_stack import run_surface_code_qec_cycle
+
+        return _timed(
+            "qec",
+            "gf2_css_stabilizer_tableau",
+            lambda: run_surface_code_qec_cycle(
+                distance=distance,
+                x_error_qubits=x_error_qubits,
+                z_error_qubits=z_error_qubits,
+            ).as_dict(),
+            owner="kellogg.surface_code.PlanarSurfaceCode+stabilizer.StabilizerState",
+        )
+
+    @staticmethod
+    def hybrid_orchestrate(
+        n_qubits: int = 2,
+        J: Any = 1,
+        g: Any = 1,
+    ) -> LibraryResult:
+        """Run a scheduled hybrid variational workload with in-loop transpilation and hash-chained receipts."""
+        from .software_stack import run_hybrid_workload
+
+        return _timed(
+            "hybrid_orchestration",
+            "exact_register_cyclotomic",
+            lambda: run_hybrid_workload(n_qubits=n_qubits, J=J, g=g).as_dict(),
+            owner="software_stack.HybridWorkloadOrchestrator",
+        )
+
+    @staticmethod
+    def compile_pulses(
+        n_qubits: int,
+        ops: Sequence[Tuple],
+        *,
+        include_readout: bool = True,
+    ) -> LibraryResult:
+        """Lower a gate circuit into an exact rational/Virtual-Z pulse schedule."""
+        from .backends import Operation, Program
+        from .software_stack import compile_pulse_schedule
+
+        program = Program(
+            n_qubits,
+            tuple(Operation(str(op[0]).lower(), tuple(op[1:])) for op in ops),
+        )
+        return _timed(
+            "pulse_control",
+            "exact_rational_waveform_schedule",
+            lambda: compile_pulse_schedule(
+                program, include_readout=include_readout
+            ).as_dict(),
+            owner="software_stack.PulseCompiler",
+        )
+
+    @staticmethod
+    def software_stack(
+        n_qubits: int = 3,
+        *,
+        qec_distance: int = 3,
+        x_error_qubits: Iterable[int] = (0,),
+        z_error_qubits: Iterable[int] = (2,),
+    ) -> LibraryResult:
+        """Execute all 6 phases of the quantum software stack end-to-end."""
+        from .software_stack import run_quantum_software_stack
+
+        return _timed(
+            "software_stack",
+            "six_phase_exact_lifecycle",
+            lambda: run_quantum_software_stack(
+                n_qubits=n_qubits,
+                qec_distance=qec_distance,
+                x_error_qubits=x_error_qubits,
+                z_error_qubits=z_error_qubits,
+            ).as_dict(),
+            owner="software_stack.run_quantum_software_stack",
+        )
+
+    @staticmethod
+    def gpu_fleet_workload(
+        n_qubits: int = 2,
+        *,
+        J: Any = 1,
+        g: Any = 1,
+        worker_count: int = 3,
+        lanes_per_worker: int = 4,
+        scale_index: int = 15,
+        fail_worker_ids: Sequence[str] = (),
+    ) -> LibraryResult:
+        """Capacity-plan, partition, lease, and execute a hybrid quantum workload across a Chronus GPU/iGPU fleet."""
+        from .software_stack import run_gpu_fleet_hybrid_workload
+
+        return _timed(
+            "gpu_fleet_workload",
+            "distributed_one_igpu_fleet_exact",
+            lambda: run_gpu_fleet_hybrid_workload(
+                n_qubits=n_qubits,
+                J=J,
+                g=g,
+                worker_count=worker_count,
+                lanes_per_worker=lanes_per_worker,
+                scale_index=scale_index,
+                fail_worker_ids=fail_worker_ids,
+            ).as_dict(),
+            owner="chronus.fleet.capacity+software_stack.run_gpu_fleet_hybrid_workload",
         )
