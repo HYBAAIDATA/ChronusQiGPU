@@ -34,8 +34,12 @@ from __future__ import annotations
 
 import re
 import time
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, fields, is_dataclass
+from decimal import Decimal
+from enum import Enum
 from fractions import Fraction
+from numbers import Number
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import sympy as sp
@@ -72,7 +76,9 @@ _CLIFFORD_T_GATES = frozenset(
 # payload (the QSqrt2->sympify defect produced "1.00000000000000").
 # Exact serialisations are fractions ("15/8"), radicals ("-sqrt(5)"),
 # integers, or symbolic text — never a decimal point.
-_FLOAT_LITERAL = re.compile(r"^-?\d+\.\d+([eE][-+]?\d+)?$")
+_FLOAT_LITERAL = re.compile(
+    r"^[+-]?(?:(?:\d+\.\d*|\.\d+)(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+)$"
+)
 
 
 class ExactLaneError(ValueError):
@@ -112,49 +118,115 @@ def _expr_domain(expr: sp.Basic) -> str:
 
 
 def audit_exactness(tree: Any) -> ExactnessReport:
-    """Walk a payload tree and verify every numeric leaf is exact.
+    """Fail closed unless every numeric payload value has an audited exact form.
 
-    Forbidden: Python ``float``, ``sp.Float`` atoms anywhere inside a
-    sympy expression, and bare decimal-literal strings in value position
-    (the serialised signature of a coercion leak).  ``wall_ms`` lives
-    outside the payload and is the only permitted float in a result.
-
-    Returns an :class:`ExactnessReport`; the caller decides whether a
-    violation raises (the facade raises :class:`ExactnessAuditError`).
+    Accepted leaves are exact integers/rationals, SymPy exact expressions,
+    explicit ``to_sympy`` exact-number adapters, booleans, strings, bytes and
+    ``None``. Containers, enums and dataclasses are traversed recursively.
+    Unsupported numeric or opaque objects are violations: their internals
+    cannot safely be assumed exact. Cyclic payloads are rejected.
     """
     violations: List[str] = []
     domains: List[str] = []
+    active: set[int] = set()
 
     def walk(v: Any, path: str) -> None:
-        if isinstance(v, bool):
+        if v is None or isinstance(v, (bool, str, bytes)):
+            if isinstance(v, str) and _FLOAT_LITERAL.fullmatch(v.strip()):
+                violations.append(f"{path}: decimal-literal string {v!r}")
             return
         if isinstance(v, float):
             violations.append(f"{path}: python float {v!r}")
             return
+        if isinstance(v, complex):
+            violations.append(f"{path}: python complex value {v!r}")
+            return
+        if isinstance(v, Decimal):
+            violations.append(f"{path}: Decimal value is not an admitted exact payload type")
+            return
+        if isinstance(v, Fraction):
+            domains.append("rational")
+            return
+        if isinstance(v, int):
+            domains.append("rational")
+            return
         if isinstance(v, sp.Basic):
             if _expr_has_float_atom(v):
                 violations.append(f"{path}: sympy Float atom in {v!r}")
+            if v.is_finite is False:
+                violations.append(f"{path}: non-finite symbolic value {v!r}")
             domains.append(_expr_domain(v))
             return
-        if isinstance(v, str):
-            if _FLOAT_LITERAL.match(v):
-                violations.append(f"{path}: decimal-literal string {v!r}")
+
+        identity = id(v)
+        if identity in active:
+            violations.append(f"{path}: cyclic payload reference")
             return
-        if isinstance(v, (int, Fraction)):
-            domains.append("rational")
-            return
-        if isinstance(v, dict):
-            for k, item in v.items():
-                walk(item, f"{path}.{k}")
+
+        if isinstance(v, Mapping):
+            active.add(identity)
+            try:
+                for key, item in v.items():
+                    # String keys are schema labels; non-string keys are data
+                    # and may otherwise hide a float from the value audit.
+                    if not isinstance(key, str):
+                        walk(key, f"{path}.<key>")
+                    walk(item, f"{path}[{key!r}]")
+            finally:
+                active.remove(identity)
             return
         if isinstance(v, (list, tuple)):
-            for i, item in enumerate(v):
-                walk(item, f"{path}[{i}]")
+            active.add(identity)
+            try:
+                for i, item in enumerate(v):
+                    walk(item, f"{path}[{i}]")
+            finally:
+                active.remove(identity)
+            return
+        if isinstance(v, Enum):
+            active.add(identity)
+            try:
+                walk(v.value, f"{path}.value")
+            finally:
+                active.remove(identity)
+            return
+        if is_dataclass(v) and not isinstance(v, type):
+            active.add(identity)
+            try:
+                for field in fields(v):
+                    walk(getattr(v, field.name), f"{path}.{field.name}")
+            finally:
+                active.remove(identity)
             return
         if hasattr(v, "to_sympy"):
-            walk(v.to_sympy(), path)
+            active.add(identity)
+            try:
+                try:
+                    exact_value = v.to_sympy()
+                except Exception as exc:
+                    violations.append(
+                        f"{path}: exact adapter {type(v).__name__}.to_sympy failed: "
+                        f"{type(exc).__name__}"
+                    )
+                    return
+                if not isinstance(exact_value, (sp.Basic, int, Fraction)) or isinstance(
+                    exact_value, bool
+                ):
+                    violations.append(
+                        f"{path}: exact adapter {type(v).__name__}.to_sympy returned "
+                        f"unsupported type {type(exact_value).__name__}"
+                    )
+                    return
+                walk(exact_value, f"{path}.to_sympy()")
+            finally:
+                active.remove(identity)
             return
-        # enums, backend labels, None, and other non-numeric leaves pass
+        if isinstance(v, Number):
+            violations.append(
+                f"{path}: unsupported numeric type {type(v).__name__}"
+            )
+            return
+        violations.append(f"{path}: opaque payload type {type(v).__name__}")
 
     walk(tree, "payload")
     if not domains:
