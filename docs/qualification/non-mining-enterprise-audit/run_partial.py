@@ -14,6 +14,6 @@ suite = unittest.defaultTestLoader.discover(
     str(root / "tests"), pattern="test_enterprise_audit_guardrails.py"
 )
 if suite.countTestCases() == 0:
-    sys.exit("No enterprise audit guardrail tests discovered")
+    sys.exit("No tests discovered")
 r = unittest.TextTestRunner(verbosity=2).run(suite)
 sys.exit(not r.wasSuccessful())

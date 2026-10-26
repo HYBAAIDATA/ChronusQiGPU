@@ -1,3 +1,8 @@
+Fresh reproduction: 2026-10-26T01:59:35.091444+00:00
+Tested source: {"manifest": "tested-source-after.json", "manifest_sha256": "2541e6997122874c9b233c63e8b11441ddc030ebd57a1afa1549a8e1113fd4f3"}
+Command (from export root): python -O docs/qualification/non-mining-enterprise-audit/run_partial.py
+Exit status: 0
+
 test_approval_still_requires_evidence (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_approval_still_requires_evidence) ... ok
 test_cannot_move_backwards (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_cannot_move_backwards) ... ok
 test_cannot_skip_to_deployment (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_cannot_skip_to_deployment) ... ok
@@ -27,6 +32,6 @@ test_mixed_invariants_reject_nonliteral_success_without_signing (test_enterprise
 test_multiple_invariants_preserve_names_inputs_and_signed_metadata (test_enterprise_audit_guardrails.ProofCertificationUnits.test_multiple_invariants_preserve_names_inputs_and_signed_metadata) ... ok
 
 ----------------------------------------------------------------------
-Ran 27 tests in 0.563s
+Ran 14 tests in 0.011s
 
 OK

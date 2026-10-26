@@ -1,3 +1,8 @@
+Fresh reproduction: 2026-10-26T01:59:34.794606+00:00
+Tested source: {"manifest": "tested-source-before.json", "manifest_sha256": "d8018a6c776fb32f212a0e0cc066464efb1e8ea24d0df6fa6e858eb02213bc95"}
+Command (from export root): python docs/qualification/non-mining-enterprise-audit/run_partial.py
+Exit status: 1
+
 test_approval_still_requires_evidence (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_approval_still_requires_evidence) ... ok
 test_cannot_move_backwards (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_cannot_move_backwards) ... FAIL
 test_cannot_skip_to_deployment (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_cannot_skip_to_deployment) ... FAIL
@@ -17,7 +22,7 @@ test_truthy_non_boolean_is_not_invariant_proof (test_enterprise_audit_guardrails
 FAIL: test_cannot_move_backwards (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_cannot_move_backwards)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/tmp/enterprise-evidence-kbp928cq/tests/test_enterprise_audit_guardrails.py", line 52, in test_cannot_move_backwards
+  File "/tmp/pr13-evidence-uaadiqc6/before/tests/test_enterprise_audit_guardrails.py", line 52, in test_cannot_move_backwards
     with self.assertRaises(PromotionBlocked):
          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
 AssertionError: PromotionBlocked not raised
@@ -26,7 +31,7 @@ AssertionError: PromotionBlocked not raised
 FAIL: test_cannot_skip_to_deployment (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_cannot_skip_to_deployment)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/tmp/enterprise-evidence-kbp928cq/tests/test_enterprise_audit_guardrails.py", line 40, in test_cannot_skip_to_deployment
+  File "/tmp/pr13-evidence-uaadiqc6/before/tests/test_enterprise_audit_guardrails.py", line 40, in test_cannot_skip_to_deployment
     with self.assertRaises(PromotionBlocked):
          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
 AssertionError: PromotionBlocked not raised
@@ -35,7 +40,7 @@ AssertionError: PromotionBlocked not raised
 FAIL: test_empty_checks_cannot_promote (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_empty_checks_cannot_promote)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/tmp/enterprise-evidence-kbp928cq/tests/test_enterprise_audit_guardrails.py", line 27, in test_empty_checks_cannot_promote
+  File "/tmp/pr13-evidence-uaadiqc6/before/tests/test_enterprise_audit_guardrails.py", line 27, in test_empty_checks_cannot_promote
     with self.assertRaises(PromotionBlocked):
          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
 AssertionError: PromotionBlocked not raised
@@ -44,7 +49,7 @@ AssertionError: PromotionBlocked not raised
 FAIL: test_empty_generator_cannot_promote (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_empty_generator_cannot_promote)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/tmp/enterprise-evidence-kbp928cq/tests/test_enterprise_audit_guardrails.py", line 32, in test_empty_generator_cannot_promote
+  File "/tmp/pr13-evidence-uaadiqc6/before/tests/test_enterprise_audit_guardrails.py", line 32, in test_empty_generator_cannot_promote
     with self.assertRaises(PromotionBlocked):
          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
 AssertionError: PromotionBlocked not raised
@@ -53,7 +58,7 @@ AssertionError: PromotionBlocked not raised
 FAIL: test_empty_invariants_cannot_be_certified (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_empty_invariants_cannot_be_certified)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/tmp/enterprise-evidence-kbp928cq/tests/test_enterprise_audit_guardrails.py", line 89, in test_empty_invariants_cannot_be_certified
+  File "/tmp/pr13-evidence-uaadiqc6/before/tests/test_enterprise_audit_guardrails.py", line 89, in test_empty_invariants_cannot_be_certified
     with self.assertRaises(ValueError):
          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
 AssertionError: ValueError not raised
@@ -62,7 +67,7 @@ AssertionError: ValueError not raised
 FAIL: test_notebook_capture_does_not_claim_replay (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_notebook_capture_does_not_claim_replay)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/tmp/enterprise-evidence-kbp928cq/tests/test_enterprise_audit_guardrails.py", line 76, in test_notebook_capture_does_not_claim_replay
+  File "/tmp/pr13-evidence-uaadiqc6/before/tests/test_enterprise_audit_guardrails.py", line 76, in test_notebook_capture_does_not_claim_replay
     self.assertFalse(result['reproducible'])
     ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
 AssertionError: True is not false
@@ -71,7 +76,7 @@ AssertionError: True is not false
 FAIL: test_truthy_non_boolean_check_is_not_approval (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_truthy_non_boolean_check_is_not_approval)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/tmp/enterprise-evidence-kbp928cq/tests/test_enterprise_audit_guardrails.py", line 36, in test_truthy_non_boolean_check_is_not_approval
+  File "/tmp/pr13-evidence-uaadiqc6/before/tests/test_enterprise_audit_guardrails.py", line 36, in test_truthy_non_boolean_check_is_not_approval
     with self.assertRaises(PromotionBlocked):
          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
 AssertionError: PromotionBlocked not raised
@@ -80,12 +85,12 @@ AssertionError: PromotionBlocked not raised
 FAIL: test_truthy_non_boolean_is_not_invariant_proof (test_enterprise_audit_guardrails.EnterpriseAuditGuardrails.test_truthy_non_boolean_is_not_invariant_proof)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/tmp/enterprise-evidence-kbp928cq/tests/test_enterprise_audit_guardrails.py", line 94, in test_truthy_non_boolean_is_not_invariant_proof
+  File "/tmp/pr13-evidence-uaadiqc6/before/tests/test_enterprise_audit_guardrails.py", line 94, in test_truthy_non_boolean_is_not_invariant_proof
     with self.assertRaises(ValueError):
          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
 AssertionError: ValueError not raised
 
 ----------------------------------------------------------------------
-Ran 14 tests in 0.012s
+Ran 14 tests in 0.015s
 
 FAILED (failures=8)
