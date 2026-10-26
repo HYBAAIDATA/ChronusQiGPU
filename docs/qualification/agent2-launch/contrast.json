@@ -1,0 +1,47 @@
+{
+  "scope": "targeted static pairs, NOT full accessibility audit",
+  "pairs": [
+    {
+      "foreground": "#002147",
+      "background": "#f5f1ed",
+      "usage": "body/canvas",
+      "ratio": 14.28,
+      "normal_text_4_5": true
+    },
+    {
+      "foreground": "#002147",
+      "background": "#ffffff",
+      "usage": "body/panel",
+      "ratio": 16.05,
+      "normal_text_4_5": true
+    },
+    {
+      "foreground": "#ffffff",
+      "background": "#0066b2",
+      "usage": "active primary action",
+      "ratio": 5.93,
+      "normal_text_4_5": true
+    },
+    {
+      "foreground": "#0066b2",
+      "background": "#ffffff",
+      "usage": "link/secondary action",
+      "ratio": 5.93,
+      "normal_text_4_5": true
+    },
+    {
+      "foreground": "#3d4a5c",
+      "background": "#ffffff",
+      "usage": "help text",
+      "ratio": 9.0,
+      "normal_text_4_5": true
+    },
+    {
+      "foreground": "#002147",
+      "background": "#e7f0f7",
+      "usage": "notice",
+      "ratio": 13.91,
+      "normal_text_4_5": true
+    }
+  ]
+}
