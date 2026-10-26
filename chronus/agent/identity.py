@@ -1,8 +1,11 @@
 """Model/tool/policy-bound identity, progression and lifecycle are not authority."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
-from ._contracts import ContractError, integer, text, sha
+
+from ._contracts import ContractError, integer, sha, text
 
 
 class ProgressionStage(Enum):
@@ -37,7 +40,7 @@ class AgentIdentity:
     institutions: tuple[str, ...] = ()
     jurisdictions: tuple[str, ...] = ()
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         for value in (
             self.id,
             self.owner,
@@ -46,9 +49,11 @@ class AgentIdentity:
             self.training_process,
         ):
             text(value)
+
         integer(self.born_at)
         sha(self.model_fingerprint)
         sha(self.tool_fingerprint)
+
         for values in (self.lineage, self.institutions, self.jurisdictions):
             if type(values) is not tuple or len(values) > 64:
                 raise ContractError("bounded immutable identity sets required")
