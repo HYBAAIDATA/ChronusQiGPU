@@ -17,6 +17,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 import base64
 import hashlib
+import importlib.util
 import time
 from typing import Any
 
@@ -159,6 +160,8 @@ class CPUEmulatorAdapter(Adapter):
                 WorkloadKind.STORE,
                 WorkloadKind.RETRIEVE,
                 WorkloadKind.TENSOR_OP,
+                WorkloadKind.GRID_GEOMETRY,
+                WorkloadKind.MODULAR_GEOMETRY,
                 WorkloadKind.CGEMV,
                 WorkloadKind.PHI_TRANSFORM,
                 WorkloadKind.LUCAS_TRANSFORM,
@@ -167,16 +170,36 @@ class CPUEmulatorAdapter(Adapter):
                 WorkloadKind.CHECKPOINT,
             )
         )
+        try:
+            quantum_available = (
+                importlib.util.find_spec("turing_universal_quantum_computer.backends") is not None
+            )
+        except (ImportError, ValueError):
+            quantum_available = False
+        try:
+            graph_available = importlib.util.find_spec("kellogg.graph_network") is not None
+        except (ImportError, ValueError):
+            graph_available = False
+        if graph_available:
+            ops += (WorkloadKind.EXACT_GRAPH.value,)
+        if quantum_available:
+            ops += (WorkloadKind.QUANTUM_PROGRAM.value,)
         return CapabilityManifest(
             adapter_id=self.id,
             kind=self.kind.value,
             operations=ops,
-            dtypes=("float64", "float32", "complex128", "bytes", "int64"),
+            dtypes=("float64", "float32", "complex128", "bytes", "int64", "uint8", "rational")
+            + (("q8", "tableau") if quantum_available else ())
+            + (("q8",) if graph_available and not quantum_available else ()),
             max_shape=(4096, 4096),
             max_bytes=256 * 1024 * 1024,
             evidence_support=("runtime_signed", "content_hash"),
             limits={"max_work_group": 1, "local_memory_bytes": 0},
             arithmetic={
+                "exact_arithmetic_ops": tuple(
+                    op for op in ops
+                    if op in {"quantum_program", "exact_graph", "grid_geometry", "modular_geometry"}
+                ),
                 "ieee754": True,
                 "fp64": True,
                 "exact_integer_ops": (
@@ -206,6 +229,22 @@ class CPUEmulatorAdapter(Adapter):
 
         if kind == WorkloadKind.PROBE:
             return self._result(workload, {"probe": self.health()}, started)
+
+        if kind in (WorkloadKind.GRID_GEOMETRY, WorkloadKind.MODULAR_GEOMETRY):
+            from .geometric import execute_grid, execute_modular
+
+            execute = execute_grid if kind == WorkloadKind.GRID_GEOMETRY else execute_modular
+            return self._result(workload, execute(value), started)
+
+        if kind == WorkloadKind.EXACT_GRAPH:
+            from .exact_graph import execute_exact_graph
+
+            return self._result(workload, execute_exact_graph(value), started)
+
+        if kind == WorkloadKind.QUANTUM_PROGRAM:
+            from .exact_quantum import execute_quantum_program
+
+            return self._result(workload, execute_quantum_program(value), started)
 
         if kind == WorkloadKind.FOLD:
             payload = self._payload_bytes(value)
@@ -641,7 +680,6 @@ class OpenCLUhdAdapter(Adapter):
             "opencl-intel-uhd: physical dispatch requires authorized target-host evidence; "
             "use software policy or run bench.chronus_igpu_evidence on the device host"
         )
-
 
 
 class ChronusSoftwareFabricAdapter(CPUEmulatorAdapter):

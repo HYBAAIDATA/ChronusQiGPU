@@ -434,7 +434,35 @@ def _verify_fold(value: Mapping[str, Any], out: Mapping[str, Any]) -> list[str]:
     return problems
 
 
+def _verify_grid_geometry(value: Mapping[str, Any], out: Mapping[str, Any]) -> list[str]:
+    from .geometric import verify_grid
+
+    return verify_grid(value, out)
+
+
+def _verify_modular_geometry(value: Mapping[str, Any], out: Mapping[str, Any]) -> list[str]:
+    from .geometric import verify_modular
+
+    return verify_modular(value, out)
+
+
+def _verify_exact_graph(value: Mapping[str, Any], out: Mapping[str, Any]) -> list[str]:
+    from .exact_graph import verify_exact_graph
+
+    return verify_exact_graph(value, out)
+
+
+def _verify_quantum_program(value: Mapping[str, Any], out: Mapping[str, Any]) -> list[str]:
+    from .exact_quantum import verify_quantum_program
+
+    return verify_quantum_program(value, out)
+
+
 _VERIFIERS: dict[WorkloadKind, tuple[str, Callable[[Mapping[str, Any], Mapping[str, Any]], list[str]]]] = {
+    WorkloadKind.GRID_GEOMETRY: ("coordinate_oracle:d4_components", _verify_grid_geometry),
+    WorkloadKind.MODULAR_GEOMETRY: ("identity_oracle:psl2z", _verify_modular_geometry),
+    WorkloadKind.EXACT_GRAPH: ("replay:kellogg:exact_graph", _verify_exact_graph),
+    WorkloadKind.QUANTUM_PROGRAM: ("replay:turing:exact_certificate", _verify_quantum_program),
     WorkloadKind.SHA256D_SCAN: ("recompute:sha256d_scan:hashlib", _verify_sha256d_scan),
     WorkloadKind.LUCAS_TRANSFORM: ("recompute:lucas_transform:exact_recurrence", _verify_lucas),
     WorkloadKind.PISOT_TRANSFORM: ("recompute:pisot_transform:exact_integer_with_float64_diagnostic", _verify_pisot),

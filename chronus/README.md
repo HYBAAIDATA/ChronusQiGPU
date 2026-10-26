@@ -675,3 +675,10 @@ through the verified path).
 | Exact maths / VQC | `kellogg/`, `turing_universal_quantum_computer/` | Bridged lazily by `tensor`; Turing stays the independent VQC |
 | Hybrid hasher / scheduler / vendors | `hyba/` | Still outside `chronus/` (used by the H4/600 route); moving it is a staged follow-up, not done |
 | Execution backends | `gpu/` | `gpu.tensor` is a deprecated shim over `tensor` |
+
+## 21. Exact GPIU integration
+
+The Virtual iGPU ABI exposes `quantum_program`, `exact_graph`, `grid_geometry`
+and `modular_geometry`. TURING retains quantum semantics; Kellogg retains exact
+tensor mathematics. See [GPIU execution and all twenty closure gates](../docs/CHRONUS_GPIU_EXECUTION.md)
+for inputs, budgets, verification, and outstanding implementation.

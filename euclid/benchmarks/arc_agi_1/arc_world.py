@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Sequence
+from typing import Any, Callable, Sequence
 
 from euclid.cognition.worlds.world import (
     ASSIGN,
@@ -21,10 +21,12 @@ from euclid.benchmarks.arc_agi_1.grid_primitives import (
 )
 
 SURFACE_DOMAIN = "arc-agi-1-grid"
+_D4 = frozenset(("rot90", "rot180", "rot270", "flip_h", "flip_v", "transpose"))
 
 
 def _apply_step(
-    op: str, train_cur: list[Grid], train_out: Sequence[Grid], extra_cur: list[Grid]
+    op: str, train_cur: list[Grid], train_out: Sequence[Grid], extra_cur: list[Grid],
+    geometry_executor: Callable[[str, Grid], Grid] | None = None
 ) -> tuple[list[Grid], list[Grid], int]:
     failures = 0
     if op in FITTED:
@@ -47,6 +49,8 @@ def _apply_step(
 
     def one(g: Grid) -> Grid:
         nonlocal failures
+        if geometry_executor is not None and op in _D4:
+            return geometry_executor(op, g)
         try:
             return apply_unary(op, g)
         except (OperatorFailed, IndexError, ValueError):
@@ -60,6 +64,7 @@ def execute_program(
     program: Sequence[Any],
     train_pairs: Sequence[tuple[Grid, Grid]],
     extra_inputs: Sequence[Grid] = (),
+    *, geometry_executor: Callable[[str, Grid], Grid] | None = None,
 ) -> tuple[list[list[Grid]], list[Grid], int]:
     train_cur = [[list(r) for r in inp] for inp, _ in train_pairs]
     train_out = [out for _, out in train_pairs]
@@ -68,7 +73,7 @@ def execute_program(
     failures = 0
     for step in normalise_program(program):
         op = step if isinstance(step, str) else step[0]
-        train_cur, extra_cur, f = _apply_step(op, train_cur, train_out, extra_cur)
+        train_cur, extra_cur, f = _apply_step(op, train_cur, train_out, extra_cur, geometry_executor)
         failures += f
         trace.append(train_cur)
     return trace, extra_cur, failures
@@ -119,10 +124,12 @@ def build_spec(
 class ArcDemonstrationWorld:
     """Budgeted world over one task's demonstrations. Holds no test data."""
 
-    def __init__(self, spec: TaskSpec, train_pairs: Sequence[tuple[Grid, Grid]]) -> None:
+    def __init__(self, spec: TaskSpec, train_pairs: Sequence[tuple[Grid, Grid]], *,
+                 geometry_executor: Callable[[str, Grid], Grid] | None = None) -> None:
         if len(train_pairs) * 3 != len(spec.variables):
             raise ValueError("spec does not match the demonstrations")
         self.spec = spec
+        self._geometry_executor = geometry_executor
         self._pairs = [([list(r) for r in i], [list(r) for r in o]) for i, o in train_pairs]
         self._targets = [o for _, o in self._pairs]
         self.probes_used = 0
@@ -148,7 +155,7 @@ class ArcDemonstrationWorld:
         return steps
 
     def _run(self, steps: list[Any]) -> dict[str, Any]:
-        trace, _, failures = execute_program(steps, self._pairs)
+        trace, _, failures = execute_program(steps, self._pairs, geometry_executor=self._geometry_executor)
         trajectory = [abstract_state(g, self._targets) for g in trace]
         final = trajectory[-1] if trajectory else list(self.spec.initial_state)
         scores = [sum(1 for i, v in self.spec.goal if s[i] == v) for s in trajectory]

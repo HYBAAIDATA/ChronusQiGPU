@@ -88,3 +88,10 @@ NEXT: merge fix branch; update docs/v2/03_QUANTUM_TENSOR_STATUS.md + deploy/azur
 
 ## 5. WORLD STATEMENT (only if PASS)
 "Chronus runs anywhere: native mode needs no GPU (measured), augmented mode uses host iGPU when present with same hash (measured), Azure runs control only (measured unavailable mining, correct). No silicon fabricated. Matrix attached."
+
+## 6. Exact GPIU workstreams
+
+The ten-specialist blueprint is tracked directive by directive in
+[CHRONUS_GPIU_EXECUTION.md](docs/CHRONUS_GPIU_EXECUTION.md). Its exact execution
+paths reuse TURING and Kellogg through the existing Virtual iGPU ABI; completion
+of a bounded software path does not complete every elevation gate above.

@@ -193,3 +193,20 @@ PI-01 remains in force: requirement capture is not completion evidence. External
 pool acceptance, physical-host scaling and publication need their own retained,
 source-bound executed evidence. Private pool identities/passwords are deployment
 secrets and must not appear in source, examples or qualification reports.
+
+
+## D11 — Complete the Chronus GPIU directives through exact mathematics
+
+Source: owner instruction in the Chronus GPIU task, 26 October 2026.
+
+> "Can we please complete every suggestion, expressed and implied."
+
+> "The universe is made of maths. Everyhting comes from maths. There is no research there."
+
+The twenty execution directives across the ten-specialist GPIU blueprint remain
+in scope. Implement through the canonical exact TURING software stack, Kellogg
+mathematics and Chronus execution seam. Preserve D6/D7 exactness and D9 domain
+authority; do not duplicate the six-phase quantum stack. The implementation and
+acceptance register is `docs/CHRONUS_GPIU_EXECUTION.md`; open rows remain work to
+complete and do not demote the declared direction. PI-01 executed evidence still
+governs completion, performance and physical-device claims.

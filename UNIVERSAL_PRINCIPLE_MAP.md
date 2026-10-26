@@ -23,9 +23,9 @@ it — progress, not counterclaim.
    into and scales a certified host GPU, **or** Chronus operates
    independently as the execution plane.
 4. **The TRIAD — Chronus, Theseus, Ovid — is one system. Pulvini folds.**
-   Pulvini produces the folded working form; Theseus stores it; Ovid
-   documents where it is stored and how it is searched — Geodesic search;
-   Chronus computes on it.
+   Pulvini produces the folded working form; OVID holds authoritative durable
+   state and integrity; THESEUS holds rebuildable query/index projections;
+   Chronus computes on the folded form (D9 ownership clarification).
 5. **Substrate vocabulary:** Lucas and Pisot **scale**; Zeckendorf and Binet
    **fold**; Fibonacci and Cassini **store**.
 6. **Quantum comes from mathematics — substrate- and hardware-agnostic.**
@@ -1869,15 +1869,16 @@ until a contracted Chronus kernel exists — presence is never execution).
 - **Pulvini folds** — `quantum_compute_substrate/pulvini/` (phi-folding,
   tensor-train/MPO data operators) and `aethel.encoding` (Zeckendorf fold):
   the folded representation is the working form.
-- **Theseus stores the folded form** — `aethel.enterprise` custody:
+- **OVID stores the folded form** — `aethel.enterprise` custody (existing adapter names remain compatibility surfaces):
   primary+replica+journal+HMAC+tenancy; folded data is what custody holds.
-- **Ovid documents where it is stored and how it is searched** — the OVID
-  data-organisation layer plus geodesic search via
+- **THESEUS supplies rebuildable query/index projections** — data organisation
+  and geodesic search via
   `python_backend/core_modules/geodesic_tensor_engine.py`.
 
 The three planes are one system: execution (Chronus) computes on the folded
-form, custody (Theseus) makes it durable and attested, organisation (Ovid)
-makes it addressable and searchable by geodesic traversal.
+form, OVID custody makes it durable and attested, and THESEUS projections
+make it addressable and searchable by geodesic traversal. This reconciles
+D9 ownership vocabulary; executable adapters retain their compatibility names.
 
 ### 20.5 The substrate vocabulary — scales, folds, stores
 
@@ -1951,3 +1952,17 @@ Owner direction is recorded in `OWNER_DECLARATIONS.md` D10. Implementation ancho
 The solve-first requirement remains an implementation/evidence gate. A bounded
 nonce traversal, heuristic score or passing consensus recheck must not be renamed
 an analytical solution, nor asserted to deliver a deterministic pool share time.
+
+
+### 20.9 Exact GPIU execution integration (D11)
+
+The owner's full ten-specialist scope is recorded in `OWNER_DECLARATIONS.md` D11.
+`chronus/virtual_igpu/exact_quantum.py` delegates certified exact programs to
+TURING; `exact_graph.py` delegates graph/tree/PEPS amplitudes to the new Kellogg
+`graph_network.py`. `geometric.py` executes integer D4/component kernels and
+rational PSL(2,Z) isometries with independent coordinate/identity checks. These
+workloads retain existing routing, tenant admission, custody and receipts.
+`docs/CHRONUS_GPIU_EXECUTION.md` maps every directive, bounded implementation and
+remaining acceptance condition. No SVD approximation or duplicate quantum engine
+is introduced. Regression anchors: `tests/test_chronus_gpiu_exact.py` and
+`tests/test_kellogg_graph_network.py`.

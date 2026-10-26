@@ -539,3 +539,9 @@ UNVERIFIED
 A discovered GPU is not hardware execution. A launched kernel is not a completed window. A submitted share is not an accepted share. An accepted share is not a block confirmation. A mathematical identity is not Bitcoin proof-of-work.
 
 This evidence hierarchy is part of PYTHIA's identity and part of HYBA's natural evolution.
+
+### Chronus exact GPIU execution
+
+[Exact execution and the twenty-directive closure register](docs/CHRONUS_GPIU_EXECUTION.md)
+describes the TURING/Kellogg bridges, integer grid kernels, rational modular
+geometry and the remaining integration and hardware gates.
