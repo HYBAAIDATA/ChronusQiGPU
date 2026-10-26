@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hyba-chronus-gpu"
+version = "1.0.0"
+description = "Bounded Chronus software GPU tiers and PYTHIA fleet composition"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["hyba-pythia-mining==1.0.0", "hyba-turing-vqc==1.0.0", "hyba-kellogg-tensor==1.0.0"]
+
+[tool.setuptools]
+packages = []

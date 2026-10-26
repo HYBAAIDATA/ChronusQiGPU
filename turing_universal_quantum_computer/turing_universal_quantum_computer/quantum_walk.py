@@ -195,3 +195,63 @@ __all__ = [
     "CoinedCycleWalk",
     "HypercubeWalk",
 ]
+
+
+class HyperbolicGraphWalk:
+    """Exact CTQW on a finite embedded upper-half-plane graph.
+
+    Edge coupling is 1/cosh(distance), a rational function of rational
+    coordinates. The real symmetric weighted Laplacian is the Hamiltonian.
+    Its exact spectral exponential defines continuous time, with no coin.
+    """
+
+    def __init__(self, coordinates, edges):
+        from fractions import Fraction
+
+        if not 1 <= len(coordinates) <= 4:
+            raise ValueError("spectral graph admission requires 1..4 vertices")
+        self.coordinates = []
+        for point in coordinates:
+            if len(point) != 2 or any(type(v) is not int and not isinstance(v, Fraction) for v in point):
+                raise TypeError("coordinates require exact rationals")
+            x, y = map(Fraction, point)
+            if y <= 0 or any(max(v.numerator.bit_length(), v.denominator.bit_length()) > 64 for v in (x, y)):
+                raise ValueError("upper half plane and 64-bit coordinate bounds required")
+            self.coordinates.append((x, y))
+        n = len(coordinates)
+        self.hamiltonian = sp.zeros(n)
+        seen = set()
+        for edge in edges:
+            if len(edge) != 2 or any(type(v) is not int or not 0 <= v < n for v in edge):
+                raise ValueError("invalid edge indices")
+            a, b = edge
+            pair = tuple(sorted(edge))
+            if a == b or pair in seen:
+                raise ValueError("edges must be distinct and non-reflexive")
+            seen.add(pair)
+            x, y = self.coordinates[a]
+            u, v = self.coordinates[b]
+            cosine = 1 + ((x - u)**2 + (y - v)**2) / (2 * y * v)
+            weight = sp.Rational(cosine.denominator, cosine.numerator)
+            self.hamiltonian[a, a] += weight
+            self.hamiltonian[b, b] += weight
+            self.hamiltonian[a, b] -= weight
+            self.hamiltonian[b, a] -= weight
+        if self.hamiltonian != self.hamiltonian.H:
+            raise ArithmeticError("Hamiltonian must be exactly Hermitian")
+
+    def propagator(self, time):
+        from fractions import Fraction
+
+        if type(time) is not int and not isinstance(time, Fraction):
+            raise TypeError("time requires an exact rational")
+        time = Fraction(time)
+        if max(time.numerator.bit_length(), time.denominator.bit_length()) > 64:
+            raise ValueError("time exceeds bit budget")
+        t = sp.Rational(time.numerator, time.denominator)
+        return (-sp.I * t * self.hamiltonian).exp()
+
+    def evolve(self, basis, time):
+        if type(basis) is not int or not 0 <= basis < len(self.coordinates):
+            raise ValueError("initial basis is outside graph")
+        return self.propagator(time)[:, basis]

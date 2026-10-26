@@ -227,12 +227,15 @@ class FleetScheduler:
         worker_id: str,
         *,
         fencing_token: Optional[str] = None,
+        replacement_plan: Optional[HostGPUPlan] = None,
     ) -> Optional[WorkerIdentity]:
         """Handle worker termination: rotate fencing tokens, invalidate old leases."""
         if worker_id not in self._workers:
             return None
 
         worker = self._workers[worker_id]
+        if replacement_plan is not None and not isinstance(replacement_plan, HostGPUPlan):
+            raise TypeError("replacement_plan must be a validated HostGPUPlan")
         old_token = worker.identity.current_fencing_token
         if (
             fencing_token is not None
@@ -241,7 +244,7 @@ class FleetScheduler:
             raise ValueError("cannot reuse a revoked fencing token")
         new_identity = worker.identity.rotated(fencing_token=fencing_token)
         self._revoked_fencing_tokens.add(old_token)
-        self._workers[worker_id] = type(worker)(new_identity, worker.plan)
+        self._workers[worker_id] = type(worker)(new_identity, replacement_plan or worker.plan)
 
         leases_to_remove = [
             lid

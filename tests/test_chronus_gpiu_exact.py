@@ -302,3 +302,15 @@ def test_exact_quantum_bridge_never_computes_display_approximations(monkeypatch)
     assert all(
         "probability_approx" not in row for row in result["execution"]["payload"]["amplitudes"]
     )
+
+
+def test_1024_mode_exact_mps_preserves_bounded_entanglement():
+    from chronus.virtual_igpu.exact_quantum import verify_quantum_program
+
+    program = Program(1024).then("h", 0).then("cx", 0, 1).then("t", 1)
+    request = {"program": program.to_dict(), "backend": "mps_exact"}
+    result = execute_quantum_program(request)
+    assert verify_quantum_program(request, result) == []
+    payload = result["execution"]["payload"]
+    assert payload["max_bond"] == 2 and payload["norm_squared"] == "1"
+    assert payload["custody"]["resident_bytes"] < 1024 * 1024

@@ -314,3 +314,15 @@ def test_contiguous_600_nonce_batch_records_real_full_h4_fanout(h4_reference_con
     assert state["physical_fanout_observed"] is True
     assert state["reason"] is None
 
+
+def test_cached_reference_topology_does_not_authorize_later_production(h4_reference_contract):
+    from chronus.reference_contract import ReferenceUnavailable
+    from hyba.hybrid.lucas_partition import _verify_h4_topology
+
+    worker = _Scheduler("reference", 1.0)
+    with reference_execution("qc-local"):
+        partition(32, [worker], strategy="h4_600")
+    assert _verify_h4_topology.cache_info().currsize == 1
+    with pytest.raises(ReferenceUnavailable):
+        partition(32, [worker], strategy="h4_600")
+    assert worker.dispatched == []

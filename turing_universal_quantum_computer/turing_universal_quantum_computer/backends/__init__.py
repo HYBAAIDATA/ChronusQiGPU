@@ -28,6 +28,7 @@ from .base import (
 )
 from .exact_algebra import Exact, Q2
 from .mps import MPSExactBackend, schmidt_bound
+from .cyclotomic import CyclotomicBackend
 from .native import ClosedFormBackend, SparseExactBackend, StabilizerBackend
 from .qpu import (
     QPUBackend,
@@ -115,6 +116,7 @@ def default_backends(
         ClosedFormBackend(),
         MPSExactBackend(),
         QPUBackend(),
+        CyclotomicBackend(max_amplitudes=min(max_amplitudes, 65536)),
     )
 
 

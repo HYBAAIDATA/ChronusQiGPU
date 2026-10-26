@@ -130,6 +130,12 @@ class DurableMutationLatch:
             pass
         return rec
 
+    def mark_uncertain(self, *, operation_id: str, detail: str) -> None:
+        """Latch when an external mutation cannot be confirmed after its intent."""
+        with self._lock:
+            if self._state == LatchState.HEALTHY:
+                self._trip_latch(operation_id, "EXTERNAL_MUTATION_UNCERTAIN", detail)
+
     def commit(
         self,
         *,

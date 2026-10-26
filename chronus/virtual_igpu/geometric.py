@@ -32,6 +32,10 @@ def _grid(value: Any) -> np.ndarray:
 
 def execute_grid(value: Mapping[str, Any]) -> dict[str, Any]:
     """Execute all eight D4 actions as vector views, or connected components."""
+    if value.get("op") in ("cellular", "graph_morphism"):
+        from .topology import execute_topology
+
+        return execute_topology(value)
     if set(value) != {"grid", "op"}:
         raise ValueError("grid_geometry requires grid and op")
     grid = _grid(value["grid"])
@@ -87,6 +91,10 @@ def execute_grid(value: Mapping[str, Any]) -> dict[str, Any]:
 
 def verify_grid(value: Mapping[str, Any], output: Mapping[str, Any]) -> list[str]:
     """Independent coordinate oracle for D4; partition/connectivity checks otherwise."""
+    if value.get("op") in ("cellular", "graph_morphism"):
+        from .topology import verify_topology
+
+        return verify_topology(value, output)
     if set(value) != {"grid", "op"} or value["op"] not in ("d4", "components"):
         raise ValueError("invalid grid geometry request")
     grid = _grid(value["grid"])
@@ -188,6 +196,10 @@ def execute_modular(value: Mapping[str, Any]) -> dict[str, Any]:
     The imaginary part identity y' = y / |cz+d|^2 is the upper-half-plane
     metric invariant. No floating-point complex numbers or log evaluation.
     """
+    if "op" in value:
+        from .geometric_flow import execute_flow
+
+        return execute_flow(value)
     x, y, (a, b, c, d) = _modular_request(value)
     denominator = (c * x + d) ** 2 + (c * y) ** 2
     real = ((a * x + b) * (c * x + d) + a * c * y * y) / denominator
@@ -202,6 +214,10 @@ def execute_modular(value: Mapping[str, Any]) -> dict[str, Any]:
 
 def verify_modular(value: Mapping[str, Any], output: Mapping[str, Any]) -> list[str]:
     """Check the defining complex cross-product equation and metric factor."""
+    if "op" in value:
+        from .geometric_flow import verify_flow
+
+        return verify_flow(value, output)
     x, y, (a, b, c, d) = _modular_request(value)
     if set(output) != {"x", "y", "metric_scale", "arithmetic"}:
         return ["invalid modular geometry output schema"]

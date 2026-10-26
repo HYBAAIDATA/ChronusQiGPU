@@ -1,135 +1,156 @@
-# Chronus GPIU execution and closure register
+# Chronus GPIU: executable software blueprint
 
-Owner request: complete every expressed and implied directive in the ten-specialist
-blueprint. All twenty directives remain in scope. This register describes actual
-implementation and the remaining work; the presence of a row does not close it.
-`OWNER_DECLARATIONS.md` D6/D7/D9/D10 and the existing execution contracts govern.
+The ten-specialist blueprint is implemented through the existing Chronus ABI,
+TURING quantum engine, Kellogg exact tensor engine and the Chronus–OVID–THESEUS
+triad. This register distinguishes executable contracts from claims that still
+need evidence. Owner declarations D3/D4/D6/D7/D9/D12/D13 govern.
 
-## Executable additions
+## Two capacity offerings
 
-The existing `virtual_igpu_v1` seam now accepts four additional workload kinds.
-They use the existing tenant admission, delivery policies, memory custody,
-receipts, evidence ledger and result verification. Each is software execution;
-required physical adapters are never satisfied by the software adapter.
+1. **Independent Chronus GPU capacity** (`native_chronus_gpu`): Chronus supplies
+   the execution plane without requiring a host GPU.
+2. **Augment the customer's GPU estate** (`host_gpu_augmentation`): Chronus
+   discovers a capable host accelerator and scales execution through it.
 
-| Kind | Input | Semantic owner | Independent check |
-|---|---|---|---|
-| `quantum_program` | TURING Program dictionary; optional exact backend, amplitude budget, shots and seed | TURING | Canonical certified execution replay outside the adapter; compares full result and certificate |
-| `exact_graph` | Named Q8 sites, physical indices, graph/tree/PEPS topology, contraction budgets | Kellogg | Canonical contraction/certificate replay outside the adapter; tests compare against a separate full bond enumeration |
-| `grid_geometry` | Rectangular integer grid and `op=d4` or `components` | Chronus integer kernels | Separate coordinate maps or component flood fill |
-| `modular_geometry` | Rational x/y and determinant-one integer matrix `[a,b,c,d]` | Chronus rational geometry | Complex cross-product identity and upper-half-plane metric factor |
+Manual adapter binding is **optional**. The existing runtime selects by advertised
+capabilities and execution policy. A caller can optionally pin an adapter or
+forbid software fallback. Receipts distinguish the requested mode from the
+backend that actually executed. Missing host hardware never disables independent
+Chronus capacity.
 
-Replay through the same canonical engine protects the transport/adapter boundary;
-it is not an independent implementation of the quantum or tensor mathematics.
-The quantum, MPS, Clifford and six-phase tests remain separate engine evidence.
+**Chronus executes; OVID owns authoritative folded state and checkpoints;
+THESEUS supplies rebuildable database, search, graph and index projections.**
+Pulvini supplies folding. Tenant admission, custody, verification and evidence
+remain part of this same system. Existing compatibility hooks named THESEUS are
+not evidence that authoritative ownership has moved from OVID.
 
-```python
-from chronus.virtual_igpu.abi import Workload
-from chronus.virtual_igpu.adapters import CPUEmulatorAdapter
-from chronus.virtual_igpu.runtime import RuntimeDaemon, RuntimeConfig
-from turing_universal_quantum_computer.backends import Program
+### Run a Lucas/Pisot capacity request
 
-runtime = RuntimeDaemon(RuntimeConfig(store_root="/tmp/chronus-gpiu-example"),
-                        adapters=[CPUEmulatorAdapter()])
-program = Program(2).then("h", 0).then("cx", 0, 1).then("t", 1)
-result = runtime.submit(Workload(
-    id="bell-phase", tenant="example", kind="quantum_program",
-    input={"program": program.to_dict(), "shots": 16, "seed": 42},
-    execution_policy="standalone_software"))
-assert result.status == "ok"
-assert result.receipt["verification"]["verdict"] == "match"
-```
-
-### Exact domains and budgets
-
-- Quantum requests admit explicit Clifford+T(+Toffoli) gates only, with strict
-  integer qubit/shot/seed domains. TURING's exact Toffoli decomposition is reused.
-  No opaque execution options, physical provider selection or float diagnostics
-  are accepted. TURING's certificate-bound `exact_payload=True` option omits
-  display-only approximations before they are computed; default TURING tables
-  retain their existing display fields. Limit: 1,024 qubits, 4,096 input and lowered operations, 4,096
-  materialised amplitudes, 4,096 shots; the MPS lane retains its own static rank
-  admission. Wider exact domain engines are unchanged by this ABI envelope.
-- PEPS/TTN sites use Kellogg `Q8`, field Q(zeta8). Every virtual edge appears
-  twice with equal dimensions. Trees must be connected and acyclic; rectangular
-  PEPS must have exactly their nearest-neighbour bonds. Fixed-physical-index
-  contraction avoids materialising the full statevector. Intermediate sizes and
-  scalar product counts are admitted before allocation. No SVD discard occurs.
-  The ABI admits at most 64 sites, 65,536 input field values, eight bonds per site,
-  65,536 elements in any intermediate and 1,000,000 scalar products. General
-  contraction depends on graph width; no universal polynomial PEPS claim follows.
-- D4 actions include all eight symmetries, including rectangular grids.
-  Components are four-connected and same-colour, including colour zero.
-  Grid side limits are 256, cells are integers 0..255. Work is proportional to
-  grid size, not an unqualified O(1) per arbitrary trial.
-- Upper-half-plane coordinates are integers or `[numerator, denominator]`,
-  never decimal text or floats. `y>0`, `ad-bc=1`; rational values are bounded to
-  4,096 numerator/denominator bits. The metric factor is `1/|cz+d|²`, computed
-  exactly. This is a modular isometry primitive, not a claim that an arbitrary
-  search problem has been solved or that SHA256d hit probabilities changed.
-
-## Every directive and its acceptance condition
-
-`Integrated` means the named bounded path is executable. `Partial` means some
-required behavior still needs implementation. `Open` identifies the missing
-specific implementation, not a change in the owner's scope.
-
-| ID | Directive | Canonical implementation and present disposition | Remaining acceptance condition |
-|---|---|---|---|
-| 1.1 | Exact Galois/cyclotomic and golden fields | **Partial:** `kellogg/cyclotomic.py`, `exact_field.py`, `scales.py`; `chronus/lucas/pisot.py`, `algebra.py`; exact quantum ABI consumes existing fields | General Z[zeta_m] field admission/composita and a register-wide algebraic-field dispatch contract; do not replace these with another implementation in Lucas |
-| 1.2 | Exact Rz/H/Toffoli compilation | **Integrated, bounded:** TURING `hilbert.py`, `software_stack.py`, algebraic backend; exact Toffoli lowering now crosses Chronus ABI | Wire general exact rational-turn symbolic rotations through this ABI; reject phases outside a selected field rather than round |
-| 2.1 | Symplectic Clifford with magic injection | **Partial:** TURING stabilizer and exact Clifford+T/MPS lanes; Chronus delegates; 1,024-qubit ABI regression | Explicit magic-state injection/resource tracking and an exact representation-switch certificate; Clifford-only tableau must continue rejecting T |
-| 2.2 | Hyperbolic CTQW | **Partial:** canonical TURING quantum walks and `Intelligence/poincare_cassini_search.py`; exact modular isometry primitive added | Admit a hyperbolic graph/Hamiltonian, certify Hermiticity, exact evolution and composition; coined discrete walks and CTQW remain distinct |
-| 3.1 | MPS/PEPS/TTN compression | **Integrated, bounded:** existing exact MPS/MPO plus new `kellogg/graph_network.py` PEPS/TTN amplitude contraction and Chronus workload | Full state operations, norms/observables, custody of graph site blocks and scalable topology-specific contraction execution |
-| 3.2 | Adaptive bonds with rigorous error bounds | **Partial:** existing exact rank factorization/minimal MPS bonds; graph contractions retain discarded weight zero | Extend rank minimization to graph boundaries and certify resource admission at scale; an area law alone does not certify a rank bound |
-| 4.1 | Polyhedral fusion/cache tiling | **Partial:** `chronus/compiler/` existing IR, lowering and intrinsics | Dependence analysis and legality proofs for fused Lucas/stride/Cassini kernels; measured cache/SLM behavior |
-| 4.2 | Identical AST across SIMD/OpenCL/SPIR-V/Metal | **Partial:** existing reference/OpenCL intrinsics; portable exact ABI and semantic digests | Implement the named remaining target lowerings, overflow and reduction semantics, and execute same-workload digest conformance per target |
-| 5.1 | Poincare-Beltrami/modular geodesic navigation | **Partial:** existing manifold/search modules; exact PSL(2,Z) action and metric certificate oracle added | Integrate certified geodesic/Jacobi trajectories with existing search-plan/coverage contracts; preserve Float64 11-D boundary |
-| 5.2 | Cassini basin Hamiltonian/gradient flow | **Partial:** existing Cassini/search operators | Implement declared potential and exact/symbolic singularity-aware flow; gradient descent is dissipative, so do not label it Hamiltonian evolution without its own equations |
-| 6.1 | Functorial OVID representation translation | **Partial:** existing folded custody/tensor interoperability; graph cores consume exact values without float conversion | Define actual admitted objects/morphisms and lossless conversion laws; a grid feature map is not generally invertible or equivalent to a stabilizer state |
-| 6.2 | Local-to-global fleet consistency | **Partial:** `chronus/fleet/capacity.py`, lease/custody checks and disjoint partitions | Specify overlaps/restrictions/gluing and test conflicting local updates; tenant isolation remains an admission invariant |
-| 7.1 | Remote zero-copy RDMA ring | **Open:** existing intra-host unified fabric is not RDMA | Registered-buffer lifetime, transport/verbs binding, remote fencing, replay protection and target-host execution; local queues cannot certify RDMA |
-| 7.2 | Continuous HMAC authority and pre-mutation custody | **Existing:** `authority_admission.py`, `native_elevation.py`, `recovery_security.py` | Execute continuous renewal/revocation/cross-tenant mutation scenarios on distributed transport; uncertain commits retain reconciliation latch |
-| 8.1 | Cohort Lyapunov control | **Partial:** existing `kellogg/phi_stability.py` diagnostics and Salamander recovery | Define cohort state, control law, disturbance bounds, invariant region and Lyapunov decrease certificate using actual telemetry |
-| 8.2 | Autonomous fenced exact recovery | **Partial:** fleet termination/fencing/failover, Salamander, uncertain-commit latch | Connect controller actions through admitted recovery and show lease reissue without duplicate commit; shrinking below exact Schmidt rank must refuse |
-| 9.1 | D4 native/vector primitives | **Integrated, bounded:** integer vector kernels and separate coordinate oracle; regression parity with EUCLID primitives | EUCLID world accepts `ChronusARCGeometry` as an explicit executor; chosen trials preserve world results and failed required adapters propagate. Measure device dispatch and end-to-end performance; this is not an ARC score |
-| 9.2 | Topological graph morphisms/cellular automata | **Partial:** four-connected component kernel now crosses ABI; existing EUCLID topology | Cellular transition rules, graph morphism contracts and feature integration; report work versus cells/edges and batch width |
-| 10.1 | Golden-stride/Fibonacci pipeline and FIFO eight | **Integrated, bounded RTL:** `hyba.vhd`, `chronus/hardware/golden_stride.vhd` and testbenches; `scripts/verify_chronus_rtl.py` | ISA/runtime integration and target FPGA mapping/place/route; GHDL synthesis elaboration and source conformance are not physical-device execution |
-| 10.2 | Exact algebraic systolic/Galois datapath | **Partial:** registered exact Z[phi] multiplication with full-width coefficients and GF(256) RTL; exhaustive finite-field testbench | Dot-product/systolic composition, ISA integration, synthesize/place/route and measure timing before claiming a physical one-cycle rate |
-
-## Compatibility decisions
-
-The blueprint asks for dynamic singular-value truncation. D6/D7 require exact
-execution. The implementation retains exact rank factorization and rejects a
-budget that cannot preserve the admitted state. Existing observational float
-operators keep their existing semantics and labels. A universal replacement of
-all numeric kernels by an exact field is not claimed.
-
-OVID holds authoritative durable state; THESEUS holds rebuildable projections
-per D9. Existing runtime hooks named THESEUS are preserved for compatibility;
-renaming a hook does not migrate custody. No independent learner or quantum
-engine is introduced; EUCLID retains learning/reward and TURING quantum semantics.
-
-## Verification
-
-Run the new regression slice from the repository root:
+From an installed environment or repository root:
 
 ```bash
-python -m pytest tests/test_chronus_gpiu_exact.py tests/test_kellogg_graph_network.py tests/test_virtual_igpu.py tests/test_arc_euclid_adapter.py tests/test_chronus_fleet.py chronus/fleet -q
+python -m chronus.scaled_gpiu --mode independent --tenant example \
+  --store-root /tmp/chronus-capacity --workload-id independent-1 \
+  --base-items 1 --scale-index 12
+
+python -m chronus.scaled_gpiu --mode host --tenant example \
+  --store-root /tmp/chronus-capacity --workload-id augment-1 \
+  --base-items 1 --scale-index 12
 ```
 
-Run RTL conformance with `python -m scripts.verify_chronus_rtl`.
-Run TURING tests with its package as working directory. Full repository gates,
-transport/device qualification, FPGA synthesis, cloud deployment and measured
-acceleration are separate evidence. Do not mark the complete blueprint delivered
-until every remaining acceptance condition above has executed evidence.
+Both execute the same fused exact integer IR over the Lucas-scaled work window
+and verify each chunk. Rung 12 executes 322 items for this request. The output
+includes the plan, computed rows, exact Pisot-conjugate bound and actual receipts.
+`--host-adapter-id` is optional; `--no-software-fallback` makes unavailable
+augmentation fail closed. The default augmentation policy permits a clearly
+labelled independent software fallback, as specified by
+`CHRONUS_IGPU_ELEVATION.md`.
 
-The implementation pass verified 136 affected tests, the full TURING suite
-(683 tests), three distribution wheel builds and installed-wheel execution,
-and GHDL simulation/synthesis elaboration. The control API and built operator
-UI returned HTTP 200 in a local smoke check with workers disabled. Repository-wide
-checks are not all green: the core suite stops at a missing episodic-memory
-artifact, two platform tests disagree with current response contracts, import
-graph construction rejects a null-containing source literal, and existing
-formatting/deployment findings remain. These failures are recorded separately
-from the passing exact execution and RTL checks.
+Lucas scale is an executed logical work multiplier; the plan deliberately does
+not manufacture a physical throughput multiplier. Capacity purchasing, billing,
+SLA and deployment remain the enclosing platform's responsibilities.
+
+## Execution contracts
+
+All requests use `virtual_igpu_v1`, the existing tenant admission, delivery modes,
+memory plane, receipts, evidence ledger and control-plane verifier.
+
+| Workload kind | Accepted software operation | Verification |
+|---|---|---|
+| `quantum_program` | Clifford, Clifford+T/Toffoli, exact MPS, rational-turn phases/Rz, explicit magic-T injection | TURING certified execution and replay |
+| `exact_graph` | PEPS/TTN amplitude, norm, local map, expectation, exact bond reduction | Kellogg certificate replay; independent full bond-sum regressions |
+| `hyperbolic_walk` | Hyperbolic weighted graph Laplacian, exact continuous-time evolution | Hermitian generator, exact symbolic replay; unitarity/composition regressions |
+| `grid_geometry` | D4, components, cellular automata, directed graph morphisms | Independent coordinate, flood-fill, scalar-cell and edge-image oracles |
+| `modular_geometry` | PSL(2,Z), geodesic/Jacobi evaluation, Cassini gradient or Hamiltonian step | Rational/symbolic replay and independently differentiated invariants |
+| `exact_kernel` | Fused Fibonacci/Lucas/Padovan, golden stride and Cassini identity | Separate fast-doubling/recurrence oracle and little-endian uint32 digest |
+| `algebraic_isa` | Z[phi] and GF(256) matrix dot-product arrays | Independent formal polynomial reduction |
+
+Replay through the canonical engine validates the adapter boundary; it is not a
+second independent implementation of quantum or tensor semantics. The separate
+mathematical tests are listed in the verification section.
+
+## All twenty directives
+
+“Implemented” below refers to the specified admitted software contract. Bounds
+are explicit, and a failed admission does not become approximate execution.
+
+| ID | Directive | Executable implementation | Scope and outstanding qualification |
+|---|---|---|---|
+| 1.1 | Golden/quadratic/cyclotomic fields | `kellogg/algebraic_field.py`: exact rational polynomial residues, cyclotomic polynomials, inversion, conjugation, lcm-composita, Q8 and Z[phi] embeddings; TURING register dispatch | Conductors 1..256. Existing observational Float64 paths retain their contract; this does not replace every numeric register in the repository. |
+| 1.2 | Exact unitary compilation | TURING `backends/cyclotomic.py` and Chronus `exact_quantum.py`: H, Toffoli, `phase:p/q`, `rz:p/q` in rational turns, including Rz global phase | Phases outside the admitted field refuse; no rounded substitute. |
+| 2.1 | Symplectic stabilizers and magic resources | Existing TURING tableau supports the 1,024-qubit Clifford ABI. `magic_t` constructs both injection branches, checks probabilities 1/2, applies S correction and records resource consumption | Magic injection uses the bounded algebraic lane; it does not assert polynomial cost for arbitrary non-Clifford circuits. |
+| 2.2 | Hyperbolic CTQW | TURING `HyperbolicGraphWalk`, Chronus `hyperbolic.py`: rational hyperbolic edge weights and exact `exp(-itH)` | Admitted graphs have 1..4 vertices. Continuous evolution has no discrete coin/shift. Arbitrary graph scale and search optimality are not established. |
+| 3.1 | Exact MPS/PEPS/TTN | Existing MPS/MPO plus `kellogg/graph_network.py`, `graph_operations.py`, `graph_custody.py`: amplitudes, local maps, norms, observables, content-verified site checkpoints over existing custody providers | Graph ABI: 64 sites, 65,536 input values/intermediate elements, 1,000,000 scalar products. Generic contraction depends on graph width and admitted ranks. |
+| 3.2 | Adaptive exact bonds | Exact rank factorization `A=C F`, absorption into neighboring site, zero discarded weight certificate; existing exact MPS rank reduction | Removes local exact dependencies. Cyclic PEPS global Schmidt-minimality and arbitrary 1,000-mode sub-exponential scaling are not claimed. |
+| 4.1 | Fusion and tiling | `chronus/compiler/exact_kernel.py`: affine independent iteration contract, fused recurrences, bounded tile working set, native C SIMD pragma | Compiler execution verified. Cache residency, SIMD instruction selection and speedup require measurement on the selected target. |
+| 4.2 | Portable exact IR | One validated AST emits C, OpenCL, Vulkan GLSL and Metal; uint32 modular overflow and digest order fixed. `portable_adapter.py` executes native C and OpenCL with recovery-safe caches | Native C and OpenCL CPU executed; Vulkan SPIR-V compiled/validated. Metal/device-specific AVX-512/AMX and physical GPU execution remain unqualified here. |
+| 5.1 | Hyperbolic geodesics | `geometric_flow.py`: PSL(2,Z) images of vertical geodesics with exact Jacobi fields; existing modular metric primitive | Unit-speed and Jacobi laws tested. No change to the canonical mining coverage/acceptance contract or 11-D Float64 boundary. Integration of these trajectories as a new mining search plan remains open. |
+| 5.2 | Cassini dynamics | Exact rational gradient of log-product potential; bounded line-search descent; separately declared symplectic-Euler Hamiltonian map | Singularities refuse. Discrete symplectic integration is not asserted to be the exact continuous ODE solution. |
+| 6.1 | Lossless representation morphisms | `aethel/representation_views.py`: finite basis permutations, adjoints, composition, tensor products and immutable zero-copy views | Admitted invertible basis maps only. Arbitrary ARC feature extraction is not an invertible grid-to-tableau transformation. |
+| 6.2 | Global consistency from local sections | `chronus/fleet/sections.py`: restriction, overlap agreement, exact domain cover, tenant/version checks, authoritative existence checks and admitted OVID manifest commit | Conflicting overlaps and cross-tenant references fail before publication. Finite execution domains; no blanket proof for all distributed code. |
+| 7.1 | Software memory ring | `chronus/fleet/memory_ring.py`: eight-slot default, preallocated buffers, `recv_into`, ownership swap, borrowed-slot backpressure, payload digest, fencing and bounded receive deadline | Application payload copy count is zero. Socket transport is executable; kernel-bypass RDMA/verbs and NIC qualification are still separate unimplemented transport work. |
+| 7.2 | Authority and audit | Existing HMAC AdmissionController gates ring/section/recovery mutations; tenant grants, nonce replay refusal, pre-mutation audit and generation revocation | Local transport/authentication scenarios tested. Off-loopback sockets require authenticated TLS. No claim of zero audit leakage against arbitrary hostile deployments. |
+| 8.1 | Lyapunov cohort control | `salamander/cohort_control.py`: exact bounded-disturbance contraction model, invariant box, observed transition certificate; `CohortAutonomicLoop` samples caller-owned telemetry | Certificates apply only when actual observations satisfy the declared model. They do not certify unobserved thermal or fragmentation dynamics. |
+| 8.2 | Autonomous fenced recovery | The loop selects a smaller Lucas lane count, requests canonical authority, journals intent, rotates worker fence, journals completion and checks postconditions | Lost completion or unfinished restart intent blocks blind retry. Exact tensor states are never truncated to fit. Deployment sensor/grant-provider wiring is explicit. |
+| 9.1 | EUCLID D4 acceleration | `ChronusARCGeometry` submits EUCLID-selected symmetry operations; vector integer kernels and coordinate oracle preserve grid semantics | EUCLID owns learning and reward. This is execution evidence, not an ARC benchmark score or device speedup. |
+| 9.2 | Topological primitives | `topology.py`: finite cellular rules and graph homomorphism/isomorphism; EUCLID executor's `topology()` consumes verified results | Bounded cells, steps and edges; work is proportional to admitted input, not universal O(1). |
+| 10.1 | Software ISA and golden pipeline | `exact_kernel` runtime integration executes recurrence/stride/Cassini instructions. Existing `golden_stride.vhd` has FIFO depth fib(6)=8 | Software is the active offering per D12/D13. GHDL conformance is retained evidence; FPGA manufacturing is not required for independent Chronus. |
+| 10.2 | Algebraic dot-product array | `algebraic_isa.py` implements bounded matrix products over Z[phi] and GF(256), exposed through the canonical ABI; registered RTL multiply remains available | Exact software integers do not overflow. No physical single-cycle or ASIC tape-out claim. |
+
+## Compatibility and exactness
+
+D6/D7 require exact execution. The blueprint's proposed singular-value truncation
+is therefore implemented as exact rank reduction with **discarded weight zero**;
+insufficient resources fail admission. Lossy truncation cannot silently acquire
+an exact certificate. This is preservation of the owner's standing contract.
+
+The Q8 graph lane and general cyclotomic register lane share Kellogg mathematical
+ownership. TURING owns quantum semantics; EUCLID owns learning/reward. No second
+quantum or learning authority is introduced into Chronus. Aethel view code has
+no Kellogg dependency.
+
+The ring is transient execution memory. Graph checkpoints use the existing
+custody protocol, with durability supplied by the chosen provider. Resident
+custody alone is not a durable deployment. OVID section commits use tenant-scoped
+VirtualMemoryPlane references; THESEUS can rebuild projections from them.
+
+## Verification and remaining work
+
+Focused regressions are `tests/test_chronus_{cyclotomic,gpiu_exact,exact_kernel,
+algebraic_isa,geometric_flow,hyperbolic,memory_ring,representation_sections,
+topology}.py`, `tests/test_kellogg_graph_network.py` and
+`tests/test_salamander_cohort_control.py`, with existing ABI, ARC, triad, fleet,
+mode and remote delivery suites. TURING's entire suite is run from its package
+directory. `python -m scripts.verify_chronus_rtl` checks the existing RTL.
+
+The full original blueprint is **not universally qualified**: RDMA is not
+implemented, emitted Metal kernels have not executed, physical accelerator
+throughput has not been measured here, generic global PEPS rank optimality is
+not established, and the new geodesic trajectory is not a mining plan. These
+remain explicit work rather than inferred success. None is a prerequisite for
+using the implemented independent software capacity path.
+
+Repository-wide pre-existing failures include a missing episodic-memory fixture,
+two platform contract assertions, import-graph handling of a null-containing
+literal, and existing style/deployment findings. The workspace validation record
+retains exact commands, input hashes, outcomes and baseline comparisons.
+
+## Packaged triad and first workload
+
+Owner D14 selects finite GPU tiers and a PYTHIA fleet. See
+[GPU packaging](CHRONUS_GPU_PACKAGING.md) for executable commands and exact limits.
+`chronus.triad.ChronusTriad` makes OVID custody required for its submissions and
+provides rebuildable THESEUS discovery. The capacity CLI uses this composition;
+historical authority profiles remain explicit compatibility surfaces.
+
+PYTHIA's prepared SHA256d specialization reuses the first SHA256 block and its
+existing golden-stride kernels. Serial software and parallel host batch receipts
+separate the logical prefix through the first winner from actual hash evaluations.
+Independent host verification checks every returned candidate. `PythiaFleet`
+uses the canonical lease/fencing scheduler and this triad, retaining PYTHIA's
+nonce ordering and pool/proof authority. It does not create physical ASIC capacity.
+
+A 1,024-mode exact MPS regression now executes H/CX/T at bond dimension2, norm1,
+with certificate replay. This is an executed bounded state family, not an
+arbitrary-state scaling guarantee. The canonical production/reference boundary
+also rejects cached research-only H4 topology outside its active authorization.

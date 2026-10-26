@@ -545,3 +545,14 @@ This evidence hierarchy is part of PYTHIA's identity and part of HYBA's natural 
 [Exact execution and the twenty-directive closure register](docs/CHRONUS_GPIU_EXECUTION.md)
 describes the TURING/Kellogg bridges, integer grid kernels, rational modular
 geometry and the remaining integration and hardware gates.
+
+## Chronus GPU capacity package
+
+The finite software GPU package and PYTHIA fleet are documented in
+[Chronus GPU packaging](docs/CHRONUS_GPU_PACKAGING.md). Install
+`hyba-chronus-gpu` from the release wheel set; use `chronus-gpu tiers` to inspect
+Starter/Pro/Fleet resource bounds and `chronus-pythia-fleet` for a bounded local
+execution fleet. Independent capacity and automatic host augmentation both use
+Chronus execution, OVID authoritative custody and rebuildable THESEUS discovery.
+The package exposes existing Lucas/Pisot scaling, Fibonacci/Cassini storage and
+Binet/Zeckendorf folded-data contracts with measured evidence.

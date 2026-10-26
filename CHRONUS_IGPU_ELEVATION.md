@@ -95,3 +95,17 @@ The ten-specialist blueprint is tracked directive by directive in
 [CHRONUS_GPIU_EXECUTION.md](docs/CHRONUS_GPIU_EXECUTION.md). Its exact execution
 paths reuse TURING and Kellogg through the existing Virtual iGPU ABI; completion
 of a bounded software path does not complete every elevation gate above.
+
+## 4. Finite packaged capacity (owner D14)
+
+The executable package is `hyba-chronus-gpu`; its `chronus-gpu` and
+`chronus-pythia-fleet` commands preserve modes A/B above. Manual host binding is
+optional. [GPU packaging](docs/CHRONUS_GPU_PACKAGING.md) defines the finite tiers,
+actual measured work/storage reporting and current deployment qualifications.
+[Blueprint register](docs/CHRONUS_GPIU_EXECUTION.md) maps all twenty directives to
+implemented contracts and remaining work.
+
+The existing triad mathematics is preserved: Lucas/Pisot for execution scaling,
+Fibonacci/Cassini for storage, exact Binet/Zeckendorf for folded data. OVID owns
+new authoritative state; THESEUS discovery is rebuildable; Chronus executes.
+Tier budgets do not imply infinite capacity or exponential measured throughput.

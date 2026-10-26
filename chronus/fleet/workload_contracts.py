@@ -20,7 +20,7 @@ from pathlib import Path
 import sys
 import tempfile
 import time
-from typing import Any, Callable, Mapping
+from typing import Any, Callable
 
 import numpy as np
 
@@ -40,7 +40,14 @@ def ensure_canonical_import_roots() -> dict[str, Any]:
     platform_dir = repo_root / "chronus" / "mla1517_platform" / "python"
     bootstrapped_paths: list[str] = []
 
-    for candidate in (repo_root, platform_dir, turing_dir):
+    # An installed distribution has a flat TURING package in site-packages.
+    # Adding that package itself to sys.path exposes its private turing_core
+    # as a top-level module and shadows PYTHIA's public compatibility module.
+    source_checkout = (
+        (repo_root / "pyproject.toml").is_file()
+        and (turing_dir / "turing_universal_quantum_computer" / "__init__.py").is_file()
+    )
+    for candidate in ((repo_root, platform_dir, turing_dir) if source_checkout else ()):
         if candidate.is_dir():
             c_str = str(candidate)
             if c_str not in sys.path or sys.path.index(c_str) > 1:

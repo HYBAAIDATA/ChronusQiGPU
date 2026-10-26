@@ -78,3 +78,72 @@ def test_topology_shape_domain_and_exactness_refusals():
     assert network.amplitude({"x": 0}).amplitude == ZERO8
     with pytest.raises(ValueError, match="physical index"):
         network.amplitude({"x": True})
+
+
+def test_norm_local_observable_and_exact_bond_reduction():
+    from kellogg.graph_operations import overlap, local_map, compress_bond
+    from chronus.virtual_igpu.exact_graph import execute_exact_graph, verify_exact_graph
+    from kellogg.graph_operations import serialize
+
+    sites = {
+        "a": GraphSite(2, ("e",), (3,), tuple(Q8(x) for x in (1, 2, 3, 2, 4, 6))),
+        "b": GraphSite(2, ("e",), (3,), tuple(Q8(x) for x in (2, 0, 1, 1, 2, 0))),
+    }
+    network = ExactGraphNetwork(sites, topology="tree")
+    norm = sum(
+        (
+            brute_force(sites, dict(zip(sites, bits))).conjugate()
+            * brute_force(sites, dict(zip(sites, bits)))
+            for bits in product(range(2), repeat=2)
+        ),
+        ZERO8,
+    )
+    assert overlap(network, network) == norm
+    reduced, evidence = compress_bond(network, "e")
+    assert evidence["new_dimension"] == 1
+    assert evidence["discarded_weight"] == 0
+    for bits in product(range(2), repeat=2):
+        physical = dict(zip(sites, bits))
+        assert reduced.amplitude(physical).amplitude == brute_force(sites, physical)
+    z = [[Q8(1), ZERO8], [ZERO8, Q8(-1)]]
+    mapped = local_map(network, "a", z)
+    expected = sum(
+        (
+            brute_force(sites, dict(zip(sites, bits))).conjugate()
+            * brute_force(sites, dict(zip(sites, bits)))
+            * (-1 if bits[0] else 1)
+            for bits in product(range(2), repeat=2)
+        ),
+        ZERO8,
+    )
+    assert overlap(network, mapped) == expected
+    for operation, extra in (
+        ("norm", {}),
+        ("compress_bond", {"bond": "e"}),
+        ("expectation", {"site": "a", "matrix": [[list(q.key()) for q in row] for row in z]}),
+    ):
+        request = {"topology": "tree", "sites": serialize(network), "op": operation, **extra}
+        output = execute_exact_graph(request)
+        assert verify_exact_graph(request, output) == []
+    with pytest.raises(MemoryError):
+        overlap(network, network, max_elements=1)
+
+
+def test_graph_site_custody_restore_and_identity_failure():
+    from kellogg.graph_custody import checkpoint, restore
+    from kellogg.custody import ResidentCustody, CustodyError
+    from kellogg.graph_operations import serialize
+    from kellogg.graph_network import ExactGraphNetwork, GraphSite
+    from kellogg.cyclotomic import Q8
+
+    network = ExactGraphNetwork({"a": GraphSite(2, (), (), (Q8(1), Q8(0)))}, topology="tree")
+    custody = ResidentCustody()
+    handle = checkpoint(network, custody)
+    assert serialize(restore(handle, custody)) == serialize(network)
+    with pytest.raises(CustodyError, match="budget"):
+        restore(handle, custody, max_bytes=1)
+    with pytest.raises(CustodyError, match="identity"):
+        restore({**handle, "sha256": "0" * 64}, custody)
+    custody.release(handle["reference"])
+    with pytest.raises(CustodyError):
+        restore(handle, custody)

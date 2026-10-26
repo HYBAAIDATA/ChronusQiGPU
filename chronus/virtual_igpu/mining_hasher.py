@@ -13,7 +13,7 @@ import time
 import uuid
 from typing import Any, Sequence
 
-from .abi import ExecutionPolicy, Workload, WorkloadKind
+from .abi import AdapterKind, ExecutionPolicy, Workload, WorkloadKind
 from .client import ChronusClient
 from .host_verify import CandidateVerificationError, sha256d, verify_hits
 
@@ -53,8 +53,11 @@ class ChronusVirtualIGPUHasher:
 
     @property
     def physical_device_executed(self) -> bool:
-        """True only when the last executing adapter was not the software emulator."""
-        return bool(self.last_adapter_kind) and self.last_adapter_kind != "software"
+        """True only for an explicitly identified accelerator kind."""
+        return self.last_adapter_kind in {
+            AdapterKind.OPENCL.value, AdapterKind.CUDA.value, AdapterKind.ROCM.value,
+            AdapterKind.ONEAPI.value, AdapterKind.METAL.value,
+        }
 
     def _submit(self, header: bytes, target_be: bytes, nonces: list[int]) -> dict[str, Any]:
         from chronus.mla1517_platform.python import runtime_config
@@ -90,9 +93,7 @@ class ChronusVirtualIGPUHasher:
         self.launches += 1
         self.kernel_ms += float(result.device_time_ns or 0) / 1e6
         adapter_id = result.actual_adapter_id or result.adapter_id
-        self.last_adapter_kind = (
-            "software" if adapter_id in {"cpu-emulator", "chronus-software-fabric"} else adapter_id
-        )
+        self.last_adapter_kind = str(result.attestation.get("kind", "unknown"))
         self.device = f"Chronus Virtual iGPU ({adapter_id})"
         self.last_result = result.to_dict()
         return dict(result.output or {})
@@ -114,6 +115,9 @@ class ChronusVirtualIGPUHasher:
             output = self._submit(header, target_be, part)
             hits = list(output.get("hits") or ())
             checked = int(output.get("checked") or 0)
+            evaluations = output.get("sha256d_evaluations", checked)
+            if type(evaluations) is not int or not 0 < checked <= evaluations <= len(part):
+                raise CandidateVerificationError("Chronus work counts exceed the admitted batch")
             if not hits and checked != len(part):
                 raise CandidateVerificationError(
                     f"Chronus checked {checked} nonces; expected {len(part)}"
@@ -129,8 +133,8 @@ class ChronusVirtualIGPUHasher:
                 hit = verified[0]
                 nonce = int(hit["nonce"])
                 digest = sha256d(header[:76] + nonce.to_bytes(4, "little"))
-                return nonce, digest, done + max(1, checked)
-            done += checked
+                return nonce, digest, done + evaluations
+            done += evaluations
         return None, None, done
 
     def self_check(self) -> None:

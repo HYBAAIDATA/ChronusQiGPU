@@ -57,7 +57,7 @@ class RuntimeInvariantError(RuntimeError):
 
 
 class CustodyError(RuntimeInvariantError):
-    """Required THESEUS custody was unavailable or did not commit/verify."""
+    """Required custody was unavailable or did not commit/verify."""
 
 
 class AdmissionDenied(RuntimeInvariantError):
@@ -702,7 +702,7 @@ class RuntimeDaemon:
         evidence_bytes: bytes,
         result: WorkloadResult,
     ) -> WorkloadResult:
-        """Durably commit the evidence envelope to THESEUS; fail closed otherwise."""
+        """Commit through the configured custody authority; fail closed otherwise."""
         from aethel.enterprise.records import OperationalRecord
 
         # record_id becomes a filesystem path component inside custody —
@@ -732,13 +732,13 @@ class RuntimeDaemon:
         except CustodyError:
             raise
         except Exception as exc:
-            raise CustodyError(f"THESEUS custody commit failed: {exc}") from exc
+            raise CustodyError(f"custody commit failed: {exc}") from exc
         return replace(
             result,
             metrics={
                 **dict(result.metrics),
                 "custody": {
-                    "authority": "theseus",
+                    "authority": getattr(self.custody, "authority", "theseus"),
                     "state": "committed",
                     "record_id": str(committed),
                     "tenant": w.tenant,

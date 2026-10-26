@@ -1966,3 +1966,27 @@ workloads retain existing routing, tenant admission, custody and receipts.
 remaining acceptance condition. No SVD approximation or duplicate quantum engine
 is introduced. Regression anchors: `tests/test_chronus_gpiu_exact.py` and
 `tests/test_kellogg_graph_network.py`.
+
+### 20.10 — Software GPIU modes (D12)
+
+Chronus executes independently as the software GPU or binds a host accelerator.
+Lucas/Pisot scaling belongs to both paths. The exact kernel compiler and
+canonical scale ladder preserve integer recurrence and partition contracts;
+backend availability and execution receipts establish the route actually run.
+
+### 20.11 Optional binding and capacity consumption (D13)
+
+Independent Chronus capacity and host-GPU augmentation are two customer options.
+`chronus.scaled_gpiu.ScaledGPIU` uses the existing product-mode policy mapping;
+augmentation discovers an adapter automatically, with optional explicit pinning.
+The triad remains Chronus execution, OVID authoritative custody and THESEUS
+rebuildable search/index projections. Logical Lucas scale and actual execution
+receipts are separate fields, including any declared software fallback.
+
+### 20.12 — Finite Chronus package and PYTHIA fleet
+
+Owner D14 requires finite tiers and a PYTHIA execution fleet. The canonical
+mathematical mapping is Lucas/Pisot execution scaling, Fibonacci/Cassini storage,
+and exact Binet/Zeckendorf folded representation. `chronus.product` derives tier
+work windows and storage budgets from those existing primitives; `chronus.fleet.pythia`
+uses existing fenced leases and triad custody. See `docs/CHRONUS_GPU_PACKAGING.md`.

@@ -171,6 +171,28 @@ def _verify_sha256d_scan(value: Mapping[str, Any], out: Mapping[str, Any]) -> li
         problems.append(f"checked {out.get('checked')} != recomputed {checked}")
     if int(out.get("start_nonce", start)) != start:
         problems.append("start_nonce mismatch")
+    if out.get("profile") == "pythia_prepared_sha256d/v1":
+        if out.get("asic_like") is not True or out.get("physical_asic") is not False:
+            problems.append("invalid software ASIC-like profile identity")
+        shape = out.get("execution_shape")
+        if shape == "serial_prepared":
+            expected_evaluations = checked
+            if out.get("first_blocks_prepared") != 1:
+                problems.append("prepared first-block count mismatch")
+            if out.get("compression_blocks_executed") != 1 + 2 * checked:
+                problems.append("prepared compression-block count mismatch")
+        elif shape == "parallel_prepared":
+            width = out.get("batch_items")
+            if type(width) is not int or not 1 <= width <= 4096:
+                problems.append("parallel batch size outside admission")
+                expected_evaluations = -1
+            else:
+                expected_evaluations = min(count, ((checked + width - 1) // width) * width)
+        else:
+            problems.append("unknown prepared execution shape")
+            expected_evaluations = -1
+        if type(out.get("sha256d_evaluations")) is not int or out["sha256d_evaluations"] != expected_evaluations:
+            problems.append("executed SHA256d count mismatch")
     return problems
 
 
@@ -446,6 +468,24 @@ def _verify_modular_geometry(value: Mapping[str, Any], out: Mapping[str, Any]) -
     return verify_modular(value, out)
 
 
+def _verify_hyperbolic_walk(value: Mapping[str, Any], out: Mapping[str, Any]) -> list[str]:
+    from .hyperbolic import verify_walk
+
+    return verify_walk(value, out)
+
+
+def _verify_algebraic(value, out):
+    from .algebraic_isa import verify_algebraic
+
+    return verify_algebraic(value, out)
+
+
+def _verify_exact_kernel(value: Mapping[str, Any], out: Mapping[str, Any]) -> list[str]:
+    from .exact_kernel import verify_kernel
+
+    return verify_kernel(value, out)
+
+
 def _verify_exact_graph(value: Mapping[str, Any], out: Mapping[str, Any]) -> list[str]:
     from .exact_graph import verify_exact_graph
 
@@ -461,6 +501,9 @@ def _verify_quantum_program(value: Mapping[str, Any], out: Mapping[str, Any]) ->
 _VERIFIERS: dict[WorkloadKind, tuple[str, Callable[[Mapping[str, Any], Mapping[str, Any]], list[str]]]] = {
     WorkloadKind.GRID_GEOMETRY: ("coordinate_oracle:d4_components", _verify_grid_geometry),
     WorkloadKind.MODULAR_GEOMETRY: ("identity_oracle:psl2z", _verify_modular_geometry),
+    WorkloadKind.HYPERBOLIC_WALK: ("replay:turing:hyperbolic_walk", _verify_hyperbolic_walk),
+    WorkloadKind.ALGEBRAIC_ISA: ("oracle:algebraic_polynomial", _verify_algebraic),
+    WorkloadKind.EXACT_KERNEL: ("oracle:lucas_pisot_integer_ir", _verify_exact_kernel),
     WorkloadKind.EXACT_GRAPH: ("replay:kellogg:exact_graph", _verify_exact_graph),
     WorkloadKind.QUANTUM_PROGRAM: ("replay:turing:exact_certificate", _verify_quantum_program),
     WorkloadKind.SHA256D_SCAN: ("recompute:sha256d_scan:hashlib", _verify_sha256d_scan),

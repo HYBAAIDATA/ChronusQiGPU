@@ -161,6 +161,7 @@ class CPUEmulatorAdapter(Adapter):
                 WorkloadKind.RETRIEVE,
                 WorkloadKind.TENSOR_OP,
                 WorkloadKind.GRID_GEOMETRY,
+                WorkloadKind.EXACT_KERNEL,
                 WorkloadKind.MODULAR_GEOMETRY,
                 WorkloadKind.CGEMV,
                 WorkloadKind.PHI_TRANSFORM,
@@ -181,15 +182,15 @@ class CPUEmulatorAdapter(Adapter):
         except (ImportError, ValueError):
             graph_available = False
         if graph_available:
-            ops += (WorkloadKind.EXACT_GRAPH.value,)
+            ops += (WorkloadKind.EXACT_GRAPH.value, WorkloadKind.ALGEBRAIC_ISA.value,)
         if quantum_available:
-            ops += (WorkloadKind.QUANTUM_PROGRAM.value,)
+            ops += (WorkloadKind.QUANTUM_PROGRAM.value, WorkloadKind.HYPERBOLIC_WALK.value,)
         return CapabilityManifest(
             adapter_id=self.id,
             kind=self.kind.value,
             operations=ops,
-            dtypes=("float64", "float32", "complex128", "bytes", "int64", "uint8", "rational")
-            + (("q8", "tableau") if quantum_available else ())
+            dtypes=("float64", "float32", "complex128", "bytes", "int64", "uint8", "uint32", "rational")
+            + (("q8", "tableau", "cyclotomic") if quantum_available else ())
             + (("q8",) if graph_available and not quantum_available else ()),
             max_shape=(4096, 4096),
             max_bytes=256 * 1024 * 1024,
@@ -198,7 +199,7 @@ class CPUEmulatorAdapter(Adapter):
             arithmetic={
                 "exact_arithmetic_ops": tuple(
                     op for op in ops
-                    if op in {"quantum_program", "exact_graph", "grid_geometry", "modular_geometry"}
+                    if op in {"quantum_program", "exact_graph", "grid_geometry", "modular_geometry", "hyperbolic_walk", "exact_kernel", "algebraic_isa"}
                 ),
                 "ieee754": True,
                 "fp64": True,
@@ -235,6 +236,20 @@ class CPUEmulatorAdapter(Adapter):
 
             execute = execute_grid if kind == WorkloadKind.GRID_GEOMETRY else execute_modular
             return self._result(workload, execute(value), started)
+
+        if kind == WorkloadKind.HYPERBOLIC_WALK:
+            from .hyperbolic import execute_walk
+
+            return self._result(workload, execute_walk(value), started)
+
+        if kind == WorkloadKind.ALGEBRAIC_ISA:
+            from .algebraic_isa import execute_algebraic
+
+            return self._result(workload, execute_algebraic(value), started)
+        if kind == WorkloadKind.EXACT_KERNEL:
+            from .exact_kernel import execute_kernel
+
+            return self._result(workload, execute_kernel(value), started)
 
         if kind == WorkloadKind.EXACT_GRAPH:
             from .exact_graph import execute_exact_graph
@@ -488,7 +503,7 @@ class CPUEmulatorAdapter(Adapter):
             started,
         )
 
-    def _sha256d_scan(self, workload: Workload, value: dict[str, Any], started: int) -> WorkloadResult:
+    def _prepare_sha256d_scan(self, value: dict[str, Any]):
         if "header80_hex" in value:
             try:
                 header80 = bytes.fromhex(str(value["header80_hex"]))
@@ -554,6 +569,10 @@ class CPUEmulatorAdapter(Adapter):
             raise AdapterUnavailable("target is malformed") from exc
         if target_int < 0 or target_int >= 1 << 256:
             raise AdapterUnavailable("target is outside the uint256 range")
+        return header_prefix, start, nonce_seq, target_int
+
+    def _sha256d_scan(self, workload: Workload, value: dict[str, Any], started: int) -> WorkloadResult:
+        header_prefix, start, nonce_seq, target_int = self._prepare_sha256d_scan(value)
         hits: list[dict[str, Any]] = []
         checked = 0
         for nonce in nonce_seq:
@@ -697,6 +716,11 @@ class ChronusSoftwareFabricAdapter(CPUEmulatorAdapter):
     available = True
     priority = 100
 
+    def _sha256d_scan(self, workload, value, started):
+        from .pythia_asic import execute_prepared_scan
+
+        return execute_prepared_scan(self, workload, value, started)
+
     def probe(self) -> AdapterAttestation:
         self.available = True
         return self._attestation(
@@ -716,6 +740,18 @@ def default_adapters(*, include_cpu_emulator: bool = True) -> list[Adapter]:
     adapters: list[Adapter] = [ChronusSoftwareFabricAdapter()] if include_cpu_emulator else []
     if include_cpu_emulator:
         adapters.append(CPUEmulatorAdapter())
+    from .portable_adapter import PortableExactAdapter
+
+    for target in (("c", "opencl") if include_cpu_emulator else ("opencl",)):
+        portable = PortableExactAdapter(target)
+        portable.probe()
+        adapters.append(portable)
+    from .pythia_asic import PythiaMiningAdapter
+
+    for target in ("opencl", "cuda", "metal"):
+        mining_adapter = PythiaMiningAdapter(target)
+        mining_adapter.probe()
+        adapters.append(mining_adapter)
     # Optional physical OpenCL probe (may be unavailable)
     try:
         uhd = OpenCLUhdAdapter()

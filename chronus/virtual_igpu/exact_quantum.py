@@ -18,7 +18,7 @@ ARITIES = {
     **dict.fromkeys(("cx", "cnot", "cz", "swap"), 2),
     **dict.fromkeys(("ccx", "toffoli"), 3),
 }
-BACKENDS = ("exact_algebraic", "stabilizer", "mps_exact")
+BACKENDS = ("exact_algebraic", "stabilizer", "mps_exact", "exact_cyclotomic")
 
 
 def _integer(value: Any, name: str, low: int, high: int) -> int:
@@ -31,6 +31,7 @@ def prepare_request(value: Mapping[str, Any]) -> tuple[Any, Any, str | None, int
     """Validate before allocating any quantum state; lower via TURING identities."""
     from turing_universal_quantum_computer.backends import Operation, Program
     from turing_universal_quantum_computer.software_stack import decompose_to_basis
+    from turing_universal_quantum_computer.backends.cyclotomic import phase_turns
 
     allowed = {"program", "backend", "max_amplitudes", "shots", "seed"}
     if set(value) - allowed or "program" not in value:
@@ -47,9 +48,11 @@ def prepare_request(value: Mapping[str, Any]) -> tuple[Any, Any, str | None, int
         if not isinstance(op, dict) or set(op) != {"gate", "qubits"}:
             raise ValueError("each operation requires gate and qubits")
         gate, qubits = op["gate"], op["qubits"]
-        if not isinstance(gate, str) or gate not in ARITIES:
+        if not isinstance(gate, str) or (
+            gate not in ARITIES and gate != "magic_t" and phase_turns(gate) is None
+        ):
             raise ValueError(f"unsupported exact gate {gate!r}")
-        if not isinstance(qubits, list) or len(qubits) != ARITIES[gate]:
+        if not isinstance(qubits, list) or len(qubits) != ARITIES.get(gate, 1):
             raise ValueError(f"wrong arity for {gate}")
         for q in qubits:
             _integer(q, "qubit", 0, width - 1)
@@ -60,12 +63,18 @@ def prepare_request(value: Mapping[str, Any]) -> tuple[Any, Any, str | None, int
         )
     original = Program(width, tuple(parsed))
     # Preserve the Clifford lane: do not expand S into non-Clifford T gates.
-    executable = decompose_to_basis(
-        original, basis_gates=("i", "h", "x", "y", "z", "s", "sdg", "t", "tdg", "cx", "cz", "swap")
+    extended = any(o.gate == "magic_t" or phase_turns(o.gate) for o in original.operations)
+    executable = (
+        original
+        if extended
+        else decompose_to_basis(
+            original,
+            basis_gates=("i", "h", "x", "y", "z", "s", "sdg", "t", "tdg", "cx", "cz", "swap"),
+        )
     )
     if len(executable.operations) > MAX_OPERATIONS:
         raise ValueError("lowered circuit exceeds operation budget")
-    backend = value.get("backend")
+    backend = value.get("backend", "exact_cyclotomic" if extended else None)
     if backend is not None and backend not in BACKENDS:
         raise ValueError(f"backend must be one of {BACKENDS}")
     budget = _integer(

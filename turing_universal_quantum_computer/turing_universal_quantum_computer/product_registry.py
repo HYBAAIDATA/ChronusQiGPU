@@ -91,6 +91,7 @@ MODULES: Tuple[ModuleEntry, ...] = (
        "distance via Kellogg's CSSCode.", consumes=["kellogg"]),
     _m("backends", "backend", "Backend registry, admission and selection."),
     _m("backends.base", "backend", "Execution/truth classes, Program, Admission, ExecutionResult."),
+    _m("backends.cyclotomic", "backend", "Exact rational-turn rotations and branch-verified magic injection over Kellogg polynomial fields.", consumes=["kellogg.algebraic_field"]),
     _m("backends.algebraic", "backend", "Universal Clifford+T, materialised, exact."),
     _m("backends.exact_algebra", "backend", "Exact closed algebraic field for the backend layer."),
     _m("backends.reference", "backend", "Exact universal statevector over Q(sqrt 2) + iQ(sqrt 2)."),

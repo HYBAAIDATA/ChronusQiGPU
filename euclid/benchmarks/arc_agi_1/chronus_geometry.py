@@ -35,17 +35,21 @@ class ChronusARCGeometry:
         self._sequence = count()
         self.last_receipt: dict[str, Any] | None = None
 
-    def __call__(self, operation: str, grid: Grid) -> Grid:
+    def topology(self, request: dict[str, Any]) -> dict[str, Any]:
+        """Execute an EUCLID-selected cellular/component/morphism request."""
+        if request.get("op") not in ("components", "cellular", "graph_morphism"):
+            raise ValueError("undeclared ARC topology primitive")
+        return self._execute(request)
+
+    def _execute(self, request: dict[str, Any]) -> dict[str, Any]:
         from chronus.virtual_igpu.abi import Workload
 
-        if operation not in D4_PRIMITIVES:
-            raise ValueError("Chronus ARC adapter accepts only declared D4 primitives")
         result = self.runtime.submit(
             Workload(
                 id=f"{self.prefix}-{next(self._sequence)}",
                 tenant=self.tenant,
                 kind="grid_geometry",
-                input={"op": "d4", "grid": grid},
+                input=request,
                 execution_policy=self.policy,
                 required_adapter_id=self.required_adapter_id,
             )
@@ -56,4 +60,9 @@ class ChronusARCGeometry:
         ):
             raise RuntimeError("Chronus ARC geometry execution failed verification")
         self.last_receipt = result.receipt
-        return result.output["transforms"][operation]
+        return result.output
+
+    def __call__(self, operation: str, grid: Grid) -> Grid:
+        if operation not in D4_PRIMITIVES:
+            raise ValueError("Chronus ARC adapter accepts only declared D4 primitives")
+        return self._execute({"op": "d4", "grid": grid})["transforms"][operation]

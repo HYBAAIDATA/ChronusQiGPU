@@ -1,9 +1,13 @@
-"""Versioned Chronus / Theseus / Ovid composition.
+"""Historical versioned Chronus / Theseus / Ovid composition.
 
 The enterprise profile assigns custody to Theseus and transformation to Ovid.
 The historical Ovid-root store is a separate, explicit legacy profile; it is
 never dual-written or silently migrated into enterprise custody. Chronus is
 optional execution evidence, not a storage-correctness authority.
+
+New GPIU capacity uses ``chronus.triad.ChronusTriad`` with OVID enterprise
+authority and rebuildable THESEUS discovery. These historical profiles keep
+their stored formats and call contracts; opening them does not migrate data.
 """
 
 from __future__ import annotations

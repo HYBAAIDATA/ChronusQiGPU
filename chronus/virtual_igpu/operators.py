@@ -58,9 +58,21 @@ OPERATORS = {
     "quantum_program": OperatorSpec(
         "quantum_program",
         OperatorFamily.QUANTUM_MATH,
-        ("q8", "tableau"),
+        ("q8", "tableau", "cyclotomic"),
         (ExecutionClass.SYMBOLIC,),
         "turing_exact_certificate_replay",
+    ),
+    "algebraic_isa": OperatorSpec(
+        "algebraic_isa", OperatorFamily.TENSOR, ("zphi", "gf256"),
+        (ExecutionClass.SYMBOLIC,), "algebraic_polynomial_oracle",
+    ),
+    "exact_kernel": OperatorSpec(
+        "exact_kernel", OperatorFamily.PHI_LUCAS, ("uint32",),
+        (ExecutionClass.DENSE_NATIVE,), "exact_recurrence_oracle",
+    ),
+    "hyperbolic_walk": OperatorSpec(
+        "hyperbolic_walk", OperatorFamily.QUANTUM_MATH, ("symbolic",),
+        (ExecutionClass.SYMBOLIC,), "turing_hermitian_evolution_replay",
     ),
     "exact_graph": OperatorSpec(
         "exact_graph",

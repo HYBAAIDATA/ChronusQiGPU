@@ -227,6 +227,10 @@ def _h4_weighted_face_spans(
     measured_hps: Sequence[float],
 ) -> Tuple[List[Tuple[str, int, int]], List[int]]:
     """Build 600 logical H4 shards and assign them by measured fleet capacity."""
+    from chronus.reference_contract import require_reference
+
+    # Topology is cacheable; the caller's current authorization is not.
+    require_reference("chronus.h4_600")
     _verify_h4_topology()
     if not device_ids:
         raise ValueError("H4 partition requires at least one device")
