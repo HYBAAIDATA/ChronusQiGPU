@@ -92,11 +92,17 @@ Differentiation should be demonstrated by the closed loop: governed reasoning â†
 
 ## Executed evidence and limitations
 
+The five logs and `test-evidence.json` were regenerated on 26 October 2026 because
+the historical invocations did not retain recoverable per-run source identities.
+The results below describe these fresh reproductions, not a recovered identity
+for the earlier runs. The JSON records the current Python/platform, command,
+timestamp, exit status and log digest for each invocation.
+
 - Readiness baseline: 34 tests passed; unchanged after repairs: 34 passed. These are repeat runs of the same suite, not 68 distinct tests.
 - New enterprise regressions before fixes: 14 tests, 8 failures (expected defects reproduced).
 - After fixes: 14/14 passed normally; the same 14/14 passed under `python -O`. These are not 28 distinct tests.
 - Actual retrieved `hyba_services` modules and actual `hyba_contracts` package initializer were executed with synthetic fixture data. Only `hyba_services.__init__` was bypassed in the partial-export harness because the full tree is not materialized. No repaired function was replaced by a double. The full package import and existing cross-product suites remain unexecuted.
-- Source export is selected and blob-verified, not a full Git checkout. Authenticated GitHub MCP reads worked; terminal Git could not authenticate. The exact branch base is independently confirmed by GitHub's ref result.
+- The original audit used a selected, blob-verified export: authenticated GitHub MCP reads worked but terminal Git could not authenticate. The fresh reproduction used the local Git checkout to reconstruct isolated exports; each test invocation still ran only the manifested files. The original audit's exact branch base was independently confirmed by GitHub's ref result.
 - No current TOE/Kellogg/TURING/Chronus/PULVINI/SALAMANDER/EUCLID engine-wide runtime suite, HTTP service, device execution, real provider sandbox, Docker end-to-end, installed artifacts, paid CI, penetration test or production soak was executed in this pass.
 - One attempted custody path `aethel/custody_binding.py` did not exist; `aethel/enterprise/` was subsequently enumerated. That unsuccessful lookup is not evidence that custody is absent.
 - No full-system production/publication approval, deployment, tag or release is performed by this audit.
@@ -112,3 +118,34 @@ python -m unittest discover -s tests -p test_tomorrow_readiness.py
 # Required next: normal full installed imports and complete enterprise suite.
 # The partial harness intentionally does NOT establish that acceptance.
 ```
+
+### Source identity for the reproduced runs
+
+`source_revision` remains the original base-export identifier. Each run's
+`tested_source` instead binds an immutable SHA-256 manifest of every source file
+in its isolated export. These exports combine revisions and an uncommitted runner
+repair, so no commit is claimed as the tested source.
+
+- `tested-source-before.json`: the base-export versions of the service modules,
+  contracts and readiness files, overlaid with the current guardrail tests and
+  guarded `run_partial.py`. This export produced the baseline readiness and red
+  guardrail runs. The red run deliberately executes the original defective service
+  implementations; its eight failures are expected.
+- `tested-source-after.json`: the current versions of the same files, including
+  the repaired services. This export produced the green, optimized and unchanged
+  readiness runs.
+
+To reconstruct either export, copy only its listed paths into an empty directory
+with the same layout and verify every file's `sha256` before running the recorded
+command from that directory. For the before export, retrieve all paths except
+`tests/test_enterprise_audit_guardrails.py` and `run_partial.py` with
+`git show b131edc408a37ff7c03534d694bfcdaf0c827abb:<path>`; copy those two overlays
+from this repair. The after export uses this repair's files. The manifest digest
+is checked against `tested_source.manifest_sha256`; log bytes are checked against
+`log_sha256`. The reproduction verified the original base manifest against Git
+and checked source hashes before and after every run.
+
+The runner rejects zero discovered cases before invoking `TextTestRunner`.
+`tests/test_enterprise_audit_runner.py` checks empty, passing, failing and
+import-error discovery in normal and optimized Python without importing the
+enterprise services.
