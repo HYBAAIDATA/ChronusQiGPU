@@ -24,7 +24,7 @@ class EnterpriseQualificationRunnerUnits(unittest.TestCase):
         spec.loader.exec_module(self.runner)
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.root = Path(temporary.name) / "checkout"
+        self.root = Path(temporary.name).resolve() / "checkout"
         self.runner.ROOT = self.root
         self.candidate = "a" * 40
         required = (
