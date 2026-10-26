@@ -1,0 +1,37 @@
+E..E.E..
+======================================================================
+ERROR: test_acknowledged_commit_survives_fresh_process (test_enterprise_bridge_durable.EnterpriseBridgeDurable.test_acknowledged_commit_survives_fresh_process)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/agent1/tests/test_enterprise_bridge_durable.py", line 59, in test_acknowledged_commit_survives_fresh_process
+    db = open_enterprise_store(durable_dir=directory)
+  File "/vercel/sandbox/data/agent1/aethel/enterprise_bridge.py", line 588, in open_enterprise_store
+    from .triad import THESEUS_CUSTODY_PROFILE, open_triad
+ModuleNotFoundError: No module named 'aethel.triad'
+
+======================================================================
+ERROR: test_durable_smoke_and_envelope_integrity (test_enterprise_bridge_durable.EnterpriseBridgeDurable.test_durable_smoke_and_envelope_integrity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/agent1/tests/test_enterprise_bridge_durable.py", line 48, in test_durable_smoke_and_envelope_integrity
+    env = smoke_measured_put(b"bridge-durable", durable_dir=directory)
+  File "/vercel/sandbox/data/agent1/aethel/enterprise_bridge.py", line 609, in smoke_measured_put
+    db = open_enterprise_store(durable_dir=durable_dir, bind_chronus=False)
+  File "/vercel/sandbox/data/agent1/aethel/enterprise_bridge.py", line 588, in open_enterprise_store
+    from .triad import THESEUS_CUSTODY_PROFILE, open_triad
+ModuleNotFoundError: No module named 'aethel.triad'
+
+======================================================================
+ERROR: test_memory_mode_is_explicit (test_enterprise_bridge_durable.EnterpriseBridgeDurable.test_memory_mode_is_explicit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/agent1/tests/test_enterprise_bridge_durable.py", line 32, in test_memory_mode_is_explicit
+    db = open_enterprise_store(durable=False)
+  File "/vercel/sandbox/data/agent1/aethel/enterprise_bridge.py", line 588, in open_enterprise_store
+    from .triad import THESEUS_CUSTODY_PROFILE, open_triad
+ModuleNotFoundError: No module named 'aethel.triad'
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.002s
+
+FAILED (errors=3)

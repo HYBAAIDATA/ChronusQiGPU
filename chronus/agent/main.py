@@ -65,6 +65,12 @@ class FrontierAgent:
     def counter(self):
         return self._iteration_counter
 
+    def drain_learning_queue(self) -> tuple:
+        """Host archival: drain and clear the learning evidence queue before the 10,000-item cap."""
+        items = tuple(self._learning_queue)
+        self._learning_queue.clear()
+        return items
+
     def record_evidence(self, outcome):
         if len(self._learning_queue) >= 10000:
             raise ContractError("learning evidence queue full; host must archive")

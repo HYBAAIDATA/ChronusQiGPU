@@ -1,393 +1,374 @@
-"""Tests for Technology Operations Guide to Collaborative Automation Framework.
+"""tests/test_collaborative_automation.py — Verification suite for Collaborative Automation.
 
-Validates the Cutover Collaborative Automation model:
-1. Interconnecting people and technology (System of Execution).
-2. Mitigating the Bathtub Effect (complexity spikes and performance dips).
-3. Addressing silo chaos across DevOps, SRE, and Tech Ops.
-4. The Four Core Use Cases:
-   - Cyber & IT Disaster Recovery
-   - Cloud Migration
-   - Application Release Management
-   - Complex Technology Implementation
-5. Single-pane-of-glass operational visibility and cryptographic audit trails.
+Covers:
+1. Cross-team orchestration (DevOps, SRE, TechOps, Security, Architecture, Release, Stakeholder)
+   and deterministic duplicate-effort prevention (CrossTeamTaskDeduplicator).
+2. Automation tool selection (AI_ML, RPA, IT_AUTOMATION, IPAAS) and authority boundary
+   enforcement (AI_ML must remain advisory_only=True).
+3. Bathtub Effect risk guardrails (scope creep, technical challenges, lack of resources,
+   loss of momentum) and incremental scaling limits.
+4. Human-in-the-loop judgment checkpoints (pause on missing decision, role verification,
+   rejection fail-closed, and signed approval completion).
+5. All four canonical Collaborative Automation workflows (Cyber/IT DR, Cloud Migration,
+   Application Release Management, Technology Implementation) and repository catalogue
+   integration (runbooks/catalogue.json).
+6. Postcondition failure and governed automatic rollback + Salamander RecoveryPlan bridge
+   + tamper-evident hash-chained EvidenceLedger.
+7. Single Pane of Glass dashboard, upstream/downstream dependency transparency, CLI,
+   and control_api.py endpoint integration.
 """
 
 from __future__ import annotations
 
-import tempfile
+import json
+import sys
 from pathlib import Path
 import pytest
 
-from governance.agent_governance import AuditLedger
-from governance.collaborative_automation import (
-    ApplicationReleaseOrchestrator,
-    AutomatedRunbook,
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_CANONICAL_PYTHON = _REPO_ROOT / "chronus" / "mla1517_platform" / "python"
+for _p in (str(_REPO_ROOT), str(_CANONICAL_PYTHON)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+from salamander import (
     AutomationToolCategory,
-    AutomationUseCaseType,
-    BathtubEffectMetrics,
-    BathtubEffectRiskGovernor,
-    BathtubRiskLevel,
-    CloudMigrationOrchestrator,
-    CollaborativeAutomationMasterSystem,
-    CollaborativeRunbookExecutionEngine,
-    DisasterRecoveryOrchestrator,
-    OperationalVisibilityDashboard,
-    RunbookTask,
-    RunbookTaskType,
-    TaskExecutionStatus,
-    TechnologyImplementationOrchestrator,
+    BathtubGuard,
+    BathtubRiskFactor,
+    CollaborativeAutomationEngine,
+    CollaborativeRunbook,
+    CollaborativeStep,
+    CrossTeamTaskDeduplicator,
+    EvidenceLedger,
+    HumanDecision,
+    RunbookStatus,
+    StepMode,
+    StepStatus,
+    TeamRole,
+    ToolSelectionCriteria,
+    WorkflowUseCase,
+    build_canonical_workflow_runbooks,
+    load_repository_catalogue_runbooks,
+    select_automation_tool,
+)
+from salamander.control_plane import FailClosed
+from tools.collaborative_automation import (
+    catalogue_payload,
+    full_runbook_catalogue,
+    main as cli_main,
 )
 
 
-@pytest.fixture
-def temp_ledger():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        ledger_path = Path(tmpdir) / "test_collab_auto_ledger.jsonl"
-        yield AuditLedger(persistence_path=str(ledger_path))
+def _approve_all_human_steps(
+    engine: CollaborativeAutomationEngine,
+    runbook: CollaborativeRunbook,
+    *,
+    actor_id: str = "lead-operator-01",
+    approved: bool = True,
+) -> None:
+    for idx, step in enumerate(runbook.ordered_steps(), start=1):
+        if step.mode in (StepMode.HUMAN_IN_THE_LOOP, StepMode.COLLABORATIVE_HYBRID):
+            role = (
+                step.required_approver_roles[0]
+                if step.required_approver_roles
+                else step.owner_team
+            )
+            engine.record_human_decision(
+                HumanDecision(
+                    decision_id=f"test-dec-{runbook.runbook_id}-{idx}",
+                    runbook_id=runbook.runbook_id,
+                    step_id=step.step_id,
+                    actor_id=actor_id,
+                    team_role=role,
+                    approved=approved,
+                    rationale="Verified prerequisites, telemetry, and blast radius.",
+                    at_ns=1_700_000_000_000_000_000 + idx,
+                )
+            )
 
 
-class TestCollaborativeAutomationFramework:
-    """Test suite covering the Collaborative Automation System of Execution."""
+@pytest.mark.unit
+def test_tool_selection_and_ai_advisory_boundary() -> None:
+    """AI_ML tool category is strictly advisory; non-advisory AI_ML fails closed."""
+    ai_tool = select_automation_tool(
+        "Predictive incident classification",
+        requires_predictive_analytics=True,
+    )
+    assert ai_tool.tool_category is AutomationToolCategory.AI_ML
+    assert ai_tool.advisory_only is True
+    assert ai_tool.composite_score >= 4.0
 
-    def test_enums_and_task_types(self):
-        """Validates all four use cases and task definitions."""
-        use_cases = list(AutomationUseCaseType)
-        assert len(use_cases) == 4
-        assert AutomationUseCaseType.CYBER_AND_IT_DISASTER_RECOVERY in use_cases
-        assert AutomationUseCaseType.CLOUD_MIGRATION in use_cases
-        assert AutomationUseCaseType.APPLICATION_RELEASE_MANAGEMENT in use_cases
-        assert AutomationUseCaseType.COMPLEX_TECHNOLOGY_IMPLEMENTATION in use_cases
+    rpa_tool = select_automation_tool(
+        "Rule-based lease drain",
+        repetitive_rule_based=True,
+    )
+    assert rpa_tool.tool_category is AutomationToolCategory.RPA
 
-        task_types = list(RunbookTaskType)
-        assert len(task_types) == 4
-        assert RunbookTaskType.AUTOMATED_TASK in task_types
-        assert RunbookTaskType.HUMAN_IN_THE_LOOP in task_types
-        assert RunbookTaskType.DECISION_GATE in task_types
-        assert RunbookTaskType.COMMUNICATION_BROADCAST in task_types
+    it_tool = select_automation_tool(
+        "Provision Chronus fleet partitions",
+        infrastructure_or_config=True,
+    )
+    assert it_tool.tool_category is AutomationToolCategory.IT_AUTOMATION
 
-        tools = list(AutomationToolCategory)
-        assert len(tools) == 5
-        assert AutomationToolCategory.AI_MACHINE_LEARNING in tools
-        assert AutomationToolCategory.RPA in tools
-        assert AutomationToolCategory.IT_AUTOMATION in tools
-        assert AutomationToolCategory.IPAAS in tools
-        assert AutomationToolCategory.COLLABORATIVE_RUNBOOK in tools
+    ipaas_tool = select_automation_tool(
+        "Exchange THESEUS custody receipts across systems",
+        cross_system_data_exchange=True,
+    )
+    assert ipaas_tool.tool_category is AutomationToolCategory.IPAAS
 
-    def test_runbook_creation_and_topological_advance(self, temp_ledger):
-        """Tests runbook creation, dependency linkage, and automated execution."""
-        engine = CollaborativeRunbookExecutionEngine(ledger=temp_ledger)
+    with pytest.raises(FailClosed, match="advisory_only=True"):
+        ToolSelectionCriteria(
+            tool_category=AutomationToolCategory.AI_ML,
+            objective="Direct autonomous proof override",
+            ease_of_use=5,
+            scalability=5,
+            integration_capability=5,
+            verifier_support=5,
+            human_collaboration_fit=5,
+            advisory_only=False,
+        ).validate()
 
-        # Register mock automated handler
-        engine.register_automated_handler(
-            AutomationToolCategory.IT_AUTOMATION.value,
-            lambda task: True,
+
+@pytest.mark.unit
+def test_cross_team_task_deduplication_prevents_silo_duplication() -> None:
+    """Identical tasks across DevOps, SRE, and TechOps are deduplicated with audit provenance."""
+    dedup = CrossTeamTaskDeduplicator()
+    engine = CollaborativeAutomationEngine(deduplicator=dedup)
+
+    step_devops = CollaborativeStep(
+        step_id="s1_devops_verify",
+        title="Verify signed container digest",
+        owner_team=TeamRole.DEVOPS,
+        collaborating_teams=(TeamRole.SRE,),
+        tool_category=AutomationToolCategory.IT_AUTOMATION,
+        mode=StepMode.AUTOMATED,
+        operation="verify_signed_container_provenance",
+        target="hyba-release-pipeline",
+        parameters={"digest": "sha256:abc123"},
+    )
+    step_sre_duplicate = CollaborativeStep(
+        step_id="s2_sre_duplicate_verify",
+        title="SRE duplicate verification of same container digest",
+        owner_team=TeamRole.SRE,
+        collaborating_teams=(TeamRole.TECH_OPS,),
+        tool_category=AutomationToolCategory.IT_AUTOMATION,
+        mode=StepMode.AUTOMATED,
+        operation="verify_signed_container_provenance",
+        target="hyba-release-pipeline",
+        depends_on=("s1_devops_verify",),
+        parameters={"digest": "sha256:abc123"},
+    )
+
+    rb = CollaborativeRunbook(
+        runbook_id="dedup_test_runbook",
+        title="Cross-team deduplication test",
+        use_case=WorkflowUseCase.APPLICATION_RELEASE_MANAGEMENT,
+        tenant_id="tenant_a",
+        target="hyba-release-pipeline",
+        steps=(step_devops, step_sre_duplicate),
+    )
+
+    report = engine.execute_runbook(rb)
+    assert report.status is RunbookStatus.COMPLETED_VERIFIED
+    assert report.step_states["s1_devops_verify"] is StepStatus.VERIFIED
+    assert report.step_states["s2_sre_duplicate_verify"] is StepStatus.DEDUPLICATED
+    assert report.deduplicated_steps == ("s2_sre_duplicate_verify",)
+    assert dedup.deduplicated_count == 1
+
+
+@pytest.mark.unit
+def test_bathtub_effect_guardrails_halt_uncontrolled_automation() -> None:
+    """BathtubGuard detects scope creep, resource exhaustion, and momentum loss."""
+    workflows = build_canonical_workflow_runbooks()
+    dr = workflows["cyber_it_disaster_recovery"]
+
+    # 1. Scope creep: unapproved mid-flight step injection
+    engine_scope = CollaborativeAutomationEngine()
+    injected = tuple(s.step_id for s in dr.ordered_steps()) + ("unapproved_extra_step",)
+    report_scope = engine_scope.execute_runbook(dr, injected_step_ids=injected)
+    assert report_scope.status is RunbookStatus.HALTED_BATHTUB_GUARD
+    assert BathtubRiskFactor.SCOPE_CREEP in report_scope.bathtub_assessment.active_risks
+
+    # 2. Scope creep: exceeding small incremental phase limit (phase 0 -> max 1 step)
+    engine_small = CollaborativeAutomationEngine(
+        bathtub_guard=BathtubGuard(scale_phase_index=0)
+    )
+    report_small = engine_small.execute_runbook(dr)
+    assert report_small.status is RunbookStatus.HALTED_BATHTUB_GUARD
+    assert BathtubRiskFactor.SCOPE_CREEP in report_small.bathtub_assessment.active_risks
+
+    # 3. Lack of resources: 0 available operators for a human-in-the-loop runbook
+    engine_res = CollaborativeAutomationEngine()
+    report_res = engine_res.execute_runbook(dr, available_operators=0)
+    assert report_res.status is RunbookStatus.HALTED_BATHTUB_GUARD
+    assert BathtubRiskFactor.LACK_OF_RESOURCES in report_res.bathtub_assessment.active_risks
+
+    # 4. Loss of momentum: longest_wait_ns exceeds stall_timeout_ns
+    engine_stall = CollaborativeAutomationEngine(
+        bathtub_guard=BathtubGuard(stall_timeout_ns=1_000)
+    )
+    report_stall = engine_stall.execute_runbook(dr, longest_wait_ns=5_000)
+    assert report_stall.status is RunbookStatus.HALTED_BATHTUB_GUARD
+    assert BathtubRiskFactor.LOSS_OF_MOMENTUM in report_stall.bathtub_assessment.active_risks
+
+
+@pytest.mark.unit
+def test_human_in_the_loop_pause_approval_and_rejection() -> None:
+    """Runbooks pause at human checkpoints without fabricating approval, and resume on decision."""
+    workflows = build_canonical_workflow_runbooks()
+    dr = workflows["cyber_it_disaster_recovery"]
+    engine = CollaborativeAutomationEngine()
+
+    # Without human decisions: automated steps run, human checkpoint pauses at AWAITING_HUMAN
+    paused_report = engine.execute_runbook(dr)
+    assert paused_report.status is RunbookStatus.AWAITING_HUMAN
+    assert paused_report.step_states["dr_01_detect_and_engage"] is StepStatus.VERIFIED
+    assert paused_report.step_states["dr_02_quarantine_lanes"] is StepStatus.VERIFIED
+    assert paused_report.step_states["dr_03_human_recovery_checkpoint"] is StepStatus.AWAITING_HUMAN_DECISION
+    assert paused_report.step_states["dr_04_reanchor_witness_audit"] is StepStatus.BLOCKED_UPSTREAM
+
+    # Provide human approvals for the checkpoints and re-execute
+    _approve_all_human_steps(engine, dr, actor_id="sec-analyst-prime", approved=True)
+    completed_report = engine.execute_runbook(dr)
+    assert completed_report.status is RunbookStatus.COMPLETED_VERIFIED
+    assert all(
+        st in (StepStatus.VERIFIED, StepStatus.DEDUPLICATED)
+        for st in completed_report.step_states.values()
+    )
+    assert engine.ledger.verify() is True
+
+    # Rejection by human fails closed
+    engine_reject = CollaborativeAutomationEngine()
+    _approve_all_human_steps(engine_reject, dr, actor_id="sec-analyst-deny", approved=False)
+    rejected_report = engine_reject.execute_runbook(dr)
+    assert rejected_report.status is RunbookStatus.FAILED_CLOSED
+    assert rejected_report.step_states["dr_03_human_recovery_checkpoint"] is StepStatus.REJECTED_BY_HUMAN
+
+
+@pytest.mark.unit
+def test_all_four_canonical_workflows_and_dependency_transparency() -> None:
+    """All 4 canonical Collaborative Automation workflows execute and produce dependency maps."""
+    workflows = build_canonical_workflow_runbooks()
+    assert set(workflows) == {
+        "cyber_it_disaster_recovery",
+        "cloud_migration",
+        "application_release_management",
+        "technology_implementation",
+    }
+
+    engine = CollaborativeAutomationEngine()
+    for rb_id, runbook in workflows.items():
+        _approve_all_human_steps(engine, runbook, actor_id=f"approver-{rb_id}")
+        report = engine.execute_runbook(runbook)
+        assert report.status is RunbookStatus.COMPLETED_VERIFIED
+        assert report.bathtub_assessment.healthy is True
+        dep_map = report.dependency_transparency
+        assert len(dep_map) == len(runbook.steps)
+        assert all(node["upstream_satisfied"] is True for node in dep_map.values())
+
+        # Verify conversion to Salamander RecoveryPlan
+        recovery_plan = runbook.to_recovery_plan(
+            actor_id=f"approver-{rb_id}",
+            deadline_ns=9_999_999_999_999_999_999,
         )
+        assert len(recovery_plan.ordered()) == len(runbook.steps)
 
-        rb = engine.create_runbook(
-            runbook_id="rb_test_01",
-            name="Test Automated Flow",
-            use_case=AutomationUseCaseType.COMPLEX_TECHNOLOGY_IMPLEMENTATION,
-        )
+    dashboard = engine.single_pane_dashboard(workflows.values())
+    assert dashboard["summary"]["registered_workflows"] == 4
+    assert dashboard["summary"]["completed_verified"] == 4
+    assert dashboard["summary"]["awaiting_human_checkpoints"] == 0
+    assert dashboard["audit_trail"]["chain_verified"] is True
 
-        task1 = RunbookTask(
-            task_id="t1",
-            name="Run Infrastructure Script",
-            task_type=RunbookTaskType.AUTOMATED_TASK,
-            tool_category=AutomationToolCategory.IT_AUTOMATION,
-            assigned_owner="terraform_runner",
-            estimated_duration_seconds=30.0,
-        )
-        task2 = RunbookTask(
-            task_id="t2",
-            name="Security Review Sign-Off",
-            task_type=RunbookTaskType.HUMAN_IN_THE_LOOP,
-            tool_category=AutomationToolCategory.COLLABORATIVE_RUNBOOK,
-            assigned_owner="Security Engineer",
-            dependencies=["t1"],
-            estimated_duration_seconds=60.0,
-        )
 
-        engine.add_task(rb.runbook_id, task1)
-        engine.add_task(rb.runbook_id, task2)
+@pytest.mark.unit
+def test_postcondition_failure_triggers_governed_rollback() -> None:
+    """Failed postcondition verification executes the declared rollback operation."""
+    workflows = build_canonical_workflow_runbooks()
+    release_rb = workflows["application_release_management"]
+    engine = CollaborativeAutomationEngine()
+    _approve_all_human_steps(engine, release_rb)
 
-        assert rb.total_estimated_duration_seconds == 90.0
-        assert "t1" in rb.critical_path_task_ids
-        assert "t2" in rb.critical_path_task_ids
+    report = engine.execute_runbook(
+        release_rb,
+        context={"fail_operations": {"deploy_canary_slice"}},
+    )
+    assert report.status is RunbookStatus.ROLLED_BACK
+    assert report.step_states["rel_03_deploy_canary"] is StepStatus.ROLLED_BACK
+    assert report.rolled_back_steps == ("rel_03_deploy_canary",)
+    assert BathtubRiskFactor.TECHNICAL_CHALLENGES in report.bathtub_assessment.active_risks
+    assert engine.ledger.verify() is True
 
-        # Start the runbook: task1 is automated and should complete immediately,
-        # unlocking task2 which awaits human approval.
-        engine.start_runbook(rb.runbook_id)
 
-        assert task1.status == TaskExecutionStatus.COMPLETED
-        assert task2.status == TaskExecutionStatus.AWAITING_HUMAN_APPROVAL
+@pytest.mark.unit
+def test_repository_catalogue_integration_and_cli(capsys: pytest.CaptureFixture[str]) -> None:
+    """runbooks/catalogue.json loads into CollaborativeRunbook objects and CLI executes cleanly."""
+    repo_runbooks = load_repository_catalogue_runbooks()
+    assert "key_rotation" in repo_runbooks
+    assert "schema_migration" in repo_runbooks
+    assert "witness_loss" in repo_runbooks
+    assert len(repo_runbooks) >= 7
 
-    def test_human_in_the_loop_approval_and_auditability(self, temp_ledger):
-        """Tests recording human judgment and unlocking downstream execution."""
-        engine = CollaborativeRunbookExecutionEngine(ledger=temp_ledger)
-        engine.register_automated_handler(
-            AutomationToolCategory.IT_AUTOMATION.value,
-            lambda task: True,
-        )
+    all_rbs = full_runbook_catalogue()
+    assert len(all_rbs) >= 11
 
-        rb = engine.create_runbook(
-            runbook_id="rb_approval_flow",
-            name="Human Approval Flow",
-            use_case=AutomationUseCaseType.APPLICATION_RELEASE_MANAGEMENT,
-        )
+    # CLI --catalogue
+    rc_cat = cli_main(["--catalogue"])
+    assert rc_cat == 0
+    out_cat = json.loads(capsys.readouterr().out)
+    assert out_cat["canonical_workflow_count"] == 4
+    assert out_cat["repository_catalogue_count"] >= 7
 
-        task1 = RunbookTask(
-            task_id="gate_1",
-            name="Release Manager Go/No-Go Gate",
-            task_type=RunbookTaskType.DECISION_GATE,
-            tool_category=AutomationToolCategory.COLLABORATIVE_RUNBOOK,
-            assigned_owner="Release Manager",
-            estimated_duration_seconds=45.0,
-        )
-        task2 = RunbookTask(
-            task_id="auto_deploy",
-            name="Promote to Production Fleet",
-            task_type=RunbookTaskType.AUTOMATED_TASK,
-            tool_category=AutomationToolCategory.IT_AUTOMATION,
-            assigned_owner="cicd_deployer",
-            dependencies=["gate_1"],
-            estimated_duration_seconds=120.0,
-        )
+    # CLI --run cyber_it_disaster_recovery --approve-all-human
+    rc_run = cli_main(["--run", "cyber_it_disaster_recovery", "--approve-all-human"])
+    assert rc_run == 0
+    out_run = json.loads(capsys.readouterr().out)
+    assert out_run["status"] == "COMPLETED_VERIFIED"
 
-        engine.add_task(rb.runbook_id, task1)
-        engine.add_task(rb.runbook_id, task2)
+    # CLI --dashboard
+    rc_dash = cli_main(["--dashboard"])
+    assert rc_dash == 0
+    out_dash = json.loads(capsys.readouterr().out)
+    assert out_dash["schema"] == "hyba.collaborative.dashboard.v1"
 
-        engine.start_runbook(rb.runbook_id)
-        assert task1.status == TaskExecutionStatus.AWAITING_HUMAN_APPROVAL
-        assert task2.status == TaskExecutionStatus.PENDING
 
-        # Submit human approval
-        decision_success = engine.submit_human_decision(
-            runbook_id="rb_approval_flow",
-            task_id="gate_1",
-            approved=True,
-            actor_name="Sarah Connor (Release VP)",
-            judgment_notes="All automated test gates passed and error budget is 99.99%.",
-        )
-        assert decision_success is True
-        assert task1.status == TaskExecutionStatus.COMPLETED
-        assert task1.approval_actor == "Sarah Connor (Release VP)"
-        # Task 2 was automatically unblocked and completed by the automated handler
-        assert task2.status == TaskExecutionStatus.COMPLETED
-        assert rb.status == "COMPLETED"
+@pytest.mark.unit
+def test_control_api_collaborative_automation_endpoints() -> None:
+    """control_api.py exposes collaborative automation status, runbooks, decisions, and execution."""
+    import control_api
 
-        # Check cryptographic audit trail
-        records = temp_ledger.get_records()
-        approval_records = [r for r in records if r.action_type == "RECORD_HUMAN_JUDGMENT"]
-        assert len(approval_records) == 1
-        assert approval_records[0].accountable_owner == "Sarah Connor (Release VP)"
-        assert approval_records[0].status == "APPROVED"
+    status_doc = control_api.collaborative_automation_status_payload()
+    assert status_doc["schema"] == "hyba.collaborative.dashboard.v1"
+    assert status_doc["summary"]["registered_workflows"] >= 11
 
-    def test_operational_visibility_dashboard_single_pane_of_glass(self, temp_ledger):
-        """Tests the real-time operational dashboard."""
-        engine = CollaborativeRunbookExecutionEngine(ledger=temp_ledger)
-        rb = engine.create_runbook(
-            runbook_id="rb_dash",
-            name="Dashboard Runbook",
-            use_case=AutomationUseCaseType.CLOUD_MIGRATION,
-        )
+    cat_doc = control_api.collaborative_runbooks_payload()
+    assert cat_doc["schema"] == "hyba.collaborative.catalogue.v1"
+    assert "cyber_it_disaster_recovery" in cat_doc["canonical_workflows"]
+    assert "key_rotation" in cat_doc["repository_catalogue_runbooks"]
 
-        engine.add_task(
-            rb.runbook_id,
-            RunbookTask(
-                task_id="m1",
-                name="Step 1 Human Check",
-                task_type=RunbookTaskType.HUMAN_IN_THE_LOOP,
-                tool_category=AutomationToolCategory.COLLABORATIVE_RUNBOOK,
-                assigned_owner="Operator 1",
-            ),
-        )
-        engine.start_runbook(rb.runbook_id)
+    # Execute without human approvals -> AWAITING_HUMAN
+    code_run1, payload_run1 = control_api._collaborative_runbook_execute(
+        {"runbook_id": "technology_implementation"}
+    )
+    assert int(code_run1) == 200
+    assert payload_run1["status"] == "AWAITING_HUMAN"
 
-        dashboard = engine.get_operational_dashboard(rb.runbook_id)
-        assert dashboard.runbook_name == "Dashboard Runbook"
-        assert dashboard.use_case == "CLOUD_MIGRATION"
-        assert dashboard.human_tasks_pending_count == 1
-        assert dashboard.overall_progress_pct == 0.0
-        assert len(dashboard.live_telemetry_feed) == 1
+    # Record human approval via control_api handler
+    code_dec, payload_dec = control_api._collaborative_human_decision(
+        {
+            "runbook_id": "technology_implementation",
+            "step_id": "impl_04_stakeholder_handover",
+            "actor_id": "stakeholder-01",
+            "team_role": "stakeholder",
+            "approved": True,
+            "rationale": "Single-pane status verified and approved for handover.",
+        }
+    )
+    assert int(code_dec) == 200
+    assert payload_dec["ok"] is True
 
-    def test_bathtub_effect_risk_governor(self):
-        """Tests the Bathtub Effect risk governor under stable and high-complexity conditions."""
-        # 1. Stable condition (low risk)
-        stable = BathtubEffectRiskGovernor.assess_runbook_risk(
-            initial_task_count=10,
-            current_task_count=11,
-            failed_tasks_count=0,
-            duration_variance_pct=5.0,
-        )
-        assert stable.risk_level == BathtubRiskLevel.LOW_STABLE
-        assert stable.scope_creep_ratio == 1.1
-
-        # 2. Bathtub complexity spike condition (high scope creep + unexpected failure rate)
-        spike = BathtubEffectRiskGovernor.assess_runbook_risk(
-            initial_task_count=10,
-            current_task_count=18,  # +80% scope creep
-            failed_tasks_count=4,   # 22.2% failure rate
-            duration_variance_pct=45.0,
-        )
-        assert spike.risk_level == BathtubRiskLevel.HIGH_BATHTUB_COMPLEXITY_SPIKE
-        assert spike.scope_creep_ratio == 1.8
-        assert any("HALT SCOPE EXPANSION" in r for r in spike.mitigation_recommendations)
-        assert any("INJECT HUMAN CHECKPOINTS" in r for r in spike.mitigation_recommendations)
-
-    def test_use_case_1_disaster_recovery_orchestration(self, temp_ledger):
-        """Tests Use Case 1: Cyber and IT Disaster Recovery."""
-        engine = CollaborativeRunbookExecutionEngine(ledger=temp_ledger)
-        engine.register_automated_handler(
-            AutomationToolCategory.IT_AUTOMATION.value,
-            lambda task: True,
-        )
-
-        dr_orchestrator = DisasterRecoveryOrchestrator(engine)
-        rb = dr_orchestrator.build_disaster_recovery_runbook(
-            incident_id="INC-RANSOMWARE-8092",
-            target_datacenter_or_cloud="us-west-2-cloud-dr",
-        )
-        assert len(rb.tasks) == 4
-        assert "dr_step_1" in rb.tasks  # Automated snapshot
-        assert "dr_step_2" in rb.tasks  # Human security analyst
-        assert "dr_step_3" in rb.tasks  # Automated DNS failover
-        assert "dr_step_4" in rb.tasks  # Executive incident commander
-
-        # Start failover
-        engine.start_runbook(rb.runbook_id)
-        assert rb.tasks["dr_step_1"].status == TaskExecutionStatus.COMPLETED
-        assert rb.tasks["dr_step_2"].status == TaskExecutionStatus.AWAITING_HUMAN_APPROVAL
-
-        # Security analyst reviews and clears the failover
-        engine.submit_human_decision(
-            rb.runbook_id,
-            "dr_step_2",
-            approved=True,
-            actor_name="Alex Ward (Security Analyst)",
-            judgment_notes="Clean snapshot verified; ransomware payload isolated.",
-        )
-
-        # dr_step_3 auto-executes, unlocking dr_step_4
-        assert rb.tasks["dr_step_3"].status == TaskExecutionStatus.COMPLETED
-        assert rb.tasks["dr_step_4"].status == TaskExecutionStatus.AWAITING_HUMAN_APPROVAL
-
-        # Executive incident commander signs off
-        engine.submit_human_decision(
-            rb.runbook_id,
-            "dr_step_4",
-            approved=True,
-            actor_name="Chief Operating Officer",
-            judgment_notes="DR failover complete. Production live in us-west-2.",
-        )
-        assert rb.status == "COMPLETED"
-
-    def test_use_case_2_cloud_migration_orchestration(self, temp_ledger):
-        """Tests Use Case 2: Cloud Migration."""
-        engine = CollaborativeRunbookExecutionEngine(ledger=temp_ledger)
-        engine.register_automated_handler(AutomationToolCategory.IT_AUTOMATION.value, lambda t: True)
-        engine.register_automated_handler(AutomationToolCategory.IPAAS.value, lambda t: True)
-
-        mig_orchestrator = CloudMigrationOrchestrator(engine)
-        rb = mig_orchestrator.build_cloud_migration_runbook(
-            application_name="Core Ledgers",
-            source_environment="On-Prem Datacenter A",
-            target_cloud="AWS us-east-1",
-        )
-        assert len(rb.tasks) == 4
-        engine.start_runbook(rb.runbook_id)
-
-        # Provisioning and data sync auto-complete
-        assert rb.tasks["mig_step_1"].status == TaskExecutionStatus.COMPLETED
-        assert rb.tasks["mig_step_2"].status == TaskExecutionStatus.COMPLETED
-        # DBA decision gate waits for approval
-        assert rb.tasks["mig_step_3"].status == TaskExecutionStatus.AWAITING_HUMAN_APPROVAL
-
-        engine.submit_human_decision(
-            rb.runbook_id,
-            "mig_step_3",
-            approved=True,
-            actor_name="Elena Vance (DBA Lead)",
-            judgment_notes="Zero replication lag confirmed.",
-        )
-        assert rb.tasks["mig_step_4"].status == TaskExecutionStatus.COMPLETED
-        assert rb.status == "COMPLETED"
-
-    def test_use_case_3_release_management_orchestration(self, temp_ledger):
-        """Tests Use Case 3: Application Release Management."""
-        engine = CollaborativeRunbookExecutionEngine(ledger=temp_ledger)
-        engine.register_automated_handler(AutomationToolCategory.IT_AUTOMATION.value, lambda t: True)
-
-        rel_orchestrator = ApplicationReleaseOrchestrator(engine)
-        rb = rel_orchestrator.build_release_runbook(
-            service_name="payment-processor",
-            release_version="3.4.1",
-        )
-        assert len(rb.tasks) == 3
-        engine.start_runbook(rb.runbook_id)
-
-        assert rb.tasks["rel_step_1"].status == TaskExecutionStatus.COMPLETED
-        assert rb.tasks["rel_step_2"].status == TaskExecutionStatus.AWAITING_HUMAN_APPROVAL
-
-        engine.submit_human_decision(
-            rb.runbook_id,
-            "rel_step_2",
-            approved=True,
-            actor_name="DevOps Release Lead",
-            judgment_notes="Canary metrics show 0% error rate.",
-        )
-        assert rb.tasks["rel_step_3"].status == TaskExecutionStatus.COMPLETED
-        assert rb.status == "COMPLETED"
-
-    def test_use_case_4_complex_technology_implementation(self, temp_ledger):
-        """Tests Use Case 4: Complex Technology Implementation."""
-        engine = CollaborativeRunbookExecutionEngine(ledger=temp_ledger)
-        engine.register_automated_handler(AutomationToolCategory.IT_AUTOMATION.value, lambda t: True)
-
-        impl_orchestrator = TechnologyImplementationOrchestrator(engine)
-        components = ["Kafka Cluster", "Redis Substrate", "Service Mesh Gateway"]
-        rb = impl_orchestrator.build_implementation_runbook(
-            project_name="Streaming Core",
-            system_components=components,
-        )
-        assert len(rb.tasks) == 4  # 3 component steps + 1 chief architect signoff
-        engine.start_runbook(rb.runbook_id)
-
-        # First 3 automated steps chain-complete
-        assert rb.tasks["impl_step_1"].status == TaskExecutionStatus.COMPLETED
-        assert rb.tasks["impl_step_2"].status == TaskExecutionStatus.COMPLETED
-        assert rb.tasks["impl_step_3"].status == TaskExecutionStatus.COMPLETED
-        assert rb.tasks["impl_final_signoff"].status == TaskExecutionStatus.AWAITING_HUMAN_APPROVAL
-
-        engine.submit_human_decision(
-            rb.runbook_id,
-            "impl_final_signoff",
-            approved=True,
-            actor_name="Chief Architect",
-            judgment_notes="All components online and peer-reviewed.",
-        )
-        assert rb.status == "COMPLETED"
-
-    def test_master_system_collaborative_assessment(self, temp_ledger):
-        """Tests master system holistic evaluation and immutable audit logging."""
-        system = CollaborativeAutomationMasterSystem(ledger=temp_ledger)
-
-        # Evaluate healthy collaborative automation (symbiotic balance: ~16.7% human judgment)
-        report = system.run_collaborative_automation_assessment(
-            active_runbooks_count=12,
-            human_judgment_interventions_count=20,
-            automated_actions_count=100,
-            bathtub_scope_creep_ratio=1.1,
-            bathtub_failure_rate_pct=3.0,
-        )
-
-        assert report["is_symbiotic_collaboration"] is True
-        assert report["human_in_the_loop_ratio_pct"] == 16.7
-        assert report["bathtub_effect_assessment"]["risk_level"] == "LOW_STABLE"
-        assert "healthy symbiotic state" in report["executive_summary"]
-
-        # Verify audit records logged to ledger
-        records = temp_ledger.get_records()
-        assert len(records) >= 1
-        eval_record = next(r for r in records if r.action_type == "COLLABORATIVE_AUTOMATION_ASSESSMENT")
-        assert eval_record.status == "ASSESSMENT_COMPLETED"
-        assert "Human involvement ratio=16.7%" in eval_record.rationale_summary
+    # Re-execute after human approval -> COMPLETED_VERIFIED
+    code_run2, payload_run2 = control_api._collaborative_runbook_execute(
+        {"runbook_id": "technology_implementation"}
+    )
+    assert int(code_run2) == 200
+    assert payload_run2["status"] == "COMPLETED_VERIFIED"

@@ -47,7 +47,7 @@ jobs:
         run: python scripts/verify_unified_enterprise.py
       - name: Upload evidence even when verification fails
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: unified-enterprise-evidence-${{ matrix.python }}
           path: artifacts/unified-enterprise/
@@ -72,7 +72,7 @@ jobs:
         run: python packaging/toe/build_and_verify.py
       - name: Retain installed-artifact evidence on success and failure
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: unified-installed-artifact-evidence-${{ matrix.python }}
           path: packaging/toe/dist/

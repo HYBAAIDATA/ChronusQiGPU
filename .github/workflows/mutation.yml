@@ -93,7 +93,7 @@ jobs:
           --workers 4
           --min-score ${{ matrix.floor }}
           --json mutation-${{ matrix.module }}.json
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:
           name: mutation-${{ matrix.module }}
@@ -130,7 +130,7 @@ jobs:
           python scripts/critical_mutation_gate.py
           --mutation ${{ matrix.mutation }}
           --json critical-mutation-${{ matrix.mutation }}.json
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:
           name: critical-mutation-${{ matrix.mutation }}

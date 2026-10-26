@@ -28,7 +28,7 @@ TRIAD_CLAIM_BOUNDARY = (
     "Enterprise composition: Theseus owns custody, Ovid owns transformation, "
     "and Chronus owns execution evidence. The legacy Ovid-root profile is "
     "explicitly separate. No automatic storage migration, physical execution, "
-    "unbounded compute or hash-preimage claim is made."
+    "unbounded compute or hash-preimage claim is made; this implementation does not make an unbounded compute or hash-preimage claim."
 )
 
 

@@ -1781,3 +1781,766 @@ class BoardReadinessAssessor:
                 else "Action required: Complete outstanding inventory or audit chain requirements before board sign-off."
             ),
         }
+
+
+# ==============================================================================
+# 13. ENHANCED MODEL TIER ROUTER & OPEN-WEIGHT VS. FRONTIER TOKENOMICS (TAYLOR)
+# ==============================================================================
+
+ModelTierRouter.DEFAULT_CATALOGUE["open_weight_finetuned_specialist"] = {
+    "model": "euclid-openweight-finetuned-specialist-v2",
+    "context_window": 65536,
+    "cost_per_1k_tokens": 0.0004,
+    "provider": "self_hosted_finetuned",
+}
+
+_orig_select_model = ModelTierRouter.select_model
+
+
+@classmethod  # type: ignore[misc]
+def _enhanced_select_model(
+    cls,
+    task_ambiguity_score: float,
+    requires_deep_reasoning: bool,
+    sovereignty_mode: SovereigntyMode,
+    max_cost_budget: Optional[float] = None,
+    has_domain_finetuned_weights: bool = False,
+) -> Dict[str, Any]:
+    """
+    Routes the task to the optimal model based on ambiguity, depth, post-training
+    fine-tuning availability, and sovereignty constraints.
+    """
+    if sovereignty_mode == SovereigntyMode.STRICT_SOVEREIGN_LOCAL:
+        if has_domain_finetuned_weights and not requires_deep_reasoning:
+            return {
+                "tier": "open_weight_finetuned_specialist",
+                "model": cls.DEFAULT_CATALOGUE["open_weight_finetuned_specialist"]["model"],
+                "reason": "Strict sovereignty + domain post-training fine-tuned specialist weights",
+                "estimated_cost_usd": cls.DEFAULT_CATALOGUE["open_weight_finetuned_specialist"]["cost_per_1k_tokens"],
+            }
+        return _orig_select_model(
+            task_ambiguity_score=task_ambiguity_score,
+            requires_deep_reasoning=requires_deep_reasoning,
+            sovereignty_mode=sovereignty_mode,
+            max_cost_budget=max_cost_budget,
+        )
+
+    if not requires_deep_reasoning and task_ambiguity_score < 0.65 and has_domain_finetuned_weights and task_ambiguity_score <= 0.35:
+        return {
+            "tier": "open_weight_finetuned_specialist",
+            "model": cls.DEFAULT_CATALOGUE["open_weight_finetuned_specialist"]["model"],
+            "reason": "Specialized low-ambiguity task routed to post-trained fine-tuned open-weight model",
+            "estimated_cost_usd": cls.DEFAULT_CATALOGUE["open_weight_finetuned_specialist"]["cost_per_1k_tokens"],
+        }
+
+    return _orig_select_model(
+        task_ambiguity_score=task_ambiguity_score,
+        requires_deep_reasoning=requires_deep_reasoning,
+        sovereignty_mode=sovereignty_mode,
+        max_cost_budget=max_cost_budget,
+    )
+
+
+@classmethod  # type: ignore[misc]
+def _evaluate_open_weight_vs_frontier(
+    cls,
+    monthly_token_volume_millions: float,
+    task_specialization_ratio: float,
+    requires_air_gapped_sovereignty: bool,
+    contractual_zdr_accepted: bool = True,
+    fine_tuning_engineering_cost_usd: float = 25000.0,
+) -> Dict[str, Any]:
+    """
+    Evaluates a CIO/CTO's architectural tradeoff between self-hosted open-weight models
+    (1. cost, 2. post-training fine-tuning, 3. full-stack sovereignty) and frontier lab
+    offerings (vertical compute co-design, self-distillation advantage, contractual sovereignty).
+    """
+    if monthly_token_volume_millions < 0:
+        raise ValueError("monthly_token_volume_millions must be non-negative")
+    if not (0.0 <= task_specialization_ratio <= 1.0):
+        raise ValueError("task_specialization_ratio must be in [0.0, 1.0]")
+
+    total_1k_units = monthly_token_volume_millions * 1000.0
+    ambiguous_share = 1.0 - task_specialization_ratio
+
+    frontier_monthly_cost = total_1k_units * (
+        ambiguous_share * cls.DEFAULT_CATALOGUE["frontier_reasoning"]["cost_per_1k_tokens"]
+        + task_specialization_ratio * cls.DEFAULT_CATALOGUE["frontier_distilled_fast"]["cost_per_1k_tokens"]
+    )
+
+    amortized_ft_monthly = fine_tuning_engineering_cost_usd / 12.0
+    hybrid_open_weight_monthly_cost = amortized_ft_monthly + total_1k_units * (
+        ambiguous_share * cls.DEFAULT_CATALOGUE["frontier_reasoning"]["cost_per_1k_tokens"]
+        + task_specialization_ratio * cls.DEFAULT_CATALOGUE["open_weight_finetuned_specialist"]["cost_per_1k_tokens"]
+    )
+
+    if requires_air_gapped_sovereignty and not contractual_zdr_accepted:
+        recommended_strategy = "STRICT_OPEN_WEIGHT_SOVEREIGN"
+        primary_driver = "Full-stack air-gapped sovereignty requirement cannot be met contractually"
+    elif hybrid_open_weight_monthly_cost < frontier_monthly_cost and task_specialization_ratio >= 0.50:
+        recommended_strategy = "HYBRID_FRONTIER_REASONING_PLUS_FINETUNED_OPEN_WEIGHT"
+        primary_driver = (
+            "High specialization volume justifies post-training fine-tuned open-weight "
+            "models alongside frontier reasoning for ambiguous tasks"
+        )
+    else:
+        recommended_strategy = "FRONTIER_SELF_DISTILLED_PORTFOLIO_WITH_CONTRACTUAL_SOVEREIGNTY"
+        primary_driver = (
+            "Frontier labs' vertical compute co-design and self-distilled models outperform "
+            "self-hosted open weights on TCO while contractual ZDR satisfies sovereignty"
+        )
+
+    return {
+        "recommended_strategy": recommended_strategy,
+        "primary_driver": primary_driver,
+        "cio_open_weight_pillars": {
+            "cost_efficiency_favorable": hybrid_open_weight_monthly_cost < frontier_monthly_cost,
+            "post_training_fine_tuning_viable": task_specialization_ratio >= 0.50,
+            "full_stack_sovereignty_mandated": requires_air_gapped_sovereignty and not contractual_zdr_accepted,
+        },
+        "frontier_structural_advantages": {
+            "vertical_hardware_compute_integration": True,
+            "self_distillation_fast_tier_available": True,
+            "contractual_sovereignty_equivalence": contractual_zdr_accepted,
+        },
+        "estimated_frontier_monthly_cost_usd": round(frontier_monthly_cost, 2),
+        "estimated_hybrid_open_weight_monthly_cost_usd": round(hybrid_open_weight_monthly_cost, 2),
+        "monthly_net_savings_with_hybrid_usd": round(
+            max(0.0, frontier_monthly_cost - hybrid_open_weight_monthly_cost), 2
+        ),
+    }
+
+
+ModelTierRouter.select_model = _enhanced_select_model  # type: ignore[assignment]
+ModelTierRouter.evaluate_open_weight_vs_frontier = _evaluate_open_weight_vs_frontier  # type: ignore[attr-defined]
+
+
+# ==============================================================================
+# 14. CISO BACKLOG TRIAGE & DEMOCRATIZED SMB/CLINIC SECURITY APPLIANCE (TAYLOR)
+# ==============================================================================
+
+@classmethod  # type: ignore[misc]
+def _triage_vulnerability_backlog(
+    cls,
+    candidates: List[VulnerabilityCandidate],
+    sandbox_regression_runner: Callable[[str], bool],
+) -> Dict[str, Any]:
+    """
+    Triages a backlog of AI-discovered legacy vulnerabilities ('cyber tech debt')
+    without taking down production systems ('Do you want the system running, or do
+    you want it patched?').
+    """
+    ranked = sorted(
+        candidates,
+        key=lambda v: (v.exploitability_score * (1.0 - v.system_breakage_risk), v.exploitability_score),
+        reverse=True,
+    )
+    canary_auto_patched: List[Dict[str, Any]] = []
+    staged_for_human: List[Dict[str, Any]] = []
+    quarantined_with_virtual_shield: List[Dict[str, Any]] = []
+
+    for vuln in ranked:
+        verdict = dict(cls.evaluate_and_stage_patch(vuln, sandbox_regression_runner))
+        verdict["component"] = vuln.component
+        verdict["priority_index"] = round(
+            vuln.exploitability_score * (1.0 - vuln.system_breakage_risk), 4
+        )
+        if verdict["action"] == "CANARY_AUTO_PATCH":
+            verdict["virtual_shield_applied"] = False
+            canary_auto_patched.append(verdict)
+        elif verdict["action"] == "STAGE_FOR_HUMAN_APPROVAL":
+            verdict["virtual_shield_applied"] = vuln.exploitability_score >= 0.70
+            staged_for_human.append(verdict)
+        else:
+            verdict["virtual_shield_applied"] = True
+            quarantined_with_virtual_shield.append(verdict)
+
+    return {
+        "total_discovered_vulnerabilities": len(candidates),
+        "production_uptime_preserved": True,
+        "canary_auto_patched_count": len(canary_auto_patched),
+        "staged_for_human_approval_count": len(staged_for_human),
+        "quarantined_with_virtual_shield_count": len(quarantined_with_virtual_shield),
+        "canary_auto_patched": canary_auto_patched,
+        "staged_for_human_approval": staged_for_human,
+        "quarantined_with_virtual_shield": quarantined_with_virtual_shield,
+    }
+
+
+@staticmethod  # type: ignore[misc]
+def _verify_post_patch_telemetry(
+    vuln_id: str,
+    baseline_error_rate: float,
+    observed_error_rate: float,
+    baseline_latency_ms: float,
+    observed_latency_ms: float,
+    max_error_delta: float = 0.005,
+    max_latency_multiplier: float = 1.25,
+) -> Dict[str, Any]:
+    """
+    Active post-deployment canary monitoring: verifies that an autonomously deployed
+    security patch has not degraded production availability or latency, triggering
+    instant rollback + virtual shielding if anomalies appear.
+    """
+    error_spike = (observed_error_rate - baseline_error_rate) > max_error_delta
+    latency_spike = observed_latency_ms > (baseline_latency_ms * max_latency_multiplier)
+    healthy = not (error_spike or latency_spike)
+
+    return {
+        "vuln_id": vuln_id,
+        "canary_healthy": healthy,
+        "action": "PROMOTE_TO_FULL_PRODUCTION" if healthy else "AUTO_ROLLBACK_PATCH_AND_ENGAGE_VIRTUAL_SHIELD",
+        "error_spike_detected": error_spike,
+        "latency_spike_detected": latency_spike,
+        "observed_error_rate": observed_error_rate,
+        "observed_latency_ms": observed_latency_ms,
+    }
+
+
+SafePatchOrchestrator.triage_vulnerability_backlog = _triage_vulnerability_backlog  # type: ignore[attr-defined]
+SafePatchOrchestrator.verify_post_patch_telemetry = _verify_post_patch_telemetry  # type: ignore[attr-defined]
+
+
+class DemocratizedSecurityAppliance:
+    """
+    Taylor Principle: Out-of-the-box automated cyber defense for vulnerable cohorts
+    (local medical clinics, regional hospitals, community banks, SMBs) that face
+    acute societal vulnerability (ransomware, AI-accelerated exploits) but lack
+    Fortune-500 CISO security engineering teams.
+    """
+
+    SUPPORTED_COHORTS = frozenset({
+        "LOCAL_MEDICAL_CLINIC",
+        "REGIONAL_HOSPITAL",
+        "COMMUNITY_BANK",
+        "SMALL_MEDIUM_BUSINESS",
+        "MUNICIPAL_UTILITY",
+        "SCHOOL_DISTRICT",
+    })
+
+    @classmethod
+    def deploy_out_of_the_box_shield(
+        cls,
+        organization_name: str,
+        cohort_type: str,
+        endpoint_count: int,
+        legacy_unpatched_systems: int = 0,
+        ransomware_immutable_backup_enabled: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Provisions a zero-configuration autonomous defensive appliance for an SMB or
+        critical community institution.
+        """
+        if not organization_name or not organization_name.strip():
+            raise ValueError("organization_name is required")
+        normalized_cohort = cohort_type.strip().upper()
+        if normalized_cohort not in cls.SUPPORTED_COHORTS:
+            raise ValueError(
+                f"Unsupported cohort_type '{cohort_type}'. Must be one of {sorted(cls.SUPPORTED_COHORTS)}"
+            )
+        if endpoint_count < 1:
+            raise ValueError("endpoint_count must be >= 1")
+
+        virtual_shields_provisioned = max(0, legacy_unpatched_systems)
+        readiness_posture = (
+            "ZERO_CONFIG_AUTONOMOUS_PROTECTION_ACTIVE"
+            if ransomware_immutable_backup_enabled
+            else "DEGRADED_BACKUP_REQUIRED"
+        )
+
+        return {
+            "organization_name": organization_name.strip(),
+            "cohort_type": normalized_cohort,
+            "protection_status": readiness_posture,
+            "requires_in_house_ciso": False,
+            "protected_endpoints": endpoint_count,
+            "legacy_endpoints_virtually_shielded": virtual_shields_provisioned,
+            "autonomous_capabilities_enabled": [
+                "CONTINUOUS_SHADOW_SANDBOX_PATCHING",
+                "RANSOMWARE_CANARY_FILE_TRIPWIRES",
+                "ZERO_TRUST_EGRESS_CONTAINMENT",
+                "VIRTUAL_WAF_FOR_UNPATCHABLE_LEGACY_SYSTEMS",
+                "IMMUTABLE_AIRGAPPED_MICRO_BACKUPS" if ransomware_immutable_backup_enabled else "BACKUP_PENDING",
+            ],
+        }
+
+
+# ==============================================================================
+# 15. REVENUE-ALIGNED WORKFLOWS, 80/20 REDESIGN & COMPETITIVE REINVESTMENT
+# ==============================================================================
+
+class WorkflowCategory(str, Enum):
+    """
+    Taylor & Kutcher Principle: Enterprise workflows reshaped by autonomous reasoning agents.
+    """
+    CUSTOMER_SERVICE_FRONT_DOOR = "CUSTOMER_SERVICE_FRONT_DOOR"
+    MERCHANT_ONBOARDING = "MERCHANT_ONBOARDING"
+    KYC_COMPLIANCE = "KYC_COMPLIANCE"
+    PRESCRIPTION_DRUG_ADHERENCE = "PRESCRIPTION_DRUG_ADHERENCE"
+    MORTGAGE_ORIGINATION = "MORTGAGE_ORIGINATION"
+    AUTONOMOUS_SOFTWARE_ENGINEERING = "AUTONOMOUS_SOFTWARE_ENGINEERING"
+
+
+class RevenueAlignedWorkflowEngine:
+    """
+    Implements Bret Taylor & Eric Kutcher's institutional transformation framework:
+    1. Digital Front-Door & Revenue-Aligned Workflows:
+       - Customer service resolving >90% of cases autonomously, decoupling company
+         growth from operating cost while improving retention and lowering CAC.
+       - Revenue-aligned workflows: merchant onboarding, KYC compliance, prescription
+         drug adherence, mortgage origination, and software engineering.
+    2. Kutcher's 80/20 Institutional Transformation Rule:
+       - Moving from individual productivity to institutional-level productivity is an
+         80% business process redesign problem and a 20% technology problem.
+    3. Taylor's Competitive Reinvestment Imperative:
+       - 'Adopting AI for your core corporate processes will be an imperative, not a
+         competitive advantage.' Efficiency gains in competitive markets are reinvested
+         into lower customer prices, lower CAC, better retention, and MORE software
+         engineering capacity (Jevons paradox for software creation).
+    """
+
+    BUSINESS_REDESIGN_WEIGHT = 0.80
+    TECHNOLOGY_READINESS_WEIGHT = 0.20
+    FRONT_DOOR_AUTONOMOUS_BENCHMARK = 0.90
+
+    @classmethod
+    def evaluate_workflow_deployment(
+        cls,
+        workflow_category: WorkflowCategory,
+        monthly_case_volume: int,
+        autonomous_resolution_rate: float,
+        legacy_cost_per_case_usd: float,
+        agentic_cost_per_case_usd: float,
+        process_redesign_score: float,
+        technology_readiness_score: float,
+        baseline_cac_usd: float = 120.0,
+        baseline_annual_retention_rate: float = 0.82,
+    ) -> Dict[str, Any]:
+        """
+        Evaluates an autonomous agent workflow deployment across unit economics,
+        Kutcher's 80/20 institutional transformation index, and growth-cost decoupling.
+        """
+        if monthly_case_volume < 0:
+            raise ValueError("monthly_case_volume must be non-negative")
+        if not (0.0 <= autonomous_resolution_rate <= 1.0):
+            raise ValueError("autonomous_resolution_rate must be in [0.0, 1.0]")
+        if not (0.0 <= process_redesign_score <= 1.0) or not (0.0 <= technology_readiness_score <= 1.0):
+            raise ValueError("process_redesign_score and technology_readiness_score must be in [0.0, 1.0]")
+
+        # Kutcher 80/20 institutional transformation score
+        institutional_transformation_index = (
+            cls.BUSINESS_REDESIGN_WEIGHT * process_redesign_score
+            + cls.TECHNOLOGY_READINESS_WEIGHT * technology_readiness_score
+        )
+        individual_productivity_trap = process_redesign_score < 0.50 and technology_readiness_score >= 0.70
+
+        autonomously_resolved_cases = int(round(monthly_case_volume * autonomous_resolution_rate))
+        human_escalated_cases = monthly_case_volume - autonomously_resolved_cases
+
+        legacy_monthly_cost = monthly_case_volume * legacy_cost_per_case_usd
+        blended_monthly_cost = (
+            autonomously_resolved_cases * agentic_cost_per_case_usd
+            + human_escalated_cases * legacy_cost_per_case_usd
+        )
+        # Realized savings scale with institutional process redesign maturity
+        realized_monthly_savings = max(
+            0.0, (legacy_monthly_cost - blended_monthly_cost) * institutional_transformation_index
+        )
+
+        # Growth decoupled from cost when autonomous resolution >= 90% and process is redesigned
+        growth_decoupled_from_cost = (
+            autonomous_resolution_rate >= cls.FRONT_DOOR_AUTONOMOUS_BENCHMARK
+            and process_redesign_score >= 0.65
+        )
+
+        # Digital front door improves retention and lowers CAC via instant 24/7 personalized resolution
+        projected_cac_usd = round(
+            baseline_cac_usd * (1.0 - 0.18 * autonomous_resolution_rate * institutional_transformation_index), 2
+        )
+        projected_retention_rate = round(
+            min(0.99, baseline_annual_retention_rate + 0.08 * autonomous_resolution_rate * institutional_transformation_index),
+            4,
+        )
+
+        return {
+            "workflow_category": workflow_category.value,
+            "monthly_case_volume": monthly_case_volume,
+            "autonomously_resolved_cases": autonomously_resolved_cases,
+            "human_escalated_cases": human_escalated_cases,
+            "autonomous_resolution_rate": round(autonomous_resolution_rate, 4),
+            "meets_90pct_front_door_benchmark": autonomous_resolution_rate >= cls.FRONT_DOOR_AUTONOMOUS_BENCHMARK,
+            "growth_decoupled_from_cost": growth_decoupled_from_cost,
+            "kutcher_80_20_assessment": {
+                "business_process_redesign_weight": cls.BUSINESS_REDESIGN_WEIGHT,
+                "technology_readiness_weight": cls.TECHNOLOGY_READINESS_WEIGHT,
+                "process_redesign_score": process_redesign_score,
+                "technology_readiness_score": technology_readiness_score,
+                "institutional_transformation_index": round(institutional_transformation_index, 4),
+                "in_individual_productivity_trap": individual_productivity_trap,
+                "diagnosis": (
+                    "WARNING: Individual productivity trap detected — technology is deployed on legacy workflows without 80% business process redesign."
+                    if individual_productivity_trap
+                    else "Institutional transformation active — end-to-end workflow redesigned around autonomous agency."
+                ),
+            },
+            "unit_economics": {
+                "legacy_monthly_cost_usd": round(legacy_monthly_cost, 2),
+                "blended_agentic_monthly_cost_usd": round(blended_monthly_cost, 2),
+                "realized_monthly_savings_usd": round(realized_monthly_savings, 2),
+                "baseline_cac_usd": baseline_cac_usd,
+                "projected_cac_usd": projected_cac_usd,
+                "baseline_annual_retention_rate": baseline_annual_retention_rate,
+                "projected_annual_retention_rate": projected_retention_rate,
+            },
+        }
+
+    @classmethod
+    def simulate_competitive_reinvestment(
+        cls,
+        annual_ai_efficiency_savings_usd: float,
+        market_competitiveness_index: float,
+        current_software_engineering_headcount: int,
+        coding_agent_productivity_multiplier: float = 2.2,
+    ) -> Dict[str, Any]:
+        """
+        Models Bret Taylor's competitive market dynamics:
+        - Adopting AI for core processes is a survival imperative, not a permanent margin windfall.
+        - Efficiency savings are reinvested into customer price/value improvements, lower CAC,
+          and expanded software creation (companies build MORE software rather than shrinking
+          engineering capacity because every organization was previously software-supply-constrained).
+        """
+        if annual_ai_efficiency_savings_usd < 0:
+            raise ValueError("annual_ai_efficiency_savings_usd must be non-negative")
+        if not (0.0 <= market_competitiveness_index <= 1.0):
+            raise ValueError("market_competitiveness_index must be in [0.0, 1.0]")
+        if current_software_engineering_headcount < 0:
+            raise ValueError("current_software_engineering_headcount must be non-negative")
+        if coding_agent_productivity_multiplier < 1.0:
+            raise ValueError("coding_agent_productivity_multiplier must be >= 1.0")
+
+        reinvested_share = 0.50 + 0.40 * market_competitiveness_index
+        retained_margin_share = 1.0 - reinvested_share
+
+        reinvested_into_customer_price_and_cac_usd = annual_ai_efficiency_savings_usd * (reinvested_share * 0.55)
+        reinvested_into_new_software_and_products_usd = annual_ai_efficiency_savings_usd * (reinvested_share * 0.45)
+        retained_operating_margin_usd = annual_ai_efficiency_savings_usd * retained_margin_share
+
+        effective_software_output_fte_equivalent = round(
+            current_software_engineering_headcount * coding_agent_productivity_multiplier, 2
+        )
+
+        return {
+            "strategic_posture": "COMPETITIVE_IMPERATIVE_NOT_OPTIONAL",
+            "annual_ai_efficiency_savings_usd": round(annual_ai_efficiency_savings_usd, 2),
+            "reinvested_into_customer_value_and_lower_cac_usd": round(reinvested_into_customer_price_and_cac_usd, 2),
+            "reinvested_into_expanded_software_creation_usd": round(reinvested_into_new_software_and_products_usd, 2),
+            "retained_operating_margin_usd": round(retained_operating_margin_usd, 2),
+            "software_engineering_jevons_effect": {
+                "current_engineering_headcount": current_software_engineering_headcount,
+                "coding_agent_productivity_multiplier": coding_agent_productivity_multiplier,
+                "effective_software_output_fte_equivalent": effective_software_output_fte_equivalent,
+                "net_software_demand_trajectory": "EXPANDING_MORE_SOFTWARE_BUILT",
+            },
+        }
+
+
+# ==============================================================================
+# 16. INFRASTRUCTURE BET & LOCAL COMMUNITY ACCOUNTABILITY GOVERNOR (TAYLOR)
+# ==============================================================================
+
+class InfrastructureBetAndCommunityGovernor:
+    """
+    Implements Bret Taylor's framework on the US/global AI data center buildout:
+    1. Sizing the Infrastructure Bet:
+       - Time-horizon impedance mismatch: AI model progress is measured in days/weeks,
+         whereas power & data center construction requires multiyear (3-5 yr) commitments.
+       - Evaluates system-level financing health: hyperscaler operating cash flow vs.
+         debt/project finance, and the transition from training capex to high-margin
+         enterprise inference revenue.
+       - Strategic asymmetry: despite financial overbuild risk (akin to the 1990s fiber
+         boom), it is a strategic bet the nation/enterprise must make.
+    2. Local Community Accountability ('Two Questions Industry Must Answer'):
+       - Q1: 'Will AI benefit me broadly?'
+       - Q2: 'Will this data center benefit my community?'
+       - Requires zero residential electricity bill inflation, water/environmental
+         stewardship, local blue-collar jobs (electricians, HVAC technicians, plumbers),
+         local tax-base funding, and transparent town-hall engagement.
+    """
+
+    @classmethod
+    def evaluate_infrastructure_bet(
+        cls,
+        planned_capex_billions_usd: float,
+        funded_by_operating_cash_flow_pct: float,
+        funded_by_debt_pct: float,
+        enterprise_inference_workload_share: float,
+        enterprise_inference_gross_margin: float,
+        ai_innovation_cycle_days: int = 14,
+        datacenter_build_lead_time_years: float = 3.5,
+    ) -> Dict[str, Any]:
+        """
+        Evaluates the macroeconomic and financial structure of a multiyear AI data center
+        buildout against the days-vs-years time-horizon impedance mismatch.
+        """
+        if planned_capex_billions_usd <= 0:
+            raise ValueError("planned_capex_billions_usd must be positive")
+        if not (0.0 <= funded_by_operating_cash_flow_pct <= 1.0) or not (0.0 <= funded_by_debt_pct <= 1.0):
+            raise ValueError("funding shares must be in [0.0, 1.0]")
+        if not (0.0 <= enterprise_inference_workload_share <= 1.0):
+            raise ValueError("enterprise_inference_workload_share must be in [0.0, 1.0]")
+        if not (0.0 <= enterprise_inference_gross_margin <= 1.0):
+            raise ValueError("enterprise_inference_gross_margin must be in [0.0, 1.0]")
+
+        build_lead_days = datacenter_build_lead_time_years * 365.0
+        impedance_mismatch_ratio = round(build_lead_days / max(ai_innovation_cycle_days, 1), 2)
+
+        # Equilibrium health: strong operating cash flow + growing high-margin enterprise inference
+        inference_monetization_strength = enterprise_inference_workload_share * enterprise_inference_gross_margin
+        systemic_debt_risk = "ELEVATED" if funded_by_debt_pct > 0.45 else "MANAGEABLE_CASH_FLOW_BACKED"
+
+        return {
+            "planned_capex_billions_usd": planned_capex_billions_usd,
+            "strategic_recommendation": "NECESSARY_ASYMMETRIC_BET_PROCEED_WITH_DISCIPLINE",
+            "time_horizon_impedance_mismatch": {
+                "ai_innovation_cycle_days": ai_innovation_cycle_days,
+                "datacenter_build_lead_time_years": datacenter_build_lead_time_years,
+                "lead_time_to_innovation_ratio": impedance_mismatch_ratio,
+                "explanation": "AI capabilities evolve in days while power and data center capacity require multiyear physical buildouts.",
+            },
+            "financing_and_margin_equilibrium": {
+                "funded_by_operating_cash_flow_pct": funded_by_operating_cash_flow_pct,
+                "funded_by_debt_pct": funded_by_debt_pct,
+                "systemic_debt_risk": systemic_debt_risk,
+                "enterprise_inference_workload_share": enterprise_inference_workload_share,
+                "enterprise_inference_gross_margin": enterprise_inference_gross_margin,
+                "inference_monetization_index": round(inference_monetization_strength, 4),
+                "durable_long_term_equilibrium": (
+                    funded_by_operating_cash_flow_pct >= 0.55 and inference_monetization_strength >= 0.25
+                ),
+            },
+        }
+
+    @classmethod
+    def evaluate_community_accountability(
+        cls,
+        facility_region: str,
+        protects_residential_power_rates: bool,
+        behind_the_meter_or_new_clean_generation_mw: float,
+        closed_loop_water_stewardship: bool,
+        local_skilled_trades_jobs_created: int,
+        annual_local_tax_contribution_millions_usd: float,
+        proactive_town_hall_engagement: bool,
+        broad_citizen_ai_access_programs: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Audits whether a data center project answers Bret Taylor's two community accountability questions:
+        1. 'Will AI benefit me broadly?'
+        2. 'Will this data center benefit my community?'
+        """
+        if not facility_region or not facility_region.strip():
+            raise ValueError("facility_region is required")
+
+        pillars = {
+            "zero_residential_electricity_bill_inflation": (
+                protects_residential_power_rates and behind_the_meter_or_new_clean_generation_mw > 0
+            ),
+            "water_and_environmental_stewardship": closed_loop_water_stewardship,
+            "local_blue_collar_trades_employment": local_skilled_trades_jobs_created >= 50,
+            "local_tax_base_contribution": annual_local_tax_contribution_millions_usd > 0.0,
+            "transparent_town_hall_governance": proactive_town_hall_engagement,
+            "broad_citizen_ai_benefit_access": broad_citizen_ai_access_programs,
+        }
+
+        passed_pillars = sum(1 for v in pillars.values() if v)
+        accountability_score_pct = round((passed_pillars / len(pillars)) * 100.0, 2)
+        community_benefits_verified = (
+            pillars["zero_residential_electricity_bill_inflation"]
+            and pillars["water_and_environmental_stewardship"]
+            and pillars["local_blue_collar_trades_employment"]
+            and pillars["transparent_town_hall_governance"]
+        )
+
+        return {
+            "facility_region": facility_region.strip(),
+            "community_social_license_status": (
+                "APPROVED_COMMUNITY_PARTNER" if community_benefits_verified else "SOCIAL_LICENSE_AT_RISK"
+            ),
+            "accountability_score_pct": accountability_score_pct,
+            "two_core_questions": {
+                "will_ai_benefit_me_broadly": broad_citizen_ai_access_programs,
+                "will_this_datacenter_benefit_my_community": community_benefits_verified,
+            },
+            "pillar_verification": pillars,
+            "economic_and_grid_metrics": {
+                "new_dedicated_power_generation_mw": behind_the_meter_or_new_clean_generation_mw,
+                "local_electricians_hvac_plumbers_jobs": local_skilled_trades_jobs_created,
+                "annual_local_tax_contribution_millions_usd": annual_local_tax_contribution_millions_usd,
+            },
+        }
+
+
+# ==============================================================================
+# 17. DEMOCRATIZED SUPERINTELLIGENCE ADVISORS & DEMOGRAPHIC ENGINE (TAYLOR)
+# ==============================================================================
+
+class UniversalAdvisorArchetype(str, Enum):
+    """
+    Bret Taylor's flagship Democratized Superintelligence archetypes:
+    'Everyone in the world will have access to a superintelligent financial advisor
+    and the greatest primary care physician. Every kid in the world will have access
+    to a personalized tutor.' Plus D2C Entrepreneur Co-Founder agents.
+    """
+    SUPERINTELLIGENT_FINANCIAL_ADVISOR = "SUPERINTELLIGENT_FINANCIAL_ADVISOR"
+    PRIMARY_CARE_PHYSICIAN_ADVISOR = "PRIMARY_CARE_PHYSICIAN_ADVISOR"
+    PERSONALIZED_STUDENT_TUTOR = "PERSONALIZED_STUDENT_TUTOR"
+    D2C_ENTREPRENEUR_COFOUNDER = "D2C_ENTREPRENEUR_COFOUNDER"
+
+
+class DemocratizedSuperintelligenceEngine:
+    """
+    Delivers the world's best frontier knowledge and autonomous execution to every
+    individual and small entrepreneur under Rich Isenberg's decision-rights guardrails,
+    and models macroeconomic productivity in an aging/shrinking global workforce.
+    """
+
+    ARCHETYPE_BLUEPRINTS: Dict[UniversalAdvisorArchetype, Dict[str, Any]] = {
+        UniversalAdvisorArchetype.SUPERINTELLIGENT_FINANCIAL_ADVISOR: {
+            "default_decision_rights": DecisionRightsTier.HIGH_IMPACT_GATED,
+            "capabilities": [
+                "FIDUCIARY_TAX_AND_RETIREMENT_OPTIMIZATION",
+                "CONTINUOUS_CASHFLOW_AND_DEBT_RESTRUCTURING",
+                "INSTITUTIONAL_GRADE_PORTFOLIO_RISK_HEDGING",
+            ],
+            "allowed_compartments": ["household_financial_ledger", "market_telemetry", "tax_code_corpus"],
+            "forbidden_compartments": ["unconsented_third_party_pii", "executive_personal_emails"],
+        },
+        UniversalAdvisorArchetype.PRIMARY_CARE_PHYSICIAN_ADVISOR: {
+            "default_decision_rights": DecisionRightsTier.PROPOSE_ONLY,
+            "capabilities": [
+                "FRONTIER_DIFFERENTIAL_DIAGNOSTIC_TRIAGE",
+                "LONGITUDINAL_PREVENTIVE_CARE_MONITORING",
+                "PRESCRIPTION_DRUG_ADHERENCE_COACHING",
+            ],
+            "allowed_compartments": ["patient_consented_ehr", "clinical_guidelines_corpus", "pharmacology_interactions"],
+            "forbidden_compartments": ["unconsented_genetic_records", "executive_personal_emails"],
+        },
+        UniversalAdvisorArchetype.PERSONALIZED_STUDENT_TUTOR: {
+            "default_decision_rights": DecisionRightsTier.BOUNDED_AUTONOMY,
+            "capabilities": [
+                "SOCRATIC_ONE_ON_ONE_MASTERY_ADAPTATION",
+                "MULTIMODAL_CONCEPT_VISUALIZATION",
+                "CONTINUOUS_KNOWLEDGE_GAP_REMEDIATION",
+            ],
+            "allowed_compartments": ["student_learning_profile", "accredited_curriculum_graph"],
+            "forbidden_compartments": ["adult_commercial_ad_targeting", "executive_personal_emails"],
+        },
+        UniversalAdvisorArchetype.D2C_ENTREPRENEUR_COFOUNDER: {
+            "default_decision_rights": DecisionRightsTier.HIGH_IMPACT_GATED,
+            "capabilities": [
+                "AUTONOMOUS_STOREFRONT_AND_SOFTWARE_GENERATION",
+                "DEMAND_GENERATION_AND_PRECISION_AD_BUYING",
+                "MERCHANT_ONBOARDING_AND_CUSTOMER_EXPERIENCE_AUTOMATION",
+            ],
+            "allowed_compartments": ["merchant_catalog", "ad_campaign_telemetry", "customer_support_tickets"],
+            "forbidden_compartments": ["competitor_proprietary_secrets", "executive_personal_emails"],
+        },
+    }
+
+    @classmethod
+    def provision_universal_advisor(
+        cls,
+        archetype: UniversalAdvisorArchetype,
+        beneficiary_id: str,
+        accountable_human_guardian: str,
+        sovereignty_mode: SovereigntyMode = SovereigntyMode.ZERO_RETENTION_CONTRACTUAL,
+    ) -> Dict[str, Any]:
+        """
+        Provisions a governed Democratized Superintelligence advisor session with
+        built-in Isenberg decision-rights manifest and Taylor frontier/distilled routing.
+        """
+        if not beneficiary_id or not beneficiary_id.strip():
+            raise ValueError("beneficiary_id is required")
+        if not accountable_human_guardian or not accountable_human_guardian.strip():
+            raise ValueError("accountable_human_guardian is required")
+
+        blueprint = cls.ARCHETYPE_BLUEPRINTS[archetype]
+        agent_id = f"democratized_{archetype.value.lower()}_{beneficiary_id.strip()}"
+
+        manifest = AgentGovernanceManifest(
+            agent_id=agent_id,
+            name=f"Democratized {archetype.value.replace('_', ' ').title()}",
+            version="1.0.0",
+            accountable_owner=accountable_human_guardian.strip(),
+            decision_rights=blueprint["default_decision_rights"],
+            allowed_tools=set(blueprint["capabilities"]),
+            allowed_data_compartments=set(blueprint["allowed_compartments"]),
+            sovereignty_mode=sovereignty_mode,
+            max_autonomous_actions_per_run=25,
+            department="Democratized Superintelligence",
+            description=f"Universal {archetype.value} advisor for {beneficiary_id.strip()}",
+        )
+
+        routing = ModelTierRouter.select_model(
+            task_ambiguity_score=0.80,
+            requires_deep_reasoning=True,
+            sovereignty_mode=sovereignty_mode,
+        )
+
+        return {
+            "archetype": archetype.value,
+            "beneficiary_id": beneficiary_id.strip(),
+            "manifest": manifest,
+            "capabilities": list(blueprint["capabilities"]),
+            "model_routing": routing,
+            "democratized_access_verified": True,
+        }
+
+    @classmethod
+    def project_macro_demographic_productivity(
+        cls,
+        baseline_working_age_population_millions: float,
+        annual_demographic_contraction_rate: float,
+        ai_augmented_productivity_gain_per_worker: float,
+        startup_creation_cost_reduction_pct: float = 0.75,
+        projection_years: int = 10,
+    ) -> Dict[str, Any]:
+        """
+        Models Bret Taylor's macroeconomic thesis on demographics and entrepreneurship:
+        As working-age populations age and shrink across major economies, democratized
+        superintelligence and D2C entrepreneurship agents offset labor contraction and
+        expand total economic output and new business formation.
+        """
+        if baseline_working_age_population_millions <= 0:
+            raise ValueError("baseline_working_age_population_millions must be positive")
+        if not (0.0 <= annual_demographic_contraction_rate < 1.0):
+            raise ValueError("annual_demographic_contraction_rate must be in [0.0, 1.0)")
+        if ai_augmented_productivity_gain_per_worker < 0.0:
+            raise ValueError("ai_augmented_productivity_gain_per_worker must be non-negative")
+        if not (0.0 <= startup_creation_cost_reduction_pct < 1.0):
+            raise ValueError("startup_creation_cost_reduction_pct must be in [0.0, 1.0)")
+
+        projected_workforce_millions = baseline_working_age_population_millions * (
+            (1.0 - annual_demographic_contraction_rate) ** projection_years
+        )
+        unaugmented_output_index = (
+            projected_workforce_millions / baseline_working_age_population_millions
+        ) * 100.0
+        ai_augmented_output_index = unaugmented_output_index * (1.0 + ai_augmented_productivity_gain_per_worker)
+
+        entrepreneurship_multiplier = round(1.0 / (1.0 - startup_creation_cost_reduction_pct), 2)
+
+        return {
+            "projection_years": projection_years,
+            "baseline_working_age_population_millions": baseline_working_age_population_millions,
+            "projected_working_age_population_millions": round(projected_workforce_millions, 3),
+            "unaugmented_gdp_output_index": round(unaugmented_output_index, 2),
+            "ai_augmented_gdp_output_index": round(ai_augmented_output_index, 2),
+            "demographic_drag_overcome": ai_augmented_output_index > 100.0,
+            "new_business_formation_multiplier": entrepreneurship_multiplier,
+            "macro_conclusion": (
+                "Democratized superintelligence overcomes demographic workforce contraction "
+                "and accelerates small-business entrepreneurship."
+                if ai_augmented_output_index > 100.0
+                else "Additional AI productivity diffusion required to offset demographic contraction."
+            ),
+        }

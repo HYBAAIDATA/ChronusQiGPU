@@ -6,6 +6,7 @@ tests/fixtures/** -text
 # (Intelligence/skill_graft.py): EOL translation would reject every graft.
 Intelligence/skills/** -text
 
-# PYTHIA structural corpus is verified by manifest sha256 at store bootstrap —
-# EOL translation corrupts the recorded digest binding.
-artifacts/pythia_training/** -text
+# Preserve LF on shell scripts executed inside Linux container builds.
+scripts/*.sh text eol=lf
+chronus/mla1517_platform/**/*.sh text eol=lf
+

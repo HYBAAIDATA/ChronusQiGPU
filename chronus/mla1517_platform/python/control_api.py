@@ -1516,6 +1516,7 @@ def console_sources_payload() -> dict[str, Any]:
         "audit": lambda: audit_tail_payload(30),
         "intelligence": system_fabric.intelligence_status,
         "cognition": system_fabric.euclid_cognition_status,
+        "collaborative_automation": collaborative_automation_status_payload,
     }
     result: dict[str, Any] = {"unavailable": {}}
     for key, producer in producers.items():
@@ -2781,6 +2782,118 @@ def _salamander_fault(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]
     return HTTPStatus.OK, {"ok": True, "recorded": True}
 
 
+_COLLAB_ENGINE_GUARD = threading.Lock()
+_COLLAB_ENGINE: Any = None
+
+
+def _collaborative_engine() -> Any:
+    global _COLLAB_ENGINE
+    with _COLLAB_ENGINE_GUARD:
+        if _COLLAB_ENGINE is None:
+            from salamander.collaborative_automation import CollaborativeAutomationEngine
+
+            _COLLAB_ENGINE = CollaborativeAutomationEngine()
+        return _COLLAB_ENGINE
+
+
+def collaborative_automation_status_payload() -> dict[str, Any]:
+    """GET /api/v1/automation/collaborative/status — Single Pane of Glass dashboard."""
+    from tools.collaborative_automation import full_runbook_catalogue
+
+    engine = _collaborative_engine()
+    all_runbooks = full_runbook_catalogue()
+    dashboard = engine.single_pane_dashboard(all_runbooks.values())
+    return {
+        **dashboard,
+        "generated_at": now_iso(),
+    }
+
+
+def collaborative_runbooks_payload() -> dict[str, Any]:
+    """GET /api/v1/automation/runbooks — Unified Collaborative Automation runbook catalogue."""
+    from tools.collaborative_automation import catalogue_payload
+
+    return {
+        **catalogue_payload(),
+        "generated_at": now_iso(),
+    }
+
+
+def _collaborative_human_decision(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
+    """POST /api/v1/automation/collaborative/decision — Record human-in-the-loop judgment."""
+    from salamander.collaborative_automation import HumanDecision, TeamRole
+
+    runbook_id = str(body.get("runbook_id") or "").strip()
+    step_id = str(body.get("step_id") or "").strip()
+    actor_id = str(body.get("actor_id") or "").strip()
+    rationale = str(body.get("rationale") or "").strip()
+    role_raw = str(body.get("team_role") or "sre").strip().lower()
+    approved = body.get("approved")
+    if not isinstance(approved, bool):
+        raise ValueError("approved must be an explicit boolean")
+    try:
+        role = TeamRole(role_raw)
+    except ValueError as exc:
+        raise ValueError(f"unsupported team_role: {role_raw!r}") from exc
+    decision = HumanDecision(
+        decision_id=str(body.get("decision_id") or f"dec:{runbook_id}:{step_id}:{int(time.time_ns())}"),
+        runbook_id=runbook_id,
+        step_id=step_id,
+        actor_id=actor_id,
+        team_role=role,
+        approved=approved,
+        rationale=rationale,
+        at_ns=int(time.time_ns()),
+        scope_revision_approved=bool(body.get("scope_revision_approved", False)),
+    )
+    seal = _collaborative_engine().record_human_decision(decision)
+    _audit().append(
+        "collaborative_human_decision",
+        runbook_id=runbook_id,
+        step_id=step_id,
+        actor_id=actor_id,
+        team_role=role.value,
+        approved=approved,
+        audit_sha256=seal,
+    )
+    return HTTPStatus.OK, {
+        "ok": True,
+        "decision": decision.to_dict(),
+        "audit_sha256": seal,
+    }
+
+
+def _collaborative_runbook_execute(body: dict[str, Any]) -> tuple[HTTPStatus, dict[str, Any]]:
+    """POST /api/v1/automation/collaborative/run — Execute a collaborative runbook."""
+    from tools.collaborative_automation import full_runbook_catalogue
+
+    runbook_id = str(body.get("runbook_id") or "").strip()
+    if not runbook_id:
+        raise ValueError("runbook_id is required")
+    all_runbooks = full_runbook_catalogue()
+    runbook = all_runbooks.get(runbook_id)
+    if runbook is None:
+        return HTTPStatus.NOT_FOUND, {
+            "ok": False,
+            "failure_class": "NOT_CONFIGURED",
+            "error": f"runbook {runbook_id!r} is not registered",
+            "available_runbooks": sorted(all_runbooks),
+        }
+    report = _collaborative_engine().execute_runbook(
+        runbook,
+        context=body.get("context") if isinstance(body.get("context"), dict) else None,
+        available_operators=int(body.get("available_operators", 2)),
+        action_budget_remaining=int(body.get("action_budget_remaining", 32)),
+    )
+    _audit().append(
+        "collaborative_runbook_executed",
+        runbook_id=runbook_id,
+        status=report.status.value,
+        audit_head_sha256=report.audit_head_sha256,
+    )
+    return HTTPStatus.OK, {"ok": True, **report.to_dict()}
+
+
 _TENSOR_RUNTIME_GUARD = threading.Lock()
 _TENSOR_RUNTIME: Any = None
 
@@ -3239,6 +3352,12 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/api/v1/tensor/capabilities":
             self._json(HTTPStatus.OK, tensor_capabilities_payload())
             return
+        if path == "/api/v1/automation/collaborative/status":
+            self._json(HTTPStatus.OK, collaborative_automation_status_payload())
+            return
+        if path == "/api/v1/automation/runbooks":
+            self._json(HTTPStatus.OK, collaborative_runbooks_payload())
+            return
         if path == "/api/v1/security/subscribe":
             code, security = security_status_payload()
             if code != HTTPStatus.OK:
@@ -3292,6 +3411,8 @@ class _Handler(BaseHTTPRequestHandler):
         "/api/v1/mining/elevate": _mining_elevate,
         "/api/v1/mining/escalate": _mining_escalate,
         "/api/v1/salamander/fault": _salamander_fault,
+        "/api/v1/automation/collaborative/decision": _collaborative_human_decision,
+        "/api/v1/automation/collaborative/run": _collaborative_runbook_execute,
         "/api/v1/tensor/execute": _tensor_execute,
     }
 

@@ -50,7 +50,7 @@ jobs:
           else
             python packaging/portfolio_release_audit.py --out portfolio-verdict.json
           fi
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: portfolio-release-verdict
           path: portfolio-verdict.json

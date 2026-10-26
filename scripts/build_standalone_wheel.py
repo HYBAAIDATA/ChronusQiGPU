@@ -36,6 +36,7 @@ SEEDS = (
     "lucas",
     "hyba_toe_intelligence",
     "hyba_euclid_intelligence",
+    "hyba_mcp",
 )
 DEPENDENCIES = (
     "numpy>=1.26,<3",

@@ -34,8 +34,12 @@ from __future__ import annotations
 
 import re
 import time
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, fields, is_dataclass
+from decimal import Decimal
+from enum import Enum
 from fractions import Fraction
+from numbers import Number
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import sympy as sp
@@ -72,7 +76,9 @@ _CLIFFORD_T_GATES = frozenset(
 # payload (the QSqrt2->sympify defect produced "1.00000000000000").
 # Exact serialisations are fractions ("15/8"), radicals ("-sqrt(5)"),
 # integers, or symbolic text — never a decimal point.
-_FLOAT_LITERAL = re.compile(r"^-?\d+\.\d+([eE][-+]?\d+)?$")
+_FLOAT_LITERAL = re.compile(
+    r"^[+-]?(?:(?:\d+\.\d*|\.\d+)(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+)$"
+)
 
 
 class ExactLaneError(ValueError):
@@ -112,49 +118,132 @@ def _expr_domain(expr: sp.Basic) -> str:
 
 
 def audit_exactness(tree: Any) -> ExactnessReport:
-    """Walk a payload tree and verify every numeric leaf is exact.
+    """Fail closed unless every numeric payload value has an audited exact form.
 
-    Forbidden: Python ``float``, ``sp.Float`` atoms anywhere inside a
-    sympy expression, and bare decimal-literal strings in value position
-    (the serialised signature of a coercion leak).  ``wall_ms`` lives
-    outside the payload and is the only permitted float in a result.
+    Accepted leaves include integers, ``Fraction`` values, booleans, bytes
+    and ``None``. SymPy expressions are checked for ``Float`` atoms, ``nan``
+    anywhere in the expression, and ``is_finite is False``.
+    Strings are not parsed, but a whole decimal or
+    scientific literal after stripping whitespace is a violation.
 
-    Returns an :class:`ExactnessReport`; the caller decides whether a
-    violation raises (the facade raises :class:`ExactnessAuditError`).
+    Mappings (values and non-string keys), lists, tuples, enum values and
+    dataclass instance fields are traversed recursively. String mapping
+    keys are treated as labels. Shared subtrees are allowed.
+    Unsupported numeric or opaque objects are violations: their internals
+    cannot safely be assumed exact. Cyclic payloads are rejected.
+
+    A ``to_sympy()`` adapter must return a SymPy expression, integer or
+    ``Fraction`` (not a boolean); its result is audited too. ``Exception``
+    subclasses raised by the adapter call become violations. Errors during
+    traversal, attribute lookup or symbolic inspection otherwise propagate.
+
+    Return an :class:`ExactnessReport` with the verdict, arithmetic-domain
+    label and path-qualified violations. ``label_only`` means no numeric
+    domain was recorded, even if violations were found. Violations do not
+    raise here; the facade raises :class:`ExactnessAuditError` for them.
     """
     violations: List[str] = []
     domains: List[str] = []
+    active: set[int] = set()
 
     def walk(v: Any, path: str) -> None:
-        if isinstance(v, bool):
+        """Accumulate domains and violations for ``v`` at its payload ``path``."""
+        if v is None or isinstance(v, (bool, str, bytes)):
+            if isinstance(v, str) and _FLOAT_LITERAL.fullmatch(v.strip()):
+                violations.append(f"{path}: decimal-literal string {v!r}")
             return
         if isinstance(v, float):
             violations.append(f"{path}: python float {v!r}")
             return
+        if isinstance(v, complex):
+            violations.append(f"{path}: python complex value {v!r}")
+            return
+        if isinstance(v, Decimal):
+            violations.append(f"{path}: Decimal value is not an admitted exact payload type")
+            return
+        if isinstance(v, Fraction):
+            domains.append("rational")
+            return
+        if isinstance(v, int):
+            domains.append("rational")
+            return
         if isinstance(v, sp.Basic):
             if _expr_has_float_atom(v):
                 violations.append(f"{path}: sympy Float atom in {v!r}")
+            if v.is_finite is False or v.has(sp.nan):
+                violations.append(f"{path}: non-finite symbolic value {v!r}")
             domains.append(_expr_domain(v))
             return
-        if isinstance(v, str):
-            if _FLOAT_LITERAL.match(v):
-                violations.append(f"{path}: decimal-literal string {v!r}")
+
+        identity = id(v)
+        if identity in active:
+            violations.append(f"{path}: cyclic payload reference")
             return
-        if isinstance(v, (int, Fraction)):
-            domains.append("rational")
-            return
-        if isinstance(v, dict):
-            for k, item in v.items():
-                walk(item, f"{path}.{k}")
+
+        if isinstance(v, Mapping):
+            active.add(identity)
+            try:
+                for key, item in v.items():
+                    # String keys are schema labels; non-string keys are data
+                    # and may otherwise hide a float from the value audit.
+                    if not isinstance(key, str):
+                        walk(key, f"{path}.<key>")
+                    walk(item, f"{path}[{key!r}]")
+            finally:
+                active.remove(identity)
             return
         if isinstance(v, (list, tuple)):
-            for i, item in enumerate(v):
-                walk(item, f"{path}[{i}]")
+            active.add(identity)
+            try:
+                for i, item in enumerate(v):
+                    walk(item, f"{path}[{i}]")
+            finally:
+                active.remove(identity)
+            return
+        if isinstance(v, Enum):
+            active.add(identity)
+            try:
+                walk(v.value, f"{path}.value")
+            finally:
+                active.remove(identity)
+            return
+        if is_dataclass(v) and not isinstance(v, type):
+            active.add(identity)
+            try:
+                for field in fields(v):
+                    walk(getattr(v, field.name), f"{path}.{field.name}")
+            finally:
+                active.remove(identity)
             return
         if hasattr(v, "to_sympy"):
-            walk(v.to_sympy(), path)
+            active.add(identity)
+            try:
+                try:
+                    exact_value = v.to_sympy()
+                except Exception as exc:
+                    violations.append(
+                        f"{path}: exact adapter {type(v).__name__}.to_sympy failed: "
+                        f"{type(exc).__name__}"
+                    )
+                    return
+                if not isinstance(exact_value, (sp.Basic, int, Fraction)) or isinstance(
+                    exact_value, bool
+                ):
+                    violations.append(
+                        f"{path}: exact adapter {type(v).__name__}.to_sympy returned "
+                        f"unsupported type {type(exact_value).__name__}"
+                    )
+                    return
+                walk(exact_value, f"{path}.to_sympy()")
+            finally:
+                active.remove(identity)
             return
-        # enums, backend labels, None, and other non-numeric leaves pass
+        if isinstance(v, Number):
+            violations.append(
+                f"{path}: unsupported numeric type {type(v).__name__}"
+            )
+            return
+        violations.append(f"{path}: opaque payload type {type(v).__name__}")
 
     walk(tree, "payload")
     if not domains:
@@ -240,7 +329,7 @@ class LibraryResult:
         from .canonical_serialization import canonical_value
 
         def canon(v: Any) -> Any:
-            if isinstance(v, dict):
+            if isinstance(v, Mapping):
                 return {str(k): canon(item) for k, item in v.items()}
             if isinstance(v, (list, tuple)):
                 return [canon(item) for item in v]
@@ -442,6 +531,31 @@ class QuantumLibrary:
                 "owner": "backends.execute (registry)",
                 "lane": "exact_algebraic | stabilizer | sparse | mps_exact | closed_form",
                 "scale": "fail-closed admission per lane",
+            },
+            "transpile": {
+                "owner": "software_stack.transpile_program + verify.program_unitary_columns",
+                "lane": "exact_algebraic_compiler",
+                "scale": "exact basis synthesis, shortest-path SWAP routing, and modulo-8 phase folding",
+            },
+            "qec": {
+                "owner": "kellogg.surface_code.PlanarSurfaceCode + stabilizer.StabilizerState",
+                "lane": "gf2_css_stabilizer_tableau",
+                "scale": "exact syndrome extraction, MWM & Union-Find decoding on distance-d planar codes",
+            },
+            "pulse_control": {
+                "owner": "software_stack.PulseCompiler",
+                "lane": "exact_rational_waveform_schedule",
+                "scale": "Virtual-Z 0-ns frame tracking, DRAG 1Q, and ECR/CZ-flux 2Q schedules",
+            },
+            "software_stack": {
+                "owner": "software_stack.run_quantum_software_stack",
+                "lane": "six_phase_exact_lifecycle",
+                "scale": "end-to-end Phase 1..6 authoring, OpenQASM, transpilation, QEC, orchestration, and pulse schedule",
+            },
+            "gpu_fleet_workload": {
+                "owner": "chronus.fleet.capacity + software_stack.run_gpu_fleet_hybrid_workload",
+                "lane": "distributed_one_igpu_fleet_exact",
+                "scale": "multi-worker ONE-iGPU capacity planning, Lucas L_n scaling, disjoint partitioning, fencing tokens, and custody",
             },
         }
 
@@ -949,4 +1063,172 @@ class QuantumLibrary:
             wall_ms=res.wall_ms,
             arithmetic_domain=res.arithmetic_domain,
             lane_owner=res.lane_owner,
+        )
+
+    # ------------------------------------------------------------------
+    # six-phase software stack — QASM IR, transpiler, QEC, hybrid, pulse
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def qasm_roundtrip(n_qubits: int, ops: Sequence[Tuple]) -> LibraryResult:
+        """Assemble ``ops`` to OpenQASM 2.0, parse back to ``Program``, and verify digest parity."""
+        from .backends import Operation, Program
+        from .software_stack import qasm_roundtrip_report
+
+        program = Program(
+            n_qubits,
+            tuple(Operation(str(op[0]).lower(), tuple(op[1:])) for op in ops),
+        )
+        return _timed(
+            "qasm_ir",
+            "openqasm2_exact",
+            lambda: qasm_roundtrip_report(program),
+            owner="software_stack.qasm_roundtrip_report",
+        )
+
+    @staticmethod
+    def transpile(
+        n_qubits: int,
+        ops: Sequence[Tuple],
+        *,
+        coupling_edges: Optional[Sequence[Tuple[int, int]]] = None,
+        basis_gates: Optional[Sequence[str]] = None,
+        optimize: bool = True,
+    ) -> LibraryResult:
+        """Compile, route, optimize, and verify exact unitary equivalence of a circuit."""
+        from .backends import Operation, Program
+        from .software_stack import CouplingMap, DEFAULT_BASIS_GATES, transpile_program
+
+        program = Program(
+            n_qubits,
+            tuple(Operation(str(op[0]).lower(), tuple(op[1:])) for op in ops),
+        )
+        cmap = (
+            CouplingMap(n_qubits, tuple((int(u), int(v)) for u, v in coupling_edges))
+            if coupling_edges is not None
+            else CouplingMap.line(n_qubits)
+        )
+        basis = tuple(basis_gates) if basis_gates is not None else DEFAULT_BASIS_GATES
+        return _timed(
+            "transpile",
+            "exact_algebraic_compiler",
+            lambda: transpile_program(
+                program,
+                coupling_map=cmap,
+                basis_gates=basis,
+                optimize=optimize,
+            ).as_dict(),
+            owner="software_stack.transpile_program",
+        )
+
+    @staticmethod
+    def qec_surface_cycle(
+        distance: int = 3,
+        x_error_qubits: Iterable[int] = (),
+        z_error_qubits: Iterable[int] = (),
+    ) -> LibraryResult:
+        """Run an exact planar surface-code syndrome extraction, decoding, and recovery cycle."""
+        from .software_stack import run_surface_code_qec_cycle
+
+        return _timed(
+            "qec",
+            "gf2_css_stabilizer_tableau",
+            lambda: run_surface_code_qec_cycle(
+                distance=distance,
+                x_error_qubits=x_error_qubits,
+                z_error_qubits=z_error_qubits,
+            ).as_dict(),
+            owner="kellogg.surface_code.PlanarSurfaceCode+stabilizer.StabilizerState",
+        )
+
+    @staticmethod
+    def hybrid_orchestrate(
+        n_qubits: int = 2,
+        J: Any = 1,
+        g: Any = 1,
+    ) -> LibraryResult:
+        """Run a scheduled hybrid variational workload with in-loop transpilation and hash-chained receipts."""
+        from .software_stack import run_hybrid_workload
+
+        return _timed(
+            "hybrid_orchestration",
+            "exact_register_cyclotomic",
+            lambda: run_hybrid_workload(n_qubits=n_qubits, J=J, g=g).as_dict(),
+            owner="software_stack.HybridWorkloadOrchestrator",
+        )
+
+    @staticmethod
+    def compile_pulses(
+        n_qubits: int,
+        ops: Sequence[Tuple],
+        *,
+        include_readout: bool = True,
+    ) -> LibraryResult:
+        """Lower a gate circuit into an exact rational/Virtual-Z pulse schedule."""
+        from .backends import Operation, Program
+        from .software_stack import compile_pulse_schedule
+
+        program = Program(
+            n_qubits,
+            tuple(Operation(str(op[0]).lower(), tuple(op[1:])) for op in ops),
+        )
+        return _timed(
+            "pulse_control",
+            "exact_rational_waveform_schedule",
+            lambda: compile_pulse_schedule(
+                program, include_readout=include_readout
+            ).as_dict(),
+            owner="software_stack.PulseCompiler",
+        )
+
+    @staticmethod
+    def software_stack(
+        n_qubits: int = 3,
+        *,
+        qec_distance: int = 3,
+        x_error_qubits: Iterable[int] = (0,),
+        z_error_qubits: Iterable[int] = (2,),
+    ) -> LibraryResult:
+        """Execute all 6 phases of the quantum software stack end-to-end."""
+        from .software_stack import run_quantum_software_stack
+
+        return _timed(
+            "software_stack",
+            "six_phase_exact_lifecycle",
+            lambda: run_quantum_software_stack(
+                n_qubits=n_qubits,
+                qec_distance=qec_distance,
+                x_error_qubits=x_error_qubits,
+                z_error_qubits=z_error_qubits,
+            ).as_dict(),
+            owner="software_stack.run_quantum_software_stack",
+        )
+
+    @staticmethod
+    def gpu_fleet_workload(
+        n_qubits: int = 2,
+        *,
+        J: Any = 1,
+        g: Any = 1,
+        worker_count: int = 3,
+        lanes_per_worker: int = 4,
+        scale_index: int = 15,
+        fail_worker_ids: Sequence[str] = (),
+    ) -> LibraryResult:
+        """Capacity-plan, partition, lease, and execute a hybrid quantum workload across a Chronus GPU/iGPU fleet."""
+        from .software_stack import run_gpu_fleet_hybrid_workload
+
+        return _timed(
+            "gpu_fleet_workload",
+            "distributed_one_igpu_fleet_exact",
+            lambda: run_gpu_fleet_hybrid_workload(
+                n_qubits=n_qubits,
+                J=J,
+                g=g,
+                worker_count=worker_count,
+                lanes_per_worker=lanes_per_worker,
+                scale_index=scale_index,
+                fail_worker_ids=fail_worker_ids,
+            ).as_dict(),
+            owner="chronus.fleet.capacity+software_stack.run_gpu_fleet_hybrid_workload",
         )

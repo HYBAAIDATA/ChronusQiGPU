@@ -106,6 +106,10 @@ MODULES: Tuple[ModuleEntry, ...] = (
     _m("representation", "boundary", "Proof-shaped representation planning (WF02), incl. mps_exact."),
     _m("pipeline", "pipeline", "Production composition path: validate, plan, execute, certify, "
        "custody, replay."),
+    _m("software_stack", "pipeline", "Six-phase quantum software stack: high-level ansatz authoring, "
+       "OpenQASM 2.0 IR, topology SWAP routing/basis transpilation, surface-code QEC cycle, hybrid "
+       "workload orchestration, and Virtual-Z/DRAG/ECR pulse compilation.",
+       consumes=["kellogg", "backends", "stabilizer", "hilbert", "verify"]),
     _m("console", "pipeline", "Operator console (turing-vqc): dense, tableau and MPS registers."),
     _m("phi_gate", "pipeline", "CLI production gate for the 1,000-qubit phi machine."),
     _m("quantum_algorithms", "algorithm", "First-principles quantum algorithms with Lucas scaling.",

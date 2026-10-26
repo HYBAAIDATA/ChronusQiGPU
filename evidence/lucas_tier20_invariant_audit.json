@@ -1,0 +1,27 @@
+{
+  "tier": "TIER-20",
+  "lucas_target": 15127,
+  "completed_iterations": 15127,
+  "status": "PASS",
+  "invariants": {
+    "budgets_holding": true,
+    "zero_budget_escapes": true,
+    "counters_holding": true,
+    "permissions_holding": true,
+    "rollback_verified_count": 5,
+    "kill_controls_holding": true,
+    "audit_ledger_events_count": 196706,
+    "archival_cycles_executed": 3
+  },
+  "performance": {
+    "wall_duration_seconds": 505.03,
+    "cpu_duration_seconds": 337.703,
+    "per_iteration_ms": 33.386
+  },
+  "tier_20_execution_record": {
+    "tier_20_target": 15127,
+    "status": "PASS",
+    "archival_strategy": "host_batched_learning_queue_draining",
+    "evidence_drain_cycles": 3
+  }
+}

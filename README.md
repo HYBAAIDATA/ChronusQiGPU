@@ -31,6 +31,7 @@
 > - [05_RUNBOOKS.md](docs/v2/05_RUNBOOKS.md) — Automated test sweeps and execution runbooks
 > - [06_GLOSSARY_BOUNDARIES.md](docs/v2/06_GLOSSARY_BOUNDARIES.md) — Epistemic glossary, truth classes, and measurement contract
 > - [07_EVIDENCE_SCOPED_READINESS.md](docs/v2/07_EVIDENCE_SCOPED_READINESS.md) — Readiness layer, system impact, authority boundaries and product distinction
+> - [08_COLLABORATIVE_AUTOMATION.md](docs/v2/08_COLLABORATIVE_AUTOMATION.md) — Collaborative automation, human-in-the-loop runbooks, Bathtub guardrails, and Single Pane of Glass visibility
 >
 > **FALSIFIABILITY & MEASUREMENT CONTRACT:**
 > Code, tests, and logged evidence are the sole source of truth. Every performance claim must be MEASURED on executing silicon; unmeasured hardware defaults strictly to `NOT_RUN`. CPU fallbacks are never disguised as device execution (`requested_route`/`executed_route`/`fallback_reason`). Quantum amplitude amplification claims on flat search spaces are closed. Probes of mathematical conjectures are finite numerical computations, not general analytic proofs.

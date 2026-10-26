@@ -1,0 +1,15 @@
+{
+  "seed": 1337,
+  "workload": "golden_walk+hendrix_scan+Hilbert_plan",
+  "hash": "e458bcc0afe8d3e5172421ea0548ff867cfed4327b272e0e1752f897222c1552",
+  "t_ms": 53.402,
+  "route": {
+    "requested": "cpu",
+    "executed": "cpu_reference",
+    "fallback_reason": ""
+  },
+  "device_run": "NOT_RUN",
+  "hashrate": "NOT_RUN",
+  "substrate": "native_chronus_gpu (cpu_reference substrate)",
+  "mislabelled_device": 0
+}

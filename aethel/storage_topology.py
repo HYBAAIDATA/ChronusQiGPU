@@ -434,12 +434,19 @@ class TheseusPhysicalStore:
         raise StorageTopologyError("no verified primary or replica for THESEUS address")
 
     @staticmethod
-    def _journal_signature(path: Path) -> tuple[int, ...] | None:
+    def _journal_signature(path: Path) -> tuple[Any, ...] | None:
         try:
             stat = path.stat()
         except FileNotFoundError:
             return None
-        return (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
+        content_hash = None
+        if os.name == "nt":
+            try:
+                with open(os.fspath(path), "rb") as stream:
+                    content_hash = hashlib.sha256(stream.read()).digest()
+            except OSError:
+                pass
+        return (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns, content_hash)
 
     @contextmanager
     def verification_batch(self, tenant_id: str):

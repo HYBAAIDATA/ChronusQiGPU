@@ -31,7 +31,7 @@ jobs:
           python experiments/lucas15_operator_ablation.py
           --repeats 2 --dimension 32 --seed 1517
           --output artifacts/lucas15_operator_ablation.json
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: lucas15-operator-ablation
           path: artifacts/lucas15_operator_ablation.json
