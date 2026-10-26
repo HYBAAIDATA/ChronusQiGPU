@@ -185,6 +185,23 @@ class EuclidRuntime:
             raise RuntimeError("runtime is closed")
         return self.learning.consolidate(replay_limit=replay_limit)
 
+    def training_pipeline(self, *, mission_id: str, provenance: str) -> Any:
+        """One training boundary over the same learner used by this runtime."""
+        if self._closed:
+            raise RuntimeError("runtime is closed")
+        from .training_pipeline import TrainingPipeline
+
+        learner = self.learning.experience_learner
+        if learner is None:
+            raise RuntimeError("runtime has no experience learner; use production()")
+        return TrainingPipeline(learner, self.learning,
+                                mission_id=mission_id, provenance=provenance)
+
+    def consolidate_learning(self, *, replay_limit: int = 64) -> dict[str, Any]:
+        if self._closed:
+            raise RuntimeError("runtime is closed")
+        return self.learning.consolidate(replay_limit=replay_limit)
+
     # Specialist organs composed under EUCLID: organ id -> (reachability
     # component, adapter factory, read-only health probe request, declared
     # operations the router may select the organ for).

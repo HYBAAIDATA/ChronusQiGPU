@@ -1,0 +1,295 @@
+/* Scoped HYBA tokens. Does not restyle the existing mining or TURING applications.
+   Georgia is a local qualification fallback, not licensed Victor Serif. */
+.hyba-enterprise {
+  --hyba-oxford: #002147;
+  --hyba-primary: #0066b2;
+  --hyba-gold: #f2a900;
+  --hyba-cream: #f5f1ed;
+  --hyba-slate: #2d3748;
+  color: var(--hyba-oxford);
+  background: var(--hyba-cream);
+  min-height: 100vh;
+  font:
+    16px/1.55 system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  color-scheme: light;
+}
+.hyba-enterprise * {
+  box-sizing: border-box;
+}
+.he-container {
+  width: min(1120px, 100%);
+  margin: auto;
+  padding: 24px 32px;
+}
+.he-header {
+  background: var(--hyba-oxford);
+  color: #fff;
+}
+.he-header .he-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+}
+.he-header p {
+  margin: 0;
+}
+.he-identity {
+  font:
+    700 26px/1.3 Georgia,
+    serif;
+  letter-spacing: 0.04em;
+}
+.he-identity span {
+  font:
+    400 15px/1.4 system-ui,
+    sans-serif;
+  letter-spacing: 0;
+  margin-left: 16px;
+}
+.he-eyebrow {
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  margin-top: 32px;
+}
+.hyba-enterprise h1 {
+  font:
+    400 clamp(36px, 5vw, 58px)/1.1 Georgia,
+    serif;
+  margin: 16px 0 24px;
+  max-width: 760px;
+}
+.hyba-enterprise h2 {
+  font:
+    400 25px/1.25 Georgia,
+    serif;
+  margin: 0 0 16px;
+}
+.hyba-enterprise h3 {
+  font-size: 18px;
+  margin: 24px 0 8px;
+}
+.he-lead {
+  font-size: 19px;
+  max-width: 760px;
+  color: var(--hyba-slate);
+  margin: 0 0 32px;
+}
+.he-notice {
+  border-left: 4px solid var(--hyba-primary);
+  background: #e7f0f7;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.he-notice p:last-child {
+  font-size: 14px;
+  margin-bottom: 0;
+}
+.he-workflow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.he-panel {
+  background: #fff;
+  border: 1px solid #a0aec0;
+  padding: 24px;
+  margin-bottom: 24px;
+  min-width: 0;
+}
+.he-step {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: #3d4a5c;
+  margin: 0 0 12px;
+}
+.hyba-enterprise p {
+  overflow-wrap: anywhere;
+}
+.hyba-enterprise label {
+  display: block;
+  font-weight: 600;
+  margin: 16px 0 8px;
+}
+.hyba-enterprise input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #66768a;
+  border-radius: 3px;
+  padding: 10px;
+  background: #fff;
+  color: #002147;
+  font: inherit;
+}
+.hyba-enterprise input[type="file"] {
+  font-size: 14px;
+}
+.hyba-enterprise fieldset {
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.hyba-enterprise legend {
+  font-size: 14px;
+  color: #3d4a5c;
+}
+.hyba-enterprise button {
+  border: 1px solid var(--hyba-primary);
+  background: var(--hyba-primary);
+  color: #fff;
+  border-radius: 3px;
+  padding: 10px 16px;
+  font:
+    600 16px/1.4 system-ui,
+    sans-serif;
+  min-height: 44px;
+  cursor: pointer;
+}
+.hyba-enterprise button:disabled {
+  background: #e9edf1;
+  border-color: #8896a6;
+  color: #465569;
+  cursor: not-allowed;
+}
+.hyba-enterprise input:disabled {
+  background: #f0f2f4;
+  color: #465569;
+}
+.hyba-enterprise .he-secondary {
+  background: #fff;
+  color: var(--hyba-primary);
+}
+.he-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.he-help {
+  font-size: 14px;
+  color: #3d4a5c;
+  margin: 8px 0 16px;
+}
+.hyba-enterprise dl {
+  display: grid;
+  grid-template-columns: minmax(100px, 180px) 1fr;
+  gap: 8px 16px;
+  margin: 24px 0;
+}
+.hyba-enterprise dt {
+  font-weight: 600;
+}
+.hyba-enterprise dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.hyba-enterprise code {
+  font:
+    14px/1.5 ui-monospace,
+    Consolas,
+    monospace;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.hyba-enterprise pre {
+  font:
+    14px/1.5 ui-monospace,
+    Consolas,
+    monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #f5f1ed;
+  padding: 16px;
+  max-height: 400px;
+  overflow: auto;
+}
+.hyba-enterprise summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 10px 0;
+  color: var(--hyba-primary);
+}
+.he-status > p[role="status"] {
+  padding: 16px;
+  background: #edf2f7;
+}
+.he-footer {
+  font-size: 14px;
+  color: #3d4a5c;
+  padding-bottom: 48px;
+}
+.he-skip {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  background: #fff;
+  color: #002147;
+  padding: 12px;
+  z-index: 10;
+}
+.he-skip:focus {
+  top: 8px;
+}
+.hyba-enterprise :focus-visible {
+  outline: 3px solid #0066b2;
+  outline-offset: 4px;
+}
+.he-header :focus-visible {
+  outline-color: #fff;
+}
+@media (max-width: 700px) {
+  .he-container {
+    padding: 20px;
+  }
+  .he-header .he-container {
+    display: block;
+  }
+  .he-header p + p {
+    margin-top: 8px;
+    font-size: 14px;
+  }
+  .he-identity span {
+    display: block;
+    margin: 8px 0 0;
+  }
+  .he-workflow {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .he-panel,
+  .he-notice {
+    padding: 20px;
+  }
+  .hyba-enterprise dl {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .hyba-enterprise dd {
+    margin-bottom: 12px;
+  }
+  .he-actions {
+    display: grid;
+  }
+  .he-eyebrow {
+    font-size: 13px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hyba-enterprise * {
+    scroll-behavior: auto;
+    transition: none;
+    animation: none;
+  }
+}
+
+.hyba-enterprise fieldset > button {
+  margin-top: 12px;
+}
+.hyba-enterprise details + button {
+  margin-top: 12px;
+}

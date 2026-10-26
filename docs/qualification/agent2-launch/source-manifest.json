@@ -1,0 +1,128 @@
+{
+  "repository": "HYB-APHIDATA/HYBAEnterprise",
+  "base_commit": "b131edc408a37ff7c03534d694bfcdaf0c827abb",
+  "scope": "Selected source export + new Agent2 files. NOT a full Git checkout. Tests are isolated component doubles.",
+  "inputs": [
+    {
+      "path": "frontend/src/main.tsx",
+      "base_blob": "7b70867e75a8f55cd619f2bc10aed4bd13878fd4"
+    },
+    {
+      "path": "frontend/src/App.tsx",
+      "reviewed_blob": "627a8041a42346d7a36778183118ec589ee6bd21"
+    },
+    {
+      "path": "docs/HYBA_STYLE_GUIDE_FRONTEND_PRODUCT.md",
+      "reviewed_blob": "021e6b971c9a2db212c3477a3a55fee321e29eba"
+    },
+    {
+      "path": "docs/ENTERPRISE_OFFERINGS.md",
+      "reviewed_blob": "12e609da9ff8b41367950a05da03ccbdb5e0263d"
+    },
+    {
+      "path": "docs/ENTERPRISE_CAPABILITY_BRIDGE.md",
+      "reviewed_blob": "f0b894e4e6f7020d9a91ddceb87222aa56effe81"
+    },
+    {
+      "path": "docs/THESEUS_OVID_ENTERPRISE_DATABASE.md",
+      "reviewed_blob": "94ecea945951954d9c346a35ec10060f83733924"
+    }
+  ],
+  "files": [
+    {
+      "path": "docs/launch/COMMERCIAL_LAUNCH_PACKET.md",
+      "sha256": "36b59ffbfa1477dccead1c2830c25a18f592cba846b67a0ce77bcbf5df3bacbc",
+      "git_blob_sha1": "a42e73779b32736c42a5c0d363f308183f85cd45"
+    },
+    {
+      "path": "docs/launch/requirements.csv",
+      "sha256": "592a3447ec14c228fdaca872382cd078d8dfd7abb244b568d064b7171a723ab6",
+      "git_blob_sha1": "9aebcd96ebba4b04e8c3a6c63881cdb9c28a6654"
+    },
+    {
+      "path": "docs/qualification/agent2-launch/README.md",
+      "sha256": "7d8c430ffdb5cf2020adb5f7ff01cb37d4cccd6f65f9fce8efacf03ab0244da4",
+      "git_blob_sha1": "f1145aeec2053e256591c423c6688210546fa544"
+    },
+    {
+      "path": "docs/qualification/agent2-launch/boundary-after.tap",
+      "sha256": "60f22656dfda2e4ecb4ee8666d8ba293cac256462df55bff65f5dc93cd1ddee3",
+      "git_blob_sha1": "ca55c7549c506e740bac80d7d720bc89f87f58e2"
+    },
+    {
+      "path": "docs/qualification/agent2-launch/boundary-before.log",
+      "sha256": "985c387cd0c50175822fc36b6ab9c7e8564a4483057ac4b05b51d77e1969e19c",
+      "git_blob_sha1": "0bf8f2251386bc89e93f571a3b8f577f314cae24"
+    },
+    {
+      "path": "docs/qualification/agent2-launch/browser-results.json",
+      "sha256": "36385ab07fd1d2a9e8b14bb9e244fda4c9816f1e28c7af2b03a1deef2126f0a8",
+      "git_blob_sha1": "d8c4b8874fe938599fbc9529c8b8a0713e49c644"
+    },
+    {
+      "path": "docs/qualification/agent2-launch/chromium-version.log",
+      "sha256": "2ad066640772a38a7acd9f2b40ddda00d0ca6f78ccba87be5c3126793b6517b0",
+      "git_blob_sha1": "8444590b250f0f3c95dd418e3c76b455c6f023a9"
+    },
+    {
+      "path": "docs/qualification/agent2-launch/contrast.json",
+      "sha256": "f434ad0e91d835d8291eda71b6e9425f0be782acefc67a9add1e2dd57ee3b0e6",
+      "git_blob_sha1": "8cbf0f1cf668d8eba97bb6d400e93c3e47803bdd"
+    },
+    {
+      "path": "docs/qualification/agent2-launch/environment.json",
+      "sha256": "d74154df9e5f399a21ccd46997cc9702fb73ff3b2a284805b048475ba7d7562a",
+      "git_blob_sha1": "132dbc421fbfe8d3ac55dbf25f29df0c46931985"
+    },
+    {
+      "path": "docs/qualification/agent2-launch/format-check.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20",
+      "git_blob_sha1": "4aa0d16e7a0ff5c16269bf45771cebe89cc2e81d"
+    },
+    {
+      "path": "docs/qualification/agent2-launch/screenshot-manifest.json",
+      "sha256": "796a4ea463291aad928c048df0d31ed8f60ed047a012115ec88b8245136a8d5a",
+      "git_blob_sha1": "cdce7022791f78aa92ce1f476a3d19a1255c6404"
+    },
+    {
+      "path": "docs/qualification/agent2-launch/typecheck-boundary.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "git_blob_sha1": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "frontend/src/enterprise/EnterpriseApp.tsx",
+      "sha256": "57e487c26638866afda5c00415194cf2d06d9dc622cf3184e53cd96a2da23ed3",
+      "git_blob_sha1": "e2f4d949dda69573c7a4946d4422b4f62810f6d3"
+    },
+    {
+      "path": "frontend/src/enterprise/boundary.ts",
+      "sha256": "fbe5080154262b90c375cf0abffaf2bacf3a4086eb1f42b8d0b9d6ab94e19f81",
+      "git_blob_sha1": "80573403e9f37852b97e4716cceeb1e6489668c2"
+    },
+    {
+      "path": "frontend/src/enterprise/enterprise.css",
+      "sha256": "af0501a259fac517a0dec5da22b36034bb5eb6fb7f3f6d8687059c9a5e0fd19c",
+      "git_blob_sha1": "a3239d11afca4d2c2431c5404a5bcc49cb56c8a2"
+    },
+    {
+      "path": "frontend/src/main.tsx",
+      "sha256": "050ec2989e797a79ed4009dcf28b6287613ce26cd0df0e0ffaa67cdbfe02d7f2",
+      "git_blob_sha1": "1410a6bc1e4618c89d53a05d4db666a039555d30"
+    },
+    {
+      "path": "scripts/enterprise_boundary.test.mjs",
+      "sha256": "1fb0216b3cb28e7933629e6a12cea3da8b2ed06657a5c880a8dde6224582dacc",
+      "git_blob_sha1": "b0c98115a8573d3c33dcc6f25d535999a98e46d1"
+    },
+    {
+      "path": "scripts/enterprise_browser_fixture.tsx",
+      "sha256": "551d90bd02b63a425944d3d461e7390fcc9ebcbf8f1f415a04410b165f8e9acb",
+      "git_blob_sha1": "517dff90a75462b7973d7ccb16c87a3e18756bc8"
+    },
+    {
+      "path": "scripts/enterprise_browser_qa.cjs",
+      "sha256": "fc77a85a72dddc362133ce720c686ff723f942535d070077b9e3634d8016b588",
+      "git_blob_sha1": "3d7751cd7f40dcc93d4352a1d62b996c0cf4f05b"
+    }
+  ]
+}

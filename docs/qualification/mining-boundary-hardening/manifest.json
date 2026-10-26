@@ -1,0 +1,31 @@
+{
+  "base_commit": "b131edc408a37ff7c03534d694bfcdaf0c827abb",
+  "qualification": "focused_software_only_not_production_release",
+  "new_tests": 81,
+  "selected_tests_unique_passed": 161,
+  "skipped_opencl": 4,
+  "final_combined_normal_passed": 122,
+  "final_combined_optimized_passed": 122,
+  "resident_protocol_passed": 39,
+  "canonical_workflow": "blocked_local_backend_and_corpus_dependency_restoration_required",
+  "full_repository_ci": "not_verified",
+  "live_pool_acceptance": "not_attempted",
+  "patch_check": "passed_against_clean_pinned_source_subset",
+  "files": {
+    "chronus/mla1517/mining/coordinator.py": "eaa1b2629c59acea6e5b39c77ea90874e1979c47d21d61effe9aa5356832eaa9",
+    "chronus/mla1517/mining/production_transport.py": "736165d6448f6e0a52c63ccd16bb0803520a8a11801a0f3bba4bb57d79172bd3",
+    "tests/test_mining_boundary_hardening.py": "97cf8dd89b9f06ba0e3cd190cc8d7015bf0326186c6e8f27f279e792890801ab",
+    "docs/qualification/mining-boundary-hardening/README.md": "891f920f92acc7e6b7cf3db6bd704fc900fb89928019219efdb5c00e660a41e9",
+    "docs/qualification/mining-boundary-hardening/before-62-cases.txt": "68d938e10bfa731a63a334318a07c530b19d8d4c35346c59fb56f80694f952f8",
+    "docs/qualification/mining-boundary-hardening/black.txt": "9b2591b2aa9a85f0b185ec967c7613aa406f9d942a958c2f177f516586b508f6",
+    "docs/qualification/mining-boundary-hardening/canonical-workflow-blocked.txt": "b80bf28facfa892902fb0512accad7e11612ba83a777a3dab88b36618289177e",
+    "docs/qualification/mining-boundary-hardening/final-combined-optimized.txt": "caed11b0ce1fc7d9d72499ecf59b9848ed5d3394ba84b518f4a151f74d31bce2",
+    "docs/qualification/mining-boundary-hardening/final-combined.txt": "cbfcb2341ebd0b2b4d77673f3102fa83d72da80f5a738321e068de3c549bde8b",
+    "docs/qualification/mining-boundary-hardening/focused-optimized.txt": "a8983e7eedfafb34f336da8c2fac899f10b3a7c4f8a9ff49eb1bad315621db89",
+    "docs/qualification/mining-boundary-hardening/focused.txt": "afe0c0a3a5ba6e0affa81aa0945465c160e3a1aafb84ba0e9030a5f04f36c9da",
+    "docs/qualification/mining-boundary-hardening/initial-collection-blocked.txt": "e29c19217c244984a10961054606fd5dcaed612b6397b7a5cc70aa545f9f8918",
+    "docs/qualification/mining-boundary-hardening/lint.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/qualification/mining-boundary-hardening/resident-protocol.txt": "c9613bbfb3c8f1a433a0ac00623962fbf97f422619d8a741e66c2af41cd5d5f4",
+    "docs/qualification/mining-boundary-hardening/transport-receipts.txt": "2911cf3a38d1486c079993264309a441bdc0e0f02b346bc547ff49ca50fd4c5e"
+  }
+}
