@@ -1,17 +1,12 @@
 """EUCLID Research & Sovereign Science API (`src/api/routers/euclid_science.py`).
 
-Exposes the measurable scientific telemetry and proofs for the "Reflection is All You Need"
-manifesto, plus the Sovereign Micro-Tether and DIFC Zero-Gharar Oracle endpoints:
-- `POST /api/v1/euclid/science/measure/efficiency` (and `/science/measure/efficiency`)
-- `GET  /api/v1/euclid/science/manifold/state` (and `/science/manifold/state`)
-- `POST /api/v1/euclid/science/isomorphic-transfer` (and `/science/isomorphic-transfer`)
-- `POST /api/v1/euclid/sovereign/micro-tether/run`
-- `POST /api/v1/euclid/sovereign/difc-oracle/settle`
+Exposes measurable scientific telemetry and proofs for the "Reflection is All You Need"
+manifesto, plus the Sovereign Micro-Tether and DIFC Zero-Gharar Oracle endpoints.
 """
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 from fastapi import APIRouter, Body
@@ -27,13 +22,13 @@ router = APIRouter(tags=["EUCLID Research & Sovereign Science"])
 
 
 class IsomorphicTransferRequest(BaseModel):
-    source_trauma: Dict[str, Any] = Field(
+    source_trauma: dict[str, Any] = Field(
         default_factory=lambda: {
             "interception_type": "Logic Error",
             "error_signature": "Session Token Leak",
         }
     )
-    target_domain_schema: Dict[str, Any] = Field(
+    target_domain_schema: dict[str, Any] = Field(
         default_factory=lambda: {
             "name": "Genomics (CRISPR Epigenetic Regulation)",
             "write_analog": "CRISPR Insertion",
@@ -44,21 +39,21 @@ class IsomorphicTransferRequest(BaseModel):
 
 
 class MicroTetherRunRequest(BaseModel):
-    payloads: Optional[List[Dict[str, Any]]] = None
-    global_target_coords: Optional[List[float]] = None
+    payloads: list[dict[str, Any]] | None = None
+    global_target_coords: list[float] | None = None
 
 
 class DIFCOracleSettleRequest(BaseModel):
     client_id: str = "difc_sovereign_fund_alpha"
     legacy_3d_cost_x: float = 10_000_000.0
     execution_7d_cost_y: float = 8_500_000.0
-    manifold_coordinates: Optional[List[float]] = None
+    manifold_coordinates: list[float] | None = None
 
 
 async def _measure_efficiency_impl(
     baseline_data_bits: float = 1_000_000.0,
     euclid_reconciliation_bits: float = 100.0,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     denom = max(1e-9, float(euclid_reconciliation_bits))
     efficiency_gain = float(baseline_data_bits) / denom
     real_entropy_reduction = GLOBAL_COGNITIVE_MANIFOLD.calculate_real_entropy_reduction()
@@ -83,11 +78,10 @@ async def _measure_efficiency_impl(
     }
 
 
-async def _get_manifold_telemetry_impl() -> Dict[str, Any]:
+async def _get_manifold_telemetry_impl() -> dict[str, Any]:
     entropy = GLOBAL_COGNITIVE_MANIFOLD.calculate_cognitive_entropy()
     disorder = GLOBAL_COGNITIVE_MANIFOLD.calculate_trauma_disorder_bits()
     ricci_max = float(np.max(np.abs(GLOBAL_COGNITIVE_MANIFOLD.ricci_tensor)))
-    # Homeostatic equilibrium holds when curvature disorder has been smoothed below 1.0 bit
     is_equilibrium = disorder < 1.0 and ricci_max < 1.0
     return {
         "manifold_status": "HOMEOTYPIC_EQUILIBRIUM" if is_equilibrium else "UNSTABLE",
@@ -102,17 +96,15 @@ async def _get_manifold_telemetry_impl() -> Dict[str, Any]:
 async def measure_learning_efficiency(
     baseline_data_bits: float = 1_000_000.0,
     euclid_reconciliation_bits: float = 100.0,
-) -> Dict[str, Any]:
-    """Nobel Goal: Prove Thermodynamic Efficiency.
-    Compares Standard Scaling (Brute Force) vs. EUCLID Reflection.
-    """
+) -> dict[str, Any]:
+    """Nobel Goal: Prove Thermodynamic Efficiency."""
     return await _measure_efficiency_impl(baseline_data_bits, euclid_reconciliation_bits)
 
 
 @router.get("/science/manifold/state")
 @router.get("/api/v1/euclid/science/manifold/state")
-async def get_manifold_telemetry() -> Dict[str, Any]:
-    """Returns the current curvature and stability of EUCLID's mind."""
+async def get_manifold_telemetry() -> dict[str, Any]:
+    """Return the current curvature and stability of EUCLID's mind."""
     return await _get_manifold_telemetry_impl()
 
 
@@ -120,9 +112,10 @@ async def get_manifold_telemetry() -> Dict[str, Any]:
 @router.post("/api/v1/euclid/science/isomorphic-transfer")
 async def run_isomorphic_transfer_endpoint(
     request: IsomorphicTransferRequest = Body(default_factory=IsomorphicTransferRequest),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     projection_md = await execute_isomorphic_transfer(
-        request.source_trauma, request.target_domain_schema
+        request.source_trauma,
+        request.target_domain_schema,
     )
     return {
         "schema": "euclid.isomorphic_transfer/1",
@@ -135,7 +128,7 @@ async def run_isomorphic_transfer_endpoint(
 @router.post("/api/v1/euclid/sovereign/micro-tether/run")
 async def run_micro_tether_endpoint(
     request: MicroTetherRunRequest = Body(default_factory=MicroTetherRunRequest),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     daemon = MicroTetherDaemon(client_environment_config="local_read_only")
     return daemon.run_single_cycle(
         override_payloads=request.payloads,
@@ -146,7 +139,7 @@ async def run_micro_tether_endpoint(
 @router.post("/api/v1/euclid/sovereign/difc-oracle/settle")
 async def settle_difc_oracle_endpoint(
     request: DIFCOracleSettleRequest = Body(default_factory=DIFCOracleSettleRequest),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     return SovereignDeltaOracle.settle_delta_contract(
         client_id=request.client_id,
         legacy_3d_cost_x=request.legacy_3d_cost_x,
