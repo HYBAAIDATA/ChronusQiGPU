@@ -38,7 +38,12 @@ LOG = logging.getLogger(__name__)
 
 
 def _positive_timeout(value: float, name: str) -> float:
-    """Reject non-finite or nonnumeric bounds before constructing a transport."""
+    """Return a finite, strictly positive timeout unchanged.
+
+    Raise ``ValueError`` for booleans, values other than integers or floats,
+    nonpositive values, or bounds that fail the ``math.isfinite`` check.
+    ``name`` identifies the bound in the error message.
+    """
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{name} must be a finite positive number")
     try:
@@ -51,6 +56,11 @@ def _positive_timeout(value: float, name: str) -> float:
 
 
 def _positive_env(name: str, default: float) -> float:
+    """Read a finite, strictly positive number from an environment variable.
+
+    An unset or whitespace-only value uses ``default``, which is also
+    validated. Raise ``ValueError`` for invalid text or an invalid bound.
+    """
     raw = os.getenv(name, "").strip()
     if not raw:
         return _positive_timeout(default, name)
@@ -94,6 +104,19 @@ class ProductionStratumClient(StratumClient):
         outbound_queue_size: int | None = None,
         **kwargs: Any,
     ) -> None:
+        """Initialize transport bounds and publish status without connecting.
+
+        Timeouts are in seconds. ``None`` selects the matching
+        ``PYTHIA_STRATUM_{CONNECT,REQUEST,WRITE,ENQUEUE}_TIMEOUT_S`` value,
+        defaulting to 0.75, 30.0, 0.75, and 0.25 seconds, respectively.
+        ``outbound_queue_size`` bounds queued payloads; ``None`` reads
+        ``PYTHIA_STRATUM_OUTBOUND_QUEUE`` or uses ``ladder_capacity(256)``.
+        Remaining arguments are forwarded to ``StratumClient``.
+
+        Raise ``ValueError`` before publishing status if a timeout is not a
+        finite positive number (booleans excluded), or the resolved queue
+        capacity is not a positive integer (booleans excluded).
+        """
         # Base __init__ publishes an initial status snapshot and therefore may
         # call our overridden _publish_status/status_snapshot immediately.
         self._submit_rtt_ms: deque[float] = deque(maxlen=ladder_capacity(2048))
@@ -237,6 +260,12 @@ class ProductionStratumClient(StratumClient):
             )
 
     async def _writer_loop(self) -> None:
+        """Serialize queued writes and acknowledge each successful drain.
+
+        Write or drain errors stop the writer and fail pending requests with
+        ``ConnectionError``; the payload's acknowledgement carries the original
+        error. Cancellation propagates. Payloads are never retried here.
+        """
         try:
             while not self._closed:
                 payload, method, ack = await self._outbound.get()
@@ -275,6 +304,14 @@ class ProductionStratumClient(StratumClient):
             raise
 
     async def _send_payload(self, payload: bytes, *, method: str) -> None:
+        """Enqueue bytes and wait for the writer's drain acknowledgement.
+
+        ``method`` labels the wire-write counter. Queue admission uses
+        ``enqueue_timeout`` seconds; acknowledgement uses ``write_timeout``
+        plus ``enqueue_timeout`` seconds. Expiry raises ``TimeoutError``;
+        connection and writer errors propagate. Success does not imply a
+        pool response, and timeout or cancellation may leave bytes queued.
+        """
         self._ensure_writer_task()
         loop = asyncio.get_running_loop()
         ack: asyncio.Future[None] = loop.create_future()
@@ -300,6 +337,19 @@ class ProductionStratumClient(StratumClient):
     async def request(
         self, method: str, params: list[Any], *, timeout: float | None = None
     ) -> Any:
+        """Send one JSON-RPC request and return the correlated response result.
+
+        ``timeout`` is the response wait in seconds after sending completes;
+        ``None`` uses ``request_timeout``. It must be finite and positive,
+        excluding booleans, or ``ValueError`` is raised before allocating a
+        request ID or sending bytes. Queue and write budgets apply separately.
+
+        Raise ``ConnectionError`` for an unavailable session, ``TimeoutError``
+        on transport or response expiry, and ``StratumProtocolError`` for a
+        pool error response. Serialization and reader/writer errors propagate.
+        Cancellation propagates and removes the pending correlation without
+        retrying; it does not recall bytes already queued or written.
+        """
         if not self.writer:
             raise ConnectionError("Stratum session is not connected")
         if self._reader_task is not None and self._reader_task.done():
@@ -403,6 +453,14 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         sv2_channel_factory: Any | None = None,
         **kwargs: Any,
     ) -> None:
+        """Store transport policy for clients created during failover.
+
+        Timeout overrides are in seconds; ``None`` reads the corresponding
+        ``PYTHIA_STRATUM_*`` setting or its default. Invalid environment values
+        raise ``ValueError``. Explicit overrides are stored for client
+        construction. ``sv2_channel_factory``
+        supplies the secure V2 channel provider when configured.
+        """
         kwargs.setdefault(
             "reconnect_delay", _positive_env("PYTHIA_RECONNECT_INITIAL_S", 0.25)
         )
@@ -532,6 +590,15 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         super().set_metrics_sink(wrapped)
 
     async def connect_with_failover(self) -> Any:
+        """Try each configured endpoint once, starting at ``endpoint_index``.
+
+        Return the first connected client, bind it as ``self.client``, update
+        the selected index, refresh work identity, and wake precomputation.
+        V2 configuration and connection failures advance to the next endpoint.
+        If all endpoints reject authorization, raise ``StratumAuthorizationError``;
+        otherwise an exhausted pass raises ``ConnectionError``. V1 client
+        construction errors propagate immediately.
+        """
         errors: list[str] = []
         authorization_failures = 0
         for offset in range(len(self.endpoints)):
