@@ -120,17 +120,34 @@ def _expr_domain(expr: sp.Basic) -> str:
 def audit_exactness(tree: Any) -> ExactnessReport:
     """Fail closed unless every numeric payload value has an audited exact form.
 
-    Accepted leaves are exact integers/rationals, SymPy exact expressions,
-    explicit ``to_sympy`` exact-number adapters, booleans, strings, bytes and
-    ``None``. Containers, enums and dataclasses are traversed recursively.
+    Accepted leaves include integers, ``Fraction`` values, booleans, bytes
+    and ``None``. SymPy expressions are checked for ``Float`` atoms, ``nan``
+    anywhere in the expression, and ``is_finite is False``.
+    Strings are not parsed, but a whole decimal or
+    scientific literal after stripping whitespace is a violation.
+
+    Mappings (values and non-string keys), lists, tuples, enum values and
+    dataclass instance fields are traversed recursively. String mapping
+    keys are treated as labels. Shared subtrees are allowed.
     Unsupported numeric or opaque objects are violations: their internals
     cannot safely be assumed exact. Cyclic payloads are rejected.
+
+    A ``to_sympy()`` adapter must return a SymPy expression, integer or
+    ``Fraction`` (not a boolean); its result is audited too. ``Exception``
+    subclasses raised by the adapter call become violations. Errors during
+    traversal, attribute lookup or symbolic inspection otherwise propagate.
+
+    Return an :class:`ExactnessReport` with the verdict, arithmetic-domain
+    label and path-qualified violations. ``label_only`` means no numeric
+    domain was recorded, even if violations were found. Violations do not
+    raise here; the facade raises :class:`ExactnessAuditError` for them.
     """
     violations: List[str] = []
     domains: List[str] = []
     active: set[int] = set()
 
     def walk(v: Any, path: str) -> None:
+        """Accumulate domains and violations for ``v`` at its payload ``path``."""
         if v is None or isinstance(v, (bool, str, bytes)):
             if isinstance(v, str) and _FLOAT_LITERAL.fullmatch(v.strip()):
                 violations.append(f"{path}: decimal-literal string {v!r}")
