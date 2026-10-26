@@ -312,6 +312,16 @@ def ota_update(device, bundle, verify):
 
 
 def capture_notebook(session, environment) -> dict:
+    """Return notebook provenance without executing or replaying cells.
+
+    ``session`` must contain ``cells`` and ``outputs``; ``data_references``
+    defaults to an empty tuple. The result includes the supplied values and
+    SHA-256 hashes of the serialized session and environment. ``reproducible``
+    is always ``False`` and ``replay_status`` is ``"NOT_RUN"``.
+
+    Missing required session keys raise ``KeyError``. ``TypeError`` and
+    ``ValueError`` from JSON serialization propagate.
+    """
     body = json.dumps(session, sort_keys=True, separators=(",", ":"), default=str).encode()
     return {
         "session_hash": hashlib.sha256(body).hexdigest(),
@@ -319,7 +329,9 @@ def capture_notebook(session, environment) -> dict:
         "outputs": session["outputs"],
         "env_hash": hashlib.sha256(json.dumps(environment, sort_keys=True).encode()).hexdigest(),
         "data_refs": session.get("data_references", ()),
-        "reproducible": True,
+        # Capture records provenance; it does not execute or replay cells.
+        "reproducible": False,
+        "replay_status": "NOT_RUN",
     }
 
 

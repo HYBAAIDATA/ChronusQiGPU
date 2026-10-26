@@ -1,0 +1,11 @@
+test_ancestor_refused_before_io (__main__.BackupUnit.test_ancestor_refused_before_io) ... ok
+test_descendant_refused_before_copy (__main__.BackupUnit.test_descendant_refused_before_copy) ... ok
+test_existing_destination_preserved (__main__.BackupUnit.test_existing_destination_preserved) ... ok
+test_new_disjoint_destination_copied (__main__.BackupUnit.test_new_disjoint_destination_copied) ... ok
+test_same_root_refused_before_io (__main__.BackupUnit.test_same_root_refused_before_io) ... ok
+test_symlink_destination_preserved (__main__.BackupUnit.test_symlink_destination_preserved) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.056s
+
+OK
