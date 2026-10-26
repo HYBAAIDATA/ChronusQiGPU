@@ -13,8 +13,14 @@ import sys
 from pathlib import Path
 
 # Bound BLAS/OpenMP thread allocation to 1 thread per worker to avoid thread exhaustion
-# and memory allocation failure ("OpenBLAS error: Memory allocation still failed after 10 retries")
-for _var in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+# and memory allocation failure ("OpenBLAS error: Memory allocation still failed after 10 retries").
+for _var in (
+    "OPENBLAS_NUM_THREADS",
+    "OMP_NUM_THREADS",
+    "MKL_NUM_THREADS",
+    "NUMEXPR_NUM_THREADS",
+    "VECLIB_MAXIMUM_THREADS",
+):
     os.environ.setdefault(_var, "1")
 
 _PROJECT_ROOT = Path(__file__).resolve().parent
@@ -22,13 +28,26 @@ _CANONICAL_PYTHON = _PROJECT_ROOT / "chronus/mla1517_platform" / "python"
 _CHRONOS_IGPU = _PROJECT_ROOT / "packages" / "chronos-one-igpu" / "src"
 _PYTHIA_CONSUMER = _PROJECT_ROOT / "packages" / "pythia-consumer" / "src"
 _TURING = _PROJECT_ROOT / "turing_universal_quantum_computer"
-for _p in [str(_PROJECT_ROOT), str(_CANONICAL_PYTHON), str(_CHRONOS_IGPU), str(_PYTHIA_CONSUMER), str(_TURING)]:
-    if _p not in sys.path:
-        sys.path.insert(0, _p)
+_PROJECT_PATHS = (
+    str(_PROJECT_ROOT),
+    str(_CANONICAL_PYTHON),
+    str(_CHRONOS_IGPU),
+    str(_PYTHIA_CONSUMER),
+    str(_TURING),
+)
+for _path in _PROJECT_PATHS:
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
 
 _existing_pp = os.environ.get("PYTHONPATH", "")
 _pp_parts = _existing_pp.split(os.pathsep) if _existing_pp else []
-for _p in [str(_CHRONOS_IGPU), str(_PYTHIA_CONSUMER), str(_CANONICAL_PYTHON), str(_PROJECT_ROOT), str(_TURING)]:
+for _p in (
+    str(_CHRONOS_IGPU),
+    str(_PYTHIA_CONSUMER),
+    str(_CANONICAL_PYTHON),
+    str(_PROJECT_ROOT),
+    str(_TURING),
+):
     if _p not in _pp_parts:
         _pp_parts.insert(0, _p)
 os.environ["PYTHONPATH"] = os.pathsep.join(_pp_parts)
@@ -55,7 +74,7 @@ _ML_EXECUTOR: concurrent.futures.ThreadPoolExecutor | None = None
 
 
 def get_ml_executor(max_workers: int = 4) -> concurrent.futures.ThreadPoolExecutor:
-    """Return a shared ThreadPoolExecutor for offloading CPU-heavy ML tree/tensor operations."""
+    """Return a shared ThreadPoolExecutor for offloading CPU-heavy ML work."""
     global _ML_EXECUTOR
     if _ML_EXECUTOR is None:
         _ML_EXECUTOR = concurrent.futures.ThreadPoolExecutor(
@@ -65,10 +84,12 @@ def get_ml_executor(max_workers: int = 4) -> concurrent.futures.ThreadPoolExecut
     return _ML_EXECUTOR
 
 
-async def evaluate_tree_channels_async(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
-    """Offloads heavy tree/channel evaluation to the asynchronous ML thread executor,
-    preventing event loop lag and eliminating slow-heartbeat warnings.
-    """
+async def evaluate_tree_channels_async(
+    fn: Callable[..., Any],
+    *args: Any,
+    **kwargs: Any,
+) -> Any:
+    """Offload heavy tree/channel evaluation to the async ML thread executor."""
     loop = asyncio.get_running_loop()
     executor = get_ml_executor()
     if kwargs:
@@ -81,4 +102,3 @@ async def evaluate_tree_channels_async(fn: Callable[..., Any], *args: Any, **kwa
 
 if __name__ == "__main__":
     main()
-
