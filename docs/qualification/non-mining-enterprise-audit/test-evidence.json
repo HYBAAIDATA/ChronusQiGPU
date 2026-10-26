@@ -1,0 +1,112 @@
+{
+  "source_revision": "b131edc408a37ff7c03534d694bfcdaf0c827abb",
+  "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+  "platform": "Linux-6.18.49-x86_64-with-glibc2.43",
+  "scope": "Non-mining partial-export module tests; actual hyba_contracts initializer; hyba_services initializer bypassed; no backend doubles for repaired functions; synthetic test data; not installed package, HTTP, device, CI or deployment validation",
+  "rerun_note": "All five entries replace historical runs whose exact tested source could not be recovered. These are fresh reproductions, not source identities inferred for the old logs. The before export combines base-export modules with the current audit tests and guarded runner; the after export uses current files.",
+  "runs": {
+    "baseline-readiness": {
+      "tested_source": {
+        "manifest": "tested-source-before.json",
+        "manifest_sha256": "d8018a6c776fb32f212a0e0cc066464efb1e8ea24d0df6fa6e858eb02213bc95"
+      },
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_tomorrow_readiness.py"
+      ],
+      "working_directory": "isolated export root reconstructed from tested_source manifest",
+      "started_at": "2026-10-26T01:59:34.574455+00:00",
+      "tests_run": 34,
+      "failures": 0,
+      "outcome": "PASS",
+      "exit_code": 0,
+      "log": "baseline-readiness.log",
+      "log_sha256": "6d674b766ff2c0238aeb0dbf5b1a16c902a0f1040f8ce33e72997e32ebef54b9"
+    },
+    "red-guardrails": {
+      "tested_source": {
+        "manifest": "tested-source-before.json",
+        "manifest_sha256": "d8018a6c776fb32f212a0e0cc066464efb1e8ea24d0df6fa6e858eb02213bc95"
+      },
+      "command": [
+        "python",
+        "docs/qualification/non-mining-enterprise-audit/run_partial.py"
+      ],
+      "working_directory": "isolated export root reconstructed from tested_source manifest",
+      "started_at": "2026-10-26T01:59:34.794606+00:00",
+      "tests_run": 14,
+      "failures": 8,
+      "outcome": "FAIL",
+      "exit_code": 1,
+      "log": "red-guardrails.log",
+      "log_sha256": "0cdce579a60cfcf5b3cd1aaae5b5e589006ee1560ee13853f450bc745f4a2f8b"
+    },
+    "green-guardrails": {
+      "tested_source": {
+        "manifest": "tested-source-after.json",
+        "manifest_sha256": "2541e6997122874c9b233c63e8b11441ddc030ebd57a1afa1549a8e1113fd4f3"
+      },
+      "command": [
+        "python",
+        "docs/qualification/non-mining-enterprise-audit/run_partial.py"
+      ],
+      "working_directory": "isolated export root reconstructed from tested_source manifest",
+      "started_at": "2026-10-26T01:59:34.934758+00:00",
+      "tests_run": 14,
+      "failures": 0,
+      "outcome": "PASS",
+      "exit_code": 0,
+      "log": "green-guardrails.log",
+      "log_sha256": "3896d27ea8e39c3dec5b89a93987c395a0f166b32a5fd28a6b279cf34ed5f154"
+    },
+    "optimized-guardrails": {
+      "tested_source": {
+        "manifest": "tested-source-after.json",
+        "manifest_sha256": "2541e6997122874c9b233c63e8b11441ddc030ebd57a1afa1549a8e1113fd4f3"
+      },
+      "command": [
+        "python",
+        "-O",
+        "docs/qualification/non-mining-enterprise-audit/run_partial.py"
+      ],
+      "working_directory": "isolated export root reconstructed from tested_source manifest",
+      "started_at": "2026-10-26T01:59:35.091444+00:00",
+      "tests_run": 14,
+      "failures": 0,
+      "outcome": "PASS",
+      "exit_code": 0,
+      "log": "optimized-guardrails.log",
+      "log_sha256": "49eb375fa5545815d569d0c45516985984447ee5dc9c5d823882782783808e1d"
+    },
+    "unchanged-readiness": {
+      "tested_source": {
+        "manifest": "tested-source-after.json",
+        "manifest_sha256": "2541e6997122874c9b233c63e8b11441ddc030ebd57a1afa1549a8e1113fd4f3"
+      },
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_tomorrow_readiness.py"
+      ],
+      "working_directory": "isolated export root reconstructed from tested_source manifest",
+      "started_at": "2026-10-26T01:59:35.539918+00:00",
+      "tests_run": 34,
+      "failures": 0,
+      "outcome": "PASS",
+      "exit_code": 0,
+      "log": "unchanged-readiness.log",
+      "log_sha256": "e40d2103037762c5969ef9f9eebae408a8090efc04281ca7549dd2904443bdd8"
+    }
+  }
+}

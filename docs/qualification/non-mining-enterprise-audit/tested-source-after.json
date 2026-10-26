@@ -1,0 +1,58 @@
+{
+  "scope": "Complete selected source files for these isolated partial-export test runs.",
+  "construction": "Current working-tree files copied before execution.",
+  "files": [
+    {
+      "path": "docs/qualification/non-mining-enterprise-audit/run_partial.py",
+      "sha256": "e592ae0c82be347b445b31f86609d4fab64e875445896a3ddca8638574e4cf2d"
+    },
+    {
+      "path": "hyba_contracts/__init__.py",
+      "sha256": "0f8db222ffbd7527972a11f8aa46a4c8f4fdb8b01b2b4ead9bd1738440efcd22"
+    },
+    {
+      "path": "hyba_contracts/packs.py",
+      "sha256": "1106ca2ee04cfe81aa2b509d859b49f6b897da7199cd9d72d7b42c5af5ec23e9"
+    },
+    {
+      "path": "hyba_contracts/planning.py",
+      "sha256": "c264d15176393f0885359eae8bbca98e58fab6485eeae9cf5c6a017d6fa23180"
+    },
+    {
+      "path": "hyba_contracts/types.py",
+      "sha256": "047ee23d0653ab73370503f0a3c1b67989e4fd27098ce2f9cf2448ac726d7548"
+    },
+    {
+      "path": "hyba_contracts/versioning.py",
+      "sha256": "1c742a7cb4e8592f0f494ab984235850cc069c556c89d1f7e85be779ba5735cd"
+    },
+    {
+      "path": "hyba_services/catalogue.py",
+      "sha256": "78dc7a5ad2fd522c9b536121f5db35c0649023711d9e5cdf5bee761a3d661428"
+    },
+    {
+      "path": "hyba_services/core.py",
+      "sha256": "734ecfcd31e9bc3ada156ba588eea19a0cb5d74a5fa64f96119f13ed3b77f435"
+    },
+    {
+      "path": "hyba_services/observability.py",
+      "sha256": "e87efd52b99be45847d4b5d66b1a02d9d581c1bea0df19202bb7279c8cbcc0b1"
+    },
+    {
+      "path": "hyba_services/platform.py",
+      "sha256": "cc4efc3c7a54c98f2378413d66cfa966910a52c5c8cf04e710d1c023d6a69acb"
+    },
+    {
+      "path": "tests/test_enterprise_audit_guardrails.py",
+      "sha256": "6c3f2a42cf07816a4be2ea479840f60476e7da5d2c4b22735e68eb6a57a150c7"
+    },
+    {
+      "path": "tests/test_tomorrow_readiness.py",
+      "sha256": "88583dd4abda667b7a209be51a36706325bc41884dd400f7e2172abb74ca156e"
+    },
+    {
+      "path": "tools/tomorrow_readiness.py",
+      "sha256": "f0718e605190df52dfe63f60459539ff1be538f72288fff19fdf49166debd188"
+    }
+  ]
+}
