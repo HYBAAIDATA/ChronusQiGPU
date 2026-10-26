@@ -1,40 +1,47 @@
 """Euclid operational facade: explicit host wiring, no signer/trust mutation methods."""
 
-from .identity import LifecycleState
-from .goal import infer_real_objective
-from .operational_loop import operational_loop
+from __future__ import annotations
+
+from typing import Any, Callable
+
 from ._contracts import ContractError
+from .goal import infer_real_objective
+from .identity import LifecycleState
+from .operational_loop import operational_loop
 
 
 class FrontierAgent:
     def __init__(
         self,
-        identity,
-        task_class,
+        identity: str,
+        task_class: str,
         *,
-        capabilities,
-        permissions,
-        budgets,
-        safety,
-        audit,
-        authority_snapshot,
-        verify_authority,
-        verification_provider,
-        verification_policy,
-        objective_verification_provider,
-        execution_guard,
-        rollback_guard,
-        clock,
-        lifecycle=LifecycleState.DRAFT,
-    ):
-        self.identity, self.task_class = identity, task_class
-        self.capabilities, self.permissions, self.budgets = capabilities, permissions, budgets
-        self.safety, self.audit = safety, audit
-        self.authority_snapshot, self.verify_authority = authority_snapshot, verify_authority
-        self.verification_provider, self.verification_policy = (
-            verification_provider,
-            verification_policy,
-        )
+        capabilities: dict[str, Any],
+        permissions: dict[str, Any],
+        budgets: dict[str, Any],
+        safety: dict[str, Any],
+        audit: list[dict[str, Any]],
+        authority_snapshot: dict[str, Any],
+        verify_authority: Callable[[dict[str, Any]], bool],
+        verification_provider: Any,
+        verification_policy: Any,
+        objective_verification_provider: Any,
+        execution_guard: Callable[[Any], bool],
+        rollback_guard: Callable[[Any], bool],
+        clock: Callable[[], float],
+        lifecycle: LifecycleState = LifecycleState.DRAFT,
+    ) -> None:
+        self.identity = identity
+        self.task_class = task_class
+        self.capabilities = capabilities
+        self.permissions = permissions
+        self.budgets = budgets
+        self.safety = safety
+        self.audit = audit
+        self.authority_snapshot = authority_snapshot
+        self.verify_authority = verify_authority
+        self.verification_provider = verification_provider
+        self.verification_policy = verification_policy
         if not callable(execution_guard):
             raise ContractError(
                 "external execution guard is mandatory; no direct-execution fallback"
@@ -44,8 +51,9 @@ class FrontierAgent:
         self.rollback_guard = rollback_guard
         self.execution_guard = execution_guard
         self.objective_verification_provider = objective_verification_provider
-        self.clock, self.lifecycle = clock, lifecycle
-        self._learning_queue = []
+        self.clock = clock
+        self.lifecycle = lifecycle
+        self._learning_queue: list[Any] = []
         self._iteration_counter = 0
         audit.append(
             "agent_boot",
@@ -54,30 +62,30 @@ class FrontierAgent:
         )
 
     @property
-    def learning_queue(self):
+    def learning_queue(self) -> tuple[Any, ...]:
         return tuple(self._learning_queue)
 
     @property
-    def iteration_counter(self):
+    def iteration_counter(self) -> int:
         return self._iteration_counter
 
     @property
-    def counter(self):
+    def counter(self) -> int:
         return self._iteration_counter
 
-    def drain_learning_queue(self) -> tuple:
+    def drain_learning_queue(self) -> tuple[Any, ...]:
         """Host archival: drain and clear the learning evidence queue before the 10,000-item cap."""
         items = tuple(self._learning_queue)
         self._learning_queue.clear()
         return items
 
-    def record_evidence(self, outcome):
-        if len(self._learning_queue) >= 10000:
+    def record_evidence(self, outcome: Any) -> None:
+        if len(self._learning_queue) >= 10_000:
             raise ContractError("learning evidence queue full; host must archive")
         self._learning_queue.append(outcome)
 
-    def run(self, objective, cognition, plan):
-        if len(self._learning_queue) >= 10000:
+    def run(self, objective: Any, cognition: Any, plan: Any) -> Any:
+        if len(self._learning_queue) >= 10_000:
             raise ContractError("archive evidence before accepting more tasks")
         infer_real_objective(objective, self.audit, now=self.clock())
         outcome = operational_loop(self, objective, cognition, plan)
@@ -85,6 +93,6 @@ class FrontierAgent:
         return outcome
 
 
-def frontier_main(agent, objective, cognition, plan):
+def frontier_main(agent: FrontierAgent, objective: Any, cognition: Any, plan: Any) -> Any:
     """No second unbudgeted retry and no qualification/elevation call."""
     return agent.run(objective, cognition, plan)
