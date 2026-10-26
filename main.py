@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 # Bound BLAS/OpenMP thread allocation to 1 thread per worker to avoid thread exhaustion
-# and memory allocation failure ("OpenBLAS error: Memory allocation still failed after 10 retries").
+# and memory allocation failure ("OpenBLAS error: Memory allocation still failed after 10 retries")
 for _var in (
     "OPENBLAS_NUM_THREADS",
     "OMP_NUM_THREADS",
@@ -25,7 +25,7 @@ for _var in (
 
 
 def _add_project_paths() -> list[str]:
-    """Register only real project roots so PYTHONPATH stays predictable."""
+    """Register only verified project roots so PYTHONPATH stays predictable."""
     base = Path(__file__).resolve().parent
     candidate_dirs = [
         base,
@@ -41,11 +41,11 @@ def _add_project_paths() -> list[str]:
     return verified
 
 
-_project_roots = _add_project_paths()
+_PROJECT_ROOTS = _add_project_paths()
 
 _existing_pp = os.environ.get("PYTHONPATH", "")
 _pp_parts = _existing_pp.split(os.pathsep) if _existing_pp else []
-for _path in _project_roots:
+for _path in _PROJECT_ROOTS:
     if _path not in _pp_parts:
         _pp_parts.insert(0, _path)
 os.environ["PYTHONPATH"] = os.pathsep.join(_pp_parts)
