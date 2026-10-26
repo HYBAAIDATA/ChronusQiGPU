@@ -8,7 +8,7 @@ Provocation Experiments into the production FastAPI router.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
@@ -22,17 +22,14 @@ from euclid.cognition.reconciliation_gateway import (
     ERNSpikePayload,
     MetacognitiveGatekeeper,
     ProvocationExperimentsSuite,
-    generate_reconciliation_report,
+    fast_reflex_interrupt_arc,
     get_curriculum_sync,
     get_node_state,
     get_reflection_trace_sync,
     get_state_matrix_sync,
     get_widget_spec_sync,
-    fast_reflex_interrupt_arc,
-    process_ern_spike_signal,
     process_ern_spike_signal_sync,
     quorum_unlock_node,
-    record_episodic_event,
 )
 
 router = APIRouter(prefix="/api/v1/euclid", tags=["Cognitive Engine"])
@@ -51,20 +48,37 @@ class AnalogyTransferRequest(BaseModel):
     target_domain: str = "dark_matter_decay"
 
 
+def _get_required_mapping(payload: Any) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        raise ValueError("websocket payload must be a JSON object")
+    return payload
+
+
 @router.websocket("/voice/stream")
-async def voice_stream_gateway(websocket: WebSocket, background_tasks: BackgroundTasks):
+async def voice_stream_gateway(
+    websocket: WebSocket,
+    background_tasks: BackgroundTasks,
+) -> None:
     await websocket.accept()
     try:
         while True:
             data = await websocket.receive_json()
+            payload = _get_required_mapping(data)
 
-            # 1. Handle Interruption (ERN Spike) — Split-Flight Gateway
-            if data.get("type") == "INTERRUPTION":
-                payload = ERNSpikePayload(**data["payload"])
-                # Fast reflex arc: lock-free capability quarantine (< 5ms)
-                receipt = fast_reflex_interrupt_arc(payload)
+            message_type = str(payload.get("type") or "").upper()
 
-                # Flight 1 (Reflex): Instant sub-200ms Audio Marker
+            if message_type == "INTERRUPTION":
+                if "payload" not in payload or not isinstance(payload["payload"], dict):
+                    await websocket.send_json(
+                        {
+                            "stream_type": "ERROR",
+                            "status": "INVALID_PAYLOAD",
+                            "reason": "missing interruption payload",
+                        }
+                    )
+                    continue
+                payload_obj = ERNSpikePayload(**payload["payload"])
+                receipt = fast_reflex_interrupt_arc(payload_obj)
                 await websocket.send_json(
                     {
                         "stream_type": "AUDIO_MARKER",
@@ -74,13 +88,10 @@ async def voice_stream_gateway(websocket: WebSocket, background_tasks: Backgroun
                         "reflex_latency_ms": receipt.reflex_latency_ms,
                     }
                 )
+                process_ern_spike_signal_sync(payload_obj)
 
-                # Flight 2 (Reflection): Commit ERN Spike & lock traumatized node
-                process_ern_spike_signal_sync(payload)
-
-            # 2. Handle Execution Request
-            elif data.get("type") == "EXECUTION_REQUEST":
-                node = str(data.get("target_node") or "")
+            elif message_type == "EXECUTION_REQUEST":
+                node = str(payload.get("target_node") or "")
                 gate = MetacognitiveGatekeeper.verify_clearance_sync(node)
 
                 if not gate["allow_write"]:
@@ -100,14 +111,13 @@ async def voice_stream_gateway(websocket: WebSocket, background_tasks: Backgroun
                         }
                     )
 
-            # 3. Handle Reflection Loop / Manifold Reconciliation Request
-            elif data.get("type") == "RECONCILE_REQUEST":
-                node = str(data.get("target_node") or "")
+            elif message_type == "RECONCILE_REQUEST":
+                node = str(payload.get("target_node") or "")
                 constraint = str(
-                    data.get("remediation_constraint")
+                    payload.get("remediation_constraint")
                     or f"Verified structural remap of {node}"
                 )
-                user_id = str(data.get("user_id") or "coach_prime")
+                user_id = str(payload.get("user_id") or "coach_prime")
                 smoothed = KNOWLEDGE_MANIFOLD.reconcile_node_after_reflection(
                     target_node=node,
                     remediation_constraint=constraint,
@@ -122,24 +132,27 @@ async def voice_stream_gateway(websocket: WebSocket, background_tasks: Backgroun
                 )
             else:
                 await websocket.send_json(
-                    {"stream_type": "ERROR", "status": "INVALID_REQUEST",
-                     "reason": "unsupported_message_type"}
+                    {
+                        "stream_type": "ERROR",
+                        "status": "INVALID_REQUEST",
+                        "reason": "unsupported_message_type",
+                    }
                 )
     except WebSocketDisconnect:
         return
+    except ValueError:
+        await websocket.close(code=1008)
     except Exception:
-        # Never swallow an error and leave the peer waiting indefinitely.
-        # No clearance is granted after a failed request.
         await websocket.close(code=1011)
 
 
 @router.get("/learning/curriculum/{user_id}")
-async def get_curriculum(user_id: str) -> Dict[str, Any]:
+async def get_curriculum(user_id: str) -> dict[str, Any]:
     return get_curriculum_sync(user_id)
 
 
 @router.get("/ui/widget-spec")
-async def get_widget_spec() -> Dict[str, Any]:
+async def get_widget_spec() -> dict[str, Any]:
     spec = get_widget_spec_sync()
     spec["visual_states"] = {
         "GREEN": "Smooth Riemannian manifold (Homeostasis)",
@@ -150,17 +163,17 @@ async def get_widget_spec() -> Dict[str, Any]:
 
 
 @router.get("/state/matrix/{user_id}")
-async def get_state_matrix(user_id: str) -> Dict[str, Any]:
+async def get_state_matrix(user_id: str) -> dict[str, Any]:
     return get_state_matrix_sync(user_id)
 
 
 @router.get("/learning/reflection-trace/{node_id}")
-async def get_reflection_trace(node_id: str) -> Dict[str, Any]:
+async def get_reflection_trace(node_id: str) -> dict[str, Any]:
     return get_reflection_trace_sync(node_id)
 
 
 @router.get("/validation/readiness")
-async def get_validation_readiness() -> Dict[str, Any]:
+async def get_validation_readiness() -> dict[str, Any]:
     matrix = get_state_matrix_sync("coach_prime")
     ack = matrix["structural_acknowledgment"]
     no_apology_enforced = "sorry" not in ack.lower() and "apologize" not in ack.lower()
@@ -177,12 +190,12 @@ async def get_validation_readiness() -> Dict[str, Any]:
 
 
 @router.get("/manifold/status")
-async def get_manifold_status() -> Dict[str, Any]:
+async def get_manifold_status() -> dict[str, Any]:
     return KNOWLEDGE_MANIFOLD.snapshot()
 
 
 @router.post("/reconcile")
-async def reconcile_node(req: ReconcileNodeRequest) -> Dict[str, Any]:
+async def reconcile_node(req: ReconcileNodeRequest) -> dict[str, Any]:
     return KNOWLEDGE_MANIFOLD.reconcile_node_after_reflection(
         target_node=req.target_node,
         remediation_constraint=req.remediation_constraint,
@@ -192,7 +205,7 @@ async def reconcile_node(req: ReconcileNodeRequest) -> Dict[str, Any]:
 
 
 @router.post("/analogy/transfer")
-async def transfer_analogy(req: AnalogyTransferRequest) -> Dict[str, Any]:
+async def transfer_analogy(req: AnalogyTransferRequest) -> dict[str, Any]:
     engine = CrossDomainAnalogyEngine()
     return engine.transfer_trauma_to_science(
         source_node=req.source_node,
@@ -203,7 +216,7 @@ async def transfer_analogy(req: AnalogyTransferRequest) -> Dict[str, Any]:
 
 class QuorumUnlockRequest(BaseModel):
     target_node: str
-    signatures: List[Dict[str, str]] = Field(default_factory=list)
+    signatures: list[dict[str, str]] = Field(default_factory=list)
     reason: str = "Curator council quorum override"
     user_id: str = "curator_council"
 
@@ -212,7 +225,7 @@ QuorumUnlockRequest.model_rebuild()
 
 
 @router.post("/quorum/unlock")
-async def post_quorum_unlock(req: QuorumUnlockRequest) -> Dict[str, Any]:
+async def post_quorum_unlock(req: QuorumUnlockRequest) -> dict[str, Any]:
     return quorum_unlock_node(
         target_node=req.target_node,
         signatures=req.signatures,
@@ -222,7 +235,7 @@ async def post_quorum_unlock(req: QuorumUnlockRequest) -> Dict[str, Any]:
 
 
 @router.get("/experiments/run")
-async def run_provocation_experiments() -> Dict[str, Any]:
+async def run_provocation_experiments() -> dict[str, Any]:
     return ProvocationExperimentsSuite.run_all()
 
 
@@ -231,15 +244,13 @@ __all__ = [
     "EPISODIC_MEMORY",
     "ERNSpikePayload",
     "MetacognitiveGatekeeper",
-    "generate_reconciliation_report",
     "get_curriculum",
     "get_node_state",
     "get_reflection_trace",
     "get_state_matrix",
     "get_validation_readiness",
     "get_widget_spec",
-    "process_ern_spike_signal",
-    "record_episodic_event",
+    "process_ern_spike_signal_sync",
     "router",
     "voice_stream_gateway",
 ]
