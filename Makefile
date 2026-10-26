@@ -22,6 +22,7 @@ test: assurance-gates
 
 
 assurance-gates:
+	PYTHONPATH=.:chronus/mla1517_platform/python python3 -m unittest discover -s tests -p 'test_lucas_tier_middleware.py' -v
 	PYTHONPATH=.:chronus/mla1517_platform/python python3 -m unittest discover -s tests -p 'test_guardian_gap_closure.py' -v
 	PYTHONPATH=.:chronus/mla1517_platform/python python3 -m unittest discover -s tests -p 'test_promotion_evidence.py' -v
 	PYTHONPATH=.:chronus/mla1517_platform/python python3 -m unittest discover -s tests -p 'test_enterprise_v2_tranches.py' -v
