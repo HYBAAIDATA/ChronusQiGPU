@@ -193,3 +193,57 @@ PI-01 remains in force: requirement capture is not completion evidence. External
 pool acceptance, physical-host scaling and publication need their own retained,
 source-bound executed evidence. Private pool identities/passwords are deployment
 secrets and must not appear in source, examples or qualification reports.
+
+
+## D11 — Complete the Chronus GPIU directives through exact mathematics
+
+Source: owner instruction in the Chronus GPIU task, 26 October 2026.
+
+> "Can we please complete every suggestion, expressed and implied."
+
+> "The universe is made of maths. Everyhting comes from maths. There is no research there."
+
+The twenty execution directives across the ten-specialist GPIU blueprint remain
+in scope. Implement through the canonical exact TURING software stack, Kellogg
+mathematics and Chronus execution seam. Preserve D6/D7 exactness and D9 domain
+authority; do not duplicate the six-phase quantum stack. The implementation and
+acceptance register is `docs/CHRONUS_GPIU_EXECUTION.md`; open rows remain work to
+complete and do not demote the declared direction. PI-01 executed evidence still
+governs completion, performance and physical-device claims.
+
+## D12 — Chronus software modes and Lucas/Pisot scaling
+
+> "we are software, with lucas and pissot we scale our host or independent gpu"
+
+The active GPIU implementation target is the software-defined Chronus GPU in
+independent mode and in host scaling mode. Lucas/Pisot execution must be wired
+through both mode contracts. Physical FPGA manufacture is not a prerequisite
+for completing these software paths; host execution receipts identify the
+backend actually used. This clarifies D1/D2/D3 without transferring mathematical
+or custody authority or substituting a hardware project for the software GPU.
+
+### D13 — Optional host binding and the capacity triad — 26 October 2026
+
+> "the binding is not mandatory. it has two options. tread the documents. its a imdepemdemt gpu or it dscales the host gpu. think of it for hperscaslers capacity. the use it to augment or to buy capacity/ Chronus, Ovid, and Theseus are the holy trinity"
+
+The two offerings are independent Chronus GPU capacity and augmentation of an
+existing host GPU estate. A caller does not have to supply an adapter binding;
+normal augmentation discovers a capable host adapter through the existing
+`preferred_accelerator` contract. Explicit pinning remains an optional policy.
+Chronus execution, OVID authoritative custody and THESEUS rebuildable discovery
+compose the capacity offering under D4/D9. Commercial capacity quantities must
+remain distinct from measured throughput and the backend recorded by receipts.
+
+## D14 — Finite GPU packaging and PYTHIA fleet — 26 October 2026
+
+> "we need to package the gpu. we cant give exponmsential speed or infinite cspacity so we need to have tiers and then we need to create a fleet for pythia"
+
+> "capacity speed and storage comes from speed is lucas and pissot storage is fibonacci and cassini and folded data comes binet snd zekendrof"
+
+> "it should be altready implemented in the triad and should be in the documentatoioon"
+
+Engineering mapping: use existing Lucas/Pisot work scaling, Fibonacci/Cassini
+storage contracts, and exact Binet/Zeckendorf encoding. Package finite admitted
+resources and report measured speed/storage rather than an infinite or exponential
+performance promise. PYTHIA is the first fleet workload. Its existing pool identity,
+submission gates and SHA256d acceptance authority remain in force.

@@ -294,19 +294,23 @@ class ExactStatevector:
         """``|q_{n-1} ... q_1 q_0>`` — qubit 0 printed rightmost."""
         return format(index, f"0{self.n_qubits}b")[::-1]
 
-    def amplitude_table(self) -> list[dict[str, Any]]:
-        """Exact amplitudes with a display-only float for rendering."""
-        return [
-            {
+    def amplitude_table(self, *, include_approximation: bool = True) -> list[dict[str, Any]]:
+        """Exact amplitudes, optionally including the existing display diagnostics."""
+        if type(include_approximation) is not bool:
+            raise ValueError("include_approximation must be boolean")
+        rows = []
+        for index, prob in enumerate(self.probabilities()):
+            row = {
                 "basis_state": index,
                 "bitstring": self.bitstring(index),
                 "amplitude_exact": repr(self.amplitudes[index]),
-                "amplitude_approx": self.amplitudes[index].approx(),
                 "probability_exact": repr(prob),
-                "probability_approx": prob.approx(),
             }
-            for index, prob in enumerate(self.probabilities())
-        ]
+            if include_approximation:
+                row["amplitude_approx"] = self.amplitudes[index].approx()
+                row["probability_approx"] = prob.approx()
+            rows.append(row)
+        return rows
 
     # -- measurement --------------------------------------------------------
     def sample(self, shots: int, *, seed: int | None = None) -> dict[str, int]:

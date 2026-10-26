@@ -106,6 +106,9 @@ class ExactFieldBackend:
         )
 
     def execute(self, program: Program, **options: Any) -> ExecutionResult:
+        exact_payload = options.get("exact_payload", False)
+        if type(exact_payload) is not bool:
+            raise ValueError("exact_payload must be boolean")
         admission = self.admit(program)
         if not admission.admitted:
             raise StatevectorTooLargeError(
@@ -131,7 +134,7 @@ class ExactFieldBackend:
             )
         payload: dict[str, Any] = {
             "state": state,
-            "amplitudes": state.amplitude_table(),
+            "amplitudes": state.amplitude_table(include_approximation=not exact_payload),
             "dirac": state.dirac(),
             "norm_sq_exact": repr(state.norm_sq()),
             "support": len(state.support()),

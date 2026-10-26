@@ -59,12 +59,12 @@ PRODUCT_AUTHORITIES: dict[str, dict[str, str]] = {
         "contract": "Cryptographic authority grants, tenant entitlements, replay defense, and fail-closed security gates",
     },
     "THESEUS": {
-        "domain": "durable_custody_and_fencing",
-        "contract": "Append-only custody journals, snapshots, optimistic concurrency versions, and fencing tokens",
+        "domain": "rebuildable_query_index_and_lineage",
+        "contract": "Rebuildable query, index, graph and semantic projections over OVID authority",
     },
     "OVID": {
-        "domain": "canonical_transformation_and_lineage",
-        "contract": "Content-addressed parent/child lineage graphs and cross-system binding metadata",
+        "domain": "authoritative_state_custody_and_integrity",
+        "contract": "Authoritative durable folded state, checkpoints, integrity and representation custody",
     },
     "Salamander": {
         "domain": "self_healing_and_bounded_repair",

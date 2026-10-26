@@ -55,6 +55,46 @@ OPERATORS = {
     "sha256": OperatorSpec("sha256", OperatorFamily.CRYPTOGRAPHIC, ("bytes",), (ExecutionClass.DENSE_NATIVE,), "sha256"),
     "sha256d_scan": OperatorSpec("sha256d_scan", OperatorFamily.CRYPTOGRAPHIC, ("bytes",), (ExecutionClass.DENSE_NATIVE, ExecutionClass.HYBRID), "sha256d_target"),
     "sha256d_verify": OperatorSpec("sha256d_verify", OperatorFamily.CRYPTOGRAPHIC, ("bytes",), (ExecutionClass.DENSE_NATIVE,), "sha256d"),
+    "quantum_program": OperatorSpec(
+        "quantum_program",
+        OperatorFamily.QUANTUM_MATH,
+        ("q8", "tableau", "cyclotomic"),
+        (ExecutionClass.SYMBOLIC,),
+        "turing_exact_certificate_replay",
+    ),
+    "algebraic_isa": OperatorSpec(
+        "algebraic_isa", OperatorFamily.TENSOR, ("zphi", "gf256"),
+        (ExecutionClass.SYMBOLIC,), "algebraic_polynomial_oracle",
+    ),
+    "exact_kernel": OperatorSpec(
+        "exact_kernel", OperatorFamily.PHI_LUCAS, ("uint32",),
+        (ExecutionClass.DENSE_NATIVE,), "exact_recurrence_oracle",
+    ),
+    "hyperbolic_walk": OperatorSpec(
+        "hyperbolic_walk", OperatorFamily.QUANTUM_MATH, ("symbolic",),
+        (ExecutionClass.SYMBOLIC,), "turing_hermitian_evolution_replay",
+    ),
+    "exact_graph": OperatorSpec(
+        "exact_graph",
+        OperatorFamily.TENSOR,
+        ("q8",),
+        (ExecutionClass.FOLDED_NATIVE,),
+        "kellogg_exact_graph_replay",
+    ),
+    "grid_geometry": OperatorSpec(
+        "grid_geometry",
+        OperatorFamily.SEARCH,
+        ("uint8",),
+        (ExecutionClass.DENSE_NATIVE,),
+        "coordinate_component_oracle",
+    ),
+    "modular_geometry": OperatorSpec(
+        "modular_geometry",
+        OperatorFamily.SEARCH,
+        ("rational",),
+        (ExecutionClass.GEODESIC,),
+        "psl2z_metric_identity",
+    ),
     # Reserved vocabulary: declared but not advertised by an adapter until real.
     "clifford": OperatorSpec("clifford", OperatorFamily.QUANTUM_MATH, ("tableau",), (ExecutionClass.SYMBOLIC,), "tableau_replay"),
     "tableau_transform": OperatorSpec("tableau_transform", OperatorFamily.QUANTUM_MATH, ("tableau",), (ExecutionClass.SYMBOLIC,), "tableau_replay"),

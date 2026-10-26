@@ -34,6 +34,11 @@ execute a run:
    while preserving the same Chronus workload contract.
 
 This is the original **independent fabric OR scale your stack** architecture.
+Customers can consume independent Chronus capacity or augment their existing
+GPU estate. Adapter discovery is automatic; an explicit adapter binding is an
+optional constraint. Lucas/Pisot scaling applies to both offerings. The
+Chronus–OVID–THESEUS triad supplies execution, authoritative state, and
+rebuildable discovery/indexing across the same tenant-scoped contract.
 A missing GPU can gate the second mode; it can never make the first mode
 unavailable. Likewise, device performance, power, thermal, hardware-rooted
 attestation and physical execution claims remain per-device evidence gates.
@@ -58,8 +63,8 @@ The names matter because Chronus sits inside a larger computational organism.
 | **PYTHIA** | Predictive, causal and mining-domain specialist | May submit mining or analytical workloads to Chronus |
 | **Turing** | HYBA Virtual Quantum Computer (VQC) | **Independent computer.** Turing may use Chronus for authorised classical kernels/substrate execution; Chronus does not own or absorb Turing |
 | **Chronus** | Software-defined GPU, heterogeneous execution, native Virtual iGPU, host-accelerator augmentation, dispatch evidence | Owns this package/runtime boundary |
-| **OVID** | Representation transformation / metamorphosis | May transform work/state before or after execution; **not durable custody** |
-| **THESEUS** | Durable custody, integrity, replication, continuity and recovery of important state | Preserves state/results; **not the transformation owner** |
+| **OVID** | Authoritative enduring state, folded representation custody and integrity | Owns durable state and checkpoints used by Chronus |
+| **THESEUS** | Rebuildable database, query, index, graph and semantic projections | Discovers and indexes OVID state; may be rebuilt from OVID |
 | **PULVINI** | Fold/representation mechanisms as established by the implementation | Can reduce/reshape the working representation used around execution; not silently owned by Chronus |
 | **Geodesic/Search** | Search, indexing and search-space structure | Can change what work must be searched/executed; remains separately attributable |
 | **Salamander** | Bounded health, healing, optimisation, promotion/rollback | Observes and remediates execution/runtime failures under governance |
@@ -175,7 +180,7 @@ representation transformation or the VQC identity.
                                |
              +-----------------+------------------+
              |                                    |
-       THESEUS custody                    SALAMANDER health
+       OVID custody                       SALAMANDER health
              |                                    |
              +--------------------+---------------+
                                   |
@@ -640,7 +645,7 @@ labelled as such.
 | Tensor `matmul`, float64, synthetic | 64² 39 ms, 256² 261 ms, 512² 1.04 s end-to-end, all verified against the `tensor` layer; max error vs NumPy 0.0. End-to-end 0.01–0.26 GFLOP/s: JSON serialisation and verification dominate, so this is **not** a compute peak |
 | Complex GEMV, 128, synthetic | 24 ms, verified |
 | Control plane | Cheapest workload median 0.59 ms, p95 0.90 ms; receipt identity binding ok; evidence ledger reloads (216 records) with hash-chain intact |
-| THESEUS custody (required) | Commit + verify median 11.4 ms (HMAC file custody); fresh-process recovery covered by `tests/test_chronus_theseus_restart_contract.py` |
+| Compatibility custody hook `THESEUS` (required in this measurement) | Commit + verify median 11.4 ms (HMAC file custody); fresh-process recovery covered by `tests/test_chronus_theseus_restart_contract.py` |
 | Built-in `chronus.measurement` harness | Memory/compute/cache/interconnect topology, roofline, hashrate, tensor, MPS/TT/MPO, stress, throttle, regression and replay stages run; **power, thermal, energy and perf-per-watt are `UNAVAILABLE`** (no sensors) |
 
 **Scale math (independently verified, 119 tests in `tests/test_chronus_scale_math_independent.py`).**
@@ -666,7 +671,7 @@ through the verified path).
 | Piece | Home | Role |
 |---|---|---|
 | Product, device, fabric, scale law | `chronus/` | Canonical Chronus |
-| **Execution plane** | `chronus/virtual_igpu/` | The single execution seam (`virtual_igpu_v1`): workloads, adapters, admission policy hook, receipts, evidence ledger, THESEUS custody hook, control-plane verifier |
+| **Execution plane** | `chronus/virtual_igpu/` | The single execution seam (`virtual_igpu_v1`): workloads, adapters, admission policy hook, receipts, evidence ledger, compatibility custody hook `THESEUS` (authoritative owner: OVID), control-plane verifier |
 | Mining execution | `chronus/mla1517/`, `chronus/mla1517_platform/` | PYTHIA's route into Chronus (`chronus` backend lane, `chronus_batch` route); control API |
 | Measurement | `chronus/measurement/`, `scripts/chronus_capability_probe.py` | Attested measurements; the probe behind §19 |
 | Chronos v3.3 maths engine | `chronus/v33/` | Retained inside Chronus |
@@ -675,3 +680,23 @@ through the verified path).
 | Exact maths / VQC | `kellogg/`, `turing_universal_quantum_computer/` | Bridged lazily by `tensor`; Turing stays the independent VQC |
 | Hybrid hasher / scheduler / vendors | `hyba/` | Still outside `chronus/` (used by the H4/600 route); moving it is a staged follow-up, not done |
 | Execution backends | `gpu/` | `gpu.tensor` is a deprecated shim over `tensor` |
+
+## 21. Exact GPIU integration
+
+The Virtual iGPU ABI exposes `quantum_program`, `exact_graph`, `grid_geometry`
+and `modular_geometry`. TURING retains quantum semantics; Kellogg retains exact
+tensor mathematics. See [GPIU execution and all twenty closure gates](../docs/CHRONUS_GPIU_EXECUTION.md)
+for inputs, budgets, verification, and outstanding implementation.
+
+## Packaged capacity and PYTHIA fleet
+
+`hyba-chronus-gpu` packages this shared implementation into finite Starter, Pro
+and Fleet technical tiers. `chronus-gpu tiers` shows their bounds;
+`chronus-pythia-fleet` executes bounded local PYTHIA shards. Both independent
+capacity and automatic host augmentation are available.
+
+The existing mapping remains explicit: **Lucas/Pisot execution scaling;
+Fibonacci/Cassini storage; Binet/Zeckendorf folded data**. The package derives
+finite budgets from those primitives and reports actual execution and storage.
+See [GPU packaging](../docs/CHRONUS_GPU_PACKAGING.md) for commands, limits,
+triad ownership, key custody and deployment qualifications.

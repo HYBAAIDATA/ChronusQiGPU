@@ -146,6 +146,8 @@ scratch_pseudocode.txt
 !/recovery/hyba_data/source/**/
 
 hyba.vhd
+# The root exact Chronus RTL is maintained source.
+!/hyba.vhd
 
 
 legacy_implementations/
