@@ -1,0 +1,73 @@
+{
+  "scope": "COMPONENT FIXTURE ONLY; no actual service",
+  "findings": [
+    {
+      "scenario": "unbound",
+      "viewport": "1280x1000",
+      "assertions": "passed",
+      "scope": "isolated component with synthetic port double",
+      "externalRequests": 0
+    },
+    {
+      "scenario": "unbound",
+      "viewport": "390x844",
+      "assertions": "passed",
+      "scope": "isolated unbound component"
+    },
+    {
+      "scenario": "success",
+      "viewport": "390x844",
+      "assertions": "passed including evidence expansion and authorized-download fixture",
+      "scope": "synthetic component only"
+    },
+    {
+      "scenario": "success",
+      "viewport": "1280x1000",
+      "assertions": "passed",
+      "scope": "isolated component with synthetic port double",
+      "externalRequests": 0
+    },
+    {
+      "scenario": "denied",
+      "viewport": "1280x1000",
+      "assertions": "passed",
+      "scope": "isolated component with synthetic port double",
+      "externalRequests": 0
+    },
+    {
+      "scenario": "revoked",
+      "viewport": "1280x1000",
+      "assertions": "passed",
+      "scope": "isolated component with synthetic port double",
+      "externalRequests": 0
+    },
+    {
+      "scenario": "expired",
+      "viewport": "1280x1000",
+      "assertions": "passed",
+      "scope": "isolated component with synthetic port double",
+      "externalRequests": 0
+    },
+    {
+      "scenario": "failure",
+      "viewport": "1280x1000",
+      "assertions": "passed",
+      "scope": "isolated component with synthetic port double",
+      "externalRequests": 0
+    },
+    {
+      "scenario": "unknown",
+      "viewport": "1280x1000",
+      "assertions": "passed",
+      "scope": "isolated component with synthetic port double",
+      "externalRequests": 0
+    },
+    {
+      "scenario": "loading",
+      "viewport": "1280x1000",
+      "assertions": "passed",
+      "scope": "isolated component with synthetic port double",
+      "externalRequests": 0
+    }
+  ]
+}

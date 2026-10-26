@@ -1,0 +1,22 @@
+E
+======================================================================
+ERROR: test_enterprise_bridge_durable (unittest.loader._FailedTest.test_enterprise_bridge_durable)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_enterprise_bridge_durable
+Traceback (most recent call last):
+  File "/usr/lib64/python3.13/unittest/loader.py", line 403, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/usr/lib64/python3.13/unittest/loader.py", line 346, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "/vercel/sandbox/data/agent1/tests/test_enterprise_bridge_durable.py", line 14, in <module>
+    from aethel.theseus import TheseusError
+  File "/vercel/sandbox/data/agent1/aethel/__init__.py", line 51, in <module>
+    from .cassini import CassiniVerifier
+ModuleNotFoundError: No module named 'aethel.cassini'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

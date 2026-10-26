@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/vercel/sandbox/data/agent1/tests/test_enterprise_bridge_durable.py", line 14, in <module>
+    from aethel.theseus import TheseusError
+ModuleNotFoundError: No module named 'aethel'

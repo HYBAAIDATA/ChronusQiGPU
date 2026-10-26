@@ -1,0 +1,11 @@
+Fresh reproduction: 2026-10-26T01:59:34.574455+00:00
+Tested source: {"manifest": "tested-source-before.json", "manifest_sha256": "d8018a6c776fb32f212a0e0cc066464efb1e8ea24d0df6fa6e858eb02213bc95"}
+Command (from export root): python -m unittest discover -s tests -p test_tomorrow_readiness.py
+Exit status: 0
+
+.assessment error: non-finite JSON constant: NaN
+.................................
+----------------------------------------------------------------------
+Ran 34 tests in 0.079s
+
+OK

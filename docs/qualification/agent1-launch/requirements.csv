@@ -1,0 +1,21 @@
+id,owner,status,current_evidence_or_gap,closure_acceptance
+ENT-01,Joint,OPEN,Customer journey has no qualified HTTP service; Agent2 stays unbound,Actual authenticated browser-to-service backup/restore
+ENT-02,Agent2,OPEN,Brand/UX work is separate; not qualified by runtime units,Approved assets and genuine browser/accessibility evidence
+ENT-03,Agent1,PRESERVED_NOT_REQUALIFIED,PR13 inherited replay honesty repair,Full normal installed assurance regression
+ENT-04,Agent1,PRESERVED_NOT_REQUALIFIED,PR13 inherited non-vacuous proof repair,Full normal installed assurance regression
+ENT-05,Agent1,PRESERVED_NOT_REQUALIFIED,PR13 inherited lifecycle repair; tenant/race/re-register still open,Authorized concurrent crash-safe lifecycle tests
+ENT-06,Joint,OPEN,Historical offers/aliases recorded; no new SKU approved,Versioned offer-specific acceptance and exclusions
+ENT-07,Agent1,PARTIAL,Canonical factory explicit Theseus profile; legacy untouched,Installed profile/legacy isolation and compatibility suite
+ENT-08,Agent1,OPEN,TOE shared authority retained; no runtime run,Admitted non-mining intelligence scenarios
+ENT-09,Agent1,OPEN,Kellogg owner retained; no runtime run,Exact/bounded/unsupported tensor scenarios
+ENT-10,Agent1,REPAIRED_SCOPED_UNIT_ONLY,Directory forwarding/refusal and no-clobber backup repaired; safe restore open,Installed tenancy/restart/corruption/interrupted-write/staged restore rollback
+ENT-11,Agent1,OPEN,Existing authorizer/verifier registry read; no recovery run,AL HARAS-authorized bounded recovery and independent postcondition
+ENT-12,Agent1,OPEN,No duplicate orchestration owner created,Real orchestration/lifecycle cancellation and shutdown
+ENT-13,Agent1,OPEN,PULVINI distinct from Ovid exact transform,Applicable fold audit envelope and reconstruction bounds
+ENT-14,Agent1,OPEN,TURING separate; billing deferred,Capability-bound computation and unsupported-operation refusal
+ENT-15,Agent1,OPEN,No physical route probe or configured execution,Actual admitted Chronus routes and substrate-bound evidence
+ENT-16,Joint,OPEN,First Storage scenario agreed; not executed end-to-end,Storage/Movement/Tensor advertised capability acceptance
+ENT-17,Joint,OPEN,No offline/sovereign deployment qualification,Offline install/residency/keys/local evidence/restore
+ENT-18,Joint,OPEN,No approved baseline/pricebook or billing activated,Hermitten reproducible economics and approved commercial terms
+ENT-19,Agent1,OPEN,No real external provider bound,Actual sandbox dependency/revocation/failure tests
+ENT-20,Joint,BLOCKED,No complete checkout or installed artifacts; local runner exit2,Candidate-bound clean installs/full regression/support/release decision

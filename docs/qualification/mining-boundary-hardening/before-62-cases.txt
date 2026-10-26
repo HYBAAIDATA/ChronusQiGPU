@@ -1,0 +1,869 @@
+......FF..FFFF..FFFF..FFFFFF...FFFFFFFFF...F...F...FFFFFFFF...           [100%]
+=================================== FAILURES ===================================
+_ test_advisory_evidence_cannot_replace_configured_order[advice1-hendrix_coprime_stride-_baseline_plan] _
+
+builder = '_baseline_plan', nonce_order = 'hendrix_coprime_stride', advice = {}
+
+    @pytest.mark.parametrize('builder', ['_baseline_plan', '_build_plan'])
+    @pytest.mark.parametrize('nonce_order', ['hendrix_coprime_stride', 'm32_turing_complete', 'poincare_cassini_11d'])
+    @pytest.mark.parametrize('advice', [None, {}, {'status': 'UNAVAILABLE'}, {'path': 'solve'}])
+    def test_advisory_evidence_cannot_replace_configured_order(builder, nonce_order, advice):
+        identity = WorkIdentity('session', 1, 'job', 'f' * 64, 1, True, 1.0)
+        lease = SimpleNamespace(start=0, count=64, extranonce2='00000000', lease_id='lease')
+        lane_order = tuple(reversed(range(32)))
+        coordinator = IntelligentPoolCoordinator.__new__(IntelligentPoolCoordinator)
+        coordinator._nonce_order = nonce_order
+        coordinator._dispatch_breadth = 32
+        coordinator._lane_order_for = lambda *args: (lane_order, 'fixture', advice)
+        coordinator._execution_route = lambda: 'cpu_reference'
+        coordinator._next_window = lambda: 64
+        coordinator._toe_advice_reason = lambda: None
+        coordinator.production_integration = SimpleNamespace(plan_evidence=lambda *args: {})
+        coordinator.solver = SimpleNamespace(get_lane_start_offset=lambda: 0)
+        coordinator.last_toe_frame = None
+        coordinator.last_toe_signal = None
+        coordinator.last_mining_decision = None
+        coordinator.tuning = SimpleNamespace(last_decision=None)
+        coordinator.client = SimpleNamespace(
+            proof_adapter=SimpleNamespace(next_extranonce2=lambda: '00000000')
+        )
+        coordinator.agentic = SimpleNamespace(
+            reserve_lease=lambda *args: lease,
+            release_lease=lambda *args: pytest.fail('valid plan unexpectedly refused'),
+            lookahead=1,
+        )
+        if builder == '_baseline_plan':
+            plan = coordinator._baseline_plan(identity, lease, 64, 'queue_empty')
+        else:
+            plan = coordinator._build_plan(identity)
+>       assert plan.nonce_order == nonce_order
+E       AssertionError: assert 'm32_turing_complete' == 'hendrix_coprime_stride'
+E         
+E         - hendrix_coprime_stride
+E         + m32_turing_complete
+
+tests/test_mining_boundary_hardening.py:47: AssertionError
+_ test_advisory_evidence_cannot_replace_configured_order[advice1-hendrix_coprime_stride-_build_plan] _
+
+builder = '_build_plan', nonce_order = 'hendrix_coprime_stride', advice = {}
+
+    @pytest.mark.parametrize('builder', ['_baseline_plan', '_build_plan'])
+    @pytest.mark.parametrize('nonce_order', ['hendrix_coprime_stride', 'm32_turing_complete', 'poincare_cassini_11d'])
+    @pytest.mark.parametrize('advice', [None, {}, {'status': 'UNAVAILABLE'}, {'path': 'solve'}])
+    def test_advisory_evidence_cannot_replace_configured_order(builder, nonce_order, advice):
+        identity = WorkIdentity('session', 1, 'job', 'f' * 64, 1, True, 1.0)
+        lease = SimpleNamespace(start=0, count=64, extranonce2='00000000', lease_id='lease')
+        lane_order = tuple(reversed(range(32)))
+        coordinator = IntelligentPoolCoordinator.__new__(IntelligentPoolCoordinator)
+        coordinator._nonce_order = nonce_order
+        coordinator._dispatch_breadth = 32
+        coordinator._lane_order_for = lambda *args: (lane_order, 'fixture', advice)
+        coordinator._execution_route = lambda: 'cpu_reference'
+        coordinator._next_window = lambda: 64
+        coordinator._toe_advice_reason = lambda: None
+        coordinator.production_integration = SimpleNamespace(plan_evidence=lambda *args: {})
+        coordinator.solver = SimpleNamespace(get_lane_start_offset=lambda: 0)
+        coordinator.last_toe_frame = None
+        coordinator.last_toe_signal = None
+        coordinator.last_mining_decision = None
+        coordinator.tuning = SimpleNamespace(last_decision=None)
+        coordinator.client = SimpleNamespace(
+            proof_adapter=SimpleNamespace(next_extranonce2=lambda: '00000000')
+        )
+        coordinator.agentic = SimpleNamespace(
+            reserve_lease=lambda *args: lease,
+            release_lease=lambda *args: pytest.fail('valid plan unexpectedly refused'),
+            lookahead=1,
+        )
+        if builder == '_baseline_plan':
+            plan = coordinator._baseline_plan(identity, lease, 64, 'queue_empty')
+        else:
+            plan = coordinator._build_plan(identity)
+>       assert plan.nonce_order == nonce_order
+E       AssertionError: assert 'm32_turing_complete' == 'hendrix_coprime_stride'
+E         
+E         - hendrix_coprime_stride
+E         + m32_turing_complete
+
+tests/test_mining_boundary_hardening.py:47: AssertionError
+_ test_advisory_evidence_cannot_replace_configured_order[advice1-poincare_cassini_11d-_baseline_plan] _
+
+builder = '_baseline_plan', nonce_order = 'poincare_cassini_11d', advice = {}
+
+    @pytest.mark.parametrize('builder', ['_baseline_plan', '_build_plan'])
+    @pytest.mark.parametrize('nonce_order', ['hendrix_coprime_stride', 'm32_turing_complete', 'poincare_cassini_11d'])
+    @pytest.mark.parametrize('advice', [None, {}, {'status': 'UNAVAILABLE'}, {'path': 'solve'}])
+    def test_advisory_evidence_cannot_replace_configured_order(builder, nonce_order, advice):
+        identity = WorkIdentity('session', 1, 'job', 'f' * 64, 1, True, 1.0)
+        lease = SimpleNamespace(start=0, count=64, extranonce2='00000000', lease_id='lease')
+        lane_order = tuple(reversed(range(32)))
+        coordinator = IntelligentPoolCoordinator.__new__(IntelligentPoolCoordinator)
+        coordinator._nonce_order = nonce_order
+        coordinator._dispatch_breadth = 32
+        coordinator._lane_order_for = lambda *args: (lane_order, 'fixture', advice)
+        coordinator._execution_route = lambda: 'cpu_reference'
+        coordinator._next_window = lambda: 64
+        coordinator._toe_advice_reason = lambda: None
+        coordinator.production_integration = SimpleNamespace(plan_evidence=lambda *args: {})
+        coordinator.solver = SimpleNamespace(get_lane_start_offset=lambda: 0)
+        coordinator.last_toe_frame = None
+        coordinator.last_toe_signal = None
+        coordinator.last_mining_decision = None
+        coordinator.tuning = SimpleNamespace(last_decision=None)
+        coordinator.client = SimpleNamespace(
+            proof_adapter=SimpleNamespace(next_extranonce2=lambda: '00000000')
+        )
+        coordinator.agentic = SimpleNamespace(
+            reserve_lease=lambda *args: lease,
+            release_lease=lambda *args: pytest.fail('valid plan unexpectedly refused'),
+            lookahead=1,
+        )
+        if builder == '_baseline_plan':
+            plan = coordinator._baseline_plan(identity, lease, 64, 'queue_empty')
+        else:
+            plan = coordinator._build_plan(identity)
+>       assert plan.nonce_order == nonce_order
+E       AssertionError: assert 'm32_turing_complete' == 'poincare_cassini_11d'
+E         
+E         - poincare_cassini_11d
+E         + m32_turing_complete
+
+tests/test_mining_boundary_hardening.py:47: AssertionError
+_ test_advisory_evidence_cannot_replace_configured_order[advice1-poincare_cassini_11d-_build_plan] _
+
+builder = '_build_plan', nonce_order = 'poincare_cassini_11d', advice = {}
+
+    @pytest.mark.parametrize('builder', ['_baseline_plan', '_build_plan'])
+    @pytest.mark.parametrize('nonce_order', ['hendrix_coprime_stride', 'm32_turing_complete', 'poincare_cassini_11d'])
+    @pytest.mark.parametrize('advice', [None, {}, {'status': 'UNAVAILABLE'}, {'path': 'solve'}])
+    def test_advisory_evidence_cannot_replace_configured_order(builder, nonce_order, advice):
+        identity = WorkIdentity('session', 1, 'job', 'f' * 64, 1, True, 1.0)
+        lease = SimpleNamespace(start=0, count=64, extranonce2='00000000', lease_id='lease')
+        lane_order = tuple(reversed(range(32)))
+        coordinator = IntelligentPoolCoordinator.__new__(IntelligentPoolCoordinator)
+        coordinator._nonce_order = nonce_order
+        coordinator._dispatch_breadth = 32
+        coordinator._lane_order_for = lambda *args: (lane_order, 'fixture', advice)
+        coordinator._execution_route = lambda: 'cpu_reference'
+        coordinator._next_window = lambda: 64
+        coordinator._toe_advice_reason = lambda: None
+        coordinator.production_integration = SimpleNamespace(plan_evidence=lambda *args: {})
+        coordinator.solver = SimpleNamespace(get_lane_start_offset=lambda: 0)
+        coordinator.last_toe_frame = None
+        coordinator.last_toe_signal = None
+        coordinator.last_mining_decision = None
+        coordinator.tuning = SimpleNamespace(last_decision=None)
+        coordinator.client = SimpleNamespace(
+            proof_adapter=SimpleNamespace(next_extranonce2=lambda: '00000000')
+        )
+        coordinator.agentic = SimpleNamespace(
+            reserve_lease=lambda *args: lease,
+            release_lease=lambda *args: pytest.fail('valid plan unexpectedly refused'),
+            lookahead=1,
+        )
+        if builder == '_baseline_plan':
+            plan = coordinator._baseline_plan(identity, lease, 64, 'queue_empty')
+        else:
+            plan = coordinator._build_plan(identity)
+>       assert plan.nonce_order == nonce_order
+E       AssertionError: assert 'm32_turing_complete' == 'poincare_cassini_11d'
+E         
+E         - poincare_cassini_11d
+E         + m32_turing_complete
+
+tests/test_mining_boundary_hardening.py:47: AssertionError
+_ test_advisory_evidence_cannot_replace_configured_order[advice2-hendrix_coprime_stride-_baseline_plan] _
+
+builder = '_baseline_plan', nonce_order = 'hendrix_coprime_stride'
+advice = {'status': 'UNAVAILABLE'}
+
+    @pytest.mark.parametrize('builder', ['_baseline_plan', '_build_plan'])
+    @pytest.mark.parametrize('nonce_order', ['hendrix_coprime_stride', 'm32_turing_complete', 'poincare_cassini_11d'])
+    @pytest.mark.parametrize('advice', [None, {}, {'status': 'UNAVAILABLE'}, {'path': 'solve'}])
+    def test_advisory_evidence_cannot_replace_configured_order(builder, nonce_order, advice):
+        identity = WorkIdentity('session', 1, 'job', 'f' * 64, 1, True, 1.0)
+        lease = SimpleNamespace(start=0, count=64, extranonce2='00000000', lease_id='lease')
+        lane_order = tuple(reversed(range(32)))
+        coordinator = IntelligentPoolCoordinator.__new__(IntelligentPoolCoordinator)
+        coordinator._nonce_order = nonce_order
+        coordinator._dispatch_breadth = 32
+        coordinator._lane_order_for = lambda *args: (lane_order, 'fixture', advice)
+        coordinator._execution_route = lambda: 'cpu_reference'
+        coordinator._next_window = lambda: 64
+        coordinator._toe_advice_reason = lambda: None
+        coordinator.production_integration = SimpleNamespace(plan_evidence=lambda *args: {})
+        coordinator.solver = SimpleNamespace(get_lane_start_offset=lambda: 0)
+        coordinator.last_toe_frame = None
+        coordinator.last_toe_signal = None
+        coordinator.last_mining_decision = None
+        coordinator.tuning = SimpleNamespace(last_decision=None)
+        coordinator.client = SimpleNamespace(
+            proof_adapter=SimpleNamespace(next_extranonce2=lambda: '00000000')
+        )
+        coordinator.agentic = SimpleNamespace(
+            reserve_lease=lambda *args: lease,
+            release_lease=lambda *args: pytest.fail('valid plan unexpectedly refused'),
+            lookahead=1,
+        )
+        if builder == '_baseline_plan':
+            plan = coordinator._baseline_plan(identity, lease, 64, 'queue_empty')
+        else:
+            plan = coordinator._build_plan(identity)
+>       assert plan.nonce_order == nonce_order
+E       AssertionError: assert 'm32_turing_complete' == 'hendrix_coprime_stride'
+E         
+E         - hendrix_coprime_stride
+E         + m32_turing_complete
+
+tests/test_mining_boundary_hardening.py:47: AssertionError
+_ test_advisory_evidence_cannot_replace_configured_order[advice2-hendrix_coprime_stride-_build_plan] _
+
+builder = '_build_plan', nonce_order = 'hendrix_coprime_stride'
+advice = {'status': 'UNAVAILABLE'}
+
+    @pytest.mark.parametrize('builder', ['_baseline_plan', '_build_plan'])
+    @pytest.mark.parametrize('nonce_order', ['hendrix_coprime_stride', 'm32_turing_complete', 'poincare_cassini_11d'])
+    @pytest.mark.parametrize('advice', [None, {}, {'status': 'UNAVAILABLE'}, {'path': 'solve'}])
+    def test_advisory_evidence_cannot_replace_configured_order(builder, nonce_order, advice):
+        identity = WorkIdentity('session', 1, 'job', 'f' * 64, 1, True, 1.0)
+        lease = SimpleNamespace(start=0, count=64, extranonce2='00000000', lease_id='lease')
+        lane_order = tuple(reversed(range(32)))
+        coordinator = IntelligentPoolCoordinator.__new__(IntelligentPoolCoordinator)
+        coordinator._nonce_order = nonce_order
+        coordinator._dispatch_breadth = 32
+        coordinator._lane_order_for = lambda *args: (lane_order, 'fixture', advice)
+        coordinator._execution_route = lambda: 'cpu_reference'
+        coordinator._next_window = lambda: 64
+        coordinator._toe_advice_reason = lambda: None
+        coordinator.production_integration = SimpleNamespace(plan_evidence=lambda *args: {})
+        coordinator.solver = SimpleNamespace(get_lane_start_offset=lambda: 0)
+        coordinator.last_toe_frame = None
+        coordinator.last_toe_signal = None
+        coordinator.last_mining_decision = None
+        coordinator.tuning = SimpleNamespace(last_decision=None)
+        coordinator.client = SimpleNamespace(
+            proof_adapter=SimpleNamespace(next_extranonce2=lambda: '00000000')
+        )
+        coordinator.agentic = SimpleNamespace(
+            reserve_lease=lambda *args: lease,
+            release_lease=lambda *args: pytest.fail('valid plan unexpectedly refused'),
+            lookahead=1,
+        )
+        if builder == '_baseline_plan':
+            plan = coordinator._baseline_plan(identity, lease, 64, 'queue_empty')
+        else:
+            plan = coordinator._build_plan(identity)
+>       assert plan.nonce_order == nonce_order
+E       AssertionError: assert 'm32_turing_complete' == 'hendrix_coprime_stride'
+E         
+E         - hendrix_coprime_stride
+E         + m32_turing_complete
+
+tests/test_mining_boundary_hardening.py:47: AssertionError
+_ test_advisory_evidence_cannot_replace_configured_order[advice2-poincare_cassini_11d-_baseline_plan] _
+
+builder = '_baseline_plan', nonce_order = 'poincare_cassini_11d'
+advice = {'status': 'UNAVAILABLE'}
+
+    @pytest.mark.parametrize('builder', ['_baseline_plan', '_build_plan'])
+    @pytest.mark.parametrize('nonce_order', ['hendrix_coprime_stride', 'm32_turing_complete', 'poincare_cassini_11d'])
+    @pytest.mark.parametrize('advice', [None, {}, {'status': 'UNAVAILABLE'}, {'path': 'solve'}])
+    def test_advisory_evidence_cannot_replace_configured_order(builder, nonce_order, advice):
+        identity = WorkIdentity('session', 1, 'job', 'f' * 64, 1, True, 1.0)
+        lease = SimpleNamespace(start=0, count=64, extranonce2='00000000', lease_id='lease')
+        lane_order = tuple(reversed(range(32)))
+        coordinator = IntelligentPoolCoordinator.__new__(IntelligentPoolCoordinator)
+        coordinator._nonce_order = nonce_order
+        coordinator._dispatch_breadth = 32
+        coordinator._lane_order_for = lambda *args: (lane_order, 'fixture', advice)
+        coordinator._execution_route = lambda: 'cpu_reference'
+        coordinator._next_window = lambda: 64
+        coordinator._toe_advice_reason = lambda: None
+        coordinator.production_integration = SimpleNamespace(plan_evidence=lambda *args: {})
+        coordinator.solver = SimpleNamespace(get_lane_start_offset=lambda: 0)
+        coordinator.last_toe_frame = None
+        coordinator.last_toe_signal = None
+        coordinator.last_mining_decision = None
+        coordinator.tuning = SimpleNamespace(last_decision=None)
+        coordinator.client = SimpleNamespace(
+            proof_adapter=SimpleNamespace(next_extranonce2=lambda: '00000000')
+        )
+        coordinator.agentic = SimpleNamespace(
+            reserve_lease=lambda *args: lease,
+            release_lease=lambda *args: pytest.fail('valid plan unexpectedly refused'),
+            lookahead=1,
+        )
+        if builder == '_baseline_plan':
+            plan = coordinator._baseline_plan(identity, lease, 64, 'queue_empty')
+        else:
+            plan = coordinator._build_plan(identity)
+>       assert plan.nonce_order == nonce_order
+E       AssertionError: assert 'm32_turing_complete' == 'poincare_cassini_11d'
+E         
+E         - poincare_cassini_11d
+E         + m32_turing_complete
+
+tests/test_mining_boundary_hardening.py:47: AssertionError
+_ test_advisory_evidence_cannot_replace_configured_order[advice2-poincare_cassini_11d-_build_plan] _
+
+builder = '_build_plan', nonce_order = 'poincare_cassini_11d'
+advice = {'status': 'UNAVAILABLE'}
+
+    @pytest.mark.parametrize('builder', ['_baseline_plan', '_build_plan'])
+    @pytest.mark.parametrize('nonce_order', ['hendrix_coprime_stride', 'm32_turing_complete', 'poincare_cassini_11d'])
+    @pytest.mark.parametrize('advice', [None, {}, {'status': 'UNAVAILABLE'}, {'path': 'solve'}])
+    def test_advisory_evidence_cannot_replace_configured_order(builder, nonce_order, advice):
+        identity = WorkIdentity('session', 1, 'job', 'f' * 64, 1, True, 1.0)
+        lease = SimpleNamespace(start=0, count=64, extranonce2='00000000', lease_id='lease')
+        lane_order = tuple(reversed(range(32)))
+        coordinator = IntelligentPoolCoordinator.__new__(IntelligentPoolCoordinator)
+        coordinator._nonce_order = nonce_order
+        coordinator._dispatch_breadth = 32
+        coordinator._lane_order_for = lambda *args: (lane_order, 'fixture', advice)
+        coordinator._execution_route = lambda: 'cpu_reference'
+        coordinator._next_window = lambda: 64
+        coordinator._toe_advice_reason = lambda: None
+        coordinator.production_integration = SimpleNamespace(plan_evidence=lambda *args: {})
+        coordinator.solver = SimpleNamespace(get_lane_start_offset=lambda: 0)
+        coordinator.last_toe_frame = None
+        coordinator.last_toe_signal = None
+        coordinator.last_mining_decision = None
+        coordinator.tuning = SimpleNamespace(last_decision=None)
+        coordinator.client = SimpleNamespace(
+            proof_adapter=SimpleNamespace(next_extranonce2=lambda: '00000000')
+        )
+        coordinator.agentic = SimpleNamespace(
+            reserve_lease=lambda *args: lease,
+            release_lease=lambda *args: pytest.fail('valid plan unexpectedly refused'),
+            lookahead=1,
+        )
+        if builder == '_baseline_plan':
+            plan = coordinator._baseline_plan(identity, lease, 64, 'queue_empty')
+        else:
+            plan = coordinator._build_plan(identity)
+>       assert plan.nonce_order == nonce_order
+E       AssertionError: assert 'm32_turing_complete' == 'poincare_cassini_11d'
+E         
+E         - poincare_cassini_11d
+E         + m32_turing_complete
+
+tests/test_mining_boundary_hardening.py:47: AssertionError
+_ test_advisory_evidence_cannot_replace_configured_order[advice3-hendrix_coprime_stride-_baseline_plan] _
+
+builder = '_baseline_plan', nonce_order = 'hendrix_coprime_stride'
+advice = {'path': 'solve'}
+
+    @pytest.mark.parametrize('builder', ['_baseline_plan', '_build_plan'])
+    @pytest.mark.parametrize('nonce_order', ['hendrix_coprime_stride', 'm32_turing_complete', 'poincare_cassini_11d'])
+    @pytest.mark.parametrize('advice', [None, {}, {'status': 'UNAVAILABLE'}, {'path': 'solve'}])
+    def test_advisory_evidence_cannot_replace_configured_order(builder, nonce_order, advice):
+        identity = WorkIdentity('session', 1, 'job', 'f' * 64, 1, True, 1.0)
+        lease = SimpleNamespace(start=0, count=64, extranonce2='00000000', lease_id='lease')
+        lane_order = tuple(reversed(range(32)))
+        coordinator = IntelligentPoolCoordinator.__new__(IntelligentPoolCoordinator)
+        coordinator._nonce_order = nonce_order
+        coordinator._dispatch_breadth = 32
+        coordinator._lane_order_for = lambda *args: (lane_order, 'fixture', advice)
+        coordinator._execution_route = lambda: 'cpu_reference'
+        coordinator._next_window = lambda: 64
+        coordinator._toe_advice_reason = lambda: None
+        coordinator.production_integration = SimpleNamespace(plan_evidence=lambda *args: {})
+        coordinator.solver = SimpleNamespace(get_lane_start_offset=lambda: 0)
+        coordinator.last_toe_frame = None
+        coordinator.last_toe_signal = None
+        coordinator.last_mining_decision = None
+        coordinator.tuning = SimpleNamespace(last_decision=None)
+        coordinator.client = SimpleNamespace(
+            proof_adapter=SimpleNamespace(next_extranonce2=lambda: '00000000')
+        )
+        coordinator.agentic = SimpleNamespace(
+            reserve_lease=lambda *args: lease,
+            release_lease=lambda *args: pytest.fail('valid plan unexpectedly refused'),
+            lookahead=1,
+        )
+        if builder == '_baseline_plan':
+            plan = coordinator._baseline_plan(identity, lease, 64, 'queue_empty')
+        else:
+            plan = coordinator._build_plan(identity)
+>       assert plan.nonce_order == nonce_order
+E       AssertionError: assert 'm32_turing_complete' == 'hendrix_coprime_stride'
+E         
+E         - hendrix_coprime_stride
+E         + m32_turing_complete
+
+tests/test_mining_boundary_hardening.py:47: AssertionError
+_ test_advisory_evidence_cannot_replace_configured_order[advice3-hendrix_coprime_stride-_build_plan] _
+
+builder = '_build_plan', nonce_order = 'hendrix_coprime_stride'
+advice = {'path': 'solve'}
+
+    @pytest.mark.parametrize('builder', ['_baseline_plan', '_build_plan'])
+    @pytest.mark.parametrize('nonce_order', ['hendrix_coprime_stride', 'm32_turing_complete', 'poincare_cassini_11d'])
+    @pytest.mark.parametrize('advice', [None, {}, {'status': 'UNAVAILABLE'}, {'path': 'solve'}])
+    def test_advisory_evidence_cannot_replace_configured_order(builder, nonce_order, advice):
+        identity = WorkIdentity('session', 1, 'job', 'f' * 64, 1, True, 1.0)
+        lease = SimpleNamespace(start=0, count=64, extranonce2='00000000', lease_id='lease')
+        lane_order = tuple(reversed(range(32)))
+        coordinator = IntelligentPoolCoordinator.__new__(IntelligentPoolCoordinator)
+        coordinator._nonce_order = nonce_order
+        coordinator._dispatch_breadth = 32
+        coordinator._lane_order_for = lambda *args: (lane_order, 'fixture', advice)
+        coordinator._execution_route = lambda: 'cpu_reference'
+        coordinator._next_window = lambda: 64
+        coordinator._toe_advice_reason = lambda: None
+        coordinator.production_integration = SimpleNamespace(plan_evidence=lambda *args: {})
+        coordinator.solver = SimpleNamespace(get_lane_start_offset=lambda: 0)
+        coordinator.last_toe_frame = None
+        coordinator.last_toe_signal = None
+        coordinator.last_mining_decision = None
+        coordinator.tuning = SimpleNamespace(last_decision=None)
+        coordinator.client = SimpleNamespace(
+            proof_adapter=SimpleNamespace(next_extranonce2=lambda: '00000000')
+        )
+        coordinator.agentic = SimpleNamespace(
+            reserve_lease=lambda *args: lease,
+            release_lease=lambda *args: pytest.fail('valid plan unexpectedly refused'),
+            lookahead=1,
+        )
+        if builder == '_baseline_plan':
+            plan = coordinator._baseline_plan(identity, lease, 64, 'queue_empty')
+        else:
+            plan = coordinator._build_plan(identity)
+>       assert plan.nonce_order == nonce_order
+E       AssertionError: assert 'm32_turing_complete' == 'hendrix_coprime_stride'
+E         
+E         - hendrix_coprime_stride
+E         + m32_turing_complete
+
+tests/test_mining_boundary_hardening.py:47: AssertionError
+_ test_advisory_evidence_cannot_replace_configured_order[advice3-poincare_cassini_11d-_baseline_plan] _
+
+builder = '_baseline_plan', nonce_order = 'poincare_cassini_11d'
+advice = {'path': 'solve'}
+
+    @pytest.mark.parametrize('builder', ['_baseline_plan', '_build_plan'])
+    @pytest.mark.parametrize('nonce_order', ['hendrix_coprime_stride', 'm32_turing_complete', 'poincare_cassini_11d'])
+    @pytest.mark.parametrize('advice', [None, {}, {'status': 'UNAVAILABLE'}, {'path': 'solve'}])
+    def test_advisory_evidence_cannot_replace_configured_order(builder, nonce_order, advice):
+        identity = WorkIdentity('session', 1, 'job', 'f' * 64, 1, True, 1.0)
+        lease = SimpleNamespace(start=0, count=64, extranonce2='00000000', lease_id='lease')
+        lane_order = tuple(reversed(range(32)))
+        coordinator = IntelligentPoolCoordinator.__new__(IntelligentPoolCoordinator)
+        coordinator._nonce_order = nonce_order
+        coordinator._dispatch_breadth = 32
+        coordinator._lane_order_for = lambda *args: (lane_order, 'fixture', advice)
+        coordinator._execution_route = lambda: 'cpu_reference'
+        coordinator._next_window = lambda: 64
+        coordinator._toe_advice_reason = lambda: None
+        coordinator.production_integration = SimpleNamespace(plan_evidence=lambda *args: {})
+        coordinator.solver = SimpleNamespace(get_lane_start_offset=lambda: 0)
+        coordinator.last_toe_frame = None
+        coordinator.last_toe_signal = None
+        coordinator.last_mining_decision = None
+        coordinator.tuning = SimpleNamespace(last_decision=None)
+        coordinator.client = SimpleNamespace(
+            proof_adapter=SimpleNamespace(next_extranonce2=lambda: '00000000')
+        )
+        coordinator.agentic = SimpleNamespace(
+            reserve_lease=lambda *args: lease,
+            release_lease=lambda *args: pytest.fail('valid plan unexpectedly refused'),
+            lookahead=1,
+        )
+        if builder == '_baseline_plan':
+            plan = coordinator._baseline_plan(identity, lease, 64, 'queue_empty')
+        else:
+            plan = coordinator._build_plan(identity)
+>       assert plan.nonce_order == nonce_order
+E       AssertionError: assert 'm32_turing_complete' == 'poincare_cassini_11d'
+E         
+E         - poincare_cassini_11d
+E         + m32_turing_complete
+
+tests/test_mining_boundary_hardening.py:47: AssertionError
+_ test_advisory_evidence_cannot_replace_configured_order[advice3-poincare_cassini_11d-_build_plan] _
+
+builder = '_build_plan', nonce_order = 'poincare_cassini_11d'
+advice = {'path': 'solve'}
+
+    @pytest.mark.parametrize('builder', ['_baseline_plan', '_build_plan'])
+    @pytest.mark.parametrize('nonce_order', ['hendrix_coprime_stride', 'm32_turing_complete', 'poincare_cassini_11d'])
+    @pytest.mark.parametrize('advice', [None, {}, {'status': 'UNAVAILABLE'}, {'path': 'solve'}])
+    def test_advisory_evidence_cannot_replace_configured_order(builder, nonce_order, advice):
+        identity = WorkIdentity('session', 1, 'job', 'f' * 64, 1, True, 1.0)
+        lease = SimpleNamespace(start=0, count=64, extranonce2='00000000', lease_id='lease')
+        lane_order = tuple(reversed(range(32)))
+        coordinator = IntelligentPoolCoordinator.__new__(IntelligentPoolCoordinator)
+        coordinator._nonce_order = nonce_order
+        coordinator._dispatch_breadth = 32
+        coordinator._lane_order_for = lambda *args: (lane_order, 'fixture', advice)
+        coordinator._execution_route = lambda: 'cpu_reference'
+        coordinator._next_window = lambda: 64
+        coordinator._toe_advice_reason = lambda: None
+        coordinator.production_integration = SimpleNamespace(plan_evidence=lambda *args: {})
+        coordinator.solver = SimpleNamespace(get_lane_start_offset=lambda: 0)
+        coordinator.last_toe_frame = None
+        coordinator.last_toe_signal = None
+        coordinator.last_mining_decision = None
+        coordinator.tuning = SimpleNamespace(last_decision=None)
+        coordinator.client = SimpleNamespace(
+            proof_adapter=SimpleNamespace(next_extranonce2=lambda: '00000000')
+        )
+        coordinator.agentic = SimpleNamespace(
+            reserve_lease=lambda *args: lease,
+            release_lease=lambda *args: pytest.fail('valid plan unexpectedly refused'),
+            lookahead=1,
+        )
+        if builder == '_baseline_plan':
+            plan = coordinator._baseline_plan(identity, lease, 64, 'queue_empty')
+        else:
+            plan = coordinator._build_plan(identity)
+>       assert plan.nonce_order == nonce_order
+E       AssertionError: assert 'm32_turing_complete' == 'poincare_cassini_11d'
+E         
+E         - poincare_cassini_11d
+E         + m32_turing_complete
+
+tests/test_mining_boundary_hardening.py:47: AssertionError
+_____________ test_timeout_environment_is_finite_and_positive[nan] _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f3d002662c0>
+raw = 'nan'
+
+    @pytest.mark.parametrize('raw', ['nan', 'NaN', 'inf', '+inf', '-inf', '0', '-1'])
+    def test_timeout_environment_is_finite_and_positive(monkeypatch, raw):
+        monkeypatch.setenv('TEST_STRATUM_TIMEOUT', raw)
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:57: Failed
+_____________ test_timeout_environment_is_finite_and_positive[NaN] _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f3d00266520>
+raw = 'NaN'
+
+    @pytest.mark.parametrize('raw', ['nan', 'NaN', 'inf', '+inf', '-inf', '0', '-1'])
+    def test_timeout_environment_is_finite_and_positive(monkeypatch, raw):
+        monkeypatch.setenv('TEST_STRATUM_TIMEOUT', raw)
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:57: Failed
+_____________ test_timeout_environment_is_finite_and_positive[inf] _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f3d00406570>
+raw = 'inf'
+
+    @pytest.mark.parametrize('raw', ['nan', 'NaN', 'inf', '+inf', '-inf', '0', '-1'])
+    def test_timeout_environment_is_finite_and_positive(monkeypatch, raw):
+        monkeypatch.setenv('TEST_STRATUM_TIMEOUT', raw)
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:57: Failed
+____________ test_timeout_environment_is_finite_and_positive[+inf] _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f3d003ad7b0>
+raw = '+inf'
+
+    @pytest.mark.parametrize('raw', ['nan', 'NaN', 'inf', '+inf', '-inf', '0', '-1'])
+    def test_timeout_environment_is_finite_and_positive(monkeypatch, raw):
+        monkeypatch.setenv('TEST_STRATUM_TIMEOUT', raw)
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:57: Failed
+_ test_explicit_timeouts_cannot_disable_transport_deadlines[nan-connect_timeout] _
+
+field = 'connect_timeout', value = nan
+
+    @pytest.mark.parametrize('field', [
+        'connect_timeout', 'request_timeout', 'write_timeout', 'enqueue_timeout'
+    ])
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf'), 0, -1, True])
+    def test_explicit_timeouts_cannot_disable_transport_deadlines(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:66: Failed
+_ test_explicit_timeouts_cannot_disable_transport_deadlines[nan-request_timeout] _
+
+field = 'request_timeout', value = nan
+
+    @pytest.mark.parametrize('field', [
+        'connect_timeout', 'request_timeout', 'write_timeout', 'enqueue_timeout'
+    ])
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf'), 0, -1, True])
+    def test_explicit_timeouts_cannot_disable_transport_deadlines(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:66: Failed
+_ test_explicit_timeouts_cannot_disable_transport_deadlines[nan-write_timeout] _
+
+field = 'write_timeout', value = nan
+
+    @pytest.mark.parametrize('field', [
+        'connect_timeout', 'request_timeout', 'write_timeout', 'enqueue_timeout'
+    ])
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf'), 0, -1, True])
+    def test_explicit_timeouts_cannot_disable_transport_deadlines(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:66: Failed
+_ test_explicit_timeouts_cannot_disable_transport_deadlines[nan-enqueue_timeout] _
+
+field = 'enqueue_timeout', value = nan
+
+    @pytest.mark.parametrize('field', [
+        'connect_timeout', 'request_timeout', 'write_timeout', 'enqueue_timeout'
+    ])
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf'), 0, -1, True])
+    def test_explicit_timeouts_cannot_disable_transport_deadlines(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:66: Failed
+_ test_explicit_timeouts_cannot_disable_transport_deadlines[inf-connect_timeout] _
+
+field = 'connect_timeout', value = inf
+
+    @pytest.mark.parametrize('field', [
+        'connect_timeout', 'request_timeout', 'write_timeout', 'enqueue_timeout'
+    ])
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf'), 0, -1, True])
+    def test_explicit_timeouts_cannot_disable_transport_deadlines(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:66: Failed
+_ test_explicit_timeouts_cannot_disable_transport_deadlines[inf-request_timeout] _
+
+field = 'request_timeout', value = inf
+
+    @pytest.mark.parametrize('field', [
+        'connect_timeout', 'request_timeout', 'write_timeout', 'enqueue_timeout'
+    ])
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf'), 0, -1, True])
+    def test_explicit_timeouts_cannot_disable_transport_deadlines(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:66: Failed
+_ test_explicit_timeouts_cannot_disable_transport_deadlines[inf-write_timeout] _
+
+field = 'write_timeout', value = inf
+
+    @pytest.mark.parametrize('field', [
+        'connect_timeout', 'request_timeout', 'write_timeout', 'enqueue_timeout'
+    ])
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf'), 0, -1, True])
+    def test_explicit_timeouts_cannot_disable_transport_deadlines(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:66: Failed
+_ test_explicit_timeouts_cannot_disable_transport_deadlines[inf-enqueue_timeout] _
+
+field = 'enqueue_timeout', value = inf
+
+    @pytest.mark.parametrize('field', [
+        'connect_timeout', 'request_timeout', 'write_timeout', 'enqueue_timeout'
+    ])
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf'), 0, -1, True])
+    def test_explicit_timeouts_cannot_disable_transport_deadlines(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:66: Failed
+_ test_explicit_timeouts_cannot_disable_transport_deadlines[-inf-connect_timeout] _
+
+field = 'connect_timeout', value = -inf
+
+    @pytest.mark.parametrize('field', [
+        'connect_timeout', 'request_timeout', 'write_timeout', 'enqueue_timeout'
+    ])
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf'), 0, -1, True])
+    def test_explicit_timeouts_cannot_disable_transport_deadlines(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:66: Failed
+_ test_explicit_timeouts_cannot_disable_transport_deadlines[0-connect_timeout] _
+
+field = 'connect_timeout', value = 0
+
+    @pytest.mark.parametrize('field', [
+        'connect_timeout', 'request_timeout', 'write_timeout', 'enqueue_timeout'
+    ])
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf'), 0, -1, True])
+    def test_explicit_timeouts_cannot_disable_transport_deadlines(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:66: Failed
+_ test_explicit_timeouts_cannot_disable_transport_deadlines[-1-connect_timeout] _
+
+field = 'connect_timeout', value = -1
+
+    @pytest.mark.parametrize('field', [
+        'connect_timeout', 'request_timeout', 'write_timeout', 'enqueue_timeout'
+    ])
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf'), 0, -1, True])
+    def test_explicit_timeouts_cannot_disable_transport_deadlines(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:66: Failed
+_ test_explicit_timeouts_cannot_disable_transport_deadlines[True-connect_timeout] _
+
+field = 'connect_timeout', value = True
+
+    @pytest.mark.parametrize('field', [
+        'connect_timeout', 'request_timeout', 'write_timeout', 'enqueue_timeout'
+    ])
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf'), 0, -1, True])
+    def test_explicit_timeouts_cannot_disable_transport_deadlines(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:66: Failed
+_ test_explicit_timeouts_cannot_disable_transport_deadlines[True-request_timeout] _
+
+field = 'request_timeout', value = True
+
+    @pytest.mark.parametrize('field', [
+        'connect_timeout', 'request_timeout', 'write_timeout', 'enqueue_timeout'
+    ])
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf'), 0, -1, True])
+    def test_explicit_timeouts_cannot_disable_transport_deadlines(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:66: Failed
+_ test_explicit_timeouts_cannot_disable_transport_deadlines[True-write_timeout] _
+
+field = 'write_timeout', value = True
+
+    @pytest.mark.parametrize('field', [
+        'connect_timeout', 'request_timeout', 'write_timeout', 'enqueue_timeout'
+    ])
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf'), 0, -1, True])
+    def test_explicit_timeouts_cannot_disable_transport_deadlines(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:66: Failed
+_ test_explicit_timeouts_cannot_disable_transport_deadlines[True-enqueue_timeout] _
+
+field = 'enqueue_timeout', value = True
+
+    @pytest.mark.parametrize('field', [
+        'connect_timeout', 'request_timeout', 'write_timeout', 'enqueue_timeout'
+    ])
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), -float('inf'), 0, -1, True])
+    def test_explicit_timeouts_cannot_disable_transport_deadlines(field, value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:66: Failed
+_________________ test_queue_bound_is_a_positive_integer[nan] __________________
+
+value = nan
+
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), 1.5, True, 0, -1])
+    def test_queue_bound_is_a_positive_integer(value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:75: Failed
+_________________ test_queue_bound_is_a_positive_integer[inf] __________________
+
+value = inf
+
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), 1.5, True, 0, -1])
+    def test_queue_bound_is_a_positive_integer(value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:75: Failed
+_________________ test_queue_bound_is_a_positive_integer[1.5] __________________
+
+value = 1.5
+
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), 1.5, True, 0, -1])
+    def test_queue_bound_is_a_positive_integer(value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:75: Failed
+_________________ test_queue_bound_is_a_positive_integer[True] _________________
+
+value = True
+
+    @pytest.mark.parametrize('value', [float('nan'), float('inf'), 1.5, True, 0, -1])
+    def test_queue_bound_is_a_positive_integer(value):
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_mining_boundary_hardening.py:75: Failed
+=========================== short test summary info ============================
+FAILED tests/test_mining_boundary_hardening.py::test_advisory_evidence_cannot_replace_configured_order[advice1-hendrix_coprime_stride-_baseline_plan]
+FAILED tests/test_mining_boundary_hardening.py::test_advisory_evidence_cannot_replace_configured_order[advice1-hendrix_coprime_stride-_build_plan]
+FAILED tests/test_mining_boundary_hardening.py::test_advisory_evidence_cannot_replace_configured_order[advice1-poincare_cassini_11d-_baseline_plan]
+FAILED tests/test_mining_boundary_hardening.py::test_advisory_evidence_cannot_replace_configured_order[advice1-poincare_cassini_11d-_build_plan]
+FAILED tests/test_mining_boundary_hardening.py::test_advisory_evidence_cannot_replace_configured_order[advice2-hendrix_coprime_stride-_baseline_plan]
+FAILED tests/test_mining_boundary_hardening.py::test_advisory_evidence_cannot_replace_configured_order[advice2-hendrix_coprime_stride-_build_plan]
+FAILED tests/test_mining_boundary_hardening.py::test_advisory_evidence_cannot_replace_configured_order[advice2-poincare_cassini_11d-_baseline_plan]
+FAILED tests/test_mining_boundary_hardening.py::test_advisory_evidence_cannot_replace_configured_order[advice2-poincare_cassini_11d-_build_plan]
+FAILED tests/test_mining_boundary_hardening.py::test_advisory_evidence_cannot_replace_configured_order[advice3-hendrix_coprime_stride-_baseline_plan]
+FAILED tests/test_mining_boundary_hardening.py::test_advisory_evidence_cannot_replace_configured_order[advice3-hendrix_coprime_stride-_build_plan]
+FAILED tests/test_mining_boundary_hardening.py::test_advisory_evidence_cannot_replace_configured_order[advice3-poincare_cassini_11d-_baseline_plan]
+FAILED tests/test_mining_boundary_hardening.py::test_advisory_evidence_cannot_replace_configured_order[advice3-poincare_cassini_11d-_build_plan]
+FAILED tests/test_mining_boundary_hardening.py::test_timeout_environment_is_finite_and_positive[nan]
+FAILED tests/test_mining_boundary_hardening.py::test_timeout_environment_is_finite_and_positive[NaN]
+FAILED tests/test_mining_boundary_hardening.py::test_timeout_environment_is_finite_and_positive[inf]
+FAILED tests/test_mining_boundary_hardening.py::test_timeout_environment_is_finite_and_positive[+inf]
+FAILED tests/test_mining_boundary_hardening.py::test_explicit_timeouts_cannot_disable_transport_deadlines[nan-connect_timeout]
+FAILED tests/test_mining_boundary_hardening.py::test_explicit_timeouts_cannot_disable_transport_deadlines[nan-request_timeout]
+FAILED tests/test_mining_boundary_hardening.py::test_explicit_timeouts_cannot_disable_transport_deadlines[nan-write_timeout]
+FAILED tests/test_mining_boundary_hardening.py::test_explicit_timeouts_cannot_disable_transport_deadlines[nan-enqueue_timeout]
+FAILED tests/test_mining_boundary_hardening.py::test_explicit_timeouts_cannot_disable_transport_deadlines[inf-connect_timeout]
+FAILED tests/test_mining_boundary_hardening.py::test_explicit_timeouts_cannot_disable_transport_deadlines[inf-request_timeout]
+FAILED tests/test_mining_boundary_hardening.py::test_explicit_timeouts_cannot_disable_transport_deadlines[inf-write_timeout]
+FAILED tests/test_mining_boundary_hardening.py::test_explicit_timeouts_cannot_disable_transport_deadlines[inf-enqueue_timeout]
+FAILED tests/test_mining_boundary_hardening.py::test_explicit_timeouts_cannot_disable_transport_deadlines[-inf-connect_timeout]
+FAILED tests/test_mining_boundary_hardening.py::test_explicit_timeouts_cannot_disable_transport_deadlines[0-connect_timeout]
+FAILED tests/test_mining_boundary_hardening.py::test_explicit_timeouts_cannot_disable_transport_deadlines[-1-connect_timeout]
+FAILED tests/test_mining_boundary_hardening.py::test_explicit_timeouts_cannot_disable_transport_deadlines[True-connect_timeout]
+FAILED tests/test_mining_boundary_hardening.py::test_explicit_timeouts_cannot_disable_transport_deadlines[True-request_timeout]
+FAILED tests/test_mining_boundary_hardening.py::test_explicit_timeouts_cannot_disable_transport_deadlines[True-write_timeout]
+FAILED tests/test_mining_boundary_hardening.py::test_explicit_timeouts_cannot_disable_transport_deadlines[True-enqueue_timeout]
+FAILED tests/test_mining_boundary_hardening.py::test_queue_bound_is_a_positive_integer[nan]
+FAILED tests/test_mining_boundary_hardening.py::test_queue_bound_is_a_positive_integer[inf]
+FAILED tests/test_mining_boundary_hardening.py::test_queue_bound_is_a_positive_integer[1.5]
+FAILED tests/test_mining_boundary_hardening.py::test_queue_bound_is_a_positive_integer[True]
+35 failed, 27 passed in 0.42s
