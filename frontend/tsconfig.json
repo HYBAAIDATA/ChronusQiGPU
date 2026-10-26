@@ -19,6 +19,7 @@
     "src/vite-env.d.ts",
     "src/components/Header.tsx",
     "src/components/Mla1517MiningPanel.tsx",
+    "src/enterprise/fixtures/enterprise_browser_fixture.tsx",
     "src/lib/api.ts",
     "src/test/**/*.ts",
     "src/**/*.{test,spec}.{ts,tsx}",
