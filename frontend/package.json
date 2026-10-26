@@ -12,7 +12,16 @@
     "lint": "tsc --noEmit",
     "format": "prettier --write .",
     "test:ts": "vitest run",
-    "test:ts:cov": "vitest run --coverage"
+    "test:ts:cov": "vitest run --coverage",
+    "dev:developer": "vite --config vite.developer.config.ts",
+    "build:developer": "vite build --config vite.developer.config.ts && node developer/scripts/audit-output.mjs",
+    "preview:developer": "vite preview --config vite.developer.config.ts",
+    "lint:developer": "tsc --project developer/tsconfig.json",
+    "test:developer": "vitest run --config developer/vitest.config.ts",
+    "build:operator": "vite build",
+    "check:developer": "npm run lint:developer && npm run test:developer && npm run build:developer",
+    "serve:developer": "node developer/scripts/serve.mjs",
+    "test:developer:isolation": "node developer/scripts/verify-isolation.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",

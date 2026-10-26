@@ -1,0 +1,130 @@
+{
+  "status": "PASS",
+  "browser": "153.0.8010.12",
+  "baseline": "b131edc408a37ff7c03534d694bfcdaf0c827abb",
+  "scope": "Production static frontend only; not product execution, private regression, or public GitHub availability",
+  "records": [
+    {
+      "viewport": "desktop",
+      "route": "#/",
+      "screenshot": "desktop-overview.png",
+      "accessibilityViolations": 0
+    },
+    {
+      "viewport": "desktop",
+      "route": "#/components/kellogg",
+      "screenshot": "desktop-kellogg.png",
+      "accessibilityViolations": 0
+    },
+    {
+      "viewport": "desktop",
+      "route": "#/components/chronus",
+      "screenshot": "desktop-chronus.png",
+      "accessibilityViolations": 0
+    },
+    {
+      "viewport": "desktop",
+      "route": "#/components/ovid",
+      "screenshot": "desktop-ovid.png",
+      "accessibilityViolations": 0
+    },
+    {
+      "viewport": "desktop",
+      "route": "#/components/theseus",
+      "screenshot": "desktop-theseus.png",
+      "accessibilityViolations": 0
+    },
+    {
+      "viewport": "desktop",
+      "route": "#/components/mcp",
+      "screenshot": "desktop-mcp.png",
+      "accessibilityViolations": 0
+    },
+    {
+      "viewport": "desktop",
+      "route": "#/guide",
+      "screenshot": "desktop-guide.png",
+      "accessibilityViolations": 0
+    },
+    {
+      "viewport": "desktop",
+      "route": "#/missing",
+      "screenshot": "desktop-not-found.png",
+      "accessibilityViolations": 0
+    },
+    {
+      "viewport": "desktop",
+      "states": [
+        "empty",
+        "filtered",
+        "escaped-input",
+        "keyboard-skip",
+        "route-focus",
+        "back-navigation"
+      ],
+      "externalOrApiRequests": 0,
+      "browserErrors": 0
+    },
+    {
+      "viewport": "mobile",
+      "route": "#/",
+      "screenshot": "mobile-overview.png",
+      "accessibilityViolations": 0
+    },
+    {
+      "viewport": "mobile",
+      "route": "#/components/kellogg",
+      "screenshot": "mobile-kellogg.png",
+      "accessibilityViolations": 0
+    },
+    {
+      "viewport": "mobile",
+      "route": "#/components/chronus",
+      "screenshot": "mobile-chronus.png",
+      "accessibilityViolations": 0
+    },
+    {
+      "viewport": "mobile",
+      "route": "#/components/ovid",
+      "screenshot": "mobile-ovid.png",
+      "accessibilityViolations": 0
+    },
+    {
+      "viewport": "mobile",
+      "route": "#/components/theseus",
+      "screenshot": "mobile-theseus.png",
+      "accessibilityViolations": 0
+    },
+    {
+      "viewport": "mobile",
+      "route": "#/components/mcp",
+      "screenshot": "mobile-mcp.png",
+      "accessibilityViolations": 0
+    },
+    {
+      "viewport": "mobile",
+      "route": "#/guide",
+      "screenshot": "mobile-guide.png",
+      "accessibilityViolations": 0
+    },
+    {
+      "viewport": "mobile",
+      "route": "#/missing",
+      "screenshot": "mobile-not-found.png",
+      "accessibilityViolations": 0
+    },
+    {
+      "viewport": "mobile",
+      "states": [
+        "empty",
+        "filtered",
+        "escaped-input",
+        "keyboard-skip",
+        "route-focus",
+        "back-navigation"
+      ],
+      "externalOrApiRequests": 0,
+      "browserErrors": 0
+    }
+  ]
+}

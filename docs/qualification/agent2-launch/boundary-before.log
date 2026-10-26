@@ -1,0 +1,60 @@
+(node:306) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:306) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///vercel/sandbox/data/agent2/frontend/src/enterprise/boundary.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /vercel/sandbox/package.json.
+✔ unbound client never executes (1.411937ms)
+✔ requires confirmed scope before execution (0.686725ms)
+✔ tenant mismatch refused (1.053009ms)
+✔ expired scope refused (0.381334ms)
+✔ empty principal refused (0.477384ms)
+✔ backup uses exact request key and adapter scope (1.17321ms)
+✔ new tenant clears outcome synchronously and rejects old completion (0.794116ms)
+✔ late connect cannot overwrite newer tenant (0.535595ms)
+✔ logout aborts and cannot resurrect result (0.553916ms)
+✔ denial clears scope, data and request key (0.514277ms)
+✔ unknown write retains request key but no protected result (0.60336ms)
+✔ timeout is unknown and late callback is discarded (17.825266ms)
+✔ expiry during work clears result and rejects callback (35.996324ms)
+✔ double submit does not create concurrent writes (0.805964ms)
+✔ invalid response becomes unknown, not zero or success (0.329085ms)
+✔ digest mismatch cannot claim reconstruction pass (0.617323ms)
+✔ memory-only, modeled and pending are not verified durable restore (0.178256ms)
+✖ unsupported exactness cannot be presented as verified restore (0.927456ms)
+✔ restart not run stays not run; no implicit restart qualification (0.331568ms)
+✔ export absent unless adapter explicitly supports it (0.435983ms)
+✔ export reauthorizes and denial clears existing outcome (0.330177ms)
+✔ export after scope change cannot download old evidence (0.35889ms)
+✔ successful evidence export returns exact service blob (0.285081ms)
+✔ notifies subscribers only with cleared protected data on logout (0.254445ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 23
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 197.970299
+
+✖ failing tests:
+
+test at scripts/enterprise_boundary.test.mjs:28:1
+✖ unsupported exactness cannot be presented as verified restore (0.927456ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///vercel/sandbox/data/agent2/scripts/enterprise_boundary.test.mjs:28:82)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

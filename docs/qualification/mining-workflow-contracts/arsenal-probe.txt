@@ -1,0 +1,24 @@
+hyba_core unavailable; mining continues without it: ModuleNotFoundError: No module named 'python_backend.mathematical_foundation'
+Available modules: 21 unavailable: ['quantum2026']
+grover False
+grover_exact True
+grover_style_search True
+hendrix True
+quantum_walk True
+hypercube_walk True
+szegedy_walk False
+szegedy_operator False
+swarming True
+annealing True
+tunnelling True
+entanglement True
+collapse True
+vqe False
+qaoa False
+qft False
+shor_period_finding False
+quantum_simulation False
+quantum_annealing False
+quantum_ml False
+hybrid_quantum_classical False
+vqc True

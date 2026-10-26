@@ -1,0 +1,25 @@
+id,requirement,status,owner,closure_acceptance
+ENT-01,Enterprise customer journey,PARTIAL_IMPLEMENTATION_SERVICE_UNBOUND,Agent2 + Agent1,Real authorized backup/restore service/browser journey on combined candidate
+ENT-02,Brand and accessibility,PARTIAL_TOKENS_AND_FIXTURE_QA,Agent2 + owner,Official lockup and approved font; full-app accessibility/browser QA
+ENT-03,Notebook replay integrity,PR13_PRESERVE_AND_RERUN,Agent1 + Agent2,PR13 preserved; installed regression on combined candidate
+ENT-04,Non-vacuous proof,PR13_PRESERVE_AND_RERUN,Agent1,PR13 preserved; installed regression
+ENT-05,Promotion lifecycle,PR13_PRESERVE_AND_RERUN,Agent1,PR13 preserved; installed lifecycle/adversarial regression
+ENT-06,Offer-specific readiness,NAME_RECONCILIATION_DOCUMENTED_RUNTIME_OPEN,Joint,Every advertised capability exercised or explicitly pending/excluded for scoped release
+ENT-07,Canonical custody,AGREED_OWNER_MAP_RUNTIME_OPEN,Agent1,Theseus custody/Ovid transform; explicit isolated legacy profile; no migration
+ENT-08,TOE shared intelligence,OPEN_REQUIRED_SEPARATE_SCENARIO,Agent1 + Agent2,Actual admitted domain workflow and honest evidence using shared TOE
+ENT-09,Kellogg mathematics,OPEN_REQUIRED_SEPARATE_SCENARIO,Agent1,Exact/bounded/unsupported real capability acceptance
+ENT-10,Theseus/Ovid custody transform,JOINT_FIRST_JOURNEY_AGREED_NOT_EXECUTED,Joint,Installed public APIs; disk directory; restore/tamper/restart/denial; actual receipts
+ENT-11,SALAMANDER recovery,OPEN_REQUIRED_SCENARIO,Agent1,AL HARAS authorization; registered handler; separate postcondition verifier
+ENT-12,EUCLID orchestration,OPEN_REQUIRED_SEPARATE_SCENARIO,Agent1 + Agent2,Real supported orchestration without taking domain authority
+ENT-13,PULVINI bounds,OPEN_REQUIRED_SEPARATE_SCENARIO,Agent1,Actual per-fold audit/reconstruction bounds; no Ovid equivalence assumption
+ENT-14,TURING compute,OPEN_COMPUTE_BILLING_DEFERRED,Agent1,Bounded computation and honest substrate; no billing activation
+ENT-15,Chronus execution,OPEN_DEVICE_ROUTE_EVIDENCE_REQUIRED,Agent1,Admitted actual configured route; no fabricated hardware or silent fallback
+ENT-16,Storage/Movement/Tensor,STORAGE_UI_PARTIAL_OTHER_OUTCOMES_OPEN,Joint,First Storage slice then all remaining agreed requirements
+ENT-17,Sovereign/offline,OPEN_NO_AVAILABILITY_CLAIM,Joint + owner,Actual offline/provider/enclave/residency/key/recovery qualification
+ENT-18,Economics/commercial,OPEN_NO_BILLING_ACTIVATED,Owner + joint,Approved baseline/terms/license/support and measured savings; TURING billing separate
+ENT-19,Provider vs reference,OPEN_NO_PROVIDER_SUCCESS_CLAIM,Agent1,Real authorized provider sandbox; reference doubles remain labeled
+ENT-20,Installed releases/support,BLOCKED_COMPLETE_CHECKOUT_INSTALL_AND_APPROVALS,Joint + owner,Clean installed candidate; complete regressions; operating/support/release decision
+EXP-01,UI stale-data boundary,ISOLATED_TESTS_PASS_NOT_SERVICE_ACCEPTANCE,Agent2,25 unit doubles; fixture browser states; actual-service rerun pending
+EXP-02,Actual service contract,BLOCKED_NO_HTTP_CONTRACT_VERIFIED,Agent1 + Agent2,Versioned real adapter with actual authorization/revocation/error/exactness mapping
+EXP-03,Candidate-bound browser screenshots,FIXTURES_ONLY,Agent2,Actual-service screenshots with exact combined candidate and environment
+EXP-04,Safe non-destructive backup and transactional restore,BLOCKED_RESTORE_CUTOVER_OPEN,Agent1 + joint,No clobber backup; staged authenticated scoped restore; validated cutover and rollback before customer endpoint
