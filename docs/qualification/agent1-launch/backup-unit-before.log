@@ -1,0 +1,124 @@
+test_ancestor_refused_before_io (__main__.BackupUnit.test_ancestor_refused_before_io) ... FAIL
+test_descendant_refused_before_copy (__main__.BackupUnit.test_descendant_refused_before_copy) ... FAIL
+test_existing_destination_preserved (__main__.BackupUnit.test_existing_destination_preserved) ... FAIL
+test_new_disjoint_destination_copied (__main__.BackupUnit.test_new_disjoint_destination_copied) ... ok
+test_same_root_refused_before_io (__main__.BackupUnit.test_same_root_refused_before_io) ... FAIL
+test_symlink_destination_preserved (__main__.BackupUnit.test_symlink_destination_preserved) ... ERROR
+
+======================================================================
+ERROR: test_symlink_destination_preserved (__main__.BackupUnit.test_symlink_destination_preserved)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/agent1/docs/qualification/agent1-launch/run_backup_unit.py", line 71, in test_symlink_destination_preserved
+    with self.assertRaises(FileExistsError): self.backup(self.actor, link)
+                                             ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/vercel/sandbox/data/agent1/aethel/enterprise/custody.py", line 818, in backup
+    shutil.rmtree(dest_p)
+    ~~~~~~~~~~~~~^^^^^^^^
+  File "/usr/lib64/python3.13/shutil.py", line 763, in rmtree
+    _rmtree_safe_fd(stack, onexc)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.13/shutil.py", line 707, in _rmtree_safe_fd
+    onexc(func, path, err)
+    ~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.13/shutil.py", line 676, in _rmtree_safe_fd
+    raise OSError("Cannot call rmtree on a symbolic link")
+OSError: [Errno None] None: PosixPath('/tmp/tmp329ha_ji/link')
+
+======================================================================
+FAIL: test_ancestor_refused_before_io (__main__.BackupUnit.test_ancestor_refused_before_io)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/agent1/docs/qualification/agent1-launch/run_backup_unit.py", line 56, in test_ancestor_refused_before_io
+    with self.assertRaises(AuthorityBoundaryError): self.backup(self.actor, self.source.parent)
+                                                    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vercel/sandbox/data/agent1/aethel/enterprise/custody.py", line 821, in backup
+    shutil.copytree(
+    ~~~~~~~~~~~~~~~^
+        self.tenant_root,
+        ^^^^^^^^^^^^^^^^^
+        dest_p,
+        ^^^^^^^
+        ignore=self._ignore_lock_files,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/lib64/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.13/unittest/mock.py", line 1234, in _execute_mock_call
+    raise effect
+AssertionError: copy tripwire
+
+======================================================================
+FAIL: test_descendant_refused_before_copy (__main__.BackupUnit.test_descendant_refused_before_copy)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/agent1/docs/qualification/agent1-launch/run_backup_unit.py", line 60, in test_descendant_refused_before_copy
+    with self.assertRaises(AuthorityBoundaryError): self.backup(self.actor, self.source/'nested')
+                                                    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vercel/sandbox/data/agent1/aethel/enterprise/custody.py", line 821, in backup
+    shutil.copytree(
+    ~~~~~~~~~~~~~~~^
+        self.tenant_root,
+        ^^^^^^^^^^^^^^^^^
+        dest_p,
+        ^^^^^^^
+        ignore=self._ignore_lock_files,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/lib64/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.13/unittest/mock.py", line 1234, in _execute_mock_call
+    raise effect
+AssertionError: copy tripwire
+
+======================================================================
+FAIL: test_existing_destination_preserved (__main__.BackupUnit.test_existing_destination_preserved)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/agent1/docs/qualification/agent1-launch/run_backup_unit.py", line 47, in test_existing_destination_preserved
+    with self.assertRaises(FileExistsError): self.backup(self.actor, dest)
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+AssertionError: FileExistsError not raised
+
+======================================================================
+FAIL: test_same_root_refused_before_io (__main__.BackupUnit.test_same_root_refused_before_io)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/agent1/docs/qualification/agent1-launch/run_backup_unit.py", line 52, in test_same_root_refused_before_io
+    with self.assertRaises(AuthorityBoundaryError): self.backup(self.actor, self.source)
+                                                    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vercel/sandbox/data/agent1/aethel/enterprise/custody.py", line 821, in backup
+    shutil.copytree(
+    ~~~~~~~~~~~~~~~^
+        self.tenant_root,
+        ^^^^^^^^^^^^^^^^^
+        dest_p,
+        ^^^^^^^
+        ignore=self._ignore_lock_files,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/lib64/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.13/unittest/mock.py", line 1234, in _execute_mock_call
+    raise effect
+AssertionError: copy tripwire
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.058s
+
+FAILED (failures=4, errors=1)
