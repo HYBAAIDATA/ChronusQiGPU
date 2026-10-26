@@ -1,0 +1,66 @@
+test_conflict_refused (__main__.BoundaryUnits.test_conflict_refused) ... ERROR
+test_default_durable_refused (__main__.BoundaryUnits.test_default_durable_refused) ... FAIL
+test_directory_and_profile_forwarded (__main__.BoundaryUnits.test_directory_and_profile_forwarded) ... ERROR
+test_empty_directory_refused (__main__.BoundaryUnits.test_empty_directory_refused) ... ERROR
+test_explicit_memory_forwarding (__main__.BoundaryUnits.test_explicit_memory_forwarding) ... ok
+test_nonboolean_durable_refused (__main__.BoundaryUnits.test_nonboolean_durable_refused) ... ok
+test_smoke_reattaches_with_same_directory (__main__.BoundaryUnits.test_smoke_reattaches_with_same_directory) ... ERROR
+test_smoke_refuses_unbound_before_engine (__main__.BoundaryUnits.test_smoke_refuses_unbound_before_engine) ... FAIL
+
+======================================================================
+ERROR: test_conflict_refused (__main__.BoundaryUnits.test_conflict_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/agent1/docs/qualification/agent1-launch/run_boundary_unit.py", line 67, in test_conflict_refused
+    with self.assertRaises(ValueError): ns['open_enterprise_store'](durable=False, durable_dir='/unit-only')
+                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: open_enterprise_store() got an unexpected keyword argument 'durable_dir'
+
+======================================================================
+ERROR: test_directory_and_profile_forwarded (__main__.BoundaryUnits.test_directory_and_profile_forwarded)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/agent1/docs/qualification/agent1-launch/run_boundary_unit.py", line 80, in test_directory_and_profile_forwarded
+    ns['open_enterprise_store'](durable_dir='/unit-only', bind_chronus=False)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: open_enterprise_store() got an unexpected keyword argument 'durable_dir'
+
+======================================================================
+ERROR: test_empty_directory_refused (__main__.BoundaryUnits.test_empty_directory_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/agent1/docs/qualification/agent1-launch/run_boundary_unit.py", line 63, in test_empty_directory_refused
+    with self.assertRaises(ValueError): ns['open_enterprise_store'](durable_dir='')
+                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+TypeError: open_enterprise_store() got an unexpected keyword argument 'durable_dir'
+
+======================================================================
+ERROR: test_smoke_reattaches_with_same_directory (__main__.BoundaryUnits.test_smoke_reattaches_with_same_directory)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/agent1/docs/qualification/agent1-launch/run_boundary_unit.py", line 90, in test_smoke_reattaches_with_same_directory
+    env = ns['smoke_measured_put'](b'unit-only', durable_dir='/unit-only')
+TypeError: smoke_measured_put() got an unexpected keyword argument 'durable_dir'
+
+======================================================================
+FAIL: test_default_durable_refused (__main__.BoundaryUnits.test_default_durable_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/agent1/docs/qualification/agent1-launch/run_boundary_unit.py", line 59, in test_default_durable_refused
+    with self.assertRaises(ValueError): ns['open_enterprise_store']()
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_smoke_refuses_unbound_before_engine (__main__.BoundaryUnits.test_smoke_refuses_unbound_before_engine)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/agent1/docs/qualification/agent1-launch/run_boundary_unit.py", line 86, in test_smoke_refuses_unbound_before_engine
+    with self.assertRaises(ValueError): ns['smoke_measured_put']()
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.022s
+
+FAILED (failures=2, errors=4)

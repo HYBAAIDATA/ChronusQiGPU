@@ -52,15 +52,15 @@ def test_external_capability_marked_not_local_production():
     assert env.get("advertisement") == "not_local_production"
 
 
-def test_smoke_measured_put_envelope():
-    env = smoke_measured_put(b"bridge-smoke-payload")
+def test_smoke_measured_put_envelope(tmp_path):
+    env = smoke_measured_put(b"bridge-smoke-payload", durable_dir=tmp_path)
     assert env["truth_class"] == "measured"
     assert env["payload"]["ok"] is True
     assert env["capability_id"] == "E.STORE.SELF_HEAL"
 
 
-def test_open_enterprise_store_put_get():
-    db = open_enterprise_store(durable=True, bind_chronus=False)
+def test_open_enterprise_store_put_get(tmp_path):
+    db = open_enterprise_store(durable=True, durable_dir=tmp_path, bind_chronus=False)
     rec = db.put(b"enterprise-kernel", durable=True)
     assert db.get(rec.uuid) == b"enterprise-kernel"
     health = db.health()

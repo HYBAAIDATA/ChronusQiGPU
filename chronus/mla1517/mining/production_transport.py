@@ -12,6 +12,7 @@ import asyncio
 import contextlib
 import json
 import logging
+import math
 import os
 from collections import deque
 from typing import Any, Mapping
@@ -36,17 +37,38 @@ from .stratum_v2_transport import (
 LOG = logging.getLogger(__name__)
 
 
+def _positive_timeout(value: float, name: str) -> float:
+    """Return a finite, strictly positive timeout unchanged.
+
+    Raise ``ValueError`` for booleans, values other than integers or floats,
+    nonpositive values, or bounds that fail the ``math.isfinite`` check.
+    ``name`` identifies the bound in the error message.
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{name} must be a finite positive number")
+    try:
+        finite = math.isfinite(value)
+    except OverflowError as exc:
+        raise ValueError(f"{name} must be a finite positive number") from exc
+    if not finite or value <= 0:
+        raise ValueError(f"{name} must be a finite positive number")
+    return value
+
+
 def _positive_env(name: str, default: float) -> float:
+    """Read a finite, strictly positive number from an environment variable.
+
+    An unset or whitespace-only value uses ``default``, which is also
+    validated. Raise ``ValueError`` for invalid text or an invalid bound.
+    """
     raw = os.getenv(name, "").strip()
     if not raw:
-        return default
+        return _positive_timeout(default, name)
     try:
         value = float(raw)
     except ValueError as exc:
         raise ValueError(f"{name} must be a number") from exc
-    if value <= 0:
-        raise ValueError(f"{name} must be positive")
-    return value
+    return _positive_timeout(value, name)
 
 
 def _positive_int_env(name: str, default: int) -> int:
@@ -82,6 +104,19 @@ class ProductionStratumClient(StratumClient):
         outbound_queue_size: int | None = None,
         **kwargs: Any,
     ) -> None:
+        """Initialize transport bounds and publish status without connecting.
+
+        Timeouts are in seconds. ``None`` selects the matching
+        ``PYTHIA_STRATUM_{CONNECT,REQUEST,WRITE,ENQUEUE}_TIMEOUT_S`` value,
+        defaulting to 0.75, 30.0, 0.75, and 0.25 seconds, respectively.
+        ``outbound_queue_size`` bounds queued payloads; ``None`` reads
+        ``PYTHIA_STRATUM_OUTBOUND_QUEUE`` or uses ``ladder_capacity(256)``.
+        Remaining arguments are forwarded to ``StratumClient``.
+
+        Raise ``ValueError`` before publishing status if a timeout is not a
+        finite positive number (booleans excluded), or the resolved queue
+        capacity is not a positive integer (booleans excluded).
+        """
         # Base __init__ publishes an initial status snapshot and therefore may
         # call our overridden _publish_status/status_snapshot immediately.
         self._submit_rtt_ms: deque[float] = deque(maxlen=ladder_capacity(2048))
@@ -92,44 +127,58 @@ class ProductionStratumClient(StratumClient):
         # provably unwritten and may be reconsidered only after freshness.
         self._wire_writes = 0
         self._wire_writes_by_method: dict[str, int] = {}
-        super().__init__(
-            *args,
-            connect_timeout=(
+        # Resolve every bound before base construction can publish status.
+        connect_timeout = _positive_timeout(
+            (
                 _positive_env("PYTHIA_STRATUM_CONNECT_TIMEOUT_S", 0.75)
                 if connect_timeout is None
                 else connect_timeout
             ),
-            request_timeout=(
+            "connect_timeout",
+        )
+        request_timeout = _positive_timeout(
+            (
                 _positive_env("PYTHIA_STRATUM_REQUEST_TIMEOUT_S", 30.0)
                 if request_timeout is None
                 else request_timeout
             ),
-            **kwargs,
+            "request_timeout",
         )
-        self.write_timeout = (
-            _positive_env("PYTHIA_STRATUM_WRITE_TIMEOUT_S", 0.75)
-            if write_timeout is None
-            else write_timeout
+        write_timeout = _positive_timeout(
+            (
+                _positive_env("PYTHIA_STRATUM_WRITE_TIMEOUT_S", 0.75)
+                if write_timeout is None
+                else write_timeout
+            ),
+            "write_timeout",
         )
-        self.enqueue_timeout = (
-            _positive_env("PYTHIA_STRATUM_ENQUEUE_TIMEOUT_S", 0.25)
-            if enqueue_timeout is None
-            else enqueue_timeout
+        enqueue_timeout = _positive_timeout(
+            (
+                _positive_env("PYTHIA_STRATUM_ENQUEUE_TIMEOUT_S", 0.25)
+                if enqueue_timeout is None
+                else enqueue_timeout
+            ),
+            "enqueue_timeout",
         )
-        # LUCAS_SCALED: the Chronus-declared default is a ladder stop; an
-        # explicit caller/env bound is honored unchanged (caller authority).
+        # LUCAS_SCALED: retain the declared default and explicit operator bound.
         queue_size = (
             _positive_int_env("PYTHIA_STRATUM_OUTBOUND_QUEUE", ladder_capacity(256))
             if outbound_queue_size is None
             else outbound_queue_size
         )
-        if self.write_timeout <= 0 or self.enqueue_timeout <= 0:
-            raise ValueError("Stratum transport timeouts must be positive")
-        if queue_size <= 0:
-            raise ValueError("outbound_queue_size must be positive")
-        self._outbound: asyncio.Queue[
-            tuple[bytes, str, asyncio.Future[None]]
-        ] = asyncio.Queue(maxsize=queue_size)
+        if type(queue_size) is not int or queue_size <= 0:
+            raise ValueError("outbound_queue_size must be a positive integer")
+        super().__init__(
+            *args,
+            connect_timeout=connect_timeout,
+            request_timeout=request_timeout,
+            **kwargs,
+        )
+        self.write_timeout = write_timeout
+        self.enqueue_timeout = enqueue_timeout
+        self._outbound: asyncio.Queue[tuple[bytes, str, asyncio.Future[None]]] = (
+            asyncio.Queue(maxsize=queue_size)
+        )
         self._writer_task: asyncio.Task[None] | None = None
         self._writer_error: BaseException | None = None
 
@@ -148,7 +197,9 @@ class ProductionStratumClient(StratumClient):
         snapshot = self.runtime_state.snapshot()
         snapshot["session_id"] = self.runtime_state.session_id
         generation = self.runtime_state.current_job or self.runtime_state.last_job
-        block_height = bip34_height(generation.coinb1) if generation is not None else None
+        block_height = (
+            bip34_height(generation.coinb1) if generation is not None else None
+        )
         snapshot.setdefault("job", {})["block_height"] = block_height
 
         counters = snapshot.get("counters", {})
@@ -181,7 +232,9 @@ class ProductionStratumClient(StratumClient):
             "accepted_ratio": accepted / candidate_total if candidate_total else None,
             "rejected_ratio": rejected / candidate_total if candidate_total else None,
             "unknown_ratio": unknown / candidate_total if candidate_total else None,
-            "stale_ratio": self._stale_dropped / candidate_total if self._stale_dropped else None,
+            "stale_ratio": (
+                self._stale_dropped / candidate_total if self._stale_dropped else None
+            ),
             "stale_dropped": self._stale_dropped,
         }
         # The persistent retarget tracker replaces this only when complete
@@ -207,6 +260,12 @@ class ProductionStratumClient(StratumClient):
             )
 
     async def _writer_loop(self) -> None:
+        """Serialize queued writes and acknowledge each successful drain.
+
+        Write or drain errors stop the writer and fail pending requests with
+        ``ConnectionError``; the payload's acknowledgement carries the original
+        error. Cancellation propagates. Payloads are never retried here.
+        """
         try:
             while not self._closed:
                 payload, method, ack = await self._outbound.get()
@@ -221,7 +280,9 @@ class ProductionStratumClient(StratumClient):
                     self._wire_writes_by_method[method] = (
                         self._wire_writes_by_method.get(method, 0) + 1
                     )
-                    await asyncio.wait_for(self.writer.drain(), timeout=self.write_timeout)
+                    await asyncio.wait_for(
+                        self.writer.drain(), timeout=self.write_timeout
+                    )
                     if not ack.done():
                         ack.set_result(None)
                 except BaseException as exc:
@@ -232,7 +293,9 @@ class ProductionStratumClient(StratumClient):
                     self._writer_error = exc
                     for future in self._pending.values():
                         if not future.done():
-                            future.set_exception(ConnectionError(f"Stratum writer stopped: {exc}"))
+                            future.set_exception(
+                                ConnectionError(f"Stratum writer stopped: {exc}")
+                            )
                     self._pending.clear()
                     return
                 finally:
@@ -241,6 +304,14 @@ class ProductionStratumClient(StratumClient):
             raise
 
     async def _send_payload(self, payload: bytes, *, method: str) -> None:
+        """Enqueue bytes and wait for the writer's drain acknowledgement.
+
+        ``method`` labels the wire-write counter. Queue admission uses
+        ``enqueue_timeout`` seconds; acknowledgement uses ``write_timeout``
+        plus ``enqueue_timeout`` seconds. Expiry raises ``TimeoutError``;
+        connection and writer errors propagate. Success does not imply a
+        pool response, and timeout or cancellation may leave bytes queued.
+        """
         self._ensure_writer_task()
         loop = asyncio.get_running_loop()
         ack: asyncio.Future[None] = loop.create_future()
@@ -254,14 +325,31 @@ class ProductionStratumClient(StratumClient):
                 f"Stratum outbound queue remained full for {self.enqueue_timeout:.3f}s"
             ) from exc
         try:
-            await asyncio.wait_for(ack, timeout=self.write_timeout + self.enqueue_timeout)
+            await asyncio.wait_for(
+                ack, timeout=self.write_timeout + self.enqueue_timeout
+            )
         except asyncio.TimeoutError as exc:
             raise TimeoutError(
                 f"Stratum socket write exceeded bounded transport budget "
                 f"({self.write_timeout:.3f}s)"
             ) from exc
 
-    async def request(self, method: str, params: list[Any], *, timeout: float | None = None) -> Any:
+    async def request(
+        self, method: str, params: list[Any], *, timeout: float | None = None
+    ) -> Any:
+        """Send one JSON-RPC request and return the correlated response result.
+
+        ``timeout`` is the response wait in seconds after sending completes;
+        ``None`` uses ``request_timeout``. It must be finite and positive,
+        excluding booleans, or ``ValueError`` is raised before allocating a
+        request ID or sending bytes. Queue and write budgets apply separately.
+
+        Raise ``ConnectionError`` for an unavailable session, ``TimeoutError``
+        on transport or response expiry, and ``StratumProtocolError`` for a
+        pool error response. Serialization and reader/writer errors propagate.
+        Cancellation propagates and removes the pending correlation without
+        retrying; it does not recall bytes already queued or written.
+        """
         if not self.writer:
             raise ConnectionError("Stratum session is not connected")
         if self._reader_task is not None and self._reader_task.done():
@@ -269,6 +357,9 @@ class ProductionStratumClient(StratumClient):
         if self._writer_error is not None:
             raise ConnectionError(f"Stratum writer has stopped: {self._writer_error}")
 
+        limit = _positive_timeout(
+            self.request_timeout if timeout is None else timeout, "request timeout"
+        )
         request_id = self._next_id
         self._next_id += 1
         loop = asyncio.get_running_loop()
@@ -289,12 +380,17 @@ class ProductionStratumClient(StratumClient):
                 future.cancel()
             raise
 
-        limit = self.request_timeout if timeout is None else timeout
         try:
             return await asyncio.wait_for(future, timeout=limit)
         except asyncio.TimeoutError as exc:
             self._pending.pop(request_id, None)
-            raise TimeoutError(f"Stratum request {method!r} timed out after {limit:.1f}s") from exc
+            raise TimeoutError(
+                f"Stratum request {method!r} timed out after {limit:.1f}s"
+            ) from exc
+        finally:
+            # Cancellation or an unusual response failure must not retain a
+            # completed/cancelled correlation future until disconnect.
+            self._pending.pop(request_id, None)
 
     def wire_writes_for(self, method: str) -> int:
         """Completed writer.write attempts for one exact Stratum method."""
@@ -357,7 +453,17 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         sv2_channel_factory: Any | None = None,
         **kwargs: Any,
     ) -> None:
-        kwargs.setdefault("reconnect_delay", _positive_env("PYTHIA_RECONNECT_INITIAL_S", 0.25))
+        """Store transport policy for clients created during failover.
+
+        Timeout overrides are in seconds; ``None`` reads the corresponding
+        ``PYTHIA_STRATUM_*`` setting or its default. Invalid environment values
+        raise ``ValueError``. Explicit overrides are stored for client
+        construction. ``sv2_channel_factory``
+        supplies the secure V2 channel provider when configured.
+        """
+        kwargs.setdefault(
+            "reconnect_delay", _positive_env("PYTHIA_RECONNECT_INITIAL_S", 0.25)
+        )
         super().__init__(*args, **kwargs)
         self.production_connect_timeout = (
             _positive_env("PYTHIA_STRATUM_CONNECT_TIMEOUT_S", 0.75)
@@ -412,9 +518,15 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
         if not isinstance(execution, Mapping) or not execution.get("executed"):
             return
         execution_id = execution.get("execution_id")
-        if not isinstance(execution_id, str) or execution_id in self._stale_execution_ids:
+        if (
+            not isinstance(execution_id, str)
+            or execution_id in self._stale_execution_ids
+        ):
             return
-        if not execution.get("candidate_id") or execution.get("pool_outcome") != "NOT_SUBMITTED":
+        if (
+            not execution.get("candidate_id")
+            or execution.get("pool_outcome") != "NOT_SUBMITTED"
+        ):
             return
         key = (
             execution.get("pool_session_id"),
@@ -468,11 +580,25 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
 
         def wrapped(counters: Mapping[str, Any]) -> None:
             self._observe_stale_from_last_execution()
-            sink({**dict(counters), "stale_candidates_dropped": self._stale_candidates_dropped})
+            sink(
+                {
+                    **dict(counters),
+                    "stale_candidates_dropped": self._stale_candidates_dropped,
+                }
+            )
 
         super().set_metrics_sink(wrapped)
 
     async def connect_with_failover(self) -> Any:
+        """Try each configured endpoint once, starting at ``endpoint_index``.
+
+        Return the first connected client, bind it as ``self.client``, update
+        the selected index, refresh work identity, and wake precomputation.
+        V2 configuration and connection failures advance to the next endpoint.
+        If all endpoints reject authorization, raise ``StratumAuthorizationError``;
+        otherwise an exhausted pass raises ``ConnectionError``. V1 client
+        construction errors propagate immediately.
+        """
         errors: list[str] = []
         authorization_failures = 0
         for offset in range(len(self.endpoints)):
@@ -480,7 +606,10 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
             endpoint = self.endpoints[index]
             if getattr(endpoint, "protocol", "v1") == "v2":
                 try:
-                    factory = getattr(self, "sv2_channel_factory", None) or load_secure_channel_factory()
+                    factory = (
+                        getattr(self, "sv2_channel_factory", None)
+                        or load_secure_channel_factory()
+                    )
                     client: Any = ProductionStratumV2Client(
                         endpoint,
                         username=endpoint.username or self.username,
@@ -670,7 +799,9 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
                         bridge.stop()
                         running = False
                     with contextlib.suppress(TimeoutError):
-                        await asyncio.wait_for(self._work_wake.wait(), max(poll_ms / 1000, 0.01))
+                        await asyncio.wait_for(
+                            self._work_wake.wait(), max(poll_ms / 1000, 0.01)
+                        )
                     self._work_wake.clear()
                     continue
                 if not running:
@@ -679,13 +810,19 @@ class ProductionMiningCoordinator(IntelligentPoolCoordinator):
 
                 ring_path = os.getenv("MLA1517_PRIME_DB_RING")
                 if ring_path:
-                    record = await asyncio.to_thread(bridge.poll_vault_to_ring, ring_path, poll_ms)
+                    record = await asyncio.to_thread(
+                        bridge.poll_vault_to_ring, ring_path, poll_ms
+                    )
                 else:
                     record = await asyncio.to_thread(bridge.poll_vault, poll_ms)
                 if record is not None:
                     try:
                         await self.submit_record(record)
-                    except (ConnectionError, TimeoutError, asyncio.IncompleteReadError) as exc:
+                    except (
+                        ConnectionError,
+                        TimeoutError,
+                        asyncio.IncompleteReadError,
+                    ) as exc:
                         LOG.warning("submit connection lost: %s", exc)
                         if running:
                             bridge.stop()
