@@ -153,7 +153,7 @@ def audit_exactness(tree: Any) -> ExactnessReport:
         if isinstance(v, sp.Basic):
             if _expr_has_float_atom(v):
                 violations.append(f"{path}: sympy Float atom in {v!r}")
-            if v.is_finite is False:
+            if v.is_finite is False or v.has(sp.nan):
                 violations.append(f"{path}: non-finite symbolic value {v!r}")
             domains.append(_expr_domain(v))
             return
@@ -312,7 +312,7 @@ class LibraryResult:
         from .canonical_serialization import canonical_value
 
         def canon(v: Any) -> Any:
-            if isinstance(v, dict):
+            if isinstance(v, Mapping):
                 return {str(k): canon(item) for k, item in v.items()}
             if isinstance(v, (list, tuple)):
                 return [canon(item) for item in v]

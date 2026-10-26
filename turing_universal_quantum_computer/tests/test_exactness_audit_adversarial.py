@@ -1,4 +1,7 @@
 """Adversarial boundary tests for exact quantum result payloads."""
+
+import json
+from collections import UserDict
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
@@ -99,10 +102,35 @@ def test_container_cycles_fail_but_shared_exact_subtrees_pass():
     assert audit_exactness([shared, shared]).exact
 
 
-def test_nonfinite_symbolic_values_are_not_valid_quantum_payloads():
-    report = audit_exactness({"probability": sp.oo})
+@pytest.mark.parametrize(
+    "value",
+    [sp.oo, -sp.oo, sp.zoo, sp.nan, sp.Add(sp.Symbol("x"), sp.nan, evaluate=False)],
+)
+def test_nonfinite_symbolic_values_are_not_valid_quantum_payloads(value):
+    report = audit_exactness({"probability": value})
     assert not report.exact
     assert any("non-finite" in issue for issue in report.violations)
+
+
+@pytest.mark.parametrize("mapping_type", [dict, MappingProxyType, UserDict])
+def test_result_serializes_nested_mappings_and_exact_values(mapping_type):
+    payload = mapping_type(
+        {
+            Fraction(1, 2): [
+                mapping_type({sp.Integer(1): sp.sqrt(2)}),
+                (mapping_type({"probability": Fraction(2, 3)}),),
+            ]
+        }
+    )
+    result = _timed("adversarial", "exact", lambda: payload)
+    assert result.verify_exactness().exact
+    serialized = json.loads(json.dumps(result.to_dict(), allow_nan=False))
+    assert serialized["payload"] == {
+        "1/2": [
+            {"1": {"$exact": "sqrt(2)"}},
+            [{"probability": {"$rational": {"numerator": 2, "denominator": 3}}}],
+        ]
+    }
 
 
 def test_exact_facade_does_not_return_opaque_payload_as_exact():
@@ -119,6 +147,7 @@ def test_existing_exact_quantum_families_still_pass_after_audit_tightening():
         QuantumLibrary.qpe(Fraction(1, 8), counting_qubits=3),
     )
     assert all(result.verify_exactness().exact for result in results)
+
 
 class StringExactAdapter:
     def to_sympy(self):
