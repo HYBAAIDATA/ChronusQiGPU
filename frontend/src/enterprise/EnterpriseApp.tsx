@@ -109,7 +109,7 @@ export default function EnterpriseApp({
           <p>
             {port
               ? "An adapter binding is not a production declaration. The service owns access, exactness, custody and recovery decisions."
-              : "This route does not call a placeholder endpoint or simulate a successful backup. Agent 1’s implemented service contract must be bound and jointly tested before customer execution is enabled."}
+              : "This route does not call a placeholder endpoint or simulate a successful backup. The reviewed service contract must be bound and jointly tested before customer execution is enabled."}
           </p>
           <p>
             Production/publication HOLD · no billing activation · no

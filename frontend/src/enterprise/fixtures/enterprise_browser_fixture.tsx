@@ -1,12 +1,12 @@
 /** Browser component harness. EVERY service response is a labeled double. */
 import React from "react";
 import { createRoot } from "react-dom/client";
-import EnterpriseApp from "../frontend/src/enterprise/EnterpriseApp";
+import EnterpriseApp from "../EnterpriseApp";
 import {
   BoundaryError,
   type WorkflowPort,
   type Outcome,
-} from "../frontend/src/enterprise/boundary";
+} from "../boundary";
 const scenario =
   new URL(location.href).searchParams.get("scenario") ?? "unbound";
 const outcome = (restored: boolean): Outcome => ({

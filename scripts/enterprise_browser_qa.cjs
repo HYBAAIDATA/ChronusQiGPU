@@ -12,7 +12,9 @@ const assert = require("node:assert/strict");
     out = path.join(root, "evidence/browser");
   fs.mkdirSync(out, { recursive: true });
   await build({
-    entryPoints: [path.join(__dirname, "enterprise_browser_fixture.tsx")],
+    entryPoints: [
+      path.join(root, "frontend/src/enterprise/fixtures/enterprise_browser_fixture.tsx"),
+    ],
     outfile: path.join(out, "fixture.js"),
     bundle: true,
     jsx: "automatic",
