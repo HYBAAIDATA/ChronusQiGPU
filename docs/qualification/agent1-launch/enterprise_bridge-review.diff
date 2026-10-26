@@ -1,0 +1,106 @@
+--- before/enterprise_bridge.py
++++ after/enterprise_bridge.py
+@@ -20,6 +20,7 @@
+ from dataclasses import asdict, dataclass, field
+ from datetime import datetime, timezone
+ from enum import Enum
++from pathlib import Path
+ from typing import Any, Dict, Iterable, List, Mapping, Optional
+ 
+ 
+@@ -565,32 +566,80 @@
+     return body
+ 
+ 
+-def open_enterprise_store(*, durable: bool = True, bind_chronus: bool = False):
+-    """Convenience: open the mining-proven triad as the enterprise store kernel."""
+-    from .triad import open_triad
+-
+-    return open_triad(durable=durable, bind_chronus=bind_chronus)
+-
+-
+-def smoke_measured_put(payload: bytes = b"enterprise-bridge-smoke") -> Dict[str, Any]:
+-    """Measured put/get through Theseus/Ovid; returns envelope (Rule 7 measured)."""
+-    from .triad import open_triad
+-
+-    db = open_triad(durable=True, bind_chronus=False)
++def open_enterprise_store(
++    *,
++    durable: bool = True,
++    durable_dir: str | Path | None = None,
++    bind_chronus: bool = False,
++):
++    """Open canonical enterprise custody with an explicit persistence boundary.
++
++    ``durable=True`` requires a real directory binding. Callers intentionally
++    using memory-only custody must pass ``durable=False``. The low-level
++    ``open_triad`` / ``open_theseus`` compatibility contracts are unchanged.
++    No legacy root migration, tenant identity or network admission is implied.
++    """
++    if type(durable) is not bool:
++        raise TypeError("durable must be a bool")
++    if durable and (durable_dir is None or str(durable_dir).strip() == ""):
++        raise ValueError("durable enterprise custody requires durable_dir")
++    if not durable and durable_dir is not None:
++        raise ValueError("durable=False cannot bind durable_dir")
++    from .triad import THESEUS_CUSTODY_PROFILE, open_triad
++
++    return open_triad(
++        durable=durable,
++        durable_dir=durable_dir,
++        storage_profile=THESEUS_CUSTODY_PROFILE,
++        bind_chronus=bind_chronus,
++    )
++
++
++def smoke_measured_put(
++    payload: bytes = b"enterprise-bridge-smoke",
++    *,
++    durable_dir: str | Path | None = None,
++) -> Dict[str, Any]:
++    """Commit, read and reattach a directory-bound Theseus/Ovid store.
++
++    Retain the supplied directory for inspection. This is local integrity
++    evidence, not independent attestation, authentication, a process-restart
++    test, a commercial savings measurement or launch qualification.
++    """
++    db = open_enterprise_store(durable_dir=durable_dir, bind_chronus=False)
+     rec = db.put(payload, durable=True)
+     got = db.get(rec.uuid)
+-    ok = got == payload
++    # Exercise the public factory's attach path instead of only reading the
++    # still-live owner's primary/replica memory. A separate process test is
++    # required before claiming process-restart survival.
++    reopened = open_enterprise_store(durable_dir=durable_dir, bind_chronus=False)
++    restored = reopened.get(rec.uuid)
++    custody = reopened.health()["custody"]
++    ok = (
++        got == payload
++        and restored == payload
++        and hashlib.sha256(restored).hexdigest() == rec.digest
++        and reopened.verify() is True
++        and custody.get("authority") == "theseus"
++        and custody.get("disk_bound") is True
++        and custody.get("integrity_verified") is True
++    )
++    if not ok:
++        raise RuntimeError("enterprise durable smoke verification failed")
+     return emit_envelope(
+         {
+-            "ok": ok,
++            "ok": True,
+             "uuid": rec.uuid,
+             "anchor": rec.anchor,
+             "lane": rec.lane,
+             "prime_key": rec.prime_key,
+             "digest": rec.digest,
+             "folded_units": rec.folded_units,
++            "custody": custody,
++            "storage_profile": reopened.storage_profile,
++            "restart_evidence": "reattach_same_process",
+         },
+-        truth_class=TruthClass.MEASURED if ok else TruthClass.UNVERIFIED,
++        truth_class=TruthClass.MEASURED,
+         capability_id="E.STORE.SELF_HEAL",
+     )
+ 

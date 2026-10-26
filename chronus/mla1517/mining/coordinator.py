@@ -2143,6 +2143,13 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
     def _baseline_plan(
         self, identity: WorkIdentity, lease: LeaseRecord, window: int, reason: str
     ) -> SearchPlan:
+        """Return a fallback plan for an already reserved lease.
+
+        ``window`` is the nonce budget and ``reason`` must identify why no
+        precomputed plan ran. Lane advice is retained as evidence while the
+        configured nonce order is preserved. Invalid plan fields propagate
+        ``ValueError``; the caller remains responsible for the lease.
+        """
         order, order_source, solve_first = self._lane_order_for(lease.start, identity)
         return SearchPlan(
             job_fingerprint=identity.job_fingerprint,
@@ -2156,7 +2163,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
             dispatch_breadth=self._dispatch_breadth,
             executor_route=self._execution_route(),
             policy_id=_BASELINE_POLICY,
-            nonce_order=(NONCE_ORDER_M32 if solve_first is not None else self._nonce_order),
+            nonce_order=self._nonce_order,
             evidence_refs={
                 "lane_order_source": order_source,
                 "chronus107": self.production_integration.plan_evidence(
@@ -2256,6 +2263,13 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
         return order, "solver", self._last_solve_first
 
     def _build_plan(self, identity: WorkIdentity) -> SearchPlan | None:
+        """Reserve a nonce lease and return a plan bound to ``identity``.
+
+        Preserve the configured nonce order alongside lane advice and its
+        evidence. Return ``None`` on lease conflict, exhaustion, or a Stratum
+        adapter error during reservation. A ``ValueError`` while constructing
+        the plan releases its lease and returns ``None``; other errors propagate.
+        """
         adapter = self.client.proof_adapter
         window = self._next_window()
         plan_id = str(uuid.uuid4())
@@ -2280,7 +2294,7 @@ class IntelligentPoolCoordinator(ManifoldPoolCoordinator):
                 dispatch_breadth=self._dispatch_breadth,
                 executor_route=self._execution_route(),
                 policy_id=decision.lead if decision is not None else "flat_exhaustive",
-                nonce_order=(NONCE_ORDER_M32 if solve_first is not None else self._nonce_order),
+                nonce_order=self._nonce_order,
                 evidence_refs={
                     "lane_order_source": order_source,
                     "chronus107": self.production_integration.plan_evidence(

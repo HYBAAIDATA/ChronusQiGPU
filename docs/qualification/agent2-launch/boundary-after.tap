@@ -1,0 +1,165 @@
+TAP version 13
+# (node:1333) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:1333) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///vercel/sandbox/data/agent2/frontend/src/enterprise/boundary.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /vercel/sandbox/package.json.
+# Subtest: unbound client never executes
+ok 1 - unbound client never executes
+  ---
+  duration_ms: 1.281777
+  type: 'test'
+  ...
+# Subtest: requires confirmed scope before execution
+ok 2 - requires confirmed scope before execution
+  ---
+  duration_ms: 0.676543
+  type: 'test'
+  ...
+# Subtest: tenant mismatch refused
+ok 3 - tenant mismatch refused
+  ---
+  duration_ms: 0.758532
+  type: 'test'
+  ...
+# Subtest: expired scope refused
+ok 4 - expired scope refused
+  ---
+  duration_ms: 0.403589
+  type: 'test'
+  ...
+# Subtest: empty principal refused
+ok 5 - empty principal refused
+  ---
+  duration_ms: 0.673646
+  type: 'test'
+  ...
+# Subtest: backup uses exact request key and adapter scope
+ok 6 - backup uses exact request key and adapter scope
+  ---
+  duration_ms: 1.230278
+  type: 'test'
+  ...
+# Subtest: new tenant clears outcome synchronously and rejects old completion
+ok 7 - new tenant clears outcome synchronously and rejects old completion
+  ---
+  duration_ms: 0.74526
+  type: 'test'
+  ...
+# Subtest: late connect cannot overwrite newer tenant
+ok 8 - late connect cannot overwrite newer tenant
+  ---
+  duration_ms: 0.484738
+  type: 'test'
+  ...
+# Subtest: logout aborts and cannot resurrect result
+ok 9 - logout aborts and cannot resurrect result
+  ---
+  duration_ms: 0.50133
+  type: 'test'
+  ...
+# Subtest: denial clears scope, data and request key
+ok 10 - denial clears scope, data and request key
+  ---
+  duration_ms: 0.565205
+  type: 'test'
+  ...
+# Subtest: unknown write retains request key but no protected result
+ok 11 - unknown write retains request key but no protected result
+  ---
+  duration_ms: 0.597756
+  type: 'test'
+  ...
+# Subtest: timeout is unknown and late callback is discarded
+ok 12 - timeout is unknown and late callback is discarded
+  ---
+  duration_ms: 25.26163
+  type: 'test'
+  ...
+# Subtest: expiry during work clears result and rejects callback
+ok 13 - expiry during work clears result and rejects callback
+  ---
+  duration_ms: 35.830218
+  type: 'test'
+  ...
+# Subtest: double submit does not create concurrent writes
+ok 14 - double submit does not create concurrent writes
+  ---
+  duration_ms: 0.579219
+  type: 'test'
+  ...
+# Subtest: invalid response becomes unknown, not zero or success
+ok 15 - invalid response becomes unknown, not zero or success
+  ---
+  duration_ms: 0.332184
+  type: 'test'
+  ...
+# Subtest: JSON-inspectable evidence is required
+ok 16 - JSON-inspectable evidence is required
+  ---
+  duration_ms: 0.499865
+  type: 'test'
+  ...
+# Subtest: digest mismatch cannot claim reconstruction pass
+ok 17 - digest mismatch cannot claim reconstruction pass
+  ---
+  duration_ms: 0.111226
+  type: 'test'
+  ...
+# Subtest: memory-only, modeled and pending are not verified durable restore
+ok 18 - memory-only, modeled and pending are not verified durable restore
+  ---
+  duration_ms: 0.138203
+  type: 'test'
+  ...
+# Subtest: unsupported exactness cannot be presented as verified restore
+ok 19 - unsupported exactness cannot be presented as verified restore
+  ---
+  duration_ms: 0.096038
+  type: 'test'
+  ...
+# Subtest: restart not run stays not run; no implicit restart qualification
+ok 20 - restart not run stays not run; no implicit restart qualification
+  ---
+  duration_ms: 0.285602
+  type: 'test'
+  ...
+# Subtest: export absent unless adapter explicitly supports it
+ok 21 - export absent unless adapter explicitly supports it
+  ---
+  duration_ms: 0.317076
+  type: 'test'
+  ...
+# Subtest: export reauthorizes and denial clears existing outcome
+ok 22 - export reauthorizes and denial clears existing outcome
+  ---
+  duration_ms: 0.318909
+  type: 'test'
+  ...
+# Subtest: export after scope change cannot download old evidence
+ok 23 - export after scope change cannot download old evidence
+  ---
+  duration_ms: 0.346019
+  type: 'test'
+  ...
+# Subtest: successful evidence export returns exact service blob
+ok 24 - successful evidence export returns exact service blob
+  ---
+  duration_ms: 0.28271
+  type: 'test'
+  ...
+# Subtest: notifies subscribers only with cleared protected data on logout
+ok 25 - notifies subscribers only with cleared protected data on logout
+  ---
+  duration_ms: 0.242888
+  type: 'test'
+  ...
+1..25
+# tests 25
+# suites 0
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 198.219038

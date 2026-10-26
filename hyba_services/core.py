@@ -178,8 +178,20 @@ class ProofService:
         invariants: Mapping[str, Callable[[Any, Any], bool]],
         backend,
     ):
-        results = tuple(bool(fn(input_obj, output_obj)) for fn in invariants.values())
-        if not all(results):
+        """Return an HMAC-signed proof of the supplied operator checks.
+
+        ``invariants`` maps recorded names to checks called with the input and
+        output objects. It must be nonempty and every result must be the literal
+        ``True``. Both objects supply ``object_id``; the output also supplies
+        ``residual_boundary``. ``backend`` is recorded without validation.
+
+        Raise ``ValueError`` for missing or failed invariants. Exceptions from
+        checks, object attribute access and serialization propagate.
+        """
+        if not invariants:
+            raise ValueError("at least one invariant is required")
+        results = tuple(fn(input_obj, output_obj) for fn in invariants.values())
+        if not all(result is True for result in results):
             raise ValueError("invariant failed")
         unsigned = {
             "proof_id": str(uuid.uuid4()),

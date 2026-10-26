@@ -1,0 +1,25 @@
+{
+  "candidate": "d11f3bb5e8b42066152a6661c179b5bd64f17d22",
+  "started_at": "2026-10-25T17:19:49.490871+00:00",
+  "scope": "local runtime prerequisites only; no HTTP/customer/hardware acceptance",
+  "launch_status": "OPEN",
+  "checks": [
+    {
+      "name": "git-head",
+      "command": [
+        "git",
+        "rev-parse",
+        "--verify",
+        "HEAD"
+      ],
+      "cwd": "/vercel/sandbox/data/agent1",
+      "exit_code": 128,
+      "status": "FAIL"
+    }
+  ],
+  "status": "BLOCKED",
+  "reason": "full Git checkout at exact candidate is required",
+  "artifacts": {
+    "git-head.log": "4a7f0e4452645f813097088971e904a7dbae37d58a48d80efa45c284233924c8"
+  }
+}
