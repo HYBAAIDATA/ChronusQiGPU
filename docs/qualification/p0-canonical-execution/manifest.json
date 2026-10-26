@@ -1,0 +1,20 @@
+{
+  "base_commit": "b131edc408a37ff7c03534d694bfcdaf0c827abb",
+  "base_router_git_blob": "e5f95fd7251568c235ce77046935336fa153a741",
+  "new_tests": 21,
+  "unique_selected_passed_per_mode": 90,
+  "hardware_specific_skips_per_mode": 4,
+  "full_repository_ci": "unverified",
+  "release_status": "not_certified",
+  "files": {
+    "chronus/mla1517/mining/resident_router.py": "668b2a7ad882cddfee6aa34b7bbade55285d8473498f9b91bfb2586806d4e707",
+    "chronus/mla1517/mining/search_authority_guard.py": "08c4f47d2e52a81b9348bc3a9e5397e966c368bb14fd59239c0f1ba710626e51",
+    "tests/test_p0_canonical_execution_boundary.py": "afcc2ecc15cfbe962f8a7d8c0bb18d93077017fe9b1be708ef24532911e3e242",
+    "docs/qualification/p0-canonical-execution/README.md": "a131849e6c6f048b7ed9864dc5eecbb505ab72f77b7e5c63e1dc876d8753ff4d",
+    "docs/qualification/p0-canonical-execution/boundary-router-optimized.txt": "4e762534a215f55b299a7ba18ecc1ee9721c7b5cc8fb13b7df9c0366d6b18dc1",
+    "docs/qualification/p0-canonical-execution/boundary-router.txt": "57ab322cd2800bad0750c37aedcc118838051bd90fab5e79da965368471da29d",
+    "docs/qualification/p0-canonical-execution/flake8.txt": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "docs/qualification/p0-canonical-execution/resident-chaos-optimized.txt": "efdfff7757eafebedb50408958c9f0f8de4ad0208beeac14d4e1fb4be3f31d15",
+    "docs/qualification/p0-canonical-execution/resident-chaos.txt": "fec649a810f9e33cb895040718c5084843728eb82deda91a8e215c210311f6a7"
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "base_commit": "b131edc408a37ff7c03534d694bfcdaf0c827abb",
+  "workspace_includes_proposals": [
+    "PR14",
+    "PR17"
+  ],
+  "normal": {
+    "tests": 235,
+    "passed": 231,
+    "skipped": 4,
+    "failures": 0,
+    "errors": 0
+  },
+  "optimized": {
+    "tests": 235,
+    "passed": 231,
+    "skipped": 4,
+    "failures": 0,
+    "errors": 0
+  },
+  "source_snapshot_sha256": {
+    "chronus/mla1517/mining/geodesic_support.py": "92b99d72a6b4bf61606241d12c8a891a2fefeaa1d2a91ca0debf4a75fb134bd3",
+    "chronus/mla1517/mining/pythia_authority.py": "54381e04bfad2649370a1de376f4119e3f5275218856555c93d9f9d09034ba44",
+    "chronus/mla1517/mining/pythia_agentic_cycle.py": "1d878ac793d41fc113e081bde0181a6150d0db74d593ac6d89b537e9181bb505",
+    "chronus/mla1517/mining/resident_search.py": "30cd6b83cc8333c809626bb9c130f2e6b02e39c93e4f8ad1951890892d7b7fca",
+    "chronus/mla1517/mining/resident_router.py": "668b2a7ad882cddfee6aa34b7bbade55285d8473498f9b91bfb2586806d4e707",
+    "chronus/mla1517/mining/search_authority_guard.py": "08c4f47d2e52a81b9348bc3a9e5397e966c368bb14fd59239c0f1ba710626e51",
+    "chronus/mla1517/mining/execution_router.py": "2ea970e4c3d6d79a7cd2f5fd568b1d6f2eb0d1d07cb219880c9a9b548a4b32e8",
+    "chronus/mla1517/mining/stratum_adapter.py": "cc374c6e9a933675714ca2005bf0d8819daaf4bd6331c1be239f670462cc0f69",
+    "chronus/mla1517/mining/production_transport.py": "736165d6448f6e0a52c63ccd16bb0803520a8a11801a0f3bba4bb57d79172bd3",
+    "chronus/mla1517/mining/coordinator.py": "eaa1b2629c59acea6e5b39c77ea90874e1979c47d21d61effe9aa5356832eaa9",
+    "chronus/mla1517/mining/recovery_authority.py": "fc178d7930590ee34ad312bf1fc473bbbb85707b2b83898368a48be65fea7fde",
+    "chronus/mla1517/mining/search_plan.py": "d84a58a7abe46703ca8b87942c518fa0d6c84dc6965506062cbd071a559506d0",
+    "chronus/mla1517/mining/session.py": "b04ba53de64283fdffafafacc0539136fe6126aa60de78da1a1fe9527aa9ada7",
+    "salamander/runtime.py": "cb60bac92981baca74841c63e1037785876c699bf6b05d9c5154dfb63517b3a5",
+    "chronus/mla1517_platform/python/mining_runtime.py": "aec130714e7e154902b9129970aae8765a8ba95ff42d0382f66bead47e6b15b4"
+  },
+  "test_sources_sha256": {
+    "tests/test_p0_canonical_execution_boundary.py": "afcc2ecc15cfbe962f8a7d8c0bb18d93077017fe9b1be708ef24532911e3e242",
+    "tests/test_execution_router.py": "3aa355c83717cae3ff5a97249d0d44bd23bfcc4c10b7fa16785a6a9b0823c4a8",
+    "tests/test_resident_hendrix.py": "d6db45b75d4b921fd7dc23ca7f8917daf859c146a23e9443d962e5f4a8dcda34",
+    "tests/test_mining_transport_chaos.py": "f898e880cd892a9335343e4539f04bbfb90e103598578ae43e737a4dbcc43ad6",
+    "tests/test_salamander_autonomic.py": "e03113d4e8e388ee7695969ef00924711d091fc628ca6d73c9f8b885e28e9b33",
+    "tests/test_salamander_mining_mode_acceptance.py": "0c0a5b4d7440bb950e10e9eadc1dfc6c5eed4b2ce70abbb199a138ca66230dd8",
+    "tests/test_mining_recovery_dispatch_boundary.py": "75f340c273629be8a5dfd6dab9ea405dcf94612b64f111bcda4ba30fef553fbe",
+    "tests/test_salamander_authority_replay.py": "30594a06a5ebd23847c9d1aa3ad3ac98fa6cf9e535518ad57ad932d9603cf42c",
+    "chronus/mla1517_platform/python/test_stratum_adapter.py": "89c7b4afb9e660f31cd39b4e41479bb255f1e1698506149ef6f35b924fdec74f",
+    "chronus/mla1517_platform/python/test_stratum_session.py": "0b100336e2517787ea42690c015ceef796b458cf6ed48c0d2ad527142bd880b9",
+    "chronus/mla1517_platform/python/test_stratum_state.py": "cb69c44c9419dfcd41cc3b6f689cf33c3bb06df77072023adbb7109deb13a429",
+    "chronus/mla1517_platform/python/test_stratum_events.py": "49944df91b27affe2bd30da0af88679397f3e90dc7143e5bde1d705c5f5cdd54",
+    "chronus/mla1517_platform/python/test_production_transport.py": "20104228df81824ba43dc47400503d445fbf8fae8ef0676b1065caf0eb98ad53",
+    "chronus/mla1517_platform/python/test_execution_receipt.py": "c378867201a690b56b5bddca7ab0b4c46bf73fc1590d8f8396b4b2f81f36e228",
+    "chronus/mla1517_platform/python/test_loopback_pool_verdict.py": "07eeb0c44690ebc766e40d1f56883b9394ffbc4396e304a8f6b25aaf86c01304",
+    "chronus/mla1517_platform/python/test_canonical_mining_workflow_e2e.py": "449d8fa4955cf66db864f725cf509a4c8435058707fb9bf8b300173c3275e289",
+    "tests/test_mining_quantum_support_contracts.py": "fc53f9636effcb270617701e4c6f48587f48421aa3e6bd0bc240ae3f7a249417"
+  },
+  "files": {
+    "docs/MINING_WORKFLOW_CONTRACTS.md": "4eb628a99b119a385753ecccd4d111a7a14228d5cc27f387be1b1e775acd1571",
+    "tests/test_mining_quantum_support_contracts.py": "fc53f9636effcb270617701e4c6f48587f48421aa3e6bd0bc240ae3f7a249417",
+    "docs/qualification/mining-workflow-contracts/README.md": "c52356de2d5b8bccd97c418366ead3e953aefec2d5a767cc94efa17b1a746e70",
+    "docs/qualification/mining-workflow-contracts/arsenal-inventory.json": "2629205b9635cac28b466dc1b956b9ce0fc867dc045ce45f61a80d5741e61695",
+    "docs/qualification/mining-workflow-contracts/arsenal-probe.txt": "cff73fad200b6beb4aa127d894465f7cf3c63df86161dddd71ec7c96fdc597b0",
+    "docs/qualification/mining-workflow-contracts/contract-evidence-map.json": "6ad2ffbf196dc152eabab7bffa8316eb8fc7f541939f2bb8905cad4ff3280a07",
+    "docs/qualification/mining-workflow-contracts/new-test-flake8.txt": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "docs/qualification/mining-workflow-contracts/selected-tests-optimized.txt": "c2c51f4847c208e0890ccae0dcb1df8f33e58a93c109c3bf5f276060ac4eb144",
+    "docs/qualification/mining-workflow-contracts/selected-tests-optimized.xml": "e2046b5d7893101c816acab5d06092c7cf9ac61e3571fae09812931ef2d80e47",
+    "docs/qualification/mining-workflow-contracts/selected-tests.txt": "471f46cd1fc9e47a15cf36587b467ba79916d4ee3bedf8f5b009725828f2a6e1",
+    "docs/qualification/mining-workflow-contracts/selected-tests.xml": "38301a6ab6e963449c27ddcd662c961e8e932b630639795109281706219a3b4f"
+  },
+  "production_release": "not_certified",
+  "live_pool": "not_attempted",
+  "full_ci": "unverified"
+}
