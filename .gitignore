@@ -144,3 +144,9 @@ scratch_pseudocode.txt
 
 # Preserve imported source directories, including nested package names.
 !/recovery/hyba_data/source/**/
+
+hyba.vhd
+
+
+legacy_implementations/
+

@@ -66,11 +66,13 @@ def _resolve(requested: str) -> Backend:
             if probe().get(backend.value, {}).get("available"):
                 return backend
         return Backend.CPU_REF
+    if requested in {"cpu", "cpu_reference", "cpu-reference", "reference"}:
+        return Backend.CPU_REF
     try:
         return Backend(requested)
     except ValueError:
         for b in Backend:
-            if requested in (b.value, b.name.lower(), _MODULE_MAP[b], _MODULE_MAP[b].replace("_mmio", "")):
+            if requested in (b.value, b.name.lower(), _MODULE_MAP[b], _MODULE_MAP[b].replace("_mmio", ""), _MODULE_MAP[b].replace("_igpu", "")):
                 return b
         raise BackendUnavailable(f"unknown PYTHIA_EXECUTION_DEVICE {requested!r}; expected " + ", ".join(b.value for b in Backend)) from None
 

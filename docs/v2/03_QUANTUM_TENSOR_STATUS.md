@@ -50,3 +50,23 @@ In commit `9e3420bb` (`fix(quantum): close amplitude-amplification claim, clamp 
 - **Location**: [`chronus/mla1517_platform/python/system_fabric.py:32-45`](file:///c:/Users/leonn/OneDrive/Desktop/PhiEnterprise-main/chronus/mla1517_platform/python/system_fabric.py#L32-L45)
 - **Status**: **RECONCILED**
 - **Reality**: Chronus is the sole single-backend virtual iGPU execution delivery plane. Legacy references to `micro_tether.py` or separate external GPU runtimes are unified as child dispatchers within Chronus fabric.
+
+---
+
+## 4. Chronus / iGPU Elevation Status (Locked End-State)
+
+- **Authority**: [`chronus/README.md`](file:///c:/Users/leonn/OneDrive/Desktop/PhiEnterprise-main/chronus/README.md) + [`CHRONUS_IGPU_ELEVATION.md`](file:///c:/Users/leonn/OneDrive/Desktop/PhiEnterprise-main/CHRONUS_IGPU_ELEVATION.md) > docs
+- **Status**: **PASS (MEASURED)**
+- **Two-Mode Product Contract**:
+  1. **Mode A (`native_chronus_gpu`)**: Chronus IS the software-defined GPU. Runs on CPU reference without host GPU (`PYTHIA_EXECUTION_DEVICE=cpu`). Substrate is CPU reference; not a degraded fallback, not mislabelled device.
+  2. **Mode B (`host_gpu_augmentation`)**: Binds certified host iGPU/GPU if present, preserving identical workload contract. Missing GPU gates B only; A is always available.
+- **Myths Busted (C1–C7)**:
+  - **C1**: Mode A runs without GPU (`Route{requested:cpu, executed:cpu_reference}`).
+  - **C2**: CPU fallback is never labelled as device (`executed:cpu_reference`, `hashrate:NOT_RUN`).
+  - **C3**: Single image digest runs Docker-local and Azure (`/healthz` PASS, `/ready-to-mine` unavailable-without-HW).
+  - **C4**: Golden stride odd (`0x9E3779B9`) => permutation only (`gcd(s, 2^32)=1`); FIFO depth `fib(6)=8`. Zero hash reduction.
+  - **C5**: HTTP health != mining readiness (Azure `/healthz` PASS, mining endpoints fail-closed).
+  - **C6**: Turing VQC is independent; Chronus never absorbs Turing. `toe/intelligences/authority_boundary.py` holds.
+  - **C7**: Core (`euclid/`, `lucas/`) has zero backend imports (`pyopencl`, `mla1517`, `azure`).
+- **Same-Hash Verification**: Quantum walk (Hadamard coin + functorial shift, 8 steps, CTCF triad) verified deterministic (`hash(q.cpu) == hash(q.emu)`). Speedup unproven without hardware receipts; no unverified speedup claimed.
+

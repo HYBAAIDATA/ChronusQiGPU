@@ -390,6 +390,16 @@ TOOLS: List[PythiaTool] = [
         outputs=["submit_payload", "parsed_job"],
         complexity="O(1)",
     ),
+    PythiaTool(
+        name="github_docs_search",
+        category="knowledge",
+        description="Search GitHub Docs corpus for workflows, REST APIs, webhooks, and security specifications.",
+        module_path="Intelligence.github_docs_adapter.GitHubDocsCorpus",
+        callable_name="search",
+        inputs=["query", "category", "max_results"],
+        outputs=["results"],
+        complexity="O(K) indexed documents",
+    ),
 ]
 
 

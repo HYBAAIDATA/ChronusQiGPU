@@ -27,16 +27,15 @@ for arg in "$@"; do
   esac
 done
 
-# Stage hyba-kellogg-tensor from the checkout exactly as packaging/kellogg-tensor
-# does: the kellogg package plus the staged pyproject/README/LICENSE.
-KELLOGG_STAGE="$(mktemp -d)/kellogg-tensor"
-mkdir -p "$KELLOGG_STAGE"
-cp -r kellogg LICENSE packaging/kellogg-tensor/pyproject.toml \
-      packaging/kellogg-tensor/README.md "$KELLOGG_STAGE/"
+# Build the in-tree Kellogg distribution from the repo's real package layout.
+# A temporary staging directory breaks the package's relative path assumptions
+# in packaging/kellogg-tensor/pyproject.toml (../../kellogg), which is exactly
+# why the wheel build fails under CI.
+KELLOGG_BUILD="./packaging/kellogg-tensor"
 
 # Substrate distributions that are in-tree and never on PyPI.
 SUBSTRATE=(
-  "$KELLOGG_STAGE"
+  "$KELLOGG_BUILD"
   ./chronus/packages/chronos-one-igpu
   ./turing_universal_quantum_computer
 )
@@ -48,7 +47,7 @@ fi
 
 if [ "$INSTALL_ROOT" -eq 1 ]; then
   if [ -n "$EXTRAS" ]; then
-    TARGET=".[$EXTRAS]"
+    TARGET=".["$EXTRAS"]"
   else
     TARGET="."
   fi
@@ -56,5 +55,3 @@ if [ "$INSTALL_ROOT" -eq 1 ]; then
 else
   python -m pip install "${PIP_FLAGS[@]}" "${SUBSTRATE[@]}"
 fi
-
-rm -rf "$(dirname "$KELLOGG_STAGE")"
