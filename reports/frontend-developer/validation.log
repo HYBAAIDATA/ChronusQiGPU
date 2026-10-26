@@ -1,0 +1,103 @@
+## Formatting
+Checking formatting...
+All matched files use Prettier code style!
+
+## Public checks
+
+> pythia-operator-frontend@0.1.0 check:developer
+> npm run lint:developer && npm run test:developer && npm run build:developer
+
+
+> pythia-operator-frontend@0.1.0 lint:developer
+> tsc --project developer/tsconfig.json
+
+
+> pythia-operator-frontend@0.1.0 test:developer
+> vitest run --config developer/vitest.config.ts
+
+
+ RUN  v5.0.5 /vercel/sandbox/data/hyba/frontend/developer
+
+ ✓ tests/catalog.test.ts (25 tests) 9ms
+ ✓ tests/boundary.test.ts (3 tests) 9ms
+ ✓ tests/output-policy.test.ts (9 tests) 6ms
+
+ Test Files  3 passed (3)
+      Tests  37 passed (37)
+   Start at  17:55:23
+   Duration  588ms (import 66%, transform 21%, tests 9%, worker 4%)
+
+
+> pythia-operator-frontend@0.1.0 build:developer
+> vite build --config vite.developer.config.ts && node developer/scripts/audit-output.mjs
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 19 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/developer/.vite/manifest.json          0.18 kB │ gzip:  0.14 kB
+../dist/developer/index.html                   0.89 kB │ gzip:  0.50 kB
+../dist/developer/assets/index-DInNCFb1.css    7.58 kB │ gzip:  2.35 kB
+../dist/developer/assets/index-Cvi5fWEj.js   235.36 kB │ gzip: 73.58 kB
+
+✓ built in 177ms
+{
+  "status": "PASS",
+  "scope": "static-output pattern audit, not repository/history secret certification",
+  "files": [
+    {
+      "path": ".vite/manifest.json",
+      "bytes": 185,
+      "sha256": "f16ff0c3ae18aed1788710202c143fa3234f8095459472a5efa67286fe2c43c2"
+    },
+    {
+      "path": "assets/index-Cvi5fWEj.js",
+      "bytes": 235369,
+      "sha256": "00873397cd2410613ddd3be47ea8b187ca1bc0704e9585fb6a64aef1a6e3330f"
+    },
+    {
+      "path": "assets/index-DInNCFb1.css",
+      "bytes": 7581,
+      "sha256": "e570887cfe9142a73f79cae0c6af229f3aa5d75eae93c983907cef0afe99f29c"
+    },
+    {
+      "path": "index.html",
+      "bytes": 898,
+      "sha256": "d028500c3a26321319c744e130e1bf4707373434b9e1f1465d444458f283208f"
+    }
+  ]
+}
+
+## Isolation checks
+
+> pythia-operator-frontend@0.1.0 test:developer:isolation
+> node developer/scripts/verify-isolation.mjs
+
+PASS: private import rejected; publicDir/env canaries excluded; output canary rejected.
+
+## Browser checks
+
+> hyba-developer-browser-checks@0.0.0 test
+> node browser-check.mjs
+
+PASS: 18 route/state records; desktop/mobile axe checks; no backend; screenshots retained.
+
+## Dependency installation
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: 'pythia-operator-frontend@0.1.0',
+npm warn EBADENGINE   required: { node: '24.21.0' },
+npm warn EBADENGINE   current: { node: 'v24.22.1', npm: '11.19.1' }
+npm warn EBADENGINE }
+
+added 195 packages, and audited 196 packages in 3s
+
+58 packages are looking for funding
+  run `npm fund` for details
+
+1 high severity vulnerability
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
