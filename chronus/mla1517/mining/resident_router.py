@@ -12,6 +12,7 @@ from chronus.resident_hendrix import ResidentHendrix, seal
 from .execution_router import ExecutionRouter, FallbackReason, NONCE_ORDER_HENDRIX, RouteDecision
 from .pythia_search import SEARCH_ARCHITECTURE_ID, PythiaSearchPrecompute
 from .exact_search import precompute_exact_search as precompute_pythia_search
+from .search_authority_guard import canonical_nonce_order, require_canonical_execution
 from .search_plan import ExecutionRoute
 
 _PYTHIA_HENDRIX_COMPOSED = "pythia_hendrix_structured_composed"
@@ -68,7 +69,10 @@ class ProductionExecutionRouter(ExecutionRouter):
 
     def execute_plan(self, plan, header, target, **kwargs):
         """Clear prior fabric evidence before any freshness or lease gate can refuse work."""
-        if self._is_pythia_lattice(plan) and hasattr(self._hasher, "last_batch_evidence"):
+        canonical_execution = self._is_pythia_lattice(plan)
+        if canonical_execution:
+            canonical_nonce_order(plan.nonce_order)
+        if canonical_execution and hasattr(self._hasher, "last_batch_evidence"):
             self._hasher.last_batch_evidence = None
         fresh = kwargs.get("is_still_fresh")
         import time
@@ -80,7 +84,10 @@ class ProductionExecutionRouter(ExecutionRouter):
         lease = kwargs.get("lease")
         if lease is not None and (lease.start != plan.base_step or lease.count != plan.window):
             raise ValueError("plan and nonce lease bounds differ")
-        return super().execute_plan(plan, header, target, **kwargs)
+        record, candidate = super().execute_plan(plan, header, target, **kwargs)
+        if canonical_execution:
+            require_canonical_execution(plan, record)
+        return record, candidate
 
     def _opencl_bound(self) -> bool:
         if _backend_name(self._hasher) in _NATIVE_BACKENDS:

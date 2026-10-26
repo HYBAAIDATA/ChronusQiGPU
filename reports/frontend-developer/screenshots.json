@@ -1,0 +1,203 @@
+{
+  "candidate": "frontend/github-first-developer-boundary-20261025",
+  "baseline": "b131edc408a37ff7c03534d694bfcdaf0c827abb",
+  "before": "unavailable: authenticated full checkout needed; no mocked reconstruction",
+  "sourceInputs": {
+    "frontend/developer/.gitignore": "d53643bfb9e9ac870df3db876df6a4ceb71f51ca1df83cea9db06089581b0f69",
+    "frontend/developer/README.md": "41a8852703873a165580a7df840681df189053640424a1f5553e8bcb5578d610",
+    "frontend/developer/index.html": "497d920cbc7bac5b2496c9f6b10eea623d8844c945d4171c412a1e355f296ee2",
+    "frontend/developer/qa/browser-check.mjs": "fc1af4c8b2c1f66e710fefc24bc4824b339d8d3388cc538b6cb10163f4f425e9",
+    "frontend/developer/qa/package-lock.json": "62a818524bea908c60c99426bdf410cd0ef34f6d11e06650b922c9a4c80da274",
+    "frontend/developer/qa/package.json": "f44fa0abb524742536ed67b17a3598ed73061dfb1eb9f645c866cd5d748b7029",
+    "frontend/developer/scripts/audit-output.mjs": "5124566285d3ffd5045b607bb56e1328ace452aa5aac19e5e5dfa96f70ac5e64",
+    "frontend/developer/scripts/output-policy.mjs": "73faaa659dd085541f423b07713073f71eacc0e7cd0f0b5fc27af4e2cdd9e81d",
+    "frontend/developer/scripts/serve.mjs": "0a41427da56c348057a7791b844365c08b08fcd8aa99a949fdd71bec4bb138dd",
+    "frontend/developer/scripts/verify-isolation.mjs": "2bd00e9d0243aa96dc7803a5a863d16dbe04840ebc7b3c0667d957847a70789e",
+    "frontend/developer/src/App.tsx": "47a811015cf5739f6404b0bbc38e1bdbdd2035664d00cb54be09dd97b245a9a6",
+    "frontend/developer/src/catalog.ts": "369c07545e566b5e066d6c5db9ba7f077c84ce60a6af385fa965d50017b06863",
+    "frontend/developer/src/components/Primitives.tsx": "341b6710bde05bf2d8ee2d2ce0e79c4766a50ac2acb99069e1dc78521de7704a",
+    "frontend/developer/src/main.tsx": "2fc543327a8c1677a71e3c16a807d91f8c50b5e4d6febc522592a3f6acacfe24",
+    "frontend/developer/src/routes.ts": "36ad0eed9985248809c636bf54dc30105ef1e091d83cc329ac1d3b4b28a0e0e9",
+    "frontend/developer/src/styles/site.css": "0a4f0deb6417e5899199b2a2244ac2e4a5c374ca18fe2a5f3a577d253cdc62cc",
+    "frontend/developer/tests/boundary.test.ts": "f74d580ef6844a110c8edff1eec67019ec063246ed27a879700c81d3b530798b",
+    "frontend/developer/tests/catalog.test.ts": "2ad4987defa2590914ec5f2e2f1450fd7346164ee53cc1a0be40d88120c640c6",
+    "frontend/developer/tests/output-policy.test.ts": "0a155b23ead65c24ba4c817eff94bb085155e8ca6c61bc5402934118bb0476d1",
+    "frontend/developer/tsconfig.json": "0bb1a364e76ac8c6fa99904283c907292223c6c76296b9a9d40c049ef6b50ae0",
+    "frontend/developer/vitest.config.ts": "3d1f714f0ea8ee05beec2913bc37ef9ffb51d1ae432f3297a04196521727c4e4",
+    "frontend/package.json": "1b3ba4f075f6ee81ed4709650c3d94cefa7dc3ec98812035f547fc294097045d",
+    "frontend/vite.developer.config.ts": "0ad9e8737a62fed90fd34a5837bdb02f02047f18af8993dd7d042bd7b1e28ed2"
+  },
+  "screenshots": [
+    {
+      "file": "desktop-chronus.png",
+      "dimensions": [
+        1440,
+        1290
+      ],
+      "sha256": "917405ce1bee03bfae66cb91998ad42cf77cb1624efe73c23dd00e355cd54a61",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "desktop-empty-search.png",
+      "dimensions": [
+        1440,
+        1749
+      ],
+      "sha256": "64f3f377a93590f1e663d72c41e81182cf81dcd01d81398f4dc1933d3a14799f",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "desktop-guide.png",
+      "dimensions": [
+        1440,
+        1165
+      ],
+      "sha256": "c8ec008cf08e5c57d2911e567af6a9e1c254fc93c35617855695d0e1ddd8d516",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "desktop-kellogg.png",
+      "dimensions": [
+        1440,
+        1265
+      ],
+      "sha256": "5e9406d66a0a3829bf635e12007e5e8a0008a926f86e32c272a342660ae8ae99",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "desktop-mcp.png",
+      "dimensions": [
+        1440,
+        1290
+      ],
+      "sha256": "e99a933657606f067f250fced85fcb019fc6c583829bfcf920df767ba5f09e15",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "desktop-not-found.png",
+      "dimensions": [
+        1440,
+        1000
+      ],
+      "sha256": "16a8ab21e539b795959bf6fae8fdd0565f3647d95fd88b8f511f0be5f4f0d587",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "desktop-overview.png",
+      "dimensions": [
+        1440,
+        2296
+      ],
+      "sha256": "2d979c0b385dc4e23714f023247cc70435d851d5aeaf4acbbc4d647bf5e5714e",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "desktop-ovid.png",
+      "dimensions": [
+        1440,
+        1290
+      ],
+      "sha256": "1b70105ebc9e50af5ee9298b3fcf188aea6b28b337c03a4bb5c87bc2f2c54e2f",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "desktop-theseus.png",
+      "dimensions": [
+        1440,
+        1265
+      ],
+      "sha256": "4d564de88eabecaece32be095c4acb6cd681fff38c72648b6ee1c493e9ad2f3b",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "mobile-chronus.png",
+      "dimensions": [
+        390,
+        2029
+      ],
+      "sha256": "5175d313f95d399dd0ef3cb17a6339f10c4a2ec2883e375327019479a6442187",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "mobile-empty-search.png",
+      "dimensions": [
+        390,
+        2887
+      ],
+      "sha256": "a5e61c3e78713e50fda40692193c3ea25c6398686c86800db4b57f9c011bdd71",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "mobile-guide.png",
+      "dimensions": [
+        390,
+        2115
+      ],
+      "sha256": "643b69555e5f26550b7374a6bb163f0d8b81a7fd286cd844e587e3a1e2c4859c",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "mobile-javascript-disabled.png",
+      "dimensions": [
+        390,
+        844
+      ],
+      "sha256": "63561ad883caa864560ce3f10f95558b16c6ab6a44a0381ef71f08abeaec7427",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "mobile-kellogg.png",
+      "dimensions": [
+        390,
+        2010
+      ],
+      "sha256": "ca84dac25ecbeec39bb8267859d3081706b293f7031a8665ffafbc01fe472483",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "mobile-mcp.png",
+      "dimensions": [
+        390,
+        1979
+      ],
+      "sha256": "4897046cfb5371df246c5494036b38f6cd5929f3614783a5e581b72b10c79326",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "mobile-not-found.png",
+      "dimensions": [
+        390,
+        844
+      ],
+      "sha256": "ca131b3446c0aaceb248d9db888219d00cfd6f17cff0d33f31e3c593a50fb040",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "mobile-overview.png",
+      "dimensions": [
+        390,
+        4201
+      ],
+      "sha256": "853688de26287ced0437303496bdfd32c35ce7e243af5c74cc9d2003178a3bb5",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "mobile-ovid.png",
+      "dimensions": [
+        390,
+        2010
+      ],
+      "sha256": "fb2ec9d7c089cabadfbce643d4b0de1518946be60d4c36842aa4f630a607a169",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    },
+    {
+      "file": "mobile-theseus.png",
+      "dimensions": [
+        390,
+        2087
+      ],
+      "sha256": "5ebaa36eec133d66ce90064d2e819c16281374722b423533e4afbfd57df7a113",
+      "context": "genuine candidate production frontend; no backend; reduced motion"
+    }
+  ]
+}

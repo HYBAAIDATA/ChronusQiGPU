@@ -813,9 +813,30 @@ class EnterpriseCustody:
         return {n for n in names if n.endswith(".lock") or n == "custody.lock"}
 
     def backup(self, dest: Path | str) -> Path:
+        """Copy to a new, disjoint destination; never delete an existing backup.
+
+        Copy this tenant's tree without advisory lock files, record a backup
+        event in the live store, and return the destination path.
+        ``AuthorityBoundaryError`` rejects the tenant root, its ancestors and
+        descendants after resolving symlinks. ``FileExistsError`` rejects an
+        existing destination, including a dangling symlink. Path resolution,
+        copy and event-write errors propagate, even if files were already copied.
+
+        This is a local operator API, not a network authorization boundary.
+        A failed copy may leave a partial destination for investigation. It is
+        not safe to promote that directory as a verified backup automatically.
+        """
         dest_p = Path(dest)
-        if dest_p.exists():
-            shutil.rmtree(dest_p)
+        source = self.tenant_root.resolve()
+        destination = dest_p.resolve()
+        if (
+            destination == source
+            or source in destination.parents
+            or destination in source.parents
+        ):
+            raise AuthorityBoundaryError("backup destination overlaps custody root")
+        if dest_p.exists() or dest_p.is_symlink():
+            raise FileExistsError("backup destination already exists; choose a new path")
         with self._lock:
             # Do not hold FileLock across copytree — Windows cannot copy locked files.
             shutil.copytree(

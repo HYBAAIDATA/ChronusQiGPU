@@ -1,0 +1,198 @@
+{
+  "schema": "hyba.mining-workflow-evidence-map.v1",
+  "semantics": "selected software coverage links, not blanket certification",
+  "groups": {
+    "canonical": [
+      "tests/test_p0_canonical_execution_boundary.py",
+      "tests/test_execution_router.py",
+      "tests/test_resident_hendrix.py",
+      "tests/test_mining_transport_chaos.py"
+    ],
+    "autonomy": [
+      "tests/test_salamander_autonomic.py",
+      "tests/test_salamander_mining_mode_acceptance.py",
+      "tests/test_mining_recovery_dispatch_boundary.py",
+      "tests/test_salamander_authority_replay.py"
+    ],
+    "protocol": [
+      "chronus/mla1517_platform/python/test_stratum_adapter.py",
+      "chronus/mla1517_platform/python/test_stratum_session.py",
+      "chronus/mla1517_platform/python/test_stratum_state.py",
+      "chronus/mla1517_platform/python/test_stratum_events.py",
+      "chronus/mla1517_platform/python/test_production_transport.py",
+      "chronus/mla1517_platform/python/test_execution_receipt.py",
+      "chronus/mla1517_platform/python/test_loopback_pool_verdict.py"
+    ],
+    "composed": [
+      "chronus/mla1517_platform/python/test_canonical_mining_workflow_e2e.py"
+    ],
+    "support": [
+      "tests/test_mining_quantum_support_contracts.py"
+    ]
+  },
+  "contracts": [
+    {
+      "id": "C01",
+      "evidence_groups": [
+        "protocol"
+      ],
+      "status": "selected_software_evidence_only"
+    },
+    {
+      "id": "C02",
+      "evidence_groups": [
+        "protocol",
+        "canonical",
+        "composed"
+      ],
+      "status": "selected_software_evidence_only"
+    },
+    {
+      "id": "C03",
+      "evidence_groups": [
+        "protocol"
+      ],
+      "status": "selected_software_evidence_only"
+    },
+    {
+      "id": "C04",
+      "evidence_groups": [
+        "canonical",
+        "composed"
+      ],
+      "status": "selected_software_evidence_only"
+    },
+    {
+      "id": "C05",
+      "evidence_groups": [
+        "composed"
+      ],
+      "status": "selected_software_evidence_only"
+    },
+    {
+      "id": "C06",
+      "evidence_groups": [
+        "support"
+      ],
+      "status": "selected_software_evidence_only"
+    },
+    {
+      "id": "C07",
+      "evidence_groups": [
+        "composed"
+      ],
+      "status": "selected_software_evidence_only"
+    },
+    {
+      "id": "C08",
+      "evidence_groups": [
+        "canonical"
+      ],
+      "status": "selected_software_evidence_only"
+    },
+    {
+      "id": "C09",
+      "evidence_groups": [
+        "canonical"
+      ],
+      "status": "selected_software_evidence_only"
+    },
+    {
+      "id": "C10",
+      "evidence_groups": [
+        "canonical"
+      ],
+      "status": "selected_software_evidence_only"
+    },
+    {
+      "id": "C11",
+      "evidence_groups": [
+        "canonical",
+        "protocol"
+      ],
+      "status": "selected_software_evidence_only"
+    },
+    {
+      "id": "C12",
+      "evidence_groups": [
+        "protocol",
+        "composed"
+      ],
+      "status": "selected_software_evidence_only"
+    },
+    {
+      "id": "C13",
+      "evidence_groups": [
+        "protocol",
+        "composed"
+      ],
+      "status": "selected_software_evidence_only"
+    },
+    {
+      "id": "C14",
+      "evidence_groups": [
+        "composed",
+        "protocol"
+      ],
+      "status": "selected_software_evidence_only"
+    },
+    {
+      "id": "C15",
+      "evidence_groups": [
+        "autonomy"
+      ],
+      "status": "selected_software_evidence_only"
+    },
+    {
+      "id": "C16",
+      "evidence_groups": [
+        "autonomy",
+        "protocol"
+      ],
+      "status": "selected_software_evidence_only"
+    }
+  ],
+  "normal": {
+    "tests": 235,
+    "passed": 231,
+    "skipped": 4,
+    "failures": 0,
+    "errors": 0
+  },
+  "optimized": {
+    "tests": 235,
+    "passed": 231,
+    "skipped": 4,
+    "failures": 0,
+    "errors": 0
+  },
+  "test_class_counts": {
+    "tests.test_p0_canonical_execution_boundary": 21,
+    "tests.test_execution_router": 34,
+    "tests.test_resident_hendrix": 35,
+    "tests.test_mining_transport_chaos.MiningTransportChaosTests": 4,
+    "tests.test_salamander_autonomic": 22,
+    "tests.test_salamander_mining_mode_acceptance": 27,
+    "tests.test_mining_recovery_dispatch_boundary": 16,
+    "tests.test_salamander_authority_replay": 14,
+    "tests.test_mining_quantum_support_contracts": 10,
+    "chronus.mla1517_platform.python.test_stratum_adapter.StratumAdapterTests": 15,
+    "chronus.mla1517_platform.python.test_stratum_session.StratumSessionTests": 4,
+    "chronus.mla1517_platform.python.test_stratum_state.StratumRuntimeStateTests": 12,
+    "chronus.mla1517_platform.python.test_stratum_events": 4,
+    "chronus.mla1517_platform.python.test_production_transport.ProductionTransportTests": 7,
+    "chronus.mla1517_platform.python.test_production_transport.FailoverDoesNotPreemptSearchTests": 1,
+    "chronus.mla1517_platform.python.test_execution_receipt.MiningExecutionReceiptTests": 3,
+    "chronus.mla1517_platform.python.test_loopback_pool_verdict": 3,
+    "chronus.mla1517_platform.python.test_canonical_mining_workflow_e2e": 3
+  },
+  "unqualified": [
+    "all_quantum2026_aliases",
+    "every_intelligence_modality",
+    "full_corpus_VQC_training",
+    "all_runtime_actuators",
+    "full_repository_CI",
+    "live_pool_acceptance",
+    "physical_fleet_throughput"
+  ]
+}

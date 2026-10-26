@@ -1,0 +1,121 @@
+........F
+=================================== FAILURES ===================================
+___________ test_canonical_workflow_reaches_literal_pool_acceptance ____________
+
+self = <Intelligence.pythia_store.PythiaStore object at 0x7fd7ca682510>
+
+    def _bootstrap_structure_training(self) -> None:
+        if not self._structure_bootstrap_enabled:
+            return
+        try:
+>           from .mining_structure_training import bootstrap_default_structure_training
+
+Intelligence/pythia_store.py:689: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """PYTHIA structural training for observed Bitcoin nonce corpora.
+    
+    This module is deliberately not a PoW predictor and does not alter the
+    consensus truth boundary. It teaches PYTHIA the geometry/distribution of an
+    observed nonce corpus as unlabelled structural evidence. SHA256d + target
+    comparison remains the only validity predicate.
+    """
+    
+    from __future__ import annotations
+    
+    import csv
+    import hashlib
+    import json
+    import math
+    from dataclasses import asdict, dataclass
+    from pathlib import Path
+    from types import SimpleNamespace
+    from typing import Any, Dict, List, Optional, Sequence, Tuple
+    
+    import numpy as np
+    
+>   from python_backend.phi_grover_v4 import cheap_resonance, phi_resonance
+E   ModuleNotFoundError: No module named 'python_backend'
+
+Intelligence/mining_structure_training.py:22: ModuleNotFoundError
+
+The above exception was the direct cause of the following exception:
+
+    def test_canonical_workflow_reaches_literal_pool_acceptance() -> None:
+>       asyncio.run(_accepted_share())
+
+chronus/mla1517_platform/python/test_canonical_mining_workflow_e2e.py:83: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib64/python3.13/asyncio/runners.py:196: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/asyncio/runners.py:119: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib64/python3.13/asyncio/base_events.py:725: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+chronus/mla1517_platform/python/test_canonical_mining_workflow_e2e.py:51: in _accepted_share
+    coord = _coordinator(port)
+            ^^^^^^^^^^^^^^^^^^
+chronus/mla1517_platform/python/test_canonical_mining_workflow_e2e.py:21: in _coordinator
+    coord = PythiaProductionMiningCoordinator(
+chronus/mla1517/mining/geodesic_support.py:133: in __init__
+    self.pythia_authority = pythia_authority or PythiaAgenticMiningAuthority()
+                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+chronus/mla1517/mining/pythia_agentic_cycle.py:116: in __init__
+    super().__init__(
+chronus/mla1517/mining/pythia_authority.py:286: in __init__
+    orchestrator = get_intelligence()
+                   ^^^^^^^^^^^^^^^^^^
+Intelligence/__init__.py:268: in get_intelligence
+    _ORCHESTRATOR = IntelligenceOrchestrator()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+Intelligence/orchestrator.py:290: in __init__
+    self.store.load()
+Intelligence/pythia_store.py:746: in load
+    self._bootstrap_structure_training()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Intelligence.pythia_store.PythiaStore object at 0x7fd7ca682510>
+
+    def _bootstrap_structure_training(self) -> None:
+        if not self._structure_bootstrap_enabled:
+            return
+        try:
+            from .mining_structure_training import bootstrap_default_structure_training
+    
+            report = bootstrap_default_structure_training(self.pythia, self)
+            self._structure_training = {"state": "ready", **report.to_dict()}
+            logger.info(
+                "PYTHIA structural corpus ready: %d train / %d holdout (%d newly taught)",
+                report.rows_train,
+                report.rows_holdout,
+                report.rows_newly_taught,
+            )
+        except Exception as exc:
+            self._structure_training = {
+                "state": "error",
+                "default_store": True,
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+>           raise RuntimeError(
+                "PYTHIA default store cannot become ready without verified structural training"
+            ) from exc
+E           RuntimeError: PYTHIA default store cannot become ready without verified structural training
+
+Intelligence/pythia_store.py:705: RuntimeError
+------------------------------ Captured log call -------------------------------
+ERROR    asyncio:base_events.py:1889 Future exception was never retrieved
+future: <Future finished exception=ConnectionError('Stratum writer stopped: ')>
+ConnectionError: Stratum writer stopped: 
+WARNING  Intelligence.registry:registry.py:119 Intelligence module euclid_frontier_agent failed to import: ModuleNotFoundError: No module named 'chronus.agent'
+WARNING  Intelligence.registry:registry.py:119 Intelligence module bsd_scribe failed to import: ModuleNotFoundError: No module named 'integrations'
+WARNING  Intelligence.registry:registry.py:111 Intelligence module cortex_intelligence_ts file missing: file not found: /data/hyba-mining-current/frontend/src/lib/cortex_intelligence.ts
+WARNING  Intelligence.registry:registry.py:111 Intelligence module lucas_pisot_separate_ts file missing: file not found: /data/hyba-mining-current/frontend/src/lib/lucas_pisot_separate.ts
+WARNING  Intelligence.registry:registry.py:119 Intelligence module exact_yangmills_gap failed to import: ModuleNotFoundError: No module named 'millennium'
+WARNING  Intelligence.skill_loader:skill_loader.py:138 Skills directory not found: /data/hyba-mining-current/Intelligence/skills
+=========================== short test summary info ============================
+FAILED chronus/mla1517_platform/python/test_canonical_mining_workflow_e2e.py::test_canonical_workflow_reaches_literal_pool_acceptance
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 8 passed in 13.52s

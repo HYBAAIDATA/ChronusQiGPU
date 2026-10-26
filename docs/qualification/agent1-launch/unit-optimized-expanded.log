@@ -1,0 +1,16 @@
+test_conflict_refused (__main__.BoundaryUnits.test_conflict_refused) ... ok
+test_default_durable_refused (__main__.BoundaryUnits.test_default_durable_refused) ... ok
+test_directory_and_profile_forwarded (__main__.BoundaryUnits.test_directory_and_profile_forwarded) ... ok
+test_empty_directory_refused (__main__.BoundaryUnits.test_empty_directory_refused) ... ok
+test_explicit_memory_forwarding (__main__.BoundaryUnits.test_explicit_memory_forwarding) ... ok
+test_nonboolean_durable_refused (__main__.BoundaryUnits.test_nonboolean_durable_refused) ... ok
+test_smoke_reattaches_with_same_directory (__main__.BoundaryUnits.test_smoke_reattaches_with_same_directory) ... ok
+test_smoke_refuses_corrupt_read (__main__.BoundaryUnits.test_smoke_refuses_corrupt_read) ... ok
+test_smoke_refuses_missing_disk_evidence (__main__.BoundaryUnits.test_smoke_refuses_missing_disk_evidence) ... ok
+test_smoke_refuses_nonliteral_verification (__main__.BoundaryUnits.test_smoke_refuses_nonliteral_verification) ... ok
+test_smoke_refuses_unbound_before_engine (__main__.BoundaryUnits.test_smoke_refuses_unbound_before_engine) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.030s
+
+OK
