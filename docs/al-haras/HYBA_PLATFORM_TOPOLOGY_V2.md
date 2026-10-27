@@ -1,13 +1,14 @@
-# HYBA Platform Topology v2 — TOE + Millennium Maths
+# HYBA Platform Topology v2 — TOE + Millennium Maths + Salamander
 
 ## Intent
 
-HYBA is the consolidated system boundary. AL HARAS and L-HRAS are governance
-and security capabilities inside that boundary. TOE is the shared reasoning
-runtime. Millennium Maths is a separate, bounded mathematical analysis service
-that may supply mathematical diagnostics and research evidence to TOE/HYBA; it
-is not the mission-data plane, identity authority, policy engine, or action
-authority.
+HYBA is the consolidated system boundary. TOE is the shared reasoning runtime;
+Salamander is the adaptive resilience control plane for anomaly detection,
+bounded self-healing and self-optimization; AL HARAS and L-HRAS provide security
+governance and policy; Millennium Maths is a separate, bounded mathematical
+analysis service. Millennium is not the mission-data plane, identity authority,
+policy engine or action authority. Salamander coordinates existing authorities
+rather than replacing them.
 
 This is a target topology and integration contract, not a claim that every
 service is deployed or connected.
@@ -130,3 +131,32 @@ sources, stale events, duplicate events and unavailable services.
    false-alarm metrics before operational use.
 6. Human review, rollback and incident response are demonstrated.
 7. Release readiness is asserted only after documented acceptance evidence.
+
+
+## Salamander: adaptive resilience and operational awareness
+
+The canonical implementation is `salamander.control_plane.AutonomicControlPlane`
+with typed contracts in `salamander.models`. The integration contract is
+documented in
+[`SALAMANDER_ADAPTIVE_RESILIENCE_INTEGRATION.md`](SALAMANDER_ADAPTIVE_RESILIENCE_INTEGRATION.md).
+Do not create a parallel self-healer inside the offering.
+
+Salamander is responsible for:
+
+- **Anomaly detection:** identify abnormal service behavior, correlate signals
+  and evidence, rank plausible causes, and preserve uncertainty.
+- **Self-healing:** select only registered, policy-authorized, bounded and
+  reversible recovery actions; verify service health independently afterward.
+- **Self-optimization:** improve declared operational objectives through replay,
+  held-out evaluation, shadow/canary rollout and rollback on regression.
+- **Coordination:** distinguish proposal, authorization, dispatch,
+  acknowledgement and post-action verification in the evidence trail.
+
+The "Jack and Chloe" design metaphor means fast, technically informed response
+under pressure—not unchecked autonomy. Missing/stale telemetry remains unknown;
+a high anomaly score is not proof of an attack; a handler's success response is
+not proof that recovery worked. Consequential actions and changes to security
+policy require explicit authorization.
+
+Millennium Maths remains a separate sidecar for non-sensitive mathematical
+probes. It must not receive mission telemetry or operational incident payloads.
