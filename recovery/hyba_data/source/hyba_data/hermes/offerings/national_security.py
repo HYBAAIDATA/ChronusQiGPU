@@ -292,16 +292,26 @@ class NationalSecurityOffering:
     def rank_defensive_signals(
         self,
         signals: list[DefensiveSignal],
+        *,
+        tenant_id: str,
+        purpose: str,
     ) -> dict[str, Any]:
-        """Rank normalized defensive signals using the phi triage heuristic.
+        """Rank tenant-scoped defensive signals; never authorize or dispatch.
 
-        This is advisory only: it never authorizes or dispatches an action.
-        Signal contents are not written to the audit log.
+        The caller must establish identity, tenant and purpose before invoking
+        this advisory method. Signal contents are not written to the audit log.
         """
+        if not isinstance(tenant_id, str) or not tenant_id.strip():
+            raise ValueError("tenant_id is required")
+        if not isinstance(purpose, str) or not purpose.strip():
+            raise ValueError("purpose is required")
         result = rank_signals(signals)
         self.audit.add_entry(
-            f"HYBA_PHI_DEFENSIVE_TRIAGE|available|{len(signals)}|{result['ranking_sha256']}"
+            f"HYBA_PHI_DEFENSIVE_TRIAGE|available|{tenant_id}|{purpose}|"
+            f"{len(signals)}|{result['ranking_sha256']}"
         )
+        result["tenant_id"] = tenant_id
+        result["purpose"] = purpose
         result["hyba_audit_integrity"] = self.audit.verify_integrity()
         return result
 
