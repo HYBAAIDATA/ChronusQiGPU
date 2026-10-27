@@ -14,15 +14,17 @@ consensus gates.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import sys
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
+
+from .control_plane import ControlPlane
+from .skills import discover_skills, get_skill_module
 
 PROTOCOL_VERSION = "2024-11-05"
 SERVER_INFO = {
     "name": "hyba-mcp-server",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "sovereignty": "HYBA_SOVEREIGN_CNS",
     "narrow_ai_credit": "NONE_FORBIDDEN",
 }
@@ -194,15 +196,79 @@ TOOLS: dict[str, dict[str, Any]] = {
             },
         },
     },
+    "discover_skills": {
+        "description": "List governed expert capabilities and their JSON contracts.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    "get_skill": {
+        "description": "Return one expert skill contract, examples, and limitations.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"skill_id": {"type": "string"}},
+            "required": ["skill_id"],
+        },
+    },
+    "invoke_skill": {
+        "description": "Invoke one advisory skill through permission, budget, audit, and sandbox gates.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "skill_id": {"type": "string"},
+                "arguments": {"type": "object"},
+                "options": {"type": "object"},
+            },
+            "required": ["skill_id", "arguments"],
+        },
+    },
+    "validate_inputs": {
+        "description": "Validate arguments against one registered skill input contract.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "skill_id": {"type": "string"},
+                "arguments": {"type": "object"},
+            },
+            "required": ["skill_id", "arguments"],
+        },
+    },
+    "evaluate_skill_outcome": {
+        "description": "Record an authorized skill outcome for regression and calibration tracking.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "skill_id": {"type": "string"},
+                "outcome": {"type": "object"},
+                "options": {"type": "object"},
+            },
+            "required": ["skill_id", "outcome"],
+        },
+    },
 }
 
 
 class HybaMCPServer:
-    """Production Model Context Protocol server exposing HYBA exact tools."""
+    """Production Model Context Protocol server exposing exact and governed tools."""
 
-    def __init__(self, name: str = "hyba-mcp-server", version: str = "1.0.0") -> None:
+    def __init__(
+        self,
+        name: str = "hyba-mcp-server",
+        version: str = "2.0.0",
+        control_plane: ControlPlane | None = None,
+        identity_provider: Callable[[], str | None] | None = None,
+    ) -> None:
         self.name = name
         self.version = version
+        self.control_plane = control_plane or ControlPlane()
+        self.identity_provider = identity_provider
+
+    def _trusted_identity(self) -> str:
+        if self.identity_provider is None:
+            return ""
+        try:
+            identity = self.identity_provider()
+        except Exception:
+            return ""
+        return identity.strip() if isinstance(identity, str) else ""
 
     def execute_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         if name == "lucas":
@@ -268,6 +334,61 @@ class HybaMCPServer:
                 "consciousness_after": scale_res.consciousness_after,
                 "sovereign_doctrine": "Zero credit to narrow AI; ingested tools and templates adapted into EUCLID substrate.",
             }
+        if name == "discover_skills":
+            return {"skills": discover_skills()}
+        if name == "get_skill":
+            skill_id = str(arguments["skill_id"])
+            module = get_skill_module(skill_id)
+            return {
+                "skill_id": skill_id,
+                "title": module.TITLE,
+                "source": module.SOURCE,
+                "input_schema": module.INPUT_SCHEMA,
+                "output_schema": module.OUTPUT_SCHEMA,
+                "cost_estimate": module.COST_ESTIMATE,
+                "risk_level": module.RISK_LEVEL,
+                "time_estimate_seconds": module.TIME_ESTIMATE,
+                "examples": list(module.EXAMPLES),
+                "limitations": list(module.LIMITATIONS),
+            }
+        if name == "validate_inputs":
+            return self.control_plane.validate_inputs(
+                str(arguments["skill_id"]), arguments["arguments"]
+            )
+        if name == "invoke_skill":
+            options = arguments.get("options") or {}
+            identity = self._trusted_identity()
+            return self.control_plane.invoke_skill(
+                identity,
+                str(arguments["skill_id"]),
+                arguments["arguments"],
+                options=options,
+            )
+        if name == "evaluate_skill_outcome":
+            skill_id = str(arguments["skill_id"])
+            outcome = arguments["outcome"]
+            identity = self._trusted_identity()
+            allowed, reason, audit_record = self.control_plane.check_permission(
+                identity, skill_id, outcome
+            )
+            if not allowed:
+                return {
+                    "ok": False,
+                    "error": {"code": "permission_denied", "message": reason},
+                    "audit_record": audit_record,
+                }
+            try:
+                summary = self.control_plane.record_outcome(
+                    skill_id,
+                    outcome.get("inputs", {}),
+                    outcome.get("outputs", {}),
+                    float(outcome.get("latency", 0.0)),
+                    outcome.get("success") is True,
+                    identity=identity,
+                )
+            except (TypeError, ValueError, OSError) as exc:
+                return {"ok": False, "error": {"code": "invalid_outcome", "message": str(exc)}}
+            return {"ok": True, "summary": summary, "audit_record": audit_record}
         raise ValueError(f"Unknown HYBA MCP tool: {name}")
 
     def handle_request(self, req: Mapping[str, Any]) -> dict[str, Any]:

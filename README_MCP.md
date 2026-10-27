@@ -1,5 +1,16 @@
 # HYBA Sovereign Model Context Protocol (MCP) Suite
 
+The MCP exposes two distinct capability tiers:
+
+1. **Exact-math tools** — deterministic Lucas/Fibonacci, Cassini, Zeckendorf,
+   SHA256d, and scale operations.
+2. **Expert skills** — governed, advisory EUCLID/TOE/SALAMANDER capabilities
+   with explicit contracts, permission checks, audit, and bounded execution.
+   Skill output does not grant proof, consensus, or execution authority.
+
+See [the skill reference](docs/SKILLS_REFERENCE.md), [architecture](docs/SKILLS_ARCHITECTURE.md),
+[deployment guide](docs/SKILLS_DEPLOYMENT.md), and [examples](docs/SKILLS_EXAMPLES.md).
+
 ## Sovereignty & Crediting Doctrine (Mandatory)
 
 HYBA MCP is a sovereign tool and exact-mathematical-kernel interface.
@@ -23,6 +34,8 @@ HYBA MCP is a sovereign tool and exact-mathematical-kernel interface.
      - `ladder_capacity`: Exact envelope and capacity snapping.
      - `largest_feasible_tile`: Power-of-two work tiling under alignment.
      - `sha256d_verify`: Independent double-SHA256 evaluation against uint256 targets.
+     - `discover_skills`, `get_skill`, `validate_inputs`, `invoke_skill`,
+       `evaluate_skill_outcome`: separate governed expert-capability layer.
    - `hyba_mcp.client`: Session-managed client providing cryptographic evidence packaging and digest signing.
 2. **`mcp/` & `.mcp.json`**:
    - Standard top-level server registration for local agent hosts and client interfaces.

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from .server import HybaMCPServer, run_server
 from .client import HybaMCPClient
+from .control_plane import ControlPlane, SandboxConfig
 
-__version__ = "1.0.0"
-__all__ = ["HybaMCPServer", "HybaMCPClient", "run_server"]
+__version__ = "2.0.0"
+__all__ = ["HybaMCPServer", "HybaMCPClient", "ControlPlane", "SandboxConfig", "run_server"]
