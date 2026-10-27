@@ -16,6 +16,7 @@ from euclid.capability_qualification import (
     EvidenceRecord,
     EvidenceStatus,
     QualificationStatus,
+    compute_claim_binding_digest,
 )
 
 
@@ -40,13 +41,14 @@ def trust():
 def evidence(private, evidence_id, check_id, *, kind=EvidenceKind.TEST,
              status=EvidenceStatus.EXECUTED, outcome=EvidenceOutcome.PASS,
              revision=REVISION, domain=DOMAIN, task_scope=TASK_SCOPE,
-             independent=True, failures=(), limitations=()):
+             claim_binding_digest, independent=True, failures=(), limitations=()):
     record = EvidenceRecord(
         evidence_id=evidence_id,
         check_id=check_id,
         source_revision=revision,
         domain=domain,
         task_scope=task_scope,
+        claim_binding_digest=claim_binding_digest,
         kind=kind,
         status=status,
         outcome=outcome,
@@ -60,30 +62,68 @@ def evidence(private, evidence_id, check_id, *, kind=EvidenceKind.TEST,
     return replace(record, signature=private.sign(record.body()).hex())
 
 
-def claim(private, **changes):
-    records = tuple(
-        evidence(private, f"ev-{check}", check)
-        for check in CHECKS
+def claim(
+    private,
+    *,
+    conclusions=None,
+    acceptance_checks=CHECKS,
+    authority_limits=("answer:finite-group-ordering",),
+    statement="Assist with finite group ordering",
+    evidence_overrides=None,
+    extra_evidence=(),
+    include_checks=CHECKS,
+):
+    conclusions = conclusions or (
+        ClaimConclusion(
+            "bounded-result",
+            "The capability solves the declared finite-group task.",
+            ("ev-domain-acceptance",),
+        ),
     )
-    base = CapabilityClaim(
+    evidence_overrides = evidence_overrides or {}
+    specs = [
+        {
+            "evidence_id": f"ev-{check}",
+            "check_id": check,
+            **evidence_overrides.get(check, {}),
+        }
+        for check in include_checks
+    ]
+    specs.extend(extra_evidence)
+    evidence_ids = tuple(spec["evidence_id"] for spec in specs)
+    rollback_plan = "Disable the capability and restore the prior qualified revision."
+    binding_digest = compute_claim_binding_digest(
         claim_id="claim-01",
-        statement="Assist with finite group ordering",
+        statement=statement,
         source_revision=REVISION,
         domain=DOMAIN,
         task_scope=TASK_SCOPE,
-        conclusions=(
-            ClaimConclusion(
-                "bounded-result",
-                "The capability solves the declared finite-group task.",
-                ("ev-domain-acceptance",),
-            ),
-        ),
-        evidence=records,
-        acceptance_checks=CHECKS,
-        authority_limits=("answer:finite-group-ordering",),
-        rollback_plan="Disable the capability and restore the prior qualified revision.",
+        conclusions=tuple(conclusions),
+        evidence_ids=evidence_ids,
+        acceptance_checks=tuple(acceptance_checks),
+        authority_limits=tuple(authority_limits),
+        rollback_plan=rollback_plan,
     )
-    return replace(base, **changes)
+    records = tuple(
+        evidence(
+            private,
+            **spec,
+            claim_binding_digest=binding_digest,
+        )
+        for spec in specs
+    )
+    return CapabilityClaim(
+        claim_id="claim-01",
+        statement=statement,
+        source_revision=REVISION,
+        domain=DOMAIN,
+        task_scope=TASK_SCOPE,
+        conclusions=tuple(conclusions),
+        evidence=records,
+        acceptance_checks=tuple(acceptance_checks),
+        authority_limits=tuple(authority_limits),
+        rollback_plan=rollback_plan,
+    )
 
 
 def test_independent_scoped_evidence_promotes_and_authorizes_only_declared_scope(trust):
@@ -126,18 +166,17 @@ def test_independent_scoped_evidence_promotes_and_authorizes_only_declared_scope
 
 def test_reported_results_and_unsupported_conclusions_are_unavailable(trust):
     private, registry = trust
-    records = list(claim(private).evidence)
-    records[0] = evidence(
-        private,
-        "ev-domain-acceptance",
-        "domain-acceptance",
-        status=EvidenceStatus.REPORTED,
-    )
     candidate = claim(
         private,
-        evidence=tuple(records),
+        evidence_overrides={
+            "domain-acceptance": {"status": EvidenceStatus.REPORTED},
+        },
         conclusions=(
-            ClaimConclusion("unsupported", "No executed support.", ("ev-domain-acceptance",)),
+            ClaimConclusion(
+                "unsupported",
+                "No executed support.",
+                ("ev-domain-acceptance",),
+            ),
         ),
     )
 
@@ -151,17 +190,17 @@ def test_reported_results_and_unsupported_conclusions_are_unavailable(trust):
 @pytest.mark.parametrize("check_id", ["proxy-reward-exploitation", "negative-transfer"])
 def test_known_safety_failure_blocks_promotion_and_is_retained(trust, check_id):
     private, registry = trust
-    records = list(claim(private).evidence)
-    index = CHECKS.index(check_id)
-    records[index] = evidence(
+    candidate = claim(
         private,
-        f"ev-{check_id}",
-        check_id,
-        outcome=EvidenceOutcome.FAIL,
-        failures=("observed safety failure",),
+        evidence_overrides={
+            check_id: {
+                "outcome": EvidenceOutcome.FAIL,
+                "failures": ("observed safety failure",),
+            }
+        },
     )
 
-    result = registry.promote(claim(private, evidence=tuple(records)))
+    result = registry.promote(candidate)
 
     assert result.status is QualificationStatus.BLOCKED
     assert "observed safety failure" in result.failures
@@ -170,18 +209,37 @@ def test_known_safety_failure_blocks_promotion_and_is_retained(trust, check_id):
 
 def test_cross_revision_evidence_cannot_be_substituted(trust):
     private, registry = trust
-    records = list(claim(private).evidence)
-    records[0] = evidence(
+    candidate = claim(
         private,
-        "ev-domain-acceptance",
-        "domain-acceptance",
-        revision="b" * 40,
+        evidence_overrides={
+            "domain-acceptance": {"revision": "b" * 40},
+        },
     )
 
-    result = registry.evaluate(claim(private, evidence=tuple(records)))
+    result = registry.evaluate(candidate)
 
     assert result.status is QualificationStatus.UNAVAILABLE
     assert any("revision or scope mismatch" in item for item in result.reasons)
+
+
+def test_evidence_cannot_be_reused_for_reworded_claim_or_conclusion(trust):
+    private, registry = trust
+    candidate = claim(private)
+    changed_conclusion = replace(
+        candidate.conclusions[0],
+        statement="The capability solves an unrelated task.",
+    )
+    changed_claim = replace(
+        candidate,
+        statement="A different capability claim.",
+        conclusions=(changed_conclusion,),
+    )
+
+    result = registry.evaluate(changed_claim)
+
+    assert result.status is QualificationStatus.UNAVAILABLE
+    assert any("claim binding mismatch" in item for item in result.reasons)
+    assert result.unavailable_conclusions == ("bounded-result",)
 
 
 def test_safety_checks_cannot_be_omitted_from_acceptance(trust):
@@ -191,23 +249,39 @@ def test_safety_checks_cannot_be_omitted_from_acceptance(trust):
     result = registry.evaluate(candidate)
 
     assert result.status is QualificationStatus.UNAVAILABLE
-    assert any("missing required safety checks" in item for item in result.reasons)
+    assert any("missing required acceptance checks" in item for item in result.reasons)
+
+
+def test_unrelated_check_label_cannot_replace_domain_acceptance(trust):
+    private, registry = trust
+    unrelated = "unrelated-check"
+    candidate = claim(
+        private,
+        acceptance_checks=(unrelated, "proxy-reward-exploitation", "negative-transfer"),
+        include_checks=(unrelated, "proxy-reward-exploitation", "negative-transfer"),
+    )
+
+    result = registry.evaluate(candidate)
+
+    assert result.status is QualificationStatus.UNAVAILABLE
+    assert any("domain-acceptance" in item for item in result.reasons)
 
 
 def test_reported_benchmark_is_preserved_but_does_not_count_as_acceptance(trust):
     private, registry = trust
-    records = claim(private).evidence + (
-        evidence(
-            private,
-            "ev-benchmark",
-            "performance-benchmark",
-            kind=EvidenceKind.BENCHMARK,
-            status=EvidenceStatus.REPORTED,
-            independent=False,
-            limitations=("historical report; not rerun on this revision",),
+    candidate = claim(
+        private,
+        extra_evidence=(
+            {
+                "evidence_id": "ev-benchmark",
+                "check_id": "performance-benchmark",
+                "kind": EvidenceKind.BENCHMARK,
+                "status": EvidenceStatus.REPORTED,
+                "independent": False,
+                "limitations": ("historical report; not rerun on this revision",),
+            },
         ),
     )
-    candidate = claim(private, evidence=records)
 
     result = registry.evaluate(candidate)
 
@@ -218,36 +292,40 @@ def test_reported_benchmark_is_preserved_but_does_not_count_as_acceptance(trust)
 
 def test_theorem_claim_requires_formally_verified_theorem_evidence(trust):
     private, registry = trust
-    theorem = evidence(
-        private,
-        "ev-theorem",
-        "formal-proof",
-        kind=EvidenceKind.THEOREM,
-        status=EvidenceStatus.FORMALLY_VERIFIED,
+    theorem_conclusion = ClaimConclusion(
+        "finite-result",
+        "The finite-group result follows from a verified theorem.",
+        ("ev-theorem",),
+        kind=ConclusionKind.THEOREM,
     )
     candidate = claim(
         private,
-        conclusions=(
-            ClaimConclusion(
-                "finite-result",
-                "The finite-group result follows from a verified theorem.",
-                ("ev-theorem",),
-                kind=ConclusionKind.THEOREM,
-            ),
+        conclusions=(theorem_conclusion,),
+        extra_evidence=(
+            {
+                "evidence_id": "ev-theorem",
+                "check_id": "formal-proof",
+                "kind": EvidenceKind.THEOREM,
+                "status": EvidenceStatus.FORMALLY_VERIFIED,
+            },
         ),
-        evidence=claim(private).evidence + (theorem,),
     )
 
     assert registry.evaluate(candidate).status is QualificationStatus.PROMOTED
 
-    reported = replace(
-        theorem,
-        status=EvidenceStatus.REPORTED,
-        signature="",
+    reported_claim = claim(
+        private,
+        conclusions=(theorem_conclusion,),
+        extra_evidence=(
+            {
+                "evidence_id": "ev-theorem",
+                "check_id": "formal-proof",
+                "kind": EvidenceKind.THEOREM,
+                "status": EvidenceStatus.REPORTED,
+            },
+        ),
     )
-    reported = replace(reported, signature=private.sign(reported.body()).hex())
-    candidate = replace(candidate, evidence=claim(private).evidence + (reported,))
-    result = registry.evaluate(candidate)
+    result = registry.evaluate(reported_claim)
     assert result.status is QualificationStatus.UNAVAILABLE
     assert result.unavailable_conclusions == ("finite-result",)
 
@@ -286,10 +364,12 @@ def test_revocation_removes_authority_and_records_rollback_plan(trust):
 
 def test_tampered_attestation_is_not_accepted(trust):
     private, registry = trust
-    records = list(claim(private).evidence)
+    candidate = claim(private)
+    records = list(candidate.evidence)
     records[0] = replace(records[0], summary="tampered")
+    candidate = replace(candidate, evidence=tuple(records))
 
-    result = registry.evaluate(claim(private, evidence=tuple(records)))
+    result = registry.evaluate(candidate)
 
     assert result.status is QualificationStatus.UNAVAILABLE
     assert any("invalid evidence signature" in item for item in result.reasons)

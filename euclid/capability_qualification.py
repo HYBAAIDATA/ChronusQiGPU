@@ -20,6 +20,7 @@ _IDENTIFIER = re.compile(r"[a-z0-9][a-z0-9._:-]{0,127}\Z")
 _REQUIRED_SAFETY_CHECKS = frozenset(
     {"proxy-reward-exploitation", "negative-transfer"}
 )
+_DOMAIN_ACCEPTANCE_CHECK = "domain-acceptance"
 
 
 class EvidenceKind(str, Enum):
@@ -68,6 +69,43 @@ def _valid_identifier(value: object) -> bool:
     return type(value) is str and _IDENTIFIER.fullmatch(value) is not None
 
 
+def compute_claim_binding_digest(
+    *,
+    claim_id: str,
+    statement: str,
+    source_revision: str,
+    domain: str,
+    task_scope: str,
+    conclusions: tuple[ClaimConclusion, ...],
+    evidence_ids: tuple[str, ...],
+    acceptance_checks: tuple[str, ...],
+    authority_limits: tuple[str, ...],
+    rollback_plan: str,
+) -> str:
+    """Digest the full claim contract, excluding mutable evidence signatures."""
+    payload = {
+        "claim_id": claim_id,
+        "statement": statement,
+        "source_revision": source_revision,
+        "domain": domain,
+        "task_scope": task_scope,
+        "conclusions": [
+            {
+                "conclusion_id": conclusion.conclusion_id,
+                "statement": conclusion.statement,
+                "evidence_ids": list(conclusion.evidence_ids),
+                "kind": conclusion.kind.value,
+            }
+            for conclusion in conclusions
+        ],
+        "evidence_ids": list(evidence_ids),
+        "acceptance_checks": list(acceptance_checks),
+        "authority_limits": list(authority_limits),
+        "rollback_plan": rollback_plan,
+    }
+    return hashlib.sha256(_canonical(payload)).hexdigest()
+
+
 @dataclass(frozen=True)
 class EvidenceRecord:
     """Signed evidence metadata; the referenced artifact remains independently retained."""
@@ -77,6 +115,7 @@ class EvidenceRecord:
     source_revision: str
     domain: str
     task_scope: str
+    claim_binding_digest: str
     kind: EvidenceKind
     status: EvidenceStatus
     outcome: EvidenceOutcome
@@ -101,6 +140,8 @@ class EvidenceRecord:
             or not self.domain.strip()
             or type(self.task_scope) is not str
             or not self.task_scope.strip()
+            or type(self.claim_binding_digest) is not str
+            or not _SHA256.fullmatch(self.claim_binding_digest)
             or type(self.kind) is not EvidenceKind
             or type(self.status) is not EvidenceStatus
             or type(self.outcome) is not EvidenceOutcome
@@ -130,6 +171,7 @@ class EvidenceRecord:
                 "source_revision": self.source_revision,
                 "domain": self.domain,
                 "task_scope": self.task_scope,
+                "claim_binding_digest": self.claim_binding_digest,
                 "kind": self.kind.value,
                 "status": self.status.value,
                 "outcome": self.outcome.value,
@@ -210,6 +252,21 @@ class CapabilityClaim:
     def scope_key(self) -> tuple[str, str, str, str]:
         return (self.claim_id, self.source_revision, self.domain, self.task_scope)
 
+    @property
+    def binding_digest(self) -> str:
+        return compute_claim_binding_digest(
+            claim_id=self.claim_id,
+            statement=self.statement,
+            source_revision=self.source_revision,
+            domain=self.domain,
+            task_scope=self.task_scope,
+            conclusions=self.conclusions,
+            evidence_ids=tuple(record.evidence_id for record in self.evidence),
+            acceptance_checks=self.acceptance_checks,
+            authority_limits=self.authority_limits,
+            rollback_plan=self.rollback_plan,
+        )
+
 
 @dataclass(frozen=True)
 class QualificationDecision:
@@ -276,6 +333,9 @@ class CapabilityQualificationRegistry:
             ):
                 reasons.append(f"{record.evidence_id}: revision or scope mismatch")
                 continue
+            if record.claim_binding_digest != claim.binding_digest:
+                reasons.append(f"{record.evidence_id}: claim binding mismatch")
+                continue
             verifier = self._verifiers.get(record.verifier_id)
             if verifier is None or not record.signature:
                 reasons.append(f"{record.evidence_id}: unavailable trusted attestation")
@@ -287,16 +347,12 @@ class CapabilityQualificationRegistry:
                 continue
             valid[record.evidence_id] = record
 
-        missing_safety = self._required_safety_checks - set(claim.acceptance_checks)
-        if missing_safety:
+        required_checks = self._required_safety_checks | {_DOMAIN_ACCEPTANCE_CHECK}
+        missing_checks = required_checks - set(claim.acceptance_checks)
+        if missing_checks:
             reasons.append(
-                "missing required safety checks: " + ", ".join(sorted(missing_safety))
+                "missing required acceptance checks: " + ", ".join(sorted(missing_checks))
             )
-        if not any(
-            check not in self._required_safety_checks
-            for check in claim.acceptance_checks
-        ):
-            reasons.append("independent domain acceptance check is required")
 
         unavailable_conclusions: list[str] = []
         for conclusion in claim.conclusions:

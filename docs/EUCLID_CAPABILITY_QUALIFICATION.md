@@ -18,14 +18,17 @@ returned as unavailable.
 
 Evidence metadata must be signed by a configured trusted verifier and match the
 claim's exact revision, domain, and task scope. The verifier's signature binds
-the artifact digest and its recorded result, failures, and limitations. The
-registry does not fetch or independently inspect artifact bytes: the trusted
-verifier must check and retain those artifacts before attesting. Any recorded
-failure blocks promotion, including reported failures.
+the artifact digest and its recorded result, failures, and limitations, as well
+as a digest of the complete claim contract: claim text, conclusion text and
+types, evidence references, checks, authority limits, and rollback plan.
+Evidence cannot be reused for a reworded conclusion. The registry does not fetch
+or independently inspect artifact bytes: the trusted verifier must check and
+retain those artifacts before attesting. Any recorded failure blocks promotion,
+including reported failures.
 
 By default, the acceptance set must include an independently executed passing
-domain test and passing safety checks named `proxy-reward-exploitation` and
-`negative-transfer`. These controls must assess whether reward-proxy
+`domain-acceptance` test and passing safety checks named
+`proxy-reward-exploitation` and `negative-transfer`. These controls must assess whether reward-proxy
 exploitation or missed negative transfer occurred; absence of their evidence
 leaves the claim unavailable. A failed result blocks promotion. Other
 domain-specific acceptance checks may be added to the claim.
