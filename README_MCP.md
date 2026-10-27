@@ -1,63 +1,73 @@
-# HYBA Sovereign Model Context Protocol (MCP) Suite
+# HYBA MCP
 
-## Sovereignty & Crediting Doctrine (Mandatory)
+`hyba_mcp` is a local, line-oriented stdio MCP server for bounded mathematical
+and SHA256d verification tools. It is not a network service, an MCP
+authorization gateway, or a mining submission interface.
 
-HYBA MCP is a sovereign tool and exact-mathematical-kernel interface.
-**We do NOT serve or augment narrow AI.**
-- Narrow AI models obtain **zero credit, zero authority, and zero decision rights**.
-- HYBA / EUCLID adapts tools, training environments, and curricula into its own deterministic cognitive and mathematical substrate.
-- All actions are subject to **AL HARAS zero-trust containment**, situational access leases, and cryptographic evidence logging.
-- `theorem_proven` remains `False` until verified against consensus gates.
+## Trust and deployment boundary
 
----
+The server does not implement caller authentication, TLS, AL HARAS leases,
+tenant isolation, persistent audit logging, or remote transport. The MCP host
+process is the trust boundary: run it only from a vetted installation under a
+least-privilege OS identity, and do not expose its stdio through an unauthenticated
+network bridge. Tools are calculations and verification only; they do not
+submit shares, mutate enterprise data, or grant decision authority.
 
-## Architectural Components
+The separate `MCPGateway` is an application governance component; this stdio
+server does not invoke or replace it. The separate `mcp/exact_kernel` and
+`mcp/cogito` servers have independent implementations and are not covered by
+the production-scope claims or protocol tests in this document.
 
-1. **`hyba_mcp` (Production Package)**:
-   - `hyba_mcp.server`: High-throughput Model Context Protocol server exposing verified tools:
-     - `lucas`: Exact fast-doubling Lucas numbers ($L_n$) with Cassini witness.
-     - `fibonacci`: Exact fast-doubling Fibonacci numbers ($F_n$).
-     - `cassini`: Exact $L_n^2 - 5 F_n^2 = 4(-1)^n$ certificate.
-     - `zeckendorf`: Canonical non-adjacent Zeckendorf representation.
-     - `ladder_verify`: Complete Lucas ladder stops.
-     - `ladder_capacity`: Exact envelope and capacity snapping.
-     - `largest_feasible_tile`: Power-of-two work tiling under alignment.
-     - `sha256d_verify`: Independent double-SHA256 evaluation against uint256 targets.
-   - `hyba_mcp.client`: Session-managed client providing cryptographic evidence packaging and digest signing.
-2. **`mcp/` & `.mcp.json`**:
-   - Standard top-level server registration for local agent hosts and client interfaces.
-3. **`euclid.enterprise.superintelligence_governance.MCPGateway`**:
-   - Institutional gatekeeper managing agent registration, tool containment, situational access leases, and automated kill-switch integration.
+## Tools
 
----
+- `lucas`, `fibonacci`, `cassini`, `zeckendorf`
+- `ladder_verify`, `ladder_capacity`, `largest_feasible_tile`
+- `sha256d_verify` (verification only; no pool interaction)
+- `scale_intelligence`
 
-## Running the Sovereign MCP Server
+Inputs are validated before execution. Sequence indices are limited to 10,000,
+tile and ladder bounds to signed 64-bit integers, SHA256d payloads to 1 MiB,
+and task-type strings to 256 characters. The stdio request limit is 2 MiB plus
+protocol overhead. Results retain `theorem_proven: false`; a computed witness
+is not promoted to a theorem or consensus authority.
 
-To start the production stdio server:
+## Run
+
+From an installed project environment:
 
 ```bash
+hyba-mcp
+# or
 python -m hyba_mcp.server
 ```
 
-### JSON-RPC Verification Example
+The top-level `.mcp.json` uses `${REPO_ROOT}` as a host-specific `PYTHONPATH`
+placeholder; configure it for the actual checkout before launching.
+
+## Protocol example
+
+Each JSON-RPC message is one newline-delimited JSON object. Notifications do
+not receive a response.
 
 ```json
-{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}
-{"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}
-{"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "lucas", "arguments": {"n": 15}}}
-{"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "lucas", "arguments": {"n": 20}}}
+{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"example-client","version":"1.0"}}}
+{"jsonrpc":"2.0","method":"notifications/initialized"}
+{"jsonrpc":"2.0","id":2,"method":"tools/list"}
+{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"lucas","arguments":{"n":15}}}
 ```
 
-Responses are returned with bit-exact Cassini invariants:
-- $L_{15} = 1364$ (Cassini: $-4$)
-- $L_{20} = 15127$ (Cassini: $+4$)
+Tool execution errors use MCP's `isError` result flag; malformed JSON-RPC
+requests use JSON-RPC error codes. Internal exception details are not returned
+to the client.
 
----
+## In-process client evidence
 
-## Anti-Hallucination & Provenance Invariants
+`HybaMCPClient` calls the local `HybaMCPServer` object directly; it is not a
+remote MCP transport client. Its evidence pack includes the recorded handshake
+and tool outputs and carries a SHA-256 integrity digest over canonical JSON.
+The digest is not a digital signature, identity assertion, or durable audit
+record. `theorem_proven` remains `false`.
 
-- Mathematical truth is verified through integer arithmetic; no floating-point approximations in the exact core (Rule 7).
-- Cryptographic proof boundaries remain inviolable (SHA-256d + target).
-- Evidence packs carry deterministic session digests:
-  $$\text{Digest} = \text{SHA256}(\text{CanonicalJSON}(\text{EvidencePack}))$$
-- Authority remains exclusively with the HYBA / EUCLID CNS.
+The deterministic arithmetic core uses integer operations. `sha256d_verify`
+checks the supplied payload and, when requested, the decoded target; it does
+not establish pool acceptance or bypass the consensus hash pipeline.

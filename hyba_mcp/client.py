@@ -1,7 +1,7 @@
 """HYBA Sovereign MCP Client.
 
-Provides session management, tool execution, and evidence-digest collection
-over Model Context Protocol servers.
+Provides in-process session management, tool execution, and evidence-digest
+collection for the local HYBA MCP server.
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ class MCPSession:
 
 
 class HybaMCPClient:
-    """Production client for invoking HYBA MCP capabilities."""
+    """In-process client for invoking local HYBA MCP capabilities."""
 
     def __init__(self, server: Optional[HybaMCPServer] = None) -> None:
         self.server = server or HybaMCPServer()
@@ -37,34 +37,42 @@ class HybaMCPClient:
     def start_session(self) -> MCPSession:
         sid = secrets.token_hex(16)
         session = MCPSession(session_id=sid)
-        resp = self.server.handle_request({
-            "jsonrpc": "2.0",
-            "id": self._next_id,
-            "method": "initialize",
-            "params": {
-                "protocolVersion": "2024-11-05",
-                "capabilities": {},
-                "clientInfo": {"name": "hyba-mcp-client", "version": "1.0.0"},
-            },
-        })
+        resp = self.server.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": self._next_id,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {},
+                    "clientInfo": {"name": "hyba-mcp-client", "version": "1.0.0"},
+                },
+            }
+        )
         self._next_id += 1
         if not resp or "error" in resp:
-            raise RuntimeError(f"MCP initialize failed: {resp.get('error') if resp else 'no response'}")
+            raise RuntimeError(
+                f"MCP initialize failed: {resp.get('error') if resp else 'no response'}"
+            )
         session.evidence.append({"handshake": resp.get("result")})
-        self.server.handle_request({
-            "jsonrpc": "2.0",
-            "method": "notifications/initialized",
-        })
+        self.server.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "method": "notifications/initialized",
+            }
+        )
         self.session = session
         return session
 
     def list_tools(self) -> list[dict[str, Any]]:
-        resp = self.server.handle_request({
-            "jsonrpc": "2.0",
-            "id": self._next_id,
-            "method": "tools/list",
-            "params": {},
-        })
+        resp = self.server.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": self._next_id,
+                "method": "tools/list",
+                "params": {},
+            }
+        )
         self._next_id += 1
         if "error" in resp:
             raise RuntimeError(f"MCP tools/list failed: {resp['error']}")
@@ -73,12 +81,14 @@ class HybaMCPClient:
     def call_tool(self, name: str, arguments: Mapping[str, Any]) -> dict[str, Any]:
         if not self.session:
             raise RuntimeError("no active MCP session; call start_session() first")
-        resp = self.server.handle_request({
-            "jsonrpc": "2.0",
-            "id": self._next_id,
-            "method": "tools/call",
-            "params": {"name": name, "arguments": dict(arguments)},
-        })
+        resp = self.server.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": self._next_id,
+                "method": "tools/call",
+                "params": {"name": name, "arguments": dict(arguments)},
+            }
+        )
         self._next_id += 1
         if "error" in resp:
             raise RuntimeError(f"MCP tool {name!r} failed: {resp['error']}")
@@ -87,7 +97,9 @@ class HybaMCPClient:
             return {}
         result_payload = json.loads(content[0]["text"])
         if resp.get("result", {}).get("isError"):
-            raise RuntimeError(f"MCP tool {name!r} failed: {result_payload.get('error', 'tool error')}")
+            raise RuntimeError(
+                f"MCP tool {name!r} failed: {result_payload.get('error', 'tool error')}"
+            )
         self.session.tools_called.append(name)
         self.session.evidence.append({"tool": name, "output": result_payload})
         return result_payload

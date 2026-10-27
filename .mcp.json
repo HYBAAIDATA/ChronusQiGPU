@@ -16,7 +16,7 @@
       "command": "python",
       "args": ["mcp/exact_kernel/server.py"],
       "env": { "PYTHONPATH": "${REPO_ROOT}" },
-      "description": "Exact kernel (stable) — standalone file runner"
+      "description": "Separate standalone exact-kernel server; not covered by the hyba-mcp protocol qualification"
     },
     {
       "name": "cogito",

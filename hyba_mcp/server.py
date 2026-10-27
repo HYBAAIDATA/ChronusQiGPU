@@ -1,16 +1,5 @@
 #!/usr/bin/env python3
-"""HYBA Sovereign MCP Server — Production Exact Kernel & Tool Gateway.
-
-Implements the standard Model Context Protocol (MCP) JSON-RPC 2.0 handshake
-and execution loop.
-
-SOVEREIGNTY & CREDITING DOCTRINE:
-HYBA MCP does not augment or defer to narrow AI. Narrow AI systems obtain zero
-credit, zero proof authority, and zero decision rights. HYBA ingests and adapts
-tools and training into its own deterministic mathematical substrate. All outputs
-are verified against exact integer arithmetic, Cassini invariants, and fail-closed
-consensus gates.
-"""
+"""Bounded local stdio MCP server for HYBA mathematical and hash tools."""
 
 from __future__ import annotations
 
@@ -21,13 +10,7 @@ import sys
 from typing import Any, Mapping
 
 PROTOCOL_VERSION = "2024-11-05"
-SERVER_INFO = {
-    "name": "hyba-mcp-server",
-    "version": "1.0.0",
-    "sovereignty": "HYBA_SOVEREIGN_CNS",
-    "narrow_ai_credit": "NONE_FORBIDDEN",
-}
-STANDARD_PROTOCOL_VERSIONS = {PROTOCOL_VERSION, "2024-10-07", "2026-07-28"}
+STANDARD_PROTOCOL_VERSIONS = {PROTOCOL_VERSION}
 MAX_SEQUENCE_INDEX = 10_000
 MAX_INTEGER_ARGUMENT = (1 << 63) - 1
 MAX_PAYLOAD_BYTES = 1_048_576
@@ -41,6 +24,7 @@ try:
 except ImportError:
     # Graceful path fallback
     import os
+
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     if repo_root not in sys.path:
         sys.path.insert(0, repo_root)
@@ -69,7 +53,13 @@ def zeckendorf(n: int) -> dict[str, Any]:
     if n < 0:
         raise ValueError("n must be non-negative")
     if n == 0:
-        return {"n": 0, "indices": [], "non_adjacency": True, "valid": True, "theorem_proven": False}
+        return {
+            "n": 0,
+            "indices": [],
+            "non_adjacency": True,
+            "valid": True,
+            "theorem_proven": False,
+        }
     fibs = [1, 2]
     while fibs[-1] <= n:
         fibs.append(fibs[-1] + fibs[-2])
@@ -87,7 +77,13 @@ def zeckendorf(n: int) -> dict[str, Any]:
         raise ValueError(
             f"Zeckendorf certificate failed for n={n}: adjacent indices observed in representation {indices}"
         )
-    return {"n": n, "indices": indices, "non_adjacency": True, "valid": True, "theorem_proven": False}
+    return {
+        "n": n,
+        "indices": indices,
+        "non_adjacency": True,
+        "valid": True,
+        "theorem_proven": False,
+    }
 
 
 def largest_feasible_tile(max_size: int, alignment: int = 16) -> dict[str, Any]:
@@ -170,9 +166,7 @@ def _validated_arguments(name: str, arguments: Any) -> dict[str, Any]:
     def integer(field: str, minimum: int, maximum: int) -> int:
         value = arguments[field]
         if type(value) is not int or not minimum <= value <= maximum:
-            raise ToolInputError(
-                f"{field} must be an integer between {minimum} and {maximum}"
-            )
+            raise ToolInputError(f"{field} must be an integer between {minimum} and {maximum}")
         return value
 
     if name in {"lucas", "fibonacci", "cassini", "zeckendorf"}:
@@ -200,26 +194,21 @@ def _validated_arguments(name: str, arguments: Any) -> dict[str, Any]:
                 raise ToolInputError("target_rung is not a supported Lucas scale rung")
         if "task_type" in arguments:
             task_type = arguments["task_type"]
-            if (
-                not isinstance(task_type, str)
-                or len(task_type) > MAX_TASK_TYPE_LENGTH
-            ):
+            if not isinstance(task_type, str) or len(task_type) > MAX_TASK_TYPE_LENGTH:
                 raise ToolInputError("task_type must be a short string")
         if "complexity" in arguments:
             complexity = arguments["complexity"]
             if (
                 isinstance(complexity, bool)
                 or not isinstance(complexity, (int, float))
-                or not math.isfinite(complexity)
                 or not 0 <= complexity <= 1
+                or not math.isfinite(complexity)
             ):
                 raise ToolInputError("complexity must be a finite number between 0 and 1")
-        if "step_direction" in arguments and arguments["step_direction"] not in {
-            "up",
-            "down",
-            "hold",
-        }:
-            raise ToolInputError("step_direction must be up, down, or hold")
+        if "step_direction" in arguments:
+            direction = arguments["step_direction"]
+            if not isinstance(direction, str) or direction not in {"up", "down", "hold"}:
+                raise ToolInputError("step_direction must be up, down, or hold")
 
     return arguments
 
@@ -229,9 +218,7 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": "Exact Lucas number L_n via fast doubling with Cassini invariant witness.",
         "inputSchema": {
             "type": "object",
-            "properties": {
-                "n": {"type": "integer", "minimum": 0, "maximum": MAX_SEQUENCE_INDEX}
-            },
+            "properties": {"n": {"type": "integer", "minimum": 0, "maximum": MAX_SEQUENCE_INDEX}},
             "required": ["n"],
             "additionalProperties": False,
         },
@@ -240,9 +227,7 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": "Exact Fibonacci number F_n via fast doubling.",
         "inputSchema": {
             "type": "object",
-            "properties": {
-                "n": {"type": "integer", "minimum": 0, "maximum": MAX_SEQUENCE_INDEX}
-            },
+            "properties": {"n": {"type": "integer", "minimum": 0, "maximum": MAX_SEQUENCE_INDEX}},
             "required": ["n"],
             "additionalProperties": False,
         },
@@ -251,9 +236,7 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": "Cassini identity verification L_n^2 - 5*F_n^2 = 4*(-1)^n.",
         "inputSchema": {
             "type": "object",
-            "properties": {
-                "n": {"type": "integer", "minimum": 0, "maximum": MAX_SEQUENCE_INDEX}
-            },
+            "properties": {"n": {"type": "integer", "minimum": 0, "maximum": MAX_SEQUENCE_INDEX}},
             "required": ["n"],
             "additionalProperties": False,
         },
@@ -262,9 +245,7 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": "Canonical non-adjacent Zeckendorf representation certificate.",
         "inputSchema": {
             "type": "object",
-            "properties": {
-                "n": {"type": "integer", "minimum": 0, "maximum": MAX_SEQUENCE_INDEX}
-            },
+            "properties": {"n": {"type": "integer", "minimum": 0, "maximum": MAX_SEQUENCE_INDEX}},
             "required": ["n"],
             "additionalProperties": False,
         },
@@ -383,7 +364,12 @@ class HybaMCPServer:
                 "sha256d_be": digest[::-1].hex(),
             }
             if "compact_bits" in arguments:
-                target = compact_target(arguments["compact_bits"])
+                try:
+                    target = compact_target(arguments["compact_bits"])
+                except ValueError as exc:
+                    raise ToolInputError(
+                        "compact_bits is not a valid positive compact target"
+                    ) from exc
                 if target > (1 << 256) - 1:
                     raise ToolInputError("compact_bits decodes to a target larger than uint256")
                 digest_int = int.from_bytes(digest, "little")
@@ -392,6 +378,7 @@ class HybaMCPServer:
             return result
         if name == "scale_intelligence":
             from Intelligence.lucas_scaler import LucasIntelligenceScaler
+
             target_rung = arguments.get("target_rung")
             scaler = LucasIntelligenceScaler(
                 initial_scale=target_rung if target_rung is not None else 31
@@ -499,10 +486,13 @@ class HybaMCPServer:
                 self._ready = True
             return None
 
+        if method == "ping":
+            if not has_id:
+                return None
+            return {"jsonrpc": "2.0", "id": rid, "result": {}}
+
         if not self._ready:
-            return None if not has_id else self._error(
-                rid, -32002, "Server is not initialized"
-            )
+            return None if not has_id else self._error(rid, -32002, "Server is not initialized")
 
         if method == "tools/list":
             if not has_id:
@@ -554,13 +544,11 @@ def run_server() -> None:
         text = sys.stdin.readline(MAX_REQUEST_BYTES + 1)
         if not text:
             break
-        if len(text.encode("utf-8")) > MAX_REQUEST_BYTES:
+        if len(text.encode("utf-8", errors="replace")) > MAX_REQUEST_BYTES:
             while text and not text.endswith("\n"):
                 text = sys.stdin.readline(MAX_REQUEST_BYTES + 1)
             print(
-                json.dumps(
-                    HybaMCPServer._error(None, -32600, "Request exceeds maximum size")
-                ),
+                json.dumps(HybaMCPServer._error(None, -32600, "Request exceeds maximum size")),
                 flush=True,
             )
             continue
