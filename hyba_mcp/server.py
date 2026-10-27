@@ -19,6 +19,8 @@ import json
 import sys
 from typing import Any, Mapping
 
+from .hyba_context import EXECUTE_PATCH, TOOLS_PATCH
+
 PROTOCOL_VERSION = "2024-11-05"
 SERVER_INFO = {
     "name": "hyba-mcp-server",
@@ -195,6 +197,7 @@ TOOLS: dict[str, dict[str, Any]] = {
         },
     },
 }
+TOOLS.update(TOOLS_PATCH)
 
 
 class HybaMCPServer:
@@ -268,6 +271,8 @@ class HybaMCPServer:
                 "consciousness_after": scale_res.consciousness_after,
                 "sovereign_doctrine": "Zero credit to narrow AI; ingested tools and templates adapted into EUCLID substrate.",
             }
+        if name in EXECUTE_PATCH:
+            return EXECUTE_PATCH[name](**arguments)
         raise ValueError(f"Unknown HYBA MCP tool: {name}")
 
     def handle_request(self, req: Mapping[str, Any]) -> dict[str, Any]:
