@@ -14,10 +14,13 @@ consensus gates.
 
 from __future__ import annotations
 
-import hashlib
 import json
+import logging
+import math
 import sys
 from typing import Any, Mapping
+
+from .hyba_context import EXECUTE_PATCH, TOOLS_PATCH
 
 PROTOCOL_VERSION = "2024-11-05"
 SERVER_INFO = {
@@ -27,6 +30,7 @@ SERVER_INFO = {
     "narrow_ai_credit": "NONE_FORBIDDEN",
 }
 STANDARD_PROTOCOL_VERSIONS = {PROTOCOL_VERSION, "2024-10-07", "2026-07-28"}
+MAX_N = 10_000
 
 try:
     from chronus.lucas.core import fibonacci, lucas
@@ -43,7 +47,48 @@ except ImportError:
     from chronus.mla1517.mining.pow import compact_target, sha256d
 
 
+try:
+    from Intelligence.lucas_scaler import LucasIntelligenceScaler
+except ImportError:
+    LucasIntelligenceScaler = None
+    logging.getLogger(__name__).warning(
+        "scale_intelligence unavailable: install the Intelligence.lucas_scaler dependencies"
+    )
+
+
+def validate_arguments(name: str, arguments: Mapping[str, Any]) -> None:
+    """Enforce advertised types and limits before invoking any kernel."""
+    if name not in TOOLS:
+        raise ValueError(f"Unknown HYBA MCP tool: {name}")
+    if not isinstance(arguments, Mapping):
+        raise ValueError("tool arguments must be an object")
+    schema = TOOLS[name]["inputSchema"]
+    for key in schema.get("required", []):
+        if key not in arguments:
+            raise ValueError(f"missing required argument: {key}")
+    for key, spec in schema["properties"].items():
+        if key not in arguments:
+            continue
+        value = arguments[key]
+        kind = spec["type"]
+        if (
+            (kind == "integer" and type(value) is not int)
+            or (kind == "number" and type(value) not in (int, float))
+            or (kind == "string" and not isinstance(value, str))
+        ):
+            raise ValueError(f"{key} must be a {kind}")
+        if kind == "number" and isinstance(value, float) and not math.isfinite(value):
+            raise ValueError(f"{key} must be finite")
+        if "minimum" in spec and value < spec["minimum"]:
+            raise ValueError(f"{key} must be >= {spec['minimum']}")
+        if "maximum" in spec and value > spec["maximum"]:
+            raise ValueError(f"{key} must be <= {spec['maximum']}")
+        if "enum" in spec and value not in spec["enum"]:
+            raise ValueError(f"{key} must be one of {spec['enum']}")
+
+
 def cassini_witness(n: int) -> dict[str, Any]:
+    validate_arguments("cassini", {"n": n})
     f = fibonacci(n)
     l = lucas(n)
     left = l * l - 5 * f * f
@@ -60,8 +105,7 @@ def cassini_witness(n: int) -> dict[str, Any]:
 
 
 def zeckendorf(n: int) -> dict[str, Any]:
-    if n < 0:
-        raise ValueError("n must be non-negative")
+    validate_arguments("zeckendorf", {"n": n})
     if n == 0:
         return {"n": 0, "indices": [], "non_adjacency": True, "valid": True, "theorem_proven": False}
     fibs = [1, 2]
@@ -120,7 +164,7 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": "Exact Lucas number L_n via fast doubling with Cassini invariant witness.",
         "inputSchema": {
             "type": "object",
-            "properties": {"n": {"type": "integer", "minimum": 0}},
+            "properties": {"n": {"type": "integer", "minimum": 0, "maximum": MAX_N}},
             "required": ["n"],
         },
     },
@@ -128,7 +172,7 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": "Exact Fibonacci number F_n via fast doubling.",
         "inputSchema": {
             "type": "object",
-            "properties": {"n": {"type": "integer", "minimum": 0}},
+            "properties": {"n": {"type": "integer", "minimum": 0, "maximum": MAX_N}},
             "required": ["n"],
         },
     },
@@ -136,7 +180,7 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": "Cassini identity verification L_n^2 - 5*F_n^2 = 4*(-1)^n.",
         "inputSchema": {
             "type": "object",
-            "properties": {"n": {"type": "integer", "minimum": 0}},
+            "properties": {"n": {"type": "integer", "minimum": 0, "maximum": MAX_N}},
             "required": ["n"],
         },
     },
@@ -144,7 +188,7 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": "Canonical non-adjacent Zeckendorf representation certificate.",
         "inputSchema": {
             "type": "object",
-            "properties": {"n": {"type": "integer", "minimum": 0}},
+            "properties": {"n": {"type": "integer", "minimum": 0, "maximum": MAX_N}},
             "required": ["n"],
         },
     },
@@ -183,18 +227,51 @@ TOOLS: dict[str, dict[str, Any]] = {
         },
     },
     "scale_intelligence": {
-        "description": "Adjust or query Lucas intelligence scale (L_10 to L_31) dynamically based on task parameters.",
+        "description": (
+            "Stateless Lucas intelligence scale selection (L_10 to L_31). "
+            "Requires Intelligence.lucas_scaler; returned *_after values are modeled, not measured."
+        ),
+        "_meta": {
+            "hyba/status": "available" if LucasIntelligenceScaler is not None else "unavailable",
+            "hyba/dependency": "Intelligence.lucas_scaler",
+        },
         "inputSchema": {
             "type": "object",
             "properties": {
-                "target_rung": {"type": "integer", "enum": [10, 12, 15, 18, 20, 31]},
-                "task_type": {"type": "string"},
-                "complexity": {"type": "number", "minimum": 0.0, "maximum": 1.0},
-                "step_direction": {"type": "string", "enum": ["up", "down", "hold"]},
+                "target_rung": {
+                    "type": "integer",
+                    "enum": [10, 12, 15, 18, 20, 31],
+                    "default": 31,
+                    "description": "Starting rung for this call; not persistent state.",
+                },
+                "task_type": {
+                    "type": "string",
+                    "description": (
+                        "Free-form, case-insensitive affinity substrings; highest match wins. "
+                        "See README_MCP.md for the full keyword table."
+                    ),
+                },
+                "complexity": {
+                    "type": "number",
+                    "minimum": 0.0,
+                    "maximum": 1.0,
+                    "description": (
+                        "Finite demand; thresholds .15/.35/.55/.75/.90 select "
+                        "10/12/15/18/20/31. Higher keyword demand wins."
+                    ),
+                },
+                "step_direction": {
+                    "type": "string",
+                    "enum": ["up", "down", "hold"],
+                    "description": (
+                        "One clamped step, overriding task adaptation; hold preserves starting rung."
+                    ),
+                },
             },
         },
     },
 }
+TOOLS.update(TOOLS_PATCH)
 
 
 class HybaMCPServer:
@@ -205,6 +282,19 @@ class HybaMCPServer:
         self.version = version
 
     def execute_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Execute validated tools, retaining exact-kernel and proof boundaries.
+
+        scale_intelligence is stateless: target_rung defaults to 31. An up/down
+        step takes precedence over adaptation; hold queries the initial rung.
+        Otherwise task_type matches case-insensitive affinity substrings and
+        finite complexity in [0, 1] selects rungs at .15/.35/.55/.75/.90.
+        The higher keyword/complexity demand wins. See README_MCP.md for keywords.
+        Envelope fields describe configured manifold/context/reflection limits;
+        *_after fields model scaling from fixed 0.5 baselines, not measurements
+        of consciousness, intelligence, performance, or theorem completion.
+        Missing scaler dependencies fail closed without disabling exact tools.
+        """
+        validate_arguments(name, arguments)
         if name == "lucas":
             n = int(arguments["n"])
             return {"L_n": lucas(n), **cassini_witness(n)}
@@ -238,15 +328,21 @@ class HybaMCPServer:
                 result["meets_target"] = digest_int <= target
             return result
         if name == "scale_intelligence":
-            from Intelligence.lucas_scaler import LucasIntelligenceScaler
+            if LucasIntelligenceScaler is None:
+                raise RuntimeError(
+                    "scale_intelligence unavailable: Intelligence.lucas_scaler "
+                    "or its dependencies are not installed"
+                )
             target_rung = arguments.get("target_rung")
-            scaler = LucasIntelligenceScaler(initial_scale=int(target_rung) if target_rung is not None else 31)
+            scaler = LucasIntelligenceScaler(
+                initial_scale=int(target_rung) if target_rung is not None else 31
+            )
             step = arguments.get("step_direction")
             if step == "up":
                 scaler.scale_up()
             elif step == "down":
                 scaler.scale_down()
-            elif "task_type" in arguments or "complexity" in arguments:
+            elif step != "hold" and ("task_type" in arguments or "complexity" in arguments):
                 scaler.scale_for_task(
                     task_type=arguments.get("task_type"),
                     complexity=arguments.get("complexity"),
@@ -268,6 +364,8 @@ class HybaMCPServer:
                 "consciousness_after": scale_res.consciousness_after,
                 "sovereign_doctrine": "Zero credit to narrow AI; ingested tools and templates adapted into EUCLID substrate.",
             }
+        if name in EXECUTE_PATCH:
+            return EXECUTE_PATCH[name](**arguments)
         raise ValueError(f"Unknown HYBA MCP tool: {name}")
 
     def handle_request(self, req: Mapping[str, Any]) -> dict[str, Any]:
@@ -315,8 +413,21 @@ class HybaMCPServer:
 
         if method == "tools/call":
             tool_name = params.get("name")
-            args = params.get("arguments") or {}
-            res = self.execute_tool(str(tool_name), args)
+            args = params.get("arguments", {})
+            try:
+                res = self.execute_tool(str(tool_name), args)
+            except (ValueError, TypeError, KeyError) as exc:
+                return {
+                    "jsonrpc": "2.0",
+                    "id": rid,
+                    "error": {"code": -32602, "message": str(exc)},
+                }
+            except RuntimeError as exc:
+                return {
+                    "jsonrpc": "2.0",
+                    "id": rid,
+                    "error": {"code": -32000, "message": str(exc)},
+                }
             return {
                 "jsonrpc": "2.0",
                 "id": rid,
