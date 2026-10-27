@@ -43,7 +43,9 @@ approach improves outcomes.
 
 ## Runtime and authority boundaries
 
-The module returns recommendation-only outputs. It does not authenticate
+The module returns recommendation-only outputs. The consolidated offering requires
+an explicit tenant ID and purpose for each ranking and audits only the tenant,
+purpose, item count and ranking digest—not signal payloads. It does not authenticate
 sources, infer missing telemetry as healthy, change thresholds, authorize
 actions, dispatch remediation, or bypass AL HARAS/L-HRAS. Consequential actions
 must pass the existing tenant/capability admission, signed policy and action
