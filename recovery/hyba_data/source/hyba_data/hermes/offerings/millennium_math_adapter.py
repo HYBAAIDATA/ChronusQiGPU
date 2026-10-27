@@ -116,7 +116,7 @@ class MillenniumMathsAPI:
                     "status": "available",
                     "operation": operation,
                     "evidence": decoded,
-                    "proof_claim": bool(decoded.get("proof_claim", False)),
+                    "proof_claim": decoded.get("proof_claim") is True,
                     "evidence_class": decoded.get("evidence_class", "UNSPECIFIED"),
                     "scope": decoded.get("scope", "UNSPECIFIED"),
                 }
