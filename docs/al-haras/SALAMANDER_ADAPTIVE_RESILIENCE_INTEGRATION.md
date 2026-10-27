@@ -73,6 +73,7 @@ Use the existing registered action handlers and authority boundaries.
 - Start with explicit per-component signals and baselines: latency, error rate,
   resource pressure, queue depth, dependency health, drift, integrity and
   missing/stale telemetry.
+- The HYBA adapter can invoke Salamander's configured `regression(metric, measured)` for a named `metric_key`; missing baselines are reported as unavailable, never as normal.
 - Emit anomaly ID, affected component/tenant scope, observed interval, baseline
   version, evidence references, severity, confidence, plausible causes and
   recommended next diagnostic.
