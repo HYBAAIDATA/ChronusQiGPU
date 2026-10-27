@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+import math
 from typing import Any
 
 
@@ -38,6 +39,7 @@ class SalamanderPlatformAdapter:
             from salamander.models import Availability, HealthObservation
 
             typed = []
+            baseline_checks = []
             for index, item in enumerate(observations):
                 if not isinstance(item, Mapping):
                     return self._unavailable("invalid_observation", f"item {index} must be a mapping")
@@ -53,6 +55,39 @@ class SalamanderPlatformAdapter:
                 timestamp = item.get("observed_at_ns", 0)
                 if type(timestamp) is not int or timestamp < 0:
                     return self._unavailable("invalid_timestamp", f"item {index} timestamp must be non-negative integer")
+                if item.get("metric_key") is not None:
+                    metric_key = item.get("metric_key")
+                    metric_value = item.get("value")
+                    if (
+                        not isinstance(metric_key, str) or not metric_key.strip()
+                        or not isinstance(metric_value, (int, float))
+                        or isinstance(metric_value, bool)
+                        or not math.isfinite(float(metric_value))
+                        or availability is not Availability.MEASURED
+                    ):
+                        return self._unavailable(
+                            "invalid_metric_baseline_check",
+                            f"item {index} requires a named metric_key and finite measured numeric value",
+                        )
+                    regression = getattr(self._control_plane, "regression", None)
+                    if not callable(regression):
+                        baseline_checks.append({
+                            "metric_key": metric_key,
+                            "status": "unavailable",
+                            "reason": "canonical baseline regression interface unavailable",
+                        })
+                    else:
+                        try:
+                            baseline_checks.append({
+                                "metric_key": metric_key,
+                                "status": "anomaly" if regression(metric_key, float(metric_value)) else "within_baseline",
+                            })
+                        except Exception:
+                            baseline_checks.append({
+                                "metric_key": metric_key,
+                                "status": "unavailable",
+                                "reason": "configured baseline unavailable or invalid",
+                            })
                 try:
                     typed.append(HealthObservation(
                         subsystem=subsystem,
@@ -82,6 +117,15 @@ class SalamanderPlatformAdapter:
                 "decision_id": getattr(decision, "decision_id", None),
                 "reasons": list(getattr(decision, "reasons", ())),
                 "observation_count": len(typed),
+                "baseline_checks": baseline_checks,
+                "anomalies": [check for check in baseline_checks if check["status"] == "anomaly"],
+                "anomaly_status": (
+                    "detected" if any(check["status"] == "anomaly" for check in baseline_checks)
+                    else "no_configured_regression" if baseline_checks and all(
+                        check["status"] == "within_baseline" for check in baseline_checks
+                    )
+                    else "unavailable" if baseline_checks else "not_evaluated"
+                ),
                 "action_authorized": False,
                 "actuation_performed": False,
             }
