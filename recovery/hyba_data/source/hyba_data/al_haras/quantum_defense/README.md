@@ -1,9 +1,18 @@
-# AL HARAS Quantum Defense
+# HYBA Consolidated Intelligence — AL HARAS Quantum Defence
 
-This directory is the canonical quantum-defense package for AL HARAS. Existing
-callers already import `al_haras.quantum_defense`; keep new work here rather
-than creating a parallel security package. The `hermes/quantum_defense`
-compatibility shims should remain shims until a separately governed deprecation.
+This is the canonical quantum-defence package inside the HYBA codebase, not an
+independent product or a separate national-security stack. Consolidation means
+enhancing these existing components and wiring them into HYBA's shared
+intelligence and governance path rather than duplicating them.
+
+The national-security capability uses the existing five-form intelligence model:
+**predictive, causal, counterfactual, topological and geometric**. The forms are
+complementary reasoning lenses; their outputs require evidence, uncertainty and
+validation. They are not five independent sources of truth.
+
+See [the HYBA National-Security Consolidation plan](../../../../../../docs/al-haras/NATIONAL_SECURITY_CONSOLIDATION.md)
+for the canonical component map, data flow, security principles and delivery
+gates.
 
 ## Current package map
 
@@ -13,25 +22,30 @@ compatibility shims should remain shims until a separately governed deprecation.
 - `threat_model.py` — threat capability and classical-defence modelling.
 - `__init__.py` — public package exports.
 
-Related controls remain outside this subpackage:
+Related controls remain part of the same HYBA architecture:
 `al_haras.paradigm_shift.SecurityGovernor` owns state-governance decisions,
-`al_haras.security_core` provides audit/trust primitives, and the AL HARAS
-runtime owns tenant, entitlement, policy and fail-closed boundaries.
+`al_haras.security_core` provides audit/trust primitives, the AL HARAS runtime
+owns tenant, entitlement, policy and fail-closed boundaries, and `l_hras/guardian.py`
+contains the broader Guardian conjunction. Existing `Intelligence/` and
+`toe/intelligences/` capabilities should be integrated through explicit
+contracts; mining-specific implementations must not be assumed to be
+national-security-ready merely because they exist.
 
-## Intended target architecture
+## Target architecture
 
-1. **Duty agents** — identity, endpoint, network, cloud, application and
-   cryptographic-posture specialists produce bounded evidence records.
-2. **Swarm coordinator** — correlates findings, tracks disagreement and assigns
-   confidence/provenance; agents do not grant each other authority.
+1. **Five intelligence forms** — each produces bounded, evidence-linked
+   assessments using its canonical HYBA implementation.
+2. **Shared orchestrator** — correlates outputs, preserves disagreement and
+   records uncertainty/provenance.
 3. **Optimization router** — optionally ranks defensive action plans using
    classical optimization first, with quantum-inspired or hardware-backed
    adapters only when explicitly configured and benchmarked.
-4. **Policy governor** — checks every proposed action against AL HARAS policy.
-5. **Evidence ledger** — records decision metadata and evidence digests without
-   placing secrets or raw sensitive payloads in logs.
-6. **Response adapter** — defaults to recommendations/dry-run; production
-   containment requires explicit policy, scoped credentials, idempotency and
+4. **HYBA policy governor** — checks every proposed action; intelligence and
+   optimization cannot grant authority.
+5. **Evidence and audit** — record decision metadata and evidence digests
+   without putting secrets or raw sensitive payloads into logs.
+6. **Response adapter** — recommendations/dry-run by default; consequential
+   actions require explicit authorization, scoped credentials, idempotency and
    rollback.
 
 ## Quantum terminology and claim boundaries
@@ -48,7 +62,8 @@ accurately in runtime metadata.
   implements a specific physical or algorithmic method.
 - **Annealing** must state whether it is classical simulated annealing,
   quantum-inspired annealing, or a named quantum-annealing provider.
-- **Entanglement** must not be claimed from ordinary agent communication.
+- The existing swarm's channel explicitly identifies its implementation as
+  `classical_coordinated_shared_state`; do not call that physical entanglement.
 - **PQC** is a cryptographic property of selected standardized algorithms and
   validated implementations, not a property conferred by this directory.
 
@@ -73,8 +88,4 @@ accurately in runtime metadata.
 3. Add a deterministic baseline and reproducible replay fixtures.
 4. Benchmark alternative optimizers against that baseline.
 5. Add provider adapters behind feature flags only after evidence of benefit.
-6. Integrate proposed actions through the AL HARAS governor; do not bypass it.
-
-See `docs/al-haras/QUANTUM_SECURITY_SWARM.md` and
-`docs/al-haras/QUANTUM_OPTIMIZATION_BENCHMARKS.md` for the system design and
-evaluation gates.
+6. Integrate proposed actions through the HYBA governor; do not bypass it.
