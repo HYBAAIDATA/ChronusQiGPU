@@ -51,10 +51,14 @@ def test_consolidated_offering_exposes_phi_triage_and_audits_digest():
     from hermes.offerings.national_security import NationalSecurityOffering
 
     offering = NationalSecurityOffering()
-    result = offering.rank_defensive_signals([
-        DefensiveSignal("web-edge", 0.9, 0.8, 0.95),
-        DefensiveSignal("database", 0.7, 0.9, 0.8, age_units=1),
-    ])
+    result = offering.rank_defensive_signals(
+        [
+            DefensiveSignal("web-edge", 0.9, 0.8, 0.95),
+            DefensiveSignal("database", 0.7, 0.9, 0.8, age_units=1),
+        ],
+        tenant_id="tenant-test",
+        purpose="defensive-triage",
+    )
     assert result["schema"] == "hyba.phi_defensive_triage/v1"
     assert result["hyba_audit_integrity"] is True
     assert result["recommendation_only"] is True
