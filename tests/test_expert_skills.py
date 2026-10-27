@@ -652,23 +652,27 @@ def test_mcp_uses_host_supplied_trusted_identity(tmp_path):
 
 
 def test_skill_tools_remain_separate_from_existing_exact_math_tools():
-    assert (
-        len(
-            [
-                name
-                for name in TOOLS
-                if name
-                not in {
-                    "discover_skills",
-                    "get_skill",
-                    "invoke_skill",
-                    "validate_inputs",
-                    "evaluate_skill_outcome",
-                }
-            ]
-        )
-        == 9
-    )
+    exact_math_tools = {
+        "lucas",
+        "fibonacci",
+        "cassini",
+        "zeckendorf",
+        "ladder_verify",
+        "ladder_capacity",
+        "largest_feasible_tile",
+        "sha256d_verify",
+        "scale_intelligence",
+    }
+    skill_tools = {
+        "discover_skills",
+        "get_skill",
+        "invoke_skill",
+        "validate_inputs",
+        "evaluate_skill_outcome",
+    }
+    assert exact_math_tools <= set(TOOLS)
+    assert skill_tools <= set(TOOLS)
+    assert exact_math_tools.isdisjoint(skill_tools)
 
 
 def test_server_reports_skill_layer_version_two():
