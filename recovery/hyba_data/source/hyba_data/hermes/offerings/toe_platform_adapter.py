@@ -13,25 +13,35 @@ from typing import Any
 class TOEPlatformAdapter:
     """Tenant-scoped, advisory adapter to TOE's Problem/runtime contract."""
 
-    def __init__(self, runtime: Any = None) -> None:
+    def __init__(
+        self,
+        runtime: Any = None,
+        *,
+        problem_type: Any = None,
+        tenant_type: Any = None,
+    ) -> None:
         self._runtime = runtime
-        self._problem_type: Any = None
-        self._tenant_type: Any = None
+        self._problem_type = problem_type
+        self._tenant_type = tenant_type
         self._load_error: str | None = None
 
     def _load(self) -> bool:
-        if self._runtime is not None and self._problem_type is not None:
+        if (
+            self._runtime is not None
+            and self._problem_type is not None
+            and self._tenant_type is not None
+        ):
             return True
         try:
             from toe.problem import Problem
             from toe.runtime import TOEIntelligenceRuntime, TenantContext
 
-            self._problem_type = Problem
-            self._tenant_type = TenantContext
+            self._problem_type = self._problem_type or Problem
+            self._tenant_type = self._tenant_type or TenantContext
             if self._runtime is None:
                 self._runtime = TOEIntelligenceRuntime()
             return True
-        except Exception as exc:  # optional platform/dependency boundary
+        except Exception as exc:
             self._load_error = f"{type(exc).__name__}: {exc}"
             return False
 
@@ -45,8 +55,7 @@ class TOEPlatformAdapter:
         """Submit one bounded advisory assessment to TOE.
 
         The caller must authorize source access and purpose before this method.
-        This method only checks the presence of the tenant/purpose context; it
-        does not replace HYBA's authorization or data-classification controls.
+        This method does not replace HYBA's authorization or data controls.
         """
         if not isinstance(observation, Mapping):
             return self._unavailable("invalid_observation", "observation must be a mapping")
@@ -59,8 +68,6 @@ class TOEPlatformAdapter:
             return self._unavailable("toe_unavailable", self._load_error or "TOE could not be loaded")
 
         try:
-            # Avoid passing credentials or unrelated caller context. The caller
-            # should supply an already-minimized, authorized observation.
             problem = self._problem_type(
                 domain="hyba_national_security",
                 observation=dict(observation),
@@ -116,11 +123,7 @@ class TOEPlatformAdapter:
             )
 
     @staticmethod
-    def _unavailable(
-        code: str,
-        reason: str,
-        **context: Any,
-    ) -> dict[str, Any]:
+    def _unavailable(code: str, reason: str, **context: Any) -> dict[str, Any]:
         return {
             "schema": "hyba.toe_assessment/v1",
             "status": "unavailable",
