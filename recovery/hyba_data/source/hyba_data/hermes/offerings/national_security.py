@@ -4,6 +4,7 @@ from typing import Any, Mapping
 
 from al_haras.security_core import CryptographicAuditChain
 from .millennium_math_adapter import MillenniumMathsAPI
+from .salamander_platform_adapter import SalamanderPlatformAdapter
 from .toe_platform_adapter import TOEPlatformAdapter
 
 PHI = (1.0 + 5.0**0.5) / 2.0
@@ -22,11 +23,13 @@ class NationalSecurityOffering:
         audit: CryptographicAuditChain | None = None,
         toe_adapter: TOEPlatformAdapter | None = None,
         millennium_api: MillenniumMathsAPI | None = None,
+        salamander_adapter: SalamanderPlatformAdapter | None = None,
     ):
         self.phi = PHI
         self.audit = audit or CryptographicAuditChain(use_merkle=True)
         self.toe_adapter = toe_adapter or TOEPlatformAdapter()
         self.millennium_api = millennium_api or MillenniumMathsAPI()
+        self.salamander_adapter = salamander_adapter or SalamanderPlatformAdapter()
         self.stack = self._build_stack()
         self.comparison = self._build_comparison()
         self.audit.add_entry("HYBA_NATIONAL_SECURITY_INVENTORY_INIT")
@@ -100,7 +103,7 @@ class NationalSecurityOffering:
                     "Post-action verification and rollback",
                     "Replay, shadow/canary evaluation and policy lifecycle",
                 ],
-                "status": "CANONICAL_COMPONENT_PRESENT_END_TO_END_INTEGRATION_REQUIRED",
+                "status": "ADVISORY_ADAPTER_PRESENT_CONTROL_PLANE_INJECTION_REQUIRED",
                 "claim_boundary": (
                     "This offering inventory does not instantiate or qualify the "
                     "control plane. Only registered, policy-authorized actions may run; "
@@ -197,6 +200,27 @@ class NationalSecurityOffering:
         result = self.millennium_api.run(operation, dict(payload or {}))
         status = str(result.get("status", "unavailable"))
         self.audit.add_entry(f"HYBA_MILLENNIUM_MATH|{operation}|{status}")
+        result["hyba_audit_integrity"] = self.audit.verify_integrity()
+        return result
+
+    def observe_with_salamander(
+        self,
+        observations: list[Mapping[str, Any]],
+        *,
+        tenant_id: str,
+        policy_id: str = "hyba-observation-v1",
+    ) -> dict[str, Any]:
+        """Submit normalized health evidence to Salamander; never actuate here."""
+        result = self.salamander_adapter.observe(
+            observations,
+            tenant_id=tenant_id,
+            policy_id=policy_id,
+        )
+        status = str(result.get("status", "unavailable"))
+        # Do not put telemetry values or incident payloads into the audit log.
+        self.audit.add_entry(
+            f"HYBA_SALAMANDER_OBSERVATION|{status}|{tenant_id}|{policy_id}"
+        )
         result["hyba_audit_integrity"] = self.audit.verify_integrity()
         return result
 
