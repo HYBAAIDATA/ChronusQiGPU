@@ -21,6 +21,8 @@ autonomy:
 - **Salamander control plane:** joins those modes with typed health, policy,
   admission, recovery, outcome verification, and auditable learning.
 
+For a concise incident-commander operating view and rollout checklist, see [`SALAMANDER_HYBA_GOVERNOR.md`](SALAMANDER_HYBA_GOVERNOR.md). This is a supplemental operating guide; the canonical implementation remains the existing control plane below.
+
 ## Canonical implementation
 
 The repository already contains the Salamander Autonomic Control Plane at
