@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import secrets
 import time
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Optional
 
@@ -33,18 +35,28 @@ class HybaMCPClient:
         self._next_id = 1
 
     def start_session(self) -> MCPSession:
-        sid = hashlib.sha256(f"hyba-{time.time()}".encode()).hexdigest()[:16]
-        self.session = MCPSession(session_id=sid)
-        # Verify handshake with server
+        sid = secrets.token_hex(16)
+        session = MCPSession(session_id=sid)
         resp = self.server.handle_request({
             "jsonrpc": "2.0",
             "id": self._next_id,
             "method": "initialize",
-            "params": {},
+            "params": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "hyba-mcp-client", "version": "1.0.0"},
+            },
         })
         self._next_id += 1
-        self.session.evidence.append({"handshake": resp.get("result")})
-        return self.session
+        if not resp or "error" in resp:
+            raise RuntimeError(f"MCP initialize failed: {resp.get('error') if resp else 'no response'}")
+        session.evidence.append({"handshake": resp.get("result")})
+        self.server.handle_request({
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized",
+        })
+        self.session = session
+        return session
 
     def list_tools(self) -> list[dict[str, Any]]:
         resp = self.server.handle_request({
@@ -54,6 +66,8 @@ class HybaMCPClient:
             "params": {},
         })
         self._next_id += 1
+        if "error" in resp:
+            raise RuntimeError(f"MCP tools/list failed: {resp['error']}")
         return resp.get("result", {}).get("tools", [])
 
     def call_tool(self, name: str, arguments: Mapping[str, Any]) -> dict[str, Any]:
@@ -72,6 +86,8 @@ class HybaMCPClient:
         if not content:
             return {}
         result_payload = json.loads(content[0]["text"])
+        if resp.get("result", {}).get("isError"):
+            raise RuntimeError(f"MCP tool {name!r} failed: {result_payload.get('error', 'tool error')}")
         self.session.tools_called.append(name)
         self.session.evidence.append({"tool": name, "output": result_payload})
         return result_payload
@@ -82,13 +98,21 @@ class HybaMCPClient:
         pack = {
             "session_id": self.session.session_id,
             "tools_called": list(self.session.tools_called),
+            "evidence": deepcopy(self.session.evidence),
             "evidence_entries": len(self.session.evidence),
             "theorem_proven": False,
             "sovereignty": "HYBA_SOVEREIGN_CNS",
             "narrow_ai_credit": "NONE_FORBIDDEN",
             "timestamp": time.time(),
         }
-        digest = hashlib.sha256(json.dumps(pack, sort_keys=True).encode()).hexdigest()
+        canonical = json.dumps(
+            pack,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
+        digest = hashlib.sha256(canonical).hexdigest()
         pack["evidence_digest"] = digest
         return pack
 
