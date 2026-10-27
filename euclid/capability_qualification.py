@@ -33,6 +33,7 @@ class EvidenceKind(str, Enum):
 class EvidenceStatus(str, Enum):
     EXECUTED = "executed"
     FORMALLY_VERIFIED = "formally_verified"
+    AUTHENTICATED = "authenticated"
     REPORTED = "reported"
     UNAVAILABLE = "unavailable"
 
@@ -41,6 +42,13 @@ class EvidenceOutcome(str, Enum):
     PASS = "pass"
     FAIL = "fail"
     UNAVAILABLE = "unavailable"
+
+
+class ConclusionKind(str, Enum):
+    THEOREM = "theorem"
+    EMPIRICAL = "empirical"
+    CAPABILITY = "capability"
+    DECISION = "decision"
 
 
 class QualificationStatus(str, Enum):
@@ -96,6 +104,7 @@ class EvidenceRecord:
             or type(self.kind) is not EvidenceKind
             or type(self.status) is not EvidenceStatus
             or type(self.outcome) is not EvidenceOutcome
+            or type(self.artifact_sha256) is not str
             or not _SHA256.fullmatch(self.artifact_sha256)
             or type(self.independent) is not bool
             or type(self.summary) is not str
@@ -139,6 +148,7 @@ class ClaimConclusion:
     conclusion_id: str
     statement: str
     evidence_ids: tuple[str, ...]
+    kind: ConclusionKind = ConclusionKind.CAPABILITY
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "evidence_ids", tuple(self.evidence_ids))
@@ -147,6 +157,7 @@ class ClaimConclusion:
             or type(self.statement) is not str
             or not self.statement.strip()
             or any(not _valid_identifier(item) for item in self.evidence_ids)
+            or type(self.kind) is not ConclusionKind
         ):
             raise ValueError("a conclusion needs an identifier, statement, and evidence references")
 
@@ -226,7 +237,6 @@ class CapabilityQualificationRegistry:
         self,
         *,
         trusted_verifiers: Mapping[str, Ed25519PublicKey],
-        required_safety_checks: frozenset[str] = _REQUIRED_SAFETY_CHECKS,
     ) -> None:
         if (
             not trusted_verifiers
@@ -234,12 +244,10 @@ class CapabilityQualificationRegistry:
                 not _valid_identifier(name) or not isinstance(key, Ed25519PublicKey)
                 for name, key in trusted_verifiers.items()
             )
-            or not required_safety_checks
-            or any(not _valid_identifier(item) for item in required_safety_checks)
         ):
-            raise ValueError("trusted evidence verifiers and safety checks are required")
+            raise ValueError("trusted evidence verifiers are required")
         self._verifiers = MappingProxyType(dict(trusted_verifiers))
-        self._required_safety_checks = frozenset(required_safety_checks)
+        self._required_safety_checks = _REQUIRED_SAFETY_CHECKS
         self._active: dict[tuple[str, str, str, str], CapabilityClaim] = {}
         self._revoked: dict[tuple[str, str, str, str], str] = {}
         self._events: list[dict[str, str]] = []
@@ -297,7 +305,9 @@ class CapabilityQualificationRegistry:
                 unavailable_conclusions.append(conclusion.conclusion_id)
                 continue
             if not all(
-                self._supports(record) for record in supporting if record is not None
+                self._supports(record, conclusion.kind)
+                for record in supporting
+                if record is not None
             ):
                 unavailable_conclusions.append(conclusion.conclusion_id)
 
@@ -342,12 +352,30 @@ class CapabilityQualificationRegistry:
         )
 
     @staticmethod
-    def _supports(record: EvidenceRecord) -> bool:
+    def _supports(record: EvidenceRecord, conclusion_kind: ConclusionKind) -> bool:
         if record.outcome is not EvidenceOutcome.PASS:
             return False
-        if record.kind is EvidenceKind.THEOREM:
-            return record.status is EvidenceStatus.FORMALLY_VERIFIED
-        return record.status is EvidenceStatus.EXECUTED
+        if conclusion_kind is ConclusionKind.THEOREM:
+            return (
+                record.kind is EvidenceKind.THEOREM
+                and record.status is EvidenceStatus.FORMALLY_VERIFIED
+            )
+        if conclusion_kind is ConclusionKind.EMPIRICAL:
+            return (
+                record.kind in (EvidenceKind.EMPIRICAL, EvidenceKind.TEST, EvidenceKind.BENCHMARK)
+                and record.status is EvidenceStatus.EXECUTED
+            )
+        if conclusion_kind is ConclusionKind.CAPABILITY:
+            return (
+                record.kind is EvidenceKind.TEST
+                and record.status is EvidenceStatus.EXECUTED
+            )
+        return (
+            conclusion_kind is ConclusionKind.DECISION
+            and record.kind is EvidenceKind.DECISION
+            and record.status is EvidenceStatus.AUTHENTICATED
+            and record.independent
+        )
 
     @staticmethod
     def _acceptance_passes(record: EvidenceRecord) -> bool:
@@ -378,6 +406,7 @@ class CapabilityQualificationRegistry:
                 {
                     "action": "promotion-refused",
                     "claim_id": claim.claim_id,
+                    "source_revision": claim.source_revision,
                     "domain": claim.domain,
                     "task_scope": claim.task_scope,
                     "reason": "; ".join(decision.reasons),
@@ -389,8 +418,12 @@ class CapabilityQualificationRegistry:
             {
                 "action": "promoted",
                 "claim_id": claim.claim_id,
+                "source_revision": claim.source_revision,
                 "domain": claim.domain,
                 "task_scope": claim.task_scope,
+                "authority_limits": json.dumps(
+                    list(claim.authority_limits), separators=(",", ":")
+                ),
                 "evidence_digest": decision.evidence_digest,
             }
         )
@@ -444,6 +477,7 @@ class CapabilityQualificationRegistry:
             {
                 "action": "revoked",
                 "claim_id": claim_id,
+                "source_revision": source_revision,
                 "domain": domain,
                 "task_scope": task_scope,
                 "reason": reason,

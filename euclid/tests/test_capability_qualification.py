@@ -10,6 +10,7 @@ from euclid.capability_qualification import (
     CapabilityClaim,
     CapabilityQualificationRegistry,
     ClaimConclusion,
+    ConclusionKind,
     EvidenceKind,
     EvidenceOutcome,
     EvidenceRecord,
@@ -183,6 +184,16 @@ def test_cross_revision_evidence_cannot_be_substituted(trust):
     assert any("revision or scope mismatch" in item for item in result.reasons)
 
 
+def test_safety_checks_cannot_be_omitted_from_acceptance(trust):
+    private, registry = trust
+    candidate = claim(private, acceptance_checks=("domain-acceptance",))
+
+    result = registry.evaluate(candidate)
+
+    assert result.status is QualificationStatus.UNAVAILABLE
+    assert any("missing required safety checks" in item for item in result.reasons)
+
+
 def test_reported_benchmark_is_preserved_but_does_not_count_as_acceptance(trust):
     private, registry = trust
     records = claim(private).evidence + (
@@ -203,6 +214,42 @@ def test_reported_benchmark_is_preserved_but_does_not_count_as_acceptance(trust)
     assert result.status is QualificationStatus.PROMOTED
     assert result.limitations == ("historical report; not rerun on this revision",)
     assert "ev-benchmark" not in candidate.conclusions[0].evidence_ids
+
+
+def test_theorem_claim_requires_formally_verified_theorem_evidence(trust):
+    private, registry = trust
+    theorem = evidence(
+        private,
+        "ev-theorem",
+        "formal-proof",
+        kind=EvidenceKind.THEOREM,
+        status=EvidenceStatus.FORMALLY_VERIFIED,
+    )
+    candidate = claim(
+        private,
+        conclusions=(
+            ClaimConclusion(
+                "finite-result",
+                "The finite-group result follows from a verified theorem.",
+                ("ev-theorem",),
+                kind=ConclusionKind.THEOREM,
+            ),
+        ),
+        evidence=claim(private).evidence + (theorem,),
+    )
+
+    assert registry.evaluate(candidate).status is QualificationStatus.PROMOTED
+
+    reported = replace(
+        theorem,
+        status=EvidenceStatus.REPORTED,
+        signature="",
+    )
+    reported = replace(reported, signature=private.sign(reported.body()).hex())
+    candidate = replace(candidate, evidence=claim(private).evidence + (reported,))
+    result = registry.evaluate(candidate)
+    assert result.status is QualificationStatus.UNAVAILABLE
+    assert result.unavailable_conclusions == ("finite-result",)
 
 
 def test_revocation_removes_authority_and_records_rollback_plan(trust):

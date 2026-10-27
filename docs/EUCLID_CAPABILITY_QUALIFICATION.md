@@ -9,9 +9,12 @@ Each claim must include conclusions, evidence references, explicit authority
 limits, and a rollback plan. Evidence records distinguish theorem proofs,
 empirical observations, tests, benchmarks, and decision artifacts. A theorem
 supports a conclusion only when formally verified; other evidence must record
-an executed passing result. Reported results remain visible but cannot satisfy
-independent acceptance. A conclusion with missing, reported-only, or otherwise
-unsupported evidence is returned as unavailable.
+an executed passing result, and decision artifacts must be authenticated
+independently. Capability conclusions require tests; mathematical, empirical,
+and decision conclusions accept only their corresponding evidence classes.
+Reported results remain visible but cannot satisfy independent acceptance. A
+conclusion with missing, reported-only, or otherwise unsupported evidence is
+returned as unavailable.
 
 Evidence metadata must be signed by a configured trusted verifier and match the
 claim's exact revision, domain, and task scope. The verifier's signature binds
