@@ -45,11 +45,13 @@ VERIFY <- POST-OBSERVE <- APPROVED ACTUATOR <- POLICY GATE
 
 ## Self-healing policy
 
-Potential low-risk actions, when explicitly configured and independently
-enforced by an actuator, include restarting an unhealthy replica, rolling back
-to a known-good configuration, or shedding optional load. Each action needs a
-per-service allowlist, a maximum action count, timeout, rate limit, cooldown,
-blast-radius bound, idempotency key, and rollback procedure.
+Use only the canonical Salamander action registry and the owning subsystem's
+qualified execution contract (for example, registered replan, throttle, failover,
+defer, quarantine, circuit-breaker, projection-rebuild or rollback actions where
+supported). Do not invent generic action names or bypass the registered handler
+and verifier. Each action needs a per-target allowlist, maximum action count,
+timeout, rate limit, cooldown, blast-radius bound, idempotency key, and rollback
+procedure.
 
 Never automatically perform destructive data changes, privilege changes,
 security-policy weakening, credential rotation without a coordinated runbook,
