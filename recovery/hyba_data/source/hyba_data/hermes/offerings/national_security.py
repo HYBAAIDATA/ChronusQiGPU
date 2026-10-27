@@ -3,17 +3,17 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from al_haras.security_core import CryptographicAuditChain
+from .millennium_math_adapter import MillenniumMathsAPI
 from .toe_platform_adapter import TOEPlatformAdapter
 
 PHI = (1.0 + 5.0**0.5) / 2.0
 
 
 class NationalSecurityOffering:
-    """HYBA national-security capability inventory and TOE advisory entrypoint.
+    """HYBA national-security inventory and TOE/Millennium advisory entrypoints.
 
     This class describes the consolidated architecture and its evidence status.
-    It does not itself provision production infrastructure or establish mission
-    readiness. Capability claims must be backed by tests and deployment evidence.
+    It does not provision production infrastructure or establish readiness.
     """
 
     def __init__(
@@ -21,10 +21,12 @@ class NationalSecurityOffering:
         *,
         audit: CryptographicAuditChain | None = None,
         toe_adapter: TOEPlatformAdapter | None = None,
+        millennium_api: MillenniumMathsAPI | None = None,
     ):
         self.phi = PHI
         self.audit = audit or CryptographicAuditChain(use_merkle=True)
         self.toe_adapter = toe_adapter or TOEPlatformAdapter()
+        self.millennium_api = millennium_api or MillenniumMathsAPI()
         self.stack = self._build_stack()
         self.comparison = self._build_comparison()
         self.audit.add_entry("HYBA_NATIONAL_SECURITY_INVENTORY_INIT")
@@ -42,6 +44,19 @@ class NationalSecurityOffering:
                 "claim_boundary": (
                     "Runtime availability, evidence quality and production readiness "
                     "must be verified in the target environment."
+                ),
+            },
+            "mathematical_platform": {
+                "name": "Millennium Maths API",
+                "role": (
+                    "Separate bounded mathematical probe service; supplies scoped "
+                    "mathematical evidence, not mission authority or proofs of open problems."
+                ),
+                "integration_contract": "MILLENNIUM_API_BASE_URL + allow-listed /millennium endpoints",
+                "status": "CLIENT_PRESENT_ENDPOINT_CONFIGURATION_REQUIRED",
+                "claim_boundary": (
+                    "The service endpoint must be configured and authenticated. "
+                    "Finite numerical probes are not proofs of open Millennium problems."
                 ),
             },
             "intelligence": {
@@ -134,12 +149,7 @@ class NationalSecurityOffering:
         tenant_id: str,
         purpose: str,
     ) -> dict[str, Any]:
-        """Run a TOE-backed advisory assessment after caller authorization.
-
-        The caller remains responsible for source authorization, data minimization,
-        classification, and purpose checks before submitting the observation.
-        This method never authorizes or executes a consequential action.
-        """
+        """Run a TOE-backed advisory assessment after caller authorization."""
         result = self.toe_adapter.assess(
             observation,
             tenant_id=tenant_id,
@@ -147,9 +157,23 @@ class NationalSecurityOffering:
         )
         status = str(result.get("status", "unavailable"))
         # Never put observation contents into the audit log.
-        self.audit.add_entry(
-            f"HYBA_TOE_ASSESSMENT|{status}|{tenant_id}|{purpose}"
-        )
+        self.audit.add_entry(f"HYBA_TOE_ASSESSMENT|{status}|{tenant_id}|{purpose}")
+        result["hyba_audit_integrity"] = self.audit.verify_integrity()
+        return result
+
+    def run_millennium_math(
+        self,
+        operation: str,
+        payload: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Run a bounded math probe separately from mission-data assessment.
+
+        Callers must supply only non-sensitive mathematical parameters. This
+        method deliberately does not accept or forward the TOE observation.
+        """
+        result = self.millennium_api.run(operation, dict(payload or {}))
+        status = str(result.get("status", "unavailable"))
+        self.audit.add_entry(f"HYBA_MILLENNIUM_MATH|{operation}|{status}")
         result["hyba_audit_integrity"] = self.audit.verify_integrity()
         return result
 
@@ -182,6 +206,7 @@ class NationalSecurityOffering:
             "resilience planning and auditable recommendations.\n\n"
             "Consolidated architecture\n"
             "- TOE provides the shared reasoning runtime and evidence/receipt substrate.\n"
+            "- Millennium Maths provides separately scoped, bounded mathematical probes.\n"
             "- Five canonical intelligence forms: predictive, causal, "
             "counterfactual, topological and geometric.\n"
             "- Existing HYBA AL HARAS and L-HRAS governance and evidence paths.\n"
@@ -196,7 +221,7 @@ class NationalSecurityOffering:
             "- Production readiness, prediction quality, external integrations "
             "and security claims require reproducible evidence.\n\n"
             "Status\n"
-            "Architecture and adapter entrypoint only. This response does not "
+            "Architecture and adapter entrypoints only. This response does not "
             "provision infrastructure or certify operational readiness."
         )
 
