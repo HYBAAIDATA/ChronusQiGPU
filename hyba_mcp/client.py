@@ -30,11 +30,21 @@ class HybaMCPClient:
     """In-process client for invoking local HYBA MCP capabilities."""
 
     def __init__(self, server: Optional[HybaMCPServer] = None) -> None:
-        self.server = server or HybaMCPServer()
+        self._server_factory = HybaMCPServer if server is None else None
+        self.server = server if server is not None else HybaMCPServer()
         self.session: Optional[MCPSession] = None
         self._next_id = 1
+        self._server_initialized = False
 
     def start_session(self) -> MCPSession:
+        if self.session is not None:
+            raise RuntimeError("an MCP session is already active")
+        if self._server_factory is not None:
+            self.server = self._server_factory()
+        elif self._server_initialized:
+            raise RuntimeError(
+                "the supplied MCP server connection is already initialized; create a new client"
+            )
         sid = secrets.token_hex(16)
         session = MCPSession(session_id=sid)
         resp = self.server.handle_request(
@@ -54,6 +64,7 @@ class HybaMCPClient:
             raise RuntimeError(
                 f"MCP initialize failed: {resp.get('error') if resp else 'no response'}"
             )
+        self._server_initialized = True
         session.evidence.append({"handshake": resp.get("result")})
         self.server.handle_request(
             {
@@ -101,7 +112,7 @@ class HybaMCPClient:
                 f"MCP tool {name!r} failed: {result_payload.get('error', 'tool error')}"
             )
         self.session.tools_called.append(name)
-        self.session.evidence.append({"tool": name, "output": result_payload})
+        self.session.evidence.append({"tool": name, "output": deepcopy(result_payload)})
         return result_payload
 
     def produce_evidence_pack(self) -> dict[str, Any]:

@@ -268,6 +268,7 @@ class TestHybaMCPClient:
         res = client.call_tool("zeckendorf", {"n": 1364})
         assert res["valid"] is True
         assert res["non_adjacency"] is True
+        res["valid"] = False
 
         pack = client.end_session()
         assert client.session is None
@@ -276,6 +277,7 @@ class TestHybaMCPClient:
         assert pack["evidence_digest"] is not None
         assert pack["evidence_entries"] == 2
         assert pack["evidence"][-1]["output"]["n"] == 1364
+        assert pack["evidence"][-1]["output"]["valid"] is True
         digest = pack.pop("evidence_digest")
         canonical = json.dumps(
             pack,
@@ -285,3 +287,14 @@ class TestHybaMCPClient:
             allow_nan=False,
         ).encode("utf-8")
         assert digest == hashlib.sha256(canonical).hexdigest()
+
+        next_session = client.start_session()
+        assert next_session.session_id != session.session_id
+        client.end_session()
+
+    def test_client_with_injected_server_requires_new_connection_after_end(self) -> None:
+        client = HybaMCPClient(server=HybaMCPServer())
+        client.start_session()
+        client.end_session()
+        with pytest.raises(RuntimeError, match="already initialized"):
+            client.start_session()
