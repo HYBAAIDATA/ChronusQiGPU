@@ -10,7 +10,7 @@ PHI = (1.0 + 5.0**0.5) / 2.0
 
 
 class NationalSecurityOffering:
-    """HYBA national-security inventory and TOE/Millennium advisory entrypoints.
+    """HYBA national-security inventory with TOE, Millennium Maths and Salamander boundaries.
 
     This class describes the consolidated architecture and its evidence status.
     It does not provision production infrastructure or establish readiness.
@@ -83,6 +83,29 @@ class NationalSecurityOffering:
                 "claim_boundary": (
                     "No fixed accuracy or operational effectiveness claim without "
                     "reproducible evaluation on a defined, held-out dataset."
+                ),
+            },
+            "resilience": {
+                "name": "Salamander Autonomic Control Plane",
+                "role": (
+                    "Canonical adaptive-resilience layer for anomaly detection, "
+                    "fault diagnosis, bounded self-healing and measured self-optimization."
+                ),
+                "integration_contract": (
+                    "salamander.control_plane.AutonomicControlPlane + salamander.models"
+                ),
+                "capabilities": [
+                    "Typed health and anomaly evidence",
+                    "Registered bounded recovery plans",
+                    "Post-action verification and rollback",
+                    "Replay, shadow/canary evaluation and policy lifecycle",
+                ],
+                "status": "CANONICAL_COMPONENT_PRESENT_END_TO_END_INTEGRATION_REQUIRED",
+                "claim_boundary": (
+                    "This offering inventory does not instantiate or qualify the "
+                    "control plane. Only registered, policy-authorized actions may run; "
+                    "unavailable telemetry is not healthy and handler success is not "
+                    "proof of recovery."
                 ),
             },
             "security": {
