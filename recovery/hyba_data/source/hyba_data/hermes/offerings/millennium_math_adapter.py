@@ -11,7 +11,7 @@ import os
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 
 class MillenniumMathsAPI:
@@ -26,6 +26,16 @@ class MillenniumMathsAPI:
         "navier_stokes": "/millennium/navier_stokes/predict_flow",
         "bsd": "/millennium/bsd/rank",
         "poincare": "/millennium/poincare/flow",
+    }
+    ALLOWED_FIELDS = {
+        "aggregate": frozenset({"scale", "only"}),
+        "hodge_topology": frozenset({"scale", "hodge_dimension"}),
+        "yang_mills_gap": frozenset({"scale", "lattice_size"}),
+        "riemann_primes": frozenset({"scale", "sieve_limit", "prime_window"}),
+        "p_vs_np": frozenset({"scale", "sat_sizes", "sat_cap"}),
+        "navier_stokes": frozenset({"scale", "ns_grid", "ns_steps"}),
+        "bsd": frozenset({"scale", "bsd_prime_limit"}),
+        "poincare": frozenset({"scale", "sphere_subdivisions", "flow_steps"}),
     }
 
     def __init__(
@@ -59,7 +69,20 @@ class MillenniumMathsAPI:
                 "api_not_configured",
                 "Set MILLENNIUM_API_BASE_URL to the trusted Millennium service URL (HTTPS, or local HTTP).",
             )
+        if payload is not None and not isinstance(payload, dict):
+            return self._unavailable("invalid_payload", "Mathematical API payload must be an object.")
         body = dict(payload or {})
+        unexpected = set(body) - self.ALLOWED_FIELDS[operation]
+        if unexpected:
+            return self._unavailable(
+                "unsupported_parameter",
+                "Unsupported parameter(s) for this operation: " + ", ".join(sorted(map(str, unexpected))),
+            )
+        if "only" in body and (
+            not isinstance(body["only"], list)
+            or any(not isinstance(item, str) for item in body["only"])
+        ):
+            return self._unavailable("invalid_parameter", "'only' must be a list of problem IDs.")
         if len(json.dumps(body, default=str).encode("utf-8")) > 64_000:
             return self._unavailable("request_too_large", "Mathematical API payload exceeds 64 KB.")
         body.setdefault("scale", "quick")
@@ -74,7 +97,13 @@ class MillenniumMathsAPI:
             method="POST",
         )
         try:
-            with urlopen(request, timeout=self.timeout_seconds) as response:
+            # Never follow redirects: a redirect could move a bearer token or
+            # mathematical payload to an unreviewed origin.
+            class _NoRedirect(HTTPRedirectHandler):
+                def redirect_request(self, req, fp, code, msg, headers, newurl):
+                    return None
+
+            with build_opener(_NoRedirect()).open(request, timeout=self.timeout_seconds) as response:
                 response_raw = response.read(self.max_response_bytes + 1)
                 if len(response_raw) > self.max_response_bytes:
                     return self._unavailable("response_too_large", "Millennium API response exceeded configured limit.")
