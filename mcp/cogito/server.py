@@ -70,7 +70,18 @@ def main() -> None:
                 }), flush=True)
                 continue
 
-            if method == "server/discover":
+            if method == "initialize":
+                resp = {
+                    "jsonrpc": "2.0",
+                    "id": rid,
+                    "result": {
+                        "protocolVersion": PROTOCOL_VERSION,
+                        "capabilities": {"tools": {"listChanged": False}},
+                        "serverInfo": SERVER_INFO,
+                    },
+                    "_meta": {"io.modelcontextprotocol/serverInfo": SERVER_INFO},
+                }
+            elif method == "server/discover":
                 result = {
                     "protocolVersions": [PROTOCOL_VERSION],
                     "capabilities": {"tools": {"listChanged": False}},
