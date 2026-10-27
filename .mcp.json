@@ -6,13 +6,17 @@
   "servers": [
     {
       "name": "hyba-mcp",
+      "status": "production",
+      "deployment_guidance": "Primary server; qualify behind AL HARAS before deployment. See docs/MCP_DEPLOYMENT.md. scale_intelligence requires Intelligence.lucas_scaler and dependencies.",
       "command": "python",
       "args": ["-m", "hyba_mcp.server"],
       "env": { "PYTHONPATH": "${REPO_ROOT}" },
-      "description": "Production HYBA sovereign MCP server — fast-doubling Lucas, Fibonacci, Cassini, Zeckendorf, tile scaling, and SHA256d verification."
+      "description": "Production HYBA sovereign MCP server — nine tools including exact arithmetic, SHA256d verification, and optional Lucas intelligence scaling."
     },
     {
       "name": "exact-kernel",
+      "status": "stable-standalone",
+      "deployment_guidance": "Optional standalone surface; omit from production registration unless separately qualified.",
       "command": "python",
       "args": ["mcp/exact_kernel/server.py"],
       "env": { "PYTHONPATH": "${REPO_ROOT}" },
@@ -20,6 +24,8 @@
     },
     {
       "name": "cogito",
+      "status": "experimental",
+      "deployment_guidance": "Internal review only. Exclude from production registration; this marker is metadata, not an enforcement switch.",
       "command": "python",
       "args": ["mcp/cogito/server.py"],
       "env": { "PYTHONPATH": "${REPO_ROOT}" },
@@ -48,5 +54,5 @@
     "credit_assignment": "ZERO_CREDIT_TO_NARROW_AI",
     "authority": "HYBA_EUCLID_AUTONOMOUS_CNS"
   },
-  "notes": "This top-level .mcp.json is intended for internal agent registration. Replace ${REPO_ROOT} with the absolute filesystem path where the repository is checked out on the agent host."
+  "notes": "Internal registration catalog, not an authorization policy. Select only qualified servers; status metadata does not prevent launch. See docs/MCP_DEPLOYMENT.md and docs/MCP_SECURITY.md. Replace ${REPO_ROOT} with the absolute checkout path and configure the host working directory there. Keep credentials and HMAC keys out of this manifest."
 }
