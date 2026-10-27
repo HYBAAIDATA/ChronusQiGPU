@@ -92,6 +92,12 @@ def test_independent_scoped_evidence_promotes_and_authorizes_only_declared_scope
     result = registry.promote(candidate)
 
     assert result.status is QualificationStatus.PROMOTED
+    assert registry.status(
+        claim_id=candidate.claim_id,
+        source_revision=REVISION,
+        domain=DOMAIN,
+        task_scope=TASK_SCOPE,
+    ) is QualificationStatus.PROMOTED
     assert registry.authorize(
         claim_id=candidate.claim_id,
         source_revision=REVISION,
@@ -138,7 +144,7 @@ def test_reported_results_and_unsupported_conclusions_are_unavailable(trust):
 
     assert result.status is QualificationStatus.UNAVAILABLE
     assert result.unavailable_conclusions == ("unsupported",)
-    assert not registry.events[-1]["action"] == "promoted"
+    assert registry.events[-1]["action"] == "promotion-refused"
 
 
 @pytest.mark.parametrize("check_id", ["proxy-reward-exploitation", "negative-transfer"])
@@ -222,6 +228,13 @@ def test_revocation_removes_authority_and_records_rollback_plan(trust):
         )
     assert registry.events[-1]["action"] == "revoked"
     assert candidate.rollback_plan in registry.events[-1]["rollback_plan"]
+    assert registry.status(
+        claim_id=candidate.claim_id,
+        source_revision=REVISION,
+        domain=DOMAIN,
+        task_scope=TASK_SCOPE,
+    ) is QualificationStatus.REVOKED
+    assert registry.promote(candidate).status is QualificationStatus.REVOKED
 
 
 def test_tampered_attestation_is_not_accepted(trust):

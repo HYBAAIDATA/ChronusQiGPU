@@ -87,6 +87,7 @@ class EvidenceRecord:
             not _valid_identifier(self.evidence_id)
             or not _valid_identifier(self.check_id)
             or not _valid_identifier(self.verifier_id)
+            or type(self.source_revision) is not str
             or not _REVISION.fullmatch(self.source_revision)
             or type(self.domain) is not str
             or not self.domain.strip()
@@ -99,6 +100,14 @@ class EvidenceRecord:
             or type(self.independent) is not bool
             or type(self.summary) is not str
             or not self.summary.strip()
+            or type(self.signature) is not str
+            or (
+                self.signature
+                and (
+                    len(self.signature) != 128
+                    or any(char not in "0123456789abcdef" for char in self.signature)
+                )
+            )
             or any(type(item) is not str or not item.strip()
                    for item in (*self.failures, *self.limitations))
         ):
@@ -164,6 +173,7 @@ class CapabilityClaim:
             not _valid_identifier(self.claim_id)
             or type(self.statement) is not str
             or not self.statement.strip()
+            or type(self.source_revision) is not str
             or not _REVISION.fullmatch(self.source_revision)
             or type(self.domain) is not str
             or not self.domain.strip()
@@ -245,10 +255,8 @@ class CapabilityQualificationRegistry:
         reasons: list[str] = []
         failures: list[str] = []
         limitations: list[str] = []
-        by_id: dict[str, EvidenceRecord] = {}
         valid: dict[str, EvidenceRecord] = {}
         for record in claim.evidence:
-            by_id[record.evidence_id] = record
             limitations.extend(record.limitations)
             failures.extend(record.failures)
             if record.outcome is EvidenceOutcome.FAIL:
@@ -288,7 +296,9 @@ class CapabilityQualificationRegistry:
             if not supporting or any(record is None for record in supporting):
                 unavailable_conclusions.append(conclusion.conclusion_id)
                 continue
-            if not any(self._supports(record) for record in supporting if record is not None):
+            if not all(
+                self._supports(record) for record in supporting if record is not None
+            ):
                 unavailable_conclusions.append(conclusion.conclusion_id)
 
         for check in claim.acceptance_checks:
@@ -351,6 +361,18 @@ class CapabilityQualificationRegistry:
 
     def promote(self, claim: CapabilityClaim) -> QualificationDecision:
         decision = self.evaluate(claim)
+        if claim.scope_key in self._revoked:
+            return QualificationDecision(
+                status=QualificationStatus.REVOKED,
+                claim_id=decision.claim_id,
+                source_revision=decision.source_revision,
+                domain=decision.domain,
+                task_scope=decision.task_scope,
+                evidence_digest=decision.evidence_digest,
+                reasons=("qualification was revoked and cannot be reactivated",),
+                failures=decision.failures,
+                limitations=decision.limitations,
+            )
         if decision.status is not QualificationStatus.PROMOTED:
             self._events.append(
                 {
@@ -363,7 +385,6 @@ class CapabilityQualificationRegistry:
             )
             return decision
         self._active[claim.scope_key] = claim
-        self._revoked.pop(claim.scope_key, None)
         self._events.append(
             {
                 "action": "promoted",
@@ -374,6 +395,16 @@ class CapabilityQualificationRegistry:
             }
         )
         return decision
+
+    def status(
+        self, *, claim_id: str, source_revision: str, domain: str, task_scope: str
+    ) -> QualificationStatus:
+        key = (claim_id, source_revision, domain, task_scope)
+        if key in self._active:
+            return QualificationStatus.PROMOTED
+        if key in self._revoked:
+            return QualificationStatus.REVOKED
+        return QualificationStatus.UNAVAILABLE
 
     def authorize(
         self,
@@ -405,7 +436,9 @@ class CapabilityQualificationRegistry:
     ) -> None:
         key = (claim_id, source_revision, domain, task_scope)
         if key not in self._active or type(reason) is not str or not reason.strip():
-            raise ValueError("an active exact-scope qualification and revocation reason are required")
+            raise ValueError(
+                "an active exact-scope qualification and revocation reason are required"
+            )
         self._revoked[key] = reason
         self._events.append(
             {
