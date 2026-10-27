@@ -21,3 +21,24 @@ def test_millennium_api_rejects_nonlocal_plain_http():
     result = api.run("aggregate", {})
     assert result["status"] == "unavailable"
     assert result["error"]["code"] == "api_not_configured"
+
+
+def test_millennium_api_rejects_parameters_outside_operation_contract():
+    api = MillenniumMathsAPI(base_url="https://maths.example.test")
+    result = api.run("riemann_primes", {"scale": "quick", "mission_id": "secret"})
+    assert result["status"] == "unavailable"
+    assert result["error"]["code"] == "unsupported_parameter"
+
+
+def test_millennium_api_rejects_non_object_payload():
+    api = MillenniumMathsAPI(base_url="https://maths.example.test")
+    result = api.run("aggregate", ["not", "an", "object"])
+    assert result["status"] == "unavailable"
+    assert result["error"]["code"] == "invalid_payload"
+
+
+def test_millennium_api_validates_aggregate_problem_filter():
+    api = MillenniumMathsAPI(base_url="https://maths.example.test")
+    result = api.run("aggregate", {"only": "riemann"})
+    assert result["status"] == "unavailable"
+    assert result["error"]["code"] == "invalid_parameter"
