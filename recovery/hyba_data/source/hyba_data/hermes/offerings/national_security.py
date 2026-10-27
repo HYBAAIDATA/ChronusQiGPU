@@ -6,6 +6,7 @@ from al_haras.security_core import CryptographicAuditChain
 from .millennium_math_adapter import MillenniumMathsAPI
 from .salamander_platform_adapter import SalamanderPlatformAdapter
 from .toe_platform_adapter import TOEPlatformAdapter
+from .phi_security_optimizer import DefensiveSignal, rank_signals
 
 PHI = (1.0 + 5.0**0.5) / 2.0
 
@@ -287,6 +288,22 @@ class NationalSecurityOffering:
             "actuation_performed": False,
             "hyba_audit_integrity": self.audit.verify_integrity(),
         }
+
+    def rank_defensive_signals(
+        self,
+        signals: list[DefensiveSignal],
+    ) -> dict[str, Any]:
+        """Rank normalized defensive signals using the phi triage heuristic.
+
+        This is advisory only: it never authorizes or dispatches an action.
+        Signal contents are not written to the audit log.
+        """
+        result = rank_signals(signals)
+        self.audit.add_entry(
+            f"HYBA_PHI_DEFENSIVE_TRIAGE|available|{len(signals)}|{result['ranking_sha256']}"
+        )
+        result["hyba_audit_integrity"] = self.audit.verify_integrity()
+        return result
 
     def _build_comparison(self) -> dict[str, Any]:
         """Return an evidence checklist, not unsupported competitor claims."""
