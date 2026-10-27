@@ -33,8 +33,8 @@ class DefensiveSignal:
     evidence_ref: str = ""
 
     def validate(self) -> None:
-        if not self.signal_id.strip():
-            raise ValueError("signal_id is required")
+        if not isinstance(self.signal_id, str) or not self.signal_id.strip():
+            raise ValueError("signal_id is required and must be a non-empty string")
         for name in ("severity", "exposure", "confidence"):
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, (int, float)):
