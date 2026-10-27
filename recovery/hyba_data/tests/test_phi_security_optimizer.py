@@ -46,3 +46,17 @@ def test_review_slot_allocation_sums_exactly_and_prioritizes_first():
 
 def test_empty_slot_allocation():
     assert allocate_review_slots([], 0) == {}
+
+def test_consolidated_offering_exposes_phi_triage_and_audits_digest():
+    from hermes.offerings.national_security import NationalSecurityOffering
+
+    offering = NationalSecurityOffering()
+    result = offering.rank_defensive_signals([
+        DefensiveSignal("web-edge", 0.9, 0.8, 0.95),
+        DefensiveSignal("database", 0.7, 0.9, 0.8, age_units=1),
+    ])
+    assert result["schema"] == "hyba.phi_defensive_triage/v1"
+    assert result["hyba_audit_integrity"] is True
+    assert result["recommendation_only"] is True
+    assert result["action_authorized"] is False
+    assert result["actuation_performed"] is False
