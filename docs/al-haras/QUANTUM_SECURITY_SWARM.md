@@ -1,79 +1,84 @@
-# AL HARAS Quantum Security Swarm
+# HYBA National-Security Intelligence: Swarm Enhancement
 
-Status: design proposal; not a claim that all components are implemented.
+Status: design proposal within HYBA consolidation; not a claim that all
+components are implemented or operationally validated.
 
 ## Objective
 
-Extend the existing AL HARAS protection layer into a governed defensive
-orchestration system. It combines evidence-producing specialist agents,
-risk-aware planning and optional optimization backends while retaining the
-existing AL HARAS authorization and audit boundaries.
+Enhance the existing HYBA intelligence and AL HARAS security components for
+authorized national-security and critical-infrastructure decision support.
+AL HARAS is a shared HYBA security/governance capability, not an independent
+product. This work must reuse the canonical five-form model and existing
+Guardian/policy path rather than create a parallel stack.
 
-The core security proposition is **better coordinated decisions**, not an
-unsupported claim that quantum computation automatically detects attacks or
-makes a system unbreakable.
+The five intelligence forms are **predictive, causal, counterfactual,
+topological and geometric**. The core proposition is better coordinated,
+evidence-backed decisions, not an unsupported claim that quantum computation
+automatically detects attacks or makes a system unbreakable.
+
+For the component map, data flow, predictive-validation criteria and delivery
+gates, see [NATIONAL_SECURITY_CONSOLIDATION.md](NATIONAL_SECURITY_CONSOLIDATION.md).
 
 ## Architecture
 
 ```text
-Telemetry and asset inventory
+Approved feeds / operator reports / authorized telemetry
           |
           v
-Input validation + tenant / identity / policy checks
+HYBA identity + tenant + purpose + policy checks
           |
           v
-Defensive agent swarm (parallel, bounded, evidence-producing)
+Validation, provenance, freshness and normalization
           |
           v
-Correlation + confidence + disagreement handling
+Canonical five-form intelligence implementations
+  | predictive | causal | counterfactual |
+  | topological | geometric |
           |
           v
-Action-plan generator
+Cross-form correlation + uncertainty + disagreement
           |
           v
-Optimizer router
-  | classical | quantum-inspired | optional quantum provider |
+Scenario / defensive action-plan recommendations
           |
           v
-AL HARAS SecurityGovernor / policy decision
+Existing HYBA AL HARAS / L-HRAS governance
           |
           v
-Dry-run recommendation or explicitly authorized response
+Analyst review → explicitly authorized response
           |
           v
-Tamper-evident audit receipt + outcome verification
+Outcome verification + audit receipt + feedback
 ```
 
-The optimizer may rank candidate actions, but it must not change the policy
-decision or grant privileges. The SecurityGovernor remains the authority for
-allow/deny/escalate/quarantine decisions.
+This is the target flow, not a claim that all connections are already wired.
+The optimizer may rank candidate actions, but it must not change a policy
+decision or grant privileges. Existing HYBA governance remains the authority.
 
 ## Proposed agent duties
 
-| Agent | Evidence to produce | Guardrail |
+| Intelligence form | Primary question | Guardrail |
 |---|---|---|
-| Identity | Unusual login, token and privilege-change signals | Never request or expose plaintext credentials |
-| Endpoint | Process, file and host posture indicators | No arbitrary command execution |
-| Network | Connection anomalies and segmentation evidence | Read-only telemetry by default |
-| Cloud | IAM, configuration and workload drift | Scope access to the authorized tenant/account |
-| Crypto posture | Algorithm, protocol, certificate and dependency inventory | Never collect private keys as inventory data |
-| Threat correlation | Correlated indicators, provenance and confidence | Distinguish observed facts from inference |
-| Response planner | Candidate containment/remediation plans and expected impact | Propose only; no authority to execute |
-| Verification | Post-action checks and recovery status | Report failure honestly; do not infer success from submission |
+| Predictive | What plausible future state or warning indicator is emerging? | Include time horizon, calibration, uncertainty and baseline |
+| Causal | Which mechanism could explain the observed pattern? | Distinguish correlation from causation and expose assumptions |
+| Counterfactual | How might outcomes differ under a stated alternative? | Make assumptions and scenario boundaries explicit |
+| Topological | What structural relationship, path or boundary changed? | Record graph/model provenance and limitations |
+| Geometric | How is the state/trajectory deviating in its defined representation? | Validate representation and metric; do not imply meaning from geometry alone |
 
-Each agent returns a versioned record with: `event_id`, `tenant_id`,
-`asset_id`, `observations`, `evidence_refs`, `confidence`,
-`timestamp`, `agent_version`, `limitations`, and `recommended_next_step`.
-Secrets and raw sensitive payloads should not be copied into the audit ledger.
+These are the five canonical reasoning forms, not five independent authorities.
+Each output should contain a versioned schema, evidence references, confidence
+or uncertainty, timestamp, model/agent version and limitations. The system
+must preserve conflicts between forms rather than averaging away critical
+warnings.
 
 ## Defensive optimization
 
-Candidate actions can be represented as a constrained optimization problem.
-The objective may minimize expected residual risk, service disruption, cost
-and time-to-containment. Constraints encode dependencies, service-level
+Candidate defensive actions can be represented as a constrained optimization
+problem. The objective may minimize expected residual risk, service disruption,
+cost and time-to-containment. Constraints encode dependencies, service-level
 requirements, change windows, blast-radius limits and mandatory controls.
 
-The system should compare:
+Compare:
 - a deterministic policy/rule baseline;
 - conventional optimization (for example, integer programming or greedy
   selection with documented bounds);
@@ -81,8 +86,10 @@ The system should compare:
 - an optional quantum-annealing or gate-model provider where a real backend is
   configured and the problem mapping is valid.
 
-The output is a **ranked candidate plan**, not an authorization token. Every
-candidate must be revalidated by AL HARAS policy before execution.
+A simulator run is not evidence of quantum-hardware advantage. The existing
+swarm channel describes its communication implementation as
+`classical_coordinated_shared_state`; do not label this physical entanglement.
+Every candidate must be revalidated by HYBA policy before execution.
 
 ## Trust, safety and resilience
 
@@ -97,34 +104,27 @@ candidate must be revalidated by AL HARAS policy before execution.
 - Actions must be idempotent where possible and include a recovery/rollback
   strategy.
 - Never permit a model or agent to modify its own permissions or disable audit.
-- Treat disagreement between agents as a reason to gather evidence or escalate,
-  not as a reason to average away a critical warning.
-
-## Quantum-safe foundations
-
-The platform's own transport, identity, signing and key-establishment layers
-must have a separately managed cryptographic migration plan. Use current
-standards-based PQC implementations and vendor-supported protocol profiles.
-Do not label the entire product quantum-resistant merely because one component
-uses a PQC algorithm.
+- Preserve purpose limitation, data minimization, retention rules and human
+  accountability for consequential decisions.
 
 ## Delivery gates
 
-1. **Inventory:** document existing AL HARAS swarm, governor and ledger APIs.
-2. **Contract:** add typed schemas and unit tests for malformed/stale/cross-tenant
+1. **Inventory:** document the real runtime path across the existing five-form
+   swarm, predictor, Guardian, policy and audit components.
+2. **Contract:** add typed schemas and tests for malformed/stale/cross-tenant
    events, conflicting findings, timeouts and absent evidence.
 3. **Replay:** build a fixed, sanitized defensive event corpus.
 4. **Shadow mode:** produce recommendations without taking actions.
-5. **Evaluation:** measure detection quality, false-positive rate, decision
-   latency, resource use, policy violations and rollback success.
+5. **Evaluation:** measure calibration, detection quality, false-positive rate,
+   decision latency, resource use, policy violations and rollback success.
 6. **Controlled response:** enable only after explicit authorization, threat
    modelling and incident-recovery testing.
-7. **Quantum experiments:** separately benchmark candidate optimizers; do not
-   gate incident response on unproven quantum advantage.
+7. **Quantum experiments:** benchmark separately; do not gate incident response
+   on unproven quantum advantage.
 
 ## Non-goals
 
-This system is for authorized defensive monitoring and remediation. It is not
-an autonomous offensive agent, a cryptographic key-breaking service, or a
-replacement for endpoint/network controls, secure engineering, incident
-response staff or independent security review.
+This is authorized defensive monitoring, early warning, resilience and decision
+support. It is not an autonomous offensive agent, a cryptographic key-breaking
+service, a system for coercive decisions based solely on inferred risk, or a
+replacement for incident responders and independent security review.
