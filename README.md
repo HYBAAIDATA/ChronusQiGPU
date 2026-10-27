@@ -36,6 +36,16 @@
 > **FALSIFIABILITY & MEASUREMENT CONTRACT:**
 > Code, tests, and logged evidence are the sole source of truth. Every performance claim must be MEASURED on executing silicon; unmeasured hardware defaults strictly to `NOT_RUN`. CPU fallbacks are never disguised as device execution (`requested_route`/`executed_route`/`fallback_reason`). Quantum amplitude amplification claims on flat search spaces are closed. Probes of mathematical conjectures are finite numerical computations, not general analytic proofs.
 
+## AL HARAS golden-ratio defensive triage
+
+The consolidated AL HARAS/TOE/Salamander direction and the executable
+phi-weighted defensive triage experiment are indexed at
+[AL_HARAS_GOLDEN_RATIO_CYBERSECURITY.md](AL_HARAS_GOLDEN_RATIO_CYBERSECURITY.md).
+The triage module is recommendation-only and remains subordinate to the existing
+AL HARAS/L-HRAS authorization boundary. Its value must be established against
+conventional baselines; no cryptographic strength or detection improvement is
+inferred from the golden ratio itself.
+
 ## Evidence-scoped readiness
 
 **Intelligence-led execution. Evidence-scoped readiness.**
