@@ -224,6 +224,70 @@ class NationalSecurityOffering:
         result["hyba_audit_integrity"] = self.audit.verify_integrity()
         return result
 
+    def assess_operational_state(
+        self,
+        observation: Mapping[str, Any],
+        health_observations: list[Mapping[str, Any]],
+        *,
+        tenant_id: str,
+        purpose: str,
+        policy_id: str = "hyba-observation-v1",
+    ) -> dict[str, Any]:
+        """Coordinate advisory TOE reasoning and Salamander health assessment.
+
+        The Millennium Maths API is intentionally not called by this method:
+        its mathematical probes remain a separate, non-sensitive workload.
+        Neither result grants action authority or performs remediation.
+        """
+        import hashlib
+        import json
+
+        toe_result = self.assess_with_toe(
+            observation, tenant_id=tenant_id, purpose=purpose
+        )
+        salamander_result = self.observe_with_salamander(
+            health_observations, tenant_id=tenant_id, policy_id=policy_id
+        )
+        toe_status = str(toe_result.get("status", "unavailable"))
+        salamander_status = str(salamander_result.get("status", "unavailable"))
+        combined_status = (
+            "available"
+            if toe_status == "available" and salamander_status == "available"
+            else "degraded"
+        )
+        identity = {
+            "tenant_id": tenant_id,
+            "purpose": purpose,
+            "policy_id": policy_id,
+            "toe_status": toe_status,
+            "salamander_status": salamander_status,
+            "toe_receipt": (
+                toe_result.get("toe_response", {}).get("receipt")
+                if isinstance(toe_result.get("toe_response"), dict) else None
+            ),
+            "salamander_decision_id": salamander_result.get("decision_id"),
+        }
+        assessment_id = hashlib.sha256(
+            json.dumps(identity, sort_keys=True, default=str, separators=(",", ":")).encode()
+        ).hexdigest()[:24]
+        self.audit.add_entry(
+            f"HYBA_COMBINED_ASSESSMENT|{combined_status}|{tenant_id}|{purpose}|{assessment_id}"
+        )
+        return {
+            "schema": "hyba.national_security_assessment/v1",
+            "assessment_id": assessment_id,
+            "status": combined_status,
+            "tenant_id": tenant_id,
+            "purpose": purpose,
+            "toe": toe_result,
+            "salamander": salamander_result,
+            "mathematical_probe_invoked": False,
+            "recommendation_only": True,
+            "action_authorized": False,
+            "actuation_performed": False,
+            "hyba_audit_integrity": self.audit.verify_integrity(),
+        }
+
     def _build_comparison(self) -> dict[str, Any]:
         """Return an evidence checklist, not unsupported competitor claims."""
         return {
