@@ -1,29 +1,49 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Mapping
 
 from al_haras.security_core import CryptographicAuditChain
+from .toe_platform_adapter import TOEPlatformAdapter
 
 PHI = (1.0 + 5.0**0.5) / 2.0
 
 
 class NationalSecurityOffering:
-    """HYBA national-security capability inventory.
+    """HYBA national-security capability inventory and TOE advisory entrypoint.
 
     This class describes the consolidated architecture and its evidence status.
     It does not itself provision production infrastructure or establish mission
     readiness. Capability claims must be backed by tests and deployment evidence.
     """
 
-    def __init__(self, *, audit: CryptographicAuditChain | None = None):
+    def __init__(
+        self,
+        *,
+        audit: CryptographicAuditChain | None = None,
+        toe_adapter: TOEPlatformAdapter | None = None,
+    ):
         self.phi = PHI
         self.audit = audit or CryptographicAuditChain(use_merkle=True)
+        self.toe_adapter = toe_adapter or TOEPlatformAdapter()
         self.stack = self._build_stack()
         self.comparison = self._build_comparison()
         self.audit.add_entry("HYBA_NATIONAL_SECURITY_INVENTORY_INIT")
 
     def _build_stack(self) -> dict[str, Any]:
         return {
+            "reasoning_platform": {
+                "name": "TOE",
+                "role": (
+                    "Canonical domain-general reasoning runtime and evidence/receipt "
+                    "substrate for the consolidated HYBA offering."
+                ),
+                "integration_contract": "toe.problem.Problem + toe.runtime.TOEIntelligenceRuntime",
+                "status": "ADAPTER_PRESENT_RUNTIME_VALIDATION_REQUIRED",
+                "claim_boundary": (
+                    "Runtime availability, evidence quality and production readiness "
+                    "must be verified in the target environment."
+                ),
+            },
             "intelligence": {
                 "name": "HYBA Five-Form Intelligence",
                 "description": (
@@ -107,6 +127,32 @@ class NationalSecurityOffering:
             },
         }
 
+    def assess_with_toe(
+        self,
+        observation: Mapping[str, Any],
+        *,
+        tenant_id: str,
+        purpose: str,
+    ) -> dict[str, Any]:
+        """Run a TOE-backed advisory assessment after caller authorization.
+
+        The caller remains responsible for source authorization, data minimization,
+        classification, and purpose checks before submitting the observation.
+        This method never authorizes or executes a consequential action.
+        """
+        result = self.toe_adapter.assess(
+            observation,
+            tenant_id=tenant_id,
+            purpose=purpose,
+        )
+        status = str(result.get("status", "unavailable"))
+        # Never put observation contents into the audit log.
+        self.audit.add_entry(
+            f"HYBA_TOE_ASSESSMENT|{status}|{tenant_id}|{purpose}"
+        )
+        result["hyba_audit_integrity"] = self.audit.verify_integrity()
+        return result
+
     def _build_comparison(self) -> dict[str, Any]:
         """Return an evidence checklist, not unsupported competitor claims."""
         return {
@@ -135,6 +181,7 @@ class NationalSecurityOffering:
             "support: early warning, scenario analysis, defensive cyber risk, "
             "resilience planning and auditable recommendations.\n\n"
             "Consolidated architecture\n"
+            "- TOE provides the shared reasoning runtime and evidence/receipt substrate.\n"
             "- Five canonical intelligence forms: predictive, causal, "
             "counterfactual, topological and geometric.\n"
             "- Existing HYBA AL HARAS and L-HRAS governance and evidence paths.\n"
@@ -149,8 +196,8 @@ class NationalSecurityOffering:
             "- Production readiness, prediction quality, external integrations "
             "and security claims require reproducible evidence.\n\n"
             "Status\n"
-            "Architecture inventory only. This response does not provision "
-            "infrastructure or certify operational readiness."
+            "Architecture and adapter entrypoint only. This response does not "
+            "provision infrastructure or certify operational readiness."
         )
 
     def deploy(self) -> dict[str, Any]:
