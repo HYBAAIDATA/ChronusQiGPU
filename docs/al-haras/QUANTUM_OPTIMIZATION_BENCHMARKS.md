@@ -1,13 +1,16 @@
-# AL HARAS Quantum and Quantum-Inspired Optimization Benchmarks
+# HYBA Defensive Optimization Benchmarks
 
-Status: evaluation protocol proposal. No quantum speedup or production advantage
-is claimed by this document.
+Status: evaluation protocol proposal within HYBA consolidation. No quantum
+speedup or production advantage is claimed by this document.
 
 ## Research question
 
 Can a quantum-inspired or quantum-hardware optimizer select safer defensive
-action plans than strong classical baselines for representative AL HARAS
-problems, within operational latency and cost limits?
+action plans than strong classical baselines for representative HYBA national-
+security and critical-infrastructure workloads, within operational latency and
+cost limits? AL HARAS is the existing shared security/governance boundary, not
+a separate stack. The optimizer is subordinate to HYBA policy and has no
+authorization authority.
 
 ## Suitable defensive problem classes
 
@@ -39,8 +42,8 @@ coordination unless a specific quantum algorithm is demonstrated.
 
 ## Benchmark protocol
 
-1. Use sanitized, reproducible problem instances representative of customer
-   workflows; publish instance sizes and generation seeds.
+1. Use sanitized, reproducible problem instances representative of authorized
+   defensive workflows; publish instance sizes and generation seeds.
 2. Define objective and hard constraints before running the algorithms.
 3. Compare all methods on identical instances and quality requirements.
 4. Record best, median and worst objective value; feasibility rate; wall-clock
