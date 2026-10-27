@@ -232,7 +232,7 @@ class NationalSecurityOffering:
             "- Millennium Maths provides separately scoped, bounded mathematical probes.\n"
             "- Five canonical intelligence forms: predictive, causal, "
             "counterfactual, topological and geometric.\n"
-            "- Salamander provides governed anomaly detection, bounded recovery, verified rollback and measured self-optimization.\\n"
+            "- Salamander provides governed anomaly detection, bounded recovery, verified rollback and measured self-optimization.\n"
             "- Existing HYBA AL HARAS and L-HRAS governance and evidence paths.\n"
             "- Classical-first defensive optimization with experimental methods "
             "kept explicitly labelled.\n\n"
