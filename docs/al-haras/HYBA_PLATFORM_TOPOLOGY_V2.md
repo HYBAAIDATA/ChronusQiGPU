@@ -135,6 +135,8 @@ sources, stale events, duplicate events and unavailable services.
 
 ## Salamander: adaptive resilience and operational awareness
 
+The HYBA advisory bridge is `hermes.offerings.salamander_platform_adapter.SalamanderPlatformAdapter`, exposed through `NationalSecurityOffering.observe_with_salamander(...)`. It converts normalized telemetry into canonical `HealthObservation` values and calls the injected `AutonomicControlPlane.observe(...)`; it deliberately cannot construct an action registry or authorize/execute recovery. The real control plane must be injected with its existing AL HARAS authorization boundary.
+
 The canonical implementation is `salamander.control_plane.AutonomicControlPlane`
 with typed contracts in `salamander.models`. The integration contract is
 documented in
