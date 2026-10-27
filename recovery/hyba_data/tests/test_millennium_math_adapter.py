@@ -42,3 +42,31 @@ def test_millennium_api_validates_aggregate_problem_filter():
     result = api.run("aggregate", {"only": "riemann"})
     assert result["status"] == "unavailable"
     assert result["error"]["code"] == "invalid_parameter"
+
+
+def test_millennium_api_does_not_coerce_string_proof_claim_to_true(monkeypatch):
+    import json
+    import hermes.offerings.millennium_math_adapter as module
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self, limit):
+            return json.dumps({
+                "proof_claim": "true",
+                "evidence_class": "FINITE_PROBE",
+                "scope": "synthetic",
+            }).encode()
+
+    class FakeOpener:
+        def open(self, request, timeout):
+            return FakeResponse()
+
+    monkeypatch.setattr(module, "build_opener", lambda handler: FakeOpener())
+    result = MillenniumMathsAPI(base_url="https://maths.example.test").run("aggregate", {})
+    assert result["status"] == "available"
+    assert result["proof_claim"] is False
