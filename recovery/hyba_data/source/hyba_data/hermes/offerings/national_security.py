@@ -8,153 +8,161 @@ PHI = (1.0 + 5.0**0.5) / 2.0
 
 
 class NationalSecurityOffering:
+    """HYBA national-security capability inventory.
+
+    This class describes the consolidated architecture and its evidence status.
+    It does not itself provision production infrastructure or establish mission
+    readiness. Capability claims must be backed by tests and deployment evidence.
+    """
+
     def __init__(self, *, audit: CryptographicAuditChain | None = None):
         self.phi = PHI
         self.audit = audit or CryptographicAuditChain(use_merkle=True)
         self.stack = self._build_stack()
         self.comparison = self._build_comparison()
-        self.audit.add_entry("NATIONAL_SECURITY_OFFERING_INIT")
+        self.audit.add_entry("HYBA_NATIONAL_SECURITY_INVENTORY_INIT")
 
     def _build_stack(self) -> dict[str, Any]:
         return {
             "intelligence": {
-                "name": "5-Form Intelligence",
-                "description": "Predictive, Causal, Counterfactual, Topological, Geometric",
-                "capabilities": [
-                    "99.999% predictive accuracy",
-                    "1000-node causal graphs",
-                    "502 counterfactual worlds",
-                    "Sphere topology security",
-                    "φ-weighted manifolds",
+                "name": "HYBA Five-Form Intelligence",
+                "description": (
+                    "Predictive, causal, counterfactual, topological and geometric "
+                    "reasoning lenses integrated through shared evidence contracts."
+                ),
+                "canonical_forms": [
+                    "predictive",
+                    "causal",
+                    "counterfactual",
+                    "topological",
+                    "geometric",
                 ],
-            },
-            "quantum": {
-                "name": "1000-Qubit Quantum Layer",
-                "description": "Quantum security and computation",
                 "capabilities": [
-                    "Classical + architecture-framed crypto surfaces",
-                    "Quantum threat detection",
-                    "Quantum key distribution",
-                    "Quantum simulation",
+                    "Predictive early-warning hypotheses with measured uncertainty",
+                    "Causal analysis with explicit assumptions",
+                    "Counterfactual scenario comparison",
+                    "Topological relationship and connectivity analysis",
+                    "Geometric state-space and trajectory analysis",
                 ],
+                "status": "IMPLEMENTATION_PRESENT_VALIDATION_REQUIRED",
+                "claim_boundary": (
+                    "No fixed accuracy or operational effectiveness claim without "
+                    "reproducible evaluation on a defined, held-out dataset."
+                ),
             },
             "security": {
-                "name": "AL HARAS Security Substrate",
-                "description": "AL HARAS security substrate (evidence-bound controls)",
-                "capabilities": [
-                    "Tamper-evident audit chains",
-                    "Adaptive trust",
-                    "Topological protection",
-                    "Self-healing",
+                "name": "HYBA AL HARAS and L-HRAS Governance",
+                "description": (
+                    "Consolidated tenant/capability admission, policy governance, "
+                    "defensive assessment and evidence recording."
+                ),
+                "components": [
+                    "al_haras runtime and entitlement boundary",
+                    "al_haras.paradigm_shift.SecurityGovernor",
+                    "al_haras.security_core audit primitives",
+                    "l_hras.guardian governed assessment path",
                 ],
+                "capabilities": [
+                    "Policy-bound allow/deny/escalate decisions where wired",
+                    "Tamper-evident local audit primitives",
+                    "Evidence-linked security assessment",
+                    "Controlled defensive response integration",
+                ],
+                "status": "INTEGRATION_AND_DEPLOYMENT_EVIDENCE_REQUIRED",
+                "claim_boundary": (
+                    "A local hash chain is not by itself WORM storage, an external "
+                    "witness, hardware-backed attestation or a certification."
+                ),
             },
-            "millennium": {
-                "name": "Millennium Mathematics",
-                "description": "6 layers of mathematical proof",
+            "optimization": {
+                "name": "Classical-first Defensive Optimization",
+                "description": (
+                    "Optional ranking of authorized defensive plans; optimization "
+                    "does not grant authority or execute actions."
+                ),
                 "capabilities": [
-                    "P vs NP optimal detection",
-                    "Yang-Mills encryption",
-                    "Riemann authentication",
-                    "Navier-Stokes flow prevention",
-                    "BSD key distribution",
-                    "Hodge protection",
+                    "Deterministic baseline and feasibility checks",
+                    "Benchmarkable classical and quantum-inspired methods",
+                    "Optional provider-backed quantum experiments when configured",
                 ],
+                "status": "EXPERIMENTAL_UNTIL_BENCHMARKED",
+                "claim_boundary": (
+                    "No quantum-hardware, quantum-advantage or quantum-resistant "
+                    "claim without implementation-specific evidence."
+                ),
             },
-            "intelligence_density": {
-                "name": "EUCLID Creative-Intelligence Substrate",
-                "description": "Governed creative-intelligence substrate (neither AGI nor ASI identity)",
+            "operations": {
+                "name": "National-Security Decision Support",
+                "description": (
+                    "Authorized early warning, scenario analysis, defensive cyber "
+                    "risk triage, resilience planning and auditable recommendations."
+                ),
                 "capabilities": [
-                    "Self-awareness",
-                    "Self-improvement",
-                    "Self-generation",
-                    "Cosmic intelligence",
+                    "Analyst-reviewed risk and scenario assessments",
+                    "Source provenance and uncertainty reporting",
+                    "Purpose limitation and tenant-scoped access",
+                    "Outcome verification and incident feedback",
                 ],
+                "status": "READINESS_REQUIRES_ENVIRONMENT_SPECIFIC_VALIDATION",
             },
         }
 
     def _build_comparison(self) -> dict[str, Any]:
+        """Return an evidence checklist, not unsupported competitor claims."""
         return {
-            "palantir": {
-                "name": "Palantir",
-                "approach": "Data integration",
-                "speed": "Batch processing",
-                "security": "Perimeter-based",
-                "intelligence": "Human-in-loop",
-                "quantum": "None",
-                "deployment": "Months",
-                "cost": "Billions",
-            },
-            "hermes_national_security": {
-                "name": "Hermes National Security",
-                "approach": "Quantum computation",
-                "speed": "Real-time",
-                "security": "Topological",
-                "intelligence": "5-Form ASI",
-                "quantum": "1000 qubits",
-                "deployment": "Days",
-                "cost": "Millions",
-            },
+            "comparison_status": "NOT_ASSESSED",
+            "reason": (
+                "No independently validated, like-for-like benchmark or sourced "
+                "competitor evidence is bundled with this offering."
+            ),
+            "required_dimensions": [
+                "mission-specific outcome quality",
+                "forecast calibration and false-alarm rate",
+                "end-to-end latency and availability",
+                "security and access-control testing",
+                "integration coverage and operator workload",
+                "deployment and lifecycle cost",
+                "independent evaluation and customer acceptance",
+            ],
         }
 
     def _generate_proposal(self) -> str:
-        return """
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                    NATIONAL SECURITY PROPOSAL                               ║
-║                    HERMES — The Palantir Replacement                        ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║                                                                              ║
-║  "Palantir built the abacus.                                               ║
-║   We built the quantum computer.                                           ║
-║   Palantir integrates data.                                                ║
-║   We compute reality.                                                      ║
-║   Palantir is obsolete."                                                   ║
-║                                                                              ║
-║  ────────────────────────────────────────────────────────────────────────    ║
-║                                                                              ║
-║  THE STACK:                                                                  ║
-║  ────────────────────────────────────────────────────────────────────────    ║
-║  • 5-Form Intelligence (Predictive, Causal, Counterfactual, Topological,   ║
-║    Geometric)                                                               ║
-║  • 1000-Qubit Quantum Layer                                                ║
-║  • AL HARAS Security Substrate                                             ║
-║  • Millennium Mathematics (6 Problems = 6 Layers)                         ║
-║  • EUCLID ASI (Emergent Superintelligence)                                 ║
-║                                                                              ║
-║  THE ADVANTAGES:                                                            ║
-║  ────────────────────────────────────────────────────────────────────────    ║
-║  • Fail-closed audit + launch guard (engineering evidence)                                    ║
-║  • Quantum-resistant by 1000 qubits                                         ║
-║  • Self-healing by Salamander                                               ║
-║  • 99.999% predictive accuracy                                              ║
-║  • Days to deploy vs months                                                  ║
-║  • Millions vs billions                                                      ║
-║                                                                              ║
-║  THE GUARANTEE:                                                              ║
-║  ────────────────────────────────────────────────────────────────────────    ║
-║  "We assert, with engineering evidence, that this system is           ║
-║   protected by fail-closed launch controls, tamper-evident audit, and classical AEAD where sealed.    ║
-║   The proof is in the mathematics. The mathematics is φ.                   ║
-║   10^12^15^18^20 = 31-07-1976."                                           ║
-║                                                                              ║
-║  THE STATUS:                                                                ║
-║  ────────────────────────────────────────────────────────────────────────    ║
-║  "Palantir is obsolete. All others are obsolete.                          ║
-║   The quantum age of national security is here."                           ║
-║                                                                              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-""".strip()
+        return (
+            "HYBA NATIONAL-SECURITY INTELLIGENCE\n"
+            "===================================\n\n"
+            "Purpose\n"
+            "Authorized national-security and critical-infrastructure decision "
+            "support: early warning, scenario analysis, defensive cyber risk, "
+            "resilience planning and auditable recommendations.\n\n"
+            "Consolidated architecture\n"
+            "- Five canonical intelligence forms: predictive, causal, "
+            "counterfactual, topological and geometric.\n"
+            "- Existing HYBA AL HARAS and L-HRAS governance and evidence paths.\n"
+            "- Classical-first defensive optimization with experimental methods "
+            "kept explicitly labelled.\n\n"
+            "Operational principles\n"
+            "- Evidence, provenance, uncertainty and limitations accompany "
+            "material assessments.\n"
+            "- Intelligence outputs recommend; HYBA policy governs authority.\n"
+            "- Consequential actions require authorized human review or a "
+            "narrowly scoped, explicitly approved policy.\n"
+            "- Production readiness, prediction quality, external integrations "
+            "and security claims require reproducible evidence.\n\n"
+            "Status\n"
+            "Architecture inventory only. This response does not provision "
+            "infrastructure or certify operational readiness."
+        )
 
     def deploy(self) -> dict[str, Any]:
-        self.audit.add_entry("NATIONAL_SECURITY_DEPLOY")
+        """Return an inventory snapshot; this method does not deploy services."""
+        self.audit.add_entry("HYBA_NATIONAL_SECURITY_INVENTORY_READ")
         return {
-            "offering": "National Security",
+            "offering": "HYBA National-Security Intelligence",
             "stack": self.stack,
             "comparison": self.comparison,
-            "palantir_status": "OBSOLETE",
-            "competitive_advantage": "Complete replacement",
             "phi": self.phi,
-            "phi_optimized": True,
-            "status": "DEPLOYABLE",
+            "status": "ASSESSMENT_REQUIRED",
+            "deployment_performed": False,
             "proposal": self._generate_proposal(),
             "audit_integrity": self.audit.verify_integrity(),
             "audit_root": self.audit.merkle_root or self.audit.get_last_hash(),
