@@ -46,6 +46,11 @@ AL HARAS/L-HRAS authorization boundary. Its value must be established against
 conventional baselines; no cryptographic strength or detection improvement is
 inferred from the golden ratio itself.
 
+The consolidated transform inventory, capability map, test gates, and proposed
+sovereign/Five Eyes/NATO/UN deployment-profile contracts are documented in
+[HYBA Capability Map and Validation Plan](docs/HYBA_CAPABILITY_MAP_AND_VALIDATION_PLAN.md).
+These profiles are specifications, not claims of deployment, accreditation, or endorsement.
+
 ## Evidence-scoped readiness
 
 **Intelligence-led execution. Evidence-scoped readiness.**
