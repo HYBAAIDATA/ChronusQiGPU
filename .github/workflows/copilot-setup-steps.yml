@@ -28,4 +28,40 @@ jobs:
           python -m pip install --upgrade pip
           pip install "numpy>=1.26,<3"
           python --version
-          python -c "from hyba_mcp.server import HybaMCPServer; s=HybaMCPServer(); print(s.handle_request({'jsonrpc':'2.0','id':1,'method':'tools/list','params':{}}))"
+          python - <<'PY'
+          import json
+          import subprocess
+          import sys
+
+          from hyba_mcp.server import HybaMCPServer
+
+          request = {"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}
+          hyba = HybaMCPServer().handle_request(request)
+          assert len(hyba["result"]["tools"]) == 11, hyba
+          print("HYBA tools/list: 11 tools")
+
+          initialize = {
+              "jsonrpc": "2.0", "id": 0, "method": "initialize",
+              "params": {"protocolVersion": "2026-07-28", "capabilities": {}},
+          }
+          process = subprocess.run(
+              [sys.executable, "-m", "mcp.cogito.server"],
+              input=json.dumps(initialize) + "\n" + json.dumps(request) + "\n",
+              text=True, capture_output=True, check=True, timeout=30,
+          )
+          handshake, cogito = [json.loads(line) for line in process.stdout.splitlines()]
+          assert handshake["result"] == {
+              "protocolVersion": "2026-07-28",
+              "capabilities": {"tools": {"listChanged": False}},
+              "serverInfo": {"name": "cogito", "version": "0.1.0"},
+          }, handshake
+          print("Cogito initialize:", json.dumps(handshake))
+          tools = cogito["result"]["tools"]
+          expected = {
+              "represent", "model", "identify", "intervene", "counterfactual",
+              "evaluate_futures", "uncertainty", "plan", "request_information",
+              "explain", "revise", "run",
+          }
+          assert len(tools) == 12 and {tool["name"] for tool in tools} == expected, cogito
+          print("Cogito tools/list: 12 capabilities:", ", ".join(tool["name"] for tool in tools))
+          PY
