@@ -79,3 +79,47 @@ def test_invalid_tenant_is_rejected_before_control_plane_call():
     assert result["status"] == "unavailable"
     assert result["error"]["code"] == "invalid_tenant"
     assert control_plane.calls == []
+
+
+class BaselineControlPlane(FakeControlPlane):
+    def regression(self, metric, measured):
+        if metric != "api.latency_ms":
+            raise RuntimeError("baseline unavailable")
+        return measured > 200.0
+
+
+def test_salamander_bridge_reports_configured_baseline_regression_without_actuation():
+    result = SalamanderPlatformAdapter(BaselineControlPlane()).observe(
+        [{
+            "subsystem": "api",
+            "dimension": "latency",
+            "availability": "MEASURED",
+            "value": 350.0,
+            "metric_key": "api.latency_ms",
+        }],
+        tenant_id="tenant-a",
+    )
+    assert result["status"] == "available"
+    assert result["anomaly_status"] == "detected"
+    assert result["anomalies"] == [{
+        "metric_key": "api.latency_ms",
+        "status": "anomaly",
+    }]
+    assert result["action_authorized"] is False
+    assert result["actuation_performed"] is False
+
+
+def test_salamander_bridge_does_not_call_missing_baseline_healthy():
+    result = SalamanderPlatformAdapter(BaselineControlPlane()).observe(
+        [{
+            "subsystem": "api",
+            "dimension": "latency",
+            "availability": "MEASURED",
+            "value": 350.0,
+            "metric_key": "unknown.metric",
+        }],
+        tenant_id="tenant-a",
+    )
+    assert result["status"] == "available"
+    assert result["anomaly_status"] == "unavailable"
+    assert result["baseline_checks"][0]["status"] == "unavailable"
