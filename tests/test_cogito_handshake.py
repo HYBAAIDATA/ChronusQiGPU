@@ -1,11 +1,13 @@
 """Regression coverage for Cogito's initialize and stateless MCP surface."""
 
+import hashlib
 import io
 import json
 
 import pytest
 
 from mcp.cogito import server
+from toe.problem import Problem
 
 
 @pytest.fixture
@@ -94,3 +96,48 @@ def test_unknown_capability_returns_error(cogito_request):
 def test_unknown_capability_raises():
     with pytest.raises(ValueError, match="unknown TOE capability 'unknown'"):
         server.TOECapabilityAdapter().invoke("unknown", {})
+
+
+@pytest.mark.parametrize("capability", server.CAPABILITIES)
+def test_capabilities_accept_empty_json_problem(cogito_request, capability):
+    extra = {
+        "intervene": {"action": {}},
+        "counterfactual": {"action": {}, "outcomes": []},
+        "revise": {"observed": {}},
+    }.get(capability, {})
+    response = cogito_request(
+        "tools/call",
+        {"name": capability, "arguments": {"problem": {}, "args": extra}},
+    )
+    assert "error" not in response
+    envelope = json.loads(response["result"]["content"][0]["text"])
+    assert envelope["capability"] == capability
+    assert envelope["truth_class"] in {"ACT", "ACQUIRE_EVIDENCE", "REFUSED"}
+    assert envelope["theorem_proven"] is False
+    assert len(envelope["evidence"]["problem_digest"]) == 64
+    assert len(envelope["evidence"]["result_digest"]) == 64
+    result_json = json.dumps(envelope["result"], sort_keys=True, separators=(",", ":"))
+    assert envelope["evidence"]["result_digest"] == hashlib.sha256(result_json.encode()).hexdigest()
+    if capability == "represent":
+        assert envelope["truth_class"] in {"ACT", "ACQUIRE_EVIDENCE"}
+    if capability == "revise":
+        assert envelope["truth_class"] == "REFUSED"
+        assert envelope["result"]["error"]["code"] == "unknown_episode"
+
+
+def test_represent_json_problem_preserves_identity(cogito_request):
+    problem = Problem(domain="test.json", observation=[1, 2, 3])
+    response = cogito_request(
+        "tools/call",
+        {
+            "name": "represent",
+            "arguments": {"problem": {"domain": problem.domain, **problem.content()}},
+        },
+    )
+    assert "error" not in response
+    envelope = json.loads(response["result"]["content"][0]["text"])
+    assert envelope["evidence"]["problem_digest"] == problem.digest()
+    assert (
+        envelope["result"]["_state"]["observation_sha256"]
+        == envelope["result"]["observation_sha256"]
+    )

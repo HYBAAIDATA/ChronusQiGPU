@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from euclid.cognition.toe_capabilities import CAPABILITIES, TOECapabilityAdapter
@@ -14,8 +16,12 @@ def adapter():
     return TOECapabilityAdapter(evidence=EvidenceChain())
 
 
-def test_every_capability_is_callable_and_evidence_chained(adapter):
+@pytest.mark.parametrize("json_input", [False, True])
+def test_every_capability_is_callable_and_evidence_chained(adapter, json_input):
     p = voyage_problem()
+    expected_digest = p.digest()
+    if json_input:
+        p = json.loads(json.dumps({"domain": p.domain, **p.content()}))
     answers = {
         "represent": adapter.invoke("represent", p),
         "model": adapter.invoke("model", p),
@@ -34,15 +40,19 @@ def test_every_capability_is_callable_and_evidence_chained(adapter):
     assert answers["run"]["result"]["status"] == "ACQUIRE_EVIDENCE"
     assert answers["counterfactual"]["result"].get("available") is False  # no factual y: refused
     assert all(a["result"] for a in answers.values())
+    assert all(a["evidence"]["problem_digest"] == expected_digest for a in answers.values())
     kinds = [r.kind for r in adapter.evidence.records]
     assert kinds.count("toe-capability") == len(answers)
     adapter.evidence.verify()
     assert set(CAPABILITIES) - set(answers) == {"revise"}
 
 
-def test_euclid_driven_learning_changes_the_next_toe_answer(adapter):
+@pytest.mark.parametrize("json_input", [False, True])
+def test_euclid_driven_learning_changes_the_next_toe_answer(adapter, json_input):
     first = adapter.invoke("run", voyage_problem())
     episode = first["result"]["episode_sha256"]
+    if json_input:
+        episode = {"episode_sha256": episode}
     observed = simulated_world(first["result"]["recommendation"]["interventions"], n=6, seed=101)
     revised = adapter.invoke("revise", episode, observed)
     assert revised["result"]["revision"] is not None
