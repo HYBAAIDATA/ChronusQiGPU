@@ -1,6 +1,9 @@
 """Focused tests for the read-only HYBA repository context tools."""
 
 import json
+import hashlib
+
+import pytest
 
 import hyba_mcp.hyba_context as context_tools
 from hyba_mcp.server import HybaMCPServer, TOOLS
@@ -22,8 +25,61 @@ def test_context_ranks_previews_and_digest_deterministically(tmp_path, monkeypat
     assert result["evidence_digest"] == repeated["evidence_digest"]
     assert result["theorem_proven"] is False
     assert result["sovereignty"] == "HYBA_SOVEREIGN_CNS"
+    assert result["budget"]["within_limit"]
+    assert result["budget"]["effective_bytes"] == result["budget"]["indexed_bytes"]
+    assert result["source_scope"] == "current_repository"
     short_preview = context_tools.hyba_context("only", max_files=1, max_chars_per_file=1)
     assert len(short_preview["files"][0]["preview"]) <= 1
+
+
+def test_context_snaps_budget_without_exceeding_requested_or_tier_limit():
+    budget = context_tools.resolve_context_budget("T0", 128 * 1024)
+    assert budget["requested_bytes"] == 128 * 1024
+    assert budget["effective_limit_bytes"] == 131070
+    assert budget["effective_limit_bytes"] <= budget["requested_bytes"]
+
+    with pytest.raises(ValueError, match="budget_bytes"):
+        context_tools.resolve_context_budget("T0", 1_000_000)
+
+
+def test_context_tiles_are_budgeted_digest_bound_and_resumable(tmp_path, monkeypatch):
+    first_tile = b"lucas" + b"a" * (context_tools.CONTEXT_TILE_BYTES - 5)
+    (tmp_path / "alpha.txt").write_bytes(first_tile + b"x" * context_tools.CONTEXT_TILE_BYTES)
+    (tmp_path / "beta.txt").write_bytes(b"lucas beta")
+    monkeypatch.setattr(context_tools, "REPO_ROOT", str(tmp_path))
+
+    first = context_tools.hyba_context("lucas", max_files=1, budget_bytes=20_000, tier="T1")
+    second = context_tools.hyba_context(
+        "lucas",
+        max_files=1,
+        budget_bytes=20_000,
+        tier="T1",
+        cursor=first["page"]["next_cursor"],
+    )
+
+    assert first["files"][0]["path"] == "alpha.txt"
+    assert first["files"][0]["sha256"] == hashlib.sha256(first_tile).hexdigest()
+    assert first["budget"]["effective_bytes"] == context_tools.CONTEXT_TILE_BYTES
+    assert first["budget"]["effective_bytes"] <= first["budget"]["effective_limit_bytes"]
+    assert sum(tile["bytes"] for tile in first["tiles"]) == first["budget"]["effective_bytes"]
+    serialized_tiles = b"".join(
+        json.dumps(tile, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        for tile in first["tiles"]
+    )
+    assert hashlib.sha256(serialized_tiles).hexdigest() == first["budget"]["index_digest"]
+    assert first["page"]["has_more"]
+    assert second["files"][0]["path"] == "beta.txt"
+    assert second["page"]["has_more"] is False
+    assert second["budget"]["within_limit"]
+    assert (
+        context_tools._evidence_digest(
+            {key: value for key, value in first.items() if key != "evidence_digest"}
+        )
+        == first["evidence_digest"]
+    )
+
+    with pytest.raises(ValueError, match="cursor"):
+        context_tools.hyba_context("different query", cursor=first["page"]["next_cursor"])
 
 
 def test_verify_requires_an_exact_byte_match_and_reports_line(tmp_path, monkeypatch):
@@ -52,7 +108,9 @@ def test_verify_rejects_paths_outside_repository(tmp_path, monkeypatch):
     assert context_tools._safe_join(str(tmp_path), "../evidence.txt") is None
 
 
-def test_server_registers_and_executes_both_tools():
+def test_server_registers_and_executes_both_tools(tmp_path, monkeypatch):
+    (tmp_path / "context.txt").write_text("TOOLS_PATCH context", encoding="utf-8")
+    monkeypatch.setattr(context_tools, "REPO_ROOT", str(tmp_path))
     server = HybaMCPServer()
     server.handle_request(
         {
@@ -86,3 +144,9 @@ def test_server_registers_and_executes_both_tools():
     context_result = json.loads(context_response["result"]["content"][0]["text"])
     assert context_result["files"]
     assert context_result["theorem_proven"] is False
+
+
+def test_server_enforces_context_tier_budget_through_control_plane():
+    server = HybaMCPServer()
+    with pytest.raises(ValueError, match="budget_bytes"):
+        server.execute_tool("hyba_context", {"query": "lucas", "budget_bytes": 1_000_000})

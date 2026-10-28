@@ -65,6 +65,21 @@ envelopes; `*_after` fields are modeled values, not measurements of
 intelligence, consciousness, performance, or theorem completion. See the tool
 schema and `scale_intelligence` implementation for exact affinity keywords.
 
+`hyba_context` defaults to tier T0 (128 KiB) and accepts T1 (1,000,000 bytes),
+T2 (5,000,000 bytes), and T3 (10,000,000 bytes). `budget_bytes` may lower but
+not exceed its tier ceiling. The limit is snapped down to a Lucas ladder
+capacity and never raised above the request. Each call indexes deterministic
+4 KiB content tiles up to that effective limit; `budget.effective_bytes` reports
+content bytes actually read, with per-tile SHA-256 values, an index digest, and
+the response evidence digest. `page.next_cursor` resumes at the next tile and
+is bound to the exact query. Matching is deterministic lexical scoring; no
+training prior is used.
+
+The current provider reads only the checked-out repository. T2/T3 expose their
+requested scope labels and higher byte ceilings, but do not imply that
+organization repositories or repository history are available; responses name
+the actual `source_scope`.
+
 ## Run
 
 Install the repository and declared dependencies first (see
