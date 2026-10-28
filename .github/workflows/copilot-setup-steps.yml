@@ -44,12 +44,18 @@ jobs:
               "jsonrpc": "2.0", "id": 0, "method": "initialize",
               "params": {"protocolVersion": "2026-07-28", "capabilities": {}},
           }
+          represent = {
+              "jsonrpc": "2.0", "id": 2, "method": "tools/call",
+              "params": {"name": "represent", "arguments": {"problem": {}}},
+          }
           process = subprocess.run(
               [sys.executable, "-m", "mcp.cogito.server"],
-              input=json.dumps(initialize) + "\n" + json.dumps(request) + "\n",
+              input="\n".join(map(json.dumps, [initialize, request, represent])) + "\n",
               text=True, capture_output=True, check=True, timeout=30,
           )
-          handshake, cogito = [json.loads(line) for line in process.stdout.splitlines()]
+          handshake, cogito, represented = [
+              json.loads(line) for line in process.stdout.splitlines()
+          ]
           assert handshake["result"] == {
               "protocolVersion": "2026-07-28",
               "capabilities": {"tools": {"listChanged": False}},
@@ -64,4 +70,9 @@ jobs:
           }
           assert len(tools) == 12 and {tool["name"] for tool in tools} == expected, cogito
           print("Cogito tools/list: 12 capabilities:", ", ".join(tool["name"] for tool in tools))
+          assert "error" not in represented, represented
+          envelope = json.loads(represented["result"]["content"][0]["text"])
+          assert envelope["truth_class"] in {"ACT", "ACQUIRE_EVIDENCE"}, envelope
+          assert envelope["theorem_proven"] is False, envelope
+          print("Cogito represent:", envelope["truth_class"])
           PY
