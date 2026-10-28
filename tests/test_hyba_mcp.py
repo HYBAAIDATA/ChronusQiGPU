@@ -40,16 +40,19 @@ class TestHybaMCPServer:
             "params": {},
         })
         tools = {t["name"]: t for t in resp["result"]["tools"]}
-        assert "lucas" in tools
-        assert "fibonacci" in tools
-        assert "cassini" in tools
-        assert "zeckendorf" in tools
-        assert "ladder_verify" in tools
-        assert "ladder_capacity" in tools
-        assert "largest_feasible_tile" in tools
-        assert "sha256d_verify" in tools
-        assert "scale_intelligence" in tools
-        assert len(tools) == 9
+        exact_math_tools = {
+            "lucas",
+            "fibonacci",
+            "cassini",
+            "zeckendorf",
+            "ladder_verify",
+            "ladder_capacity",
+            "largest_feasible_tile",
+            "sha256d_verify",
+            "scale_intelligence",
+        }
+        assert exact_math_tools <= tools.keys()
+        assert len(tools) == len(exact_math_tools) + 2 + 5
 
     def test_lucas_15_and_20_tool_calls_hold_cassini_invariant(self) -> None:
         server = HybaMCPServer()
@@ -103,7 +106,18 @@ class TestHybaMCPClient:
         assert session.session_id is not None
 
         tools = client.list_tools()
-        assert len(tools) == 9
+        tool_names = {tool["name"] for tool in tools}
+        assert {
+            "lucas",
+            "fibonacci",
+            "cassini",
+            "zeckendorf",
+            "ladder_verify",
+            "ladder_capacity",
+            "largest_feasible_tile",
+            "sha256d_verify",
+            "scale_intelligence",
+        } <= tool_names
 
         res = client.call_tool("zeckendorf", {"n": 1364})
         assert res["valid"] is True

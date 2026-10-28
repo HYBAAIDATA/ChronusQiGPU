@@ -63,8 +63,10 @@ def test_server_registers_and_executes_both_tools():
     listing = server.handle_request(
         {"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}
     )
-    assert len(listing["result"]["tools"]) == 11
+    names = {tool["name"] for tool in listing["result"]["tools"]}
     assert {"hyba_context", "hyba_verify"} <= set(TOOLS)
+    assert {"hyba_context", "hyba_verify"} <= names
+    assert len(names) == 16
 
     context_response = server.handle_request(
         {

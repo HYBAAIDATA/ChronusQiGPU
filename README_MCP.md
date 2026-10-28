@@ -1,5 +1,16 @@
 # HYBA Sovereign Model Context Protocol (MCP) Suite
 
+The MCP exposes two distinct capability tiers:
+
+1. **Exact-math tools** — deterministic Lucas/Fibonacci, Cassini, Zeckendorf,
+   SHA256d, and scale operations.
+2. **Expert skills** — governed, advisory EUCLID/TOE/SALAMANDER capabilities
+   with explicit contracts, permission checks, audit, and bounded execution.
+   Skill output does not grant proof, consensus, or execution authority.
+
+See [the skill reference](docs/SKILLS_REFERENCE.md), [architecture](docs/SKILLS_ARCHITECTURE.md),
+[deployment guide](docs/SKILLS_DEPLOYMENT.md), and [examples](docs/SKILLS_EXAMPLES.md).
+
 ## Sovereignty & Crediting Doctrine (Mandatory)
 
 HYBA MCP is a sovereign tool and exact-mathematical-kernel interface.
@@ -16,7 +27,8 @@ HYBA MCP is a sovereign tool and exact-mathematical-kernel interface.
 ## Architectural Components
 
 1. **`hyba_mcp` (Production Package)**:
-   - `hyba_mcp.server`: Model Context Protocol server exposing nine tools:
+   - `hyba_mcp.server`: Model Context Protocol server exposing exact-math,
+     scaling, repository-context, and governed skill tools:
      - `lucas`: Exact fast-doubling Lucas numbers ($L_n$) with Cassini witness.
      - `fibonacci`: Exact fast-doubling Fibonacci numbers ($F_n$).
      - `cassini`: Exact $L_n^2 - 5 F_n^2 = 4(-1)^n$ certificate.
@@ -25,8 +37,15 @@ HYBA MCP is a sovereign tool and exact-mathematical-kernel interface.
      - `ladder_capacity`: Exact envelope and capacity snapping.
      - `largest_feasible_tile`: Power-of-two work tiling under alignment.
      - `sha256d_verify`: Independent double-SHA256 evaluation against uint256 targets.
+     - `discover_skills`: list governed expert capabilities.
+     - `get_skill`: retrieve a skill contract, examples, and limitations.
+     - `validate_inputs`: preflight a skill's argument schema.
+     - `invoke_skill`: invoke through permission, budget, audit, and sandbox gates.
+     - `evaluate_skill_outcome`: submit an authorized outcome for evaluation tracking.
      - `scale_intelligence`: Stateless Lucas scale selection and modeled metrics,
        requiring `Intelligence.lucas_scaler` and its dependencies.
+      - `hyba_context`: find deterministic repository context for a query.
+      - `hyba_verify`: verify exact phrases in repository files.
    - `hyba_mcp.client`: Session-managed client providing SHA-256 digests and
     HMAC-SHA256 authenticated evidence packs.
 2. **`mcp/` & `.mcp.json`**:

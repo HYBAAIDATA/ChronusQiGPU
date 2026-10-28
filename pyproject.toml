@@ -124,6 +124,7 @@ py-modules = [
 
 [tool.setuptools.package-data]
 Intelligence = ["py.typed", "skills/**/SKILL.md", "skills/**/PROVENANCE.json", "skills/**/*.json"]
+"hyba_mcp" = ["skills/*.py"]
 reports = ["*.json", "*.md"]
 "chronus.mla1517" = ["seeds/*.yaml"]
 aethel = ["py.typed", "*.md", "capabilities.json"]
