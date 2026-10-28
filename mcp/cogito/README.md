@@ -20,6 +20,18 @@ Every tool result is an envelope:
 
 Agents inherit the honesty. Flattening is disallowed.
 
+## JSON inputs
+
+Pass `problem` as a JSON object containing TOE `Problem.content()` fields and an
+optional `domain` label (default: `cogito`). Nested structures, operators,
+objectives and constraints use the canonical TOE content format. Capability
+parameters go in `args`, such as `{"action": {"x": 1}}` for `intervene`.
+
+A minimal call is `{"name": "represent", "arguments": {"problem": {}}}`.
+For `revise`, pass `problem: {"episode_sha256": "<digest from run>"}` and
+`args: {"observed": ...}`; learning remains bound to an episode previously
+solved by this server's tenant.
+
 ## Registration
 
 ```json

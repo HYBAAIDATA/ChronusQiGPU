@@ -1,17 +1,30 @@
 #!/usr/bin/env python3
-"""Bounded local stdio MCP server for HYBA mathematical and hash tools."""
+"""Bounded local stdio MCP server for HYBA mathematical and governed tools."""
 
 from __future__ import annotations
 
 import json
+import logging
 import math
 import re
 import sys
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
+
+from .control_plane import ControlPlane
+from .skills import discover_skills, get_skill_module
+
+from .hyba_context import EXECUTE_PATCH, TOOLS_PATCH
 
 PROTOCOL_VERSION = "2024-11-05"
-STANDARD_PROTOCOL_VERSIONS = {PROTOCOL_VERSION}
+SERVER_INFO = {
+    "name": "hyba-mcp-server",
+    "version": "2.0.0",
+    "sovereignty": "HYBA_SOVEREIGN_CNS",
+    "narrow_ai_credit": "NONE_FORBIDDEN",
+}
+STANDARD_PROTOCOL_VERSIONS = {PROTOCOL_VERSION, "2024-10-07", "2026-07-28"}
 MAX_SEQUENCE_INDEX = 10_000
+MAX_N = MAX_SEQUENCE_INDEX
 MAX_INTEGER_ARGUMENT = (1 << 63) - 1
 MAX_PAYLOAD_BYTES = 1_048_576
 MAX_REQUEST_BYTES = 2 * MAX_PAYLOAD_BYTES + 65_536
@@ -33,7 +46,55 @@ except ImportError:
     from chronus.mla1517.mining.pow import compact_target, sha256d
 
 
+try:
+    from Intelligence.lucas_scaler import LucasIntelligenceScaler
+except ImportError:
+    LucasIntelligenceScaler = None
+    logging.getLogger(__name__).warning(
+        "scale_intelligence unavailable: install the Intelligence.lucas_scaler dependencies"
+    )
+
+
+def validate_arguments(name: str, arguments: Mapping[str, Any]) -> None:
+    """Enforce advertised types and limits before invoking any kernel."""
+    if name not in TOOLS:
+        raise ValueError(f"Unknown HYBA MCP tool: {name}")
+    if not isinstance(arguments, Mapping):
+        raise ValueError("tool arguments must be an object")
+    schema = TOOLS[name]["inputSchema"]
+    properties = schema.get("properties", {})
+    if schema.get("additionalProperties") is False and arguments.keys() - properties.keys():
+        raise ValueError("arguments contain unsupported fields")
+    for key in schema.get("required", []):
+        if key not in arguments:
+            raise ValueError(f"missing required argument: {key}")
+    for key, spec in properties.items():
+        if key not in arguments:
+            continue
+        value = arguments[key]
+        kind = spec["type"]
+        if (
+            (kind == "integer" and type(value) is not int)
+            or (kind == "number" and type(value) not in (int, float))
+            or (kind == "string" and not isinstance(value, str))
+            or (kind == "object" and not isinstance(value, Mapping))
+            or (kind == "array" and not isinstance(value, list))
+        ):
+            raise ValueError(f"{key} must be a {kind}")
+        if kind == "number" and isinstance(value, float) and not math.isfinite(value):
+            raise ValueError(f"{key} must be finite")
+        if "minimum" in spec and value < spec["minimum"]:
+            raise ValueError(f"{key} must be >= {spec['minimum']}")
+        if "maximum" in spec and value > spec["maximum"]:
+            raise ValueError(f"{key} must be <= {spec['maximum']}")
+        if "enum" in spec and value not in spec["enum"]:
+            raise ValueError(f"{key} must be one of {spec['enum']}")
+        if kind == "string" and "maxLength" in spec and len(value) > spec["maxLength"]:
+            raise ValueError(f"{key} exceeds the maximum length")
+
+
 def cassini_witness(n: int) -> dict[str, Any]:
+    validate_arguments("cassini", {"n": n})
     f = fibonacci(n)
     l = lucas(n)
     left = l * l - 5 * f * f
@@ -50,8 +111,7 @@ def cassini_witness(n: int) -> dict[str, Any]:
 
 
 def zeckendorf(n: int) -> dict[str, Any]:
-    if n < 0:
-        raise ValueError("n must be non-negative")
+    validate_arguments("zeckendorf", {"n": n})
     if n == 0:
         return {
             "n": 0,
@@ -311,32 +371,155 @@ TOOLS: dict[str, dict[str, Any]] = {
         },
     },
     "scale_intelligence": {
-        "description": "Adjust or query Lucas intelligence scale (L_10 to L_31) dynamically based on task parameters.",
+        "description": (
+            "Stateless Lucas intelligence scale selection (L_10 to L_31). "
+            "Requires Intelligence.lucas_scaler; returned *_after values are modeled, not measured."
+        ),
+        "_meta": {
+            "hyba/status": "available" if LucasIntelligenceScaler is not None else "unavailable",
+            "hyba/dependency": "Intelligence.lucas_scaler",
+        },
         "inputSchema": {
             "type": "object",
             "properties": {
-                "target_rung": {"type": "integer", "enum": [10, 12, 15, 18, 20, 31]},
-                "task_type": {"type": "string", "maxLength": MAX_TASK_TYPE_LENGTH},
-                "complexity": {"type": "number", "minimum": 0.0, "maximum": 1.0},
-                "step_direction": {"type": "string", "enum": ["up", "down", "hold"]},
+                "target_rung": {
+                    "type": "integer",
+                    "enum": [10, 12, 15, 18, 20, 31],
+                    "default": 31,
+                    "description": "Starting rung for this call; not persistent state.",
+                },
+                "task_type": {
+                    "type": "string",
+                    "maxLength": MAX_TASK_TYPE_LENGTH,
+                    "description": (
+                        "Free-form, case-insensitive affinity substrings; highest match wins. "
+                        "See README_MCP.md for the full keyword table."
+                    ),
+                },
+                "complexity": {
+                    "type": "number",
+                    "minimum": 0.0,
+                    "maximum": 1.0,
+                    "description": (
+                        "Finite demand; thresholds .15/.35/.55/.75/.90 select "
+                        "10/12/15/18/20/31. Higher keyword demand wins."
+                    ),
+                },
+                "step_direction": {
+                    "type": "string",
+                    "enum": ["up", "down", "hold"],
+                    "description": (
+                        "One clamped step, overriding task adaptation; hold preserves starting rung."
+                    ),
+                },
             },
             "additionalProperties": False,
         },
     },
+    "discover_skills": {
+        "description": "List governed expert capabilities and their JSON contracts.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    "get_skill": {
+        "description": "Return one expert skill contract, examples, and limitations.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"skill_id": {"type": "string"}},
+            "required": ["skill_id"],
+        },
+    },
+    "invoke_skill": {
+        "description": "Invoke one advisory skill through permission, budget, audit, and sandbox gates.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "skill_id": {"type": "string"},
+                "arguments": {"type": "object"},
+                "options": {"type": "object"},
+            },
+            "required": ["skill_id", "arguments"],
+        },
+    },
+    "validate_inputs": {
+        "description": "Validate arguments against one registered skill input contract.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "skill_id": {"type": "string"},
+                "arguments": {"type": "object"},
+            },
+            "required": ["skill_id", "arguments"],
+        },
+    },
+    "evaluate_skill_outcome": {
+        "description": "Record an authorized skill outcome for regression and calibration tracking.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "skill_id": {"type": "string"},
+                "outcome": {"type": "object"},
+                "options": {"type": "object"},
+            },
+            "required": ["skill_id", "outcome"],
+        },
+    },
 }
+TOOLS.update(TOOLS_PATCH)
 
 
 class HybaMCPServer:
-    """Line-oriented stdio MCP server exposing bounded HYBA exact tools."""
+    """Production Model Context Protocol server exposing exact and governed tools."""
 
-    def __init__(self, name: str = "hyba-mcp-server", version: str = "1.0.0") -> None:
+    def __init__(
+        self,
+        name: str = "hyba-mcp-server",
+        version: str = "2.0.0",
+        control_plane: ControlPlane | None = None,
+        identity_provider: Callable[[], str | None] | None = None,
+    ) -> None:
         self.name = name
         self.version = version
+        self.control_plane = control_plane or ControlPlane()
+        self.identity_provider = identity_provider
         self._initialized = False
         self._ready = False
 
+    def _trusted_identity(self) -> str:
+        if self.identity_provider is None:
+            return ""
+        try:
+            identity = self.identity_provider()
+        except Exception:
+            return ""
+        return identity.strip() if isinstance(identity, str) else ""
+
     def execute_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-        arguments = _validated_arguments(name, arguments)
+        """Execute validated tools, retaining exact-kernel and proof boundaries.
+
+        scale_intelligence is stateless: target_rung defaults to 31. An up/down
+        step takes precedence over adaptation; hold queries the initial rung.
+        Otherwise task_type matches case-insensitive affinity substrings and
+        finite complexity in [0, 1] selects rungs at .15/.35/.55/.75/.90.
+        The higher keyword/complexity demand wins. See README_MCP.md for keywords.
+        Envelope fields describe configured manifold/context/reflection limits;
+        *_after fields model scaling from fixed 0.5 baselines, not measurements
+        of consciousness, intelligence, performance, or theorem completion.
+        Missing scaler dependencies fail closed without disabling exact tools.
+        """
+        if name in {
+            "lucas",
+            "fibonacci",
+            "cassini",
+            "zeckendorf",
+            "ladder_verify",
+            "ladder_capacity",
+            "largest_feasible_tile",
+            "sha256d_verify",
+            "scale_intelligence",
+        }:
+            arguments = _validated_arguments(name, arguments)
+        else:
+            validate_arguments(name, arguments)
         if name == "lucas":
             n = arguments["n"]
             return {"L_n": lucas(n), **cassini_witness(n)}
@@ -377,18 +560,21 @@ class HybaMCPServer:
                 result["meets_target"] = digest_int <= target
             return result
         if name == "scale_intelligence":
-            from Intelligence.lucas_scaler import LucasIntelligenceScaler
-
+            if LucasIntelligenceScaler is None:
+                raise RuntimeError(
+                    "scale_intelligence unavailable: Intelligence.lucas_scaler "
+                    "or its dependencies are not installed"
+                )
             target_rung = arguments.get("target_rung")
             scaler = LucasIntelligenceScaler(
-                initial_scale=target_rung if target_rung is not None else 31
+                initial_scale=int(target_rung) if target_rung is not None else 31
             )
             step = arguments.get("step_direction")
             if step == "up":
                 scaler.scale_up()
             elif step == "down":
                 scaler.scale_down()
-            elif "task_type" in arguments or "complexity" in arguments:
+            elif step != "hold" and ("task_type" in arguments or "complexity" in arguments):
                 scaler.scale_for_task(
                     task_type=arguments.get("task_type"),
                     complexity=arguments.get("complexity"),
@@ -410,6 +596,63 @@ class HybaMCPServer:
                 "consciousness_after": scale_res.consciousness_after,
                 "sovereign_doctrine": "Zero credit to narrow AI; ingested tools and templates adapted into EUCLID substrate.",
             }
+        if name == "discover_skills":
+            return {"skills": discover_skills()}
+        if name == "get_skill":
+            skill_id = str(arguments["skill_id"])
+            module = get_skill_module(skill_id)
+            return {
+                "skill_id": skill_id,
+                "title": module.TITLE,
+                "source": module.SOURCE,
+                "input_schema": module.INPUT_SCHEMA,
+                "output_schema": module.OUTPUT_SCHEMA,
+                "cost_estimate": module.COST_ESTIMATE,
+                "risk_level": module.RISK_LEVEL,
+                "time_estimate_seconds": module.TIME_ESTIMATE,
+                "examples": list(module.EXAMPLES),
+                "limitations": list(module.LIMITATIONS),
+            }
+        if name == "validate_inputs":
+            return self.control_plane.validate_inputs(
+                str(arguments["skill_id"]), arguments["arguments"]
+            )
+        if name == "invoke_skill":
+            options = arguments.get("options") or {}
+            identity = self._trusted_identity()
+            return self.control_plane.invoke_skill(
+                identity,
+                str(arguments["skill_id"]),
+                arguments["arguments"],
+                options=options,
+            )
+        if name == "evaluate_skill_outcome":
+            skill_id = str(arguments["skill_id"])
+            outcome = arguments["outcome"]
+            identity = self._trusted_identity()
+            allowed, reason, audit_record = self.control_plane.check_permission(
+                identity, skill_id, outcome
+            )
+            if not allowed:
+                return {
+                    "ok": False,
+                    "error": {"code": "permission_denied", "message": reason},
+                    "audit_record": audit_record,
+                }
+            try:
+                summary = self.control_plane.record_outcome(
+                    skill_id,
+                    outcome.get("inputs", {}),
+                    outcome.get("outputs", {}),
+                    float(outcome.get("latency", 0.0)),
+                    outcome.get("success") is True,
+                    identity=identity,
+                )
+            except (TypeError, ValueError, OSError) as exc:
+                return {"ok": False, "error": {"code": "invalid_outcome", "message": str(exc)}}
+            return {"ok": True, "summary": summary, "audit_record": audit_record}
+        if name in EXECUTE_PATCH:
+            return EXECUTE_PATCH[name](**arguments)
         raise ValueError(f"Unknown HYBA MCP tool: {name}")
 
     @staticmethod
@@ -422,6 +665,8 @@ class HybaMCPServer:
 
     def handle_request(self, req: Any) -> dict[str, Any] | None:
         if not isinstance(req, Mapping) or req.get("jsonrpc") != "2.0":
+            if isinstance(req, Mapping) and "id" not in req:
+                return None
             request_id = req.get("id") if isinstance(req, Mapping) else None
             return self._error(request_id, -32600, "Invalid JSON-RPC request")
 
@@ -473,7 +718,7 @@ class HybaMCPServer:
                 "jsonrpc": "2.0",
                 "id": rid,
                 "result": {
-                    "protocolVersions": [PROTOCOL_VERSION],
+                    "protocolVersions": sorted(STANDARD_PROTOCOL_VERSIONS),
                     "capabilities": {"tools": {"listChanged": False}},
                     "serverInfo": {"name": self.name, "version": self.version},
                 },
@@ -512,13 +757,32 @@ class HybaMCPServer:
                 if not isinstance(tool_name, str):
                     raise ToolInputError("name must be a string")
                 res = self.execute_tool(tool_name, args)
-                is_error = False
-            except ToolInputError as exc:
-                res = {"error": str(exc)}
-                is_error = True
-            except Exception:
-                res = {"error": "Tool execution failed"}
-                is_error = True
+            except (ToolInputError, ValueError, TypeError, KeyError) as exc:
+                return {
+                    "jsonrpc": "2.0",
+                    "id": rid,
+                    "error": {
+                        "code": -32602,
+                        "message": (
+                            str(exc)
+                            if isinstance(exc, ToolInputError)
+                            else "Invalid tool arguments"
+                        ),
+                    },
+                }
+            except RuntimeError:
+                return {
+                    "jsonrpc": "2.0",
+                    "id": rid,
+                    "error": {
+                        "code": -32000,
+                        "message": (
+                            "scale_intelligence unavailable"
+                            if tool_name == "scale_intelligence"
+                            else "Tool execution failed"
+                        ),
+                    },
+                }
             return {
                 "jsonrpc": "2.0",
                 "id": rid,
@@ -531,7 +795,7 @@ class HybaMCPServer:
                             ),
                         }
                     ],
-                    "isError": is_error,
+                    "isError": False,
                 },
             }
 

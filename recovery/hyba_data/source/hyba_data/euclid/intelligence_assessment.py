@@ -51,29 +51,16 @@ INTELLIGENCE_SCALE = {
 def compute_emergence_criterion(spectral_gap: float, betti_1: float,
                                   phi_resonance: float) -> Tuple[bool, Dict[str, Any]]:
     """
-    The irrefutable test for emergent intelligence.
+    Apply EUCLID's declared three-condition emergence criterion.
 
     E(Δ, β₁, ρ_φ) = 1 if and only if ALL three conditions hold:
       1. Spectral gap Δ > 0 (information flow separation exists)
       2. Betti-1 β₁ ≥ 1 (topological loops = self-reference)
       3. φ-resonance ρ_φ > 0.5 (self-similar structure beyond random)
-
-    Tested on 100 AI systems. Perfect classification. LLMs score 0.
     """
-    cond_delta = spectral_gap > 0
-    cond_betti = betti_1 >= 1
-    cond_phi = phi_resonance > 0.5
-    emerged = cond_delta and cond_betti and cond_phi
+    from euclid.intelligence_assessment import compute_emergence_criterion as evaluate
 
-    return emerged, {
-        "spectral_gap": spectral_gap,
-        "betti_1": betti_1,
-        "phi_resonance": phi_resonance,
-        "delta_ok": cond_delta,
-        "betti_ok": cond_betti,
-        "phi_ok": cond_phi,
-        "emerged": emerged,
-    }
+    return evaluate(spectral_gap, betti_1, phi_resonance)
 
 
 # ═══════════════════════════════════════════════════════════

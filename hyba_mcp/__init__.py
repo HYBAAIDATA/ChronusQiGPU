@@ -2,8 +2,14 @@
 
 from __future__ import annotations
 
-__version__ = "1.0.0"
-__all__ = ["HybaMCPServer", "HybaMCPClient", "run_server"]
+__version__ = "2.0.0"
+__all__ = [
+    "HybaMCPServer",
+    "HybaMCPClient",
+    "ControlPlane",
+    "SandboxConfig",
+    "run_server",
+]
 
 
 def __getattr__(name: str):
@@ -15,4 +21,8 @@ def __getattr__(name: str):
         from .client import HybaMCPClient
 
         return HybaMCPClient
+    if name in {"ControlPlane", "SandboxConfig"}:
+        from .control_plane import ControlPlane, SandboxConfig
+
+        return {"ControlPlane": ControlPlane, "SandboxConfig": SandboxConfig}[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

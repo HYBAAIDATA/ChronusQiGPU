@@ -1,39 +1,74 @@
 # HYBA MCP
 
-`hyba_mcp` is a local, line-oriented stdio MCP server for bounded mathematical
-and SHA256d verification tools. It is not a network service, an MCP
-authorization gateway, or a mining submission interface.
+`hyba_mcp` exposes two capability tiers:
+
+1. **Exact tools** for Lucas/Fibonacci arithmetic, Cassini and Zeckendorf
+   certificates, ladder capacity, work tiling, SHA256d verification, and
+   stateless scale selection.
+2. **Governed skills and repository-context tools** for advisory EUCLID/TOE/
+   SALAMANDER capabilities. These have explicit contracts and, for skill
+   execution, permission, audit, and bounded-execution gates.
+
+Skill output, a successful identity check, and signed evidence do not grant
+theorem, consensus, or execution authority. `theorem_proven` remains `false`.
+See [skill reference](docs/SKILLS_REFERENCE.md), [architecture](docs/SKILLS_ARCHITECTURE.md),
+[deployment guide](docs/SKILLS_DEPLOYMENT.md), [examples](docs/SKILLS_EXAMPLES.md),
+and [security and evidence](docs/MCP_SECURITY.md).
 
 ## Trust and deployment boundary
 
-The server does not implement caller authentication, TLS, AL HARAS leases,
-tenant isolation, persistent audit logging, or remote transport. The MCP host
-process is the trust boundary: run it only from a vetted installation under a
-least-privilege OS identity, and do not expose its stdio through an unauthenticated
-network bridge. Tools are calculations and verification only; they do not
-submit shares, mutate enterprise data, or grant decision authority.
+The stdio server is a local process interface, not a remote service, TLS
+endpoint, or AL HARAS gateway. Its default control plane has no deployment
+authorizer, so skill invocation is denied. Production skill use requires an
+embedding with a trusted `identity_provider`, deployment-owned AL HARAS
+authorizer, and protected durable audit path; see
+[skill deployment](docs/SKILLS_DEPLOYMENT.md). The standalone stdio server does
+not configure those deployment credentials or policies.
 
-The separate `MCPGateway` is an application governance component; this stdio
-server does not invoke or replace it. The separate `mcp/exact_kernel` and
-`mcp/cogito` servers have independent implementations and are not covered by
-the production-scope claims or protocol tests in this document.
+Run it only from a vetted installation under a least-privilege OS identity.
+Do not expose stdio through an unauthenticated network bridge. The MCP host
+process is the transport trust boundary; tenant isolation, access leases,
+request rate/concurrency/session controls, and protected audit storage remain
+deployment responsibilities. The skill sandbox provides bounded execution but
+is not an OS filesystem/network namespace. Manifest status markers are guidance,
+not containment or readiness certifications.
 
-## Tools
+`HybaMCPClient` calls the local `HybaMCPServer` object directly; it is not a
+remote MCP transport client. This qualification covers neither the separate
+`mcp/exact_kernel` nor `mcp/cogito` servers, which have independent
+implementations.
 
-- `lucas`, `fibonacci`, `cassini`, `zeckendorf`
-- `ladder_verify`, `ladder_capacity`, `largest_feasible_tile`
-- `sha256d_verify` (verification only; no pool interaction)
-- `scale_intelligence`
+## Tools and limits
 
-Inputs are validated before execution. Sequence indices are limited to 10,000,
-tile and ladder bounds to signed 64-bit integers, SHA256d payloads to 1 MiB,
-and task-type strings to 256 characters. The stdio request limit is 2 MiB plus
-protocol overhead. Results retain `theorem_proven: false`; a computed witness
-is not promoted to a theorem or consensus authority.
+The server advertises exact tools (`lucas`, `fibonacci`, `cassini`,
+`zeckendorf`, `ladder_verify`, `ladder_capacity`, `largest_feasible_tile`,
+`sha256d_verify`, `scale_intelligence`), context tools (`hyba_context`,
+`hyba_verify`), and governed skill tools (`discover_skills`, `get_skill`,
+`validate_inputs`, `invoke_skill`, `evaluate_skill_outcome`).
+
+Inputs are validated before execution. Sequence indices are limited to
+0–10,000 inclusive; integer bounds to signed 64-bit values; SHA256d payloads to
+1 MiB; task-type strings to 256 characters; and newline-delimited requests to
+2 MiB plus protocol overhead. SHA256d compact targets must decode to a positive
+uint256 target. Tool argument errors use JSON-RPC `-32602`; unavailable scaler
+calls use `-32000`. Notifications do not receive responses.
+
+`scale_intelligence` is stateless: each call creates a new scaler; its default
+starting rung is 31. `target_rung` accepts 10, 12, 15, 18, 20, or 31.
+`step_direction` accepts `up`, `down`, or `hold`; a step takes precedence over
+task adaptation and is clamped at the endpoints. Otherwise, finite
+`complexity` in [0,1] and free-form case-insensitive `task_type` matching select
+a rung. Complexity thresholds .15/.35/.55/.75/.90 select 10/12/15/18/20/31,
+while the highest task-keyword match wins; with both parameters, the higher
+demand wins. Response fields such as `context_limit` describe configured
+envelopes; `*_after` fields are modeled values, not measurements of
+intelligence, consciousness, performance, or theorem completion. See the tool
+schema and `scale_intelligence` implementation for exact affinity keywords.
 
 ## Run
 
-From an installed project environment:
+Install the repository and declared dependencies first (see
+[deployment checklist](docs/MCP_DEPLOYMENT.md)). From an installed environment:
 
 ```bash
 hyba-mcp
@@ -43,11 +78,14 @@ python -m hyba_mcp.server
 
 The top-level `.mcp.json` uses `${REPO_ROOT}` as a host-specific `PYTHONPATH`
 placeholder; configure it for the actual checkout before launching.
+The exact-math tools remain available if the optional scaler import fails;
+`tools/list` reports scaler availability and an unavailable invocation returns
+an explicit error. The root distribution does not define a separate
+`hyba-mcp` PyPI distribution.
 
 ## Protocol example
 
-Each JSON-RPC message is one newline-delimited JSON object. Notifications do
-not receive a response.
+Each JSON-RPC message is one newline-delimited JSON object:
 
 ```json
 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"example-client","version":"1.0"}}}
@@ -56,18 +94,22 @@ not receive a response.
 {"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"lucas","arguments":{"n":15}}}
 ```
 
-Tool execution errors use MCP's `isError` result flag; malformed JSON-RPC
-requests use JSON-RPC error codes. Internal exception details are not returned
-to the client.
+The server requires initialization before tools/list or tools/call, negotiates
+the protocol version, and suppresses notification responses. Invalid tool
+arguments return JSON-RPC `-32602`; runtime tool failures return a safe error
+without exposing internal exception details.
 
-## In-process client evidence
+## Evidence packs
 
-`HybaMCPClient` calls the local `HybaMCPServer` object directly; it is not a
-remote MCP transport client. Its evidence pack includes the recorded handshake
-and tool outputs and carries a SHA-256 integrity digest over canonical JSON.
-The digest is not a digital signature, identity assertion, or durable audit
-record. `theorem_proven` remains `false`.
+Evidence includes the handshake, tool arguments and outputs, session metadata,
+a SHA-256 digest, and HMAC-SHA256 authentication tag. Session IDs use 128 bits
+of cryptographic randomness; the default signing key is a private ephemeral
+256-bit key. A caller-managed key may be supplied for verification after
+session close. Keys are never exported in packs. See
+[MCP security](docs/MCP_SECURITY.md) for canonicalization, key management,
+replay considerations, and verification.
 
-The deterministic arithmetic core uses integer operations. `sha256d_verify`
-checks the supplied payload and, when requested, the decoded target; it does
-not establish pool acceptance or bypass the consensus hash pipeline.
+The HMAC authenticates a client's evidence record; it is not encryption,
+non-repudiation, independently attested server execution, or AL HARAS approval.
+Evidence can contain sensitive operator data, so apply deployment retention,
+encryption-at-rest, and access controls.
