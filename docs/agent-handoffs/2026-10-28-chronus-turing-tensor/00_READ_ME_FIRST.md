@@ -1,0 +1,43 @@
+# HYBA — CHRONUS, TURING & Tensor Consolidation and Elevation Pack
+
+Prepared: 28 October 2026. Investigation baseline: `HYBAAIENTERPRISE/HYBAEnterprise`, `main` SHA `c4ea01fd1b82d411db3fd394c96fc143579b08b5` (re-resolve HEAD before work).
+
+## Purpose
+
+Three independent implementation assignments, one cross-system QC specification, and a reference digest from connected Notion authority records. This handover preserves the original conception **without confusing architecture promises with executable proof**.
+
+## Files
+
+- `01_CHRONUS_implementation_prompt.md`: execution fabric, virtual iGPU, mathematical graphics engine, Hendrix/ASIC-like functionality, package consolidation and evidence.
+- `02_TURING_implementation_prompt.md`: independent VQC, exact-state correctness, representations, measurement, custody, backend dispatch and scientific qualification.
+- `03_TENSOR_implementation_prompt.md`: logical tensor contracts, Kellogg mathematical semantics, representation and backend execution, provenance and scientific correctness.
+- `04_JOINT_INTEGRATION_QC.md`: independent integrator/QC assignment with shared end-to-end obligations and evidence thresholds.
+- `05_NOTION_REQUIREMENTS_DIGEST.md`: a curated, sourced transfer of the controlling Notion requirements into this pack, plus historical context and distinctions.
+- `06_ACCEPTANCE_MATRIX.md`: release-gate and ownership matrix for all three.
+
+## Status and fidelity
+
+This was originally prepared as a **read-only planning and documentation artifact** and was subsequently committed in documentation-only [PR #90](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/pull/90). It is not a Notion edit, production certification, exact-head test run, or owner approval of an implementation. The Notion digest is a **faithful synthesis of retrieved pages**, not a complete verbatim export of every linked page. Canonical Notion pages are still the authorities for owner-controlled architecture, subject to executable evidence for implementation facts. Re-fetch their latest revision before editing or publishing.
+
+## Owner's updated production directive (28 October 2026)
+
+[Owner directive: agent accountability, actual-workload parity and competitive-benchmark separation](08_OWNER_DIRECTIVE_PRODUCTION_PARITY.md) takes priority for these execution assignments. One agent per system (#91, #92, #93), assigned by the owner; ChatGPT owns independent QC (#94). Final production profile may only be marked ready after real-workload parity, recovery/security evidence, independent QC and owner approval. Comparative benchmarks require genuine competitor products and separate authorization; operational measurements remain mandatory, but are not product comparisons.
+
+## Working protocol
+
+Assign the three implementation prompts to independent executors. Assign `04_JOINT_INTEGRATION_QC.md` to an independent reviewer, rather than having the same agent mark its own work certified. Each executor must prepare a separate PR, minimally scoped and with exact-head evidence. No material authority change, owner-controlled canonical modification, release publication, deployment, or production-status promotion without explicit owner approval.
+
+No removals without proved functional replacement; no fabricated evidence; CI startup failures are not test passes. Missing device, external pool or physical QPU evidence stays `UNAVAILABLE` or `GATED`.
+
+## Agent assignments and delivery lanes — owner decision (28 October 2026)
+
+| Lane | Named executing agent | Tracking | Completion requirement |
+| --- | --- | --- | --- |
+| CHRONUS | **Perplexity** | [#91](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/91) | Implementation through independently verified production qualification |
+| TURING | **Sider** | [#92](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/92) | Implementation through independently verified production qualification |
+| Tensor/Kellogg | **Copilot** | [#93](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/93) | Implementation through independently verified production qualification |
+| Repository-wide CI | **GitHub Copilot** | [#96](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/96) | All required workflows execute and pass, with exact-head evidence |
+| Independent QC | **ChatGPT** | [#94](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/94) | Review source and exact artifacts, real-workload parity, security, recovery; owner decision remains final |
+
+**Copilot on Tensor/Kellogg and GitHub Copilot on CI are separate responsibility lanes.** These are the owner's named AI agents; no GitHub usernames, notification deliveries or authenticated GitHub assignments have been inferred. Green CI is a necessary shared engineering gate but not a substitute for correctness, real workloads or QC. [CI workflow instructions](09_GITHUB_COPILOT_CI_GREEN.md).
+
