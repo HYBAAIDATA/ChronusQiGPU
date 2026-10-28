@@ -544,7 +544,22 @@ def test_authority_invocation_is_audited_without_execution_subprocess(tmp_path):
 
 def test_mcp_lists_old_tools_and_new_skill_tools():
     server = HybaMCPServer()
-    response = server.handle_request({"id": 1, "method": "tools/list", "params": {}})
+    server.handle_request(
+        {
+            "jsonrpc": "2.0",
+            "id": 0,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "tests", "version": "1.0"},
+            },
+        }
+    )
+    server.handle_request({"jsonrpc": "2.0", "method": "notifications/initialized"})
+    response = server.handle_request(
+        {"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}
+    )
     tools = {item["name"] for item in response["result"]["tools"]}
     exact_tools = {
         "lucas",

@@ -1,7 +1,7 @@
 """HYBA Sovereign MCP Client.
 
-Provides session management, tool execution, and authenticated evidence collection
-over Model Context Protocol servers.
+Provides in-process session management, tool execution, and evidence-digest
+collection for the local HYBA MCP server, with authenticated evidence packs.
 """
 
 from __future__ import annotations
@@ -11,6 +11,7 @@ import hmac
 import json
 import secrets
 import time
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Optional
 
@@ -59,57 +60,80 @@ class MCPSession:
 
 
 class HybaMCPClient:
-    """Production client for invoking HYBA MCP capabilities."""
+    """In-process client for invoking local HYBA MCP capabilities."""
 
     def __init__(self, server: Optional[HybaMCPServer] = None) -> None:
-        self.server = server or HybaMCPServer()
+        self._server_factory = HybaMCPServer if server is None else None
+        self.server = server if server is not None else HybaMCPServer()
         self.session: Optional[MCPSession] = None
         self._session_secret: Optional[bytes] = None
         self._next_id = 1
+        self._server_initialized = False
 
     def start_session(self, *, signing_key: Optional[bytes] = None) -> MCPSession:
-        """Start with an ephemeral 256-bit key, or a caller-managed key of >=32 bytes."""
+        """Start with an ephemeral key, or a caller-managed key of at least 32 bytes."""
         if self.session is not None:
             raise RuntimeError("an MCP session is already active; end it before starting another")
         if signing_key is not None and (
             not isinstance(signing_key, bytes) or len(signing_key) < 32
         ):
             raise ValueError("signing_key must contain at least 32 bytes")
+        if self._server_factory is not None:
+            self.server = self._server_factory()
+        elif self._server_initialized:
+            raise RuntimeError(
+                "the supplied MCP server connection is already initialized; create a new client"
+            )
         session = MCPSession(session_id=secrets.token_hex(16))
-        # Verify handshake with server
-        resp = self.server.handle_request({
-            "jsonrpc": "2.0",
-            "id": self._next_id,
-            "method": "initialize",
-            "params": {},
-        })
+        resp = self.server.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": self._next_id,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {},
+                    "clientInfo": {"name": "hyba-mcp-client", "version": "1.0.0"},
+                },
+            }
+        )
         self._next_id += 1
-        if "error" in resp or not isinstance(resp.get("result"), dict):
-            raise RuntimeError("MCP initialization failed")
-        session.evidence.append({"handshake": resp["result"]})
+        if not resp or "error" in resp or not isinstance(resp.get("result"), dict):
+            raise RuntimeError(
+                f"MCP initialization failed: {resp.get('error') if resp else 'no response'}"
+            )
+        self._server_initialized = True
+        session.evidence.append({"handshake": deepcopy(resp["result"])})
+        self.server.handle_request({"jsonrpc": "2.0", "method": "notifications/initialized"})
         self._session_secret = signing_key if signing_key is not None else secrets.token_bytes(32)
         self.session = session
         return session
 
     def list_tools(self) -> list[dict[str, Any]]:
-        resp = self.server.handle_request({
-            "jsonrpc": "2.0",
-            "id": self._next_id,
-            "method": "tools/list",
-            "params": {},
-        })
+        resp = self.server.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": self._next_id,
+                "method": "tools/list",
+                "params": {},
+            }
+        )
         self._next_id += 1
+        if "error" in resp:
+            raise RuntimeError(f"MCP tools/list failed: {resp['error']}")
         return resp.get("result", {}).get("tools", [])
 
     def call_tool(self, name: str, arguments: Mapping[str, Any]) -> dict[str, Any]:
         if not self.session:
             raise RuntimeError("no active MCP session; call start_session() first")
-        resp = self.server.handle_request({
-            "jsonrpc": "2.0",
-            "id": self._next_id,
-            "method": "tools/call",
-            "params": {"name": name, "arguments": dict(arguments)},
-        })
+        resp = self.server.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": self._next_id,
+                "method": "tools/call",
+                "params": {"name": name, "arguments": dict(arguments)},
+            }
+        )
         self._next_id += 1
         if "error" in resp:
             raise RuntimeError(f"MCP tool {name!r} failed: {resp['error']}")
@@ -117,6 +141,10 @@ class HybaMCPClient:
         if not content:
             return {}
         result_payload = json.loads(content[0]["text"])
+        if resp.get("result", {}).get("isError"):
+            raise RuntimeError(
+                f"MCP tool {name!r} failed: {result_payload.get('error', 'tool error')}"
+            )
         self.session.tools_called.append(name)
         self.session.evidence.append(
             json.loads(
@@ -133,15 +161,14 @@ class HybaMCPClient:
         pack = {
             "session_id": self.session.session_id,
             "tools_called": list(self.session.tools_called),
+            "evidence": deepcopy(self.session.evidence),
             "evidence_entries": len(self.session.evidence),
-            "evidence": self.session.evidence,
             "theorem_proven": False,
             "sovereignty": "HYBA_SOVEREIGN_CNS",
             "narrow_ai_credit": "NONE_FORBIDDEN",
             "timestamp": time.time(),
             "signature_algorithm": "HMAC-SHA256",
         }
-        # Snapshot mutable evidence so exported packs cannot mutate the live session.
         pack = json.loads(_canonical_json(pack))
         pack["evidence_digest"] = hashlib.sha256(_canonical_json(pack)).hexdigest()
         pack["evidence_signature"] = hmac.new(

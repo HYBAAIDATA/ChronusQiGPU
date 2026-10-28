@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import json
 import hashlib
+import io
+import json
 import hmac
 import secrets
 import subprocess
@@ -15,30 +16,59 @@ import pytest
 import hyba_mcp.server as server_module
 from hyba_mcp.server import HybaMCPServer, MAX_N, TOOLS
 from hyba_mcp.client import HybaMCPClient, verify_evidence_pack
+from hyba_mcp.server import run_server
+
+
+def _ready_server() -> HybaMCPServer:
+    server = HybaMCPServer()
+    response = server.handle_request(
+        {
+            "jsonrpc": "2.0",
+            "id": 0,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "tests", "version": "1.0"},
+            },
+        }
+    )
+    assert response is not None
+    server.handle_request({"jsonrpc": "2.0", "method": "notifications/initialized"})
+    return server
 
 
 class TestHybaMCPServer:
     def test_handshake_declares_sovereign_doctrine(self) -> None:
         server = HybaMCPServer()
-        resp = server.handle_request({
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "initialize",
-            "params": {},
-        })
+        resp = server.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {},
+                    "clientInfo": {"name": "tests", "version": "1.0"},
+                },
+            }
+        )
         assert resp["jsonrpc"] == "2.0"
         assert resp["id"] == 1
-        server_info = resp["result"]["serverInfo"]
-        assert server_info["sovereignty"] == "HYBA_SOVEREIGN_CNS"
+        assert resp["result"]["protocolVersion"] == "2024-11-05"
+        assert resp["result"]["serverInfo"]["name"] == "hyba-mcp-server"
+        assert resp["result"]["capabilities"] == {"tools": {"listChanged": False}}
 
     def test_tools_list_contains_exact_mathematical_suite(self) -> None:
-        server = HybaMCPServer()
-        resp = server.handle_request({
-            "jsonrpc": "2.0",
-            "id": 2,
-            "method": "tools/list",
-            "params": {},
-        })
+        server = _ready_server()
+        resp = server.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "tools/list",
+                "params": {},
+            }
+        )
         tools = {t["name"]: t for t in resp["result"]["tools"]}
         exact_math_tools = {
             "lucas",
@@ -53,16 +83,19 @@ class TestHybaMCPServer:
         }
         assert exact_math_tools <= tools.keys()
         assert len(tools) == len(exact_math_tools) + 2 + 5
+        assert tools["fibonacci"]["inputSchema"]["properties"]["n"]["maximum"] == MAX_N
 
     def test_lucas_15_and_20_tool_calls_hold_cassini_invariant(self) -> None:
-        server = HybaMCPServer()
+        server = _ready_server()
         # L_15 = 1364, F_15 = 610
-        r15 = server.handle_request({
-            "jsonrpc": "2.0",
-            "id": 3,
-            "method": "tools/call",
-            "params": {"name": "lucas", "arguments": {"n": 15}},
-        })
+        r15 = server.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 3,
+                "method": "tools/call",
+                "params": {"name": "lucas", "arguments": {"n": 15}},
+            }
+        )
         payload15 = json.loads(r15["result"]["content"][0]["text"])
         assert payload15["L_n"] == 1364
         assert payload15["F_n"] == 610
@@ -70,12 +103,14 @@ class TestHybaMCPServer:
         assert payload15["left"] == -4
 
         # L_20 = 15127, F_20 = 6765
-        r20 = server.handle_request({
-            "jsonrpc": "2.0",
-            "id": 4,
-            "method": "tools/call",
-            "params": {"name": "lucas", "arguments": {"n": 20}},
-        })
+        r20 = server.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 4,
+                "method": "tools/call",
+                "params": {"name": "lucas", "arguments": {"n": 20}},
+            }
+        )
         payload20 = json.loads(r20["result"]["content"][0]["text"])
         assert payload20["L_n"] == 15127
         assert payload20["F_n"] == 6765
@@ -98,20 +133,144 @@ class TestHybaMCPServer:
         assert payload["theorem_proven"] is False
 
     def test_sha256d_verify_tool_call(self) -> None:
-        server = HybaMCPServer()
+        server = _ready_server()
         header_hex = "00" * 80
-        r = server.handle_request({
-            "jsonrpc": "2.0",
-            "id": 5,
-            "method": "tools/call",
-            "params": {
-                "name": "sha256d_verify",
-                "arguments": {"payload_hex": header_hex, "compact_bits": 0x1D00FFFF},
-            },
-        })
+        r = server.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 5,
+                "method": "tools/call",
+                "params": {
+                    "name": "sha256d_verify",
+                    "arguments": {"payload_hex": header_hex, "compact_bits": 0x1D00FFFF},
+                },
+            }
+        )
         payload = json.loads(r["result"]["content"][0]["text"])
         assert "sha256d_be" in payload
         assert "meets_target" in payload
+        assert r["result"]["isError"] is False
+
+    def test_server_enforces_initialize_lifecycle_and_silences_notifications(self) -> None:
+        server = HybaMCPServer()
+        assert server.handle_request({"jsonrpc": "2.0", "id": "ping-1", "method": "ping"}) == {
+            "jsonrpc": "2.0",
+            "id": "ping-1",
+            "result": {},
+        }
+        premature = server.handle_request({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
+        assert premature["error"]["code"] == -32002
+
+        initialized = server.handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "unsupported",
+                    "capabilities": {},
+                    "clientInfo": {"name": "tests", "version": "1.0"},
+                },
+            }
+        )
+        assert initialized["result"]["protocolVersion"] == "2024-11-05"
+        assert (
+            server.handle_request({"jsonrpc": "2.0", "method": "notifications/initialized"}) is None
+        )
+        assert server.handle_request({"jsonrpc": "2.0", "method": "notifications/unknown"}) is None
+
+    @pytest.mark.parametrize(
+        "name,arguments",
+        [
+            ("fibonacci", {"n": True}),
+            ("lucas", {"n": "15"}),
+            ("cassini", {"n": 10_001}),
+            ("largest_feasible_tile", {"max_size": 32, "extra": 1}),
+            ("sha256d_verify", {"payload_hex": "0"}),
+            ("sha256d_verify", {"payload_hex": "00", "compact_bits": -1}),
+            ("scale_intelligence", {"target_rung": 999}),
+        ],
+    )
+    def test_tool_validation_returns_safe_json_rpc_error(
+        self, name: str, arguments: dict[str, object]
+    ) -> None:
+        response = _ready_server().handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 7,
+                "method": "tools/call",
+                "params": {"name": name, "arguments": arguments},
+            }
+        )
+        assert response["error"]["code"] == -32602
+        assert "Traceback" not in response["error"]["message"]
+        assert "TypeError" not in response["error"]["message"]
+
+    def test_tool_call_unknown_name_is_a_safe_json_rpc_error(self) -> None:
+        response = _ready_server().handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 8,
+                "method": "tools/call",
+                "params": {"name": "does_not_exist", "arguments": {}},
+            }
+        )
+        assert response["error"]["code"] == -32602
+
+    def test_compact_target_must_fit_uint256(self) -> None:
+        response = _ready_server().handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 9,
+                "method": "tools/call",
+                "params": {
+                    "name": "sha256d_verify",
+                    "arguments": {"payload_hex": "00", "compact_bits": 0x2200FFFF},
+                },
+            }
+        )
+        assert response["error"]["code"] == -32602
+
+    def test_stdio_parser_returns_protocol_error_without_exception_details(
+        self, monkeypatch
+    ) -> None:
+        stdin = io.StringIO('{"jsonrpc":"2.0","id":1,"id":2,"method":"tools/list"}\n')
+        stdout = io.StringIO()
+        monkeypatch.setattr("sys.stdin", stdin)
+        monkeypatch.setattr("sys.stdout", stdout)
+
+        run_server()
+
+        response = json.loads(stdout.getvalue())
+        assert response["error"]["code"] == -32700
+        assert response["error"]["message"] == "Parse error"
+
+    def test_module_entrypoint_has_clean_stdio(self) -> None:
+        messages = [
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {},
+                    "clientInfo": {"name": "tests", "version": "1.0"},
+                },
+            },
+            {"jsonrpc": "2.0", "method": "notifications/initialized"},
+        ]
+        result = subprocess.run(
+            [sys.executable, "-m", "hyba_mcp.server"],
+            cwd=Path(__file__).resolve().parents[1],
+            input="\n".join(json.dumps(message) for message in messages) + "\n",
+            text=True,
+            capture_output=True,
+            check=True,
+            timeout=15,
+        )
+        assert result.stderr == ""
+        assert len(result.stdout.splitlines()) == 1
+        assert json.loads(result.stdout)["result"]["protocolVersion"] == "2024-11-05"
 
 
 class TestHybaMCPClient:
@@ -137,14 +296,31 @@ class TestHybaMCPClient:
         res = client.call_tool("zeckendorf", {"n": 1364})
         assert res["valid"] is True
         assert res["non_adjacency"] is True
+        res["valid"] = False
 
+        signing_key = client._session_secret
         pack = client.end_session()
         assert client.session is None
         assert pack["sovereignty"] == "HYBA_SOVEREIGN_CNS"
         assert pack["narrow_ai_credit"] == "NONE_FORBIDDEN"
         assert pack["evidence_digest"] is not None
+        assert pack["evidence_entries"] == 2
+        assert pack["evidence"][-1]["output"]["n"] == 1364
+        assert pack["evidence"][-1]["output"]["valid"] is True
         assert pack["evidence_signature"] is not None
         assert client._session_secret is None
+        assert verify_evidence_pack(pack, signing_key, expected_session_id=session.session_id)
+
+        next_session = client.start_session()
+        assert next_session.session_id != session.session_id
+        client.end_session()
+
+    def test_client_with_injected_server_requires_new_connection_after_end(self) -> None:
+        client = HybaMCPClient(server=HybaMCPServer())
+        client.start_session()
+        client.end_session()
+        with pytest.raises(RuntimeError, match="already initialized"):
+            client.start_session()
 
 
 @pytest.mark.parametrize("name", ["lucas", "fibonacci", "cassini", "zeckendorf"])
@@ -155,8 +331,13 @@ def test_sequence_inputs_rejected_before_kernel(name, n, monkeypatch):
 
     monkeypatch.setattr(server_module, "lucas", forbidden)
     monkeypatch.setattr(server_module, "fibonacci", forbidden)
-    response = HybaMCPServer().handle_request(
-        {"id": 42, "method": "tools/call", "params": {"name": name, "arguments": {"n": n}}}
+    response = _ready_server().handle_request(
+        {
+            "jsonrpc": "2.0",
+            "id": 42,
+            "method": "tools/call",
+            "params": {"name": name, "arguments": {"n": n}},
+        }
     )
     assert response["id"] == 42
     assert response["error"]["code"] == -32602
@@ -179,8 +360,13 @@ def test_sequence_bounds_are_inclusive(name, n):
 
 @pytest.mark.parametrize("arguments", [{}, None, [], False])
 def test_missing_or_malformed_arguments(arguments):
-    response = HybaMCPServer().handle_request(
-        {"id": 7, "method": "tools/call", "params": {"name": "lucas", "arguments": arguments}}
+    response = _ready_server().handle_request(
+        {
+            "jsonrpc": "2.0",
+            "id": 7,
+            "method": "tools/call",
+            "params": {"name": "lucas", "arguments": arguments},
+        }
     )
     assert response["id"] == 7
     assert response["error"]["code"] == -32602
@@ -236,9 +422,14 @@ def test_scaler_precedence_and_endpoints(arguments, rung):
 
 def test_missing_scaler_fails_closed_but_exact_tools_work(monkeypatch):
     monkeypatch.setattr(server_module, "LucasIntelligenceScaler", None)
-    server = HybaMCPServer()
+    server = _ready_server()
     result = server.handle_request(
-        {"id": 9, "method": "tools/call", "params": {"name": "scale_intelligence"}}
+        {
+            "jsonrpc": "2.0",
+            "id": 9,
+            "method": "tools/call",
+            "params": {"name": "scale_intelligence"},
+        }
     )
     assert result["id"] == 9
     assert result["error"]["code"] == -32000
@@ -399,13 +590,16 @@ def test_recorded_evidence_is_not_mutated_by_tool_caller():
     assert client.verify_evidence_pack(pack)
 
 
-@pytest.mark.parametrize(("name", "arguments"), [
-    ("largest_feasible_tile", {"max_size": 64, "alignment": 0}),
-    ("largest_feasible_tile", {"max_size": -1}),
-    ("ladder_capacity", {"bound": False}),
-    ("sha256d_verify", {"payload_hex": 15}),
-    ("sha256d_verify", {"payload_hex": "not-hex"}),
-])
+@pytest.mark.parametrize(
+    ("name", "arguments"),
+    [
+        ("largest_feasible_tile", {"max_size": 64, "alignment": 0}),
+        ("largest_feasible_tile", {"max_size": -1}),
+        ("ladder_capacity", {"bound": False}),
+        ("sha256d_verify", {"payload_hex": 15}),
+        ("sha256d_verify", {"payload_hex": "not-hex"}),
+    ],
+)
 def test_other_tool_contracts_fail_closed(name, arguments):
     with pytest.raises(ValueError):
         HybaMCPServer().execute_tool(name, arguments)
@@ -414,7 +608,7 @@ def test_other_tool_contracts_fail_closed(name, arguments):
 def test_documentation_and_manifest_cover_registered_tools():
     root = Path(__file__).resolve().parents[1]
     readme = (root / "README_MCP.md").read_text()
-    assert all(f"`{name}`:" in readme for name in TOOLS)
+    assert all(f"`{name}`" in readme for name in TOOLS)
     manifest = json.loads((root / ".mcp.json").read_text())
     statuses = {entry["name"]: entry["status"] for entry in manifest["servers"]}
     assert statuses == {

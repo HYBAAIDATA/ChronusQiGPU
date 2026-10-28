@@ -11,7 +11,7 @@
       "command": "python",
       "args": ["-m", "hyba_mcp.server"],
       "env": { "PYTHONPATH": "${REPO_ROOT}" },
-      "description": "Production HYBA sovereign MCP server — nine tools including exact arithmetic, SHA256d verification, and optional Lucas intelligence scaling."
+      "description": "Production HYBA MCP server — exact-math, repository-context, and governed expert-skill tools; qualify the host deployment before production use."
     },
     {
       "name": "exact-kernel",
@@ -20,7 +20,7 @@
       "command": "python",
       "args": ["mcp/exact_kernel/server.py"],
       "env": { "PYTHONPATH": "${REPO_ROOT}" },
-      "description": "Exact kernel (stable) — standalone file runner"
+      "description": "Separate standalone exact-kernel server; not covered by the hyba-mcp protocol qualification"
     },
     {
       "name": "cogito",

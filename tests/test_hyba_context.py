@@ -30,12 +30,8 @@ def test_verify_requires_an_exact_byte_match_and_reports_line(tmp_path, monkeypa
     (tmp_path / "evidence.txt").write_bytes(b"first line\nExact phrase.\n")
     monkeypatch.setattr(context_tools, "REPO_ROOT", str(tmp_path))
 
-    found = context_tools.hyba_verify(
-        "claim", ["evidence.txt"], "Exact phrase."
-    )
-    absent = context_tools.hyba_verify(
-        "claim", ["evidence.txt"], "exact phrase."
-    )
+    found = context_tools.hyba_verify("claim", ["evidence.txt"], "Exact phrase.")
+    absent = context_tools.hyba_verify("claim", ["evidence.txt"], "exact phrase.")
 
     assert found["supported"] is True
     assert found["status"] == "supported"
@@ -49,9 +45,7 @@ def test_verify_rejects_paths_outside_repository(tmp_path, monkeypatch):
     (tmp_path / "evidence.txt").write_text("exact phrase", encoding="utf-8")
     monkeypatch.setattr(context_tools, "REPO_ROOT", str(tmp_path))
 
-    result = context_tools.hyba_verify(
-        "claim", ["../evidence.txt", "evidence.txt"], "exact phrase"
-    )
+    result = context_tools.hyba_verify("claim", ["../evidence.txt", "evidence.txt"], "exact phrase")
 
     assert result["supported"] is True
     assert result["matches"] == [{"path": "evidence.txt", "line": 1}]
@@ -60,6 +54,19 @@ def test_verify_rejects_paths_outside_repository(tmp_path, monkeypatch):
 
 def test_server_registers_and_executes_both_tools():
     server = HybaMCPServer()
+    server.handle_request(
+        {
+            "jsonrpc": "2.0",
+            "id": 0,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "tests", "version": "1.0"},
+            },
+        }
+    )
+    server.handle_request({"jsonrpc": "2.0", "method": "notifications/initialized"})
     listing = server.handle_request(
         {"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}
     )
