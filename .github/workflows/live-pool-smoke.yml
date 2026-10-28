@@ -1,0 +1,159 @@
+name: Live Pool Smoke
+
+# Bounded, one-share live Stratum acceptance run on the owner's self-hosted
+# host. Dispatching this workflow IS the live-submission approval: only
+# collaborators with write access can dispatch, and the script submits at
+# most one share (--max-shares 1, --max-runtime 600).
+#
+# Run-card halt conditions are encoded, not advisory:
+#   - opencl lane with no Intel device -> halt (no CPU fallback)
+#   - pool auth rejection -> shares rejected (job fails, log uploaded)
+#   - verdict ACCEPTED -> accepted_share.log.redacted artifact
+#
+# The pool password is read only from the `pool-live-smoke` GitHub
+# Environment secret PYTHIA_POOL_PASSWORD and is never printed, persisted
+# to the repository, or readable back via the API. The bridge log is
+# scrubbed of the password before any artifact upload.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pool:
+        description: "Pool catalog entry"
+        required: true
+        type: choice
+        options: [viabtc, braiins]
+        default: viabtc
+      worker:
+        description: "Pool account.worker identity (e.g. ACCOUNT.001)"
+        required: true
+        type: string
+      backend:
+        description: "Hashing backend"
+        required: true
+        type: choice
+        options: [opencl, cpu]
+        default: opencl
+      endpoint:
+        description: "Optional host:port override for the pool endpoint"
+        required: false
+        type: string
+
+concurrency:
+  group: live-pool-smoke-${{ inputs.pool }}-${{ inputs.worker }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  live-pool-smoke:
+    runs-on: [self-hosted, chronus]
+    timeout-minutes: 20
+    environment: pool-live-smoke
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime dependencies
+        run: python -m pip install --upgrade pip && python -m pip install numpy sympy pyopencl
+
+      - name: Mask pool password in workflow logs
+        run: echo "::add-mask::${{ secrets.PYTHIA_POOL_PASSWORD }}"
+        env:
+          PYTHIA_SMOKE_POOL_PASSWORD: ${{ secrets.PYTHIA_POOL_PASSWORD }}
+
+      - name: Refuse empty pool password
+        run: |
+          if [ -z "${{ secrets.PYTHIA_POOL_PASSWORD }}" ]; then
+            echo "::error::PYTHIA_POOL_PASSWORD is not set on the pool-live-smoke environment."
+            exit 1
+          fi
+
+      - name: Probe Chronus OpenCL device (opencl lane)
+        if: inputs.backend == 'opencl'
+        id: probe
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+          import sys
+          try:
+              import pyopencl as cl
+          except ImportError:
+              print("::error::pyopencl unavailable on the runner")
+              sys.exit(1)
+          devices = [d for p in cl.get_platforms() for d in p.get_devices()]
+          intel = [d for d in devices if "intel" in (d.vendor or "").lower()]
+          if not intel:
+              print("::error::No Intel OpenCL device visible — connected but no shares. Halting per run card; no CPU fallback on the opencl lane.")
+              sys.exit(1)
+          name = intel[0].name.strip()
+          print(f"device_name={name}")
+          print(f"::notice::Chronus OpenCL device: {name}")
+          EOF
+
+      - name: Run bounded one-share live smoke
+        id: smoke
+        env:
+          PYTHIA_SMOKE_POOL_PASSWORD: ${{ secrets.PYTHIA_POOL_PASSWORD }}
+          HYBA_REQUIRE_HYBA: "1"
+          HYBA_DEVICE_VENDOR: "Intel"
+          HYBA_DEVICE_NAME: ${{ steps.probe.outputs.device_name }}
+        run: |
+          ARGS="--pool ${{ inputs.pool }} --worker '${{ inputs.worker }}' --backend ${{ inputs.backend }} --max-runtime 600 --confirm-live-submit"
+          if [ -n "${{ inputs.endpoint }}" ]; then ARGS="$ARGS --endpoint '${{ inputs.endpoint }}'"; fi
+          python3 scripts/live_pool_smoke.py $ARGS
+
+      - name: Redact credentials from bridge log
+        if: always()
+        id: redact
+        env:
+          PYTHIA_SMOKE_POOL_PASSWORD: ${{ secrets.PYTHIA_POOL_PASSWORD }}
+        run: |
+          LOG=$(ls -t smoke-artifacts/live-pool-${{ inputs.pool }}-*.log 2>/dev/null | head -1)
+          if [ -z "$LOG" ]; then echo "::warning::no bridge log produced"; exit 0; fi
+          REDACTED=$(python3 - "$LOG" <<'EOF'
+          import os, pathlib, sys
+          log = pathlib.Path(sys.argv[1])
+          text = log.read_text(encoding="utf-8", errors="replace")
+          password = os.environ.get("PYTHIA_SMOKE_POOL_PASSWORD", "")
+          if password:
+              text = text.replace(password, "***REDACTED***")
+          out = log.with_name(log.name + ".redacted")
+          out.write_text(text, encoding="utf-8")
+          print(out)
+          EOF
+          )
+          echo "redacted_log=$REDACTED" >> "$GITHUB_OUTPUT"
+          if grep -q "Pool submission verdict: \*\*\* ACCEPTED \*\*\*" "$REDACTED"; then
+            cp "$REDACTED" smoke-artifacts/accepted_share.log.redacted
+            echo "accepted=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload redacted evidence
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: live-pool-smoke-${{ inputs.pool }}-${{ github.run_id }}
+          path: |
+            smoke-artifacts/*.redacted
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Verdict
+        if: always()
+        run: |
+          {
+            echo "## Live pool smoke — ${{ inputs.pool }} / ${{ inputs.worker }}"
+            echo
+            echo "- backend: ${{ inputs.backend }}"
+            echo "- run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            if [ "${{ steps.redact.outputs.accepted }}" = "true" ]; then
+              echo "- verdict: **ACCEPTED** — see accepted_share.log.redacted artifact"
+            else
+              echo "- verdict: no accepted share inside the bounded window"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          test "${{ steps.smoke.outcome }}" = "success"
