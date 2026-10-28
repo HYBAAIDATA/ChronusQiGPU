@@ -1,5 +1,6 @@
 """Deterministic, read-only repository context and exact-phrase verification tools."""
 
+import base64
 import hashlib
 import json
 import os
@@ -65,7 +66,6 @@ def hyba_context(
             keywords.append(keyword)
             seen.add(keyword)
 
-    ranked_files = []
     root = os.path.realpath(REPO_ROOT)
     candidate_paths = []
     for current_root, dirnames, filenames in os.walk(root, followlinks=False):
@@ -285,6 +285,7 @@ TOOLS_PATCH = {
                 },
             },
             "required": ["query"],
+            "additionalProperties": False,
         },
     },
     "hyba_verify": {
