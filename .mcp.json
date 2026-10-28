@@ -24,12 +24,12 @@
     },
     {
       "name": "cogito",
-      "status": "experimental",
-      "deployment_guidance": "Internal review only. Exclude from production registration; this marker is metadata, not an enforcement switch.",
+      "status": "production",
+      "deployment_guidance": "Production-qualified through initialize plus JSON problem adaptation; place behind AL HARAS before deployment. See docs/MCP_DEPLOYMENT.md.",
       "command": "python",
-      "args": ["mcp/cogito/server.py"],
+      "args": ["-m", "mcp.cogito.server"],
       "env": { "PYTHONPATH": "${REPO_ROOT}" },
-      "description": "Cogito capability surface (experimental) — use for internal review only"
+      "description": "Production Cogito MCP server — 12 EUCLID/TOE capabilities with initialize and JSON problem adaptation."
     }
   ],
   "connectors": [

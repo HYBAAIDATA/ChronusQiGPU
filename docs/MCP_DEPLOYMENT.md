@@ -19,8 +19,10 @@ scoped qualification results before promotion.
 - [ ] In `.mcp.json`, replace `${REPO_ROOT}` with the absolute checkout path
   according to the host's variable-expansion rules and set that working directory.
   Register `hyba-mcp` as the primary surface. `exact-kernel` is optional stable
-  standalone; `cogito` is experimental/internal-only. Omit unqualified servers
-  from production host configuration. The catalog's status fields do not enforce this.
+  standalone; `cogito` is production-classified and exposes twelve EUCLID/TOE
+  capabilities. Verify its initialize handshake and JSON problem adaptation;
+  omit any server that has not passed deployment-specific qualification. The
+  catalog's status fields do not enforce this.
 - [ ] Place the local interface behind the governed MCPGateway/AL HARAS host
   policy; configure tenant identity, authorization, leases and kill-switches
   there. Do not assume the standalone server supplies these controls.
@@ -71,3 +73,32 @@ in the security guide with a trusted key.
 Never address dependency, authorization, or evidence failures by bypassing
 AL HARAS, disabling HMAC checks, granting narrow AI authority, or treating
 modeled scaling metrics as proof or measured readiness.
+
+## Release evidence and rollback
+
+The `production` manifest status is a registration classification, not a
+deployment approval or proof of readiness. Qualification requires the focused
+manifest and handshake tests plus deployment-specific host and AL HARAS checks.
+
+- CI workflow: [CI — lint, unit tests, compile](../.github/workflows/ci.yml)
+  (the full `tests/` suite includes the Cogito handshake and manifest tests).
+- Focused evidence: [`tests/test_cogito_handshake.py`](../tests/test_cogito_handshake.py)
+  and [`tests/test_mcp_manifest.py`](../tests/test_mcp_manifest.py).
+- CI run for this change: pending; attach the completed PR check-run URL here
+  before treating this change as release-qualified.
+
+### Approval record
+
+| Decision | Approver | Date | Evidence |
+|---|---|---|---|
+| Pending — no deployment approval recorded by this change | Not recorded | Not recorded | Await completed CI check run and deployment-specific qualification |
+
+### Rollback
+
+Revert the change commit (`git revert <commit-sha>`) to restore the prior
+repository configuration. If only the deployed MCP configuration must be
+restored, reinstate the prior Cogito registration (`status: experimental`,
+internal-review-only guidance, and `args: ["mcp/cogito/server.py"]`) from the
+previous `.mcp.json`, then restart the MCP host and verify its registered
+configuration. Do not treat rollback configuration metadata as an authorization
+control.
