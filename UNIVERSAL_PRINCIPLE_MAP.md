@@ -795,7 +795,7 @@ The single backend (`compile_operator` → `IntelligenceState` → `TOEBridge`) 
 | Security | Role enforcement, audit trail | `security.check` → `data_layer.policy` | `toe/unified/security.py` | SHA256d digests; append-only audit |
 | Quantum computing | VQC, Grover, QPE, quantum walks | `turing_universal_quantum_computer` → `phi_vqc` | `turing_universal_quantum_computer/.../phi_vqc.py` | φ-scaled quantum algorithms; Lucas-scaled circuits |
 | Consciousness | Action weighting, interface reordering | `consciousness.observe` → `rank` | `toe/unified/consciousness.py` | φ-weighted action accumulation |
-| Self-healing | Salamander, module diagnosis | `salamander.diagnose_manifold` | `legacy/Intelligence/salamander.py` | φ-sensitivity; degenerate manifold detection |
+| Self-healing | Salamander, module diagnosis | `salamander_diagnose` / `salamander_propose` / `salamander_optimise` | `Intelligence/salamander.py`, `hyba_mcp/salamander.py` | Homeostasis thresholds; bounded golden-step recommendation; no auto-apply |
 | Yang-Mills | Lattice gauge theory, mass gap | `probe_yang_mills` → 2I Laplacian | `millennium/millennium_suite.py` | Δ = 1 − φ/2 = 1/(2φ²) |
 | Poincaré | Homology sphere, 600-cell | `conjugacy_classes` → character table | `millennium/hyba_poincare_yangmills.py` | φ → icosians → 2I → Σ(2,3,5) |
 | Ricci flow | Curvature, holographic entropy | `spectral_soliton`, `holographic_entropy` | `ricci_yang_mills_flow.py` (Clay C5, C6) | M₃₂ min-cut; [H,Φ]=0 on ℂ³² |
