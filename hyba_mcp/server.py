@@ -11,6 +11,7 @@ import sys
 from typing import Any, Callable, Mapping
 
 from .control_plane import ControlPlane
+from .salamander import MAX_AUTHORITY_LEASE_SECONDS, SALAMANDER_TOOLS, SalamanderTools
 from .skills import discover_skills, get_skill_module
 
 from .hyba_context import EXECUTE_PATCH, TOOLS_PATCH
@@ -465,6 +466,7 @@ TOOLS: dict[str, dict[str, Any]] = {
     },
 }
 TOOLS.update(TOOLS_PATCH)
+TOOLS.update(SALAMANDER_TOOLS)
 
 
 class HybaMCPServer:
@@ -476,11 +478,16 @@ class HybaMCPServer:
         version: str = "2.0.0",
         control_plane: ControlPlane | None = None,
         identity_provider: Callable[[], str | None] | None = None,
+        salamander_enabled: bool = False,
     ) -> None:
         self.name = name
         self.version = version
         self.control_plane = control_plane or ControlPlane()
         self.identity_provider = identity_provider
+        self.salamander_tools = SalamanderTools(
+            self.control_plane,
+            enabled=salamander_enabled,
+        )
         self._initialized = False
         self._ready = False
 
@@ -596,6 +603,8 @@ class HybaMCPServer:
                 "consciousness_after": scale_res.consciousness_after,
                 "sovereign_doctrine": "Zero credit to narrow AI; ingested tools and templates adapted into EUCLID substrate.",
             }
+        if name in SALAMANDER_TOOLS:
+            return self.salamander_tools.execute(name, arguments, self._trusted_identity())
         if name == "discover_skills":
             return {"skills": discover_skills()}
         if name == "get_skill":
@@ -620,12 +629,38 @@ class HybaMCPServer:
         if name == "invoke_skill":
             options = arguments.get("options") or {}
             identity = self._trusted_identity()
-            return self.control_plane.invoke_skill(
+            skill_id = str(arguments["skill_id"])
+            skill_arguments = arguments["arguments"]
+            if skill_id == "security.verify_authority" and isinstance(skill_arguments, Mapping):
+                skill_arguments = {**skill_arguments, "identity": identity}
+                if skill_arguments.get("capability") == "salamander.optimise":
+                    duration = skill_arguments.get("lease_duration")
+                    if (
+                        isinstance(duration, bool)
+                        or not isinstance(duration, (int, float))
+                        or (isinstance(duration, float) and not math.isfinite(duration))
+                        or duration <= 0
+                        or duration > MAX_AUTHORITY_LEASE_SECONDS
+                    ):
+                        raise ToolInputError(
+                            f"Salamander authority leases are limited to "
+                            f"{MAX_AUTHORITY_LEASE_SECONDS:g} seconds"
+                        )
+            result = self.control_plane.invoke_skill(
                 identity,
-                str(arguments["skill_id"]),
-                arguments["arguments"],
+                skill_id,
+                skill_arguments,
                 options=options,
             )
+            if skill_id == "security.verify_authority" and isinstance(skill_arguments, Mapping):
+                lease = self.salamander_tools.issue_authority_lease(
+                    identity,
+                    skill_arguments,
+                    result,
+                )
+                if lease is not None:
+                    result = {**result, "authority_lease": lease}
+            return result
         if name == "evaluate_skill_outcome":
             skill_id = str(arguments["skill_id"])
             outcome = arguments["outcome"]

@@ -82,7 +82,7 @@ class TestHybaMCPServer:
             "scale_intelligence",
         }
         assert exact_math_tools <= tools.keys()
-        assert len(tools) == len(exact_math_tools) + 2 + 5
+        assert len(tools) == len(exact_math_tools) + 2 + 5 + 3
         assert tools["fibonacci"]["inputSchema"]["properties"]["n"]["maximum"] == MAX_N
 
     def test_lucas_15_and_20_tool_calls_hold_cassini_invariant(self) -> None:

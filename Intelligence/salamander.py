@@ -50,7 +50,6 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
-from lucas.ladder import FULL_LADDER
 from toe.poincare_golden_11d import (
     PHI,
     PRIME_BUCKETS,
@@ -176,7 +175,7 @@ class HomeostasisMonitor:
         elif error_rate > self.max_error_rate:
             action = "circuit_break"
             healthy = False
-        elif throughput > 0 and self._baseline.get("throughput", 0) > 0:
+        elif self._baseline.get("throughput", 0) > 0:
             ratio = throughput / self._baseline["throughput"]
             if ratio < 1.0 / PHI:
                 action = "recalibrate"
