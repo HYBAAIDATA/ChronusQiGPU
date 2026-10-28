@@ -1,19 +1,16 @@
 name: ARC native runtime research execution
 on:
-  push:
-    branches: [research/arc-native-20261023]
-    paths:
-      - .github/workflows/arc-native-research.yml
-      - euclid/benchmarks/arc_agi_1/remote_preflight.py
+  workflow_dispatch:
 permissions:
   contents: write
 concurrency:
-  group: arc-native-research
+  group: arc-native-research-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   canonical-runtime:
+    if: github.ref_name == 'research/arc-native-20261023'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:

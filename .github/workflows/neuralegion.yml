@@ -150,16 +150,16 @@
 name: "NeuraLegion"
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  schedule:
-    - cron: '37 23 * * 5'
+  workflow_dispatch:
+
+concurrency:
+  group: neuralegion-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   neuralegion_scan:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     name: A job to run a Nexploit scan
     steps:
       - uses: actions/checkout@v4

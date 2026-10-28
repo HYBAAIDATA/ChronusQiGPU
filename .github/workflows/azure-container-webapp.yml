@@ -3,12 +3,17 @@ name: Deploy PYTHIA control image to Azure
 on:
   workflow_dispatch:
 
+concurrency:
+  group: azure-container-webapp-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment:
       name: Production
     steps:

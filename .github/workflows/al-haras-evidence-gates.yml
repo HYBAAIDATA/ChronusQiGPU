@@ -2,9 +2,30 @@ name: AL HARAS Evidence Gates
 
 on:
   push:
-    branches: [main, 'feat/**']
+    branches: [main]
+    paths:
+      - "al_haras/**"
+      - "aethel/**"
+      - "chronus/**"
+      - "euclid/**"
+      - "hyba/**"
+      - "hyba_mcp/**"
+      - "integrations/**"
+      - "Intelligence/**"
+      - "kellogg/**"
+      - "mining/**"
+      - "scripts/**"
+      - "tests/**"
+      - "toe/**"
+      - "turing_universal_quantum_computer/**"
+      - "Makefile"
+      - "pyproject.toml"
+      - ".github/workflows/**"
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
   workflow_dispatch:
 
 permissions:

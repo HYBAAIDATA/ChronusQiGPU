@@ -18,9 +18,11 @@
 # For more samples to get started with GitHub Action workflows to deploy to Azure: https://github.com/Azure/actions-workflow-samples
 
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
+
+concurrency:
+  group: azure-webapps-node-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   AZURE_WEBAPP_NAME: your-app-name    # set this to your application's name
@@ -33,6 +35,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
     - uses: actions/checkout@v4
 
@@ -58,6 +61,7 @@ jobs:
     permissions:
       contents: none
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: build
     environment:
       name: 'Development'
