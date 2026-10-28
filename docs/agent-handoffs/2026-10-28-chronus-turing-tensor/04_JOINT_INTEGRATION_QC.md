@@ -1,5 +1,7 @@
 # Independent QC assignment — CHRONUS × TURING × Tensor/Kellogg
 
+**Owner appointment (28 October 2026): ChatGPT is the independent QC owner, with [QC tracker #94](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/94). This is NOT a GitHub account assignment. Implementation agent assignees remain for the repository owner to allocate. The final gate is actual representative workload correctness/parity and recovery, NOT a benchmark. Only separately approved external comparisons with genuine competitors count as benchmarking. Read [08_OWNER_DIRECTIVE_PRODUCTION_PARITY.md](08_OWNER_DIRECTIVE_PRODUCTION_PARITY.md).**
+
 **Role:** Independent integrator, adversarial reviewer and release-gate verifier. Do not implement the three subsystems' own core changes and then mark your own work certified. Audit the candidate PR heads against the shared governing Notion architecture, the pinned implementation manifests and the exact released installed artifacts. Preserve owner approval control.
 
 ## Source hierarchy
@@ -36,3 +38,7 @@ Owner-approved [architecture register](https://app.notion.com/p/3f0bcc6fa49981c6
 ## Required output
 
 `HYBA_CHRONUS_TURING_TENSOR_QC_VERDICT.md`: each obligation with owner, implementation path, pinned source SHA, exact command, pass/fail/gated, raw evidence, device/custody identity and next fix. State `RELEASE_HOLD` until every mandatory check for the targeted profile is satisfied; available software-only profiles and unavailable physical-lane certifications should remain distinct. Record conflicts requiring explicit owner choice; no unapproved merge, package publication, production declaration or Notion change.
+
+## Mandatory QC conclusion for each subsystem
+
+For each profile independently: record agent PR and SHA, installed artifact digest, exact real input, independently computed expected result, exact/stochastic/numeric parity rule and result, operational bounds/telemetry, custody semantic restore/replay, security/negative tests and outstanding findings. Issue `QC_PASS` only when all mandatory gates are met; otherwise `QC_HOLD`. Compare to a competitor only under a separate owner-approved competitive benchmark protocol. Operational timing/resources are service-safety observations, not comparative benchmarks. [CHRONUS #91](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/91), [TURING #92](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/92), [Tensor #93](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/93) must each be independently assessed, then owner approval may promote `PRODUCTION_READY` for the proved profile.

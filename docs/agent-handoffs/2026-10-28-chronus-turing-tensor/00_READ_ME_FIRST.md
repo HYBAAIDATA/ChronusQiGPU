@@ -17,7 +17,11 @@ Three independent implementation assignments, one cross-system QC specification,
 
 ## Status and fidelity
 
-This is a **read-only planning and documentation artifact**, not a pull request, Notion edit, production certification, exact-head test run, or owner approval. The Notion digest is a **faithful synthesis of retrieved pages**, not a complete verbatim export of every linked page. Canonical Notion pages are still the authorities for owner-controlled architecture, subject to executable evidence for implementation facts. Re-fetch their latest revision before editing or publishing.
+This was originally prepared as a **read-only planning and documentation artifact** and was subsequently committed in documentation-only [PR #90](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/pull/90). It is not a Notion edit, production certification, exact-head test run, or owner approval of an implementation. The Notion digest is a **faithful synthesis of retrieved pages**, not a complete verbatim export of every linked page. Canonical Notion pages are still the authorities for owner-controlled architecture, subject to executable evidence for implementation facts. Re-fetch their latest revision before editing or publishing.
+
+## Owner's updated production directive (28 October 2026)
+
+[Owner directive: agent accountability, actual-workload parity and competitive-benchmark separation](08_OWNER_DIRECTIVE_PRODUCTION_PARITY.md) takes priority for these execution assignments. One agent per system (#91, #92, #93), assigned by the owner; ChatGPT owns independent QC (#94). Final production profile may only be marked ready after real-workload parity, recovery/security evidence, independent QC and owner approval. Comparative benchmarks require genuine competitor products and separate authorization; operational measurements remain mandatory, but are not product comparisons.
 
 ## Working protocol
 

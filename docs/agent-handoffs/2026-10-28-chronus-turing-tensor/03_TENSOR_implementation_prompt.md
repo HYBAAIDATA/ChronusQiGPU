@@ -1,5 +1,8 @@
 # Implementation assignment — Tensor / Kellogg consolidation and elevation
 
+> **Owner production directive, 28 October 2026:** This Tensor/Kellogg assignment is owned by **one implementation agent to completion**, to be assigned by repository owner at [issue #93](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/93). ChatGPT independently performs QC ([issue #94](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/94)). The final qualification is actual production-path **real-workload result parity, security, custody and fresh-process replay**, not a benchmark. Comparative benchmarking is only for a separate genuine competitor study; operational safety metrics are still necessary. Preserve each product's distinct class/authority and do not claim superiority or `PRODUCTION_READY` without evidence, independent QC and owner approval. **Read [08_OWNER_DIRECTIVE_PRODUCTION_PARITY.md](08_OWNER_DIRECTIVE_PRODUCTION_PARITY.md) first.**
+
+
 **Repository:** `HYBAAIENTERPRISE/HYBAEnterprise` (inspected SHA `c4ea01fd1b82d411db3fd394c96fc143579b08b5`; re-resolve exact HEAD).
 
 **Mission:** Consolidate HYBA Tensor into an evidence-bound **logical tensor execution and verification interface**, preserving the deep exact quantum/tensor mathematical capabilities of **Kellogg** and July Geodesic Tensor/PULVINI work while using **CHRONUS solely as heterogeneous execution substrate**. Reconcile duplicate implementations, restore missing algorithms rather than delete capabilities, enforce precision and memory contracts, and produce clean reproducible packages and evidence. Do not fold Kellogg's mathematical authority into CHRONUS, TURING or the general logical router.
@@ -47,3 +50,7 @@ Reconcile product naming in the package catalog rather than silently assuming a 
 ## Deliverables
 
 One scoped PR with canonical source/ABI/module map, feature-retention/compatibility evidence, exact math and backend regression suites, ownership-reconciled package manifest, measured production-dossier artifacts and `TENSOR_KELLOGG_CLOSURE_DOSSIER.md`. Return all unverified claims as MISSING/UNAVAILABLE/GATED. No removing features without proven replacements; no unapproved architectural or product renaming, merging, publication or production promotion. Independent reviewer tests all final installed artefacts.
+
+## Required owner-lane production closure (28 October 2026)
+
+The assigned owner of [issue #93](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/93) must implement, close findings, rerun exact-head source and clean-installed artifact tests, then submit a real workload parity dossier with independent oracle, predeclared tolerances, actual execution path, output hashes, AL HARAS decisions, OVID transforms if exercised, THESEUS separate-process semantic replay, refusal/rollback tests and bounded resource measurements. Resolve failed QC findings and resubmit. Stop only at `QC_PASS` and explicit owner production-status decision for the supported profile. Distinct product positioning does not establish a competitive claim. No benchmark can replace demonstrated workload parity; a competitive benchmark needs a genuine third-party product and separate evidence/approval.

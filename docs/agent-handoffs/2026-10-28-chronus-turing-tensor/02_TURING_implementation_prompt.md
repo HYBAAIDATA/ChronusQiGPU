@@ -1,5 +1,8 @@
 # Implementation assignment — TURING independent VQC consolidation and elevation
 
+> **Owner production directive, 28 October 2026:** This TURING assignment is owned by **one implementation agent to completion**, to be assigned by repository owner at [issue #92](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/92). ChatGPT independently performs QC ([issue #94](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/94)). The final qualification is actual production-path **real-workload result parity, security, custody and fresh-process replay**, not a benchmark. Comparative benchmarking is only for a separate genuine competitor study; operational safety metrics are still necessary. Preserve each product's distinct class/authority and do not claim superiority or `PRODUCTION_READY` without evidence, independent QC and owner approval. **Read [08_OWNER_DIRECTIVE_PRODUCTION_PARITY.md](08_OWNER_DIRECTIVE_PRODUCTION_PARITY.md) first.**
+
+
 **Repository:** `HYBAAIENTERPRISE/HYBAEnterprise`; baseline inspected `main` SHA `c4ea01fd1b82d411db3fd394c96fc143579b08b5`. Resolve fresh HEAD and commit-bound audit before changes.
 
 **Mission:** Preserve TURING as the independent HYBA Virtual Quantum Computer, consolidate duplicated or fragmented VQC implementations under one semantic authority, repair mathematical and execution-contract defects, integrate real CHRONUS execution where justified, and qualify exactness, measurement, representation, verification, THESEUS replay, OVID transformations and release artifacts. Do not demote TURING into a generic GPU adapter or grant it intelligence/mining/security/custody ownership. Do not confuse mathematical VQC verification with a physical quantum device.
@@ -52,3 +55,7 @@ Run clean wheel/sdist installation and executable exact-head tests in supported 
 ## Deliverables
 
 A single bounded TURING PR (or separately reviewable defects if necessary), source and dependency ownership manifest, F01–F14 current-head re-test ledger, mathematical counterexample regressions, typed representation/backend/custody contracts, build/replay artifacts, publication gate and `TURING_CLOSURE_DOSSIER.md`. No merger into CHRONUS, no functionality removed without validated replacement, no owner-controlled Notion edits, no unapproved publication/tag/merge. Independent QC will certify or reject evidence; final promotion belongs to owner.
+
+## Required owner-lane production closure (28 October 2026)
+
+The assigned owner of [issue #92](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/92) must implement, close findings, rerun exact-head source and clean-installed artifact tests, then submit a real workload parity dossier with independent oracle, predeclared tolerances, actual execution path, output hashes, AL HARAS decisions, OVID transforms if exercised, THESEUS separate-process semantic replay, refusal/rollback tests and bounded resource measurements. Resolve failed QC findings and resubmit. Stop only at `QC_PASS` and explicit owner production-status decision for the supported profile. Distinct product positioning does not establish a competitive claim. No benchmark can replace demonstrated workload parity; a competitive benchmark needs a genuine third-party product and separate evidence/approval.

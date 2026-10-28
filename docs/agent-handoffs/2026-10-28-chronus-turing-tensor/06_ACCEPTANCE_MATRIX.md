@@ -12,7 +12,9 @@
 | THESEUS | Execution receipt/recovery | Circuit/checkpoint/replay | Tensor state/receipt/replay | Fresh-process semantic recovery; tampering refused |
 | PYTHIA mining | Execute sealed Hendrix SHA256d only | Optional independently scoped VQC support | Advisory; never mining proof | PYTHIA keeps strategy; real accepted shares unavailable absent pool evidence |
 | Release | Core and optional device lane profiles | `hyba-turing-vqc` exact wheel | Kellogg and logical Tensor packaging reconciled | Clean installed artifacts; package digests; SBOM; tests; rollback |
-| Benchmarks | Matched render/hashing/compute | Matched circuit/correctness/resource | Matched matrix/tensor workload | p50/p95/p99/repetitions, workload semantics, raw artifacts, negatives |
+| Real-workload parity (production gate) | Actual render/compute/real SHA256d work | Actual VQC programs, independent expected state/distribution | Actual complex tensor/TT/MPS/MPO/fold workloads | Correctness parity, predeclared numerical/statistical tolerances, real operational input, raw artifacts, custody and replay; not a benchmark |
+| Operational safety telemetry (production gate) | Measured bounded runtime, memory, error, backend identity | Measured execution envelope, cancellation and replay | Measured memory/residual/timeout/precision envelope | Service safety/resource evidence only, not a comparative performance claim |
+| External competitor benchmark (separate) | Comparable third-party product when meaningful | Comparable third-party VQC product under same semantics | Comparable third-party tensor system under matched workload | Separately approved competitor-only comparison; no competitor = no comparative claim, no effect on correctness-parity requirement |
 | Owner gates | Architecture/new backend/status/claims | VQC semantics/representations/status/claims | Public naming/authority/status | Explicit approval before material changes or production promotion |
 
 ## Status vocabulary
@@ -28,3 +30,7 @@
 ## Exit artifacts
 
 `CHRONUS_CLOSURE_DOSSIER.md`, `TURING_CLOSURE_DOSSIER.md`, `TENSOR_KELLOGG_CLOSURE_DOSSIER.md`, and `HYBA_CHRONUS_TURING_TENSOR_QC_VERDICT.md`, with all missing obligations explicitly unresolved. Zero fabricated values. No autonomous release declaration.
+
+## Owner's 28 October superseding parity rule
+
+See [08_OWNER_DIRECTIVE_PRODUCTION_PARITY.md](08_OWNER_DIRECTIVE_PRODUCTION_PARITY.md). Agent owners for [#91](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/91), [#92](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/92), [#93](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/93) must complete real production-workload parity and recovery. Independent QC [#94](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/94) must verify the exact installed artifacts. Production-ready status follows owner approval, never agent self-certification. No internal parity test is a competitive benchmark; external comparisons require an actual competitor.
