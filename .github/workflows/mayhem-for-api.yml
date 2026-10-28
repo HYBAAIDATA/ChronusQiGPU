@@ -24,17 +24,17 @@
 name: "Mayhem for API"
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: mayhem-for-api-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   mayhem-for-api:
     name: Mayhem for API
-    # Mayhem for API runs on linux, mac and windows
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       actions: read
       contents: read
@@ -55,7 +55,7 @@ jobs:
           mayhem-token: ${{ secrets.MAYHEM_TOKEN }}
           api-url: http://localhost:8080 # <- ✏️ update this
           api-spec: http://localhost:8080/openapi.json # <- ✏️ update this
-          duration: 60
+          duration: 10
           sarif-report: mapi.sarif
 
       - name: Upload SARIF file

@@ -3,9 +3,27 @@ name: PYTHIA Canonical Push CI
 on:
   push:
     branches: [main]
+    paths:
+      - "chronus/mla1517/**"
+      - "chronus/mla1517_platform/**"
+      - "aethel/**"
+      - "mining/**"
+      - "tests/**"
+      - "scripts/ci_install.sh"
+      - "pyproject.toml"
+      - ".github/workflows/pythia-push-gate.yml"
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:
+
+concurrency:
+  group: pythia-canonical-push-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -14,11 +32,13 @@ jobs:
   canonical-python:
     name: Canonical Python compile and tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
+          cache: pip
       - name: Install canonical test package
         working-directory: chronus/mla1517_platform
         run: |

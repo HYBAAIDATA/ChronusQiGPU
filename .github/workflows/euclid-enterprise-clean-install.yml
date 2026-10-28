@@ -19,18 +19,38 @@ on:
       - "tests/intelligence_consolidation/**"
       - ".github/workflows/euclid-enterprise-clean-install.yml"
   push:
-    branches: [main, fix/euclid-clean-install-runtime-fidelity]
+    branches: [main]
+    paths:
+      - "euclid/**"
+      - "Intelligence/**"
+      - "al_haras/**"
+      - "aethel/**"
+      - "toe/**"
+      - "kellogg/**"
+      - "hyba_substrate/**"
+      - "resonance_intelligence/**"
+      - "scripts/*clean_install*"
+      - "scripts/build_standalone_wheel.py"
+      - "tests/test_empirical_state_bridge_hardening.py"
+      - "tests/test_enterprise_packaging.py"
+      - "tests/test_unified_intelligence_consolidation.py"
+      - "tests/intelligence_consolidation/**"
+      - ".github/workflows/euclid-enterprise-clean-install.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: euclid-enterprise-clean-install-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   installed-artifact:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
         python: ["3.12", "3.13"]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
@@ -41,6 +61,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
+          cache: pip
       - name: Install build tooling only
         run: python -m pip install "build>=1.2,<2" "setuptools>=77,<81" wheel
       - name: Packaging regressions

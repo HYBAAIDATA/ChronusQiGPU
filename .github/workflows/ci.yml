@@ -3,8 +3,37 @@ name: CI
 on:
   push:
     branches: [main]
+    paths:
+      - "**/*.py"
+      - "**/*.c"
+      - "**/*.h"
+      - "**/*.cpp"
+      - "**/*.cl"
+      - "**/*.rs"
+      - "**/*.js"
+      - "**/*.jsx"
+      - "**/*.ts"
+      - "**/*.tsx"
+      - "**/*.toml"
+      - "**/*.yml"
+      - "**/*.yaml"
+      - "**/*.sh"
+      - "frontend/**"
+      - "pyproject.toml"
+      - "Makefile"
+      - "Dockerfile*"
+      - ".github/workflows/**"
   pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -17,6 +46,7 @@ jobs:
   node:
     name: Node — typecheck, unit tests, build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -37,6 +67,7 @@ jobs:
   python:
     name: Python — lint, unit tests, compile
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
         with:
@@ -150,6 +181,7 @@ jobs:
   deploy-sentry:
     name: Deploy sentry — config, dependency, native-build and CI wiring
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7

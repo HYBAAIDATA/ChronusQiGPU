@@ -3,8 +3,22 @@ name: PYTHIA Production Mining CI
 on:
   push:
     branches: [main]
+    paths:
+      - "chronus/mla1517/**"
+      - "chronus/mla1517_platform/**"
+      - "aethel/**"
+      - "mining/**"
+      - "tests/**"
+      - "scripts/ci_install.sh"
+      - "pyproject.toml"
+      - ".github/workflows/pythia-ci.yml"
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:
 
 permissions:
@@ -21,6 +35,7 @@ jobs:
   format-and-lint:
     name: Canonical Python — Black and Flake8
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Check out source
         uses: actions/checkout@v7
@@ -60,6 +75,7 @@ jobs:
   canonical-logic:
     name: Canonical behavioral gates — offline and deterministic
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Check out source
         uses: actions/checkout@v7
@@ -133,6 +149,7 @@ jobs:
   integration-audit:
     name: Integration audit — deletions, imports, and compile
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Check out source
         uses: actions/checkout@v7
@@ -175,6 +192,7 @@ jobs:
   hybrid-fleet:
     name: Hybrid solver fleet — offline signal gates
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Check out source
         uses: actions/checkout@v7
@@ -200,6 +218,7 @@ jobs:
   hardware-gate:
     name: Hardware gate — explicit NOT_RUN when silicon is unavailable
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Check out source
         uses: actions/checkout@v7

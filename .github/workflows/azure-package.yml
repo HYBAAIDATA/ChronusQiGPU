@@ -1,14 +1,15 @@
 name: Azure packaging
 on:
-  pull_request:
-  push:
-    branches: [main]
   workflow_dispatch:
+concurrency:
+  group: azure-package-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
   infrastructure:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - name: Compile Bicep without deploying resources

@@ -4,9 +4,17 @@ on:
   push:
     branches:
       - main
-      - elevation/euclid-intelligence-elevation
     tags:
       - 'v*.*.*'
+    paths:
+      - 'Dockerfile*'
+      - '.dockerignore'
+      - 'chronus/**'
+      - 'packages/**'
+      - 'frontend/**'
+      - 'scripts/ci_install.sh'
+      - 'pyproject.toml'
+      - '.github/workflows/docker-build-cloud.yml'
   pull_request:
     paths:
       - 'Dockerfile'
