@@ -15,6 +15,7 @@ import subprocess
 import sys
 import time
 from fractions import Fraction
+from importlib.metadata import PackageNotFoundError, version as distribution_version
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Sequence
 
@@ -27,7 +28,15 @@ def provenance() -> Dict[str, Any]:
     import turing_universal_quantum_computer as tqc
 
     prov = _kellogg_provenance()
-    prov["turing_version"] = tqc.__version__
+    turing_version = getattr(tqc, "__version__", None)
+    if turing_version is None:
+        try:
+            turing_version = distribution_version("hyba-turing-vqc")
+        except PackageNotFoundError as exc:
+            raise RuntimeError(
+                "cannot resolve the installed hyba-turing-vqc version"
+            ) from exc
+    prov["turing_version"] = turing_version
     return prov
 
 
@@ -516,6 +525,10 @@ BENCHMARKS: Dict[str, tuple] = {
     "ten_thousand_qubit_vqc_voyage": ("meta", bench_ten_thousand_qubit_vqc_voyage),
 }
 
+REQUIRED_BENCHMARKS = frozenset(
+    {"pipeline_custody_replay", "ten_thousand_qubit_vqc_voyage"}
+)
+
 
 def run(benchmark_id: str, *, quick: bool = False, prov: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     from kellogg.certificate import merkle_root
@@ -586,7 +599,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     summary = run_all(args.ids or None, quick=args.quick, out_dir=args.out, progress=show)
     print(f"passed {len(summary['passed'])}, failed {len(summary['failed'])}, "
           f"incomplete {len(summary['incomplete'])}; digest {summary['digest'][:16]}")
-    return 1 if summary["failed"] else 0
+    required_incomplete = sorted(set(summary["incomplete"]) & REQUIRED_BENCHMARKS)
+    if required_incomplete:
+        print("required benchmarks incomplete: " + ", ".join(required_incomplete))
+    return 1 if summary["failed"] or required_incomplete else 0
 
 
 if __name__ == "__main__":
