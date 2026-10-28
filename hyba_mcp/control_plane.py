@@ -16,6 +16,7 @@ from typing import Any, Callable, Mapping
 
 from .skills import SKILL_MODULES, get_skill_module
 from .skills.common import json_safe, validate_schema
+from .hyba_context import resolve_context_budget
 
 MAX_AUDIT_PAYLOAD_BYTES = 1_048_576
 
@@ -292,6 +293,12 @@ class ControlPlane:
             return {"valid": False, "errors": [f"unknown skill: {skill_id}"]}
         errors = validate_schema(arguments, module.INPUT_SCHEMA)
         return {"valid": not errors, "errors": errors, "skill_id": skill_id}
+
+    def enforce_context_budget(
+        self, tier: str = "T0", budget_bytes: int | None = None
+    ) -> dict[str, Any]:
+        """Validate a context request against its tier ceiling and Lucas scale."""
+        return resolve_context_budget(tier, budget_bytes)
 
     def route_task(
         self,

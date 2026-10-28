@@ -1,12 +1,18 @@
 """Deterministic, read-only repository context and exact-phrase verification tools."""
 
+import base64
 import hashlib
 import json
 import os
 import re
 
+from kellogg.scales import zeckendorf
+from lucas.ladder import ladder_capacity
+
 SKIP_DIRS = {".git", "__pycache__", "node_modules"}
 REPO_ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir))
+DEFAULT_CONTEXT_BUDGET = 10_000_000
+MAX_CONTEXT_PAGE = 10_000_000
 
 
 def _safe_join(root, relative_path):
@@ -37,11 +43,21 @@ def _validate_limit(name, value, minimum, maximum):
         raise ValueError(f"{name} must be an integer from {minimum} to {maximum}")
 
 
-def hyba_context(query, max_files=8, max_chars_per_file=2000):
+def hyba_context(
+    query, max_files=8, max_chars_per_file=2000, budget=DEFAULT_CONTEXT_BUDGET, page=0
+):
+    """Return read-only previews from a byte-bounded, zero-based paged index.
+
+    The budget counts path framing and file bytes, snapped down by the Lucas
+    capacity ladder. A partial scan is reported as UNSEEN, not as a negative
+    search result.
+    """
     if not isinstance(query, str) or not query.strip():
         raise ValueError("query must be a non-empty string")
     _validate_limit("max_files", max_files, 0, 100)
     _validate_limit("max_chars_per_file", max_chars_per_file, 1, 20000)
+    _validate_limit("budget", budget, 1, DEFAULT_CONTEXT_BUDGET)
+    _validate_limit("page", page, 0, MAX_CONTEXT_PAGE)
 
     keywords = []
     seen = set()
@@ -50,30 +66,89 @@ def hyba_context(query, max_files=8, max_chars_per_file=2000):
             keywords.append(keyword)
             seen.add(keyword)
 
-    ranked_files = []
     root = os.path.realpath(REPO_ROOT)
+    candidate_paths = []
     for current_root, dirnames, filenames in os.walk(root, followlinks=False):
         dirnames[:] = sorted(name for name in dirnames if name not in SKIP_DIRS)
         for filename in sorted(filenames):
-            candidate = _safe_join(root, os.path.relpath(os.path.join(current_root, filename), root))
+            candidate = _safe_join(
+                root, os.path.relpath(os.path.join(current_root, filename), root)
+            )
             if candidate is None:
                 continue
-            try:
-                with open(candidate, "rb") as source:
-                    raw = source.read()
-                if b"\x00" in raw:
-                    continue
-                text = raw.decode("utf-8", errors="replace")
-            except (OSError, UnicodeError):
-                continue
-
             relative_path = os.path.relpath(candidate, root).replace(os.sep, "/")
-            lowered_path = relative_path.lower()
-            score = sum(text.lower().count(keyword) for keyword in keywords)
-            score += 2 * sum(lowered_path.count(keyword) for keyword in keywords)
-            if score == 0:
-                continue
+            candidate_paths.append((relative_path, candidate))
 
+    candidate_paths.sort(key=lambda item: item[0])
+    effective_budget = min(budget, ladder_capacity(budget))
+    tile_size = (
+        effective_budget if effective_budget < 16 else 1 << (effective_budget.bit_length() - 1)
+    )
+    budget_used = 0
+    tile_bytes = 0
+    tile_hasher = hashlib.sha256()
+    tiles = []
+
+    def append_index_bytes(data):
+        nonlocal budget_used, tile_bytes, tile_hasher
+        offset = 0
+        while offset < len(data):
+            amount = min(tile_size - tile_bytes, len(data) - offset)
+            tile_hasher.update(data[offset : offset + amount])
+            tile_bytes += amount
+            budget_used += amount
+            offset += amount
+            if tile_bytes == tile_size:
+                tiles.append(
+                    {
+                        "index": len(tiles),
+                        "fold_indices": zeckendorf(len(tiles) + 1),
+                        "bytes": tile_bytes,
+                        "digest": tile_hasher.hexdigest(),
+                    }
+                )
+                tile_bytes = 0
+                tile_hasher = hashlib.sha256()
+
+    index_complete = True
+    for relative_path, candidate in candidate_paths:
+        try:
+            with open(candidate, "rb") as source:
+                path_bytes = relative_path.encode("utf-8")
+                header = len(path_bytes).to_bytes(8, "big") + path_bytes
+                remaining = effective_budget - budget_used
+                if len(header) > remaining:
+                    index_complete = False
+                    break
+                append_index_bytes(header)
+
+                raw_parts = []
+                available = effective_budget - budget_used
+                file_size = os.fstat(source.fileno()).st_size
+                while available > 0:
+                    chunk = source.read(min(tile_size, available))
+                    if not chunk:
+                        break
+                    raw_parts.append(chunk)
+                    append_index_bytes(chunk)
+                    available = effective_budget - budget_used
+                raw = b"".join(raw_parts)
+        except (OSError, UnicodeError):
+            index_complete = False
+            break
+
+        if file_size > len(raw):
+            index_complete = False
+
+        if b"\x00" in raw:
+            if not index_complete:
+                break
+            continue
+        text = raw.decode("utf-8", errors="replace")
+        lowered_path = relative_path.lower()
+        score = sum(text.lower().count(keyword) for keyword in keywords)
+        score += 2 * sum(lowered_path.count(keyword) for keyword in keywords)
+        if score > 0:
             text_lower = text.lower()
             positions = [text_lower.find(keyword) for keyword in keywords]
             positions = [position for position in positions if position >= 0]
@@ -89,14 +164,42 @@ def hyba_context(query, max_files=8, max_chars_per_file=2000):
                 if suffix:
                     end -= len(suffix)
                 preview = prefix + text[start:end] + suffix
-            ranked_files.append(
-                {"path": relative_path, "score": score, "preview": preview}
-            )
+            ranked_files.append({"path": relative_path, "score": score, "preview": preview})
+
+        if not index_complete:
+            break
+
+    if tile_bytes:
+        tiles.append(
+            {
+                "index": len(tiles),
+                "fold_indices": zeckendorf(len(tiles) + 1),
+                "bytes": tile_bytes,
+                "digest": tile_hasher.hexdigest(),
+            }
+        )
 
     ranked_files.sort(key=lambda item: (-item["score"], item["path"]))
+    page_size = max_files
+    page_count = (len(ranked_files) + page_size - 1) // page_size if page_size else 0
+    page_start = page * page_size
     result = {
         "query": query,
-        "files": ranked_files[:max_files],
+        "files": ranked_files[page_start : page_start + page_size],
+        "page": page,
+        "page_size": page_size,
+        "page_count": page_count,
+        "has_more": page + 1 < page_count,
+        "total_files": len(ranked_files),
+        "budget": budget,
+        "effective_budget": effective_budget,
+        "budget_used": budget_used,
+        "index_complete": index_complete,
+        "index_status": "COMPLETE" if index_complete else "UNSEEN",
+        "tile_size": tile_size,
+        "budget_fold_indices": zeckendorf(effective_budget),
+        "tiles": tiles,
+        "advisory_only": True,
         "theorem_proven": False,
         "sovereignty": "HYBA_SOVEREIGN_CNS",
     }
@@ -168,8 +271,21 @@ TOOLS_PATCH = {
                     "maximum": 20000,
                     "default": 2000,
                 },
+                "budget": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": DEFAULT_CONTEXT_BUDGET,
+                    "default": DEFAULT_CONTEXT_BUDGET,
+                },
+                "page": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": MAX_CONTEXT_PAGE,
+                    "default": 0,
+                },
             },
             "required": ["query"],
+            "additionalProperties": False,
         },
     },
     "hyba_verify": {

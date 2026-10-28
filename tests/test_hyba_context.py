@@ -1,8 +1,13 @@
 """Focused tests for the read-only HYBA repository context tools."""
 
+import hashlib
 import json
+import hashlib
+
+import pytest
 
 import hyba_mcp.hyba_context as context_tools
+import pytest
 from hyba_mcp.server import HybaMCPServer, TOOLS
 
 
@@ -20,10 +25,125 @@ def test_context_ranks_previews_and_digest_deterministically(tmp_path, monkeypat
     assert [item["path"] for item in result["files"]] == ["alpha.txt", "beta.txt"]
     assert result["files"][0]["score"] > result["files"][1]["score"]
     assert result["evidence_digest"] == repeated["evidence_digest"]
+    assert result["advisory_only"] is True
     assert result["theorem_proven"] is False
     assert result["sovereignty"] == "HYBA_SOVEREIGN_CNS"
+    assert result["budget"]["within_limit"]
+    assert result["budget"]["effective_bytes"] == result["budget"]["indexed_bytes"]
+    assert result["source_scope"] == "current_repository"
     short_preview = context_tools.hyba_context("only", max_files=1, max_chars_per_file=1)
     assert len(short_preview["files"][0]["preview"]) <= 1
+    assert short_preview["budget"] == 10_000_000
+    assert short_preview["tile_size"] == 8_388_608
+
+
+def test_context_budget_tiles_and_pages_are_deterministic(tmp_path, monkeypatch):
+    alpha = tmp_path / "alpha.txt"
+    beta = tmp_path / "beta.txt"
+    alpha.write_text("context alpha", encoding="utf-8")
+    beta.write_text("context beta", encoding="utf-8")
+    monkeypatch.setattr(context_tools, "REPO_ROOT", str(tmp_path))
+
+    first_page = context_tools.hyba_context("context", max_files=1, budget=4096, page=0)
+    second_page = context_tools.hyba_context("context", max_files=1, budget=4096, page=1)
+    repeated = context_tools.hyba_context("context", max_files=1, budget=4096, page=0)
+
+    assert [item["path"] for item in first_page["files"]] == ["alpha.txt"]
+    assert [item["path"] for item in second_page["files"]] == ["beta.txt"]
+    assert first_page["page_count"] == 2
+    assert first_page["has_more"] is True
+    assert second_page["has_more"] is False
+    assert first_page["budget_used"] <= first_page["effective_budget"] <= 4096
+    assert sum(tile["bytes"] for tile in first_page["tiles"]) == first_page["budget_used"]
+    stream = b"".join(
+        len(path).to_bytes(8, "big") + path + content
+        for path, content in (
+            (b"alpha.txt", b"context alpha"),
+            (b"beta.txt", b"context beta"),
+        )
+    )
+    assert first_page["tiles"] == [
+        {
+            "index": 0,
+            "fold_indices": [2],
+            "bytes": len(stream),
+            "digest": hashlib.sha256(stream).hexdigest(),
+        }
+    ]
+    assert first_page["tiles"] == second_page["tiles"] == repeated["tiles"]
+    assert first_page["evidence_digest"] == repeated["evidence_digest"]
+    assert first_page["advisory_only"] is True
+    assert first_page["theorem_proven"] is False
+    assert alpha.read_text(encoding="utf-8") == "context alpha"
+    assert beta.read_text(encoding="utf-8") == "context beta"
+
+
+def test_context_budget_is_finite_and_marks_partial_index(tmp_path, monkeypatch):
+    source = tmp_path / "large.txt"
+    source.write_text("context " * 20, encoding="utf-8")
+    monkeypatch.setattr(context_tools, "REPO_ROOT", str(tmp_path))
+
+    result = context_tools.hyba_context("context", budget=32)
+
+    assert result["budget_used"] <= result["effective_budget"] <= 32
+    assert result["index_complete"] is False
+    assert result["index_status"] == "UNSEEN"
+    assert sum(tile["bytes"] for tile in result["tiles"]) == result["budget_used"]
+    assert source.read_text(encoding="utf-8") == "context " * 20
+
+    for invalid_budget in (True, 0, 10_000_001):
+        with pytest.raises(ValueError):
+            context_tools.hyba_context("context", budget=invalid_budget)
+
+
+def test_context_snaps_budget_without_exceeding_requested_or_tier_limit():
+    budget = context_tools.resolve_context_budget("T0", 128 * 1024)
+    assert budget["requested_bytes"] == 128 * 1024
+    assert budget["effective_limit_bytes"] == 131070
+    assert budget["effective_limit_bytes"] <= budget["requested_bytes"]
+
+    with pytest.raises(ValueError, match="budget_bytes"):
+        context_tools.resolve_context_budget("T0", 1_000_000)
+
+
+def test_context_tiles_are_budgeted_digest_bound_and_resumable(tmp_path, monkeypatch):
+    first_tile = b"lucas" + b"a" * (context_tools.CONTEXT_TILE_BYTES - 5)
+    (tmp_path / "alpha.txt").write_bytes(first_tile + b"x" * context_tools.CONTEXT_TILE_BYTES)
+    (tmp_path / "beta.txt").write_bytes(b"lucas beta")
+    monkeypatch.setattr(context_tools, "REPO_ROOT", str(tmp_path))
+
+    first = context_tools.hyba_context("lucas", max_files=1, budget_bytes=20_000, tier="T1")
+    second = context_tools.hyba_context(
+        "lucas",
+        max_files=1,
+        budget_bytes=20_000,
+        tier="T1",
+        cursor=first["page"]["next_cursor"],
+    )
+
+    assert first["files"][0]["path"] == "alpha.txt"
+    assert first["files"][0]["sha256"] == hashlib.sha256(first_tile).hexdigest()
+    assert first["budget"]["effective_bytes"] == context_tools.CONTEXT_TILE_BYTES
+    assert first["budget"]["effective_bytes"] <= first["budget"]["effective_limit_bytes"]
+    assert sum(tile["bytes"] for tile in first["tiles"]) == first["budget"]["effective_bytes"]
+    serialized_tiles = b"".join(
+        json.dumps(tile, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        for tile in first["tiles"]
+    )
+    assert hashlib.sha256(serialized_tiles).hexdigest() == first["budget"]["index_digest"]
+    assert first["page"]["has_more"]
+    assert second["files"][0]["path"] == "beta.txt"
+    assert second["page"]["has_more"] is False
+    assert second["budget"]["within_limit"]
+    assert (
+        context_tools._evidence_digest(
+            {key: value for key, value in first.items() if key != "evidence_digest"}
+        )
+        == first["evidence_digest"]
+    )
+
+    with pytest.raises(ValueError, match="cursor"):
+        context_tools.hyba_context("different query", cursor=first["page"]["next_cursor"])
 
 
 def test_verify_requires_an_exact_byte_match_and_reports_line(tmp_path, monkeypatch):
@@ -52,7 +172,10 @@ def test_verify_rejects_paths_outside_repository(tmp_path, monkeypatch):
     assert context_tools._safe_join(str(tmp_path), "../evidence.txt") is None
 
 
-def test_server_registers_and_executes_both_tools():
+def test_server_registers_and_executes_both_tools(tmp_path, monkeypatch):
+    (tmp_path / "context.txt").write_text("TOOLS_PATCH is registered", encoding="utf-8")
+    monkeypatch.setattr(context_tools, "REPO_ROOT", str(tmp_path))
+
     server = HybaMCPServer()
     server.handle_request(
         {
@@ -74,15 +197,29 @@ def test_server_registers_and_executes_both_tools():
     assert {"hyba_context", "hyba_verify"} <= set(TOOLS)
     assert {"hyba_context", "hyba_verify"} <= names
     assert len(names) == 16
+    context_schema = next(
+        tool["inputSchema"] for tool in listing["result"]["tools"] if tool["name"] == "hyba_context"
+    )
+    assert context_schema["properties"]["budget"]["default"] == 10_000_000
+    assert context_schema["properties"]["page"]["default"] == 0
 
     context_response = server.handle_request(
         {
             "jsonrpc": "2.0",
             "id": 2,
             "method": "tools/call",
-            "params": {"name": "hyba_context", "arguments": {"query": "TOOLS_PATCH"}},
+            "params": {
+                "name": "hyba_context",
+                "arguments": {"query": "TOOLS_PATCH", "budget": 4096, "page": 0},
+            },
         }
     )
     context_result = json.loads(context_response["result"]["content"][0]["text"])
     assert context_result["files"]
     assert context_result["theorem_proven"] is False
+
+
+def test_server_enforces_context_tier_budget_through_control_plane():
+    server = HybaMCPServer()
+    with pytest.raises(ValueError, match="budget_bytes"):
+        server.execute_tool("hyba_context", {"query": "lucas", "budget_bytes": 1_000_000})

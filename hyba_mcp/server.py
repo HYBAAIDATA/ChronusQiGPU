@@ -686,6 +686,12 @@ class HybaMCPServer:
             except (TypeError, ValueError, OSError) as exc:
                 return {"ok": False, "error": {"code": "invalid_outcome", "message": str(exc)}}
             return {"ok": True, "summary": summary, "audit_record": audit_record}
+        if name == "hyba_context":
+            self.control_plane.enforce_context_budget(
+                arguments.get("tier", "T0"),
+                arguments.get("budget_bytes"),
+            )
+            return EXECUTE_PATCH[name](**arguments)
         if name in EXECUTE_PATCH:
             return EXECUTE_PATCH[name](**arguments)
         raise ValueError(f"Unknown HYBA MCP tool: {name}")
