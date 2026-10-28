@@ -1,0 +1,74 @@
+{
+  "schema": "chronus.render_benchmark_revalidation/1",
+  "date": "2026-10-28",
+  "base": "main @ c4ea01f (exact head pinned at assignment)",
+  "command": "PYTHONPATH=. python -m chronus.v33.benchmarks.real_workloads",
+  "historical_artifact": "chronus/v33/benchmarks/real_workload_results.json (2026-10-05 run)",
+  "revalidation_artifact": "reports/chronus_8k_revalidation_20261028_clean_main_results.json",
+  "historical_environment": {
+    "platform": "Linux-6.18.49-x86_64-with-glibc2.34",
+    "python": "3.13.14",
+    "numpy": "2.5.3",
+    "cpu_count": 2,
+    "utc_timestamp": "2026-10-05T00:11:18+00:00",
+    "protocol_version": "1.0.0",
+    "thread_environment": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null,
+      "NUMEXPR_NUM_THREADS": null,
+      "CHRONUS_V33_RENDER_BACKEND": null
+    }
+  },
+  "revalidation_environment": {
+    "platform": "Linux-6.1.155-x86_64-with-glibc2.43",
+    "python": "3.14.8",
+    "numpy": "2.5.4",
+    "cpu_count": 2,
+    "utc_timestamp": "2026-10-28T07:40:27+00:00",
+    "protocol_version": "1.0.0",
+    "thread_environment": {
+      "OMP_NUM_THREADS": "4",
+      "OPENBLAS_NUM_THREADS": "4",
+      "MKL_NUM_THREADS": null,
+      "NUMEXPR_NUM_THREADS": null,
+      "CHRONUS_V33_RENDER_BACKEND": null
+    }
+  },
+  "workloads": [
+    {
+      "workload": "demo_sunset_sphere_8k",
+      "historical_seconds": 4.887069,
+      "revalidated_seconds": 4.600994,
+      "delta_pct": -5.85,
+      "identical_frame_contracts": true
+    },
+    {
+      "workload": "binary_two_sphere_8k",
+      "historical_seconds": 6.059355,
+      "revalidated_seconds": 6.018064,
+      "delta_pct": -0.68,
+      "identical_frame_contracts": true
+    },
+    {
+      "workload": "studio_composite_box_plane_8k",
+      "historical_seconds": 14.565593,
+      "revalidated_seconds": 13.087711,
+      "delta_pct": -10.15,
+      "identical_frame_contracts": true
+    },
+    {
+      "workload": "gallery_composite_4spp_8k",
+      "historical_seconds": 57.600152,
+      "revalidated_seconds": 53.063136,
+      "delta_pct": -7.88,
+      "identical_frame_contracts": true
+    }
+  ],
+  "verdicts": {
+    "historical_4.887s_clark": "REPRODUCED WITHIN 10% (4.601s on this host; hardware differs)",
+    "bit_identical_frame_facts": "HOLDS for all four 8K workloads (energy, hit counts, distributions identical)",
+    "8k_60fps_target": "NOT EVIDENCED (fastest measured frame 4.60s vs 16.7ms budget; ~0.22 fps)",
+    "claim_status": "8K render capability is evidenced as exactness, not speed. Any 8K/60fps marketing stays gated."
+  }
+}
