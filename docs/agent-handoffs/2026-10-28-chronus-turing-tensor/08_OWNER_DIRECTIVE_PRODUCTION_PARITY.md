@@ -1,6 +1,6 @@
 # Owner directive — agent-owned production readiness; real-workload parity, not benchmarking
 
-**Issued:** 28 October 2026. **Owner:** HYBA repository owner. **Implementation agents:** one each for CHRONUS, TURING and Tensor/Kellogg, to be designated by owner. **Independent QC:** ChatGPT in the owner conversation, no GitHub account/assignee implied.
+**Issued:** 28 October 2026. **Owner:** HYBA repository owner. **Implementation agents:** Perplexity (CHRONUS), Sider (TURING) and Copilot (Tensor/Kellogg) have been designated by owner. **Shared CI owner:** GitHub Copilot (#96). **Independent QC:** ChatGPT in the owner conversation, no GitHub account/assignee implied.
 
 **Status:** Approved workstream acceptance policy, **not** proof of production readiness, benchmark claim, physical backend certification, or permission to change the canonical architecture. Read the underlying Notion constitution and report conflicts for owner resolution. The three issue trackers are [CHRONUS #91](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/91), [TURING #92](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/92), [Tensor/Kellogg #93](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/93); independent [QC #94](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/94).
 
@@ -8,7 +8,7 @@
 
 Each owner receives one bounded subsystem lane and owns **implementation through completion**: discover and reconcile actual source and canonical workflows; implement corrections; keep functioning capabilities intact or demonstrably replace them; wire public/composed runtime and required security/transform/custody integrations; execute unit/property/adversarial/clean-installed/restart tests; conduct the final actual-workload parity voyage; address independent QC defects; produce a reproducible closure dossier. The implementation agent must not self-certify. A PR merge or documented module is not a production pass.
 
-The repository owner will allocate actual agents to #91–#93. Leave GitHub assignees unset until owner assignment; do not invent an identity. ChatGPT is the designated independent QC reviewer, with review work controlled by this conversation and issue #94.
+The repository owner has named Perplexity for #91, Sider for #92 and Copilot for #93. GitHub Copilot owns #96, the independent shared CI-green lane. Leave GitHub assignees unset unless the owner supplies verifiable GitHub usernames; do not invent identities. ChatGPT is the designated independent QC reviewer, with review work controlled by this conversation and issue #94.
 
 ## What production-ready means here
 
@@ -49,3 +49,16 @@ For each parity voyage save exact real input and provenance, source SHA, install
 `AGENT_ASSIGNED → SOURCE_RECONCILED → IMPLEMENTED → CLEAN_INSTALL_VERIFIED → REAL_WORKLOAD_PARITY_PASS → RECOVERY_SECURITY_PASS → QC_PASS → OWNER_APPROVED → PRODUCTION_READY (verified profile)`.
 
 The arrows represent **evidence gates**, not assumed future results. Use explicit `BLOCKED`/`FAIL`/unavailable states for incomplete phases. Agents must keep fixing and resubmitting until QC accepts all mandatory checks for the target profile. No automatic deployment, package publication or status promotion; unsupported hardware-specific, market, physical-QPU and pool-acceptance claims stay unpromoted.
+
+## Agent assignments and delivery lanes — owner decision (28 October 2026)
+
+| Lane | Named executing agent | Tracking | Completion requirement |
+| --- | --- | --- | --- |
+| CHRONUS | **Perplexity** | [#91](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/91) | Implementation through independently verified production qualification |
+| TURING | **Sider** | [#92](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/92) | Implementation through independently verified production qualification |
+| Tensor/Kellogg | **Copilot** | [#93](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/93) | Implementation through independently verified production qualification |
+| Repository-wide CI | **GitHub Copilot** | [#96](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/96) | All required workflows execute and pass, with exact-head evidence |
+| Independent QC | **ChatGPT** | [#94](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/94) | Review source and exact artifacts, real-workload parity, security, recovery; owner decision remains final |
+
+**Copilot on Tensor/Kellogg and GitHub Copilot on CI are separate responsibility lanes.** These are the owner's named AI agents; no GitHub usernames, notification deliveries or authenticated GitHub assignments have been inferred. Green CI is a necessary shared engineering gate but not a substitute for correctness, real workloads or QC. [CI workflow instructions](09_GITHUB_COPILOT_CI_GREEN.md).
+

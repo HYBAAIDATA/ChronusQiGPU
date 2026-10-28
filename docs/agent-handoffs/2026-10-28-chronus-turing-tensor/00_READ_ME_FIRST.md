@@ -28,3 +28,16 @@ This was originally prepared as a **read-only planning and documentation artifac
 Assign the three implementation prompts to independent executors. Assign `04_JOINT_INTEGRATION_QC.md` to an independent reviewer, rather than having the same agent mark its own work certified. Each executor must prepare a separate PR, minimally scoped and with exact-head evidence. No material authority change, owner-controlled canonical modification, release publication, deployment, or production-status promotion without explicit owner approval.
 
 No removals without proved functional replacement; no fabricated evidence; CI startup failures are not test passes. Missing device, external pool or physical QPU evidence stays `UNAVAILABLE` or `GATED`.
+
+## Agent assignments and delivery lanes — owner decision (28 October 2026)
+
+| Lane | Named executing agent | Tracking | Completion requirement |
+| --- | --- | --- | --- |
+| CHRONUS | **Perplexity** | [#91](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/91) | Implementation through independently verified production qualification |
+| TURING | **Sider** | [#92](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/92) | Implementation through independently verified production qualification |
+| Tensor/Kellogg | **Copilot** | [#93](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/93) | Implementation through independently verified production qualification |
+| Repository-wide CI | **GitHub Copilot** | [#96](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/96) | All required workflows execute and pass, with exact-head evidence |
+| Independent QC | **ChatGPT** | [#94](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/94) | Review source and exact artifacts, real-workload parity, security, recovery; owner decision remains final |
+
+**Copilot on Tensor/Kellogg and GitHub Copilot on CI are separate responsibility lanes.** These are the owner's named AI agents; no GitHub usernames, notification deliveries or authenticated GitHub assignments have been inferred. Green CI is a necessary shared engineering gate but not a substitute for correctness, real workloads or QC. [CI workflow instructions](09_GITHUB_COPILOT_CI_GREEN.md).
+

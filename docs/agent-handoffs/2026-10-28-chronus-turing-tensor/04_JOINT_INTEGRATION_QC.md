@@ -42,3 +42,18 @@ Owner-approved [architecture register](https://app.notion.com/p/3f0bcc6fa49981c6
 ## Mandatory QC conclusion for each subsystem
 
 For each profile independently: record agent PR and SHA, installed artifact digest, exact real input, independently computed expected result, exact/stochastic/numeric parity rule and result, operational bounds/telemetry, custody semantic restore/replay, security/negative tests and outstanding findings. Issue `QC_PASS` only when all mandatory gates are met; otherwise `QC_HOLD`. Compare to a competitor only under a separate owner-approved competitive benchmark protocol. Operational timing/resources are service-safety observations, not comparative benchmarks. [CHRONUS #91](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/91), [TURING #92](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/92), [Tensor #93](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/93) must each be independently assessed, then owner approval may promote `PRODUCTION_READY` for the proved profile.
+
+## Agent assignments and delivery lanes — owner decision (28 October 2026)
+
+| Lane | Named executing agent | Tracking | Completion requirement |
+| --- | --- | --- | --- |
+| CHRONUS | **Perplexity** | [#91](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/91) | Implementation through independently verified production qualification |
+| TURING | **Sider** | [#92](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/92) | Implementation through independently verified production qualification |
+| Tensor/Kellogg | **Copilot** | [#93](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/93) | Implementation through independently verified production qualification |
+| Repository-wide CI | **GitHub Copilot** | [#96](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/96) | All required workflows execute and pass, with exact-head evidence |
+| Independent QC | **ChatGPT** | [#94](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/94) | Review source and exact artifacts, real-workload parity, security, recovery; owner decision remains final |
+
+**Copilot on Tensor/Kellogg and GitHub Copilot on CI are separate responsibility lanes.** These are the owner's named AI agents; no GitHub usernames, notification deliveries or authenticated GitHub assignments have been inferred. Green CI is a necessary shared engineering gate but not a substitute for correctness, real workloads or QC. [CI workflow instructions](09_GITHUB_COPILOT_CI_GREEN.md).
+
+
+**Independent QC rule:** a `GREEN` result requires verified executed CI jobs, not an absent or blocked runner. No agent can self-certify its own product, even if it fixes the CI system. QC verdict remains per profile at the actual tested SHA/artifact.

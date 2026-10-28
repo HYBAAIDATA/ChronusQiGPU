@@ -34,3 +34,18 @@
 ## Owner's 28 October superseding parity rule
 
 See [08_OWNER_DIRECTIVE_PRODUCTION_PARITY.md](08_OWNER_DIRECTIVE_PRODUCTION_PARITY.md). Agent owners for [#91](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/91), [#92](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/92), [#93](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/93) must complete real production-workload parity and recovery. Independent QC [#94](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/94) must verify the exact installed artifacts. Production-ready status follows owner approval, never agent self-certification. No internal parity test is a competitive benchmark; external comparisons require an actual competitor.
+
+## Agent assignments and delivery lanes — owner decision (28 October 2026)
+
+| Lane | Named executing agent | Tracking | Completion requirement |
+| --- | --- | --- | --- |
+| CHRONUS | **Perplexity** | [#91](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/91) | Implementation through independently verified production qualification |
+| TURING | **Sider** | [#92](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/92) | Implementation through independently verified production qualification |
+| Tensor/Kellogg | **Copilot** | [#93](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/93) | Implementation through independently verified production qualification |
+| Repository-wide CI | **GitHub Copilot** | [#96](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/96) | All required workflows execute and pass, with exact-head evidence |
+| Independent QC | **ChatGPT** | [#94](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/94) | Review source and exact artifacts, real-workload parity, security, recovery; owner decision remains final |
+
+**Copilot on Tensor/Kellogg and GitHub Copilot on CI are separate responsibility lanes.** These are the owner's named AI agents; no GitHub usernames, notification deliveries or authenticated GitHub assignments have been inferred. Green CI is a necessary shared engineering gate but not a substitute for correctness, real workloads or QC. [CI workflow instructions](09_GITHUB_COPILOT_CI_GREEN.md).
+
+
+**Added CI obligation:** all required workflows must have executed and passed on the exact candidate and integrated SHA, with job URLs and logs. GitHub Copilot owns CI closure (#96) but does not own CHRONUS/TURING/Tensor product correctness. Startup failures and skipped required jobs are not green. See [CI handover](09_GITHUB_COPILOT_CI_GREEN.md).

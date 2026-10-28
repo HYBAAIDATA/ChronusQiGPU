@@ -23,13 +23,26 @@
 
 **Document provenance:** prepared as a requirements handover on 28 October 2026; source citations and limitations are in the digest. These Markdown files are available on the repository branch that contains them and become available on `main` after merge.
 
+## Agent assignments and delivery lanes — owner decision (28 October 2026)
+
+| Lane | Named executing agent | Tracking | Completion requirement |
+| --- | --- | --- | --- |
+| CHRONUS | **Perplexity** | [#91](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/91) | Implementation through independently verified production qualification |
+| TURING | **Sider** | [#92](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/92) | Implementation through independently verified production qualification |
+| Tensor/Kellogg | **Copilot** | [#93](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/93) | Implementation through independently verified production qualification |
+| Repository-wide CI | **GitHub Copilot** | [#96](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/96) | All required workflows execute and pass, with exact-head evidence |
+| Independent QC | **ChatGPT** | [#94](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/94) | Review source and exact artifacts, real-workload parity, security, recovery; owner decision remains final |
+
+**Copilot on Tensor/Kellogg and GitHub Copilot on CI are separate responsibility lanes.** These are the owner's named AI agents; no GitHub usernames, notification deliveries or authenticated GitHub assignments have been inferred. Green CI is a necessary shared engineering gate but not a substitute for correctness, real workloads or QC. [CI workflow instructions](09_GITHUB_COPILOT_CI_GREEN.md).
+
 ## Assigned workstreams and independent QC
 
 | Workstream | GitHub tracker | Accountable role |
 | --- | --- | --- |
-| CHRONUS | [#91](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/91) | Single implementation agent, owner to assign |
-| TURING | [#92](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/92) | Single implementation agent, owner to assign |
-| Tensor/Kellogg | [#93](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/93) | Single implementation agent, owner to assign |
+| CHRONUS — Perplexity | [#91](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/91) | Perplexity (assigned) |
+| TURING — Sider | [#92](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/92) | Sider (assigned) |
+| Tensor/Kellogg — Copilot | [#93](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/93) | Copilot (assigned) |
+| CI Green — GitHub Copilot | [#96](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/96) | Separate CI execution/repair |
 | Independent QC | [#94](https://github.com/HYBAAIENTERPRISE/HYBAEnterprise/issues/94) | ChatGPT QC as appointed in owner conversation |
 
 Never mark a production-ready status merely because a task/PR is complete. The final acceptance is **actual workload correctness/parity and recovery**, independently verified, then owner-approved for its declared profile. Competitor-only benchmarking is separate.
