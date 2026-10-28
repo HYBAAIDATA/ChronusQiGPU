@@ -82,6 +82,21 @@ class TestHybaMCPServer:
         assert payload20["cassini_holds"] is True
         assert payload20["left"] == 4
 
+    def test_lucas_10_benchmark_anchor_is_exact(self) -> None:
+        response = HybaMCPServer().handle_request({
+            "jsonrpc": "2.0",
+            "id": 5,
+            "method": "tools/call",
+            "params": {"name": "lucas", "arguments": {"n": 10}},
+        })
+        payload = json.loads(response["result"]["content"][0]["text"])
+        assert payload["n"] == 10
+        assert payload["L_n"] == 123
+        assert payload["F_n"] == 55
+        assert payload["cassini_holds"] is True
+        assert payload["left"] == payload["right"] == 4
+        assert payload["theorem_proven"] is False
+
     def test_sha256d_verify_tool_call(self) -> None:
         server = HybaMCPServer()
         header_hex = "00" * 80
