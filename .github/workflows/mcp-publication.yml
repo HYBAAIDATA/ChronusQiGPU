@@ -1,0 +1,176 @@
+name: hyba-mcp-sovereign-server
+
+on:
+  pull_request:
+    paths:
+      - "hyba_mcp/**"
+      - "packaging/mcp-sovereign-server/**"
+      - "mcp/**"
+      - ".mcp.json"
+      - ".github/workflows/mcp-publication.yml"
+  workflow_dispatch:
+    inputs:
+      rc_sha:
+        description: Full frozen release-candidate commit; must equal dispatch head
+        required: true
+        type: string
+      publish:
+        description: "Publish the exact verified release artefacts"
+        type: choice
+        options: [none, testpypi, pypi]
+        default: none
+
+permissions:
+  contents: read
+
+env:
+  RC_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  CI_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+jobs:
+  preflight:
+    name: Freeze and verify source identity
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        ref: ${{ env.RC_SHA }}
+    - name: Require exact requested RC
+      run: |
+        test "$(git rev-parse HEAD)" = "$RC_SHA"
+        if [ "${{ github.event_name }}" = workflow_dispatch ]; then
+          test "${{ inputs.rc_sha }}" = "${{ github.sha }}"
+        fi
+
+  verify-wheel:
+    name: Build + smoke / Python ${{ matrix.python }}
+    needs: preflight
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.RC_SHA }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install release tooling
+        run: python -m pip install --disable-pip-version-check build twine
+      - name: Build and verify MCP artefacts
+        run: python packaging/mcp-sovereign-server/build_and_verify.py
+      - name: Retain interpreter evidence
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: mcp-fixture-${{ matrix.python }}
+          path: |
+            packaging/mcp-sovereign-server/dist/artifact-verdict.json
+            packaging/mcp-sovereign-server/dist/wheel-manifest.json
+
+  catalog-check:
+    name: Publication catalog integrity
+    needs: verify-wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.RC_SHA }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Check catalog
+        run: python packaging/check_publication_catalog.py
+      - name: Unit tests
+        run: python -m unittest discover -s tests -p "test_publication_catalog.py" -v
+
+  # --- TestPyPI upload (never dispatched in this change) ---
+  upload-testpypi:
+    name: Upload to TestPyPI
+    needs: [verify-wheel, catalog-check]
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish != 'none' }}
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.RC_SHA }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install tooling
+        run: python -m pip install --disable-pip-version-check build twine
+      - name: Rebuild verified artefacts
+        run: python packaging/mcp-sovereign-server/build_and_verify.py
+      - name: Upload to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: packaging/mcp-sovereign-server/dist/
+
+  smoke-testpypi:
+    name: Smoke TestPyPI / Python ${{ matrix.python }}
+    needs: upload-testpypi
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install from TestPyPI
+        run: |
+          python -m pip install --index-url https://test.pypi.org/simple/ \
+            --extra-index-url https://pypi.org/simple/ \
+            hyba-mcp-sovereign-server==1.0.0
+      - name: Smoke test
+        run: python -c "from hyba_mcp.server import HybaMCPServer; s=HybaMCPServer(); print('OK')"
+
+  # --- PyPI upload (never dispatched in this change) ---
+  upload-pypi:
+    name: Upload to PyPI
+    needs: smoke-testpypi
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish == 'pypi' }}
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.RC_SHA }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install tooling
+        run: python -m pip install --disable-pip-version-check build twine
+      - name: Rebuild verified artefacts
+        run: python packaging/mcp-sovereign-server/build_and_verify.py
+      - name: Upload to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: packaging/mcp-sovereign-server/dist/
+
+  smoke-pypi:
+    name: Smoke PyPI / Python ${{ matrix.python }}
+    needs: upload-pypi
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install from PyPI
+        run: python -m pip install hyba-mcp-sovereign-server==1.0.0
+      - name: Smoke test
+        run: python -c "from hyba_mcp.server import HybaMCPServer; s=HybaMCPServer(); print('OK')"

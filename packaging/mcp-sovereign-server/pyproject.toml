@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# Owner-approved publication convention: hyba-<system>-<capability>.
+# Python import remains hyba_mcp; naming approval is not upload approval.
+name = "hyba-mcp-sovereign-server"
+version = "1.0.0"
+description = "HYBA Sovereign Model Context Protocol — exact-kernel MCP server, evidence-pack client, and gateway boundary for AL HARAS zero-trust tool containment."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [{ name = "HYBA Software Limited" }]
+keywords = [
+    "mcp",
+    "model-context-protocol",
+    "exact-arithmetic",
+    "lucas-numbers",
+    "cassini-identity",
+    "evidence-packs",
+    "zero-trust",
+    "sovereign-server",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4,<10",
+]
+
+[project.scripts]
+hyba-mcp-server = "hyba_mcp.server:run_server"
+
+[project.urls]
+Homepage = "https://github.com/PhiEnterprise1/EuclidPhiEnterprise"
+Repository = "https://github.com/PhiEnterprise1/EuclidPhiEnterprise"
+Issues = "https://github.com/PhiEnterprise1/EuclidPhiEnterprise/issues"
+
+[tool.setuptools]
+include-package-data = false
+package-dir = {"hyba_mcp" = "../../hyba_mcp"}
+packages = ["hyba_mcp"]
+
+[tool.setuptools.package-data]
+hyba_mcp = ["py.typed"]
