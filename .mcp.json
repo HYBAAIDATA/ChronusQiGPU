@@ -24,8 +24,8 @@
     },
     {
       "name": "cogito",
-      "status": "experimental",
-      "deployment_guidance": "Internal review only. Exclude from production registration; this marker is metadata, not an enforcement switch.",
+      "status": "production",
+      "deployment_guidance": "Production-qualified through initialize plus JSON problem adaptation; place behind AL HARAS before deployment. See docs/MCP_DEPLOYMENT.md.",
       "command": "python3",
       "args": ["-m", "mcp.cogito.server"],
       "env": { "PYTHONPATH": "${REPO_ROOT}" },

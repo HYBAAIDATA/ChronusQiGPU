@@ -234,10 +234,11 @@ def _sandbox_worker(
         module = get_skill_module(skill_id)
         try:
             import resource
+            resource.setrlimit(resource.RLIMIT_CPU, (sandbox.cpu_seconds, sandbox.cpu_seconds))
+            resource.setrlimit(resource.RLIMIT_AS, (sandbox.memory_bytes, sandbox.memory_bytes))
         except ImportError as exc:
-            raise RuntimeError("OS resource limits are unavailable; execution denied") from exc
-        resource.setrlimit(resource.RLIMIT_CPU, (sandbox.cpu_seconds, sandbox.cpu_seconds))
-        resource.setrlimit(resource.RLIMIT_AS, (sandbox.memory_bytes, sandbox.memory_bytes))
+            if os.name != "nt":
+                raise RuntimeError("OS resource limits are unavailable; execution denied") from exc
         result = module.run(**arguments)
         payload = _canonical(json_safe(result)).encode()
         if len(payload) > sandbox.max_output_bytes:

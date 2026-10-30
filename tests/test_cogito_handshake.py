@@ -3,6 +3,12 @@
 import hashlib
 import io
 import json
+from pathlib import Path
+
+import mcp
+_local_mcp = Path(__file__).resolve().parents[1] / "mcp"
+if _local_mcp.is_dir() and str(_local_mcp) not in mcp.__path__:
+    mcp.__path__.append(str(_local_mcp))
 
 import pytest
 

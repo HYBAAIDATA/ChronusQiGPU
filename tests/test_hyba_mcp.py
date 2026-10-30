@@ -118,7 +118,7 @@ class TestHybaMCPServer:
         assert payload20["left"] == 4
 
     def test_lucas_10_benchmark_anchor_is_exact(self) -> None:
-        response = HybaMCPServer().handle_request({
+        response = _ready_server().handle_request({
             "jsonrpc": "2.0",
             "id": 5,
             "method": "tools/call",
@@ -614,5 +614,5 @@ def test_documentation_and_manifest_cover_registered_tools():
     assert statuses == {
         "hyba-mcp": "production",
         "exact-kernel": "stable-standalone",
-        "cogito": "experimental",
+        "cogito": "production",
     }

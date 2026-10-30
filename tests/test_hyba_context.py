@@ -196,7 +196,7 @@ def test_server_registers_and_executes_both_tools(tmp_path, monkeypatch):
     names = {tool["name"] for tool in listing["result"]["tools"]}
     assert {"hyba_context", "hyba_verify"} <= set(TOOLS)
     assert {"hyba_context", "hyba_verify"} <= names
-    assert len(names) == 16
+    assert len(names) == len(TOOLS)
     context_schema = next(
         tool["inputSchema"] for tool in listing["result"]["tools"] if tool["name"] == "hyba_context"
     )
