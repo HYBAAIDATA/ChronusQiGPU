@@ -1,0 +1,147 @@
+# Chronos GPU — Quantum-from-Maths Real-Time Graphics Engine (Implementation Start, 3 Aug 2026)
+
+<aside>
+🚀
+
+**We are building the GPU version.** This page starts the concrete implementation of Chronos as a quantum-from-maths graphics engine that runs on classical GPU hardware. It reuses and extends the real HYBA modules: `core/manifold.py` (M32 spectral adjacency), `quantum/variational.py` (QAOAOptimizer), `quantum/tensor_train.py` (TensorTrainState / MatrixProductOperator), and integrates with PRISMA geodesic rendering + HERMES GPU scaling.
+
+No physical hardware. No cryogenics. No weak measurement. Direct expectation-value computation on the manifold. 8K @ 60 fps target via mathematical supersampling and φ-fold compression.
+
+</aside>
+
+## Core reframing for GPU execution
+
+| Original Chronos concept | GPU-native replacement |
+| --- | --- |
+| 1M physical cavities | M32 (or M256) manifold faces — 32–256 mathematical resonators |
+| Weak measurement (ε) | Direct ⟨ψ |
+| Cryogenic control | GPU tensor operations (NumPy/Numba/CuPy or Metal) |
+| Observer-effect compensation | Not required — no measurement collapse in pure maths |
+| Laser pulse scheduling | Hamiltonian term scheduling in the QAOA evolution loop |
+| Readout budget | Full state available; selective observable extraction for performance |
+
+## Implementation roadmap (this build session)
+
+1. **QSDL Compiler** — scene → manifold-mapped Hamiltonian (this page)
+2. **Hamiltonian Library** — geometry/material/light → QAOA cost/mixer terms (next)
+3. **Evolution Engine** — layered multi-angle QAOA on M32 using real `QAOAOptimizer`
+4. **Tomography & Reconstruction** — direct expectation values + AI super-resolution via PRISMA
+5. **QX API surface** — Python + shader integration for HERMES/PRISMA
+6. **Performance envelope** — frame-time budget, 8K supersampling, φ-fold compression
+
+## 1. QSDL Compiler — Reference Implementation
+
+```python
+# qsd l_compiler.py
+# Chronos GPU — QSDL Compiler v1.0
+# Targets: core/manifold.py, quantum/variational.py, quantum/tensor_train.py
+
+from __future__ import annotations
+
+import numpy as np
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Tuple
+
+# Real HYBA imports (once available in the environment)
+# from core.manifold import M32_SPECTRAL, M32_ADJACENCY, build_m32
+# from quantum.variational import QAOAOptimizer
+# from quantum.tensor_train import TensorTrainState, MatrixProductOperator
+
+@dataclass
+class ManifoldConfig:
+    name: str = "M32"
+    n_faces: int = 32
+    adjacency_threshold: float = 0.70
+    spectral_adjacency: np.ndarray = field(default_factory=lambda: np.zeros((32, 32)))
+
+@dataclass
+class QScene:
+    manifold: ManifoldConfig
+    objects: List[Dict] = field(default_factory=list)
+    lights: List[Dict] = field(default_factory=list)
+    camera: Dict = field(default_factory=dict)
+    hamiltonian_terms: List[np.ndarray] = field(default_factory=list)
+    readout_observables: List[str] = field(default_factory=list)
+    quality: Dict = field(default_factory=dict)
+
+class QSDLCompiler:
+    def __init__(self, manifold: Optional[ManifoldConfig] = None):
+        self.manifold = manifold or ManifoldConfig()
+        # Load real spectral adjacency from core/manifold.py when available
+        # self.manifold.spectral_adjacency = M32_SPECTRAL
+
+    def compile(self, qsd l_source: str) -> QScene:
+        """Compile QSDL source into a QScene ready for QAOA evolution."""
+        # Placeholder parser — in production this would be a full recursive descent parser
+        scene = QScene(manifold=self.manifold)
+
+        # Example: hard-coded sphere + glass material for now
+        scene.objects.append({
+            "name": "sphere_0",
+            "geometry": {"type": "sphere", "radius": 1.0, "center": (0,0,0)},
+            "material": {
+                "dielectric": 1.5,
+                "absorption": 0.001,
+                "resonance_weights": np.full(self.manifold.n_faces, 0.5)
+            },
+            "transform": np.eye(4)
+        })
+
+        scene.lights.append({
+            "name": "sun",
+            "type": "directional",
+            "direction": (1,1,1),
+            "intensity": 1.0,
+            "driving_term": np.zeros((self.manifold.n_faces, self.manifold.n_faces))
+        })
+
+        scene.camera = {
+            "resolution": (7680, 4320),
+            "fov": 60.0,
+            "position": (0,0,5),
+            "readout": ["intensity", "depth", "normal"]
+        }
+
+        scene.quality = {
+            "layers": 4,
+            "steps": 80,
+            "learning_rate": 0.08,
+            "damping": 1e-2,
+            "seed": 0
+        }
+
+        # Build Hamiltonian terms (will be replaced by HamiltonianLibrary)
+        scene.hamiltonian_terms = self._build_initial_hamiltonian(scene)
+        return scene
+
+    def _build_initial_hamiltonian(self, scene: QScene) -> List[np.ndarray]:
+        n = self.manifold.n_faces
+        terms = []
+        for obj in scene.objects:
+            # Placeholder: diagonal cost term from resonance weights
+            res = obj["material"]["resonance_weights"]
+            cost = -np.diag(res)
+            terms.append(cost)
+        for light in scene.lights:
+            terms.append(light["driving_term"])
+        return terms
+
+# Example usage
+if __name__ == "__main__":
+    compiler = QSDLCompiler()
+    qscene = compiler.compile("scene sunset { ... }")
+    print(f"Compiled scene with {len(qscene.objects)} objects on {qscene.manifold.name}")
+    print(f"Hamiltonian terms: {len(qscene.hamiltonian_terms)}")
+```
+
+## Next immediate steps (I will execute these now)
+
+1. Complete the full QSDL grammar + parser (recursive descent or Lark-based)
+2. Build the Hamiltonian Library that maps geometry/material to real QAOA cost + mixer terms using `QAOAOptimizer`
+3. Wire the evolution loop to the existing 384-parameter deep ansatz from the VQC page
+4. Add direct expectation-value readout + PRISMA-style geodesic supersampling
+5. Produce a working end-to-end render of a simple scene (sphere + light) in < 16 ms on GPU
+
+I am now building item 2 (Hamiltonian Library) as the next concrete artifact. Stand by for the page.
+
+[Hamiltonian Library — Geometry/Material/Light → QAOA Cost & Mixer Terms (Chronos GPU, 3 Aug 2026)](Hamiltonian%20Library%20%E2%80%94%20Geometry%20Material%20Light%20%E2%86%92%20QA%200e83b14c11b54c3f90a1dc49fe5b566d.md)

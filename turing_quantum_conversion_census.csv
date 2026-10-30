@@ -1,0 +1,393 @@
+path,line,category,text,production_source,disposition
+turing_universal_quantum_computer/turing_universal_quantum_computer/__init__.py,6,scheduler,"Hendrix schedule, large-scale stabilizer execution, the production phi-machine",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/__init__.py,12,scheduler,"dual-overlay frame, complete nonce schedule, sha256d",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/__init__.py,22,ranker,midas_vqc             32-face variational nonce ranker + exact Clifford skeleton;,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/__init__.py,28,sampling,swarm                 QuantumSwarm — agents sampling exact Born distributions,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/__init__.py,34,scheduler,pisot / hendrix       Lucas/Pisot scale contracts + Hendrix schedule,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/annealing.py,10,simulation,This module does NOT simulate annealing — it uses the exact closed-form,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/annealing.py,98,scheduler,schedule point — the true bottleneck is at g=1 i.e. s=1/2.,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/__init__.py,8,simulation,"or simulated answer.  The QPU backend is never selected automatically, because",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/__init__.py,160,fallback,# The sparse engine stays a fallback for Clifford programs: bounded,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/__init__.py,237,sampling,Sampling without an explicit seed is normalized to seed zero.  This is a,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/algebraic.py,151,sampling,"payload[""counts""] = state.sample(",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/base.py,4,classical,classical hardware.  A backend is therefore not just a code path — it is a,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/base.py,7,simulation,"approximate answer labelled exact, or a simulated answer labelled measured.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/base.py,224,simulation,"#: True only when a real, non-simulator provider job completed.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/cyclotomic.py,92,sampling,"""cyclotomic execution emits exact Born probabilities; no sampling options""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/cyclotomic.py,108,enumeration,"for index, op in enumerate(program.operations):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/cyclotomic.py,118,enumeration,"for i, amplitude in enumerate(state):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/cyclotomic.py,123,enumeration,"for i, amplitude in enumerate(state):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/cyclotomic.py,138,enumeration,"branch0 = [a * (t if i >> q & 1 else one) / sqrt2 for i, a in enumerate(before)]",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/cyclotomic.py,139,enumeration,"branch1 = [a * (one if i >> q & 1 else t) / sqrt2 for i, a in enumerate(before)]",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/cyclotomic.py,145,enumeration,"for i, a in enumerate(branch1)",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/mps.py,186,sampling,"def sample(self, distribution: Dict[str, Any], shots: int, seed: Optional[int]) -> Dict[str, int]:",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/mps.py,238,sampling,"payload[""counts""] = self.sample(dist[""_exact""], int(shots), options.get(""seed""))",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/native.py,133,enumeration,as a physical device holds a state it cannot enumerate.  Every operation a,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/native.py,135,sampling,"gate application, shot sampling, measurement distributions, marginals,",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/native.py,162,sampling,"""O(n^2) tableau bits; gates, shot sampling, marginals, """,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/native.py,203,sampling,def sample(,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/native.py,211,sampling,"""""""Sample ``shots`` readouts from the exact Born distribution.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/native.py,215,sampling,identically.  The distribution being sampled is exact; the draw is a,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/native.py,216,classical,labelled classical sampling of it.,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/native.py,216,sampling,labelled classical sampling of it.,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/native.py,293,enumeration,"""listing them is suppressed above the enumeration cap, and the """,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/native.py,304,enumeration,"for position, qubit in enumerate(free):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/native.py,325,sampling,three are exact fractions rather than sampled estimates.,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/native.py,359,sampling,"payload[""counts""] = self.sample(",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/qpu.py,6,classical,The consolidated package is an exact *classical* substrate.  It can be,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/qpu.py,12,simulation,"* returns no fabricated, cached or simulated result in place of a job;",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/qpu.py,68,simulation,"""a simulated or assumed run is not a measured run""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/qpu.py,136,simulation,"""and will not simulate one""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/qpu.py,151,simulation,"""""""Submit to a real provider, or refuse.  Never returns a simulated result.""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/qpu.py,155,classical,"f""refused: {reason}. The VQC's exact backends are classical """,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/qpu.py,157,simulation,"""of them explicitly if a simulated result is what you want.""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/qpu.py,185,classical,otherwise.  A caller holding an exact classical result cannot reach a,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/qpu.py,191,classical,"""classical result is not a measured quantum result""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/reference.py,21,classical,This is an exact *classical* evaluation of the algebra of a universal gate,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/reference.py,25,sampling,"an oversized register is refused, never truncated, sampled down, or faked.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/reference.py,281,enumeration,"return [i for i, amplitude in enumerate(self.amplitudes) if not amplitude.is_zero()]",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/reference.py,302,enumeration,"for index, prob in enumerate(self.probabilities()):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/reference.py,316,sampling,"def sample(self, shots: int, *, seed: int | None = None) -> dict[str, int]:",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/reference.py,317,sampling,"""""""Deterministic exact-Born sampling.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/reference.py,320,sampling,"probabilities, so the sampling decision never rounds.  A fixed ``seed``",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/reference.py,339,enumeration,"for index, bound in enumerate(cumulative):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/reference.py,350,sampling,"""""""Sample only the listed qubits from their exact marginal.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/reference.py,373,enumeration,"for index, bound in enumerate(cumulative):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/reference.py,393,enumeration,"for index, amplitude in enumerate(self.amplitudes):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/reference.py,426,enumeration,"for index, probability in enumerate(probabilities):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/backends/reference.py,457,enumeration,"for position, qubit in enumerate(subset):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/benchmark.py,64,sampling,"a, b = rng.sample(range(n), 2)",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/benchmark.py,85,enumeration,"for index, amp in enumerate(state.amplitudes):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/benchmark.py,153,enumeration,"for index, program in enumerate(programs):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/benchmark.py,259,chronus,"BLOCK = {{'aethel','toe','chronus','mining','Intelligence','euclid','al_haras','hyba','salamander','tensor',",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/capabilities.py,7,classical,"substrate into ""classical dressed as quantum"".",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/capabilities.py,47,classical,"""Every backend is an exact classical evaluation of a restricted, """,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/capabilities.py,57,simulation,#: What exact simulation is not.,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/capabilities.py,71,classical,"""Exact classical evaluation of a general n-qubit circuit needs a """,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/capabilities.py,134,simulation,"""asserts physical-constant mutation rather than simulation parameters"",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/capabilities.py,200,enumeration,"for position, row in enumerate(table):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/capabilities.py,201,enumeration,"line = ""  "".join(str(cell).ljust(widths[i]) for i, cell in enumerate(row))",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/certificates.py,329,simulation,"""refusing to attach hardware evidence to a simulated run""",True,BOUNDARY_EXACT
+turing_universal_quantum_computer/turing_universal_quantum_computer/certificates.py,427,enumeration,"for index, operation in enumerate(program.operations):",True,BOUNDARY_EXACT
+turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py,1,chronus,"""""""CHRONUS execution-lane consumption for the TURING VQC.",True,SUBSTRATE_ADAPTER_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py,3,chronus,"CHRONUS owns heterogeneous execution/acceleration (CPU/iGPU/GPU, Virtual-iGPU",True,SUBSTRATE_ADAPTER_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py,5,chronus,"exists AND Chronus exposes a contracted kernel for the workload, execution",True,SUBSTRATE_ADAPTER_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py,8,classical,GATED/UNAVAILABLE and execution stays on the exact classical path.,True,MEASUREMENT_BOUNDARY_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py,17,chronus,recorded cross-agent dependency on the CHRONUS agent.,True,SUBSTRATE_ADAPTER_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py,19,chronus,field comes from the live ``aethel.chronus`` context or is ``None``.,True,SUBSTRATE_ADAPTER_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py,38,chronus,from aethel import chronus as _chronus  # noqa: F401,True,SUBSTRATE_ADAPTER_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py,62,chronus,"""""""Probe the Chronus execution lane for ``workload`` — read-only.",True,SUBSTRATE_ADAPTER_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py,76,chronus,"reason=""aethel.chronus is not importable on this host"",",True,SUBSTRATE_ADAPTER_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py,79,chronus,from aethel.chronus import ChronusContext,True,SUBSTRATE_ADAPTER_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py,90,chronus,"cross_agent_dependency=""CHRONUS"",",True,SUBSTRATE_ADAPTER_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py,112,chronus,# There is no contracted Chronus kernel for VQC gate execution: Chronus,True,SUBSTRATE_ADAPTER_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py,115,chronus,# this workload until the CHRONUS agent publishes a VQC kernel contract.,True,SUBSTRATE_ADAPTER_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py,124,chronus,"cross_agent_dependency=""CHRONUS"",",True,SUBSTRATE_ADAPTER_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py,125,chronus,"reason=""bound accelerator present but no contracted Chronus VQC """,True,SUBSTRATE_ADAPTER_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py,135,chronus,"cross_agent_dependency=""CHRONUS"",",True,SUBSTRATE_ADAPTER_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/chronus_lane.py,138,chronus,"""CHRONUS (agent A)"",",True,SUBSTRATE_ADAPTER_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/config.py,31,simulation,"if self.execution_mode not in {""exact_vqc"", ""simulation"", ""nisq"", ""fault_tolerant""}:",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/config.py,35,simulation,"""This adapter supports exact_vqc only; no simulator, QPU or logical-QEC substitution""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/console.py,22,fallback,The tableau is not a fallback or a degraded mode.  It is the correct,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/console.py,74,classical,"""exact algebra on a classical substrate · Clifford+T over Q(√2) + iQ(√2)\n""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/console.py,170,enumeration,"for index, amplitude in enumerate(state.amplitudes):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/console.py,489,enumeration,"for index, probability in enumerate(probabilities):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/console.py,570,sampling,# The public boundary normalizes unseeded sampling to seed 0; report,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/console.py,585,classical,"""  the distribution is exact; the draw is a labelled classical sampling of it.""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/console.py,585,sampling,"""  the distribution is exact; the draw is a labelled classical sampling of it.""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/console.py,606,sampling,"""  computed by exact Clifford maps X→HZH, Y→HS†ZSH† — not sampled""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/console.py,773,classical,"""  Exact classical quantum algebra is not relabelled as measured hardware.""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/deep_variational.py,4,chronus,or Chronus. Tensor remains the logical representation owner and Chronus remains,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/deep_variational.py,52,ranker,"def from_midas_ranker(cls, ranker: Any) -> ""LayeredVariationalAnsatz"":",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/deep_variational.py,53,ranker,"""""""Reuse the ranker's validated graph without transferring ownership.""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/deep_variational.py,54,ranker,"return cls(ranker.adjacency, layers=int(ranker.config.num_layers))",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/exact_state_vector.py,4,sampling,"No floating amplitudes, truncation, Monte-Carlo sampling, tensor shortcuts, or",True,MEASUREMENT_BOUNDARY_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/exact_state_vector.py,200,sampling,No random sampling is performed. The result is an algebraic witness,True,MEASUREMENT_BOUNDARY_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/exact_state_vector.py,217,sampling,measurement and not a Monte-Carlo sample.,True,MEASUREMENT_BOUNDARY_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/exact_state_vector.py,240,enumeration,"(weight if (index & 1) == 0 else -weight for index, weight in enumerate(probabilities)),",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/exact_state_vector.py,283,enumeration,"tuple(a if (i & 1) == 0 else phase * a for i, a in enumerate(self.amplitudes)),",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/golden_quantum.py,61,simulation,"""""""Immutable reference constants plus explicit simulation overrides.""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/golden_quantum.py,81,simulation,"raise KeyError(f""unknown simulation constants: {sorted(unknown)}"")",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/golden_quantum.py,84,simulation,"raise ValueError(""simulation constants must be finite"")",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/golden_quantum.py,328,scheduler,"""implementation"": ""golden coprime scheduling"",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/golden_quantum.py,349,simulation,"""implementation"": ""immutable constants plus simulation overrides"",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/grover_exact_scale.py,7,simulation,"Pure linear algebra over C. No simulation, no approximation, no heuristics.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/hendrix.py,1,scheduler,"""""""Hendrix iGPU structured-search facade with Lucas/Pisot scheduling.""""""",True,Q_CONVERTED
+turing_universal_quantum_computer/turing_universal_quantum_computer/hendrix.py,6,classical,"""""""Explicitly classical/iGPU schedule; consensus remains external.""""""",True,Q_CONVERTED
+turing_universal_quantum_computer/turing_universal_quantum_computer/hendrix.py,6,scheduler,"""""""Explicitly classical/iGPU schedule; consensus remains external.""""""",True,Q_CONVERTED
+turing_universal_quantum_computer/turing_universal_quantum_computer/hendrix.py,12,scheduler,"def schedule(self, nonce_count: int) -> HendrixSchedule:",True,Q_CONVERTED
+turing_universal_quantum_computer/turing_universal_quantum_computer/hilbert.py,31,classical,postulate.  ``measure(seed)`` is downstream classical sampling OF that,True,MEASUREMENT_BOUNDARY_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/hilbert.py,31,sampling,postulate.  ``measure(seed)`` is downstream classical sampling OF that,True,MEASUREMENT_BOUNDARY_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/hilbert.py,528,enumeration,"for p, q in enumerate(positions):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/hilbert.py,535,enumeration,"for p, q in enumerate(positions):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/hilbert.py,766,sampling,(AGENTS.md section 1.2.1); no sampling is involved.,True,MEASUREMENT_BOUNDARY_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/hilbert.py,784,classical,"""""""Downstream CLASSICAL sampling of the exact distribution().",True,MEASUREMENT_BOUNDARY_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/hilbert.py,784,sampling,"""""""Downstream CLASSICAL sampling of the exact distribution().",True,MEASUREMENT_BOUNDARY_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/hilbert.py,788,classical,Born-rule probabilities (converted to float only at this classical,True,MEASUREMENT_BOUNDARY_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/july_compat.py,48,chronus,"""close_gaps_test"": ""chronus.v33.test_harness.ChronosTestHarness"",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/july_compat.py,50,chronus,"""memory_integration"": ""chronus.v33.memory.run_memory_self_tests"",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/july_compat.py,78,simulation,"raise ValueError(""software adapter results require an explicit simulation truth class"")",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/july_compat.py,152,simulation,finite-precision simulation: the state vector is evolved exactly for,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/july_compat.py,386,enumeration,"for index, stage in enumerate(self.stages):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/lucas/algebra.py,12,sampling,"evaluation, sampling, or hardware assumption is used.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/lucas/ladder.py,23,chronus,# Chronus-domain name for the same ladder (capacity/dispatch rungs).,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/lucas/ladder.py,71,chronus,"""""""Snap a Chronus-owned capacity/retention bound to a ladder stop.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/lucas_metallic_walk.py,35,classical,"""""""Cassini-type identity residual. Zero for the classical golden case.""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/midas_vqc.py,1,ranker,"""""""32-face MIDAS variational candidate ranker for Turing.",True,Q_CONVERTED
+turing_universal_quantum_computer/turing_universal_quantum_computer/midas_vqc.py,4,classical,boundary. The model is a classical variational ranker with a Clifford circuit,True,Q_CONVERTED
+turing_universal_quantum_computer/turing_universal_quantum_computer/midas_vqc.py,4,ranker,boundary. The model is a classical variational ranker with a Clifford circuit,True,Q_CONVERTED
+turing_universal_quantum_computer/turing_universal_quantum_computer/midas_vqc.py,325,enumeration,"for position, nonce in enumerate(window):",True,SYNTAX_ALLOWED
+turing_universal_quantum_computer/turing_universal_quantum_computer/native_adapter.py,185,sampling,"""sampled execution requires explicit readout; no silent truncation""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/native_adapter.py,333,enumeration,"for index, amplitude in enumerate(amplitudes):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/native_adapter.py,352,sampling,"raise CapabilityError(""sample standard error requires at least two shots"")",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/native_adapter.py,384,sampling,"raise ResultValidationError(""invalid sample counts"", job_id=job.job_id)",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/phi_quantum_machine.py,139,sampling,the circuit exits this bounded affine family and sampling falls back to,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/phi_quantum_machine.py,177,sampling,"def sample(self, shots: int, seed: int) -> tuple[tuple[int, ...], ...]:",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/phi_quantum_machine.py,336,sampling,# sampling metadata. Future measurement uses the exact tableau path.,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/phi_quantum_machine.py,446,sampling,"def sample(self, shots: int = 1, seed: int = 42) -> tuple[tuple[int, ...], ...]:",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/phi_quantum_machine.py,450,sampling,"return self.sampler.sample(shots, seed)",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/phi_quantum_machine.py,454,sampling,# StabilizerState without this sampled convenience path.,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/phi_quantum_machine.py,457,sampling,"""general tableau sampling policy exceeded (max 64 qubits, 128 shots)""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/phi_quantum_machine.py,473,sampling,"samples = self.sample(shots, seed)",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/phi_verification.py,114,classical,explicitly excluded from the pass condition because a copied classical bit,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/phi_vqc.py,10,classical,the ranking forward path. The ranker is a classical NumPy MLP. This module,True,Q_CONVERTED
+turing_universal_quantum_computer/turing_universal_quantum_computer/phi_vqc.py,10,mlp,the ranking forward path. The ranker is a classical NumPy MLP. This module,True,Q_CONVERTED
+turing_universal_quantum_computer/turing_universal_quantum_computer/phi_vqc.py,10,ranker,the ranking forward path. The ranker is a classical NumPy MLP. This module,True,Q_CONVERTED
+turing_universal_quantum_computer/turing_universal_quantum_computer/phi_vqc.py,48,ranker,"""""""Trainable 32-face candidate ranker with an exact Clifford skeleton.""""""",True,Q_CONVERTED
+turing_universal_quantum_computer/turing_universal_quantum_computer/phi_vqc.py,246,ranker,"raise RuntimeError(""ranker violated candidate-preservation invariant"")",True,Q_CONVERTED
+turing_universal_quantum_computer/turing_universal_quantum_computer/pipeline.py,15,chronus,are exercised through ``transform.py``/``custody.py`` when requested; CHRONUS,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,4,scheduler,"coprime-stride schedule, the Hilbert coverage plan, and the physical",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,95,chronus,# the MLA1517 platform gate in ``chronus.mla1517.mining.pow``.,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,118,scheduler,"# Hendrix structured-search schedule: coprime-stride permutation, verified",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,121,scheduler,# Execution-receipt contract: a schedule/search result names its,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,122,scheduler,"# implementation module, binds the schedule by canonical digest, and declares",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,123,fallback,# its execution mode and whether any fallback ran.  A schedule is a,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,123,scheduler,# its execution mode and whether any fallback ran.  A schedule is a,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,125,enumeration,# it reduces zero work relative to enumeration and is never a quantum claim.,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,159,scheduler,"raise IndexError(""worker outside schedule"")",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,184,scheduler,# Digest binds every schedule parameter above; recompute by removing,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,191,scheduler,"""""""Lucas/Pisot-scaled deterministic scheduler for the iGPU search path.""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,193,fallback,# Execution-receipt surface.  There is no fallback path in this,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,194,scheduler,# implementation — the schedule is the entire computation — so,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,211,scheduler,schedule = HendrixSchedule(,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,214,scheduler,if not schedule.verify():,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,215,scheduler,"raise RuntimeError(""Hendrix schedule invariant failure"")",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,216,scheduler,return schedule,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,219,scheduler,schedule = self.plan(nonce_count),True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,222,scheduler,for worker_id in range(schedule.workers):,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,223,scheduler,for nonce in schedule.worker_nonces(worker_id):,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,230,scheduler,manifest = schedule.manifest(),True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/pisot.py,234,scheduler,"""schedule"": manifest,",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,65,scheduler,"_m(""turing_core"", ""core"", ""Exact arithmetic, deterministic scheduling and certification.""),",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,70,classical,"_m(""turing_core.specification"", ""core"", ""Machine-checkable classical Turing-machine specification """,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,73,scheduler,"_m(""turing_core.schedule"", ""application"", ""Deterministic complete nonce-ordering schedule; ordering """,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,75,chronus,"execution_paths=[""turing_core.core (re-exported)"", ""chronus/mla1517_platform/python/turing_core.py""]),",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,88,sampling,"_m(""swarm"", ""core"", ""Agents sampling exact Born distributions.""),",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,117,chronus,"execution_paths=[""chronus/mla1517/mining/pythia_authority.py"",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,118,chronus,"""chronus/mla1517_platform/python/system_fabric.py""]),",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,120,chronus,"execution_paths=[""chronus/mla1517_platform/python/system_fabric.py""]),",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,122,chronus,"execution_paths=[""chronus/mla1517/mining/pythia_agentic_cycle.py"",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,127,chronus,"execution_paths=[""chronus/mla1517/mining/hyba_intelligence.py""]),",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,128,ranker,"_m(""midas_vqc"", ""application"", ""32-face MIDAS variational candidate ranker with exact Clifford """,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,129,chronus,"""skeleton."", execution_paths=[""chronus/mla1517/mining/pythia_authority.py""]),",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,130,scheduler,"_m(""hendrix"", ""application"", ""Hendrix structured-search facade over the Pisot schedule."",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,131,chronus,"execution_paths=[""chronus/mla1517/mining/pythia_authority.py""]),",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,132,scheduler,"_m(""pisot"", ""application"", ""Exact Lucas/Pisot scale contracts, Hendrix schedule, Hilbert coverage """,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,135,chronus,"""chronus/mla1517/mining/hendrix_order.py""]),",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,138,chronus,"""chronus/mla1517/mining/pythia_authority.py""]),",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,150,chronus,"_m(""chronus_lane"", ""adapter"", ""CHRONUS execution-lane consumption; gated without hardware."",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,151,chronus,"consumes=[""aethel.chronus""]),",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,181,chronus,"(""turing_adapter"", ""chronus.mla1517.mining.turing_adapter"", ""older copy of the live owner""),",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,190,chronus,"(""extended_algebra"", ""chronus/mla1517_platform/python/extended_algebra"", ""identical copy""),",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/product_registry.py,191,chronus,"(""rings"", ""chronus.mla1517.rings"", ""identical copy""),",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_algorithms.py,24,fallback,# same limbs as an in-package fallback.,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_algorithms.py,411,enumeration,"for idx, p in enumerate(probs[:16])",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_algorithms.py,492,enumeration,"{""index"": i, ""phase_value"": i / N, ""probability"": p} for i, p in enumerate(probs)",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_algorithms.py,565,classical,classical = [0.0] * num_positions,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_algorithms.py,566,classical,classical[center] = 1.0,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_algorithms.py,570,classical,if classical[x] > 0:,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_algorithms.py,573,classical,nxt[l] += 0.5 * classical[x],True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_algorithms.py,574,classical,nxt[r] += 0.5 * classical[x],True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_algorithms.py,575,classical,classical = nxt,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_algorithms.py,579,classical,c_mean = sum(positions[i] * classical[i] for i in range(num_positions)),True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_algorithms.py,581,classical,c_var = sum(((positions[i] - c_mean) ** 2) * classical[i] for i in range(num_positions)),True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_algorithms.py,586,classical,"""classical_probabilities"": classical,",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,33,scheduler,"k* is recomputed over the scaled space, and the Zeckendorf/Lucas schedule",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,40,simulation,"quantum_cuda.create_simulator(device_id, seed, scale_index) -> Simulator",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,55,simulation,The simulator is deterministic given its seed; no ``np.random`` is used in the,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,207,enumeration,# Real device enumeration — no silicon expectation,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,276,fallback,"""""""The container/host CPU — the universal fallback device.""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,285,enumeration,"""""""Enumerate the devices this host actually has — the device census.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,309,enumeration,"""""""Resolve ``device_id`` against the real enumeration.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,321,simulation,"""""""Exact-math quantum simulator backed by the Turing/iGPU core.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,323,simulation,The simulator is stateless apart from its device id and seed; the,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,324,scheduler,"""quantum"" behaviour comes from the exact Grover/Lucas-Pisot schedule in",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,325,classical,"``submit_kernel``, not from a classical RNG dressed up as quantum.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,329,scheduler,"search schedule (Grover k*, Zeckendorf spacing) still drives the probe",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,369,enumeration,# The *bound* device (what enumeration found) is reported as,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,410,scheduler,# -- exact Grover / Lucas-Pisot scheduling -----------------------------,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,423,scheduler,# sqrt(N) is computed in float for the schedule only; the,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,431,scheduler,"""""""Zeckendorf-spaced nonce probe schedule.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,496,scheduler,and the Zeckendorf/Lucas schedule covers it. ``base_nonce`` shifts,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,513,scheduler,# The header arrives with the nonce field zeroed; the schedule,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,527,scheduler,"schedule = self._zeckendorf_schedule(scaled_space, self.seed, limit=probe_budget)",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,531,scheduler,"self._stats[""probe_budget""] = len(schedule)",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,537,scheduler,# double-SHA256 batch to the Metal GPU. The exact-math schedule still,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,560,scheduler,# The Grover schedule is honoured by probing the k_star most-likely,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,564,scheduler,for off in schedule:,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,572,scheduler,if probed >= len(schedule):,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,589,simulation,"""""""Create an exact-math quantum simulator bound to a real device.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,591,enumeration,``device_id`` indexes the real enumeration (0 = the best device present:,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,614,enumeration,"return {i: f""{dev['name']} [{dev['backend']}]"" for i, dev in enumerate(_enumerate_devices())}",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,618,simulation,"simulator: QuantumSimulator,",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,632,simulation,wrapper delegates to ``simulator.submit_kernel`` so the existing caller,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,634,simulation,``base_nonce`` pass straight through to the simulator.,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,636,simulation,if simulator is None:,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_cuda.py,638,simulation,return simulator.submit_kernel(,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py,13,simulation,"No float statevector simulation, no approximation, no heuristic",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py,14,classical,relabelled as quantum.  The only float anywhere is the classical,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py,16,classical,which is post-quantum classical sampling of the exact distribution).,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py,16,sampling,which is post-quantum classical sampling of the exact distribution).,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py,198,enumeration,"for i, item in enumerate(v):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py,303,classical,result under an exact label.  ``wall_ms`` is classical elapsed wall,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py,314,sampling,sampled: bool = False,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py,325,classical,"stays a plain float in the envelope — it is classical metadata,",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py,347,sampling,"""sampled"": self.sampled,",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py,553,scheduler,"""scale"": ""end-to-end Phase 1..6 authoring, OpenQASM, transpilation, QEC, orchestration, and pulse schedule"",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py,556,chronus,"""owner"": ""chronus.fleet.capacity + software_stack.run_gpu_fleet_hybrid_workload"",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py,880,classical,classical bookkeeping over exact evaluations — no floats in the,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py,947,sampling,"value — a real expectation value, not a sampled estimate.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py,1167,scheduler,"""""""Lower a gate circuit into an exact rational/Virtual-Z pulse schedule.""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py,1218,chronus,"""""""Capacity-plan, partition, lease, and execute a hybrid quantum workload across a Chronus GPU/iGPU fleet.""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/quantum_library.py,1233,chronus,"owner=""chronus.fleet.capacity+software_stack.run_gpu_fleet_hybrid_workload"",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,40,scheduler,5. **Phase 5 — Quantum Orchestration and Hybrid Workload Scheduling**:,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,41,scheduler,Deterministic hybrid CPU-VQC workload scheduler and variational loop,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,46,scheduler,"Exact symbolic/rational waveform scheduler (:class:`PulseCompiler`,",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,758,fallback,"# Fallback when 'z' is not in allowed_gates (e.g. basis = h, s, sdg, t, tdg, cx)",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,772,fallback,# Minimal T/Tdg fallback,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,1171,enumeration,"for j, x_check_mask in enumerate(code.hx):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,1193,enumeration,"for i, z_check_mask in enumerate(code.hz):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,1206,enumeration,"for j, x_check_mask in enumerate(code.hx):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,1220,enumeration,"anc_z_syndrome = sum(bit << i for i, bit in enumerate(z_syndrome_bits))",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,1221,enumeration,"anc_x_syndrome = sum(bit << j for j, bit in enumerate(x_syndrome_bits))",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,1250,enumeration,"for i, z_check_mask in enumerate(code.hz):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,1259,enumeration,"for j, x_check_mask in enumerate(code.hx):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,1327,scheduler,# Phase 5: Quantum Orchestration and Hybrid Workload Scheduling,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,1333,classical,"""""""Specification for a hybrid quantum-classical variational job.""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,1355,classical,"""""""One quantum-classical iteration record in a hash-chained hybrid session.""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,1441,classical,"""""""Priority queue and hybrid quantum-classical session orchestrator.""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,1448,scheduler,"# Sort by descending priority, then job_id for deterministic scheduling",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,1479,enumeration,"for idx, theta in enumerate(spec.candidate_turns):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,1643,chronus,"""""""Capacity-plan, partition, lease, and execute a hybrid quantum workload across a Chronus GPU/iGPU fleet.""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,1645,chronus,"_fleet_cap = importlib.import_module(""chronus.fleet.capacity"")",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,1805,scheduler,"""""""Compiled pulse control schedule for a quantum program.""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,1831,scheduler,"""""""Lowers a native :class:`Program` into an exact pulse control schedule.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,2131,classical,# Phase 5: Hybrid Quantum-Classical Workload Orchestration,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/software_stack.py,2139,scheduler,# Phase 6: Pulse-Level Compilation & Control Schedule,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/stabilizer.py,25,simulation,"""Improved simulation of stabilizer circuits"" — the CHP tableau algorithm.",True,ACADEMIC_CITATION_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/stabilizer.py,284,classical,classical draw; without a seed the canonical branch is outcome 0.,True,MEASUREMENT_BOUNDARY_APPROVED
+turing_universal_quantum_computer/turing_universal_quantum_computer/surface_code_exact.py,179,enumeration,"index = {edge: i for i, edge in enumerate(sorted(self.data_edges()))}",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/swarm.py,1,sampling,"""""""Quantum-driven swarm — agents sampling exact Born distributions.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/swarm.py,6,classical,classical point mass; its step is a seeded draw from the exact,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/swarm.py,7,classical,probability measure (the same labelled classical boundary as,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/swarm.py,12,classical,Born measure) is exact; the per-agent draw is classical sampling OF that,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/swarm.py,12,sampling,Born measure) is exact; the per-agent draw is classical sampling OF that,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/swarm.py,33,classical,this classical boundary (documented convention).,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/swarm.py,90,sampling,"""""""Exact variance of agent positions (rational, sample quantity).""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,6,classical,* classical exact/reference computation;,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,7,classical,* classical quantum simulation;,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,7,simulation,* classical quantum simulation;,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,10,classical,* hardware-accelerated classical/VQC execution;,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,14,simulation,"formalism, logical-qubit count, simulator output, or GPU dispatch is not",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,51,classical,#: Exact classical arithmetic used as a reference answer (e.g. dense,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,54,classical,#: A classical simulation of quantum dynamics whose output is a,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,54,simulation,#: A classical simulation of quantum dynamics whose output is a,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,55,simulation,"#: simulation result, not a hardware measurement.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,58,classical,#: Turing backend (exact state classes on classical hardware).,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,60,classical,"#: A quantum-*inspired* classical method (schedules, rankers, anneal-like",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,63,classical,#: A Turing VQC or classical workload executed on bound physical,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,64,chronus,#: acceleration hardware (Chronus iGPU/GPU/other) with device evidence.,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,131,classical,classical evaluation of the same algebra.,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,189,classical,"rationale=""declared approximate backend: classical simulation output"",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,189,simulation,"rationale=""declared approximate backend: classical simulation output"",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,200,classical,"""admitted Turing backend (exact state class on classical hardware)"",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/taxonomy.py,209,classical,"rationale=""exact classical evaluation outside the Turing composition path"",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/trotter_simulation.py,1,simulation,"""""""Trotter-Suzuki Hamiltonian simulation — first-principles time evolution.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/trotter_simulation.py,10,simulation,"1996, Suzuki 1990), which is why real quantum-simulation algorithms use",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/__init__.py,1,scheduler,"""""""TURING Core — exact arithmetic, deterministic scheduling, and certification.""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/__init__.py,4,scheduler,from .schedule import (  # noqa: F401,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/__init__.py,10,scheduler,"from . import core, schedule  # noqa: F401",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,176,enumeration,"dcoeffs = [c * (deg - i) for i, c in enumerate(coeffs[:-1])]",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,455,enumeration,"for pair, i in enumerate(range(0, len(folded) - 1, 2)):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,468,fallback,"fallback), then a round-robin of the five family limbs modulo the",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,475,scheduler,schedule: List[int] = [],True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,479,scheduler,schedule.append(off),True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,484,scheduler,while len(schedule) < limit and guard < window * 16:,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,487,scheduler,schedule.append(off),True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,493,scheduler,return tuple(schedule),True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,702,scheduler,"assert 0 < len(sched) <= 1000, ""Extended nonce schedule malformed""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,703,scheduler,"assert len(set(sched)) == len(sched), ""Extended nonce schedule has duplicates""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,713,sampling,sample = bytes(range(256)) * 3,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,714,sampling,"assert t_phi_unfold(t_phi_fold(sample), len(sample)) == sample",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,715,sampling,w = [7] * len(sample),True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,716,sampling,"assert folded_modular_dot(t_phi_fold(sample), len(sample), w) == (",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,717,sampling,sum(7 * b for b in sample) % 256,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,749,scheduler,# Deterministic complete nonce-window schedule — package-internal module,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,750,chronus,# (consolidated from chronus/mla1517_platform/python/turing_core.py).,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,752,scheduler,# package __init__ imports them from .schedule directly.,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/core.py,753,scheduler,"from .schedule import (  # noqa: E402,F401",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,23,classical,entirely on classical hardware via simulation. Simulating a quantum,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,23,simulation,entirely on classical hardware via simulation. Simulating a quantum,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,81,classical,ASSUMED_MAX_CORES = 1000  # assumed classical cluster size for Amdahl bound,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,129,classical,"""Quantum-Classical Computational Boundary"", ""BQP vs P"", 100.0, np.e, 1.2, 8",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,167,classical,"elif frontier.name == ""Quantum-Classical Computational Boundary"":",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,593,sampling,# Sample the manifold at multiple scales — deterministic seed so,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,748,enumeration,"for i, val in enumerate(sorted_values):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,821,sampling,# Sample points along straight line path,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,1003,classical,Probe the boundary between quantum and classical computational advantage,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,1007,classical,# Model quantum vs classical computational complexity,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,1011,classical,# Classical complexity analysis,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,1061,classical,"""""""Measured cost of this explorer's own classical analysis, in",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,1144,classical,Classical cost = expected oracle queries (N+1)/(M+1) under,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,1145,sampling,uniform sampling without replacement; quantum cost = measured,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,1147,simulation,"real iterate — no simulation, no keyword matching.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,1278,classical,"def _analyze_quantum_classical_boundary(self, classical: Dict, quantum: Dict) -> Dict[str, Any]:",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,1279,classical,"""""""Analyze the quantum-classical boundary""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,1281,classical,"classical_cost = classical[""time_complexity""] * classical[""space_complexity""]",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,1698,simulation,# Simulate time delay by shifting one signal,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,2749,enumeration,"for i, problem_instance in enumerate(problem_instances):",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/discovery.py,3028,classical,# Quantum-classical boundary,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/inventory.py,155,classical,classical = any(,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/inventory.py,159,classical,if classical and quantum:,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/schedule.py,15,scheduler,"""""""The requested or supplied schedule violates the complete-window contract.""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/schedule.py,45,scheduler,The schedule is a rotated ascending or descending traversal. Both direction,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/schedule.py,46,scheduler,choices are bijections modulo ``window``; therefore every full schedule is,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/schedule.py,48,scheduler,"complete schedule by this function's metadata-free API, so callers that",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/schedule.py,63,scheduler,"""""""Return a deterministic schedule prefix as an immutable tuple.""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/schedule.py,67,scheduler,"def validate_schedule(schedule: Iterable[Any], window: int, *, require_complete: bool = True) -> tuple[int, ...]:",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/schedule.py,75,scheduler,values = tuple(schedule),True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/schedule.py,78,scheduler,"f""complete schedule requires {window} entries, got {len(values)}""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/schedule.py,81,scheduler,"raise TuringScheduleError(""schedule prefix is longer than its window"")",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/schedule.py,84,scheduler,"raise TuringScheduleError(""schedule values must be integers"")",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/schedule.py,86,scheduler,"raise TuringScheduleError(f""schedule value {value} is outside [0, {window})"")",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/schedule.py,88,scheduler,"raise TuringScheduleError(""schedule contains duplicate nonces"")",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/schedule.py,90,scheduler,"raise TuringScheduleError(""schedule is missing one or more nonces"")",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/schedule.py,96,scheduler,"schedule = extended_nonce_schedule(window, seed=seed, cap=window)",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/schedule.py,97,scheduler,"return validate_schedule(schedule, window, require_complete=True)",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/specification.py,280,enumeration,"tape = {index: symbol for index, symbol in enumerate(input_symbols)}",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/turing_core/ten_thousand.py,191,simulation,"10_000; this is the analytical solution, not a simulation.",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/unified_theory.py,41,simulation,"""Reference constants are immutable; overrides create labelled simulation contexts only."",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/unified_theory.py,49,fallback,"""Experimental ordering may lead, but an exact complete fallback remains available."",",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/variational.py,13,simulation,"does not simulate a 2^32 state vector, and it makes no consensus",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/variational.py,16,fallback,* The phi-Grover fallback probes the deterministic nonce schedule,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/variational.py,16,scheduler,* The phi-Grover fallback probes the deterministic nonce schedule,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/variational.py,150,scheduler,"deterministic schedule seeded by the header.""""""",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/variational.py,235,sampling,for sample in batch_data:,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/variational.py,236,sampling,"header = sample[""header""]",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/variational.py,237,sampling,"target_nonce = int(sample[""nonce""])",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/variational.py,352,fallback,"""""""VQC prediction -> consensus verification -> phi-Grover fallback ->",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/variational.py,367,fallback,phi-Grover schedule fallback searches the nonce window; 4. the VQC,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/variational.py,367,scheduler,phi-Grover schedule fallback searches the nonce window; 4. the VQC,True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/variational.py,423,fallback,"""""""Fallback: probe the deterministic nonce schedule until the",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/variational.py,423,scheduler,"""""""Fallback: probe the deterministic nonce schedule until the",True,REVIEW
+turing_universal_quantum_computer/turing_universal_quantum_computer/variational.py,469,simulation,"""""""End-to-end demonstration: init, train on simulated blocks, predict,",True,REVIEW

@@ -1,0 +1,93 @@
+# EUCLID — FederatedResonanceGate & IOP Resonance Integration
+
+**HYBA | EUCLID**
+
+<aside>
+
+**Status: implemented, validated — 19 July 2026.** The FederatedResonanceGate extends the WorldIntegrationGate with three-rule validation of remote resonance metrics (effective_alpha, uses_numpy, phi_metric_scale) during IOP transactions. ResonanceAwareSLA negotiation automatically adjusts advertised confidence based on local degradation state. Cross-boundary execution cycles are simulated and verified.
+
+</aside>
+
+## Two-Way Integration
+
+### 1. Resonance-Informed SLA Negotiation
+
+When Organism B receives a contract proposal from Organism A, B's router computes a `ResonanceAwareSLA` that adjusts the advertised confidence based on local resonance metrics:
+
+- **alpha_penalty** = `min(1.0, effective_alpha / base_alpha)` — caps confidence proportionally to degradation
+- **numpy_penalty** = `PHI_I` (≈ 0.618) if `uses_numpy=False`, otherwise 1.0
+- **adjusted_confidence** = `original * alpha_penalty * numpy_penalty`, floored at 0.1
+
+**Verification:**
+
+- Healthy, numpy-enabled node: 0.85 → 0.85 (no adjustment)
+- Degraded alpha=0.236, pure-Python: 0.85 → 0.325 (α penalty=0.618 × numpy penalty=0.618)
+- `should_refuse` triggers when adjusted confidence < 0.15 — the organism refuses the contract rather than over-commit
+
+### 2. Telemetry-Backed IOP Validation
+
+The IOP RESOLVE payload now carries `uses_numpy`, `effective_alpha`, and `resonance_explanation` (with `phi_metric_scale`). The requester's `FederatedResonanceGate` audits this telemetry through three rules:
+
+### Rule 1: Temporal Memory Boundary
+
+| Condition | Verdict | Veto Category |
+| --- | --- | --- |
+| `effective_alpha < 0.150` | VETO | FEEDBACK_FAILURE |
+| `effective_alpha ≥ 0.150` | Pass | — |
+
+An alpha below 0.150 indicates quarantined organs with heavily discounted temporal memory. No amount of other evidence compensates — the integration is rejected immediately.
+
+### Rule 2: Numerical Precision Scaling (The Epistemic Penalty)
+
+| Condition | Action |
+| --- | --- |
+| `uses_numpy = True` | No penalty — full signal strength |
+| `uses_numpy = False` | Signal × PHI_I (≈ 0.618) — φ⁻¹ reduction |
+| Adjusted signal < 0.5 | VETO with TRUTH_FAILURE; evidence demoted to INTERNAL_HEURISTIC |
+
+This is the epistemic correction embodied structurally: pure-Python execution carries reduced mathematical precision, and the signal strength reflects this honestly. The flag is not a passive logging parameter — it directly gates integration.
+
+### Rule 3: Structural Explanation Verification
+
+| Condition | Verdict |
+| --- | --- |
+| No `resonance_explanation` in payload | VETO (COHERENCE_FAILURE) |
+| `abs(phi_metric_scale - PHI_I) > 1e-5` | VETO (COHERENCE_FAILURE) |
+| `phi_metric_scale ≈ PHI_I` (± 1e-5) | Pass |
+
+This ensures the remote node used canonical φ-scaled metric space for its perturbation analysis. Any deviation indicates non-canonical or corrupted mathematics.
+
+## Cross-Boundary Execution Simulation
+
+```
+Organism A (healthy, numpy, α=0.382)  →  SLA request to Organism B
+Organism B (degraded, pure-Python, α=0.236)  →  adjusts SLA confidence: 0.85 → 0.325
+Organism B executes and returns RESOLVE with resonance telemetry
+Organism A validates through FederatedResonanceGate:
+  Rule 1: α=0.236 ≥ 0.150 → PASS
+  Rule 2: numpy=False → signal 0.80 × 0.618 = 0.494 < 0.5 → VETO (TRUTH_FAILURE)
+Organism B recovers (numpy=True, α=0.382) → full SLA, validation PASSES
+```
+
+## Architectural Invariant Analysis
+
+- **No Bypassing of Heuristic Penalties:** `uses_numpy=False` is not passive — it directly triggers φ⁻¹ signal downgrade. Hardware degradation translates into system-wide epistemic caution.
+- **Deterministic Veto Boundaries:** `effective_alpha < 0.150` is a hard filter. Quarantined nodes cannot integrate regardless of other evidence.
+- **Exact Constant Alignment:** Both sender (explainer's φ-metric) and receiver (gate's PHI_I check) are aligned to 1e-5 tolerance. Any drift fails Rule 3.
+
+## Canonical Files
+
+| File | Purpose |
+| --- | --- |
+| `euclid/federated_resonance_gate.py` | FederatedResonanceGate, ResonanceAwareSLA, ResonanceAwareIOPRouter |
+| `euclid/delegation_types.py` | EvidenceSource, VetoCategory, ValidationSignal, IntegrationAssessment stubs |
+
+## Claim Boundaries
+
+- The FederatedResonanceGate is a laboratory validation component — not a deployed production gate
+- Cross-boundary execution is simulated in-process — no real network transport
+- The epistemic penalties (φ⁻¹ scaling) are mathematically grounded but not independently validated
+- Resonance metrics (effective_alpha, phi_metric_scale) are assumed to be honestly reported by the remote node — no Byzantine fault tolerance
+- The `ResonanceAwareSLA` is a self-adjustment mechanism — an adversarial node could report false metrics; this is mitigated by the requester's gate but not cryptographically enforced at the SLA level
+
+</content>

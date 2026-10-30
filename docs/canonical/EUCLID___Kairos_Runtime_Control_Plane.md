@@ -1,0 +1,260 @@
+# EUCLID — Kairos Runtime Control Plane
+
+**HYBA | EUCLID**
+
+<aside>
+
+**Status: implemented as a fail-closed single-operator runtime control plane.** This is the first externalisation-ready layer for The Polyverse of Kairos: session-controlled, command-validated, replay-capable, and explicitly bounded against unproven multi-user or network operation.
+
+</aside>
+
+## Implemented runtime controls
+
+- Typed creator, operator, and audience roles.
+- Operator-only session activation; audience and creator execution are disabled at runtime.
+- One active session only; concurrent operation rejects until distributed consistency and conflict-resolution evidence exist.
+- Strict request schema, domain/action vocabulary validation, and per-session command limits.
+- Governed dispatch to the Kairos world kernel.
+- Chronicle-backed replay export and runtime-health reporting.
+- Fail-closed rejection of inactive sessions, invalid actions, unsupported request fields, unsupported roles, and concurrent sessions.
+
+## Verification
+
+- **39/39** focused core, closure, CNS, interactive, Kairos world, and runtime tests passed.
+- **13/13** production-harness checks passed.
+- Compilation passed.
+
+## Runtime mode and boundary
+
+The runtime is intentionally **single-operator first**. Its types and contracts preserve the later multi-user path, but multi-user execution remains disabled. It is transport-neutral: no REST listener, WebSocket listener, public API, authentication provider, renderer, client UI, SDK, distributed persistence, or external-provider deployment is claimed.
+
+## Custody
+
+- **Baseline snapshot:** `EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260718_2158.zip`
+- **Baseline commit:** `a81fcfb755fbe2ddba014258d24b2f864a523d72`
+- **Runtime bundle SHA-256:** `de4e0e87654a1e46fa0acfaa58c7038ac67ac0f683159d89e29a26675631173c`
+
+[Kairos Runtime Control Plane evidence bundle](KAIROS_RUNTIME_CONTROL_PLANE.zip)
+
+Kairos Runtime Control Plane evidence bundle
+
+## Decision record — 19 July 2026
+
+- **Decision:** Preserve the Kairos Runtime Control Plane as a single evidence-backed control-plane slice in the EUCLID repository and the canonical EUCLID laboratory record; do not create a parallel capability record or treat a point-in-time evidence bundle as the implementation itself.
+- **Implementation reconciliation:** The specified world lifecycle, single-operator session model, governed Fold dispatch, machine-readable rule enforcement, chronicle-backed replay, and laboratory truth boundary are already represented in the implemented Kairos control-plane lineage and its subsequent integration records.
+- **Truth boundary retained:** This record does not assert public deployment, distributed persistence, multi-user execution, external-provider operation, rendering or physics engines, an SDK, external comparative evaluation, or any unverified authentication service.
+- **Posterity requirement:** Future changes must retain the decision rationale, source paths, test command and result, environment/dependency state, failure or negative-control results, manifest, and SHA-256 seal in the EUCLID repository; the EUCLID Research Archive remains the durable index and narrative chronology.
+- **Design discipline:** The tone vector—Curious, Unconquered, Radiant, Stoic, and Transformative—remains a governed design input. It must be expressed as executable rule-pack vocabulary, invariants, forbidden actions, evolution drivers, and tests before it is treated as implemented behaviour.
+
+## Implementation closure — 19 July 2026
+
+<aside>
+
+**Implemented and locally verified against the EUCLID working repository.** The Kairos Runtime Control Plane now has a repository-native, deterministic implementation—not a detached specification or evidence-only bundle.
+
+</aside>
+
+### Delivered source and controls
+
+- `euclid/kairos_runtime.py` — lifecycle state machine; fail-closed transition handling; single-operator sessions; typed Fold envelopes; five domain rule packs; hash-linked chronicle; checkpoint/restore; and replay-integrity verification.
+- `tests/test_kairos_runtime.py` — accepted, rejected, deferred, self-transition, forbidden-action, concurrent-session, checkpoint/restore/replay, lifecycle fail-closed, and boundary-opening negative controls.
+- `euclid/production_harness.py` — Kairos verification is now a required production-harness check.
+- `euclid/KAIROS_RUNTIME_CONTROL_PLANE.md` — repository-native design, boundary, reproduction, and preservation guide.
+
+### Verification result
+
+- Focused Kairos plus adjacent EUCLID creative-substrate, architecture-closure, and CNS regressions: **40/40 passed**.
+- EUCLID production harness: **11/11 passed**, including `kairos_control_plane`.
+- EUCLID compilation: **passed**.
+
+### Snapshot custody
+
+- Updated repository snapshot: `EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0021.zip`
+- Files in manifest: **972** (runtime caches, virtual environments, generated bytecode, logs, and nested snapshots excluded).
+- SHA-256: `ad4e4d86a3610a84341d7976b19460debb54b62b91cc511e90265895789d9db9`
+- This evidence validates an in-process laboratory control plane only. It does not establish a public, distributed, multi-user, externally authenticated, externally provided, rendered, physics-enabled, SDK, or independently evaluated runtime.
+
+[Updated EUCLID working repository snapshot](EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0021.zip)
+
+Updated EUCLID working repository snapshot
+
+[Updated repository snapshot SHA-256 checksum](EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0021.zip.sha256)
+
+Updated repository snapshot SHA-256 checksum
+
+[Kairos control-plane evidence manifest](kairos_control_plane_manifest_20260719.json)
+
+Kairos control-plane evidence manifest
+
+## Closure correction — 19 July 2026
+
+- **Reason:** The initial closure snapshot was preserved before the final `load_world`, CNS-snapshot, and invariant-violation controls were added. It remains in the record as superseded evidence; it is not deleted or overwritten.
+- **Final control additions:** `load_world` now validates the hash-linked chronicle before returning a world; `record_cns_snapshot` records phase, mood, risk, volatility, and world hash; declared rule-pack invariant violations reject before mutation.
+- **Final verification:** **42/42** focused Kairos and adjacent EUCLID regressions passed; the production harness remained **11/11**; compilation passed.
+- **Current sealed repository snapshot:** `EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0021R1.zip` — SHA-256 `0e0cf2fa5d98fc0bb79e8374de13e5521112ebaba68e8dde818f0e2d6c7baf5e`; 972-file manifest under the same stated exclusions.
+
+[Final Kairos-closure EUCLID working repository snapshot](EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0021R1.zip)
+
+Final Kairos-closure EUCLID working repository snapshot
+
+[Final Kairos-closure snapshot SHA-256 checksum](EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0021R1.zip.sha256)
+
+Final Kairos-closure snapshot SHA-256 checksum
+
+[Final Kairos-closure evidence manifest](kairos_control_plane_manifest_20260719%201.json)
+
+Final Kairos-closure evidence manifest
+
+## Kairos Runtime Execution Layer — 19 July 2026
+
+<aside>
+
+**Status: implemented and internally verified.** The execution layer now evolves a bounded Kairos world only through the governed control plane; it remains in-process, single-operator, deterministic, and laboratory-only.
+
+</aside>
+
+### Implemented execution path
+
+- **Operator execution loop:** accepts a typed operator action, enforces the laboratory boundary, routes the action through the Fold protocol, and returns the resulting in-process world state.
+- **Domain engines:** update authorised source and target domain-local state, revision, payload hash, machine-readable invariants, and bounded evolution-driver values only after control-plane acceptance.
+- **Fold engine:** applies cross-domain propagation, records coherence delta and volatility impact, triggers bounded resonance for defined constructive Fold actions, and preserves rejection/defer semantics without domain-engine or CNS mutation.
+- **CNS and chronicle:** accepted execution records a phase/mood/risk/volatility/world-hash CNS snapshot after hash-linked domain and Fold-execution chronicle entries.
+- **Truth boundary:** execution rejects non-laboratory configuration. No network transport, multi-user execution, distributed persistence, external provider, renderer, physics engine, SDK, public endpoint, or external evaluation is implemented or asserted.
+
+### Verification
+
+- Focused execution, control-plane, and adjacent EUCLID regressions: **46/46 passed**.
+- EUCLID production harness: **12/12 passed**, including `kairos_execution_layer`.
+- EUCLID compilation: **passed**.
+
+### Custody
+
+- Updated repository snapshot: `EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0028.zip`
+- Files in manifest: **978** under the established exclusions for virtual environments, runtime caches, generated bytecode, logs, and nested snapshots.
+- SHA-256: `cd3b2fedeff1f5e7f215627b9c24715f4fb1fc228cf6585cf38a463932db2dfc`
+
+[EUCLID repository snapshot with Kairos Execution Layer](EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0028.zip)
+
+EUCLID repository snapshot with Kairos Execution Layer
+
+[Kairos Execution Layer snapshot SHA-256 checksum](EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0028.zip.sha256)
+
+Kairos Execution Layer snapshot SHA-256 checksum
+
+[Kairos Execution Layer evidence manifest](kairos_execution_layer_manifest_20260719.json)
+
+Kairos Execution Layer evidence manifest
+
+## Sealed Kairos Mining-Orchestration Lab Service — 19 July 2026
+
+<aside>
+
+**Status: implemented and internally verified as a sealed laboratory service contract.** It is versioned and caller-gated, but opens no network listener and makes no live-mining or performance claim.
+
+</aside>
+
+### Implemented narrow service surface
+
+- **Versioned contract:** four declared `v1` routes for health, laboratory-world creation, evidence-gated experiment execution, and in-process world-state readout. The contract inventory does not bind a REST, WebSocket, or other network listener.
+- **Caller gate:** explicit single-operator laboratory allowlist. This is a local caller contract—not an external identity or production-authentication claim.
+- **Mining-orchestration experiment gate:** rejects out-of-allowlist callers, missing identity, out-of-range risk/volatility, performance claims, malformed agent labels, and payloads containing pool, Stratum, wallet, private-key, credential, endpoint, API-key, token, hashrate, revenue, profitability, or accepted-share fields.
+- **Governed execution:** valid experiments flow through the Kairos execution and control layers, recording risk, volatility, forbidden-state rejection, agent labels, domain transitions, CNS state, and chronicle evidence. Agent labels are descriptive experiment inputs, not autonomous multi-agent execution.
+
+### Verification
+
+- Focused mining-lab, execution, control-plane, and adjacent EUCLID regressions: **50/50 passed**.
+- EUCLID production harness: **13/13 passed**, including `kairos_mining_lab_service`.
+- EUCLID compilation: **passed**.
+
+### Custody and truth boundary
+
+- Updated repository snapshot: `EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0031.zip`
+- Files in manifest: **984** under established exclusions for virtual environments, runtime caches, generated bytecode, logs, and nested snapshots.
+- SHA-256: `59bd4479dae8782a0b31caff8616b0ec7ba7d96023cd10df23bf11e0befc4652`
+- This is neither a live mining service nor a public API. It has no listener, external authentication, pool/Stratum/wallet/credential handling, miner operation, share submission, hashrate or revenue/profitability measurement, SDK, distributed persistence, or external evaluation.
+
+[EUCLID repository snapshot with sealed Kairos Mining Lab Service](EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0031.zip)
+
+EUCLID repository snapshot with sealed Kairos Mining Lab Service
+
+[Sealed Mining Lab Service snapshot SHA-256 checksum](EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0031.zip.sha256)
+
+Sealed Mining Lab Service snapshot SHA-256 checksum
+
+[Sealed Mining Lab Service evidence manifest](kairos_mining_lab_service_manifest_20260719.json)
+
+Sealed Mining Lab Service evidence manifest
+
+## Millennium Mathematics Laboratory World — 19 July 2026
+
+<aside>
+
+**Status: implemented and internally verified.** The next Kairos world is a single-operator laboratory for reproducible hypotheses, explicit invariants, constraints, and retained counterexample attempts across the seven original Millennium Prize Problem lanes.
+
+</aside>
+
+- **World scope:** Birch and Swinnerton-Dyer, Hodge, Navier-Stokes, P versus NP, Poincaré, Riemann, and Yang-Mills mass gap are represented as named research lanes. They are not a claim about the status of any problem.
+- **Governed path:** experiments require a stated hypothesis and explicit invariants, then traverse the Symbolic Orchard → Geometric Plane governed Fold path. Declared invariant violations reject before accepted world mutation; outcomes are chronicle-linked and replayable.
+- **Truth boundary:** the world does not prove, disprove, solve, peer-review, independently validate, or establish any Millennium Prize Problem result. It does not substitute for formal proof systems, mathematical review, publication, or independent reproduction.
+- **Verification:** **53/53** focused and adjacent EUCLID regressions passed; the production harness is **14/14**; compilation passed.
+- **Custody:** `EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0038.zip` — SHA-256 `119ea90087cbb491bba4ecd73579b10c22f1617302c94cdcce0cada3fd5fafd0`.
+
+[EUCLID repository snapshot with Millennium Mathematics World](EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0038.zip)
+
+EUCLID repository snapshot with Millennium Mathematics World
+
+[Millennium Mathematics World snapshot SHA-256 checksum](EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0038.zip.sha256)
+
+Millennium Mathematics World snapshot SHA-256 checksum
+
+[Millennium Mathematics World evidence manifest](millennium_math_world_manifest_20260719.json)
+
+Millennium Mathematics World evidence manifest
+
+## Kairos Mining-Orchestration Reasoning Layer — Stability-First — 19 July 2026
+
+<aside>
+
+**Status: implemented and internally verified.** This is the first sequenced slice of the Hybrid reasoning path: stability → coordination → policy.
+
+</aside>
+
+- **Stability reasoning:** bounded laboratory observations now derive a risk posture, volatility-cycle indicator, forbidden-state likelihood, anomaly signal, resilience score, and a fail-closed policy proposal.
+- **Fail-closed operation:** a declared forbidden state yields `PROHIBITED` and `REJECT`; malformed or out-of-range observations reject before assessment.
+- **Evidence:** each assessment is a hash-linked chronicle event. The implementation has no live mining, miner control, pool/Stratum, wallet, credential, accepted-share, hashrate, revenue, profitability, operational-prediction, or external-evaluation capability or claim.
+- **Verification:** **56/56** focused and adjacent EUCLID regressions passed; production harness **15/15**; compilation passed.
+- **Custody:** `EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0047.zip` — SHA-256 `72ca27e4e93483112164b3f806378c6baf79e7b15d59298919393015581aaa37`.
+
+[EUCLID repository snapshot with mining stability reasoning](EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0047.zip)
+
+EUCLID repository snapshot with mining stability reasoning
+
+[Mining stability reasoning snapshot SHA-256 checksum](EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260719_0047.zip.sha256)
+
+Mining stability reasoning snapshot SHA-256 checksum
+
+[Mining stability reasoning evidence manifest](kairos_mining_reasoning_manifest_20260719.json)
+
+Mining stability reasoning evidence manifest
+
+## Repository checkpoint protocol — 19 July 2026
+
+<aside>
+
+**Custody rule: checkpoint the current repository after each completed implementation unit, after any recovery or environment interruption, and before any substantial new architectural branch.** Each checkpoint must be attached here with its SHA-256 and a verification transcript.
+
+</aside>
+
+- **Current recovery checkpoint:** `EUCLID_REPOSITORY_CHECKPOINT_20260719_0129.zip`
+- **SHA-256:** `a21b1070640abf22c020dba483518aafac12941c7c2de066e22cbf5ebd5a4246`
+- **Verification:** archive integrity check passed; restored mining stability, sealed mining-lab, and fixed cross-world control-matrix tests passed; compilation passed.
+- **Recovery provenance:** this checkpoint follows restoration from the latest available sealed EUCLID snapshot after the transient working directory was unavailable. It is a dated recovery checkpoint, not a claim that it supersedes a later unrecorded working tree.
+- **Retention:** preserve earlier checkpoints and snapshots as historical evidence; never overwrite them. Update the canonical EUCLID page at each checkpoint so the latest recoverable state is visible and retrievable.
+
+[Current EUCLID repository recovery checkpoint](EUCLID_REPOSITORY_CHECKPOINT_20260719_0129.zip)
+
+Current EUCLID repository recovery checkpoint
+
+[Current repository checkpoint SHA-256 checksum](EUCLID_REPOSITORY_CHECKPOINT_20260719_0129.zip.sha256)
+
+Current repository checkpoint SHA-256 checksum

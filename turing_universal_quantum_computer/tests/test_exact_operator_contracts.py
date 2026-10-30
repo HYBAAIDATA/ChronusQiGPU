@@ -146,7 +146,7 @@ for verify in (r.assert_normalized, lambda: verify_unitary([[ExactComplex(2)]]))
         raise RuntimeError('invalid quantum invariant passed under -O')
 """
     env = dict(os.environ)
-    env["PYTHONPATH"] = str(Path(__file__).resolve().parents[1])
+    env["PYTHONPATH"] = os.pathsep.join([str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parents[2])])
     result = subprocess.run(
         [sys.executable, "-O", "-c", code], env=env, text=True, capture_output=True
     )
@@ -183,7 +183,7 @@ for operation in (
         raise AssertionError('oversized exact materialization was admitted')
 """
     env = dict(os.environ)
-    env["PYTHONPATH"] = str(Path(__file__).resolve().parents[1])
+    env["PYTHONPATH"] = os.pathsep.join([str(Path(__file__).resolve().parents[1]), str(Path(__file__).resolve().parents[2])])
     completed = subprocess.run(
         [sys.executable, "-c", code], capture_output=True, text=True, env=env, timeout=15
     )

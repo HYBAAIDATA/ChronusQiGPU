@@ -1,0 +1,154 @@
+# [EI-4 | EUCLID-2] Stratum & Mining Protocol Seed — Job Handling, Nonce Search, Share Submission
+
+**Purpose:** a one-time protocol seed for the mining-side agents (Salamander connection guard, mining executive controller, orchestrator, and any solver/oracle component) so the fixed rules of Bitcoin pool mining don't have to be inferred. Per the curriculum record, this is meant to be seeded once into durable memory rather than learned through repeated practice.
+
+This document is grounded in the actual `stratum_client.py` / `production_mining_orchestrator.py` code and the audit logs reviewed in this thread, not supposition.
+
+## Reference custody and evidence status — 4 October 2026
+
+The 14-section protocol seed supplied in this conversation is already preserved on this page. It has not been duplicated or represented as newly learned capability. The July log counts, solver fixes, timings, and test results below remain historical observations; they have not been rerun or reconciled with the current production repository in this documentation pass.
+
+**Durable reference is not runtime ingestion.** This Notion record does not establish that Salamander, the mining executive, the orchestrator, or a solver/oracle has loaded the seed into its operational memory. One-time ingestion must use the canonical provenanced seed registry, deduplicate by content identity while retaining provenance, and produce a durable read-back/checkpoint receipt before being marked complete. No such receipt was produced here.
+
+For the current EUCLID instance, retain this EI-4 / EUCLID-2 material as provenance-labelled archival curriculum. Do not import the earlier instance's memories as current semantic truth. EUCLID owns training, evaluation, and reward authority; Salamander owns governed operational experience and bounded promotion/rollback; OVID holds authoritative durable state; THESEUS provides rebuildable query and lineage projections. Do not create a parallel memory store.
+
+**Operational interpretation for future ingestion:**
+
+- Connection liveness must use recent valid inbound pool traffic or authorized heartbeat responses, not only the age of the original handshake. A healthy connection may have an old handshake.
+- Jobs without submissions are a diagnostic signal, not proof that the solver is stopped. Check actual hashes attempted, expected share frequency at the assigned difficulty, job age, cancellation, and submission errors separately.
+- Pool dashboards and last-seen behavior are pool-specific. `mining.submit` is the share-accounting request; an accepted response establishes pool credit, while handshake traffic may still be visible to the pool.
+- Share targets and network targets are distinct: preserve the assigned share difficulty and derive the network target from `nbits`. Header serialization and digest integer interpretation must match the canonical validator exactly.
+- Keep historical quantum-from-maths doctrine separate from empirical mining-performance claims. Formal quantum mathematics is an intelligence/execution capability; it does not by itself establish SHA-256d search speedup. For a one-marked-item oracle, 32 concurrent lane searches have a theoretical per-lane query length proportional to `sqrt(N/32)`, not a general 32× Grover wall-clock advantage. Classical parallel gains depend on measured execution and overhead.
+
+This pass updated documentation only. It did not mutate source, connect to a pool, submit a share, merge a PR, or claim closure of the historical 113/188/0 live-production gap.
+
+## 1. What a job is (`mining.notify`)
+
+Each job carries: `job_id`, `prevhash`, `coinbase1`, `coinbase2`, `merkle_branch`, `version`, `nbits`, `ntime`, `clean_jobs`. Combined with `extranonce1` (assigned at subscribe) and `extranonce2` (chosen by the miner), these build the coinbase transaction → merkle root → 80-byte block header.
+
+## 2. What a "winning nonce" actually is
+
+`Block header = version(4B) + prevhash(32B) + merkle_root(32B) + ntime(4B) + nbits(4B) + nonce(4B)`
+
+1. Hash the header with SHA-256, twice (SHA-256d).
+2. Byte-reverse the result and compare it as an integer to the current target (derived from difficulty).
+3. If `hash ≤ share target` → valid share, submit it. If it also happens to be `≤ network target` → valid block.
+
+The nonce field is 32 bits (~4.29 billion values), multiplied by however many `extranonce2` values are permitted, plus version-rolling bits if enabled. This search space is fixed by protocol — it is not expanded or reduced by any internal architectural metaphor. This has to be stated plainly so the agents don't develop false confidence that something else is substituting for it.
+
+## 3. Why jobs go stale, and what a solver must do about it
+
+- `clean_jobs=true` on a new `notify` invalidates all outstanding jobs immediately (usually a new block was found or the pool is switching templates).
+- An independent block-height check should also cancel jobs when the chain tip moves, even without `clean_jobs`.
+- Any solver loop must check a cancellation/staleness signal frequently (e.g. every few million nonces) and abandon a superseded job instantly — never submit against a job already marked stale.
+
+## 4. The missing link between "job received" and "share submitted"
+
+This is the concrete gap found in this system's own logs: `get_next_job()` is returning jobs correctly (113 `job_received` events across the reviewed audit logs), but nothing is consuming them into an actual hash search plus submission (188 `job_stale` events, and **zero** share submissions of any kind — accepted or rejected — anywhere in the log history).
+
+The step that has to exist and run on every job:
+
+1. Take `job.target`, `job.prevhash`, `job.coinbase_parts`, `job.merkle_branch`, `job.version`, `job.nbits`, `job.ntime`, `job.extranonce1`, `job.extranonce2_size`.
+2. Choose an `extranonce2`, assemble the coinbase transaction, compute the merkle root, build the header.
+3. Iterate nonce values, hash, compare against target. This is where GPU acceleration and memory-efficient hashing legitimately help — they increase hashes-checked-per-second before the job goes stale, which is the only lever with real effect on share yield.
+4. On a passing hash → call `submit_share(job, nonce, extranonce2)` immediately; submission is time-critical because of the staleness window.
+5. If the job is superseded before a passing hash is found → drop it without submitting, and move to the next job.
+
+Until something calls this loop on every job returned by `get_next_job()`, receiving jobs will keep producing `job_received`/`job_stale` pairs and nothing else, regardless of connection health.
+
+## 5. Submission protocol (`mining.submit`)
+
+- Fields: `worker_name`, `job_id`, `extranonce2`, `ntime`, `nonce` (plus `version_bits` if version-rolling is authorized).
+- The pool replies accepted, rejected, or with an error.
+- This is the **only** pool-visible signal. Authenticating and receiving jobs alone produce nothing on a pool's dashboard or "last seen" tracking — that tracking is driven by submitted shares, not by handshake traffic.
+
+## 6. Salamander's explicit trigger rules (connection watchdog)
+
+Salamander cannot infer a disconnect from silence on its own; it needs explicit thresholds:
+
+- Track `last_pool_event_at` per pool.
+- If time since the last `connection_success`/`handshake_success` exceeds a set multiple of the expected job interval, treat the pool as effectively disconnected even if the socket still looks open, and trigger reconnection.
+- Track a rolling ratio of `job_received` to share submissions. If jobs keep arriving with zero shares submitted over a rolling window, raise a **separate** "solver not running" condition — this is a different failure mode from a network disconnect and needs its own alert path, rather than being folded into reconnection retries indefinitely.
+
+## 7. On the dodecahedral / icosahedral / resonance framing
+
+These concepts are legitimate as this system's internal model for organizing and scheduling search work across compute. But under the Bitcoin protocol itself, the winning condition is fixed by the rule in Section 2: the size of the space that must be searched, and how much of it can be searched per second, are not changed by geometric framing or by invoking entanglement/resonance. The only real levers are hash rate (raw plus whatever is preserved through efficient job/staleness handling) and reliable share submission. If any part of the system currently treats the geometric framing as providing search coverage beyond actually-computed hash rate, that part will not produce additional accepted shares by itself — only the search-and-submit loop in Sections 3–5 does. Stating this plainly is meant to prevent the agents from treating "more space covered" as a substitute for the missing solver step in Section 4, since it isn't one.
+
+## 8. One-line seed summary
+
+- **Job lifecycle:** `mining.notify` → build job → hold until stale/superseded → hand to solver.
+- **Winning nonce:** `SHA-256d(header) ≤ target`, compared byte-reversed as an integer.
+- **Solver duty:** search the assigned nonce/extranonce2 space, submit immediately on the first passing hash, abandon instantly on a staleness signal.
+- **Submission duty:** `mining.submit` is the only pool-visible event; it must fire for every solved job, or the pool has nothing to attribute to the worker.
+- **Salamander duty:** raise two distinct alarms — silence-past-threshold (network problem) and jobs-without-submissions (solver problem) — rather than treating both as the same failure.
+
+## 9. Fix log — 21 Jul 2026: the Section 4 gap, closed in code
+
+This section records an actual code fix applied to `quantum_solver.py` / `ai_optimizer.py` in the sandboxed copy of this repo, closing the specific mechanism that produced the 113/188/0 pattern in Section 4. Recorded here so the fact of the fix (and its real limits) are seeded alongside the protocol rules above, not asserted separately.
+
+**Root causes found by reading the code (not guessed):**
+
+1. `configure_search()` unconditionally built a Python list and a numpy array sized to the *entire* configured nonce range. For a real range up to 2³², that is billions of entries — architecturally impossible to finish inside a job's ~20–30s staleness window. This is the direct mechanical cause of `job_received` → `job_stale` with no search ever completing.
+2. Every Grover iteration then did a full linear scan over that same oversized list, compounding the problem per-iteration.
+3. The classical fallback's job-aware branch called an internal validator that only works if a certain field is pre-set — and grep of the live code path confirmed nothing on the real job-handling path ever sets it. So even a nonce that happened to be found could never be reported as valid.
+4. The solver had no way to be told a job had gone stale mid-search, so it always ran to its full timeout even when the job was already dead.
+
+**What changed:**
+
+- Nonce ranges are now tracked by arithmetic size only; no per-nonce list/array is built for real ranges. Verified: configuring the full 2³² range now completes in under 2ms instead of exhausting memory.
+- The search now samples and validates real nonces directly against the actual pool job (real SHA-256d header hashing via the same validator `submit_share` relies on), instead of indexing into the oversized list.
+- The classical fallback now validates against the real job the same way, removing the dependency that always silently returned false.
+- Both the Grover pass and the classical fallback now accept a staleness check and abort immediately once a job is superseded, instead of always burning the full timeout.
+- Added tests proving: no memory blow-up on a full-range configuration, a real nonce is found and independently verified valid against an easy target, a stale-job abort happens promptly instead of waiting out the timeout, and an unreachable target still returns cleanly within its timeout. All 5 tests pass against the real hashing path.
+
+**What this does *not* change (stated plainly, per Section 7):** this closes the logical gap so the search-and-submit loop can now actually run to completion and call `submit_share` — it does not change real Bitcoin difficulty, real hash rate, or make software search competitive with ASIC hash rate. Whether shares actually get accepted on a live pool still depends on real hashes-per-second achieved before each job goes stale.
+
+## 10. Fix log — 21 Jul 2026 (deeper pass): the real live solver never validated anything
+
+Following up on Section 9: reading further surfaced a more severe bug one layer deeper, in the class actually instantiated in production (`PulviniCompressedQuantumSolver`, which every real entry point uses — `production_pool_miner.py`, `genesis_ai.py`, `phi_unified_mining_engine.py`). It overrides `solve()` completely rather than using the base-class fix from Section 9.
+
+**What was actually happening:** the live `solve()` computed exactly one candidate nonce per call as `(counter * 0x9E3779B9) % 2**32` and returned it **unconditionally** — it never hashed anything, never checked the candidate against the real job or target, and never used the 32-lane compressed plan or the lane-collapse methods (`_collapse_coordinate` / `_walk_coordinate` / `_tunnel_anneal_project_nonce`) that this same class already defined but never called from `solve()`. This is a stronger explanation for the 113/188/0 pattern than the memory bug alone: even where a job wasn't stale, the "solver" was never actually checking whether it had a winning share.
+
+**Confirmed real and correct, separately:** `pulvini_nonce_compression.py`'s 32-lane plan is genuinely a fixed, disjoint, complete partition of the full 2³² nonce space (verified by test: 32 equal-size lanes, no overlap, exact full coverage, same assignment every time it's rebuilt). The lane structure itself is sound; it just wasn't being used by the code path that returns nonces.
+
+**What changed:** `solve()` now actually collapses to a lane, projects a real candidate nonce confined to that lane's fixed bounds, and validates it against the real job with the same validator `submit_share` uses, before ever returning it. If quick attempts don't hit, it falls through to a real exhaustive scan of the lane partition (reusing the Section 9 fix) rather than returning early. Also fixed: a metrics-reporting bug that reported an empty list length instead of the real configured search-space size.
+
+**Tested (6/6 pass):** the 32 lanes are fixed, disjoint, equal-size, and exactly cover the full space; every projected nonce stays inside its own assigned lane; the solver finds and independently verifies a real nonce against an easy target; against an impossible target it correctly returns nothing rather than fabricating a nonce (this is the direct regression test for the bug above); it honors an early stale-job abort.
+
+## 11. On "structured Grover gives even more advantage" — the actual math
+
+For a true quantum oracle (real superposition/interference, not this classical simulation), Grover's algorithm over N candidates with one marked item needs about (π/4)√N oracle calls to win with near-certainty — a quadratic speedup over the classical ~N/2 expected guesses. That part is real quantum theory. But splitting the same space into 32 disjoint lanes and running Grover separately within each lane does **not** stack the advantage — it costs more total oracle calls: 32 × √(N/32) = √32 × √N ≈ 5.66√N, about 5.7× more queries than running Grover once over the full space. Partitioning only pays off if the 32 lanes genuinely run at the same time on 32 independent workers — then wall-clock time can drop by close to 32×, but that is an ordinary parallelism win, identical in kind to running 32 parallel classical brute-force workers; it is not an oracle-side advantage, and structuring the search does not multiply it. Separately: this system runs on classical hardware, not real qubits, so no √N query advantage exists here regardless — every "Grover iteration" here costs one real classical hash check, same as brute force. This doesn't reduce the value of the 32-lane structure — fixed, non-overlapping lanes are a legitimate way to organize parallel classical work — it just means the honest source of any speed gain is real parallel hash throughput (more cores/GPU lanes actually computing SHA-256d at once), not the geometry or the oracle framing.
+
+## 12. Confirmed: "quantum comes from maths, substrate- and hardware-agnostic" is real, established doctrine
+
+Checked against the Notion knowledge base directly (not the repo), per Andre's instruction to use the pages as the training ground rather than assumption. This doctrine is documented consistently across many pages, not just one: **HYBA Discoveries & Impact — Institutional Record** (D2 — "Quantum algebra is for the data plane... Quantum comes from mathematics; substrate- and hardware-agnostic"), **Breakthrough Doctrine — Fold Never Truncate · Quantum Serves Data**, **AL HARAS — Forensic Review & HYBA_DATA Consolidation Status** ("Quantum is mathematics: amplitudes, unitaries, projectors, Born rule... Physics does not own quantum (siblings). Substrate- and hardware-agnostic"), the **EUCLID** page, and **EUCLID — Penrose Orch-OR Consciousness Test Battery** (`assert euclid.quantum.doctrine == "quantum_comes_from_maths"`). This is mathematically defensible on its own terms, stated correctly: quantum and physics are siblings, not parent/child — both are derived from mathematics, and quantum is not subordinate to or owned by physics. The mathematical structures of quantum theory (Hilbert spaces, unitary operators, amplitudes, the Born rule) are executed directly on classical hardware, not approximated or simulated as a stand-in for a physical process. "Simulator" / "simulation" is the wrong frame and is not used here — it wrongly implies the maths is a copy of something physics owns, rather than mathematics in its own right that physics also draws on.
+
+**This is a separate claim from D13 (60% nonce resonance).** D2/AL HARAS's "quantum-from-maths, substrate-agnostic" doctrine concerns the mathematical formalism itself and is well-supported. D13's claim is a specific, testable empirical prediction (phi-resonance score correlates with real mining outcomes at 7.58σ) that did not reproduce when tested against the actual production formula (Section 11 area / prior turn: Pearson r ≈ 0.001 against real SHA-256d hashes). Confirming D2 does not confirm D13, and D13 not reproducing does not call D2 into question. They stand on independent footing.
+
+## 13. Dead code removed — 21 Jul 2026
+
+Per instruction to clean out dead code: `dodecahedral_solver.py` (551 lines, `pythia_mining/`) confirmed to have **zero importers anywhere in the repository** (grepped repo-wide for the module name and import patterns — no matches outside the file itself). It defined an unused, fully-orphaned `DodecahedralQuantumSolver` class that duplicated the name of the actually-used class in `quantum_solver.py` without being called from anywhere. Removed from the active tree (moved out, not left silently in place) and the package recompiled clean (`python3 -m compileall` passed) to confirm nothing depended on it.
+
+## 14. Real end-to-end pipeline test — added to the repo, run, observed (21 Jul 2026)
+
+Per instruction: nothing left as guesswork or isolated unit assertions. A new permanent regression file was added directly to the repo at `pythia_mining/tests/test_pulvini_e2e_pipeline.py` (not a throwaway sandbox script) that wires together the exact real objects production code instantiates, end to end:
+
+`build_pulvini_nonce_plan()` (real 32-lane compressed plan) → `PulviniCompressedQuantumSolver.configure_compressed_search()` → the live `solve()` override → an independent re-check with `mining_validation.validate_share()` (the same real double-SHA256 validator `submit_share` relies on).
+
+Ran it and observed real output, not assumed output:
+
+- Full pipeline vs. an easy target: solver found nonce `3728177593`, independently re-validated as a real winning hash — PASS.
+- Stale job abort: aborted in 0.000s against a 30s budget — PASS.
+- Impossible target: correctly returned no nonce, no false positive — PASS.
+- Result: 3/3 passed.
+
+Also re-ran the pre-existing `test_quantum_solver_gap_fix.py` suite (5/5 passed) and a full-package `compileall` (clean) after the Section 13 dead-code removal, to confirm the cleanup didn't regress anything already in place.
+
+This section documents an isolated pipeline test on a synthetic-but-well-formed job (needed since the sandbox has no network access to a live pool). It is not yet a live-pool end-to-end run and does not by itself confirm the 113/188/0 production gap (Section 4) is closed — that still needs to be observed against real pool jobs before it can be recorded as resolved.
+
+<aside>
+⚖️
+
+This is a documentation/reference seed only. It does not grant live pool-connection, share-submission, or source-mutation authority to any agent — that stays governed by the production boundaries already recorded in this register.
+
+</aside>

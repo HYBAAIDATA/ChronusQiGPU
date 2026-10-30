@@ -255,6 +255,7 @@ def test_unsupported_configuration_allocates_no_worker(kwargs):
 
 def test_import_boundary_under_concurrent_initialization():
     import kellogg
+    import tempfile
     import turing_universal_quantum_computer as turing
     from pathlib import Path
 
@@ -283,7 +284,7 @@ assert not any(k == 'chronus' or k.startswith('chronus.') for k in sys.modules)
     for _ in range(3):
         done = subprocess.run(
             [sys.executable, "-c", code],
-            cwd="/tmp",
+            cwd=tempfile.gettempdir(),
             env=env,
             capture_output=True,
             text=True,

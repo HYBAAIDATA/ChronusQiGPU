@@ -203,4 +203,4 @@ def test_wheel_content_parity_distinguishes_container_timestamps(tmp_path):
 
 def test_generated_reference_matches_importable_candidate():
     generator = module("generate_api_reference")
-    assert generator.render() == (PROJECT / "docs/reference.md").read_text()
+    assert generator.render() == (PROJECT / "docs/reference.md").read_text(encoding="utf-8")

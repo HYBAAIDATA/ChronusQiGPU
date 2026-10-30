@@ -1641,11 +1641,11 @@ def run_gpu_fleet_hybrid_workload(
     work_id: str = "gpu-fleet-vqe-ising",
 ) -> GPUFleetQuantumWorkloadReport:
     """Capacity-plan, partition, lease, and execute a hybrid quantum workload across a Chronus GPU/iGPU fleet."""
-    from chronus.fleet.capacity import (
-        GPUWorkerSpec,
-        WorkloadSpec,
-        execute_fleet_workload,
-    )
+    import importlib
+    _fleet_cap = importlib.import_module("chronus.fleet.capacity")
+    GPUWorkerSpec = _fleet_cap.GPUWorkerSpec
+    WorkloadSpec = _fleet_cap.WorkloadSpec
+    execute_fleet_workload = _fleet_cap.execute_fleet_workload
 
     if worker_count < 1 or lanes_per_worker < 1:
         raise ValueError("worker_count and lanes_per_worker must be >= 1")

@@ -1,0 +1,276 @@
+# MIDAS — Production Readiness Integration Package V1
+
+<aside>
+🛡️
+
+**Purpose:** a copy-and-integrate package for the current staging-readiness gap closure. It adds a repeatable release gate, runtime configuration validation, staging API verification, and operational release controls. It deliberately contains no secrets, pool credentials, or live-mining activation.
+
+</aside>
+
+## Verified starting point
+
+- API security and staging hardening are in place, including admin protection for metrics and analytics.
+- The readiness score is 58/80. The remaining work is concentrated in integration, performance, resilience, chaos testing, observability, deployment, and governance.
+- The repository already uses Python and pytest. The existing root `test_api.sh` must be updated because it still expects production documentation endpoints to be available; the current production expectation is `404`.
+
+## Package contents
+
+| Repository path | Purpose | Gate impact |
+| --- | --- | --- |
+| <code>.github/workflows/production-readiness.yml</code> | Pull-request and release-candidate quality gate | Testing, security, deployment |
+| <code>scripts/validate_production_[config.py](http://config.py)</code> | Fail-fast production configuration validation | Security, deployment |
+| <code>scripts/verify_[staging.py](http://staging.py)</code> | Authenticated/non-authenticated staging smoke tests | Integration, security, observability |
+| <code>docs/PRODUCTION_[RUNBOOK.md](http://RUNBOOK.md)</code> | Promotion, rollback, incident, and evidence control | Deployment, governance |
+| <code>test_[api.sh](http://api.sh)</code> | Corrected endpoint expectations for production mode | Security regression |
+
+## 1. Add `.github/workflows/production-readiness.yml`
+
+```yaml
+name: Production Readiness Gate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+      - name: Static production-config validation
+        run: python scripts/validate_production_config.py --static
+      - name: Run test suite
+        run: python -m pytest -q --junitxml=test-results.xml
+      - name: Publish test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results.xml
+          if-no-files-found: error
+```
+
+**Integration note:** make this workflow a required status check for `main`. If the repository uses a branch name other than `main`, update the branch selector before commit.
+
+## 2. Add `scripts/validate_production_config.py`
+
+```python
+#!/usr/bin/env python3
+"""Static and runtime validation for MIDAS production configuration."""
+from __future__ import annotations
+
+import argparse
+import os
+import re
+import sys
+from pathlib import Path
+
+TRUTHY = {"1", "true", "yes", "on"}
+PLACEHOLDERS = {"", "changeme", "change-me", "example", "dev", "development", "secret", "your-secret"}
+
+def fail(message: str) -> None:
+    print(f"FAIL: {message}")
+    raise SystemExit(1)
+
+def is_placeholder(value: str | None) -> bool:
+    return value is None or value.strip().lower() in PLACEHOLDERS
+
+def static_check() -> None:
+    source = Path("production_api.py")
+    if not source.exists():
+        fail("production_api.py was not found at repository root")
+    text = source.read_text(encoding="utf-8")
+    required = {
+        "metrics admin role": r'@require_role\(["\']admin["\']\)\s*\nasync def get_metrics',
+        "metrics token verification": r'async def get_metrics\([^)]*Depends\(verify_token\)',
+        "analytics admin role": r'@require_role\(["\']admin["\']\)\s*\nasync def get_analytics',
+        "favicon route": r'@app\.get\(["\']/favicon\.ico',
+    }
+    missing = [name for name, pattern in required.items() if not re.search(pattern, text)]
+    if missing:
+        fail("missing source controls: " + ", ".join(missing))
+    print("PASS: static production API controls verified")
+
+def runtime_check() -> None:
+    env = os.environ
+    if env.get("HYBA_PRODUCTION_MODE", "").strip().lower() not in TRUTHY:
+        fail("HYBA_PRODUCTION_MODE must be explicitly enabled")
+    secret = env.get("JWT_SECRET")
+    if is_placeholder(secret) or len(secret or "") < 32:
+        fail("JWT_SECRET must be non-placeholder and at least 32 characters")
+    port = env.get("PORT", "8001")
+    if port != "8001":
+        fail("PORT must be 8001 for this release configuration")
+    cors = env.get("CORS_ORIGINS", "")
+    if not cors or "*" in cors:
+        fail("CORS_ORIGINS must contain explicit origins and no wildcard")
+    if not env.get("TLS_CERT_FILE") or not env.get("TLS_KEY_FILE"):
+        fail("TLS_CERT_FILE and TLS_KEY_FILE must be configured")
+    print("PASS: runtime production configuration validated")
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--static", action="store_true", help="validate source-level controls only")
+    parser.add_argument("--runtime", action="store_true", help="validate environment configuration")
+    args = parser.parse_args()
+    if not (args.static or args.runtime):
+        parser.error("choose --static and/or --runtime")
+    if args.static:
+        static_check()
+    if args.runtime:
+        runtime_check()
+
+if __name__ == "__main__":
+    main()
+```
+
+## 3. Add `scripts/verify_staging.py`
+
+```python
+#!/usr/bin/env python3
+"""Staging-only HTTP smoke test. Never prints bearer tokens."""
+from __future__ import annotations
+
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+
+BASE_URL = os.environ.get("MIDAS_STAGING_URL", "").rstrip("/")
+ADMIN_TOKEN = os.environ.get("MIDAS_STAGING_ADMIN_TOKEN", "")
+USER_TOKEN = os.environ.get("MIDAS_STAGING_USER_TOKEN", "")
+
+def request(path: str, token: str | None = None) -> tuple[int, dict[str, str], str]:
+    headers = {"Accept": "application/json", "X-Correlation-ID": "staging-release-gate"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    req = urllib.request.Request(f"{BASE_URL}{path}", headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=15) as response:
+            return response.status, dict(response.headers), response.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as exc:
+        return exc.code, dict(exc.headers), exc.read().decode("utf-8", "replace")
+
+def expect(name: str, path: str, expected: int, token: str | None = None) -> None:
+    status, headers, _body = request(path, token)
+    if status != expected:
+        raise AssertionError(f"{name}: expected {expected}, got {status}")
+    if "X-Correlation-ID" not in headers and "X-Request-ID" not in headers:
+        raise AssertionError(f"{name}: correlation/request ID header missing")
+    print(f"PASS: {name} ({status})")
+
+def main() -> None:
+    if not BASE_URL.startswith("https://"):
+        raise SystemExit("MIDAS_STAGING_URL must be an https URL")
+    if not ADMIN_TOKEN or not USER_TOKEN:
+        raise SystemExit("staging admin and user tokens must be supplied through environment variables")
+    expect("health", "/api/v2/health", 200)
+    expect("docs disabled", "/docs", 404)
+    expect("redoc disabled", "/redoc", 404)
+    expect("openapi disabled", "/openapi.json", 404)
+    expect("metrics unauthenticated", "/api/v2/metrics", 401)
+    expect("metrics non-admin", "/api/v2/metrics", 403, USER_TOKEN)
+    expect("metrics admin", "/api/v2/metrics", 200, ADMIN_TOKEN)
+    expect("analytics non-admin", "/api/v2/analytics", 403, USER_TOKEN)
+    expect("analytics admin", "/api/v2/analytics", 200, ADMIN_TOKEN)
+    print(json.dumps({"result": "PASS", "base_url": BASE_URL}, indent=2))
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (AssertionError, OSError) as exc:
+        print(f"FAIL: {exc}", file=sys.stderr)
+        raise SystemExit(1)
+```
+
+**Run in staging only:**
+
+```powershell
+$env:MIDAS_STAGING_URL = "https://staging.example.com"
+$env:MIDAS_STAGING_ADMIN_TOKEN = "<admin test token>"
+$env:MIDAS_STAGING_USER_TOKEN = "<non-admin test token>"
+python scripts/verify_staging.py
+```
+
+## 4. Replace the production-mode documentation checks in `test_api.sh`
+
+```bash
+# Production mode: API documentation must not be publicly served.
+for path in /docs /redoc /openapi.json; do
+  status=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL$path")
+  if [ "$status" != "404" ]; then
+    echo "FAIL: $path returned $status; expected 404 in production mode"
+    exit 1
+  fi
+  echo "PASS: $path is disabled in production mode"
+done
+```
+
+## 5. Add `docs/PRODUCTION_RUNBOOK.md`
+
+```markdown
+# MIDAS Production Runbook
+
+## Promotion prerequisites
+- [ ] Release commit SHA, image digest, SBOM, and dependency lock evidence recorded.
+- [ ] Required CI workflow green on the release candidate.
+- [ ] Security regression tests green.
+- [ ] Staging smoke test green.
+- [ ] Load and resilience report attached.
+- [ ] Change owner, incident commander, and rollback owner named.
+- [ ] Explicit go/no-go approval recorded.
+
+## Deploy
+1. Validate runtime configuration: `python scripts/validate_production_config.py --runtime`.
+2. Deploy the immutable release image.
+3. Verify one active listener on port 8001.
+4. Run `python scripts/verify_staging.py` against the production-like endpoint using dedicated test identities.
+5. Observe error rate, latency, authentication failures, and rate-limit events for the agreed watch period.
+
+## Rollback triggers
+- Any unauthenticated protected route returns a success status.
+- Documentation/OpenAPI is publicly available in production mode.
+- Error-rate or latency SLO breach.
+- Authentication, proxy, TLS, or data-integrity failure.
+- Security incident or unexplained elevated authorization denial/error rate.
+
+## Rollback
+1. Stop promotion and notify the incident owner.
+2. Revert to the prior immutable image digest.
+3. Re-run health, docs-blocked, and authorization checks.
+4. Preserve logs, correlation IDs, deployment events, and test reports.
+5. Record root cause and corrective action before re-promotion.
+```
+
+## Integration sequence
+
+1. Create the five paths above in a feature branch.
+2. Run `python scripts/validate_production_config.py --static` locally.
+3. Run `python -m pytest -q` and correct any project-specific test-discovery issue.
+4. Configure the three staging variables only in GitHub Actions/staging secret storage.
+5. Merge after the new workflow is a required check.
+6. Run the staging verifier and attach its report to the release record.
+
+## Acceptance criteria for this package
+
+- Every pull request runs the full pytest suite and static API-control validation.
+- Production config cannot start with obvious insecure defaults.
+- Staging proves auth boundaries and docs blocking against a running service.
+- The release process has named evidence, rollback triggers, and a rollback procedure.
+- No secret, wallet, pool, or live-mining value is committed by this package.

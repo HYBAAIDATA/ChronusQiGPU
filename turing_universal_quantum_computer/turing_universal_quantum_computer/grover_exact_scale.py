@@ -41,7 +41,7 @@ from __future__ import annotations
 import cmath
 import math
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     from .quantum_algorithms import GroverSearch
@@ -353,6 +353,77 @@ def lucas_row(n: int, base_N: int = 1 << 6) -> Dict[str, Any]:
         row["P_marked"] = r["P_marked"]
         row["cassini_drift"] = r["cassini_drift"]
     return row
+
+
+class GroverOperator:
+    """Exact Grover iteration operator G = D @ O.
+
+    Where:
+    - O is the oracle phase flip about the target states: I - 2 * sum_{k in targets} |k><k|
+    - D is the Grover diffusion operator: 2|s><s| - I, with |s> = uniform superposition
+    """
+
+    def __init__(self, n_qubits: int, target_indices: List[int]):
+        import numpy as np
+        self.n_qubits = n_qubits
+        self.dim = 2 ** n_qubits
+        self.target_indices = target_indices
+
+        for idx in self.target_indices:
+            if idx < 0 or idx >= self.dim:
+                raise ValueError(
+                    f"Target index {idx} out of range for {n_qubits} qubits (dim={self.dim})"
+                )
+
+        self.oracle = self._build_oracle()
+        self.diffuser = self._build_diffuser()
+
+    def _build_oracle(self):
+        import numpy as np
+        O = np.identity(self.dim, dtype=complex)
+        for idx in self.target_indices:
+            O[idx, idx] = -1.0
+        return O
+
+    def _build_diffuser(self):
+        import numpy as np
+        return (2.0 / self.dim) * np.ones((self.dim, self.dim), dtype=complex) - np.identity(self.dim, dtype=complex)
+
+    def __call__(self, state):
+        after_oracle = self.oracle @ state
+        after_diffuser = self.diffuser @ after_oracle
+        return after_diffuser
+
+    def iterate(self, state, n_iterations: int):
+        current = state.copy()
+        for _ in range(n_iterations):
+            current = self(current)
+        return current
+
+    def search(self, initial_state=None,
+               n_iterations: Optional[int] = None) -> Tuple[int, Any]:
+        import numpy as np
+        if initial_state is None:
+            initial_state = np.full(self.dim, 1.0 / np.sqrt(self.dim), dtype=complex)
+
+        if n_iterations is None:
+            n_targets = len(self.target_indices)
+            n_total = self.dim
+            n_iterations = max(1, int(np.pi / 4.0 * np.sqrt(n_total / n_targets)))
+
+        final_state = self.iterate(initial_state, n_iterations)
+        probs = np.abs(final_state) ** 2
+        target_probs = [probs[idx] for idx in self.target_indices]
+        best_target_local_idx = int(np.argmax(target_probs))
+        best_idx = self.target_indices[best_target_local_idx]
+        return best_idx, probs
+
+
+def grover_search(n_qubits: int, target_indices: List[int],
+                  initial_state=None,
+                  n_iterations: Optional[int] = None) -> Tuple[int, Any]:
+    grover = GroverOperator(n_qubits, target_indices)
+    return grover.search(initial_state, n_iterations)
 
 
 def main() -> None:

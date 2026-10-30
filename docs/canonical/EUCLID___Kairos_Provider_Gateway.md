@@ -1,0 +1,38 @@
+# EUCLID — Kairos Provider Gateway
+
+**HYBA | EUCLID**
+
+<aside>
+
+**Status: implemented and internally verified.** The Kairos Provider Gateway establishes the fail-closed contract boundary required before any renderer, physics engine, audio engine, animation engine, or other external provider may attach.
+
+</aside>
+
+## Implemented controls
+
+- Provider identity must match its governed manifest.
+- Contract modality must match declared provider modalities.
+- Creator-rights attestation is mandatory.
+- A deterministic replay boundary and a declared failure policy are mandatory.
+- Rendered output is rejected unless its provider manifest records validated deployment.
+- Unsafe or mismatched provider contracts reject before registration.
+
+## Verification
+
+- **42/42** focused core, closure, CNS, interactive, Kairos world, runtime, transport, recovery, and provider-gateway tests passed.
+- **16/16** production-harness checks passed.
+- Compilation passed.
+
+## Boundary
+
+This is a contract registry. No external provider is invoked, no renderer or engine is deployed, and no rendered-media, real-time, performance, or external-provider claim is made.
+
+## Custody
+
+- **Baseline snapshot:** `EUCLID_SHARED_REPOSITORY_SNAPSHOT_20260718_2158.zip`
+- **Baseline commit:** `a81fcfb755fbe2ddba014258d24b2f864a523d72`
+- **Provider-gateway bundle SHA-256:** `5031ed615c1bd0a99236a69c18ac02a8024c1a9666e0d28852e816f5c4596191`
+
+[Kairos Provider Gateway evidence bundle](KAIROS_PROVIDER_GATEWAY.zip)
+
+Kairos Provider Gateway evidence bundle

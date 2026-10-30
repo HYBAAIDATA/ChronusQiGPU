@@ -541,6 +541,7 @@ with QuantumPipeline() as p:
     env = dict(os.environ)
     # Reuse the actual package origins, not a fake module or namespace shim.
     import kellogg
+    import tempfile
     from pathlib import Path
     import turing_universal_quantum_computer as t
 
@@ -550,7 +551,7 @@ with QuantumPipeline() as p:
     completed = subprocess.run(
         [sys.executable, "-c", code],
         env=env,
-        cwd="/tmp",
+        cwd=tempfile.gettempdir(),
         capture_output=True,
         text=True,
         timeout=20,
