@@ -1,0 +1,23 @@
+name: HYBA MCP QC corrections
+on:
+  workflow_dispatch:
+  push:
+    paths: ['hyba_mcp/**', 'tests/test_mcp_qc.py', '.github/workflows/mcp-qc.yml']
+  pull_request:
+    paths: ['hyba_mcp/**', 'tests/test_mcp_qc.py', '.github/workflows/mcp-qc.yml']
+permissions:
+  contents: read
+jobs:
+  qualification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'numpy>=1.26,<3' 'pytest>=8,<9'
+      - run: python -m pytest -q tests/test_mcp_qc.py tests/test_production_contracts.py tests/test_capability_contracts.py tests/test_expert_skills.py tests/test_hyba_mcp.py tests/test_hyba_mcp_salamander.py tests/test_hyba_context.py
