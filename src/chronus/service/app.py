@@ -19,6 +19,7 @@ from chronus.service.routers import (
     al_haras_router,
     billing_router,
     ciaas_router,
+    connectors_router,
     console_router,
     health_router,
     metrics_router,
@@ -145,6 +146,7 @@ def create_app() -> FastAPI:
     app.include_router(v1_router)
     app.include_router(ciaas_router)
     app.include_router(al_haras_router)
+    app.include_router(connectors_router)
 
     @app.get("/", include_in_schema=False)
     async def root():

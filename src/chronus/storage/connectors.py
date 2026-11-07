@@ -458,13 +458,18 @@ class ALHarasConnectorGuard:
         """Verify H^1(X; F) = 0 at connector edge and decrypt stream in RAM on demand."""
         # 1. Customer-Held KMS / PKCS#11 HSM on-demand in-memory stream decryption
         if raw_or_encrypted.startswith(ENVELOPE_MAGIC):
-            plaintext, kms_audit = al_haras_kms_custody.decrypt_in_memory_for_tenant(
-                tenant_id=tenant_id,
-                envelope_bytes=raw_or_encrypted,
-                associated_data=associated_data,
-                kms_provider=kms_provider,
-                kms_key_arn=kms_key_arn,
-            )
+            try:
+                plaintext, kms_audit = al_haras_kms_custody.decrypt_in_memory_for_tenant(
+                    tenant_id=tenant_id,
+                    envelope_bytes=raw_or_encrypted,
+                    associated_data=associated_data,
+                    kms_provider=kms_provider,
+                    kms_key_arn=kms_key_arn,
+                )
+            except ValueError as exc:
+                raise ConnectorSecurityError(
+                    f"AL HARAS blocked connector '{connector_id}' ingress: {exc}"
+                ) from exc
         else:
             binding = al_haras_kms_custody.ensure_binding(
                 tenant_id=tenant_id,

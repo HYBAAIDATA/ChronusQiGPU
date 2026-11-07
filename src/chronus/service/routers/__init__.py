@@ -9,6 +9,7 @@ from chronus.service.routers.billing import router as billing_router
 from chronus.service.routers.v1 import router as v1_router
 from chronus.service.routers.ciaas import router as ciaas_router
 from chronus.service.routers.al_haras import router as al_haras_router
+from chronus.service.routers.connectors import router as connectors_router
 
 __all__ = [
     "workloads_router",
@@ -20,4 +21,5 @@ __all__ = [
     "v1_router",
     "ciaas_router",
     "al_haras_router",
+    "connectors_router",
 ]
