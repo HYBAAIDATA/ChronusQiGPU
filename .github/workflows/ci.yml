@@ -20,8 +20,6 @@ jobs:
       fail-fast: false
       matrix:
         python: ['3.10', '3.11', '3.12']
-    env:
-      CHRONUS_WORKLOAD_DB_PATH: ${{ runner.temp }}/chronus-tests.sqlite3
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -29,6 +27,8 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: python -m pip install -e '.[dev]'
       - name: Test and measure coverage
+        env:
+          CHRONUS_WORKLOAD_DB_PATH: ${{ runner.temp }}/chronus-tests.sqlite3
         run: python -m pytest -q --cov=chronus.execution --cov=chronus.backends --cov=chronus.service --cov=chronus.sdk --cov=chronus.security --cov-report=term-missing --cov-report=xml
       - uses: actions/upload-artifact@v4
         if: always()
