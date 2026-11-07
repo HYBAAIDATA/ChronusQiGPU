@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chronus-gpiu-service
+  namespace: chronus
+  labels:
+    app: chronus-gpiu
+    version: "36.0.0"
+spec:
+  replicas: 12
+  selector:
+    matchLabels:
+      app: chronus-gpiu
+  template:
+    metadata:
+      labels:
+        app: chronus-gpiu
+    spec:
+      containers:
+        - name: chronus-gpiu
+          image: registry.chronus.dev/chronus/igpu-core:v36.0.0
+          ports:
+            - containerPort: 50051
+              name: grpc
+            - containerPort: 8080
+              name: rest
+          resources:
+            requests:
+              cpu: "8000m"
+              memory: "32Gi"
+            limits:
+              cpu: "16000m"
+              memory: "64Gi"
+          livenessProbe:
+            httpGet:
+              path: /v1/capabilities
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            grpc:
+              port: 50051
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          env:
+            - name: CHRONUS_ENV
+              value: "production"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chronus-gpiu-service
+  namespace: chronus
+  labels:
+    app: chronus-gpiu
+spec:
+  selector:
+    app: chronus-gpiu
+  ports:
+    - name: grpc
+      port: 50051
+      targetPort: 50051
+    - name: rest
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: chronus-gpiu-hpa
+  namespace: chronus
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: chronus-gpiu-service
+  minReplicas: 6
+  maxReplicas: 72
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 75

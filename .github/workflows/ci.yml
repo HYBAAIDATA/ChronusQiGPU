@@ -1,0 +1,204 @@
+name: CI - Chronus Quantum iGPU v36.0
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.10"
+  DATABASE_URL: "postgresql://chronus:chronus@localhost:5432/chronus_quantum"
+
+jobs:
+  # =========================================================================
+  # Quality Gates
+  # =========================================================================
+  quality-checks:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run ruff linting
+        run: ruff check src/ tests/ --fix
+
+      - name: Run black formatting check
+        run: black --check src/ tests/
+
+      - name: Run mypy type checking
+        run: mypy src/chronus --ignore-missing-imports --strict
+
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
+
+  # =========================================================================
+  # Test Suite
+  # =========================================================================
+  test-suite:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: chronus
+          POSTGRES_PASSWORD: chronus
+          POSTGRES_DB: chronus_quantum
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run tests with coverage
+        env:
+          THESISUS_DB_HOST: localhost
+          THESISUS_DB_PORT: 5432
+          THESISUS_DB_DATABASE: chronus_quantum
+          THESISUS_DB_USERNAME: chronus
+          THESISUS_DB_PASSWORD: chronus
+        run: |
+          # Run migration
+          python -m chronus.database.migrate
+          # Run tests with coverage
+          pytest tests/ --cov=src/chronus --cov-report=term-missing --cov-report=html --cov-fail-under=95
+        timeout-minutes: 10
+
+  # =========================================================================
+  # Integration Tests
+  # =========================================================================
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: chronus
+          POSTGRES_PASSWORD: chronus
+          POSTGRES_DB: chronus_quantum
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run integration tests
+        env:
+          THESISUS_DB_HOST: localhost
+          THESISUS_DB_PORT: 5432
+          THESISUS_DB_DATABASE: chronus_quantum
+          THESISUS_DB_USERNAME: chronus
+          THESISUS_DB_PASSWORD: chronus
+        run: |
+          python -m chronus.database.migrate
+          pytest tests/integration/ -v
+        timeout-minutes: 15
+
+  # =========================================================================
+  # Build & Package
+  # =========================================================================
+  build-package:
+    name: Build Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build package
+        run: python -m build
+
+      - name: Check package
+        run: |
+          twine check dist/*
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: chronus-quantum-igpu
+          path: dist/
+
+  # =========================================================================
+  # Security Audit
+  # =========================================================================
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run bandit security check
+        run: bandit -r src/ -lll -o bandit-report.json -f json
+
+      - name: Upload bandit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit-report.json
+
+      - name: Run safety check
+        run: |
+          pip install safety
+          safety check --json > safety-report.json
+        continue-on-error: true
+
+      - name: Upload safety report
+        uses: actions/upload-artifact@v4
+        with:
+          name: safety-report
+          path: safety-report.json

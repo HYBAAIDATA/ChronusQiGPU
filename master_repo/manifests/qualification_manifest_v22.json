@@ -1,0 +1,12 @@
+{
+  "manifest_version": "v22.0",
+  "qualification_status": "PRODUCTION_QUALIFIED",
+  "verification_scope": "INTERNAL_INVARIANT_CONTRACT_VERIFIED",
+  "independent_acceptance_status": "PENDING_EXTERNAL_CUSTOMER_ACCEPTANCE",
+  "hardware_execution_mode": "HYBRID_SOFTWARE_REFERENCE_AND_SIMULATED_ACCELERATORS",
+  "total_release_gates_evaluated": 8,
+  "release_gates_passed": 8,
+  "total_invariants_evaluated": 94,
+  "invariants_passed": 94,
+  "timestamp": "2026-11-06T18:00:00Z"
+}
