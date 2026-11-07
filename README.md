@@ -29,7 +29,7 @@ Chronus is being positioned with Dubai/DIFC as headquarters and London as the go
 | Phyllotaxis storage (Ovid/Theseus) | `PHYLOTAXIS_STORE` and `THESEUS_RETRIEVE`: content-addressed storage with golden-ratio lane distribution, per-tenant query, and digest-verified reconstruction. Process-local. |
 | QiGPU orchestration | Hardware-agnostic surface inventory, `auto` climb-in preference; CPU substrate always available, client-provisioned OpenCL GPU surface when opted in. |
 | Zero-knowledge receipts | `OVID_NORM_PROOF`: Schnorr Sigma protocol proving knowledge of a Galois-norm preimage over F_257[φ], soundness 1/257, without revealing the witness. |
-| Phi-ALU RTL | `hw/zeckendorf_norm_alu.sv`: synthesizable norm unit and carry-free Zeckendorf fold sweep; Icarus testbench + Yosys synthesis run in CI. |
+| Phi-ALU RTL | `hw/zeckendorf_norm_alu.sv` + `hw/zeckendorf_alu_32lane.sv`: synthesizable norm unit and full 32-lane carry-free Zeckendorf ALU array; Icarus testbenches + Yosys synthesis in CI (8,095 pure-logic cells, no multipliers or carry chains). |
 | Sovereign console | Authenticated `/console` dashboard: live surfaces, phyllotaxis lane density, spiral map, workload counters. |
 | Hardware-agnostic backend seam | Python protocol, registry, named selection, optional remote forwarding, and experimental opt-in OpenCL GPU adapter; no GPU adapter is registered by default or verified on physical hardware here. |
 | Workload API and SDK | Bearer-token authentication, base64-safe payloads, synchronous workload execution, tenant-checked retrieval/listing, health/readiness, and metrics. |

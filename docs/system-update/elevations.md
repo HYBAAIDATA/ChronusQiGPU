@@ -10,7 +10,9 @@ Four capabilities elevate the verified core (108 tests, green CI) toward the sov
 - `zeckendorf_fold_sweep` — one parallel even-phase rewrite sweep of the base-phi fold rule `F_k + F_{k+1} = F_{k+2}` (bit pattern `011 -> 100`). Even-indexed pairs share no input bits, so the sweep is constant gate delay with no binary carry chain. When a fold target meets a firing pair (pattern `1111`), the identity `F_k + F_{k+1} + F_{k+2} + F_{k+3} = F_{k+2} + F_{k+4}` keeps every sweep value-preserving.
 - `qigpu_phi_alu` — top level binding one fold sweep and one norm unit.
 
-Verification: `hw/tb_qigpu_phi_alu.sv` runs known-answer vectors with Icarus Verilog (`TB PASS`), and CI synthesizes the netlist with Yosys (4,622 generic cells, zero inferred memory). The CI job `rtl-synthesis` uploads the testbench log and synthesis statistics as artifacts. This is a verified netlist, not an ASIC tape-out; timing closure and physical design remain client-specific work.
+`hw/zeckendorf_alu_32lane.sv` scales the fold sweep to the full **32-lane carry-free ALU array** (`qigpu_zeckendorf_alu_32lane`): 32 independent 64-bit Zeckendorf registers, each folding in parallel in one constant-delay sweep, with per-lane canonicality flags (`c_k * c_{k+1} = 0`) aggregated into an `all_canonical` structural parity signal.
+
+Verification: `hw/tb_qigpu_phi_alu.sv` and `hw/tb_zeckendorf_alu_32lane.sv` run known-answer vectors with Icarus Verilog (both `TB PASS`), including full-array parallel fold, per-lane independence, canonical passthrough, and value preservation on overlap patterns. CI synthesizes both netlists with Yosys: the phi-ALU is 4,622 cells; the 32-lane array is 8,095 cells of pure AND/OR/NAND logic — zero multipliers, zero dividers, zero inferred memory, confirming the carry-free claim in the synthesized netlist. The CI job `rtl-synthesis` uploads the testbench log and synthesis statistics as artifacts. This is a verified netlist, not an ASIC tape-out; timing closure and physical design remain client-specific work.
 
 ## 2. Zero-knowledge norm proofs (`src/chronus/security/norm_proof.py`)
 
