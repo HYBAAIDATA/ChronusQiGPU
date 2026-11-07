@@ -25,7 +25,7 @@ Chronus is being positioned with Dubai/DIFC as headquarters and London as the go
 
 | Capability | Current implementation |
 |---|---|
-| Native mathematical execution | `EXACT_Q5_ALGEBRAIC` arithmetic, `LUCAS_PV_SCALING`, exact `PV_LATTICE_FOLD`, and symbolic `TRINITY_SCALE_FOLD_STORE` with resumable Zeckendorf-encoded seeds. |
+| Native mathematical execution | `EXACT_Q5_ALGEBRAIC` arithmetic, `LUCAS_PV_SCALING`, exact `PV_LATTICE_FOLD`, symbolic `TRINITY_SCALE_FOLD_STORE`, and `METALLIC_SCALE` over the full metallic-means family (golden, silver, bronze, m ≤ 64). |
 | Phyllotaxis storage (Ovid/Theseus) | `PHYLOTAXIS_STORE` and `THESEUS_RETRIEVE`: content-addressed storage with golden-ratio lane distribution, per-tenant query, and digest-verified reconstruction. Process-local. |
 | QiGPU orchestration | Hardware-agnostic surface inventory, `auto` climb-in preference; CPU substrate always available, client-provisioned OpenCL GPU surface when opted in. |
 | Zero-knowledge receipts | `OVID_NORM_PROOF`: Schnorr Sigma protocol proving knowledge of a Galois-norm preimage over F_257[φ], soundness 1/257, without revealing the witness. |
@@ -100,4 +100,5 @@ Tenant tokens are configured as a JSON environment variable for this implementat
 - [Native nonce search and accelerator integrity](docs/system-update/mining-and-accelerators.md)
 - [QiGPU, Chronus, Theseus and Ovid unified system](docs/system-update/qigpu-storage.md)
 - [Market-ready elevations: RTL, norm proofs, climb-in, console](docs/system-update/elevations.md)
+- [The metallic means family](docs/system-update/metallic-means.md)
 - [Historical reports](docs/reports/README.md)

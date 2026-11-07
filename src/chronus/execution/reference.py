@@ -10,6 +10,7 @@ from fractions import Fraction
 from typing import Any, Dict, Protocol
 
 from chronus.backends.lattice import ParityVerificationError, phi_power
+from chronus.backends.metallic import metallic_power
 from chronus.backends.lattice_workload import parse_lattice_workload, serialize_lattice
 from chronus.execution.mining import search_nonce_range
 from chronus.execution.trinity import scale_fold_store
@@ -101,7 +102,8 @@ class NativeMathReferenceBackend:
     supported_workloads = frozenset(
         {"EXACT_Q5_ALGEBRAIC", "LUCAS_PV_SCALING", "SHA256D_NONCE_SEARCH",
          "PV_LATTICE_FOLD", "TRINITY_SCALE_FOLD_STORE",
-         "PHYLOTAXIS_STORE", "THESEUS_RETRIEVE", "OVID_NORM_PROOF"}
+         "PHYLOTAXIS_STORE", "THESEUS_RETRIEVE", "OVID_NORM_PROOF",
+         "METALLIC_SCALE"}
     )
     max_payload_bytes = 1024 * 1024
     max_lucas_index = 100_000
@@ -148,6 +150,8 @@ class NativeMathReferenceBackend:
             return self._execute_theseus_retrieve(request)
         if workload_type == "OVID_NORM_PROOF":
             return self._execute_norm_proof(request)
+        if workload_type == "METALLIC_SCALE":
+            return self._execute_metallic(request)
         if workload_type == "LUCAS_PV_SCALING":
             return self._execute_lucas(request)
         if workload_type == "SHA256D_NONCE_SEARCH":
@@ -261,6 +265,30 @@ class NativeMathReferenceBackend:
                 "valid": norm_proof.verify(proof),
             }
         raise ValueError("operation must be 'prove' or 'verify'")
+
+    max_metallic_index = 100_000
+
+    def _execute_metallic(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        m, index = request.get("m"), request.get("index")
+        if not isinstance(m, int) or isinstance(m, bool) or not 1 <= m <= 64:
+            raise ValueError("m must be an integer between 1 and 64")
+        if not isinstance(index, int) or isinstance(index, bool) or index < 0:
+            raise ValueError("index must be a non-negative integer")
+        if index > self.max_metallic_index:
+            raise ValueError(f"index exceeds limit ({self.max_metallic_index})")
+        power = metallic_power(m, index)
+        names = {1: "golden", 2: "silver", 3: "bronze"}
+        return {
+            "execution_mode": self.execution_mode,
+            "metallic_index": m,
+            "family": names.get(m, f"metallic-{m}"),
+            "order": index,
+            "a": str(power.a),
+            "b": str(power.b),
+            "trace": str(power.trace().numerator),
+            "norm": str(power.norm().numerator),
+            "interpretation": f"sigma_{m}^{index} = a + b*sigma_{m}",
+        }
 
     def _execute_q5(self, request: Dict[str, Any]) -> Dict[str, Any]:
         operation = request.get("operation")
