@@ -36,7 +36,7 @@ class QSqrt2:
         self.a, self.b, self.e = a, b, e
 
     @classmethod
-    def uniform(cls, num_qubits: int) -> "QSqrt2":
+    def uniform_amplitude(cls, num_qubits: int) -> "QSqrt2":
         """2**(-n/2): rational for even n, sqrt(2)/2**((n+1)/2) for odd n."""
         if num_qubits % 2 == 0:
             return cls(1, 0, num_qubits // 2)
@@ -202,8 +202,8 @@ def algebraic_search(
     """
     c = METALLIC_COEFFICIENTS[family]
     n = 1 << num_qubits
-    marked = QSqrt2.uniform(num_qubits)
-    unmarked = QSqrt2.uniform(num_qubits)
+    marked = QSqrt2.uniform_amplitude(num_qubits)
+    unmarked = QSqrt2.uniform_amplitude(num_qubits)
     history = [marked.a or marked.b]  # compact magnitude trace proxy
     best = marked.magnitude()
     peak = 0
