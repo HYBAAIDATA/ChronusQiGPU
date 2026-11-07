@@ -162,26 +162,37 @@ class DSW4DInstantonMonopoleHealer:
     @classmethod
     def inspect_and_heal(cls, trace_payload: bytes, is_perturbed: bool = False) -> Dict[str, Any]:
         if not is_perturbed:
+            trace_h = hashlib.sha256(trace_payload).hexdigest()
             return {
                 "instanton_charge_k": 0,
+                "instanton_number_k": 0,
                 "cobordism_type": "TRIVIAL_COBORDISM_NO_FAULT",
+                "cobordism_status": "TRIVIAL_COBORDISM_NO_FAULT",
                 "seiberg_witten_monopole": "TRIVIAL_VACUUM",
                 "healing_cycles": 0,
+                "repair_latency_cycles": 0,
                 "healed": False,
-                "trace_hash": hashlib.sha256(trace_payload).hexdigest(),
+                "trace_hash": trace_h,
+                "healed_trace_hash": trace_h,
             }
 
         # Monopole dual cobordism transformation
         dual_kernel = b"\x53\x57\x5f\x4d\x4f\x4e\x4f\x50\x4f\x4c\x45\x5f\x44\x55\x41\x4c"  # "SW_MONOPOLE_DUAL"
         healed_digest = hashlib.sha256(trace_payload + dual_kernel).digest()
+        healed_h = hashlib.sha256(healed_digest).hexdigest()
 
         return {
             "instanton_charge_k": 1,
+            "instanton_number_k": 1,
             "cobordism_type": "INSTANTON_COBORDISM_TRACE_HEALED",
+            "cobordism_status": "INSTANTON_COBORDISM_TRACE_HEALED",
             "seiberg_witten_monopole": "MONOPOLE_DUAL_REVERSAL_SATISFIED",
+            "seiberg_witten_monopole_dual": "SW_DUAL_APPLIED",
             "healing_cycles": 1,
+            "repair_latency_cycles": 1,
             "healed": True,
-            "trace_hash": hashlib.sha256(healed_digest).hexdigest(),
+            "trace_hash": healed_h,
+            "healed_trace_hash": healed_h,
         }
 
 
