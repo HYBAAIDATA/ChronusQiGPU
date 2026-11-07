@@ -17,6 +17,7 @@ from chronus.execution.mining import search_nonce_range
 from chronus.execution.trinity import scale_fold_store
 from chronus.security import norm_proof
 from chronus.security.ovid import OVIDStorage
+from chronus.storage.connectors import BinetZeckendorfIngressEngine, zero_copy_connector_manager
 from chronus.storage.theseus import TheseusService
 
 
@@ -104,7 +105,8 @@ class NativeMathReferenceBackend:
         {"EXACT_Q5_ALGEBRAIC", "LUCAS_PV_SCALING", "SHA256D_NONCE_SEARCH",
          "PV_LATTICE_FOLD", "TRINITY_SCALE_FOLD_STORE",
          "PHYLOTAXIS_STORE", "THESEUS_RETRIEVE", "OVID_NORM_PROOF",
-         "METALLIC_SCALE"}
+         "METALLIC_SCALE", "ZERO_COPY_CONNECTOR_EXECUTE",
+         "BINET_ZECKENDORF_INGEST"}
     )
     @property
     def max_payload_bytes(self) -> int:
@@ -138,6 +140,8 @@ class NativeMathReferenceBackend:
                 "norm_invariant_verified": True,
                 "values": serialize_lattice(outputs),
             }
+        if workload_type == "BINET_ZECKENDORF_INGEST":
+            return self._execute_binet_zeckendorf_ingest(payload)
         try:
             request = json.loads(payload)
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
@@ -145,6 +149,8 @@ class NativeMathReferenceBackend:
         if not isinstance(request, dict):
             raise ValueError("payload must be a JSON object")
 
+        if workload_type == "ZERO_COPY_CONNECTOR_EXECUTE":
+            return self._execute_zero_copy_pointer(request)
         if workload_type == "TRINITY_SCALE_FOLD_STORE":
             result = scale_fold_store(request)
             if request.get("store") is True:
@@ -264,6 +270,61 @@ class NativeMathReferenceBackend:
             "digest_verified": True,
             "data": "base64:" + base64.b64encode(payload).decode("ascii"),
         }
+
+    def _execute_binet_zeckendorf_ingest(self, payload: bytes) -> Dict[str, Any]:
+        raw_bytes = payload
+        source_uri = ""
+        format_hint = None
+        if payload.lstrip()[:1] == b"{":
+            try:
+                parsed = json.loads(payload.decode("utf-8"))
+                if isinstance(parsed, dict) and "b64_payload" in parsed:
+                    b64_val = parsed.get("b64_payload")
+                    if not isinstance(b64_val, str):
+                        raise ValueError("b64_payload must be a base64 string")
+                    raw_bytes = base64.b64decode(b64_val, validate=True)
+                    source_uri = str(parsed.get("source_uri", ""))
+                    hint = parsed.get("format_hint")
+                    format_hint = str(hint) if isinstance(hint, str) else None
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                raw_bytes = payload
+            except binascii.Error as exc:
+                raise ValueError("b64_payload must contain valid base64") from exc
+
+        folded = BinetZeckendorfIngressEngine.fold_bytes(
+            raw_bytes, source_uri=source_uri, format_hint=format_hint
+        )
+        reconstructed = BinetZeckendorfIngressEngine.unfold_bytes(folded)
+        if reconstructed != raw_bytes:
+            raise ParityVerificationError("Binet-Zeckendorf unfold parity mismatch")
+        return {
+            "execution_mode": self.execution_mode,
+            "folded": folded,
+            "roundtrip_exact_verified": True,
+        }
+
+    def _execute_zero_copy_pointer(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        pointer_id = request.get("pointer_id")
+        if not isinstance(pointer_id, str) or not pointer_id.startswith("ptr_ovid_"):
+            raise ValueError("pointer_id must be a valid 'ptr_ovid_<hash>' reference")
+        operation = str(request.get("operation", "PV_LATTICE_FOLD"))
+        scale_order = request.get("scale_order", 8)
+        metallic_m = request.get("metallic_m", 1)
+        if not isinstance(scale_order, int) or isinstance(scale_order, bool):
+            raise ValueError("scale_order must be an integer")
+        if not isinstance(metallic_m, int) or isinstance(metallic_m, bool):
+            raise ValueError("metallic_m must be an integer")
+        try:
+            pointer_result = zero_copy_connector_manager.execute_against_pointer(
+                pointer_id=pointer_id,
+                operation=operation,
+                scale_order=scale_order,
+                metallic_m=metallic_m,
+            )
+        except KeyError as exc:
+            raise ValueError(f"Zero-copy pointer '{pointer_id}' not found") from exc
+        pointer_result["execution_mode"] = self.execution_mode
+        return pointer_result
 
     def _execute_norm_proof(self, request: Dict[str, Any]) -> Dict[str, Any]:
         operation = request.get("operation")

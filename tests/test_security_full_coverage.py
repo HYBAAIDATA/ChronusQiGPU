@@ -32,6 +32,7 @@ from chronus.security import (
     ZKSTARKVerifier,
     OVIDReceipt,
     OVIDStorage,
+    OVIDZeroCopyPointer,
     VerifyEndpoint,
     PostQuantumError,
     VerificationError,
@@ -611,3 +612,269 @@ class TestEndToEndDefenseOperations:
         assert f4["frontier"] == "FRONTIER_4_NATO_CNI_SELF_HEALING_DEFENSE"
         assert f4["dsw_instanton_monopole"]["healing_cycles"] == 1
         assert f4["cni_defense_posture"] == "TOPOLOGICALLY_HEALED_UNINTERRUPTED_OPERATION"
+
+
+# ==============================================================================
+# SECTION 5: DEEP BRANCH & EDGE CASE COVERAGE (100% INVARIANT VERIFICATION)
+# ==============================================================================
+
+class TestEdgeCasesAndDeepCoverage:
+    """Targeted coverage for edge branches across the entire security architecture."""
+
+    def test_lucas_subsystem_zero_fast_path(self):
+        """Covers fast doubling branch when n <= 0."""
+        res = HyperscaleDefenseSimulationEngine.execute_hypersonic_cfd_simulation(
+            mach_number=5.0,
+            state_dimensions=0,
+        )
+        assert res["frontier"] == "FRONTIER_3_DARPA_HYPERSCALE_DEFENSE_SIMULATION"
+        assert res["pisot_lucas_ram_footprint_bytes"] == 64
+        assert "L_0" in res["state_space_dimension"]
+
+    def test_al_haras_topological_os_kernel_lifecycle(self):
+        """Covers ALHarasTopologicalKernel boot, process exec, and sovereign manifest."""
+        kernel = ALHarasTopologicalKernel("UK_NATIONAL_CYBER_DEFENCE")
+        boot = kernel.boot_kernel()
+        assert boot["kernel_name"] == "AL_HARAS_TOPOLOGICAL_OS_v36"
+        assert boot["boot_status"] == "KERNEL_BOOT_SUCCESSFUL"
+        assert boot["maclane_pentagon_coherence"] is True
+
+        # Clean process
+        clean_res = kernel.execute_sovereign_process("proc_clean", b"AUTHENTIC_STREAM")
+        assert clean_res["process_admitted"] is True
+        assert clean_res["sheaf_cohomology"]["h0_harmonic_section"] is True
+        assert clean_res["dsw_instanton_healing"]["repair_latency_cycles"] == 0
+
+        # Adversarial process
+        adv_res = kernel.execute_sovereign_process("proc_adv", b"MALICIOUS_ATTACK_VECTOR")
+        assert adv_res["process_admitted"] is False
+        assert adv_res["dsw_instanton_healing"]["cobordism_status"] == "INSTANTON_COBORDISM_TRACE_HEALED"
+        assert adv_res["dsw_instanton_healing"]["repair_latency_cycles"] == 1
+
+        # Manifest
+        manifest = ALHarasSovereignOSProduct.get_sovereign_product_manifest("UK_NATIONAL_CYBER_DEFENCE")
+        assert manifest["product_name"] == "AL_HARAS_TOPOLOGICAL_OS_SOVEREIGN_EDITION"
+        assert manifest["governance_standards"]["fedramp_high"] == "FEDRAMP_HIGH_CERTIFIED"
+
+    def test_kms_in_memory_stream_encryption_and_errors(self):
+        """Covers RAM-only KMS envelope encryption, decryption, and error branches."""
+        prov = LocalMemoryKeyProvider()
+        prov.register_ed25519_key("test_key")
+        plaintext = b"SECRET_IN_MEMORY_DEFENSE_STREAM"
+        assoc_data = b"TENANT_METADATA_1"
+
+        # Encrypt and Decrypt
+        envelope = prov.encrypt_stream_in_memory("test_key", plaintext, assoc_data)
+        decrypted = prov.decrypt_stream_in_memory("test_key", envelope, assoc_data)
+        assert decrypted == plaintext
+
+        # TypeError on non-bytes plaintext
+        with pytest.raises(TypeError, match="plaintext must be bytes"):
+            prov.encrypt_stream_in_memory("test_key", "not_bytes")  # type: ignore
+
+        # ValueError on truncated envelope
+        with pytest.raises(ValueError, match="Invalid or truncated"):
+            prov.decrypt_stream_in_memory("test_key", b"short")
+
+        # ValueError on envelope header mismatch
+        fake_envelope = b"WRONG_HEADER" + b"\x00" * 40
+        with pytest.raises(ValueError, match="Envelope header mismatch"):
+            prov.decrypt_stream_in_memory("test_key", fake_envelope)
+
+        # ValueError on corrupted ciphertext
+        corrupted = bytearray(envelope)
+        corrupted[-1] ^= 0xFF
+        with pytest.raises(ValueError, match="stream authentication failed"):
+            prov.decrypt_stream_in_memory("test_key", bytes(corrupted), assoc_data)
+
+        # Custody manager tenant encryption
+        tenant_envelope = al_haras_kms_custody.encrypt_for_tenant(
+            tenant_id="NATO_HQ",
+            plaintext=plaintext,
+            associated_data=assoc_data,
+        )
+        tenant_decrypted, audit = al_haras_kms_custody.decrypt_in_memory_for_tenant(
+            tenant_id="NATO_HQ",
+            envelope_bytes=tenant_envelope,
+            associated_data=assoc_data,
+        )
+        assert tenant_decrypted == plaintext
+        assert audit["decrypted_in_memory"] is True
+        assert audit["persistent_disk_bytes_written"] == 0
+
+        # Factory providers
+        assert isinstance(get_kms_provider("aws"), CloudKMSProvider)
+        assert isinstance(get_kms_provider("vault"), VaultKMSProvider)
+        assert isinstance(get_kms_provider("pkcs11"), PKCS11HSMKeyProvider)
+        assert isinstance(get_kms_provider("local"), LocalMemoryKeyProvider)
+
+    def test_ovid_zero_copy_pointer_validation_and_storage(self):
+        """Covers all branch checks in OVIDZeroCopyPointer and OVIDStorage."""
+        valid_hash = hashlib.sha256(b"zero_copy_test").hexdigest()
+        valid_ptr_id = f"ptr_ovid_{valid_hash}"
+        source_uri = "gs://sovereign-vault/stream.bin"
+        connector_id = "gcs"
+        tenant_id = "FIVE_EYES"
+
+        # 1. Invalid prefix
+        with pytest.raises(ValueError, match="must start with 'ptr_ovid_'"):
+            OVIDZeroCopyPointer(
+                pointer_id="bad_prefix",
+                content_hash=valid_hash,
+                source_uri=source_uri,
+                connector_id=connector_id,
+                tenant_id=tenant_id,
+                byte_length=10,
+            )
+
+        # 2. Invalid hash (length or non-hex)
+        with pytest.raises(ValueError, match="lowercase 64-char"):
+            OVIDZeroCopyPointer(
+                pointer_id="ptr_ovid_xyz",
+                content_hash="xyz",
+                source_uri=source_uri,
+                connector_id=connector_id,
+                tenant_id=tenant_id,
+                byte_length=10,
+            )
+
+        # 3. Mismatch between pointer_id and hash
+        with pytest.raises(ValueError, match="pointer_id must equal"):
+            OVIDZeroCopyPointer(
+                pointer_id=valid_ptr_id,
+                content_hash="0" * 64,
+                source_uri=source_uri,
+                connector_id=connector_id,
+                tenant_id=tenant_id,
+                byte_length=10,
+            )
+
+        # 4. Negative offset or length
+        with pytest.raises(ValueError, match="byte_offset must be a non-negative integer"):
+            OVIDZeroCopyPointer(
+                pointer_id=valid_ptr_id,
+                content_hash=valid_hash,
+                source_uri=source_uri,
+                connector_id=connector_id,
+                tenant_id=tenant_id,
+                byte_offset=-1,
+                byte_length=10,
+            )
+        with pytest.raises(ValueError, match="byte_length must be a non-negative integer"):
+            OVIDZeroCopyPointer(
+                pointer_id=valid_ptr_id,
+                content_hash=valid_hash,
+                source_uri=source_uri,
+                connector_id=connector_id,
+                tenant_id=tenant_id,
+                byte_offset=0,
+                byte_length=-1,
+            )
+
+        # 5. data_stays_at_rest false
+        with pytest.raises(ValueError, match="Zero-copy pointer invariant violated"):
+            OVIDZeroCopyPointer(
+                pointer_id=valid_ptr_id,
+                content_hash=valid_hash,
+                source_uri=source_uri,
+                connector_id=connector_id,
+                tenant_id=tenant_id,
+                byte_length=10,
+                data_stays_at_rest=False,
+            )
+
+        # 6. OVIDStorage pointers
+        storage = OVIDStorage()
+        ptr = storage.register_zero_copy_pointer(
+            source_uri=source_uri,
+            content_hash=valid_hash,
+            connector_id=connector_id,
+            tenant_id=tenant_id,
+            byte_length=1024,
+        )
+        assert storage.resolve_pointer(valid_ptr_id) == ptr
+        assert len(storage.list_pointers()) == 1
+        assert len(storage.list_pointers(tenant_id="FIVE_EYES")) == 1
+        assert len(storage.list_pointers(tenant_id="OTHER")) == 0
+
+        # Receipt bound to pointer
+        rcpt = storage.create_pointer_receipt(valid_ptr_id, ml_dsa_signature="sig_hex")
+        assert storage.verify_receipt(rcpt) is True
+
+        # Nonexistent pointer receipt creation
+        with pytest.raises(ValueError, match="Zero-copy pointer .* not found"):
+            storage.create_pointer_receipt("ptr_ovid_" + "f" * 64)
+
+        # VerifyEndpoint with invalid receipt
+        endpoint = VerifyEndpoint(None, None, None, ovid_storage=storage)
+        bad_rcpt = OVIDReceipt("ptr_ovid_" + "0" * 64, "0" * 64)
+        assert endpoint.verify_receipt(bad_rcpt) is False
+
+    def test_signers_key_not_initialized_and_getters(self):
+        """Covers uninitialized key checks in ML-DSA and Ed25519 signers."""
+        # ML-DSA uninitialized
+        ml = MLDSASigner()
+        assert ml.get_public_key() is not None
+        ml._private_key = None
+        with pytest.raises(ValueError, match="ML-DSA keys not initialized"):
+            ml.sign(b"data")
+        assert ml.verify(b"data", "0" * 384) is False
+        ml._public_key = None
+        assert ml.verify(b"data", "0" * 384) is False
+        assert ml.get_public_key() is None
+
+        # Ed25519 uninitialized
+        ed = Ed25519Signer()
+        assert ed.get_public_key() is not None
+        assert ed.algorithm == "Ed25519"
+        ed._private_key = None
+        with pytest.raises(ValueError, match="Ed25519 private key not initialized"):
+            ed.sign(b"data")
+        ed._public_key = None
+        assert ed.verify(b"data", "0" * 128) is False
+        assert ed.get_public_key() is None
+
+    def test_norm_proof_edge_branches(self):
+        """Covers _add, NormProof validation, and zero nonce randomizer retry."""
+        from chronus.security.norm_proof import _add
+        assert _add((1, 2), (3, 4)) == (4, 6)
+
+        # NormProof validation error on statement type
+        with pytest.raises(ValueError, match="statement and commitment must be integers"):
+            NormProof.from_dict({"statement": "bad", "commitment": 1, "response": [1, 2]})
+
+        # NormProof validation error on response length
+        with pytest.raises(ValueError, match="response must be a pair"):
+            NormProof.from_dict({"statement": 1, "commitment": 1, "response": [1, 2, 3]})
+
+        # Nonce = 0 triggers retry loop in prove
+        p = prove((5, 10), nonce=0)
+        from chronus.security.norm_proof import verify as verify_norm
+        assert verify_norm(p) is True
+
+    def test_stark_verifier_air_and_merkle_branches(self):
+        """Covers polynomial verification, empty Merkle trees, and odd leaf trees."""
+        from chronus.security.stark import _merkle_root, _merkle_path
+        # Empty leaves
+        assert len(_merkle_root([])) == 64
+        # Odd leaves
+        odd_leaves = [b"alpha", b"beta", b"gamma"]
+        root = _merkle_root(odd_leaves)
+        path = _merkle_path(odd_leaves, 0)
+        assert len(root) == 64
+        assert len(path) > 0
+
+        # AIR polynomial verification
+        v = ZKSTARKVerifier()
+        assert v.verify_air_polynomial([], [1], [1]) is False
+        # Valid P(x) = Q(x) * Z(x)
+        assert v.verify_air_polynomial([0, 1], [1], [0, 1]) is True
+
+        # Non-dict proof
+        assert v.verify_proof("not_a_dict") is False  # type: ignore
+
+        # Mismatched public input end
+        trace = [1, 2, 3, 4, 5, 6, 7, 8]
+        valid_proof = v.generate_proof(trace, public_input={"start": 1, "end": 8})
+        assert v.verify_proof(valid_proof, public_input={"end": 999}) is False
+

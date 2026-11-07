@@ -108,8 +108,8 @@ async def submit_workload(
                 backend_preference = QiGPUOrchestrator(execution_router).auto_select(
                     request.workload_type
                 )[0]
-            is_folding = str(request.workload_type) in ("PV_LATTICE_FOLD", "TRINITY_SCALE_FOLD_STORE")
-            is_storage = str(request.workload_type) in ("PHYLOTAXIS_STORE", "THESEUS_RETRIEVE", "OVID_NORM_PROOF")
+            is_folding = str(request.workload_type) in ("PV_LATTICE_FOLD", "TRINITY_SCALE_FOLD_STORE", "BINET_ZECKENDORF_INGEST")
+            is_storage = str(request.workload_type) in ("PHYLOTAXIS_STORE", "THESEUS_RETRIEVE", "OVID_NORM_PROOF", "ZERO_COPY_CONNECTOR_EXECUTE")
             with trace_span("execution_dispatch", {"backend": backend_preference, "workload_type": str(request.workload_type)}):
                 if is_folding:
                     with trace_span("algebraic_folding"):
@@ -126,7 +126,7 @@ async def submit_workload(
             parsed_id = uuid4()
             backend_status = WorkloadStatus.COMPLETED
             result = execution.to_dict()
-            receipt = None
+            receipt = (result.get("result") or {}).get("execution_digest") if isinstance(result, dict) else None
             ccu_cost = None
     except (ValueError, LatticeOverflowError) as exc:
         raise HTTPException(

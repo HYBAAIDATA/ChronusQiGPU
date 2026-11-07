@@ -89,7 +89,7 @@ export default function GovernancePage() {
       name: 'Functional Behavior',
       desc: 'Exact representation arithmetic, deterministic test suite & 94 invariants',
       status: 'PASS' as const,
-      evidence: '203/203 pytest · 45 unittest · 94/94 invariants passing',
+      evidence: '242/242 pytest · 45 unittest · 94/94 invariants passing',
       authority: 'Verification Lead',
     },
     {

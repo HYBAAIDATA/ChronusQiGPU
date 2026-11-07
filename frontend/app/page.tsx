@@ -153,7 +153,7 @@ export default function OverviewPage() {
           </div>
           <div className="space-y-1">
             <div className="text-3xl font-mono font-semibold text-white tracking-tight">
-              203 / 203
+              242 / 242
             </div>
             <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-mono">
               <CheckCircle2 className="w-3.5 h-3.5" />

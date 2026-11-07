@@ -197,3 +197,127 @@
 .emoji-picker-container .epr-category-nav button:hover {
   opacity: 0.8;
 }
+
+/* Brand-consistent form controls & range slider (modern-web-guidance) */
+:root {
+  --chronus-brand-accent: #2563eb;
+}
+
+.dark {
+  --chronus-brand-accent: #3b82f6;
+}
+
+.chronus-branded-form {
+  color-scheme: dark;
+  accent-color: var(--chronus-brand-accent);
+}
+
+@supports not (accent-color: var(--chronus-brand-accent)) {
+  .chronus-branded-form input[type="checkbox"].visually-hidden,
+  .chronus-branded-form input[type="radio"].visually-hidden {
+    position: absolute !important;
+    clip-path: inset(50%) !important;
+    overflow: hidden !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    white-space: nowrap !important;
+  }
+}
+
+input[type="range"].chronus-range-slider {
+  --slider-track-size: 0.5rem;
+  --slider-thumb-size: 1.25rem;
+  --slider-track-radius: 999px;
+  --slider-thumb-radius: 50%;
+  --slider-track-color: #262626;
+  --slider-fill-color: var(--chronus-brand-accent, #3b82f6);
+  --slider-thumb-color: #60a5fa;
+  --slider-direction: to right;
+
+  --attr-min: attr(min type(<number>), 0);
+  --attr-max: attr(max type(<number>), 100);
+  --control-value: attr(value type(<number>), 50);
+  --slider-progress: calc(
+    progress(var(--control-value), var(--attr-min), var(--attr-max)) * 100%
+  );
+
+  appearance: none;
+  inline-size: 100%;
+  block-size: 2.25rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"].chronus-range-slider:dir(rtl) {
+  --slider-direction: to left;
+}
+
+@supports not (opacity: progress(1, 0, 100)) {
+  input[type="range"].chronus-range-slider {
+    --slider-progress: calc(
+      (var(--control-value) - var(--attr-min)) /
+      (var(--attr-max) - var(--attr-min)) * 100%
+    );
+  }
+}
+
+/* WebKit / Blink track and thumb (kept separate from Firefox rules) */
+input[type="range"].chronus-range-slider::-webkit-slider-runnable-track {
+  block-size: var(--slider-track-size);
+  border: 0;
+  border-radius: var(--slider-track-radius);
+  background: linear-gradient(
+    var(--slider-direction),
+    var(--slider-fill-color) var(--slider-progress),
+    var(--slider-track-color) var(--slider-progress)
+  );
+}
+
+input[type="range"].chronus-range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  inline-size: var(--slider-thumb-size);
+  block-size: var(--slider-thumb-size);
+  margin-block-start: calc(
+    (var(--slider-track-size) - var(--slider-thumb-size)) / 2
+  );
+  border: 2px solid #0a0a0a;
+  border-radius: var(--slider-thumb-radius);
+  background: var(--slider-thumb-color);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+}
+
+/* Firefox track, progress, and thumb */
+input[type="range"].chronus-range-slider::-moz-range-track {
+  block-size: var(--slider-track-size);
+  border: 0;
+  border-radius: var(--slider-track-radius);
+  background: var(--slider-track-color);
+}
+
+input[type="range"].chronus-range-slider::-moz-range-progress {
+  block-size: var(--slider-track-size);
+  border-radius: var(--slider-track-radius);
+  background: var(--slider-fill-color);
+}
+
+input[type="range"].chronus-range-slider::-moz-range-thumb {
+  inline-size: var(--slider-thumb-size);
+  block-size: var(--slider-thumb-size);
+  border: 2px solid #0a0a0a;
+  border-radius: var(--slider-thumb-radius);
+  background: var(--slider-thumb-color);
+}
+
+input[type="range"].chronus-range-slider:focus-visible {
+  outline: 2px solid var(--slider-fill-color);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
