@@ -16,6 +16,7 @@ from chronus.backends.lattice import (
 from chronus.backends.opencl_pv import (
     KERNEL_SHA256,
     OpenCLPVBackend,
+    _wire_integer,
     validate_fixed_width,
 )
 from chronus.backends.limbs import decode_int256, encode_int256
@@ -85,3 +86,10 @@ def test_deep_lucas_reference_limb_round_trip():
     assert decode_int256(encode_int256(result.a)) == result.a
     assert decode_int256(encode_int256(result.b)) == result.b
     assert result.norm() == 1
+
+
+def test_wire_integer_preserves_precision_and_rejects_non_integer_values():
+    assert _wire_integer("9223372036854775807") == 9223372036854775807
+    for invalid in (True, 1.0, "1e10", "", "9" * 1025, 10**1024):
+        with pytest.raises(ValueError):
+            _wire_integer(invalid)
