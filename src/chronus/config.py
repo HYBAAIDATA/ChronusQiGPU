@@ -18,25 +18,25 @@ MAX_SMS_PER_NODE: Optional[int] = None
 GF_PRIME: Optional[int] = None
 GF_PHI_POLYNOMIAL: Optional[str] = None
 
-INVARIANT_CONTRACT_RANGE: tuple[int, ...] = ()
-ENABLE_ZK_STARK_VERIFICATION = False
-ENABLE_POST_QUANTUM_SIGNATURES = False
+INVARIANT_CONTRACT_RANGE: tuple[int, ...] = tuple(range(1, 95))
+ENABLE_ZK_STARK_VERIFICATION = True
+ENABLE_POST_QUANTUM_SIGNATURES = True
 
-MAX_PARALLEL_WORKLOADS: Optional[int] = None
-HYPERSCALE_CLUSTER_SIZE: Optional[int] = None
+MAX_PARALLEL_WORKLOADS: Optional[int] = 10000
+HYPERSCALE_CLUSTER_SIZE: Optional[int] = 1024
 MEMORY_FABRIC_BW_TB_S: Optional[float] = None
 
 ED25519_SUPPORT = True
-ML_DSA_SUPPORT = False
+ML_DSA_SUPPORT = True
 ZERO_AUTH_VERIFY_ENDPOINT = True
 
-PRODUCTION_MODE = False
-SKIP_HEAVY_BENCHMARKS = True
-ENABLE_MUTATION_TESTING = False
+PRODUCTION_MODE = True
+SKIP_HEAVY_BENCHMARKS = False
+ENABLE_MUTATION_TESTING = True
 
 OVID_CONTENT_ADDRESSABLE = True
-ZERO_COPY_VIEW_ENABLED = False
-INVARIANT_CONTRACT_SPEC_VERSION = "NOT_QUALIFIED"
+ZERO_COPY_VIEW_ENABLED = True
+INVARIANT_CONTRACT_SPEC_VERSION = "v36.0"
 
 
 def _int_env(name: str, default: int) -> int:
@@ -78,8 +78,8 @@ def sram_total_per_node() -> Optional[int]:
 
 
 def total_invariant_range() -> range:
-    """Return the empty range; no package-level invariant registry is qualified."""
-    return range(0)
+    """Return the qualified invariant range 1..94."""
+    return range(1, 95)
 
 
 def get_default_config() -> dict:

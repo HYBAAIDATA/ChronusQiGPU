@@ -14,8 +14,19 @@ from chronus.service.dependencies import auth_service, service_config
 from chronus.service.routers import workloads
 from chronus.service.workload_store import SQLiteWorkloadStore
 
-cl = pytest.importorskip("pyopencl")
-np = pytest.importorskip("numpy")
+try:
+    import pyopencl as cl
+except ImportError:
+    cl = None
+
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
+if cl is None or np is None:
+    pytestmark = pytest.mark.skip(reason="pyopencl or numpy not available")
+
 
 
 @pytest.fixture(scope="module")

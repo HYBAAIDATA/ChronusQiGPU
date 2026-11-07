@@ -24,11 +24,18 @@ from chronus.service.models import (
     WorkloadResponse,
     WorkloadStatus,
 )
-from chronus.service.workload_store import SQLiteWorkloadStore
+import time
+from chronus.service.workload_store import SQLiteWorkloadStore, get_workload_store
+from chronus.service.telemetry import (
+    current_tenant_id,
+    current_workload_id,
+    metrics_registry,
+    trace_span,
+)
 
 router = APIRouter(prefix="/workloads", tags=["workloads"])
 
-workload_store = SQLiteWorkloadStore()
+workload_store = get_workload_store()
 
 
 def workload_counts() -> tuple[int, int]:
@@ -58,7 +65,11 @@ async def submit_workload(
             ).model_dump(),
         )
 
+    current_tenant_id.set(tenant_id)
+    start_wall_time = time.time()
     try:
+        with trace_span("api_ingestion", {"tenant_id": request.tenant_id, "workload_type": str(request.workload_type)}):
+            pass
         if service_config.execution_backend_url:
             sdk = ChronusAPISDK(
                 tenant_id=request.tenant_id,
@@ -97,12 +108,21 @@ async def submit_workload(
                 backend_preference = QiGPUOrchestrator(execution_router).auto_select(
                     request.workload_type
                 )[0]
-            execution = await run_in_threadpool(
-                execution_router.execute,
-                request.payload_bytes,
-                request.workload_type,
-                backend_preference,
-            )
+            is_folding = str(request.workload_type) in ("PV_LATTICE_FOLD", "TRINITY_SCALE_FOLD_STORE")
+            is_storage = str(request.workload_type) in ("PHYLOTAXIS_STORE", "THESEUS_RETRIEVE", "OVID_NORM_PROOF")
+            with trace_span("execution_dispatch", {"backend": backend_preference, "workload_type": str(request.workload_type)}):
+                if is_folding:
+                    with trace_span("algebraic_folding"):
+                        pass
+                if is_storage:
+                    with trace_span("ovid_storage"):
+                        pass
+                execution = await run_in_threadpool(
+                    execution_router.execute,
+                    request.payload_bytes,
+                    request.workload_type,
+                    backend_preference,
+                )
             parsed_id = uuid4()
             backend_status = WorkloadStatus.COMPLETED
             result = execution.to_dict()
@@ -164,6 +184,12 @@ async def submit_workload(
             else None
         ),
     )
+    current_workload_id.set(str(parsed_id))
+    elapsed_duration = time.time() - start_wall_time
+    metrics_registry.record_request(request.tenant_id, str(backend_status), str(request.workload_type))
+    metrics_registry.record_execution_latency(elapsed_duration)
+    metrics_registry.record_ccu(request.tenant_id, float(ccu_cost or 1.0))
+
     workload_store.save(workload)
     return workload
 

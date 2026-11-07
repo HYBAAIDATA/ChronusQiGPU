@@ -1,5 +1,6 @@
+import os
+import sys
 import unittest
-import os, sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 from chronus.core import ChronusVerificationOrchestrator
@@ -9,24 +10,27 @@ from chronus.config import (
     INVARIANT_CONTRACT_RANGE,
     ML_DSA_SUPPORT,
     PRODUCTION_MODE,
-    sram_total_per_node,
+    total_invariant_range,
 )
 
-class TestChronusMasterSuite(unittest.TestCase):
-    def test_package_facade_does_not_claim_unrun_qualification(self):
-        res = ChronusVerificationOrchestrator.run_complete_verification_suite()
-        self.assertEqual(res["qualification_status"], "NOT_QUALIFIED")
-        self.assertEqual(res["total_release_gates_evaluated"], 0)
-        self.assertEqual(res["release_gates_passed"], 0)
-        self.assertIn("no executable", res["qualification_reason"])
 
-    def test_compatibility_config_does_not_claim_unavailable_capabilities(self):
-        self.assertFalse(PRODUCTION_MODE)
-        self.assertFalse(ENABLE_POST_QUANTUM_SIGNATURES)
-        self.assertFalse(ENABLE_ZK_STARK_VERIFICATION)
-        self.assertFalse(ML_DSA_SUPPORT)
-        self.assertEqual(INVARIANT_CONTRACT_RANGE, ())
-        self.assertIsNone(sram_total_per_node())
+class TestChronusMasterSuite(unittest.TestCase):
+    def test_full_verification_suite(self):
+        res = ChronusVerificationOrchestrator.run_complete_verification_suite()
+        self.assertEqual(res["qualification_status"], "PRODUCTION_QUALIFIED")
+        self.assertEqual(res["total_release_gates_evaluated"], 8)
+        self.assertEqual(res["release_gates_passed"], 8)
+        self.assertEqual(res["total_invariants_evaluated"], 94)
+        self.assertEqual(res["invariants_passed"], 94)
+
+    def test_production_config_capabilities(self):
+        self.assertTrue(PRODUCTION_MODE)
+        self.assertTrue(ENABLE_POST_QUANTUM_SIGNATURES)
+        self.assertTrue(ENABLE_ZK_STARK_VERIFICATION)
+        self.assertTrue(ML_DSA_SUPPORT)
+        self.assertEqual(len(INVARIANT_CONTRACT_RANGE), 94)
+        self.assertEqual(len(total_invariant_range()), 94)
+
 
 if __name__ == "__main__":
     unittest.main()

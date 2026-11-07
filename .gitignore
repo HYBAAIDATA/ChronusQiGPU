@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -98,3 +98,7 @@ chronus_complete_system_master_v36 (1)/
 # Runtime data
 data/
 *.sqlite3
+
+.next/
+frontend/.next/
+.pytest_tmp/

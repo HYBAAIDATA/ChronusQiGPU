@@ -5,6 +5,7 @@ verification are not implemented.
 """
 
 from chronus.security.ovid import OVIDReceipt, OVIDStorage, VerifyEndpoint
+from chronus.security.kms import CloudKMSProvider, KMSKeyProvider, LocalMemoryKeyProvider, VaultKMSProvider, get_kms_provider
 from chronus.security.signers import (
     Ed25519Signer,
     MLDSASigner,
