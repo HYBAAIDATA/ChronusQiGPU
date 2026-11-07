@@ -100,6 +100,17 @@ jobs:
         run: python -c "import pyopencl as cl; assert any(d.type & cl.device_type.CPU for p in cl.get_platforms() for d in p.get_devices())"
       - run: python -m pytest -q tests/test_opencl_kernel.py
 
+  purity-gate:
+    name: Mathematical purity gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Block simulation, approximation, heuristics and quantum theatre
+        run: python scripts/ci/purity_gate.py
+
   rtl-synthesis:
     name: Phi-ALU RTL simulation and Yosys synthesis
     runs-on: ubuntu-latest

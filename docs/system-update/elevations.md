@@ -32,6 +32,10 @@ The QiGPU now resolves `backend_preference: "auto"` at the API layer: when a cli
 
 The quantum layer is pure mathematics: statevectors evolve over F_257 with exact integer field arithmetic — no floating point, no simulated noise, no fabricated fidelities, no vendor backend facades. The field contains the entire standard gate set exactly: √2 = 60, 1/√2 = 30 (Hadamard), i = 16 (S gate), ω₈ = 4 (T gate). The Bell state computes to exact amplitudes `[30, 0, 0, 30]`; gate algebra (S² = Z, T² = S, H² = I) holds by integer equality; circuit equivalence is exact amplitude comparison. Measurement is intentionally absent — there is no Born rule over a finite field, so the module provides exact state evolution and circuit identity verification, not sampling. The previous holonomic-pulse and vendor-backend facades were removed; distributed and database packages were re-labelled honestly as in-process bookkeeping and configuration scaffolding.
 
+## 7. Exact Grover iteration (`src/chronus/quantum/grover.py`)
+
+Oracle phase flips and the diffusion reflection `D = 2|s><s| - I` execute as exact F_257 field arithmetic. Verified correctness: n = 2 converges in one iteration to marked amplitude exactly 1 and all others exactly 0 (matching the real-valued guarantee); `D² = I` and oracle involution hold by integer equality; trajectories for n ≤ 3 match an independent exact recurrence for every marked state. The **purity gate** (`scripts/ci/purity_gate.py`, CI job `purity-gate`) blocks floating-point computation, pseudo-random heuristics, statistical sampling, and quantum-theatre tokens from the mathematical packages on every commit.
+
 ## 6. Generalized runtime bounds (`chronus.config.runtime_bounds`)
 
 No operational limit is hardcoded: search lanes, storage lanes, PV order, Lucas/metallic indices, element counts, payload sizes, and Trinity scale bounds are all environment-overridable (`CHRONUS_*`), failing closed on invalid values. Structural mathematical constants (the field prime 257, the golden fixed-point constant, the packaged kernel digest) remain definition-fixed.

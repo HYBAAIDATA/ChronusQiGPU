@@ -4,12 +4,14 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
+from chronus.execution import mining
 from chronus.execution.mining import partition_nonce_range, search_nonce_range
 from chronus.execution.structural import (
     fold_pair,
     unfold_pair,
     zeckendorf_decode,
     zeckendorf_encode,
+    zeckendorf_increment,
 )
 from chronus.service.app import create_app
 from chronus.service.dependencies import auth_service, service_config
@@ -58,6 +60,69 @@ def test_parallel_results_match_independent_hashlib_reference():
         header = GENESIS_HEADER[:76] + match["nonce"].to_bytes(4, "little")
         expected = hashlib.sha256(hashlib.sha256(header).digest()).digest()[::-1].hex()
         assert match["hash"] == expected
+
+
+def test_zeckendorf_step_order_finds_identical_matches():
+    header = bytes(range(80))
+    target = 1 << 200  # generous target so matches exist in a small range
+    binary = search_nonce_range(header, 0, 4096, target, workers=1, step_order="binary")
+    folded = search_nonce_range(header, 0, 4096, target, workers=1, step_order="zeckendorf")
+    assert binary["tested"] == folded["tested"] == 4096
+    assert binary["match_count"] == folded["match_count"]
+    assert {m["nonce"] for m in binary["matches"]} == {m["nonce"] for m in folded["matches"]}
+    assert folded["step_order"] == "zeckendorf"
+    with pytest.raises(ValueError, match="step_order"):
+        search_nonce_range(header, 0, 10, target, step_order="spiral")
+
+
+def test_polyhedral_lane_labels_cover_12_faces_and_20_vertices():
+    labels = [mining.polyhedral_lane(lane) for lane in range(32)]
+    faces = [l for l in labels if l["polyhedral"] == "dodecahedron-face"]
+    vertices = [l for l in labels if l["polyhedral"] == "icosahedron-vertex"]
+    assert len(faces) == 12 and len(vertices) == 20
+    assert [f["index"] for f in faces] == list(range(12))
+    assert [v["index"] for v in vertices] == list(range(20))
+    with pytest.raises(ValueError):
+        mining.polyhedral_lane(32)
+
+
+def test_zeckendorf_increment_is_carry_free_and_bijective():
+    indices = ()
+    seen = []
+    for expected in range(1, 3000):
+        indices = zeckendorf_increment(indices)
+        # Canonicality after every step: non-adjacent descending indices.
+        assert all(left - right >= 2 for left, right in zip(indices, indices[1:]))
+        seen.append(zeckendorf_decode(indices))
+        assert seen[-1] == expected
+    assert len(set(seen)) == len(seen)  # bijective traversal, no collisions
+
+
+def test_zeckendorf_increment_matches_encode_of_successor():
+    for value in [0, 1, 2, 3, 10, 100, 4180, 6765, 2**40 + 12345]:
+        assert zeckendorf_decode(zeckendorf_increment(zeckendorf_encode(value))) == value + 1
+
+
+def test_search_store_option_records_theseus_receipt():
+    from chronus.execution import NativeMathReferenceBackend
+
+    backend = NativeMathReferenceBackend()
+    payload = json.dumps({
+        "header_hex": bytes(range(80)).hex(),
+        "target_hex": f"{1 << 200:064x}",
+        "start": 0, "stop": 1024, "step": "zeckendorf", "store": True,
+    }).encode()
+    result = backend.execute(payload, "SHA256D_NONCE_SEARCH")
+    receipt = result["theseus_receipt"]
+    assert result["step_order"] == "zeckendorf"
+    assert 0 <= receipt["coordinate"]["lane"] < 32
+    assert result["durable"] is False
+    bad = json.dumps({
+        "header_hex": bytes(range(80)).hex(), "target_hex": f"{1:064x}",
+        "start": 0, "stop": 10, "store": False,
+    }).encode()
+    with pytest.raises(ValueError, match="store"):
+        backend.execute(bad, "SHA256D_NONCE_SEARCH")
 
 
 def test_canonical_zeckendorf_round_trip():

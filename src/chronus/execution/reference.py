@@ -178,13 +178,24 @@ class NativeMathReferenceBackend:
             target = int(target_hex, 16)
         except ValueError as exc:
             raise ValueError("header_hex and target_hex must be hexadecimal") from exc
-        return search_nonce_range(
+        result = search_nonce_range(
             header,
             request.get("start"),
             request.get("stop"),
             target,
             request.get("workers", 1),
+            request.get("step", "binary"),
         )
+        if request.get("store") is True:
+            record = self._theseus.store(
+                self._storage_tenant(request),
+                json.dumps(result["matches"], sort_keys=True).encode("utf-8"),
+            )
+            result["theseus_receipt"] = record.to_dict()
+            result["durable"] = False
+        elif "store" in request:
+            raise ValueError("store must be a boolean true when present")
+        return result
 
     def _execute_lucas(self, request: Dict[str, Any]) -> Dict[str, Any]:
         index = request.get("index")
