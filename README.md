@@ -103,4 +103,6 @@ Tenant tokens are configured as a JSON environment variable for this implementat
 - [QiGPU, Chronus, Theseus and Ovid unified system](docs/system-update/qigpu-storage.md)
 - [Market-ready elevations: RTL, norm proofs, climb-in, console](docs/system-update/elevations.md)
 - [The metallic means family](docs/system-update/metallic-means.md)
+- [Beyond quadratic: the metallic search experiment](docs/system-update/after-quantum.md)
+- [Four-phase integration status](docs/system-update/integration-plan.md)
 - [Historical reports](docs/reports/README.md)

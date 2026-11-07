@@ -85,6 +85,33 @@ class TheseusService:
             if record_tenant == tenant_id
         ]
 
+    def scale_record(
+        self, tenant_id: str, object_id: str, increment: int
+    ) -> TheseusRecord:
+        """Advance a record's PV scale lineage without touching its content.
+
+        The content address is unchanged; the scale index advances by exact
+        addition and the record receives a fresh phyllotaxis coordinate in
+        the lineage.
+        """
+        record = self.get_record(tenant_id, object_id)
+        from chronus.core.scaling import PVScale
+
+        scale = PVScale(record.scale_index).advance(increment)
+        coordinate = phyllotaxis_coordinate(
+            self._sequence, bytes.fromhex(object_id), self.lane_count
+        )
+        self._sequence += 1
+        scaled = TheseusRecord(
+            object_id=object_id,
+            tenant_id=tenant_id,
+            size_bytes=record.size_bytes,
+            coordinate=coordinate,
+            scale_index=scale.index,
+        )
+        self._records[(tenant_id, object_id)] = scaled
+        return scaled
+
     def stats(self) -> dict:
         histogram = [0] * self.lane_count
         for record in self._records.values():

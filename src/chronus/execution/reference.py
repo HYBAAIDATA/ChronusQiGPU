@@ -185,6 +185,8 @@ class NativeMathReferenceBackend:
             target,
             request.get("workers", 1),
             request.get("step", "binary"),
+            request.get("engine", "library"),
+            request.get("partition", "uniform"),
         )
         if request.get("store") is True:
             record = self._theseus.store(
