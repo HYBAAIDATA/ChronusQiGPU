@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Play, RotateCw, Shield, Terminal, Zap } from 'lucide-react';
+import { Play, RotateCw, Shield, Terminal, Zap, UserCheck } from 'lucide-react';
 import { StatusPill } from '@/components/console/status-pill';
 import { Button } from '@/components/ui/button';
 import { fetchSystemStatus, SystemStatus } from '@/lib/chronus-client';
@@ -17,6 +17,7 @@ export function Header() {
     purity_gate: 'PASSED',
     version: '36.0.0',
   });
+  const [activeRole, setActiveRole] = useState<'system_admin' | 'tenant_admin' | 'developer' | 'external_auditor'>('developer');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -44,6 +45,22 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-3">
+        {/* AL HARAS Role Persona Switcher */}
+        <div className="hidden lg:flex items-center gap-1.5 bg-neutral-100 dark:bg-neutral-900 px-2 py-1 rounded-lg border border-neutral-200 dark:border-neutral-800 text-xs font-mono">
+          <UserCheck className="w-3.5 h-3.5 text-neutral-500" />
+          <span className="text-neutral-400 text-[10px]">ROLE:</span>
+          <select
+            value={activeRole}
+            onChange={(e) => setActiveRole(e.target.value as any)}
+            className="bg-transparent font-medium text-neutral-800 dark:text-neutral-200 focus:outline-none cursor-pointer text-xs"
+          >
+            <option value="system_admin" className="dark:bg-neutral-900">System Admin</option>
+            <option value="tenant_admin" className="dark:bg-neutral-900">Tenant Admin</option>
+            <option value="developer" className="dark:bg-neutral-900">Developer / Engineer</option>
+            <option value="external_auditor" className="dark:bg-neutral-900">External Auditor</option>
+          </select>
+        </div>
+
         <div className="hidden md:flex items-center gap-3 text-xs font-mono mr-2">
           <span className="text-neutral-500">BACKEND:</span>
           <span className="text-neutral-800 dark:text-neutral-200 font-medium">

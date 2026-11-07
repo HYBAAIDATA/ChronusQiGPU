@@ -1,7 +1,7 @@
 """Security primitives in the Chronus reference implementation.
 
-Ed25519 receipts are process-local. ML-DSA and cryptographic STARK/FRI
-verification are not implemented.
+Integrates NIST FIPS 204 ML-DSA, Ed25519, FRI ZK-STARK verifier,
+and the AL HARAS Sovereign Topological Quantum Immunity Swarm Fabric.
 """
 
 from chronus.security.ovid import OVIDReceipt, OVIDStorage, VerifyEndpoint
@@ -13,6 +13,19 @@ from chronus.security.signers import (
     VerificationError,
 )
 from chronus.security.stark import ZKSTARKVerifier
+from chronus.security.al_haras import (
+    ALHarasSecurityFabric,
+    ALHarasSovereignProductSDK,
+    CellularSheafCohomology,
+    CyclotomicAnyonBraidEngine,
+    CyclotomicZ5,
+    DSW4DInstantonMonopoleHealer,
+    ExactQ5,
+    GaloisField257Phi,
+    HeckeModularChecksum,
+    RamanujanExpanderSpectralGapGuard,
+    SovereignGovernanceEngine,
+)
 
 __version__ = "36.0.0"
 __all__ = [
@@ -25,6 +38,17 @@ __all__ = [
     "SecurityContext",
     "PostQuantumError",
     "VerificationError",
+    "ALHarasSecurityFabric",
+    "ALHarasSovereignProductSDK",
+    "CellularSheafCohomology",
+    "CyclotomicAnyonBraidEngine",
+    "CyclotomicZ5",
+    "DSW4DInstantonMonopoleHealer",
+    "ExactQ5",
+    "GaloisField257Phi",
+    "HeckeModularChecksum",
+    "RamanujanExpanderSpectralGapGuard",
+    "SovereignGovernanceEngine",
 ]
 
 
@@ -35,11 +59,13 @@ class SecurityContext:
     convenient use across the platform.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, sovereign_state_id: str = "sovereign_default") -> None:
         self.ml_dsa = MLDSASigner()
         self.ed25519 = Ed25519Signer()
         self.zk_stark = ZKSTARKVerifier()
         self.ovid = OVIDStorage()
+        self.al_haras_fabric = ALHarasSecurityFabric()
+        self.al_haras_sovereign = ALHarasSovereignProductSDK(sovereign_state_id=sovereign_state_id)
         self.verify_endpoint = VerifyEndpoint(
             ml_dsa_signer=self.ml_dsa,
             ed25519_signer=self.ed25519,

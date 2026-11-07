@@ -11,7 +11,8 @@ import {
   Binary, 
   ShieldCheck,
   Terminal,
-  Activity
+  Activity,
+  Users
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StatusPill } from '@/components/console/status-pill';
@@ -58,6 +59,13 @@ const NAV_ITEMS = [
     desc: 'G1â€“G8 Gates & Receipts',
     href: '/governance',
     icon: ShieldCheck,
+  },
+  {
+    num: '07',
+    label: 'CIaaS & RBAC',
+    desc: 'AL HARAS Matrix & FinOps',
+    href: '/ciaas',
+    icon: Users,
   },
 ];
 
