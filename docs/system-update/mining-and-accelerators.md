@@ -1,5 +1,7 @@
 # Native search and accelerator integrity
 
+> **Positioning:** The native search capability documented here is a **private treasury engine**, not a product offering. It exists to fund, protect, and secure the mathematical discoveries behind Chronus, Theseus, Ovid, and the QiGPU — autonomously, so the platform answers to no hyperscaler, investor, or gatekeeper. It is not sold, licensed, or exposed as a client-facing commercial feature. The platform itself is a sovereign utility for the benefit of all.
+
 ## Executable native search
 
 `SHA256D_NONCE_SEARCH` searches a caller-supplied 80-byte Bitcoin-format header over a bounded half-open uint32 nonce range. The service partitions each request into 32 disjoint contiguous lanes and computes actual SHA-256d hashes using the host's Python/OpenSSL implementation. `workers` selects between 1 and 32 processes, limited by reported CPU count. The first 64 header bytes are hashed once per lane and reused as a SHA-256 midstate. Results contain tested counts, match counts, a bounded list of matches and an explicit `SOFTWARE_EXECUTION` mode.

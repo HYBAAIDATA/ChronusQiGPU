@@ -13,6 +13,10 @@ The intended QiGPU model has two operating modes: Chronus can execute independen
 
 Input descriptions can remain compact, but materialized integers and exact outputs grow with the requested problem. The Lucas reference backend currently caps the index at 100,000. Performance, memory, or energy claims require workload-specific measurements on identified hardware.
 
+## Mission posture
+
+Chronus is a sovereign utility, not a corporate product. Its native search capability is a private, self-sustaining treasury engine that funds and protects the underlying mathematical discoveries; it is never sold or offered to clients. The mathematical substrate — Lucas/PV scaling, phyllotaxis storage, Zeckendorf folding, Galois receipts — is hardware-agnostic so that sovereign entities and enterprises can compute without dependency on any single hyperscaler.
+
 ## Market and operating footprint
 
 Chronus is being positioned with Dubai/DIFC as headquarters and London as the go-to-market office, serving a global customer base that includes sovereign clients in the GCC. The product ambition is hardware-agnostic mathematical execution across independent Chronus capacity and customer/fleet accelerators. These are strategic positioning statements; they do not imply that a specific office, customer deployment, regulatory authorization, or accelerator integration has been independently verified in this source checkout.
