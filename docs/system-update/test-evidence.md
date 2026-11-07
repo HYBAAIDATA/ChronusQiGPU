@@ -8,7 +8,7 @@ The following checks were run after the service, SDK, execution, persistence, an
 
 | Check | Command | Result |
 |---|---|---|
-| Repository test suite | `/tmp/chronus-system-update-venv/bin/python -m pytest -q` | **90 passed** with a CPU OpenCL runtime available; one third-party deprecation warning |
+| Repository test suite | `/tmp/chronus-system-update-venv/bin/python -m pytest -q` | **107 passed** with a CPU OpenCL runtime available; one third-party deprecation warning |
 | Active implementation lint | `ruff check --select F src/chronus/execution src/chronus/backends src/chronus/service src/chronus/sdk src/chronus/security tests` | **Passed** |
 | Active package syntax compilation | `/tmp/chronus-system-update-venv/bin/python -m compileall -q /root/Chronusv2/src/chronus/config.py /root/Chronusv2/src/chronus/execution /root/Chronusv2/src/chronus/backends /root/Chronusv2/src/chronus/sdk /root/Chronusv2/src/chronus/security /root/Chronusv2/src/chronus/service` | **Passed** |
 | Wheel build | `/tmp/chronus-system-update-venv/bin/python -m pip wheel --no-deps --no-build-isolation /root/Chronusv2 --wheel-dir /tmp/chronus-wheelhouse --quiet` | **Passed** (`chronus_quantum_igpu-36.0.0-py3-none-any.whl`) |
@@ -16,7 +16,7 @@ The following checks were run after the service, SDK, execution, persistence, an
 | Container smoke | Build image; submit and retrieve a workload across a container restart | **Passed** with local Docker; this does not demonstrate container replacement or production persistence. |
 | Dependency audit | `python -m pip_audit` | **No known vulnerabilities** in audited installed dependencies; local project package itself is not audited by PyPI lookup. |
 
-The test suite includes exact \(Q(\sqrt5)\) arithmetic, Lucas/PV identity checks, binary payload handling, authentication, tenant isolation, SQLite re-open, SDK-to-service submission, no automatic replay of failed submissions, backend registration, a real Bitcoin genesis SHA-256d vector, 32-lane partition coverage, all byte-pair M15 round-trips, exact lattice parity and overflow rejection. Symbolic scale/fold/store tests cover chained index 4781, seed recovery, canonical-state validation, and agreement with exact expanded arithmetic. OpenCL tests exercise each checked execution tier, signed boundaries, cancellation and randomized comparisons on a CPU OpenCL runtime when available; these are not physical GPU evidence. Actual GPU execution has not been tested.
+The test suite includes exact \(Q(\sqrt5)\) arithmetic, Lucas/PV identity checks, binary payload handling, authentication, tenant isolation, SQLite re-open, SDK-to-service submission, no automatic replay of failed submissions, backend registration, a real Bitcoin genesis SHA-256d vector, 32-lane partition coverage, all byte-pair M15 round-trips, exact lattice parity and overflow rejection. Symbolic scale/fold/store tests cover chained index 4781, seed recovery, canonical-state validation, and agreement with exact expanded arithmetic. Storage tests cover golden-ratio lane distribution, golden-turn coordinates, Theseus tenant isolation, deduplication, tamper fail-closed reconstruction, and QiGPU surface inventory and preference resolution. OpenCL tests exercise each checked execution tier, signed boundaries, cancellation and randomized comparisons on a CPU OpenCL runtime when available; these are not physical GPU evidence. Actual GPU execution has not been tested.
 
 ## What this evidence establishes
 

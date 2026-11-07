@@ -43,10 +43,13 @@ def _unfold(value: Any) -> int:
 def scale_fold_store(request: dict[str, Any]) -> dict[str, Any]:
     """Represent phi**index times the folded seeds without expanding phi**index."""
     increment = _index(request.get("increment"))
-    if set(request) == {"increment", "values"}:
+    if "store" in request and not isinstance(request["store"], bool):
+        raise ValueError("store must be a boolean")
+    keys = set(request) - {"store"}
+    if keys == {"increment", "values"}:
         index = 0
         values = parse_lattice_values(request["values"])
-    elif set(request) == {"increment", "state"}:
+    elif keys == {"increment", "state"}:
         state = request["state"]
         if not isinstance(state, dict) or set(state) != {"scale_index", "values"}:
             raise ValueError("state must contain scale_index and values")

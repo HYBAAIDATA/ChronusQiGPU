@@ -7,6 +7,7 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from chronus.execution import execution_router
+from chronus.execution.qigpu import QiGPUOrchestrator
 from chronus.service.dependencies import get_current_tenant, get_service_config
 from chronus.service.routers.workloads import workload_counts
 from chronus.service.models import (
@@ -51,6 +52,7 @@ async def get_health(
         backend_details = {
             "mode": "native-reference",
             "registered_backends": execution_router.list_backends(),
+            "qigpu": QiGPUOrchestrator(execution_router).inventory(),
         }
     components: List[ComponentHealth] = [
         ComponentHealth(

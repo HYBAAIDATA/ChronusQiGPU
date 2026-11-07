@@ -1,5 +1,7 @@
 """Exact mathematical reference execution and backend selection."""
 
+import base64
+import binascii
 import json
 import os
 import time
@@ -11,6 +13,8 @@ from chronus.backends.lattice import ParityVerificationError, phi_power
 from chronus.backends.lattice_workload import parse_lattice_workload, serialize_lattice
 from chronus.execution.mining import search_nonce_range
 from chronus.execution.trinity import scale_fold_store
+from chronus.security.ovid import OVIDStorage
+from chronus.storage.theseus import TheseusService
 
 
 class ExecutionBackend(Protocol):
@@ -95,7 +99,8 @@ class NativeMathReferenceBackend:
     execution_mode = "NATIVE_CPU_REFERENCE"
     supported_workloads = frozenset(
         {"EXACT_Q5_ALGEBRAIC", "LUCAS_PV_SCALING", "SHA256D_NONCE_SEARCH",
-         "PV_LATTICE_FOLD", "TRINITY_SCALE_FOLD_STORE"}
+         "PV_LATTICE_FOLD", "TRINITY_SCALE_FOLD_STORE",
+         "PHYLOTAXIS_STORE", "THESEUS_RETRIEVE"}
     )
     max_payload_bytes = 1024 * 1024
     max_lucas_index = 100_000
@@ -132,7 +137,14 @@ class NativeMathReferenceBackend:
             raise ValueError("payload must be a JSON object")
 
         if workload_type == "TRINITY_SCALE_FOLD_STORE":
-            return scale_fold_store(request)
+            result = scale_fold_store(request)
+            if request.get("store") is True:
+                result["storage"] = self._store_trinity_state(result)
+            return result
+        if workload_type == "PHYLOTAXIS_STORE":
+            return self._execute_phylotaxis_store(request)
+        if workload_type == "THESEUS_RETRIEVE":
+            return self._execute_theseus_retrieve(request)
         if workload_type == "LUCAS_PV_SCALING":
             return self._execute_lucas(request)
         if workload_type == "SHA256D_NONCE_SEARCH":
@@ -178,6 +190,53 @@ class NativeMathReferenceBackend:
             "lucas": _decimal_string(lucas),
             "identity_verified": lucas == 2 * next_fibonacci - fibonacci,
             "identity": "L_n = 2*F_(n+1) - F_n",
+        }
+
+    _theseus = TheseusService(OVIDStorage())
+
+    @staticmethod
+    def _storage_tenant(request: Dict[str, Any]) -> str:
+        tenant = request.get("tenant_id", "default")
+        if not isinstance(tenant, str) or not tenant.strip():
+            raise ValueError("tenant_id must be a non-empty string")
+        return tenant.strip()
+
+    def _store_trinity_state(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        state_bytes = json.dumps(result["state"], sort_keys=True).encode("utf-8")
+        record = self._theseus.store(
+            "trinity", state_bytes, scale_index=result["state"]["scale_index"]
+        )
+        return {"theseus_record": record.to_dict(), "durable": False}
+
+    def _execute_phylotaxis_store(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        data = request.get("data")
+        if not isinstance(data, str) or not data.startswith("base64:"):
+            raise ValueError("data must be a 'base64:'-prefixed string")
+        try:
+            payload = base64.b64decode(data[7:], validate=True)
+        except (ValueError, binascii.Error) as exc:
+            raise ValueError("data must contain valid base64") from exc
+        record = self._theseus.store(self._storage_tenant(request), payload)
+        return {
+            "execution_mode": self.execution_mode,
+            "storage": "ovid-phyllotaxis",
+            "theseus_record": record.to_dict(),
+            "durable": False,
+        }
+
+    def _execute_theseus_retrieve(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        object_id = request.get("object_id")
+        if not isinstance(object_id, str) or len(object_id) != 64:
+            raise ValueError("object_id must be a 64-character hex digest")
+        try:
+            payload = self._theseus.reconstruct(self._storage_tenant(request), object_id)
+        except KeyError as exc:
+            raise ValueError("object not stored for this tenant in this process") from exc
+        return {
+            "execution_mode": self.execution_mode,
+            "object_id": object_id,
+            "digest_verified": True,
+            "data": "base64:" + base64.b64encode(payload).decode("ascii"),
         }
 
     def _execute_q5(self, request: Dict[str, Any]) -> Dict[str, Any]:

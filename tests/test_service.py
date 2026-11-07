@@ -146,6 +146,9 @@ class TestServiceAPI:
         backend = next(c for c in body["components"] if c["name"] == "execution_backend")
         assert backend["details"]["mode"] == "native-reference"
         assert "python-math-reference" in backend["details"]["registered_backends"]
+        qigpu = backend["details"]["qigpu"]
+        assert qigpu["hardware_agnostic"] is True
+        assert qigpu["default_surface"] == "python-math-reference"
         assert body["total_workloads"] == 0
 
     def test_readiness_for_native_reference_backend(self):
@@ -229,6 +232,34 @@ class TestServiceAPI:
         )
         assert stored.status_code == 200
         assert stored.json()["result"] == result
+
+    def test_phyllotaxis_store_and_theseus_retrieve_api(self):
+        auth_service.register_tenant("service-test", "service-test-token")
+        store = self.client.post(
+            "/workloads/submit",
+            headers={"Authorization": "Bearer service-test-token"},
+            json={
+                "payload_bytes": '{"data":"base64:Z29sZGVu","tenant_id":"service-test"}',
+                "tenant_id": "service-test",
+                "workload_type": "PHYLOTAXIS_STORE",
+            },
+        )
+        assert store.status_code == 202
+        record = store.json()["result"]["result"]["theseus_record"]
+        assert 0 <= record["coordinate"]["lane"] < 32
+        retrieve = self.client.post(
+            "/workloads/submit",
+            headers={"Authorization": "Bearer service-test-token"},
+            json={
+                "payload_bytes": '{"object_id":"%s","tenant_id":"service-test"}' % record["object_id"],
+                "tenant_id": "service-test",
+                "workload_type": "THESEUS_RETRIEVE",
+            },
+        )
+        assert retrieve.status_code == 202
+        result = retrieve.json()["result"]["result"]
+        assert result["digest_verified"] is True
+        assert result["data"] == "base64:Z29sZGVu"
 
     def test_trinity_symbolic_workload_api(self):
         auth_service.register_tenant("service-test", "service-test-token")
