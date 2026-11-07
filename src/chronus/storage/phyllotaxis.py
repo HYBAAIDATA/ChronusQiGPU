@@ -6,8 +6,12 @@ uniformly over a fixed lane count: the Knuth multiplicative hash uses
 floor(2**64 * (phi - 1)). Vogel's model places record n at radius sqrt(n) and
 angle n golden turns; this module assigns each stored record a deterministic
 spiral coordinate and a golden-hash lane.
+
+``PhyllotaxisMesh`` is the deterministic key-mapping facade: any key is
+hashed to a lane and a golden-angle spiral coordinate with no stored state.
 """
 
+import hashlib
 from dataclasses import dataclass
 
 # floor(2**64 * (phi - 1)); the golden ratio conjugate in fixed point.
@@ -63,3 +67,47 @@ def phyllotaxis_coordinate(
         golden_turns_denominator=fibs[_CONVERGENT_DEPTH + 2],
         lane=golden_lane(digest, lane_count),
     )
+
+
+def golden_angle_hash(key: str | bytes) -> int:
+    """Hash a key to a 64-bit fixed-point golden-angle position in [0, 2**64).
+
+    The SHA-256 digest of the key is multiplied by the golden ratio conjugate
+    fixed-point constant; the low 64 bits are the key's golden-angle position
+    on the storage circle (the fractional part of digest/2**64 golden turns).
+    """
+    if isinstance(key, str):
+        if not key:
+            raise ValueError("key must be non-empty")
+        key = key.encode("utf-8")
+    if not isinstance(key, bytes) or not key:
+        raise ValueError("key must be non-empty str or bytes")
+    digest = hashlib.sha256(key).digest()
+    return (int.from_bytes(digest, "big") * GOLDEN_RATIO_CONJUGATE_64) & _MASK64
+
+
+class PhyllotaxisMesh:
+    """Stateless golden-ratio mesh mapping keys to lanes and spiral coordinates."""
+
+    def __init__(self, lanes: int = 32) -> None:
+        if not isinstance(lanes, int) or isinstance(lanes, bool) or lanes < 1:
+            raise ValueError("lanes must be a positive integer")
+        self.lanes = lanes
+
+    def map_key(self, key: str | bytes) -> tuple[int, dict]:
+        """Return ``(lane, coordinate)`` for a key; pure and deterministic."""
+        position = golden_angle_hash(key)
+        lane = (position * self.lanes) >> 64
+        digest = hashlib.sha256(
+            key.encode("utf-8") if isinstance(key, str) else key
+        ).digest()
+        # Second digest slice fixes a deterministic radius ring so the
+        # coordinate needs no allocation counter.
+        ring = int.from_bytes(digest[8:16], "big") & 0xFFFF
+        return lane, {
+            "lane": lane,
+            "golden_angle_position": position,
+            "turn_fraction": [position, 1 << 64],
+            "ring": ring,
+            "model": "vogel-spiral",
+        }

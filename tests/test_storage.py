@@ -7,7 +7,9 @@ import pytest
 from chronus.security.ovid import OVIDStorage
 from chronus.storage import (
     GOLDEN_RATIO_CONJUGATE_64,
+    PhyllotaxisMesh,
     TheseusService,
+    golden_angle_hash,
     golden_lane,
     phyllotaxis_coordinate,
 )
@@ -49,6 +51,31 @@ def test_phyllotaxis_coordinate_uses_golden_turns():
 def test_phyllotaxis_rejects_invalid_sequence(bad):
     with pytest.raises(ValueError):
         phyllotaxis_coordinate(bad, b"\x00" * 32, 32)
+
+
+def test_mesh_map_key_is_deterministic_and_in_range():
+    mesh = PhyllotaxisMesh(lanes=32)
+    lane, coords = mesh.map_key("test_payload_vector")
+    assert lane == 4  # regression vector: sha256("test_payload_vector") golden hash
+    assert coords["lane"] == lane
+    assert 0 <= coords["golden_angle_position"] < 2**64
+    assert coords["turn_fraction"][1] == 2**64
+    assert mesh.map_key("test_payload_vector") == (lane, coords)
+    assert mesh.map_key(b"test_payload_vector") == (lane, coords)
+
+
+def test_mesh_distributes_keys_and_validates():
+    mesh = PhyllotaxisMesh(lanes=32)
+    lanes = [mesh.map_key(f"key-{i}")[0] for i in range(3200)]
+    assert len(set(lanes)) == 32
+    assert abs(golden_angle_hash("k") / 2**64
+               - (int.from_bytes(hashlib.sha256(b"k").digest(), "big")
+                  * GOLDEN_RATIO_CONJUGATE_64 % 2**64) / 2**64) == 0
+    for bad in ("", b"", None, 5):
+        with pytest.raises(ValueError):
+            mesh.map_key(bad)
+    with pytest.raises(ValueError):
+        PhyllotaxisMesh(lanes=0)
 
 
 def test_theseus_store_query_reconstruct_round_trip():
