@@ -14,11 +14,11 @@ from chronus.backends.lattice import (
 )
 from chronus.backends.limbs import encode_int256, decode_int256
 from chronus.backends.lattice_workload import (
-    MAX_ELEMENTS,
     checked_int64 as _checked,
     parse_lattice_workload,
     serialize_lattice,
 )
+from chronus.config import runtime_bounds
 
 KERNEL_SHA256 = "51afee69ead0a470a205f140c4b8f9f439ab2d4682810548713004c3d8001605"
 
@@ -189,10 +189,13 @@ class OpenCLPVBackend:
     def dispatch_pv_fold(
         self, values: list[PhiElement], order: int
     ) -> tuple[list[PhiElement], dict[str, Any]]:
-        if not isinstance(order, int) or isinstance(order, bool) or not 0 <= order <= 360:
-            raise ValueError("order must be an integer between 0 and 360")
-        if not 1 <= len(values) <= MAX_ELEMENTS:
-            raise ValueError(f"values must contain 1 to {MAX_ELEMENTS} elements")
+        bounds = runtime_bounds()
+        max_order = bounds["max_pv_order"]
+        if not isinstance(order, int) or isinstance(order, bool) or not 0 <= order <= max_order:
+            raise ValueError(f"order must be an integer between 0 and {max_order}")
+        max_elements = bounds["max_lattice_elements"]
+        if not 1 <= len(values) <= max_elements:
+            raise ValueError(f"values must contain 1 to {max_elements} elements")
         outputs, widths = self._dispatch(values, phi_power(order))
         verify_fold(values, outputs, order)
         sign = -1 if order % 2 else 1

@@ -1,6 +1,6 @@
 """Health Check Service for Chronus Distributed Systems.
 
-Production-ready health checking with component-level status tracking,
+In-process component health bookkeeping with status tracking.
 failure detection, and automatic recovery coordination.
 """
 

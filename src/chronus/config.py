@@ -2,8 +2,14 @@
 
 This module intentionally does not advertise target hardware capacity,
 production readiness, proof verification, or post-quantum support.
+
+Runtime bounds are environment-configurable so no operational limit is
+hardcoded; structural mathematical constants (the field prime, the golden
+ratio fixed-point constant, protocol parameters) are definition-fixed and
+never configurable.
 """
 
+import os
 from typing import Optional
 
 L1_SRAM_SIZE_PER_SM: Optional[int] = None
@@ -31,6 +37,37 @@ ENABLE_MUTATION_TESTING = False
 OVID_CONTENT_ADDRESSABLE = True
 ZERO_COPY_VIEW_ENABLED = False
 INVARIANT_CONTRACT_SPEC_VERSION = "NOT_QUALIFIED"
+
+
+def _int_env(name: str, default: int) -> int:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be an integer") from exc
+    if value < 1:
+        raise ValueError(f"{name} must be positive")
+    return value
+
+
+def runtime_bounds() -> dict[str, int]:
+    """Operational limits; every value is overridable via environment."""
+    return {
+        "max_lattice_elements": _int_env("CHRONUS_MAX_LATTICE_ELEMENTS", 4096),
+        "max_decimal_digits": _int_env("CHRONUS_MAX_DECIMAL_DIGITS", 1024),
+        "max_pv_order": _int_env("CHRONUS_MAX_PV_ORDER", 360),
+        "max_lucas_index": _int_env("CHRONUS_MAX_LUCAS_INDEX", 100_000),
+        "max_metallic_index": _int_env("CHRONUS_MAX_METALLIC_INDEX", 100_000),
+        "max_metallic_m": _int_env("CHRONUS_MAX_METALLIC_M", 64),
+        "max_search_candidates": _int_env("CHRONUS_MAX_SEARCH_CANDIDATES", 65_536),
+        "max_reported_matches": _int_env("CHRONUS_MAX_REPORTED_MATCHES", 32),
+        "search_lanes": _int_env("CHRONUS_SEARCH_LANES", 32),
+        "storage_lanes": _int_env("CHRONUS_STORAGE_LANES", 32),
+        "max_trinity_index": _int_env("CHRONUS_MAX_TRINITY_INDEX", (1 << 53) - 1),
+        "max_payload_bytes": _int_env("CHRONUS_MAX_PAYLOAD_BYTES", 1024 * 1024),
+    }
 
 
 def sram_total_per_node() -> Optional[int]:

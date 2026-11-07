@@ -284,6 +284,29 @@ class TestServiceAPI:
         denied = self.client.get("/console")
         assert denied.status_code in (401, 403)
 
+    def test_billing_usage_receipt_is_signed_and_tenant_scoped(self):
+        auth_service.register_tenant("service-test", "service-test-token")
+        self.client.post(
+            "/workloads/submit",
+            headers={"Authorization": "Bearer service-test-token"},
+            json={
+                "payload_bytes": '{"index":10}',
+                "tenant_id": "service-test",
+                "workload_type": "LUCAS_PV_SCALING",
+            },
+        )
+        response = self.client.get(
+            "/billing/usage", headers={"Authorization": "Bearer service-test-token"}
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["usage"]["workloads_completed"] >= 1
+        assert "LUCAS_PV_SCALING" in body["usage"]["by_type"]
+        from chronus.service.routers.verify import _ed25519_signer
+        assert _ed25519_signer.verify(body["digest"].encode("ascii"), body["signature"])
+        unauthenticated = self.client.get("/billing/usage")
+        assert unauthenticated.status_code in (401, 403)
+
     def test_trinity_symbolic_workload_api(self):
         auth_service.register_tenant("service-test", "service-test-token")
         response = self.client.post(

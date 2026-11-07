@@ -1,6 +1,6 @@
 """Database configuration for Thesus Database System.
 
-Production-ready database configuration with connection pooling,
+Database configuration structures with documented defaults.
 retry logic, and environment-based configuration.
 """
 

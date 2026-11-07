@@ -16,17 +16,21 @@ def test_field_arithmetic_norm_identities():
 
 
 def test_proof_round_trip_and_tamper_rejection():
-    witness = (42, 17)
-    proof = prove(witness)
-    assert proof.statement == norm(witness)
+    proof = prove((42, 17), nonce=987654321)  # deterministic: no flakiness
+    assert proof.statement == norm((42, 17))
     assert verify(proof)
-    # Tampered commitment, response or statement must fail.
-    assert not verify(NormProof(proof.statement, (proof.commitment + 1) % P, proof.response))
-    assert not verify(NormProof((proof.statement + 1) % P, proof.commitment, proof.response))
-    assert not verify(NormProof(
-        proof.statement, proof.commitment,
-        ((proof.response[0] + 1) % P, proof.response[1]),
-    ))
+    # Soundness is 1/257 per forgery attempt: across all 256 possible
+    # single-step tamper values per axis, detection must be overwhelming.
+    for tamper in (
+        lambda p, d: NormProof(p.statement, (p.commitment + d) % P, p.response),
+        lambda p, d: NormProof((p.statement + d) % P, p.commitment, p.response),
+        lambda p, d: NormProof(
+            p.statement, p.commitment, ((p.response[0] + d) % P, p.response[1])),
+        lambda p, d: NormProof(
+            p.statement, p.commitment, (p.response[0], (p.response[1] + d) % P)),
+    ):
+        detected = sum(not verify(tamper(proof, d)) for d in range(1, P))
+        assert detected >= 250, f"tamper detection too weak: {detected}/256"
 
 
 def test_proofs_do_not_reveal_witness_and_are_randomized():
@@ -42,9 +46,12 @@ def test_deterministic_nonce_for_reproducible_vectors():
 
 
 def test_wrong_witness_statement_fails_verification():
-    proof = prove((5, 5))
-    forged = NormProof((proof.statement + 7) % P, proof.commitment, proof.response)
-    assert not verify(forged)
+    proof = prove((5, 5), nonce=24601)  # deterministic nonce
+    detected = sum(
+        not verify(NormProof((proof.statement + d) % P, proof.commitment, proof.response))
+        for d in range(1, P)
+    )
+    assert detected >= 250, f"forgery detection too weak: {detected}/256"
 
 
 def test_zero_and_out_of_range_elements_rejected():

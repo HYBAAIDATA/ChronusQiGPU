@@ -6,6 +6,8 @@ from chronus.storage.phyllotaxis import (
     PhyllotaxisMesh,
     golden_angle_hash,
     golden_lane,
+    metallic_conjugate_64,
+    metallic_lane,
     phyllotaxis_coordinate,
 )
 from chronus.storage.theseus import TheseusRecord, TheseusService
@@ -18,5 +20,7 @@ __all__ = [
     "TheseusService",
     "golden_angle_hash",
     "golden_lane",
+    "metallic_conjugate_64",
+    "metallic_lane",
     "phyllotaxis_coordinate",
 ]

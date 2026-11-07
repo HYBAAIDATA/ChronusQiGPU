@@ -25,10 +25,12 @@ Chronus is being positioned with Dubai/DIFC as headquarters and London as the go
 
 | Capability | Current implementation |
 |---|---|
-| Native mathematical execution | `EXACT_Q5_ALGEBRAIC` arithmetic, `LUCAS_PV_SCALING`, exact `PV_LATTICE_FOLD`, and symbolic `TRINITY_SCALE_FOLD_STORE` with resumable Zeckendorf-encoded seeds. |
+| Native mathematical execution | `EXACT_Q5_ALGEBRAIC` arithmetic, `LUCAS_PV_SCALING`, exact `PV_LATTICE_FOLD`, symbolic `TRINITY_SCALE_FOLD_STORE`, and `METALLIC_SCALE` over the full metallic-means family (golden, silver, bronze, m ≤ 64). |
 | Phyllotaxis storage (Ovid/Theseus) | `PHYLOTAXIS_STORE` and `THESEUS_RETRIEVE`: content-addressed storage with golden-ratio lane distribution, per-tenant query, and digest-verified reconstruction. Process-local. |
 | QiGPU orchestration | Hardware-agnostic surface inventory, `auto` climb-in preference; CPU substrate always available, client-provisioned OpenCL GPU surface when opted in. |
 | Zero-knowledge receipts | `OVID_NORM_PROOF`: Schnorr Sigma protocol proving knowledge of a Galois-norm preimage over F_257[φ], soundness 1/257, without revealing the witness. |
+| Exact quantum evolution | `chronus.quantum.StateVector`: statevectors over F_257 with the full gate set as exact field constants (1/√2 = 30, i = 16, ω₈ = 4); circuit equivalence by integer equality. No floats, no simulated noise. |
+| Configurable bounds | All operational limits (lanes, orders, payload sizes) are `CHRONUS_*` environment settings via `chronus.config.runtime_bounds()`; only protocol-defining constants are fixed. |
 | Phi-ALU RTL | `hw/zeckendorf_norm_alu.sv` + `hw/zeckendorf_alu_32lane.sv`: synthesizable norm unit and full 32-lane carry-free Zeckendorf ALU array; Icarus testbenches + Yosys synthesis in CI (8,095 pure-logic cells, no multipliers or carry chains). |
 | Sovereign console | Authenticated `/console` dashboard: live surfaces, phyllotaxis lane density, spiral map, workload counters. |
 | Hardware-agnostic backend seam | Python protocol, registry, named selection, optional remote forwarding, and experimental opt-in OpenCL GPU adapter; no GPU adapter is registered by default or verified on physical hardware here. |
@@ -91,6 +93,7 @@ Tenant tokens are configured as a JSON environment variable for this implementat
 
 ## Documentation
 
+- [Executive architecture and project summary](docs/executive/executive-architecture-and-project-summary.md)
 - [Architecture and market model](docs/system-update/architecture-and-market.md)
 - [Current implementation assessment](docs/system-update/current-state-assessment.md)
 - [Test evidence and limitations](docs/system-update/test-evidence.md)
@@ -99,4 +102,7 @@ Tenant tokens are configured as a JSON environment variable for this implementat
 - [Native nonce search and accelerator integrity](docs/system-update/mining-and-accelerators.md)
 - [QiGPU, Chronus, Theseus and Ovid unified system](docs/system-update/qigpu-storage.md)
 - [Market-ready elevations: RTL, norm proofs, climb-in, console](docs/system-update/elevations.md)
+- [The metallic means family](docs/system-update/metallic-means.md)
+- [Beyond quadratic: the metallic search experiment](docs/system-update/after-quantum.md)
+- [Four-phase integration status](docs/system-update/integration-plan.md)
 - [Historical reports](docs/reports/README.md)

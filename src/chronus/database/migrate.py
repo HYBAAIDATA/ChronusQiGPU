@@ -1,6 +1,6 @@
 """Database migration script for Thesus Database System.
 
-Production-ready migration runner using Alembic for schema management.
+Migration configuration scaffolding; no Alembic runtime is executed by this package.
 """
 
 import asyncio

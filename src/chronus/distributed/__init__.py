@@ -1,7 +1,7 @@
-"""Chronus Quantum iGPU Distributed Systems Layer.
+"""In-process cluster bookkeeping for Chronus.
 
-Production-ready distributed execution with failure injection, health checking,
-cluster orchestration, and consensus protocols for hyperscale deployment.
+Single-process node registry and workload assignment structures. This is
+not a networked distributed runtime; no consensus or replication executes.
 """
 
 from chronus.distributed.failure_injection import (

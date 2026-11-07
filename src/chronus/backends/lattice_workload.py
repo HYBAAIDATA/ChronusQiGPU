@@ -4,22 +4,26 @@ import json
 from typing import Any
 
 from chronus.backends.lattice import LatticeOverflowError, PhiElement
+from chronus.config import runtime_bounds
 
 INT64_MIN = -(1 << 63)
 INT64_MAX = (1 << 63) - 1
-MAX_ELEMENTS = 4096
-MAX_DECIMAL_DIGITS = 1024
+
+
+def _bounds() -> dict[str, int]:
+    return runtime_bounds()
 
 
 def wire_integer(value: Any) -> int:
+    max_digits = _bounds()["max_decimal_digits"]
     if isinstance(value, int) and not isinstance(value, bool):
-        if value.bit_length() <= 3402 and len(str(abs(value))) <= MAX_DECIMAL_DIGITS:
+        if value.bit_length() <= 3402 and len(str(abs(value))) <= max_digits:
             return value
     if isinstance(value, str):
         digits = value[1:] if value.startswith("-") else value
-        if 1 <= len(digits) <= MAX_DECIMAL_DIGITS and digits.isascii() and digits.isdecimal():
+        if 1 <= len(digits) <= max_digits and digits.isascii() and digits.isdecimal():
             return int(value)
-    raise ValueError(f"coefficients must be integers or decimal strings of at most {MAX_DECIMAL_DIGITS} digits")
+    raise ValueError(f"coefficients must be integers or decimal strings of at most {max_digits} digits")
 
 
 def checked_int64(value: int) -> int:
@@ -29,8 +33,9 @@ def checked_int64(value: int) -> int:
 
 
 def parse_lattice_values(raw_values: Any) -> list[PhiElement]:
-    if not isinstance(raw_values, list) or not 1 <= len(raw_values) <= MAX_ELEMENTS:
-        raise ValueError(f"values must contain 1 to {MAX_ELEMENTS} elements")
+    max_elements = _bounds()["max_lattice_elements"]
+    if not isinstance(raw_values, list) or not 1 <= len(raw_values) <= max_elements:
+        raise ValueError(f"values must contain 1 to {max_elements} elements")
     values = []
     for value in raw_values:
         if not isinstance(value, dict) or set(value) != {"a", "b", "denominator"}:
@@ -46,8 +51,9 @@ def parse_lattice_values(raw_values: Any) -> list[PhiElement]:
 
 
 def parse_lattice_workload(payload: bytes) -> tuple[list[PhiElement], int]:
-    if len(payload) > 1024 * 1024:
-        raise ValueError("payload exceeds 1 MiB")
+    bounds = _bounds()
+    if len(payload) > bounds["max_payload_bytes"]:
+        raise ValueError(f"payload exceeds {bounds['max_payload_bytes']} bytes")
     try:
         request = json.loads(payload)
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
@@ -55,8 +61,9 @@ def parse_lattice_workload(payload: bytes) -> tuple[list[PhiElement], int]:
     if not isinstance(request, dict):
         raise ValueError("payload must be a JSON object")
     order = request.get("order")
-    if not isinstance(order, int) or isinstance(order, bool) or not 0 <= order <= 360:
-        raise ValueError("order must be an integer between 0 and 360")
+    max_order = bounds["max_pv_order"]
+    if not isinstance(order, int) or isinstance(order, bool) or not 0 <= order <= max_order:
+        raise ValueError(f"order must be an integer between 0 and {max_order}")
     return parse_lattice_values(request.get("values")), order
 
 

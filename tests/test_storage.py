@@ -11,6 +11,8 @@ from chronus.storage import (
     TheseusService,
     golden_angle_hash,
     golden_lane,
+    metallic_conjugate_64,
+    metallic_lane,
     phyllotaxis_coordinate,
 )
 from chronus.storage.theseus import StorageIntegrityError
@@ -76,6 +78,29 @@ def test_mesh_distributes_keys_and_validates():
             mesh.map_key(bad)
     with pytest.raises(ValueError):
         PhyllotaxisMesh(lanes=0)
+
+
+def test_metallic_conjugates_are_exactly_derived():
+    assert metallic_conjugate_64(1) == GOLDEN_RATIO_CONJUGATE_64
+    # frac(sigma_2) = sqrt(2) - 1 (float64 reference: tolerance covers float rounding)
+    assert abs(metallic_conjugate_64(2) / 2**64 - (2**0.5 - 1)) < 2**-50
+    # Silver constant is the fractional part of 1 + sqrt(2), not the SHA IV.
+    assert metallic_conjugate_64(2) == 0x6A09E667F3BCC908
+    with pytest.raises(ValueError):
+        metallic_conjugate_64(0)
+
+
+def test_multiscale_mesh_uses_independent_metallic_lenses():
+    mesh = PhyllotaxisMesh(lanes=32)
+    mapping = mesh.map_key_multiscale("vector-embedding-7")
+    assert 0 <= mapping["golden_lane"] < 32
+    assert 0 <= mapping["silver_partition"] < 8
+    assert 0 <= mapping["bronze_route"] < 4
+    digest = hashlib.sha256(b"vector-embedding-7").digest()
+    assert mapping["silver_partition"] == metallic_lane(digest, 8, 2)
+    assert mapping["bronze_route"] == metallic_lane(digest, 4, 3)
+    # Tiers are independent: changing lanes changes only that tier.
+    assert mesh.map_key_multiscale("vector-embedding-7") == mapping
 
 
 def test_theseus_store_query_reconstruct_round_trip():
