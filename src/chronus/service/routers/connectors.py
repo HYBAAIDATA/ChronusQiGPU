@@ -25,6 +25,8 @@ from chronus.security.kms import al_haras_kms_custody
 from chronus.service.ciaas_store import ciaas_store
 from chronus.storage.connectors import (
     DATA_MOVEMENT_PLANE_SPECS,
+    DEPLOYMENT_ROADMAP_PHASES,
+    HYPERSCALER_CONNECTOR_MATRIX,
     PREBUILT_CONNECTOR_SPECS,
     ConnectorCategory,
     ConnectorSecurityError,
@@ -124,7 +126,7 @@ async def get_connector_specifications() -> Dict[str, Any]:
             },
             {
                 "id": "EXPLICIT_MEMORY_ACCESS_CLASSES",
-                "plane": "T3-T5 Data Movement Plane",
+                "plane": "6-Class Zero-Copy Data Movement Plane",
                 "classes": [cls.value for cls in MemoryAccessClass],
                 "wan_protocol": "Discrete Exterior Calculus (DEC) Lie-Poisson fluid streaming (0 stalls at 100% bus saturation)",
             },
@@ -134,16 +136,50 @@ async def get_connector_specifications() -> Dict[str, Any]:
                 "key_custody": "Customer-Held Cloud KMS or HSM (PKCS#11) on-demand in-memory decryption (0 persistent disk bytes)",
             },
         ],
+        "core_integration_mandate": "Mathematics first. Representation second. Execution third. Evidence throughout.",
         "categories": [cat.value for cat in ConnectorCategory],
         "supported_connector_types": [ct.value for ct in ConnectorType],
         "data_movement_plane": {
             cls.value: spec for cls, spec in DATA_MOVEMENT_PLANE_SPECS.items()
         },
         "prebuilt_connectors": PREBUILT_CONNECTOR_SPECS,
+        "hyperscaler_matrix": HYPERSCALER_CONNECTOR_MATRIX,
+        "deployment_roadmap": DEPLOYMENT_ROADMAP_PHASES,
         "featured_specs": {
             "AWS_S3": PREBUILT_CONNECTOR_SPECS["AWS_S3"],
             "SNOWFLAKE": PREBUILT_CONNECTOR_SPECS["SNOWFLAKE"],
+            "NVIDIA_DGX_CLOUD": PREBUILT_CONNECTOR_SPECS["NVIDIA_DGX_CLOUD"],
+            "PALANTIR_FOUNDRY": PREBUILT_CONNECTOR_SPECS["PALANTIR_FOUNDRY"],
         },
+    }
+
+
+@router.get(
+    "/matrix",
+    summary="Get the 7-provider Comprehensive Hyperscaler Connector Matrix & 6 Memory Access Classes",
+)
+async def get_hyperscaler_connector_matrix() -> Dict[str, Any]:
+    return {
+        "core_integration_mandate": "Mathematics first. Representation second. Execution third. Evidence throughout.",
+        "data_remains_at_rest": True,
+        "memory_access_classes": {
+            cls.value: spec for cls, spec in DATA_MOVEMENT_PLANE_SPECS.items()
+        },
+        "total_providers": len(HYPERSCALER_CONNECTOR_MATRIX),
+        "matrix": HYPERSCALER_CONNECTOR_MATRIX,
+    }
+
+
+@router.get(
+    "/roadmap",
+    summary="Get the 4-phase Strategic Enterprise Deployment & Implementation Roadmap",
+)
+async def get_deployment_roadmap() -> Dict[str, Any]:
+    return {
+        "total_phases": len(DEPLOYMENT_ROADMAP_PHASES),
+        "max_warp_scale": 160000,
+        "max_simd_lanes": 5120000,
+        "phases": DEPLOYMENT_ROADMAP_PHASES,
     }
 
 

@@ -18,6 +18,9 @@ from typing import Any, Dict, List
 import pytest
 from hypothesis import HealthCheck, given, settings, strategies as st
 from fastapi.testclient import TestClient
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 FAST_HYPOTHESIS = settings(
     suppress_health_check=[HealthCheck.too_slow],

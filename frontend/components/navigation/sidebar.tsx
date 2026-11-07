@@ -12,7 +12,8 @@ import {
   ShieldCheck,
   Terminal,
   Activity,
-  Users
+  Users,
+  Link2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StatusPill } from '@/components/console/status-pill';
@@ -66,6 +67,13 @@ const NAV_ITEMS = [
     desc: 'AL HARAS Matrix & FinOps',
     href: '/ciaas',
     icon: Users,
+  },
+  {
+    num: '08',
+    label: 'Zero-Copy Connectors',
+    desc: 'OVID Pointers & ECA Ingress',
+    href: '/connectors',
+    icon: Link2,
   },
 ];
 

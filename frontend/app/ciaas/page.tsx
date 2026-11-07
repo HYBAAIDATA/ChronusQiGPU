@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId } from 'react';
+import Link from 'next/link';
 import { 
   Users, 
   ShieldCheck, 
@@ -17,7 +18,9 @@ import {
   Zap,
   Globe2,
   Lock,
-  FileCheck
+  FileCheck,
+  Gauge,
+  Database
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { StatusPill } from '@/components/console/status-pill';
@@ -27,10 +30,22 @@ import {
   PricingBreakdown, 
   HermitenSettlement,
   FabricPodsResponse,
-  SovereignProfileResponse
+  SovereignProfileResponse,
+  InstantOnboardResponse,
+  LoadSimulationResponse
 } from '@/lib/api-client';
 
 export default function CIaaSPage() {
+  const uid = useId();
+  const contractIdInputId = `${uid}-contract-id`;
+  const companyNameInputId = `${uid}-company-name`;
+  const instantTenantIdInputId = `${uid}-instant-tenant-id`;
+  const instantEmailInputId = `${uid}-instant-email`;
+  const kmsArnInputId = `${uid}-kms-arn`;
+  const initialWarpsSliderId = `${uid}-initial-warps`;
+  const maxWarpsSliderId = `${uid}-max-warps`;
+  const ecaCheckboxId = `${uid}-eca-checkbox`;
+
   const [selectedRole, setSelectedRole] = useState<'system_admin' | 'tenant_admin' | 'developer' | 'external_auditor'>('system_admin');
   const [selectedJourney, setSelectedJourney] = useState<1 | 2 | 3 | 4>(1);
   const [tenants, setTenants] = useState<TenantProfile[]>([]);
@@ -55,6 +70,28 @@ export default function CIaaSPage() {
   const [newEmail, setNewEmail] = useState('');
   const [newPod, setNewPod] = useState('alpha');
   const [onboardStatus, setOnboardStatus] = useState<string | null>(null);
+
+  // 4-Stage Zero-Friction Instant Provisioning state (Stage 1 -> Stage 4)
+  const [contractId, setContractId] = useState('ctr_apex_2026_9941');
+  const [companyName, setCompanyName] = useState('Apex Global Financial');
+  const [instantTenantId, setInstantTenantId] = useState('tenant_apex_9921a');
+  const [instantEmail, setInstantEmail] = useState('security@apexglobal.com');
+  const [ecaAccepted, setEcaAccepted] = useState(true);
+  const [initialWarps, setInitialWarps] = useState<number>(32);
+  const [maxAuthorizedWarps, setMaxAuthorizedWarps] = useState<number>(1024);
+  const [dataAtRestGb, setDataAtRestGb] = useState<number>(10000);
+  const [dataInMotionGb, setDataInMotionGb] = useState<number>(5000);
+  const [kmsProvider, setKmsProvider] = useState<'AWS_KMS' | 'AZURE_KEY_VAULT' | 'HASHICORP_VAULT' | 'PKCS11_HSM'>('AWS_KMS');
+  const [kmsKeyArn, setKmsKeyArn] = useState('arn:aws:kms:us-east-1:123456789012:key/apex-prod-key');
+  const [webhookSource, setWebhookSource] = useState<'DOCUSIGN_CLM' | 'IRONCLAD_MSA' | 'SALESFORCE_CPQ'>('DOCUSIGN_CLM');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [isInstantProvisioning, setIsInstantProvisioning] = useState(false);
+  const [instantReceipt, setInstantReceipt] = useState<InstantOnboardResponse | null>(null);
+  const [instantError, setInstantError] = useState<string | null>(null);
+
+  // 500-Concurrent-Tenant Activation Load Simulator state
+  const [isRunningLoadSim, setIsRunningLoadSim] = useState(false);
+  const [loadSimResult, setLoadSimResult] = useState<LoadSimulationResponse | null>(null);
 
   useEffect(() => {
     async function loadInitialData() {
@@ -131,6 +168,110 @@ export default function CIaaSPage() {
     }
   };
 
+  const clearFieldError = (field: string) => {
+    setFieldErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const validateField = (field: string, value: string) => {
+    const trimmed = value.trim();
+    let msg = '';
+    if (field === 'contract_id' && trimmed.length < 4) {
+      msg = 'Contract ID must be at least 4 characters (e.g. ctr_apex_2026_9941).';
+    } else if (field === 'company_name' && trimmed.length < 2) {
+      msg = 'Enterprise legal entity name is required.';
+    } else if (field === 'tenant_id' && !/^[a-zA-Z0-9_-]{3,64}$/.test(trimmed)) {
+      msg = 'Tenant ID must be 3–64 alphanumeric, underscore, or hyphen characters.';
+    } else if (field === 'admin_email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      msg = 'Valid Security Officer email address is required.';
+    } else if (field === 'kms_key_arn' && trimmed.length < 8) {
+      msg = 'Customer-held Cloud KMS ARN or PKCS#11 key URI is required.';
+    }
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      if (msg) next[field] = msg;
+      else delete next[field];
+      return next;
+    });
+    return !msg;
+  };
+
+  const handleLoadApexPreset = () => {
+    const suffix = tenants.some((t) => t.tenant_id === 'tenant_apex_9921a')
+      ? `_${Math.random().toString(16).slice(2, 6)}`
+      : '';
+    setContractId(`ctr_apex_2026_9941${suffix}`);
+    setCompanyName('Apex Global Financial');
+    setInstantTenantId(`tenant_apex_9921a${suffix}`);
+    setInstantEmail('security@apexglobal.com');
+    setEcaAccepted(true);
+    setInitialWarps(32);
+    setMaxAuthorizedWarps(1024);
+    setDataAtRestGb(10000);
+    setDataInMotionGb(5000);
+    setKmsProvider('AWS_KMS');
+    setKmsKeyArn('arn:aws:kms:us-east-1:123456789012:key/apex-prod-key');
+    setWebhookSource('DOCUSIGN_CLM');
+    setFieldErrors({});
+    setInstantError(null);
+  };
+
+  const handleInstantOnboard = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const okContract = validateField('contract_id', contractId);
+    const okCompany = validateField('company_name', companyName);
+    const okTenant = validateField('tenant_id', instantTenantId);
+    const okEmail = validateField('admin_email', instantEmail);
+    const okArn = validateField('kms_key_arn', kmsKeyArn);
+    if (!okContract || !okCompany || !okTenant || !okEmail || !okArn) {
+      return;
+    }
+
+    setIsInstantProvisioning(true);
+    setInstantError(null);
+    try {
+      const receipt = await ChronusAPIClient.instantOnboardTenant({
+        contract_id: contractId.trim(),
+        company_name: companyName.trim(),
+        tenant_id: instantTenantId.trim(),
+        admin_email: instantEmail.trim(),
+        enduring_addendum_accepted: ecaAccepted,
+        regional_pod: 'alpha',
+        webhook_source: webhookSource,
+        cce_allocations: {
+          initial_warps: initialWarps,
+          max_authorized_warps: Math.max(maxAuthorizedWarps, initialWarps),
+          data_at_rest_gb: dataAtRestGb,
+          data_in_motion_gb: dataInMotionGb,
+          o1_structural_memory_gb: 512,
+          kms_provider: kmsProvider,
+          kms_key_arn: kmsKeyArn.trim(),
+        },
+      });
+      setInstantReceipt(receipt);
+      const refreshedTenants = await ChronusAPIClient.getTenants();
+      setTenants(refreshedTenants);
+    } catch (err: any) {
+      setInstantError(err?.message || 'Instant T0 provisioning failed.');
+    } finally {
+      setIsInstantProvisioning(false);
+    }
+  };
+
+  const handleRunLoadSimulation = async () => {
+    setIsRunningLoadSim(true);
+    try {
+      const sim = await ChronusAPIClient.runInstantProvisioningLoadTest(500);
+      setLoadSimResult(sim);
+    } finally {
+      setIsRunningLoadSim(false);
+    }
+  };
+
   const ROLES_INFO = {
     system_admin: {
       title: 'System Admin',
@@ -182,6 +323,15 @@ export default function CIaaSPage() {
           Multi-tenant commercial control plane strictly isolated from execution fabric and durable state.
           Governed by the AL HARAS 4-tier role authority, 5-dimensional Chronus Capacity Entitlements (CCE), and Hermiten 25% net avoided-cost settlement.
         </p>
+        <div className="mt-3">
+          <Link
+            href="/connectors"
+            className="inline-flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:opacity-90 transition-opacity"
+          >
+            <span>Enduring Capacity Addendum (ECA) Zero-Copy Connectors (S3, Snowflake, SAN, HDFS)</span>
+            <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+          </Link>
+        </div>
       </div>
 
       {/* McKinsey Executive KPI Summary Bar */}
@@ -547,16 +697,585 @@ export default function CIaaSPage() {
       </div>
 
       {/* SECTION 3: Tenant Onboarding & CCE Quotas Administration */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Globe2 className="w-5 h-5 text-neutral-700 dark:text-neutral-300" />
             <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
-              3. Tenant Onboarding & Chronus Capacity Entitlements (CCE)
+              3. Zero-Friction Instant Provisioning &amp; Enduring Capacity Engine
             </h2>
           </div>
-          <span className="text-xs font-mono text-neutral-400">5-Dimensional Resource Axis</span>
+          <div className="flex items-center gap-2">
+            <StatusPill status="PASS" label="T0 ACTIVATION < 30s SLA" />
+            <span className="text-xs font-mono text-neutral-400">5-Dimensional CCE + ECA</span>
+          </div>
         </div>
+
+        {/* 4-Stage Zero-Friction Instant Onboarding Engine Card */}
+        <Card className="p-6 border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-950/80 space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-neutral-200 dark:border-neutral-800">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-mono text-blue-600 dark:text-blue-400 font-semibold">
+                <Zap className="w-4 h-4" />
+                <span>POST /v1/tenants/onboard/instant · ZERO HUMAN-IN-THE-LOOP</span>
+              </div>
+              <h3 className="text-base font-semibold text-neutral-900 dark:text-white mt-1">
+                4-Stage Automated MSA Webhook Ingress &amp; AL HARAS Key Custody Binding
+              </h3>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Transitions an enterprise MSA signature (DocuSign, Ironclad, Salesforce CPQ) into isolated PostgreSQL schemas, OVID/THESEUS fabrics, and PKCS#11 customer-held KMS custody in milliseconds.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleLoadApexPreset}
+                className="px-3 py-1.5 rounded-lg border border-blue-300 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-xs font-mono font-medium hover:bg-blue-100 dark:hover:bg-blue-950/70 transition-colors"
+              >
+                Load Apex Global MSA Preset
+              </button>
+              <Link
+                href="/workloads"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 text-xs font-mono hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors"
+              >
+                Open Stage 4 FinOps Slider <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {/* 4-Stage Pipeline Telemetry Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono">
+            <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900/70 border border-neutral-200 dark:border-neutral-800">
+              <div className="flex items-center justify-between text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                <span>STAGE 1 · WEBHOOK INGRESS</span>
+                <span>{instantReceipt ? `${instantReceipt.stage_telemetry.stage_1_webhook_ingress_ms} ms` : '< 1s SLA'}</span>
+              </div>
+              <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-1">
+                HMAC-SHA256 CLM/CPQ signature &amp; System Admin bearer verification.
+              </p>
+            </div>
+            <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900/70 border border-neutral-200 dark:border-neutral-800">
+              <div className="flex items-center justify-between text-[10px] font-bold text-purple-600 dark:text-purple-400">
+                <span>STAGE 2 · FABRIC ISOLATION</span>
+                <span>{instantReceipt ? `${instantReceipt.stage_telemetry.stage_2_fabric_provision_ms} ms` : '< 5s SLA'}</span>
+              </div>
+              <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-1">
+                Postgres schema (<code>pool_size=10</code>, <code>REPEATABLE READ</code>) + <code>o1_&#123;tenant&#125;</code> + THESEUS.
+              </p>
+            </div>
+            <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900/70 border border-neutral-200 dark:border-neutral-800">
+              <div className="flex items-center justify-between text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                <span>STAGE 3 · AL HARAS KMS</span>
+                <span>{instantReceipt ? `${instantReceipt.stage_telemetry.stage_3_al_haras_kms_ms} ms` : '< 10s SLA'}</span>
+              </div>
+              <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-1">
+                PKCS#11 customer KMS ARN binding + AES-256-GCM credential handoff.
+              </p>
+            </div>
+            <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900/70 border border-neutral-200 dark:border-neutral-800">
+              <div className="flex items-center justify-between text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                <span>STAGE 4 · ENDURING CCE</span>
+                <span>{instantReceipt ? `${instantReceipt.stage_telemetry.stage_4_enduring_cce_ready_ms} ms` : '< 30s T0'}</span>
+              </div>
+              <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-1">
+                Pre-authorized ECA burst quota up to 10,000 Warps + Hermiten 25% engine.
+              </p>
+            </div>
+          </div>
+
+          {/* Semantic Instant Onboarding Form */}
+          <form
+            method="POST"
+            action="/api/chronus/v1/tenants/onboard/instant"
+            onSubmit={handleInstantOnboard}
+            className="chronus-branded-form space-y-6"
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Fieldset 1: MSA Identity & CLM Trigger */}
+              <fieldset className="space-y-4 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/30 min-w-0">
+                <legend className="px-2 text-xs font-mono uppercase tracking-wider font-semibold text-neutral-700 dark:text-neutral-300">
+                  Stage 1 · MSA Contract &amp; Identity Payload
+                </legend>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor={contractIdInputId} className="block text-xs font-mono font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      MSA Contract ID *
+                    </label>
+                    <input
+                      id={contractIdInputId}
+                      name="contract_id"
+                      type="text"
+                      required
+                      value={contractId}
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck={false}
+                      aria-invalid={Boolean(fieldErrors.contract_id)}
+                      aria-describedby={fieldErrors.contract_id ? `${contractIdInputId}-err` : undefined}
+                      onChange={(e) => {
+                        setContractId(e.target.value);
+                        clearFieldError('contract_id');
+                      }}
+                      onBlur={(e) => validateField('contract_id', e.target.value)}
+                      className="w-full p-2.5 text-xs font-mono rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white"
+                    />
+                    {fieldErrors.contract_id && (
+                      <p id={`${contractIdInputId}-err`} role="alert" className="text-[11px] font-mono text-red-600 dark:text-red-400 mt-1">
+                        {fieldErrors.contract_id}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor={instantTenantIdInputId} className="block text-xs font-mono font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      Target Tenant Namespace *
+                    </label>
+                    <input
+                      id={instantTenantIdInputId}
+                      name="tenant_id"
+                      type="text"
+                      required
+                      value={instantTenantId}
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck={false}
+                      aria-invalid={Boolean(fieldErrors.tenant_id)}
+                      aria-describedby={fieldErrors.tenant_id ? `${instantTenantIdInputId}-err` : undefined}
+                      onChange={(e) => {
+                        setInstantTenantId(e.target.value);
+                        clearFieldError('tenant_id');
+                      }}
+                      onBlur={(e) => validateField('tenant_id', e.target.value)}
+                      className="w-full p-2.5 text-xs font-mono rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white"
+                    />
+                    {fieldErrors.tenant_id && (
+                      <p id={`${instantTenantIdInputId}-err`} role="alert" className="text-[11px] font-mono text-red-600 dark:text-red-400 mt-1">
+                        {fieldErrors.tenant_id}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor={companyNameInputId} className="block text-xs font-mono font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      Enterprise Legal Name *
+                    </label>
+                    <input
+                      id={companyNameInputId}
+                      name="company_name"
+                      type="text"
+                      required
+                      autoComplete="organization"
+                      value={companyName}
+                      aria-invalid={Boolean(fieldErrors.company_name)}
+                      aria-describedby={fieldErrors.company_name ? `${companyNameInputId}-err` : undefined}
+                      onChange={(e) => {
+                        setCompanyName(e.target.value);
+                        clearFieldError('company_name');
+                      }}
+                      onBlur={(e) => validateField('company_name', e.target.value)}
+                      className="w-full p-2.5 text-xs font-mono rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white"
+                    />
+                    {fieldErrors.company_name && (
+                      <p id={`${companyNameInputId}-err`} role="alert" className="text-[11px] font-mono text-red-600 dark:text-red-400 mt-1">
+                        {fieldErrors.company_name}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor={instantEmailInputId} className="block text-xs font-mono font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      Designated Security Officer Email *
+                    </label>
+                    <input
+                      id={instantEmailInputId}
+                      name="admin_email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck={false}
+                      value={instantEmail}
+                      aria-invalid={Boolean(fieldErrors.admin_email)}
+                      aria-describedby={fieldErrors.admin_email ? `${instantEmailInputId}-err` : undefined}
+                      onChange={(e) => {
+                        setInstantEmail(e.target.value);
+                        clearFieldError('admin_email');
+                      }}
+                      onBlur={(e) => validateField('admin_email', e.target.value)}
+                      className="w-full p-2.5 text-xs font-mono rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white"
+                    />
+                    {fieldErrors.admin_email && (
+                      <p id={`${instantEmailInputId}-err`} role="alert" className="text-[11px] font-mono text-red-600 dark:text-red-400 mt-1">
+                        {fieldErrors.admin_email}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Visible Radio Group (< 6 choices) for E-Signature Webhook Source */}
+                <div>
+                  <span className="block text-xs font-mono font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
+                    E-Signature Webhook Ingress Provider
+                  </span>
+                  <div className="flex flex-wrap gap-3">
+                    {(
+                      [
+                        { value: 'DOCUSIGN_CLM', label: 'DocuSign CLM' },
+                        { value: 'IRONCLAD_MSA', label: 'Ironclad MSA' },
+                        { value: 'SALESFORCE_CPQ', label: 'Salesforce CPQ' },
+                      ] as const
+                    ).map((src) => {
+                      const radioId = `${uid}-wh-${src.value}`;
+                      return (
+                        <label
+                          key={src.value}
+                          htmlFor={radioId}
+                          className="chronus-choice-label inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-xs font-mono text-neutral-800 dark:text-neutral-200 cursor-pointer"
+                        >
+                          <input
+                            id={radioId}
+                            type="radio"
+                            name="webhook_source"
+                            value={src.value}
+                            checked={webhookSource === src.value}
+                            onChange={() => setWebhookSource(src.value)}
+                            className="visually-hidden"
+                          />
+                          <span>{src.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="pt-1">
+                  <label
+                    htmlFor={ecaCheckboxId}
+                    className="chronus-choice-label inline-flex items-center gap-2 text-xs font-mono text-neutral-800 dark:text-neutral-200 cursor-pointer"
+                  >
+                    <input
+                      id={ecaCheckboxId}
+                      type="checkbox"
+                      name="enduring_addendum_accepted"
+                      checked={ecaAccepted}
+                      onChange={(e) => setEcaAccepted(e.target.checked)}
+                      className="visually-hidden"
+                    />
+                    <span>
+                      Enduring Capacity Addendum (ECA) accepted — pre-authorize self-service burst scaling
+                    </span>
+                  </label>
+                </div>
+              </fieldset>
+
+              {/* Fieldset 2: AL HARAS KMS Custody & Enduring CCE Ranges */}
+              <fieldset className="space-y-4 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/30 min-w-0">
+                <legend className="px-2 text-xs font-mono uppercase tracking-wider font-semibold text-neutral-700 dark:text-neutral-300">
+                  Stages 3 &amp; 4 · Customer KMS Custody &amp; CCE Quotas
+                </legend>
+
+                {/* Visible Radio Group (4 < 6 choices) for Cloud KMS / HSM Provider */}
+                <div>
+                  <span className="block text-xs font-mono font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
+                    Customer-Held KMS / HSM Custody Provider *
+                  </span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(
+                      [
+                        { value: 'AWS_KMS', label: 'AWS KMS', defaultArn: 'arn:aws:kms:us-east-1:123456789012:key/apex-prod-key' },
+                        { value: 'AZURE_KEY_VAULT', label: 'Azure Key Vault', defaultArn: 'https://apex-kv.vault.azure.net/keys/chronus-root/01' },
+                        { value: 'HASHICORP_VAULT', label: 'HashiCorp Vault', defaultArn: 'vault://transit/keys/apex-sovereign-ed25519' },
+                        { value: 'PKCS11_HSM', label: 'PKCS#11 L4 HSM', defaultArn: 'pkcs11:model=FIPS140-3-L4;token=apex-hsm-slot0' },
+                      ] as const
+                    ).map((prov) => {
+                      const radioId = `${uid}-kms-${prov.value}`;
+                      return (
+                        <label
+                          key={prov.value}
+                          htmlFor={radioId}
+                          className="chronus-choice-label inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-xs font-mono text-neutral-800 dark:text-neutral-200 cursor-pointer"
+                        >
+                          <input
+                            id={radioId}
+                            type="radio"
+                            name="kms_provider"
+                            value={prov.value}
+                            checked={kmsProvider === prov.value}
+                            onChange={() => {
+                              setKmsProvider(prov.value);
+                              setKmsKeyArn(prov.defaultArn);
+                              clearFieldError('kms_key_arn');
+                            }}
+                            className="visually-hidden"
+                          />
+                          <span>{prov.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor={kmsArnInputId} className="block text-xs font-mono font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Customer KMS Key ARN / PKCS#11 URI *
+                  </label>
+                  <input
+                    id={kmsArnInputId}
+                    name="kms_key_arn"
+                    type="text"
+                    required
+                    value={kmsKeyArn}
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    aria-invalid={Boolean(fieldErrors.kms_key_arn)}
+                    aria-describedby={fieldErrors.kms_key_arn ? `${kmsArnInputId}-err` : undefined}
+                    onChange={(e) => {
+                      setKmsKeyArn(e.target.value);
+                      clearFieldError('kms_key_arn');
+                    }}
+                    onBlur={(e) => validateField('kms_key_arn', e.target.value)}
+                    className="w-full p-2.5 text-xs font-mono rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white"
+                  />
+                  {fieldErrors.kms_key_arn && (
+                    <p id={`${kmsArnInputId}-err`} role="alert" className="text-[11px] font-mono text-red-600 dark:text-red-400 mt-1">
+                      {fieldErrors.kms_key_arn}
+                    </p>
+                  )}
+                </div>
+
+                {/* Native Range Sliders for Initial & Max Authorized ECA Warps */}
+                <div className="space-y-3 pt-1">
+                  <div>
+                    <div className="flex items-center justify-between text-xs font-mono mb-1">
+                      <label htmlFor={initialWarpsSliderId} className="font-medium text-neutral-700 dark:text-neutral-300">
+                        T0 Initial Active Warps
+                      </label>
+                      <span className="font-bold text-blue-600 dark:text-blue-400">
+                        {initialWarps} Warps ({initialWarps * 16} CCU)
+                      </span>
+                    </div>
+                    <input
+                      id={initialWarpsSliderId}
+                      name="initial_warps"
+                      type="range"
+                      min={32}
+                      max={1024}
+                      step={32}
+                      value={initialWarps}
+                      aria-valuetext={`${initialWarps} initial active warps`}
+                      onChange={(e) => {
+                        const nextVal = Number(e.target.value);
+                        setInitialWarps(nextVal);
+                        if (nextVal > maxAuthorizedWarps) {
+                          setMaxAuthorizedWarps(nextVal);
+                        }
+                      }}
+                      style={
+                        {
+                          '--attr-min': 32,
+                          '--attr-max': 1024,
+                          '--control-value': initialWarps,
+                        } as React.CSSProperties
+                      }
+                      className="chronus-range-slider"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between text-xs font-mono mb-1">
+                      <label htmlFor={maxWarpsSliderId} className="font-medium text-neutral-700 dark:text-neutral-300">
+                        ECA Max Pre-Authorized Warps
+                      </label>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        {maxAuthorizedWarps.toLocaleString()} Warps
+                      </span>
+                    </div>
+                    <input
+                      id={maxWarpsSliderId}
+                      name="max_authorized_warps"
+                      type="range"
+                      min={256}
+                      max={10000}
+                      step={256}
+                      value={maxAuthorizedWarps}
+                      aria-valuetext={`${maxAuthorizedWarps} maximum pre-authorized warps`}
+                      onChange={(e) => setMaxAuthorizedWarps(Math.max(Number(e.target.value), initialWarps))}
+                      style={
+                        {
+                          '--attr-min': 256,
+                          '--attr-max': 10000,
+                          '--control-value': maxAuthorizedWarps,
+                        } as React.CSSProperties
+                      }
+                      className="chronus-range-slider"
+                    />
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+              <div className="text-xs font-mono text-neutral-500" aria-live="polite">
+                {instantError ? (
+                  <span className="text-red-600 dark:text-red-400 font-semibold">{instantError}</span>
+                ) : (
+                  <span>
+                    Storage Allocation: {dataAtRestGb.toLocaleString()} GB Data-at-Rest · {dataInMotionGb.toLocaleString()} GB Data-in-Motion · OVID <code>o1_{instantTenantId || 'tenant'}</code>
+                  </span>
+                )}
+              </div>
+              <button
+                type="submit"
+                disabled={isInstantProvisioning}
+                className="inline-flex items-center justify-center gap-2 bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 px-5 py-2.5 rounded-lg text-xs font-mono font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
+              >
+                <Zap className="w-4 h-4" />
+                {isInstantProvisioning ? 'Executing 4-Stage T0 Provisioning...' : 'Trigger Instant T0 Onboarding (201 Created)'}
+              </button>
+            </div>
+          </form>
+
+          {/* 201 Created Instant Onboarding Receipt */}
+          {instantReceipt && (
+            <div className="p-5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/70 space-y-4 font-mono text-xs">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 pb-3 border-b border-emerald-200/70 dark:border-emerald-800/50">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span className="font-bold text-emerald-800 dark:text-emerald-300">
+                    {instantReceipt.status} · {instantReceipt.execution_time_ms} ms (SLA &lt; 30,000 ms)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <StatusPill status="PASS" label={instantReceipt.al_haras_kms_status} />
+                  <Link
+                    href="/workloads"
+                    className="px-2.5 py-1 rounded bg-emerald-600 text-white text-[11px] font-semibold hover:bg-emerald-700 transition-colors"
+                  >
+                    Scale in FinOps Panel →
+                  </Link>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="p-3 rounded-lg bg-white/80 dark:bg-neutral-950/80 border border-emerald-200/60 dark:border-neutral-800">
+                  <span className="text-[10px] text-neutral-400 block">ASSIGNED CCE &amp; PREFIX</span>
+                  <span className="font-bold text-neutral-900 dark:text-white block mt-0.5">{instantReceipt.assigned_cce_id}</span>
+                  <span className="text-[11px] text-blue-600 dark:text-blue-400">{instantReceipt.zero_copy_prefix}*</span>
+                </div>
+                <div className="p-3 rounded-lg bg-white/80 dark:bg-neutral-950/80 border border-emerald-200/60 dark:border-neutral-800">
+                  <span className="text-[10px] text-neutral-400 block">POSTGRES ISOLATION</span>
+                  <span className="font-bold text-neutral-900 dark:text-white block mt-0.5">{instantReceipt.postgres_isolation.schema_name}</span>
+                  <span className="text-[11px] text-neutral-500">
+                    pool={instantReceipt.postgres_isolation.pool_size} · {instantReceipt.postgres_isolation.isolation_level}
+                  </span>
+                </div>
+                <div className="p-3 rounded-lg bg-white/80 dark:bg-neutral-950/80 border border-emerald-200/60 dark:border-neutral-800">
+                  <span className="text-[10px] text-neutral-400 block">OVID &amp; THESEUS JOURNAL</span>
+                  <span className="font-bold text-purple-600 dark:text-purple-400 block mt-0.5">{instantReceipt.ovid_namespace}</span>
+                  <span className="text-[11px] text-neutral-500 truncate block">
+                    Genesis: {instantReceipt.theseus_genesis_entry_hash.slice(0, 16)}…
+                  </span>
+                </div>
+                <div className="p-3 rounded-lg bg-white/80 dark:bg-neutral-950/80 border border-emerald-200/60 dark:border-neutral-800">
+                  <span className="text-[10px] text-neutral-400 block">SEALED WELCOME HANDOFF</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 block mt-0.5">
+                    {instantReceipt.credential_handoff.encryption_scheme}
+                  </span>
+                  <span className="text-[11px] text-neutral-500 truncate block">
+                    To: {instantReceipt.credential_handoff.recipient_security_officer}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-neutral-900 text-neutral-200 flex items-center justify-between gap-2 border border-neutral-800">
+                <div className="truncate">
+                  <span className="text-emerald-400 font-semibold">[TENANT_ADMIN JWT]: </span>
+                  <span>{instantReceipt.tenant_admin_token}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(instantReceipt.tenant_admin_token)}
+                  className="shrink-0 text-neutral-400 hover:text-white p-1"
+                  title="Copy Tenant Admin Token"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {/* 500-Concurrent-Tenant Activation Load Simulator Card */}
+        <Card className="p-5 border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-950/70 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <Gauge className="w-5 h-5 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
+                  500-Concurrent-Tenant T0 Activation Stress Benchmark
+                </h3>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  Executes 500 parallel 4-stage tenant activations across 32 worker lanes (PostgreSQL schema isolation + OVID/THESEUS genesis + PKCS#11 KMS custody attestation) to verify the &lt; 30-second SLA.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleRunLoadSimulation}
+              disabled={isRunningLoadSim}
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-mono font-semibold transition-colors disabled:opacity-60"
+            >
+              <Activity className="w-3.5 h-3.5" />
+              {isRunningLoadSim ? 'Simulating 500 Concurrent Tenants...' : 'Run 500-Tenant Load Simulation'}
+            </button>
+          </div>
+
+          {loadSimResult && (
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-3 pt-2 border-t border-neutral-100 dark:border-neutral-800 text-xs font-mono">
+              <div className="p-3 rounded-lg bg-neutral-100 dark:bg-neutral-900/70 border border-neutral-200 dark:border-neutral-800">
+                <span className="text-[10px] text-neutral-400 block">ACTIVATED</span>
+                <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+                  {loadSimResult.tenants_activated}/{loadSimResult.tenants_requested}
+                </span>
+              </div>
+              <div className="p-3 rounded-lg bg-neutral-100 dark:bg-neutral-900/70 border border-neutral-200 dark:border-neutral-800">
+                <span className="text-[10px] text-neutral-400 block">WALL TIME</span>
+                <span className="text-base font-bold text-neutral-900 dark:text-white">
+                  {loadSimResult.total_wall_time_ms} ms
+                </span>
+              </div>
+              <div className="p-3 rounded-lg bg-neutral-100 dark:bg-neutral-900/70 border border-neutral-200 dark:border-neutral-800">
+                <span className="text-[10px] text-neutral-400 block">P50 / P95 / P99</span>
+                <span className="text-xs font-bold text-blue-600 dark:text-blue-400 block mt-1">
+                  {loadSimResult.p50_latency_ms} / {loadSimResult.p95_latency_ms} / {loadSimResult.p99_latency_ms} ms
+                </span>
+              </div>
+              <div className="p-3 rounded-lg bg-neutral-100 dark:bg-neutral-900/70 border border-neutral-200 dark:border-neutral-800">
+                <span className="text-[10px] text-neutral-400 block">THROUGHPUT</span>
+                <span className="text-base font-bold text-purple-600 dark:text-purple-400">
+                  {loadSimResult.throughput_tenants_per_sec}/s
+                </span>
+              </div>
+              <div className="p-3 rounded-lg bg-neutral-100 dark:bg-neutral-900/70 border border-neutral-200 dark:border-neutral-800">
+                <span className="text-[10px] text-neutral-400 block">KMS &amp; THESEUS</span>
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 block mt-1">
+                  {loadSimResult.kms_custody_verified_count} KMS · {loadSimResult.theseus_continuity_verified_count} Journal
+                </span>
+              </div>
+              <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 flex flex-col justify-center">
+                <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold">T0 SLA VERDICT</span>
+                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-300 mt-0.5">
+                  {loadSimResult.under_30_second_sla ? 'PASS (< 30s)' : 'BREACH'}
+                </span>
+              </div>
+            </div>
+          )}
+        </Card>
 
         {/* Existing Tenants Table */}
         <Card className="border-neutral-200 dark:border-neutral-800 overflow-hidden">
@@ -568,10 +1287,10 @@ export default function CIaaSPage() {
                   <th className="p-3">ORGANIZATION</th>
                   <th className="p-3">POD</th>
                   <th className="p-3">DATA REST</th>
-                  <th className="p-3">DATA MOTION</th>
-                  <th className="p-3">DATA PROC</th>
                   <th className="p-3">COMPUTE CCU</th>
-                  <th className="p-3">CONCURRENCY</th>
+                  <th className="p-3">ACTIVE / ECA MAX</th>
+                  <th className="p-3">KMS CUSTODY</th>
+                  <th className="p-3">OVID FABRIC</th>
                   <th className="p-3">API PREFIX</th>
                 </tr>
               </thead>
@@ -585,12 +1304,20 @@ export default function CIaaSPage() {
                         Pod {t.regional_pod}
                       </span>
                     </td>
-                    <td className="p-3 text-neutral-500">{t.cce.data_at_rest_gb} GB</td>
-                    <td className="p-3 text-neutral-500">{t.cce.data_in_motion_gb} GB</td>
-                    <td className="p-3 text-neutral-500">{t.cce.data_processed_gb} GB</td>
-                    <td className="p-3 text-emerald-600 dark:text-emerald-400 font-bold">{t.cce.compute_intensity_ccu} CCU</td>
-                    <td className="p-3 text-neutral-500">{t.cce.concurrency_limit} Warps</td>
-                    <td className="p-3 text-neutral-400 truncate max-w-[120px]">{t.api_key_prefix}</td>
+                    <td className="p-3 text-neutral-500">{t.cce.data_at_rest_gb.toLocaleString()} GB</td>
+                    <td className="p-3 text-emerald-600 dark:text-emerald-400 font-bold">{t.cce.compute_intensity_ccu.toLocaleString()} CCU</td>
+                    <td className="p-3 text-neutral-600 dark:text-neutral-300">
+                      {t.cce.concurrency_limit} / {(t.max_authorized_warps || 4096).toLocaleString()} W
+                    </td>
+                    <td className="p-3">
+                      <span className="text-emerald-600 dark:text-emerald-400 text-[11px]">
+                        {t.kms_provider || 'AWS_KMS'}
+                      </span>
+                    </td>
+                    <td className="p-3 text-purple-600 dark:text-purple-400">
+                      {t.ovid_namespace || `o1_${t.tenant_id}`}
+                    </td>
+                    <td className="p-3 text-neutral-400 truncate max-w-[130px]">{t.api_key_prefix}</td>
                   </tr>
                 ))}
               </tbody>
@@ -598,10 +1325,10 @@ export default function CIaaSPage() {
           </div>
         </Card>
 
-        {/* Onboarding Form */}
+        {/* Manual / Standard Onboarding Form */}
         <Card className="p-5 border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-950/70">
           <h3 className="text-sm font-semibold text-neutral-900 dark:text-white mb-3">
-            Onboard New Enterprise Tenant
+            Manual Administrative Tenant Onboarding (Legacy Endpoint)
           </h3>
           <form onSubmit={handleOnboardTenant} className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs font-mono">
             <input

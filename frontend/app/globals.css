@@ -201,14 +201,18 @@
 /* Brand-consistent form controls & range slider (modern-web-guidance) */
 :root {
   --chronus-brand-accent: #2563eb;
+  --chronus-slider-track: #d4d4d8;
+  --chronus-slider-thumb-border: #ffffff;
 }
 
 .dark {
   --chronus-brand-accent: #3b82f6;
+  --chronus-slider-track: #262626;
+  --chronus-slider-thumb-border: #0a0a0a;
 }
 
 .chronus-branded-form {
-  color-scheme: dark;
+  color-scheme: light dark;
   accent-color: var(--chronus-brand-accent);
 }
 
@@ -225,6 +229,72 @@
     border: 0 !important;
     white-space: nowrap !important;
   }
+
+  .chronus-branded-form label.chronus-choice-label {
+    position: relative;
+    padding-inline-start: 1.75rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .chronus-branded-form input[type="checkbox"].visually-hidden + span::before,
+  .chronus-branded-form input[type="radio"].visually-hidden + span::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.1rem;
+    height: 1.1rem;
+    border: 2px solid #737373;
+    background: transparent;
+    box-sizing: border-box;
+    transition: all 0.15s ease;
+  }
+
+  .chronus-branded-form input[type="checkbox"].visually-hidden + span::before {
+    border-radius: 4px;
+  }
+
+  .chronus-branded-form input[type="radio"].visually-hidden + span::before {
+    border-radius: 999px;
+  }
+
+  .chronus-branded-form input[type="checkbox"].visually-hidden:focus-visible + span::before,
+  .chronus-branded-form input[type="radio"].visually-hidden:focus-visible + span::before {
+    outline: 2px solid var(--chronus-brand-accent, #2563eb);
+    outline-offset: 2px;
+  }
+
+  .chronus-branded-form input[type="checkbox"].visually-hidden:checked + span::before,
+  .chronus-branded-form input[type="radio"].visually-hidden:checked + span::before {
+    background-color: var(--chronus-brand-accent, #2563eb);
+    border-color: var(--chronus-brand-accent, #2563eb);
+  }
+
+  .chronus-branded-form input[type="checkbox"].visually-hidden:checked + span::after {
+    content: "✓";
+    position: absolute;
+    inset-inline-start: 0.22rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.78rem;
+  }
+
+  .chronus-branded-form input[type="radio"].visually-hidden:checked + span::after {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0.32rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: #ffffff;
+  }
 }
 
 input[type="range"].chronus-range-slider {
@@ -232,7 +302,7 @@ input[type="range"].chronus-range-slider {
   --slider-thumb-size: 1.25rem;
   --slider-track-radius: 999px;
   --slider-thumb-radius: 50%;
-  --slider-track-color: #262626;
+  --slider-track-color: var(--chronus-slider-track, #262626);
   --slider-fill-color: var(--chronus-brand-accent, #3b82f6);
   --slider-thumb-color: #60a5fa;
   --slider-direction: to right;
@@ -320,4 +390,71 @@ input[type="range"].chronus-range-slider:focus-visible {
   outline: 2px solid var(--slider-fill-color);
   outline-offset: 4px;
   border-radius: 6px;
+}
+
+/* Responsive Data Tables & Exclusive Accordion Specs (modern-web-guidance) */
+.chronus-table-region {
+  container-type: inline-size;
+  overflow-x: auto;
+  max-width: 100%;
+  border-radius: var(--radius);
+}
+
+.chronus-table-region:focus-visible {
+  outline: 2px solid var(--chronus-brand-accent);
+  outline-offset: 2px;
+}
+
+.chronus-data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.chronus-data-table caption {
+  caption-side: top;
+  text-align: left;
+}
+
+.chronus-data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+@container (width < 44rem) {
+  .chronus-data-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .chronus-data-table tbody,
+  .chronus-data-table tr,
+  .chronus-data-table th[scope="row"],
+  .chronus-data-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .chronus-data-table tbody tr {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .chronus-data-table td[data-label]::before {
+    content: attr(data-label) ": ";
+    font-weight: 600;
+    opacity: 0.7;
+  }
+}
+
+details.chronus-spec-accordion > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+details.chronus-spec-accordion > summary::-webkit-details-marker {
+  display: none;
 }

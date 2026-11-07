@@ -244,6 +244,119 @@ class ChronusAPISDK:
         target_tenant = tenant_id or self.tenant_id
         return self._request("GET", f"/v1/tenants/{target_tenant}/capacity")
 
+    def list_connector_specs(self) -> Dict[str, Any]:
+        """Retrieve pre-built Zero-Copy Connector specifications and T3-T5 Data Movement Plane."""
+        return self._request("GET", "/v1/connectors/specs")
+
+    def authorize_eca(
+        self,
+        kms_provider: str = "AWS_KMS",
+        kms_key_arn: Optional[str] = None,
+        auto_schema_discovery: bool = True,
+        tenant_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Authorize Tenant Enduring Capacity Addendum (ECA) & Customer KMS/PKCS#11 custody."""
+        target_tenant = tenant_id or self.tenant_id
+        payload: Dict[str, Any] = {
+            "kms_provider": kms_provider,
+            "auto_schema_discovery": auto_schema_discovery,
+        }
+        if kms_key_arn is not None:
+            payload["kms_key_arn"] = kms_key_arn
+        return self._request("POST", f"/v1/connectors/eca/{target_tenant}/authorize", json=payload)
+
+    def register_connector(
+        self,
+        *,
+        name: str,
+        connector_type: str,
+        endpoint_uri: str,
+        source_region: str = "eu-west-2",
+        pod_region: str = "eu-west-2",
+        kms_provider: str = "AWS_KMS",
+        kms_key_arn: Optional[str] = None,
+        co_located: bool = False,
+        access_class_override: Optional[str] = None,
+        auto_discover: bool = True,
+        tenant_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Bind a Day-1 Zero-Copy Native Representation Connector to client data at rest."""
+        payload: Dict[str, Any] = {
+            "tenant_id": tenant_id or self.tenant_id,
+            "name": name,
+            "connector_type": connector_type,
+            "endpoint_uri": endpoint_uri,
+            "source_region": source_region,
+            "pod_region": pod_region,
+            "kms_provider": kms_provider,
+            "co_located": co_located,
+            "auto_discover": auto_discover,
+        }
+        if kms_key_arn is not None:
+            payload["kms_key_arn"] = kms_key_arn
+        if access_class_override is not None:
+            payload["access_class_override"] = access_class_override
+        return self._request("POST", "/v1/connectors", json=payload)
+
+    def list_connectors(self, tenant_id: Optional[str] = None) -> Dict[str, Any]:
+        """List bound Zero-Copy Native Representation Connectors."""
+        params: Optional[Dict[str, Any]] = {"tenant_id": tenant_id} if tenant_id else None
+        return self._request("GET", "/v1/connectors", params=params)
+
+    def ingest_zero_copy(
+        self,
+        connector_id: str,
+        payload_bytes: bytes,
+        *,
+        object_path: str = "part-00000.parquet",
+        byte_offset: int = 0,
+        format_hint: Optional[str] = None,
+        encrypt_with_customer_kms: bool = False,
+        simulate_adversarial: bool = False,
+    ) -> Dict[str, Any]:
+        """Ingest external block via Binet-Zeckendorf Fold & return ptr_ovid_<hash> pointer."""
+        if not payload_bytes:
+            raise ValueError("payload_bytes cannot be empty")
+        body: Dict[str, Any] = {
+            "payload_b64": "base64:" + base64.b64encode(payload_bytes).decode("ascii"),
+            "object_path": object_path,
+            "byte_offset": byte_offset,
+            "encrypt_with_customer_kms": encrypt_with_customer_kms,
+            "simulate_adversarial": simulate_adversarial,
+        }
+        if format_hint is not None:
+            body["format_hint"] = format_hint
+        return self._request("POST", f"/v1/connectors/{connector_id}/ingest", json=body)
+
+    def discover_connector_schemas(
+        self,
+        connector_id: str,
+        additional_tables: Optional[list[str]] = None,
+    ) -> Dict[str, Any]:
+        """Run Automated Schema Discovery Middleware under Tenant ECA."""
+        body: Dict[str, Any] = {}
+        if additional_tables is not None:
+            body["additional_tables"] = additional_tables
+        return self._request("POST", f"/v1/connectors/{connector_id}/discover", json=body)
+
+    def execute_zero_copy_pointer(
+        self,
+        pointer_id: str,
+        operation: str = "PV_LATTICE_FOLD",
+        scale_order: int = 8,
+        metallic_m: int = 1,
+    ) -> Dict[str, Any]:
+        """Execute exact algebraic computation directly against ptr_ovid_<hash>."""
+        return self._request(
+            "POST",
+            f"/v1/connectors/pointers/{pointer_id}/execute",
+            json={
+                "operation": operation,
+                "scale_order": scale_order,
+                "metallic_m": metallic_m,
+            },
+        )
+
     def get_metrics(self) -> str:
         response = self._client.get("/metrics")
         if response.status_code != 200:

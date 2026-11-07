@@ -14,7 +14,7 @@
 | :--- | :--- | :--- | :--- |
 | **Gate G8 Final Release Posture** | `8 / 8` Mandatory Release Gates (`G1`–`G8`) Certified | `8 / 8` Gates | **PASS (`GO`)** |
 | **CI Mathematical Purity Gate** | `0` float approximations, `0` pseudo-random calls, `0` theatre tokens | `0` Violations | **PASS** |
-| **Automated Verification Coverage** | `242 / 242` `pytest` passing (`23` opt-in OpenCL device skips), `45 / 45` `unittest` suites, `94 / 94` invariants (`I1`–`I94`) | `100%` Pass | **PASS** |
+| **Automated Verification Coverage** | `242 / 242` `pytest` passing (`23` opt-in OpenCL device skips), `50 / 50` `unittest` suites, `94 / 94` invariants (`I1`–`I94`) | `100%` Pass | **PASS** |
 | **Substrate Latency & Throughput** | `p50 = 0.0112 ms`, `p95 = 0.1525 ms`, `p99 = 0.3642 ms`, `89,285.72 ops/sec` | `p99 < 5.0 ms` | **PASS** |
 | **Multi-Tenant Burst Concurrency** | `1,000 / 1,000` parallel tenant workflows (`50` async workers, `2,002` persisted records, `0` drops) | `100%` Zero-Loss | **PASS** |
 | **Hermiten 25% Value-Share Engine** | Exact integer reconciliation: `S_net = \$2,000,000.00`, `F_Chronus = \$500,000.00`, Client Retained = `\$1,500,000.00` | Exact Cent Parity | **PASS** |
@@ -105,7 +105,7 @@ All 7 console destinations ([page.tsx](file:///c:/Users/leonn/OneDrive/Desktop/c
 | Gate | Control Domain | Qualification Evidence | Status |
 | :--- | :--- | :--- | :--- |
 | **G1** | **Scope & Baseline** | Immutable git baseline (`ba92879`), exact ring specs, 5D CCE & 4-part FinOps contract models. | **PASS** |
-| **G2** | **Functional Behavior** | `242 / 242` `pytest` passed, `45 / 45` `unittest` passed, `94 / 94` invariants (`I1`–`I94`), CI Purity Gate `0` violations. | **PASS** |
+| **G2** | **Functional Behavior** | `242 / 242` `pytest` passed, `50 / 50` `unittest` passed, `94 / 94` invariants (`I1`–`I94`), CI Purity Gate `0` violations. | **PASS** |
 | **G3** | **Data Integrity & Recovery** | `PostgresWorkloadStore` (`asyncpg`, `pool_size=10`, `REPEATABLE READ`, `@with_retry`), Alembic `0001_initial_schema`, OVID/Theseus exact round-trip. | **PASS** |
 | **G4** | **Security & Isolation** | AL HARAS OS 6/6 pillars, OIDC/JWKS 4-tier RBAC (`403`/`401` enforced), Cloud KMS/Vault/PKCS#11 HSM, NCSC `14/14`. | **PASS** |
 | **G5** | **Performance & Capacity** | `HardwareAcceleratorDispatcher`, `89,285.72 ops/sec`, `p99 = 0.3642 ms`, 32-lane Zeckendorf RTL (`8,095` cells, `0` carry ripple). | **PASS** |

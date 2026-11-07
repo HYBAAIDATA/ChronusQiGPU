@@ -23,6 +23,7 @@ from typing import Any, Dict, List, Optional
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pydantic import BaseModel, Field, model_validator
 
+import chronus.execution  # noqa: F401 - ensure execution package initializes before storage.connectors
 from chronus.security.kms import (
     SUPPORTED_CUSTOMER_KMS_PROVIDERS,
     al_haras_kms_custody,

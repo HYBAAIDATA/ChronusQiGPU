@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Database, HardDrive, RefreshCw, Layers, ShieldCheck, Search, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,7 +57,15 @@ export default function StoragePage() {
             PhyllotaxisMesh & Theseus Reconstruction Engine
           </h2>
         </div>
-        <StatusPill status="OPERATIONAL" label="MESH RECONSTRUCTED" />
+        <div className="flex items-center gap-2">
+          <Link
+            href="/connectors"
+            className="text-xs font-mono px-3 py-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 transition-colors"
+          >
+            ptr_ovid_* Zero-Copy Connectors →
+          </Link>
+          <StatusPill status="OPERATIONAL" label="MESH RECONSTRUCTED" />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

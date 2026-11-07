@@ -31,6 +31,7 @@ class OVIDZeroCopyPointer:
     access_class: str = "REMOTE_REFERENCE"
     encryption_boundary: str = "CUSTOMER_KMS_ENVELOPE"
     data_stays_at_rest: bool = True
+    bulk_staging_bytes: int = 0
     detected_format: str = "RAW_BINARY"
     algebraic_descriptor: Dict[str, Any] = field(default_factory=dict)
     created_at: str = field(
@@ -54,10 +55,17 @@ class OVIDZeroCopyPointer:
             raise ValueError("byte_length must be a non-negative integer")
         if self.data_stays_at_rest is not True:
             raise ValueError("Zero-copy pointer invariant violated: data_stays_at_rest must be True")
+        if self.bulk_staging_bytes != 0:
+            raise ValueError("Zero-copy pointer invariant violated: bulk_staging_bytes must be 0")
+
+    @property
+    def short_pointer_id(self) -> str:
+        return f"{POINTER_PREFIX}{self.content_hash[:8]}"
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "pointer_id": self.pointer_id,
+            "short_pointer_id": self.short_pointer_id,
             "content_hash": self.content_hash,
             "source_uri": self.source_uri,
             "connector_id": self.connector_id,
@@ -93,7 +101,7 @@ class OVIDZeroCopyPointer:
 
 
 class OVIDReceipt:
-    """Receipt binding an object digest to optional signature records."""
+    """Receipt binding an object digest to optional signature and STARK proof records."""
 
     def __init__(
         self,
@@ -104,6 +112,9 @@ class OVIDReceipt:
         timestamp: Optional[str] = None,
         latency_ms: float = 0.0,
         metadata: Optional[Dict[str, Any]] = None,
+        receipt_handle: Optional[str] = None,
+        stark_proof: Optional[Dict[str, Any]] = None,
+        stark_public_input: Optional[Dict[str, Any]] = None,
     ) -> None:
         self.receipt_id = receipt_id
         self.hash_value = hash_value
@@ -112,9 +123,12 @@ class OVIDReceipt:
         self.timestamp = timestamp or datetime.now(timezone.utc).isoformat()
         self.latency_ms = latency_ms
         self.metadata = metadata or {}
+        self.receipt_handle = receipt_handle
+        self.stark_proof = stark_proof
+        self.stark_public_input = stark_public_input
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        payload: Dict[str, Any] = {
             "receipt_id": self.receipt_id,
             "hash_value": self.hash_value,
             "ml_dsa_signature": self.ml_dsa_signature,
@@ -123,6 +137,13 @@ class OVIDReceipt:
             "latency_ms": self.latency_ms,
             "metadata": self.metadata,
         }
+        if self.receipt_handle is not None:
+            payload["receipt_handle"] = self.receipt_handle
+        if self.stark_proof is not None:
+            payload["stark_proof"] = self.stark_proof
+        if self.stark_public_input is not None:
+            payload["stark_public_input"] = self.stark_public_input
+        return payload
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "OVIDReceipt":
@@ -134,6 +155,9 @@ class OVIDReceipt:
             timestamp=data.get("timestamp"),
             latency_ms=data.get("latency_ms", 0.0),
             metadata=data.get("metadata"),
+            receipt_handle=data.get("receipt_handle"),
+            stark_proof=data.get("stark_proof"),
+            stark_public_input=data.get("stark_public_input"),
         )
 
 
@@ -198,15 +222,34 @@ class OVIDStorage:
         return pointer
 
     def resolve_pointer(self, pointer_id: str) -> Optional[OVIDZeroCopyPointer]:
-        """Resolve a ptr_ovid_<hash> zero-copy reference pointer."""
+        """Resolve a ptr_ovid_<hash> zero-copy reference pointer (full digest or >=8-hex prefix)."""
         self._pointer_eval_count += 1
-        return self._pointers.get(pointer_id)
+        direct = self._pointers.get(pointer_id)
+        if direct is not None:
+            return direct
+        if pointer_id.startswith(POINTER_PREFIX) and len(pointer_id) >= len(POINTER_PREFIX) + 8:
+            matches = [p for pid, p in self._pointers.items() if pid.startswith(pointer_id)]
+            if len(matches) == 1:
+                return matches[0]
+        return None
 
-    def list_pointers(self, tenant_id: Optional[str] = None) -> List[OVIDZeroCopyPointer]:
-        """List registered zero-copy pointers, optionally scoped by tenant."""
-        if tenant_id is None:
-            return list(self._pointers.values())
-        return [p for p in self._pointers.values() if p.tenant_id == tenant_id]
+    def list_pointers(
+        self,
+        tenant_id: Optional[str] = None,
+        connector_id: Optional[str] = None,
+    ) -> List[OVIDZeroCopyPointer]:
+        """List registered zero-copy pointers, optionally scoped by tenant or connector."""
+        items = list(self._pointers.values())
+        if tenant_id is not None:
+            items = [p for p in items if p.tenant_id == tenant_id]
+        if connector_id is not None:
+            items = [p for p in items if p.connector_id == connector_id]
+        return items
+
+    def register_receipt_alias(self, alias_id: str, receipt: OVIDReceipt) -> None:
+        """Bind a human/auditor receipt handle (e.g. o1_apex_7c577572) to an OVIDReceipt."""
+        if alias_id:
+            self._receipts[alias_id] = receipt
 
     def create_pointer_receipt(
         self,
@@ -214,26 +257,37 @@ class OVIDStorage:
         ml_dsa_signature: Optional[str] = None,
         ed25519_signature: Optional[str] = None,
         latency_ms: float = 0.0,
+        receipt_handle: Optional[str] = None,
+        stark_proof: Optional[Dict[str, Any]] = None,
+        stark_public_input: Optional[Dict[str, Any]] = None,
     ) -> OVIDReceipt:
         """Issue an OVIDReceipt bound to an in-place zero-copy pointer."""
-        pointer = self._pointers.get(pointer_id)
+        pointer = self.resolve_pointer(pointer_id)
         if pointer is None:
             raise ValueError(f"Zero-copy pointer {pointer_id} not found")
+        short_pointer = f"{POINTER_PREFIX}{pointer.content_hash[:8]}"
         receipt = OVIDReceipt(
             receipt_id=pointer.pointer_id,
             hash_value=pointer.content_hash,
             ml_dsa_signature=ml_dsa_signature,
             ed25519_signature=ed25519_signature,
             latency_ms=latency_ms,
+            receipt_handle=receipt_handle or short_pointer,
+            stark_proof=stark_proof,
+            stark_public_input=stark_public_input,
             metadata={
                 "zero_copy": True,
                 "source_uri": pointer.source_uri,
+                "short_pointer_id": short_pointer,
                 "access_class": pointer.access_class,
                 "data_stays_at_rest": True,
             },
         )
         self._receipts[pointer.pointer_id] = receipt
         self._receipts[pointer.content_hash] = receipt
+        self._receipts[short_pointer] = receipt
+        if receipt_handle:
+            self._receipts[receipt_handle] = receipt
         return receipt
 
     def create_receipt(
@@ -242,6 +296,10 @@ class OVIDStorage:
         ml_dsa_signature: Optional[str] = None,
         ed25519_signature: Optional[str] = None,
         latency_ms: float = 0.0,
+        receipt_handle: Optional[str] = None,
+        stark_proof: Optional[Dict[str, Any]] = None,
+        stark_public_input: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> OVIDReceipt:
         payload = self._store.get(ovid_id)
         if payload is None or hashlib.sha256(payload).hexdigest() != ovid_id:
@@ -252,12 +310,24 @@ class OVIDStorage:
             ml_dsa_signature=ml_dsa_signature,
             ed25519_signature=ed25519_signature,
             latency_ms=latency_ms,
+            metadata=metadata,
+            receipt_handle=receipt_handle,
+            stark_proof=stark_proof,
+            stark_public_input=stark_public_input,
         )
         self._receipts[ovid_id] = receipt
+        if receipt_handle:
+            self._receipts[receipt_handle] = receipt
         return receipt
 
     def get_receipt(self, ovid_id: str) -> Optional[OVIDReceipt]:
-        return self._receipts.get(ovid_id)
+        direct = self._receipts.get(ovid_id)
+        if direct is not None:
+            return direct
+        normalized = ovid_id.strip()
+        if normalized != ovid_id and normalized in self._receipts:
+            return self._receipts[normalized]
+        return None
 
     def verify_receipt(self, receipt: OVIDReceipt) -> bool:
         if receipt.receipt_id.startswith(POINTER_PREFIX):
@@ -286,7 +356,8 @@ class OVIDStorage:
             "stored_objects": len(self._store),
             "zero_copy_pointers": len(self._pointers),
             "pointer_evaluations": self._pointer_eval_count,
-            "receipts": len(self._receipts),
+            "receipts": len({id(r) for r in self._receipts.values()}),
+            "receipt_index_keys": len(self._receipts),
             "content_addressable": True,
             "durable": False,
         }
@@ -323,7 +394,93 @@ class VerifyEndpoint:
                 receipt.hash_value.encode("ascii"), receipt.ed25519_signature
             ):
                 return False
+        if receipt.stark_proof is not None:
+            if self.zk_stark_verifier is None or not self.zk_stark_verifier.verify_proof(
+                receipt.stark_proof, receipt.stark_public_input
+            ):
+                return False
         return bool(receipt.ml_dsa_signature or receipt.ed25519_signature)
+
+    def verify_receipt_detailed(self, identifier: str) -> Dict[str, Any]:
+        """Zero-auth receipt verification returning cryptographic evidence without raw payload exposure."""
+        self._zero_auth_count += 1
+        receipt = self.ovid_storage.get_receipt(identifier)
+        if receipt is None:
+            return {
+                "valid": False,
+                "status": "NOT_FOUND",
+                "identifier": identifier,
+                "receipt_id": None,
+                "receipt_handle": None,
+                "hash_value": None,
+                "ml_dsa_verified": False,
+                "ed25519_verified": False,
+                "stark_quotient_verified": False,
+                "polynomial_identity": "P(x) = Q(x) * Z_H(x)",
+                "raw_payload_exposed": False,
+                "auth_required": False,
+            }
+
+        storage_ok = self.ovid_storage.verify_receipt(receipt)
+        ml_dsa_ok = False
+        if receipt.ml_dsa_signature:
+            ml_dsa_ok = bool(
+                self.ml_dsa_signer is not None
+                and self.ml_dsa_signer.verify(
+                    receipt.hash_value.encode("ascii"), receipt.ml_dsa_signature
+                )
+            )
+        ed25519_ok = False
+        if receipt.ed25519_signature:
+            ed25519_ok = bool(
+                self.ed25519_signer is not None
+                and self.ed25519_signer.verify(
+                    receipt.hash_value.encode("ascii"), receipt.ed25519_signature
+                )
+            )
+        stark_ok = False
+        if receipt.stark_proof is not None:
+            stark_ok = bool(
+                self.zk_stark_verifier is not None
+                and self.zk_stark_verifier.verify_proof(
+                    receipt.stark_proof, receipt.stark_public_input
+                )
+            )
+
+        valid = bool(
+            storage_ok
+            and (ml_dsa_ok if receipt.ml_dsa_signature else True)
+            and (ed25519_ok if receipt.ed25519_signature else True)
+            and (stark_ok if receipt.stark_proof is not None else True)
+            and (ml_dsa_ok or ed25519_ok)
+        )
+        self._verification_count += 1
+        return {
+            "valid": valid,
+            "status": "VERIFIED" if valid else "VERIFICATION_FAILED",
+            "identifier": identifier,
+            "receipt_id": receipt.receipt_id,
+            "receipt_handle": receipt.receipt_handle,
+            "hash_value": receipt.hash_value,
+            "timestamp": receipt.timestamp,
+            "ml_dsa_verified": ml_dsa_ok,
+            "ml_dsa_standard": "NIST FIPS 204 ML-DSA-65" if receipt.ml_dsa_signature else None,
+            "ed25519_verified": ed25519_ok,
+            "stark_quotient_verified": stark_ok,
+            "polynomial_identity": "P(x) = Q(x) * Z_H(x)",
+            "stark_trace_commitment": (
+                receipt.stark_proof.get("trace_commitment")
+                if isinstance(receipt.stark_proof, dict)
+                else None
+            ),
+            "stark_quotient_commitment": (
+                receipt.stark_proof.get("quotient_commitment")
+                if isinstance(receipt.stark_proof, dict)
+                else None
+            ),
+            "raw_payload_exposed": False,
+            "auth_required": False,
+        }
 
     def verify_hash_zero_auth(self, hash_value: str) -> Dict[str, Any]:
         self._zero_auth_count += 1
@@ -333,6 +490,7 @@ class VerifyEndpoint:
             "valid": valid,
             "hash": hash_value,
             "receipt_id": receipt.receipt_id if receipt and valid else None,
+            "receipt_handle": receipt.receipt_handle if receipt and valid else None,
             "auth_required": False,
         }
 

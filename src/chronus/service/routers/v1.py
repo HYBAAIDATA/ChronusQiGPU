@@ -20,6 +20,7 @@ from chronus.execution import execution_router
 from chronus.execution.qigpu import QiGPUOrchestrator
 from chronus.execution.reference import NativeMathReferenceBackend
 from chronus.service.ciaas_store import ciaas_store
+from chronus.storage.connectors import ConnectorType, MemoryAccessClass, zero_copy_connector_manager
 from chronus.service.dependencies import get_current_tenant, get_service_config, security
 from chronus.service.models import WorkloadRequest, WorkloadResponse, VerificationResult
 from chronus.service.routers.workloads import submit_workload, workload_counts, workload_store
@@ -59,6 +60,13 @@ async def get_capabilities() -> Dict[str, Any]:
             "zero_floating_point": True,
             "zero_heuristics": True,
             "zero_quantum_theatre": True,
+        },
+        "zero_copy_connectors": {
+            "pointer_prefix": "ptr_ovid_",
+            "supported_connectors": [ct.value for ct in ConnectorType],
+            "memory_access_classes": [mc.value for mc in MemoryAccessClass],
+            "ingress_engine": "BINET_ZECKENDORF_LOSSLESS_FOLD_V36",
+            "security_edge": "AL_HARAS_SHEAF_COHOMOLOGY_AND_CUSTOMER_KMS_PKCS11",
         },
         "version": "36.0.0",
     }
@@ -141,9 +149,18 @@ async def v1_verify_receipt(receipt_hash: str) -> VerificationResult:
 )
 async def get_storage_fabric() -> Dict[str, Any]:
     storage_stats = NativeMathReferenceBackend._theseus.stats()
+    ovid_stats = zero_copy_connector_manager.ovid.get_stats()
     return {
         "status": "ONLINE",
         "storage": storage_stats,
+        "zero_copy_pointers": {
+            "pointer_prefix": "ptr_ovid_",
+            "active_pointers": ovid_stats["zero_copy_pointers"],
+            "bound_connectors": len(zero_copy_connector_manager.list_connectors()),
+            "discovered_datasets": len(zero_copy_connector_manager.list_discovered_datasets()),
+            "bulk_staging_bytes": 0,
+            "data_stays_at_rest": True,
+        },
         "invariants": {
             "continuity": "HELD",
             "reconstruction_drift": 0.0,
