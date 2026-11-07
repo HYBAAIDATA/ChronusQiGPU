@@ -91,6 +91,7 @@ Tenant tokens are configured as a JSON environment variable for this implementat
 
 ## Documentation
 
+- [Executive architecture and project summary](docs/executive/executive-architecture-and-project-summary.md)
 - [Architecture and market model](docs/system-update/architecture-and-market.md)
 - [Current implementation assessment](docs/system-update/current-state-assessment.md)
 - [Test evidence and limitations](docs/system-update/test-evidence.md)

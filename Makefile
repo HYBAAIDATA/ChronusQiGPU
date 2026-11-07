@@ -14,10 +14,9 @@ help:
 	@echo "make clean           Clean build artifacts"
 	@echo "make install-devmode Install development dependencies"
 
-# Install development dependencies
+# Install development dependencies (pyproject.toml is the single source of truth)
 install-devmode:
-	pip install -r requirements.txt
-	pip install -r requirements-dev.txt
+	pip install -e '.[dev]'
 
 # Run tests
 test:
@@ -58,7 +57,3 @@ clean:
 # Install in development mode
 install-dev:
 	pip install -e .
-
-# Update requirements
-update-requirements:
-	pip freeze > requirements.txt
