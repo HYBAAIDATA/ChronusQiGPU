@@ -5,17 +5,24 @@ Exposes:
 - POST /v1/auth/token: Mints a scoped JWT token for testing/API access.
 - GET  /v1/tenants: Lists onboarded enterprise tenants.
 - POST /v1/tenants/onboard: Onboards a new tenant and provisions CCE quotas.
+- POST /v1/tenants/onboard/instant: Zero-friction (<30s) automated webhook/admin tenant onboarding.
+- POST /v1/tenants/onboard/instant/load-test: Concurrent multi-tenant activation load simulator.
 - GET  /v1/tenants/{tenant_id}: Retrieves tenant profile and CCE allocations.
 - POST /v1/tenants/{tenant_id}/cce: Updates 5-dimension CCE quotas.
+- GET  /v1/tenants/{tenant_id}/capacity: Retrieves Enduring Capacity Addendum (ECA) & FinOps state.
+- PATCH /v1/tenants/{tenant_id}/capacity: Dynamic self-service capacity scaling (no addendum required).
 - GET  /v1/tenants/{tenant_id}/pricing: Four-part pricing breakdown (P_total).
 - POST /v1/tenants/{tenant_id}/settlement: Reconciles Hermiten 25% value-share settlement.
 - GET  /v1/fabric/pods: Disaggregated regional fleet pods (alpha..delta) and DEC routing.
 - GET  /v1/governance/sovereign: Sovereign profile, NCSC 14 principles, and Sheaf Cohomology.
 """
 
+import os
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 from chronus.service.auth_middleware import (
     AL_HARAS_PRIVILEGES_MATRIX,
@@ -24,6 +31,7 @@ from chronus.service.auth_middleware import (
     create_jwt_token,
     get_current_identity,
     require_roles,
+    security as bearer_security,
 )
 from chronus.service.ciaas_store import (
     ChronusCapacityEntitlement,
@@ -31,6 +39,19 @@ from chronus.service.ciaas_store import (
     PricingBreakdown,
     TenantProfile,
     ciaas_store,
+)
+from chronus.service.instant_provisioning import (
+    CapacityExpansionRequest,
+    CapacityExpansionResponse,
+    EnduringAddendumError,
+    InstantOnboardRequest,
+    InstantOnboardResponse,
+    LoadSimulationRequest,
+    LoadSimulationResponse,
+    ProvisioningConflictError,
+    TenantCapacityStatusResponse,
+    instant_provisioning_engine,
+    verify_webhook_hmac_signature,
 )
 
 router = APIRouter(prefix="/v1", tags=["ciaas"])
@@ -134,6 +155,109 @@ async def onboard_tenant(request: OnboardTenantRequest) -> TenantProfile:
     return profile
 
 
+async def _authorize_instant_ingress(
+    http_request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_security),
+) -> AuthenticatedIdentity:
+    """Authorize Stage 1 ingress via SYSTEM_ADMIN Bearer token or HMAC webhook signature."""
+    sig_header = (
+        http_request.headers.get("X-Chronus-Webhook-Signature")
+        or http_request.headers.get("X-DocuSign-Signature-1")
+        or http_request.headers.get("X-Ironclad-Signature")
+    )
+    if sig_header:
+        raw_body = await http_request.body()
+        if verify_webhook_hmac_signature(raw_body, sig_header):
+            return AuthenticatedIdentity(
+                tenant_id="chronus-system-webhook",
+                user_id="clm-webhook-ingress",
+                roles={Role.SYSTEM_ADMIN},
+                claims={"sub": "clm-webhook-ingress", "webhook_verified": True},
+                is_jwt=False,
+            )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "error": "invalid_webhook_signature",
+                "message": "Cryptographic webhook HMAC signature verification failed.",
+            },
+        )
+
+    configured_sys_token = os.getenv("CHRONUS_SYSTEM_ADMIN_TOKEN", "").strip()
+    if (
+        credentials is not None
+        and configured_sys_token
+        and credentials.credentials == configured_sys_token
+    ):
+        return AuthenticatedIdentity(
+            tenant_id="chronus-system-root",
+            user_id="system-admin-token",
+            roles={Role.SYSTEM_ADMIN},
+            claims={"sub": "system-admin-token"},
+            is_jwt=False,
+        )
+
+    identity = get_current_identity(request=http_request, credentials=credentials)
+    if not identity.has_any_role({Role.SYSTEM_ADMIN, Role.ADMIN}):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "error": "insufficient_permissions",
+                "message": "Instant tenant provisioning requires system_admin authority or signed CLM webhook.",
+                "current_roles": [r.value for r in identity.roles],
+            },
+        )
+    return identity
+
+
+@router.post(
+    "/tenants/onboard/instant",
+    response_model=InstantOnboardResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Zero-Friction Instant Automated Tenant Onboarding (< 30s T0 SLA)",
+    description=(
+        "Executes all 4 stages of the Chronus CIaaS Instant Provisioning Engine: "
+        "MSA webhook ingress validation, PostgreSQL REPEATABLE READ & OVID/THESEUS "
+        "fabric initialization, AL HARAS PKCS#11 KMS key custody binding, and "
+        "Enduring Capacity Addendum (ECA) activation."
+    ),
+)
+async def instant_onboard_tenant(
+    payload: InstantOnboardRequest,
+    _admin: AuthenticatedIdentity = Depends(_authorize_instant_ingress),
+) -> InstantOnboardResponse:
+    try:
+        return await run_in_threadpool(
+            instant_provisioning_engine.provision_instant_tenant,
+            payload,
+        )
+    except ProvisioningConflictError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"error": "tenant_or_contract_conflict", "message": str(exc)},
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": "invalid_provisioning_request", "message": str(exc)},
+        ) from exc
+
+
+@router.post(
+    "/tenants/onboard/instant/load-test",
+    response_model=LoadSimulationResponse,
+    summary="Simulate concurrent Zero-Friction tenant activations (up to 1000 tenants)",
+)
+async def simulate_instant_onboarding_load(
+    sim_request: LoadSimulationRequest,
+    _admin: AuthenticatedIdentity = Depends(_authorize_instant_ingress),
+) -> LoadSimulationResponse:
+    return await run_in_threadpool(
+        instant_provisioning_engine.simulate_concurrent_activations,
+        sim_request,
+    )
+
+
 @router.get(
     "/tenants/{tenant_id}",
     response_model=TenantProfile,
@@ -147,6 +271,72 @@ async def get_tenant_profile(tenant_id: str) -> TenantProfile:
             detail=f"Tenant '{tenant_id}' not found.",
         )
     return tenant
+
+
+@router.get(
+    "/tenants/{tenant_id}/capacity",
+    response_model=TenantCapacityStatusResponse,
+    summary="Inspect Enduring Capacity Addendum (ECA), active warps, and Hermiten settlement",
+)
+async def get_tenant_capacity_status(tenant_id: str) -> TenantCapacityStatusResponse:
+    try:
+        return instant_provisioning_engine.get_capacity_status(tenant_id)
+    except KeyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tenant '{tenant_id}' not found.",
+        ) from exc
+
+
+@router.patch(
+    "/tenants/{tenant_id}/capacity",
+    response_model=CapacityExpansionResponse,
+    summary="Dynamic Self-Service Capacity Expansion (No Addendum Required)",
+    description=(
+        "Adjusts active 32-lane execution warps, OVID/THESEUS storage limits, and O(1) "
+        "structural memory allocations in real time under the Enduring Capacity Addendum "
+        "(ECA), automatically reconciling Hermiten 25% Value-Share settlement."
+    ),
+)
+async def expand_tenant_capacity(
+    tenant_id: str,
+    request: CapacityExpansionRequest,
+    identity: AuthenticatedIdentity = Depends(
+        require_roles(Role.TENANT_ADMIN, Role.SYSTEM_ADMIN)
+    ),
+) -> CapacityExpansionResponse:
+    is_sys_admin = identity.has_any_role({Role.SYSTEM_ADMIN, Role.ADMIN})
+    if not is_sys_admin and identity.tenant_id != tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "error": "tenant_isolation_violation",
+                "message": (
+                    f"Tenant Admin for '{identity.tenant_id}' cannot modify "
+                    f"capacity for tenant '{tenant_id}'."
+                ),
+            },
+        )
+    try:
+        return await run_in_threadpool(
+            instant_provisioning_engine.expand_capacity,
+            tenant_id,
+            request,
+        )
+    except KeyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "tenant_not_found", "message": f"Tenant '{tenant_id}' not found."},
+        ) from exc
+    except EnduringAddendumError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "error": "enduring_addendum_constraint",
+                "message": str(exc),
+                "additional_approval_required": True,
+            },
+        ) from exc
 
 
 @router.post(

@@ -171,7 +171,7 @@ def get_current_tenant(
     auth.check_rate_limit(tenant_id)
 
     # For workload submission, require authentication
-    protected_operation = request.method in ("POST", "PUT", "DELETE")
+    protected_operation = request.method in ("POST", "PUT", "PATCH", "DELETE")
     protected_resource = request.url.path.startswith(
         ("/workloads", "/verify/receipt")
     )

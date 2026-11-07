@@ -28,33 +28,33 @@ export default function MathPage() {
   const metallicFamilies = [
     {
       m: 1,
-      name: 'Golden Mean (Ï†)',
-      symbol: 'Ï†',
-      poly: 'Î»Â² - Î» - 1 = 0',
-      root: '(1 + âˆš5) / 2 â‰ˆ 1.6180339887...',
-      conjugate: '(1 - âˆš5) / 2 â‰ˆ -0.6180339887...',
-      decay: 'O(Ï†^-n) asymptotic decay',
-      field: 'Q(âˆš5)',
+      name: 'Golden Mean (φ)',
+      symbol: 'φ',
+      poly: 'λ² - λ - 1 = 0',
+      root: '(1 + √5) / 2 ≈ 1.6180339887...',
+      conjugate: '(1 - √5) / 2 ≈ -0.6180339887...',
+      decay: 'O(φ^-n) asymptotic decay',
+      field: 'ℚ(√5)',
     },
     {
       m: 2,
-      name: 'Silver Mean (Î´_S)',
-      symbol: 'Î´_S',
-      poly: 'Î»Â² - 2Î» - 1 = 0',
-      root: '1 + âˆš2 â‰ˆ 2.4142135623...',
-      conjugate: '1 - âˆš2 â‰ˆ -0.4142135623...',
-      decay: 'O(Î´_S^-n) exponential contraction',
-      field: 'Q(âˆš2)',
+      name: 'Silver Mean (δ_S)',
+      symbol: 'δ_S',
+      poly: 'λ² - 2λ - 1 = 0',
+      root: '1 + √2 ≈ 2.4142135623...',
+      conjugate: '1 - √2 ≈ -0.4142135623...',
+      decay: 'O(δ_S^-n) exponential contraction',
+      field: 'ℚ(√2)',
     },
     {
       m: 3,
-      name: 'Bronze Mean (Î´_B)',
-      symbol: 'Î´_B',
-      poly: 'Î»Â² - 3Î» - 1 = 0',
-      root: '(3 + âˆš13) / 2 â‰ˆ 3.3027756377...',
-      conjugate: '(3 - âˆš13) / 2 â‰ˆ -0.3027756377...',
-      decay: 'O(Î´_B^-n) ultra-fast contraction',
-      field: 'Q(âˆš13)',
+      name: 'Bronze Mean (δ_B)',
+      symbol: 'δ_B',
+      poly: 'λ² - 3λ - 1 = 0',
+      root: '(3 + √13) / 2 ≈ 3.3027756377...',
+      conjugate: '(3 - √13) / 2 ≈ -0.3027756377...',
+      decay: 'O(δ_B^-n) ultra-fast contraction',
+      field: 'ℚ(√13)',
     },
   ];
 
@@ -66,7 +66,7 @@ export default function MathPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-neutral-800 bg-neutral-900/60 backdrop-blur-md gap-4">
         <div>
           <div className="text-xs font-mono uppercase tracking-wider text-neutral-400">
-            Algebraic Ring Engine Â· Field Arithmetic
+            Algebraic Ring Engine · Field Arithmetic
           </div>
           <h2 className="text-xl font-semibold text-white tracking-tight">
             Exact Mathematical Engine & Metallic Contraction
@@ -83,7 +83,7 @@ export default function MathPage() {
               <div className="flex items-center gap-2">
                 <Calculator className="w-4 h-4 text-purple-400" />
                 <h3 className="text-base font-semibold text-white">
-                  Exact Field Multiplier in \(\mathbb&#123;Q&#125;(\sqrt&#123;5&#125;)\)
+                  Exact Field Multiplier in ℚ(√5)
                 </h3>
               </div>
               <span className="text-xs font-mono text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
@@ -92,10 +92,10 @@ export default function MathPage() {
             </div>
 
             <p className="text-xs text-neutral-300 leading-relaxed font-mono">
-              Numbers are evaluated strictly as rational pairs \((a, b) \in \mathbb&#123;Q&#125;^2\):
+              Numbers are evaluated strictly as rational pairs (a, b) ∈ ℚ²:
               <br />
               <span className="text-purple-300 block mt-1">
-                (a + bâˆš5) Â· (c + dâˆš5) = (ac + 5bd) + (ad + bc)âˆš5
+                (a + b√5) · (c + d√5) = (ac + 5bd) + (ad + bc)√5
               </span>
             </p>
 
@@ -111,7 +111,7 @@ export default function MathPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-mono text-neutral-400">Operand 1: b (âˆš5)</label>
+                  <label className="text-[11px] font-mono text-neutral-400">Operand 1: b (√5)</label>
                   <Input
                     type="number"
                     value={b}
@@ -132,7 +132,7 @@ export default function MathPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-mono text-neutral-400">Operand 2: d (âˆš5)</label>
+                  <label className="text-[11px] font-mono text-neutral-400">Operand 2: d (√5)</label>
                   <Input
                     type="number"
                     value={d}
@@ -148,10 +148,10 @@ export default function MathPage() {
                   Deterministic Exact Product
                 </span>
                 <div className="text-lg font-semibold text-emerald-400">
-                  {resRational} + {resRadical}âˆš5
+                  {resRational} + {resRadical}√5
                 </div>
                 <div className="text-[11px] text-neutral-500">
-                  Real = {aNum}Ã—{cNum} + 5({bNum}Ã—{dNum}) = {resRational} Â· Irrational = {aNum}Ã—{dNum} + {bNum}Ã—{cNum} = {resRadical}
+                  Real = {aNum}×{cNum} + 5({bNum}×{dNum}) = {resRational} · Irrational = {aNum}×{dNum} + {bNum}×{cNum} = {resRadical}
                 </div>
               </div>
             </div>
@@ -165,7 +165,7 @@ export default function MathPage() {
               <div className="flex items-center gap-2">
                 <Binary className="w-4 h-4 text-blue-400" />
                 <h3 className="text-base font-semibold text-white">
-                  Metallic Means Family (\(m \ge 1\))
+                  Metallic Means Family (m ≥ 1)
                 </h3>
               </div>
               <span className="text-xs font-mono text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
@@ -210,7 +210,7 @@ export default function MathPage() {
             </div>
 
             <p className="text-xs text-neutral-400 leading-relaxed font-mono">
-              Because all algebraic conjugates strictly satisfy \(|\lambda^*| &lt; 1\), powers of the dominant root contract exponentially towards integers, guaranteeing bounded integer-lattice distance without floating-point error.
+              Because all algebraic conjugates strictly satisfy |λ*| &lt; 1, powers of the dominant root contract exponentially towards integers, guaranteeing bounded integer-lattice distance without floating-point error.
             </p>
           </Card>
         </div>

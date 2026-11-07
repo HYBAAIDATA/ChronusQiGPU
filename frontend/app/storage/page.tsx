@@ -50,7 +50,7 @@ export default function StoragePage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-neutral-800 bg-neutral-900/60 backdrop-blur-md gap-4">
         <div>
           <div className="text-xs font-mono uppercase tracking-wider text-neutral-400">
-            Memory & Storage Subsystem Â· Continuous Fabric
+            Memory & Storage Subsystem · Continuous Fabric
           </div>
           <h2 className="text-xl font-semibold text-white tracking-tight">
             PhyllotaxisMesh & Theseus Reconstruction Engine
@@ -69,7 +69,7 @@ export default function StoragePage() {
                   PhyllotaxisMesh Golden-Angle Spiral
                 </h3>
                 <p className="text-xs text-neutral-400 font-mono">
-                  Î¸ = 137.507764Â° Â· Collision-Free Hash Dispersion
+                  θ = 137.507764° · Collision-Free Hash Dispersion
                 </p>
               </div>
               <span className="text-[11px] font-mono text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
@@ -123,7 +123,7 @@ export default function StoragePage() {
               </svg>
 
               <div className="absolute bottom-3 left-3 text-[11px] font-mono text-neutral-400 bg-neutral-900/90 px-3 py-1 rounded border border-neutral-800">
-                Node <span className="text-blue-400 font-semibold">#{nodes[activeNode].id}</span>: {nodes[activeNode].key} Â· Density: {nodes[activeNode].density} items
+                Node <span className="text-blue-400 font-semibold">#{nodes[activeNode].id}</span>: {nodes[activeNode].key} · Density: {nodes[activeNode].density} items
               </div>
             </div>
 

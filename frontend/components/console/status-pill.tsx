@@ -9,8 +9,10 @@ export type OperationalStatus =
   | 'OPERATIONAL' 
   | 'ONLINE'
   | 'RUNNING' 
+  | 'PENDING'
   | 'DEGRADED'
   | 'UNAVAILABLE'
+  | 'UNVERIFIED'
   | 'SIMULATED'
   | ExecutionBadge;
 

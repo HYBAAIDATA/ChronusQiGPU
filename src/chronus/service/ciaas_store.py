@@ -17,8 +17,9 @@ Manages:
 - Sovereign Security Profile (NCSC 14 Principles & Cellular Sheaf Cohomology H^1(X; F) = 0)
 """
 
-import time
 import secrets
+import threading
+import time
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
@@ -43,6 +44,16 @@ class TenantProfile(BaseModel):
     cce: ChronusCapacityEntitlement
     api_key_prefix: str
     sovereign_profile_enabled: bool = True
+    contract_id: Optional[str] = None
+    assigned_cce_id: Optional[str] = None
+    enduring_addendum_accepted: bool = True
+    max_authorized_warps: int = 1024
+    o1_structural_memory_gb: int = 256
+    kms_provider: str = "AWS_KMS"
+    kms_key_arn: Optional[str] = None
+    al_haras_kms_status: str = "KMS_BOUND_CUSTOMER_CUSTODY"
+    ovid_namespace: Optional[str] = None
+    console_access_url: Optional[str] = None
 
 
 class PricingBreakdown(BaseModel):
@@ -74,6 +85,7 @@ class CIaaSStore:
     """In-memory multi-tenant CIaaS administrative store."""
 
     def __init__(self) -> None:
+        self._lock = threading.RLock()
         self._tenants: Dict[str, TenantProfile] = {}
         self._seed_default_tenants()
 
@@ -96,6 +108,15 @@ class CIaaSStore:
             ),
             api_key_prefix="ptr_sdk_default_ref",
             sovereign_profile_enabled=True,
+            contract_id="ctr_chronus_ref_2026_0001",
+            assigned_cce_id="cce_default_2026_q4",
+            enduring_addendum_accepted=True,
+            max_authorized_warps=4096,
+            o1_structural_memory_gb=512,
+            kms_provider="AWS_KMS",
+            kms_key_arn="arn:aws:kms:eu-west-2:000000000001:key/chronus-ref-root",
+            ovid_namespace="o1_tenant-default",
+            console_access_url="https://console.chronus.io/tenants/tenant-default/workloads",
         )
 
         self._tenants["tenant-sovereign-01"] = TenantProfile(
@@ -114,6 +135,15 @@ class CIaaSStore:
             ),
             api_key_prefix="ptr_sdk_sovereign_01",
             sovereign_profile_enabled=True,
+            contract_id="ctr_sovereign_uk_2026_0108",
+            assigned_cce_id="cce_sovereign_2026_q4",
+            enduring_addendum_accepted=True,
+            max_authorized_warps=10000,
+            o1_structural_memory_gb=2048,
+            kms_provider="PKCS11_HSM",
+            kms_key_arn="pkcs11:model=FIPS140-3-L4;token=sovereign-uk-01",
+            ovid_namespace="o1_tenant-sovereign-01",
+            console_access_url="https://console.chronus.io/tenants/tenant-sovereign-01/workloads",
         )
 
         self._tenants["tenant-finops-02"] = TenantProfile(
@@ -132,13 +162,33 @@ class CIaaSStore:
             ),
             api_key_prefix="ptr_sdk_finops_02",
             sovereign_profile_enabled=False,
+            contract_id="ctr_globalquant_2026_0442",
+            assigned_cce_id="cce_finops_2026_q4",
+            enduring_addendum_accepted=True,
+            max_authorized_warps=2048,
+            o1_structural_memory_gb=512,
+            kms_provider="AZURE_KEY_VAULT",
+            kms_key_arn="https://globalquant-kv.vault.azure.net/keys/prod-hsm-01",
+            ovid_namespace="o1_tenant-finops-02",
+            console_access_url="https://console.chronus.io/tenants/tenant-finops-02/workloads",
         )
 
     def get_tenant(self, tenant_id: str) -> Optional[TenantProfile]:
-        return self._tenants.get(tenant_id)
+        with self._lock:
+            return self._tenants.get(tenant_id)
 
     def list_tenants(self) -> List[TenantProfile]:
-        return list(self._tenants.values())
+        with self._lock:
+            return list(self._tenants.values())
+
+    def save_tenant(self, profile: TenantProfile) -> TenantProfile:
+        with self._lock:
+            self._tenants[profile.tenant_id] = profile
+            return profile
+
+    def remove_tenant(self, tenant_id: str) -> None:
+        with self._lock:
+            self._tenants.pop(tenant_id, None)
 
     def onboard_tenant(
         self,
@@ -161,16 +211,20 @@ class CIaaSStore:
             cce=entitlement,
             api_key_prefix=token_prefix,
             sovereign_profile_enabled=sovereign_profile_enabled,
+            ovid_namespace=f"o1_{tenant_id}",
+            console_access_url=f"https://console.chronus.io/tenants/{tenant_id}/workloads",
         )
-        self._tenants[tenant_id] = profile
+        with self._lock:
+            self._tenants[tenant_id] = profile
         return profile
 
     def update_cce(self, tenant_id: str, cce: ChronusCapacityEntitlement) -> Optional[TenantProfile]:
-        tenant = self._tenants.get(tenant_id)
-        if not tenant:
-            return None
-        tenant.cce = cce
-        return tenant
+        with self._lock:
+            tenant = self._tenants.get(tenant_id)
+            if not tenant:
+                return None
+            tenant.cce = cce
+            return tenant
 
     def calculate_pricing(self, tenant_id: str, consumed_ccu: int = 128) -> PricingBreakdown:
         tenant = self._tenants.get(tenant_id)

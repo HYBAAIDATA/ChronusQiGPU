@@ -205,6 +205,11 @@ class ZKSTARKVerifier:
             if not _verify_merkle_path(trace_root, p_leaf, idx, t_path):
                 return False
 
+            if idx == 0 and proof.get("boundary_start") is not None and p_val != proof.get("boundary_start"):
+                return False
+            if idx == trace_len - 1 and proof.get("boundary_end") is not None and p_val != proof.get("boundary_end"):
+                return False
+
             q_leaf = q_val.to_bytes(8, "big")
             if not _verify_merkle_path(quotient_root, q_leaf, idx, q_path):
                 return False
@@ -247,8 +252,7 @@ class ZKSTARKVerifier:
         trace_root = _merkle_root(trace_leaves)
 
         # Step 2: Compute Quotient Polynomial on trace: Q(x) = (P(next) - P(x) - delta) / (x^N - 1)
-        # Using delta = 1 for the linear transition
-        delta = 1
+        delta = (trace[1] - trace[0]) % MODULUS
         quotients = []
         for i in range(trace_len):
             nxt = trace[(i + 1) % trace_len]

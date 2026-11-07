@@ -84,7 +84,7 @@ class ChronusAPISDK:
     ) -> Dict[str, Any]:
         attempts = (
             self.max_retries
-            if method.upper() in {"GET", "PUT", "DELETE"}
+            if method.upper() in {"GET", "PUT", "PATCH", "DELETE"}
             else 1
         )
         for attempt in range(attempts):
@@ -110,7 +110,7 @@ class ChronusAPISDK:
             except ValueError:
                 body = {}
 
-            if response.status_code in (200, 202, 204):
+            if response.status_code in (200, 201, 202, 204):
                 return body
             if response.status_code == 401:
                 raise AuthenticationError(response=body)
@@ -217,6 +217,32 @@ class ChronusAPISDK:
 
     def get_health(self) -> Dict[str, Any]:
         return self._request("GET", "/health")
+
+    def instant_onboard_tenant(self, onboarding_payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Trigger Zero-Friction instant tenant provisioning (<30s T0 SLA)."""
+        return self._request("POST", "/v1/tenants/onboard/instant", json=onboarding_payload)
+
+    def expand_capacity(
+        self,
+        requested_warp_capacity: int,
+        expand_storage_gb: Optional[int] = None,
+        reason: str = "SDK_SELF_SERVICE_EXPANSION",
+        tenant_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Dynamically expand active warps or storage under Enduring Capacity Addendum."""
+        target_tenant = tenant_id or self.tenant_id
+        payload: Dict[str, Any] = {
+            "requested_warp_capacity": requested_warp_capacity,
+            "reason": reason,
+        }
+        if expand_storage_gb is not None:
+            payload["expand_storage_gb"] = expand_storage_gb
+        return self._request("PATCH", f"/v1/tenants/{target_tenant}/capacity", json=payload)
+
+    def get_capacity_status(self, tenant_id: Optional[str] = None) -> Dict[str, Any]:
+        """Retrieve Enduring Capacity Addendum and real-time Hermiten settlement status."""
+        target_tenant = tenant_id or self.tenant_id
+        return self._request("GET", f"/v1/tenants/{target_tenant}/capacity")
 
     def get_metrics(self) -> str:
         response = self._client.get("/metrics")

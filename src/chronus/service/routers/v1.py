@@ -19,6 +19,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from chronus.execution import execution_router
 from chronus.execution.qigpu import QiGPUOrchestrator
 from chronus.execution.reference import NativeMathReferenceBackend
+from chronus.service.ciaas_store import ciaas_store
 from chronus.service.dependencies import get_current_tenant, get_service_config, security
 from chronus.service.models import WorkloadRequest, WorkloadResponse, VerificationResult
 from chronus.service.routers.workloads import submit_workload, workload_counts, workload_store
@@ -71,6 +72,12 @@ async def get_capabilities() -> Dict[str, Any]:
 async def get_capacity() -> Dict[str, Any]:
     total_wklds, active_wklds = workload_counts()
     storage_stats = NativeMathReferenceBackend._theseus.stats()
+    tenants = ciaas_store.list_tenants()
+    total_allocated_ccu = max(
+        1024, sum(t.cce.compute_intensity_ccu for t in tenants)
+    )
+    total_active_warps = sum(t.cce.concurrency_limit for t in tenants)
+    total_max_warps = sum(t.max_authorized_warps for t in tenants)
     return {
         "status": "ONLINE",
         "workloads": {
@@ -79,10 +86,16 @@ async def get_capacity() -> Dict[str, Any]:
             "completed": total_wklds - active_wklds,
         },
         "ccu": {
-            "allocated_units": 1024,
+            "allocated_units": total_allocated_ccu,
             "consumed_units": active_wklds * 16,
             "unit_price_usd": "0.045",
             "billing_signature": "ed25519_signed_billing_ledger",
+        },
+        "enduring_capacity": {
+            "active_tenants": len(tenants),
+            "active_warps": total_active_warps,
+            "max_authorized_warps": total_max_warps,
+            "hermiten_value_share_pct": 25,
         },
         "memory_fabric": {
             "mode": "PhyllotaxisMesh",

@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
 
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
     Float,
@@ -29,6 +30,7 @@ from sqlalchemy import (
     delete,
     func,
     select,
+    text,
 )
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import DBAPIError, OperationalError
@@ -96,10 +98,57 @@ tenant_usage_table = Table(
     Column("period_end", DateTime(timezone=True), nullable=False),
 )
 
+ciaas_tenants_table = Table(
+    "ciaas_tenants",
+    metadata,
+    Column("tenant_id", String(128), primary_key=True),
+    Column("contract_id", String(128), nullable=False, index=True),
+    Column("company_name", String(256), nullable=False),
+    Column("admin_email", String(256), nullable=False),
+    Column("assigned_cce_id", String(128), nullable=False, unique=True),
+    Column("schema_name", String(128), nullable=False),
+    Column("enduring_addendum_accepted", Boolean, nullable=False, default=True),
+    Column("active_warps", Integer, nullable=False, default=32),
+    Column("max_authorized_warps", Integer, nullable=False, default=1024),
+    Column("data_at_rest_gb", Integer, nullable=False, default=10000),
+    Column("data_in_motion_gb", Integer, nullable=False, default=5000),
+    Column("kms_provider", String(64), nullable=False),
+    Column("kms_key_arn", Text, nullable=False),
+    Column("profile_json", Text, nullable=False),
+    Column("created_at", DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)),
+    Column("updated_at", DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)),
+)
+
+ciaas_capacity_ledger_table = Table(
+    "ciaas_capacity_ledger",
+    metadata,
+    Column("event_id", String(64), primary_key=True),
+    Column("tenant_id", String(128), nullable=False, index=True),
+    Column("previous_warps", Integer, nullable=False),
+    Column("new_active_warps", Integer, nullable=False),
+    Column("previous_storage_gb", Integer, nullable=False),
+    Column("new_storage_gb", Integer, nullable=False),
+    Column("reason", String(256), nullable=False),
+    Column("created_at", DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)),
+)
+
 # Indexes
 Index("ix_workloads_tenant_status", workloads_table.c.tenant_id, workloads_table.c.status)
 Index("ix_execution_records_workload", execution_records_table.c.workload_id)
 Index("ix_receipts_tenant_workload", receipts_table.c.tenant_id, receipts_table.c.workload_id)
+
+
+def sanitize_tenant_schema_name(tenant_id: str) -> str:
+    """Derive a strictly validated PostgreSQL identifier for per-tenant schema isolation."""
+    cleaned = "".join(
+        ch if (ch.isalnum() or ch == "_") else "_"
+        for ch in tenant_id.strip().lower()
+    ).strip("_")
+    if not cleaned:
+        raise ValueError("tenant_id cannot derive a valid PostgreSQL schema identifier")
+    if not cleaned.startswith("tenant_"):
+        cleaned = f"tenant_{cleaned}"
+    return cleaned[:63]
 
 
 def with_retry(
@@ -160,6 +209,8 @@ class PostgresWorkloadStore(WorkloadStoreInterface):
         else:
             self.dsn = raw_dsn
 
+        self.pool_size = pool_size
+        self.max_overflow = max_overflow
         self.isolation_level = isolation_level
         self.engine: AsyncEngine = create_async_engine(
             self.dsn,
@@ -175,6 +226,39 @@ class PostgresWorkloadStore(WorkloadStoreInterface):
             expire_on_commit=False,
         )
         self._initialized = False
+        self._tenant_schemas: Dict[str, Dict[str, Any]] = {}
+
+    @classmethod
+    def build_tenant_isolation_descriptor(
+        cls,
+        tenant_id: str,
+        pool_size: int = 10,
+        isolation_level: str = "REPEATABLE READ",
+    ) -> Dict[str, Any]:
+        """Construct dedicated PostgreSQL tenant schema & REPEATABLE READ pool descriptor."""
+        schema_name = sanitize_tenant_schema_name(tenant_id)
+        return {
+            "tenant_id": tenant_id,
+            "schema_name": schema_name,
+            "pool_size": pool_size,
+            "isolation_level": isolation_level,
+            "status": "PROVISIONED",
+        }
+
+    @with_retry()
+    async def async_provision_tenant_schema(self, tenant_id: str) -> Dict[str, Any]:
+        """Create a dedicated tenant schema under REPEATABLE READ isolation in PostgreSQL."""
+        await self.init_db()
+        descriptor = self.build_tenant_isolation_descriptor(
+            tenant_id=tenant_id,
+            pool_size=self.pool_size,
+            isolation_level=self.isolation_level,
+        )
+        schema_name = descriptor["schema_name"]
+        async with self.engine.begin() as conn:
+            await conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{schema_name}"'))
+        self._tenant_schemas[tenant_id] = descriptor
+        return descriptor
 
     async def init_db(self) -> None:
         """Create tables if they do not exist."""

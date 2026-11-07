@@ -1,4 +1,4 @@
-"""AL HARAS Sovereign Topological Quantum Immunity Router."""
+"""AL HARAS Sovereign Topological Quantum Immunity & Defense Frontiers Router."""
 
 import base64
 from typing import Any, Dict, List, Optional
@@ -12,6 +12,11 @@ from chronus.security.al_haras import (
     RamanujanExpanderSpectralGapGuard,
     CyclotomicAnyonBraidEngine,
     SovereignGovernanceEngine,
+    TacticalSwarmMeshEngine,
+    PostQuantumSubstrateEngine,
+    HyperscaleDefenseSimulationEngine,
+    CNISelfHealingEngine,
+    StrategicDefenseCoordinator,
 )
 
 router = APIRouter(prefix="/v1/al-haras", tags=["al-haras-security"])
@@ -48,6 +53,25 @@ class HealTraceRequest(BaseModel):
     is_corrupted: bool = Field(
         default=True,
         description="Flag indicating instanton tunneling event",
+    )
+
+
+class FrontierSimulationRequest(BaseModel):
+    frontier_id: Optional[str] = Field(
+        default="ALL",
+        description="Frontier ID to simulate ('FRONTIER_1', 'FRONTIER_2', 'FRONTIER_3', 'FRONTIER_4', or 'ALL')",
+    )
+    node_count: int = Field(
+        default=16,
+        description="Tactical swarm node count for Frontier 1",
+    )
+    jamming_intensity_db: float = Field(
+        default=45.0,
+        description="Contested RF jamming level in dB for Frontier 1",
+    )
+    simulate_hostile_strike: bool = Field(
+        default=False,
+        description="Simulate cyber-physical strike / adversarial spoofing",
     )
 
 
@@ -140,3 +164,36 @@ async def heal_trace(req: HealTraceRequest) -> Dict[str, Any]:
         trace_payload=trace_bytes,
         is_perturbed=req.is_corrupted,
     )
+
+
+@router.get("/frontiers")
+async def get_defense_frontiers() -> Dict[str, Any]:
+    """Return 4-Frontier Strategic Defense Posture overview."""
+    return StrategicDefenseCoordinator.get_strategic_posture_overview()
+
+
+@router.post("/frontiers/simulate")
+async def simulate_defense_frontier(req: FrontierSimulationRequest) -> Dict[str, Any]:
+    """Simulate execution across the 4 Strategic Defense Frontiers."""
+    fid = (req.frontier_id or "ALL").upper()
+
+    if fid == "FRONTIER_1":
+        return TacticalSwarmMeshEngine.evaluate_swarm_mesh(
+            node_count=req.node_count,
+            jamming_intensity_db=req.jamming_intensity_db,
+            injected_adversarial_vector=req.simulate_hostile_strike,
+        )
+    elif fid == "FRONTIER_2":
+        return PostQuantumSubstrateEngine.generate_line_rate_ivc_receipt(
+            c4isr_stream_packet=b"FIVE_EYES_DEFENSE_STREAM_AUTHENTIC",
+        )
+    elif fid == "FRONTIER_3":
+        return HyperscaleDefenseSimulationEngine.execute_hypersonic_cfd_simulation(
+            mach_number=12.5,
+        )
+    elif fid == "FRONTIER_4":
+        return CNISelfHealingEngine.audit_and_heal_cni_asset(
+            simulated_cyber_physical_strike=req.simulate_hostile_strike,
+        )
+    else:
+        return StrategicDefenseCoordinator.run_all_frontier_simulations()

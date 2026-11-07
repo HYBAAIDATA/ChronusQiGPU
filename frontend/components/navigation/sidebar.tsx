@@ -3,12 +3,12 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Cpu, 
-  Layers, 
-  HardDrive, 
-  Binary, 
+import {
+  LayoutDashboard,
+  Cpu,
+  Layers,
+  HardDrive,
+  Binary,
   ShieldCheck,
   Terminal,
   Activity,

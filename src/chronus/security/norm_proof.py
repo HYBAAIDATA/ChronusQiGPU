@@ -79,7 +79,7 @@ class NormProof:
 
     @classmethod
     def from_dict(cls, data: dict) -> "NormProof":
-        if not isinstance(data, dict) or set(data) < {"statement", "commitment", "response"}:
+        if not isinstance(data, dict) or not {"statement", "commitment", "response"}.issubset(data):
             raise ValueError("proof must contain statement, commitment and response")
         statement, commitment = data["statement"], data["commitment"]
         response = data["response"]

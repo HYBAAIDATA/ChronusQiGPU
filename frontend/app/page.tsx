@@ -23,7 +23,7 @@ export default function OverviewPage() {
   const [capabilities, setCapabilities] = useState<CapabilitiesResponse | null>(null);
   const [capacity, setCapacity] = useState<CapacityResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedTier, setSelectedTier] = useState<string | null>('T6â€“T9');
+  const [selectedTier, setSelectedTier] = useState<string | null>('T6–T9');
   const [telemetryLogs, setTelemetryLogs] = useState<Array<{ time: string; level: string; msg: string; source: string }>>([
     { time: '22:15:02', level: 'INFO', source: 'QiGPU', msg: 'Substrate initialized: NativeMathReferenceBackend registered (infinite precision rational pairs in Q(sqrt(5)))' },
     { time: '22:15:05', level: 'AUDIT', source: 'ALU', msg: '32-Lane Carry-Free Zeckendorf ALU operational; zero carry-ripple depth' },
@@ -62,18 +62,18 @@ export default function OverviewPage() {
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
           <div>
             <div className="text-xs font-mono uppercase tracking-wider text-neutral-400">
-              Executive Brief Â· Substrate Health
+              Executive Brief · Substrate Health
             </div>
             <div className="text-sm font-semibold text-white tracking-tight">
-              Operational Reference State: Deterministic Exact Representation in \(\mathbb&#123;Q&#125;(\sqrt&#123;5&#125;)\)
+              Operational Reference State: Deterministic Exact Representation in ℚ(√5)
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <StatusPill
-            status={capabilities?.status || 'OPERATIONAL'}
-            label={capabilities?.substrate_mode || 'SUBSTRATE & HARDWARE AGNOSTIC'}
+            status={capabilities?.status || (isLoading ? 'PENDING' : 'UNVERIFIED')}
+            label={capabilities?.substrate_mode || (isLoading ? 'POLLING GATEWAY' : 'AWAITING TELEMETRY')}
           />
           <button
             onClick={loadData}
@@ -95,11 +95,11 @@ export default function OverviewPage() {
           </div>
           <div className="space-y-1">
             <div className="text-3xl font-mono font-semibold text-white tracking-tight">
-              {capacity ? capacity.workloads.total.toLocaleString() : '1,048'}
+              {capacity ? capacity.workloads.total.toLocaleString() : '—'}
             </div>
             <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-mono">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>{capacity ? `${capacity.workloads.active} executing / ${capacity.workloads.completed} completed` : '100% Deterministic'}</span>
+              <span>{capacity ? `${capacity.workloads.active} executing / ${capacity.workloads.completed} completed` : 'Awaiting gateway telemetry'}</span>
             </div>
           </div>
           <div className="text-[11px] text-neutral-500 font-mono">
@@ -122,7 +122,7 @@ export default function OverviewPage() {
             </div>
           </div>
           <div className="text-[11px] text-neutral-500 font-mono">
-            RTL Verified Â· 1 Cycle Depth
+            RTL Verified · 1 Cycle Depth
           </div>
         </Card>
 
@@ -141,7 +141,7 @@ export default function OverviewPage() {
             </div>
           </div>
           <div className="text-[11px] text-neutral-500 font-mono">
-            0.0 Collision Rate Â· Theseus Recovered
+            0.0 Collision Rate · Theseus Recovered
           </div>
         </Card>
 
@@ -153,15 +153,15 @@ export default function OverviewPage() {
           </div>
           <div className="space-y-1">
             <div className="text-3xl font-mono font-semibold text-white tracking-tight">
-              144 / 144
+              203 / 203
             </div>
             <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-mono">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>CI Purity Gate Validated</span>
+              <span>94/94 Invariants · CI Purity Gate</span>
             </div>
           </div>
           <div className="text-[11px] text-neutral-500 font-mono">
-            Zero approximation Â· Zero theatre
+            Zero approximation · Zero theatre
           </div>
         </Card>
       </div>
@@ -171,7 +171,7 @@ export default function OverviewPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-neutral-800 gap-2">
           <div>
             <h3 className="text-base font-semibold text-white tracking-tight">
-              T0â€“T14 Substrate Topology Canvas
+              T0–T14 Substrate Topology Canvas
             </h3>
             <p className="text-xs text-neutral-400 font-mono mt-0.5">
               15 execution tiers across 5 architectural planes executing in concert
@@ -185,15 +185,15 @@ export default function OverviewPage() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3.5">
           {/* T0-T2: Orchestration */}
           <div
-            onClick={() => setSelectedTier('T0â€“T2')}
-            className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedTier === 'T0â€“T2'
+            onClick={() => setSelectedTier('T0–T2')}
+            className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedTier === 'T0–T2'
               ? 'bg-blue-950/20 border-blue-500/60 shadow-lg'
               : 'bg-neutral-950 border-neutral-800 hover:border-neutral-700'
               }`}
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-800 text-neutral-200 font-bold">
-                T0â€“T2
+                T0–T2
               </span>
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
             </div>
@@ -209,15 +209,15 @@ export default function OverviewPage() {
 
           {/* T3-T5: Data Movement */}
           <div
-            onClick={() => setSelectedTier('T3â€“T5')}
-            className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedTier === 'T3â€“T5'
+            onClick={() => setSelectedTier('T3–T5')}
+            className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedTier === 'T3–T5'
               ? 'bg-blue-950/20 border-blue-500/60 shadow-lg'
               : 'bg-neutral-950 border-neutral-800 hover:border-neutral-700'
               }`}
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-800 text-neutral-200 font-bold">
-                T3â€“T5
+                T3–T5
               </span>
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
             </div>
@@ -233,15 +233,15 @@ export default function OverviewPage() {
 
           {/* T6-T9: QiGPU Engine */}
           <div
-            onClick={() => setSelectedTier('T6â€“T9')}
-            className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedTier === 'T6â€“T9'
+            onClick={() => setSelectedTier('T6–T9')}
+            className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedTier === 'T6–T9'
               ? 'bg-blue-950/30 border-blue-400 shadow-lg ring-1 ring-blue-500/30'
               : 'bg-neutral-950 border-neutral-800 hover:border-neutral-700'
               }`}
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-900/60 text-blue-200 font-bold">
-                T6â€“T9
+                T6–T9
               </span>
               <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
             </div>
@@ -257,15 +257,15 @@ export default function OverviewPage() {
 
           {/* T10-T12: Durable State */}
           <div
-            onClick={() => setSelectedTier('T10â€“T12')}
-            className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedTier === 'T10â€“T12'
+            onClick={() => setSelectedTier('T10–T12')}
+            className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedTier === 'T10–T12'
               ? 'bg-blue-950/20 border-blue-500/60 shadow-lg'
               : 'bg-neutral-950 border-neutral-800 hover:border-neutral-700'
               }`}
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-800 text-neutral-200 font-bold">
-                T10â€“T12
+                T10–T12
               </span>
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
             </div>
@@ -281,25 +281,25 @@ export default function OverviewPage() {
 
           {/* T13-T14: Verification */}
           <div
-            onClick={() => setSelectedTier('T13â€“T14')}
-            className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedTier === 'T13â€“T14'
+            onClick={() => setSelectedTier('T13–T14')}
+            className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedTier === 'T13–T14'
               ? 'bg-blue-950/20 border-blue-500/60 shadow-lg'
               : 'bg-neutral-950 border-neutral-800 hover:border-neutral-700'
               }`}
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-900/60 text-purple-200 font-bold">
-                T13â€“T14
+                T13–T14
               </span>
               <span className="w-2 h-2 rounded-full bg-purple-400" />
             </div>
             <div className="font-semibold text-sm text-white">Verification</div>
             <div className="text-xs text-neutral-400 mt-1 leading-snug">
-              Ed25519 tamper-proof receipts & norm proofs
+              Ed25519 & ML-DSA receipts & zk-STARK proofs
             </div>
             <div className="mt-3 pt-2 border-t border-neutral-800 text-[11px] font-mono flex justify-between text-neutral-500">
               <span>Integrity:</span>
-              <span className="text-purple-400">FIPS COMPLIANT</span>
+              <span className="text-purple-400">FIPS 204</span>
             </div>
           </div>
         </div>
@@ -308,20 +308,20 @@ export default function OverviewPage() {
         <div className="p-4 rounded-xl bg-neutral-950 border border-neutral-800/80 font-mono text-xs space-y-2">
           <div className="text-neutral-400">
             <span className="text-blue-400 font-semibold">[TIER DETAIL - {selectedTier}]:</span>{' '}
-            {selectedTier === 'T6â€“T9' && (
+            {selectedTier === 'T6–T9' && (
               'The QiGPU computational core executes non-adjacent Zeckendorf representation transforms. Eliminates traditional binary carry rippling across 32 warps, achieving exact algebraic polynomial evaluation without floating-point errors.'
             )}
-            {selectedTier === 'T0â€“T2' && (
-              'Ingestion, tenant authorization, CCU metering, and execution router dispatch. Directs workloads to NativeMathReferenceBackend or OpenCLPVBackend based on requested precision.'
+            {selectedTier === 'T0–T2' && (
+              'Ingestion, OIDC/JWT 4-tier RBAC, AL HARAS Sheaf Cohomology admission, CCU metering, and HardwareAcceleratorDispatcher routing across NativeMathReferenceBackend, OpenCL, CUDA, and RTL.'
             )}
-            {selectedTier === 'T3â€“T5' && (
-              'Algebraic ring limb allocation (64-bit through 256-bit). Performs zero-copy state pointer transformations and SIMD limb packing.'
+            {selectedTier === 'T3–T5' && (
+              'Algebraic ring limb allocation (64-bit through 256-bit) and DEC Lie-Poisson zero-stall virtual crossbar routing across multi-region pods.'
             )}
-            {selectedTier === 'T10â€“T12' && (
-              'Theseus zero-drift state reconstruction and OVID content-addressed storage. Reconstructs full mathematical state from compact O(1) parametric descriptors.'
+            {selectedTier === 'T10–T12' && (
+              'PostgresWorkloadStore (REPEATABLE READ + retry backoff), Theseus zero-drift state reconstruction, and OVID content-addressed storage.'
             )}
-            {selectedTier === 'T13â€“T14' && (
-              'Cryptographic evidence generation. Signs outputs with process-level Ed25519 keys, tracks Pisot norm contraction bounds (Delta_n <= phi^-n), and records verification receipts.'
+            {selectedTier === 'T13–T14' && (
+              'Cryptographic evidence generation. Signs outputs with NIST FIPS 204 ML-DSA and Ed25519 keys, generates FRI zk-STARK proofs, and tracks Pisot norm contraction bounds.'
             )}
           </div>
         </div>
@@ -337,7 +337,7 @@ export default function OverviewPage() {
             </span>
           </div>
           <span className="text-[11px] font-mono text-neutral-500">
-            Target: http://127.0.0.1:8000 Â· REST / WebSockets Â· 5s Polling
+            Target: http://127.0.0.1:8000 · REST / WebSockets · 5s Polling
           </span>
         </div>
         <div className="p-4 font-mono text-xs space-y-2 text-neutral-400 bg-neutral-950/90 max-h-56 overflow-y-auto">

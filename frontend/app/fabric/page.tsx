@@ -65,7 +65,7 @@ norm_valid_o  <= 1'b1;`,
       <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-neutral-800 bg-neutral-900/60 backdrop-blur-md gap-4">
         <div>
           <div className="text-xs font-mono uppercase tracking-wider text-neutral-400">
-            Execution Fabric Â· QiGPU Substrate
+            Execution Fabric · QiGPU Substrate
           </div>
           <h2 className="text-xl font-semibold text-white tracking-tight">
             Substrate-Agnostic Execution & Hardware Abstraction
@@ -85,19 +85,19 @@ norm_valid_o  <= 1'b1;`,
               Hardware-Agnostic Posture: Direct Algebraic Execution
             </h3>
             <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
-              Chronus operates directly on exact algebraic ring structures (\(\mathbb&#123;Q&#125;(\sqrt&#123;5&#125;)\), metallic means, and non-adjacent Zeckendorf representation). 
+              Chronus operates directly on exact algebraic ring structures (ℚ(√5), metallic means, and non-adjacent Zeckendorf representation). 
               QiGPU does not require proprietary vendor GPU drivers, external host compilers, or physical accelerator availability to execute. 
               The software mathematical reference backend executes immediately and deterministically, while hardware targets (OpenCL, SystemVerilog RTL) provide zero-loss parallel acceleration.
             </p>
             <div className="pt-2 flex flex-wrap gap-2 text-xs font-mono">
               <span className="px-2.5 py-1 rounded bg-neutral-900 text-blue-300 border border-neutral-800">
-                âœ“ No Vendor Lock-In
+                ✓ No Vendor Lock-In
               </span>
               <span className="px-2.5 py-1 rounded bg-neutral-900 text-purple-300 border border-neutral-800">
-                âœ“ Exact Fractional Precision
+                ✓ Exact Fractional Precision
               </span>
               <span className="px-2.5 py-1 rounded bg-neutral-900 text-emerald-300 border border-neutral-800">
-                âœ“ Deterministic Purity
+                ✓ Deterministic Purity
               </span>
             </div>
           </div>
@@ -125,7 +125,7 @@ norm_valid_o  <= 1'b1;`,
             <div>
               <h4 className="text-base font-semibold text-white">NativeMathReferenceBackend</h4>
               <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
-                Exact infinite-precision arithmetic in \(\mathbb&#123;Q&#125;(\sqrt&#123;5&#125;)\) via rational pairs. Fast doubling Lucas sequences up to \(n=100,000\).
+                Exact infinite-precision arithmetic in ℚ(√5) via rational pairs. Fast doubling Lucas sequences up to n = 100,000.
               </p>
             </div>
             <div className="pt-3 border-t border-neutral-800 text-[11px] font-mono text-neutral-500 space-y-1">
@@ -157,7 +157,7 @@ norm_valid_o  <= 1'b1;`,
             <div className="pt-3 border-t border-neutral-800 text-[11px] font-mono text-neutral-500 space-y-1">
               <div className="flex justify-between">
                 <span>Multi-Limb:</span>
-                <span className="text-neutral-200">4 Ã— 64-bit (256-bit)</span>
+                <span className="text-neutral-200">4 × 64-bit (256-bit)</span>
               </div>
               <div className="flex justify-between">
                 <span>Status:</span>
@@ -204,7 +204,7 @@ norm_valid_o  <= 1'b1;`,
                 Interactive RTL Inspector: 32-Lane Zeckendorf ALU
               </h3>
               <p className="text-xs text-neutral-400 font-mono">
-                Source: hw/zeckendorf_alu_32lane.sv Â· Step through cycle pipeline execution
+                Source: hw/zeckendorf_alu_32lane.sv · Step through cycle pipeline execution
               </p>
             </div>
           </div>

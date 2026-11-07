@@ -1,11 +1,26 @@
 """Security primitives in the Chronus reference implementation.
 
 Integrates NIST FIPS 204 ML-DSA, Ed25519, FRI ZK-STARK verifier,
-and the AL HARAS Sovereign Topological Quantum Immunity Swarm Fabric.
+the AL HARAS Sovereign Topological Quantum Immunity Swarm Fabric,
+and the Pentagon, GCHQ, and NATO 4-Frontier Strategic Defense Substrates.
 """
 
-from chronus.security.ovid import OVIDReceipt, OVIDStorage, VerifyEndpoint
-from chronus.security.kms import CloudKMSProvider, KMSKeyProvider, LocalMemoryKeyProvider, VaultKMSProvider, get_kms_provider
+from chronus.security.ovid import (
+    OVIDReceipt,
+    OVIDStorage,
+    OVIDZeroCopyPointer,
+    POINTER_PREFIX,
+    VerifyEndpoint,
+)
+from chronus.security.kms import (
+    CloudKMSProvider,
+    KMSKeyProvider,
+    LocalMemoryKeyProvider,
+    PKCS11HSMKeyProvider,
+    VaultKMSProvider,
+    al_haras_kms_custody,
+    get_kms_provider,
+)
 from chronus.security.signers import (
     Ed25519Signer,
     MLDSASigner,
@@ -25,6 +40,13 @@ from chronus.security.al_haras import (
     HeckeModularChecksum,
     RamanujanExpanderSpectralGapGuard,
     SovereignGovernanceEngine,
+    ALHarasTopologicalKernel,
+    ALHarasSovereignOSProduct,
+    TacticalSwarmMeshEngine,
+    PostQuantumSubstrateEngine,
+    HyperscaleDefenseSimulationEngine,
+    CNISelfHealingEngine,
+    StrategicDefenseCoordinator,
 )
 
 __version__ = "36.0.0"
@@ -49,6 +71,13 @@ __all__ = [
     "HeckeModularChecksum",
     "RamanujanExpanderSpectralGapGuard",
     "SovereignGovernanceEngine",
+    "ALHarasTopologicalKernel",
+    "ALHarasSovereignOSProduct",
+    "TacticalSwarmMeshEngine",
+    "PostQuantumSubstrateEngine",
+    "HyperscaleDefenseSimulationEngine",
+    "CNISelfHealingEngine",
+    "StrategicDefenseCoordinator",
 ]
 
 
@@ -66,6 +95,7 @@ class SecurityContext:
         self.ovid = OVIDStorage()
         self.al_haras_fabric = ALHarasSecurityFabric()
         self.al_haras_sovereign = ALHarasSovereignProductSDK(sovereign_state_id=sovereign_state_id)
+        self.defense_coordinator = StrategicDefenseCoordinator()
         self.verify_endpoint = VerifyEndpoint(
             ml_dsa_signer=self.ml_dsa,
             ed25519_signer=self.ed25519,

@@ -104,7 +104,7 @@ export default function WorkloadsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-neutral-800 bg-neutral-900/60 backdrop-blur-md gap-4">
         <div>
           <div className="text-xs font-mono uppercase tracking-wider text-neutral-400">
-            Workload Subsystem Â· Execution Gateway
+            Workload Subsystem · Execution Gateway
           </div>
           <h2 className="text-xl font-semibold text-white tracking-tight">
             Workload Dispatcher & Cryptographic Receipts
@@ -168,7 +168,7 @@ export default function WorkloadsPage() {
                   placeholder="e.g. 42"
                 />
                 <p className="text-[11px] text-neutral-500 font-mono">
-                  Exact fast-doubling in \(\mathbb&#123;Q&#125;(\sqrt&#123;5&#125;)\): \(L_n = 2F_&#123;n+1&#125; - F_n\)
+                  Exact fast-doubling in ℚ(√5): L_n = 2F_&#123;n+1&#125; - F_n
                 </p>
               </div>
             )}
@@ -180,9 +180,9 @@ export default function WorkloadsPage() {
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { m: '1', label: 'Golden (Ï†)' },
-                    { m: '2', label: 'Silver (Î´_S)' },
-                    { m: '3', label: 'Bronze (Î´_B)' },
+                    { m: '1', label: 'Golden (φ)' },
+                    { m: '2', label: 'Silver (δ_S)' },
+                    { m: '3', label: 'Bronze (δ_B)' },
                   ].map((fam) => (
                     <button
                       key={fam.m}
@@ -197,7 +197,7 @@ export default function WorkloadsPage() {
                   ))}
                 </div>
                 <p className="text-[11px] text-neutral-500 font-mono">
-                  Characteristic polynomial: \(\lambda^2 - m\lambda - 1 = 0\)
+                  Characteristic polynomial: λ² - mλ - 1 = 0
                 </p>
               </div>
             )}
@@ -214,7 +214,7 @@ export default function WorkloadsPage() {
                   className="bg-neutral-950 border-neutral-800 text-white font-mono"
                 />
                 <p className="text-[11px] text-neutral-500 font-mono">
-                  Polyhedral \(SO(3)\) 32-warp carry-free Zeckendorf parallel traversal
+                  Polyhedral SO(3) 32-warp carry-free Zeckendorf parallel traversal
                 </p>
               </div>
             )}
@@ -223,7 +223,7 @@ export default function WorkloadsPage() {
               <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800 font-mono text-xs text-neutral-400 space-y-1">
                 <span className="text-neutral-500 text-[10px] block">LATTICE CONFIGURATION</span>
                 <div>Dimension: <span className="text-white">256-bit Exact</span></div>
-                <div>Limb Precision: <span className="text-blue-400">4 Ã— 64-bit Limbs</span></div>
+                <div>Limb Precision: <span className="text-blue-400">4 × 64-bit Limbs</span></div>
               </div>
             )}
 
@@ -343,7 +343,7 @@ export default function WorkloadsPage() {
                     <StatusPill status={wkld.execution_mode} />
                   </td>
                   <td className="p-3.5 text-neutral-400">{wkld.backend}</td>
-                  <td className="p-3.5 text-blue-400 font-medium">{wkld.zero_copy_pointer_id || 'â€”'}</td>
+                  <td className="p-3.5 text-blue-400 font-medium">{wkld.zero_copy_pointer_id || '—'}</td>
                   <td className="p-3.5 text-neutral-400">{formatMs(wkld.duration_ms)}</td>
                   <td className="p-3.5">
                     <StatusPill status={wkld.status} />
