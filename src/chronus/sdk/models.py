@@ -1,12 +1,8 @@
-"""Data models for the Chronus Python SDK.
+"""Data models and errors for the Chronus Python SDK."""
 
-Production-ready Pydantic models with validation and serialization
-for SDK request/response objects.
-"""
-
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
@@ -37,7 +33,7 @@ class WorkloadResult(BaseModel):
     ccu_cost: Optional[float] = None
     result: Optional[Dict[str, Any]] = None
     verification_receipt: Optional[str] = None
-    submitted_at: datetime = Field(default_factory=datetime.utcnow)
+    submitted_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
@@ -57,13 +53,15 @@ class WorkloadResult(BaseModel):
 
 
 class VerificationReceipt(BaseModel):
-    """Post-quantum signed verification receipt model."""
+    """Signed verification receipt model."""
 
     receipt_id: str = Field(default_factory=lambda: str(uuid4()))
     hash_value: str
     ml_dsa_signature: Optional[str] = None
     ed25519_signature: Optional[str] = None
-    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
     latency_ms: float = 0.0
 
     def to_dict(self) -> Dict[str, Any]:

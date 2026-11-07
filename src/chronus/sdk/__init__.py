@@ -1,9 +1,4 @@
-"""Chronus Quantum iGPU Python SDK — Enterprise Client Library.
-
-Production-ready SDK for interacting with Chronus CIaaS services.
-Supports authentication, workload submission, verification, and
-post-quantum signed receipts.
-"""
+"""HTTP SDK for interacting with the Chronus workload service."""
 
 __version__ = "36.0.0"
 __all__ = [

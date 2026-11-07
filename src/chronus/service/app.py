@@ -1,166 +1,156 @@
-"""Chronus Quantum iGPU REST API Service — Enterprise CIaaS Platform.
+"""Chronus API application factory."""
 
-Production-ready FastAPI application exposing the Chronus computational
-substrate via REST endpoints with OpenAPI specification, authentication,
-rate limiting, CORS, compression, and comprehensive observability.
-"""
-
+import logging
+import os
 import time
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
+from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 
-from chronus.service.dependencies import auth_service, service_config
-from chronus.service.routers import health_router, metrics_router, verify_router, workloads_router
+from chronus.service.dependencies import service_config
 from chronus.service.models import ErrorResponse
+from chronus.service.routers import (
+    console_router,
+    health_router,
+    metrics_router,
+    verify_router,
+    workloads_router,
+)
 
-_SERVICE_START_TIME = time.time()
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Application lifespan manager.
-
-    Handles startup and shutdown of the Chronus service including
-    initialization of security components, distributed systems,
-    and quantum integration layer.
-    """
-    print("Chronus Quantum iGPU v36.0 — Starting CIaaS Service...")
-    print(f"  Post-Quantum Signatures: {service_config.enable_post_quantum}")
-    print(f"  Zero-Auth Verify: {service_config.enable_zero_auth_verify}")
-    print(f"  Max Payload Size: {service_config.max_payload_size_mb} MB")
-    print(f"  Rate Limit: {service_config.rate_limit_requests_per_minute} req/min")
-
+    logger.info(
+        "Chronus API starting; execution_backend_configured=%s",
+        bool(service_config.execution_backend_url),
+    )
     yield
-
-    print("Chronus Quantum iGPU v36.0 — Shutting down CIaaS Service...")
+    logger.info("Chronus API stopped")
 
 
 def create_app() -> FastAPI:
-    """Create and configure the FastAPI application."""
     app = FastAPI(
-        title="Chronus Quantum iGPU CIaaS API",
-        description="""
-# Chronus Quantum iGPU — Representation-Aware Computational Infrastructure
-
-Mathematics-First, Representation-Aware Computational Infrastructure & CIaaS Service Delivery Platform.
-
-## Features
-
-- **Exact Algebraic Computation**: O(1) constant structural RAM via Binet-Zeckendorf and PV Lucas collapse
-- **Post-Quantum Security**: ML-DSA (FIPS 204) + Ed25519 signatures
-- **Zero-Knowledge Verification**: zk-STARK FRI-based proof verification
-- **Zero-Auth Verify**: `/verify/{hash}` endpoint with no authentication required (Invariant I7)
-- **Enterprise SDK**: Python SDK with full type hints and async support
-- **Distributed Execution**: Failure injection, health checking, cluster orchestration
-- **Quantum Integration**: Holonomic Berry Connection, NVQLink QLDPC, CUDA-Q compiler
-
-## Authentication
-
-Most endpoints require a Bearer token in the `Authorization` header:
-```
-Authorization: Bearer <tenant_id>:<access_token>
-```
-
-The `/verify/{hash}` endpoint supports zero-auth access per Invariant I7.
-
-
-    # CORS middleware
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        title="Chronus Quantum iGPU API",
+        version="36.0.0",
+        description=(
+            "Chronus is a mathematics-first, representation-aware computational "
+            "substrate. Its execution model is designed to operate on a native "
+            "mathematical reference backend and to extend workloads to client or "
+            "fleet accelerators through backend adapters. This API currently "
+            "executes supported workloads on the native reference backend or "
+            "forwards them to an explicitly configured compatible execution service."
+        ),
+        lifespan=lifespan,
     )
 
-    # Compression middleware
+    allowed_origins = [
+        origin.strip()
+        for origin in os.getenv("CHRONUS_CORS_ORIGINS", "").split(",")
+        if origin.strip()
+    ]
+    if allowed_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=allowed_origins,
+            allow_credentials=True,
+            allow_methods=["GET", "POST", "PUT", "DELETE"],
+            allow_headers=[
+                "Authorization",
+                "Content-Type",
+                "X-Request-ID",
+                "X-Tenant-ID",
+                "X-Region",
+                "X-Endpoint",
+                "X-SDK-Version",
+            ],
+        )
     app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-    # Exception handlers
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(
         request: Request, exc: RequestValidationError
     ) -> JSONResponse:
         return JSONResponse(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            content=ErrorResponse(
-                error="validation_error",
-                error_code="VAL001",
-                message="Request validation failed",
-                details={"errors": exc.errors()},
-            ).dict(),
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            content=jsonable_encoder(
+                ErrorResponse(
+                    error="validation_error",
+                    error_code="VAL001",
+                    message="Request validation failed",
+                    details={
+                        "errors": [
+                            {key: error[key] for key in ("type", "loc", "msg") if key in error}
+                            for error in exc.errors()
+                        ]
+                    },
+                )
+            ),
+        )
+
+    @app.exception_handler(HTTPException)
+    async def http_exception_handler(
+        request: Request, exc: HTTPException
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=jsonable_encoder({"detail": exc.detail}),
+            headers=exc.headers,
         )
 
     @app.exception_handler(Exception)
     async def generic_exception_handler(
         request: Request, exc: Exception
     ) -> JSONResponse:
+        logger.exception("Unhandled request error for %s", request.url.path)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content=ErrorResponse(
-                error="internal_server_error",
-                error_code="INT001",
-                message="An unexpected error occurred",
-                details={"exception": str(exc)},
-            ).dict(),
+            content=jsonable_encoder(
+                ErrorResponse(
+                    error="internal_server_error",
+                    error_code="INT001",
+                    message="An unexpected error occurred",
+                )
+            ),
         )
 
-    # Health check middleware
     @app.middleware("http")
     async def add_process_time_header(request: Request, call_next):
-        start_time = time.time()
+        started = time.perf_counter()
         response = await call_next(request)
-        process_time = time.time() - start_time
-        response.headers["X-Process-Time"] = str(process_time)
-        response.headers["X-Service-Version"] = "36.0.0"
+        response.headers["X-Process-Time"] = str(time.perf_counter() - started)
+        response.headers["X-Service-Version"] = app.version
         return response
 
-    # Register routers
     app.include_router(workloads_router)
     app.include_router(verify_router)
     app.include_router(health_router)
     app.include_router(metrics_router)
+    app.include_router(console_router)
 
-    # Root endpoint
     @app.get("/", include_in_schema=False)
     async def root():
         return {
-            "service": "Chronus Quantum iGPU CIaaS",
-            "version": "36.0.0",
-            "status": "operational",
+            "service": "Chronus Quantum iGPU API",
+            "version": app.version,
+            "status": (
+                "remote_adapter"
+                if service_config.execution_backend_url
+                else "native_reference"
+            ),
             "docs": "/docs",
             "health": "/health",
-            "verify": "/verify/{hash}",
+            "readiness": "/health/ready",
         }
 
     return app
 
 
-# Create application instance
 app = create_app()
-## Rate Limiting
-
-- 600 requests per minute per tenant
-- 100 request burst allowance
-- Zero-auth endpoints: minimal allowance
-        """,
-        version="36.0.0",
-        contact={
-            "name": "Chronus Systems",
-            "url": "https://github.com/hybadatadevops1/Chronusv2",
-        },
-        license_info={
-            "name": "MIT License",
-            "url": "https://opensource.org/licenses/MIT",
-        },
-        docs_url="/docs",
-        redoc_url="/redoc",
-        openapi_url="/openapi.json",
-        lifespan=lifespan,
-    )

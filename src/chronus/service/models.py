@@ -4,12 +4,14 @@ Enterprise-grade Pydantic models with validation, serialization,
 and OpenAPI schema generation for all service endpoints.
 """
 
-from datetime import datetime
+import base64
+import binascii
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 
 class WorkloadType(str, Enum):
@@ -17,6 +19,13 @@ class WorkloadType(str, Enum):
 
     QUANTUM_CHEMISTRY_VQE = "QUANTUM_CHEMISTRY_VQE"
     EXACT_Q5_ALGEBRAIC = "EXACT_Q5_ALGEBRAIC"
+    LUCAS_PV_SCALING = "LUCAS_PV_SCALING"
+    SHA256D_NONCE_SEARCH = "SHA256D_NONCE_SEARCH"
+    PV_LATTICE_FOLD = "PV_LATTICE_FOLD"
+    TRINITY_SCALE_FOLD_STORE = "TRINITY_SCALE_FOLD_STORE"
+    PHYLOTAXIS_STORE = "PHYLOTAXIS_STORE"
+    THESEUS_RETRIEVE = "THESEUS_RETRIEVE"
+    OVID_NORM_PROOF = "OVID_NORM_PROOF"
     O1_STRUCTURAL_PV = "O1_STRUCTURAL_PV"
     ENTERPRISE_FINANCIAL_ETL = "ENTERPRISE_FINANCIAL_ETL"
     LEGAL_LITIGATION_ANALYSIS = "LEGAL_LITIGATION_ANALYSIS"
@@ -76,9 +85,11 @@ class WorkloadRequest(BaseModel):
     )
     priority: Priority = Field(default=Priority.HIGH, description="Workload priority")
     tenant_id: str = Field(..., description="Tenant identifier", min_length=1, max_length=128)
-    access_token: str = Field(..., description="Access token for authentication", min_length=1)
     region: str = Field(default="us-east-1", description="Deployment region")
     endpoint: str = Field(default="internal_v1", description="API endpoint version")
+    backend_preference: Optional[str] = Field(
+        None, description="Optional registered backend name"
+    )
     callback_url: Optional[str] = Field(
         None, description="Optional webhook URL for completion notification"
     )
@@ -86,23 +97,35 @@ class WorkloadRequest(BaseModel):
         default=None, description="Optional metadata key-value pairs"
     )
 
-    @validator("payload_bytes")
+    @field_validator("payload_bytes", mode="before")
+    @classmethod
+    def decode_wire_payload(cls, value: Any) -> Any:
+        if isinstance(value, str) and value.startswith("base64:"):
+            try:
+                return base64.b64decode(value[7:], validate=True)
+            except (ValueError, binascii.Error) as exc:
+                raise ValueError("payload_bytes must contain valid base64 data") from exc
+        return value
+
+    @field_validator("payload_bytes")
+    @classmethod
     def payload_must_not_be_empty(cls, v: bytes) -> bytes:
         if not v:
             raise ValueError("payload_bytes cannot be empty")
         return v
 
-    @validator("tenant_id")
+    @field_serializer("payload_bytes", when_used="json")
+    def encode_wire_payload(self, value: bytes) -> str:
+        return "base64:" + base64.b64encode(value).decode("ascii")
+
+    @field_validator("tenant_id")
+    @classmethod
     def tenant_id_must_be_valid(cls, v: str) -> str:
         if not v or not v.strip():
             raise ValueError("tenant_id must be a non-empty string")
         return v.strip()
 
-    class Config:
-        use_enum_values = True
-        json_encoders = {
-            bytes: lambda v: v.decode("latin-1") if v else "",
-        }
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class WorkloadResponse(BaseModel):
@@ -115,7 +138,7 @@ class WorkloadResponse(BaseModel):
     priority: Priority
     tenant_id: str
     region: str
-    submitted_at: datetime = Field(default_factory=datetime.utcnow)
+    submitted_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     ccu_cost: Optional[float] = Field(
@@ -127,12 +150,7 @@ class WorkloadResponse(BaseModel):
     callback_url: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
 
-    class Config:
-        use_enum_values = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat() if v else None,
-            UUID: lambda v: str(v),
-        }
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class HealthStatus(str, Enum):
@@ -159,7 +177,7 @@ class HealthResponse(BaseModel):
 
     status: HealthStatus
     version: str = "36.0.0"
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     components: List[ComponentHealth]
     uptime_seconds: float
     total_workloads: int
@@ -170,16 +188,16 @@ class VerificationResult(BaseModel):
     """Result of invariant verification."""
 
     qualification_status: str = Field(
-        default="PRODUCTION_QUALIFIED",
-        description="Overall qualification status",
+        default="NOT_A_RELEASE_QUALIFICATION",
+        description="Receipt verification result; this is not release qualification",
     )
-    total_release_gates_evaluated: int = 8
-    release_gates_passed: int = 8
-    total_invariants_evaluated: int = 88
-    invariants_passed: int = 88
+    total_release_gates_evaluated: int = 0
+    release_gates_passed: int = 0
+    total_invariants_evaluated: int = 0
+    invariants_passed: int = 0
     gate_results: List[Dict[str, Any]] = Field(default_factory=list)
-    invariant_summary: str = "All 88 Architectural Invariants (I1-I88) Green"
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    invariant_summary: str = "Release qualification was not evaluated."
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     verification_suite_total_latency_ms: float = 0.0
 
 
@@ -189,7 +207,7 @@ class ErrorResponse(BaseModel):
     error: str
     error_code: str
     message: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     request_id: Optional[str] = None
     details: Optional[Dict[str, Any]] = None
 

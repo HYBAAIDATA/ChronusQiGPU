@@ -1,27 +1,16 @@
-"""OVID Content-Addressable Storage and Receipt System.
+"""In-process content-addressed object and receipt primitives.
 
-Production-ready OVID (Object Verifiable ID) storage with content-addressable
-identifiers, post-quantum signed receipts, and zero-copy views.
+The implementation is process-local; it is not a durable or distributed
+storage service.
 """
 
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 
 class OVIDReceipt:
-    """OVID (Object Verifiable ID) Receipt.
-
-    Represents a cryptographically signed receipt for a stored OVID object.
-    Supports both ML-DSA (post-quantum) and Ed25519 (classical) signatures.
-
-    Invariant Contract:
-        I1: Every stored OVID object has a COS-resident receipt
-        I2: Receipt hash == sha256(rfc8785(payload)) [RFC 8785 canonical]
-        I3: Every receipt carries a valid signature (Ed25519 or ML-DSA)
-        I10: OVID IDs are content-addressed (same bytes → same ID)
-        I11: Retrieve after store returns byte-identical content
-    """
+    """Receipt binding an object digest to optional signature records."""
 
     def __init__(
         self,
@@ -37,12 +26,11 @@ class OVIDReceipt:
         self.hash_value = hash_value
         self.ml_dsa_signature = ml_dsa_signature
         self.ed25519_signature = ed25519_signature
-        self.timestamp = timestamp or datetime.utcnow().isoformat()
+        self.timestamp = timestamp or datetime.now(timezone.utc).isoformat()
         self.latency_ms = latency_ms
         self.metadata = metadata or {}
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert receipt to dictionary for serialization."""
         return {
             "receipt_id": self.receipt_id,
             "hash_value": self.hash_value,
@@ -55,55 +43,35 @@ class OVIDReceipt:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "OVIDReceipt":
-        """Create receipt from dictionary."""
         return cls(
             receipt_id=data["receipt_id"],
             hash_value=data["hash_value"],
             ml_dsa_signature=data.get("ml_dsa_signature"),
             ed25519_signature=data.get("ed25519_signature"),
             timestamp=data.get("timestamp"),
+            latency_ms=data.get("latency_ms", 0.0),
+            metadata=data.get("metadata"),
+        )
 
 
 class OVIDStorage:
-    """Content-Addressable OVID Storage System.
-
-    Implements content-addressable storage where the same bytes always
-    produce the same OVID ID (Invariant I10). Supports zero-copy views
-    and post-quantum signed receipts.
-    """
+    """In-memory content-addressed byte store and receipt registry."""
 
     def __init__(self) -> None:
-        """Initialize OVID storage."""
         self._store: Dict[str, bytes] = {}
         self._receipts: Dict[str, OVIDReceipt] = {}
         self._store_count = 0
         self._retrieve_count = 0
 
     def store(self, payload: bytes) -> str:
-        """Store bytes and return content-addressable OVID ID.
-
-        Args:
-            payload: Bytes to store.
-
-        Returns:
-            OVID ID (SHA-256 hash of payload).
-        """
-        ovid_id = hashlib.sha256(payload).hexdigest()
-        self._store[ovid_id] = payload
+        if not isinstance(payload, bytes):
+            raise TypeError("payload must be bytes")
+        object_id = hashlib.sha256(payload).hexdigest()
+        self._store.setdefault(object_id, payload)
         self._store_count += 1
-        return ovid_id
+        return object_id
 
     def retrieve(self, ovid_id: str) -> Optional[bytes]:
-        """Retrieve stored bytes by OVID ID.
-
-        Per Invariant I11: Retrieve after store returns byte-identical content.
-
-        Args:
-            ovid_id: Content-addressable OVID ID.
-
-        Returns:
-            Stored bytes if found, None otherwise.
-        """
         self._retrieve_count += 1
         return self._store.get(ovid_id)
 
@@ -114,134 +82,9 @@ class OVIDStorage:
         ed25519_signature: Optional[str] = None,
         latency_ms: float = 0.0,
     ) -> OVIDReceipt:
-        """Create a signed receipt for a stored OVID object.
-
-        Args:
-            ovid_id: OVID ID of the stored object.
-            ml_dsa_signature: Optional ML-DSA signature.
-            ed25519_signature: Optional Ed25519 signature.
-            latency_ms: Verification latency in milliseconds.
-
-
-
-class VerifyEndpoint:
-    """Zero-Auth Verify Endpoint (/verify/{hash}).
-
-    Per Invariant I7: /verify/<hash> returns {valid: true} with no auth required.
-    Supports post-quantum ML-DSA and Ed25519 signed receipts plus zk-STARK proof.
-    """
-
-    def __init__(
-        self,
-        ml_dsa_signer: Any,
-        ed25519_signer: Any,
-        zk_stark_verifier: Any,
-        ovid_storage: Optional[OVIDStorage] = None,
-    ) -> None:
-        """Initialize verify endpoint.
-
-        Args:
-            ml_dsa_signer: ML-DSA signer instance.
-            ed25519_signer: Ed25519 signer instance.
-            zk_stark_verifier: zk-STARK verifier instance.
-            ovid_storage: Optional OVID storage instance.
-        """
-        self.ml_dsa_signer = ml_dsa_signer
-        self.ed25519_signer = ed25519_signer
-        self.zk_stark_verifier = zk_stark_verifier
-        self.ovid_storage = ovid_storage or OVIDStorage()
-        self._verification_count = 0
-        self._zero_auth_count = 0
-
-    def verify_receipt(self, receipt: OVIDReceipt) -> bool:
-        """Verify an OVID receipt using all available signature schemes.
-
-        Args:
-            receipt: OVIDReceipt to verify.
-
-        Returns:
-            True if receipt passes verification.
-        """
-        self._verification_count += 1
-
-        # Verify OVID object exists
-        if not self.ovid_storage.verify_receipt(receipt):
-            return False
-
-        # Verify ML-DSA signature if present
-        if receipt.ml_dsa_signature:
-            if not self.ml_dsa_signer.verify(
-                receipt.hash_value.encode("utf-8"), receipt.ml_dsa_signature
-            ):
-                return False
-
-        # Verify Ed25519 signature if present
-        if receipt.ed25519_signature:
-            if not self.ed25519_signer.verify(
-                receipt.hash_value.encode("utf-8"), receipt.ed25519_signature
-            ):
-                return False
-
-        return True
-
-    def verify_hash_zero_auth(self, hash_value: str) -> Dict[str, Any]:
-        """Verify a hash with zero authentication required.
-
-        Per Invariant I7: /verify/<hash> returns {valid: true} with no auth required.
-
-        Args:
-            hash_value: Hash value to verify.
-
-        Returns:
-            Verification result dictionary.
-        """
-        self._verification_count += 1
-        self._zero_auth_count += 1
-
-        receipt = self.ovid_storage.get_receipt(hash_value)
-
-        if receipt is not None:
-            is_valid = self.verify_receipt(receipt)
-            return {
-                "valid": is_valid,
-                "hash": hash_value,
-                "receipt_id": receipt.receipt_id,
-                "ml_dsa_verified": receipt.ml_dsa_signature is not None,
-                "ed25519_verified": receipt.ed25519_signature is not None,
-                "auth_required": False,
-                "invariant_i7": True,
-            }
-
-        return {
-            "valid": False,
-            "hash": hash_value,
-            "receipt_id": None,
-            "ml_dsa_verified": False,
-            "ed25519_verified": False,
-            "auth_required": False,
-            "invariant_i7": True,
-            "error": "Hash not found in OVID storage",
-        }
-
-    def get_stats(self) -> Dict[str, Any]:
-        """Get verify endpoint statistics."""
-        return {
-            "total_verifications": self._verification_count,
-            "zero_auth_verifications": self._zero_auth_count,
-            "invariant_i7_enabled": True,
-            "ml_dsa_enabled": True,
-            "ed25519_enabled": True,
-            "zk_stark_enabled": True,
-        }
-        Returns:
-            OVIDReceipt instance.
-
-        Raises:
-            ValueError: If OVID ID not found in storage.
-        """
-        if ovid_id not in self._store:
-            raise ValueError(f"OVID ID {ovid_id} not found in storage")
-
+        payload = self._store.get(ovid_id)
+        if payload is None or hashlib.sha256(payload).hexdigest() != ovid_id:
+            raise ValueError(f"OVID ID {ovid_id} not found or invalid")
         receipt = OVIDReceipt(
             receipt_id=ovid_id,
             hash_value=ovid_id,
@@ -253,33 +96,77 @@ class VerifyEndpoint:
         return receipt
 
     def get_receipt(self, ovid_id: str) -> Optional[OVIDReceipt]:
-        """Get receipt for an OVID ID."""
         return self._receipts.get(ovid_id)
 
     def verify_receipt(self, receipt: OVIDReceipt) -> bool:
-        """Verify an OVID receipt.
-
-        Args:
-            receipt: OVIDReceipt to verify.
-
-        Returns:
-            True if receipt is valid, False otherwise.
-        """
-        if receipt.receipt_id not in self._store:
-            return False
-        if not receipt.ml_dsa_signature and not receipt.ed25519_signature:
-            return False
-        return True
+        payload = self._store.get(receipt.receipt_id)
+        return bool(
+            payload is not None
+            and receipt.receipt_id == receipt.hash_value
+            and hashlib.sha256(payload).hexdigest() == receipt.receipt_id
+            and (
+                receipt.ml_dsa_signature
+                or receipt.ed25519_signature
+            )
+        )
 
     def get_stats(self) -> Dict[str, Any]:
-        """Get storage statistics."""
         return {
             "store_count": self._store_count,
             "retrieve_count": self._retrieve_count,
             "stored_objects": len(self._store),
             "receipts": len(self._receipts),
             "content_addressable": True,
+            "durable": False,
         }
-            latency_ms=data.get("latency_ms", 0.0),
-            metadata=data.get("metadata", {}),
-        )
+
+
+class VerifyEndpoint:
+    """Receipt verifier operating against a supplied object store."""
+
+    def __init__(
+        self,
+        ml_dsa_signer: Any,
+        ed25519_signer: Any,
+        zk_stark_verifier: Any,
+        ovid_storage: Optional[OVIDStorage] = None,
+    ) -> None:
+        self.ml_dsa_signer = ml_dsa_signer
+        self.ed25519_signer = ed25519_signer
+        self.zk_stark_verifier = zk_stark_verifier
+        self.ovid_storage = ovid_storage or OVIDStorage()
+        self._verification_count = 0
+        self._zero_auth_count = 0
+
+    def verify_receipt(self, receipt: OVIDReceipt) -> bool:
+        self._verification_count += 1
+        if not self.ovid_storage.verify_receipt(receipt):
+            return False
+        if receipt.ml_dsa_signature:
+            if self.ml_dsa_signer is None or not self.ml_dsa_signer.verify(
+                receipt.hash_value.encode("ascii"), receipt.ml_dsa_signature
+            ):
+                return False
+        if receipt.ed25519_signature:
+            if self.ed25519_signer is None or not self.ed25519_signer.verify(
+                receipt.hash_value.encode("ascii"), receipt.ed25519_signature
+            ):
+                return False
+        return bool(receipt.ml_dsa_signature or receipt.ed25519_signature)
+
+    def verify_hash_zero_auth(self, hash_value: str) -> Dict[str, Any]:
+        self._zero_auth_count += 1
+        receipt = self.ovid_storage.get_receipt(hash_value)
+        valid = receipt is not None and self.verify_receipt(receipt)
+        return {
+            "valid": valid,
+            "hash": hash_value,
+            "receipt_id": receipt.receipt_id if receipt and valid else None,
+            "auth_required": False,
+        }
+
+    def get_stats(self) -> Dict[str, Any]:
+        return {
+            "total_verifications": self._verification_count,
+            "zero_auth_verifications": self._zero_auth_count,
+        }

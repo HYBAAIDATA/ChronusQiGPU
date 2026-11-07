@@ -53,6 +53,18 @@ class QuantumDeviceInfo:
             "device_id": self.device_id,
             "backend": self.backend.value,
             "modality": self.modality.value,
+            "num_qubits": self.num_qubits,
+            "quantum_volume": self.quantum_volume,
+            "is_available": self.is_available,
+            "calibration_timestamp": (
+                self.calibration_timestamp.isoformat()
+                if self.calibration_timestamp
+                else None
+            ),
+            "error_rates": self.error_rates,
+            "connectivity_map": self.connectivity_map,
+            "metadata": self.metadata,
+        }
 
 
 class QuantumHardwareAbstraction:

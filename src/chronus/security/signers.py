@@ -1,24 +1,14 @@
-"""Post-Quantum Cryptographic Signers for Chronus Quantum iGPU.
+"""Ed25519 receipt signing and an explicit unavailable ML-DSA interface."""
 
-Production-ready implementation of ML-DSA (FIPS 204) and Ed25519
-digital signatures for OVID receipt signing and verification.
-"""
-
-import hashlib
-import os
-from typing import Any, Dict, Optional, Tuple
+from typing import Optional
 
 from cryptography.hazmat.primitives.asymmetric import ed25519
-from cryptography.hazmat.primitives import hashes
+from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 
 class MLDSASigner:
-    """ML-DSA (FIPS 204) Post-Quantum Digital Signature Signer.
-
-    Implements Module-Lattice-Based Digital Signature Algorithm
-    as standardized in NIST FIPS 204 for post-quantum security.
-    """
+    """Unavailable ML-DSA interface; no conformant implementation is bundled."""
 
     def __init__(self, security_level: int = 3) -> None:
         """Initialize ML-DSA signer.
@@ -26,38 +16,14 @@ class MLDSASigner:
         Args:
             security_level: Security level (2, 3, or 5 for ML-DSA-44/65/87).
         """
+        if security_level not in (2, 3, 5):
+            raise ValueError("security_level must be 2, 3, or 5")
         self.security_level = security_level
-        self._algorithm = "ML-DSA"
-        self._fips_standard = "FIPS 204"
-        self._key_pair: Optional[Tuple[bytes, bytes]] = None
-        self._generate_keypair()
-
-    def _generate_keypair(self) -> None:
-        """Generate ML-DSA key pair (simulated for production readiness)."""
-        # In production, this would use liboqs or pqc library
-        # For now, generate deterministic key material from os.urandom
-        seed = os.urandom(32)
-        private_key = hashlib.sha256(seed + b"ml-dsa-private").digest()
-        public_key = hashlib.sha256(seed + b"ml-dsa-public").digest()
-        self._key_pair = (private_key, public_key)
+        self._algorithm = "ML-DSA-UNAVAILABLE"
+        self._fips_standard = "FIPS 204 (not implemented)"
 
     def sign(self, message: bytes) -> str:
-        """Sign a message using ML-DSA.
-
-        Args:
-            message: Message bytes to sign.
-
-        Returns:
-            Hex-encoded ML-DSA signature.
-        """
-        if self._key_pair is None:
-            raise ValueError("ML-DSA key pair not initialized")
-
-        private_key, _ = self._key_pair
-        # Deterministic signature derived from message + private key
-        signature_input = private_key + message + b"ml-dsa-sign"
-        signature = hashlib.sha256(signature_input).digest()
-        return signature.hex()
+        raise NotImplementedError("A conformant ML-DSA provider is not configured")
 
     def verify(self, message: bytes, signature: str) -> bool:
         """Verify an ML-DSA signature.
@@ -69,23 +35,11 @@ class MLDSASigner:
         Returns:
             True if signature is valid, False otherwise.
         """
-        if self._key_pair is None:
-            return False
-
-        _, public_key = self._key_pair
-        expected = hashlib.sha256(public_key + message + b"ml-dsa-sign").digest()
-        try:
-            sig_bytes = bytes.fromhex(signature)
-            return sig_bytes == expected
-        except ValueError:
-            return False
+        return False
 
     def get_public_key(self) -> Optional[str]:
         """Get the hex-encoded public key."""
-        if self._key_pair is None:
-            return None
-        _, public_key = self._key_pair
-        return public_key.hex()
+        return None
 
     @property
     def algorithm(self) -> str:
@@ -147,7 +101,7 @@ class Ed25519Signer:
             sig_bytes = bytes.fromhex(signature)
             self._public_key.verify(sig_bytes, message)
             return True
-        except Exception:
+        except (InvalidSignature, ValueError):
             return False
 
     def get_public_key(self) -> Optional[str]:

@@ -1,7 +1,7 @@
-"""Chronus Quantum iGPU Security Layer — Post-Quantum Cryptography.
+"""Security primitives in the Chronus reference implementation.
 
-Production-ready post-quantum security with ML-DSA (FIPS 204), Ed25519,
-zk-STARK FRI verification, and zero-auth verify endpoint.
+Ed25519 receipts are process-local. ML-DSA and cryptographic STARK/FRI
+verification are not implemented.
 """
 
 from chronus.security.ovid import OVIDReceipt, OVIDStorage, VerifyEndpoint

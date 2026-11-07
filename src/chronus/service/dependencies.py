@@ -5,15 +5,16 @@ session dependencies for all route handlers.
 """
 
 import time
+import os
+import json
 from collections import defaultdict
-from datetime import datetime, timedelta
 from typing import Dict, Optional
 from uuid import uuid4
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from chronus.service.models import ErrorResponse, WorkloadRequest
+from chronus.service.models import ErrorResponse
 
 
 # Security scheme
@@ -29,8 +30,11 @@ class ServiceConfig:
         self.rate_limit_burst: int = 100
         self.max_payload_size_mb: int = 100
         self.default_region: str = "us-east-1"
-        self.enable_post_quantum: bool = True
+        self.enable_post_quantum: bool = False
         self.enable_zero_auth_verify: bool = True
+        self.execution_backend_url: Optional[str] = os.getenv(
+            "CHRONUS_EXECUTION_BASE_URL"
+        )
 
 
 class RateLimiter:
@@ -75,6 +79,15 @@ class AuthService:
     def __init__(self) -> None:
         self._tokens: Dict[str, Dict[str, str]] = {}
         self._rate_limiter = RateLimiter()
+        configured_tokens = os.getenv("CHRONUS_TENANT_TOKENS", "{}")
+        try:
+            tenant_tokens = json.loads(configured_tokens)
+        except json.JSONDecodeError as exc:
+            raise ValueError("CHRONUS_TENANT_TOKENS must be a JSON object") from exc
+        if not isinstance(tenant_tokens, dict):
+            raise ValueError("CHRONUS_TENANT_TOKENS must be a JSON object")
+        for tenant_id, token in tenant_tokens.items():
+            self.register_tenant(tenant_id, token)
 
     def authenticate(
         self, credentials: Optional[HTTPAuthorizationCredentials]
@@ -91,13 +104,6 @@ class AuthService:
         if token in self._tokens:
             return self._tokens[token].get("tenant_id")
 
-        # Validate token format (tenant_id:access_token)
-        if ":" in token:
-            parts = token.split(":", 1)
-            tenant_id = parts[0]
-            self._tokens[token] = {"tenant_id": tenant_id}
-            return tenant_id
-
         return None
 
     def check_rate_limit(self, tenant_id: Optional[str]) -> None:
@@ -113,11 +119,16 @@ class AuthService:
                     error="rate_limit_exceeded",
                     error_code="RL001",
                     message="Too many requests. Please slow down.",
-                ).dict(),
+                ).model_dump(),
             )
 
     def register_tenant(self, tenant_id: str, access_token: str) -> None:
         """Register a new tenant with an access token."""
+        if not tenant_id or not tenant_id.strip() or not access_token:
+            raise ValueError("tenant_id and access_token must be non-empty")
+        existing = self._tokens.get(access_token)
+        if existing and existing["tenant_id"] != tenant_id:
+            raise ValueError("access_token is already assigned to another tenant")
         self._tokens[access_token] = {"tenant_id": tenant_id}
 
 
@@ -152,14 +163,18 @@ def get_current_tenant(
     auth.check_rate_limit(tenant_id)
 
     # For workload submission, require authentication
-    if request.method in ("POST", "PUT", "DELETE") and tenant_id is None:
+    protected_operation = request.method in ("POST", "PUT", "DELETE")
+    protected_resource = request.url.path.startswith(
+        ("/workloads", "/verify/receipt")
+    )
+    if tenant_id is None and (protected_operation or protected_resource):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ErrorResponse(
                 error="authentication_required",
                 error_code="AUTH001",
                 message="Valid authentication token required for this operation.",
-            ).dict(),
+            ).model_dump(),
         )
 
     return tenant_id
