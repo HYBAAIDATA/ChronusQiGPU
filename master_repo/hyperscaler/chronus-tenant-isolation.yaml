@@ -1,0 +1,61 @@
+# Chronus Tenant Isolation (NetworkPolicy + RBAC) for Multi‑Tenant Hyperscaler Deployments
+# This snippet can be applied to a Kubernetes cluster that hosts multiple
+# Chronus tenants. It creates isolated network policies and RBAC roles so that
+# tenant workloads cannot interfere with one another.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tenant-a
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tenant-a-isolate
+  namespace: tenant-a
+spec:
+  podSelector:
+    matchLabels:
+      app: chronus-gpiu
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              tenant: "tenant-a"
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              tenant: "tenant-a"
+    - to:
+        - namespaceSelector:
+            matchNames:
+              - "kube-system"
+              - "monitoring"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: chronus-tenant-a-admin
+  namespace: tenant-a
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "delete"]
+  - apiGroups: ["chronus.dev"]
+    resources: ["ovidreceipts", "theseusjournals"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tenant-a-bind-admin
+  namespace: tenant-a
+subjects:
+  - kind: User
+    name: "admin-a@example.com"   # replace with actual identity
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: chronus-tenant-a-admin
+  apiGroup: rbac.authorization.k8s.io

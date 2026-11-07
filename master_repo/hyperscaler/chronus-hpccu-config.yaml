@@ -1,0 +1,35 @@
+# Chronus HCCU (Chronus Capacity Unit) Billing Configuration
+# This file defines the pricing and metering parameters that hyperscaler
+# operators can expose to their billing pipelines.
+
+# CCU = Chronus Capacity Unit; one CCU corresponds to a unit of verified
+# workload execution (e.g., one million algebraic operations, one VQE run,
+# or a fixed amount of OVID storage).
+
+ccu_definitions:
+  # Example: 1 CCU = 1e6 exact algebraic operations in F_257[phi]
+  algebraic_op: 1e6
+
+  # VQE execution (single shot) costs 5 CCUs
+  vqe_run: 5
+
+  # OVID object store per GB per month = 0.02 CCUs
+  ovid_storage_per_gb_month: 0.02
+
+  # ML-DSA signature generation per signature = 0.1 CCU
+  mldsa_signature: 0.1
+
+  # FRI zk-STARK proof generation per proof = 2 CCUs
+  fri_proof: 2
+
+# Billing endpoint template that hyperscaler can plug into their system:
+#   https://billing.<hyperscaler-domain>/chronus/ccu?job_id={job_id}&units={units}
+billing_endpoint_template: "https://billing.<hyperscaler-domain>/chronus/ccu?job_id={job_id}&units={units}"
+
+# -----------------------------------------------------------------
+# Example of how a pod can expose its CCU consumption via an env var:
+#   - name: CHRONUS_CCU_CONSUMED
+#     valueFrom:
+#       resourceFieldRef:
+#         resource: chronus_ccu
+# -----------------------------------------------------------------

@@ -1,0 +1,60 @@
+# Chronus GPU Node Pool (AWS p4d / GKE n1-standard-16 with NVIDIA A100)
+# This manifest describes a node pool that the Cluster Autoscaler can
+# grow/shrink. It is example‑specific to each cloud provider; adjust the
+# machine type, accelerator count, and labels as needed.
+
+# -------------------------------------------------------------------------
+# AWS example (p4d.24xlarge):
+#   * 8 × NVIDIA A100 GPUs
+#   * 1.152 TB memory per node
+#   * 48 vCPUs (Amazon EC2)
+# -------------------------------------------------------------------------
+# apiVersion: machine.openshift.io/v1beta1
+# kind: NodePool
+# metadata:
+#   name: gpu‑pool
+#   namespace: openshift-machine-api
+# spec:
+#   machine:
+#     type: p4d.24xlarge
+#     sshKey: <ssh‑public‑key>
+#   awsMachineTemplate:
+#     spec:
+#       amiType: AL2_x86_64
+#       instanceType: p4d.24xlarge
+#       rootVolume:
+#         size: 500 GiB
+#       accelerator:
+#         - type: nvidia-a100
+#           count: 8
+#           driver: null
+# -------------------------------------------------------------------------
+# GKE example (n1‑standard‑16 with 4 A100s):
+#   * 4 × NVIDIA A100 GPUs per node
+#   * 64 GB memory, 16 vCPUs
+# -------------------------------------------------------------------------
+# apiVersion: containers.gke.io/v1
+# kind: NodePool
+# metadata:
+#   name: gpu‑pool
+#   namespace: gke‑system
+# spec:
+#   config:
+#     machineType: n1-standard-16
+#     diskSizeGb: 250
+#     oauthScopes:
+#       - https://www.googleapis.com/auth/compute.readonly
+#   whereabouts:
+#     defaultPools:
+#       - tag: nvidia‑a100
+# -------------------------------------------------------------------------
+# Common labels to aid the Cluster Autoscaler and Prometheus discovery:
+#   cloudprovider: aws   # or gke
+#   gpu‑type: nvidia‑a100
+#   chronus‑enabled: "true"
+# -------------------------------------------------------------------------
+# To enable automatic registration of the node pool with the Chronus
+# Deployment’s GPU affinity, ensure the following label is present on every
+# node:
+#   chronus.gpiu.io/gpu‑pool: "true"
+# -------------------------------------------------------------------------

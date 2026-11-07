@@ -1,0 +1,68 @@
+# Chronus GPU Device Plugin Manifest
+# This file can be deployed as a DaemonSet to expose NVIDIA GPUs to pods
+# via the Device Plugin API (https://kubernetes.io/docs/concepts/extend-kubernetes/plugin/compute/device-plugins/).
+# The plugin simply lists the available GPUs on each node; the Chronus
+# Deployment’s tolerations and affinity then schedule pods onto nodes that
+# have GPUs available.
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin
+  namespace: kube-system
+  labels:
+    name: nvidia-device-plugin
+spec:
+  selector:
+    matchLabels:
+      name: nvidia-device-plugin
+  template:
+    metadata:
+      labels:
+        name: nvidia-device-plugin
+    spec:
+      hostPID: true
+      hostIPC: true
+      containers:
+        - name: nvidia-device-plugin
+          image: nvidia/k8s-device-plugin:1.11
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: device-plugins
+              mountPath: /var/lib/kubelet/device-plugins
+          ports:
+            - containerPort: 50000
+              protocol: TCP
+          env:
+            - name: CUDA_VISIBLE_DEVICES
+              value: "*"
+      volumes:
+        - name: device-plugins
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+            type: DirectoryOrCreate
+---
+# Optional RuntimeDefault device plugin configuration for OpenShift:
+#   apiVersion: machine.openshift.io/v1
+#   kind: RuntimeClass
+#   metadata:
+#     name: nvidia
+#   description: "Run pods on nodes with NVIDIA GPUs via the device plugin"
+#   handler: "nvidia"
+#   menu: |
+#     type: ContainerRuntimeHandler
+#     containerRuntime: "containerd"
+# -------------------------------------------------------------------------
+# After the DaemonSet is running, pods can request a GPU by specifying:
+#   resources:
+#     limits:
+#       nvidia.com/gpu: "1"
+#   tolerations:
+#     - key: "nvidia.com/gpu"
+#       operator: "Exists"
+# -------------------------------------------------------------------------
+# To verify the plugin is working:
+#   kubectl get daemonset nvidia-device-plugin -n kube-system
+#   kubectl describe pod <pod-name> | grep -i nvidia
+# -------------------------------------------------------------------------
