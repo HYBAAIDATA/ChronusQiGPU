@@ -21,7 +21,7 @@ Chronus is being positioned with Dubai/DIFC as headquarters and London as the go
 
 | Capability | Current implementation |
 |---|---|
-| Native mathematical execution | `EXACT_Q5_ALGEBRAIC` add, subtract, multiply, and divide; `LUCAS_PV_SCALING` using exact Fibonacci fast doubling and \(L_n=2F_{n+1}-F_n\). |
+| Native mathematical execution | `EXACT_Q5_ALGEBRAIC` arithmetic, `LUCAS_PV_SCALING`, exact `PV_LATTICE_FOLD`, and symbolic `TRINITY_SCALE_FOLD_STORE` with resumable Zeckendorf-encoded seeds. |
 | Hardware-agnostic backend seam | Python protocol, registry, named selection, optional remote forwarding, and experimental opt-in OpenCL GPU adapter; no GPU adapter is registered by default or verified on physical hardware here. |
 | Workload API and SDK | Bearer-token authentication, base64-safe payloads, synchronous workload execution, tenant-checked retrieval/listing, health/readiness, and metrics. |
 | Workload persistence | SQLite records survive process restart on a single node; this is not multi-region or distributed storage. |

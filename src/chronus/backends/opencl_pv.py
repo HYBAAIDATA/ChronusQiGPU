@@ -1,7 +1,6 @@
 """Opt-in OpenCL GPU adapter with exact host-side bounds and full parity checks."""
 
 import hashlib
-import json
 from importlib.resources import files
 from typing import Any
 
@@ -14,29 +13,14 @@ from chronus.backends.lattice import (
     verify_fold,
 )
 from chronus.backends.limbs import encode_int256, decode_int256
+from chronus.backends.lattice_workload import (
+    MAX_ELEMENTS,
+    checked_int64 as _checked,
+    parse_lattice_workload,
+    serialize_lattice,
+)
 
-KERNEL_SHA256 = "25725484f1ec55b841de4c6d9f428f554a746126a5285163e5f9e8414dc16173"
-INT64_MIN = -(1 << 63)
-INT64_MAX = (1 << 63) - 1
-MAX_ELEMENTS = 4096
-MAX_DECIMAL_DIGITS = 1024
-
-
-def _wire_integer(value: Any) -> int:
-    if isinstance(value, int) and not isinstance(value, bool):
-        if value.bit_length() <= 3402 and len(str(abs(value))) <= MAX_DECIMAL_DIGITS:
-            return value
-    if isinstance(value, str):
-        digits = value[1:] if value.startswith("-") else value
-        if 1 <= len(digits) <= MAX_DECIMAL_DIGITS and digits.isascii() and digits.isdecimal():
-            return int(value)
-    raise ValueError(f"coefficients must be integers or decimal strings of at most {MAX_DECIMAL_DIGITS} digits")
-
-
-def _checked(value: int) -> int:
-    if not INT64_MIN <= value <= INT64_MAX:
-        raise LatticeOverflowError("OpenCL fixed-width operation would overflow int64")
-    return value
+KERNEL_SHA256 = "51afee69ead0a470a205f140c4b8f9f439ab2d4682810548713004c3d8001605"
 
 
 def validate_fixed_width(values: list[PhiElement], factor: PhiElement) -> None:
@@ -132,6 +116,8 @@ class OpenCLPVBackend:
     def _dispatch(
         self, values: list[PhiElement], factor: PhiElement
     ) -> tuple[list[PhiElement], dict[str, int]]:
+        if factor.a < 0 or factor.b < 0 or factor.denominator != 1:
+            raise ValueError("OpenCL PV factors must have non-negative integer coefficients")
         for value in values:
             _checked(value.a)
             _checked(value.b)
@@ -179,10 +165,10 @@ class OpenCLPVBackend:
             kernel(self.queue, (len(values),), None, d_a, d_b, d_factors,
                    d_out_a, d_out_b, d_status)
             status = mapped_read(d_status, (len(values),), np.dtype(np.uint32))
-            if np.any(status & np.uint32(~7 & 0xFFFFFFFF)):
-                raise ParityVerificationError("OpenCL returned an invalid status")
             if np.any(status & np.uint32(4)):
                 raise LatticeOverflowError("OpenCL calculation exceeds signed 256-bit range")
+            if np.any((status != 0) & (status != 1) & (status != 3)):
+                raise ParityVerificationError("OpenCL returned an invalid status")
             out_a = mapped_read(d_out_a, limb_shape, np.dtype(np.uint64))
             out_b = mapped_read(d_out_b, limb_shape, np.dtype(np.uint64))
         except cl.Error as exc:
@@ -195,9 +181,9 @@ class OpenCLPVBackend:
             ) for i, value in enumerate(values)
         ]
         return outputs, {
-            "fit_int64": int(np.count_nonzero(status == 0)),
-            "requires_128_bits": int(np.count_nonzero(status == 1)),
-            "requires_256_bits": int(np.count_nonzero(status & np.uint32(2))),
+            "executed_64_bit": int(np.count_nonzero(status == 0)),
+            "executed_128_bit": int(np.count_nonzero(status == 1)),
+            "executed_256_bit": int(np.count_nonzero(status == 3)),
         }
 
     def dispatch_pv_fold(
@@ -212,43 +198,27 @@ class OpenCLPVBackend:
         sign = -1 if order % 2 else 1
         if any(output.norm() != value.norm() * sign for value, output in zip(values, outputs)):
             raise ParityVerificationError("OpenCL norm invariant failed")
+        device = self.probe_silicon()
         return outputs, {
             "execution_mode": self.execution_mode,
-            "device": self.probe_silicon(),
+            "device": device,
+            "device_signature": {
+                "vendor_id": device["vendor_id"],
+                "device_id": device["pci_device_id"],
+                "pci_address": device["pci_address"],
+                "driver_version": device["driver_version"],
+            },
             "verification": "full_exact_host_parity",
             "norm_invariant_verified": True,
-            "intermediate_width_counts": widths,
+            "execution_tier_counts": widths,
         }
 
     def execute(self, payload: bytes, workload_type: str) -> dict[str, Any]:
         if not self.supports(workload_type):
             raise ValueError(f"OpenCL backend does not support {workload_type}")
-        if len(payload) > 1024 * 1024:
-            raise ValueError("payload exceeds 1 MiB")
-        try:
-            request = json.loads(payload)
-        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
-            raise ValueError("payload must be a UTF-8 JSON object") from exc
-        if not isinstance(request, dict):
-            raise ValueError("payload must be a JSON object")
-        order, raw_values = request.get("order"), request.get("values")
-        if not isinstance(order, int) or isinstance(order, bool) or not 0 <= order <= 360:
-            raise ValueError("order must be an integer between 0 and 360")
-        if not isinstance(raw_values, list) or not 1 <= len(raw_values) <= MAX_ELEMENTS:
-            raise ValueError(f"values must contain 1 to {MAX_ELEMENTS} elements")
-        values = []
-        for value in raw_values:
-            if not isinstance(value, dict) or set(value) != {"a", "b", "denominator"}:
-                raise ValueError("each value must contain a, b and denominator")
-            values.append(PhiElement(
-                _wire_integer(value["a"]), _wire_integer(value["b"]),
-                _wire_integer(value["denominator"]),
-            ))
+        values, order = parse_lattice_workload(payload)
         outputs, receipt = self.dispatch_pv_fold(values, order)
         return {
             **receipt,
-            "values": [
-                {"a": str(value.a), "b": str(value.b), "denominator": str(value.denominator)}
-                for value in outputs
-            ],
+            "values": serialize_lattice(outputs),
         }

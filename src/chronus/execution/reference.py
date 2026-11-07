@@ -7,7 +7,10 @@ from dataclasses import dataclass
 from fractions import Fraction
 from typing import Any, Dict, Protocol
 
+from chronus.backends.lattice import ParityVerificationError, phi_power
+from chronus.backends.lattice_workload import parse_lattice_workload, serialize_lattice
 from chronus.execution.mining import search_nonce_range
+from chronus.execution.trinity import scale_fold_store
 
 
 class ExecutionBackend(Protocol):
@@ -91,7 +94,8 @@ class NativeMathReferenceBackend:
     name = "python-math-reference"
     execution_mode = "NATIVE_CPU_REFERENCE"
     supported_workloads = frozenset(
-        {"EXACT_Q5_ALGEBRAIC", "LUCAS_PV_SCALING", "SHA256D_NONCE_SEARCH"}
+        {"EXACT_Q5_ALGEBRAIC", "LUCAS_PV_SCALING", "SHA256D_NONCE_SEARCH",
+         "PV_LATTICE_FOLD", "TRINITY_SCALE_FOLD_STORE"}
     )
     max_payload_bytes = 1024 * 1024
     max_lucas_index = 100_000
@@ -106,6 +110,20 @@ class NativeMathReferenceBackend:
             raise ValueError("payload must be non-empty bytes")
         if len(payload) > self.max_payload_bytes:
             raise ValueError("reference workload payload exceeds 1 MiB")
+        if workload_type == "PV_LATTICE_FOLD":
+            values, order = parse_lattice_workload(payload)
+            factor = phi_power(order)
+            outputs = [value.multiply(factor) for value in values]
+            sign = -1 if order % 2 else 1
+            if any(output.norm() != value.norm() * sign for value, output in zip(values, outputs)):
+                raise ParityVerificationError("CPU reference norm invariant failed")
+            return {
+                "execution_mode": self.execution_mode,
+                "device_signature": None,
+                "verification": "exact_cpu_reference_and_norm",
+                "norm_invariant_verified": True,
+                "values": serialize_lattice(outputs),
+            }
         try:
             request = json.loads(payload)
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
@@ -113,6 +131,8 @@ class NativeMathReferenceBackend:
         if not isinstance(request, dict):
             raise ValueError("payload must be a JSON object")
 
+        if workload_type == "TRINITY_SCALE_FOLD_STORE":
+            return scale_fold_store(request)
         if workload_type == "LUCAS_PV_SCALING":
             return self._execute_lucas(request)
         if workload_type == "SHA256D_NONCE_SEARCH":

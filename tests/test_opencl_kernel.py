@@ -48,7 +48,7 @@ def test_real_kernel_matches_python_reference(cpu_opencl, order):
     verify_fold(values, outputs, order)
     assert sum(widths.values()) == len(values)
     if order == 360:
-        assert widths["requires_256_bits"] > 0
+        assert widths["executed_256_bit"] > 0
 
 
 def test_real_kernel_random_inputs_and_boundaries(cpu_opencl):
@@ -58,6 +58,57 @@ def test_real_kernel_random_inputs_and_boundaries(cpu_opencl):
     for order in (0, 1, 50, 90, 180):
         outputs, _ = cpu_opencl._dispatch(values, phi_power(order))
         verify_fold(values, outputs, order)
+
+
+@pytest.mark.parametrize(
+    ("factor", "values", "expected_tiers"),
+    [
+        (PhiElement(1, 0), [PhiElement(-(2**63), 2**63 - 1)],
+         {"executed_64_bit": 1, "executed_128_bit": 0, "executed_256_bit": 0}),
+        (PhiElement(2, 2), [PhiElement(2**63 - 1, -(2**63 - 1))],
+         {"executed_64_bit": 0, "executed_128_bit": 1, "executed_256_bit": 0}),
+        (PhiElement(2**64, 0), [PhiElement(-(2**63), 0)],
+         {"executed_64_bit": 0, "executed_128_bit": 1, "executed_256_bit": 0}),
+        (PhiElement(2**65, 0), [PhiElement(-(2**63), 0)],
+         {"executed_64_bit": 0, "executed_128_bit": 0, "executed_256_bit": 1}),
+        (PhiElement(1, 1), [PhiElement(1, 1), PhiElement(2**63 - 1, 2**63 - 1)],
+         {"executed_64_bit": 1, "executed_128_bit": 1, "executed_256_bit": 0}),
+        (PhiElement(2**127, 0), [PhiElement(0, 0)],
+         {"executed_64_bit": 0, "executed_128_bit": 0, "executed_256_bit": 1}),
+    ],
+)
+def test_real_kernel_execution_tiers(cpu_opencl, factor, values, expected_tiers):
+    outputs, tiers = cpu_opencl._dispatch(values, factor)
+    assert outputs == [value.multiply(factor) for value in values]
+    assert tiers == expected_tiers
+
+
+def test_real_kernel_rejects_negative_factors(cpu_opencl):
+    with pytest.raises(ValueError, match="non-negative"):
+        cpu_opencl._dispatch([PhiElement(1, 1)], PhiElement(-1, 0))
+
+
+def test_real_kernel_random_factors_and_tier_counts(cpu_opencl):
+    rng = random.Random(128256)
+    values = [
+        PhiElement(rng.randrange(-(2**63), 2**63), rng.randrange(-(2**63), 2**63))
+        for _ in range(60)
+    ] + [PhiElement(0, 0), PhiElement(1, -1), PhiElement(-(2**63), 0)]
+    for bits in (1, 31, 63, 64, 65, 100, 126, 128, 180):
+        factor = PhiElement(rng.getrandbits(bits), rng.getrandbits(bits))
+        outputs, tiers = cpu_opencl._dispatch(values, factor)
+        assert outputs == [value.multiply(factor) for value in values]
+        expected = dict.fromkeys(tiers, 0)
+        for value in values:
+            ac, bd = value.a * factor.a, value.b * factor.b
+            ad, bc = value.a * factor.b, value.b * factor.a
+            intermediates = [ac, bd, ad, bc, ac + bd, ad + bc, ad + bc + bd]
+            def fits(width):
+                return all(-(2 ** (width - 1)) <= x < 2 ** (width - 1)
+                           for x in [factor.a, factor.b, *intermediates])
+            tier = 64 if fits(64) else 128 if fits(128) else 256
+            expected[f"executed_{tier}_bit"] += 1
+        assert tiers == expected
 
 
 def test_real_kernel_rejects_256_bit_overflow(cpu_opencl):
@@ -73,7 +124,7 @@ def test_dispatch_receipt_and_norm_are_verified_on_cpu_runtime(cpu_opencl, monke
     assert receipt["norm_invariant_verified"] is True
     assert receipt["execution_mode"] == "SOFTWARE_EXECUTION"
     assert receipt["device"]["zero_copy_verified"] is False
-    assert sum(receipt["intermediate_width_counts"].values()) == 2
+    assert sum(receipt["execution_tier_counts"].values()) == 2
 
 
 @pytest.mark.parametrize("corrupt", [False, True])
@@ -87,7 +138,7 @@ def test_api_path_rejects_mismatched_opencl_result(cpu_opencl, tmp_path, monkeyp
     if corrupt:
         monkeypatch.setattr(
             cpu_opencl, "_dispatch",
-            lambda values, factor: ([PhiElement(-1, 0)], {"fit_int64": 1}),
+            lambda values, factor: ([PhiElement(-1, 0)], {"executed_64_bit": 1}),
         )
     auth_service.register_tenant("opencl-test", "opencl-test-token")
     payload = json.dumps({

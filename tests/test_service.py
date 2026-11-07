@@ -205,6 +205,47 @@ class TestServiceAPI:
         )
         assert denied.status_code == 403
 
+    def test_pv_lattice_cpu_result_persists(self):
+        auth_service.register_tenant("service-test", "service-test-token")
+        response = self.client.post(
+            "/workloads/submit",
+            headers={"Authorization": "Bearer service-test-token"},
+            json={
+                "payload_bytes": '{"order":90,"values":[{"a":"1","b":"0","denominator":"1"}]}',
+                "tenant_id": "service-test",
+                "workload_type": "PV_LATTICE_FOLD",
+            },
+        )
+        assert response.status_code == 202
+        body = response.json()
+        result = body["result"]
+        assert result["execution_mode"] == "NATIVE_CPU_REFERENCE"
+        assert result["result"]["device_signature"] is None
+        assert result["result"]["norm_invariant_verified"] is True
+        assert result["result"]["values"][0]["b"] == "2880067194370816120"
+        stored = self.client.get(
+            f"/workloads/{body['workload_id']}",
+            headers={"Authorization": "Bearer service-test-token"},
+        )
+        assert stored.status_code == 200
+        assert stored.json()["result"] == result
+
+    def test_trinity_symbolic_workload_api(self):
+        auth_service.register_tenant("service-test", "service-test-token")
+        response = self.client.post(
+            "/workloads/submit",
+            headers={"Authorization": "Bearer service-test-token"},
+            json={
+                "payload_bytes": '{"increment":4781,"values":[{"a":1,"b":0,"denominator":1}]}',
+                "tenant_id": "service-test",
+                "workload_type": "TRINITY_SCALE_FOLD_STORE",
+            },
+        )
+        assert response.status_code == 202
+        result = response.json()["result"]["result"]
+        assert result["state"]["scale_index"] == 4781
+        assert result["cassini_verified"] is False
+
     def test_receipt_is_signed_and_verified_without_release_claim(self):
         unauthenticated = self.client.post(
             "/verify/receipt?hash_value=receipt-payload"
