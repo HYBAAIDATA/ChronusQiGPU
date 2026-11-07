@@ -5,23 +5,33 @@ import os
 from concurrent.futures import ProcessPoolExecutor
 from typing import Any
 
+from chronus.config import runtime_bounds
 
-LANES = 32
-MAX_CANDIDATES = 65_536
-MAX_REPORTED_MATCHES = 32
+
+def _lanes() -> int:
+    return runtime_bounds()["search_lanes"]
+
+
+def _max_reported() -> int:
+    return runtime_bounds()["max_reported_matches"]
+
+
+def _max_candidates() -> int:
+    return runtime_bounds()["max_search_candidates"]
 
 
 def partition_nonce_range(start: int, stop: int) -> list[tuple[int, int]]:
-    """Partition a half-open nonce interval into 32 disjoint contiguous lanes."""
+    """Partition a half-open nonce interval into disjoint contiguous lanes."""
     if not (0 <= start <= stop <= 1 << 32):
         raise ValueError("nonce range must be within [0, 2**32]")
-    width, remainder = divmod(stop - start, LANES)
+    lanes = _lanes()
+    width, remainder = divmod(stop - start, lanes)
     return [
         (
             start + lane * width + min(lane, remainder),
             start + (lane + 1) * width + min(lane + 1, remainder),
         )
-        for lane in range(LANES)
+        for lane in range(lanes)
     ]
 
 
@@ -37,7 +47,7 @@ def _search_lane(args: tuple[bytes, int, int, int]) -> dict[str, Any]:
         digest = hashlib.sha256(inner.digest()).digest()
         if int.from_bytes(digest, "little") <= target:
             match_count += 1
-            if len(matches) < MAX_REPORTED_MATCHES:
+            if len(matches) < _max_reported():
                 matches.append({"nonce": nonce, "hash": digest[::-1].hex()})
     return {"start": start, "stop": stop, "tested": stop - start,
             "match_count": match_count, "matches": matches}
@@ -52,12 +62,13 @@ def search_nonce_range(
     if any(not isinstance(value, int) or isinstance(value, bool) for value in (start, stop, target, workers)):
         raise ValueError("start, stop, target and workers must be integers")
     lanes = partition_nonce_range(start, stop)
-    if stop == start or stop - start > MAX_CANDIDATES:
-        raise ValueError(f"range must contain between 1 and {MAX_CANDIDATES} candidates")
+    max_candidates = _max_candidates()
+    if stop == start or stop - start > max_candidates:
+        raise ValueError(f"range must contain between 1 and {max_candidates} candidates")
     if not 0 <= target < 1 << 256:
         raise ValueError("target must be an unsigned 256-bit integer")
-    if not 1 <= workers <= LANES:
-        raise ValueError("workers must be between 1 and 32")
+    if not 1 <= workers <= _lanes():
+        raise ValueError(f"workers must be between 1 and {_lanes()}")
     jobs = [(header, lane_start, lane_stop, target) for lane_start, lane_stop in lanes]
     processes = min(workers, os.cpu_count() or 1)
     if processes == 1:
@@ -68,7 +79,7 @@ def search_nonce_range(
     match_count = sum(lane["match_count"] for lane in results)
     matches = [
         match for lane in results for match in lane["matches"]
-    ][:MAX_REPORTED_MATCHES]
+    ][:_max_reported()]
     return {
         "algorithm": "SHA-256d",
         "execution_mode": "SOFTWARE_EXECUTION",

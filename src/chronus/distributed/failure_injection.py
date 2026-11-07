@@ -1,6 +1,6 @@
 """Failure Injection Engine for Chronus Distributed Systems.
 
-Production-ready chaos engineering framework for testing system resilience
+In-process failure-injection hooks for testing; no chaos is executed against live infrastructure.
 under real failure conditions including process crashes, network partitions,
 and hardware failures.
 """

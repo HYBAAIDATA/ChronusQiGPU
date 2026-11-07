@@ -11,6 +11,7 @@ from typing import Any, Dict, Protocol
 
 from chronus.backends.lattice import ParityVerificationError, phi_power
 from chronus.backends.metallic import metallic_power
+from chronus.config import runtime_bounds
 from chronus.backends.lattice_workload import parse_lattice_workload, serialize_lattice
 from chronus.execution.mining import search_nonce_range
 from chronus.execution.trinity import scale_fold_store
@@ -105,8 +106,13 @@ class NativeMathReferenceBackend:
          "PHYLOTAXIS_STORE", "THESEUS_RETRIEVE", "OVID_NORM_PROOF",
          "METALLIC_SCALE"}
     )
-    max_payload_bytes = 1024 * 1024
-    max_lucas_index = 100_000
+    @property
+    def max_payload_bytes(self) -> int:
+        return runtime_bounds()["max_payload_bytes"]
+
+    @property
+    def max_lucas_index(self) -> int:
+        return runtime_bounds()["max_lucas_index"]
 
     def supports(self, workload_type: str) -> bool:
         return workload_type in self.supported_workloads
@@ -266,16 +272,16 @@ class NativeMathReferenceBackend:
             }
         raise ValueError("operation must be 'prove' or 'verify'")
 
-    max_metallic_index = 100_000
-
     def _execute_metallic(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        bounds = runtime_bounds()
         m, index = request.get("m"), request.get("index")
-        if not isinstance(m, int) or isinstance(m, bool) or not 1 <= m <= 64:
-            raise ValueError("m must be an integer between 1 and 64")
+        max_m = bounds["max_metallic_m"]
+        if not isinstance(m, int) or isinstance(m, bool) or not 1 <= m <= max_m:
+            raise ValueError(f"m must be an integer between 1 and {max_m}")
         if not isinstance(index, int) or isinstance(index, bool) or index < 0:
             raise ValueError("index must be a non-negative integer")
-        if index > self.max_metallic_index:
-            raise ValueError(f"index exceeds limit ({self.max_metallic_index})")
+        if index > bounds["max_metallic_index"]:
+            raise ValueError(f"index exceeds limit ({bounds['max_metallic_index']})")
         power = metallic_power(m, index)
         names = {1: "golden", 2: "silver", 3: "bronze"}
         return {

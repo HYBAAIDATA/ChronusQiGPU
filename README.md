@@ -29,6 +29,8 @@ Chronus is being positioned with Dubai/DIFC as headquarters and London as the go
 | Phyllotaxis storage (Ovid/Theseus) | `PHYLOTAXIS_STORE` and `THESEUS_RETRIEVE`: content-addressed storage with golden-ratio lane distribution, per-tenant query, and digest-verified reconstruction. Process-local. |
 | QiGPU orchestration | Hardware-agnostic surface inventory, `auto` climb-in preference; CPU substrate always available, client-provisioned OpenCL GPU surface when opted in. |
 | Zero-knowledge receipts | `OVID_NORM_PROOF`: Schnorr Sigma protocol proving knowledge of a Galois-norm preimage over F_257[φ], soundness 1/257, without revealing the witness. |
+| Exact quantum evolution | `chronus.quantum.StateVector`: statevectors over F_257 with the full gate set as exact field constants (1/√2 = 30, i = 16, ω₈ = 4); circuit equivalence by integer equality. No floats, no simulated noise. |
+| Configurable bounds | All operational limits (lanes, orders, payload sizes) are `CHRONUS_*` environment settings via `chronus.config.runtime_bounds()`; only protocol-defining constants are fixed. |
 | Phi-ALU RTL | `hw/zeckendorf_norm_alu.sv` + `hw/zeckendorf_alu_32lane.sv`: synthesizable norm unit and full 32-lane carry-free Zeckendorf ALU array; Icarus testbenches + Yosys synthesis in CI (8,095 pure-logic cells, no multipliers or carry chains). |
 | Sovereign console | Authenticated `/console` dashboard: live surfaces, phyllotaxis lane density, spiral map, workload counters. |
 | Hardware-agnostic backend seam | Python protocol, registry, named selection, optional remote forwarding, and experimental opt-in OpenCL GPU adapter; no GPU adapter is registered by default or verified on physical hardware here. |

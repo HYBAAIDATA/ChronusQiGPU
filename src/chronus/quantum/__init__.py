@@ -1,17 +1,26 @@
-"""Chronus Quantum iGPU Quantum Integration Layer.
+"""Exact finite-field quantum evolution for Chronus.
 
-Production-ready quantum-classical hybrid execution with hardware abstraction,
-Holonomic Berry Connection, NVQLink QLDPC, and CUDA-Q compiler integration.
+Quantum behavior here comes from mathematics, not vendor hardware facades:
+statevectors evolve over F_257 with exact field arithmetic — no floating
+point, no simulated noise, no fabricated fidelities, no external backends.
 """
 
-__version__ = "36.0.0"
+from chronus.quantum.statevector import (
+    I_UNIT,
+    INV_SQRT2,
+    MAX_QUBITS,
+    OMEGA_8,
+    P,
+    SQRT2,
+    StateVector,
+)
+
 __all__ = [
-    "QuantumHardwareAbstraction",
-    "HolonomicPulseProcessor",
-    "NVQLinkController",
-    "CUDAQCompiler",
-    "HybridWorkloadRunner",
-    "QuantumError",
-    "HardwareUnavailable",
-    "QECError",
+    "I_UNIT",
+    "INV_SQRT2",
+    "MAX_QUBITS",
+    "OMEGA_8",
+    "P",
+    "SQRT2",
+    "StateVector",
 ]

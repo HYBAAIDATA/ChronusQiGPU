@@ -4,19 +4,18 @@ from typing import Any
 
 from chronus.backends.lattice import PhiElement
 from chronus.backends.lattice_workload import (
-    MAX_ELEMENTS,
     checked_int64,
     parse_lattice_values,
     wire_integer,
 )
+from chronus.config import runtime_bounds
 from chronus.execution.structural import zeckendorf_decode, zeckendorf_encode
-
-MAX_INDEX = (1 << 53) - 1
 
 
 def _index(value: Any) -> int:
-    if not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= MAX_INDEX:
-        raise ValueError(f"scale index must be an integer between 0 and {MAX_INDEX}")
+    max_index = runtime_bounds()["max_trinity_index"]
+    if not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= max_index:
+        raise ValueError(f"scale index must be an integer between 0 and {max_index}")
     return value
 
 
@@ -55,8 +54,9 @@ def scale_fold_store(request: dict[str, Any]) -> dict[str, Any]:
             raise ValueError("state must contain scale_index and values")
         index = _index(state["scale_index"])
         folded_values = state["values"]
-        if not isinstance(folded_values, list) or not 1 <= len(folded_values) <= MAX_ELEMENTS:
-            raise ValueError(f"values must contain 1 to {MAX_ELEMENTS} elements")
+        max_elements = runtime_bounds()["max_lattice_elements"]
+        if not isinstance(folded_values, list) or not 1 <= len(folded_values) <= max_elements:
+            raise ValueError(f"values must contain 1 to {max_elements} elements")
         values = []
         for value in folded_values:
             if not isinstance(value, dict) or set(value) != {"a", "b", "denominator"}:

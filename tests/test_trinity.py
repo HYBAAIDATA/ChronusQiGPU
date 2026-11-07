@@ -5,7 +5,9 @@ import pytest
 from chronus.backends.lattice import PhiElement, phi_power
 from chronus.execution import ExecutionRouter
 from chronus.execution.structural import zeckendorf_decode
-from chronus.execution.trinity import MAX_INDEX, scale_fold_store
+from chronus.execution.trinity import scale_fold_store
+
+MAX_INDEX = (1 << 53) - 1  # default trinity bound; runtime_bounds() is authoritative
 
 
 def _unfold(coefficient):

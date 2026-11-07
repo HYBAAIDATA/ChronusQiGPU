@@ -1,14 +1,7 @@
-"""Chronus Quantum iGPU — Thesus Database System.
+"""Database configuration scaffolding for Chronus.
 
-Production-ready database integration with connection pooling,
-ORM models, and migration support for Hyperscale Hyperscale
-Computational Infrastructure & CIaaS Platform.
-
-Thesus provides:
-- Async PostgreSQL connection pooling
-- ORM models for workloads, receipts, configurations, and node registry
-- Database migrations and schema management
-- Connection lifecycle management
+Configuration structures only; the active workload store is the SQLite
+backend in chronus.service.workload_store. No ORM or pooling executes here.
 """
 
 __version__ = "36.0.0"

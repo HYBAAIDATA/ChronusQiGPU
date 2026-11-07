@@ -38,7 +38,7 @@ Golden-angle (phyllotactic) sampling genuinely maximizes uniform dispersion — 
 
 1. **Parameterized fold hardware** — the RTL fold sweep generalizes from `011 -> 100` to the m-fold rule; a parameterized `zeckendorf_fold_sweep #(parameter M)` is the next silicon step.
 2. **Metallic norm proofs** — the F_257[phi] Sigma protocol extends to F_p[sigma_m] whenever m^2 + 4 is a quadratic non-residue mod p, giving per-family zero-knowledge receipts.
-3. **Multi-scale phyllotaxis** — lane distribution can nest golden, silver and bronze angles as hierarchical coordinate lenses over the same Theseus store.
+3. **Multi-scale phyllotaxis** — **implemented**: `PhyllotaxisMesh.map_key_multiscale` nests golden (local lane), silver (8-way partition) and bronze (4-way macro route) lenses over one key, each derived from its own exactly computed metallic fixed-point constant (`metallic_conjugate_64(m)`, integer square roots only — m = 1 reproduces the Knuth golden constant bit-for-bit).
 
 ## Missed opportunities now on record
 

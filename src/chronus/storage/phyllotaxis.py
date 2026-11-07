@@ -69,6 +69,32 @@ def phyllotaxis_coordinate(
     )
 
 
+def metallic_conjugate_64(m: int) -> int:
+    """floor(2**64 * frac(sigma_m)): the m-th metallic fixed-point constant.
+
+    frac(sigma_m) = (sqrt(m^2 + 4) - m) / 2, computed with exact integer
+    square roots so no floating point enters the derivation. m = 1 reproduces
+    the golden (Knuth) constant 0x9E3779B97F4A7C15.
+    """
+    if not isinstance(m, int) or isinstance(m, bool) or m < 1:
+        raise ValueError("m must be a positive integer")
+    from math import isqrt
+
+    scaled_root = isqrt((m * m + 4) << 128)  # floor(sqrt(m^2+4) * 2**64)
+    return (scaled_root - (m << 64)) // 2
+
+
+def metallic_lane(digest: bytes, lane_count: int, m: int) -> int:
+    """Map a digest onto a lane using the m-th metallic mean conjugate."""
+    if not isinstance(digest, bytes) or not digest:
+        raise ValueError("digest must be non-empty bytes")
+    if not isinstance(lane_count, int) or isinstance(lane_count, bool) or lane_count < 1:
+        raise ValueError("lane_count must be a positive integer")
+    key = int.from_bytes(digest[:8], "big")
+    product = (key * metallic_conjugate_64(m)) & _MASK64
+    return (product * lane_count) >> 64
+
+
 def golden_angle_hash(key: str | bytes) -> int:
     """Hash a key to a 64-bit fixed-point golden-angle position in [0, 2**64).
 
@@ -110,4 +136,22 @@ class PhyllotaxisMesh:
             "turn_fraction": [position, 1 << 64],
             "ring": ring,
             "model": "vogel-spiral",
+        }
+
+    def map_key_multiscale(
+        self, key: str | bytes, silver_lanes: int = 8, bronze_lanes: int = 4
+    ) -> dict:
+        """Nested metallic hierarchy: golden local lane, silver partition, bronze route.
+
+        Each tier uses its own metallic conjugate, so the tiers are
+        algebraically independent lenses over the same key.
+        """
+        raw = key.encode("utf-8") if isinstance(key, str) else key
+        digest = hashlib.sha256(raw).digest()
+        lane, coords = self.map_key(key)
+        return {
+            "golden_lane": lane,
+            "silver_partition": metallic_lane(digest, silver_lanes, 2),
+            "bronze_route": metallic_lane(digest, bronze_lanes, 3),
+            "coordinate": coords,
         }

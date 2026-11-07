@@ -8,11 +8,9 @@ is process-local; it is not durable across restart.
 import hashlib
 from dataclasses import dataclass
 
+from chronus.config import runtime_bounds
 from chronus.security.ovid import OVIDStorage
 from chronus.storage.phyllotaxis import PhyllotaxisCoordinate, phyllotaxis_coordinate
-
-DEFAULT_LANES = 32
-MAX_PAYLOAD_BYTES = 1024 * 1024
 
 
 class StorageIntegrityError(RuntimeError):
@@ -40,7 +38,9 @@ class TheseusRecord:
 class TheseusService:
     """Store, query and reconstruct exact payloads with phyllotaxis addressing."""
 
-    def __init__(self, ovid: OVIDStorage, lane_count: int = DEFAULT_LANES) -> None:
+    def __init__(self, ovid: OVIDStorage, lane_count: int | None = None) -> None:
+        if lane_count is None:
+            lane_count = runtime_bounds()["storage_lanes"]
         if not isinstance(lane_count, int) or isinstance(lane_count, bool) or lane_count < 1:
             raise ValueError("lane_count must be a positive integer")
         self.ovid = ovid
@@ -53,8 +53,9 @@ class TheseusService:
     ) -> TheseusRecord:
         if not tenant_id or not isinstance(tenant_id, str):
             raise ValueError("tenant_id must be a non-empty string")
-        if not isinstance(payload, bytes) or not 1 <= len(payload) <= MAX_PAYLOAD_BYTES:
-            raise ValueError(f"payload must be 1 to {MAX_PAYLOAD_BYTES} bytes")
+        max_payload = runtime_bounds()["max_payload_bytes"]
+        if not isinstance(payload, bytes) or not 1 <= len(payload) <= max_payload:
+            raise ValueError(f"payload must be 1 to {max_payload} bytes")
         if not isinstance(scale_index, int) or isinstance(scale_index, bool) or scale_index < 0:
             raise ValueError("scale_index must be a non-negative integer")
         object_id = self.ovid.store(payload)

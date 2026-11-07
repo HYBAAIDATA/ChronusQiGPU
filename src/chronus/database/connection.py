@@ -1,6 +1,6 @@
 """Database connection and session management for Thesus.
 
-Production-ready async PostgreSQL connection pooling using SQLAlchemy
+Database connection configuration structures; no live pooling executes in this package.
 with proper lifecycle management, retry logic, and health checks.
 """
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class ThesusDatabase:
-    """Production-ready database manager for Chronus Quantum iGPU.
+    """Database manager configuration holder for Chronus.
 
     Manages PostgreSQL connections with:
     - Async connection pooling

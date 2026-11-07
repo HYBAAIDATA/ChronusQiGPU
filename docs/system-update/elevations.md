@@ -28,6 +28,14 @@ Exposed as the native workload `OVID_NORM_PROOF` (`{"operation": "prove", "witne
 
 The QiGPU now resolves `backend_preference: "auto"` at the API layer: when a client-provisioned accelerator surface (OpenCL GPU, KAT-verified at startup) supports the requested workload, execution climbs into that instance's silicon; otherwise it operates on the CPU substrate. Unsupported or unknown surfaces fail closed. Tests cover climb-in with a provisioned accelerator, CPU fallback, per-workload support filtering, and fail-closed behavior. Real-time bandwidth probing and unified-memory pointer sharing remain hardware-dependent and are only reported, never simulated.
 
+## 5. Exact finite-field quantum evolution (`src/chronus/quantum/`)
+
+The quantum layer is pure mathematics: statevectors evolve over F_257 with exact integer field arithmetic — no floating point, no simulated noise, no fabricated fidelities, no vendor backend facades. The field contains the entire standard gate set exactly: √2 = 60, 1/√2 = 30 (Hadamard), i = 16 (S gate), ω₈ = 4 (T gate). The Bell state computes to exact amplitudes `[30, 0, 0, 30]`; gate algebra (S² = Z, T² = S, H² = I) holds by integer equality; circuit equivalence is exact amplitude comparison. Measurement is intentionally absent — there is no Born rule over a finite field, so the module provides exact state evolution and circuit identity verification, not sampling. The previous holonomic-pulse and vendor-backend facades were removed; distributed and database packages were re-labelled honestly as in-process bookkeeping and configuration scaffolding.
+
+## 6. Generalized runtime bounds (`chronus.config.runtime_bounds`)
+
+No operational limit is hardcoded: search lanes, storage lanes, PV order, Lucas/metallic indices, element counts, payload sizes, and Trinity scale bounds are all environment-overridable (`CHRONUS_*`), failing closed on invalid values. Structural mathematical constants (the field prime 257, the golden fixed-point constant, the packaged kernel digest) remain definition-fixed.
+
 ## 4. Sovereign control plane console (`/console`)
 
 An authenticated, embedded HTML dashboard renders live telemetry with no external assets: provisioned QiGPU surfaces, the phyllotaxis golden-ratio lane density histogram, a golden-angle spiral plot of stored records, and workload counters. Unauthenticated access returns 401. Tenant-isolated telemetry is embedded as JSON for downstream tooling.
