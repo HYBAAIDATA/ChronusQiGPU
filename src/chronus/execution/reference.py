@@ -13,6 +13,7 @@ from chronus.backends.lattice import ParityVerificationError, phi_power
 from chronus.backends.lattice_workload import parse_lattice_workload, serialize_lattice
 from chronus.execution.mining import search_nonce_range
 from chronus.execution.trinity import scale_fold_store
+from chronus.security import norm_proof
 from chronus.security.ovid import OVIDStorage
 from chronus.storage.theseus import TheseusService
 
@@ -100,7 +101,7 @@ class NativeMathReferenceBackend:
     supported_workloads = frozenset(
         {"EXACT_Q5_ALGEBRAIC", "LUCAS_PV_SCALING", "SHA256D_NONCE_SEARCH",
          "PV_LATTICE_FOLD", "TRINITY_SCALE_FOLD_STORE",
-         "PHYLOTAXIS_STORE", "THESEUS_RETRIEVE"}
+         "PHYLOTAXIS_STORE", "THESEUS_RETRIEVE", "OVID_NORM_PROOF"}
     )
     max_payload_bytes = 1024 * 1024
     max_lucas_index = 100_000
@@ -145,6 +146,8 @@ class NativeMathReferenceBackend:
             return self._execute_phylotaxis_store(request)
         if workload_type == "THESEUS_RETRIEVE":
             return self._execute_theseus_retrieve(request)
+        if workload_type == "OVID_NORM_PROOF":
+            return self._execute_norm_proof(request)
         if workload_type == "LUCAS_PV_SCALING":
             return self._execute_lucas(request)
         if workload_type == "SHA256D_NONCE_SEARCH":
@@ -238,6 +241,26 @@ class NativeMathReferenceBackend:
             "digest_verified": True,
             "data": "base64:" + base64.b64encode(payload).decode("ascii"),
         }
+
+    def _execute_norm_proof(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        operation = request.get("operation")
+        if operation == "prove":
+            witness = request.get("witness")
+            if not isinstance(witness, list) or len(witness) != 2:
+                raise ValueError("witness must be [a, b] with entries in [0, 257)")
+            proof = norm_proof.prove((witness[0], witness[1]))
+            result = proof.to_dict()
+            result["valid"] = norm_proof.verify(proof)
+            result["execution_mode"] = self.execution_mode
+            return result
+        if operation == "verify":
+            proof = norm_proof.NormProof.from_dict(request.get("proof"))
+            return {
+                "execution_mode": self.execution_mode,
+                "protocol": "schnorr-norm-preimage-f257phi",
+                "valid": norm_proof.verify(proof),
+            }
+        raise ValueError("operation must be 'prove' or 'verify'")
 
     def _execute_q5(self, request: Dict[str, Any]) -> Dict[str, Any]:
         operation = request.get("operation")

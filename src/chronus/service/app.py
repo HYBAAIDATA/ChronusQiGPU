@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from chronus.service.dependencies import service_config
 from chronus.service.models import ErrorResponse
 from chronus.service.routers import (
+    console_router,
     health_router,
     metrics_router,
     verify_router,
@@ -132,6 +133,7 @@ def create_app() -> FastAPI:
     app.include_router(verify_router)
     app.include_router(health_router)
     app.include_router(metrics_router)
+    app.include_router(console_router)
 
     @app.get("/", include_in_schema=False)
     async def root():

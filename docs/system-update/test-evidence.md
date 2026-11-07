@@ -8,7 +8,9 @@ The following checks were run after the service, SDK, execution, persistence, an
 
 | Check | Command | Result |
 |---|---|---|
-| Repository test suite | `/tmp/chronus-system-update-venv/bin/python -m pytest -q` | **107 passed** with a CPU OpenCL runtime available; one third-party deprecation warning |
+| Repository test suite | `/tmp/chronus-system-update-venv/bin/python -m pytest -q` | **118 passed** with a CPU OpenCL runtime available; one third-party deprecation warning |
+| RTL testbench | `iverilog -g2012 -o tb_phi hw/tb_qigpu_phi_alu.sv hw/zeckendorf_norm_alu.sv && ./tb_phi` | **TB PASS** (norm and fold known-answer vectors) |
+| RTL synthesis | `yosys -Q -T -p 'read_verilog -sv hw/zeckendorf_norm_alu.sv; hierarchy -check -top qigpu_phi_alu; synth -top qigpu_phi_alu; stat'` | **Passed**; 4,622 generic cells, zero inferred memories |
 | Active implementation lint | `ruff check --select F src/chronus/execution src/chronus/backends src/chronus/service src/chronus/sdk src/chronus/security tests` | **Passed** |
 | Active package syntax compilation | `/tmp/chronus-system-update-venv/bin/python -m compileall -q /root/Chronusv2/src/chronus/config.py /root/Chronusv2/src/chronus/execution /root/Chronusv2/src/chronus/backends /root/Chronusv2/src/chronus/sdk /root/Chronusv2/src/chronus/security /root/Chronusv2/src/chronus/service` | **Passed** |
 | Wheel build | `/tmp/chronus-system-update-venv/bin/python -m pip wheel --no-deps --no-build-isolation /root/Chronusv2 --wheel-dir /tmp/chronus-wheelhouse --quiet` | **Passed** (`chronus_quantum_igpu-36.0.0-py3-none-any.whl`) |

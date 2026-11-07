@@ -14,6 +14,7 @@ from chronus.backends.lattice import (
     ParityVerificationError,
 )
 from chronus.execution import execution_router
+from chronus.execution.qigpu import QiGPUOrchestrator
 from chronus.sdk.client import ChronusAPISDK, ChronusSDKError
 from chronus.service.dependencies import get_current_tenant, security, service_config
 from chronus.service.models import (
@@ -91,11 +92,16 @@ async def submit_workload(
             receipt = submission.get("verification_receipt")
             ccu_cost = submission.get("ccu_cost")
         else:
+            backend_preference = request.backend_preference
+            if backend_preference == "auto":
+                backend_preference = QiGPUOrchestrator(execution_router).auto_select(
+                    request.workload_type
+                )[0]
             execution = await run_in_threadpool(
                 execution_router.execute,
                 request.payload_bytes,
                 request.workload_type,
-                request.backend_preference,
+                backend_preference,
             )
             parsed_id = uuid4()
             backend_status = WorkloadStatus.COMPLETED

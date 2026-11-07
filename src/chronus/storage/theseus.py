@@ -84,6 +84,18 @@ class TheseusService:
             if record_tenant == tenant_id
         ]
 
+    def stats(self) -> dict:
+        histogram = [0] * self.lane_count
+        for record in self._records.values():
+            histogram[record.coordinate.lane] += 1
+        return {
+            "records": len(self._records),
+            "lane_count": self.lane_count,
+            "lane_histogram": histogram,
+            "tenants": len({record.tenant_id for record in self._records.values()}),
+            "durable": False,
+        }
+
     def get_record(self, tenant_id: str, object_id: str) -> TheseusRecord:
         record = self._records.get((tenant_id, object_id))
         if record is None:

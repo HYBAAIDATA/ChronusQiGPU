@@ -100,6 +100,28 @@ jobs:
         run: python -c "import pyopencl as cl; assert any(d.type & cl.device_type.CPU for p in cl.get_platforms() for d in p.get_devices())"
       - run: python -m pytest -q tests/test_opencl_kernel.py
 
+  rtl-synthesis:
+    name: Phi-ALU RTL simulation and Yosys synthesis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq yosys iverilog
+      - name: Run known-answer testbench
+        run: |
+          iverilog -g2012 -o tb_phi hw/tb_qigpu_phi_alu.sv hw/zeckendorf_norm_alu.sv
+          ./tb_phi | tee rtl-testbench.log
+          grep -q 'TB PASS' rtl-testbench.log
+      - name: Synthesize with Yosys
+        run: |
+          yosys -Q -T -p 'read_verilog -sv hw/zeckendorf_norm_alu.sv; hierarchy -check -top qigpu_phi_alu; synth -top qigpu_phi_alu; stat' | tee yosys-report.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rtl-synthesis-report
+          path: |
+            rtl-testbench.log
+            yosys-report.txt
+          if-no-files-found: error
+
   container:
     name: Container build and restart smoke test
     runs-on: ubuntu-latest

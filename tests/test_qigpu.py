@@ -77,6 +77,22 @@ def test_phylotaxis_store_and_theseus_retrieve_via_native_backend():
         )
 
 
+def test_auto_select_climbs_into_client_accelerator_when_provisioned():
+    router = ExecutionRouter()
+    orchestrator = QiGPUOrchestrator(router)
+    assert orchestrator.auto_select("PV_LATTICE_FOLD") == (
+        "python-math-reference", "cpu-substrate"
+    )
+    router.register_backend(FakeAccelerator())
+    assert orchestrator.auto_select("PV_LATTICE_FOLD") == ("fake-gpu", "client-accelerator")
+    # Workloads the accelerator does not support stay on the CPU substrate.
+    assert orchestrator.auto_select("LUCAS_PV_SCALING") == (
+        "python-math-reference", "cpu-substrate"
+    )
+    with pytest.raises(ValueError, match="no execution surface"):
+        orchestrator.auto_select("UNKNOWN_WORKLOAD")
+
+
 def test_trinity_store_option_persists_folded_state():
     backend = NativeMathReferenceBackend()
     result = backend.execute(

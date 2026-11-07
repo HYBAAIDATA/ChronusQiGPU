@@ -70,6 +70,18 @@ class QiGPUOrchestrator:
                 return name
         raise ValueError(f"no execution surface supports {workload_type}")
 
+    def auto_select(self, workload_type: str) -> tuple[str, str]:
+        """Climb into a provisioned accelerator surface when one supports the
+        workload; otherwise operate on the CPU substrate. Fails closed when no
+        surface supports the workload."""
+        for name, backend in self.router._backends.items():
+            if hasattr(backend, "probe_silicon") and backend.supports(workload_type):
+                return name, "client-accelerator"
+        for name, backend in self.router._backends.items():
+            if backend.supports(workload_type):
+                return name, "cpu-substrate"
+        raise ValueError(f"no execution surface supports {workload_type}")
+
     def inventory(self) -> dict[str, Any]:
         surfaces = self.surfaces()
         return {

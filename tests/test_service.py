@@ -261,6 +261,29 @@ class TestServiceAPI:
         assert result["digest_verified"] is True
         assert result["data"] == "base64:Z29sZGVu"
 
+    def test_auto_backend_preference_and_console_dashboard(self):
+        auth_service.register_tenant("service-test", "service-test-token")
+        response = self.client.post(
+            "/workloads/submit",
+            headers={"Authorization": "Bearer service-test-token"},
+            json={
+                "payload_bytes": '{"index":10}',
+                "tenant_id": "service-test",
+                "workload_type": "LUCAS_PV_SCALING",
+                "backend_preference": "auto",
+            },
+        )
+        assert response.status_code == 202
+        assert response.json()["result"]["backend"] == "python-math-reference"
+        console = self.client.get(
+            "/console", headers={"Authorization": "Bearer service-test-token"}
+        )
+        assert console.status_code == 200
+        assert "Sovereign Control Plane" in console.text
+        assert "python-math-reference" in console.text
+        denied = self.client.get("/console")
+        assert denied.status_code in (401, 403)
+
     def test_trinity_symbolic_workload_api(self):
         auth_service.register_tenant("service-test", "service-test-token")
         response = self.client.post(
