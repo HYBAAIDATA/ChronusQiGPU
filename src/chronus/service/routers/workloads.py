@@ -1,37 +1,37 @@
-"""Workload submission and management API routes.
+"""Workload submission and management API routes."""
 
-Enterprise-grade endpoints for submitting, querying, and managing
-computational workloads on the Chronus CIaaS platform.
-"""
+from datetime import datetime
+from datetime import timezone
+from uuid import UUID, uuid4
 
-import asyncio
-import time
-from typing import Dict, List, Optional
-from uuid import UUID
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials
+from starlette.concurrency import run_in_threadpool
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
-
-from chronus.core import (
-    ChronusVerificationOrchestrator,
+from chronus.backends.lattice import (
+    HardwareUnavailableError,
+    LatticeOverflowError,
+    ParityVerificationError,
 )
-import importlib
-_chronus_gpiu_v36 = importlib.import_module("chronus_gpiu-v36")
-ChronusAPISDK = _chronus_gpiu_v36.ChronusAPISDK
-from chronus.service.dependencies import get_auth_service, get_current_tenant
+from chronus.execution import execution_router
+from chronus.sdk.client import ChronusAPISDK, ChronusSDKError
+from chronus.service.dependencies import get_current_tenant, security, service_config
 from chronus.service.models import (
     ErrorResponse,
-    HealthStatus,
     PaginatedWorkloads,
     WorkloadRequest,
     WorkloadResponse,
     WorkloadStatus,
 )
+from chronus.service.workload_store import SQLiteWorkloadStore
 
 router = APIRouter(prefix="/workloads", tags=["workloads"])
 
-# In-memory workload store (production would use a database)
-_workload_store: Dict[str, WorkloadResponse] = {}
-_workload_counter: int = 0
+workload_store = SQLiteWorkloadStore()
+
+
+def workload_counts() -> tuple[int, int]:
+    return workload_store.counts()
 
 
 @router.post(
@@ -43,19 +43,10 @@ _workload_counter: int = 0
 )
 async def submit_workload(
     request: WorkloadRequest,
-    background_tasks: BackgroundTasks,
     tenant_id: str = Depends(get_current_tenant),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> WorkloadResponse:
-    """Submit a new computational workload.
-
-    Accepts binary payload and schedules execution on the Chronus
-    representation-aware computational substrate. Returns a workload
-    ID that can be used to query status and results.
-    """
-    global _workload_counter
-    _workload_counter += 1
-
-    # Validate tenant matches request
+    """Execute on the mathematical reference backend or a configured adapter."""
     if request.tenant_id != tenant_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -63,55 +54,112 @@ async def submit_workload(
                 error="tenant_mismatch",
                 error_code="AUTH002",
                 message="Request tenant_id does not match authenticated tenant.",
-            ).dict(),
+            ).model_dump(),
         )
-
-    # Initialize SDK client
-    sdk = ChronusAPISDK(
-        tenant_id=request.tenant_id,
-        access_token=request.access_token,
-        region=request.region,
-    )
 
     try:
-        # Submit workload to Chronus core
-        submission = sdk.submit_workload(
-            payload_bytes=request.payload_bytes,
-            workload_type=request.workload_type,
-            representation_mode=request.representation_mode,
-        )
-
-        workload = WorkloadResponse(
-            workload_id=UUID(submission.get("workload_id", str(_workload_counter))),
-            status=WorkloadStatus.EXECUTING,
-            workload_type=request.workload_type,
-            representation_mode=request.representation_mode,
-            priority=request.priority,
-            tenant_id=request.tenant_id,
-            region=request.region,
-            ccu_cost=submission.get("ccu_cost"),
-            result=submission.get("result"),
-            verification_receipt=submission.get("verification_receipt"),
-            callback_url=request.callback_url,
-            metadata=request.metadata,
-        )
-
-        _workload_store[str(workload.workload_id)] = workload
-
-        # Schedule background verification
-        background_tasks.add_task(_verify_workload, str(workload.workload_id), sdk)
-
-        return workload
-
-    except ValueError as e:
+        if service_config.execution_backend_url:
+            sdk = ChronusAPISDK(
+                tenant_id=request.tenant_id,
+                access_token=credentials.credentials,
+                region=request.region,
+                base_url=service_config.execution_backend_url,
+            )
+            try:
+                submission = await run_in_threadpool(
+                    sdk.submit_workload,
+                    payload_bytes=request.payload_bytes,
+                    workload_type=request.workload_type,
+                    representation_mode=request.representation_mode,
+                    priority=request.priority,
+                    callback_url=request.callback_url,
+                    metadata=request.metadata,
+                    backend_preference=request.backend_preference,
+                )
+            finally:
+                sdk.close()
+            workload_id = submission.get("workload_id")
+            if not workload_id:
+                raise ChronusSDKError(
+                    "Execution adapter returned no workload ID",
+                    status_code=502,
+                    response=submission,
+                )
+            parsed_id = UUID(workload_id)
+            backend_status = WorkloadStatus(submission["status"])
+            result = submission.get("result")
+            receipt = submission.get("verification_receipt")
+            ccu_cost = submission.get("ccu_cost")
+        else:
+            execution = await run_in_threadpool(
+                execution_router.execute,
+                request.payload_bytes,
+                request.workload_type,
+                request.backend_preference,
+            )
+            parsed_id = uuid4()
+            backend_status = WorkloadStatus.COMPLETED
+            result = execution.to_dict()
+            receipt = None
+            ccu_cost = None
+    except (ValueError, LatticeOverflowError) as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ErrorResponse(
-                error="invalid_workload",
+                error="invalid_or_unsupported_workload",
                 error_code="WL001",
-                message=str(e),
-            ).dict(),
-        )
+                message=str(exc),
+            ).model_dump(),
+        ) from exc
+    except ChronusSDKError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=ErrorResponse(
+                error="execution_adapter_error",
+                error_code="EXE002",
+                message="Chronus accelerator adapter rejected or could not process the workload.",
+            ).model_dump(),
+        ) from exc
+    except HardwareUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=ErrorResponse(
+                error="accelerator_unavailable",
+                error_code="EXE003",
+                message="The selected accelerator could not execute the workload.",
+            ).model_dump(),
+        ) from exc
+    except ParityVerificationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=ErrorResponse(
+                error="accelerator_parity_failure",
+                error_code="EXE004",
+                message="Accelerator result failed exact parity verification.",
+            ).model_dump(),
+        ) from exc
+
+    workload = WorkloadResponse(
+        workload_id=parsed_id,
+        status=backend_status,
+        workload_type=request.workload_type,
+        representation_mode=request.representation_mode,
+        priority=request.priority,
+        tenant_id=request.tenant_id,
+        region=request.region,
+        ccu_cost=ccu_cost,
+        result=result,
+        verification_receipt=receipt,
+        callback_url=request.callback_url,
+        metadata=request.metadata,
+        completed_at=(
+            datetime.now(timezone.utc)
+            if backend_status == WorkloadStatus.COMPLETED
+            else None
+        ),
+    )
+    workload_store.save(workload)
+    return workload
 
 @router.get(
     "/{workload_id}",
@@ -130,17 +178,16 @@ async def get_workload(
     """
     workload_id_str = str(workload_id)
 
-    if workload_id_str not in _workload_store:
+    workload = workload_store.get(workload_id_str)
+    if workload is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=ErrorResponse(
                 error="workload_not_found",
                 error_code="WL003",
                 message=f"Workload {workload_id} not found.",
-            ).dict(),
+            ).model_dump(),
         )
-
-    workload = _workload_store[workload_id_str]
 
     # Verify tenant access
     if workload.tenant_id != tenant_id:
@@ -150,7 +197,7 @@ async def get_workload(
                 error="tenant_mismatch",
                 error_code="AUTH002",
                 message="You do not have access to this workload.",
-            ).dict(),
+            ).model_dump(),
         )
 
     return workload
@@ -171,16 +218,19 @@ async def list_workloads(
 
     Returns a paginated list of workloads submitted by the authenticated tenant.
     """
-    tenant_workloads = [
-        w for w in _workload_store.values() if w.tenant_id == tenant_id
-    ]
-
-    total = len(tenant_workloads)
+    if page < 1 or page_size < 1 or page_size > 100:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=ErrorResponse(
+                error="invalid_pagination",
+                error_code="WL005",
+                message="page must be positive and page_size must be between 1 and 100.",
+            ).model_dump(),
+        )
+    items, total = workload_store.list_for_tenant(
+        tenant_id, offset=(page - 1) * page_size, limit=page_size
+    )
     total_pages = (total + page_size - 1) // page_size if total > 0 else 0
-
-    start = (page - 1) * page_size
-    end = start + page_size
-    items = tenant_workloads[start:end]
 
     return PaginatedWorkloads(
         items=items,
@@ -208,17 +258,16 @@ async def cancel_workload(
     """
     workload_id_str = str(workload_id)
 
-    if workload_id_str not in _workload_store:
+    workload = workload_store.get(workload_id_str)
+    if workload is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=ErrorResponse(
                 error="workload_not_found",
                 error_code="WL003",
                 message=f"Workload {workload_id} not found.",
-            ).dict(),
+            ).model_dump(),
         )
-
-    workload = _workload_store[workload_id_str]
 
     if workload.tenant_id != tenant_id:
         raise HTTPException(
@@ -227,7 +276,7 @@ async def cancel_workload(
                 error="tenant_mismatch",
                 error_code="AUTH002",
                 message="You do not have access to this workload.",
-            ).dict(),
+            ).model_dump(),
         )
 
     if workload.status in (
@@ -241,19 +290,9 @@ async def cancel_workload(
                 error="workload_not_cancellable",
                 error_code="WL004",
                 message=f"Workload {workload_id} is in {workload.status} state and cannot be cancelled.",
-            ).dict(),
+            ).model_dump(),
         )
 
     workload.status = WorkloadStatus.CANCELLED
-    from datetime import datetime
-    workload.completed_at = datetime.utcnow()
-
-
-async def _verify_workload(workload_id: str, sdk: ChronusAPISDK) -> None:
-    """Background task to verify a completed workload."""
-    await asyncio.sleep(1)  # Simulate async verification delay
-    if workload_id in _workload_store:
-        workload = _workload_store[workload_id]
-        workload.status = WorkloadStatus.COMPLETED
-        from datetime import datetime
-        workload.completed_at = datetime.utcnow()
+    workload.completed_at = datetime.now(timezone.utc)
+    workload_store.save(workload)

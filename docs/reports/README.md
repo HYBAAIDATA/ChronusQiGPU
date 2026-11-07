@@ -1,4 +1,6 @@
-# CHRONUS QUANTUM iGPU v35.0 — FINAL OPERATIONAL RELEASE CANDIDATE
+# CHRONUS QUANTUM iGPU v35.0 — HISTORICAL RELEASE REPORT
+
+> **Status note:** This page preserves v35 release-report content. Its qualification and product statements are reported claims, not independently established v36 results. See the [system update programme](../system-update/README.md) for the current evidence-bounded assessment and recommended acceptance approach.
 
 > **Chronus Quantum iGPU:** Mathematics-First, Representation-Aware Computational Infrastructure & CIaaS Service Delivery Platform.
 
@@ -61,5 +63,9 @@ pytest tests/
 
 * **License:** MIT License
 * **Release Status:** `V35 — PACKAGED; INTERNAL CLOSE-OUT CHECKS REPORTED PASS; INDEPENDENT PRODUCTION ACCEPTANCE PENDING.`
-* **Invariants Qualified:** 88 / 88 (100% Green)
-* **Release Gates Qualified:** 8 / 8 (100% Green)
+* **Invariants reported qualified:** 88 / 88 (historical report claim)
+* **Release gates reported qualified:** 8 / 8 (historical report claim)
+
+## System update programme
+
+For the current implementation-grounded v36 architecture, market model, test evidence, and release controls, see the [system update pack](../system-update/README.md). The pack distinguishes historical release-report claims from behavior and tests in the current source tree.

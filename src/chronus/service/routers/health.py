@@ -1,15 +1,14 @@
-"""Health check API routes.
-
-Production-ready health endpoints with component-level status,
-uptime tracking, and workload statistics.
-"""
+"""Health check API routes."""
 
 import time
 from typing import List
 
-from fastapi import APIRouter, Depends
+import httpx
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from chronus.execution import execution_router
 from chronus.service.dependencies import get_current_tenant, get_service_config
+from chronus.service.routers.workloads import workload_counts
 from chronus.service.models import (
     ComponentHealth,
     HealthResponse,
@@ -32,71 +31,47 @@ async def get_health(
     tenant_id: str = Depends(get_current_tenant),
     config = Depends(get_service_config),
 ) -> HealthResponse:
-    """Get comprehensive service health status.
-
-    Checks all critical components (core engine, configuration,
-    security layer, distributed systems, quantum integration)
-    and returns aggregated health status.
-    """
+    """Report observed API health and execution backend configuration."""
     _uptime = time.time() - _SERVICE_START_TIME
-
-    # Component health checks
+    total_workloads, active_workloads = workload_counts()
+    remote_backend_status = await _remote_backend_status(config.execution_backend_url)
+    if config.execution_backend_url:
+        backend_status = (
+            HealthStatus.HEALTHY
+            if remote_backend_status["healthy"]
+            else HealthStatus.UNHEALTHY
+        )
+        backend_details = {
+            "mode": "remote-adapter",
+            "configured": True,
+            "health_status_code": remote_backend_status["status_code"],
+        }
+    else:
+        backend_status = HealthStatus.HEALTHY
+        backend_details = {
+            "mode": "native-reference",
+            "registered_backends": execution_router.list_backends(),
+        }
     components: List[ComponentHealth] = [
         ComponentHealth(
-            name="chronus_core_engine",
+            name="api_process",
             status=HealthStatus.HEALTHY,
-            latency_ms=0.012,
-            details={"version": "36.0.0", "invariants": "I1-I88"},
+            details={"version": "36.0.0"},
         ),
         ComponentHealth(
-            name="configuration",
-            status=HealthStatus.HEALTHY,
-            details={
-                "gf_prime": config.__dict__.get("GF_PRIME", "N/A"),
-                "post_quantum_enabled": config.enable_post_quantum,
-            },
-        ),
-        ComponentHealth(
-            name="security_layer",
-            status=HealthStatus.HEALTHY,
-            details={
-                "ml_dsa": True,
-                "ed25519": True,
-                "zk_stark": True,
-                "zero_auth_verify": config.enable_zero_auth_verify,
-            },
-        ),
-        ComponentHealth(
-            name="distributed_systems",
-            status=HealthStatus.HEALTHY,
-            details={"cluster_size": 72, "nodes_active": 72},
-        ),
-        ComponentHealth(
-            name="quantum_integration",
-            status=HealthStatus.HEALTHY,
-            details={
-                "holonomic_pulse": True,
-                "nvqlink": True,
-                "cuda_q": True,
-            },
+            name="execution_backend",
+            status=backend_status,
+            details=backend_details,
         ),
     ]
-
-    # Determine overall status
-    overall_status = HealthStatus.HEALTHY
-    for comp in components:
-        if comp.status == HealthStatus.UNHEALTHY:
-            overall_status = HealthStatus.UNHEALTHY
-            break
-        if comp.status == HealthStatus.DEGRADED:
-            overall_status = HealthStatus.DEGRADED
+    overall_status = backend_status
 
     return HealthResponse(
         status=overall_status,
         components=components,
         uptime_seconds=round(_uptime, 3),
-        total_workloads=0,
-        active_workloads=0,
+        total_workloads=total_workloads,
+        active_workloads=active_workloads,
     )
 
 
@@ -116,5 +91,36 @@ async def liveness_probe() -> dict:
     description="Readiness check for container orchestration.",
 )
 async def readiness_probe() -> dict:
-    """Readiness probe for Kubernetes."""
-    return {"status": "ready", "service": "chronus-quantum-igpu", "version": "36.0.0"}
+    """Readiness for accepting workload execution."""
+    config = get_service_config()
+    remote_status = await _remote_backend_status(config.execution_backend_url)
+    if config.execution_backend_url and not remote_status["healthy"]:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "status": "not_ready",
+                "reason": "execution adapter health check failed",
+            },
+        )
+    return {
+        "status": "ready",
+        "service": "chronus-quantum-igpu",
+        "version": "36.0.0",
+        "execution_mode": (
+            "remote-adapter" if config.execution_backend_url else "native-reference"
+        ),
+    }
+
+
+async def _remote_backend_status(url: str | None) -> dict:
+    if not url:
+        return {"healthy": True, "status_code": None}
+    try:
+        async with httpx.AsyncClient(base_url=url.rstrip("/"), timeout=2.0) as client:
+            response = await client.get("/health/ready")
+    except httpx.RequestError:
+        return {"healthy": False, "status_code": None}
+    return {
+        "healthy": 200 <= response.status_code < 300,
+        "status_code": response.status_code,
+    }

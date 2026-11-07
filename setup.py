@@ -4,6 +4,6 @@ setup(
     name="chronus-quantum-igpu",
     version="36.0.0",
     packages=find_packages(where="src"),
-    package_dir={" ": "src"},
+    package_dir={"": "src"},
     python_requires=">=3.10",
 )
