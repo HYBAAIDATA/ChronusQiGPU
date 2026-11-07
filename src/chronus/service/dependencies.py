@@ -104,6 +104,14 @@ class AuthService:
         if token in self._tokens:
             return self._tokens[token].get("tenant_id")
 
+        # JWT validation via AL HARAS KMS middleware
+        try:
+            from chronus.service.auth_middleware import jwt_validator
+            identity = jwt_validator.validate_token(token)
+            return identity.tenant_id
+        except Exception:
+            pass
+
         return None
 
     def check_rate_limit(self, tenant_id: Optional[str]) -> None:
