@@ -49,7 +49,7 @@ jobs:
           tar -czf chronus-${{ github.ref_name }}-qualification-dossier.tar.gz -C dossier .
 
       - name: Attest build provenance (SLSA)
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@96b4a1ef7235a096b17240c259729fdd70c83d45 # v2
         with:
           subject-path: |
             dist/*
