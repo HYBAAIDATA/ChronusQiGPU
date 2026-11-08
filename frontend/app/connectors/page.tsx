@@ -1,0 +1,9 @@
+import { Card } from '@/components/ui/card';
+import { StatusPill } from '@/components/console/status-pill';
+
+export default function ConnectorsPage() {
+  return <div className="space-y-7">
+    <header className="space-y-2 border-b border-neutral-800 pb-6"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-300">Data / Connectors</p><h1 className="text-3xl font-semibold tracking-tight text-white">Connector preview</h1><p className="max-w-3xl text-sm leading-6 text-neutral-400">A connector record, pointer, or discovered schema is not proof of a live external connection or zero-copy transfer. This page does not bind to production sources or run benchmark actions.</p></header>
+    <Card className="border-neutral-800 bg-neutral-900/50 p-5 sm:p-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-semibold text-white">Evidence required before production use</h2><p className="mt-1 text-sm text-neutral-400">The current screens do not provide the verification needed to make external-data guarantees.</p></div><StatusPill status="UNVERIFIED" label="No live source verified" showDot={false} /></div><ol className="mt-5 list-decimal space-y-2 pl-5 text-sm leading-6 text-neutral-400"><li>Authenticated provider connection and an auditable read against a user-authorized test object.</li><li>Data-location, encryption, access-control, and transfer evidence measured at the actual storage boundary.</li><li>Benchmarks run on identified hardware and representative datasets, with raw inputs, methodology, and reproducible results attached.</li></ol><p className="mt-5 border-t border-neutral-800 pt-4 text-xs leading-5 text-neutral-500">Do not enter production credentials or sensitive source data in this preview.</p></Card>
+  </div>;
+}

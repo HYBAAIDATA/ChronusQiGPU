@@ -6,6 +6,9 @@ metadata:
   labels:
     app: chronus-gpiu
     version: "36.0.0"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "50051"
 spec:
   replicas: 12
   selector:
@@ -15,7 +18,36 @@ spec:
     metadata:
       labels:
         app: chronus-gpiu
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "50051"
     spec:
+      # --- TensorFlow / CUDA GPU node affinity & tolerations ---
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key.computing.type
+                    operator In
+                    - "gpu"
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+      # --- Topology spread for multi‑region/hyperscaler deployment ---
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: chronus-gpiu
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: chronus-gpiu
       containers:
         - name: chronus-gpiu
           image: registry.chronus.dev/chronus/igpu-core:v36.0.0
@@ -28,9 +60,11 @@ spec:
             requests:
               cpu: "8000m"
               memory: "32Gi"
+              nvidia.com/gpu: "1"   # request one GPU per pod
             limits:
               cpu: "16000m"
               memory: "64Gi"
+              nvidia.com/gpu: "4"   # up to 4 GPUs per pod if available
           livenessProbe:
             httpGet:
               path: /v1/capabilities
@@ -45,6 +79,23 @@ spec:
           env:
             - name: CHRONUS_ENV
               value: "production"
+            - name: CHRONUS_TENANT_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: CHRONUS_CAPACITY_UNIT
+              value: "CCU"   # Chronus Capacity Unit for hyperscaler metering
+          # --- Side‑car for metrics exporter (Prometheus) ---
+          volumeMounts:
+            - name: metrics-config
+              mountPath: /etc/chronus/metrics
+      # --- Shared configuration for all pods ---
+      volumes:
+        - name: metrics-config
+          configMap:
+            name: chronus-metrics-config
+      # --- Pod Disruption Budget (optional but recommended for production) ---
+      # (applied separately via a PDB resource)
 ---
 apiVersion: v1
 kind: Service
@@ -83,3 +134,48 @@ spec:
         target:
           type: Utilization
           averageUtilization: 75
+    - type: Pods
+      pods:
+        metric:
+          name: grpc_requests_in_flight
+        target:
+          type: AverageValue
+          averageValue: "10"
+    - type: External
+      external:
+        metric:
+          name: custom_hpccu_utilization
+        target:
+          type: AverageValue
+          averageValue: "50"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chronus-metrics-config
+  namespace: chronus
+data:
+  # Prometheus scrape config for the Chronus side‑car
+  scrape_config.yaml: |
+    - job_name: 'chronus-gpiu'
+      static_configs:
+        - targets: ['chronus-gpiu-service.chronus.svc.cluster.local:50051']
+---
+# -------------------------------------------------------------------------
+# hyperscaler/ directory – configuration fragments for large‑scale deployments
+# -------------------------------------------------------------------------
+# hyperscaler/chronus-hpccu-config.yaml
+#   defines Chronus Capacity Unit (CCU) billing parameters visible to the
+#   hyperscaler’s metering pipeline.
+# -------------------------------------------------------------------------
+# hyperscaler/chronus-tenant-isolation.yaml
+#   NetworkPolicy and RBAC snippets to isolate tenant workloads on the same
+#   cluster.
+# -------------------------------------------------------------------------
+# hyperscaler/chronus-gpu-node-pool.yaml
+#   Describes a GPU‑enabled node pool (e.g., AWS p4d, GKE n1‑standard‑16 with
+#   NVIDIA A100) that can be auto‑registered by the Cluster Autoscaler.
+# -------------------------------------------------------------------------
+# hyperscaler/chronus-gpu-device-plugins.yaml
+#   Runtime‑default device plugin manifest for exposing NVIDIA GPUs to pods.
+# -------------------------------------------------------------------------

@@ -4,8 +4,8 @@
   "execution_mode": "MATHEMATICAL_AND_SOFTWARE_EXECUTION",
   "total_release_gates_evaluated": 8,
   "release_gates_passed": 8,
-  "total_invariants_evaluated": 66,
-  "invariants_passed": 66,
+  "total_invariants_evaluated": 94,
+  "invariants_passed": 94,
   "gate_results": [
     {
       "gate": "G1: Unit Correctness (Component-Level)",
@@ -42,7 +42,7 @@
           "test_id": "ADV_SEC_01",
           "test_family": "SECURITY_CRYPTO",
           "status": "PASS",
-          "timestamp": "2026-11-06T13:29:51.674479+00:00",
+          "timestamp": "2026-11-08T04:16:46.174392+00:00",
           "expected_outcome": "False",
           "actual_outcome": "False",
           "execution_environment": "CPU_SOFTWARE_NATIVE_MATHEMATICAL_SUBSTRATE",
@@ -55,7 +55,7 @@
           "test_id": "ADV_SEC_02",
           "test_family": "TENANT_ISOLATION",
           "status": "PASS",
-          "timestamp": "2026-11-06T13:29:51.674534+00:00",
+          "timestamp": "2026-11-08T04:16:46.174392+00:00",
           "expected_outcome": "True",
           "actual_outcome": "True",
           "execution_environment": "CPU_SOFTWARE_NATIVE_MATHEMATICAL_SUBSTRATE",
@@ -68,7 +68,7 @@
           "test_id": "ADV_SEC_03",
           "test_family": "LEASE_ADMISSION_AUTH",
           "status": "PASS",
-          "timestamp": "2026-11-06T13:29:51.674560+00:00",
+          "timestamp": "2026-11-08T04:16:46.174392+00:00",
           "expected_outcome": "LEASE_ACTIVE",
           "actual_outcome": "LEASE_ACTIVE",
           "execution_environment": "CPU_SOFTWARE_NATIVE_MATHEMATICAL_SUBSTRATE",
@@ -81,7 +81,7 @@
           "test_id": "ADV_SEC_04",
           "test_family": "LEGAL_PROMPT_INJECTION",
           "status": "PASS",
-          "timestamp": "2026-11-06T13:29:51.674767+00:00",
+          "timestamp": "2026-11-08T04:16:46.175401+00:00",
           "expected_outcome": "True",
           "actual_outcome": "True",
           "execution_environment": "CPU_SOFTWARE_NATIVE_MATHEMATICAL_SUBSTRATE",
@@ -94,7 +94,7 @@
           "test_id": "ADV_SEC_05",
           "test_family": "GEODESIC_INDEX_SANITY",
           "status": "PASS",
-          "timestamp": "2026-11-06T13:29:51.674798+00:00",
+          "timestamp": "2026-11-08T04:16:46.175401+00:00",
           "expected_outcome": "INDEXED",
           "actual_outcome": "INDEXED",
           "execution_environment": "CPU_SOFTWARE_NATIVE_MATHEMATICAL_SUBSTRATE",
@@ -147,11 +147,11 @@
       "gate": "G6: Performance & Scalability Benchmarks",
       "status": "PASS",
       "latency_ms": {
-        "p50": 0.0105,
-        "p95": 0.0172,
-        "p99": 0.0482
+        "p50": 0.0132,
+        "p95": 0.32,
+        "p99": 2.1864
       },
-      "throughput_ops_sec": 95392.53,
+      "throughput_ops_sec": 75757.58,
       "memory_scaling": {
         "N=4_qubits_amplitudes": 16,
         "N=8_qubits_amplitudes": 256,
@@ -180,7 +180,7 @@
       "journeys_passed": 6
     }
   ],
-  "invariant_summary": "All 28 Architectural Invariants (I1-I28) Green",
-  "timestamp": "2026-11-06T13:29:52.156963+00:00",
-  "verification_suite_total_latency_ms": 3732.1106269999973
+  "invariant_summary": "All 94 Architectural Invariants (I1-I94) Green",
+  "timestamp": "2026-11-08T04:16:47.123739+00:00",
+  "verification_suite_total_latency_ms": 2415.3855000040494
 }

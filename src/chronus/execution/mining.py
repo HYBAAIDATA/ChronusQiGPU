@@ -6,9 +6,13 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import Any
 
 from chronus.config import runtime_bounds
-from chronus.execution.structural import zeckendorf_decode, zeckendorf_encode, zeckendorf_increment
+from chronus.execution.structural import (
+    zeckendorf_decode,
+    zeckendorf_encode,
+    zeckendorf_increment,
+)
 
-POLYHEDRAL_FACES = 12   # dodecahedron face centroids
+POLYHEDRAL_FACES = 12  # dodecahedron face centroids
 POLYHEDRAL_VERTICES = 20  # icosahedron vertices; 12 + 20 = 32 lanes
 
 
@@ -57,7 +61,9 @@ def partition_nonce_range(
     total = stop - start
     if weights == "uniform":
         width, remainder = divmod(total, lanes)
-        boundaries = [start + lane * width + min(lane, remainder) for lane in range(lanes + 1)]
+        boundaries = [
+            start + lane * width + min(lane, remainder) for lane in range(lanes + 1)
+        ]
     else:
         from chronus.backends.metallic import metallic_sequence
 
@@ -66,7 +72,11 @@ def partition_nonce_range(
         boundaries = [start]
         cursor = start
         for lane in range(lanes):
-            share = total * ladder[lane] // ladder_total if lane < lanes - 1 else stop - cursor
+            share = (
+                total * ladder[lane] // ladder_total
+                if lane < lanes - 1
+                else stop - cursor
+            )
             cursor += share
             boundaries.append(cursor)
     return [(boundaries[lane], boundaries[lane + 1]) for lane in range(lanes)]
@@ -80,6 +90,7 @@ def _search_lane(args: tuple[bytes, int, int, int, str, int, str]) -> dict[str, 
     def hash_candidate(nonce: int) -> bytes:
         if engine == "unrolled":
             from chronus.execution.asic_sha256 import sha256d_unrolled
+
             return sha256d_unrolled(header[:76] + nonce.to_bytes(4, "little"))
         inner = prefix.copy()
         inner.update(suffix + nonce.to_bytes(4, "little"))
@@ -109,17 +120,28 @@ def _search_lane(args: tuple[bytes, int, int, int, str, int, str]) -> dict[str, 
                 match_count += 1
                 if len(matches) < _max_reported():
                     matches.append({"nonce": nonce, "hash": digest[::-1].hex()})
-    result = {"start": start, "stop": stop, "tested": stop - start,
-              "match_count": match_count, "matches": matches,
-              "step_order": step_order}
+    result = {
+        "start": start,
+        "stop": stop,
+        "tested": stop - start,
+        "match_count": match_count,
+        "matches": matches,
+        "step_order": step_order,
+    }
     result.update(polyhedral_lane(lane))
     result["engine"] = engine
     return result
 
 
 def search_nonce_range(
-    header: bytes, start: int, stop: int, target: int, workers: int = 1,
-    step_order: str = "binary", engine: str = "library", partition: str = "uniform",
+    header: bytes,
+    start: int,
+    stop: int,
+    target: int,
+    workers: int = 1,
+    step_order: str = "binary",
+    engine: str = "library",
+    partition: str = "uniform",
 ) -> dict[str, Any]:
     """Hash each nonce once; target is interpreted as Bitcoin's little-endian uint256."""
     if step_order not in ("binary", "zeckendorf"):
@@ -128,12 +150,17 @@ def search_nonce_range(
         raise ValueError("engine must be 'library' or 'unrolled'")
     if not isinstance(header, bytes) or len(header) != 80:
         raise ValueError("header must be exactly 80 bytes")
-    if any(not isinstance(value, int) or isinstance(value, bool) for value in (start, stop, target, workers)):
+    if any(
+        not isinstance(value, int) or isinstance(value, bool)
+        for value in (start, stop, target, workers)
+    ):
         raise ValueError("start, stop, target and workers must be integers")
     lanes = partition_nonce_range(start, stop, weights=partition)
     max_candidates = _max_candidates()
     if stop == start or stop - start > max_candidates:
-        raise ValueError(f"range must contain between 1 and {max_candidates} candidates")
+        raise ValueError(
+            f"range must contain between 1 and {max_candidates} candidates"
+        )
     if not 0 <= target < 1 << 256:
         raise ValueError("target must be an unsigned 256-bit integer")
     if not 1 <= workers <= _lanes():
@@ -149,9 +176,9 @@ def search_nonce_range(
         with ProcessPoolExecutor(max_workers=processes) as pool:
             results = list(pool.map(_search_lane, jobs))
     match_count = sum(lane["match_count"] for lane in results)
-    matches = [
-        match for lane in results for match in lane["matches"]
-    ][:_max_reported()]
+    matches = [match for lane in results for match in lane["matches"]][
+        : _max_reported()
+    ]
     return {
         "algorithm": "SHA-256d",
         "execution_mode": "SOFTWARE_EXECUTION",

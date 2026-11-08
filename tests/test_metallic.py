@@ -23,7 +23,7 @@ def test_silver_ratio_matches_pell_arithmetic():
     # sigma_2 = 1 + sqrt(2); sigma_2^3 = 7 + 5*sqrt(2) = 2 + 5*sigma_2.
     cube = metallic_power(2, 3)
     assert (cube.a, cube.b) == (2, 5)
-    assert cube.norm() == Fraction(-1)     # N(sigma_2) = -1, so N(sigma_2^3) = -1
+    assert cube.norm() == Fraction(-1)  # N(sigma_2) = -1, so N(sigma_2^3) = -1
     # Trace sequence for m=2: companion Pell numbers 2, 2, 6, 14, 34, ...
     assert [metallic_sequence(2, n) for n in range(5)] == [2, 2, 6, 14, 34]
 
@@ -71,7 +71,9 @@ def test_metallic_scale_workload_via_router():
     assert result["trace"] == "14"
     assert result["norm"] == "-1"
     with pytest.raises(ValueError, match="between 1 and 64"):
-        ExecutionRouter().execute(json.dumps({"m": 0, "index": 1}).encode(), "METALLIC_SCALE")
+        ExecutionRouter().execute(
+            json.dumps({"m": 0, "index": 1}).encode(), "METALLIC_SCALE"
+        )
     with pytest.raises(ValueError, match="exceeds"):
         ExecutionRouter().execute(
             json.dumps({"m": 1, "index": 100001}).encode(), "METALLIC_SCALE"

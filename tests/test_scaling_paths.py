@@ -42,7 +42,10 @@ def test_fast_doubling_and_metallic_paths_agree_everywhere():
         golden = phi_power(order)
         metallic = metallic_power(1, order)
         assert (golden.a, golden.b, golden.denominator) == (
-            metallic.a, metallic.b, metallic.denominator)
+            metallic.a,
+            metallic.b,
+            metallic.denominator,
+        )
         assert metallic_sequence(1, order) == golden.trace()
 
 
@@ -50,7 +53,9 @@ def test_lucas_pv_workload_uses_the_same_scaling_engine():
     """The API workload agrees with direct phi_power at the same orders."""
     backend = NativeMathReferenceBackend()
     for order in (0, 1, 90, 479, 4781, 50000):
-        result = backend.execute(json.dumps({"index": order}).encode(), "LUCAS_PV_SCALING")
+        result = backend.execute(
+            json.dumps({"index": order}).encode(), "LUCAS_PV_SCALING"
+        )
         power = phi_power(order)
         assert result["fibonacci"] == _decimal_string(power.b)
         assert result["lucas"] == _decimal_string(power.trace().numerator)
@@ -60,15 +65,21 @@ def test_lucas_pv_workload_uses_the_same_scaling_engine():
 def test_lattice_fold_factor_is_the_same_scaling_engine():
     """PV_LATTICE_FOLD multiplies by phi^order; verify against phi_power."""
     value = PhiElement(-7, 11, 3)
-    payload = json.dumps({
-        "order": 137,
-        "values": [{"a": str(value.a), "b": str(value.b), "denominator": "3"}],
-    }).encode()
+    payload = json.dumps(
+        {
+            "order": 137,
+            "values": [{"a": str(value.a), "b": str(value.b), "denominator": "3"}],
+        }
+    ).encode()
     receipt = ExecutionRouter().execute(payload, "PV_LATTICE_FOLD")
     expected = value.multiply(phi_power(137))
-    assert receipt.result["values"] == [{
-        "a": str(expected.a), "b": str(expected.b), "denominator": "3",
-    }]
+    assert receipt.result["values"] == [
+        {
+            "a": str(expected.a),
+            "b": str(expected.b),
+            "denominator": "3",
+        }
+    ]
 
 
 def test_metallic_trace_recurrence_matches_powers_across_family():
@@ -177,9 +188,14 @@ def test_trinity_scale_index_composes_with_lattice_fold():
     staged = scale_fold_store({"values": values, "increment": 100})
     staged = scale_fold_store({"state": staged["state"], "increment": 37})
     assert staged["state"]["scale_index"] == 137
-    direct = ExecutionRouter().execute(json.dumps({
-        "order": 137,
-        "values": [{"a": 3, "b": -2, "denominator": 7}],
-    }).encode(), "PV_LATTICE_FOLD")
+    direct = ExecutionRouter().execute(
+        json.dumps(
+            {
+                "order": 137,
+                "values": [{"a": 3, "b": -2, "denominator": 7}],
+            }
+        ).encode(),
+        "PV_LATTICE_FOLD",
+    )
     expected = PhiElement(3, -2, 7).multiply(phi_power(137))
     assert direct.result["values"][0]["a"] == str(expected.a)

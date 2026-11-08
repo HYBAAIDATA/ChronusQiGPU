@@ -84,15 +84,13 @@ class ChronusAPISDK:
     ) -> Dict[str, Any]:
         attempts = (
             self.max_retries
-            if method.upper() in {"GET", "PUT", "DELETE"}
+            if method.upper() in {"GET", "PUT", "PATCH", "DELETE"}
             else 1
         )
         for attempt in range(attempts):
             started = time.perf_counter()
             try:
-                response = self._client.request(
-                    method, path, json=json, params=params
-                )
+                response = self._client.request(method, path, json=json, params=params)
             except httpx.RequestError as exc:
                 if attempt + 1 == attempts:
                     raise ServiceUnavailableError(
@@ -110,7 +108,7 @@ class ChronusAPISDK:
             except ValueError:
                 body = {}
 
-            if response.status_code in (200, 202, 204):
+            if response.status_code in (200, 201, 202, 204):
                 return body
             if response.status_code == 401:
                 raise AuthenticationError(response=body)
@@ -218,6 +216,298 @@ class ChronusAPISDK:
     def get_health(self) -> Dict[str, Any]:
         return self._request("GET", "/health")
 
+    def instant_onboard_tenant(
+        self, onboarding_payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Trigger Zero-Friction instant tenant provisioning (<30s T0 SLA)."""
+        return self._request(
+            "POST", "/v1/tenants/onboard/instant", json=onboarding_payload
+        )
+
+    def expand_capacity(
+        self,
+        requested_warp_capacity: int,
+        expand_storage_gb: Optional[int] = None,
+        reason: str = "SDK_SELF_SERVICE_EXPANSION",
+        tenant_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Dynamically expand active warps or storage under Enduring Capacity Addendum."""
+        target_tenant = tenant_id or self.tenant_id
+        payload: Dict[str, Any] = {
+            "requested_warp_capacity": requested_warp_capacity,
+            "reason": reason,
+        }
+        if expand_storage_gb is not None:
+            payload["expand_storage_gb"] = expand_storage_gb
+        return self._request(
+            "PATCH", f"/v1/tenants/{target_tenant}/capacity", json=payload
+        )
+
+    def get_capacity_status(self, tenant_id: Optional[str] = None) -> Dict[str, Any]:
+        """Retrieve Enduring Capacity Addendum and real-time Hermiten settlement status."""
+        target_tenant = tenant_id or self.tenant_id
+        return self._request("GET", f"/v1/tenants/{target_tenant}/capacity")
+
+    def list_connector_specs(self) -> Dict[str, Any]:
+        """Retrieve pre-built Zero-Copy Connector specifications and T3-T5 Data Movement Plane."""
+        return self._request("GET", "/v1/connectors/specs")
+
+    def authorize_eca(
+        self,
+        kms_provider: str = "AWS_KMS",
+        kms_key_arn: Optional[str] = None,
+        auto_schema_discovery: bool = True,
+        tenant_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Authorize Tenant Enduring Capacity Addendum (ECA) & Customer KMS/PKCS#11 custody."""
+        target_tenant = tenant_id or self.tenant_id
+        payload: Dict[str, Any] = {
+            "kms_provider": kms_provider,
+            "auto_schema_discovery": auto_schema_discovery,
+        }
+        if kms_key_arn is not None:
+            payload["kms_key_arn"] = kms_key_arn
+        return self._request(
+            "POST", f"/v1/connectors/eca/{target_tenant}/authorize", json=payload
+        )
+
+    def register_connector(
+        self,
+        *,
+        name: str,
+        connector_type: str,
+        endpoint_uri: str,
+        source_region: str = "eu-west-2",
+        pod_region: str = "eu-west-2",
+        kms_provider: str = "AWS_KMS",
+        kms_key_arn: Optional[str] = None,
+        co_located: bool = False,
+        access_class_override: Optional[str] = None,
+        auto_discover: bool = True,
+        tenant_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Bind a Day-1 Zero-Copy Native Representation Connector to client data at rest."""
+        payload: Dict[str, Any] = {
+            "tenant_id": tenant_id or self.tenant_id,
+            "name": name,
+            "connector_type": connector_type,
+            "endpoint_uri": endpoint_uri,
+            "source_region": source_region,
+            "pod_region": pod_region,
+            "kms_provider": kms_provider,
+            "co_located": co_located,
+            "auto_discover": auto_discover,
+        }
+        if kms_key_arn is not None:
+            payload["kms_key_arn"] = kms_key_arn
+        if access_class_override is not None:
+            payload["access_class_override"] = access_class_override
+        return self._request("POST", "/v1/connectors", json=payload)
+
+    def list_connectors(self, tenant_id: Optional[str] = None) -> Dict[str, Any]:
+        """List bound Zero-Copy Native Representation Connectors."""
+        params: Optional[Dict[str, Any]] = (
+            {"tenant_id": tenant_id} if tenant_id else None
+        )
+        return self._request("GET", "/v1/connectors", params=params)
+
+    def ingest_zero_copy(
+        self,
+        connector_id: str,
+        payload_bytes: bytes,
+        *,
+        object_path: str = "part-00000.parquet",
+        byte_offset: int = 0,
+        format_hint: Optional[str] = None,
+        encrypt_with_customer_kms: bool = False,
+        simulate_adversarial: bool = False,
+    ) -> Dict[str, Any]:
+        """Ingest external block via Binet-Zeckendorf Fold & return ptr_ovid_<hash> pointer."""
+        if not payload_bytes:
+            raise ValueError("payload_bytes cannot be empty")
+        body: Dict[str, Any] = {
+            "payload_b64": "base64:" + base64.b64encode(payload_bytes).decode("ascii"),
+            "object_path": object_path,
+            "byte_offset": byte_offset,
+            "encrypt_with_customer_kms": encrypt_with_customer_kms,
+            "simulate_adversarial": simulate_adversarial,
+        }
+        if format_hint is not None:
+            body["format_hint"] = format_hint
+        return self._request("POST", f"/v1/connectors/{connector_id}/ingest", json=body)
+
+    def discover_connector_schemas(
+        self,
+        connector_id: str,
+        additional_tables: Optional[list[str]] = None,
+    ) -> Dict[str, Any]:
+        """Run Automated Schema Discovery Middleware under Tenant ECA."""
+        body: Dict[str, Any] = {}
+        if additional_tables is not None:
+            body["additional_tables"] = additional_tables
+        return self._request(
+            "POST", f"/v1/connectors/{connector_id}/discover", json=body
+        )
+
+    def execute_zero_copy_pointer(
+        self,
+        pointer_id: str,
+        operation: str = "PV_LATTICE_FOLD",
+        scale_order: int = 8,
+        metallic_m: int = 1,
+    ) -> Dict[str, Any]:
+        """Execute exact algebraic computation directly against ptr_ovid_<hash>."""
+        return self._request(
+            "POST",
+            f"/v1/connectors/pointers/{pointer_id}/execute",
+            json={
+                "operation": operation,
+                "scale_order": scale_order,
+                "metallic_m": metallic_m,
+            },
+        )
+
+    def run_s3_parquet_discovery_benchmark(
+        self,
+        target_s3_uri: str = "s3://apex-financial-lakehouse-prod/quant_models_v4/historical_ticks_2026.parquet",
+        total_parquet_files: int = 1250,
+        total_records_indexed: int = 15400000000,
+        discovered_columns_count: int = 142,
+    ) -> Dict[str, Any]:
+        """Execute Multi-Terabyte S3 Parquet Schema Discovery Benchmark under ECA."""
+        payload: Dict[str, Any] = {
+            "target_s3_uri": target_s3_uri,
+            "total_parquet_files": total_parquet_files,
+            "total_records_indexed": total_records_indexed,
+            "discovered_columns_count": discovered_columns_count,
+        }
+        return self._request(
+            "POST", "/v1/connectors/benchmarks/s3-parquet-discovery", json=payload
+        )
+
+    def benchmark_zero_copy_query(
+        self,
+        pointer_id: str = "ptr_ovid_9350fda91695d3d9b9a31bf6",
+        query_type: str = "ALL_BENCHMARKS",
+        scale_order: int = 12,
+        records_to_scan: int = 15400000000,
+    ) -> Dict[str, Any]:
+        """Execute in-place zero-copy query response time benchmark against ptr_ovid_<hash>."""
+        payload: Dict[str, Any] = {
+            "query_type": query_type,
+            "scale_order": scale_order,
+            "records_to_scan": records_to_scan,
+        }
+        return self._request(
+            "POST",
+            f"/v1/connectors/pointers/{pointer_id}/query-benchmark",
+            json=payload,
+        )
+
+    def get_workload_v1(self, workload_id: Any) -> Dict[str, Any]:
+        """Retrieve workload execution status and cryptographic verification receipt via GET /v1/workloads/{id}."""
+        wid = str(workload_id)
+        return self._request("GET", f"/v1/workloads/{wid}")
+
+    def list_workloads_v1(self, page: int = 1, page_size: int = 50) -> Dict[str, Any]:
+        """List tenant workloads via GET /v1/workloads."""
+        return self._request(
+            "GET", "/v1/workloads", params={"page": page, "page_size": page_size}
+        )
+
+    def verify_receipt_v1(self, receipt_hash: str) -> Dict[str, Any]:
+        """Public zero-auth cryptographic verification via GET /v1/verify/{receipt_hash}."""
+        return self._request("GET", f"/v1/verify/{receipt_hash}")
+
+    def get_hyperscaler_matrix(self) -> Dict[str, Any]:
+        """Retrieve the 7-row Hyperscaler Connector Matrix via GET /v1/connectors/matrix."""
+        return self._request("GET", "/v1/connectors/matrix")
+
+    def get_deployment_roadmap(self) -> Dict[str, Any]:
+        """Retrieve the 4-phase Deployment Roadmap via GET /v1/connectors/roadmap."""
+        return self._request("GET", "/v1/connectors/roadmap")
+
+    def register_cluster(
+        self,
+        cluster_id: str,
+        cloud_provider: str = "NVIDIA_DGX_CLOUD",
+        region: str = "us-east-1",
+        blade_count: int = 32,
+        interconnect: str = "130_TBPS_H4_POLYTOPE_CROSSBAR",
+        subsystems: Optional[list] = None,
+    ) -> Dict[str, Any]:
+        """Register physical AI Factory cluster via POST /v1/fabric/clusters/register."""
+        payload = {
+            "cluster_id": cluster_id,
+            "cloud_provider": cloud_provider,
+            "region": region,
+            "blade_count": blade_count,
+            "interconnect": interconnect,
+            "subsystems": subsystems
+            or [
+                "NVIDIA_BLACKWELL_B200",
+                "NVFP4_TENSOR_CORES",
+                "HBM3E_DISAGGREGATED_POOL",
+                "H4_600_CELL_VIRTUAL_CROSSBAR",
+            ],
+        }
+        return self._request("POST", "/v1/fabric/clusters/register", json=payload)
+
+    def schedule_disaggregated_pools(
+        self,
+        workload_id: str,
+        prefill_tokens: int = 131072,
+        decode_tokens: int = 4096,
+        quantum_hilbert_dim: int = 64,
+        require_zero_stall: bool = True,
+    ) -> Dict[str, Any]:
+        """Schedule disaggregated Prefill, Decode, and Cryo-Quantum pools via POST /v1/fabric/pools/schedule."""
+        payload = {
+            "workload_id": workload_id,
+            "prefill_tokens": prefill_tokens,
+            "decode_tokens": decode_tokens,
+            "quantum_hilbert_dim": quantum_hilbert_dim,
+            "require_zero_stall": require_zero_stall,
+        }
+        return self._request("POST", "/v1/fabric/pools/schedule", json=payload)
+
+    def reconcile_settlement(
+        self,
+        tenant_id: str,
+        period: str = "2026-Q1",
+        counterfactual_cloud_spend_usd: float = 520000.00,
+        actual_cloud_spend_usd: float = 317500.00,
+        incremental_chronus_costs_usd: float = 0.00,
+    ) -> Dict[str, Any]:
+        """Calculate Hermiten 25% Value-Share settlement via POST /v1/billing/hermiten/settlement."""
+        payload = {
+            "tenant_id": tenant_id,
+            "period": period,
+            "counterfactual_cloud_spend_usd": counterfactual_cloud_spend_usd,
+            "actual_cloud_spend_usd": actual_cloud_spend_usd,
+            "incremental_chronus_costs_usd": incremental_chronus_costs_usd,
+        }
+        return self._request("POST", "/v1/billing/hermiten/settlement", json=payload)
+
+    def onboard_instant_tenant(
+        self,
+        tenant_id: str,
+        organization_name: str,
+        requested_warps: int = 256,
+        aws_kms_key_arn: Optional[str] = None,
+        contact_email: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Instant tenant onboarding under ECA via POST /v1/tenants/onboard/instant."""
+        payload = {
+            "tenant_id": tenant_id,
+            "organization_name": organization_name,
+            "requested_warps": requested_warps,
+            "aws_kms_key_arn": aws_kms_key_arn
+            or "arn:aws:kms:us-east-1:112233445566:key/chronus-pkcs11-custody",
+            "contact_email": contact_email or f"admin@{tenant_id}.internal",
+        }
+        return self._request("POST", "/v1/tenants/onboard/instant", json=payload)
+
     def get_metrics(self) -> str:
         response = self._client.get("/metrics")
         if response.status_code != 200:
@@ -229,9 +519,7 @@ class ChronusAPISDK:
 
     def get_stats(self) -> Dict[str, Any]:
         average = (
-            self._total_latency_ms / self._request_count
-            if self._request_count
-            else 0.0
+            self._total_latency_ms / self._request_count if self._request_count else 0.0
         )
         return {
             "sdk_version": self.SDK_VERSION,

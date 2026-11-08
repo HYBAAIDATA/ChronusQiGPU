@@ -20,7 +20,8 @@ from chronus.service.workload_store import SQLiteWorkloadStore
 
 
 GENESIS_HEADER = bytes.fromhex(
-    "01000000" + "00" * 32
+    "01000000"
+    + "00" * 32
     + "3ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a"
     + "29ab5f49ffff001d1dac2b7c"
 )
@@ -45,9 +46,12 @@ def test_genesis_hash_and_little_endian_target():
     assert result["tested"] == 1
     assert result["matches"] == [{"nonce": GENESIS_NONCE, "hash": GENESIS_HASH}]
     assert result["execution_mode"] == "SOFTWARE_EXECUTION"
-    assert search_nonce_range(
-        GENESIS_HEADER, GENESIS_NONCE, GENESIS_NONCE + 1, int(GENESIS_HASH, 16) - 1
-    )["match_count"] == 0
+    assert (
+        search_nonce_range(
+            GENESIS_HEADER, GENESIS_NONCE, GENESIS_NONCE + 1, int(GENESIS_HASH, 16) - 1
+        )["match_count"]
+        == 0
+    )
 
 
 def test_parallel_results_match_independent_hashlib_reference():
@@ -66,10 +70,14 @@ def test_zeckendorf_step_order_finds_identical_matches():
     header = bytes(range(80))
     target = 1 << 200  # generous target so matches exist in a small range
     binary = search_nonce_range(header, 0, 4096, target, workers=1, step_order="binary")
-    folded = search_nonce_range(header, 0, 4096, target, workers=1, step_order="zeckendorf")
+    folded = search_nonce_range(
+        header, 0, 4096, target, workers=1, step_order="zeckendorf"
+    )
     assert binary["tested"] == folded["tested"] == 4096
     assert binary["match_count"] == folded["match_count"]
-    assert {m["nonce"] for m in binary["matches"]} == {m["nonce"] for m in folded["matches"]}
+    assert {m["nonce"] for m in binary["matches"]} == {
+        m["nonce"] for m in folded["matches"]
+    }
     assert folded["step_order"] == "zeckendorf"
     with pytest.raises(ValueError, match="step_order"):
         search_nonce_range(header, 0, 10, target, step_order="spiral")
@@ -100,27 +108,40 @@ def test_zeckendorf_increment_is_carry_free_and_bijective():
 
 def test_zeckendorf_increment_matches_encode_of_successor():
     for value in [0, 1, 2, 3, 10, 100, 4180, 6765, 2**40 + 12345]:
-        assert zeckendorf_decode(zeckendorf_increment(zeckendorf_encode(value))) == value + 1
+        assert (
+            zeckendorf_decode(zeckendorf_increment(zeckendorf_encode(value)))
+            == value + 1
+        )
 
 
 def test_search_store_option_records_theseus_receipt():
     from chronus.execution import NativeMathReferenceBackend
 
     backend = NativeMathReferenceBackend()
-    payload = json.dumps({
-        "header_hex": bytes(range(80)).hex(),
-        "target_hex": f"{1 << 200:064x}",
-        "start": 0, "stop": 1024, "step": "zeckendorf", "store": True,
-    }).encode()
+    payload = json.dumps(
+        {
+            "header_hex": bytes(range(80)).hex(),
+            "target_hex": f"{1 << 200:064x}",
+            "start": 0,
+            "stop": 1024,
+            "step": "zeckendorf",
+            "store": True,
+        }
+    ).encode()
     result = backend.execute(payload, "SHA256D_NONCE_SEARCH")
     receipt = result["theseus_receipt"]
     assert result["step_order"] == "zeckendorf"
     assert 0 <= receipt["coordinate"]["lane"] < 32
     assert result["durable"] is False
-    bad = json.dumps({
-        "header_hex": bytes(range(80)).hex(), "target_hex": f"{1:064x}",
-        "start": 0, "stop": 10, "store": False,
-    }).encode()
+    bad = json.dumps(
+        {
+            "header_hex": bytes(range(80)).hex(),
+            "target_hex": f"{1:064x}",
+            "start": 0,
+            "stop": 10,
+            "store": False,
+        }
+    ).encode()
     with pytest.raises(ValueError, match="store"):
         backend.execute(bad, "SHA256D_NONCE_SEARCH")
 
@@ -144,17 +165,23 @@ def test_search_api_executes_genesis_candidate(tmp_path, monkeypatch):
         workloads, "workload_store", SQLiteWorkloadStore(str(tmp_path / "test.sqlite3"))
     )
     auth_service.register_tenant("mining-test", "mining-test-token")
-    payload = json.dumps({
-        "header_hex": GENESIS_HEADER.hex(),
-        "start": GENESIS_NONCE,
-        "stop": GENESIS_NONCE + 1,
-        "target_hex": GENESIS_HASH,
-    })
+    payload = json.dumps(
+        {
+            "header_hex": GENESIS_HEADER.hex(),
+            "start": GENESIS_NONCE,
+            "stop": GENESIS_NONCE + 1,
+            "target_hex": GENESIS_HASH,
+        }
+    )
     with TestClient(create_app()) as client:
         response = client.post(
             "/workloads/submit",
             headers={"Authorization": "Bearer mining-test-token"},
-            json={"tenant_id": "mining-test", "workload_type": "SHA256D_NONCE_SEARCH", "payload_bytes": payload},
+            json={
+                "tenant_id": "mining-test",
+                "workload_type": "SHA256D_NONCE_SEARCH",
+                "payload_bytes": payload,
+            },
         )
     assert response.status_code == 202
     assert response.json()["result"]["result"]["matches"][0]["hash"] == GENESIS_HASH

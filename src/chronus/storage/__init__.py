@@ -1,5 +1,24 @@
-"""Phyllotaxis content-addressed storage and Theseus reconstruction."""
+"""Phyllotaxis content-addressed storage, Theseus reconstruction, and Zero-Copy Connectors."""
 
+from chronus.storage.connectors import (
+    DATA_MOVEMENT_PLANE_SPECS,
+    PREBUILT_CONNECTOR_SPECS,
+    ALHarasConnectorGuard,
+    BinetZeckendorfIngressEngine,
+    ConnectorCategory,
+    ConnectorSecurityError,
+    ConnectorType,
+    DataMovementPlaneRouter,
+    DiscoveredDataset,
+    EnduringCapacityAddendumRecord,
+    IngestFormat,
+    MemoryAccessClass,
+    RegisteredConnector,
+    SchemaDiscoveryMiddleware,
+    ZeroCopyConnectorManager,
+    classify_memory_access_class,
+    zero_copy_connector_manager,
+)
 from chronus.storage.phyllotaxis import (
     GOLDEN_RATIO_CONJUGATE_64,
     PhyllotaxisCoordinate,
@@ -13,14 +32,31 @@ from chronus.storage.phyllotaxis import (
 from chronus.storage.theseus import TheseusRecord, TheseusService
 
 __all__ = [
+    "ALHarasConnectorGuard",
+    "BinetZeckendorfIngressEngine",
+    "ConnectorCategory",
+    "ConnectorSecurityError",
+    "ConnectorType",
+    "DATA_MOVEMENT_PLANE_SPECS",
+    "DataMovementPlaneRouter",
+    "DiscoveredDataset",
+    "EnduringCapacityAddendumRecord",
     "GOLDEN_RATIO_CONJUGATE_64",
+    "IngestFormat",
+    "MemoryAccessClass",
+    "PREBUILT_CONNECTOR_SPECS",
     "PhyllotaxisCoordinate",
     "PhyllotaxisMesh",
+    "RegisteredConnector",
+    "SchemaDiscoveryMiddleware",
     "TheseusRecord",
     "TheseusService",
+    "ZeroCopyConnectorManager",
+    "classify_memory_access_class",
     "golden_angle_hash",
     "golden_lane",
     "metallic_conjugate_64",
     "metallic_lane",
     "phyllotaxis_coordinate",
+    "zero_copy_connector_manager",
 ]

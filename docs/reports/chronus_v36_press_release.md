@@ -1,20 +1,11 @@
-# Press Release Draft: Chronus Quantum iGPU v36
+# Press release draft — NOT APPROVED FOR DISTRIBUTION
 
-**FOR IMMEDIATE RELEASE**  
-**November 6, 2026**
+This is an internal placeholder only. Do not distribute, quote, or use as a customer or investor announcement. No release date, certification, customer, benchmark, security, or production claim has been verified for publication.
 
-## Chronus Quantum iGPU v36 presents a Python research prototype for representation-aware computing
+## Safe factual description for internal discussion
 
-Chronus Quantum iGPU v36 is a Python research prototype exploring exact arithmetic, Fibonacci-based representations, receipt-oriented workload records, and software models of heterogeneous computing components.
+Chronusv2 is a software prototype exploring selected exact-math reference workloads and execution abstractions. The repository includes Python service and API code, a CPU reference path, and experimental components. It is not currently release-qualified; tests, deployment, physical accelerator performance, and independent security or compliance assessments were not verified in the 2026-11-08 source review.
 
-The v36 package includes code for Fibonacci and algebraic operations, along with simulated memory and accelerator abstractions. Its verification interface is an early software harness, not a certification of physical GPU, quantum, or hyperscale infrastructure performance.
+Before any publication, confirm the current commit and release status, gather supporting evidence for every material claim, and obtain legal, security, and product approval. Chronus does not assert affiliation, endorsement, or a joint venture with McKinsey or Accenture.
 
-In the reviewed checkout, the current pytest command completed with one test passing. That test checks the status returned by the verification orchestrator; it does not independently validate every invariant or establish production qualification. Proof-shaped outputs and architectural simulations should likewise not be interpreted as cryptographic proof verification or hardware benchmark results.
-
-The project is publishing an accompanying scientific and verification note to make these evidence boundaries explicit and identify the additional testing needed for stronger claims. Results should be treated as prototype behavior until independently reproducible mathematical, cryptographic, and hardware evaluations are available.
-
-**About Chronus Quantum iGPU**  
-Chronus Quantum iGPU is a software project investigating representation-aware computational abstractions. Project materials and source code are available through the Chronusv2 repository.
-
-**Media contact:** Not provided.  
-**Availability, licensing, and support details:** Refer to the repository's current release metadata; no production service availability is asserted by this draft.
+See the [claim audit](../claim-audit.md).

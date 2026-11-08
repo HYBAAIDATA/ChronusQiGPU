@@ -19,7 +19,9 @@ def encode_int256(value: int) -> tuple[int, int, int, int]:
 def decode_int256(limbs: tuple[int, int, int, int]) -> int:
     """Decode four little-endian two's-complement limbs without truncation."""
     if len(limbs) != 4 or any(
-        not isinstance(limb, int) or isinstance(limb, bool) or not 0 <= limb <= LIMB_MASK
+        not isinstance(limb, int)
+        or isinstance(limb, bool)
+        or not 0 <= limb <= LIMB_MASK
         for limb in limbs
     ):
         raise ValueError("limbs must contain four unsigned 64-bit integers")

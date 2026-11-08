@@ -53,8 +53,11 @@ def norm(x: tuple[int, int]) -> int:
 
 def _validate_element(x: tuple[int, int]) -> tuple[int, int]:
     if (
-        not isinstance(x, tuple) or len(x) != 2
-        or any(not isinstance(v, int) or isinstance(v, bool) or not 0 <= v < P for v in x)
+        not isinstance(x, tuple)
+        or len(x) != 2
+        or any(
+            not isinstance(v, int) or isinstance(v, bool) or not 0 <= v < P for v in x
+        )
     ):
         raise ValueError("field element must be a tuple of two integers in [0, 257)")
     if x == (0, 0):
@@ -79,14 +82,21 @@ class NormProof:
 
     @classmethod
     def from_dict(cls, data: dict) -> "NormProof":
-        if not isinstance(data, dict) or set(data) < {"statement", "commitment", "response"}:
+        if not isinstance(data, dict) or not {
+            "statement",
+            "commitment",
+            "response",
+        }.issubset(data):
             raise ValueError("proof must contain statement, commitment and response")
         statement, commitment = data["statement"], data["commitment"]
         response = data["response"]
         if not (
-            isinstance(statement, int) and isinstance(commitment, int)
-            and not isinstance(statement, bool) and not isinstance(commitment, bool)
-            and 0 <= statement < P and 0 <= commitment < P
+            isinstance(statement, int)
+            and isinstance(commitment, int)
+            and not isinstance(statement, bool)
+            and not isinstance(commitment, bool)
+            and 0 <= statement < P
+            and 0 <= commitment < P
         ):
             raise ValueError("statement and commitment must be integers in [0, 257)")
         if not isinstance(response, list) or len(response) != 2:
@@ -107,7 +117,8 @@ def prove(witness: tuple[int, int], *, nonce: int | None = None) -> NormProof:
     statement = norm(x)
     while True:
         randomizer = (
-            (nonce % P, (nonce // P) % P) if nonce is not None
+            (nonce % P, (nonce // P) % P)
+            if nonce is not None
             else (secrets.randbelow(P), secrets.randbelow(P))
         )
         if randomizer != (0, 0):

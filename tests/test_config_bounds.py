@@ -22,7 +22,9 @@ def test_env_override_changes_behavior(monkeypatch):
     assert len(lanes) == 8
     monkeypatch.setenv("CHRONUS_MAX_METALLIC_M", "2")
     with pytest.raises(ValueError, match="between 1 and 2"):
-        ExecutionRouter().execute(json.dumps({"m": 3, "index": 1}).encode(), "METALLIC_SCALE")
+        ExecutionRouter().execute(
+            json.dumps({"m": 3, "index": 1}).encode(), "METALLIC_SCALE"
+        )
 
 
 def test_invalid_env_values_fail_closed(monkeypatch):

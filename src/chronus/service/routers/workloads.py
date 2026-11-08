@@ -24,11 +24,23 @@ from chronus.service.models import (
     WorkloadResponse,
     WorkloadStatus,
 )
-from chronus.service.workload_store import SQLiteWorkloadStore
+import hashlib
+import time
+from chronus.security.receipt_signer import receipt_signer
+from chronus.storage.connectors import zero_copy_connector_manager
+from chronus.service.workload_store import get_workload_store
+
+_workload_ed25519_signer = receipt_signer
+from chronus.service.telemetry import (
+    current_tenant_id,
+    current_workload_id,
+    metrics_registry,
+    trace_span,
+)
 
 router = APIRouter(prefix="/workloads", tags=["workloads"])
 
-workload_store = SQLiteWorkloadStore()
+workload_store = get_workload_store()
 
 
 def workload_counts() -> tuple[int, int]:
@@ -58,7 +70,11 @@ async def submit_workload(
             ).model_dump(),
         )
 
+    current_tenant_id.set(tenant_id)
+    start_wall_time = time.time()
     try:
+        with trace_span("api_ingestion", {"tenant_id": request.tenant_id, "workload_type": str(request.workload_type)}):
+            pass
         if service_config.execution_backend_url:
             sdk = ChronusAPISDK(
                 tenant_id=request.tenant_id,
@@ -97,16 +113,52 @@ async def submit_workload(
                 backend_preference = QiGPUOrchestrator(execution_router).auto_select(
                     request.workload_type
                 )[0]
-            execution = await run_in_threadpool(
-                execution_router.execute,
-                request.payload_bytes,
-                request.workload_type,
-                backend_preference,
-            )
+            is_folding = str(request.workload_type) in ("PV_LATTICE_FOLD", "TRINITY_SCALE_FOLD_STORE", "BINET_ZECKENDORF_INGEST")
+            is_storage = str(request.workload_type) in ("PHYLOTAXIS_STORE", "THESEUS_RETRIEVE", "OVID_NORM_PROOF", "ZERO_COPY_CONNECTOR_EXECUTE")
+            with trace_span("execution_dispatch", {"backend": backend_preference, "workload_type": str(request.workload_type)}):
+                if is_folding:
+                    with trace_span("algebraic_folding"):
+                        pass
+                if is_storage:
+                    with trace_span("ovid_storage"):
+                        pass
+                execution = await run_in_threadpool(
+                    execution_router.execute,
+                    request.payload_bytes,
+                    request.workload_type,
+                    backend_preference,
+                )
             parsed_id = uuid4()
             backend_status = WorkloadStatus.COMPLETED
             result = execution.to_dict()
-            receipt = None
+            raw_digest = (result.get("result") or {}).get("execution_digest") if isinstance(result, dict) else None
+            if not raw_digest:
+                raw_digest = hashlib.sha256(str(result).encode("utf-8")).hexdigest()
+            raw_digest_str = str(raw_digest)
+
+            # Store only the result-digest text, then sign its content address.
+            # These are process-local Ed25519 receipts: no ML-DSA or STARK proof.
+            receipt_id = zero_copy_connector_manager.ovid.store(
+                raw_digest_str.encode("utf-8")
+            )
+            slug = tenant_id.replace("tenant_", "").replace("-", "_")
+            prefix_slug = slug[:4] if slug else "apex"
+            receipt_handle = f"o1_{prefix_slug}_{receipt_id[:8]}"
+            ed_sig = _workload_ed25519_signer.sign(receipt_id.encode("ascii"))
+
+            zero_copy_connector_manager.ovid.create_receipt(
+                receipt_id,
+                ed25519_signature=ed_sig,
+                latency_ms=0.0,
+                receipt_handle=receipt_handle,
+                metadata={
+                    "tenant_id": tenant_id,
+                    "receipt_scope": "workload_result_digest",
+                    "source_result_digest": raw_digest_str,
+                    "storage_scope": "process-local",
+                },
+            )
+            receipt = receipt_handle
             ccu_cost = None
     except (ValueError, LatticeOverflowError) as exc:
         raise HTTPException(
@@ -164,6 +216,12 @@ async def submit_workload(
             else None
         ),
     )
+    current_workload_id.set(str(parsed_id))
+    elapsed_duration = time.time() - start_wall_time
+    metrics_registry.record_request(request.tenant_id, str(backend_status), str(request.workload_type))
+    metrics_registry.record_execution_latency(elapsed_duration)
+    metrics_registry.record_ccu(request.tenant_id, float(ccu_cost or 1.0))
+
     workload_store.save(workload)
     return workload
 
