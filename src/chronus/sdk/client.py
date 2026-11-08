@@ -625,6 +625,85 @@ class ChronusAPISDK:
         """Retrieve EUCLID DEC Fluid and Lie-Poisson telemetry."""
         return self._request("GET", "/euclid/telemetry")
 
+    def get_mining_status(self) -> Dict[str, Any]:
+        """Retrieve real-time mining administration status."""
+        return self._request("GET", "/v1/mining/admin/status")
+
+    def start_mining(
+        self,
+        base_hashrate_eh_s: Optional[float] = None,
+        active_warps: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Start mining engine with specified hashrate and warp allocation."""
+        return self._request(
+            "POST",
+            "/v1/mining/admin/start",
+            json={
+                "base_hashrate_eh_s": base_hashrate_eh_s,
+                "active_warps": active_warps,
+            },
+        )
+
+    def stop_mining(self) -> Dict[str, Any]:
+        """Stop active mining engine."""
+        return self._request("POST", "/v1/mining/admin/stop")
+
+    def configure_mining_capacity(
+        self,
+        base_hashrate_eh_s: Optional[float] = None,
+        active_warps: Optional[int] = None,
+        core_voltage_v: Optional[float] = None,
+        fan_speed_pct: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Dynamically configure hashrate, warps, and die voltage."""
+        return self._request(
+            "POST",
+            "/v1/mining/admin/configure",
+            json={
+                "base_hashrate_eh_s": base_hashrate_eh_s,
+                "active_warps": active_warps,
+                "core_voltage_v": core_voltage_v,
+                "fan_speed_pct": fan_speed_pct,
+            },
+        )
+
+    def configure_mining_intelligence(
+        self,
+        predictive: float,
+        causal: float,
+        counterfactual: float,
+        topological: float,
+        geometric: float,
+    ) -> Dict[str, Any]:
+        """Rebalance 5-mode meta-intelligence distribution."""
+        return self._request(
+            "POST",
+            "/v1/mining/admin/intelligence",
+            json={
+                "predictive": predictive,
+                "causal": causal,
+                "counterfactual": counterfactual,
+                "topological": topological,
+                "geometric": geometric,
+            },
+        )
+
+    def apply_mining_causal_intervention(self, intervention: str) -> Dict[str, Any]:
+        """Apply Pearl Level 2 do(X) intervention."""
+        return self._request(
+            "POST",
+            "/v1/mining/admin/intervene",
+            json={"intervention": intervention},
+        )
+
+    def inject_mining_anomaly(self) -> Dict[str, Any]:
+        """Simulate reorg or stratum poisoning perturbation."""
+        return self._request("POST", "/v1/mining/admin/anomaly/inject")
+
+    def heal_mining_anomaly(self) -> Dict[str, Any]:
+        """Trigger 1-cycle DSW instanton monopole cobordism heal."""
+        return self._request("POST", "/v1/mining/admin/anomaly/heal")
+
     def get_metrics(self) -> str:
         response = self._client.get("/metrics")
         if response.status_code != 200:

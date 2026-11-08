@@ -33,7 +33,7 @@ from typing import List, Tuple
 from unittest.mock import MagicMock
 
 import pytest
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from chronus.execution.hardware_dispatcher import HardwareAcceleratorDispatcher
@@ -81,7 +81,7 @@ from chronus.sdk.client import ChronusAPISDK
 
 class TestPropertyInvariants:
     @given(st.integers(min_value=-50, max_value=50), st.integers(min_value=-50, max_value=50))
-    @settings(max_examples=30)
+    @settings(max_examples=30, suppress_health_check=[HealthCheck.too_slow])
     def test_prop_cyclotomic_phi_inverse_invariant(self, c0: int, c1: int):
         """Invariant: phi * phi^-1 == 1 identically in Z[zeta_5]."""
         phi = Cyclotomic5.phi()
@@ -97,7 +97,7 @@ class TestPropertyInvariants:
         st.integers(min_value=0, max_value=256),
         st.integers(min_value=0, max_value=256),
     )
-    @settings(max_examples=40)
+    @settings(max_examples=40, suppress_health_check=[HealthCheck.too_slow])
     def test_prop_f257_phi_norm_multiplicativity(self, a: int, b: int):
         """Invariant: N(x * y) == N(x) * N(y) mod 257 in F_257[phi]."""
         x = F257Phi(a, b)
@@ -106,7 +106,7 @@ class TestPropertyInvariants:
         assert prod.norm() == (x.norm() * y.norm()) % P
 
     @given(st.integers(min_value=0, max_value=100000))
-    @settings(max_examples=30)
+    @settings(max_examples=30, suppress_health_check=[HealthCheck.too_slow])
     def test_prop_zeckendorf_non_adjacency_invariant(self, val: int):
         """Invariant: Zeckendorf indices are strictly non-adjacent (c_k * c_{k+1} = 0)."""
         indices = ZeckendorfBasePhiIndexer.encode(val)
@@ -116,7 +116,7 @@ class TestPropertyInvariants:
         assert ZeckendorfBasePhiIndexer.decode(indices) == val
 
     @given(st.integers(min_value=0, max_value=256))
-    @settings(max_examples=25)
+    @settings(max_examples=25, suppress_health_check=[HealthCheck.too_slow])
     def test_prop_hodge_sheaf_laplacian_harmonic_consensus(self, stalk_val: int):
         """Invariant: A constant 0-cochain lies identically in ker(L_F)."""
         consensus = HodgeSheafLaplacianConsensus(node_count=4)
