@@ -7073,7 +7073,9 @@ class WorkloadExecutionTraceabilityChain:
         geodesic_res: dict
     ) -> dict:
         import hashlib
-        chain_id = f"chain_{hashlib.sha256(f'{workload_id}:{tenant_id}:{ovid_res.get("oVID_id", "")}'.encode()).hexdigest()[:16]}"
+        ovid_id = ovid_res.get("oVID_id", "")
+        chain_seed = f"{workload_id}:{tenant_id}:{ovid_id}".encode()
+        chain_id = f"chain_{hashlib.sha256(chain_seed).hexdigest()[:16]}"
         return {
             "traceability_chain_id": chain_id,
             "workload_id": workload_id,

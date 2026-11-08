@@ -13,6 +13,7 @@ import os
 import time
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set
+from urllib.parse import urlparse
 from urllib.request import Request as URLRequest, urlopen
 
 import jwt
@@ -110,9 +111,18 @@ class JWKSCache:
         """Fetch and parse JWKS from the remote endpoint or local JSON definition."""
         raw_jwks = os.getenv("CHRONUS_STATIC_JWKS")
         if not raw_jwks and self.jwks_url:
+            # Only HTTPS is permitted for remote key material; file:// or
+            # custom schemes would allow local key injection (CWE-22).
+            if urlparse(self.jwks_url).scheme != "https":
+                logger.warning(
+                    "Refusing to fetch JWKS from non-HTTPS URL: %s",
+                    self.jwks_url,
+                )
+                return
             try:
                 req = URLRequest(self.jwks_url, headers={"User-Agent": "Chronus-JWKS-Resolver/1.0"})
-                with urlopen(req, timeout=10.0) as resp:
+                # Scheme validated as https above.
+                with urlopen(req, timeout=10.0) as resp:  # nosec B310
                     raw_jwks = resp.read().decode("utf-8")
             except Exception as exc:
                 logger.warning("Failed to fetch JWKS from %s: %s", self.jwks_url, exc)
