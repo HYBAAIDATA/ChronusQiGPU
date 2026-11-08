@@ -114,6 +114,7 @@ class NativeMathReferenceBackend:
             "THESEUS_RETRIEVE",
             "OVID_NORM_PROOF",
             "METALLIC_SCALE",
+            "EXACT_PHASE_SEARCH",
             "ZERO_COPY_CONNECTOR_EXECUTE",
             "BINET_ZECKENDORF_INGEST",
             "ENTERPRISE_FINANCIAL_ETL",

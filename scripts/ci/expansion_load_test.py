@@ -13,7 +13,7 @@ import asyncio
 import os
 import sys
 import time
-from typing import Dict, List, Tuple
+from typing import Tuple
 
 import httpx
 
@@ -93,7 +93,7 @@ async def run_expansion_simulation(total_tenants: int = 500, concurrency: int = 
     print("=" * 80)
     print(f"CHRONUS CIaaS 10X DYNAMIC CAPACITY EXPANSION BURST ({total_tenants} TENANTS)")
     print(f"Concurrency Level: {concurrency} In-Flight Workers | Client: HTTPX Async ASGI Transport")
-    print(f"Scaling Factor   : 10X Dynamic Expansion (512 CCU -> 5,120 CCU | 32 -> 320 Warps)")
+    print("Scaling Factor   : 10X Dynamic Expansion (512 CCU -> 5,120 CCU | 32 -> 320 Warps)")
     print("=" * 80)
 
     app = create_app()
@@ -160,7 +160,7 @@ async def run_expansion_simulation(total_tenants: int = 500, concurrency: int = 
     print(f"  Total Authorized Warps  : {total_expanded_warps:,} 32-Lane Warps ({total_expanded_warps * 32:,} SIMD Vectors)")
     print(f"  Total Expanded Storage  : {total_expanded_storage_tb:.2f} TB (From {total_tenants * 1024 / 1024:.2f} TB)")
     print(f"  Regional Fleet Pods     : {len(pods_info.get('pods', []))} Active Pods (alpha, beta, gamma, delta)")
-    print(f"  DEC Routing & DSW Status: STABLE (0 packet stalls, zero instanton defects)")
+    print("  DEC Routing & DSW Status: STABLE (0 packet stalls, zero instanton defects)")
     print("=" * 80)
     print("10X DYNAMIC EXPANSION BURST COMPLETED: ZERO DEFECTS / 100% RECONCILED")
     print("=" * 80)

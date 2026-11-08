@@ -7,7 +7,6 @@ generating the qualification_manifest_v36.json release record.
 import importlib.util
 import json
 import os
-import sys
 from typing import Any, Dict
 
 
