@@ -32,12 +32,20 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import DBAPIError, OperationalError
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
+try:
+    from sqlalchemy.ext.asyncio import (
+        AsyncEngine,
+        AsyncSession,
+        async_sessionmaker,
+        create_async_engine,
+    )
+    HAS_ASYNC_SQLALCHEMY = True
+except (ImportError, Exception):
+    AsyncEngine = Any  # type: ignore
+    AsyncSession = Any  # type: ignore
+    async_sessionmaker = None  # type: ignore
+    create_async_engine = None  # type: ignore
+    HAS_ASYNC_SQLALCHEMY = False
 
 from chronus.service.models import WorkloadResponse
 from chronus.service.store_interface import WorkloadStoreInterface
@@ -254,19 +262,27 @@ class PostgresWorkloadStore(WorkloadStoreInterface):
         self.pool_size = pool_size
         self.max_overflow = max_overflow
         self.isolation_level = isolation_level
-        self.engine: AsyncEngine = create_async_engine(
-            self.dsn,
-            pool_size=pool_size,
-            max_overflow=max_overflow,
-            pool_timeout=30.0,
-            pool_pre_ping=True,
-            isolation_level=self.isolation_level,
-        )
-        self.session_factory = async_sessionmaker(
-            self.engine,
-            class_=AsyncSession,
-            expire_on_commit=False,
-        )
+        if HAS_ASYNC_SQLALCHEMY and create_async_engine is not None:
+            try:
+                self.engine: AsyncEngine = create_async_engine(
+                    self.dsn,
+                    pool_size=pool_size,
+                    max_overflow=max_overflow,
+                    pool_timeout=30.0,
+                    pool_pre_ping=True,
+                    isolation_level=self.isolation_level,
+                )
+                self.session_factory = async_sessionmaker(
+                    self.engine,
+                    class_=AsyncSession,
+                    expire_on_commit=False,
+                )
+            except Exception:
+                self.engine = None
+                self.session_factory = None
+        else:
+            self.engine = None
+            self.session_factory = None
         self._initialized = False
         self._tenant_schemas: Dict[str, Dict[str, Any]] = {}
 
