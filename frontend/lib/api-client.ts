@@ -57,4 +57,67 @@ export class ChronusAPIClient {
   static verifyReceipt = (receiptId: string) =>
     get<VerifyReceiptResponse>(`v1/verify/${segment(receiptId)}`);
   static getStorage = () => get<ApiRecord>('v1/storage');
+
+  static executeAgenticSheafTurn = (agentStates?: Record<string, number[]>, stalkDim = 4) =>
+    post<ApiRecord>('v1/al-haras/applications/agentic-sheaf/verify-turn', {
+      agent_states: agentStates || {
+        Planner: [1.0, 0.0, 0.0, 1.0],
+        Coder: [1.0, 0.0, 0.0, 1.0],
+        Executor: [1.0, 0.0, 0.0, 1.0],
+        Tool: [1.0, 0.0, 0.0, 1.0],
+      },
+      stalk_dim: stalkDim,
+    });
+
+  static transmitOrbitalTelemetry = (
+    packetPayload = 'SDA_PWSA_TELEMETRY_STREAM_PACKET_001',
+    sourceSat = 'SAT_00',
+    targetSat = 'SAT_07',
+    constellationSize = 16
+  ) =>
+    post<ApiRecord>('v1/al-haras/applications/orbital-mesh/transmit', {
+      packet_payload: packetPayload,
+      source_sat: sourceSat,
+      target_sat: targetSat,
+      constellation_size: constellationSize,
+    });
+
+  static executeZkNeuralProveAndVerify = (
+    sensorInput: number[] = [12, 24, 36, 48],
+    weightsCommitment = 'sovereign_weights_merkle_root_v4_7f9c2b'
+  ) =>
+    post<ApiRecord>('v1/al-haras/applications/zk-neural/prove-and-verify', {
+      sensor_input: sensorInput,
+      weights_commitment: weightsCommitment,
+    });
+
+  static processCBDCCrossBorderSettlement = (
+    senderBank = 'FEDERAL_RESERVE',
+    receiverBank = 'BANK_OF_ENGLAND',
+    amountTokens = 10000000,
+    simulateDoubleSpend = false
+  ) =>
+    post<ApiRecord>('v1/al-haras/applications/cbdc-settlement/process', {
+      sender_bank: senderBank,
+      receiver_bank: receiverBank,
+      amount_tokens: amountTokens,
+      simulate_double_spend: simulateDoubleSpend,
+    });
+
+  static executeTISAMicrocode = (
+    funct7 = 0x02,
+    rs1Val: [number, number, number, number] = [1, 2, 0, 0],
+    rs2Val: [number, number, number, number] = [3, 1, 0, 0],
+    rs1 = 1,
+    rs2 = 2,
+    rd = 3
+  ) =>
+    post<ApiRecord>('v1/al-haras/applications/t-isa/execute', {
+      funct7,
+      rs1,
+      rs2,
+      rd,
+      rs1_val: rs1Val,
+      rs2_val: rs2Val,
+    });
 }

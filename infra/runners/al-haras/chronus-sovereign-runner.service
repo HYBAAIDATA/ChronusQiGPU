@@ -1,0 +1,42 @@
+[Unit]
+Description=Chronusv2 Ephemeral Sovereign Runner (AL HARAS Enforced)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=github-runner
+Group=github-runner
+WorkingDirectory=/opt/actions-runner
+
+# Enforce the pre-job and post-job hooks via environment
+Environment="ACTIONS_RUNNER_HOOK_JOB_STARTED=/opt/actions-runner/hooks/pre-job-attest.sh"
+Environment="ACTIONS_RUNNER_HOOK_JOB_COMPLETED=/opt/actions-runner/hooks/post-job-scrub.sh"
+Environment="ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER=false"
+
+# Step 1: Load and pin AL HARAS eBPF/LSM as root BEFORE dropping privileges
+PermissionsStartOnly=true
+ExecStartPre=/usr/local/sbin/al-haras-bootstrap.sh
+
+# Step 2: Register dynamically as an ephemeral runner (runs as github-runner)
+ExecStartPre=/opt/actions-runner/bin/register-ephemeral.sh
+
+# Step 3: Execute exactly one job and exit
+ExecStart=/opt/actions-runner/run.sh
+
+# Step 4: Clean up registration and scrub workspace as root after job exits
+ExecStopPost=/usr/local/sbin/al-haras-teardown.sh
+
+# Automatically restart to spin up a fresh ephemeral registration for the next job
+Restart=always
+RestartSec=3
+
+# Hardening: Prevent the runner process from modifying kernel or escalating privileges
+NoNewPrivileges=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ReadWritePaths=/opt/actions-runner /tmp
+
+[Install]
+WantedBy=multi-user.target
