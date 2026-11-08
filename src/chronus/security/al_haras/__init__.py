@@ -36,6 +36,35 @@ from chronus.security.al_haras.defense_frontiers import (
     CNISelfHealingEngine,
     StrategicDefenseCoordinator,
 )
+from chronus.security.al_haras.agentic_immune import (
+    AgentNode,
+    AgentNodeType,
+    AgenticSheafTopology,
+    AgenticSheafGuard,
+    ThreatClassification,
+)
+from chronus.security.al_haras.hardware_t_isa import (
+    TISAOpcode,
+    TISAInstruction,
+    TopologicalRegisterFile,
+    RISCVTopologicalCoprocessor,
+    TopologicalSheafFault,
+    encode_t_isa_instruction,
+    decode_t_isa_instruction,
+)
+from chronus.security.al_haras.orbital_mesh import (
+    SatelliteNode,
+    SatelliteOrbitClass,
+    OrbitalConstellationMesh,
+)
+from chronus.security.al_haras.zk_neural import (
+    VerifiableNeuralComputeEngine,
+    NeuralLayerTrace,
+)
+from chronus.security.al_haras.formal_invariants import (
+    FormalTopologicalProofVerifier,
+    FormalProofVerdict,
+)
 
 __all__ = [
     "CyclotomicZ5",
@@ -56,4 +85,23 @@ __all__ = [
     "HyperscaleDefenseSimulationEngine",
     "CNISelfHealingEngine",
     "StrategicDefenseCoordinator",
+    "AgentNode",
+    "AgentNodeType",
+    "AgenticSheafTopology",
+    "AgenticSheafGuard",
+    "ThreatClassification",
+    "TISAOpcode",
+    "TISAInstruction",
+    "TopologicalRegisterFile",
+    "RISCVTopologicalCoprocessor",
+    "TopologicalSheafFault",
+    "encode_t_isa_instruction",
+    "decode_t_isa_instruction",
+    "SatelliteNode",
+    "SatelliteOrbitClass",
+    "OrbitalConstellationMesh",
+    "VerifiableNeuralComputeEngine",
+    "NeuralLayerTrace",
+    "FormalTopologicalProofVerifier",
+    "FormalProofVerdict",
 ]

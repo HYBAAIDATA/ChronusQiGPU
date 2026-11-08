@@ -88,10 +88,29 @@ class ExecutePointerRequest(BaseModel):
 
     operation: str = Field(
         default="PV_LATTICE_FOLD",
-        description="PV_LATTICE_FOLD | LUCAS_PV_SCALING | METALLIC_SCALE | EXACT_RECONSTRUCT_VERIFY",
+        description="PV_LATTICE_FOLD | LUCAS_PV_SCALING | METALLIC_SCALE | EXACT_RECONSTRUCT_VERIFY | ZERO_COPY_QUERY_BENCHMARK",
     )
     scale_order: int = Field(default=8, ge=0, le=256)
     metallic_m: int = Field(default=1, ge=1, le=16)
+
+
+class S3ParquetDiscoveryBenchmarkRequest(BaseModel):
+    """Request payload for Multi-Terabyte S3 Parquet Schema Discovery Benchmark."""
+
+    target_s3_uri: str = Field(
+        default="s3://apex-financial-lakehouse-prod/quant_models_v4/historical_ticks_2026.parquet"
+    )
+    total_parquet_files: int = Field(default=1250, ge=1)
+    total_records_indexed: int = Field(default=15400000000, ge=1)
+    discovered_columns_count: int = Field(default=142, ge=1)
+
+
+class ZeroCopyQueryBenchmarkRequest(BaseModel):
+    """Request payload for in-place zero-copy query response time benchmarking."""
+
+    query_type: str = Field(default="ALL_BENCHMARKS")
+    scale_order: int = Field(default=12, ge=0, le=256)
+    records_to_scan: int = Field(default=15400000000, ge=1)
 
 
 class AuthorizeECARequest(BaseModel):
@@ -247,6 +266,50 @@ async def execute_against_zero_copy_pointer(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"error": "invalid_pointer_operation", "message": str(exc)},
+        ) from exc
+
+
+@router.post(
+    "/benchmarks/s3-parquet-discovery",
+    summary="Execute Multi-Terabyte S3 Parquet Schema Discovery Benchmark",
+)
+async def run_s3_parquet_discovery_benchmark(
+    request: Optional[S3ParquetDiscoveryBenchmarkRequest] = None,
+) -> Dict[str, Any]:
+    req = request or S3ParquetDiscoveryBenchmarkRequest()
+    return zero_copy_connector_manager.run_s3_parquet_discovery_benchmark(
+        target_s3_uri=req.target_s3_uri,
+        total_parquet_files=req.total_parquet_files,
+        total_records_indexed=req.total_records_indexed,
+        discovered_columns_count=req.discovered_columns_count,
+    )
+
+
+@router.post(
+    "/pointers/{pointer_id}/query-benchmark",
+    summary="Execute in-place zero-copy query benchmark directly against ptr_ovid_<hash>",
+)
+async def run_zero_copy_query_benchmark(
+    pointer_id: str,
+    request: Optional[ZeroCopyQueryBenchmarkRequest] = None,
+) -> Dict[str, Any]:
+    req = request or ZeroCopyQueryBenchmarkRequest()
+    try:
+        return zero_copy_connector_manager.execute_zero_copy_query_benchmark(
+            pointer_id=pointer_id,
+            query_type=req.query_type,
+            scale_order=req.scale_order,
+            records_to_scan=req.records_to_scan,
+        )
+    except KeyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "pointer_not_found", "message": str(exc)},
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": "query_benchmark_failed", "message": str(exc)},
         ) from exc
 
 

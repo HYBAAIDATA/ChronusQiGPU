@@ -37,7 +37,7 @@ export function Header() {
         <div className="flex items-center gap-2">
           <span className="text-xs font-mono font-medium text-neutral-400">ONTOLOGY:</span>
           <span className="text-xs font-mono font-semibold text-neutral-900 dark:text-white bg-neutral-100 dark:bg-neutral-900 px-2.5 py-1 rounded-md border border-neutral-200 dark:border-neutral-800">
-            PARADIGM Â· MATHEMATICS FIRST
+            PARADIGM · MATHEMATICS FIRST
           </span>
         </div>
         <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-800" />

@@ -490,11 +490,10 @@ export default function GovernancePage() {
             <button
               key={cat.id}
               onClick={() => setPrincipleFilter(cat.id)}
-              className={`px-3 py-1 rounded-lg transition-colors border ${
-                principleFilter === cat.id
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-semibold'
-                  : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:bg-neutral-800'
-              }`}
+              className={`px-3 py-1 rounded-lg transition-colors border ${principleFilter === cat.id
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-semibold'
+                : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:bg-neutral-800'
+                }`}
             >
               {cat.label}
             </button>

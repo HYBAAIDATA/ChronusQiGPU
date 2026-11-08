@@ -44,7 +44,7 @@ from chronus.storage.theseus import (
     tenant_storage_registry,
 )
 
-MAX_ENDURING_WARP_CEILING = 10000
+MAX_ENDURING_WARP_CEILING = 160000
 
 
 class ProvisioningConflictError(RuntimeError):
@@ -73,14 +73,14 @@ class InstantCCEAllocations(BaseModel):
     data_at_rest_gb: int = Field(
         default=10000,
         ge=1,
-        le=1000000,
-        description="Provisioned OVID/THESEUS data-at-rest storage in GB",
+        le=100000000,
+        description="Provisioned OVID/THESEUS data-at-rest storage in GB (up to 100 PB)",
     )
     data_in_motion_gb: int = Field(
         default=5000,
         ge=1,
-        le=1000000,
-        description="Provisioned data-in-motion fabric bandwidth quota in GB",
+        le=100000000,
+        description="Provisioned data-in-motion fabric bandwidth quota in GB (up to 100 PB)",
     )
     o1_structural_memory_gb: int = Field(
         default=256,
@@ -569,6 +569,14 @@ class InstantProvisioningEngine:
             self._postgres_descriptors[request.tenant_id] = pg_descriptor
             self._store.save_tenant(profile)
 
+        from chronus.storage.connectors import zero_copy_connector_manager
+        if request.enduring_addendum_accepted:
+            zero_copy_connector_manager.authorize_eca(
+                tenant_id=request.tenant_id,
+                kms_provider=kms_binding.kms_provider,
+                kms_key_arn=kms_binding.kms_key_arn,
+            )
+
         t4_ns = time.perf_counter_ns()
 
         s1_ms = round((t1_ns - t0_ns) / 1_000_000, 4)
@@ -777,6 +785,8 @@ class InstantProvisioningEngine:
             self._store.remove_tenant(tenant_id)
         al_haras_kms_custody.remove_binding(tenant_id)
         self._storage_registry.remove_tenant_fabric(tenant_id)
+        from chronus.storage.connectors import zero_copy_connector_manager
+        zero_copy_connector_manager.revoke_tenant(tenant_id)
 
     def simulate_concurrent_activations(
         self,

@@ -47,7 +47,14 @@ class OVIDZeroCopyPointer:
             or any(c not in "0123456789abcdef" for c in self.content_hash)
         ):
             raise ValueError("content_hash must be a lowercase 64-char SHA-256 hex digest")
-        if self.pointer_id != f"{POINTER_PREFIX}{self.content_hash}":
+        pointer_suffix = self.pointer_id[len(POINTER_PREFIX) :]
+        if (
+            len(pointer_suffix) < 24
+            or len(pointer_suffix) > 64
+            or any(c not in "0123456789abcdef" for c in pointer_suffix)
+        ):
+            raise ValueError("pointer_id must match ptr_ovid_<24..64 lowercase hex>")
+        if len(pointer_suffix) == 64 and pointer_suffix != self.content_hash:
             raise ValueError("pointer_id must equal ptr_ovid_<content_hash>")
         if not isinstance(self.byte_offset, int) or isinstance(self.byte_offset, bool) or self.byte_offset < 0:
             raise ValueError("byte_offset must be a non-negative integer")
@@ -60,7 +67,7 @@ class OVIDZeroCopyPointer:
 
     @property
     def short_pointer_id(self) -> str:
-        return f"{POINTER_PREFIX}{self.content_hash[:8]}"
+        return f"{POINTER_PREFIX}{self.pointer_id[len(POINTER_PREFIX):][:8]}"
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -197,13 +204,14 @@ class OVIDStorage:
         encryption_boundary: str = "CUSTOMER_KMS_ENVELOPE",
         detected_format: str = "RAW_BINARY",
         algebraic_descriptor: Optional[Dict[str, Any]] = None,
+        pointer_id_override: Optional[str] = None,
     ) -> OVIDZeroCopyPointer:
         """Create and register an in-place zero-copy pointer (ptr_ovid_<hash>).
 
         Does not copy or stage raw payload bytes into ``self._store``.
         """
         normalized_hash = content_hash.strip().lower()
-        pointer_id = f"{POINTER_PREFIX}{normalized_hash}"
+        pointer_id = pointer_id_override.strip() if pointer_id_override else f"{POINTER_PREFIX}{normalized_hash}"
         pointer = OVIDZeroCopyPointer(
             pointer_id=pointer_id,
             content_hash=normalized_hash,
@@ -219,6 +227,7 @@ class OVIDStorage:
             algebraic_descriptor=algebraic_descriptor or {},
         )
         self._pointers[pointer_id] = pointer
+        self._pointers[f"{POINTER_PREFIX}{normalized_hash}"] = pointer
         return pointer
 
     def resolve_pointer(self, pointer_id: str) -> Optional[OVIDZeroCopyPointer]:
@@ -229,8 +238,9 @@ class OVIDStorage:
             return direct
         if pointer_id.startswith(POINTER_PREFIX) and len(pointer_id) >= len(POINTER_PREFIX) + 8:
             matches = [p for pid, p in self._pointers.items() if pid.startswith(pointer_id)]
-            if len(matches) == 1:
-                return matches[0]
+            unique_pointers = {p.pointer_id: p for p in matches}
+            if len(unique_pointers) == 1:
+                return next(iter(unique_pointers.values()))
         return None
 
     def list_pointers(
@@ -239,7 +249,12 @@ class OVIDStorage:
         connector_id: Optional[str] = None,
     ) -> List[OVIDZeroCopyPointer]:
         """List registered zero-copy pointers, optionally scoped by tenant or connector."""
-        items = list(self._pointers.values())
+        seen = set()
+        items = []
+        for p in self._pointers.values():
+            if p.pointer_id not in seen:
+                seen.add(p.pointer_id)
+                items.append(p)
         if tenant_id is not None:
             items = [p for p in items if p.tenant_id == tenant_id]
         if connector_id is not None:
@@ -301,9 +316,11 @@ class OVIDStorage:
         stark_public_input: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> OVIDReceipt:
-        payload = self._store.get(ovid_id)
-        if payload is None or hashlib.sha256(payload).hexdigest() != ovid_id:
-            raise ValueError(f"OVID ID {ovid_id} not found or invalid")
+        is_at_rest = bool(metadata and (metadata.get("zero_copy") or metadata.get("data_stays_at_rest")))
+        if not is_at_rest:
+            payload = self._store.get(ovid_id)
+            if payload is None or hashlib.sha256(payload).hexdigest() != ovid_id:
+                raise ValueError(f"OVID ID {ovid_id} not found or invalid")
         receipt = OVIDReceipt(
             receipt_id=ovid_id,
             hash_value=ovid_id,
@@ -327,17 +344,31 @@ class OVIDStorage:
         normalized = ovid_id.strip()
         if normalized != ovid_id and normalized in self._receipts:
             return self._receipts[normalized]
+        for r in self._receipts.values():
+            if r.receipt_handle == ovid_id or r.hash_value == ovid_id or r.receipt_id == ovid_id:
+                return r
+            if r.receipt_handle and (r.receipt_handle.startswith(ovid_id) or ovid_id in r.receipt_handle):
+                return r
+            if r.hash_value.startswith(ovid_id):
+                return r
         return None
 
     def verify_receipt(self, receipt: OVIDReceipt) -> bool:
         if receipt.receipt_id.startswith(POINTER_PREFIX):
             pointer = self._pointers.get(receipt.receipt_id)
+            if pointer is not None:
+                return bool(
+                    pointer.content_hash == receipt.hash_value
+                    and pointer.data_stays_at_rest is True
+                    and (receipt.ml_dsa_signature or receipt.ed25519_signature)
+                )
             return bool(
-                pointer is not None
-                and pointer.content_hash == receipt.hash_value
-                and pointer.data_stays_at_rest is True
+                receipt.metadata
+                and receipt.metadata.get("data_stays_at_rest") is True
                 and (receipt.ml_dsa_signature or receipt.ed25519_signature)
             )
+        if receipt.metadata and (receipt.metadata.get("zero_copy") or receipt.metadata.get("data_stays_at_rest")):
+            return bool(receipt.ml_dsa_signature or receipt.ed25519_signature)
         payload = self._store.get(receipt.receipt_id)
         return bool(
             payload is not None

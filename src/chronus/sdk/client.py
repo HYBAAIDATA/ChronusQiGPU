@@ -357,6 +357,141 @@ class ChronusAPISDK:
             },
         )
 
+    def run_s3_parquet_discovery_benchmark(
+        self,
+        target_s3_uri: str = "s3://apex-financial-lakehouse-prod/quant_models_v4/historical_ticks_2026.parquet",
+        total_parquet_files: int = 1250,
+        total_records_indexed: int = 15400000000,
+        discovered_columns_count: int = 142,
+    ) -> Dict[str, Any]:
+        """Execute Multi-Terabyte S3 Parquet Schema Discovery Benchmark under ECA."""
+        payload: Dict[str, Any] = {
+            "target_s3_uri": target_s3_uri,
+            "total_parquet_files": total_parquet_files,
+            "total_records_indexed": total_records_indexed,
+            "discovered_columns_count": discovered_columns_count,
+        }
+        return self._request("POST", "/v1/connectors/benchmarks/s3-parquet-discovery", json=payload)
+
+    def benchmark_zero_copy_query(
+        self,
+        pointer_id: str = "ptr_ovid_9350fda91695d3d9b9a31bf6",
+        query_type: str = "ALL_BENCHMARKS",
+        scale_order: int = 12,
+        records_to_scan: int = 15400000000,
+    ) -> Dict[str, Any]:
+        """Execute in-place zero-copy query response time benchmark against ptr_ovid_<hash>."""
+        payload: Dict[str, Any] = {
+            "query_type": query_type,
+            "scale_order": scale_order,
+            "records_to_scan": records_to_scan,
+        }
+        return self._request(
+            "POST",
+            f"/v1/connectors/pointers/{pointer_id}/query-benchmark",
+            json=payload,
+        )
+
+    def get_workload_v1(self, workload_id: Any) -> Dict[str, Any]:
+        """Retrieve workload execution status and cryptographic verification receipt via GET /v1/workloads/{id}."""
+        wid = str(workload_id)
+        return self._request("GET", f"/v1/workloads/{wid}")
+
+    def list_workloads_v1(self, page: int = 1, page_size: int = 50) -> Dict[str, Any]:
+        """List tenant workloads via GET /v1/workloads."""
+        return self._request("GET", "/v1/workloads", params={"page": page, "page_size": page_size})
+
+    def verify_receipt_v1(self, receipt_hash: str) -> Dict[str, Any]:
+        """Public zero-auth cryptographic verification via GET /v1/verify/{receipt_hash}."""
+        return self._request("GET", f"/v1/verify/{receipt_hash}")
+
+    def get_hyperscaler_matrix(self) -> Dict[str, Any]:
+        """Retrieve the 7-row Hyperscaler Connector Matrix via GET /v1/connectors/matrix."""
+        return self._request("GET", "/v1/connectors/matrix")
+
+    def get_deployment_roadmap(self) -> Dict[str, Any]:
+        """Retrieve the 4-phase Deployment Roadmap via GET /v1/connectors/roadmap."""
+        return self._request("GET", "/v1/connectors/roadmap")
+
+    def register_cluster(
+        self,
+        cluster_id: str,
+        cloud_provider: str = "NVIDIA_DGX_CLOUD",
+        region: str = "us-east-1",
+        blade_count: int = 32,
+        interconnect: str = "130_TBPS_H4_POLYTOPE_CROSSBAR",
+        subsystems: Optional[list] = None,
+    ) -> Dict[str, Any]:
+        """Register physical AI Factory cluster via POST /v1/fabric/clusters/register."""
+        payload = {
+            "cluster_id": cluster_id,
+            "cloud_provider": cloud_provider,
+            "region": region,
+            "blade_count": blade_count,
+            "interconnect": interconnect,
+            "subsystems": subsystems or [
+                "NVIDIA_BLACKWELL_B200",
+                "NVFP4_TENSOR_CORES",
+                "HBM3E_DISAGGREGATED_POOL",
+                "H4_600_CELL_VIRTUAL_CROSSBAR",
+            ],
+        }
+        return self._request("POST", "/v1/fabric/clusters/register", json=payload)
+
+    def schedule_disaggregated_pools(
+        self,
+        workload_id: str,
+        prefill_tokens: int = 131072,
+        decode_tokens: int = 4096,
+        quantum_hilbert_dim: int = 64,
+        require_zero_stall: bool = True,
+    ) -> Dict[str, Any]:
+        """Schedule disaggregated Prefill, Decode, and Cryo-Quantum pools via POST /v1/fabric/pools/schedule."""
+        payload = {
+            "workload_id": workload_id,
+            "prefill_tokens": prefill_tokens,
+            "decode_tokens": decode_tokens,
+            "quantum_hilbert_dim": quantum_hilbert_dim,
+            "require_zero_stall": require_zero_stall,
+        }
+        return self._request("POST", "/v1/fabric/pools/schedule", json=payload)
+
+    def reconcile_settlement(
+        self,
+        tenant_id: str,
+        period: str = "2026-Q1",
+        counterfactual_cloud_spend_usd: float = 520000.00,
+        actual_cloud_spend_usd: float = 317500.00,
+        incremental_chronus_costs_usd: float = 0.00,
+    ) -> Dict[str, Any]:
+        """Calculate Hermiten 25% Value-Share settlement via POST /v1/billing/hermiten/settlement."""
+        payload = {
+            "tenant_id": tenant_id,
+            "period": period,
+            "counterfactual_cloud_spend_usd": counterfactual_cloud_spend_usd,
+            "actual_cloud_spend_usd": actual_cloud_spend_usd,
+            "incremental_chronus_costs_usd": incremental_chronus_costs_usd,
+        }
+        return self._request("POST", "/v1/billing/hermiten/settlement", json=payload)
+
+    def onboard_instant_tenant(
+        self,
+        tenant_id: str,
+        organization_name: str,
+        requested_warps: int = 256,
+        aws_kms_key_arn: Optional[str] = None,
+        contact_email: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Instant tenant onboarding under ECA via POST /v1/tenants/onboard/instant."""
+        payload = {
+            "tenant_id": tenant_id,
+            "organization_name": organization_name,
+            "requested_warps": requested_warps,
+            "aws_kms_key_arn": aws_kms_key_arn or "arn:aws:kms:us-east-1:112233445566:key/chronus-pkcs11-custody",
+            "contact_email": contact_email or f"admin@{tenant_id}.internal",
+        }
+        return self._request("POST", "/v1/tenants/onboard/instant", json=payload)
+
     def get_metrics(self) -> str:
         response = self._client.get("/metrics")
         if response.status_code != 200:

@@ -226,7 +226,7 @@ export default function WorkloadsPage() {
     setTimeout(() => setCopiedId(null), 1500);
   };
 
-  const maxWarps = capacityState?.max_authorized_warps || 10000;
+  const maxWarps = capacityState?.max_authorized_warps || 160000;
   const activeSettlement = lastExpansion?.hermiten_settlement || capacityState?.hermiten_settlement;
   const activePricing = lastExpansion?.pricing_breakdown || capacityState?.pricing_breakdown;
 
@@ -360,7 +360,7 @@ export default function WorkloadsPage() {
                   Active 32-Lane Execution Warps
                 </label>
                 <span className="text-sm font-mono font-bold text-blue-400">
-                  {requestedWarps.toLocaleString()} Warps ({(requestedWarps * 16).toLocaleString()} CCU)
+                  {requestedWarps.toLocaleString()} Warps ({(requestedWarps * 16).toLocaleString()} CCU · {(requestedWarps * 32).toLocaleString()} SIMD Lanes)
                 </span>
               </div>
 
@@ -387,7 +387,7 @@ export default function WorkloadsPage() {
               <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1">
                 <span className="text-[11px] font-mono text-neutral-500">Min: 32 Warps</span>
                 <div className="flex flex-wrap gap-1.5">
-                  {[32, 128, 256, 512, 1024, 4096, 10000]
+                  {[32, 128, 256, 512, 1024, 4096, 10000, 40000, 160000]
                     .filter((preset) => preset <= maxWarps)
                     .map((preset) => (
                       <button

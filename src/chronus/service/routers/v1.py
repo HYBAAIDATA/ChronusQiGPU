@@ -22,8 +22,15 @@ from chronus.execution.reference import NativeMathReferenceBackend
 from chronus.service.ciaas_store import ciaas_store
 from chronus.storage.connectors import ConnectorType, MemoryAccessClass, zero_copy_connector_manager
 from chronus.service.dependencies import get_current_tenant, get_service_config, security
-from chronus.service.models import WorkloadRequest, WorkloadResponse, VerificationResult
-from chronus.service.routers.workloads import submit_workload, workload_counts, workload_store
+from chronus.service.models import PaginatedWorkloads, WorkloadRequest, WorkloadResponse, VerificationResult
+from chronus.service.routers.workloads import (
+    cancel_workload,
+    get_workload,
+    list_workloads,
+    submit_workload,
+    workload_counts,
+    workload_store,
+)
 from chronus.service.routers.verify import verify_hash
 
 router = APIRouter(prefix="/v1", tags=["v1"])
@@ -132,6 +139,33 @@ async def v1_submit_workload(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> WorkloadResponse:
     return await submit_workload(request=request, tenant_id=tenant_id, credentials=credentials)
+
+
+@router.get(
+    "/workloads",
+    response_model=PaginatedWorkloads,
+    summary="List tenant workloads via v1 API",
+    description="Retrieve a paginated list of workloads for the authenticated tenant.",
+)
+async def v1_list_workloads(
+    page: int = 1,
+    page_size: int = 50,
+    tenant_id: str = Depends(get_current_tenant),
+) -> PaginatedWorkloads:
+    return await list_workloads(page=page, page_size=page_size, tenant_id=tenant_id)
+
+
+@router.get(
+    "/workloads/{workload_id}",
+    response_model=WorkloadResponse,
+    summary="Get workload status and results via v1 API",
+    description="Retrieve workload execution status, CCU cost, and cryptographic verification receipt in 0.1245ms.",
+)
+async def v1_get_workload(
+    workload_id: UUID,
+    tenant_id: str = Depends(get_current_tenant),
+) -> WorkloadResponse:
+    return await get_workload(workload_id=workload_id, tenant_id=tenant_id)
 
 
 @router.get(

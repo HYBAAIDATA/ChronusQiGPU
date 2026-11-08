@@ -343,11 +343,21 @@ class StreamingMultiprocessor:
     def __init__(self, sm_id: int, num_lanes: int = 32):
         self.sm_id           = sm_id
         self.num_lanes       = num_lanes
-        self.l1_shared_sram  = bytearray(256 * 1024)
+        self._l1_shared_sram = None
         self.register_file   = [{} for _ in range(num_lanes)]
         self.tma             = TensorMemoryAccelerator()
         self.tensor_core     = TensorCoreEngine()
         self.hensel_accum    = PadicHenselAccumulator()
+
+    @property
+    def l1_shared_sram(self) -> bytearray:
+        if self._l1_shared_sram is None:
+            self._l1_shared_sram = bytearray(256 * 1024)
+        return self._l1_shared_sram
+
+    @l1_shared_sram.setter
+    def l1_shared_sram(self, val: bytearray):
+        self._l1_shared_sram = val
 
     def execute_vector_instruction(
         self,

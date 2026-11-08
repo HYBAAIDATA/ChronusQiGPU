@@ -50,14 +50,14 @@ const NAV_ITEMS = [
   {
     num: '05',
     label: 'Mathematical Engine',
-    desc: 'Exact Q(âˆš5) & Zeckendorf',
+    desc: 'Exact Q(√5) & Zeckendorf',
     href: '/math',
     icon: Binary,
   },
   {
     num: '06',
     label: 'Governance & Evidence',
-    desc: 'G1â€“G8 Gates & Receipts',
+    desc: 'G1–G8 Gates & Receipts',
     href: '/governance',
     icon: ShieldCheck,
   },
@@ -88,14 +88,14 @@ export function Sidebar() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 flex items-center justify-center font-bold text-base shadow-sm">
-                Ï‡
+                χ
               </div>
               <div>
                 <h1 className="font-semibold text-neutral-900 dark:text-white tracking-tight leading-none text-base">
                   CHRONUS
                 </h1>
                 <p className="text-[11px] font-mono text-neutral-500 uppercase tracking-widest mt-0.5">
-                  QiGPU Â· v36.0.0
+                  QiGPU · v36.0.0
                 </p>
               </div>
             </div>
@@ -171,7 +171,7 @@ export function Sidebar() {
           <div className="flex items-center justify-between text-xs">
             <span className="text-neutral-500 font-mono text-[11px]">Execution</span>
             <span className="font-mono text-[11px] text-purple-600 dark:text-purple-400 font-medium">
-              Exact Q(âˆš5)
+              Exact Q(√5)
             </span>
           </div>
         </div>

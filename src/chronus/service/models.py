@@ -202,6 +202,16 @@ class VerificationResult(BaseModel):
     invariant_summary: str = "Release qualification was not evaluated."
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     verification_suite_total_latency_ms: float = 0.0
+    receipt_id: Optional[str] = None
+    receipt_handle: Optional[str] = None
+    hash_value: Optional[str] = None
+    ed25519_verified: Optional[bool] = None
+    ml_dsa_verified: Optional[bool] = None
+    stark_quotient_verified: Optional[bool] = None
+    polynomial_identity: Optional[str] = None
+    raw_payload_exposed: Optional[bool] = None
+    auth_required: Optional[bool] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class ErrorResponse(BaseModel):

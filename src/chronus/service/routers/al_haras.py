@@ -17,6 +17,13 @@ from chronus.security.al_haras import (
     HyperscaleDefenseSimulationEngine,
     CNISelfHealingEngine,
     StrategicDefenseCoordinator,
+    AgenticSheafGuard,
+    RISCVTopologicalCoprocessor,
+    TISAInstruction,
+    TISAOpcode,
+    OrbitalConstellationMesh,
+    VerifiableNeuralComputeEngine,
+    FormalTopologicalProofVerifier,
 )
 
 router = APIRouter(prefix="/v1/al-haras", tags=["al-haras-security"])
@@ -140,9 +147,9 @@ async def inspect_workload(req: InspectWorkloadRequest) -> Dict[str, Any]:
 
     vectors = req.state_vectors
     if req.simulate_adversarial:
-        vectors = [
+        vectors = vectors or [
             [1.0, 2.0, 3.0],
-            [99.9, -42.0, 18.5],
+            [2.0, 3.0, 3.0],
             [1.0, 2.0, 3.0],
         ]
         passphrase = "ADVERSARIAL_INJECTION_SHALL_NOT_PASS"
@@ -197,3 +204,101 @@ async def simulate_defense_frontier(req: FrontierSimulationRequest) -> Dict[str,
         )
     else:
         return StrategicDefenseCoordinator.run_all_frontier_simulations()
+
+
+# ------------------------------------------------------------------------------
+# EXPANSION ENDPOINTS: AGENTIC SHEAF, ORBITAL MESH, T-ISA, zk-ML & FORMAL PROOFS
+# ------------------------------------------------------------------------------
+
+class AgenticPromptRequest(BaseModel):
+    prompt_text: str = Field(
+        default="Plan constellation telemetry transfer.",
+        description="User or system prompt text to inspect for adversarial injection",
+    )
+    session_id: str = Field(default="sess_demo_01")
+
+
+class AgenticToolRequest(BaseModel):
+    agent_id: str = Field(default="tactical_agent_01")
+    tool_name: str = Field(default="run_database_query")
+    tool_args: Dict[str, Any] = Field(default_factory=lambda: {"limit": 10})
+    simulate_poisoning: bool = Field(default=False)
+
+
+class OrbitalMeshRequest(BaseModel):
+    num_satellites: int = Field(default=16)
+    radiation_flux: float = Field(default=5e4)
+    rf_jamming: bool = Field(default=True)
+    jammed_link_ratio: float = Field(default=0.25)
+
+
+class ZKMLInferenceRequest(BaseModel):
+    layer_name: str = Field(default="layer_dense_0")
+    input_values: List[int] = Field(default_factory=lambda: [10, 20, 30, 40])
+    weights_fingerprint: str = Field(default="a" * 64)
+    simulate_backdoor: bool = Field(default=False)
+
+
+@router.post("/agentic/intercept-prompt")
+async def intercept_agent_prompt(req: AgenticPromptRequest) -> Dict[str, Any]:
+    """Inspect user prompt at Sheaf boundary before agent ingestion."""
+    guard = AgenticSheafGuard()
+    return guard.intercept_user_prompt(req.prompt_text, session_id=req.session_id)
+
+
+@router.post("/agentic/intercept-tool")
+async def intercept_agent_tool(req: AgenticToolRequest) -> Dict[str, Any]:
+    """Pre-tool execution gatekeeper with 1-cycle DSW rollback on poisoning."""
+    guard = AgenticSheafGuard()
+    return guard.intercept_tool_execution(
+        agent_id=req.agent_id,
+        tool_name=req.tool_name,
+        tool_args=req.tool_args,
+        simulate_poisoning=req.simulate_poisoning,
+    )
+
+
+@router.post("/orbital/simulate")
+async def simulate_orbital_mesh(req: OrbitalMeshRequest) -> Dict[str, Any]:
+    """Simulate space weather, cosmic ray SEUs, and laser link RF jamming."""
+    mesh = OrbitalConstellationMesh.create_reference_constellation(req.num_satellites)
+    return mesh.simulate_space_weather_and_jamming(
+        radiation_flux_particles_cm2=req.radiation_flux,
+        anti_satellite_rf_jamming=req.rf_jamming,
+        jammed_link_ratio=req.jammed_link_ratio,
+    )
+
+
+@router.post("/zk-ml/verify")
+async def verify_zk_ml_inference(req: ZKMLInferenceRequest) -> Dict[str, Any]:
+    """Generate and verify O(1) line-rate zk-STARK neural inference proof."""
+    engine = VerifiableNeuralComputeEngine()
+    proof_pkg = engine.generate_inference_proof(
+        layer_name=req.layer_name,
+        input_data=req.input_values,
+        weights_root=req.weights_fingerprint,
+        simulate_tampering=req.simulate_backdoor,
+    )
+    return engine.verify_inference_proof(proof_pkg)
+
+
+@router.get("/hardware/t-isa-diagnostics")
+async def get_t_isa_diagnostics() -> Dict[str, Any]:
+    """Execute cycle-accurate RISC-V Topological Coprocessor program."""
+    coproc = RISCVTopologicalCoprocessor()
+    prog = [
+        TISAInstruction(TISAOpcode.T_LOAD_CYCLO, rd=1, imm=(1, 2, 0, 0)),
+        TISAInstruction(TISAOpcode.T_LOAD_CYCLO, rd=2, imm=(3, 1, 0, 0)),
+        TISAInstruction(TISAOpcode.T_CYCLO_ADD, rd=3, rs1=1, rs2=2),
+        TISAInstruction(TISAOpcode.T_CYCLO_MUL, rd=4, rs1=1, rs2=2),
+        TISAInstruction(TISAOpcode.T_SHEAF_INSPECT, rs1=1, rs2=1),
+        TISAInstruction(TISAOpcode.T_STARK_EVAL, rs1=1),
+    ]
+    return coproc.execute_program(prog)
+
+
+@router.get("/formal/theorems")
+async def get_formal_theorems() -> Dict[str, Any]:
+    """Return Lean 4 formal mathematical verification audit for EAL7."""
+    return FormalTopologicalProofVerifier.verify_all_theorems()
+

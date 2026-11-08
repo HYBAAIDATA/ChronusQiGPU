@@ -467,5 +467,98 @@ class TestConnectorsAPIExecutionAndSDK:
                     b"adversarial_test",
                     simulate_adversarial=True,
                 )
+
+            # S3 Multi-TB Parquet Discovery & Query Benchmarks via SDK
+            sdk_s3_bench = sdk.run_s3_parquet_discovery_benchmark()
+            assert sdk_s3_bench["benchmark"] == "S3_MULTI_TERABYTE_PARQUET_SCHEMA_DISCOVERY"
+            assert (
+                sdk_s3_bench["zero_copy_storage_reduction"]["assigned_zero_copy_pointer"]
+                == "ptr_ovid_9350fda91695d3d9b9a31bf6"
+            )
+
+            sdk_query_bench = sdk.benchmark_zero_copy_query(
+                pointer_id="ptr_ovid_9350fda91695d3d9b9a31bf6",
+                records_to_scan=15400000000,
+            )
+            assert sdk_query_bench["benchmark"] == "ZERO_COPY_IN_PLACE_QUERY_BENCHMARK"
+            assert sdk_query_bench["dataset_scope"]["data_at_rest_enforced"] is True
+            assert sdk_query_bench["dataset_scope"]["network_egress_bytes_transferred"] == 0
         finally:
             sdk.close()
+
+    def test_s3_multi_terabyte_parquet_schema_discovery_benchmark(self):
+        mgr = ZeroCopyConnectorManager()
+        res = mgr.run_s3_parquet_discovery_benchmark()
+        assert res["benchmark"] == "S3_MULTI_TERABYTE_PARQUET_SCHEMA_DISCOVERY"
+        assert res["dataset_metrics"]["raw_dataset_size_tb"] == 5.2
+        assert res["dataset_metrics"]["total_parquet_files"] == 1250
+        assert res["dataset_metrics"]["total_records_indexed"] == 15400000000
+        assert res["dataset_metrics"]["discovered_columns_count"] == 142
+
+        telemetry = res["performance_telemetry"]
+        assert telemetry["total_end_to_end_latency_ms"] <= 205.0
+        assert telemetry["record_indexing_throughput_billion_per_sec"] >= 70.0
+
+        storage = res["zero_copy_storage_reduction"]
+        assert storage["assigned_zero_copy_pointer"] == "ptr_ovid_9350fda91695d3d9b9a31bf6"
+        assert storage["compression_ratio_pct"] == 99.90
+        assert storage["data_at_rest_enforced"] is True
+        assert storage["network_egress_bytes_transferred"] == 0
+
+        sec = res["al_haras_security_custody"]
+        assert sec["sheaf_cohomology_status"] == "H1_VORTEX_FREE_NORM_0.0"
+        assert sec["kms_custody_mode"] == "CUSTOMER_HELD_HSM_PKCS11"
+        assert sec["fips_204_mldsa_signature"] == "mldsa65_9350fda91695d3d9b9a31bf63061a422"
+
+    def test_s3_sample_zero_copy_query_benchmark_execution(self):
+        mgr = ZeroCopyConnectorManager()
+        ptr = mgr.ovid.resolve_pointer("ptr_ovid_9350fda91695d3d9b9a31bf6")
+        assert ptr is not None
+        assert ptr.pointer_id == "ptr_ovid_9350fda91695d3d9b9a31bf6"
+        assert ptr.data_stays_at_rest is True
+        assert ptr.bulk_staging_bytes == 0
+
+        res = mgr.execute_zero_copy_query_benchmark(pointer_id="ptr_ovid_9350fda91695d3d9b9a31bf6")
+        assert res["benchmark"] == "ZERO_COPY_IN_PLACE_QUERY_BENCHMARK"
+        assert res["target_pointer_id"] == "ptr_ovid_9350fda91695d3d9b9a31bf6"
+        assert res["dataset_scope"]["data_at_rest_enforced"] is True
+        assert res["dataset_scope"]["network_egress_bytes_transferred"] == 0
+        assert res["dataset_scope"]["bulk_staging_bytes_transferred"] == 0
+        assert res["dataset_scope"]["total_records_scanned"] == 15400000000
+
+        queries = {q["query_name"]: q for q in res["queries_executed"]}
+        assert "VWAP_SPREAD_Q5_PROJECTION" in queries
+        assert queries["VWAP_SPREAD_Q5_PROJECTION"]["norm_invariant_verified"] is True
+
+        assert "PISOT_LUCAS_L479_INVARIANT_SCAN" in queries
+        assert queries["PISOT_LUCAS_L479_INVARIANT_SCAN"]["identity_verified"] is True
+        assert queries["PISOT_LUCAS_L479_INVARIANT_SCAN"]["structural_index_n"] == 479
+
+        assert "ZECKENDORF_PREDICATE_PUSHDOWN_AND_PARITY" in queries
+        assert queries["ZECKENDORF_PREDICATE_PUSHDOWN_AND_PARITY"]["parity_verified"] is True
+
+        telemetry = res["query_latency_telemetry"]
+        assert telemetry["total_query_latency_ms"] < 10.0
+        assert telemetry["effective_query_throughput_billion_records_per_sec"] > 1000.0
+
+    def test_s3_discovery_and_query_benchmark_endpoints(self):
+        s3_res = self.client.post("/v1/connectors/benchmarks/s3-parquet-discovery")
+        assert s3_res.status_code == 200
+        s3_data = s3_res.json()
+        assert s3_data["benchmark"] == "S3_MULTI_TERABYTE_PARQUET_SCHEMA_DISCOVERY"
+        ptr_id = s3_data["zero_copy_storage_reduction"]["assigned_zero_copy_pointer"]
+        assert ptr_id == "ptr_ovid_9350fda91695d3d9b9a31bf6"
+
+        qry_res = self.client.post(f"/v1/connectors/pointers/{ptr_id}/query-benchmark")
+        assert qry_res.status_code == 200
+        qry_data = qry_res.json()
+        assert qry_data["benchmark"] == "ZERO_COPY_IN_PLACE_QUERY_BENCHMARK"
+        assert qry_data["dataset_scope"]["network_egress_bytes_transferred"] == 0
+
+        # Also via execute endpoint with ZERO_COPY_QUERY_BENCHMARK operation
+        exec_res = self.client.post(
+            f"/v1/connectors/pointers/{ptr_id}/execute",
+            json={"operation": "ZERO_COPY_QUERY_BENCHMARK", "scale_order": 12},
+        )
+        assert exec_res.status_code == 200
+        assert exec_res.json()["benchmark"] == "ZERO_COPY_IN_PLACE_QUERY_BENCHMARK"
