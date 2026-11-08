@@ -58,9 +58,34 @@ jobs:
             rtl-testbench.log
           if-no-files-found: error
 
+      - name: Install cosign
+        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+
+      # Keyless Sigstore signing works on private repos today (public Fulcio
+      # certificate + Rekor transparency log); this is the cryptographic
+      # receipt investors verify until GitHub attestations are available.
+      - name: Sign dossier with Sigstore keyless
+        run: |
+          set -euo pipefail
+          cosign sign-blob --yes \
+            --bundle dossier/Chronus_v36_Sovereign_Investor_Dossier.pdf.sigstore.json \
+            dossier/Chronus_v36_Sovereign_Investor_Dossier.pdf
+          cosign sign-blob --yes \
+            --bundle dossier/telemetry.json.sigstore.json \
+            dossier/telemetry.json
+
+      # Artifact attestations require a public repo or org with GHAS; the
+      # step activates automatically once the repository qualifies.
       - name: Attest dossier provenance (SLSA)
+        continue-on-error: true
         uses: actions/attest-build-provenance@96b4a1ef7235a096b17240c259729fdd70c83d45 # v2
         with:
           subject-path: |
             dossier/Chronus_v36_Sovereign_Investor_Dossier.pdf
             dossier/telemetry.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: investor-dossier-sigstore-bundles
+          path: dossier/*.sigstore.json
+          if-no-files-found: error

@@ -72,7 +72,12 @@ jobs:
         with:
           name: python-distribution
           path: dist
+      # NOTE: artifact attestations require a public repo or an organization
+      # with GitHub Advanced Security; on user-owned private repos the API
+      # rejects them. continue-on-error keeps the pipeline green and the step
+      # activates automatically once the repo qualifies.
       - name: Attest build provenance
+        continue-on-error: true
         uses: actions/attest-build-provenance@96b4a1ef7235a096b17240c259729fdd70c83d45 # v2
         with:
           subject-path: dist/*

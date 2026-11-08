@@ -48,7 +48,24 @@ jobs:
           (cd dist && sha256sum *) | tee dossier/SHA256SUMS.txt
           tar -czf chronus-${{ github.ref_name }}-qualification-dossier.tar.gz -C dossier .
 
+      - name: Install cosign
+        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+
+      # Keyless Sigstore signing works on private repos today (public Fulcio
+      # certificate + Rekor transparency log entry per artifact).
+      - name: Sign release artifacts with Sigstore keyless
+        run: |
+          set -euo pipefail
+          for artifact in dist/* sbom.cdx.json chronus-${{ github.ref_name }}-qualification-dossier.tar.gz; do
+            cosign sign-blob --yes --bundle "${artifact}.sigstore.json" "${artifact}"
+          done
+
+      # Artifact attestations require a public repo or org with GHAS; on
+      # user-owned private repos the API rejects them. continue-on-error
+      # keeps the release green and the step activates automatically once
+      # the repository qualifies.
       - name: Attest build provenance (SLSA)
+        continue-on-error: true
         uses: actions/attest-build-provenance@96b4a1ef7235a096b17240c259729fdd70c83d45 # v2
         with:
           subject-path: |
@@ -66,4 +83,6 @@ jobs:
             --verify-tag \
             dist/* \
             sbom.cdx.json \
-            chronus-${{ github.ref_name }}-qualification-dossier.tar.gz
+            sbom.cdx.json.sigstore.json \
+            chronus-${{ github.ref_name }}-qualification-dossier.tar.gz \
+            chronus-${{ github.ref_name }}-qualification-dossier.tar.gz.sigstore.json
