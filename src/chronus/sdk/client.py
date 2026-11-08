@@ -3,7 +3,7 @@
 import base64
 import os
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
 import httpx
@@ -507,6 +507,100 @@ class ChronusAPISDK:
             "contact_email": contact_email or f"admin@{tenant_id}.internal",
         }
         return self._request("POST", "/v1/tenants/onboard/instant", json=payload)
+
+    def execute_agentic_sheaf_turn(
+        self,
+        agent_states: Optional[Dict[str, List[float]]] = None,
+        stalk_dim: int = 4,
+    ) -> Dict[str, Any]:
+        """Verify and execute turn with Cellular Sheaf cohomology and 1-cycle DSW healing."""
+        states = agent_states or {
+            "Planner": [1.0, 0.0, 0.0, 1.0],
+            "Coder": [1.0, 0.0, 0.0, 1.0],
+            "Executor": [1.0, 0.0, 0.0, 1.0],
+            "Tool": [1.0, 0.0, 0.0, 1.0],
+        }
+        return self._request(
+            "POST",
+            "/v1/al-haras/applications/agentic-sheaf/verify-turn",
+            json={"agent_states": states, "stalk_dim": stalk_dim},
+        )
+
+    def transmit_orbital_telemetry(
+        self,
+        packet_payload: str = "SDA_PWSA_TELEMETRY_STREAM_PACKET_001",
+        source_sat: str = "SAT_00",
+        target_sat: str = "SAT_07",
+        constellation_size: int = 16,
+    ) -> Dict[str, Any]:
+        """Transmit satellite telemetry over PSL_2(F_257) Ramanujan LPS Expander."""
+        return self._request(
+            "POST",
+            "/v1/al-haras/applications/orbital-mesh/transmit",
+            json={
+                "packet_payload": packet_payload,
+                "source_sat": source_sat,
+                "target_sat": target_sat,
+                "constellation_size": constellation_size,
+            },
+        )
+
+    def prove_and_verify_zk_neural(
+        self,
+        sensor_input: Optional[List[int]] = None,
+        weights_commitment: str = "sovereign_weights_merkle_root_v4_7f9c2b",
+    ) -> Dict[str, Any]:
+        """Generate and verify line-rate FRI zk-STARK neural inference proof."""
+        return self._request(
+            "POST",
+            "/v1/al-haras/applications/zk-neural/prove-and-verify",
+            json={
+                "sensor_input": sensor_input or [12, 24, 36, 48],
+                "weights_commitment": weights_commitment,
+            },
+        )
+
+    def process_cbdc_cross_border_settlement(
+        self,
+        sender_bank: str = "FEDERAL_RESERVE",
+        receiver_bank: str = "BANK_OF_ENGLAND",
+        amount_tokens: int = 10_000_000,
+        simulate_double_spend: bool = False,
+    ) -> Dict[str, Any]:
+        """Process wholesale CBDC cross-border transfer under homological conservation partial_1=0."""
+        return self._request(
+            "POST",
+            "/v1/al-haras/applications/cbdc-settlement/process",
+            json={
+                "sender_bank": sender_bank,
+                "receiver_bank": receiver_bank,
+                "amount_tokens": amount_tokens,
+                "simulate_double_spend": simulate_double_spend,
+            },
+        )
+
+    def execute_t_isa_microcode(
+        self,
+        funct7: int = 0x02,
+        rs1_val: Optional[Tuple[int, int, int, int]] = (1, 2, 0, 0),
+        rs2_val: Optional[Tuple[int, int, int, int]] = (3, 1, 0, 0),
+        rs1: int = 1,
+        rs2: int = 2,
+        rd: int = 3,
+    ) -> Dict[str, Any]:
+        """Execute T-ISA instruction on RISC-V RoCC silicon ALU."""
+        return self._request(
+            "POST",
+            "/v1/al-haras/applications/t-isa/execute",
+            json={
+                "funct7": funct7,
+                "rs1": rs1,
+                "rs2": rs2,
+                "rd": rd,
+                "rs1_val": list(rs1_val or (1, 2, 0, 0)),
+                "rs2_val": list(rs2_val or (3, 1, 0, 0)),
+            },
+        )
 
     def get_metrics(self) -> str:
         response = self._client.get("/metrics")
