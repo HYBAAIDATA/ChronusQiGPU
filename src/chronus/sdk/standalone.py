@@ -40,10 +40,12 @@ class ChronusClient:
 
     def _request(self, method: str, endpoint: str, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         url = f"{self.base_url}{endpoint}"
+        if not url.startswith(("http://", "https://")):
+            raise ValueError(f"Invalid URL scheme: {url}")
         body = json.dumps(data).encode("utf-8") if data else None
         req = urllib.request.Request(url, data=body, headers=self._headers, method=method)
         try:
-            with urllib.request.urlopen(req) as resp:
+            with urllib.request.urlopen(req) as resp:  # nosec B310
                 res_bytes = resp.read()
                 return json.loads(res_bytes.decode("utf-8")) if res_bytes else {}
         except urllib.error.HTTPError as e:

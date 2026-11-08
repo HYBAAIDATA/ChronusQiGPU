@@ -160,14 +160,15 @@ class StealthEngine:
     Controls hashrate cap (10.0 EH/s max, 1.0 EH/s active),
     prevents mining two consecutive mainnet blocks, and maintains socket presence.
     """
-    def __init__(self, max_cap_eh: float = 10.0, active_stealth_eh: float = 1.0):
+    def __init__(self, max_cap_eh: float = 10.0, active_stealth_eh: float = 1.0, never_consecutive_blocks: bool = True):
         self.max_cap_eh = max_cap_eh
         self.active_stealth_eh = active_stealth_eh
+        self.never_consecutive_blocks = never_consecutive_blocks
         self.last_mined_block_height: Optional[int] = None
         self.mined_blocks_history: List[int] = []
 
     def can_submit_block(self, block_height: int) -> bool:
-        if self.last_mined_block_height is not None and block_height == self.last_mined_block_height + 1:
+        if self.never_consecutive_blocks and self.last_mined_block_height is not None and block_height == self.last_mined_block_height + 1:
             logger.warning(f"[STEALTH LOCKOUT] Block #{block_height} suppressed! Rule: Never mine consecutive blocks.")
             return False
         return True
