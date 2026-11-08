@@ -5,6 +5,13 @@ statevectors evolve over F_257 with exact field arithmetic — no floating
 point, no simulated noise, no fabricated fidelities, no external backends.
 """
 
+from chronus.quantum.extension_search import (
+    ExtensionSubspaceState,
+    exact_extension_search,
+    extension_norm,
+    extension_one_shot_phases,
+    phi_element_power,
+)
 from chronus.quantum.grover import (
     diffusion,
     grover_iterate,
@@ -40,6 +47,7 @@ from chronus.quantum.statevector import (
 )
 
 __all__ = [
+    "ExtensionSubspaceState",
     "I_UNIT",
     "INV_SQRT2",
     "MAX_QUBITS",
@@ -52,8 +60,11 @@ __all__ = [
     "StateVector",
     "algebraic_search",
     "diffusion",
+    "exact_extension_search",
     "exact_search",
     "exact_subspace_search",
+    "extension_norm",
+    "extension_one_shot_phases",
     "exact_search_multi",
     "generalized_iterate",
     "grover_iterate",
@@ -63,6 +74,7 @@ __all__ = [
     "oracle_flip",
     "phase_iterate",
     "phase_iterate_multi",
+    "phi_element_power",
     "subspace_iterate",
     "uniform_subspace",
 ]

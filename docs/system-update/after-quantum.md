@@ -35,12 +35,17 @@ Two further steps complete the frontier the first experiment left open:
 
 **Persistence.** Working memory is the rank-2 pair; long-term memory is the phyllotaxis store. `EXACT_PHASE_SEARCH` with `"store": true` writes the converged state through Theseus: content-addressed in Ovid, distributed onto a golden-ratio lane, with PV scale lineage on the record and Cassini parity reported as metadata. Retrieval is digest-verified and reproduces the exact state.
 
+## Result 4: the extension field completes the pairing — search and PV parity in one step
+
+With amplitudes, oracle phases and diffusion phases in F₂₅₇[φ] ≅ F₂₅₇² (order 66,048), the target marked amplitude becomes v = φˢ. The closed form generalizes verbatim (`β = r·v/(N·u − r·v)`, `α = 1 − v/(β·u)`), and because N(φˢ) = (−1)ˢ exactly, **one oracle + one diffusion step simultaneously identifies the marked set and encodes the Lucas/PV scale parity in the surviving amplitude**. Verified exhaustively: n = 1..7, r = 1..5, s = 0..7, every combination converging with `norm_parity_verified`. Degenerate parameters (N·u = r·v, only scalar targets in the tested range) fall back to the prime-subfield pair and land on −1, norm 1 — still parity-exact. At s = 0 the extension reduces to the proven prime-field pairs.
+
 ## What scales and what does not
 
 | Component | Scaling |
 |---|---|
 | State preparation (Hadamard wall) | O(n) gates for n qubits |
 | One-shot phase-matched search (single or multi-marked) | 1 oracle + 1 diffusion, closed-form phases |
+| Extension-field search (F₂₅₇[φ]) | Same single step; marked amplitude is φˢ, norm = (−1)ˢ — PV parity carried by the result itself |
 | Exact working state | **2 field elements (rank-2 symbolic)** — the 2^n dense array is eliminated |
 | Persistent memory | Theseus/Ovid phyllotaxis store: converged states are content-addressed, lane-addressed by the golden ratio, carrying PV scale lineage and Cassini parity metadata (`"store": true` on `EXACT_PHASE_SEARCH`) |
 | Marked-set membership resolution | 1 oracle query per candidate index |
