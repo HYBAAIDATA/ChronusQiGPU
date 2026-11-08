@@ -5,18 +5,36 @@ This document is the operational companion to the pipeline changes in
 controls that must be applied from the GitHub UI or with owner-level
 credentials, because they sit outside what workflow code can enforce.
 
-## 1. Build provenance attestations (implemented)
+## 1. Build provenance and signatures (implemented)
+
+**Plan constraint:** GitHub artifact attestations are unavailable on
+user-owned private repositories (the API rejects them; they require a public
+repository or an organization with GitHub Advanced Security). All attestation
+steps are therefore `continue-on-error: true` and activate automatically once
+the repository qualifies — no workflow edits needed.
+
+Until then, cryptographic receipts come from **Sigstore keyless signing**
+(cosign), which works on private repos today: every artifact gets a public
+Fulcio OIDC certificate bound to this repo's workflow identity, plus a Rekor
+transparency-log entry, in a `.sigstore.json` bundle.
 
 - `ci.yml` job `provenance` attests the Python distribution on every push to
-  `main` and every `v*` tag via `actions/attest-build-provenance` with
-  Sigstore/Fulcio OIDC signing. Statements appear under the repository
-  **Attestations** tab.
-- `release.yml` attests `dist/*`, the CycloneDX SBOM, and the qualification
-  dossier on every tag.
+  `main` and every `v*` tag (activates when eligible).
+- `release.yml` signs and attests `dist/*`, the CycloneDX SBOM, and the
+  qualification dossier on every tag; `.sigstore.json` bundles are attached
+  to the GitHub Release.
+- `investor-evidence-dossier.yml` signs and attests the PDF certificate and
+  raw telemetry; bundles are uploaded as workflow artifacts.
 - Verify any artifact offline:
 
   ```bash
-  gh attestation verify dist/chronus-<version>.tar.gz --repo hybadatadevops1/Chronusv2
+  cosign verify-blob --bundle <artifact>.sigstore.json \
+    --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+    --certificate-identity-regexp '^https://github.com/hybadatadevops1/Chronusv2/' \
+    <artifact>
+
+  # once attestations are enabled:
+  gh attestation verify <artifact> --repo hybadatadevops1/Chronusv2
   ```
 
 ## 2. Threshold governance on `main` and `v*` tags (manual — owner action)

@@ -36,6 +36,14 @@ ATTEST_VERIFY_CMD = (
     "gh attestation verify Chronus_v36_Sovereign_Investor_Dossier.pdf "
     "--repo hybadatadevops1/Chronusv2"
 )
+COSIGN_VERIFY_CMD = (
+    "cosign verify-blob "
+    "--bundle Chronus_v36_Sovereign_Investor_Dossier.pdf.sigstore.json "
+    "--certificate-oidc-issuer https://token.actions.githubusercontent.com "
+    "--certificate-identity-regexp "
+    "'^https://github.com/hybadatadevops1/Chronusv2/' "
+    "Chronus_v36_Sovereign_Investor_Dossier.pdf"
+)
 
 
 def _timed(fn):
@@ -294,8 +302,15 @@ def render_markdown(meta: dict, results: list[dict]) -> str:
         "",
         "## Independent verification",
         "",
-        "This report and its raw telemetry are cryptographically attested with "
-        "Sigstore/Fulcio OIDC build provenance. Verify on any machine:",
+        "This report and its raw telemetry are cryptographically signed with "
+        "Sigstore keyless (Fulcio OIDC certificate + Rekor transparency log). "
+        "Verify on any machine:",
+        "",
+        f"```bash\n{COSIGN_VERIFY_CMD}\n```",
+        "",
+        "Once the repository qualifies for GitHub artifact attestations "
+        "(public repo or organization with GHAS), provenance is also "
+        "verifiable via:",
         "",
         f"```bash\n{ATTEST_VERIFY_CMD}\n```",
         "",
@@ -350,7 +365,8 @@ Total benchmark time: {_esc(meta['total_time_s'])}s
 </table>
 <p class="footer">
 Telemetry SHA-256 receipt: <code>{_esc(meta['telemetry_sha256'])}</code><br>
-Independent verification: <code>{_esc(ATTEST_VERIFY_CMD)}</code><br>
+Independent verification (Sigstore keyless): <code>{_esc(COSIGN_VERIFY_CMD)}</code><br>
+Provenance verification (when GitHub attestations are enabled): <code>{_esc(ATTEST_VERIFY_CMD)}</code><br>
 Capabilities without automated evidence are never asserted; threshold-MPC
 Byzantine injection evidence is tracked as future work and is not claimed here.
 </p>
@@ -404,7 +420,8 @@ def render_pdf(meta: dict, results: list[dict], out_path: Path) -> bool:
         pdf.ln(3)
     pdf.set_font("helvetica", "", 8)
     pdf.multi_cell(0, 4, new_x="LMARGIN", new_y="NEXT", text=_breakable(f"Telemetry SHA-256 receipt: {meta['telemetry_sha256']}"))
-    pdf.multi_cell(0, 4, new_x="LMARGIN", new_y="NEXT", text=_breakable(f"Independent verification: {ATTEST_VERIFY_CMD}"))
+    pdf.multi_cell(0, 4, new_x="LMARGIN", new_y="NEXT", text=_breakable(f"Independent verification (Sigstore keyless): {COSIGN_VERIFY_CMD}"))
+    pdf.multi_cell(0, 4, new_x="LMARGIN", new_y="NEXT", text=_breakable(f"Provenance (when attestations enabled): {ATTEST_VERIFY_CMD}"))
     pdf.output(str(out_path))
     return True
 
