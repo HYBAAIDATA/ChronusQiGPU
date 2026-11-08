@@ -11,7 +11,22 @@ from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import declarative_base
 
-Base = declarative_base()
+def _record_constructor(self, **kwargs) -> None:
+    """Declarative constructor accepting the public ``metadata`` keyword.
+
+    ``metadata`` is reserved by the SQLAlchemy Declarative API, so the mapped
+    attribute is ``metadata_`` (column name stays ``metadata``). The public
+    ``metadata=`` keyword is translated for API compatibility.
+    """
+    if "metadata" in kwargs:
+        kwargs["metadata_"] = kwargs.pop("metadata")
+    for key, value in kwargs.items():
+        if not hasattr(type(self), key):
+            raise TypeError(f"{type(self).__name__!r} has no attribute {key!r}")
+        setattr(self, key, value)
+
+
+Base = declarative_base(constructor=_record_constructor)
 
 
 class WorkloadRecord(Base):
@@ -35,7 +50,7 @@ class WorkloadRecord(Base):
     started_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)
     error_message = Column(Text, nullable=True)
-    metadata = Column(JSONB, nullable=True)
+    metadata_ = Column("metadata", JSONB, nullable=True)
 
     def to_dict(self) -> dict:
         return {
@@ -55,7 +70,7 @@ class WorkloadRecord(Base):
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "error_message": self.error_message,
-            "metadata": self.metadata,
+            "metadata": self.metadata_,
         }
 
 
@@ -71,7 +86,7 @@ class NodeRecord(Base):
     status = Column(String(20), nullable=False)
     last_heartbeat = Column(DateTime, nullable=True)
     workloads_assigned = Column(Integer, default=0)
-    metadata = Column(JSONB, nullable=True)
+    metadata_ = Column("metadata", JSONB, nullable=True)
 
     def to_dict(self) -> dict:
         return {
@@ -84,7 +99,7 @@ class NodeRecord(Base):
                 self.last_heartbeat.isoformat() if self.last_heartbeat else None
             ),
             "workloads_assigned": self.workloads_assigned,
-            "metadata": self.metadata,
+            "metadata": self.metadata_,
         }
 
 
@@ -119,7 +134,7 @@ class ReceiptRecord(Base):
     timestamp = Column(DateTime, nullable=False)
     latency_ms = Column(Float, nullable=False, default=0.0)
     validity = Column(Boolean, nullable=False, default=False)
-    metadata = Column(JSONB, nullable=True)
+    metadata_ = Column("metadata", JSONB, nullable=True)
 
     def to_dict(self) -> dict:
         return {
@@ -130,5 +145,5 @@ class ReceiptRecord(Base):
             "timestamp": self.timestamp.isoformat() if self.timestamp else None,
             "latency_ms": self.latency_ms,
             "validity": self.validity,
-            "metadata": self.metadata,
+            "metadata": self.metadata_,
         }
