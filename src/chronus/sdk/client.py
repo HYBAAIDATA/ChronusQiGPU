@@ -756,3 +756,8 @@ class ChronusAPISDK:
             "total_latency_ms": round(self._total_latency_ms, 3),
             "average_latency_ms": round(average, 3),
         }
+
+
+# Canonical alias for SDK client
+ChronusClient = ChronusAPISDK
+
