@@ -56,15 +56,12 @@
 
 ---
 
-## 5. OVID (Gatekeeper, Rate Limiter & Observability)
-- **Local Pre-Submit Gatekeeper** (`src/chronus/stratum/gatekeeper.py`):
-  - 2-stage verification: Stage A (hash target check: p99 $0.300\,\mu\text{s}$), Stage B (full block header verification: p99 $638.100\,\mu\text{s}$).
-  - Exact rational bounds evaluated with `fractions.Fraction`.
-  - Zero pool bans: shares not strictly meeting pool target are dropped locally in $<3\,\mu\text{s}$.
-- **Rate Limiter** (`src/chronus/stratum/rate_limiter.py`):
-  - Monotonic nanosecond token bucket replenishment with rate burst protection.
-- **Observability** (`src/chronus/observability/metrics.py`):
-  - Prometheus metrics instrumentation tracking shares submitted, shares dropped, gatekeeper latency, and hash rate.
+## OVID
+STATE: DONE
+COMMIT: 2fb69da41c35a0e3b241d92b4a9ba01c34afb17b
+TESTS: 15/15 — pytest tests/test_gatekeeper.py tests/test_rate_limiter.py -v
+BLOCKERS: none
+RISKS: manifest gatekeeper_p99_us=0.3 CONTRADICTED; measured p99=49.1us, p50=4.7us
 
 ---
 

@@ -48,7 +48,7 @@ class TestGatekeeper(unittest.TestCase):
     def test_gatekeeper_en2_width_reject(self):
         gk = LocalPreSubmitGatekeeper()
         valid, reason, _, _, _, _ = gk.verify_candidate(
-            job_data={"job_id": "j1", "prevhash_hex": "00"*32, "coinb1_hex": "01", "coinb2_hex": "02", "merkle_branches": [], "version_hex": "20000000", "nbits_hex": "1d00ffff"},
+            job_data={"prevhash_hex": "00"*32, "coinb1_hex": "01", "coinb2_hex": "02", "merkle_branches": [], "version_hex": "20000000", "nbits_hex": "1d00ffff"},
             extranonce1_hex="a45b7889",
             extranonce2_hex="00", # Wrong size! Expected 4 bytes = 8 hex chars
             extranonce2_size=4,
@@ -65,7 +65,7 @@ class TestGatekeeper(unittest.TestCase):
     def test_gatekeeper_version_mask_reject(self):
         gk = LocalPreSubmitGatekeeper()
         valid, reason, _, _, _, _ = gk.verify_candidate(
-            job_data={"job_id": "j1", "prevhash_hex": "00"*32, "coinb1_hex": "01", "coinb2_hex": "02", "merkle_branches": [], "version_hex": "20000000", "nbits_hex": "1d00ffff"},
+            job_data={"prevhash_hex": "00"*32, "coinb1_hex": "01", "coinb2_hex": "02", "merkle_branches": [], "version_hex": "20000000", "nbits_hex": "1d00ffff"},
             extranonce1_hex="a45b7889",
             extranonce2_hex="00000001",
             extranonce2_size=4,
@@ -81,7 +81,7 @@ class TestGatekeeper(unittest.TestCase):
     def test_gatekeeper_bad_hex_reject(self):
         gk = LocalPreSubmitGatekeeper()
         valid, reason, _, _, _, _ = gk.verify_candidate(
-            job_data={"job_id": "j1", "prevhash_hex": "not_hex", "coinb1_hex": "01", "coinb2_hex": "02", "merkle_branches": [], "version_hex": "20000000", "nbits_hex": "1d00ffff"},
+            job_data={"prevhash_hex": "not_hex", "coinb1_hex": "01", "coinb2_hex": "02", "merkle_branches": [], "version_hex": "20000000", "nbits_hex": "1d00ffff"},
             extranonce1_hex="a45b7889",
             extranonce2_hex="00000001",
             extranonce2_size=4,
@@ -97,7 +97,7 @@ class TestGatekeeper(unittest.TestCase):
     def test_gatekeeper_above_target_reject(self):
         gk = LocalPreSubmitGatekeeper()
         valid, reason, _, _, _, _ = gk.verify_candidate(
-            job_data={"job_id": "j1", "prevhash_hex": "00"*32, "coinb1_hex": "01", "coinb2_hex": "02", "merkle_branches": [], "version_hex": "20000000", "nbits_hex": "1d00ffff"},
+            job_data={"prevhash_hex": "00"*32, "coinb1_hex": "01", "coinb2_hex": "02", "merkle_branches": [], "version_hex": "20000000", "nbits_hex": "1d00ffff"},
             extranonce1_hex="a45b7889",
             extranonce2_hex="00000001",
             extranonce2_size=4,
