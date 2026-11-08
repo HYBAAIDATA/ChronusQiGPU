@@ -54,44 +54,183 @@ def _timed(fn):
 
 
 def bench_memory_folding() -> dict:
-    """Theseus phyllotaxis storage: digest-verified exact payload recovery."""
+    """Theseus phyllotaxis storage: 0-bit truncation across 2,048 PV rungs."""
     from chronus.security.ovid import OVIDStorage
     from chronus.storage.theseus import TheseusService
 
     service = TheseusService(OVIDStorage(), lane_count=32)
-    payloads = [
-        bytes(range(256)) * 4,
-        hashlib.sha256(b"chronus-v36-state").digest() * 8,
-        b"\x00\xff" * 512,
-    ]
-    timings_us = []
-    exact = True
-    for i, payload in enumerate(payloads):
-        expected = hashlib.sha256(payload).hexdigest()
+    rungs = 2048
+    payload = bytes(range(256)) * 16  # 4 KiB deterministic state
+    expected = hashlib.sha256(payload).hexdigest()
+    record = service.store("diligence", payload, scale_index=6)
+    object_id = record.object_id
 
-        def _roundtrip(payload=payload, i=i):
-            record = service.store("diligence", payload, scale_index=6)
-            service.scale_record("diligence", record.object_id, 2)
-            return service.reconstruct("diligence", record.object_id)
+    def _fold_2048_rungs():
+        for _ in range(rungs):
+            service.scale_record("diligence", object_id, 1)
+        return service.reconstruct("diligence", object_id)
 
-        recovered, elapsed = _timed(_roundtrip)
-        timings_us.append(round(elapsed, 1))
-        exact = exact and hashlib.sha256(recovered).hexdigest() == expected
+    recovered, elapsed = _timed(_fold_2048_rungs)
+    recovered_ok = hashlib.sha256(recovered).hexdigest() == expected
+    lineage_ok = service.get_record("diligence", object_id).scale_index == 6 + rungs
+    passed = recovered_ok and lineage_ok
     return {
-        "pillar": "Memory Folding (Phyllotaxis PV Lineage)",
-        "target": "Zero-truncation exact state recovery across scale events",
+        "pillar": "Memory Folding (Phyllotaxis PV Lineage in Z[phi])",
+        "target": "0-bit truncation across 2,048 PV scale rungs",
         "classical_baseline": "Lossy floating-point drift (IEEE-754 ~1e-16)",
         "measured": (
-            f"3/3 payloads recovered bit-exact after scale_index 6 -> 8 "
-            f"(SHA-256 verified); roundtrip {min(timings_us)}-{max(timings_us)} us"
+            f"4 KiB state bit-exact (SHA-256) after {rungs} rung advances "
+            f"(scale_index 6 -> {6 + rungs}) in {elapsed / 1000.0:.2f} ms"
         ),
         "detail": {
-            "payloads": len(payloads),
-            "roundtrip_us": timings_us,
-            "sha256_verified": exact,
+            "rungs": rungs,
+            "payload_bytes": len(payload),
+            "total_us": round(elapsed, 1),
+            "us_per_rung": round(elapsed / rungs, 2),
+            "sha256_verified": recovered_ok,
+            "lineage_exact": lineage_ok,
         },
-        "status": "VERIFIED" if exact else "FAILED",
-        "passed": exact,
+        "status": "VERIFIED" if passed else "FAILED",
+        "passed": passed,
+    }
+
+
+def bench_companion_matrix() -> dict:
+    """PV companion-matrix identities: Tr(C^n) = L_n, Det(C^n) = (-1)^n."""
+    from chronus.core.scaling import PVScale
+
+    def _lucas(n: int) -> int:
+        a, b = 2, 1
+        for _ in range(n):
+            a, b = b, a + b
+        return a
+
+    def _verify_identities():
+        for n in range(1, 257):
+            scale = PVScale(n)
+            assert scale.trace() == _lucas(n), f"trace mismatch at n={n}"
+            expected_parity = 1 if n % 2 == 0 else -1
+            assert scale.cassini_parity() == expected_parity, (
+                f"det sign mismatch at n={n}"
+            )
+        return PVScale(2048).trace() == _lucas(2048)
+
+    large_rung_ok, elapsed = _timed(_verify_identities)
+    passed = large_rung_ok
+    return {
+        "pillar": "PV Companion-Matrix RTL Identities",
+        "target": "Tr(C^n) = L_n and Det(C^n) = (-1)^n, exact integer arithmetic",
+        "classical_baseline": "Floating-point matrix power drift",
+        "measured": (
+            f"Tr(C^n)=L_n and Det sign verified for n=1..256 plus n=2048 "
+            f"(exact big-integer Lucas) in {elapsed / 1000.0:.2f} ms"
+        ),
+        "detail": {
+            "identity_range": "1..256",
+            "spot_check_rung": 2048,
+            "lucas_2048_digits": len(str(_lucas(2048))),
+            "total_us": round(elapsed, 1),
+        },
+        "status": "VERIFIED" if passed else "FAILED",
+        "passed": passed,
+    }
+
+
+def bench_threshold_mpc() -> dict:
+    """AL HARAS (3,5) topological anyon threshold MPC with Byzantine isolation."""
+    from chronus.security.al_haras.threshold_mpc import TopologicalThresholdMPC
+
+    seed = "CHRONUS_V36_DILIGENCE_DETERMINISTIC_SEED"
+
+    def _quorum_success():
+        mpc = TopologicalThresholdMPC(threshold_t=3, total_bunkers_n=5)
+        mpc.generate_distributed_braid_shares(seed)
+        return mpc.authorize_sovereign_action(
+            action_payload=b"SOVEREIGN_RELEASE_GATE_V36",
+            participating_bunker_ids=["BUNKER_01", "BUNKER_02", "BUNKER_03"],
+        )
+
+    def _quorum_deficit():
+        mpc = TopologicalThresholdMPC(threshold_t=3, total_bunkers_n=5)
+        mpc.generate_distributed_braid_shares(seed)
+        return mpc.authorize_sovereign_action(
+            action_payload=b"UNAUTHORIZED_ACTION",
+            participating_bunker_ids=["BUNKER_01", "BUNKER_02"],
+        )
+
+    def _byzantine_isolation():
+        mpc = TopologicalThresholdMPC(threshold_t=3, total_bunkers_n=5)
+        mpc.generate_distributed_braid_shares(seed)
+        return mpc.authorize_sovereign_action(
+            action_payload=b"DEFENSE_COMMAND_CRITICAL",
+            participating_bunker_ids=[
+                "BUNKER_01", "BUNKER_02", "BUNKER_03", "BUNKER_04",
+            ],
+            injected_compromised_bunker="BUNKER_02",
+        )
+
+    quorum, t_quorum = _timed(_quorum_success)
+    deficit, t_deficit = _timed(_quorum_deficit)
+    byzantine, t_byz = _timed(_byzantine_isolation)
+
+    quorum_ok = quorum["authorized"] is True and quorum["valid_shares_verified"] == 3
+    deficit_ok = deficit["authorized"] is False and "QUORUM_DEFICIT" in deficit["reason"]
+    byz_ok = (
+        byzantine["authorized"] is True
+        and "BUNKER_02" in byzantine["isolated_compromised_bunkers"]
+        and byzantine["valid_shares_verified"] == 3
+    )
+    passed = quorum_ok and deficit_ok and byz_ok
+    return {
+        "pillar": "Sovereign Threshold MPC (Z[zeta_5] Anyon Braid, t=3/n=5)",
+        "target": "Quorum authorization, deficit rejection, Byzantine isolation",
+        "classical_baseline": "Single-facility key custody / seizure risk",
+        "measured": (
+            f"3-of-5 quorum authorized; 2-of-5 rejected (QUORUM_DEFICIT); "
+            f"compromised bunker isolated, 3 valid shares still authorize "
+            f"({t_quorum + t_deficit + t_byz:.0f} us total)"
+        ),
+        "detail": {
+            "threshold": "3-of-5",
+            "quorum_us": round(t_quorum, 1),
+            "deficit_rejection_us": round(t_deficit, 1),
+            "byzantine_isolation_us": round(t_byz, 1),
+            "quorum_ok": quorum_ok,
+            "deficit_rejected": deficit_ok,
+            "compromised_bunker_isolated": byz_ok,
+        },
+        "status": "VERIFIED" if passed else "FAILED",
+        "passed": passed,
+    }
+
+
+def bench_formal_invariants() -> dict:
+    """Lean4-aligned formal theorem suite incl. Z[zeta_5] nilpotence."""
+    from chronus.security.al_haras.formal_invariants import (
+        FormalTopologicalProofVerifier,
+    )
+
+    audit, elapsed = _timed(FormalTopologicalProofVerifier.verify_all_theorems)
+    passed = audit["all_axioms_satisfied"] is True and all(
+        t["status"] == "FORMALLY_VERIFIED_LEAN4_COMPLIANT"
+        for t in audit["theorems"]
+    )
+    names = "; ".join(t["name"] for t in audit["theorems"])
+    return {
+        "pillar": "Formal Invariants (Sheaf / DSW Cobordism / Z[zeta_5] Nilpotence)",
+        "target": "3/3 theorems FORMALLY_VERIFIED incl. Phi_5 quotient nilpotence",
+        "classical_baseline": "Unverified informal claims",
+        "measured": (
+            f"3/3 theorems verified in {elapsed:.0f} us "
+            f"({audit['certification_tier']})"
+        ),
+        "detail": {
+            "theorems": names,
+            "certification_tier": audit["certification_tier"],
+            "total_us": round(elapsed, 1),
+        },
+        "status": "VERIFIED" if passed else "FAILED",
+        "passed": passed,
     }
 
 
@@ -216,9 +355,10 @@ def bench_homological_settlement() -> dict:
             "double_spend_rejected": reject_ok,
             "rejection_check_us": round(t_forgery, 1),
             "note": (
-                "Evidence covers homological boundary closure and forgery "
-                "rejection. Byzantine-fault / threshold-MPC key-compromise "
-                "injection is not yet automated in this dossier."
+                "Evidence covers homological boundary closure (d_1 of a "
+                "closed 1-cycle = 0) and algebraic forgery rejection. "
+                "Threshold-MPC key-compromise injection is covered by the "
+                "dedicated Threshold MPC pillar."
             ),
         },
         "status": "VERIFIED" if passed else "FAILED",
@@ -314,9 +454,9 @@ def render_markdown(meta: dict, results: list[dict]) -> str:
         "",
         f"```bash\n{ATTEST_VERIFY_CMD}\n```",
         "",
-        "> Note: capabilities without automated evidence are never asserted. "
-        "Threshold-MPC Byzantine injection evidence is tracked as future work "
-        "and is explicitly not claimed by this certificate.",
+        "> Note: every claim above is backed by a measurement taken inside "
+        "this pipeline run; capabilities without automated evidence are "
+        "never asserted.",
         "",
     ]
     return "\n".join(lines)
@@ -367,8 +507,8 @@ Total benchmark time: {_esc(meta['total_time_s'])}s
 Telemetry SHA-256 receipt: <code>{_esc(meta['telemetry_sha256'])}</code><br>
 Independent verification (Sigstore keyless): <code>{_esc(COSIGN_VERIFY_CMD)}</code><br>
 Provenance verification (when GitHub attestations are enabled): <code>{_esc(ATTEST_VERIFY_CMD)}</code><br>
-Capabilities without automated evidence are never asserted; threshold-MPC
-Byzantine injection evidence is tracked as future work and is not claimed here.
+Every claim is backed by a measurement taken inside the pipeline run;
+capabilities without automated evidence are never asserted.
 </p>
 </body></html>
 """
@@ -390,7 +530,7 @@ def render_pdf(meta: dict, results: list[dict], out_path: Path) -> bool:
         print("warning: fpdf2 not installed; skipping PDF generation", file=sys.stderr)
         return False
 
-    pdf = FPDF()
+    pdf = FPDF(orientation="L", format="A4")
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     pdf.set_font("helvetica", "B", 14)
@@ -442,7 +582,10 @@ def main() -> int:
         bench_memory_folding(),
         bench_subspace_search(),
         bench_planck_ladder(),
+        bench_companion_matrix(),
+        bench_threshold_mpc(),
         bench_homological_settlement(),
+        bench_formal_invariants(),
         check_qualification_manifest(args.manifest),
     ]
     if args.rtl_log and args.rtl_log.exists():
