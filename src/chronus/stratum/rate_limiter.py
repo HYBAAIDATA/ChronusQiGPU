@@ -7,9 +7,11 @@ Purity & Performance Contract:
 - 0 floating-point operations.
 - Non-blocking acquire() with exact integer token refill and integer remainder carrying.
 - Priority Queue Block Bypass: Mainnet block solutions bypass rate limiter entirely.
+- RATE bounded in [10, 20]/s, CAP asserted as 2 * RATE.
 """
 
 import time
+from collections import deque
 from typing import Optional
 from chronus.stratum.sharding import ShareCandidate
 
@@ -17,14 +19,20 @@ from chronus.stratum.sharding import ShareCandidate
 class IntegerNanosecondTokenBucket:
     """
     Token bucket rate limiter operating strictly on integer nanoseconds.
-    Pacing rate: rate_per_sec (default 15 submits/sec).
+    Pacing rate: rate_per_sec (default 15 submits/sec, bounded within [10, 20]).
     Capacity: 2 * rate_per_sec (default 30 tokens).
     """
     def __init__(self, rate_per_sec: int = 15, capacity: Optional[int] = None):
         if rate_per_sec <= 0:
             raise ValueError(f"Rate must be positive integer, got {rate_per_sec}")
+        assert 10 <= rate_per_sec <= 20, f"RATE bounds assertion failed: rate {rate_per_sec} not in [10, 20]/s"
+        expected_capacity = 2 * rate_per_sec
+        if capacity is not None:
+            assert capacity == expected_capacity, f"CAP assertion failed: capacity {capacity} != 2*RATE ({expected_capacity})"
+            self.capacity = capacity
+        else:
+            self.capacity = expected_capacity
         self.rate_per_sec = rate_per_sec
-        self.capacity = capacity if capacity is not None else 2 * rate_per_sec
 
         self.tokens: int = self.capacity
         self.ns_per_token: int = 1_000_000_000 // rate_per_sec
@@ -59,13 +67,13 @@ class IntegerNanosecondTokenBucket:
 
 class PriorityShareQueue:
     """
-    Submission queue prioritizing mainnet block hits over standard shares.
+    Submission queue prioritizing mainnet block hits over standard shares using priority deques.
     Block hits bypass the token bucket pacing entirely.
     """
     def __init__(self, maxsize: int = 64):
         self.maxsize = maxsize
-        self.high_priority_blocks: list[ShareCandidate] = []
-        self.normal_priority_shares: list[ShareCandidate] = []
+        self.high_priority_blocks: deque[ShareCandidate] = deque()
+        self.normal_priority_shares: deque[ShareCandidate] = deque()
 
     def push(self, candidate: ShareCandidate, is_block_hit: bool) -> bool:
         """
@@ -86,14 +94,14 @@ class PriorityShareQueue:
 
     def pop(self) -> Optional[tuple[ShareCandidate, bool]]:
         """
-        Pops next available candidate.
+        Pops next available candidate from the priority deque.
         Returns (candidate, is_block_hit) or None if empty.
         High priority block hits are ALWAYS returned first.
         """
         if self.high_priority_blocks:
-            return self.high_priority_blocks.pop(0), True
+            return self.high_priority_blocks.popleft(), True
         if self.normal_priority_shares:
-            return self.normal_priority_shares.pop(0), False
+            return self.normal_priority_shares.popleft(), False
         return None
 
     def empty(self) -> bool:

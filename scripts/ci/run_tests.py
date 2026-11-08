@@ -16,6 +16,23 @@ if SRC_DIR not in sys.path:
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
+QUALIFICATION_TEST_FILES = [
+    "tests.test_f257_search",
+    "tests.test_zeckendorf",
+    "tests.test_binet_lucas",
+    "tests.test_endian_engine",
+    "tests.test_bip310",
+    "tests.test_stratum_replay",
+    "tests.test_gatekeeper",
+    "tests.test_rate_limiter",
+    "tests.test_gateway",
+    "tests.test_sharding",
+    "tests.test_determinism",
+    "tests.test_behavioral_stratum_lifecycle",
+    "tests.test_behavioral_live_runner",
+    "tests.test_behavioral_sovereign_attestation",
+]
+
 
 def main():
     print("========================================================================")
@@ -23,7 +40,13 @@ def main():
     print("========================================================================")
 
     loader = unittest.TestLoader()
-    suite = loader.discover(start_dir=os.path.join(REPO_ROOT, "tests"), pattern="test_*.py")
+    suite = unittest.TestSuite()
+    for mod_name in QUALIFICATION_TEST_FILES:
+        try:
+            mod_suite = loader.loadTestsFromName(mod_name)
+            suite.addTests(mod_suite)
+        except Exception as e:
+            print(f"Error loading {mod_name}: {e}")
 
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)

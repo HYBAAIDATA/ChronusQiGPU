@@ -17,7 +17,7 @@ import asyncio
 import json
 import logging
 from fractions import Fraction
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 
 from chronus.stratum.bip310 import DEFAULT_CLIENT_MASK_HEX, parse_and_intersect_version_mask
 from chronus.stratum.sharding import DedupLedger, WorkPartitioner
@@ -78,6 +78,19 @@ class StratumGateway:
         self.jobs.clear()
         self.job_history.clear()
         self.dedup_ledger.clear()
+        self.current_difficulty = Fraction(1)
+        self.extranonce1_hex = ""
+        self.extranonce2_size = 4
+        self.pool_mask_hex = "00000000"
+
+        if self.writer:
+            try:
+                self.writer.close()
+                await self.writer.wait_closed()
+            except Exception:
+                pass
+            self.writer = None
+            self.reader = None
 
         self.reader, self.writer = await asyncio.open_connection(
             self.host, self.port, limit=1024 * 1024
@@ -85,8 +98,18 @@ class StratumGateway:
         self.is_connected = True
         logger.info(f"[GEN {gen}] Connected successfully to {self.host}:{self.port}")
 
+    async def write_rpc(self, method: str, params: List[Any]) -> int:
+        """Writes a JSON-RPC request line directly to socket without reading."""
+        if not self.writer:
+            raise ConnectionError("Socket is not open.")
+        rpc_id = self._next_id()
+        payload_str = json.dumps({"id": rpc_id, "method": method, "params": params}) + "\n"
+        self.writer.write(payload_str.encode("utf-8"))
+        await self.writer.drain()
+        return rpc_id
+
     async def send_rpc(self, method: str, params: List[Any]) -> Dict[str, Any]:
-        """Sends a JSON-RPC request line and reads the response line."""
+        """Sends a JSON-RPC request line and reads until the response with matching ID arrives."""
         if not self.writer or not self.reader:
             raise ConnectionError("Socket is not open.")
 
@@ -95,14 +118,54 @@ class StratumGateway:
         self.writer.write(payload_str.encode("utf-8"))
         await self.writer.drain()
 
-        # Read response line with 1 MiB limit
-        line = await self.reader.readuntil(b"\n")
-        if not line:
-            raise ConnectionError("Pool closed TCP socket unexpectedly.")
+        # Read lines until matching response id arrives; dispatch interleaved server pushes
+        while True:
+            line = await self.reader.readuntil(b"\n")
+            if not line:
+                raise ConnectionError("Pool closed TCP socket unexpectedly.")
 
-        line_str = line.decode("utf-8").rstrip("\r\n")
-        response = json.loads(line_str)
-        return response
+            line_str = line.decode("utf-8", errors="replace").replace("\r", "").strip()
+            if not line_str:
+                continue
+
+            try:
+                response = json.loads(line_str)
+            except json.JSONDecodeError as exc:
+                logger.warning(f"Malformed JSON from pool, dropping line: {exc}")
+                continue
+
+            if not isinstance(response, dict):
+                logger.warning(f"Non-dict JSON payload from pool, dropping line: {response}")
+                continue
+
+            if response.get("id") == rpc_id:
+                return response
+            elif "method" in response or response.get("id") is None:
+                await self.handle_server_push(response)
+
+    async def read_line(self) -> bytes:
+        """Reads a single newline-delimited frame using readuntil(b'\\n') up to the 1 MiB limit."""
+        if not self.reader:
+            raise ConnectionError("Socket is not open.")
+        return await self.reader.readuntil(b"\n")
+
+    async def read_message(self) -> Optional[Dict[str, Any]]:
+        """
+        Reads next line, strips \\r, parses JSON.
+        On JSON parse error, drops the line and returns None (does not disconnect).
+        """
+        line = await self.read_line()
+        if not line:
+            return None
+        line_str = line.decode("utf-8", errors="replace").replace("\r", "").strip()
+        if not line_str:
+            return None
+        try:
+            msg = json.loads(line_str)
+            return msg if isinstance(msg, dict) else None
+        except json.JSONDecodeError as exc:
+            logger.warning(f"Malformed JSON from pool, dropping line: {exc}")
+            return None
 
     async def execute_handshake(self):
         """
@@ -136,15 +199,15 @@ class StratumGateway:
         else:
             raise ValueError(f"Invalid mining.subscribe result payload: {sub_res}")
 
-        # Step 3: mining.extranonce.subscribe
+        # Step 3: mining.extranonce.subscribe (optional extension)
         try:
-            await self.send_rpc("mining.extranonce.subscribe", [])
+            await asyncio.wait_for(self.send_rpc("mining.extranonce.subscribe", []), timeout=2.0)
             logger.info("[HANDSHAKE] mining.extranonce.subscribe registered")
         except Exception as e:
             logger.warning(f"[HANDSHAKE] mining.extranonce.subscribe skipped: {e}")
 
         # Step 4: mining.authorize
-        auth_res = await self.send_rpc("mining.authorize", [self.worker_name, self.password])
+        auth_res = await asyncio.wait_for(self.send_rpc("mining.authorize", [self.worker_name, self.password]), timeout=5.0)
         if auth_res.get("result") is True:
             logger.info(f"[HANDSHAKE] Authorized worker '{self.worker_name}' successfully.")
         else:

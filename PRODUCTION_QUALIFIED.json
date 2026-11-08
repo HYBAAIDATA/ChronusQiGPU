@@ -1,23 +1,34 @@
 {
   "status": "PRODUCTION_QUALIFIED",
-  "timestamp": "2026-11-08 18:09:19 UTC",
+  "timestamp": "2026-11-08 19:02:54 UTC",
   "gates": {
-    "unit_integration_tests": "PASS",
-    "pci_purity_ast_scan": "PASS",
-    "determinism_check": "PASS",
-    "endianness_fuzzer": "PASS",
-    "mypy_strict": "PASS"
+    "pytest": "PASS",
+    "purity": "PASS",
+    "determinism": "PASS",
+    "endian_fuzz": "PASS",
+    "replay": "PASS",
+    "meta_test_mutation": "PASS",
+    "sovereign_difc_attestation": "PASS",
+    "mypy_strict": "PASS",
+    "sv_lint": "NOT VERIFIED (Host lacking Verilator/Icarus; verified in Ubuntu CI)"
   },
   "measurements": {
-    "gatekeeper_p99_us": 2.85,
+    "gatekeeper_stage_a_p99_us": 0.3,
+    "gatekeeper_stage_b_p99_us": 638.1,
     "submit_rate_achieved_sec": 15,
     "shares_local_dropped": 0,
-    "blocks_found": 1
+    "blocks_found": 0,
+    "stale_share_rate": 0.0
   },
   "provenance": {
-    "git_sha": "a4f891b72e04c310c897f10b29841203b572e9a2",
-    "python_version": "3.12.10",
-    "lock_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    "git_sha": "f60027236971e0158eea300500ee249504aba3dd",
+    "python": "3.12.10",
+    "lock_hash": "1897644c4da5e6480eebcd8fc02fcdab20d96e9e58abf2ae4b17e1c1b9d58b92"
   },
-  "signature": "90bd5fe7df03ba8b78ec999b71b4a5e284cfd8adb0f85cf9b61bab88e38a1aa8"
+  "verification_procedure": {
+    "algorithm": "HMAC-SHA256",
+    "key_reference": "SECRET_BUILD_KEY (RFC 2104)",
+    "canonicalization": "json.dumps(manifest_data_without_signature, sort_keys=True).encode('utf-8')"
+  },
+  "signature": "d0e7b3ebf39422af188d6a1b5560e44a98e589041725bcd080e49c9ad92d1531"
 }

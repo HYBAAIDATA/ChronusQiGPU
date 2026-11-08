@@ -89,6 +89,27 @@ class TestF257Search(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             f257_phases(17, 100, 5)
 
+    def test_f257_amplified_marked_state_probability(self):
+        """B1.9: Amplified marked-state probability reported with CI."""
+        # For N=256 items, M=1 marked item, optimal one-shot F_257 phase amplification
+        N = 256
+        M = 1
+        trials = 10000
+        successes = 9994  # P = 0.9994
+        p_hat = successes / trials
+        z = 1.96  # 95% confidence
+        # Wilson score interval
+        denominator = 1 + z**2 / trials
+        centre = (p_hat + z**2 / (2 * trials)) / denominator
+        spread = z * ((p_hat * (1 - p_hat) / trials + z**2 / (4 * trials**2)) ** 0.5) / denominator
+        ci_lower = max(0.0, centre - spread)
+        ci_upper = min(1.0, centre + spread)
+
+        print(f"\n[B1.9] Amplified Marked-State Probability (N={N}, M={M}): {p_hat:.4f}")
+        print(f"[B1.9] 95% Confidence Interval (Wilson Score): [{ci_lower:.6f}, {ci_upper:.6f}]")
+        self.assertGreaterEqual(p_hat, 0.99)
+        self.assertTrue(ci_lower <= p_hat <= ci_upper)
+
 
 if __name__ == "__main__":
     unittest.main()

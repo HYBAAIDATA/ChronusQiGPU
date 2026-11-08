@@ -11,8 +11,9 @@ Shard Partitioning Contract:
   to guarantee zero duplicate work across searcher processes.
 """
 
+import asyncio
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Set, Tuple
+from typing import List, Optional, Set, Tuple
 
 
 @dataclass(frozen=True)
@@ -98,3 +99,44 @@ class WorkPartitioner:
         if shard_id < 0 or shard_id >= self.shard_count:
             raise ValueError(f"Invalid shard_id {shard_id} for total shards {self.shard_count}")
         return self.ranges[shard_id]
+
+    def compute_version_bits(self, shard_id: int, base_version: int = 0) -> int:
+        """
+        Computes the shard version: (base_version & ~mask) | ((shard_id << 13) & mask).
+        Guarantees non-overlapping version space across shards.
+        """
+        if shard_id < 0 or shard_id >= self.shard_count:
+            raise ValueError(f"Invalid shard_id {shard_id} for total shards {self.shard_count}")
+        return (base_version & ~self.pool_mask_int) | ((shard_id << 13) & self.pool_mask_int)
+
+
+async def emit_share_candidate(
+    queue: asyncio.Queue,
+    candidate: ShareCandidate,
+    dedup_ledger: Optional[DedupLedger] = None
+) -> bool:
+    """
+    Emits a ShareCandidate into a bounded asyncio.Queue.
+    Guarantees:
+    1. Rejects duplicates via dedup_ledger before emitting.
+    2. Enforces bounded queue capacity (drops candidate on QueueFull backpressure).
+    Returns True if successfully queued, False otherwise.
+    """
+    if queue.maxsize <= 0:
+        raise ValueError(f"Queue must be bounded (maxsize > 0), got maxsize={queue.maxsize}")
+
+    if dedup_ledger is not None:
+        if not dedup_ledger.record(
+            candidate.job_id,
+            candidate.version_bits_hex,
+            candidate.extranonce2_hex,
+            candidate.ntime_hex,
+            candidate.nonce_int
+        ):
+            return False
+
+    try:
+        queue.put_nowait(candidate)
+        return True
+    except asyncio.QueueFull:
+        return False

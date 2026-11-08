@@ -23,7 +23,7 @@ import time
 from fractions import Fraction
 from typing import Dict, Any, Tuple, Optional
 
-from chronus.stratum.bip310 import apply_version_rolling, format_extranonce2
+from chronus.stratum.bip310 import apply_version_rolling
 from chronus.stratum.endian_engine import swap_prevhash_words, compute_merkle_root_stratum, build_header80, sha256d
 
 # Mainnet Difficulty 1 Target (Truediff1 constant)
@@ -61,12 +61,14 @@ def decode_nbits_target(nbits_hex_or_int: str | int) -> int:
     return target
 
 
-def compute_share_target_exact(difficulty: Fraction | int | float | str) -> int:
+def compute_share_target_exact(difficulty: Fraction | int | str) -> int:
     """
     Computes exact share target integer using arbitrary-precision Fraction division.
     0 floating-point operations. Floor integer division.
     """
-    frac_diff = Fraction(str(difficulty))
+    if isinstance(difficulty, float):
+        raise TypeError(f"Floating-point difficulty disallowed in exact gatekeeper: got {difficulty}")
+    frac_diff = Fraction(difficulty) if isinstance(difficulty, (int, str, Fraction)) else Fraction(str(difficulty))
     if frac_diff <= 0:
         raise ValueError(f"Share difficulty must be positive, got {difficulty}")
     return (TRUEDIFF1_TARGET * frac_diff.denominator) // frac_diff.numerator
@@ -116,7 +118,9 @@ class LocalPreSubmitGatekeeper:
         nonce_int: int,
         version_bits_hex: str,
         pool_mask_hex: str,
-        current_difficulty: Fraction
+        current_difficulty: Fraction,
+        dedup_ledger: Optional[Any] = None,
+        active_job_ids: Optional[Any] = None
     ) -> Tuple[bool, Optional[DropReason], str, int, int, bool]:
         """
         Executes local 2-stage verification:
@@ -127,6 +131,28 @@ class LocalPreSubmitGatekeeper:
             (is_valid, drop_reason, block_hash_be_hex, hash_int, target_int, is_network_block)
         """
         t0 = time.perf_counter_ns()
+
+        # Check Active Job / Stale Job
+        if active_job_ids is not None:
+            job_id = job_data.get("job_id")
+            if job_id not in active_job_ids:
+                self.reject_counts[DropReason.STALE_JOB] += 1
+                self.last_verification_ns = time.perf_counter_ns() - t0
+                return False, DropReason.STALE_JOB, "", 0, 0, False
+
+        # Check Duplicate in DedupLedger
+        if dedup_ledger is not None:
+            job_id = job_data.get("job_id", "")
+            if dedup_ledger.is_duplicate(
+                job_id,
+                version_bits_hex,
+                extranonce2_hex,
+                ntime_hex,
+                nonce_int
+            ):
+                self.reject_counts[DropReason.DUP] += 1
+                self.last_verification_ns = time.perf_counter_ns() - t0
+                return False, DropReason.DUP, "", 0, 0, False
 
         # Check ExtraNonce2 width
         if len(extranonce2_hex) != extranonce2_size * 2:
@@ -198,6 +224,15 @@ class LocalPreSubmitGatekeeper:
         if not is_share_valid:
             self.reject_counts[DropReason.ABOVE_TARGET] += 1
             return False, DropReason.ABOVE_TARGET, block_hash_be_hex, hash_int, share_target_int, False
+
+        if dedup_ledger is not None:
+            dedup_ledger.record(
+                job_data.get("job_id", ""),
+                version_bits_hex,
+                extranonce2_hex,
+                ntime_hex,
+                nonce_int
+            )
 
         self.verified_shares_count += 1
         if is_network_block:
