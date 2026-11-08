@@ -84,9 +84,11 @@ class TestGateway(unittest.TestCase):
         self.assertEqual(gw.extranonce1_hex, "12345678")
         self.assertEqual(gw.extranonce2_size, 6)
 
-        # 3. mining.set_version_mask
+        # 3. mining.set_version_mask (>=16 bits accepted; <16 bits refused per BIP310)
+        loop.run_until_complete(gw.handle_server_push({"method": "mining.set_version_mask", "params": ["1fffe000"]}))
+        self.assertEqual(gw.pool_mask_hex, "1fffe000")
         loop.run_until_complete(gw.handle_server_push({"method": "mining.set_version_mask", "params": ["0000e000"]}))
-        self.assertEqual(gw.pool_mask_hex, "0000e000")
+        self.assertEqual(gw.pool_mask_hex, "00000000")
 
         loop.close()
 

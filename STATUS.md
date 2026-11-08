@@ -10,6 +10,7 @@
 ---
 
 ## 1. MILLENIEIEUM (Repo Shape & Wiring Truth)
+
 - **Canonical Package Path**: `src/chronus/` (defined in `pyproject.toml` under `[tool.setuptools.packages.find] where = ["src"]`).
 - **Entrypoints**:
   - **API Service**: `uvicorn chronus.service.app:app` (targeted by `Dockerfile` and `docker-compose.yml`).
@@ -19,6 +20,7 @@
 ---
 
 ## 2. CHRONUS (Math / Galois Engine & Hardware Verification)
+
 - **Galois Field $F_{257}$ Phase Search** (`src/chronus/math/f257_search.py`):
   - $\alpha$ closed form: $\alpha = (u^{-1} + 1) \pmod{257}$ (strictly dependent on $u$, lines 70–73).
   - Multi-mark fail-loud: $M \ge 2$ raises `NotImplementedError` (lines 61–65).
@@ -36,36 +38,37 @@
 
 ---
 
-## 3. THESEUS (Stratum Endian Engine & BIP310)
-- **Endian Engine** (`src/chronus/stratum/endian_engine.py`):
-  - PrevHash word-swap endianness correctly reverses 4-byte words within 32-byte chunks (`swap_endian_words`).
-  - Merkle root internal ordering preserved without improper reversal.
-  - Strict 80-byte header packing with `<I` format.
-- **BIP310 Version-Rolling** (`src/chronus/stratum/bip310.py`):
-  - Clean bitwise mask negotiation (`version_mask`), safe version rolling within permitted bits.
+## THESEUS
+STATE: DONE
+COMMIT: PENDING
+TESTS: 11/11 — pytest tests/test_endian_engine.py -v
+BLOCKERS: none
+RISKS: bip310 submit-arity builder is not yet wired into gateway.py or master_e2e_engine.py; Toe/Mining must wire it before live submit. Real mining.notify capture absent from tests/vectors/; replay is synthetic-only.
 
 ---
 
-## 4. TOE (Gateway, Sharding & Connection Resilience)
-- **Stratum Gateway** (`src/chronus/stratum/gateway.py`):
-  - Single-socket asynchronous management with monotonic `connection_generation`.
-  - Clean 4-step handshake (`mining.subscribe`, `mining.configure`, `mining.authorize`).
-  - Real socket push event processing and automatic reconnection.
-- **Sharding Engine** (`src/chronus/stratum/sharding.py`):
-  - Exact disjoint Extranonce1 + Extranonce2 space partitioning.
+## TOE
+
+STATE: DONE_WITH_BLOCKER
+COMMIT: 49b7ec9a54e54b5dad53d40d5a36fbd2227a5189
+TESTS: 13 passed/13 total — pytest tests/test_gateway.py tests/test_sharding.py -v
+BLOCKERS: BLOCKER_TOE_1.patch
+RISKS: compute_version_bits/emit_share_candidate are TEST_ONLY; consumer wiring is Mining/Ovid's responsibility.
 
 ---
 
 ## OVID
+
 STATE: DONE
 COMMIT: 2fb69da41c35a0e3b241d92b4a9ba01c34afb17b
 TESTS: 15/15 — pytest tests/test_gatekeeper.py tests/test_rate_limiter.py -v
 BLOCKERS: none
 RISKS: manifest gatekeeper_p99_us=0.3 CONTRADICTED; measured p99=49.1us, p50=4.7us
-
+d pseudocode
 ---
 
 ## 6. MINING (Build, Packaging & Attestation)
+
 - **Canonical Miner CLI**: `src/chronus/execution/mining_entrypoint.py` & `chronus_live_miner.py`.
 - **Distribution Packages Built**:
   - `dist/chronus_quantum_igpu-36.0.1.tar.gz`
