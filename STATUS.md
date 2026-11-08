@@ -49,7 +49,7 @@ RISKS: bip310 submit-arity builder is not yet wired into gateway.py or master_e2
 
 ## TOE
 STATE: DONE_WITH_BLOCKER
-COMMIT: 4d6e5a7cba46938a85320af995536b103c030fcd
+COMMIT: ea3bb1f4237209c64c97c08fae2bec4bc9eceab4
 TESTS: 13 passed/13 total — pytest tests/test_gateway.py tests/test_sharding.py -v
 BLOCKERS: BLOCKER_TOE_1.patch
 RISKS: compute_version_bits/emit_share_candidate are TEST_ONLY; consumer wiring is Mining/Ovid's responsibility.

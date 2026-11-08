@@ -9,14 +9,3 @@
                  if not line:
                      logger.warning("Upstream pool closed TCP connection. Reconnecting...")
                      break
---- a/src/chronus/execution/mining_entrypoint.py
-+++ b/src/chronus/execution/mining_entrypoint.py
-@@ -159,7 +159,7 @@
-         """Processes continuous server push events from the Stratum socket."""
-         while self.running and self.gateway.reader:
-             try:
--                line = await self.gateway.reader.readline()
-+                line = await self.gateway.read_line()
-                 if not line:
-                     logger.warning("Pool closed connection.")
-                     break
