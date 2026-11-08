@@ -84,6 +84,18 @@ class TestBehavioralLiveRunner(unittest.TestCase):
         self.assertEqual(runner.user, "runner_worker")
         self.assertEqual(runner.gateway.host, "127.0.0.1")
 
+    def test_miner_runs_without_max_seconds(self):
+        """Asserts that default max_seconds for ChronusRealMiningEngine.run is None (non-terminating)."""
+        import inspect
+        engine = ChronusRealMiningEngine(
+            host="127.0.0.1",
+            port=3333,
+            user="test_worker",
+            password="123",
+        )
+        sig = inspect.signature(engine.run)
+        self.assertIsNone(sig.parameters["max_seconds"].default)
+
 
 if __name__ == "__main__":
     unittest.main()

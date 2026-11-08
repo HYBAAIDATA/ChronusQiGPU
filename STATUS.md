@@ -9,13 +9,12 @@
 
 ---
 
-## 1. MILLENIEIEUM (Repo Shape & Wiring Truth)
-
-- **Canonical Package Path**: `src/chronus/` (defined in `pyproject.toml` under `[tool.setuptools.packages.find] where = ["src"]`).
-- **Entrypoints**:
-  - **API Service**: `uvicorn chronus.service.app:app` (targeted by `Dockerfile` and `docker-compose.yml`).
-  - **Stratum Mining Worker**: Packaged at `src/chronus/execution/mining_entrypoint.py`, executed via `chronus_live_miner.py` and CLI `chronus-miner`.
-- **Manifest Integrity**: `PRODUCTION_QUALIFIED.json` grounded in live git HEAD SHA, real `pyproject.toml` sha256 lock hash, live gatekeeper microsecond measurements, and HMAC-SHA256 sovereign signature.
+## MILLENIEIEUM
+STATE: DONE_WITH_BLOCKER
+COMMIT: 84079fb72a38703cf297520f9ae2dcbb8d2a3087
+TESTS: 72/73 — py scripts/ci/run_tests.py (1 error: test_malformed_json_dropped_not_disconnect)
+BLOCKERS: BLOCKER_MILLENIEIEUM_1.patch, BLOCKER_MILLENIEIEUM_2.patch
+RISKS: manifest.py:75-87 hardcodes all gate values; PRODUCTION_QUALIFIED.json must not be cited as evidence; max_seconds=15 in chronus_live_miner.py:288 blocks non-terminating deployment
 
 ---
 
