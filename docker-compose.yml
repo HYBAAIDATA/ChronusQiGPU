@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: api-runtime
     ports:
       - "127.0.0.1:18000:8000"
     environment:
@@ -54,6 +55,20 @@ services:
       retries: 3
     security_opt:
       - no-new-privileges:true
+
+  miner:
+    image: chronus-miner:local
+    pull_policy: never
+    profiles: [miner]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: miner-runtime
+    env_file:
+      - .env
+    environment:
+      MINING_MAX_SECONDS: ${MINING_MAX_SECONDS:-}
+    restart: "no"
 
 volumes:
   chronus_data:

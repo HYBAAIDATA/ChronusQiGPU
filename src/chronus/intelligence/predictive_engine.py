@@ -20,6 +20,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.preprocessing import StandardScaler
 from statsmodels.tsa.seasonal import seasonal_decompose
+import scipy.linalg
 
 try:
     from xgboost import XGBClassifier
@@ -71,7 +72,10 @@ class PredictiveEngine:
         X_train: pd.DataFrame | np.ndarray | None = None,
         y_train: pd.Series | np.ndarray | None = None,
     ) -> None:
-        self.config = config if config is not None else self._default_config()
+        default_cfg = self._default_config()
+        if config is not None:
+            default_cfg.update(config)
+        self.config = default_cfg
         self._validate_config()
         self._initialize_components()
         self.models: dict[str, Any] = {}
@@ -654,6 +658,199 @@ class PredictiveEngine:
         n = min(len(imps), feature_dim)
         return {f"f{i}": float(imps[i]) for i in range(n)}
 
+    def predict_proba(self, X: pd.DataFrame | np.ndarray) -> np.ndarray:
+        """
+        Aggregates class probability predictions across ensemble estimators via weighted average:
+            P(y=1 | x) = sum_m (w_m * P_m(y=1 | x)) / sum_m (w_m)
+        """
+        if isinstance(X, pd.DataFrame):
+            num_cols = X.select_dtypes(include=[np.number])
+            expected_dim = getattr(self.scaler, 'n_features_in_', int(self.config.get('feature_dim', 10)))
+            if num_cols.shape[1] == expected_dim:
+                X_arr = num_cols.to_numpy(dtype=float)
+            else:
+                X_arr = np.vstack([self._extract_features(X.iloc[[i]]) for i in range(len(X))])
+        else:
+            X_arr = np.asarray(X, dtype=float)
+            if X_arr.ndim == 1:
+                X_arr = X_arr.reshape(1, -1)
+
+        X_imputed = self.imputer.transform(X_arr)
+        X_scaled = self.scaler.transform(X_imputed)
+
+        weighted_probs = np.zeros(len(X_scaled), dtype=float)
+        total_weight = 0.0
+        for name, model in self.models.items():
+            w = float(self.model_weights.get(name, 1.0))
+            p = model.predict_proba(X_scaled)[:, 1]
+            weighted_probs += p * w
+            total_weight += w
+
+        if total_weight > 0:
+            final_p1 = weighted_probs / total_weight
+        else:
+            final_p1 = np.full(len(X_scaled), 0.5)
+
+        final_p0 = 1.0 - final_p1
+        return np.column_stack([final_p0, final_p1])
+
+    def predict(self, X: pd.DataFrame | np.ndarray, threshold: float = 0.5) -> np.ndarray:
+        """Class labels assigned by checking P(y=1 | x) >= threshold."""
+        probs = self.predict_proba(X)
+        return (probs[:, 1] >= threshold).astype(int)
+
+    def evaluate(
+        self, X: pd.DataFrame | np.ndarray, y: pd.Series | np.ndarray
+    ) -> dict[str, float]:
+        """Evaluates pipeline performance: accuracy, precision, recall, and f1_score."""
+        y_true = np.asarray(y, dtype=int).ravel()
+        y_pred = self.predict(X)
+        acc = float(np.mean(y_true == y_pred))
+        tp = int(np.sum((y_true == 1) & (y_pred == 1)))
+        fp = int(np.sum((y_true == 0) & (y_pred == 1)))
+        fn = int(np.sum((y_true == 1) & (y_pred == 0)))
+        
+        prec = float(tp / (tp + fp)) if (tp + fp) > 0 else 0.0
+        rec = float(tp / (tp + fn)) if (tp + fn) > 0 else 0.0
+        f1 = float(2.0 * prec * rec / (prec + rec)) if (prec + rec) > 0 else 0.0
+
+        return {
+            'accuracy': acc,
+            'precision': prec,
+            'recall': rec,
+            'f1_score': f1,
+        }
+
+    # ------------------------------------------------ Pure Quantum Algebra
+
+    def to_quantum_state(self, x: np.ndarray | pd.DataFrame) -> np.ndarray:
+        """
+        Maps real feature vector x in R^d into normalized complex state vector |psi> in C^d:
+            |psi> = (x * exp(i*(x + phi))) / ||x * exp(i*(x + phi))||_2
+        guaranteeing <psi|psi> = 1.0.
+        """
+        if isinstance(x, pd.DataFrame):
+            num = x.select_dtypes(include=[np.number])
+            arr = num.iloc[0].to_numpy(dtype=float) if not num.empty else np.zeros(int(self.config.get('feature_dim', 10)))
+        else:
+            arr = np.asarray(x, dtype=float).ravel()
+
+        phi = (1.0 + np.sqrt(5.0)) / 2.0
+        theta = arr + phi
+        complex_vec = arr * np.exp(1j * theta)
+        norm = float(np.linalg.norm(complex_vec))
+        if norm < 1e-12:
+            d = len(arr)
+            return np.ones(d, dtype=complex) / np.sqrt(d)
+        state = complex_vec / norm
+        return state
+
+    def compute_density_matrix(self, state: np.ndarray) -> np.ndarray:
+        """
+        Forms quantum density operator rho representing pure quantum states:
+            rho = |psi><psi|, satisfying Tr(rho) = 1, rho^dagger = rho, rho >= 0.
+        """
+        psi = np.asarray(state, dtype=complex).reshape(-1, 1)
+        norm = float(np.linalg.norm(psi))
+        if not np.isclose(norm, 1.0, atol=1e-5):
+            psi = psi / norm
+        rho = psi @ psi.conj().T
+        return rho
+
+    def compute_von_neumann_entropy(self, density_matrix: np.ndarray) -> float:
+        """
+        Quantifies quantum statistical uncertainty from eigenvalues lambda_i of rho:
+            S(rho) = -Tr(rho log2 rho) = -sum_{lambda_i > 0} lambda_i log2(lambda_i).
+        For pure states |psi><psi|, S(rho) = 0 bits identically.
+        """
+        rho = np.asarray(density_matrix, dtype=complex)
+        eigenvalues = np.linalg.eigvalsh(rho)
+        pos_eigs = eigenvalues[eigenvalues > 1e-12]
+        if len(pos_eigs) == 0:
+            return 0.0
+        entropy = -float(np.sum(pos_eigs * np.log2(pos_eigs)))
+        return max(0.0, float(entropy))
+
+    def quantum_born_measurement(
+        self,
+        density_matrix: np.ndarray,
+        basis_states: list[np.ndarray] | None = None,
+    ) -> np.ndarray:
+        """
+        Evaluates quantum probability distribution over orthonormal basis operators:
+            P(m) = Tr(Pi_m * rho) = <m|rho|m> = |<m|psi>|^2.
+        """
+        rho = np.asarray(density_matrix, dtype=complex)
+        if basis_states is None:
+            probs = np.real(np.diag(rho))
+        else:
+            probs_list = []
+            for b in basis_states:
+                m = np.asarray(b, dtype=complex).reshape(-1, 1)
+                m_norm = float(np.linalg.norm(m))
+                if not np.isclose(m_norm, 1.0, atol=1e-5):
+                    m = m / m_norm
+                p_m = float(np.real((m.conj().T @ rho @ m)[0, 0]))
+                probs_list.append(p_m)
+            probs = np.array(probs_list, dtype=float)
+
+        probs = np.clip(probs, 0.0, 1.0)
+        total = float(np.sum(probs))
+        if total > 0:
+            probs = probs / total
+        return probs
+
+    def compute_quantum_fidelity(
+        self, state1: np.ndarray, state2: np.ndarray
+    ) -> float:
+        """
+        Measures state overlap and distinguishability between quantum feature states:
+            F(|psi1>, |psi2>) = |<psi1|psi2>|^2 in [0, 1].
+        """
+        s1 = np.asarray(state1, dtype=complex).ravel()
+        s2 = np.asarray(state2, dtype=complex).ravel()
+        n1 = float(np.linalg.norm(s1))
+        n2 = float(np.linalg.norm(s2))
+        if n1 > 0:
+            s1 = s1 / n1
+        if n2 > 0:
+            s2 = s2 / n2
+        overlap = np.vdot(s1, s2)
+        fidelity = float(np.abs(overlap) ** 2)
+        return float(np.clip(fidelity, 0.0, 1.0))
+
+    def evolve_quantum_state(
+        self,
+        state: np.ndarray,
+        hamiltonian: np.ndarray,
+        time_delta: float = 1.0,
+        hbar: float = 1.0,
+    ) -> np.ndarray:
+        """
+        Evolves quantum feature state over time t under Hermitian Hamiltonian matrix H = H^dagger:
+            |psi(t)> = U(t) |psi(0)> = exp(-i*H*t/hbar) |psi(0)>
+        computed via matrix exponentiation (scipy.linalg.expm), preserving unitary normalization |||psi(t)>|| = 1.0.
+        """
+        psi0 = np.asarray(state, dtype=complex).ravel()
+        norm0 = float(np.linalg.norm(psi0))
+        if not np.isclose(norm0, 1.0, atol=1e-5):
+            psi0 = psi0 / norm0
+
+        H = np.asarray(hamiltonian, dtype=complex)
+        d = len(psi0)
+        if H.shape != (d, d):
+            raise ValueError(f'Hamiltonian shape {H.shape} must match state dimension ({d}, {d}).')
+
+        if not np.allclose(H, H.conj().T, atol=1e-5):
+            H = 0.5 * (H + H.conj().T)
+
+        U = scipy.linalg.expm(-1j * H * time_delta / hbar)
+        psi_t = U @ psi0
+        norm_t = float(np.linalg.norm(psi_t))
+        if not np.isclose(norm_t, 1.0, atol=1e-5):
+            psi_t = psi_t / norm_t
+        return psi_t
+
     def cleanup(self) -> None:
         gc.collect()
 
@@ -893,3 +1090,9 @@ class TestPredictiveEngine(unittest.TestCase):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     unittest.main(argv=["first-arg-is-ignored"], exit=False, verbosity=2)
+
+
+# ---------------------------------------------------------------------------
+# Module Alias & Exports
+# ---------------------------------------------------------------------------
+QuantumStateEngine = PredictiveEngine
