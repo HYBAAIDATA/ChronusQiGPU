@@ -4,6 +4,7 @@ import gc
 import logging
 import os
 import shutil
+import tempfile
 import unittest
 import warnings
 from collections.abc import Callable
@@ -683,8 +684,8 @@ class TestPredictiveEngine(unittest.TestCase):
             "allow_missing_boosters": True,
             "aggregation": "weighted_mean",
         }
-        if os.path.exists(self.config["model_dir"]):
-            shutil.rmtree(self.config["model_dir"])
+        self.test_dir = tempfile.mkdtemp(prefix="chronus_pci_test_")
+        self.config["model_dir"] = self.test_dir
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             self.engine = PredictiveEngine(config=self.config)
@@ -728,8 +729,8 @@ class TestPredictiveEngine(unittest.TestCase):
         )
 
     def tearDown(self) -> None:
-        if os.path.exists(self.config["model_dir"]):
-            shutil.rmtree(self.config["model_dir"])
+        if hasattr(self, "test_dir") and os.path.exists(self.test_dir):
+            shutil.rmtree(self.test_dir, ignore_errors=True)
 
     # --- construction / persistence ------------------------------------
 
