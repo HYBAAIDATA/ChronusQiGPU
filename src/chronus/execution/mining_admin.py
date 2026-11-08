@@ -89,7 +89,7 @@ class MiningAdminEngine:
             self.config.active_warps = active_warps
 
         self.is_running = True
-        self.start_timestamp = time.time()
+        self.start_timestamp = time.perf_counter_ns()
         self.anomaly_injected = False
         self.dsw_healed = False
 
@@ -283,6 +283,6 @@ class MiningAdminEngine:
                 "accepted_shares": self.accepted_shares,
                 "rejected_shares": self.rejected_shares,
                 "blocks_found": self.blocks_found,
-                "uptime_seconds": (time.time() - self.start_timestamp) if self.start_timestamp and self.is_running else 0,
+                "uptime_seconds": ((time.perf_counter_ns() - self.start_timestamp) // 1_000_000_000) if self.start_timestamp and self.is_running else 0,
             },
         }

@@ -5,9 +5,11 @@
 name: Deploy Next.js site to Pages
 
 on:
-  # Runs on pushes targeting the default branch
-  push:
-    branches: ["main"]
+  # NOTE: automatic push trigger disabled. This is the stock static-export Pages
+  # template: it expects a repo-root package.json and a static `./out` export,
+  # but the Chronus UI is a dynamic Next.js server in `frontend/` that ships as a
+  # container image (see frontend/Dockerfile and the "Frontend build" CI job).
+  # Re-enable only after adding `working-directory: frontend` and `output: "export"`.
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:

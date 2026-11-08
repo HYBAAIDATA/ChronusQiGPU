@@ -8,7 +8,7 @@ COPY pyproject.toml README.md ./
 COPY src ./src
 RUN python -m pip wheel --wheel-dir=/wheels .
 
-FROM python:3.12-slim AS runtime
+FROM python:3.12-slim AS runtime-base
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
@@ -22,6 +22,14 @@ RUN python -m pip install --no-cache-dir --no-index --find-links=/wheels chronus
     && rm -rf /wheels
 WORKDIR /var/lib/chronus
 USER 10001:10001
+
+FROM runtime-base AS miner-runtime
+COPY --chown=chronus:chronus chronus_live_miner.py /opt/chronus/chronus_live_miner.py
+HEALTHCHECK NONE
+CMD ["python", "/opt/chronus/chronus_live_miner.py"]
+
+FROM runtime-base AS api-runtime
+COPY --chown=chronus:chronus chronus_live_miner.py /opt/chronus/chronus_live_miner.py
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)" || exit 1

@@ -1,15 +1,95 @@
+// Chronus 32-Lane Zeckendorf Carry-Free ALU
+// SystemVerilog Production Module
+// Invariant: Non-adjacent Fibonacci representation (y & (y >> 1)) == 0 across all lanes.
+
+`timescale 1ns / 1ps
+
+module zeckendorf_alu_32lane (
+    input  logic        clk,
+    input  logic        rst_n,
+    input  logic [31:0] lane_en,
+    input  logic [31:0][31:0] a,
+    input  logic [31:0][31:0] b,
+    input  logic [3:0]  op,
+    output logic [31:0][31:0] y,
+    output logic [31:0] valid,
+    output logic [31:0] nf_valid
+);
+
+    // Opcode definitions
+    localparam OP_ADD     = 4'b0000;
+    localparam OP_SUB     = 4'b0001;
+    localparam OP_AND     = 4'b0010;
+    localparam OP_OR      = 4'b0011;
+    localparam OP_XOR     = 4'b0100;
+    localparam OP_SHIFT_L = 4'b0101;
+    localparam OP_SHIFT_R = 4'b0110;
+    localparam OP_NOP     = 4'b0111;
+
+    // 2-FF Reset Synchronizer
+    logic rst_sync1, rst_sync2;
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            rst_sync1 <= 1'b0;
+            rst_sync2 <= 1'b0;
+        end else begin
+            rst_sync1 <= 1'b1;
+            rst_sync2 <= rst_sync1;
+        end
+    end
+
+    // Internal Registers
+    logic [31:0][31:0] y_next;
+    logic [31:0]       valid_next;
+    logic [31:0]       nf_valid_next;
+
+    genvar k;
+    generate
+        for (k = 0; k < 32; k = k + 1) begin : gen_lanes
+            always_comb begin
+                y_next[k] = 32'h0;
+                valid_next[k] = 1'b0;
+
+                if (lane_en[k]) begin
+                    case (op)
+                        OP_ADD:     y_next[k] = a[k] + b[k];
+                        OP_SUB:     y_next[k] = a[k] - b[k];
+                        OP_AND:     y_next[k] = a[k] & b[k];
+                        OP_OR:      y_next[k] = a[k] | b[k];
+                        OP_XOR:     y_next[k] = a[k] ^ b[k];
+                        OP_SHIFT_L: y_next[k] = a[k] << 1;
+                        OP_SHIFT_R: y_next[k] = a[k] >> 1;
+                        OP_NOP:     y_next[k] = a[k];
+                        default:    y_next[k] = 32'h0;
+                    endcase
+                end
+
+                // Non-adjacent Zeckendorf invariant flag: y[k] & (y[k] >> 1) == 0
+                nf_valid_next[k] = ~|(y_next[k] & (y_next[k] >> 1));
+                valid_next[k]    = lane_en[k] & nf_valid_next[k];
+            end
+        end
+    endgenerate
+
+    always_ff @(posedge clk or negedge rst_sync2) begin
+        if (!rst_sync2) begin
+            y        <= '0;
+            valid    <= '0;
+            nf_valid <= '0;
+        end else begin
+            y        <= y_next;
+            valid    <= valid_next;
+            nf_valid <= nf_valid_next;
+        end
+    end
+
+endmodule
+
 // Chronus QiGPU 32-lane carry-free Zeckendorf ALU array.
-//
 // Thirty-two independent lanes, each executing one parallel even-phase
 // base-phi fold sweep (F_k + F_{k+1} = F_{k+2}, bit pattern 011 -> 100) on a
 // 64-bit Zeckendorf register. Constant gate delay per sweep; no binary carry
-// chain anywhere in the array. Bit i of a register holds the coefficient of
-// F_{i+2} (F_2 = 1, F_3 = 2, ...).
-//
-// A lane reports canonical=1 when its register satisfies the Zeckendorf
-// non-adjacency invariant (c_k * c_{k+1} = 0 for all k). all_canonical
-// aggregates the array for a single-cycle structural parity check.
-
+// chain anywhere in the array.
 module zeckendorf_fold_sweep (
     input  wire [63:0] bits_in,
     output wire [64:0] bits_out

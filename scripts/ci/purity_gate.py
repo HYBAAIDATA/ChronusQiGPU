@@ -15,6 +15,7 @@ appears. Rules:
 Run: python scripts/ci/purity_gate.py  (exit 1 with a report on violation)
 """
 
+import ast
 import re
 import sys
 from pathlib import Path
@@ -27,6 +28,9 @@ EXACT_PACKAGES = [
     "src/chronus/storage",
     "src/chronus/security",
     "src/chronus/quantum",
+    "src/chronus/stratum",
+    "src/chronus/math",
+    "src/chronus/hw",
 ]
 
 BANNED = [
@@ -61,6 +65,27 @@ def scan_file(path: Path) -> list[str]:
         for token in THEATRE_TOKENS:
             if token in line:
                 violations.append(f"{path}:{line_number}: theatre token '{token}': {line.strip()}")
+
+    # AST analysis for struct packing endianness and banned timing calls
+    try:
+        tree = ast.parse(text, filename=str(path))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Attribute) and node.func.attr == "pack":
+                    if node.args and isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
+                        fmt = node.args[0].value
+                        if not fmt.startswith(("<", ">", "!")):
+                            violations.append(
+                                f"{path}:{node.lineno}: struct.pack format '{fmt}' missing explicit endianness prefix ('<', '>', '!')"
+                            )
+                if isinstance(node.func, ast.Attribute) and node.func.attr in {"time", "monotonic"}:
+                    if isinstance(node.func.value, ast.Name) and node.func.value.id == "time":
+                        violations.append(
+                            f"{path}:{node.lineno}: Banned call 'time.{node.func.attr}()' violates PCI Purity Rule (use perf_counter_ns)"
+                        )
+    except Exception as e:
+        violations.append(f"{path}: AST parse error: {e}")
+
     return violations
 
 
