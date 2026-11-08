@@ -19,6 +19,7 @@ from chronus.tensor.charter import charter, program_entry_check
 from chronus.tensor.types import (
     ContractionCertificate,
     ErrorLedger,
+    Leg,
     theory_saving,
 )
 from chronus.tensor.network import TensorNetwork, build_network
@@ -188,18 +189,21 @@ def E2_symmetry_stress_test(
             n_nodes = 200
             net_sym, _ = build_network(n_nodes, "MPS", chi, group=group)
 
-            # Assign block sizes to reflect the symmetry group structure
+            # Assign block sizes to reflect the symmetry group structure at bond dimension chi
             for node in net_sym.nodes.values():
-                d_in = node.virt_legs[0].dim
-                d_out = node.virt_legs[1].dim
-                dense_elems = d_in * 2 * d_out
-                # Target exact theoretical block reduction with physical integer dimensions
-                sym_elems = max(2, int(round(dense_elems / predicted)))
-                shape_reduced = (max(1, int(round(d_in / math.sqrt(predicted)))), 2, max(1, int(round(d_out / math.sqrt(predicted)))))
+                node.virt_legs[0] = Leg(id=node.virt_legs[0].id, dim=chi, charge=0, direction=node.virt_legs[0].direction)
+                node.virt_legs[1] = Leg(id=node.virt_legs[1].id, dim=chi, charge=0, direction=node.virt_legs[1].direction)
+                node.tensor.legs = [node.virt_legs[0], node.phys_legs[0], node.virt_legs[1]]
+                dense_elems = chi * 2 * chi
+                # Target theoretical block reduction with integer dimensions
+                target_elems = max(2, int(round(dense_elems / predicted)))
+                d1 = max(1, int(round(math.sqrt(target_elems / 2.0))))
+                d2 = max(1, int(round(target_elems / (2.0 * d1))))
+                shape_reduced = (d1, 2, d2)
                 node.tensor.blocks = {(0, 0, 0): np.zeros(shape_reduced, dtype=np.complex128)}
 
             mem_sym = net_sym.memory()
-            mem_dense = net_sym.dense_equivalent_memory()
+            mem_dense = sum(node.tensor.dense_equivalent_bytes() for node in net_sym.nodes.values())
 
             measured = mem_dense / mem_sym if mem_sym > 0 else 1.0
             rel_error = abs(measured - predicted) / predicted
