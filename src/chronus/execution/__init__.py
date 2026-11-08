@@ -16,6 +16,7 @@ from chronus.execution.systemverilog_backend import (
 )
 from chronus.execution.cuda_backend import CUDABackendAdapter
 from chronus.execution.opencl_backend import OpenCLAcceleratorBackend
+from chronus.execution.opencl_sha256d import OpenCLSha256dMinerBackend
 
 __all__ = [
     "ExecutionRouter",
@@ -25,6 +26,7 @@ __all__ = [
     "SystemVerilogHardwareSimulatorBackend",
     "CUDABackendAdapter",
     "OpenCLAcceleratorBackend",
+    "OpenCLSha256dMinerBackend",
     "MATHEMATICAL_EXECUTION",
     "SOFTWARE_EXECUTION",
     "PHYSICAL_HARDWARE_EXECUTION",
