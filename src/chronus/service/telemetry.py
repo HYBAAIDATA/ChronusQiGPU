@@ -208,7 +208,7 @@ class PrometheusMetricsRegistry:
 
         lines.extend([
             "",
-            "# HELP chronus_hardware_memory_bytes Hardware accelerator device memory capacity in bytes",
+            "# HELP chronus_hardware_memory_bytes Observed hardware memory bytes reported by an adapter",
             "# TYPE chronus_hardware_memory_bytes gauge",
         ])
 

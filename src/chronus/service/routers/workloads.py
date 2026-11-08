@@ -136,22 +136,26 @@ async def submit_workload(
                 raw_digest = hashlib.sha256(str(result).encode("utf-8")).hexdigest()
             raw_digest_str = str(raw_digest)
 
-            # Receipts currently use process-local Ed25519 only. No ML-DSA or
-            # STARK proof is generated; those implementations are not conformant.
+            # Store only the result-digest text, then sign its content address.
+            # These are process-local Ed25519 receipts: no ML-DSA or STARK proof.
+            receipt_id = zero_copy_connector_manager.ovid.store(
+                raw_digest_str.encode("utf-8")
+            )
             slug = tenant_id.replace("tenant_", "").replace("-", "_")
             prefix_slug = slug[:4] if slug else "apex"
-            receipt_handle = f"o1_{prefix_slug}_{raw_digest_str[:8]}"
-            ed_sig = _workload_ed25519_signer.sign(raw_digest_str.encode("ascii"))
+            receipt_handle = f"o1_{prefix_slug}_{receipt_id[:8]}"
+            ed_sig = _workload_ed25519_signer.sign(receipt_id.encode("ascii"))
 
             zero_copy_connector_manager.ovid.create_receipt(
-                raw_digest_str,
+                receipt_id,
                 ed25519_signature=ed_sig,
                 latency_ms=0.0,
                 receipt_handle=receipt_handle,
                 metadata={
                     "tenant_id": tenant_id,
                     "receipt_scope": "workload_result_digest",
-                    "payload_included": False,
+                    "source_result_digest": raw_digest_str,
+                    "storage_scope": "process-local",
                 },
             )
             receipt = receipt_handle
