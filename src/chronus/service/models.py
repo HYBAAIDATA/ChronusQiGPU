@@ -185,7 +185,7 @@ class HealthResponse(BaseModel):
     """Overall service health response."""
 
     status: HealthStatus
-    version: str = "36.0.0"
+    version: str = "36.0.1"
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     components: List[ComponentHealth]
     uptime_seconds: float

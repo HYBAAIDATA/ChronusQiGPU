@@ -57,7 +57,7 @@ async def get_capabilities() -> Dict[str, Any]:
         "backend_inventory": backends,
         "execution_surfaces": inventory.get("surfaces", []),
         "default_surface": inventory.get("default_surface"),
-        "version": "36.0.0",
+        "version": "36.0.1",
     }
 
 

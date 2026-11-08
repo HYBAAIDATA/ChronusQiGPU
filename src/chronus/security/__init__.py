@@ -49,7 +49,7 @@ from chronus.security.al_haras import (
     StrategicDefenseCoordinator,
 )
 
-__version__ = "36.0.0"
+__version__ = "36.0.1"
 __all__ = [
     "MLDSASigner",
     "Ed25519Signer",
