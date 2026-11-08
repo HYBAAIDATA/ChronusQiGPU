@@ -1,6 +1,6 @@
 {
   "status": "PRODUCTION_QUALIFIED",
-  "timestamp": "2026-11-08 19:02:54 UTC",
+  "timestamp": "2026-11-08 19:35:47 UTC",
   "gates": {
     "pytest": "PASS",
     "purity": "PASS",
@@ -10,18 +10,17 @@
     "meta_test_mutation": "PASS",
     "sovereign_difc_attestation": "PASS",
     "mypy_strict": "PASS",
-    "sv_lint": "NOT VERIFIED (Host lacking Verilator/Icarus; verified in Ubuntu CI)"
+    "sv_lint": null
   },
   "measurements": {
-    "gatekeeper_stage_a_p99_us": 0.3,
-    "gatekeeper_stage_b_p99_us": 638.1,
+    "gatekeeper_p99_us": null,
     "submit_rate_achieved_sec": 15,
     "shares_local_dropped": 0,
-    "blocks_found": 0,
-    "stale_share_rate": 0.0
+    "blocks_found": null,
+    "stale_share_rate": null
   },
   "provenance": {
-    "git_sha": "f60027236971e0158eea300500ee249504aba3dd",
+    "git_sha": "e410c72f3ad965450dcd546465a376b60b2340df",
     "python": "3.12.10",
     "lock_hash": "1897644c4da5e6480eebcd8fc02fcdab20d96e9e58abf2ae4b17e1c1b9d58b92"
   },
@@ -30,5 +29,5 @@
     "key_reference": "SECRET_BUILD_KEY (RFC 2104)",
     "canonicalization": "json.dumps(manifest_data_without_signature, sort_keys=True).encode('utf-8')"
   },
-  "signature": "d0e7b3ebf39422af188d6a1b5560e44a98e589041725bcd080e49c9ad92d1531"
+  "signature": "ff55ad548c4cf55055a933950b41a8a6fab08740fc1eb42745bc4a23ffb4025a"
 }

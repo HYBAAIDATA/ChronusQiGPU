@@ -15,6 +15,10 @@ import time
 from dataclasses import dataclass
 from typing import List
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 SRC_DIR = os.path.join(REPO_ROOT, "src")
 
@@ -129,10 +133,10 @@ def execute_mutation(mut: Mutation) -> bool:
 
         # A successful mutation test MUST result in returncode != 0 (the test caught the bug!)
         if res.returncode != 0:
-            print(f"  ✓ KILLED: {mut.name}")
+            print(f"  [KILLED] {mut.name}")
             return True
         else:
-            print(f"  ✗ SURVIVED: {mut.name}")
+            print(f"  [SURVIVED] {mut.name}")
             print(f"    Mutant survived! Test suite did not catch fault: {mut.description}")
             return False
     finally:

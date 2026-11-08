@@ -20,14 +20,13 @@ import logging
 import os
 import sys
 import time
-from fractions import Fraction
 from typing import Optional, Tuple
 
 from chronus.stratum.endian_engine import swap_prevhash_words, compute_merkle_root_stratum, build_header80
 from chronus.stratum.bip310 import apply_version_rolling, format_extranonce2
 from chronus.stratum.sharding import WorkPartitioner
 from chronus.stratum.gateway import StratumGateway
-from chronus.stratum.gatekeeper import LocalPreSubmitGatekeeper, compute_share_target_exact, decode_nbits_target
+from chronus.stratum.gatekeeper import LocalPreSubmitGatekeeper
 from chronus.stratum.rate_limiter import IntegerNanosecondTokenBucket, PriorityShareQueue
 from chronus.quantum.geometric_polychoron import Polychoron600Cell
 from chronus.execution.geometric_galois_miner import (
@@ -317,7 +316,9 @@ async def async_main():
     logger.info(f"[CONFIG] Worker Identity:    {user}")
 
     engine = ChronusRealMiningEngine(host, port, user, password)
-    await engine.run()
+    max_sec_env = os.getenv("MINING_MAX_SECONDS")
+    max_seconds = int(max_sec_env) if max_sec_env else None
+    await engine.run(max_seconds=max_seconds)
 
 
 def cli_main():

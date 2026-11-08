@@ -99,7 +99,7 @@ class LivePoolRunner:
             while self.is_running and self.gateway.is_connected:
                 if not self.gateway.reader:
                     break
-                line = await self.gateway.reader.readline()
+                line = await self.gateway.read_line()
                 if not line:
                     logger.warning("Upstream pool closed TCP connection. Reconnecting...")
                     break

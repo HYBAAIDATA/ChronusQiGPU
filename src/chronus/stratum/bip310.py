@@ -25,7 +25,7 @@ def get_mining_configure_payload() -> list:
              "version-rolling.min-bit-count": MIN_BIT_COUNT}]
 
 
-def parse_and_intersect_version_mask(server_mask_hex: str, client_mask_hex: str = DEFAULT_CLIENT_MASK_HEX) -> str:
+def parse_and_intersect_version_mask(server_mask_hex: str, client_mask_hex: str = DEFAULT_CLIENT_MASK_HEX, min_bit_count: int = MIN_BIT_COUNT) -> str:
     """
     Intersects client mask with server mask returned by pool during mining.configure.
     Returning "00000000" means the client refuses version rolling because the negotiated mask is below the BIP310 minimum.
@@ -34,7 +34,7 @@ def parse_and_intersect_version_mask(server_mask_hex: str, client_mask_hex: str 
     server_mask = int(server_mask_hex, 16)
     client_mask = int(client_mask_hex, 16)
     intersected = server_mask & client_mask
-    if intersected.bit_count() < MIN_BIT_COUNT:
+    if min_bit_count > 0 and intersected.bit_count() < min_bit_count:
         return "00000000"  # refuse to roll
     return f"{intersected:08x}"
 

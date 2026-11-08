@@ -18,9 +18,9 @@ class TestBIP310(unittest.TestCase):
         intersected_zero = parse_and_intersect_version_mask("00000000", DEFAULT_CLIENT_MASK_HEX)
         self.assertEqual(intersected_zero, "00000000")
 
-        # Partial mask
+        # Partial mask with < 16 bits must be refused per BIP310 minimum
         intersected_partial = parse_and_intersect_version_mask("0000e000", "1fffe000")
-        self.assertEqual(intersected_partial, "0000e000")
+        self.assertEqual(intersected_partial, "00000000")
 
     def test_apply_version_rolling(self):
         base_ver = "20000000"

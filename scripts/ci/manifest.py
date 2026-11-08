@@ -25,6 +25,8 @@ SECRET_BUILD_KEY = b"CHRONUS_PRODUCTION_QUALIFIED_HMAC_KEY_v36"
 
 def run_cmd(cmd: str) -> bool:
     res = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=REPO_ROOT)
+    if res.returncode != 0:
+        print(f"[CMD FAIL] {cmd}\nSTDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}")
     return res.returncode == 0
 
 
@@ -62,28 +64,52 @@ def main():
 
     all_passed = p_tests and p_purity and p_determinism and p_fuzz and p_replay and p_meta and p_sovereign
 
-    # Probe SystemVerilog toolchain truth
+    # SystemVerilog lint check (run verilator if present, otherwise set to None; never hardcode PASS)
     verilator_bin = shutil.which("verilator")
-    iverilog_bin = shutil.which("iverilog")
     if verilator_bin:
-        sv_lint_status = "PASS"
-    elif iverilog_bin:
-        sv_lint_status = "PASS (iverilog)"
+        sv_lint_status = "PASS" if run_cmd("verilator --lint-only hardware/rtl/*.sv hw/*.sv") else "FAIL"
     else:
-        sv_lint_status = "NOT VERIFIED (Host lacking Verilator/Icarus; verified in Ubuntu CI)"
+        sv_lint_status = None
 
-    # Provenance data grounded in repository reality
+    # Provenance data grounded in repository reality (never hardcode git_sha)
     try:
         git_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True).strip()
     except Exception:
-        git_sha = "UNKNOWN"
+        git_sha = None
 
-    pyproject_path = os.path.join(REPO_ROOT, "pyproject.toml")
-    if os.path.exists(pyproject_path):
-        with open(pyproject_path, "rb") as f:
-            lock_hash = hashlib.sha256(f.read()).hexdigest()
-    else:
-        lock_hash = "0" * 64
+    # Lockfile hash: hash actual lockfile if present; otherwise None (never hardcode empty hash)
+    lock_hash = None
+    lock_candidates = ["uv.lock", "poetry.lock", "Pipfile.lock", "requirements.lock", "pyproject.toml"]
+    for lock_name in lock_candidates:
+        lock_path = os.path.join(REPO_ROOT, lock_name)
+        if os.path.exists(lock_path):
+            with open(lock_path, "rb") as f:
+                lock_hash = hashlib.sha256(f.read()).hexdigest()
+            break
+
+    # Read empirical gatekeeper measurement from benchmark results if present, otherwise None
+    gatekeeper_p99_us = None
+    bench_result_path = os.path.join(REPO_ROOT, "build", "benchmarks", "gatekeeper_latency.json")
+    if os.path.exists(bench_result_path):
+        try:
+            with open(bench_result_path, "r", encoding="utf-8") as f:
+                bdata = json.load(f)
+                gatekeeper_p99_us = bdata.get("p99_us")
+        except Exception:
+            gatekeeper_p99_us = None
+
+    # Read live runtime metrics if present; otherwise None (never hardcode blocks_found or stale_share_rate)
+    blocks_found = None
+    stale_share_rate = None
+    metrics_path = os.path.join(REPO_ROOT, "build", "metrics", "stratum_metrics.json")
+    if os.path.exists(metrics_path):
+        try:
+            with open(metrics_path, "r", encoding="utf-8") as f:
+                mdata = json.load(f)
+                blocks_found = mdata.get("blocks_found")
+                stale_share_rate = mdata.get("stale_share_rate")
+        except Exception:
+            pass
 
     manifest_data = {
         "status": "PRODUCTION_QUALIFIED" if all_passed else "QUALIFICATION_FAILED",
@@ -100,12 +126,11 @@ def main():
             "sv_lint": sv_lint_status
         },
         "measurements": {
-            "gatekeeper_stage_a_p99_us": 0.300,
-            "gatekeeper_stage_b_p99_us": 638.100,
+            "gatekeeper_p99_us": gatekeeper_p99_us,
             "submit_rate_achieved_sec": 15,
             "shares_local_dropped": 0,
-            "blocks_found": 0,
-            "stale_share_rate": 0.0
+            "blocks_found": blocks_found,
+            "stale_share_rate": stale_share_rate
         },
         "provenance": {
             "git_sha": git_sha,
