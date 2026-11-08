@@ -126,6 +126,30 @@ def test_lucas_weighted_partition_is_exact_and_disjoint():
     assert sum(b - a for a, b in lanes) == sum(b - a for a, b in uniform) == 65536
 
 
+def test_rtl_companion_step_semantics_match_phi_power():
+    """The silicon scale step (a,b) -> (b, a+b) reproduces phi^k exactly.
+
+    Mirrors hw/pv_scale_32lane.sv: k register steps from any (a, b) must equal
+    multiplication by phi^k, for every order the lattice workloads serve.
+    """
+    for order in range(0, 361, 19):
+        a, b = 0, 1
+        for _ in range(order):
+            a, b = b, a + b
+        power = phi_power(order + 1)
+        assert (a, b) == (power.a, power.b)
+    # Composition: k1 steps then k2 steps equals k1+k2 steps.
+    a1, b1 = 3, -2
+    for _ in range(47):
+        a1, b1 = b1, a1 + b1
+    for _ in range(90):
+        a1, b1 = b1, a1 + b1
+    a2, b2 = 3, -2
+    for _ in range(137):
+        a2, b2 = b2, a2 + b2
+    assert (a1, b1) == (a2, b2)
+
+
 def test_trinity_scale_index_composes_with_lattice_fold():
     """Advancing the scale index and materializing agree with direct fold."""
     from chronus.execution.trinity import scale_fold_store

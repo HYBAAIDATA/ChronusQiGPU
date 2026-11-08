@@ -123,11 +123,14 @@ jobs:
           ./tb_phi | tee rtl-testbench.log
           iverilog -g2012 -o tb_32lane hw/tb_zeckendorf_alu_32lane.sv hw/zeckendorf_alu_32lane.sv
           ./tb_32lane | tee -a rtl-testbench.log
-          test "$(grep -c 'TB PASS' rtl-testbench.log)" -eq 2
+          iverilog -g2012 -o tb_pv hw/tb_pv_scale_32lane.sv hw/pv_scale_32lane.sv
+          ./tb_pv | tee -a rtl-testbench.log
+          test "$(grep -c 'TB PASS' rtl-testbench.log)" -eq 3
       - name: Synthesize with Yosys
         run: |
           yosys -Q -T -p 'read_verilog -sv hw/zeckendorf_norm_alu.sv; hierarchy -check -top qigpu_phi_alu; synth -top qigpu_phi_alu; stat' | tee yosys-report.txt
           yosys -Q -T -p 'read_verilog -sv hw/zeckendorf_alu_32lane.sv; hierarchy -check -top qigpu_zeckendorf_alu_32lane; synth -top qigpu_zeckendorf_alu_32lane; stat' | tee -a yosys-report.txt
+          yosys -Q -T -p 'read_verilog -sv hw/pv_scale_32lane.sv; hierarchy -check -top qigpu_pv_scale_32lane; synth -top qigpu_pv_scale_32lane; stat' | tee -a yosys-report.txt
       - uses: actions/upload-artifact@v4
         with:
           name: rtl-synthesis-report
