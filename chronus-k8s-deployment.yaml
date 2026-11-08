@@ -1,0 +1,146 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chronus
+  labels:
+    app.kubernetes.io/name: chronus
+    app.kubernetes.io/part-of: chronus-quantum-igpu
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chronus-patroclus-config
+  namespace: chronus
+  labels:
+    app.kubernetes.io/name: chronus-patroclus-config
+data:
+  CHRONUS_PATROCLUS_ENABLED: "true"
+  CHRONUS_MYRMIDON_SEARCHERS: "600"
+  CHRONUS_HOPF_PHALANXES: "10"
+  CHRONUS_STEALTH_CAP_EHS: "10.0"
+  CHRONUS_STEALTH_ACTIVE_EHS: "1.0"
+  CHRONUS_NEVER_CONSECUTIVE_BLOCKS: "true"
+  CHRONUS_PERSISTENT_PRESENCE: "true"
+  CHRONUS_PCI_PURITY: "true"
+  CHRONUS_IS_QUANTUM: "false"
+  CHRONUS_ORACLE_ALPHA: "17"
+  CHRONUS_ORACLE_U: "241"
+  CHRONUS_ORACLE_MODULUS: "257"
+  CHRONUS_ASICBOOST_MASK: "1fffe000"
+  TARGET_POOLS: "ViaBTC:3510,Braiins:3511,NiceHash:3512,CKPool:3513"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chronus-patroclus-mining-gateway
+  namespace: chronus
+  labels:
+    app: chronus-patroclus-gateway
+    version: "36.0.0"
+    tier: master-execution
+spec:
+  replicas: 4
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: chronus-patroclus-gateway
+  template:
+    metadata:
+      labels:
+        app: chronus-patroclus-gateway
+        version: "36.0.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: chronus-patroclus-gateway
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: patroclus-gateway
+          image: registry.chronus.dev/chronus/patroclus-gateway:v36.0.0
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "uvicorn", "chronus.service.app:app", "--host", "0.0.0.0", "--port", "8000"]
+          ports:
+            - name: http-api
+              containerPort: 8000
+              protocol: TCP
+            - name: stratum-wire
+              containerPort: 3333
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: chronus-patroclus-config
+          env:
+            - name: CHRONUS_ENV
+              value: "production"
+            - name: CHRONUS_API_PORT
+              value: "8000"
+          resources:
+            requests:
+              cpu: "4000m"
+              memory: "8Gi"
+            limits:
+              cpu: "16000m"
+              memory: "32Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /v1/mining/admin/patroclus
+              port: 8000
+              httpHeaders:
+                - name: Authorization
+                  value: "Bearer cluster-internal-token"
+                - name: X-Tenant-ID
+                  value: "cluster-internal"
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 10001
+            capabilities:
+              drop:
+                - ALL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chronus-patroclus-service
+  namespace: chronus
+  labels:
+    app: chronus-patroclus-gateway
+spec:
+  type: ClusterIP
+  ports:
+    - name: http-api
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+    - name: stratum-wire
+      port: 3333
+      targetPort: 3333
+      protocol: TCP
+  selector:
+    app: chronus-patroclus-gateway
