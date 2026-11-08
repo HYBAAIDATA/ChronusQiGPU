@@ -371,3 +371,24 @@ class TestServiceAPI:
         assert response.status_code == 501
         assert response.json()["detail"]["error"] == "algorithm_unavailable"
 
+
+    def test_capabilities_endpoint_reports_inventory_not_qualification(self):
+        response = self.client.get("/v1/capabilities")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "inventory_only"
+        assert body["measurement_scope"] == "process-local"
+        assert body["release_qualification"] == "not_assessed"
+        assert "purity_gate" not in body
+        assert "hardware_abstraction" not in body
+
+    def test_capacity_endpoint_exposes_observed_counters_only(self):
+        response = self.client.get("/v1/capacity")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "observed"
+        assert body["measurement_scope"] == "process-local"
+        assert "workloads" in body
+        assert "ccu" not in body
+        assert "hardware_pool" not in body
+        assert "qualification_note" in body
