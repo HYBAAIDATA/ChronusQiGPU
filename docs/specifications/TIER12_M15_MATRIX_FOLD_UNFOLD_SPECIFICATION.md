@@ -159,3 +159,4 @@ def apply_m15_inverse_byte_map(u: int, v: int) -> tuple[int, int]:
 ```
 
 Verified with 100% pass rate in [`tests/test_mining.py`](file:///c:/Users/leonn/OneDrive/Desktop/chronus-quantum-igpu/tests/test_mining.py) (`test_m15_byte_map_is_bijective`).
+

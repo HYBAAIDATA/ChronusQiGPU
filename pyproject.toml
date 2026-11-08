@@ -29,6 +29,7 @@ dependencies = [
     "opentelemetry-sdk>=1.25,<2",
     "SQLAlchemy>=2.0,<3",
     "greenlet>=3.0.0",
+    "numpy>=1.26,<3",
 ]
 
 [project.optional-dependencies]
