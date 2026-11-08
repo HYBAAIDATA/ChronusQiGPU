@@ -17,6 +17,16 @@ from chronus.execution.systemverilog_backend import (
 from chronus.execution.cuda_backend import CUDABackendAdapter
 from chronus.execution.opencl_backend import OpenCLAcceleratorBackend
 from chronus.execution.opencl_sha256d import OpenCLSha256dMinerBackend
+from chronus.execution.geometric_galois_miner import (
+    DSW1CycleInstantonCobordism,
+    ExactGaloisOracleF257,
+    GeometricGaloisMiner,
+    GeometricGaloisMinerBackend,
+    GeometricMiningResult,
+    HodgeSheafLaplacianConsensus,
+    LiePoissonRamanujanExpander,
+    ZeckendorfBasePhiIndexer,
+)
 
 __all__ = [
     "ExecutionRouter",
@@ -27,6 +37,14 @@ __all__ = [
     "CUDABackendAdapter",
     "OpenCLAcceleratorBackend",
     "OpenCLSha256dMinerBackend",
+    "GeometricGaloisMiner",
+    "GeometricGaloisMinerBackend",
+    "GeometricMiningResult",
+    "ExactGaloisOracleF257",
+    "LiePoissonRamanujanExpander",
+    "HodgeSheafLaplacianConsensus",
+    "DSW1CycleInstantonCobordism",
+    "ZeckendorfBasePhiIndexer",
     "MATHEMATICAL_EXECUTION",
     "SOFTWARE_EXECUTION",
     "PHYSICAL_HARDWARE_EXECUTION",

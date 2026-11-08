@@ -102,6 +102,7 @@ data/
 .next/
 frontend/.next/
 .pytest_tmp/
+.pytest_temp/
 .hypothesis/
 master_repo/
 *.tar.gz

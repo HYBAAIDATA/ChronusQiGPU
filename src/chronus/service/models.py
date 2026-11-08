@@ -200,6 +200,10 @@ class VerificationResult(BaseModel):
         default="NOT_A_RELEASE_QUALIFICATION",
         description="Receipt verification result; this is not release qualification",
     )
+    valid: Optional[bool] = Field(default=None, description="Cryptographic validity boolean")
+    zk_stark: Optional[str] = Field(default=None, description="zk-STARK verification status (VERIFIED/NOT_EVALUATED)")
+    mldsa_sig: Optional[str] = Field(default=None, description="ML-DSA-65 post-quantum signature status (VALID/NOT_EVALUATED)")
+    reason: Optional[str] = Field(default=None, description="Verification reason or detail code")
     total_release_gates_evaluated: int = 0
     release_gates_passed: int = 0
     total_invariants_evaluated: int = 0

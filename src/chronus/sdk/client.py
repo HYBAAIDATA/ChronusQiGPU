@@ -602,6 +602,29 @@ class ChronusAPISDK:
             },
         )
 
+    def route_euclid_workload(
+        self,
+        workload_type: str,
+        content: Optional[str] = None,
+        agent_states: Optional[Dict[str, Any]] = None,
+        bus_saturation_pct: float = 100.0,
+    ) -> Dict[str, Any]:
+        """Route workload via EUCLID 5-Mode Meta-Intelligence Engine."""
+        return self._request(
+            "POST",
+            "/euclid/route",
+            json={
+                "workload_type": workload_type,
+                "content": content,
+                "agent_states": agent_states,
+                "bus_saturation_pct": bus_saturation_pct,
+            },
+        )
+
+    def get_euclid_telemetry(self) -> Dict[str, Any]:
+        """Retrieve EUCLID DEC Fluid and Lie-Poisson telemetry."""
+        return self._request("GET", "/euclid/telemetry")
+
     def get_metrics(self) -> str:
         response = self._client.get("/metrics")
         if response.status_code != 200:

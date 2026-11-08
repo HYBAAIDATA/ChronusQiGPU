@@ -59,3 +59,4 @@ include = ["chronus*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+addopts = "--basetemp=.pytest_temp"

@@ -268,8 +268,9 @@ class StratumV1Client:
                             _Event("job", job=StratumJob.from_notify(params))
                         )
                     elif method == "mining.set_difficulty" and params:
+                        diff_val = (params[0] + 0.0) if isinstance(params[0], (int, float)) else 1.0
                         await self._events.put(
-                            _Event("difficulty", difficulty=float(params[0]))
+                            _Event("difficulty", difficulty=diff_val)
                         )
                 else:
                     request_id = message.get("id")

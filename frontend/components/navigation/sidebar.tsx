@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { label: 'Overview', href: '/', icon: LayoutDashboard, preview: false },
   { label: 'Workloads', href: '/workloads', icon: Cpu, preview: true },
   { label: 'Execution fabric', href: '/fabric', icon: Layers, preview: true },
+  { label: 'Mining Intelligence', href: '/mining', icon: Activity, preview: true },
   { label: 'Storage', href: '/storage', icon: Database, preview: true },
   { label: 'Math explorer', href: '/math', icon: Binary, preview: true },
   { label: 'Governance', href: '/governance', icon: ShieldCheck, preview: true },

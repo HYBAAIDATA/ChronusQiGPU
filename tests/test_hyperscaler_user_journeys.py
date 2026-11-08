@@ -245,22 +245,24 @@ def test_user_journey_1_financial_lakehouse_zero_copy_flow(api_client):
 
 def test_user_journey_2_hyperscale_ai_factory_flow(api_client):
     """Verify User Journey 2: Disaggregated AI Factory (NVIDIA DGX Cloud & Azure Fabric)."""
-    # 1. Tripartite & 5-Target Runtime Accelerator Discovery (incl. iGPU miner)
+    # 1. Tripartite & 6-Target Runtime Accelerator Discovery (incl. iGPU & Galois miners)
     dispatcher = HardwareAcceleratorDispatcher()
     discovered_targets = dispatcher.discover_backends()
-    assert len(discovered_targets) == 5
+    assert len(discovered_targets) == 6
     target_names = list(discovered_targets.keys())
     assert "python-math-reference" in target_names
     assert "opencl-hardware-accelerator" in target_names
     assert "cuda-hardware-accelerator" in target_names
     assert "systemverilog-rtl-simulator" in target_names
     assert "opencl-igpu-sha256d-miner" in target_names
+    assert "geometric-galois-miner" in target_names
     backend_class_names = [b.__class__.__name__ for b in dispatcher._backends.values()]
     assert "NativeMathReferenceBackend" in backend_class_names
     assert "OpenCLAcceleratorBackend" in backend_class_names
     assert "CUDABackendAdapter" in backend_class_names
     assert "SystemVerilogHardwareSimulatorBackend" in backend_class_names
     assert "OpenCLSha256dMinerBackend" in backend_class_names
+    assert "GeometricGaloisMinerBackend" in backend_class_names
 
     # 2. Physical AI Factory Cluster Registration via POST /v1/fabric/clusters/register
     reg_resp = api_client.post(

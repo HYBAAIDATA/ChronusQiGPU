@@ -21,6 +21,7 @@ this codebase is the canonical reference for:
 | `poclbm130302.cl`, `phatk121016.cl`   | `src/chronus/kernels/sha256d_search.cl`           |
 | stratum client in `util.c`            | `src/chronus/execution/stratum.py`                |
 | `ocl.c` device/queue management       | `src/chronus/execution/opencl_sha256d.py`         |
+| Linear nonce loop in `scan-platform`  | `src/chronus/execution/geometric_galois_miner.py` |
 
 The Chronus modules are clean-room implementations of public standards
 (FIPS 180-4 SHA-256, the Stratum V1 protocol as documented publicly) and are

@@ -36,6 +36,14 @@ from chronus.quantum.subspace import (
     subspace_iterate,
     uniform_subspace,
 )
+from chronus.quantum.geometric_polychoron import (
+    Cyclotomic5,
+    CyclotomicBraidCompiler,
+    F257Phi,
+    PisotLucasStateCompression,
+    Polychoron600Cell,
+    QuantumGeometricTensor,
+)
 from chronus.quantum.statevector import (
     I_UNIT,
     INV_SQRT2,
@@ -48,6 +56,12 @@ from chronus.quantum.statevector import (
 
 __all__ = [
     "ExtensionSubspaceState",
+    "Cyclotomic5",
+    "F257Phi",
+    "Polychoron600Cell",
+    "QuantumGeometricTensor",
+    "CyclotomicBraidCompiler",
+    "PisotLucasStateCompression",
     "I_UNIT",
     "INV_SQRT2",
     "MAX_QUBITS",
