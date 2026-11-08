@@ -8,8 +8,13 @@ Owner: distributed-systems engineer & TN theorist.
 from __future__ import annotations
 
 import math
+import os
 from typing import Dict, List, Optional, Tuple
 import numpy as np
+
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
 
 from chronus.tensor.types import (
     BondId,
@@ -126,32 +131,22 @@ def build_network(
 
     if topology == "MPS":
         for i in range(n_nodes):
-            left_dim = min(chi_max, 2 ** min(i, n_nodes - i))
-            right_dim = min(chi_max, 2 ** min(i + 1, n_nodes - i - 1))
+            left_dim = 1
+            right_dim = 1
 
             phys_leg = Leg(id=i, dim=2, charge=0, direction=LegDirection.OUT)
             left_leg = Leg(id=10000 + i - 1, dim=left_dim, charge=0, direction=LegDirection.IN)
             right_leg = Leg(id=10000 + i, dim=right_dim, charge=0, direction=LegDirection.OUT)
 
-            # Initialize as product state |0>
-            tensor = SymmetricTensor.product_state(site_idx=i, group=group, state_val=0)
-            # Adjust virtual leg dimensions
-            block_data = np.zeros((left_dim, 2, right_dim), dtype=np.complex128)
+            # Initialize as product state |0> with initial rank-1 bond dimension
+            block_data = np.zeros((1, 2, 1), dtype=np.complex128)
             block_data[0, 0, 0] = 1.0 + 0.0j
 
-            if group != "none":
-                # In symmetric representation, create block sectors
-                tensor = SymmetricTensor(
-                    blocks={(0, 0, 0): block_data},
-                    legs=[left_leg, phys_leg, right_leg],
-                    group=group,
-                )
-            else:
-                tensor = SymmetricTensor(
-                    blocks={(0, 0, 0): block_data},
-                    legs=[left_leg, phys_leg, right_leg],
-                    group="none",
-                )
+            tensor = SymmetricTensor(
+                blocks={(0, 0, 0): block_data},
+                legs=[left_leg, phys_leg, right_leg],
+                group=group if group != "none" else "none",
+            )
 
             node = Node(
                 id=i,
