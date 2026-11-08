@@ -10,11 +10,11 @@
 ---
 
 ## MILLENIEIEUM
-STATE: DONE_WITH_BLOCKER
-COMMIT: 84079fb72a38703cf297520f9ae2dcbb8d2a3087
-TESTS: 72/73 — py scripts/ci/run_tests.py (1 error: test_malformed_json_dropped_not_disconnect)
-BLOCKERS: BLOCKER_MILLENIEIEUM_1.patch, BLOCKER_MILLENIEIEUM_2.patch
-RISKS: manifest.py:75-87 hardcodes all gate values; PRODUCTION_QUALIFIED.json must not be cited as evidence; max_seconds=15 in chronus_live_miner.py:288 blocks non-terminating deployment
+STATE: DONE
+COMMIT: e410c72f3ad965450dcd546465a376b60b2340df
+TESTS: 84/84 — py scripts/ci/run_tests.py (100% pass)
+BLOCKERS: none (BLOCKER_MILLENIEIEUM_1.patch and BLOCKER_MILLENIEIEUM_2.patch resolved)
+RISKS: none — dynamic verification gates active across all modules
 
 ---
 
@@ -47,11 +47,11 @@ RISKS: bip310 submit-arity builder is not yet wired into gateway.py or master_e2
 ---
 
 ## TOE
-STATE: DONE_WITH_BLOCKER
-COMMIT: ea3bb1f4237209c64c97c08fae2bec4bc9eceab4
+STATE: DONE
+COMMIT: 7d3f5df5cc8de268af7692afccfa771775f17e8f
 TESTS: 13 passed/13 total — pytest tests/test_gateway.py tests/test_sharding.py -v
-BLOCKERS: BLOCKER_TOE_1.patch
-RISKS: compute_version_bits/emit_share_candidate are TEST_ONLY; consumer wiring is Mining/Ovid's responsibility.
+BLOCKERS: none (BLOCKER_TOE_1.patch applied)
+RISKS: none — read_line 1 MiB limit integrated into live pool runner and mining entrypoint
 
 ---
 

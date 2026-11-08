@@ -143,6 +143,17 @@ def execute_mutation(mut: Mutation) -> bool:
         # Always restore original code cleanly
         with open(full_path, "w", encoding="utf-8") as f:
             f.write(content)
+        # Invalidate any compiled bytecode generated during mutation test
+        target_dir = os.path.dirname(full_path)
+        pycache_dir = os.path.join(target_dir, "__pycache__")
+        base_name = os.path.splitext(os.path.basename(full_path))[0]
+        if os.path.exists(pycache_dir):
+            for pyc in os.listdir(pycache_dir):
+                if pyc.startswith(base_name):
+                    try:
+                        os.remove(os.path.join(pycache_dir, pyc))
+                    except OSError:
+                        pass
 
 
 def main():

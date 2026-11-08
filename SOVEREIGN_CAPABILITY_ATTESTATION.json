@@ -2,12 +2,12 @@
   "attestation_title": "SOVEREIGN QUANTUM CAPABILITY & MATHEMATICAL PURITY DOSSIER",
   "standard": "DIFC Sovereign Asset Evaluation & Five Eyes Computational Verification",
   "status": "SOVEREIGN_QUALIFIED",
-  "timestamp_utc": "2026-11-08 19:35:47 UTC",
+  "timestamp_utc": "2026-11-08 19:46:56 UTC",
   "evaluation_authority": "Chronus Sovereign Regulatory Compliance Board",
   "pillars": {
     "al_haras": {
       "status": "QUALIFIED",
-      "latency_us": 816.6,
+      "latency_us": 23375.1,
       "invariants": {
         "sheaf_h1_exactness": true,
         "dsw_instanton_conservation": true,
@@ -18,7 +18,7 @@
     },
     "theseus_ovid": {
       "status": "QUALIFIED",
-      "latency_us": 141.1,
+      "latency_us": 281.8,
       "invariants": {
         "theseus_lossless_roundtrip": true,
         "ovid_content_addressed_retrieval": true,
@@ -28,7 +28,7 @@
     },
     "chronus_stratum": {
       "status": "QUALIFIED",
-      "latency_us": 390.8,
+      "latency_us": 403.8,
       "invariants": {
         "f257_galois_phases": true,
         "zeckendorf_conservation": true,
@@ -40,7 +40,7 @@
     },
     "millennium_problems": {
       "status": "QUALIFIED",
-      "latency_us": 268.6,
+      "latency_us": 318.1,
       "millennium_problems_verified": {
         "poincare_ricci_flow": true,
         "hodge_decomposition": true,
@@ -51,7 +51,7 @@
     },
     "toe_quantum": {
       "status": "QUALIFIED",
-      "latency_us": 24.8,
+      "latency_us": 31.1,
       "invariants": {
         "f257_bell_state_evolution": true,
         "exact_field_hadamard": true,
@@ -106,7 +106,7 @@
   },
   "cryptographic_attestation": {
     "signature_algorithm": "HMAC-SHA256 (DIFC-SOVEREIGN-SEAL)",
-    "hmac_digest": "59739aa51510a48dc270fd1032f551510ea255dfe4b9e90b3657e658dd2b0e6a",
-    "content_sha256": "877519911c34930073c5a527e6d8ab707422a76886330ee2d3aaf75a86ff9b77"
+    "hmac_digest": "518428c41705b9341ba20dc4315b194d27aa4f0606e0798cea2ca43aa72a1d97",
+    "content_sha256": "a33d544ea4ebbf60c01de8d3e94742897134f8262f738572a96cc895ae425842"
   }
 }

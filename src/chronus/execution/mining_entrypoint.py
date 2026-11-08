@@ -158,7 +158,7 @@ class ChronusRealMiningEngine:
         """Processes continuous server push events from the Stratum socket."""
         while self.running and self.gateway.reader:
             try:
-                line = await self.gateway.reader.readline()
+                line = await self.gateway.read_line()
                 if not line:
                     logger.warning("Pool closed connection.")
                     break
