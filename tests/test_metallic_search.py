@@ -217,6 +217,88 @@ def test_both_operator_families_agree_at_nonce_space_scale():
         assert ours.unmarked_amplitude == jform.unmarked_amplitude == 0
 
 
+def test_n1000_published_vectors_reproduce_exactly():
+    # Externally reported n=1000 traces: single-marked and six multi-marked rows.
+    from chronus.quantum.metallic_search import jform_one_shot_phases
+    from chronus.quantum.subspace import exact_jform_subspace_search
+
+    assert pow(30, 1000, P) == 241 and pow(2, 1000, P) == 256
+    assert (17, 120) in jform_one_shot_phases(1000)
+    claimed = [(2, 199, 239), (4, 102, 237), (8, 85, 233),
+               (16, 128, 225), (32, 171, 209), (64, 154, 177)]
+    for marked_count, beta, mu in claimed:
+        pairs = jform_one_shot_phases(1000, marked_count)
+        assert pairs[0][0] == 17  # invariant oracle phase
+        assert any(pair[1] == beta for pair in pairs)
+        n_mod, u = pow(2, 1000, P), pow(30, 1000, P)
+        assert pow(n_mod, -1, P) * ((n_mod * u + marked_count) % P) % P == mu
+        result = exact_jform_subspace_search(1000, marked_count)
+        assert result.marked_amplitude == 1 and result.unmarked_amplitude == 0
+
+
+def test_scaling_slide_climbs_with_lucas_ladder():
+    import json
+
+    from chronus.backends.metallic import metallic_sequence
+    from chronus.execution import NativeMathReferenceBackend
+
+    backend = NativeMathReferenceBackend()
+    result = backend.execute(
+        json.dumps({"num_qubits": 10, "marked_count": 1}).encode(),
+        "EXACT_PHASE_SEARCH",
+    )
+    slide = result["scaling_slide"]
+    assert [rung["num_qubits"] for rung in slide] == [8, 9, 10, 11, 12]
+    for rung in slide:
+        assert rung["lucas_trace"] == str(metallic_sequence(1, rung["num_qubits"]))
+        assert rung["uniform_amplitude"] == pow(30, rung["num_qubits"], P)
+    # The slide ascends the Lucas ladder: L_11 = 199 at n=11.
+    assert slide[3]["lucas_trace"] == "199"
+
+
+def test_phase_search_surface_modes():
+    import json
+
+    from chronus.backends.lattice import HardwareUnavailableError
+    from chronus.execution import ExecutionRouter, execution_router
+
+    payload = json.dumps({"num_qubits": 6, "marked_count": 2, "surface": "accelerator"}).encode()
+    with pytest.raises(HardwareUnavailableError):
+        ExecutionRouter().execute(payload, "EXACT_PHASE_SEARCH")
+
+    auto = ExecutionRouter().execute(
+        json.dumps({"num_qubits": 6, "marked_count": 2, "surface": "auto"}).encode(),
+        "EXACT_PHASE_SEARCH",
+    )
+    assert auto.result["surface"] == "substrate"
+
+    class FakePhaseAccelerator:
+        name = "fake-phase-gpu"
+        execution_mode = "PHYSICAL_ACCELERATOR"
+        supported_workloads = frozenset({"EXACT_PHASE_SEARCH"})
+
+        def supports(self, workload_type):
+            return True
+
+        def probe_silicon(self):
+            return {"device_name": "fake", "known_answer_test": "passed"}
+
+        def execute(self, payload, workload_type):
+            return {"execution_mode": "PHYSICAL_ACCELERATOR",
+                    "surface": "client-accelerator", "fake": True}
+
+    execution_router.register_backend(FakePhaseAccelerator())
+    try:
+        climbed = ExecutionRouter().execute(
+            json.dumps({"num_qubits": 6, "marked_count": 2, "surface": "accelerator"}).encode(),
+            "EXACT_PHASE_SEARCH",
+        )
+        assert climbed.result["surface"] == "client-accelerator"
+        assert "scaling_slide" in climbed.result  # slide accompanies climb-in
+    finally:
+        del execution_router._backends["fake-phase-gpu"]
+
+
 def test_multi_marked_closed_form_matches_brute_force_minimum():
     # Brute-force phase sweep for n=2, r=2 must rediscover the closed form.
     n, r = 2, 2

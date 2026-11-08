@@ -169,3 +169,20 @@ __kernel void pv_lattice_fold(
     out_b[i] = result_b;
     status[i] = (overflow ? 4U : 0U) | 3U;
 }
+
+// Exact one-shot phase search consensus over F_257: every lane executes the
+// same field iterate independently; the host requires unanimous agreement.
+// Arithmetic is exact mod-257 integer math; no floating point on device.
+__kernel void phase_consensus(
+    const uint alpha, const uint beta, const uint u,
+    const uint marked_count, const uint n_mod, const uint n_mod_inv,
+    __global uint *marked_out, __global uint *unmarked_out
+) {
+    size_t lane = get_global_id(0);
+    uint marked = (uint)(((ulong)alpha * u) % 257);
+    uint total = (uint)(((ulong)marked_count * marked
+                         + (ulong)((n_mod + 257 - marked_count) % 257) * u) % 257);
+    uint mean = (uint)(((ulong)total * n_mod_inv) % 257);
+    marked_out[lane] = (uint)(((ulong)marked + (ulong)beta * mean) % 257);
+    unmarked_out[lane] = (uint)(((ulong)u + (ulong)beta * mean) % 257);
+}

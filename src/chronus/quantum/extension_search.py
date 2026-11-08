@@ -63,8 +63,8 @@ def extension_one_shot_phases(
     num_qubits: int, marked_count: int, scale_index: int
 ) -> tuple[tuple[int, int], tuple[int, int]]:
     """Closed-form (alpha, beta) in F_257[phi] targeting amplitude phi^s."""
-    if not isinstance(num_qubits, int) or not 1 <= num_qubits <= 64:
-        raise ValueError("num_qubits must be between 1 and 64")
+    if not isinstance(num_qubits, int) or isinstance(num_qubits, bool) or num_qubits < 1:
+        raise ValueError("num_qubits must be a positive integer")
     n = 1 << num_qubits
     if not isinstance(marked_count, int) or not 1 <= marked_count < n:
         raise ValueError("marked_count must be in [1, 2**num_qubits)")

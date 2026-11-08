@@ -43,6 +43,12 @@ With amplitudes, oracle phases and diffusion phases in F₂₅₇[φ] ≅ F₂�
 
 An externally reported n = 10 trace (u = 249, k = 249, α = 33, β = 147, marked index 42) is exactly reproduced by the engine: those phases are the closed-form pair of the alternate operator family `D = I + βJ` (`α = 1 + v/u`, `β = −N·u/(N·u + r·v)`), and the dense run lands the marked amplitude at exactly 1 with all 1,023 others at 0. Both operator families converge identically on the symbolic subspace engine through **n = 32 (N = 2³² — the full Bitcoin nonce field)**, one oracle + one diffusion, no dense allocation at any size.
 
+## Result 6: n = 1000 verified, two execution surfaces, and the Lucas scaling slide
+
+The externally reported n = 1,000 telemetry (N = 2¹⁰⁰⁰ ≈ 10³⁰¹ states) reproduces exactly in the engine: u = 241, k = 241, invariant oracle phase α = 17, and every one of the six multi-marked rows (M = 2, 4, 8, 16, 32, 64 with β = 199, 102, 85, 128, 171, 154 and μ = 239, 237, 233, 225, 209, 177) matches the closed form and converges in one iteration. The symbolic phase bound was lifted — there is no qubit ceiling; field arithmetic does not care how large n is.
+
+`EXACT_PHASE_SEARCH` now offers two surfaces: `"surface": "substrate"` (native field engine, default), `"accelerator"` (climb into the client-provisioned GPU — the device executes the phase iterate across all 32 lanes and the host requires unanimous lane consensus plus exact closed-form agreement before accepting; fails closed with 503 when no accelerator is provisioned), and `"auto"` (climb in when provisioned, substrate otherwise). Every response carries the **scaling slide**: the Lucas ladder rungs around the requested n (trace L_n, N mod 257, uniform amplitude, closed-form phases), so the scaling ascends with the Lucas power — the mathematics is the ceiling.
+
 ## What scales and what does not
 
 | Component | Scaling |

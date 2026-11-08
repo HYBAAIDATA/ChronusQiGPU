@@ -312,18 +312,62 @@ class NativeMathReferenceBackend:
             "interpretation": f"sigma_{m}^{index} = a + b*sigma_{m}",
         }
 
+    def _scaling_slide(self, num_qubits: int) -> list[Dict[str, Any]]:
+        """Lucas ladder around the requested scale: the slide as n grows."""
+        from chronus.backends.metallic import metallic_sequence
+        from chronus.quantum.metallic_search import jform_one_shot_phases
+        from chronus.quantum.statevector import INV_SQRT2, P
+
+        slide = []
+        for rung in range(max(1, num_qubits - 2), num_qubits + 3):
+            alpha, beta = jform_one_shot_phases(rung, 1)[0]
+            slide.append({
+                "num_qubits": rung,
+                "lucas_trace": str(metallic_sequence(1, rung)),
+                "N_mod257": pow(2, rung, P),
+                "uniform_amplitude": pow(INV_SQRT2, rung, P),
+                "phases": {"alpha": alpha, "beta": beta},
+            })
+        return slide
+
     def _execute_phase_search(self, request: Dict[str, Any]) -> Dict[str, Any]:
         num_qubits, marked_count = request.get("num_qubits"), request.get("marked_count")
         if not isinstance(num_qubits, int) or isinstance(num_qubits, bool):
             raise ValueError("num_qubits must be an integer")
         if not isinstance(marked_count, int) or isinstance(marked_count, bool):
             raise ValueError("marked_count must be an integer")
+        surface = request.get("surface", "substrate")
+        if surface not in ("substrate", "auto", "accelerator"):
+            raise ValueError("surface must be 'substrate', 'auto' or 'accelerator'")
+        if surface != "substrate":
+            accelerator = next(
+                (backend for backend in execution_router._backends.values()
+                 if hasattr(backend, "probe_silicon")
+                 and backend.supports("EXACT_PHASE_SEARCH")),
+                None,
+            )
+            if accelerator is not None:
+                result = accelerator.execute(
+                    json.dumps({
+                        "num_qubits": num_qubits, "marked_count": marked_count,
+                    }).encode(),
+                    "EXACT_PHASE_SEARCH",
+                )
+                result["scaling_slide"] = self._scaling_slide(num_qubits)
+                return result
+            if surface == "accelerator":
+                from chronus.backends.lattice import HardwareUnavailableError
+                raise HardwareUnavailableError(
+                    "no client accelerator is provisioned for EXACT_PHASE_SEARCH"
+                )
         state = exact_subspace_search(num_qubits, marked_count)
         result = {
             "execution_mode": self.execution_mode,
+            "surface": "substrate",
             "field": "F_257",
             "iterations": 1,
             "state": state.to_dict(),
+            "scaling_slide": self._scaling_slide(num_qubits),
         }
         if request.get("store") is True:
             # Converged states persist in the phyllotaxis memory substrate:

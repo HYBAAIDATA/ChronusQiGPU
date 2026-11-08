@@ -122,8 +122,8 @@ def jform_one_shot_phases(num_qubits: int, marked_count: int = 1) -> list[tuple[
     algebraic system under different parameterizations; this form matches
     the D = I + beta*J convention used in external telemetry.
     """
-    if not isinstance(num_qubits, int) or not 1 <= num_qubits <= 64:
-        raise ValueError("num_qubits must be between 1 and 64")
+    if not isinstance(num_qubits, int) or isinstance(num_qubits, bool) or num_qubits < 1:
+        raise ValueError("num_qubits must be a positive integer")
     n = 1 << num_qubits
     if not isinstance(marked_count, int) or not 1 <= marked_count < n:
         raise ValueError("marked_count must be in [1, 2**num_qubits)")
@@ -168,8 +168,8 @@ def one_shot_phases(num_qubits: int) -> list[tuple[int, int]]:
     optimality bound does not apply, and the field supplies phases that do
     not exist over the reals.
     """
-    if not isinstance(num_qubits, int) or not 1 <= num_qubits <= 64:
-        raise ValueError("num_qubits must be between 1 and 64")
+    if not isinstance(num_qubits, int) or isinstance(num_qubits, bool) or num_qubits < 1:
+        raise ValueError("num_qubits must be a positive integer")
     n = 1 << num_qubits
     u = pow(INV_SQRT2, num_qubits, P)
     k = pow((n * u) % P, -1, P)
