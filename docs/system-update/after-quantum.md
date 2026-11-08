@@ -25,13 +25,22 @@ where `u = 30^n` is the uniform amplitude. `one_shot_phases(n)` computes both pa
 
 **Why this does not contradict quantum optimality:** the F_257 engine is exact algebraic dynamics, not unitary evolution. There is no Born rule and no measurement; "one iteration" is one application of the oracle and diffusion operators after the uniform state is prepared, with phases that depend on N and assume a single marked item. The unitary lower bounds (BBBV) govern physical quantum devices; they do not constrain exact field arithmetic. What the result shows is that the Chronus substrate — math as the substrate, hardware-agnostic — can express search dynamics that physical quantum computers cannot realize: phases like these exist in F_257 but not as real rotation angles.
 
+## Result 3: multi-marked one-shot search, and the dense statevector is gone
+
+Two further steps complete the frontier the first experiment left open:
+
+**Multiplicity.** With r marked states the invariant subspace is still two-dimensional, and the closed form generalizes: `beta/(1+beta) = ±r·k`, `alpha = 1 − N/(r·(1+beta))`, `k = (N·u)⁻¹`. One iterate puts every marked amplitude at exactly ±1 and every unmarked amplitude at exactly 0 — the full marked set is identified at once. Verified exhaustively over all subsets for n ≤ 4, sampled to n = 10, and cross-checked against a brute-force phase sweep that independently rediscovers the closed-form pairs. r = 1 reduces to the original single-marked form; a sign branch is dropped when its denominator vanishes (N·u ≡ ±r), leaving one sufficient pair.
+
+**Memory.** The earlier "2^n field elements — the honest cost" row reflected the flat-array harness, not the mathematics. The uniform state, the marked indicator, and the iterate span a rank-2 subspace, so the trajectory is exactly the pair `(a_marked, a_unmarked)`. `chronus.quantum.subspace` executes the search on that pair alone — **no dense statevector is allocated at any point** — and dense-vs-symbolic trajectories are asserted equal step by step. Marked-set membership is then decided by oracle evaluation per candidate, never by a state table.
+
 ## What scales and what does not
 
 | Component | Scaling |
 |---|---|
 | State preparation (Hadamard wall) | O(n) gates for n qubits |
-| One-shot phase-matched search | 1 oracle + 1 diffusion, closed-form phases |
-| Exact state memory | 2^n field elements — the honest cost; no claim of compression |
+| One-shot phase-matched search (single or multi-marked) | 1 oracle + 1 diffusion, closed-form phases |
+| Exact state memory | **2 field elements (rank-2 symbolic)** — the 2^n dense array is eliminated |
+| Marked-set membership resolution | 1 oracle query per candidate index |
 | Reflection-coefficient metallic scaling | Does not converge (documented negative result) |
 
 ## Reproduce

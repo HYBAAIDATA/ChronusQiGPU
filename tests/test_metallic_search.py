@@ -8,9 +8,12 @@ from chronus.quantum.metallic_search import (
     QSqrt2,
     algebraic_search,
     exact_search,
+    exact_search_multi,
     generalized_iterate,
     one_shot_phases,
+    one_shot_phases_multi,
     phase_iterate,
+    phase_iterate_multi,
     phase_matched_sweep,
 )
 
@@ -75,3 +78,85 @@ def test_phase_iterate_validates_inputs():
         phase_iterate(StateVector(1), 7, 1, 1)
     with pytest.raises(ValueError):
         one_shot_phases(0)
+
+
+def test_multi_marked_reduces_to_single_marked_at_r1():
+    for n in (1, 2, 3, 4):
+        assert sorted(one_shot_phases_multi(n, 1)) == sorted(one_shot_phases(n))
+
+
+def test_multi_marked_converges_for_all_counts_and_subsets():
+    # Exhaustive subsets at small sizes; sampled at larger ones.
+    from itertools import combinations
+
+    for n in (2, 3, 4):
+        n_states = 1 << n
+        for r in range(1, n_states):
+            subsets = combinations(range(n_states), r) if n_states <= 8 else \
+                [tuple(range(r)), tuple(range(n_states - r, n_states))]
+            for subset in subsets:
+                state = exact_search_multi(n, set(subset))
+                amps = state.amplitudes
+                assert all(amps[i] in (1, 256) for i in subset)
+                assert all(amps[i] == 0 for i in range(n_states) if i not in subset)
+
+
+def test_multi_marked_converges_at_scale():
+    for n, r in ((6, 3), (8, 5), (10, 7)):
+        marked = set(list(range(0, 1 << n, (1 << n) // r))[:r])
+        state = exact_search_multi(n, marked)
+        assert all(state.amplitudes[i] in (1, 256) for i in marked)
+        assert sum(1 for a in state.amplitudes if a != 0) == r
+
+
+def test_multi_marked_validates_inputs():
+    with pytest.raises(ValueError):
+        one_shot_phases_multi(2, 0)
+    with pytest.raises(ValueError):
+        one_shot_phases_multi(2, 4)
+    with pytest.raises(ValueError):
+        phase_iterate_multi(StateVector(1), set(), 1, 1)
+    with pytest.raises(ValueError):
+        phase_iterate_multi(StateVector(1), {3}, 1, 1)
+
+
+def test_symbolic_subspace_search_matches_dense_engine_exactly():
+    from chronus.quantum.subspace import (
+        exact_subspace_search,
+        subspace_iterate,
+        uniform_subspace,
+    )
+
+    for n, r in ((2, 1), (2, 3), (3, 4), (4, 2), (4, 5), (6, 7)):
+        dense = exact_search_multi(n, set(range(r)))
+        symbolic = exact_subspace_search(n, r)
+        assert symbolic.marked_amplitude == dense.amplitudes[0]
+        assert symbolic.unmarked_amplitude == 0
+    # Iterated trajectories agree too, step by step.
+    dense = StateVector(3)
+    for q in range(3):
+        dense.apply("H", q)
+    symbolic = uniform_subspace(3, 2)
+    alpha, beta = one_shot_phases_multi(3, 2)[0]
+    for _ in range(3):
+        dense = phase_iterate_multi(dense, {0, 1}, alpha, beta)
+        symbolic = subspace_iterate(symbolic, alpha, beta)
+        assert symbolic.marked_amplitude == dense.amplitudes[0]
+        assert symbolic.unmarked_amplitude == dense.amplitudes[2]
+
+
+def test_multi_marked_closed_form_matches_brute_force_minimum():
+    # Brute-force phase sweep for n=2, r=2 must rediscover the closed form.
+    n, r = 2, 2
+    found = set()
+    for alpha in range(1, 257):
+        for beta in range(1, 257):
+            state = StateVector(n)
+            for q in range(n):
+                state.apply("H", q)
+            phase_iterate_multi(state, {0, 1}, alpha, beta)
+            amps = state.amplitudes
+            if amps[0] in (1, 256) and amps[1] in (1, 256) \
+                    and amps[2] == 0 and amps[3] == 0:
+                found.add((alpha, beta))
+    assert set(one_shot_phases_multi(n, r)) <= found

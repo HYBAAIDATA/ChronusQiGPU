@@ -157,6 +157,73 @@ def exact_search(num_qubits: int, marked: int) -> StateVector:
     return state
 
 
+def one_shot_phases_multi(num_qubits: int, marked_count: int) -> list[tuple[int, int]]:
+    """Closed-form phase pairs for one-shot search with r marked states.
+
+    With r marked items the invariant subspace is still two-dimensional
+    (uniform-over-marked, uniform-over-unmarked), and the same elimination
+    that produced the single-marked form generalizes:
+
+        beta/(1+beta) = +/-r*k,   alpha = 1 - N/(r*(1+beta)),   k = (N*u)^-1
+
+    After one iterate every unmarked amplitude is exactly 0 and every marked
+    amplitude is exactly +/-1: the marked set is identified in full. A sign
+    branch is dropped when its denominator vanishes (N*u congruent to +/-r),
+    in which case one pair remains sufficient.
+    """
+    if not isinstance(marked_count, int) or isinstance(marked_count, bool) \
+            or not 1 <= marked_count < (1 << num_qubits):
+        raise ValueError("marked_count must be an integer in [1, 2**num_qubits)")
+    n = 1 << num_qubits
+    u = pow(INV_SQRT2, num_qubits, P)
+    k = pow((n * u) % P, -1, P)
+    pairs = []
+    for sign in (1, -1):
+        rk = (marked_count * k) % P
+        denominator = (1 - sign * rk) % P
+        if denominator == 0:
+            continue
+        beta = (sign * rk) * pow(denominator, -1, P) % P
+        alpha = (1 - n * pow((marked_count * (1 + beta)) % P, -1, P)) % P
+        pairs.append((alpha, beta))
+    if not pairs:
+        raise ValueError("field lacks the phases required for this size and count")
+    return pairs
+
+
+def phase_iterate_multi(
+    state: StateVector, marked: set[int], alpha: int, beta: int
+) -> StateVector:
+    """Phase iterate with an oracle flipping every state in the marked set."""
+    if not marked or not all(0 <= m < len(state.amplitudes) for m in marked):
+        raise ValueError("marked must be a non-empty set of in-range indices")
+    for value in (alpha, beta):
+        if not isinstance(value, int) or isinstance(value, bool) or not 0 <= value < P:
+            raise ValueError("phases must be field elements in [0, 257)")
+    for index in marked:
+        state.amplitudes[index] = (alpha * state.amplitudes[index]) % P
+    n = len(state.amplitudes)
+    mean = (sum(state.amplitudes) * pow(n, -1, P)) % P
+    state.amplitudes = [
+        ((1 + beta) * mean - beta * a) % P for a in state.amplitudes
+    ]
+    return state
+
+
+def exact_search_multi(num_qubits: int, marked: set[int]) -> StateVector:
+    """One exact iteration identifying every marked state simultaneously."""
+    alpha, beta = one_shot_phases_multi(num_qubits, len(marked))[0]
+    state = StateVector(num_qubits)
+    for qubit in range(num_qubits):
+        state.apply("H", qubit)
+    phase_iterate_multi(state, marked, alpha, beta)
+    amps = state.amplitudes
+    if not (all(amps[i] in (1, P - 1) for i in marked)
+            and all(amps[i] == 0 for i in range(len(amps)) if i not in marked)):
+        raise ArithmeticError("multi-marked exact search failed to converge")
+    return state
+
+
 def phase_matched_sweep(
     num_qubits: int, marked: int, max_iterations: int = 64
 ) -> dict:
