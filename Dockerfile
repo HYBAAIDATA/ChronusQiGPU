@@ -23,13 +23,14 @@ RUN python -m pip install --no-cache-dir --no-index --find-links=/wheels chronus
 WORKDIR /var/lib/chronus
 USER 10001:10001
 
-FROM runtime-base AS api-runtime
-EXPOSE 8000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)" || exit 1
-CMD ["uvicorn", "chronus.service.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
-
 FROM runtime-base AS miner-runtime
 COPY --chown=chronus:chronus chronus_live_miner.py /opt/chronus/chronus_live_miner.py
 HEALTHCHECK NONE
 CMD ["python", "/opt/chronus/chronus_live_miner.py"]
+
+FROM runtime-base AS api-runtime
+COPY --chown=chronus:chronus chronus_live_miner.py /opt/chronus/chronus_live_miner.py
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)" || exit 1
+CMD ["uvicorn", "chronus.service.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

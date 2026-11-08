@@ -352,10 +352,12 @@ class ChronusRealMiningEngine:
                     is_harmonic = self.consensus.is_harmonic_consensus(stalk)
                 alpha = ExactGaloisOracleF257.ALPHA
                 beta = ExactGaloisOracleF257.diffusion_phase(marked_count=1)
+                z_indices = ZeckendorfBasePhiIndexer.encode(solution_nonce)
                 logger.info(
                     f"[O(1) GALOIS COLLAPSE] Solved Nonce: 0x{solution_nonce:08x} | "
                     f"Vertex: #{vertex_idx} | Alpha: {alpha} | Beta: {beta} | "
-                    f"Harmonic Consensus: {is_harmonic} | Hash: {candidate_hash:#x}"
+                    f"Zeckendorf: {z_indices} | Harmonic Consensus: {is_harmonic} | "
+                    f"Hash: {candidate_hash:#x}"
                 )
 
                 is_block_candidate = candidate_hash <= decode_nbits_target(job["nbits_hex"])

@@ -1,6 +1,6 @@
 {
   "status": "PRODUCTION_QUALIFIED",
-  "timestamp": "2026-11-08 23:02:24 UTC",
+  "timestamp": "2026-11-08 23:08:22 UTC",
   "gates": {
     "pytest": "PASS",
     "purity": "PASS",
@@ -20,7 +20,7 @@
     "stale_share_rate": null
   },
   "provenance": {
-    "git_sha": "9d0ee422024507c58c2d963de900cf381177930d",
+    "git_sha": "0b5aa07d650267eccc03764747877fe1ca31c0ba",
     "python": "3.12.10",
     "lock_hash": "1897644c4da5e6480eebcd8fc02fcdab20d96e9e58abf2ae4b17e1c1b9d58b92"
   },
@@ -29,5 +29,5 @@
     "key_reference": "SECRET_BUILD_KEY (RFC 2104)",
     "canonicalization": "json.dumps(manifest_data_without_signature, sort_keys=True).encode('utf-8')"
   },
-  "signature": "3d766f461a0ce499f87669ce08715356b5ad593c81b7d8abccca3145873b8fbc"
+  "signature": "e13fdaa8d641b9f8a9793bf79494bf0c7a58a2f00bdf1fb33ca583926437fc4e"
 }
