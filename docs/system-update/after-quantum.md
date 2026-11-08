@@ -39,6 +39,10 @@ Two further steps complete the frontier the first experiment left open:
 
 With amplitudes, oracle phases and diffusion phases in F₂₅₇[φ] ≅ F₂₅₇² (order 66,048), the target marked amplitude becomes v = φˢ. The closed form generalizes verbatim (`β = r·v/(N·u − r·v)`, `α = 1 − v/(β·u)`), and because N(φˢ) = (−1)ˢ exactly, **one oracle + one diffusion step simultaneously identifies the marked set and encodes the Lucas/PV scale parity in the surviving amplitude**. Verified exhaustively: n = 1..7, r = 1..5, s = 0..7, every combination converging with `norm_parity_verified`. Degenerate parameters (N·u = r·v, only scalar targets in the tested range) fall back to the prime-subfield pair and land on −1, norm 1 — still parity-exact. At s = 0 the extension reduces to the proven prime-field pairs.
 
+## Result 5: independent telemetry reproduced, full nonce-space scale
+
+An externally reported n = 10 trace (u = 249, k = 249, α = 33, β = 147, marked index 42) is exactly reproduced by the engine: those phases are the closed-form pair of the alternate operator family `D = I + βJ` (`α = 1 + v/u`, `β = −N·u/(N·u + r·v)`), and the dense run lands the marked amplitude at exactly 1 with all 1,023 others at 0. Both operator families converge identically on the symbolic subspace engine through **n = 32 (N = 2³² — the full Bitcoin nonce field)**, one oracle + one diffusion, no dense allocation at any size.
+
 ## What scales and what does not
 
 | Component | Scaling |

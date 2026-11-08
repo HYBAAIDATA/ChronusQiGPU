@@ -18,7 +18,7 @@ operational metric documented as such, not a Born probability.
 from dataclasses import dataclass
 from fractions import Fraction
 
-from chronus.quantum.statevector import INV_SQRT2, MAX_QUBITS, P, StateVector
+from chronus.quantum.statevector import INV_SQRT2, P, StateVector
 
 
 class QSqrt2:
@@ -110,6 +110,49 @@ def phase_iterate(state: StateVector, marked: int, alpha: int, beta: int) -> Sta
     return state
 
 
+def jform_one_shot_phases(num_qubits: int, marked_count: int = 1) -> list[tuple[int, int]]:
+    """Closed-form phases for the alternate operator family D = I + beta*J.
+
+    With diffusion a_i -> a_i + beta*mu and oracle phase alpha, one iterate
+    cancels unmarked states and lands marked amplitudes on +/-1 when
+
+        alpha = 1 + v/u,   beta = -N*u / (N*u + r*v),   v = +/-1
+
+    over F_257, requiring N*u + r*v invertible. Both families are the same
+    algebraic system under different parameterizations; this form matches
+    the D = I + beta*J convention used in external telemetry.
+    """
+    if not isinstance(num_qubits, int) or not 1 <= num_qubits <= 64:
+        raise ValueError("num_qubits must be between 1 and 64")
+    n = 1 << num_qubits
+    if not isinstance(marked_count, int) or not 1 <= marked_count < n:
+        raise ValueError("marked_count must be in [1, 2**num_qubits)")
+    u = pow(INV_SQRT2, num_qubits, P)
+    nu = (n * u) % P
+    pairs = []
+    for v in (1, P - 1):
+        denominator = (nu + marked_count * v) % P
+        if denominator == 0:
+            continue
+        alpha = (1 + v * pow(u, -1, P)) % P
+        beta = (-nu) * pow(denominator, -1, P) % P
+        pairs.append((alpha, beta))
+    if not pairs:
+        raise ValueError("field lacks the phases required for this size and count")
+    return pairs
+
+
+def jform_iterate(state: StateVector, marked: int, alpha: int, beta: int) -> StateVector:
+    """One iterate of the D = I + beta*J family on a dense statevector."""
+    if not 0 <= marked < len(state.amplitudes):
+        raise ValueError("marked index out of range")
+    state.amplitudes[marked] = (alpha * state.amplitudes[marked]) % P
+    n = len(state.amplitudes)
+    mean = (sum(state.amplitudes) * pow(n, -1, P)) % P
+    state.amplitudes = [(a + beta * mean) % P for a in state.amplitudes]
+    return state
+
+
 def one_shot_phases(num_qubits: int) -> list[tuple[int, int]]:
     """Closed-form phase pairs for exact one-iteration search over F_257.
 
@@ -125,8 +168,8 @@ def one_shot_phases(num_qubits: int) -> list[tuple[int, int]]:
     optimality bound does not apply, and the field supplies phases that do
     not exist over the reals.
     """
-    if not isinstance(num_qubits, int) or not 1 <= num_qubits <= MAX_QUBITS:
-        raise ValueError(f"num_qubits must be between 1 and {MAX_QUBITS}")
+    if not isinstance(num_qubits, int) or not 1 <= num_qubits <= 64:
+        raise ValueError("num_qubits must be between 1 and 64")
     n = 1 << num_qubits
     u = pow(INV_SQRT2, num_qubits, P)
     k = pow((n * u) % P, -1, P)

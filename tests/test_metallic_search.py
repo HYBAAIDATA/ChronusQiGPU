@@ -2,7 +2,7 @@
 
 import pytest
 
-from chronus.quantum import StateVector
+from chronus.quantum import P, StateVector
 from chronus.quantum.metallic_search import (
     METALLIC_COEFFICIENTS,
     QSqrt2,
@@ -181,6 +181,40 @@ def test_phase_search_workload_validates():
     with pytest.raises(ValueError):
         backend.execute(json.dumps({"num_qubits": 3, "marked_count": 8}).encode(),
                         "EXACT_PHASE_SEARCH")
+
+
+def test_jform_family_reproduces_published_telemetry_vector():
+    # Externally reported n=10 Bitcoin-nonce trace: u=249, k=249, alpha=33,
+    # beta=147, marked index 42. Every number must reproduce exactly.
+    from chronus.quantum.metallic_search import jform_iterate, jform_one_shot_phases
+
+    u = pow(30, 10, P)
+    assert u == 249
+    assert (33, 147) in jform_one_shot_phases(10)
+    state = StateVector(10)
+    for q in range(10):
+        state.apply("H", q)
+    assert state.amplitudes[42] == 249
+    jform_iterate(state, 42, 33, 147)
+    assert state.amplitudes[42] == 1
+    assert all(a == 0 for i, a in enumerate(state.amplitudes) if i != 42)
+    # Trace intermediates: marked after oracle 250, mean 56.
+    mean = ((33 * u) % P + 1023 * u) % P * pow(1024, -1, P) % P
+    assert (33 * u) % P == 250 and mean == 56
+
+
+def test_both_operator_families_agree_at_nonce_space_scale():
+    from chronus.quantum.subspace import (
+        exact_jform_subspace_search,
+        exact_subspace_search,
+    )
+
+    for n in (10, 16, 20, 32):
+        ours = exact_subspace_search(n, 1)
+        jform = exact_jform_subspace_search(n, 1)
+        assert ours.marked_amplitude in (1, P - 1)
+        assert jform.marked_amplitude in (1, P - 1)
+        assert ours.unmarked_amplitude == jform.unmarked_amplitude == 0
 
 
 def test_multi_marked_closed_form_matches_brute_force_minimum():

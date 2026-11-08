@@ -66,6 +66,33 @@ def subspace_iterate(state: SubspaceState, alpha: int, beta: int) -> SubspaceSta
     )
 
 
+def jform_subspace_iterate(state: SubspaceState, alpha: int, beta: int) -> SubspaceState:
+    """One iterate of the D = I + beta*J family on the rank-2 pair."""
+    n = 1 << state.num_qubits
+    r = state.marked_count
+    marked = (alpha * state.marked_amplitude) % P
+    mean = ((r * marked + (n - r) * state.unmarked_amplitude)
+            * pow(n, -1, P)) % P
+    return SubspaceState(
+        state.num_qubits,
+        r,
+        (marked + beta * mean) % P,
+        (state.unmarked_amplitude + beta * mean) % P,
+    )
+
+
+def exact_jform_subspace_search(num_qubits: int, marked_count: int) -> SubspaceState:
+    """One-shot search under the D = I + beta*J family; no dense array."""
+    from chronus.quantum.metallic_search import jform_one_shot_phases
+
+    state = uniform_subspace(num_qubits, marked_count)
+    alpha, beta = jform_one_shot_phases(num_qubits, marked_count)[0]
+    result = jform_subspace_iterate(state, alpha, beta)
+    if result.unmarked_amplitude != 0 or result.marked_amplitude not in (1, P - 1):
+        raise ArithmeticError("jform subspace search failed to converge")
+    return result
+
+
 def exact_subspace_search(num_qubits: int, marked_count: int) -> SubspaceState:
     """One-shot phase-matched search in O(1) state: returns the converged pair.
 

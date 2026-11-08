@@ -18,7 +18,7 @@ subfield, whose norm is still the parity anchor.
 from dataclasses import dataclass
 
 from chronus.quantum.metallic_search import one_shot_phases_multi
-from chronus.quantum.statevector import INV_SQRT2, MAX_QUBITS, P
+from chronus.quantum.statevector import INV_SQRT2, P
 
 _EXTENSION_ORDER = P * P - 1  # 66048
 
@@ -63,8 +63,8 @@ def extension_one_shot_phases(
     num_qubits: int, marked_count: int, scale_index: int
 ) -> tuple[tuple[int, int], tuple[int, int]]:
     """Closed-form (alpha, beta) in F_257[phi] targeting amplitude phi^s."""
-    if not isinstance(num_qubits, int) or not 1 <= num_qubits <= MAX_QUBITS:
-        raise ValueError(f"num_qubits must be between 1 and {MAX_QUBITS}")
+    if not isinstance(num_qubits, int) or not 1 <= num_qubits <= 64:
+        raise ValueError("num_qubits must be between 1 and 64")
     n = 1 << num_qubits
     if not isinstance(marked_count, int) or not 1 <= marked_count < n:
         raise ValueError("marked_count must be in [1, 2**num_qubits)")
