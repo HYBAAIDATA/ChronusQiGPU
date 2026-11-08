@@ -15,6 +15,7 @@ from chronus.config import runtime_bounds
 from chronus.backends.lattice_workload import parse_lattice_workload, serialize_lattice
 from chronus.execution.mining import search_nonce_range
 from chronus.execution.trinity import scale_fold_store
+from chronus.quantum.subspace import exact_subspace_search
 from chronus.security import norm_proof
 from chronus.security.ovid import OVIDStorage
 from chronus.storage.theseus import TheseusService
@@ -104,7 +105,7 @@ class NativeMathReferenceBackend:
         {"EXACT_Q5_ALGEBRAIC", "LUCAS_PV_SCALING", "SHA256D_NONCE_SEARCH",
          "PV_LATTICE_FOLD", "TRINITY_SCALE_FOLD_STORE",
          "PHYLOTAXIS_STORE", "THESEUS_RETRIEVE", "OVID_NORM_PROOF",
-         "METALLIC_SCALE"}
+         "METALLIC_SCALE", "EXACT_PHASE_SEARCH"}
     )
     @property
     def max_payload_bytes(self) -> int:
@@ -158,6 +159,8 @@ class NativeMathReferenceBackend:
             return self._execute_norm_proof(request)
         if workload_type == "METALLIC_SCALE":
             return self._execute_metallic(request)
+        if workload_type == "EXACT_PHASE_SEARCH":
+            return self._execute_phase_search(request)
         if workload_type == "LUCAS_PV_SCALING":
             return self._execute_lucas(request)
         if workload_type == "SHA256D_NONCE_SEARCH":
@@ -308,6 +311,37 @@ class NativeMathReferenceBackend:
             "norm": str(power.norm().numerator),
             "interpretation": f"sigma_{m}^{index} = a + b*sigma_{m}",
         }
+
+    def _execute_phase_search(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        num_qubits, marked_count = request.get("num_qubits"), request.get("marked_count")
+        if not isinstance(num_qubits, int) or isinstance(num_qubits, bool):
+            raise ValueError("num_qubits must be an integer")
+        if not isinstance(marked_count, int) or isinstance(marked_count, bool):
+            raise ValueError("marked_count must be an integer")
+        state = exact_subspace_search(num_qubits, marked_count)
+        result = {
+            "execution_mode": self.execution_mode,
+            "field": "F_257",
+            "iterations": 1,
+            "state": state.to_dict(),
+        }
+        if request.get("store") is True:
+            # Converged states persist in the phyllotaxis memory substrate:
+            # content-addressed in Ovid, lane-addressed by the golden ratio,
+            # with PV scale lineage carried on the Theseus record.
+            record = self._theseus.store(
+                "phase-search",
+                json.dumps(result["state"], sort_keys=True).encode("utf-8"),
+                scale_index=num_qubits,
+            )
+            result["memory"] = {
+                "theseus_record": record.to_dict(),
+                "cassini_parity": -1 if num_qubits % 2 else 1,
+                "durable": False,
+            }
+        elif "store" in request:
+            raise ValueError("store must be a boolean true when present")
+        return result
 
     def _execute_q5(self, request: Dict[str, Any]) -> Dict[str, Any]:
         operation = request.get("operation")

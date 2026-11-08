@@ -31,7 +31,9 @@ Two further steps complete the frontier the first experiment left open:
 
 **Multiplicity.** With r marked states the invariant subspace is still two-dimensional, and the closed form generalizes: `beta/(1+beta) = ±r·k`, `alpha = 1 − N/(r·(1+beta))`, `k = (N·u)⁻¹`. One iterate puts every marked amplitude at exactly ±1 and every unmarked amplitude at exactly 0 — the full marked set is identified at once. Verified exhaustively over all subsets for n ≤ 4, sampled to n = 10, and cross-checked against a brute-force phase sweep that independently rediscovers the closed-form pairs. r = 1 reduces to the original single-marked form; a sign branch is dropped when its denominator vanishes (N·u ≡ ±r), leaving one sufficient pair.
 
-**Memory.** The earlier "2^n field elements — the honest cost" row reflected the flat-array harness, not the mathematics. The uniform state, the marked indicator, and the iterate span a rank-2 subspace, so the trajectory is exactly the pair `(a_marked, a_unmarked)`. `chronus.quantum.subspace` executes the search on that pair alone — **no dense statevector is allocated at any point** — and dense-vs-symbolic trajectories are asserted equal step by step. Marked-set membership is then decided by oracle evaluation per candidate, never by a state table.
+**Memory.** The earlier "2^n field elements — the honest cost" row reflected the flat-array harness, not the mathematics. The uniform state, the marked indicator, and the iterate span a rank-2 subspace, so the trajectory is exactly the pair `(a_marked, a_unmarked)` — both elements of the prime field F₂₅₇, the same field that anchors the receipts. `chronus.quantum.subspace` executes the search on that pair alone — **no dense statevector is allocated at any point** — and dense-vs-symbolic trajectories are asserted equal step by step. Marked-set membership is decided by oracle evaluation per candidate, never by a state table.
+
+**Persistence.** Working memory is the rank-2 pair; long-term memory is the phyllotaxis store. `EXACT_PHASE_SEARCH` with `"store": true` writes the converged state through Theseus: content-addressed in Ovid, distributed onto a golden-ratio lane, with PV scale lineage on the record and Cassini parity reported as metadata. Retrieval is digest-verified and reproduces the exact state.
 
 ## What scales and what does not
 
@@ -39,7 +41,8 @@ Two further steps complete the frontier the first experiment left open:
 |---|---|
 | State preparation (Hadamard wall) | O(n) gates for n qubits |
 | One-shot phase-matched search (single or multi-marked) | 1 oracle + 1 diffusion, closed-form phases |
-| Exact state memory | **2 field elements (rank-2 symbolic)** — the 2^n dense array is eliminated |
+| Exact working state | **2 field elements (rank-2 symbolic)** — the 2^n dense array is eliminated |
+| Persistent memory | Theseus/Ovid phyllotaxis store: converged states are content-addressed, lane-addressed by the golden ratio, carrying PV scale lineage and Cassini parity metadata (`"store": true` on `EXACT_PHASE_SEARCH`) |
 | Marked-set membership resolution | 1 oracle query per candidate index |
 | Reflection-coefficient metallic scaling | Does not converge (documented negative result) |
 

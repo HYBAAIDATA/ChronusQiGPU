@@ -145,6 +145,44 @@ def test_symbolic_subspace_search_matches_dense_engine_exactly():
         assert symbolic.unmarked_amplitude == dense.amplitudes[2]
 
 
+def test_phase_search_workload_persists_in_phyllotaxis_memory():
+    import json
+
+    from chronus.execution import NativeMathReferenceBackend
+
+    backend = NativeMathReferenceBackend()
+    result = backend.execute(json.dumps({
+        "num_qubits": 6, "marked_count": 7, "store": True,
+    }).encode(), "EXACT_PHASE_SEARCH")
+    assert result["iterations"] == 1
+    assert result["state"]["unmarked_amplitude"] == 0
+    memory = result["memory"]
+    record = memory["theseus_record"]
+    assert record["scale_index"] == 6  # PV lineage carries the search scale
+    assert 0 <= record["coordinate"]["lane"] < 32  # golden-ratio lane
+    retrieved = backend.execute(json.dumps({
+        "object_id": record["object_id"], "tenant_id": "phase-search",
+    }).encode(), "THESEUS_RETRIEVE")
+    import base64
+    stored = json.loads(base64.b64decode(retrieved["data"][7:]))
+    assert stored == result["state"]  # exact round trip through Theseus
+    assert memory["cassini_parity"] == 1  # even index parity metadata
+
+
+def test_phase_search_workload_validates():
+    import json
+
+    from chronus.execution import NativeMathReferenceBackend
+
+    backend = NativeMathReferenceBackend()
+    with pytest.raises(ValueError):
+        backend.execute(json.dumps({"num_qubits": 0, "marked_count": 1}).encode(),
+                        "EXACT_PHASE_SEARCH")
+    with pytest.raises(ValueError):
+        backend.execute(json.dumps({"num_qubits": 3, "marked_count": 8}).encode(),
+                        "EXACT_PHASE_SEARCH")
+
+
 def test_multi_marked_closed_form_matches_brute_force_minimum():
     # Brute-force phase sweep for n=2, r=2 must rediscover the closed form.
     n, r = 2, 2
