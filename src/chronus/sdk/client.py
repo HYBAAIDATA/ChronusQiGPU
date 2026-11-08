@@ -704,6 +704,37 @@ class ChronusAPISDK:
         """Trigger 1-cycle DSW instanton monopole cobordism heal."""
         return self._request("POST", "/v1/mining/admin/anomaly/heal")
 
+    def get_patroclus_telemetry(self) -> Dict[str, Any]:
+        """Retrieve Patroclus Gateway & 600 Myrmidon Searchers telemetry."""
+        return self._request("GET", "/v1/mining/admin/patroclus")
+
+    def configure_mining_stealth(
+        self,
+        max_configured_eh_s: Optional[float] = None,
+        stealth_target_eh_s: Optional[float] = None,
+        never_consecutive_blocks: Optional[bool] = None,
+        persistent_presence: Optional[bool] = None,
+    ) -> Dict[str, Any]:
+        """Configure stealth hashrate shaping and block suppression policies."""
+        payload: Dict[str, Any] = {}
+        if max_configured_eh_s is not None:
+            payload["max_configured_eh_s"] = max_configured_eh_s
+        if stealth_target_eh_s is not None:
+            payload["stealth_target_eh_s"] = stealth_target_eh_s
+        if never_consecutive_blocks is not None:
+            payload["never_consecutive_blocks"] = never_consecutive_blocks
+        if persistent_presence is not None:
+            payload["persistent_presence"] = persistent_presence
+        return self._request("POST", "/v1/mining/admin/stealth", json=payload)
+
+    def simulate_patroclus_mining(self, pools: Optional[list] = None) -> Dict[str, Any]:
+        """Simulate multi-pool Stratum V1 handshake and share acceptance."""
+        return self._request(
+            "POST",
+            "/v1/mining/admin/patroclus/simulate",
+            json={"pools": pools},
+        )
+
     def get_metrics(self) -> str:
         response = self._client.get("/metrics")
         if response.status_code != 200:

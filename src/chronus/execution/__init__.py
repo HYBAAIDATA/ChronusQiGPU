@@ -27,6 +27,31 @@ from chronus.execution.geometric_galois_miner import (
     LiePoissonRamanujanExpander,
     ZeckendorfBasePhiIndexer,
 )
+from chronus.execution.master_e2e_engine import (
+    F257GaloisOracle,
+    MyrmidonSearcher,
+    PatroclusGateway,
+    StealthEngine,
+    StratumMultiPoolServer,
+    SystemInvariantContracts,
+    build_block_header,
+    check_share_difficulty_exact,
+    compute_merkle_root,
+    execute_master_end_to_end,
+    format_extranonce2,
+    prevhash_le_to_stratum_hex,
+    roll_version,
+    swap_endian_words,
+)
+from chronus.execution.myrmidon_orchestrator import (
+    STRATUM_ERROR_CODES,
+    PatroclusCharter,
+)
+from chronus.execution.stealth_orchestrator import (
+    PatroclusStealthGateway,
+    StealthConfig,
+    run_stealth_simulation,
+)
 
 __all__ = [
     "ExecutionRouter",
@@ -45,6 +70,25 @@ __all__ = [
     "HodgeSheafLaplacianConsensus",
     "DSW1CycleInstantonCobordism",
     "ZeckendorfBasePhiIndexer",
+    "SystemInvariantContracts",
+    "PatroclusGateway",
+    "MyrmidonSearcher",
+    "StealthEngine",
+    "StealthConfig",
+    "PatroclusStealthGateway",
+    "PatroclusCharter",
+    "STRATUM_ERROR_CODES",
+    "F257GaloisOracle",
+    "StratumMultiPoolServer",
+    "swap_endian_words",
+    "prevhash_le_to_stratum_hex",
+    "compute_merkle_root",
+    "roll_version",
+    "format_extranonce2",
+    "build_block_header",
+    "check_share_difficulty_exact",
+    "execute_master_end_to_end",
+    "run_stealth_simulation",
     "MATHEMATICAL_EXECUTION",
     "SOFTWARE_EXECUTION",
     "PHYSICAL_HARDWARE_EXECUTION",

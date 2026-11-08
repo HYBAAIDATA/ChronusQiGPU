@@ -159,4 +159,19 @@ export class ChronusAPIClient {
     post<ApiRecord>('v1/mining/admin/intervene', { intervention });
   static injectMiningAnomaly = () => post<ApiRecord>('v1/mining/admin/anomaly/inject', {});
   static healMiningAnomaly = () => post<ApiRecord>('v1/mining/admin/anomaly/heal', {});
+  static getPatroclusTelemetry = () => get<ApiRecord>('v1/mining/admin/patroclus');
+  static configureMiningStealth = (
+    maxConfiguredEhS?: number,
+    stealthTargetEhS?: number,
+    neverConsecutiveBlocks?: boolean,
+    persistentPresence?: boolean
+  ) =>
+    post<ApiRecord>('v1/mining/admin/stealth', {
+      max_configured_eh_s: maxConfiguredEhS,
+      stealth_target_eh_s: stealthTargetEhS,
+      never_consecutive_blocks: neverConsecutiveBlocks,
+      persistent_presence: persistentPresence,
+    });
+  static simulatePatroclusMining = (pools?: string[]) =>
+    post<ApiRecord>('v1/mining/admin/patroclus/simulate', { pools });
 }

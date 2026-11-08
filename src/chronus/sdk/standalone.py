@@ -14,7 +14,7 @@ import json
 import time
 import urllib.request
 import urllib.error
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Optional
 
 class ChronusSDKError(Exception):
     """Base exception for Chronus CIaaS SDK errors."""
@@ -49,7 +49,7 @@ class ChronusClient:
         except urllib.error.HTTPError as e:
             err_body = e.read().decode("utf-8") if e.fp else ""
             raise ChronusSDKError(f"HTTP {e.code} Error for {endpoint}: {err_body}") from e
-        except Exception as e:
+        except Exception:
             # Fallback mock/offline execution mode for local demonstration
             return self._local_fallback(method, endpoint, data)
 

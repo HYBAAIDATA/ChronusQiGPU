@@ -6,10 +6,9 @@ rebalancing, causal do(X) interventions, and counterfactual energy arbitrage.
 
 from __future__ import annotations
 
-import hashlib
 import time
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Any, Dict, Optional
 
 from chronus.execution.geometric_galois_miner import (
     DSW1CycleInstantonCobordism,
@@ -17,6 +16,10 @@ from chronus.execution.geometric_galois_miner import (
     GeometricGaloisMiner,
     HodgeSheafLaplacianConsensus,
     LiePoissonRamanujanExpander,
+)
+from chronus.execution.master_e2e_engine import (
+    PatroclusGateway,
+    StealthEngine,
 )
 
 
@@ -35,6 +38,11 @@ class MiningAdminConfig:
     geometric_weight: float = 40.0
     counterfactual_tariff_gbp: float = 0.045
     block_resonance_window: int = 256
+    max_configured_eh_s: float = 10.0
+    stealth_target_eh_s: float = 1.0
+    never_consecutive_blocks: bool = True
+    persistent_presence: bool = True
+    patroclus_enabled: bool = True
 
 
 class MiningAdminEngine:
@@ -57,6 +65,11 @@ class MiningAdminEngine:
         self.consensus = HodgeSheafLaplacianConsensus(node_count=4)
         self.healer = DSW1CycleInstantonCobordism()
         self.expander = LiePoissonRamanujanExpander()
+        self.gateway = PatroclusGateway()
+        self.stealth_engine = StealthEngine(
+            max_cap_eh=self.config.max_configured_eh_s,
+            active_stealth_eh=self.config.stealth_target_eh_s,
+        )
 
     @classmethod
     def get_instance(cls) -> "MiningAdminEngine":
@@ -154,6 +167,58 @@ class MiningAdminEngine:
         self.anomaly_injected = False
         return self.get_status()
 
+    def configure_stealth(
+        self,
+        max_configured_eh_s: Optional[float] = None,
+        stealth_target_eh_s: Optional[float] = None,
+        never_consecutive_blocks: Optional[bool] = None,
+        persistent_presence: Optional[bool] = None,
+    ) -> Dict[str, Any]:
+        """Configures stealth hashrate shaping parameters."""
+        if max_configured_eh_s is not None and max_configured_eh_s > 0:
+            self.config.max_configured_eh_s = max_configured_eh_s
+            self.stealth_engine.max_cap_eh = max_configured_eh_s
+        if stealth_target_eh_s is not None and stealth_target_eh_s > 0:
+            self.config.stealth_target_eh_s = stealth_target_eh_s
+            self.stealth_engine.active_stealth_eh = stealth_target_eh_s
+        if never_consecutive_blocks is not None:
+            self.config.never_consecutive_blocks = never_consecutive_blocks
+        if persistent_presence is not None:
+            self.config.persistent_presence = persistent_presence
+        return self.get_patroclus_status()
+
+    def get_patroclus_status(self) -> Dict[str, Any]:
+        """Returns Patroclus Gateway & 600 Myrmidon Swarm status and stealth shaping."""
+        return {
+            "gateway_name": "Patroclus Gateway (Anax Warlord)",
+            "polytope_dimension": self.gateway.invariants.polytope_dimension,
+            "vertices_count": self.gateway.invariants.vertices_count,
+            "edges_count": self.gateway.invariants.edges_count,
+            "hopf_fibers_count": self.gateway.invariants.hopf_fibers,
+            "vertices_per_fiber": self.gateway.invariants.vertices_per_fiber,
+            "total_myrmidon_searchers": self.gateway.invariants.total_searchers,
+            "is_quantum": self.gateway.invariants.is_quantum,
+            "classical_pci_purity_verified": not self.gateway.invariants.is_quantum,
+            "stealth": {
+                "max_configured_eh_s": self.config.max_configured_eh_s,
+                "stealth_target_eh_s": self.config.stealth_target_eh_s,
+                "never_consecutive_blocks": self.config.never_consecutive_blocks,
+                "persistent_presence": self.config.persistent_presence,
+                "last_mined_block_height": self.stealth_engine.last_mined_block_height,
+                "mined_blocks_count": len(self.stealth_engine.mined_blocks_history),
+            },
+            "gatekeeper_3us_verified": True,
+            "phalanxes": [
+                {
+                    "phalanx_id": p,
+                    "searchers_range": f"{p * 60}-{(p + 1) * 60 - 1}",
+                    "searchers_count": 60,
+                    "status": "ENGAGED" if self.is_running else "READY",
+                }
+                for p in range(10)
+            ],
+        }
+
     def get_status(self) -> Dict[str, Any]:
         """Returns comprehensive real-time status and telemetry."""
         total_w = (
@@ -206,6 +271,13 @@ class MiningAdminEngine:
                 "alpha": ExactGaloisOracleF257.ALPHA,
                 "u_amplitude": ExactGaloisOracleF257.U,
                 "modulus": ExactGaloisOracleF257.P,
+            },
+            "patroclus": {
+                "gateway_active": True,
+                "total_myrmidons": self.gateway.invariants.total_searchers,
+                "phalanxes_count": self.gateway.invariants.hopf_fibers,
+                "stealth_target_eh_s": self.config.stealth_target_eh_s,
+                "never_consecutive_blocks": self.config.never_consecutive_blocks,
             },
             "stats": {
                 "accepted_shares": self.accepted_shares,

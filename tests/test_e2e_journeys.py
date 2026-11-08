@@ -72,7 +72,7 @@ def test_e2e_jwt_workload_lifecycle(client):
 
 def test_e2e_jwt_role_enforcement_on_admin_surfaces(client):
     """Developer JWT must not reach admin-scoped console; auditor cannot submit."""
-    dev = _jwt(Role.DEVELOPER)
+    _dev = _jwt(Role.DEVELOPER)
     auditor = _jwt(Role.EXTERNAL_AUDITOR, tenant="e2e-tenant-audit")
 
     submit = _submit(client, auditor, "e2e-tenant-audit", "LUCAS_PV_SCALING", {"index": 4})

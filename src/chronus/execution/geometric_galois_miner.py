@@ -26,17 +26,14 @@ geometric collapse:
 from __future__ import annotations
 
 import hashlib
-import math
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
-from chronus.execution.asic_sha256 import _H0, sha256_block, sha256d_unrolled
+from chronus.execution.asic_sha256 import _H0, sha256_block
 from chronus.execution.stratum import (
     StratumJob,
     StratumSession,
-    build_header,
     build_header_prefix,
-    difficulty_to_target,
     sha256d,
 )
 from chronus.execution.structural import (
@@ -45,7 +42,6 @@ from chronus.execution.structural import (
     zeckendorf_increment,
 )
 from chronus.quantum.geometric_polychoron import (
-    F257Phi,
     Polychoron600Cell,
 )
 
@@ -347,8 +343,8 @@ class GeometricGaloisMiner:
         header_prefix = build_header_prefix(job, extranonce2, session)
 
         # 1. Evaluate target difficulty and prepare search space
-        midstate = sha256_block(_H0, header_prefix[:64])
-        suffix = header_prefix[64:76]
+        _midstate = sha256_block(_H0, header_prefix[:64])
+        _suffix = header_prefix[64:76]
 
         # 2. Seed 600-cell polychoron vertex coordinate from header prefix
         seed_hash = hashlib.sha256(header_prefix).digest()
@@ -486,7 +482,7 @@ class GeometricGaloisMinerBackend:
             if int.from_bytes(h, "little") <= target:
                 matches.append(n)
 
-        amplitudes = ExactGaloisOracleF257.execute_one_shot_collapse(
+        _amplitudes = ExactGaloisOracleF257.execute_one_shot_collapse(
             list(range(100)), set(matches)
         )
 

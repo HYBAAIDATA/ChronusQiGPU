@@ -28,11 +28,7 @@ Covers 100% across:
    - SDK client methods & REST router endpoints
 """
 
-import hashlib
-from typing import List, Tuple
-from unittest.mock import MagicMock
 
-import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
@@ -41,7 +37,6 @@ from chronus.execution.geometric_galois_miner import (
     DSW1CycleInstantonCobordism,
     ExactGaloisOracleF257,
     GeometricGaloisMiner,
-    GeometricGaloisMinerBackend,
     GeometricMiningResult,
     HodgeSheafLaplacianConsensus,
     LiePoissonRamanujanExpander,
@@ -54,12 +49,9 @@ from chronus.execution.stratum import (
     DIFF1_TARGET,
     StratumJob,
     StratumSession,
-    build_header,
-    build_header_prefix,
     sha256d,
 )
 from chronus.orchestration.euclid import (
-    DECFluidRouter,
     EuclidMetaIntelligenceRouter,
     IntelligenceMode,
 )
@@ -71,7 +63,6 @@ from chronus.quantum.geometric_polychoron import (
     Polychoron600Cell,
     QuantumGeometricTensor,
 )
-from chronus.sdk.client import ChronusAPISDK
 
 
 # ===========================================================================

@@ -6,7 +6,6 @@ in-process fake Stratum pool over a real socket.
 """
 
 import asyncio
-import hashlib
 import json
 
 import pytest

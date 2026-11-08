@@ -13,7 +13,7 @@ reports unavailable and raises HardwareUnavailableError on execute.
 
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from chronus.backends.lattice import HardwareUnavailableError
 from chronus.execution.asic_sha256 import _H0, sha256_block

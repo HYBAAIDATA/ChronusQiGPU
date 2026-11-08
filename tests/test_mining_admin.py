@@ -13,7 +13,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from chronus.execution.mining_admin import MiningAdminEngine
-from chronus.sdk.client import ChronusAPISDK
 from chronus.service.app import app
 
 

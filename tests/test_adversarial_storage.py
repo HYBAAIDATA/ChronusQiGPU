@@ -39,7 +39,7 @@ def test_ovid_retrieve_counts_accesses():
     ovid.store(b"data")
     ovid.retrieve("x")
     ovid.retrieve("y")
-    stats = ovid.stats() if hasattr(ovid, "stats") else None
+    _stats = ovid.stats() if hasattr(ovid, "stats") else None
     # access counters exist on the storage object
     assert ovid._retrieve_count == 2
 

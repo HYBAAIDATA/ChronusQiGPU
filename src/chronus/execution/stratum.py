@@ -13,7 +13,7 @@ streams, matching every public Stratum V1 pool.
 import asyncio
 import hashlib
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 # Stratum difficulty-1 target: 0x00000000FFFF0000...0000 (2**208 * 0xFFFF).
