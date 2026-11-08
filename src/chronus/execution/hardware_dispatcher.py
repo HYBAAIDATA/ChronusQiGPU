@@ -17,7 +17,7 @@ Zero floating point; strictly compliant with CI purity gate.
 import concurrent.futures
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from chronus.backends.lattice import HardwareUnavailableError
 from chronus.execution.cuda_backend import CUDABackendAdapter
@@ -65,12 +65,36 @@ class HardwareAcceleratorDispatcher:
             classification = getattr(b, "runtime_classification", mode)
             summary[name] = {
                 "name": name,
+                "backend_name": name,
                 "available": is_avail,
                 "execution_mode": mode,
                 "runtime_classification": classification,
                 "supported_workloads": sorted(list(b.supported_workloads)),
             }
         return summary
+
+    def discover_accelerators(self) -> List[Any]:
+        """Discover accelerators returning target objects with .backend_name attribute."""
+        class _DiscoveredTarget:
+            def __init__(self, name: str, info: Dict[str, Any]) -> None:
+                self.backend_name = name
+                self.name = name
+                self.available = info["available"]
+                self.execution_mode = info["execution_mode"]
+                self.runtime_classification = info["runtime_classification"]
+                self.supported_workloads = info["supported_workloads"]
+
+            def to_dict(self) -> Dict[str, Any]:
+                return {
+                    "backend_name": self.backend_name,
+                    "name": self.name,
+                    "available": self.available,
+                    "execution_mode": self.execution_mode,
+                    "runtime_classification": self.runtime_classification,
+                    "supported_workloads": self.supported_workloads,
+                }
+
+        return [_DiscoveredTarget(name, info) for name, info in self.discover_backends().items()]
 
     def dispatch(
         self,

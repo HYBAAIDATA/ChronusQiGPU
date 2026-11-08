@@ -189,6 +189,7 @@ async def get_hyperscaler_connector_matrix() -> Dict[str, Any]:
             cls.value: spec for cls, spec in DATA_MOVEMENT_PLANE_SPECS.items()
         },
         "total_providers": len(HYPERSCALER_CONNECTOR_MATRIX),
+        "total_connectors": len(HYPERSCALER_CONNECTOR_MATRIX),
         "matrix": HYPERSCALER_CONNECTOR_MATRIX,
     }
 

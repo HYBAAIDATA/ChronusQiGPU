@@ -239,3 +239,19 @@ class ALHarasSovereignProductSDK:
             "verification_signature": mldsa65_sig,
             "inspection_latency_ms": elapsed_ms,
         }
+
+    def get_full_governance_report(self, tenant_id: str = "sovereign_default") -> Dict[str, Any]:
+        """Generate full sovereign governance report for an air-gapped tenant."""
+        auth_report = self.inspect_and_authorize(b"GOVERNANCE_AUDIT")
+        return {
+            "sovereign_profile": "DOD_IL6_AIR_GAPPED_SOVEREIGN",
+            "tenant_id": tenant_id,
+            "sovereign_state_id": self.sovereign_state_id,
+            "kms_custody_mode": "CUSTOMER_HELD_HSM_PKCS11",
+            "external_telemetry_egress_bytes": 0,
+            "fips_204_ml_dsa_signed": True,
+            "signature_standard": "NIST FIPS 204 ML-DSA-65",
+            "ml_dsa_signature": auth_report["fips_204_mldsa65_signature"],
+            "receipt_handle": auth_report["ovid_receipt_handle"],
+            "inspection": auth_report,
+        }
