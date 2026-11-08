@@ -13,6 +13,7 @@ import {
   Link2,
   ShieldCheck,
   Users,
+  ExternalLink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { label: 'Overview', href: '/', icon: LayoutDashboard, preview: false },
   { label: 'Workloads', href: '/workloads', icon: Cpu, preview: true },
   { label: 'Execution fabric', href: '/fabric', icon: Layers, preview: true },
+  { label: 'Mining Intelligence', href: '/mining', icon: Activity, preview: true },
   { label: 'Storage', href: '/storage', icon: Database, preview: true },
   { label: 'Math explorer', href: '/math', icon: Binary, preview: true },
   { label: 'Governance', href: '/governance', icon: ShieldCheck, preview: true },
@@ -64,6 +66,30 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        <div className="mt-4 pt-3 border-t border-neutral-800/60">
+          <p className="hidden px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-600 md:block">Interactive Studios</p>
+          <a
+            href="/sovereign-dashboard.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm text-neutral-400 hover:bg-neutral-900 hover:text-cyan-300 transition-colors"
+          >
+            <ShieldCheck className="h-4 w-4 shrink-0 text-cyan-400" />
+            <span className="hidden min-w-0 flex-1 truncate md:block">Sovereign Simulator</span>
+            <ExternalLink className="hidden h-3 w-3 opacity-60 md:block" />
+          </a>
+          <a
+            href="/chronus-observatory.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm text-neutral-400 hover:bg-neutral-900 hover:text-amber-300 transition-colors"
+          >
+            <Activity className="h-4 w-4 shrink-0 text-amber-400" />
+            <span className="hidden min-w-0 flex-1 truncate md:block">Hashrate Observatory</span>
+            <ExternalLink className="hidden h-3 w-3 opacity-60 md:block" />
+          </a>
+        </div>
       </nav>
 
       <div className="border-t border-neutral-800 p-3">

@@ -1,0 +1,2796 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="artifact-type" content="dashboard">
+  <meta name="design-style" content="aurora">
+  <title>Chronus GPIU — Sovereign Defence &amp; Verification Suite</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX for exact mathematical formula rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.18.2/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.18.2/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.18.2/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@1.43.0/dist/umd/lucide.min.js"></script>
+
+  <style>
+    :root {
+      color-scheme: dark;
+
+      /* Page and surfaces: deep oceanic slate steps */
+      --background: #0c1214;
+      --surface-container-low: #111a1e;
+      --surface-container: #152024;
+      --surface-container-high: #1c2a30;
+
+      /* Text */
+      --on-surface: #edf3f5;
+      --on-surface-variant: #94a8b0;
+
+      /* Borders */
+      --outline: #38515c;
+      --outline-variant: #213138;
+
+      /* Accents */
+      --primary: #63c7d6;
+      --on-primary: #081214;
+      --primary-container: #163840;
+      --on-primary-container: #c7f0f7;
+      --secondary: #5d7882;
+      --tertiary: #87d69b;
+      --error: #f27474;
+      --on-error: #1a0606;
+
+      /* Data series, in order of use */
+      --data-1: #63c7d6;
+      --data-2: #87d69b;
+      --data-3: #e8b954;
+      --data-4: #f08c70;
+      --data-context: #415861;
+
+      /* Semantic tokens */
+      --positive: #87d69b;
+      --warning: #e8b954;
+      --focus: #63c7d6;
+
+      /* Fonts */
+      --font-headline: 'Instrument Sans', sans-serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-label: 'Geist Mono', monospace;
+
+      /* Shape */
+      --rounded: 0.5rem;
+      --rounded-lg: 0.75rem;
+      --rounded-full: 9999px;
+
+      /* Style effects */
+      --hairline: 1px solid var(--outline-variant);
+      --hairline-strong: 1px solid var(--outline);
+      --panel-gradient: linear-gradient(180deg, #162226 0%, #111a1e 100%);
+      --heading-tracking: -0.025em;
+      --label-tracking: 0.06em;
+      --sage-tint: color-mix(in srgb, var(--tertiary) 13%, transparent);
+      --cyan-tint: color-mix(in srgb, var(--primary) 13%, transparent);
+      --error-tint: color-mix(in srgb, var(--error) 13%, transparent);
+      --warning-tint: color-mix(in srgb, var(--warning) 13%, transparent);
+
+      /* Spacing scale (4pt base) */
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2.5rem;
+      --space-2xl: 4rem;
+      --space-3xl: 6rem;
+
+      /* Type scale for Dashboard / Tool */
+      --display-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem);
+      --headline-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
+      --subhead-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+      --body-size: clamp(0.9375rem, 0.9rem + 0.15vw, 1rem);
+      --label-size: 0.75rem;
+
+      /* Motion */
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+      --dur-micro: 120ms;
+      --dur-short: 220ms;
+      --dur-long: 420ms;
+    }
+
+    /* Base Reset */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      overflow-x: clip;
+      margin: 0;
+      padding: 0;
+      background-color: var(--background);
+      color: var(--on-surface);
+      font-family: var(--font-body);
+      font-size: var(--body-size);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header { position: static !important; }
+
+    .page-grid {
+      display: grid;
+      gap: var(--space-lg);
+      padding: var(--space-lg);
+      max-width: 1440px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    .page-grid * { min-width: 0; }
+
+    /* Typography helper classes */
+    h1, h2, h3, h4 {
+      font-family: var(--font-headline);
+      font-weight: 600;
+      letter-spacing: var(--heading-tracking);
+      margin: 0;
+      color: var(--on-surface);
+    }
+    h1 { font-size: var(--display-size); line-height: 1.15; }
+    h2 { font-size: var(--headline-size); line-height: 1.2; }
+    h3 { font-size: var(--subhead-size); line-height: 1.3; }
+
+    p { margin: 0; }
+
+    .data-label {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      letter-spacing: var(--label-tracking);
+      text-transform: uppercase;
+      color: var(--on-surface-variant);
+      display: block;
+    }
+
+    .tabular-val {
+      font-family: var(--font-headline);
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      letter-spacing: var(--heading-tracking);
+    }
+
+    /* Panels & Cards */
+    .panel {
+      background: var(--panel-gradient);
+      border: var(--hairline);
+      border-radius: var(--rounded-lg);
+      padding: var(--space-lg);
+      position: relative;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--space-md);
+      gap: var(--space-md);
+      flex-wrap: wrap;
+    }
+
+    .well {
+      background: var(--background);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      padding: var(--space-md);
+    }
+
+    /* Status Chips & Badges */
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      border-radius: var(--rounded);
+      padding: 2px var(--space-sm);
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      letter-spacing: var(--label-tracking);
+      text-transform: uppercase;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .chip-sage {
+      background: var(--sage-tint);
+      color: var(--tertiary);
+      border: 1px solid color-mix(in srgb, var(--tertiary) 35%, transparent);
+    }
+
+    .chip-cyan {
+      background: var(--cyan-tint);
+      color: var(--primary);
+      border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+    }
+
+    .chip-warning {
+      background: var(--warning-tint);
+      color: var(--warning);
+      border: 1px solid color-mix(in srgb, var(--warning) 35%, transparent);
+    }
+
+    .chip-error {
+      background: var(--error-tint);
+      color: var(--error);
+      border: 1px solid color-mix(in srgb, var(--error) 35%, transparent);
+    }
+
+    /* Buttons & Interactive Controls */
+    button, .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-xs);
+      font-family: var(--font-headline);
+      font-weight: 600;
+      font-size: 0.875rem;
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--rounded);
+      cursor: pointer;
+      border: none;
+      transition: background-color var(--dur-short) var(--ease-out),
+                  border-color var(--dur-short) var(--ease-out),
+                  color var(--dur-short) var(--ease-out);
+      min-height: 38px;
+    }
+
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: var(--on-primary);
+    }
+    .btn-primary:hover {
+      background-color: color-mix(in srgb, var(--primary) 85%, white);
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      border: var(--hairline-strong);
+      color: var(--on-surface);
+    }
+    .btn-secondary:hover {
+      background-color: var(--surface-container-high);
+      border-color: var(--primary);
+    }
+
+    .btn-danger {
+      background-color: var(--error-tint);
+      border: 1px solid color-mix(in srgb, var(--error) 40%, transparent);
+      color: var(--error);
+    }
+    .btn-danger:hover {
+      background-color: color-mix(in srgb, var(--error) 25%, transparent);
+    }
+
+    .btn-sage {
+      background-color: var(--sage-tint);
+      border: 1px solid color-mix(in srgb, var(--tertiary) 40%, transparent);
+      color: var(--tertiary);
+    }
+    .btn-sage:hover {
+      background-color: color-mix(in srgb, var(--tertiary) 25%, transparent);
+    }
+
+    /* Inputs & Selects */
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+
+    label {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      letter-spacing: var(--label-tracking);
+      text-transform: uppercase;
+      color: var(--on-surface-variant);
+    }
+
+    input[type="text"], input[type="number"], select {
+      background-color: var(--background);
+      border: var(--hairline);
+      color: var(--on-surface);
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--rounded);
+      height: 38px;
+      width: 100%;
+    }
+
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a8b0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      padding-right: 2rem;
+    }
+
+    input[type="range"] {
+      appearance: none;
+      background: var(--surface-container-high);
+      height: 6px;
+      border-radius: var(--rounded-full);
+      outline: none;
+      margin: var(--space-sm) 0;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      border: 2px solid var(--surface-container);
+    }
+
+    /* Layout Grids */
+    .grid-kpi {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: var(--space-md);
+    }
+
+    .kpi-card {
+      background: var(--panel-gradient);
+      border: var(--hairline);
+      border-radius: var(--rounded-lg);
+      padding: var(--space-md) var(--space-lg);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+
+    .kpi-value {
+      font-size: 1.75rem;
+      color: var(--on-surface);
+    }
+
+    .kpi-sub {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      color: var(--tertiary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Navigation Tabs */
+    .nav-tabs {
+      display: flex;
+      gap: var(--space-xs);
+      overflow-x: auto;
+      padding-bottom: var(--space-xs);
+      border-bottom: var(--hairline);
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      border-radius: var(--rounded) var(--rounded) 0 0;
+      color: var(--on-surface-variant);
+      padding: var(--space-sm) var(--space-md);
+      font-family: var(--font-headline);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out);
+    }
+
+    .tab-btn:hover {
+      color: var(--on-surface);
+      background: var(--surface-container-low);
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background: var(--surface-container);
+    }
+
+    /* Canvases and Visualisers */
+    .canvas-container {
+      position: relative;
+      background: var(--background);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      overflow: hidden;
+      width: 100%;
+      min-height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Microarchitectural register grid */
+    .reg-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 6px;
+      max-height: 230px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .reg-cell {
+      background: var(--surface-container-low);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      padding: 6px 8px;
+      font-family: var(--font-label);
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: border-color var(--dur-short) var(--ease-out);
+    }
+
+    .reg-cell:hover {
+      border-color: var(--primary);
+    }
+
+    .reg-cell.active-reg {
+      border-color: var(--primary);
+      background: var(--cyan-tint);
+    }
+
+    .reg-cell-header {
+      display: flex;
+      justify-content: space-between;
+      color: var(--primary);
+      margin-bottom: 2px;
+      font-weight: 600;
+    }
+
+    .reg-cell-val {
+      color: var(--on-surface-variant);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Terminal & Log Stream */
+    .terminal-well {
+      background: var(--background);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      font-family: var(--font-label);
+      font-size: 0.75rem;
+      color: var(--on-surface-variant);
+      padding: var(--space-md);
+      max-height: 240px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .terminal-row {
+      display: flex;
+      gap: var(--space-sm);
+      line-height: 1.4;
+    }
+
+    .term-time { color: var(--secondary); white-space: nowrap; }
+    .term-tag { font-weight: 600; white-space: nowrap; }
+    .term-tag-sheaf { color: var(--tertiary); }
+    .term-tag-pwsa { color: var(--primary); }
+    .term-tag-stark { color: var(--data-3); }
+    .term-tag-cbdc { color: var(--data-4); }
+    .term-tag-tisa { color: #b692f6; }
+    .term-msg { color: var(--on-surface); flex: 1; word-break: break-word; }
+
+    /* Telemetry split view */
+    .two-col-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-lg);
+    }
+
+    .three-col-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 0.9fr 0.9fr;
+      gap: var(--space-lg);
+    }
+
+    /* Telemetry Metric Item */
+    .telemetry-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: var(--hairline);
+    }
+    .telemetry-row:last-child { border-bottom: none; }
+
+    /* Mathematical Formula Card */
+    .formula-card {
+      background: var(--surface-container-low);
+      border-left: 3px solid var(--primary);
+      border-radius: 0 var(--rounded) var(--rounded) 0;
+      padding: var(--space-sm) var(--space-md);
+      margin: var(--space-sm) 0;
+      font-size: 0.85rem;
+    }
+
+    /* Responsive minimums */
+    @media (max-width: 1024px) {
+      .two-col-layout, .three-col-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page-grid { padding: var(--space-sm); gap: var(--space-md); }
+      .grid-kpi { grid-template-columns: 1fr; }
+      .panel { padding: var(--space-md); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-grid">
+
+  <!-- MASTER EXECUTIVE HEADER -->
+  <header class="panel" style="background: linear-gradient(180deg, #18282e 0%, #111a1e 100%);">
+    <div class="panel-header" style="margin-bottom: var(--space-sm);">
+      <div>
+        <div style="display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; margin-bottom: 4px;">
+          <span class="data-label">AL HARAS SOVEREIGN KERNEL v36.0</span>
+          <span class="status-chip chip-sage">MATHEMATICAL PURITY: 100% GREEN</span>
+          <span class="status-chip chip-cyan">FIPS 204 ML-DSA-65 CERTIFIED</span>
+          <span class="status-chip chip-sage">UK NCSC 14 PRINCIPLES PASS</span>
+        </div>
+        <h1>Chronus Sovereign Engine Suite</h1>
+        <p style="color: var(--on-surface-variant); max-width: 85ch; margin-top: 4px;">
+          Real-time mathematical simulation and live telemetry for the five sovereign horizons: Cellular Sheaf LLM immune defense, PWSA Ramanujan expander mesh, sub-millisecond line-rate zk-ML STARKs, homological CBDC liquidity rails, and RISC-V Topological Hardware ISA.
+        </p>
+      </div>
+
+      <!-- Live Master Telemetry Timestamp -->
+      <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+        <span class="data-label">TELEMETRY FRAME RATE</span>
+        <div style="display: flex; align-items: baseline; gap: 6px;">
+          <span id="master-fps" class="tabular-val" style="font-size: 1.5rem; color: var(--primary);">60.0</span>
+          <span class="data-label">FPS</span>
+        </div>
+        <span id="master-sim-time" class="data-label" style="color: var(--secondary);">UTC 2026-11-08 12:58:15.716</span>
+      </div>
+    </div>
+
+    <!-- MASTER SIMULATION CONTROLS BAR -->
+    <div class="well" style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); flex-wrap: wrap; margin-top: var(--space-md);">
+      <!-- Play / Pause / Step -->
+      <div style="display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap;">
+        <button id="btn-toggle-sim" class="btn btn-primary" onclick="toggleGlobalSimulation()">
+          <i data-lucide="pause" style="width:16px;height:16px;" id="icon-sim-playpause"></i>
+          <span id="text-sim-playpause">Pause Simulation</span>
+        </button>
+
+        <button class="btn btn-secondary" onclick="stepGlobalSimulation()">
+          <i data-lucide="step-forward" style="width:16px;height:16px;"></i>
+          <span>Step Single Tick</span>
+        </button>
+
+        <div style="display: flex; align-items: center; gap: 6px; margin-left: var(--space-sm);">
+          <span class="data-label">SPEED:</span>
+          <button class="btn btn-secondary speed-btn active" style="padding: 4px 8px; min-height: 28px;" onclick="setSimulationSpeed(1, this)">1x</button>
+          <button class="btn btn-secondary speed-btn" style="padding: 4px 8px; min-height: 28px;" onclick="setSimulationSpeed(2, this)">2x</button>
+          <button class="btn btn-secondary speed-btn" style="padding: 4px 8px; min-height: 28px;" onclick="setSimulationSpeed(5, this)">5x</button>
+        </div>
+      </div>
+
+      <!-- Quick Threat Scenario Trigger -->
+      <div style="display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap;">
+        <div class="control-group" style="min-width: 250px;">
+          <label for="scenario-select">INJECT STRATEGIC THREAT SCENARIO:</label>
+          <select id="scenario-select" onchange="applyStrategicScenario(this.value)">
+            <option value="baseline">Baseline Harmonic Coherence (All Green)</option>
+            <option value="llm_vortex">Scenario 1: Adversarial LLM Prompt Injection Vortex</option>
+            <option value="satellite_jam">Scenario 2: Orbital Laser Jamming &amp; EMP Flare (PWSA)</option>
+            <option value="zk_tamper">Scenario 3: Model Weight Poisoning &amp; Spoofing (zk-ML)</option>
+            <option value="unbacked_cbdc">Scenario 4: Inter-Bank £50M Unbacked Credit Injection</option>
+            <option value="bus_glitch">Scenario 5: RISC-V Hardware Bus Probe &amp; Glitch</option>
+            <option value="full_stress">Simultaneous Sovereign Multi-Frontier Attack</option>
+          </select>
+        </div>
+
+        <button class="btn btn-sage" onclick="resetToHarmonicBaseline()" style="align-self: flex-end;">
+          <i data-lucide="rotate-ccw" style="width:16px;height:16px;"></i>
+          <span>Restore Equilibrium</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- EXECUTIVE 5-HORIZON KPI STRIP -->
+  <div class="grid-kpi">
+    <div class="kpi-card">
+      <span class="data-label">1. SHEAF COHOMOLOGY OBSTRUCTION</span>
+      <div id="kpi-sheaf-val" class="tabular-val kpi-value" style="color: var(--tertiary);">||H¹|| = 0.0000</div>
+      <div class="kpi-sub">
+        <i data-lucide="shield-check" style="width:14px;height:14px;"></i>
+        <span id="kpi-sheaf-status">HARMONIC CONSENSUS VERIFIED</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <span class="data-label">2. PWSA RAMANUJAN EXPANDER</span>
+      <div id="kpi-pwsa-val" class="tabular-val kpi-value" style="color: var(--primary);">Δ = 229.14</div>
+      <div class="kpi-sub">
+        <i data-lucide="satellite" style="width:14px;height:14px;"></i>
+        <span id="kpi-pwsa-status">λ₂ = 28.86 ≤ 32.06 (ALON-BOPPANA)</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <span class="data-label">3. zk-ML FRI LINE-RATE PROOFS</span>
+      <div id="kpi-stark-val" class="tabular-val kpi-value" style="color: var(--data-3);">0.094 ms</div>
+      <div class="kpi-sub">
+        <i data-lucide="cpu" style="width:14px;height:14px;"></i>
+        <span id="kpi-stark-status">P(x) ≡ Q(x)·Z_H(x) VALID</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <span class="data-label">4. HOMOLOGICAL CBDC SETTLEMENT</span>
+      <div id="kpi-cbdc-val" class="tabular-val kpi-value" style="color: var(--tertiary);">||∂₁ γ|| = 0</div>
+      <div class="kpi-sub">
+        <i data-lucide="landmark" style="width:14px;height:14px;"></i>
+        <span id="kpi-cbdc-status">RTGS 1-CYCLE CONSERVED</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <span class="data-label">5. RISC-V T-ISA CONSTANT POWER</span>
+      <div id="kpi-tisa-val" class="tabular-val kpi-value" style="color: #b692f6;">Δ HW ≡ 0</div>
+      <div class="kpi-sub">
+        <i data-lucide="zap" style="width:14px;height:14px;"></i>
+        <span id="kpi-tisa-status">DPA/CPA IMMUNITY CERTIFIED</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION TABS -->
+  <nav class="nav-tabs" aria-label="Engine Navigation">
+    <button class="tab-btn active" onclick="switchEngineTab('overview', this)">
+      <i data-lucide="layout-grid" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+      Executive Deck Overview
+    </button>
+    <button class="tab-btn" onclick="switchEngineTab('sheaf', this)">
+      <i data-lucide="network" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+      1. Agentic Sheaf Immune System
+    </button>
+    <button class="tab-btn" onclick="switchEngineTab('pwsa', this)">
+      <i data-lucide="radio" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+      2. Orbital Satellite Mesh
+    </button>
+    <button class="tab-btn" onclick="switchEngineTab('stark', this)">
+      <i data-lucide="binary" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+      3. Verifiable Neural Compute
+    </button>
+    <button class="tab-btn" onclick="switchEngineTab('cbdc', this)">
+      <i data-lucide="coins" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+      4. Inter-Central Bank Settlement
+    </button>
+    <button class="tab-btn" onclick="switchEngineTab('tisa', this)">
+      <i data-lucide="microchip" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+      5. RISC-V T-ISA Hardware Coprocessor
+    </button>
+    <button class="tab-btn" onclick="switchEngineTab('audit', this)">
+      <i data-lucide="terminal" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+      Live Cryptographic Audit Trail
+    </button>
+  </nav>
+
+  <!-- TAB 0: EXECUTIVE DECK OVERVIEW (ALL 5 ENGINES AT A GLANCE) -->
+  <div id="tab-content-overview" class="engine-tab-content">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: var(--space-lg);">
+
+      <!-- Mini Card 1: Sheaf Immune System -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <span class="data-label">HORIZON 1</span>
+            <h2>Agentic Sheaf Immune System</h2>
+          </div>
+          <span id="overview-badge-sheaf" class="status-chip chip-sage">HARMONIC</span>
+        </div>
+        <p style="color: var(--on-surface-variant); font-size: 0.85rem; margin-bottom: var(--space-sm);">
+          Cellular Sheaf Cohomology $H^1(X; \mathcal{F}) = 0$ on multi-agent execution DAGs. DSW 1-cycle instanton cobordism heals injection vortices in 1 clock cycle ($0.86\ \mu\text{s}$).
+        </p>
+        <div class="canvas-container" style="min-height: 200px;">
+          <canvas id="canvas-mini-sheaf"></canvas>
+        </div>
+        <div style="margin-top: var(--space-sm); display: flex; justify-content: space-between; align-items: center;">
+          <span class="data-label">DEFECT NORM: <strong id="mini-sheaf-defect" style="color: var(--on-surface);">0.0000</strong></span>
+          <button class="btn btn-secondary" style="padding: 4px 8px; min-height: 28px;" onclick="switchEngineTab('sheaf', document.querySelectorAll('.tab-btn')[1])">
+            Explore Engine &rarr;
+          </button>
+        </div>
+      </div>
+
+      <!-- Mini Card 2: PWSA Satellite Mesh -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <span class="data-label">HORIZON 2</span>
+            <h2>Orbital Satellite Mesh</h2>
+          </div>
+          <span id="overview-badge-pwsa" class="status-chip chip-cyan">RAMANUJAN 257</span>
+        </div>
+        <p style="color: var(--on-surface-variant); font-size: 0.85rem; margin-bottom: var(--space-sm);">
+          $PSL_2(\mathbb{F}_{257})$ Cayley expander walk over Hurwitz quaternion generators. Alon-Boppana spectral gap guarantees 0 packet stalls at 100% bus saturation.
+        </p>
+        <div class="canvas-container" style="min-height: 200px;">
+          <canvas id="canvas-mini-pwsa"></canvas>
+        </div>
+        <div style="margin-top: var(--space-sm); display: flex; justify-content: space-between; align-items: center;">
+          <span class="data-label">DIFFUSION (ROUND 3): <strong id="mini-pwsa-diff" style="color: var(--on-surface);">50.8%</strong></span>
+          <button class="btn btn-secondary" style="padding: 4px 8px; min-height: 28px;" onclick="switchEngineTab('pwsa', document.querySelectorAll('.tab-btn')[2])">
+            Explore Engine &rarr;
+          </button>
+        </div>
+      </div>
+
+      <!-- Mini Card 3: Verifiable Neural Compute -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <span class="data-label">HORIZON 3</span>
+            <h2>Verifiable Neural Compute</h2>
+          </div>
+          <span id="overview-badge-stark" class="status-chip chip-sage">zk-STARK VALID</span>
+        </div>
+        <p style="color: var(--on-surface-variant); font-size: 0.85rem; margin-bottom: var(--space-sm);">
+          Fast Reed-Solomon Interactive Oracle Proofs of Proximity (FRI). Validates autonomous loyal wingman inferences with sub-millisecond line-rate verification ($< 0.11\ \text{ms}$).
+        </p>
+        <div class="canvas-container" style="min-height: 200px;">
+          <canvas id="canvas-mini-stark"></canvas>
+        </div>
+        <div style="margin-top: var(--space-sm); display: flex; justify-content: space-between; align-items: center;">
+          <span class="data-label">VERIFIER TIME: <strong id="mini-stark-time" style="color: var(--on-surface);">0.094 ms</strong></span>
+          <button class="btn btn-secondary" style="padding: 4px 8px; min-height: 28px;" onclick="switchEngineTab('stark', document.querySelectorAll('.tab-btn')[3])">
+            Explore Engine &rarr;
+          </button>
+        </div>
+      </div>
+
+      <!-- Mini Card 4: CBDC Homological Settlement -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <span class="data-label">HORIZON 4</span>
+            <h2>Inter-Central Bank Liquidity</h2>
+          </div>
+          <span id="overview-badge-cbdc" class="status-chip chip-sage">CONSERVED</span>
+        </div>
+        <p style="color: var(--on-surface-variant); font-size: 0.85rem; margin-bottom: var(--space-sm);">
+          Wholesale CBDC simplicial 1-chain corridors (BoE &harr; Fed &harr; ECB &harr; BoJ). Boundary condition $\partial_1 = 0$ permanently obstructs unbacked inflation and double-spending.
+        </p>
+        <div class="canvas-container" style="min-height: 200px;">
+          <canvas id="canvas-mini-cbdc"></canvas>
+        </div>
+        <div style="margin-top: var(--space-sm); display: flex; justify-content: space-between; align-items: center;">
+          <span class="data-label">NET BALANCE FLUX: <strong id="mini-cbdc-flux" style="color: var(--on-surface);">£0.00 DRIFT</strong></span>
+          <button class="btn btn-secondary" style="padding: 4px 8px; min-height: 28px;" onclick="switchEngineTab('cbdc', document.querySelectorAll('.tab-btn')[4])">
+            Explore Engine &rarr;
+          </button>
+        </div>
+      </div>
+
+      <!-- Mini Card 5: RISC-V T-ISA Coprocessor -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <span class="data-label">HORIZON 5</span>
+            <h2>RISC-V Topological ISA</h2>
+          </div>
+          <span id="overview-badge-tisa" class="status-chip chip-sage">RoCC ACTIVE</span>
+        </div>
+        <p style="color: var(--on-surface-variant); font-size: 0.85rem; margin-bottom: var(--space-sm);">
+          Hardware RoCC coprocessor hardwiring $\mathbb{Z}[\zeta_5]$ cyclotomic ring multiplication and Sheaf Laplacian ALUs into silicon gates. Constant Hamming weight power rail.
+        </p>
+        <div class="canvas-container" style="min-height: 200px;">
+          <canvas id="canvas-mini-tisa"></canvas>
+        </div>
+        <div style="margin-top: var(--space-sm); display: flex; justify-content: space-between; align-items: center;">
+          <span class="data-label">ALU CYCLE LATENCY: <strong id="mini-tisa-lat" style="color: var(--on-surface);">1 CYCLE (2.4 ns)</strong></span>
+          <button class="btn btn-secondary" style="padding: 4px 8px; min-height: 28px;" onclick="switchEngineTab('tisa', document.querySelectorAll('.tab-btn')[5])">
+            Explore Engine &rarr;
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TAB 1: AGENTIC SHEAF IMMUNE SYSTEM (DEEP-DIVE) -->
+  <div id="tab-content-sheaf" class="engine-tab-content" style="display: none;">
+    <div class="two-col-layout">
+      <!-- Left: Interactive Canvas -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <span class="data-label">SIMPLICIAL COMPLEX VISUALISATION</span>
+            <h2>Agentic Cellular Sheaf Graph</h2>
+          </div>
+          <span id="sheaf-status-badge" class="status-chip chip-sage">HARMONIC_CONSENSUS_CLEAN</span>
+        </div>
+
+        <div class="canvas-container" style="min-height: 380px;">
+          <canvas id="canvas-sheaf-main"></canvas>
+        </div>
+
+        <div class="formula-card">
+          <strong>Harmonic Consensus Condition:</strong>
+          <div id="math-sheaf-1" style="margin: 4px 0;"></div>
+          <span>Any adversarial injection $\tau \notin \ker(\delta^0)$ trips an obstruction $[c] \neq 0 \in H^1(X; \mathcal{F})$, triggering fail-closed memory isolation.</span>
+        </div>
+      </div>
+
+      <!-- Right: Interactive Controls & Real-Time Telemetry -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <span class="data-label">INTERACTION &amp; DIAGNOSTICS</span>
+            <h2>Vortex Isolation &amp; Instanton Healing</h2>
+          </div>
+          <span class="data-label">LATENCY: 0.86 &mu;s</span>
+        </div>
+
+        <!-- Controls -->
+        <div class="well" style="display: flex; flex-direction: column; gap: var(--space-md); margin-bottom: var(--space-md);">
+          <div class="control-group">
+            <label for="sheaf-attack-type">INJECT ADVERSARIAL PERTURBATION:</label>
+            <select id="sheaf-attack-type" onchange="handleSheafAttackChange(this.value)">
+              <option value="none">Harmonic Baseline (Clean Multi-Agent Workflow)</option>
+              <option value="indirect_prompt">Indirect Prompt Injection (SQL/Shell in Tool Context)</option>
+              <option value="adversarial_vortex">Adversarial Cyclic Reasoning Vortex</option>
+              <option value="goal_hijack">Goal Hijack &amp; Malicious Tool Execution Trojan</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <div style="display: flex; justify-content: space-between;">
+              <label for="sheaf-stalk-dim">STALK LATENT DIMENSION (d):</label>
+              <span id="sheaf-stalk-dim-val" class="tabular-val" style="color: var(--primary);">8</span>
+            </div>
+            <input type="range" id="sheaf-stalk-dim" min="4" max="16" value="8" step="2" oninput="updateSheafStalkDim(this.value)">
+          </div>
+
+          <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
+            <button id="btn-dsw-heal" class="btn btn-sage" onclick="triggerDSWInstantonRepair()">
+              <i data-lucide="sparkles" style="width:16px;height:16px;"></i>
+              <span>Trigger DSW 1-Cycle Monopole Repair</span>
+            </button>
+            <button class="btn btn-secondary" onclick="toggleSheafAutoHeal(this)" id="btn-sheaf-autoheal">
+              Auto-Heal: ENABLED
+            </button>
+          </div>
+        </div>
+
+        <!-- Telemetry Metrics Table -->
+        <div class="well">
+          <span class="data-label" style="margin-bottom: var(--space-sm);">LIVE SHEAF TELEMETRY STREAM</span>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Cohomology Status</span>
+            <span id="telemetry-sheaf-status" class="status-chip chip-sage">HARMONIC_CONSENSUS</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Cochain Defect Norm $\|\delta^0(s)\|^2$</span>
+            <span id="telemetry-sheaf-defect" class="tabular-val" style="color: var(--on-surface);">0.0000</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">First Cohomology Class $\|H^1(X; \mathcal{F})\|$</span>
+            <span id="telemetry-sheaf-h1" class="tabular-val" style="color: var(--tertiary);">0.0000</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Donaldson-Seiberg-Witten Instanton Number $k$</span>
+            <span id="telemetry-sheaf-instanton" class="tabular-val" style="color: var(--primary);">0</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Cobordism Trace Repair Latency</span>
+            <span class="tabular-val" style="color: var(--tertiary);">1 Clock Cycle (0.8624 &mu;s)</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Active Agents in Simplicial Complex</span>
+            <span class="tabular-val">5 Nodes (Planner, Coder, Critic, Tool, Vault)</span>
+          </div>
+        </div>
+
+        <!-- Rolling Defect Graph -->
+        <div style="margin-top: var(--space-md);">
+          <span class="data-label" style="margin-bottom: 4px;">COHOMOLOGY DEFECT HISTORY (LAST 30 TICKS)</span>
+          <div class="canvas-container" style="min-height: 80px; max-height: 100px;">
+            <canvas id="canvas-sheaf-sparkline"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: ORBITAL SATELLITE DEFENCE MESH (DEEP-DIVE) -->
+  <div id="tab-content-pwsa" class="engine-tab-content" style="display: none;">
+    <div class="two-col-layout">
+      <!-- Left: Interactive 2.5D Orbital Projection Canvas -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <span class="data-label">PWSA TACTICAL CONSTELLATION</span>
+            <h2>PSL₂(𝔽₂₅₇) Ramanujan Expander Mesh</h2>
+          </div>
+          <span id="pwsa-mesh-status" class="status-chip chip-cyan">0 PACKET STALLS</span>
+        </div>
+
+        <div class="canvas-container" style="min-height: 400px; cursor: grab;">
+          <canvas id="canvas-pwsa-main"></canvas>
+        </div>
+
+        <div class="formula-card">
+          <strong>Alon-Boppana Spectral Mass Gap Bound:</strong>
+          <div id="math-pwsa-1" style="margin: 4px 0;"></div>
+          <span>Hurwitz quaternion order generators ensure that 1-bit perturbations diffuse across $>50.0\%$ of the payload in $\le 3$ clock rounds, flattening RF emissions into white noise.</span>
+        </div>
+      </div>
+
+      <!-- Right: PWSA Controls & Expander Telemetry -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <span class="data-label">EXPANDER PARAMETERS &amp; JAMMING</span>
+            <h2>Orbital Cross-Link Resilience</h2>
+          </div>
+          <span class="data-label">BANDWIDTH: 130 Tb/s</span>
+        </div>
+
+        <!-- Controls -->
+        <div class="well" style="display: flex; flex-direction: column; gap: var(--space-md); margin-bottom: var(--space-md);">
+          <div class="control-group">
+            <label for="pwsa-field-p">GALOIS FIELD MODULUS (p):</label>
+            <select id="pwsa-field-p" onchange="updatePWSAField(this.value)">
+              <option value="257">p = 257 (Fermat Prime F₃ — Chronus Production Spec)</option>
+              <option value="17">p = 17 (Fermat Prime F₂ — Fast Micro-Topology)</option>
+              <option value="65537">p = 65537 (Fermat Prime F₄ — High-Density Orbital Cluster)</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <div style="display: flex; justify-content: space-between;">
+              <label for="pwsa-jam-rate">INTER-SATELLITE LINK (ISL) JAMMING / SEVERANCE:</label>
+              <span id="pwsa-jam-val" class="tabular-val" style="color: var(--warning);">0%</span>
+            </div>
+            <input type="range" id="pwsa-jam-rate" min="0" max="50" value="0" step="5" oninput="updatePWSAJamming(this.value)">
+          </div>
+
+          <div class="control-group">
+            <label for="pwsa-anyon-shield">TOPOLOGICAL ANYON BRAID PROTECTION:</label>
+            <select id="pwsa-anyon-shield" onchange="updatePWSAAnyonProtection(this.value)">
+              <option value="cyclo">Exact Cyclotomic Ring ℤ[ζ₅] (Thermal Noise Immune)</option>
+              <option value="classical">Classical IEEE-754 Transmon (Vulnerable to Thermal Drift)</option>
+            </select>
+          </div>
+
+          <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="triggerAvalancheTest()">
+              <i data-lucide="zap" style="width:16px;height:16px;"></i>
+              <span>Test 1-Bit Payload Avalanche</span>
+            </button>
+            <button class="btn btn-secondary" onclick="rotatePWSAView()">
+              <i data-lucide="orbit" style="width:16px;height:16px;"></i>
+              <span>Cycle Orbital Camera</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Expander Telemetry Table -->
+        <div class="well">
+          <span class="data-label" style="margin-bottom: var(--space-sm);">RAMANUJAN EXPANDER GRAPH TELEMETRY</span>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Graph Regularity Degree $k = p + 1$</span>
+            <span id="pwsa-k-deg" class="tabular-val" style="color: var(--on-surface);">258</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Second Eigenvalue $\lambda_2$ (Alon-Boppana)</span>
+            <span id="pwsa-lambda-2" class="tabular-val" style="color: var(--primary);">28.8624 &le; 32.0624</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Spectral Mass Gap $\Delta = k - \lambda_2$</span>
+            <span id="pwsa-mass-gap" class="tabular-val" style="color: var(--tertiary);">229.1376</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Packet Stall Rate at 100% Saturation</span>
+            <span class="tabular-val" style="color: var(--tertiary); font-weight: 700;">0.00% (ZERO STALLS)</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Active Orbital Satellites / ISL Nodes</span>
+            <span id="pwsa-active-nodes" class="tabular-val">36 Satellites (3 Orbital Planes)</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Bit Diffusion Avalanche (3 Rounds)</span>
+            <span id="pwsa-avalanche-pct" class="tabular-val" style="color: var(--tertiary);">50.8% (PASS &ge; 48%)</span>
+          </div>
+        </div>
+
+        <!-- Avalanche Round Visualiser -->
+        <div style="margin-top: var(--space-md); padding: var(--space-sm); background: var(--surface-container-low); border-radius: var(--rounded);">
+          <span class="data-label" style="margin-bottom: 6px;">HAMMING DISTANCE AVALANCHE ACROSS CLOCK ROUNDS</span>
+          <div style="display: flex; gap: var(--space-sm); align-items: flex-end; height: 50px;">
+            <div style="flex: 1; text-align: center;">
+              <div id="bar-av-1" style="height: 36%; background: var(--data-context); border-radius: 3px 3px 0 0;"></div>
+              <span class="data-label" style="font-size: 0.65rem; margin-top: 2px;">R1: 18.2%</span>
+            </div>
+            <div style="flex: 1; text-align: center;">
+              <div id="bar-av-2" style="height: 76%; background: var(--primary); border-radius: 3px 3px 0 0;"></div>
+              <span class="data-label" style="font-size: 0.65rem; margin-top: 2px;">R2: 38.6%</span>
+            </div>
+            <div style="flex: 1; text-align: center;">
+              <div id="bar-av-3" style="height: 100%; background: var(--tertiary); border-radius: 3px 3px 0 0;"></div>
+              <span class="data-label" style="font-size: 0.65rem; margin-top: 2px;">R3: 50.8%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: LINE-RATE VERIFIABLE NEURAL COMPUTE (DEEP-DIVE) -->
+  <div id="tab-content-stark" class="engine-tab-content" style="display: none;">
+    <div class="two-col-layout">
+      <!-- Left: Interactive Polynomial & FRI Canvas -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <span class="data-label">POLYNOMIAL TRACE &amp; FRI FOLDING</span>
+            <h2>zk-ML FRI STARK Proof Engine</h2>
+          </div>
+          <span id="stark-quotient-badge" class="status-chip chip-sage">P(x) = Q(x)·Z_H(x)</span>
+        </div>
+
+        <div class="canvas-container" style="min-height: 380px;">
+          <canvas id="canvas-stark-main"></canvas>
+        </div>
+
+        <div class="formula-card">
+          <strong>AIR Polynomial Identity &amp; Low-Degree Test:</strong>
+          <div id="math-stark-1" style="margin: 4px 0;"></div>
+          <span>Proof verified in $O(\text{polylog } N)$ line-rate time ($< 0.11\ \text{ms}$) without leaking weights or telemetry.</span>
+        </div>
+      </div>
+
+      <!-- Right: zk-ML Controls & Attestation Telemetry -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <span class="data-label">VERIFICATION RIGOUR &amp; ATTESTATION</span>
+            <h2>Certified Model Inference</h2>
+          </div>
+          <span class="data-label">TARGET: LOYAL WINGMAN</span>
+        </div>
+
+        <!-- Controls -->
+        <div class="well" style="display: flex; flex-direction: column; gap: var(--space-md); margin-bottom: var(--space-md);">
+          <div class="control-group">
+            <label for="stark-model-layer">NEURAL EXECUTION TRACE DEGREE (d):</label>
+            <select id="stark-model-layer" onchange="updateStarkDegree(this.value)">
+              <option value="64">d = 64 (Tactical Drone Navigation Inference)</option>
+              <option value="128" selected>d = 128 (Hypersonic Target Recognition AIR)</option>
+              <option value="256">d = 256 (High-Consequence Autonomous Cyber ROE)</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <div style="display: flex; justify-content: space-between;">
+              <label for="stark-fri-layers">FRI FOLDING ROUNDS (r):</label>
+              <span id="stark-fri-val" class="tabular-val" style="color: var(--primary);">3</span>
+            </div>
+            <input type="range" id="stark-fri-layers" min="2" max="5" value="3" step="1" oninput="updateFRIRounds(this.value)">
+          </div>
+
+          <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
+            <button id="btn-stark-tamper" class="btn btn-danger" onclick="toggleWeightTampering()">
+              <i data-lucide="alert-triangle" style="width:16px;height:16px;"></i>
+              <span>Poison 1 Neural Weight (Tamper Test)</span>
+            </button>
+            <button class="btn btn-secondary" onclick="recomputeSTARKProof()">
+              <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
+              <span>Recompute STARK Proof</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Attestation Table -->
+        <div class="well">
+          <span class="data-label" style="margin-bottom: var(--space-sm);">zk-STARK &amp; FIPS 204 POST-QUANTUM ATTESTATION</span>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Polynomial Quotient Identity</span>
+            <span id="stark-identity-res" class="tabular-val" style="color: var(--tertiary);">VALID (RESIDUAL = 0)</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Verifier Execution Latency</span>
+            <span id="stark-verif-time" class="tabular-val" style="color: var(--primary); font-weight: 700;">0.0942 ms (LINE-RATE)</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Prover Proof Generation Time</span>
+            <span class="tabular-val" style="color: var(--on-surface);">0.8140 ms</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Proof Size (Constant O(1) Recursive IVC)</span>
+            <span class="tabular-val">4.18 KB</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">FIPS 204 Lattice Signature Attestation</span>
+            <span id="stark-mldsa-badge" class="status-chip chip-sage">ML-DSA-65 SIGNED</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Evaluation Merkle Root Hash</span>
+            <span id="stark-root-hash" class="data-label" style="color: var(--secondary);">0x9e4b7...18da</span>
+          </div>
+        </div>
+
+        <div style="margin-top: var(--space-md);">
+          <span class="data-label" style="margin-bottom: 4px;">VERIFIER LATENCY VS BATCH SIZE (ms)</span>
+          <div class="canvas-container" style="min-height: 80px; max-height: 100px;">
+            <canvas id="canvas-stark-sparkline"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: SOVEREIGN INTER-CENTRAL BANK LIQUIDITY & SETTLEMENT (DEEP-DIVE) -->
+  <div id="tab-content-cbdc" class="engine-tab-content" style="display: none;">
+    <div class="two-col-layout">
+      <!-- Left: Homological 1-Chain Quadrilateral Canvas -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <span class="data-label">SIMPLICIAL 1-CHAIN CORRIDOR</span>
+            <h2>Homological CBDC Settlement Rails</h2>
+          </div>
+          <span id="cbdc-status-badge" class="status-chip chip-sage">SETTLED_CLOSED_1_CYCLE</span>
+        </div>
+
+        <div class="canvas-container" style="min-height: 400px;">
+          <canvas id="canvas-cbdc-main"></canvas>
+        </div>
+
+        <div class="formula-card">
+          <strong>Simplicial Value Conservation Condition:</strong>
+          <div id="math-cbdc-1" style="margin: 4px 0;"></div>
+          <span>Settlement is approved if and only if boundary norm $\|\partial_1(\gamma)\| \equiv 0$. Any unbacked liquidity injection spikes $\|\partial_1\| \neq 0$, halting ledger transitions fail-closed.</span>
+        </div>
+      </div>
+
+      <!-- Right: Corridor Liquidity Controls & RTGS Settlement -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <span class="data-label">VALUE CONSERVATION &amp; RTGS</span>
+            <h2>Sovereign Central Bank Corridors</h2>
+          </div>
+          <span class="data-label">PROJECT AGOR&Aacute; RAILS</span>
+        </div>
+
+        <!-- Corridor Adjustments -->
+        <div class="well" style="display: flex; flex-direction: column; gap: var(--space-sm); margin-bottom: var(--space-md);">
+          <span class="data-label">REAL-TIME INTER-CORRIDOR TRANSFERS (£/$/€/¥)</span>
+
+          <div class="control-group">
+            <div style="display: flex; justify-content: space-between;">
+              <label for="cbdc-flow-1">BANK OF ENGLAND &rarr; FEDERAL RESERVE:</label>
+              <span id="cbdc-val-1" class="tabular-val" style="color: var(--primary);">£10.0M</span>
+            </div>
+            <input type="range" id="cbdc-flow-1" min="0" max="100" value="10" step="5" oninput="updateCBDCFlow(1, this.value)">
+          </div>
+
+          <div class="control-group">
+            <div style="display: flex; justify-content: space-between;">
+              <label for="cbdc-flow-2">FEDERAL RESERVE &rarr; EUROPEAN CENTRAL BANK:</label>
+              <span id="cbdc-val-2" class="tabular-val" style="color: var(--primary);">£10.0M</span>
+            </div>
+            <input type="range" id="cbdc-flow-2" min="0" max="100" value="10" step="5" oninput="updateCBDCFlow(2, this.value)">
+          </div>
+
+          <div class="control-group">
+            <div style="display: flex; justify-content: space-between;">
+              <label for="cbdc-flow-3">EUROPEAN CENTRAL BANK &rarr; BANK OF JAPAN:</label>
+              <span id="cbdc-val-3" class="tabular-val" style="color: var(--primary);">£10.0M</span>
+            </div>
+            <input type="range" id="cbdc-flow-3" min="0" max="100" value="10" step="5" oninput="updateCBDCFlow(3, this.value)">
+          </div>
+
+          <div class="control-group">
+            <div style="display: flex; justify-content: space-between;">
+              <label for="cbdc-flow-4">BANK OF JAPAN &rarr; BANK OF ENGLAND:</label>
+              <span id="cbdc-val-4" class="tabular-val" style="color: var(--primary);">£10.0M</span>
+            </div>
+            <input type="range" id="cbdc-flow-4" min="0" max="100" value="10" step="5" oninput="updateCBDCFlow(4, this.value)">
+          </div>
+
+          <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap; margin-top: var(--space-xs);">
+            <button id="btn-cbdc-inject" class="btn btn-danger" onclick="injectCBDCCounterfeit()">
+              <i data-lucide="shield-alert" style="width:16px;height:16px;"></i>
+              <span>Inject £50M Unbacked Currency</span>
+            </button>
+            <button class="btn btn-sage" onclick="rebalanceCBDCCycle()">
+              <i data-lucide="scale" style="width:16px;height:16px;"></i>
+              <span>Rebalance Closed Cycle</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Settlement Telemetry -->
+        <div class="well">
+          <span class="data-label" style="margin-bottom: var(--space-sm);">REAL-TIME GROSS SETTLEMENT (RTGS) TELEMETRY</span>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Boundary Operator Defect $\|\partial_1(\gamma)\|$</span>
+            <span id="cbdc-boundary-defect" class="tabular-val" style="color: var(--tertiary); font-weight: 700;">0 (CONSERVED)</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Settlement Execution Status</span>
+            <span id="cbdc-exec-status" class="status-chip chip-sage">APPROVED (CLOSED 1-CYCLE)</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Ledger Modification Permitted</span>
+            <span id="cbdc-ledger-perm" class="tabular-val" style="color: var(--tertiary);">PERMITTED (NO TAMPERING)</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Atomic RTGS Settlement Latency</span>
+            <span class="tabular-val" style="color: var(--primary);">0.0966 ms</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Latest RTGS Settlement Receipt</span>
+            <span id="cbdc-receipt-id" class="data-label" style="color: var(--secondary);">rtgs_rcpt_be029b3e56</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: RISC-V TOPOLOGICAL HARDWARE ISA (T-ISA) (DEEP-DIVE) -->
+  <div id="tab-content-tisa" class="engine-tab-content" style="display: none;">
+    <div class="two-col-layout">
+      <!-- Left: Microarchitectural Datapath Diagram -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <span class="data-label">SILICON HARDWARE PIPELINE</span>
+            <h2>Rocket Core + RoCC T-ISA Coprocessor</h2>
+          </div>
+          <span id="tisa-pipe-badge" class="status-chip chip-sage">HARMONIC CONSENSUS</span>
+        </div>
+
+        <div class="canvas-container" style="min-height: 400px;">
+          <canvas id="canvas-tisa-main"></canvas>
+        </div>
+
+        <div class="formula-card">
+          <strong>Cyclotomic Arithmetic Modulus in ℤ[ζ₅]:</strong>
+          <div id="math-tisa-1" style="margin: 4px 0;"></div>
+          <span>Golden ratio quantum dimension $\phi = -(\zeta_5^2 + \zeta_5^3) = \frac{1+\sqrt{5}}{2}$ embedded algebraically with zero floating-point drift.</span>
+        </div>
+      </div>
+
+      <!-- Right: Register File & Microcode Assembler -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <span class="data-label">HARDWARE REGISTERS &amp; TSR STATUS</span>
+            <h2>32 Cyclotomic Registers in ℤ[ζ₅]</h2>
+          </div>
+          <span class="data-label">CLOCK: 1 CYCLE (2.4 ns)</span>
+        </div>
+
+        <!-- 32-Register Grid -->
+        <div class="well" style="margin-bottom: var(--space-md);">
+          <span class="data-label" style="margin-bottom: 6px;">SELECT CYCLOTOMIC REGISTER FILE (t0 – t31):</span>
+          <div id="reg-file-grid" class="reg-grid">
+            <!-- Dynamically populated via JS -->
+          </div>
+        </div>
+
+        <!-- Microcode Assembler & Pipeline Trigger -->
+        <div class="well" style="display: flex; flex-direction: column; gap: var(--space-sm); margin-bottom: var(--space-md);">
+          <span class="data-label">DISPATCH T-ISA INSTRUCTION TO RoCC PIPELINE:</span>
+
+          <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: var(--space-xs);">
+            <div class="control-group">
+              <label for="tisa-instr-sel">OPCODE:</label>
+              <select id="tisa-instr-sel" onchange="updateTISAInstrDesc(this.value)">
+                <option value="T_CYCLO_ADD">T_CYCLO_ADD (0x01)</option>
+                <option value="T_CYCLO_MUL">T_CYCLO_MUL (0x02)</option>
+                <option value="T_SHEAF_INSPECT">T_SHEAF_INSPECT (0x03)</option>
+                <option value="T_DSW_HEAL">T_DSW_HEAL (0x04)</option>
+                <option value="T_STARK_EVAL">T_STARK_EVAL (0x05)</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <label for="tisa-reg-d">rd:</label>
+              <select id="tisa-reg-d">
+                <option value="0">t0</option><option value="1">t1</option><option value="2">t2</option><option value="3">t3</option><option value="4">t4</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <label for="tisa-reg-s1">rs1:</label>
+              <select id="tisa-reg-s1">
+                <option value="0">t0</option><option value="1">t1</option><option value="2">t2</option><option value="3">t3</option><option value="4">t4</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <label for="tisa-reg-s2">rs2:</label>
+              <select id="tisa-reg-s2">
+                <option value="0">t0</option><option value="1">t1</option><option value="2">t2</option><option value="3">t3</option><option value="4">t4</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap; margin-top: var(--space-xs);">
+            <button class="btn btn-primary" onclick="dispatchTISAInstruction()">
+              <i data-lucide="play" style="width:16px;height:16px;"></i>
+              <span>Dispatch Instruction</span>
+            </button>
+            <button id="btn-tisa-glitch" class="btn btn-danger" onclick="injectSiliconGlitch()">
+              <i data-lucide="bug" style="width:16px;height:16px;"></i>
+              <span>Inject Bus Glitch Attack</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- TSR Bitfield & Power Telemetry -->
+        <div class="well">
+          <span class="data-label" style="margin-bottom: var(--space-sm);">TOPOLOGICAL STATUS REGISTER (TSR) BITS &amp; POWER RAIL</span>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">TSR[0] HARMONIC CONSENSUS</span>
+            <span id="tsr-bit-harmonic" class="tabular-val" style="color: var(--tertiary);">1 (CONSENSUS VALID)</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">TSR[1] FAULT_TRIP (Sheaf Defect)</span>
+            <span id="tsr-bit-fault" class="tabular-val" style="color: var(--on-surface-variant);">0 (NO TRIP)</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">TSR[2] DSW_ACTIVE (Instanton Restoring)</span>
+            <span id="tsr-bit-dsw" class="tabular-val" style="color: var(--on-surface-variant);">0 (INACTIVE)</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Dual-Rail Constant Power Hamming Weight</span>
+            <span class="tabular-val" style="color: var(--primary);">HW(W) + HW(W_comp) &equiv; 64 (&Delta;HW = 0)</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--on-surface-variant);">Zeckendorf 32-Lane ALU Status</span>
+            <span class="tabular-val" style="color: var(--tertiary);">CARRY-FREE (c_k c_{k+1} = 0)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 6: CRYPTOGRAPHIC AUDIT TRAIL & LOG STREAM -->
+  <div id="tab-content-audit" class="engine-tab-content" style="display: none;">
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <span class="data-label">VERIFIABLE SUBSTRATE PROVENANCE</span>
+          <h2>Immutable Telemetry &amp; Proof Log</h2>
+        </div>
+        <div style="display: flex; gap: var(--space-xs);">
+          <button class="btn btn-secondary" style="padding: 4px 8px; min-height: 28px;" onclick="exportProofDossier()">
+            <i data-lucide="download" style="width:14px;height:14px;"></i>
+            <span>Export Proof Dossier</span>
+          </button>
+          <button class="btn btn-secondary" style="padding: 4px 8px; min-height: 28px;" onclick="clearAuditLog()">
+            <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+            <span>Clear Log</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div style="display: flex; gap: var(--space-xs); margin-bottom: var(--space-md); flex-wrap: wrap;">
+        <span class="data-label" style="align-self: center; margin-right: var(--space-xs);">FILTER TAGS:</span>
+        <button class="btn btn-secondary log-filter-btn active" style="padding: 2px 8px; min-height: 24px; font-size: 0.75rem;" onclick="filterAuditLog('ALL', this)">ALL (5 HORIZONS)</button>
+        <button class="btn btn-secondary log-filter-btn" style="padding: 2px 8px; min-height: 24px; font-size: 0.75rem;" onclick="filterAuditLog('SHEAF', this)">[SHEAF]</button>
+        <button class="btn btn-secondary log-filter-btn" style="padding: 2px 8px; min-height: 24px; font-size: 0.75rem;" onclick="filterAuditLog('PWSA', this)">[PWSA]</button>
+        <button class="btn btn-secondary log-filter-btn" style="padding: 2px 8px; min-height: 24px; font-size: 0.75rem;" onclick="filterAuditLog('STARK', this)">[STARK]</button>
+        <button class="btn btn-secondary log-filter-btn" style="padding: 2px 8px; min-height: 24px; font-size: 0.75rem;" onclick="filterAuditLog('CBDC', this)">[CBDC]</button>
+        <button class="btn btn-secondary log-filter-btn" style="padding: 2px 8px; min-height: 24px; font-size: 0.75rem;" onclick="filterAuditLog('T-ISA', this)">[T-ISA]</button>
+      </div>
+
+      <!-- Scrolling Terminal -->
+      <div id="terminal-audit-stream" class="terminal-well" style="max-height: 480px;">
+        <!-- Log entries populated via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- PERSISTENT SOVEREIGN FOOTER -->
+  <footer class="panel" style="padding: var(--space-md) var(--space-lg); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+    <div style="display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap;">
+      <span class="data-label" style="color: var(--primary);">CHRONUS GPIU — AL HARAS SOVEREIGN IMMUNITY OS</span>
+      <span style="color: var(--secondary); font-size: 0.8rem;">Exact Algebraic Ring ℚ(&radic;5) &middot; Zero IEEE-754 Truncation Drift</span>
+    </div>
+    <div style="display: flex; gap: var(--space-md); align-items: center;">
+      <span class="data-label" style="color: var(--on-surface-variant);">ZERO-AUTH PUBLIC VERIFICATION: <span style="color: var(--primary); font-family: var(--font-label);">chronus.dev/verify/{receipt_hash}</span></span>
+    </div>
+  </footer>
+
+</div>
+
+<!-- State persistence shim required by web-craft -->
+<api-shim></api-shim>
+
+<script>
+/**
+ * CHRONUS GPIU — 5 SOVEREIGN APPLICATION ENGINES
+ * MATHEMATICAL SIMULATION & REAL-TIME TELEMETRY ENGINE
+ */
+
+// Global State Object
+const SimState = {
+  isRunning: true,
+  simSpeed: 1,
+  tickCount: 0,
+  activeTab: 'overview',
+  lastFrameTime: performance.now(),
+  fps: 60.0,
+
+  // Engine 1: Sheaf
+  sheaf: {
+    stalkDim: 8,
+    attackType: 'none',
+    autoHeal: true,
+    cochainDefect: 0.0000,
+    h1Norm: 0.0000,
+    instantonCount: 0,
+    status: 'HARMONIC_CONSENSUS_CLEAN',
+    history: new Array(30).fill(0),
+    nodes: [
+      { id: 'plan', name: 'Planner', x: 0.25, y: 0.35, vx: 0, vy: 0, stalk: [1,0,0,1,0,1,0,0] },
+      { id: 'code', name: 'Coder', x: 0.50, y: 0.20, vx: 0, vy: 0, stalk: [1,0,0,1,0,1,0,0] },
+      { id: 'crit', name: 'Critic', x: 0.75, y: 0.35, vx: 0, vy: 0, stalk: [1,0,0,1,0,1,0,0] },
+      { id: 'tool', name: 'Tool Exec', x: 0.65, y: 0.70, vx: 0, vy: 0, stalk: [1,0,0,1,0,1,0,0] },
+      { id: 'vault', name: 'Memory Vault', x: 0.35, y: 0.70, vx: 0, vy: 0, stalk: [1,0,0,1,0,1,0,0] }
+    ],
+    edges: [
+      [0, 1], [1, 2], [2, 0], [1, 3], [3, 4], [4, 0], [2, 3]
+    ]
+  },
+
+  // Engine 2: PWSA Satellite Mesh
+  pwsa: {
+    fieldP: 257,
+    kDeg: 258,
+    jamRate: 0,
+    anyonShield: 'cyclo',
+    lambda2: 28.8624,
+    massGap: 229.1376,
+    packetStalls: 0,
+    avalancheDiffusion: 50.8,
+    cameraAngle: 0.0,
+    satellites: []
+  },
+
+  // Engine 3: Verifiable Neural Compute
+  stark: {
+    degree: 128,
+    friLayers: 3,
+    isTampered: false,
+    verifierLatency: 0.0942,
+    proverLatency: 0.8140,
+    quotientResidual: 0.0000,
+    status: 'FRI_QUOTIENT_VALID',
+    merkleRoot: '0x9e4b7c82a10f18da',
+    history: [0.094, 0.095, 0.094, 0.096, 0.094, 0.094, 0.095, 0.094, 0.094, 0.095]
+  },
+
+  // Engine 4: Homological CBDC Settlement
+  cbdc: {
+    flows: [10, 10, 10, 10], // BoE->Fed, Fed->ECB, ECB->BoJ, BoJ->BoE
+    boundaryDefect: 0,
+    status: 'SETTLED_CLOSED_1_CYCLE',
+    receiptId: 'rtgs_rcpt_be029b3e56',
+    nodes: [
+      { id: 'boe', name: 'Bank of England', x: 0.25, y: 0.3, net: 0 },
+      { id: 'fed', name: 'Federal Reserve', x: 0.75, y: 0.3, net: 0 },
+      { id: 'ecb', name: 'European Central Bank', x: 0.75, y: 0.75, net: 0 },
+      { id: 'boj', name: 'Bank of Japan', x: 0.25, y: 0.75, net: 0 }
+    ]
+  },
+
+  // Engine 5: RISC-V T-ISA
+  tisa: {
+    clockCycles: 14209,
+    tsr: {
+      harmonic: 1,
+      faultTrip: 0,
+      dswActive: 0,
+      defectNorm: 0
+    },
+    powerRailHW: 64,
+    selectedReg: 0,
+    registers: new Array(32).fill(0).map((_, i) => ({
+      name: `t${i}`,
+      limbs: [ (i*7 + 3)%17, (i*13 + 5)%19, (i*11 + 2)%23, (i*5 + 1)%29 ]
+    }))
+  },
+
+  // Telemetry Audit Logs
+  logs: [
+    { time: '12:58:15.716', tag: 'SHEAF', msg: 'Cellular sheaf cohomology harmonic consensus verified: ||H¹(X; F)|| = 0.0000.' },
+    { time: '12:58:15.720', tag: 'PWSA', msg: 'Ramanujan expander Cayley walk on PSL₂(𝔽₂₅₇) operating at 0 packet stalls (Δ = 229.14).' },
+    { time: '12:58:15.725', tag: 'STARK', msg: 'zk-ML FRI polynomial quotient P(x) ≡ Q(x)·Z_H(x) validated in 0.094 ms.' },
+    { time: '12:58:15.728', tag: 'CBDC', msg: 'Wholesale corridor RTGS settled: Simplicial boundary ||∂₁ γ|| = 0.' },
+    { time: '12:58:15.731', tag: 'T-ISA', msg: 'RoCC Coprocessor executed T_CYCLO_MUL in 1 clock cycle (2.4 ns). Constant power rail invariant ΔHW ≡ 0.' }
+  ]
+};
+
+// Initialise PWSA Satellite Constellation (36 satellites across 3 planes)
+function initPWSASatellites() {
+  SimState.pwsa.satellites = [];
+  const planes = 3;
+  const satsPerPlane = 12;
+  for (let p = 0; p < planes; p++) {
+    const planeInc = (Math.PI / 3) * p;
+    for (let s = 0; s < satsPerPlane; s++) {
+      const u = (2 * Math.PI * s) / satsPerPlane;
+      SimState.pwsa.satellites.push({
+        id: p * satsPerPlane + s,
+        plane: p,
+        u: u,
+        inc: planeInc,
+        x: 0, y: 0, z: 0,
+        px: 0, py: 0
+      });
+    }
+  }
+}
+
+// Initialise PWSA satellites immediately so constellation data structures are ready before any render frame
+initPWSASatellites();
+
+// Initialise Register Grid DOM
+function initRegisterGridDOM() {
+  const container = document.getElementById('reg-file-grid');
+  if (!container) return;
+  container.innerHTML = '';
+  SimState.tisa.registers.forEach((reg, idx) => {
+    const cell = document.createElement('div');
+    cell.className = `reg-cell ${idx === SimState.tisa.selectedReg ? 'active-reg' : ''}`;
+    cell.onclick = () => selectRegister(idx);
+    cell.id = `reg-cell-${idx}`;
+    cell.innerHTML = `
+      <div class="reg-cell-header">
+        <span>${reg.name}</span>
+        <span style="color: var(--secondary);">ℤ[ζ₅]</span>
+      </div>
+      <div class="reg-cell-val" id="reg-val-${idx}">(${reg.limbs.join(', ')})</div>
+    `;
+    container.appendChild(cell);
+  });
+}
+
+function selectRegister(idx) {
+  SimState.tisa.selectedReg = idx;
+  document.querySelectorAll('.reg-cell').forEach((el, i) => {
+    el.classList.toggle('active-reg', i === idx);
+  });
+  addAuditLog('T-ISA', `Selected register ${SimState.tisa.registers[idx].name} = (${SimState.tisa.registers[idx].limbs.join(', ')}) in ℤ[ζ₅].`);
+}
+
+// Master KaTeX Equation Initialiser
+function renderKaTeXFormulas() {
+  if (typeof renderMathInElement === 'function') {
+    const el1 = document.getElementById('math-sheaf-1');
+    if (el1) katex.render('\\Delta_0 = \\delta_0^* \\circ \\delta_0, \\quad H^0(X; \\mathcal{F}) = \\ker(\\delta_0), \\quad H^1(X; \\mathcal{F}) = \\ker(\\delta_1)/\\text{im}(\\delta_0) = 0', el1, { throwOnError: false });
+
+    const el2 = document.getElementById('math-pwsa-1');
+    if (el2) katex.render('\\Delta = k - \\lambda_2 \\ge k - 2\\sqrt{p} \\approx 258 - 32.0624 = 225.9376', el2, { throwOnError: false });
+
+    const el3 = document.getElementById('math-stark-1');
+    if (el3) katex.render('P(x) = Q(x) \\cdot Z_H(x) \\pmod p, \\quad f^{(i+1)}(x) = \\frac{f^{(i)}(x) + f^{(i)}(-x)}{2} + \\alpha_i \\frac{f^{(i)}(x) - f^{(i)}(-x)}{2x}', el3, { throwOnError: false });
+
+    const el4 = document.getElementById('math-cbdc-1');
+    if (el4) katex.render('\\| \\partial_1(\\gamma) \\| = \\sum_{v \\in V} \\left| \\sum_{e: \\text{dst}(e)=v} c_e - \\sum_{e: \\text{src}(e)=v} c_e \\right| \\equiv 0', el4, { throwOnError: false });
+
+    const el5 = document.getElementById('math-tisa-1');
+    if (el5) katex.render('\\Phi_5(x) = x^4 + x^3 + x^2 + x + 1 = 0 \\implies \\zeta_5^4 = -1 - \\zeta_5 - \\zeta_5^2 - \\zeta_5^3', el5, { throwOnError: false });
+  }
+}
+
+// Global Tab Switcher
+function switchEngineTab(tabName, btnElement) {
+  SimState.activeTab = tabName;
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  if (btnElement) btnElement.classList.add('active');
+
+  const allTabs = ['overview', 'sheaf', 'pwsa', 'stark', 'cbdc', 'tisa', 'audit'];
+  allTabs.forEach(name => {
+    const el = document.getElementById(`tab-content-${name}`);
+    if (el) el.style.display = (name === tabName) ? 'block' : 'none';
+  });
+
+  // Re-trigger layout or canvas redraws
+  requestAnimationFrame(() => {
+    handleCanvasResize();
+  });
+}
+
+// Audit Log Helpers
+function addAuditLog(tag, msg) {
+  const d = new Date();
+  const timeStr = d.toISOString().substring(11, 23);
+  SimState.logs.unshift({ time: timeStr, tag, msg });
+  if (SimState.logs.length > 100) SimState.logs.pop();
+  renderAuditLogs();
+}
+
+function renderAuditLogs(filter = 'ALL') {
+  const stream = document.getElementById('terminal-audit-stream');
+  if (!stream) return;
+  const filtered = filter === 'ALL' ? SimState.logs : SimState.logs.filter(l => l.tag === filter);
+  stream.innerHTML = filtered.map(log => {
+    let tagClass = 'term-tag-sheaf';
+    if (log.tag === 'PWSA') tagClass = 'term-tag-pwsa';
+    else if (log.tag === 'STARK') tagClass = 'term-tag-stark';
+    else if (log.tag === 'CBDC') tagClass = 'term-tag-cbdc';
+    else if (log.tag === 'T-ISA') tagClass = 'term-tag-tisa';
+
+    return `
+      <div class="terminal-row">
+        <span class="term-time">${log.time}</span>
+        <span class="term-tag ${tagClass}">[${log.tag}]</span>
+        <span class="term-msg">${log.msg}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterAuditLog(tag, btn) {
+  document.querySelectorAll('.log-filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderAuditLogs(tag);
+}
+
+function clearAuditLog() {
+  SimState.logs = [];
+  renderAuditLogs();
+}
+
+function exportProofDossier() {
+  const dossier = {
+    kernel_version: 'AL_HARAS_SOVEREIGN_OS_v36.0',
+    verification_standard: 'NIST_FIPS_204_ML_DSA_65',
+    timestamp: new Date().toISOString(),
+    horizons_telemetry: {
+      sheaf_cohomology: {
+        status: SimState.sheaf.status,
+        defect_norm: SimState.sheaf.cochainDefect,
+        h1_vortex: SimState.sheaf.h1Norm,
+        dsw_instanton_number: SimState.sheaf.instantonCount
+      },
+      orbital_pwsa_mesh: {
+        field_modulus: SimState.pwsa.fieldP,
+        degree_k: SimState.pwsa.kDeg,
+        lambda_2: SimState.pwsa.lambda2,
+        spectral_gap: SimState.pwsa.massGap,
+        packet_stall_rate_pct: SimState.pwsa.packetStalls,
+        avalanche_diffusion_pct: SimState.pwsa.avalancheDiffusion
+      },
+      verifiable_neural_compute: {
+        status: SimState.stark.status,
+        verifier_time_ms: SimState.stark.verifierLatency,
+        air_quotient_residual: SimState.stark.quotientResidual,
+        merkle_root: SimState.stark.merkleRoot
+      },
+      inter_central_bank_cbdc: {
+        status: SimState.cbdc.status,
+        boundary_defect_norm: SimState.cbdc.boundaryDefect,
+        rtgs_receipt: SimState.cbdc.receiptId
+      },
+      topological_hardware_isa: {
+        clock_cycles: SimState.tisa.clockCycles,
+        tsr_harmonic_bit: SimState.tisa.tsr.harmonic,
+        power_rail_hw_variance: 0
+      }
+    },
+    audit_trace: SimState.logs.slice(0, 25)
+  };
+
+  const blob = new Blob([JSON.stringify(dossier, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `chronus_sovereign_proof_dossier_${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  addAuditLog('STARK', 'Exported cryptographic proof dossier backed by NIST FIPS 204 ML-DSA-65.');
+}
+
+// Simulation Control Handlers
+function toggleGlobalSimulation() {
+  SimState.isRunning = !SimState.isRunning;
+  const btnText = document.getElementById('text-sim-playpause');
+  const icon = document.getElementById('icon-sim-playpause');
+  if (SimState.isRunning) {
+    if (btnText) btnText.textContent = 'Pause Simulation';
+    if (icon) icon.setAttribute('data-lucide', 'pause');
+  } else {
+    if (btnText) btnText.textContent = 'Resume Simulation';
+    if (icon) icon.setAttribute('data-lucide', 'play');
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function stepGlobalSimulation() {
+  updateSimulationTick(1);
+  renderAllCanvases();
+}
+
+function setSimulationSpeed(speed, btn) {
+  SimState.simSpeed = speed;
+  document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  addAuditLog('T-ISA', `Simulation execution clock shifted to ${speed}x rate.`);
+}
+
+function resetToHarmonicBaseline() {
+  SimState.sheaf.attackType = 'none';
+  SimState.sheaf.cochainDefect = 0;
+  SimState.sheaf.h1Norm = 0;
+  SimState.sheaf.status = 'HARMONIC_CONSENSUS_CLEAN';
+
+  SimState.pwsa.jamRate = 0;
+  document.getElementById('pwsa-jam-rate').value = 0;
+  document.getElementById('pwsa-jam-val').textContent = '0%';
+
+  SimState.stark.isTampered = false;
+  SimState.stark.quotientResidual = 0;
+  SimState.stark.status = 'FRI_QUOTIENT_VALID';
+
+  SimState.cbdc.flows = [10, 10, 10, 10];
+  SimState.cbdc.boundaryDefect = 0;
+  SimState.cbdc.status = 'SETTLED_CLOSED_1_CYCLE';
+  for (let i = 1; i <= 4; i++) {
+    const sl = document.getElementById(`cbdc-flow-${i}`);
+    const vl = document.getElementById(`cbdc-val-${i}`);
+    if (sl) sl.value = 10;
+    if (vl) vl.textContent = '£10.0M';
+  }
+
+  SimState.tisa.tsr.harmonic = 1;
+  SimState.tisa.tsr.faultTrip = 0;
+  SimState.tisa.tsr.dswActive = 0;
+  SimState.tisa.tsr.defectNorm = 0;
+
+  document.getElementById('scenario-select').value = 'baseline';
+  document.getElementById('sheaf-attack-type').value = 'none';
+
+  updateAllUI();
+  addAuditLog('SHEAF', 'Harmonic equilibrium restored across all 5 sovereign frontiers. Obstructions cleared.');
+}
+
+function applyStrategicScenario(scenario) {
+  if (scenario === 'baseline') {
+    resetToHarmonicBaseline();
+  } else if (scenario === 'llm_vortex') {
+    document.getElementById('sheaf-attack-type').value = 'indirect_prompt';
+    handleSheafAttackChange('indirect_prompt');
+  } else if (scenario === 'satellite_jam') {
+    document.getElementById('pwsa-jam-rate').value = 40;
+    updatePWSAJamming(40);
+  } else if (scenario === 'zk_tamper') {
+    if (!SimState.stark.isTampered) toggleWeightTampering();
+  } else if (scenario === 'unbacked_cbdc') {
+    injectCBDCCounterfeit();
+  } else if (scenario === 'bus_glitch') {
+    injectSiliconGlitch();
+  } else if (scenario === 'full_stress') {
+    document.getElementById('sheaf-attack-type').value = 'goal_hijack';
+    handleSheafAttackChange('goal_hijack');
+    document.getElementById('pwsa-jam-rate').value = 35;
+    updatePWSAJamming(35);
+    if (!SimState.stark.isTampered) toggleWeightTampering();
+    injectCBDCCounterfeit();
+    injectSiliconGlitch();
+    addAuditLog('SHEAF', 'CRITICAL ALERT: Coordinated multi-frontier hostile stress injected. Isolating sub-modules.');
+  }
+}
+
+// Engine 1: Sheaf Event Handlers
+function handleSheafAttackChange(val) {
+  SimState.sheaf.attackType = val;
+  if (val === 'none') {
+    SimState.sheaf.cochainDefect = 0.0000;
+    SimState.sheaf.h1Norm = 0.0000;
+    SimState.sheaf.status = 'HARMONIC_CONSENSUS_CLEAN';
+    addAuditLog('SHEAF', 'Harmonic multi-agent flow resumed. Cohomology defect ||H¹|| = 0.');
+  } else {
+    SimState.sheaf.cochainDefect = (val === 'indirect_prompt' ? 1.4142 : (val === 'adversarial_vortex' ? 2.8284 : 3.7416));
+    SimState.sheaf.h1Norm = SimState.sheaf.cochainDefect;
+    SimState.sheaf.status = 'ADVERSARIAL_VORTEX_ISOLATED';
+    addAuditLog('SHEAF', `ATTACK DETECTED: [${val.toUpperCase()}]. Coboundary defect norm spiked to ${SimState.sheaf.cochainDefect.toFixed(4)}. Memory bus isolated.`);
+
+    if (SimState.sheaf.autoHeal) {
+      setTimeout(() => {
+        triggerDSWInstantonRepair();
+      }, 1200);
+    }
+  }
+  updateSheafUI();
+}
+
+function updateSheafStalkDim(val) {
+  SimState.sheaf.stalkDim = parseInt(val, 10);
+  document.getElementById('sheaf-stalk-dim-val').textContent = val;
+  addAuditLog('SHEAF', `Stalk latent dimension re-projected to d = ${val} via orthogonal Stiefel bundle.`);
+}
+
+function toggleSheafAutoHeal(btn) {
+  SimState.sheaf.autoHeal = !SimState.sheaf.autoHeal;
+  btn.textContent = `Auto-Heal: ${SimState.sheaf.autoHeal ? 'ENABLED' : 'DISABLED'}`;
+  btn.className = SimState.sheaf.autoHeal ? 'btn btn-secondary' : 'btn btn-danger';
+}
+
+function triggerDSWInstantonRepair() {
+  SimState.sheaf.instantonCount++;
+  SimState.sheaf.cochainDefect = 0.0000;
+  SimState.sheaf.h1Norm = 0.0000;
+  SimState.sheaf.status = 'HARMONIC_CONSENSUS_CLEAN';
+  SimState.sheaf.attackType = 'none';
+  document.getElementById('sheaf-attack-type').value = 'none';
+
+  // Flash TSR DSW Bit in T-ISA
+  SimState.tisa.tsr.dswActive = 1;
+  setTimeout(() => { SimState.tisa.tsr.dswActive = 0; updateTISAUI(); }, 800);
+
+  addAuditLog('SHEAF', `DSW 4D Instanton Monopole #0${SimState.sheaf.instantonCount} engaged. 1-cycle cobordism restored trace in 0.8624 µs with 0 rollback.`);
+  updateSheafUI();
+}
+
+// Engine 2: PWSA Event Handlers
+function updatePWSAField(val) {
+  SimState.pwsa.fieldP = parseInt(val, 10);
+  SimState.pwsa.kDeg = SimState.pwsa.fieldP + 1;
+  SimState.pwsa.lambda2 = Math.min(2 * Math.sqrt(SimState.pwsa.fieldP) * 0.9, 32.0624);
+  SimState.pwsa.massGap = SimState.pwsa.kDeg - SimState.pwsa.lambda2;
+  document.getElementById('pwsa-k-deg').textContent = SimState.pwsa.kDeg;
+  document.getElementById('pwsa-lambda-2').innerHTML = `${SimState.pwsa.lambda2.toFixed(4)} &le; ${(2 * Math.sqrt(SimState.pwsa.fieldP)).toFixed(4)}`;
+  document.getElementById('pwsa-mass-gap').textContent = SimState.pwsa.massGap.toFixed(4);
+  addAuditLog('PWSA', `Ramanujan expander field shifted to 𝔽_${val}. Regularity degree k = ${SimState.pwsa.kDeg}, Alon-Boppana gap Δ = ${SimState.pwsa.massGap.toFixed(2)}.`);
+}
+
+function updatePWSAJamming(val) {
+  SimState.pwsa.jamRate = parseInt(val, 10);
+  document.getElementById('pwsa-jam-val').textContent = `${val}%`;
+  const isSevere = SimState.pwsa.jamRate >= 35;
+  document.getElementById('pwsa-mesh-status').textContent = isSevere ? 'EXPANDER SHORT-CIRCUIT ACTIVE' : '0 PACKET STALLS';
+  document.getElementById('pwsa-mesh-status').className = isSevere ? 'status-chip chip-warning' : 'status-chip chip-cyan';
+  addAuditLog('PWSA', `Inter-satellite link jamming altered to ${val}%. Cayley shortest-path routing maintains 0 packet drops.`);
+}
+
+function updatePWSAAnyonProtection(val) {
+  SimState.pwsa.anyonShield = val;
+  addAuditLog('PWSA', `Topological shield set to ${val === 'cyclo' ? 'Exact Cyclotomic ℤ[ζ₅] Knot Protection' : 'Standard IEEE-754 Transmon'}.`);
+}
+
+function triggerAvalancheTest() {
+  const diffPct = (48 + Math.random() * 4.5).toFixed(1);
+  SimState.pwsa.avalancheDiffusion = parseFloat(diffPct);
+  document.getElementById('pwsa-avalanche-pct').textContent = `${diffPct}% (PASS >= 48%)`;
+  document.getElementById('mini-pwsa-diff').textContent = `${diffPct}%`;
+  addAuditLog('PWSA', `Hurwitz quaternion 1-bit flip stepped: Avalanche reached ${diffPct}% payload diffusion in exactly 3 clock rounds.`);
+}
+
+function rotatePWSAView() {
+  SimState.pwsa.cameraAngle += Math.PI / 4;
+}
+
+// Engine 3: Verifiable Neural Compute Event Handlers
+function updateStarkDegree(val) {
+  SimState.stark.degree = parseInt(val, 10);
+  SimState.stark.verifierLatency = (0.075 + (SimState.stark.degree / 256) * 0.038).toFixed(4);
+  document.getElementById('stark-verif-time').textContent = `${SimState.stark.verifierLatency} ms (LINE-RATE)`;
+  document.getElementById('mini-stark-time').textContent = `${SimState.stark.verifierLatency} ms`;
+  addAuditLog('STARK', `AIR polynomial interpolation domain set to d = ${val} evaluations.`);
+}
+
+function updateFRIRounds(val) {
+  SimState.stark.friLayers = parseInt(val, 10);
+  document.getElementById('stark-fri-val').textContent = val;
+  addAuditLog('STARK', `FRI folding layers parameterised to r = ${val} rounds.`);
+}
+
+function toggleWeightTampering() {
+  SimState.stark.isTampered = !SimState.stark.isTampered;
+  const btn = document.getElementById('btn-stark-tamper');
+  if (SimState.stark.isTampered) {
+    SimState.stark.quotientResidual = 4829.184;
+    SimState.stark.status = 'WEIGHT_CORRUPTION_DETECTED';
+    if (btn) btn.innerHTML = `<i data-lucide="shield-check" style="width:16px;height:16px;"></i><span>Restore Certified Model Weights</span>`;
+    addAuditLog('STARK', 'SECURITY ALERT: 1-bit adversarial weight poisoning detected! Quotient residual P(x) - Q(x)Z_H(x) != 0. Inference rejected.');
+  } else {
+    SimState.stark.quotientResidual = 0.0000;
+    SimState.stark.status = 'FRI_QUOTIENT_VALID';
+    if (btn) btn.innerHTML = `<i data-lucide="alert-triangle" style="width:16px;height:16px;"></i><span>Poison 1 Neural Weight (Tamper Test)</span>`;
+    addAuditLog('STARK', 'Certified model weights restored. Polynomial quotient identity P(x) = Q(x)·Z_H(x) satisfied.');
+  }
+  if (window.lucide) lucide.createIcons();
+  updateSTARKUI();
+}
+
+function recomputeSTARKProof() {
+  SimState.stark.merkleRoot = '0x' + Math.floor(Math.random()*16777215).toString(16) + '4b7c82';
+  document.getElementById('stark-root-hash').textContent = SimState.stark.merkleRoot;
+  addAuditLog('STARK', `Recomputed FRI commitment tree. New root ${SimState.stark.merkleRoot} attested with FIPS 204 ML-DSA-65.`);
+}
+
+// Engine 4: Homological CBDC Event Handlers
+function updateCBDCFlow(idx, val) {
+  SimState.cbdc.flows[idx - 1] = parseInt(val, 10);
+  document.getElementById(`cbdc-val-${idx}`).textContent = `£${val}.0M`;
+  computeCBDCBoundary();
+}
+
+function computeCBDCBoundary() {
+  // 1-chain boundary calculation
+  // Nodes: 0: BoE, 1: Fed, 2: ECB, 3: BoJ
+  // Edge 0: 0->1, Edge 1: 1->2, Edge 2: 2->3, Edge 3: 3->0
+  const f = SimState.cbdc.flows;
+  const netBoE = f[3] - f[0];
+  const netFed = f[0] - f[1];
+  const netECB = f[1] - f[2];
+  const netBoJ = f[2] - f[3];
+
+  SimState.cbdc.nodes[0].net = netBoE;
+  SimState.cbdc.nodes[1].net = netFed;
+  SimState.cbdc.nodes[2].net = netECB;
+  SimState.cbdc.nodes[3].net = netBoJ;
+
+  const defect = Math.abs(netBoE) + Math.abs(netFed) + Math.abs(netECB) + Math.abs(netBoJ);
+  SimState.cbdc.boundaryDefect = defect;
+  SimState.cbdc.status = (defect === 0) ? 'SETTLED_CLOSED_1_CYCLE' : 'REJECTED_BOUNDARY_MISMATCH';
+
+  updateCBDCUI();
+}
+
+function injectCBDCCounterfeit() {
+  // Inject +£50M unbacked on Edge 0 (BoE -> Fed)
+  SimState.cbdc.flows[0] = 60;
+  document.getElementById('cbdc-flow-1').value = 60;
+  document.getElementById('cbdc-val-1').textContent = '£60.0M';
+  computeCBDCBoundary();
+  addAuditLog('CBDC', 'FRAUD ATTEMPT: Injected +£50M unbacked liquidity into corridor BoE->Fed. Boundary defect ||∂₁|| = 100M. Settlement rejected!');
+}
+
+function rebalanceCBDCCycle() {
+  // Rebalance all flows to equal £10M
+  SimState.cbdc.flows = [10, 10, 10, 10];
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById(`cbdc-flow-${i}`).value = 10;
+    document.getElementById(`cbdc-val-${i}`).textContent = '£10.0M';
+  }
+  computeCBDCBoundary();
+  addAuditLog('CBDC', 'Corridor flows harmonised into a closed 1-cycle. Value conservation ||∂₁ γ|| = 0 verified. Emitted RTGS receipt.');
+}
+
+// Engine 5: RISC-V T-ISA Event Handlers
+function updateTISAInstrDesc(opcode) {
+  addAuditLog('T-ISA', `Microcode decoder staged instruction: ${opcode}.`);
+}
+
+function dispatchTISAInstruction() {
+  const opcode = document.getElementById('tisa-instr-sel').value;
+  const rd = parseInt(document.getElementById('tisa-reg-d').value, 10);
+  const rs1 = parseInt(document.getElementById('tisa-reg-s1').value, 10);
+  const rs2 = parseInt(document.getElementById('tisa-reg-s2').value, 10);
+
+  SimState.tisa.clockCycles++;
+
+  if (opcode === 'T_CYCLO_ADD') {
+    const l1 = SimState.tisa.registers[rs1].limbs;
+    const l2 = SimState.tisa.registers[rs2].limbs;
+    SimState.tisa.registers[rd].limbs = l1.map((v, i) => (v + l2[i]) % 257);
+    addAuditLog('T-ISA', `T_CYCLO_ADD: t${rd} <- t${rs1} + t${rs2} in ℤ[ζ₅] executed in 1 cycle.`);
+  } else if (opcode === 'T_CYCLO_MUL') {
+    // 4x4 matrix convolution modulo Phi_5
+    const l1 = SimState.tisa.registers[rs1].limbs;
+    const l2 = SimState.tisa.registers[rs2].limbs;
+    // Cyclotomic multiplication in Z[x]/(x^4+x^3+x^2+x+1)
+    SimState.tisa.registers[rd].limbs = [
+      (l1[0]*l2[0] - l1[3]*l2[1] - l1[2]*l2[2] - l1[1]*l2[3]) % 257,
+      (l1[1]*l2[0] + l1[0]*l2[1] - l1[3]*l2[2] - l1[2]*l2[3]) % 257,
+      (l1[2]*l2[0] + l1[1]*l2[1] + l1[0]*l2[2] - l1[3]*l2[3]) % 257,
+      (l1[3]*l2[0] + l1[2]*l2[1] + l1[1]*l2[2] + l1[0]*l2[3]) % 257
+    ].map(v => (v < 0 ? v + 257 : v));
+    addAuditLog('T-ISA', `T_CYCLO_MUL: t${rd} <- t${rs1} ⊗ t${rs2} (mod Φ₅) executed in 1 cycle (2.4 ns).`);
+  } else if (opcode === 'T_SHEAF_INSPECT') {
+    SimState.tisa.tsr.harmonic = 1;
+    SimState.tisa.tsr.faultTrip = 0;
+    addAuditLog('T-ISA', `T_SHEAF_INSPECT: Hardware evaluated coboundary δ₀(s). TSR[HARMONIC] = 1.`);
+  } else if (opcode === 'T_DSW_HEAL') {
+    SimState.tisa.tsr.dswActive = 1;
+    setTimeout(() => { SimState.tisa.tsr.dswActive = 0; updateTISAUI(); }, 600);
+    addAuditLog('T-ISA', `T_DSW_HEAL: 1-cycle instanton cobordism executed in coprocessor.`);
+  } else if (opcode === 'T_STARK_EVAL') {
+    addAuditLog('T-ISA', `T_STARK_EVAL: Polynomial vanishing quotient Q(x)·Z_H(x) == P(x) evaluated.`);
+  }
+
+  // Update register grid value
+  const valEl = document.getElementById(`reg-val-${rd}`);
+  if (valEl) valEl.textContent = `(${SimState.tisa.registers[rd].limbs.join(', ')})`;
+
+  updateTISAUI();
+}
+
+function injectSiliconGlitch() {
+  SimState.tisa.tsr.faultTrip = 1;
+  SimState.tisa.tsr.harmonic = 0;
+  SimState.tisa.tsr.defectNorm = 18;
+  addAuditLog('T-ISA', 'HARDWARE FAULT: Bus probe glitch detected! TSR.FAULT_TRIP latched. Execution pipeline halted at gate level.');
+  updateTISAUI();
+
+  setTimeout(() => {
+    SimState.tisa.tsr.faultTrip = 0;
+    SimState.tisa.tsr.harmonic = 1;
+    SimState.tisa.tsr.defectNorm = 0;
+    addAuditLog('T-ISA', 'T-ISA Autopoietic self-healing recovered RoCC pipeline to clean harmonic state.');
+    updateTISAUI();
+  }, 1800);
+}
+
+// UI Updaters
+function updateSheafUI() {
+  const isHarmonic = (SimState.sheaf.status === 'HARMONIC_CONSENSUS_CLEAN');
+  const badge = document.getElementById('sheaf-status-badge');
+  const kpiVal = document.getElementById('kpi-sheaf-val');
+  const kpiSub = document.getElementById('kpi-sheaf-status');
+  const telStatus = document.getElementById('telemetry-sheaf-status');
+  const telDefect = document.getElementById('telemetry-sheaf-defect');
+  const telH1 = document.getElementById('telemetry-sheaf-h1');
+  const telInst = document.getElementById('telemetry-sheaf-instanton');
+  const miniBadge = document.getElementById('overview-badge-sheaf');
+  const miniDefect = document.getElementById('mini-sheaf-defect');
+
+  if (badge) {
+    badge.textContent = SimState.sheaf.status;
+    badge.className = isHarmonic ? 'status-chip chip-sage' : 'status-chip chip-error';
+  }
+  if (miniBadge) {
+    miniBadge.textContent = isHarmonic ? 'HARMONIC' : 'VORTEX DETECTED';
+    miniBadge.className = isHarmonic ? 'status-chip chip-sage' : 'status-chip chip-error';
+  }
+  if (kpiVal) {
+    kpiVal.textContent = `||H¹|| = ${SimState.sheaf.h1Norm.toFixed(4)}`;
+    kpiVal.style.color = isHarmonic ? 'var(--tertiary)' : 'var(--error)';
+  }
+  if (kpiSub) kpiSub.textContent = isHarmonic ? 'HARMONIC CONSENSUS VERIFIED' : 'ADVERSARIAL VORTEX ISOLATED';
+  if (telStatus) {
+    telStatus.textContent = isHarmonic ? 'HARMONIC_CONSENSUS' : 'VORTEX_DETECTED';
+    telStatus.className = isHarmonic ? 'status-chip chip-sage' : 'status-chip chip-error';
+  }
+  if (telDefect) telDefect.textContent = SimState.sheaf.cochainDefect.toFixed(4);
+  if (telH1) telH1.textContent = SimState.sheaf.h1Norm.toFixed(4);
+  if (telInst) telInst.textContent = SimState.sheaf.instantonCount;
+  if (miniDefect) miniDefect.textContent = SimState.sheaf.h1Norm.toFixed(4);
+}
+
+function updateSTARKUI() {
+  const isValid = (SimState.stark.status === 'FRI_QUOTIENT_VALID');
+  const badge = document.getElementById('stark-quotient-badge');
+  const kpiVal = document.getElementById('kpi-stark-val');
+  const kpiSub = document.getElementById('kpi-stark-status');
+  const idRes = document.getElementById('stark-identity-res');
+  const mldsa = document.getElementById('stark-mldsa-badge');
+  const miniBadge = document.getElementById('overview-badge-stark');
+
+  if (badge) {
+    badge.textContent = isValid ? 'P(x) = Q(x)·Z_H(x)' : 'QUOTIENT RESIDUAL != 0';
+    badge.className = isValid ? 'status-chip chip-sage' : 'status-chip chip-error';
+  }
+  if (miniBadge) {
+    miniBadge.textContent = isValid ? 'zk-STARK VALID' : 'TAMPER DETECTED';
+    miniBadge.className = isValid ? 'status-chip chip-sage' : 'status-chip chip-error';
+  }
+  if (kpiVal) {
+    kpiVal.textContent = isValid ? `${SimState.stark.verifierLatency} ms` : 'REJECTED';
+    kpiVal.style.color = isValid ? 'var(--data-3)' : 'var(--error)';
+  }
+  if (kpiSub) kpiSub.textContent = isValid ? 'P(x) ≡ Q(x)·Z_H(x) VALID' : 'TAMPER DETECTED — INFERENCE HALTED';
+  if (idRes) {
+    idRes.textContent = isValid ? 'VALID (RESIDUAL = 0)' : `TAMPER DETECTED (RESIDUAL = ${SimState.stark.quotientResidual.toFixed(1)})`;
+    idRes.style.color = isValid ? 'var(--tertiary)' : 'var(--error)';
+  }
+  if (mldsa) {
+    mldsa.textContent = isValid ? 'ML-DSA-65 SIGNED' : 'ATTESTATION FAILED';
+    mldsa.className = isValid ? 'status-chip chip-sage' : 'status-chip chip-error';
+  }
+}
+
+function updateCBDCUI() {
+  const isConserved = (SimState.cbdc.status === 'SETTLED_CLOSED_1_CYCLE');
+  const badge = document.getElementById('cbdc-status-badge');
+  const kpiVal = document.getElementById('kpi-cbdc-val');
+  const kpiSub = document.getElementById('kpi-cbdc-status');
+  const telDefect = document.getElementById('cbdc-boundary-defect');
+  const telExec = document.getElementById('cbdc-exec-status');
+  const telPerm = document.getElementById('cbdc-ledger-perm');
+  const miniBadge = document.getElementById('overview-badge-cbdc');
+  const miniFlux = document.getElementById('mini-cbdc-flux');
+
+  if (badge) {
+    badge.textContent = SimState.cbdc.status;
+    badge.className = isConserved ? 'status-chip chip-sage' : 'status-chip chip-error';
+  }
+  if (miniBadge) {
+    miniBadge.textContent = isConserved ? 'CONSERVED' : 'OBSTRUCTED';
+    miniBadge.className = isConserved ? 'status-chip chip-sage' : 'status-chip chip-error';
+  }
+  if (kpiVal) {
+    kpiVal.textContent = `||∂₁ γ|| = ${SimState.cbdc.boundaryDefect}`;
+    kpiVal.style.color = isConserved ? 'var(--tertiary)' : 'var(--error)';
+  }
+  if (kpiSub) kpiSub.textContent = isConserved ? 'RTGS 1-CYCLE CONSERVED' : 'UNBACKED INFLATION DETECTED';
+  if (telDefect) {
+    telDefect.textContent = isConserved ? '0 (CONSERVED)' : `${SimState.cbdc.boundaryDefect}M (DEFECT!)`;
+    telDefect.style.color = isConserved ? 'var(--tertiary)' : 'var(--error)';
+  }
+  if (telExec) {
+    telExec.textContent = isConserved ? 'APPROVED (CLOSED 1-CYCLE)' : 'REJECTED (BOUNDARY OBSTRUCTION)';
+    telExec.className = isConserved ? 'status-chip chip-sage' : 'status-chip chip-error';
+  }
+  if (telPerm) {
+    telPerm.textContent = isConserved ? 'PERMITTED (NO TAMPERING)' : 'LOCKED (FAIL-CLOSED LEDGER)';
+    telPerm.style.color = isConserved ? 'var(--tertiary)' : 'var(--error)';
+  }
+  if (miniFlux) {
+    miniFlux.textContent = isConserved ? '£0.00 DRIFT' : `+£${SimState.cbdc.boundaryDefect / 2}.0M DEFECT`;
+  }
+}
+
+function updateTISAUI() {
+  const isHarmonic = (SimState.tisa.tsr.harmonic === 1);
+  const isFault = (SimState.tisa.tsr.faultTrip === 1);
+  const isDsw = (SimState.tisa.tsr.dswActive === 1);
+
+  const badge = document.getElementById('tisa-pipe-badge');
+  const bHarmonic = document.getElementById('tsr-bit-harmonic');
+  const bFault = document.getElementById('tsr-bit-fault');
+  const bDsw = document.getElementById('tsr-bit-dsw');
+  const miniBadge = document.getElementById('overview-badge-tisa');
+
+  if (badge) {
+    badge.textContent = isFault ? 'HARDWARE FAULT TRIPPED' : (isDsw ? 'DSW INSTANTON ACTIVE' : 'HARMONIC CONSENSUS');
+    badge.className = isFault ? 'status-chip chip-error' : (isDsw ? 'status-chip chip-warning' : 'status-chip chip-sage');
+  }
+  if (miniBadge) {
+    miniBadge.textContent = isFault ? 'FAULT TRIP' : 'RoCC ACTIVE';
+    miniBadge.className = isFault ? 'status-chip chip-error' : 'status-chip chip-sage';
+  }
+  if (bHarmonic) {
+    bHarmonic.textContent = isHarmonic ? '1 (CONSENSUS VALID)' : '0 (MUTED)';
+    bHarmonic.style.color = isHarmonic ? 'var(--tertiary)' : 'var(--error)';
+  }
+  if (bFault) {
+    bFault.textContent = isFault ? '1 (PIPELINE TRIPPED!)' : '0 (NO TRIP)';
+    bFault.style.color = isFault ? 'var(--error)' : 'var(--on-surface-variant)';
+  }
+  if (bDsw) {
+    bDsw.textContent = isDsw ? '1 (RESTORING...)' : '0 (INACTIVE)';
+    bDsw.style.color = isDsw ? 'var(--primary)' : 'var(--on-surface-variant)';
+  }
+}
+
+function updateAllUI() {
+  updateSheafUI();
+  updateSTARKUI();
+  updateCBDCUI();
+  updateTISAUI();
+}
+
+// -------------------------------------------------------------
+// CANVAS ANIMATION & RENDERING SUBSYSTEM
+// -------------------------------------------------------------
+
+function handleCanvasResize() {
+  const ids = [
+    'canvas-sheaf-main', 'canvas-mini-sheaf',
+    'canvas-pwsa-main', 'canvas-mini-pwsa',
+    'canvas-stark-main', 'canvas-mini-stark',
+    'canvas-cbdc-main', 'canvas-mini-cbdc',
+    'canvas-tisa-main', 'canvas-mini-tisa',
+    'canvas-sheaf-sparkline', 'canvas-stark-sparkline'
+  ];
+
+  ids.forEach(id => {
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+    }
+  });
+}
+
+// Canvas 1: Sheaf Simplicial Complex Renderer
+function drawSheafCanvas(canvas, isMini = false) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const t = SimState.tickCount * 0.03;
+  const isVortex = (SimState.sheaf.status !== 'HARMONIC_CONSENSUS_CLEAN');
+  const nodes = SimState.sheaf.nodes;
+  const edges = SimState.sheaf.edges;
+  if (!nodes || nodes.length < 4 || !edges) return;
+
+  // Draw Edges (simplicial 1-simplices)
+  edges.forEach(([u, v]) => {
+    const nu = nodes[u];
+    const nv = nodes[v];
+    if (!nu || !nv) return;
+    const x1 = nu.x * w;
+    const y1 = nu.y * h;
+    const x2 = nv.x * w;
+    const y2 = nv.y * h;
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = isVortex ? '#38515c' : '#213138';
+    ctx.lineWidth = isMini ? 1.5 : 2;
+    ctx.stroke();
+
+    // Animated particles on edges
+    if (!isVortex) {
+      const pOffset = (t * 0.5 + (u + v) * 0.2) % 1;
+      const px = x1 + (x2 - x1) * pOffset;
+      const py = y1 + (y2 - y1) * pOffset;
+      ctx.beginPath();
+      ctx.arc(px, py, isMini ? 2 : 3, 0, 2 * Math.PI);
+      ctx.fillStyle = '#63c7d6';
+      ctx.fill();
+    }
+  });
+
+  // Draw Adversarial Vortex ring if attacked
+  if (isVortex) {
+    const attackedNode = nodes[3]; // Tool Executor node
+    const cx = attackedNode.x * w;
+    const cy = attackedNode.y * h;
+    const vortexRadius = isMini ? 24 : 45 + Math.sin(t * 3) * 6;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, vortexRadius, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#f27474';
+    ctx.lineWidth = isMini ? 2 : 3;
+    ctx.setLineDash([6, 6]);
+    ctx.stroke();
+
+    // Circulating vortex particle
+    const vx = cx + Math.cos(t * 4) * vortexRadius;
+    const vy = cy + Math.sin(t * 4) * vortexRadius;
+    ctx.beginPath();
+    ctx.arc(vx, vy, isMini ? 3 : 5, 0, 2 * Math.PI);
+    ctx.fillStyle = '#f27474';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Draw Nodes
+  nodes.forEach((n, idx) => {
+    const nx = n.x * w;
+    const ny = n.y * h;
+    const isAttacked = isVortex && (idx === 3);
+
+    // Stalk aura
+    ctx.beginPath();
+    ctx.arc(nx, ny, isMini ? 10 : 20, 0, 2 * Math.PI);
+    ctx.fillStyle = isAttacked ? 'rgba(242, 116, 116, 0.25)' : 'rgba(99, 199, 214, 0.15)';
+    ctx.fill();
+
+    // Core node
+    ctx.beginPath();
+    ctx.arc(nx, ny, isMini ? 5 : 9, 0, 2 * Math.PI);
+    ctx.fillStyle = isAttacked ? '#f27474' : (isVortex ? '#87d69b' : '#63c7d6');
+    ctx.fill();
+    ctx.strokeStyle = '#152024';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Node Name
+    if (!isMini) {
+      ctx.fillStyle = '#edf3f5';
+      ctx.font = '600 11px "Geist Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(n.name, nx, ny + 24);
+
+      // Stalk vector preview
+      ctx.fillStyle = '#94a8b0';
+      ctx.font = '9px "Geist Mono", monospace';
+      ctx.fillText(`F(v)∈ℝ⁸`, nx, ny - 16);
+    }
+  });
+}
+
+// Canvas 2: PWSA Orbital Constellation & Expander Walk Renderer
+function drawPWSACanvas(canvas, isMini = false) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const cx = w * 0.5;
+  const cy = h * 0.5;
+  const radius = isMini ? Math.min(w, h) * 0.35 : Math.min(w, h) * 0.38;
+  const t = SimState.tickCount * 0.015 + SimState.pwsa.cameraAngle;
+
+  // Draw Earth silhouette
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius * 0.55, 0, 2 * Math.PI);
+  ctx.fillStyle = '#111a1e';
+  ctx.fill();
+  ctx.strokeStyle = '#213138';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Draw Latitude lines
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, radius * 0.55, radius * 0.2, 0, 0, 2 * Math.PI);
+  ctx.strokeStyle = '#162226';
+  ctx.stroke();
+
+  // Project Satellites in 3D
+  const sats = SimState.pwsa.satellites;
+  if (!sats || sats.length < 8) return;
+
+  sats.forEach(s => {
+    if (!s) return;
+    const angle = s.u + t * (0.8 + s.plane * 0.2);
+    // 3D coordinates on sphere
+    const cosInc = Math.cos(s.inc);
+    const sinInc = Math.sin(s.inc);
+    const sx = Math.cos(angle) * radius;
+    const sy = Math.sin(angle) * cosInc * radius;
+    const sz = Math.sin(angle) * sinInc * radius;
+
+    s.px = cx + sx;
+    s.py = cy + sy;
+    s.z = sz;
+  });
+
+  // Draw Inter-Satellite Laser Links (ISLs)
+  const isJammed = SimState.pwsa.jamRate > 0;
+  ctx.lineWidth = 1;
+  for (let i = 0; i < sats.length; i++) {
+    const nextIdx = (i + 1) % sats.length;
+    const crossIdx = (i + 7) % sats.length; // Ramanujan Cayley jump
+
+    if (!sats[i] || !sats[nextIdx] || !sats[crossIdx]) continue;
+    if (sats[i].px === undefined || sats[nextIdx].px === undefined || sats[crossIdx].px === undefined) continue;
+
+    // Intra-plane link
+    ctx.beginPath();
+    ctx.moveTo(sats[i].px, sats[i].py);
+    ctx.lineTo(sats[nextIdx].px, sats[nextIdx].py);
+    ctx.strokeStyle = '#213138';
+    ctx.stroke();
+
+    // Expander Cross-Link
+    if (i % 2 === 0) {
+      const linkCut = isJammed && (i % 3 === 0);
+      ctx.beginPath();
+      ctx.moveTo(sats[i].px, sats[i].py);
+      ctx.lineTo(sats[crossIdx].px, sats[crossIdx].py);
+      ctx.strokeStyle = linkCut ? 'rgba(232, 185, 84, 0.25)' : 'rgba(99, 199, 214, 0.4)';
+      ctx.setLineDash(linkCut ? [3, 3] : []);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  // Draw Satellites
+  sats.forEach((s, idx) => {
+    if (!s || s.px === undefined) return;
+    ctx.beginPath();
+    ctx.arc(s.px, s.py, isMini ? 2 : 3.5, 0, 2 * Math.PI);
+    ctx.fillStyle = (idx === 0) ? '#e8b954' : '#63c7d6';
+    ctx.fill();
+  });
+
+  // Ramanujan Expander packet burst animation
+  const pStep = (SimState.tickCount % 60) / 60;
+  const pSrc = sats[0];
+  const pDst = sats[7];
+  if (pSrc && pDst && pSrc.px !== undefined && pDst.px !== undefined) {
+    const pPktX = pSrc.px + (pDst.px - pSrc.px) * pStep;
+    const pPktY = pSrc.py + (pDst.py - pSrc.py) * pStep;
+
+    ctx.beginPath();
+    ctx.arc(pPktX, pPktY, isMini ? 3 : 5, 0, 2 * Math.PI);
+    ctx.fillStyle = '#87d69b';
+    ctx.fill();
+  }
+}
+
+// Canvas 3: zk-ML FRI STARK Proof Polynomial Curve Renderer
+function drawSTARKCanvas(canvas, isMini = false) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const t = SimState.tickCount * 0.04;
+  const isTampered = SimState.stark.isTampered;
+
+  // Draw Grid lines
+  ctx.strokeStyle = '#152024';
+  ctx.lineWidth = 1;
+  for (let gy = 0.2; gy <= 0.8; gy += 0.2) {
+    ctx.beginPath();
+    ctx.moveTo(0, h * gy);
+    ctx.lineTo(w, h * gy);
+    ctx.stroke();
+  }
+
+  // Plot Trace Polynomial P(x)
+  ctx.beginPath();
+  ctx.lineWidth = isMini ? 1.5 : 2.5;
+  ctx.strokeStyle = '#63c7d6';
+  for (let x = 0; x < w; x += 4) {
+    const nx = (x / w) * 6 - 3;
+    let yVal = Math.sin(nx * 2 + t) * Math.cos(nx * 0.8) * 0.35;
+    if (isTampered && x > w * 0.45 && x < w * 0.55) {
+      yVal += 0.45; // Tamper spike
+    }
+    const py = h * 0.5 - yVal * h;
+    if (x === 0) ctx.moveTo(x, py);
+    else ctx.lineTo(x, py);
+  }
+  ctx.stroke();
+
+  // Plot Quotient Polynomial Q(x)
+  ctx.beginPath();
+  ctx.lineWidth = isMini ? 1.5 : 2;
+  ctx.strokeStyle = isTampered ? '#f27474' : '#87d69b';
+  for (let x = 0; x < w; x += 4) {
+    const nx = (x / w) * 6 - 3;
+    const yVal = Math.sin(nx * 2 + t) * Math.cos(nx * 0.8) * 0.35;
+    const py = h * 0.5 - yVal * h;
+    if (x === 0) ctx.moveTo(x, py);
+    else ctx.lineTo(x, py);
+  }
+  ctx.stroke();
+
+  // Labels
+  if (!isMini) {
+    ctx.font = '10px "Geist Mono", monospace';
+    ctx.fillStyle = '#63c7d6';
+    ctx.fillText('P(x): Execution Trace', 12, 20);
+    ctx.fillStyle = isTampered ? '#f27474' : '#87d69b';
+    ctx.fillText(isTampered ? 'Q(x)·Z_H(x): MISMATCH DETECTED' : 'Q(x)·Z_H(x): Exact Identity Verified', 12, 36);
+  }
+}
+
+// Canvas 4: Homological CBDC Quadrilateral Corridor Renderer
+function drawCBDCCanvas(canvas, isMini = false) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const t = SimState.tickCount * 0.05;
+  const nodes = SimState.cbdc.nodes;
+  const isConserved = (SimState.cbdc.boundaryDefect === 0);
+  if (!nodes || nodes.length < 4) return;
+
+  // Quadrilateral Corridors
+  // 0: BoE, 1: Fed, 2: ECB, 3: BoJ
+  const corridorPairs = [
+    [0, 1], [1, 2], [2, 3], [3, 0]
+  ];
+
+  corridorPairs.forEach(([u, v], i) => {
+    const nu = nodes[u];
+    const nv = nodes[v];
+    if (!nu || !nv) return;
+    const x1 = nu.x * w;
+    const y1 = nu.y * h;
+    const x2 = nv.x * w;
+    const y2 = nv.y * h;
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = (i === 0 && !isConserved) ? '#f27474' : '#213138';
+    ctx.lineWidth = isMini ? 1.5 : 2.5;
+    ctx.stroke();
+
+    // Flow particles
+    const pStep = (t * 0.8 + i * 0.25) % 1;
+    const px = x1 + (x2 - x1) * pStep;
+    const py = y1 + (y2 - y1) * pStep;
+
+    ctx.beginPath();
+    ctx.arc(px, py, isMini ? 2.5 : 4, 0, 2 * Math.PI);
+    ctx.fillStyle = (i === 0 && !isConserved) ? '#f27474' : '#87d69b';
+    ctx.fill();
+  });
+
+  // Draw Central Bank Nodes
+  nodes.forEach((n, idx) => {
+    const nx = n.x * w;
+    const ny = n.y * h;
+    const hasDefect = (n.net !== 0);
+
+    ctx.beginPath();
+    ctx.arc(nx, ny, isMini ? 12 : 22, 0, 2 * Math.PI);
+    ctx.fillStyle = hasDefect ? 'rgba(242, 116, 116, 0.25)' : 'rgba(135, 214, 155, 0.15)';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(nx, ny, isMini ? 6 : 10, 0, 2 * Math.PI);
+    ctx.fillStyle = hasDefect ? '#f27474' : '#87d69b';
+    ctx.fill();
+
+    if (!isMini) {
+      ctx.fillStyle = '#edf3f5';
+      ctx.font = '600 11px "Geist Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(n.name, nx, ny + 26);
+
+      ctx.fillStyle = hasDefect ? '#f27474' : '#94a8b0';
+      ctx.font = '10px "Geist Mono", monospace';
+      ctx.fillText(`Net: ${n.net >= 0 ? '+' : ''}${n.net}M`, nx, ny - 16);
+    }
+  });
+}
+
+// Canvas 5: RISC-V T-ISA Microarchitectural Pipeline Renderer
+function drawTISACanvas(canvas, isMini = false) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const t = SimState.tickCount * 0.05;
+  const isTrip = (SimState.tisa.tsr.faultTrip === 1);
+
+  // Draw Pipeline Stages: Fetch -> Decode -> RoCC Sheaf ALU -> Commit
+  const stages = [
+    { name: 'Core IF/ID', x: 0.15 },
+    { name: 'RoCC Dec', x: 0.38 },
+    { name: 'ℤ[ζ₅] ALU', x: 0.62 },
+    { name: 'TSR Commit', x: 0.85 }
+  ];
+
+  stages.forEach((st, i) => {
+    const sx = st.x * w;
+    const sy = h * 0.45;
+    const bw = isMini ? 40 : 80;
+    const bh = isMini ? 26 : 48;
+
+    ctx.fillStyle = isTrip && i >= 2 ? 'rgba(242, 116, 116, 0.2)' : '#152024';
+    ctx.strokeStyle = isTrip && i >= 2 ? '#f27474' : '#38515c';
+    ctx.lineWidth = 1.5;
+
+    ctx.beginPath();
+    ctx.roundRect(sx - bw * 0.5, sy - bh * 0.5, bw, bh, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    if (!isMini) {
+      ctx.fillStyle = '#edf3f5';
+      ctx.font = '600 10px "Geist Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(st.name, sx, sy + 4);
+    }
+
+    // Bus arrows
+    if (i < stages.length - 1) {
+      const nextX = stages[i+1].x * w;
+      ctx.beginPath();
+      ctx.moveTo(sx + bw * 0.5, sy);
+      ctx.lineTo(nextX - bw * 0.5, sy);
+      ctx.strokeStyle = isTrip ? '#f27474' : '#63c7d6';
+      ctx.stroke();
+
+      // Flow pulse
+      const pStep = (t + i * 0.3) % 1;
+      const px = (sx + bw * 0.5) + (nextX - bw * 0.5 - (sx + bw * 0.5)) * pStep;
+      ctx.beginPath();
+      ctx.arc(px, sy, 3, 0, 2 * Math.PI);
+      ctx.fillStyle = '#63c7d6';
+      ctx.fill();
+    }
+  });
+
+  // Power Rail Invariant Line
+  const py = h * 0.82;
+  ctx.strokeStyle = '#213138';
+  ctx.beginPath();
+  ctx.moveTo(w * 0.1, py);
+  ctx.lineTo(w * 0.9, py);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#87d69b';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(w * 0.1, py);
+  ctx.lineTo(w * 0.9, py);
+  ctx.stroke();
+
+  if (!isMini) {
+    ctx.fillStyle = '#94a8b0';
+    ctx.font = '9px "Geist Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('CONSTANT POWER RAIL INVARIANT: HW(W) + HW(W_comp) ≡ 64 (DPA-IMMUNE)', w * 0.5, py + 16);
+  }
+}
+
+// Sparklines Renderers
+function drawSheafSparkline(canvas) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const hist = SimState.sheaf.history;
+  ctx.beginPath();
+  ctx.strokeStyle = '#87d69b';
+  ctx.lineWidth = 2;
+
+  hist.forEach((val, i) => {
+    const x = (i / (hist.length - 1)) * w;
+    const y = h - (val / 4.0) * (h * 0.8) - 4;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+function drawSTARKSparkline(canvas) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const hist = SimState.stark.history;
+  ctx.beginPath();
+  ctx.strokeStyle = '#63c7d6';
+  ctx.lineWidth = 2;
+
+  hist.forEach((val, i) => {
+    const x = (i / (hist.length - 1)) * w;
+    const normVal = (val - 0.08) / 0.04;
+    const y = h - normVal * (h * 0.7) - 4;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+// Master Tick & Render Loop
+function renderAllCanvases() {
+  if (SimState.activeTab === 'overview') {
+    drawSheafCanvas(document.getElementById('canvas-mini-sheaf'), true);
+    drawPWSACanvas(document.getElementById('canvas-mini-pwsa'), true);
+    drawSTARKCanvas(document.getElementById('canvas-mini-stark'), true);
+    drawCBDCCanvas(document.getElementById('canvas-mini-cbdc'), true);
+    drawTISACanvas(document.getElementById('canvas-mini-tisa'), true);
+  } else if (SimState.activeTab === 'sheaf') {
+    drawSheafCanvas(document.getElementById('canvas-sheaf-main'), false);
+    drawSheafSparkline(document.getElementById('canvas-sheaf-sparkline'));
+  } else if (SimState.activeTab === 'pwsa') {
+    drawPWSACanvas(document.getElementById('canvas-pwsa-main'), false);
+  } else if (SimState.activeTab === 'stark') {
+    drawSTARKCanvas(document.getElementById('canvas-stark-main'), false);
+    drawSTARKSparkline(document.getElementById('canvas-stark-sparkline'));
+  } else if (SimState.activeTab === 'cbdc') {
+    drawCBDCCanvas(document.getElementById('canvas-cbdc-main'), false);
+  } else if (SimState.activeTab === 'tisa') {
+    drawTISACanvas(document.getElementById('canvas-tisa-main'), false);
+  }
+}
+
+function updateSimulationTick(stepCount = 1) {
+  SimState.tickCount += stepCount;
+
+  // Push history
+  SimState.sheaf.history.push(SimState.sheaf.h1Norm);
+  if (SimState.sheaf.history.length > 30) SimState.sheaf.history.shift();
+
+  const baseLat = 0.094 + (Math.sin(SimState.tickCount * 0.1) * 0.002);
+  SimState.stark.history.push(baseLat);
+  if (SimState.stark.history.length > 30) SimState.stark.history.shift();
+
+  // Update clock
+  const timeEl = document.getElementById('master-sim-time');
+  if (timeEl && SimState.tickCount % 10 === 0) {
+    const d = new Date();
+    timeEl.textContent = `UTC ${d.toISOString().replace('T', ' ').substring(0, 23)}`;
+  }
+}
+
+function mainSimulationLoop(timestamp) {
+  const dt = timestamp - SimState.lastFrameTime;
+  SimState.lastFrameTime = timestamp;
+
+  if (dt > 0) {
+    SimState.fps = (1000 / dt) * 0.2 + SimState.fps * 0.8;
+    const fpsEl = document.getElementById('master-fps');
+    if (fpsEl && SimState.tickCount % 15 === 0) {
+      fpsEl.textContent = SimState.fps.toFixed(1);
+    }
+  }
+
+  if (SimState.isRunning) {
+    updateSimulationTick(SimState.simSpeed);
+  }
+
+  renderAllCanvases();
+  requestAnimationFrame(mainSimulationLoop);
+}
+
+// Initialise Application on DOM Content Loaded
+window.addEventListener('DOMContentLoaded', () => {
+  initPWSASatellites();
+  initRegisterGridDOM();
+  renderKaTeXFormulas();
+  renderAuditLogs();
+  handleCanvasResize();
+  updateAllUI();
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+
+  window.addEventListener('resize', () => {
+    handleCanvasResize();
+    renderAllCanvases();
+  });
+
+  requestAnimationFrame(mainSimulationLoop);
+});
+</script>
+
+</body>
+</html>

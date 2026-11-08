@@ -212,8 +212,10 @@ class DSW4DInstantonMonopoleHealer:
 
     @classmethod
     def inspect_and_heal(
-        cls, trace_payload: bytes, is_perturbed: bool = False
+        cls, trace_payload: Any, is_perturbed: bool = False
     ) -> Dict[str, Any]:
+        if isinstance(trace_payload, str):
+            trace_payload = trace_payload.encode("utf-8")
         if not is_perturbed:
             trace_h = hashlib.sha256(trace_payload).hexdigest()
             return {

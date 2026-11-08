@@ -381,7 +381,9 @@ class AgenticSheafImmuneSystem:
     Executes 1-cycle DSW instanton cobordism repair before tool execution.
     """
 
-    def __init__(self, agent_dag: AgentDAG, stalk_dim: int = 64) -> None:
+    def __init__(self, agent_dag: Optional[AgentDAG] = None, stalk_dim: int = 64) -> None:
+        if agent_dag is None:
+            agent_dag = AgentDAG.create_canonical_pipeline()
         self.dag = agent_dag
         self.stalk_dim = stalk_dim
         self.restriction_maps = self.init_stiefel_restriction_maps(agent_dag)

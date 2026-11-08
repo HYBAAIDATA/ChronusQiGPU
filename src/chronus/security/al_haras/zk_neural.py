@@ -15,7 +15,7 @@ Guarantees proof of model authenticity, inference integrity, and non-tampering:
 import hashlib
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from chronus.security.stark import ZKSTARKVerifier, MODULUS
 

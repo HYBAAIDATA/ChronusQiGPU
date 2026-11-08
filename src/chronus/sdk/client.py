@@ -602,6 +602,139 @@ class ChronusAPISDK:
             },
         )
 
+    def route_euclid_workload(
+        self,
+        workload_type: str,
+        content: Optional[str] = None,
+        agent_states: Optional[Dict[str, Any]] = None,
+        bus_saturation_pct: float = 100.0,
+    ) -> Dict[str, Any]:
+        """Route workload via EUCLID 5-Mode Meta-Intelligence Engine."""
+        return self._request(
+            "POST",
+            "/euclid/route",
+            json={
+                "workload_type": workload_type,
+                "content": content,
+                "agent_states": agent_states,
+                "bus_saturation_pct": bus_saturation_pct,
+            },
+        )
+
+    def get_euclid_telemetry(self) -> Dict[str, Any]:
+        """Retrieve EUCLID DEC Fluid and Lie-Poisson telemetry."""
+        return self._request("GET", "/euclid/telemetry")
+
+    def get_mining_status(self) -> Dict[str, Any]:
+        """Retrieve real-time mining administration status."""
+        return self._request("GET", "/v1/mining/admin/status")
+
+    def start_mining(
+        self,
+        base_hashrate_eh_s: Optional[float] = None,
+        active_warps: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Start mining engine with specified hashrate and warp allocation."""
+        return self._request(
+            "POST",
+            "/v1/mining/admin/start",
+            json={
+                "base_hashrate_eh_s": base_hashrate_eh_s,
+                "active_warps": active_warps,
+            },
+        )
+
+    def stop_mining(self) -> Dict[str, Any]:
+        """Stop active mining engine."""
+        return self._request("POST", "/v1/mining/admin/stop")
+
+    def configure_mining_capacity(
+        self,
+        base_hashrate_eh_s: Optional[float] = None,
+        active_warps: Optional[int] = None,
+        core_voltage_v: Optional[float] = None,
+        fan_speed_pct: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Dynamically configure hashrate, warps, and die voltage."""
+        return self._request(
+            "POST",
+            "/v1/mining/admin/configure",
+            json={
+                "base_hashrate_eh_s": base_hashrate_eh_s,
+                "active_warps": active_warps,
+                "core_voltage_v": core_voltage_v,
+                "fan_speed_pct": fan_speed_pct,
+            },
+        )
+
+    def configure_mining_intelligence(
+        self,
+        predictive: float,
+        causal: float,
+        counterfactual: float,
+        topological: float,
+        geometric: float,
+    ) -> Dict[str, Any]:
+        """Rebalance 5-mode meta-intelligence distribution."""
+        return self._request(
+            "POST",
+            "/v1/mining/admin/intelligence",
+            json={
+                "predictive": predictive,
+                "causal": causal,
+                "counterfactual": counterfactual,
+                "topological": topological,
+                "geometric": geometric,
+            },
+        )
+
+    def apply_mining_causal_intervention(self, intervention: str) -> Dict[str, Any]:
+        """Apply Pearl Level 2 do(X) intervention."""
+        return self._request(
+            "POST",
+            "/v1/mining/admin/intervene",
+            json={"intervention": intervention},
+        )
+
+    def inject_mining_anomaly(self) -> Dict[str, Any]:
+        """Simulate reorg or stratum poisoning perturbation."""
+        return self._request("POST", "/v1/mining/admin/anomaly/inject")
+
+    def heal_mining_anomaly(self) -> Dict[str, Any]:
+        """Trigger 1-cycle DSW instanton monopole cobordism heal."""
+        return self._request("POST", "/v1/mining/admin/anomaly/heal")
+
+    def get_patroclus_telemetry(self) -> Dict[str, Any]:
+        """Retrieve Patroclus Gateway & 600 Myrmidon Searchers telemetry."""
+        return self._request("GET", "/v1/mining/admin/patroclus")
+
+    def configure_mining_stealth(
+        self,
+        max_configured_eh_s: Optional[float] = None,
+        stealth_target_eh_s: Optional[float] = None,
+        never_consecutive_blocks: Optional[bool] = None,
+        persistent_presence: Optional[bool] = None,
+    ) -> Dict[str, Any]:
+        """Configure stealth hashrate shaping and block suppression policies."""
+        payload: Dict[str, Any] = {}
+        if max_configured_eh_s is not None:
+            payload["max_configured_eh_s"] = max_configured_eh_s
+        if stealth_target_eh_s is not None:
+            payload["stealth_target_eh_s"] = stealth_target_eh_s
+        if never_consecutive_blocks is not None:
+            payload["never_consecutive_blocks"] = never_consecutive_blocks
+        if persistent_presence is not None:
+            payload["persistent_presence"] = persistent_presence
+        return self._request("POST", "/v1/mining/admin/stealth", json=payload)
+
+    def simulate_patroclus_mining(self, pools: Optional[list] = None) -> Dict[str, Any]:
+        """Simulate multi-pool Stratum V1 handshake and share acceptance."""
+        return self._request(
+            "POST",
+            "/v1/mining/admin/patroclus/simulate",
+            json={"pools": pools},
+        )
+
     def get_metrics(self) -> str:
         response = self._client.get("/metrics")
         if response.status_code != 200:
@@ -623,3 +756,8 @@ class ChronusAPISDK:
             "total_latency_ms": round(self._total_latency_ms, 3),
             "average_latency_ms": round(average, 3),
         }
+
+
+# Canonical alias for SDK client
+ChronusClient = ChronusAPISDK
+

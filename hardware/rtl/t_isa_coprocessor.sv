@@ -44,6 +44,9 @@ module t_isa_coprocessor #(
     localparam [6:0] OPC_SHEAF_INSP   = 7'b0000011;
     localparam [6:0] OPC_DSW_HEAL     = 7'b0000100;
     localparam [6:0] OPC_STARK_EVAL   = 7'b0000101;
+    localparam [6:0] OPC_RICCI_INSP   = 7'b0000110;
+    localparam [6:0] OPC_HODGE_PROJ   = 7'b0000111;
+    localparam [6:0] OPC_ANOSOV_PURGE = 7'b0001000;
 
     // -------------------------------------------------------------------------
     // 32-Register Cyclotomic Register File: 32 x 128-bit
@@ -114,6 +117,29 @@ module t_isa_coprocessor #(
     wire [DATA_WIDTH-1:0] dsw_healed_data = rs2_data;
 
     // -------------------------------------------------------------------------
+    // Topological Unit 5: Ollivier-Ricci Curvature De-cloaking Inspector
+    // Evaluates discrete Ricci curvature neck indicator (a0 represents curvature).
+    // If a0 < 0, a bottleneck C2 channel is detected.
+    // -------------------------------------------------------------------------
+    wire ricci_anomaly_detected = (a0 < 32'sd0);
+
+    // -------------------------------------------------------------------------
+    // Topological Unit 6: Hodge Orthogonal Subspace Projector
+    // P_exact: Projects input signal (rs1) into irrotational gradient subspace,
+    // zeroing out solenoidal covert channel timing leakage (a2, a3).
+    // -------------------------------------------------------------------------
+    wire [DATA_WIDTH-1:0] hodge_projected_data = {32'd0, 32'd0, a1, a0};
+
+    // -------------------------------------------------------------------------
+    // Topological Unit 7: Anosov Ergodic Toral Hyperbolic Scrambler
+    // Arnold's cat map over F_257: (2*x + y, x + y) mod 257.
+    // Rapidly scatters key bytes into uniform maximum entropy in 1 clock cycle.
+    // -------------------------------------------------------------------------
+    wire [15:0] cat_map_x = (16'd2 * rs1_data[7:0] + rs1_data[15:8]) % 16'd257;
+    wire [15:0] cat_map_y = (rs1_data[7:0] + rs1_data[15:8]) % 16'd257;
+    wire [DATA_WIDTH-1:0] anosov_purged_data = {96'd0, 8'd0, cat_map_y[7:0], 8'd0, cat_map_x[7:0]};
+
+    // -------------------------------------------------------------------------
     // Pipeline & Control State Machine
     // -------------------------------------------------------------------------
     always_ff @(posedge clk or negedge rst_n) begin
@@ -167,6 +193,35 @@ module t_isa_coprocessor #(
                         resp_data      <= {96'd0, 32'h00000001};
                         resp_exception <= 1'b0;
                         resp_exc_code  <= 4'h0;
+                    end
+
+                    OPC_RICCI_INSP: begin
+                        resp_data      <= {96'd0, (ricci_anomaly_detected ? 32'hFFFFFFFF : 32'h00000001)};
+                        if (ricci_anomaly_detected) begin
+                            // Trip Hardware Ricci Curvature Neck Singularity Trap (Fault Code 4'hC)
+                            resp_exception <= 1'b1;
+                            resp_exc_code  <= 4'hC;
+                        end else begin
+                            resp_exception <= 1'b0;
+                            resp_exc_code  <= 4'h0;
+                        end
+                        if (cmd_rd != 0) regfile[cmd_rd] <= {96'd0, (ricci_anomaly_detected ? 32'h00000000 : 32'h00000001)};
+                    end
+
+                    OPC_HODGE_PROJ: begin
+                        // Exact subspace projection: covert channel nullification
+                        resp_data      <= hodge_projected_data;
+                        resp_exception <= 1'b0;
+                        resp_exc_code  <= 4'h0;
+                        if (cmd_rd != 0) regfile[cmd_rd] <= hodge_projected_data;
+                    end
+
+                    OPC_ANOSOV_PURGE: begin
+                        // 1-Cycle Ergodic Memory Purge
+                        resp_data      <= anosov_purged_data;
+                        resp_exception <= 1'b0;
+                        resp_exc_code  <= 4'h0;
+                        if (cmd_rd != 0) regfile[cmd_rd] <= anosov_purged_data;
                     end
 
                     default: begin

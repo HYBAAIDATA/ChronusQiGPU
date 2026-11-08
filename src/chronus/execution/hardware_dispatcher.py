@@ -22,6 +22,8 @@ from typing import Any, Dict, List, Optional
 from chronus.backends.lattice import HardwareUnavailableError
 from chronus.execution.cuda_backend import CUDABackendAdapter
 from chronus.execution.opencl_backend import OpenCLAcceleratorBackend
+from chronus.execution.opencl_sha256d import OpenCLSha256dMinerBackend
+from chronus.execution.geometric_galois_miner import GeometricGaloisMinerBackend
 from chronus.execution.reference import NativeMathReferenceBackend
 from chronus.execution.systemverilog_backend import (
     SystemVerilogHardwareSimulatorBackend,
@@ -44,12 +46,16 @@ class HardwareAcceleratorDispatcher:
         self._opencl_backend = OpenCLAcceleratorBackend()
         self._cuda_backend = CUDABackendAdapter()
         self._rtl_backend = SystemVerilogHardwareSimulatorBackend()
+        self._opencl_miner_backend = OpenCLSha256dMinerBackend()
+        self._geometric_galois_backend = GeometricGaloisMinerBackend()
 
         self._backends: Dict[str, Any] = {
             self._reference_backend.name: self._reference_backend,
             self._opencl_backend.name: self._opencl_backend,
             self._cuda_backend.name: self._cuda_backend,
             self._rtl_backend.name: self._rtl_backend,
+            self._opencl_miner_backend.name: self._opencl_miner_backend,
+            self._geometric_galois_backend.name: self._geometric_galois_backend,
         }
 
     def register_backend(self, backend: Any) -> None:

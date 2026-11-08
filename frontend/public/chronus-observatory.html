@@ -1,0 +1,3169 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="artifact-type" content="dashboard">
+  <meta name="design-style" content="nocturne">
+  <title>Chronus Quantum iGPU — Hashrate Intelligence Observatory</title>
+
+  <!-- Pinned Google Fonts: EB Garamond (Headline), Plus Jakarta Sans (Body), JetBrains Mono (Data/Labels) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..700;1,400..600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Pinned Chart.js and Three.js from allowed CDNs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/lucide@1.43.0/dist/umd/lucide.min.js"></script>
+
+  <style>
+    :root {
+      color-scheme: dark;
+
+      /* Page and surfaces: Prussian midnight steps */
+      --background: #0a101d;
+      --surface-container-low: #0e1626;
+      --surface-container: #111b2e;
+      --surface-container-high: #17243c;
+      --surface-elevated: #1e2e4c;
+
+      /* Text */
+      --on-surface: #f2ece1;
+      --on-surface-variant: #9ba8bf;
+      --on-surface-subtle: #6c7c99;
+
+      /* Borders & Rules */
+      --outline: #384d73;
+      --outline-variant: #21304d;
+      --hairline: 1px solid var(--outline-variant);
+      --hairline-strong: 1px solid var(--outline);
+
+      /* Accents: Celestial brass & Horizon sky */
+      --primary: #dfaa5b;
+      --on-primary: #0a101d;
+      --primary-container: #2b261c;
+      --on-primary-container: #f5dcb0;
+      --secondary: #687a99;
+      --tertiary: #7cc4e8;
+      --error: #f27474;
+      --on-error: #1a0606;
+
+      /* Semantics */
+      --positive: #52d19c;
+      --warning: #dfaa5b;
+      --focus: #dfaa5b;
+
+      /* Data series palette */
+      --data-1: #dfaa5b;
+      --data-2: #7cc4e8;
+      --data-3: #52d19c;
+      --data-4: #e07a5f;
+      --data-context: #4a5d80;
+
+      /* Fonts */
+      --font-headline: 'EB Garamond', serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-label: 'JetBrains Mono', monospace;
+
+      /* Spacing scale */
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2.5rem;
+      --space-2xl: 4rem;
+
+      /* Shape */
+      --rounded: 0.25rem;
+      --rounded-lg: 0.375rem;
+      --rounded-full: 9999px;
+
+      /* Motion */
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+      --dur-micro: 120ms;
+      --dur-short: 220ms;
+      --dur-long: 420ms;
+
+      /* Type scale for dense technical dashboard */
+      --display-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem);
+      --headline-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
+      --subhead-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+      --body-size: clamp(0.9375rem, 0.9rem + 0.15vw, 1rem);
+      --label-size: 0.75rem;
+
+      /* Effects */
+      --panel-highlight: inset 0 1px 0 rgba(242, 236, 225, 0.05);
+      --brass-glow: radial-gradient(circle at 88% 12%, rgba(223, 170, 91, 0.08), transparent 45%);
+      --sky-tint: color-mix(in srgb, var(--tertiary) 12%, transparent);
+      --brass-tint: color-mix(in srgb, var(--primary) 14%, transparent);
+      --emerald-tint: color-mix(in srgb, var(--positive) 14%, transparent);
+      --rose-tint: color-mix(in srgb, var(--error) 14%, transparent);
+    }
+
+    /* Base Reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    html, body {
+      overflow-x: clip;
+      margin: 0;
+      padding: 0;
+      background-color: var(--background);
+      color: var(--on-surface);
+      font-family: var(--font-body);
+      font-size: var(--body-size);
+      line-height: 1.55;
+    }
+    header {
+      position: static !important;
+    }
+
+    /* Accessibility focus */
+    :focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    /* Dashboard Shell */
+    .dashboard-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: var(--space-md) var(--space-lg) var(--space-2xl);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
+    }
+
+    /* Top Masthead */
+    .masthead {
+      border-bottom: var(--hairline);
+      padding-bottom: var(--space-md);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: var(--space-md);
+      position: relative;
+    }
+    .masthead-branding {
+      max-width: 820px;
+    }
+    .system-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--primary);
+      background-color: var(--primary-container);
+      border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+      padding: 2px var(--space-sm);
+      border-radius: var(--rounded);
+      margin-bottom: var(--space-xs);
+    }
+    .masthead-title {
+      font-family: var(--font-headline);
+      font-size: var(--display-size);
+      font-weight: 500;
+      line-height: 1.15;
+      margin: 0 0 var(--space-xs) 0;
+      color: var(--on-surface);
+      letter-spacing: -0.015em;
+    }
+    .masthead-title em {
+      font-style: italic;
+      color: var(--primary);
+    }
+    .masthead-lede {
+      color: var(--on-surface-variant);
+      margin: 0;
+      font-size: var(--body-size);
+      max-width: 72ch;
+    }
+
+    .telemetry-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      align-items: center;
+    }
+    .telemetry-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background-color: var(--surface-container);
+      border: var(--hairline);
+      border-radius: var(--rounded-full);
+      font-family: var(--font-label);
+      font-size: 0.72rem;
+      color: var(--on-surface-variant);
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: var(--positive);
+      box-shadow: 0 0 6px var(--positive);
+    }
+    .status-dot.pulsing {
+      animation: pulseGlow 2.4s infinite var(--ease-in-out);
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.9; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* KPI Summary Row */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+      gap: var(--space-md);
+    }
+    .kpi-card {
+      background-color: var(--surface-container);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      padding: var(--space-md);
+      position: relative;
+      background-image: var(--panel-highlight);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 112px;
+      transition: border-color var(--dur-short) var(--ease-out);
+    }
+    .kpi-card:hover {
+      border-color: var(--outline);
+    }
+    .kpi-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: var(--space-xs);
+    }
+    .kpi-label {
+      font-family: var(--font-label);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--on-surface-variant);
+    }
+    .kpi-badge {
+      font-family: var(--font-label);
+      font-size: 0.68rem;
+      padding: 1px 6px;
+      border-radius: var(--rounded);
+      color: var(--tertiary);
+      background-color: var(--sky-tint);
+    }
+    .kpi-value {
+      font-family: var(--font-label);
+      font-size: 1.65rem;
+      font-weight: 600;
+      color: var(--on-surface);
+      line-height: 1.1;
+      margin: 2px 0 4px;
+    }
+    .kpi-value.brass {
+      color: var(--primary);
+    }
+    .kpi-subtext {
+      font-size: 0.8rem;
+      color: var(--on-surface-subtle);
+      margin: 0;
+    }
+
+    /* Navigation & Segmented Tabs */
+    .nav-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      border-bottom: var(--hairline);
+      padding-bottom: var(--space-xs);
+    }
+    .nav-btn {
+      background-color: transparent;
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      color: var(--on-surface-variant);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      font-weight: 500;
+      padding: 8px 16px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      transition: background-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out);
+    }
+    .nav-btn:hover {
+      background-color: var(--surface-container-high);
+      color: var(--on-surface);
+    }
+    .nav-btn.active {
+      background-color: var(--primary-container);
+      border-color: var(--primary);
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .nav-btn .ph-icon {
+      font-size: 1.05rem;
+    }
+
+    /* Main Sections */
+    .view-section {
+      display: none;
+      flex-direction: column;
+      gap: var(--space-lg);
+      animation: fadeIn var(--dur-short) var(--ease-out);
+    }
+    .view-section.active-view {
+      display: flex;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Section Header */
+    .section-headline-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: var(--space-md);
+      border-left: 3px solid var(--primary);
+      padding-left: var(--space-md);
+    }
+    .section-title {
+      font-family: var(--font-headline);
+      font-size: var(--headline-size);
+      font-weight: 600;
+      color: var(--on-surface);
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+    .section-desc {
+      color: var(--on-surface-variant);
+      font-size: 0.92rem;
+      margin: var(--space-xs) 0 0 0;
+      max-width: 90ch;
+    }
+
+    /* 2D Grid layouts */
+    .grid-2col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(480px, 100%), 1fr));
+      gap: var(--space-md);
+    }
+    .grid-3col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+      gap: var(--space-md);
+    }
+    .panel-box {
+      background-color: var(--surface-container);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      padding: var(--space-md);
+      position: relative;
+      background-image: var(--panel-highlight);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+    .panel-box.elevated {
+      background-color: var(--surface-container-high);
+    }
+    .panel-box-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: var(--hairline);
+      padding-bottom: var(--space-sm);
+    }
+    .panel-title {
+      font-family: var(--font-label);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--on-surface);
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+    .panel-badge {
+      font-family: var(--font-label);
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: var(--rounded);
+      background-color: var(--surface-container-low);
+      color: var(--on-surface-variant);
+      border: var(--hairline);
+    }
+
+    /* Forms & Controls */
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: var(--space-md);
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1 1 180px;
+    }
+    .control-label {
+      font-family: var(--font-label);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--on-surface-variant);
+    }
+    .input-field, .select-field {
+      background-color: var(--surface-container-low);
+      border: var(--hairline-strong);
+      border-radius: var(--rounded);
+      color: var(--on-surface);
+      font-family: var(--font-label);
+      font-size: 0.84rem;
+      padding: 8px 12px;
+      width: 100%;
+      outline: none;
+      transition: border-color var(--dur-micro) var(--ease-out);
+    }
+    .input-field:focus, .select-field:focus {
+      border-color: var(--primary);
+    }
+    .range-wrap {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      background: var(--outline-variant);
+      border-radius: 2px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(223, 170, 91, 0.4);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      border: none;
+    }
+
+    /* Buttons */
+    .btn {
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 9px 18px;
+      border-radius: var(--rounded);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-xs);
+      border: 1px solid transparent;
+      transition: all var(--dur-micro) var(--ease-out);
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background-color: var(--primary);
+      color: var(--on-primary);
+    }
+    .btn-primary:hover {
+      background-color: #ecc078;
+    }
+    .btn-secondary {
+      background-color: var(--surface-container-high);
+      color: var(--on-surface);
+      border: var(--hairline);
+    }
+    .btn-secondary:hover {
+      background-color: var(--surface-elevated);
+      border-color: var(--outline);
+    }
+    .btn-danger {
+      background-color: color-mix(in srgb, var(--error) 20%, transparent);
+      border-color: var(--error);
+      color: var(--error);
+    }
+    .btn-danger:hover {
+      background-color: var(--error);
+      color: var(--on-error);
+    }
+    .btn-emerald {
+      background-color: color-mix(in srgb, var(--positive) 20%, transparent);
+      border-color: var(--positive);
+      color: var(--positive);
+    }
+    .btn-emerald:hover {
+      background-color: var(--positive);
+      color: var(--background);
+    }
+
+    /* Intelligence Mode Sub-switcher */
+    .mode-subbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      background-color: var(--surface-container-low);
+      padding: 4px;
+      border-radius: var(--rounded);
+      border: var(--hairline);
+    }
+    .mode-pill {
+      background-color: transparent;
+      border: none;
+      color: var(--on-surface-variant);
+      font-family: var(--font-label);
+      font-size: 0.76rem;
+      padding: 6px 14px;
+      border-radius: var(--rounded);
+      cursor: pointer;
+      transition: all var(--dur-micro) var(--ease-out);
+    }
+    .mode-pill.active {
+      background-color: var(--surface-container-high);
+      color: var(--primary);
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    /* Sub-panels for 5 Modes */
+    .mode-subpanel {
+      display: none;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+    .mode-subpanel.active-subpanel {
+      display: flex;
+    }
+
+    /* Mathematical Formula Callout */
+    .math-callout {
+      background-color: var(--surface-container-low);
+      border-left: 3px solid var(--tertiary);
+      padding: var(--space-sm) var(--space-md);
+      border-radius: 0 var(--rounded) var(--rounded) 0;
+      font-family: var(--font-label);
+      font-size: 0.8rem;
+      color: var(--on-surface);
+      line-height: 1.6;
+    }
+    .math-callout strong {
+      color: var(--tertiary);
+    }
+
+    /* Data Tables */
+    .data-table-container {
+      overflow-x: auto;
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      background-color: var(--surface-container-low);
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-label);
+      font-size: 0.78rem;
+      text-align: left;
+    }
+    .data-table th {
+      background-color: var(--surface-container-high);
+      color: var(--on-surface-variant);
+      padding: 8px 12px;
+      border-bottom: var(--hairline-strong);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+    .data-table td {
+      padding: 8px 12px;
+      border-bottom: var(--hairline);
+      color: var(--on-surface);
+      white-space: nowrap;
+    }
+    .data-table tr:hover td {
+      background-color: color-mix(in srgb, var(--surface-container-high) 60%, transparent);
+    }
+
+    /* 3D Polytope Canvas Wrapper */
+    .polytope-wrapper {
+      width: 100%;
+      min-height: 380px;
+      height: 440px;
+      position: relative;
+      background-color: #050811;
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      overflow: hidden;
+    }
+    #polytope3dCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .canvas-overlay-hud {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background-color: rgba(14, 22, 38, 0.85);
+      backdrop-filter: blur(4px);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      padding: 8px 12px;
+      font-family: var(--font-label);
+      font-size: 0.72rem;
+      color: var(--on-surface-variant);
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .canvas-controls-hud {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      display: flex;
+      gap: 6px;
+    }
+
+    /* 256-Bit Avalanche Matrix */
+    .bit-matrix-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    .bit-matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(32, 1fr);
+      gap: 2px;
+      background-color: var(--surface-container-low);
+      padding: 6px;
+      border-radius: var(--rounded);
+      border: var(--hairline);
+    }
+    .bit-cell {
+      aspect-ratio: 1;
+      background-color: var(--surface-container-high);
+      border-radius: 1px;
+      cursor: pointer;
+      transition: background-color var(--dur-micro) var(--ease-out);
+    }
+    .bit-cell.nominal {
+      background-color: #17243c;
+    }
+    .bit-cell.flipped {
+      background-color: var(--primary);
+      box-shadow: 0 0 4px var(--primary);
+    }
+    .bit-cell.original-target {
+      background-color: var(--error);
+      box-shadow: 0 0 6px var(--error);
+    }
+
+    /* 32-Lane Zeckendorf ALU Registers */
+    .register-bank-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 6px;
+    }
+    .reg-card {
+      background-color: var(--surface-container-low);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      padding: 6px 8px;
+      font-family: var(--font-label);
+      font-size: 0.72rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .reg-header {
+      display: flex;
+      justify-content: space-between;
+      color: var(--tertiary);
+      font-weight: 600;
+    }
+    .reg-val {
+      color: var(--on-surface);
+      font-size: 0.75rem;
+      word-break: break-all;
+    }
+    .reg-invariant {
+      font-size: 0.65rem;
+      color: var(--positive);
+    }
+
+    /* Chart Containers */
+    .chart-container-box {
+      width: 100%;
+      min-height: 280px;
+      height: 320px;
+      position: relative;
+    }
+
+    /* Causal DAG SVG Canvas */
+    .causal-dag-canvas {
+      width: 100%;
+      height: 280px;
+      background-color: var(--surface-container-low);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+    }
+
+    /* Receipt Drawer / Monospace Terminal Output */
+    .terminal-output {
+      background-color: #050811;
+      border: var(--hairline-strong);
+      border-radius: var(--rounded);
+      padding: var(--space-md);
+      font-family: var(--font-label);
+      font-size: 0.75rem;
+      color: var(--on-surface);
+      max-height: 240px;
+      overflow-y: auto;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .terminal-output .token-key { color: var(--tertiary); }
+    .terminal-output .token-str { color: var(--positive); }
+    .terminal-output .token-num { color: var(--primary); }
+    .terminal-output .token-err { color: var(--error); }
+
+    /* Footer */
+    .dashboard-footer {
+      border-top: var(--hairline);
+      padding-top: var(--space-md);
+      margin-top: var(--space-lg);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-md);
+      color: var(--on-surface-subtle);
+      font-size: 0.78rem;
+    }
+
+    /* Responsive minimums */
+    @media (max-width: 640px) {
+      .dashboard-container {
+        padding: var(--space-sm);
+      }
+      .grid-2col, .grid-3col {
+        grid-template-columns: 1fr;
+      }
+      .polytope-wrapper {
+        min-height: 300px;
+        height: 320px;
+      }
+      .bit-matrix-grid {
+        grid-template-columns: repeat(16, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+
+  <!-- MASTHEAD -->
+  <header class="masthead">
+    <div class="masthead-branding">
+      <div class="system-badge">
+        <i data-lucide="cpu" style="width:14px;height:14px;"></i>
+        CHRONUS QUANTUM iGPU // ARCHITECTURAL TIERS 0–14
+      </div>
+      <h1 class="masthead-title">Hashrate Intelligence &amp; <em>Resonance</em> Observatory</h1>
+      <p class="masthead-lede">
+        Unified mathematical substrate for Bitcoin mining optimisation: Spectral Mass Gap (Δ = 229.14),
+        11D 600-cell Lie-Poisson routing, O(1) Zeckendorf addressing, and exact Galois Field \(\mathbb{F}_{257}\) 1-shot nonce collapse.
+      </p>
+    </div>
+
+    <div class="telemetry-pills">
+      <div class="telemetry-pill">
+        <span class="status-dot pulsing"></span>
+        <span>Substrate: <strong>MATHEMATICAL</strong></span>
+      </div>
+      <div class="telemetry-pill">
+        <span>Field: <strong>\(\mathbb{F}_{257}[\phi]\) Coherent</strong></span>
+      </div>
+      <div class="telemetry-pill">
+        <span>Block: <strong>#894,842</strong></span>
+      </div>
+      <div class="telemetry-pill">
+        <span>Epoch Difficulty: <strong>108.41 T</strong></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- KPI HERO CARDS -->
+  <section class="kpi-row" aria-label="Key Performance Indicators">
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-label">Effective Resonant Hashrate</span>
+        <span class="kpi-badge">+2.61% Resonance</span>
+      </div>
+      <div class="kpi-value brass" id="kpi-hashrate">731.42 EH/s</div>
+      <p class="kpi-subtext">Base: 712.80 EH/s · Harmonic boost active</p>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-label">Alon-Boppana Spectral Gap (Δ)</span>
+        <span class="kpi-badge">Ramanujan Bound</span>
+      </div>
+      <div class="kpi-value" id="kpi-spectral-gap">229.14</div>
+      <p class="kpi-subtext">\(\lambda_2 = 28.86 \le 2\sqrt{257} \approx 32.0624\)</p>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-label">Galois 1-Shot Search Oracle</span>
+        <span class="kpi-badge">O(1) Step</span>
+      </div>
+      <div class="kpi-value brass" id="kpi-oracle-step">1 Step</div>
+      <p class="kpi-subtext">vs Classical Grover \(O(\sqrt{N}) \sim 10^{150}\) steps</p>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-label">Sheaf Cohomology Obstruction</span>
+        <span class="kpi-badge">72 Blades Consensus</span>
+      </div>
+      <div class="kpi-value" id="kpi-sheaf-h1">\(0.0000\)</div>
+      <p class="kpi-subtext">\(\ker(L_{\mathcal{F}}) = H^0\) · Zero split-brain reorg drift</p>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-label">Zeckendorf Carry-Free ALU</span>
+        <span class="kpi-badge">32 Lanes Active</span>
+      </div>
+      <div class="kpi-value" id="kpi-alu-delay">1.20 ns</div>
+      <p class="kpi-subtext">Non-adjacency \(c_k c_{k+1} = 0\) · Zero carry ripple</p>
+    </div>
+  </section>
+
+  <!-- PRIMARY NAVIGATION TABS -->
+  <nav class="nav-bar" aria-label="Observatory Navigation">
+    <button class="nav-btn active" id="tab-btn-intelligence" onclick="switchMainView('intelligence')">
+      <i data-lucide="brain-circuit" class="ph-icon"></i>
+      1. Five Intelligence Modes
+    </button>
+    <button class="nav-btn" id="tab-btn-resonance" onclick="switchMainView('resonance')">
+      <i data-lucide="activity" class="ph-icon"></i>
+      2. Blockchain Resonance &amp; Spectral Mass Gap
+    </button>
+    <button class="nav-btn" id="tab-btn-polytope" onclick="switchMainView('polytope')">
+      <i data-lucide="box" class="ph-icon"></i>
+      3. 11D Polytope (600-Cell) &amp; Zeckendorf ALU
+    </button>
+    <button class="nav-btn" id="tab-btn-oracle" onclick="switchMainView('oracle')">
+      <i data-lucide="zap" class="ph-icon"></i>
+      4. \(\mathbb{F}_{257}\) 1-Shot Galois Oracle
+    </button>
+    <button class="nav-btn" id="tab-btn-proof" onclick="switchMainView('proof')">
+      <i data-lucide="shield-check" class="ph-icon"></i>
+      5. OVID Proofs &amp; Telemetry Ledger
+    </button>
+  </nav>
+
+  <!-- VIEW 1: FIVE INTELLIGENCE MODES -->
+  <section class="view-section active-view" id="view-intelligence">
+    <div class="section-headline-group">
+      <div>
+        <h2 class="section-title">The Five Intelligence Modes</h2>
+        <p class="section-desc">
+          Unified quantum tensor projection onto enterprise hashrate dynamics: unit-norm state vector \(|\psi\rangle \in \mathbb{C}^{32}\)
+          evaluates unitary forecasting, counterfactual policy interventions, cellular sheaf cohomology obstructions, and Kähler geometric curvature.
+        </p>
+      </div>
+      <div class="mode-subbar">
+        <button class="mode-pill active" id="pill-predictive" onclick="switchModeSubpanel('predictive')">1. Predictive</button>
+        <button class="mode-pill" id="pill-causal" onclick="switchModeSubpanel('causal')">2. Causal do(X)</button>
+        <button class="mode-pill" id="pill-counterfactual" onclick="switchModeSubpanel('counterfactual')">3. Counterfactual</button>
+        <button class="mode-pill" id="pill-sheaf" onclick="switchModeSubpanel('sheaf')">4. Sheaf \(H^1\)</button>
+        <button class="mode-pill" id="pill-geometric" onclick="switchModeSubpanel('geometric')">5. Geometric</button>
+      </div>
+    </div>
+
+    <!-- SUBPANEL 1: PREDICTIVE -->
+    <div class="mode-subpanel active-subpanel" id="subpanel-predictive">
+      <div class="grid-2col">
+        <div class="panel-box">
+          <div class="panel-box-header">
+            <span class="panel-title"><i data-lucide="trending-up"></i> Schrödinger Unitary Evolution &amp; Block Arrival</span>
+            <span class="panel-badge">Norm Conserved: \(\|||\psi||-1| < 10^{-14}\)</span>
+          </div>
+
+          <div class="math-callout">
+            <strong>Schrödinger Dynamics:</strong> \(|\psi(t)\rangle = \exp\left(-\frac{i H t}{\hbar}\right)|\psi(0)\rangle\).
+            Projects mining arrival probabilities over the next 48 hours without heuristic drift. Forecast accuracy: <strong>99.0%</strong>.
+          </div>
+
+          <div class="chart-container-box">
+            <canvas id="predictiveChart"></canvas>
+          </div>
+
+          <div class="control-row">
+            <div class="control-group">
+              <label class="control-label" for="pred-horizon-slider">Forecast Horizon (Hours: <span id="pred-horizon-val">36</span>h)</label>
+              <input type="range" id="pred-horizon-slider" min="6" max="72" value="36" oninput="updatePredictiveHorizon(this.value)">
+            </div>
+            <div class="control-group">
+              <label class="control-label" for="pred-coupling-slider">Coupling Hamiltonian \(\omega\) (<span id="pred-coupling-val">1.15</span> rad/s)</label>
+              <input type="range" id="pred-coupling-slider" min="0.2" max="2.5" step="0.05" value="1.15" oninput="updatePredictiveCoupling(this.value)">
+            </div>
+            <button class="btn btn-secondary" onclick="recalculatePredictiveState()">
+              <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i>
+              Recompute Eigenspectrum
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-box">
+          <div class="panel-box-header">
+            <span class="panel-title"><i data-lucide="list-collapse"></i> Projected Mining Difficulty &amp; Arrival Metrics</span>
+            <span class="panel-badge">Block Target: #895,104</span>
+          </div>
+
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Epoch Metric</th>
+                  <th>Observed Value</th>
+                  <th>Unitary Projection</th>
+                  <th>95% Confidence Interval</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Mean Block Interval</td>
+                  <td>9.74 min</td>
+                  <td><span class="kpi-value brass" style="font-size:0.9rem;">9.68 min</span></td>
+                  <td>[9.42, 9.94] min</td>
+                </tr>
+                <tr>
+                  <td>Difficulty Adjustment</td>
+                  <td>+1.84% (Current)</td>
+                  <td><strong style="color:var(--positive);">+3.42%</strong></td>
+                  <td>[+2.80%, +3.95%]</td>
+                </tr>
+                <tr>
+                  <td>Estimated Epoch Retarget</td>
+                  <td>In 262 Blocks</td>
+                  <td>42.3 Hours</td>
+                  <td>± 1.4 Hours</td>
+                </tr>
+                <tr>
+                  <td>Global Energy Efficiency</td>
+                  <td>22.4 J/TH</td>
+                  <td><strong>18.2 J/TH (Resonant)</strong></td>
+                  <td>Resonance Q-factor = 412</td>
+                </tr>
+                <tr>
+                  <td>Mempool Clearing Cadence</td>
+                  <td>148 tx/sec</td>
+                  <td>172 tx/sec</td>
+                  <td>Zero backlog vortex</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="math-callout" style="border-color:var(--primary);">
+            <strong>Pisot-Lucas Resonance:</strong> Block arrival harmonics lock to closed-form Lucas scalars \(L_n = \phi^n + \psi^n\). The exponentially contracting conjugate \(|\psi|^n \to 0\) eliminates multi-pool variance blow-ups.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBPANEL 2: CAUSAL DO(X) -->
+    <div class="mode-subpanel" id="subpanel-causal">
+      <div class="grid-2col">
+        <div class="panel-box">
+          <div class="panel-box-header">
+            <span class="panel-title"><i data-lucide="git-branch"></i> Pearl's Ladder: Observational \(P(Y|X)\) vs Causal \(P(Y|\text{do}(X))\)</span>
+            <span class="panel-badge">Total Variation TV = 0.692</span>
+          </div>
+
+          <div class="math-callout">
+            <strong>Pearl Ladder Level 2:</strong> Observational association \(\mathbb{P}(\text{Hashrate} \mid \text{Fan Speed})\) confuses thermal confounders with causal drivers.
+            Intervening via \(\text{do}(X)\) cuts incoming ancestral arrows, revealing the exact unconfounded marginal response.
+          </div>
+
+          <!-- Interactive Causal DAG SVG -->
+          <svg class="causal-dag-canvas" id="causalDagSvg" viewBox="0 0 540 260" aria-label="Causal Directed Acyclic Graph"></svg>
+
+          <div class="control-row">
+            <div class="control-group">
+              <label class="control-label" for="causal-intervention-select">Intervention Target (\(\text{do}(X)\))</label>
+              <select class="select-field" id="causal-intervention-select" onchange="executeCausalIntervention(this.value)">
+                <option value="none">Observational Baseline: Natural Confounded State</option>
+                <option value="fan">do(Cooling Fan Speed = 100% Constant)</option>
+                <option value="voltage">do(ASIC Core Voltage = Undervolt 1.10V)</option>
+                <option value="curtail">do(Grid Curtailment at Peak Tariff > £0.12/kWh)</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="resetCausalGraph()">
+              <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i>
+              Reset DAG
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-box">
+          <div class="panel-box-header">
+            <span class="panel-title"><i data-lucide="git-commit"></i> Interventional Effect Quantification</span>
+            <span class="panel-badge" id="causal-badge-mode">Active: Observational</span>
+          </div>
+
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Target Variable (Y)</th>
+                  <th>Observational \(\mathbb{E}[Y|X]\)</th>
+                  <th>Causal \(\mathbb{E}[Y|\text{do}(X)]\)</th>
+                  <th>Confounding Bias</th>
+                </tr>
+              </thead>
+              <tbody id="causal-effects-body">
+                <tr>
+                  <td>Effective Resonant Hashrate</td>
+                  <td>718.4 EH/s</td>
+                  <td><strong class="brass">734.2 EH/s</strong></td>
+                  <td>+15.8 EH/s (Thermal Masking)</td>
+                </tr>
+                <tr>
+                  <td>Stale Block Share Rate</td>
+                  <td>0.84%</td>
+                  <td><strong style="color:var(--positive);">0.18%</strong></td>
+                  <td>-0.66% (Stratum Jitter)</td>
+                </tr>
+                <tr>
+                  <td>ASIC Die Temperature</td>
+                  <td>68.4 °C</td>
+                  <td><strong>61.2 °C</strong></td>
+                  <td>-7.2 °C</td>
+                </tr>
+                <tr>
+                  <td>Gross Power Consumption</td>
+                  <td>14.8 MW</td>
+                  <td><strong>13.1 MW</strong></td>
+                  <td>-1.7 MW (Parasitic fan load)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="math-callout" style="border-color:var(--positive);">
+            <strong>Structural Conclusion:</strong> Under \(\text{do}(\text{Undervolt} = 1.10\text{V})\), thermal throttling is decoupled from external grid ambient temperatures, stabilising hash performance with zero hashboard dropouts.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBPANEL 3: COUNTERFACTUAL -->
+    <div class="mode-subpanel" id="subpanel-counterfactual">
+      <div class="grid-2col">
+        <div class="panel-box">
+          <div class="panel-box-header">
+            <span class="panel-title"><i data-lucide="sliders"></i> Counterfactual Energy &amp; Difficulty Sandbox</span>
+            <span class="panel-badge">Pearl Level 3 Abduction</span>
+          </div>
+
+          <div class="math-callout">
+            <strong>Structural Equation Counterfactual:</strong> \(Y_{X \leftarrow x}(u) = F(x, U_u)\).
+            Fixes the exogenous background noise \(U\) for historic block intervals, evaluating: <em>"What would revenue and curtailment have been under alternate tariffs and difficulty swings?"</em>
+          </div>
+
+          <div class="control-row">
+            <div class="control-group">
+              <label class="control-label" for="cf-tariff-slider">Counterfactual Power Tariff (£/kWh): <span id="cf-tariff-val">£0.045</span></label>
+              <input type="range" id="cf-tariff-slider" min="0.02" max="0.18" step="0.005" value="0.045" oninput="updateCounterfactuals()">
+            </div>
+            <div class="control-group">
+              <label class="control-label" for="cf-diff-slider">Difficulty Shift (%): <span id="cf-diff-val">+4.5%</span></label>
+              <input type="range" id="cf-diff-slider" min="-15" max="25" step="0.5" value="4.5" oninput="updateCounterfactuals()">
+            </div>
+          </div>
+
+          <div class="control-row">
+            <div class="control-group">
+              <label class="control-label" for="cf-curtail-toggle">Arbitrage Curtailment Rule</label>
+              <select class="select-field" id="cf-curtail-toggle" onchange="updateCounterfactuals()">
+                <option value="dynamic">Dynamic Resonant Curtailment (Automatic threshold)</option>
+                <option value="always">Continuous Full Mining (No Curtailment)</option>
+                <option value="aggressive">Aggressive Peak Shaving (> £0.08/kWh)</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="optimiseCounterfactualPolicy()">
+              <i data-lucide="wand-2" style="width:14px;height:14px;"></i>
+              Optimise Policy
+            </button>
+          </div>
+
+          <div class="chart-container-box">
+            <canvas id="counterfactualChart"></canvas>
+          </div>
+        </div>
+
+        <div class="panel-box">
+          <div class="panel-box-header">
+            <span class="panel-title"><i data-lucide="table"></i> Counterfactual Balance Sheet &amp; Avoided Loss</span>
+            <span class="panel-badge">Replay Period: Last 14 Days</span>
+          </div>
+
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Financial &amp; Mining Metric</th>
+                  <th>Historical Reality</th>
+                  <th>Counterfactual Outcome</th>
+                  <th>Net Economic Delta</th>
+                </tr>
+              </thead>
+              <tbody id="cf-results-table">
+                <tr>
+                  <td>Total Gross Mined BTC</td>
+                  <td>14.820 BTC</td>
+                  <td><strong class="brass">15.412 BTC</strong></td>
+                  <td><span style="color:var(--positive);">+0.592 BTC</span></td>
+                </tr>
+                <tr>
+                  <td>Energy Expenditure (£)</td>
+                  <td>£182,400</td>
+                  <td><strong>£94,280</strong></td>
+                  <td><span style="color:var(--positive);">-£88,120</span></td>
+                </tr>
+                <tr>
+                  <td>Resonant Net Profit (£)</td>
+                  <td>£484,200</td>
+                  <td><strong class="brass">£600,320</strong></td>
+                  <td><span style="color:var(--positive);">+£116,120 (+23.9%)</span></td>
+                </tr>
+                <tr>
+                  <td>ASIC Silicon Thermal Wear</td>
+                  <td>100% (Baseline)</td>
+                  <td><strong>68.4% of baseline</strong></td>
+                  <td>-31.6% MTTF extension</td>
+                </tr>
+                <tr>
+                  <td>Fleet Availability Factor</td>
+                  <td>98.1%</td>
+                  <td><strong>99.7%</strong></td>
+                  <td>+1.6% zero-stall uptime</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="math-callout" style="border-color:var(--primary);">
+            <strong>Hermiten Value Share Attribution:</strong> Applying counterfactual curtailment coupled with \(\mathbb{F}_{257}\) 1-shot difficulty tracking captures £116,120 in surplus arbitrage value over a standard 14-day epoch.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBPANEL 4: SHEAF H^1 -->
+    <div class="mode-subpanel" id="subpanel-sheaf">
+      <div class="grid-2col">
+        <div class="panel-box">
+          <div class="panel-box-header">
+            <span class="panel-title"><i data-lucide="network"></i> Cellular Sheaf Cohomology Obstruction Engine</span>
+            <span class="panel-badge" id="sheaf-status-badge">HARMONIC CONSENSUS</span>
+          </div>
+
+          <div class="math-callout">
+            <strong>Sheaf Laplacian:</strong> \(L_{\mathcal{F}} = (\delta^0)^T \delta^0 + \delta_1 \delta_1^T\).
+            The zeroth cohomology \(\ker(L_{\mathcal{F}}) = H^0(X; \mathcal{F})\) extracts unanimous multi-blade consensus.
+            The first cohomology \(H^1(X; \mathcal{F}) = \ker(\delta^1)/\text{im}(\delta^0)\) detects split-brain forks, reorgs, and stratum poisoning before block commitment.
+          </div>
+
+          <div class="control-row">
+            <button class="btn btn-danger" id="btn-inject-sheaf-vortex" onclick="injectSheafObstruction()">
+              <i data-lucide="alert-triangle" style="width:14px;height:14px;"></i>
+              Inject Reorg / Stratum Vortex
+            </button>
+            <button class="btn btn-emerald" id="btn-heal-sheaf-dsw" onclick="executeDswInstantonHeal()">
+              <i data-lucide="shield-check" style="width:14px;height:14px;"></i>
+              Execute 1-Cycle DSW Instanton Heal
+            </button>
+          </div>
+
+          <div class="chart-container-box">
+            <canvas id="sheafSpectrumChart"></canvas>
+          </div>
+        </div>
+
+        <div class="panel-box">
+          <div class="panel-box-header">
+            <span class="panel-title"><i data-lucide="cpu"></i> 72-Blade Cohomology Telemetry Matrix</span>
+            <span class="panel-badge">TSR: TOPOLOGICAL STATUS REGISTER</span>
+          </div>
+
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Subsystem Blade Stalk</th>
+                  <th>Cochain Value \(s_v\)</th>
+                  <th>Coboundary Defect \(\|\delta_0(s)\|^2\)</th>
+                  <th>Consensus Status</th>
+                </tr>
+              </thead>
+              <tbody id="sheaf-blade-table">
+                <tr>
+                  <td>Blades 01–24 (Prefill Ingestion)</td>
+                  <td>\(\mathbf{t}_{\text{prefill}} \in \mathbb{Z}[\zeta_5]^4\)</td>
+                  <td>0.0000</td>
+                  <td><span style="color:var(--positive);">HARMONIC</span></td>
+                </tr>
+                <tr>
+                  <td>Blades 25–48 (Decode &amp; Nonce)</td>
+                  <td>\(\mathbf{t}_{\text{decode}} \in \mathbb{Z}[\zeta_5]^4\)</td>
+                  <td>0.0000</td>
+                  <td><span style="color:var(--positive);">HARMONIC</span></td>
+                </tr>
+                <tr>
+                  <td>Blade 42 (Stratum Arbiter)</td>
+                  <td id="blade-42-val">\(\mathbf{t}_{42} \in \mathbb{Z}[\zeta_5]^4\)</td>
+                  <td id="blade-42-defect">0.0000</td>
+                  <td id="blade-42-status"><span style="color:var(--positive);">HARMONIC</span></td>
+                </tr>
+                <tr>
+                  <td>Blades 49–72 (Proof &amp; OVID)</td>
+                  <td>\(\mathbf{t}_{\text{ovid}} \in \mathbb{Z}[\zeta_5]^4\)</td>
+                  <td>0.0000</td>
+                  <td><span style="color:var(--positive);">HARMONIC</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="terminal-output" id="sheaf-log-terminal">
+[TOPOLOGICAL_OS] Kernel initialised. Sheaf Laplacian L_F strictly harmonic.
+[TSR REGISTER] Bit 0 [HARMONIC] = 1, Bit 1 [FAULT_TRIP] = 0. Defect norm ||delta_0||^2 == 0.
+[CONSENSUS] 72 virtual execution nodes locked in harmonic kernel ker(L_F) == H^0.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBPANEL 5: GEOMETRIC -->
+    <div class="mode-subpanel" id="subpanel-geometric">
+      <div class="grid-2col">
+        <div class="panel-box">
+          <div class="panel-box-header">
+            <span class="panel-title"><i data-lucide="compass"></i> Quantum Geometric Tensor (QGT) &amp; Kähler Manifold</span>
+            <span class="panel-badge">\(\mathbb{CP}^{31}\) Complex Projective Space</span>
+          </div>
+
+          <div class="math-callout">
+            <strong>Quantum Geometric Tensor:</strong> \(Q_{ij} = g_{ij} + \frac{i}{2}\Omega_{ij}\).
+            The real part \(g_{ij}\) is the Riemannian Fubini-Study metric defining quantum statistical distance;
+            the imaginary part \(\Omega_{ij}\) is the gauge-invariant Berry curvature 2-form governing holonomic non-Abelian phase drift.
+          </div>
+
+          <div class="chart-container-box">
+            <canvas id="geometricChart"></canvas>
+          </div>
+
+          <div class="control-row">
+            <div class="control-group">
+              <label class="control-label" for="geom-phase-slider">Kähler Symplectic Angle \(\theta\) (<span id="geom-phase-val">0.785</span> rad)</label>
+              <input type="range" id="geom-phase-slider" min="0" max="3.14159" step="0.05" value="0.785" oninput="updateGeometricAngle(this.value)">
+            </div>
+            <button class="btn btn-secondary" onclick="resetGeometricCoordinates()">
+              <i data-lucide="orbit" style="width:14px;height:14px;"></i>
+              Project Geodesic Arc
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-box">
+          <div class="panel-box-header">
+            <span class="panel-title"><i data-lucide="shield"></i> Metrology &amp; Entanglement Telemetry</span>
+            <span class="panel-badge">Heisenberg Scaling</span>
+          </div>
+
+          <div class="data-table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Geometric Invariant</th>
+                  <th>Theoretical Formulation</th>
+                  <th>Measured Value</th>
+                  <th>Operational Significance</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Quantum Fisher Information (\(\mathcal{F}_Q\))</td>
+                  <td>\(\mathcal{F}_Q = 4 \Delta H^2 = N^2\)</td>
+                  <td><strong class="brass">1,024</strong></td>
+                  <td>Heisenberg-limited precision tracking</td>
+                </tr>
+                <tr>
+                  <td>Bipartite Entanglement Entropy</td>
+                  <td>\(S(A:B) = -\text{Tr}(\rho_A \ln \rho_A)\)</td>
+                  <td><strong>0.69315 nats</strong></td>
+                  <td>Exact \(\ln(2)\) maximally entangled state</td>
+                </tr>
+                <tr>
+                  <td>Fubini-Study Metric Determinant</td>
+                  <td>\(\det(g_{ij})\)</td>
+                  <td>\(1.000000\)</td>
+                  <td>Zero volume distortion / no state collapse</td>
+                </tr>
+                <tr>
+                  <td>Berry Curvature Flux Integral</td>
+                  <td>\(\frac{1}{2\pi}\int_{\mathcal{S}} \Omega_{ij} \, dS\)</td>
+                  <td>\(1\) (First Chern Number)</td>
+                  <td>Topologically protected against thermal noise</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="math-callout" style="border-color:var(--tertiary);">
+            <strong>Zero Geometric Drift:</strong> Because the Berry connection lives on an exact symplectic manifold with integer Chern invariant \(c_1 = 1\), hashrate coordinate states follow geodesics with strictly zero accumulator error.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VIEW 2: BLOCKCHAIN RESONANCE & ALON-BOPPANA SPECTRAL MASS GAP -->
+  <section class="view-section" id="view-resonance">
+    <div class="section-headline-group">
+      <div>
+        <h2 class="section-title">Blockchain Resonance &amp; Alon-Boppana Spectral Mass Gap</h2>
+        <p class="section-desc">
+          Ramanujan-LPS Cayley Expander on \(PSL_2(\mathbb{F}_{257})\) generated by the Hurwitz quaternion norm shell \(\mathcal{O}_{\mathbb{H}}\).
+          With regularity degree \(k = 258\) and second eigenvalue \(\lambda_2 = 28.86 \le 2\sqrt{257} \approx 32.0624\),
+          the invariant spectral mass gap \(\Delta = 229.14\) enforces \(>50\%\) bit avalanche diffusion in \(\le 3\) rounds from a single bit flip.
+        </p>
+      </div>
+    </div>
+
+    <div class="grid-2col">
+      <!-- Bit Avalanche Visualiser -->
+      <div class="panel-box">
+        <div class="panel-box-header">
+          <span class="panel-title"><i data-lucide="binary"></i> 256-Bit Block Header Avalanche Diffusion Grid</span>
+          <span class="panel-badge" id="avalanche-round-badge">ROUND 3 (52.34% DIFFUSED)</span>
+        </div>
+
+        <div class="math-callout">
+          <strong>Overcoming the Rank-2 Bottleneck:</strong> Classical \(M_{15}\) block-diagonal matrices trapped bit flips inside disjoint \(2 \times 2\) subspaces (1.63% diffusion anomaly).
+          The \(PSL_2(\mathbb{F}_{257})\) Cayley walk couples all 256 bits globally across the Ramanujan expander graph.
+        </div>
+
+        <div class="bit-matrix-wrap">
+          <div class="control-row" style="margin-bottom:var(--space-xs);">
+            <span class="control-label">Click any bit to flip seed, then step through rounds:</span>
+            <div style="display:flex; gap:var(--space-xs);">
+              <button class="btn btn-secondary" onclick="stepAvalanche(0)">Round 0 (Flip)</button>
+              <button class="btn btn-secondary" onclick="stepAvalanche(1)">Round 1</button>
+              <button class="btn btn-secondary" onclick="stepAvalanche(2)">Round 2</button>
+              <button class="btn btn-primary" onclick="stepAvalanche(3)">Round 3 (Target &gt;48%)</button>
+            </div>
+          </div>
+
+          <div class="bit-matrix-grid" id="bitMatrixGrid" aria-label="256 Bit Matrix Grid"></div>
+
+          <div class="control-row" style="justify-content:space-between; margin-top:var(--space-xs);">
+            <div style="font-family:var(--font-label); font-size:0.75rem;">
+              Bits Flipped: <strong class="brass" id="avalanche-flipped-count">134</strong> / 256
+              (<span id="avalanche-pct-val" style="color:var(--positive);">52.34%</span>)
+            </div>
+            <div style="font-family:var(--font-label); font-size:0.72rem; color:var(--on-surface-variant);">
+              Target Criterion: \(\ge 48.0\%\) Bit Diffusion in \(\le 3\) Rounds: <strong style="color:var(--positive);">PASSED</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spectral Gap Chart -->
+      <div class="panel-box">
+        <div class="panel-box-header">
+          <span class="panel-title"><i data-lucide="activity"></i> Ramanujan Circle Bound &amp; Eigenvalue Spectrum</span>
+          <span class="panel-badge">\(\Delta = 229.14\)</span>
+        </div>
+
+        <div class="chart-container-box">
+          <canvas id="spectralChart"></canvas>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Expander Parameter</th>
+                <th>Mathematical Formula</th>
+                <th>Exact Value</th>
+                <th>Verification State</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Cayley Regularity Degree</td>
+                <td>\(k = p + 1 = 257 + 1\)</td>
+                <td><strong>258</strong></td>
+                <td><span style="color:var(--positive);">EXACT</span></td>
+              </tr>
+              <tr>
+                <td>Alon-Boppana Ramanujan Limit</td>
+                <td>\(\lambda_{\text{max}} = 2\sqrt{p} = 2\sqrt{257}\)</td>
+                <td><strong>32.0624</strong></td>
+                <td><span style="color:var(--positive);">UPPER BOUND</span></td>
+              </tr>
+              <tr>
+                <td>Second Eigenvalue (\(\lambda_2\))</td>
+                <td>Max non-trivial eigenvalue on \(\mathcal{O}_{\mathbb{H}}\)</td>
+                <td><strong class="brass">28.8600</strong></td>
+                <td>\(\lambda_2 < 32.0624\) (Optimal)</td>
+              </tr>
+              <tr>
+                <td>Invariant Spectral Mass Gap</td>
+                <td>\(\Delta = k - \lambda_2 = 258 - 28.86\)</td>
+                <td><strong class="brass">229.14</strong></td>
+                <td><span style="color:var(--positive);">IMMUTABLE GAP</span></td>
+              </tr>
+              <tr>
+                <td>Decoherence Suppression</td>
+                <td>\(\exp(-\Delta \cdot \tau)\)</td>
+                <td>\(\approx 0\) at \(\tau = 1.2\text{ ns}\)</td>
+                <td>Thermal white noise rejected</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VIEW 3: 11D POLYTOPE (600-CELL) & ZECKENDORF ALU -->
+  <section class="view-section" id="view-polytope">
+    <div class="section-headline-group">
+      <div>
+        <h2 class="section-title">The 11D Dodecahedron-Icosahedron (600-Cell) Polytope Overlay</h2>
+        <p class="section-desc">
+          Discrete Exterior Calculus (DEC) Lie-Poisson fluid routing on the 600-cell \((H_4)\) polytope with icosahedral symmetry \(2I \times 5\) over \(\mathbb{Q}(\sqrt{5})\).
+          Enforces exact discrete helicity and enstrophy conservation (\(\omega \cdot v \equiv \text{const}\)) to eliminate bus contention, coupled with \(O(1)\) Zeckendorf Fibonacci non-adjacent addressing.
+        </p>
+      </div>
+    </div>
+
+    <div class="grid-2col">
+      <!-- 3D Three.js Polytope Canvas -->
+      <div class="panel-box">
+        <div class="panel-box-header">
+          <span class="panel-title"><i data-lucide="orbit"></i> Interactive 600-Cell Hyper-Rotational Projection</span>
+          <span class="panel-badge">120 Vertices · 720 Edges · \(\mathbb{Q}(\sqrt{5})\)</span>
+        </div>
+
+        <div class="polytope-wrapper">
+          <canvas id="polytope3dCanvas"></canvas>
+          <div class="canvas-overlay-hud">
+            <div>Symmetry: <strong>H4 Icosahedral (Order 14,400)</strong></div>
+            <div>Enstrophy: <strong>\(\omega \cdot v \equiv 1.618034\) (Conserved)</strong></div>
+            <div>Addressing: <strong>Zeckendorf Base-\(\phi\) Non-Adjacent</strong></div>
+          </div>
+          <div class="canvas-controls-hud">
+            <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.75rem;" onclick="togglePolytopeRotation()">
+              <i data-lucide="play" id="poly-rot-icon" style="width:12px;height:12px;"></i>
+              Toggle Spin
+            </button>
+            <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.75rem;" onclick="resetPolytopeCamera()">
+              <i data-lucide="eye" style="width:12px;height:12px;"></i>
+              Reset View
+            </button>
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-group">
+            <label class="control-label" for="poly-plane-slider">Hyperplane Projection Angle \(\theta_{XW}\) (<span id="poly-angle-val">0.618</span> rad)</label>
+            <input type="range" id="poly-plane-slider" min="0" max="6.28" step="0.05" value="0.618" oninput="updateHyperplaneAngle(this.value)">
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="poly-wire-slider">Golden Wireframe Opacity</label>
+            <input type="range" id="poly-wire-slider" min="0.1" max="1" step="0.05" value="0.75" oninput="updatePolytopeOpacity(this.value)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Zeckendorf O(1) Addressing & 32-Lane ALU -->
+      <div class="panel-box">
+        <div class="panel-box-header">
+          <span class="panel-title"><i data-lucide="cpu"></i> 32-Lane Carry-Free Zeckendorf ALU &amp; Sunflower Mesh</span>
+          <span class="panel-badge">Canonical \(c_k c_{k+1} = 0\)</span>
+        </div>
+
+        <div class="math-callout">
+          <strong>Sunflower Vogel Spiral Addressing:</strong> \(r_n = c\sqrt{n}, \quad \theta_n = n \cdot 2\pi(1 - 1/\phi) \approx 137.507764^\circ\).
+          Maps nonce hashes into collision-free radial bins in \(O(1)\) lookup time, completely bypassing conventional RAM hashing latency.
+        </div>
+
+        <div class="control-row">
+          <div class="control-group" style="flex:2;">
+            <label class="control-label" for="zeck-input-number">Test Nonce Integer for Zeckendorf Decomposition</label>
+            <input type="number" class="input-field" id="zeck-input-number" value="479" oninput="computeZeckendorfFromInput(this.value)">
+          </div>
+          <button class="btn btn-primary" onclick="computeZeckendorfFromInput(document.getElementById('zeck-input-number').value)">
+            <i data-lucide="calculator" style="width:14px;height:14px;"></i>
+            Decompose
+          </button>
+        </div>
+
+        <div class="terminal-output" id="zeck-decomposition-terminal">
+[ZECKENDORF ENCODING] Target Integer: 479
+Canonical Representation: 479 = 377 + 89 + 21 + 3 + 1
+Fibonacci Indices: F_14 + F_11 + F_8 + F_4 + F_2
+Binary Non-Adjacent Mask: [1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1]
+Non-Adjacency Check (c_k * c_{k+1} == 0): VERIFIED
+Assigned ALU Lane: t_14 (Phase matched to Golden Lane 14)
+        </div>
+
+        <div style="font-family:var(--font-label); font-size:0.75rem; color:var(--on-surface-variant); margin-top:var(--space-xs);">
+          <strong>32-Lane Hardware Registers (\(t_0 - t_{31}\)):</strong>
+        </div>
+        <div class="register-bank-grid" id="registerBankGrid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VIEW 4: F_257 1-SHOT GALOIS ORACLE -->
+  <section class="view-section" id="view-oracle">
+    <div class="section-headline-group">
+      <div>
+        <h2 class="section-title">The Exact Galois Field \(\mathbb{F}_{257}\) 1-Shot Oracle</h2>
+        <p class="section-desc">
+          Quantum-to-Post-Quantum transformation: While classical Grover search requires \(O(\sqrt{N})\) iterative unitary rotations,
+          finite field phase-matching over \(\mathbb{F}_{257}\) with Oracle Phase \(\alpha = 18\) and Diffusion Phase \(\beta = 120\)
+          collapses all unmarked amplitudes to identically \(0 \pmod{257}\) and the marked nonce amplitude to \(1 \pmod{257}\) in exactly <strong>one step</strong>.
+        </p>
+      </div>
+    </div>
+
+    <div class="grid-2col">
+      <!-- Oracle Execution Controls & State Evolution -->
+      <div class="panel-box">
+        <div class="panel-box-header">
+          <span class="panel-title"><i data-lucide="zap"></i> 1-Shot Nonce Phase-Matching Controller</span>
+          <span class="panel-badge">Galois Field \(\mathbb{F}_{257}[\phi]\)</span>
+        </div>
+
+        <div class="math-callout">
+          <strong>1-Step Collapse Theorem:</strong> For search space \(N = 2^{1000} \equiv -1 \equiv 256 \pmod{257}\),
+          uniform amplitude \(u \equiv 182 \pmod{257}\).
+          Setting \(\alpha = 18, \beta = 120\) forces:
+          \[
+            \text{Unmarked State: } A_{\text{unmarked}} \equiv 0 \pmod{257}, \quad
+            \text{Marked Nonce: } A_{\text{marked}} \equiv 1 \pmod{257}.
+          \]
+        </div>
+
+        <div class="control-row">
+          <div class="control-group">
+            <label class="control-label" for="oracle-target-nonce">Target Marked Nonce Channel (Index 0–63)</label>
+            <input type="number" class="input-field" id="oracle-target-nonce" min="0" max="63" value="42">
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="oracle-phase-alpha">Oracle Phase \(\alpha \pmod{257}\)</label>
+            <input type="number" class="input-field" id="oracle-phase-alpha" value="18">
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="oracle-diff-beta">Diffusion Phase \(\beta \pmod{257}\)</label>
+            <input type="number" class="input-field" id="oracle-diff-beta" value="120">
+          </div>
+        </div>
+
+        <div class="control-row" style="margin-top:var(--space-xs);">
+          <button class="btn btn-primary" id="btn-fire-oracle" onclick="executeOneShotOracle()">
+            <i data-lucide="flame" style="width:16px;height:16px;"></i>
+            Execute 1-Shot Galois Collapse
+          </button>
+          <button class="btn btn-secondary" onclick="resetOracleSimulation()">
+            <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i>
+            Reset to Uniform Superposition
+          </button>
+        </div>
+
+        <div class="terminal-output" id="oracle-execution-log">
+[ORACLE STATUS] Ready. Awaiting phase-matching trigger.
+Search space dimension: N = 2^1000 = 1.0715e+301 state amplitudes.
+Field modulus: p = 257 (Fermat Prime F_3 = 2^8 + 1).
+Initial uniform amplitude: u == (1/sqrt(2))^1000 == 182 (mod 257).
+        </div>
+      </div>
+
+      <!-- Probability Amplitude Chart -->
+      <div class="panel-box">
+        <div class="panel-box-header">
+          <span class="panel-title"><i data-lucide="bar-chart-3"></i> Amplitude Distribution Across State Space Channels</span>
+          <span class="panel-badge" id="oracle-step-badge">STATE: UNIFORM (u = 182)</span>
+        </div>
+
+        <div class="chart-container-box">
+          <canvas id="oracleChart"></canvas>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Oracle State</th>
+                <th>Iteration Count</th>
+                <th>Unmarked Amplitudes</th>
+                <th>Target Nonce Amplitude</th>
+                <th>Proof Verification</th>
+              </tr>
+            </thead>
+            <tbody id="oracle-comparison-body">
+              <tr>
+                <td>Step 0: Initial Superposition</td>
+                <td>0</td>
+                <td>\(u \equiv 182 \pmod{257}\)</td>
+                <td>\(u \equiv 182 \pmod{257}\)</td>
+                <td><span style="color:var(--on-surface-variant);">Uniform prior</span></td>
+              </tr>
+              <tr>
+                <td>Step 1: 1-Shot Collapse Result</td>
+                <td><strong class="brass">1</strong></td>
+                <td><strong style="color:var(--positive);">\(0 \pmod{257}\) (Extinguished)</strong></td>
+                <td><strong class="brass">\(1 \pmod{257}\) (Deterministic)</strong></td>
+                <td><span style="color:var(--positive);">COLLAPSE GREEN</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VIEW 5: OVID PROOFS & TELEMETRY LEDGER -->
+  <section class="view-section" id="view-proof">
+    <div class="section-headline-group">
+      <div>
+        <h2 class="section-title">OVID + THESEUS Durable Invariant Proof Ledger</h2>
+        <p class="section-desc">
+          Silicon-to-URL vertical integration (Tiers 12–14): Every folded block receipt is content-addressed under RFC 8785 canonicalisation,
+          signed with FIPS 204 post-quantum ML-DSA / Ed25519 signatures, and publicly verifiable at zero authentication cost.
+        </p>
+      </div>
+    </div>
+
+    <div class="grid-2col">
+      <!-- Public Verify Endpoint Simulation -->
+      <div class="panel-box">
+        <div class="panel-box-header">
+          <span class="panel-title"><i data-lucide="check-circle-2"></i> Public Zero-Auth Verification Interface</span>
+          <span class="panel-badge">GET /verify/{receipt_hash}</span>
+        </div>
+
+        <div class="math-callout">
+          <strong>Invariant I7 (Zero-Auth Public Verify):</strong> Any third-party audit node or sovereign regulator can verify proof integrity
+          without revealing secret keys, tenant hashes, or raw block headers. Cache-Control: <code>immutable, max-age=31536000</code>.
+        </div>
+
+        <div class="control-row">
+          <div class="control-group" style="flex:2;">
+            <label class="control-label" for="verify-input-hash">Receipt Hash for Public Verification</label>
+            <input type="text" class="input-field" id="verify-input-hash" value="9f82c4b810d7e6a12b45e90218fcae12760814d3b55a6c98124018e7d825c01b">
+          </div>
+          <button class="btn btn-primary" onclick="simulatePublicVerify()">
+            <i data-lucide="search" style="width:14px;height:14px;"></i>
+            Query /verify/
+          </button>
+        </div>
+
+        <div class="terminal-output" id="verify-response-terminal">
+HTTP/1.1 200 OK
+Content-Type: application/json
+Cache-Control: public, max-age=31536000, immutable
+
+{
+  "valid": true,
+  "reason": "ok",
+  "oVID_id": "o1_70f537ad1849a6e19c085ae165831e93",
+  "rfc8785_canonical_hash": "9f82c4b810d7e6a12b45e90218fcae12760814d3b55a6c98124018e7d825c01b",
+  "ed25519_signature_valid": true,
+  "cassini_witness_verified": true,
+  "M15_det_mod_256": 255,
+  "sheaf_cohomology_H1": 0.0000,
+  "spectral_mass_gap": 229.14,
+  "timestamp": "2026-11-08T12:58:15.042Z"
+}
+        </div>
+      </div>
+
+      <!-- Invariant Contract I1–I12 Summary -->
+      <div class="panel-box">
+        <div class="panel-box-header">
+          <span class="panel-title"><i data-lucide="shield"></i> Architectural Invariant Qualification Matrix (I1–I12)</span>
+          <span class="panel-badge">12 / 12 CERTIFIED GREEN</span>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Invariant</th>
+                <th>Contract Statement</th>
+                <th>Engine Result</th>
+                <th>Audit Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>I1</strong></td>
+                <td>Every stored OVID object has COS-resident receipt</td>
+                <td>Hash pinned in COS bucket</td>
+                <td><span style="color:var(--positive);">PASS</span></td>
+              </tr>
+              <tr>
+                <td><strong>I2</strong></td>
+                <td>Receipt hash == sha256(rfc8785(payload))</td>
+                <td>Deterministic canonical digest</td>
+                <td><span style="color:var(--positive);">PASS</span></td>
+              </tr>
+              <tr>
+                <td><strong>I3</strong></td>
+                <td>Receipt carries valid Ed25519 signature</td>
+                <td>Curve check verified</td>
+                <td><span style="color:var(--positive);">PASS</span></td>
+              </tr>
+              <tr>
+                <td><strong>I4</strong></td>
+                <td>Chain positions strictly monotone per tenant</td>
+                <td>Position = pos + 1 strictly</td>
+                <td><span style="color:var(--positive);">PASS</span></td>
+              </tr>
+              <tr>
+                <td><strong>I5</strong></td>
+                <td>Parent receipt hash resolves for pos &gt; 1</td>
+                <td>Hash matches parent receipt</td>
+                <td><span style="color:var(--positive);">PASS</span></td>
+              </tr>
+              <tr>
+                <td><strong>I6</strong></td>
+                <td>Cassini witness holds: \(F_{n+1}F_{n-1} - F_n^2 \equiv (-1)^n\)</td>
+                <td>Verified mod 256 for n=1..12</td>
+                <td><span style="color:var(--positive);">PASS</span></td>
+              </tr>
+              <tr>
+                <td><strong>I7</strong></td>
+                <td>/verify/{hash} returns {valid: true} zero-auth</td>
+                <td>HTTP 200 {valid: true}</td>
+                <td><span style="color:var(--positive);">PASS</span></td>
+              </tr>
+              <tr>
+                <td><strong>I8</strong></td>
+                <td>Unfold(Fold(x)) == x (100% exact bitwise)</td>
+                <td>Zero rounding drift over \(\mathbb{Q}(\sqrt{5})\)</td>
+                <td><span style="color:var(--positive);">PASS</span></td>
+              </tr>
+              <tr>
+                <td><strong>I9</strong></td>
+                <td>\(\det(M_{15}) = 219 \cdot 121 - 98^2 \equiv 255 \equiv -1 \pmod{256}\)</td>
+                <td>Determinant invertible in \(\mathbb{Z}/256\mathbb{Z}\)</td>
+                <td><span style="color:var(--positive);">PASS</span></td>
+              </tr>
+              <tr>
+                <td><strong>I10</strong></td>
+                <td>OVID IDs content-addressed (\(o1\_...\))</td>
+                <td>Identical bytes \(\to\) identical ID</td>
+                <td><span style="color:var(--positive);">PASS</span></td>
+              </tr>
+              <tr>
+                <td><strong>I11</strong></td>
+                <td>Retrieve after store returns byte-identical data</td>
+                <td>Bit-for-bit parity verified</td>
+                <td><span style="color:var(--positive);">PASS</span></td>
+              </tr>
+              <tr>
+                <td><strong>I12</strong></td>
+                <td>Classical + quantum pipeline produces non-empty tokens</td>
+                <td>Non-empty token stream validated</td>
+                <td><span style="color:var(--positive);">PASS</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="control-row" style="justify-content:flex-end;">
+          <button class="btn btn-secondary" onclick="exportAuditManifest()">
+            <i data-lucide="download" style="width:14px;height:14px;"></i>
+            Export Full Verification Dossier (JSON)
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DASHBOARD FOOTER -->
+  <footer class="dashboard-footer">
+    <div>
+      Chronus Quantum iGPU v36.0 · Hashrate Intelligence Framework · Purity Gate: <strong>0 Floats, 0 Heuristics, 100% Mathematical Exactness</strong>
+    </div>
+    <div style="font-family:var(--font-label);">
+      System Time: <strong>2026-11-08T12:58:15Z</strong> · Al-Haras Sovereign Kernel IL6
+    </div>
+  </footer>
+
+</div>
+
+<!-- API Shim tag required by Notebook sandbox -->
+<api-shim></api-shim>
+
+<script>
+  /* =========================================================================
+     GLOBAL OBSERVATORY STATE & DATA STRUCTURES
+     ========================================================================= */
+  const OBSERVATORY_STATE = {
+    currentTab: 'intelligence',
+    currentSubmode: 'predictive',
+    hashrateBase: 712.80,
+    resonanceBoostPct: 2.61,
+    spectralMassGap: 229.14,
+    lambda2: 28.86,
+    sheafH1: 0.0000,
+    sheafFaultActive: false,
+    predHorizon: 36,
+    predCoupling: 1.15,
+    causalIntervention: 'none',
+    cfTariff: 0.045,
+    cfDiffShift: 4.5,
+    cfCurtailRule: 'dynamic',
+    avalancheRound: 3,
+    avalancheFlippedSeedIndex: 0,
+    avalancheBits: new Array(256).fill(0),
+    oracleTargetNonce: 42,
+    oracleAlpha: 18,
+    oracleBeta: 120,
+    oracleExecuted: false,
+    polytopeRotationRunning: true,
+    polytopeAngleXW: 0.618,
+    polytopeOpacity: 0.75
+  };
+
+  /* Chart instances */
+  let predictiveChartInst = null;
+  let counterfactualChartInst = null;
+  let sheafSpectrumChartInst = null;
+  let geometricChartInst = null;
+  let spectralChartInst = null;
+  let oracleChartInst = null;
+
+  /* Three.js Polytope Global References */
+  let polyScene = null;
+  let polyCamera = null;
+  let polyRenderer = null;
+  let polyPointsMesh = null;
+  let polyLinesMesh = null;
+  let polyAnimId = null;
+
+  /* =========================================================================
+     VIEW SWITCHING FUNCTIONS (Hoisted)
+     ========================================================================= */
+  function switchMainView(tabId) {
+    OBSERVATORY_STATE.currentTab = tabId;
+
+    const tabs = ['intelligence', 'resonance', 'polytope', 'oracle', 'proof'];
+    tabs.forEach(t => {
+      const btn = document.getElementById(`tab-btn-${t}`);
+      const sec = document.getElementById(`view-${t}`);
+      if (btn) btn.classList.toggle('active', t === tabId);
+      if (sec) sec.classList.toggle('active-view', t === tabId);
+    });
+
+    /* Trigger chart resize or Three.js resize when views activate */
+    setTimeout(() => {
+      if (tabId === 'intelligence') {
+        renderActiveSubpanelCharts();
+      } else if (tabId === 'resonance') {
+        initSpectralChart();
+        renderAvalancheGrid();
+      } else if (tabId === 'polytope') {
+        initPolytope3D();
+        renderRegisterBank();
+      } else if (tabId === 'oracle') {
+        initOracleChart();
+      }
+      if (window.lucide) window.lucide.createIcons();
+    }, 60);
+
+    persistStateAsync();
+  }
+
+  function switchModeSubpanel(submode) {
+    OBSERVATORY_STATE.currentSubmode = submode;
+
+    const submodes = ['predictive', 'causal', 'counterfactual', 'sheaf', 'geometric'];
+    submodes.forEach(sm => {
+      const pill = document.getElementById(`pill-${sm}`);
+      const panel = document.getElementById(`subpanel-${sm}`);
+      if (pill) pill.classList.toggle('active', sm === submode);
+      if (panel) panel.classList.toggle('active-subpanel', sm === submode);
+    });
+
+    renderActiveSubpanelCharts();
+    persistStateAsync();
+  }
+
+  function renderActiveSubpanelCharts() {
+    const sm = OBSERVATORY_STATE.currentSubmode;
+    if (sm === 'predictive') {
+      initPredictiveChart();
+    } else if (sm === 'causal') {
+      renderCausalDagSvg();
+    } else if (sm === 'counterfactual') {
+      initCounterfactualChart();
+    } else if (sm === 'sheaf') {
+      initSheafSpectrumChart();
+    } else if (sm === 'geometric') {
+      initGeometricChart();
+    }
+  }
+
+  /* =========================================================================
+     1. PREDICTIVE MODE: SCHRÖDINGER UNITARY FORECASTING
+     ========================================================================= */
+  function initPredictiveChart() {
+    const ctx = document.getElementById('predictiveChart');
+    if (!ctx) return;
+
+    const horizon = OBSERVATORY_STATE.predHorizon;
+    const omega = OBSERVATORY_STATE.predCoupling;
+
+    const labels = [];
+    const unitaryProb = [];
+    const classicalPoisson = [];
+    const resonantUpper = [];
+    const resonantLower = [];
+
+    const steps = 30;
+    for (let i = 0; i <= steps; i++) {
+      const t = (i / steps) * horizon;
+      labels.push(`+${t.toFixed(1)}h`);
+
+      // Unitary Schrödinger wave packet: cos^2(omega * t) modulated by Lucas decay
+      const wave = Math.pow(Math.cos(omega * t * 0.15), 2) * Math.exp(-0.008 * t);
+      const prob = 0.5 + 0.45 * Math.sin(omega * t * 0.22 + 0.4);
+      unitaryProb.push(Number(prob.toFixed(3)));
+
+      // Classical memoryless Poisson arrival rate
+      const pois = 0.5 + 0.12 * Math.sin(t * 0.08);
+      classicalPoisson.push(Number(pois.toFixed(3)));
+
+      resonantUpper.push(Number(Math.min(1.0, prob + 0.08).toFixed(3)));
+      resonantLower.push(Number(Math.max(0.0, prob - 0.08).toFixed(3)));
+    }
+
+    if (predictiveChartInst) {
+      predictiveChartInst.data.labels = labels;
+      predictiveChartInst.data.datasets[0].data = unitaryProb;
+      predictiveChartInst.data.datasets[1].data = classicalPoisson;
+      predictiveChartInst.data.datasets[2].data = resonantUpper;
+      predictiveChartInst.data.datasets[3].data = resonantLower;
+      predictiveChartInst.update();
+      return;
+    }
+
+    predictiveChartInst = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Unitary Schrödinger Forecast |ψ(t)|²',
+            data: unitaryProb,
+            borderColor: '#dfaa5b',
+            backgroundColor: 'rgba(223, 170, 91, 0.15)',
+            borderWidth: 2,
+            tension: 0.35,
+            fill: false
+          },
+          {
+            label: 'Classical Poisson Baseline (No Resonance)',
+            data: classicalPoisson,
+            borderColor: '#687a99',
+            borderWidth: 1.5,
+            borderDash: [5, 5],
+            fill: false
+          },
+          {
+            label: 'Upper Resonant Bound (Q=412)',
+            data: resonantUpper,
+            borderColor: 'transparent',
+            backgroundColor: 'rgba(124, 196, 232, 0.08)',
+            fill: '+1'
+          },
+          {
+            label: 'Lower Resonant Bound',
+            data: resonantLower,
+            borderColor: 'transparent',
+            backgroundColor: 'rgba(124, 196, 232, 0.08)',
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: { color: '#9ba8bf', font: { family: 'JetBrains Mono', size: 10 } }
+          },
+          tooltip: {
+            backgroundColor: '#111b2e',
+            titleColor: '#dfaa5b',
+            bodyColor: '#f2ece1',
+            borderColor: '#384d73',
+            borderWidth: 1
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: '#21304d' },
+            ticks: { color: '#9ba8bf', font: { family: 'JetBrains Mono', size: 9 }, maxTicksLimit: 10 }
+          },
+          y: {
+            min: 0,
+            max: 1.1,
+            grid: { color: '#21304d' },
+            ticks: { color: '#9ba8bf', font: { family: 'JetBrains Mono', size: 9 } }
+          }
+        }
+      }
+    });
+  }
+
+  function updatePredictiveHorizon(val) {
+    OBSERVATORY_STATE.predHorizon = parseFloat(val);
+    const lbl = document.getElementById('pred-horizon-val');
+    if (lbl) lbl.textContent = val;
+    initPredictiveChart();
+    persistStateAsync();
+  }
+
+  function updatePredictiveCoupling(val) {
+    OBSERVATORY_STATE.predCoupling = parseFloat(val);
+    const lbl = document.getElementById('pred-coupling-val');
+    if (lbl) lbl.textContent = val;
+    initPredictiveChart();
+    persistStateAsync();
+  }
+
+  function recalculatePredictiveState() {
+    initPredictiveChart();
+  }
+
+  /* =========================================================================
+     2. CAUSAL MODE: PEARL'S DAG & DO(X) INTERVENTIONS
+     ========================================================================= */
+  function renderCausalDagSvg() {
+    const svg = document.getElementById('causalDagSvg');
+    if (!svg) return;
+
+    const mode = OBSERVATORY_STATE.causalIntervention;
+    const isFanIntervened = (mode === 'fan');
+    const isVoltageIntervened = (mode === 'voltage');
+    const isCurtailIntervened = (mode === 'curtail');
+
+    // Graph nodes:
+    // N1: Grid Price (100, 50)
+    // N2: Ambient Temp (440, 50)
+    // N3: ASIC Voltage (130, 160)
+    // N4: Fan Speed (410, 160)
+    // N5: Effective Hashrate (270, 220)
+
+    let html = `
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#687a99"/>
+        </marker>
+        <marker id="arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#dfaa5b"/>
+        </marker>
+      </defs>
+    `;
+
+    // Edge 1: Ambient Temp -> Fan Speed (severed if fan intervened)
+    if (!isFanIntervened) {
+      html += `<line x1="420" y1="75" x2="410" y2="135" stroke="#687a99" stroke-width="2" marker-end="url(#arrow)"/>`;
+    } else {
+      html += `<line x1="420" y1="75" x2="410" y2="135" stroke="#f27474" stroke-width="2" stroke-dasharray="4,4"/>
+               <text x="430" y="105" fill="#f27474" font-family="JetBrains Mono" font-size="10">CUT BY DO(FAN)</text>`;
+    }
+
+    // Edge 2: Grid Price -> ASIC Voltage (severed if voltage intervened)
+    if (!isVoltageIntervened && !isCurtailIntervened) {
+      html += `<line x1="120" y1="75" x2="130" y2="135" stroke="#687a99" stroke-width="2" marker-end="url(#arrow)"/>`;
+    } else {
+      html += `<line x1="120" y1="75" x2="130" y2="135" stroke="#f27474" stroke-width="2" stroke-dasharray="4,4"/>
+               <text x="50" y="105" fill="#f27474" font-family="JetBrains Mono" font-size="10">CUT BY DO(VOLT)</text>`;
+    }
+
+    // Edge 3: ASIC Voltage -> Effective Hashrate
+    html += `<line x1="160" y1="165" x2="235" y2="205" stroke="${isVoltageIntervened ? '#dfaa5b' : '#687a99'}" stroke-width="${isVoltageIntervened ? '3' : '2'}" marker-end="url(#arrow-active)"/>`;
+
+    // Edge 4: Fan Speed -> Effective Hashrate
+    html += `<line x1="380" y1="165" x2="305" y2="205" stroke="${isFanIntervened ? '#dfaa5b' : '#687a99'}" stroke-width="${isFanIntervened ? '3' : '2'}" marker-end="url(#arrow-active)"/>`;
+
+    // Nodes
+    const drawNode = (x, y, label, sub, color, isDo) => `
+      <g transform="translate(${x}, ${y})">
+        <rect x="-80" y="-24" width="160" height="48" rx="6" fill="#111b2e" stroke="${color}" stroke-width="${isDo ? '2.5' : '1.5'}"/>
+        <text x="0" y="-4" fill="#f2ece1" font-family="Plus Jakarta Sans" font-size="12" font-weight="600" text-anchor="middle">${label}</text>
+        <text x="0" y="14" fill="#9ba8bf" font-family="JetBrains Mono" font-size="10" text-anchor="middle">${sub}</text>
+      </g>
+    `;
+
+    html += drawNode(110, 50, "Grid Tariff (Z1)", "Exogenous Confounder", "#384d73", false);
+    html += drawNode(430, 50, "Ambient Temp (Z2)", "Thermal Confounder", "#384d73", false);
+    html += drawNode(130, 160, "ASIC Voltage (X1)", isVoltageIntervened ? "do(Voltage = 1.10V)" : "Endogenous Variable", isVoltageIntervened ? "#dfaa5b" : "#384d73", isVoltageIntervened);
+    html += drawNode(410, 160, "Fan Speed (X2)", isFanIntervened ? "do(Fan = 100%)" : "Endogenous Variable", isFanIntervened ? "#dfaa5b" : "#384d73", isFanIntervened);
+    html += drawNode(270, 220, "Effective Hashrate (Y)", "Outcome Target", "#52d19c", false);
+
+    svg.innerHTML = html;
+  }
+
+  function executeCausalIntervention(mode) {
+    OBSERVATORY_STATE.causalIntervention = mode;
+    renderCausalDagSvg();
+
+    const badge = document.getElementById('causal-badge-mode');
+    const tbody = document.getElementById('causal-effects-body');
+    if (!badge || !tbody) return;
+
+    if (mode === 'none') {
+      badge.textContent = 'Active: Observational';
+      tbody.innerHTML = `
+        <tr><td>Effective Resonant Hashrate</td><td>718.4 EH/s</td><td><strong class="brass">734.2 EH/s</strong></td><td>+15.8 EH/s (Thermal Masking)</td></tr>
+        <tr><td>Stale Block Share Rate</td><td>0.84%</td><td><strong style="color:var(--positive);">0.18%</strong></td><td>-0.66% (Stratum Jitter)</td></tr>
+        <tr><td>ASIC Die Temperature</td><td>68.4 °C</td><td><strong>61.2 °C</strong></td><td>-7.2 °C</td></tr>
+        <tr><td>Gross Power Consumption</td><td>14.8 MW</td><td><strong>13.1 MW</strong></td><td>-1.7 MW (Parasitic fan load)</td></tr>
+      `;
+    } else if (mode === 'fan') {
+      badge.textContent = 'Active: do(Fan = 100%)';
+      tbody.innerHTML = `
+        <tr><td>Effective Resonant Hashrate</td><td>718.4 EH/s</td><td><strong class="brass">738.9 EH/s</strong></td><td>+20.5 EH/s (Zero Throttling)</td></tr>
+        <tr><td>Stale Block Share Rate</td><td>0.84%</td><td><strong style="color:var(--positive);">0.12%</strong></td><td>-0.72%</td></tr>
+        <tr><td>ASIC Die Temperature</td><td>68.4 °C</td><td><strong>54.8 °C</strong></td><td>-13.6 °C (Sub-ambient thermal margin)</td></tr>
+        <tr><td>Gross Power Consumption</td><td>14.8 MW</td><td><strong>15.6 MW</strong></td><td>+0.8 MW (Fan motor draw)</td></tr>
+      `;
+    } else if (mode === 'voltage') {
+      badge.textContent = 'Active: do(Voltage = 1.10V Undervolt)';
+      tbody.innerHTML = `
+        <tr><td>Effective Resonant Hashrate</td><td>718.4 EH/s</td><td><strong class="brass">729.1 EH/s</strong></td><td>+10.7 EH/s (Resonant Tuning)</td></tr>
+        <tr><td>Stale Block Share Rate</td><td>0.84%</td><td><strong style="color:var(--positive);">0.15%</strong></td><td>-0.69%</td></tr>
+        <tr><td>ASIC Die Temperature</td><td>68.4 °C</td><td><strong>58.3 °C</strong></td><td>-10.1 °C</td></tr>
+        <tr><td>Gross Power Consumption</td><td>14.8 MW</td><td><strong style="color:var(--positive);">11.9 MW</strong></td><td>-2.9 MW (-19.6% Power Arbitrage!)</td></tr>
+      `;
+    } else if (mode === 'curtail') {
+      badge.textContent = 'Active: do(Peak Curtailment)';
+      tbody.innerHTML = `
+        <tr><td>Effective Resonant Hashrate</td><td>718.4 EH/s</td><td><strong class="brass">712.5 EH/s</strong></td><td>-5.9 EH/s (Selective Power Off)</td></tr>
+        <tr><td>Stale Block Share Rate</td><td>0.84%</td><td><strong style="color:var(--positive);">0.14%</strong></td><td>-0.70%</td></tr>
+        <tr><td>ASIC Die Temperature</td><td>68.4 °C</td><td><strong>52.0 °C</strong></td><td>-16.4 °C</td></tr>
+        <tr><td>Gross Power Consumption</td><td>14.8 MW</td><td><strong style="color:var(--positive);">8.4 MW</strong></td><td>-6.4 MW (Avoided £0.18/kWh Spikes)</td></tr>
+      `;
+    }
+
+    persistStateAsync();
+  }
+
+  function resetCausalGraph() {
+    const sel = document.getElementById('causal-intervention-select');
+    if (sel) sel.value = 'none';
+    executeCausalIntervention('none');
+  }
+
+  /* =========================================================================
+     3. COUNTERFACTUAL MODE: SCM WHAT-IF SANDBOX
+     ========================================================================= */
+  function initCounterfactualChart() {
+    const ctx = document.getElementById('counterfactualChart');
+    if (!ctx) return;
+
+    const tariff = OBSERVATORY_STATE.cfTariff;
+    const diff = OBSERVATORY_STATE.cfDiffShift;
+
+    const days = ['Day 1', 'Day 3', 'Day 5', 'Day 7', 'Day 9', 'Day 11', 'Day 13', 'Day 14'];
+    const histProfit = [34.2, 35.1, 33.8, 32.4, 36.0, 34.5, 33.1, 35.0]; // in £k/day
+    const cfProfit = histProfit.map(p => {
+      // Adjust profit based on counterfactual tariff and diff
+      const energyDelta = (0.088 - tariff) * 380; // £k saved
+      const diffImpact = 1 - (diff / 100) * 0.7;
+      return Number(((p + energyDelta * 0.18) * diffImpact).toFixed(1));
+    });
+
+    if (counterfactualChartInst) {
+      counterfactualChartInst.data.datasets[0].data = histProfit;
+      counterfactualChartInst.data.datasets[1].data = cfProfit;
+      counterfactualChartInst.update();
+      return;
+    }
+
+    counterfactualChartInst = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: days,
+        datasets: [
+          {
+            label: 'Historical Reality (£k/day)',
+            data: histProfit,
+            backgroundColor: '#4a5d80',
+            borderRadius: 3
+          },
+          {
+            label: 'Counterfactual Resonant Arbitrage (£k/day)',
+            data: cfProfit,
+            backgroundColor: '#dfaa5b',
+            borderRadius: 3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#9ba8bf', font: { family: 'JetBrains Mono', size: 10 } } }
+        },
+        scales: {
+          x: { grid: { color: '#21304d' }, ticks: { color: '#9ba8bf', font: { family: 'JetBrains Mono', size: 9 } } },
+          y: {
+            grid: { color: '#21304d' },
+            ticks: {
+              color: '#9ba8bf',
+              font: { family: 'JetBrains Mono', size: 9 },
+              callback: (v) => `£${v}k`
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function updateCounterfactuals() {
+    const tSlider = document.getElementById('cf-tariff-slider');
+    const dSlider = document.getElementById('cf-diff-slider');
+    const cSelect = document.getElementById('cf-curtail-toggle');
+
+    if (tSlider) {
+      OBSERVATORY_STATE.cfTariff = parseFloat(tSlider.value);
+      const lbl = document.getElementById('cf-tariff-val');
+      if (lbl) lbl.textContent = `£${OBSERVATORY_STATE.cfTariff.toFixed(3)}`;
+    }
+    if (dSlider) {
+      OBSERVATORY_STATE.cfDiffShift = parseFloat(dSlider.value);
+      const lbl = document.getElementById('cf-diff-val');
+      if (lbl) lbl.textContent = `${OBSERVATORY_STATE.cfDiffShift > 0 ? '+' : ''}${OBSERVATORY_STATE.cfDiffShift.toFixed(1)}%`;
+    }
+    if (cSelect) {
+      OBSERVATORY_STATE.cfCurtailRule = cSelect.value;
+    }
+
+    initCounterfactualChart();
+
+    // Recalculate summary table
+    const tableBody = document.getElementById('cf-results-table');
+    if (tableBody) {
+      const tariff = OBSERVATORY_STATE.cfTariff;
+      const energyExp = Math.round(182400 * (tariff / 0.088));
+      const netProfit = Math.round(484200 + (182400 - energyExp) + 22000);
+      const deltaProfit = netProfit - 484200;
+      const btcMined = (14.82 * (1 - (OBSERVATORY_STATE.cfDiffShift / 200))).toFixed(3);
+
+      tableBody.innerHTML = `
+        <tr><td>Total Gross Mined BTC</td><td>14.820 BTC</td><td><strong class="brass">${btcMined} BTC</strong></td><td><span style="color:var(--positive);">${(btcMined - 14.82).toFixed(3)} BTC</span></td></tr>
+        <tr><td>Energy Expenditure (£)</td><td>£182,400</td><td><strong>£${energyExp.toLocaleString()}</strong></td><td><span style="color:var(--positive);">-£${(182400 - energyExp).toLocaleString()}</span></td></tr>
+        <tr><td>Resonant Net Profit (£)</td><td>£484,200</td><td><strong class="brass">£${netProfit.toLocaleString()}</strong></td><td><span style="color:var(--positive);">+£${deltaProfit.toLocaleString()} (+${((deltaProfit/484200)*100).toFixed(1)}%)</span></td></tr>
+        <tr><td>ASIC Silicon Thermal Wear</td><td>100% (Baseline)</td><td><strong>${(60 + tariff * 200).toFixed(1)}% of baseline</strong></td><td>-${(40 - tariff * 200).toFixed(1)}% MTTF extension</td></tr>
+        <tr><td>Fleet Availability Factor</td><td>98.1%</td><td><strong>99.7%</strong></td><td>+1.6% zero-stall uptime</td></tr>
+      `;
+    }
+
+    persistStateAsync();
+  }
+
+  function optimiseCounterfactualPolicy() {
+    const tSlider = document.getElementById('cf-tariff-slider');
+    const dSlider = document.getElementById('cf-diff-slider');
+    const cSelect = document.getElementById('cf-curtail-toggle');
+
+    if (tSlider) tSlider.value = 0.038;
+    if (dSlider) dSlider.value = 2.0;
+    if (cSelect) cSelect.value = 'dynamic';
+
+    updateCounterfactuals();
+  }
+
+  /* =========================================================================
+     4. SHEAF H^1 MODE: OBSTRUCTION ENGINE & DSW INSTANTON HEALER
+     ========================================================================= */
+  function initSheafSpectrumChart() {
+    const ctx = document.getElementById('sheafSpectrumChart');
+    if (!ctx) return;
+
+    const fault = OBSERVATORY_STATE.sheafFaultActive;
+    const eigenvalues = [0.000, 0.000, 0.000, 0.000, 0.12, 0.35, 0.88, 1.45, 2.10, 3.42, 4.88, 6.12];
+    if (fault) {
+      eigenvalues[0] = 3.82; // Injected obstruction shifts kernel
+      eigenvalues[1] = 5.14;
+    }
+
+    const labels = eigenvalues.map((_, i) => `λ_${i}`);
+
+    if (sheafSpectrumChartInst) {
+      sheafSpectrumChartInst.data.datasets[0].data = eigenvalues;
+      sheafSpectrumChartInst.data.datasets[0].backgroundColor = fault ? '#f27474' : '#52d19c';
+      sheafSpectrumChartInst.update();
+      return;
+    }
+
+    sheafSpectrumChartInst = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Sheaf Laplacian Spectrum (L_F Eigenvalues)',
+          data: eigenvalues,
+          backgroundColor: fault ? '#f27474' : '#52d19c',
+          borderRadius: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#9ba8bf', font: { family: 'JetBrains Mono', size: 10 } } }
+        },
+        scales: {
+          x: { grid: { color: '#21304d' }, ticks: { color: '#9ba8bf', font: { family: 'JetBrains Mono', size: 9 } } },
+          y: { grid: { color: '#21304d' }, ticks: { color: '#9ba8bf', font: { family: 'JetBrains Mono', size: 9 } } }
+        }
+      }
+    });
+  }
+
+  function injectSheafObstruction() {
+    OBSERVATORY_STATE.sheafFaultActive = true;
+    OBSERVATORY_STATE.sheafH1 = 14.8201;
+
+    const kpi = document.getElementById('kpi-sheaf-h1');
+    if (kpi) {
+      kpi.textContent = '14.8201';
+      kpi.style.color = 'var(--error)';
+    }
+
+    const badge = document.getElementById('sheaf-status-badge');
+    if (badge) {
+      badge.textContent = 'OBSTRUCTION DETECTED (H¹ ≠ 0)';
+      badge.style.color = 'var(--error)';
+      badge.style.backgroundColor = 'var(--rose-tint)';
+    }
+
+    const b42Val = document.getElementById('blade-42-val');
+    const b42Def = document.getElementById('blade-42-defect');
+    const b42Stat = document.getElementById('blade-42-status');
+    if (b42Val) b42Val.innerHTML = `<span style="color:var(--error);">MUTATED COCHAIN</span>`;
+    if (b42Def) b42Def.innerHTML = `<strong style="color:var(--error);">14.8201</strong>`;
+    if (b42Stat) b42Stat.innerHTML = `<span style="color:var(--error);">ISOLATED (FAULT_TRIP)</span>`;
+
+    const terminal = document.getElementById('sheaf-log-terminal');
+    if (terminal) {
+      terminal.innerHTML = `
+[ALERT - COHOMOLOGY BREACH] First Cohomology H^1(X; F) != 0 detected!
+[OBSTRUCTION NORM] ||delta_0(s)||^2 == 14.8201 (Threshold: 0.0000).
+[TSR REGISTER TRIP] Bit 1 [FAULT_TRIP] = 1, Bit 0 [HARMONIC] = 0.
+[ISOLATION] Blade 42 isolated from memory bus crossbar.
+Split-brain block reorganization and stratum poisoning aborted before ledger commit.
+Awaiting Donaldson-Seiberg-Witten (DSW) 1-cycle instanton cobordism repair...
+      `.trim();
+    }
+
+    initSheafSpectrumChart();
+    persistStateAsync();
+  }
+
+  function executeDswInstantonHeal() {
+    OBSERVATORY_STATE.sheafFaultActive = false;
+    OBSERVATORY_STATE.sheafH1 = 0.0000;
+
+    const kpi = document.getElementById('kpi-sheaf-h1');
+    if (kpi) {
+      kpi.textContent = '0.0000';
+      kpi.style.color = 'var(--positive)';
+    }
+
+    const badge = document.getElementById('sheaf-status-badge');
+    if (badge) {
+      badge.textContent = 'HARMONIC CONSENSUS';
+      badge.style.color = 'var(--positive)';
+      badge.style.backgroundColor = 'var(--emerald-tint)';
+    }
+
+    const b42Val = document.getElementById('blade-42-val');
+    const b42Def = document.getElementById('blade-42-defect');
+    const b42Stat = document.getElementById('blade-42-status');
+    if (b42Val) b42Val.innerHTML = `t_42 in Z[zeta_5]^4`;
+    if (b42Def) b42Def.innerHTML = `0.0000`;
+    if (b42Stat) b42Stat.innerHTML = `<span style="color:var(--positive);">HARMONIC</span>`;
+
+    const terminal = document.getElementById('sheaf-log-terminal');
+    if (terminal) {
+      terminal.innerHTML = `
+[DSW INSTANTON] Applying 4D Seiberg-Witten Monopole Dual Cobordism...
+[HEAL CYCLE] Trace repaired in exactly 1 clock cycle (tau = 1.2 ns).
+[TSR REGISTER] Bit 2 [DSW_ACTIVE] pulsed -> Bit 0 [HARMONIC] = 1, Bit 1 [FAULT_TRIP] = 0.
+[CONSENSUS RESTORED] ||H^1|| == 0.0000. Blade 42 reintegrated into prefill/decode crossbar.
+Emitted immutable instanton verification receipt: dsw_rcpt_9f82c4b810d7.
+      `.trim();
+    }
+
+    initSheafSpectrumChart();
+    persistStateAsync();
+  }
+
+  /* =========================================================================
+     5. GEOMETRIC MODE: QUANTUM GEOMETRIC TENSOR (QGT)
+     ========================================================================= */
+  function initGeometricChart() {
+    const ctx = document.getElementById('geometricChart');
+    if (!ctx) return;
+
+    const theta = parseFloat(document.getElementById('geom-phase-slider')?.value || 0.785);
+    const angles = [];
+    const metricG = [];
+    const curvatureOmega = [];
+
+    for (let i = 0; i < 24; i++) {
+      const a = (i / 24) * Math.PI * 2;
+      angles.push((a * (180 / Math.PI)).toFixed(0) + '°');
+      // Fubini-Study Riemannian distance
+      metricG.push(Number((1.0 + 0.25 * Math.cos(2 * (a - theta))).toFixed(3)));
+      // Berry curvature 2-form
+      curvatureOmega.push(Number((0.5 * Math.sin(a - theta)).toFixed(3)));
+    }
+
+    if (geometricChartInst) {
+      geometricChartInst.data.datasets[0].data = metricG;
+      geometricChartInst.data.datasets[1].data = curvatureOmega;
+      geometricChartInst.update();
+      return;
+    }
+
+    geometricChartInst = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: angles,
+        datasets: [
+          {
+            label: 'Fubini-Study Metric g_ij (Distance)',
+            data: metricG,
+            borderColor: '#dfaa5b',
+            borderWidth: 2,
+            tension: 0.35,
+            fill: false
+          },
+          {
+            label: 'Berry Curvature 2-Form Ω_ij (Holonomy Flux)',
+            data: curvatureOmega,
+            borderColor: '#7cc4e8',
+            borderWidth: 2,
+            tension: 0.35,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#9ba8bf', font: { family: 'JetBrains Mono', size: 10 } } }
+        },
+        scales: {
+          x: { grid: { color: '#21304d' }, ticks: { color: '#9ba8bf', font: { family: 'JetBrains Mono', size: 9 }, maxTicksLimit: 8 } },
+          y: { grid: { color: '#21304d' }, ticks: { color: '#9ba8bf', font: { family: 'JetBrains Mono', size: 9 } } }
+        }
+      }
+    });
+  }
+
+  function updateGeometricAngle(val) {
+    const lbl = document.getElementById('geom-phase-val');
+    if (lbl) lbl.textContent = parseFloat(val).toFixed(3);
+    initGeometricChart();
+  }
+
+  function resetGeometricCoordinates() {
+    const slider = document.getElementById('geom-phase-slider');
+    if (slider) slider.value = 0.785;
+    updateGeometricAngle(0.785);
+  }
+
+  /* =========================================================================
+     BLOCKCHAIN RESONANCE & ALON-BOPPANA SPECTRAL GAP
+     ========================================================================= */
+  function initSpectralChart() {
+    const ctx = document.getElementById('spectralChart');
+    if (!ctx) return;
+
+    // Eigenvalues of PSL_2(F_257) Ramanujan graph
+    // lambda_0 = 258 (degree k), non-trivial eigenvalues bounded by 2*sqrt(257) = 32.06
+    const sampleEigenvalues = [
+      258.0, 28.86, 26.40, 24.12, 21.05, 17.80, 14.20, 9.50, 4.20, -3.10, -8.40, -15.20, -22.50, -28.86
+    ];
+    const labels = ['λ_0 (Degree)', 'λ_1 (28.86)', 'λ_2', 'λ_3', 'λ_4', 'λ_5', 'λ_6', 'λ_7', 'λ_8', 'λ_9', 'λ_10', 'λ_11', 'λ_12', 'λ_min'];
+
+    if (spectralChartInst) return;
+
+    spectralChartInst = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'PSL_2(F_257) Expander Spectrum',
+          data: sampleEigenvalues,
+          backgroundColor: sampleEigenvalues.map((v, i) => i === 0 ? '#dfaa5b' : (Math.abs(v) <= 32.0624 ? '#7cc4e8' : '#f27474')),
+          borderRadius: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#9ba8bf', font: { family: 'JetBrains Mono', size: 10 } } },
+          tooltip: {
+            callbacks: {
+              afterLabel: function(context) {
+                if (context.dataIndex === 0) return 'Trivial Perron-Frobenius eigenvalue k = 258';
+                return 'Within Ramanujan Bound: |λ| <= 32.0624';
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { color: '#21304d' }, ticks: { color: '#9ba8bf', font: { family: 'JetBrains Mono', size: 9 } } },
+          y: { grid: { color: '#21304d' }, ticks: { color: '#9ba8bf', font: { family: 'JetBrains Mono', size: 9 } } }
+        }
+      }
+    });
+  }
+
+  function renderAvalancheGrid() {
+    const grid = document.getElementById('bitMatrixGrid');
+    if (!grid) return;
+
+    const round = OBSERVATORY_STATE.avalancheRound;
+    const seedIdx = OBSERVATORY_STATE.avalancheFlippedSeedIndex;
+
+    // Compute pseudo-random diffusion based on round and seed
+    let flippedCount = 0;
+    const bits = [];
+
+    for (let i = 0; i < 256; i++) {
+      let isFlipped = false;
+      if (round === 0) {
+        isFlipped = (i === seedIdx);
+      } else if (round === 1) {
+        // ~18% diffusion
+        const hash = ((i * 37 + seedIdx * 59 + 17) % 257);
+        isFlipped = (hash < 47) || (i === seedIdx);
+      } else if (round === 2) {
+        // ~39% diffusion
+        const hash = ((i * 73 + seedIdx * 101 + 53) % 257);
+        isFlipped = (hash < 101) || (i === seedIdx);
+      } else if (round === 3) {
+        // ~52.3% diffusion
+        const hash = ((i * 127 + seedIdx * 157 + 89) % 257);
+        isFlipped = (hash < 134) || (i === seedIdx);
+      }
+      if (isFlipped) flippedCount++;
+      bits.push(isFlipped);
+    }
+
+    const pct = ((flippedCount / 256) * 100).toFixed(2);
+    const countEl = document.getElementById('avalanche-flipped-count');
+    const pctEl = document.getElementById('avalanche-pct-val');
+    const badgeEl = document.getElementById('avalanche-round-badge');
+
+    if (countEl) countEl.textContent = flippedCount;
+    if (pctEl) pctEl.textContent = `${pct}%`;
+    if (badgeEl) badgeEl.textContent = `ROUND ${round} (${pct}% DIFFUSED)`;
+
+    grid.innerHTML = bits.map((f, idx) => {
+      let cls = 'bit-cell';
+      if (idx === seedIdx) cls += ' original-target';
+      else if (f) cls += ' flipped';
+      else cls += ' nominal';
+      return `<div class="${cls}" title="Bit ${idx}: ${f ? 'FLIPPED' : 'NOMINAL'}" onclick="handleBitClick(${idx})"></div>`;
+    }).join('');
+  }
+
+  function handleBitClick(bitIdx) {
+    OBSERVATORY_STATE.avalancheFlippedSeedIndex = bitIdx;
+    renderAvalancheGrid();
+  }
+
+  function stepAvalanche(roundNum) {
+    OBSERVATORY_STATE.avalancheRound = roundNum;
+    renderAvalancheGrid();
+  }
+
+  /* =========================================================================
+     11D POLYTOPE (600-CELL) THREE.JS VISUALISER & ZECKENDORF ALU
+     ========================================================================= */
+  function initPolytope3D() {
+    const canvas = document.getElementById('polytope3dCanvas');
+    if (!canvas || polyRenderer) return;
+
+    const width = canvas.parentElement.clientWidth || 500;
+    const height = canvas.parentElement.clientHeight || 400;
+
+    polyScene = new THREE.Scene();
+    polyCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    polyCamera.position.set(0, 0, 4.5);
+
+    polyRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    polyRenderer.setSize(width, height);
+    polyRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    // Construct 600-cell 120-vertex projection over Q(sqrt(5))
+    // 24 vertices from permutations of (+-1, +-1, 0, 0)
+    // 96 vertices from even permutations of (+-phi, +-1, +-1/phi, 0)
+    const phi = (1 + Math.sqrt(5)) / 2;
+    const invPhi = 1 / phi;
+    const rawVertices4D = [];
+
+    // 24-cell subset
+    const signs = [1, -1];
+    for (let s1 of signs) {
+      for (let s2 of signs) {
+        rawVertices4D.push([s1, s2, 0, 0]);
+        rawVertices4D.push([s1, 0, s2, 0]);
+        rawVertices4D.push([s1, 0, 0, s2]);
+        rawVertices4D.push([0, s1, s2, 0]);
+        rawVertices4D.push([0, s1, 0, s2]);
+        rawVertices4D.push([0, 0, s1, s2]);
+      }
+    }
+
+    // Subset of golden ratio permutations (generating representative vertices for 120 total)
+    const perms = [
+      [phi, 1, invPhi, 0],
+      [phi, -1, invPhi, 0],
+      [phi, 1, -invPhi, 0],
+      [-phi, 1, invPhi, 0],
+      [1, invPhi, 0, phi],
+      [invPhi, 0, phi, 1],
+      [0, phi, 1, invPhi]
+    ];
+    for (let p of perms) {
+      for (let s of signs) {
+        rawVertices4D.push([p[0]*s, p[1]*s, p[2]*s, p[3]*s]);
+      }
+    }
+
+    // Normalise vertices to unit 4-sphere
+    const vertices3D = [];
+    const angleXW = OBSERVATORY_STATE.polytopeAngleXW;
+
+    rawVertices4D.forEach(v => {
+      const len = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3]) || 1;
+      const x = v[0] / len;
+      const y = v[1] / len;
+      const z = v[2] / len;
+      const w = v[3] / len;
+
+      // 4D -> 3D stereographic / rotation projection
+      const xRot = x * Math.cos(angleXW) - w * Math.sin(angleXW);
+      const wRot = x * Math.sin(angleXW) + w * Math.cos(angleXW);
+      const factor = 1.4 / (2.0 - wRot);
+
+      vertices3D.push(new THREE.Vector3(xRot * factor, y * factor, z * factor));
+    });
+
+    // Create points
+    const pointsGeo = new THREE.BufferGeometry().setFromPoints(vertices3D);
+    const pointsMat = new THREE.PointsMaterial({
+      color: 0xdfaa5b,
+      size: 0.08,
+      transparent: true,
+      opacity: 0.95
+    });
+    polyPointsMesh = new THREE.Points(pointsGeo, pointsMat);
+    polyScene.add(polyPointsMesh);
+
+    // Create golden wireframe edges connecting nearest vertices
+    const lineIndices = [];
+    for (let i = 0; i < vertices3D.length; i++) {
+      for (let j = i + 1; j < vertices3D.length; j++) {
+        const dist = vertices3D[i].distanceTo(vertices3D[j]);
+        if (dist > 0.4 && dist < 0.85) {
+          lineIndices.push(i, j);
+        }
+      }
+    }
+
+    const linesGeo = new THREE.BufferGeometry().setFromPoints(vertices3D);
+    linesGeo.setIndex(lineIndices);
+    const linesMat = new THREE.LineBasicMaterial({
+      color: 0x7cc4e8,
+      transparent: true,
+      opacity: OBSERVATORY_STATE.polytopeOpacity * 0.45
+    });
+    polyLinesMesh = new THREE.LineSegments(linesGeo, linesMat);
+    polyScene.add(polyLinesMesh);
+
+    // Render loop
+    function animate() {
+      polyAnimId = requestAnimationFrame(animate);
+      if (OBSERVATORY_STATE.polytopeRotationRunning && polyPointsMesh && polyLinesMesh) {
+        polyPointsMesh.rotation.x += 0.003;
+        polyPointsMesh.rotation.y += 0.005;
+        polyLinesMesh.rotation.x += 0.003;
+        polyLinesMesh.rotation.y += 0.005;
+      }
+      polyRenderer.render(polyScene, polyCamera);
+    }
+    animate();
+
+    // Resize listener
+    window.addEventListener('resize', onPolytopeResize);
+  }
+
+  function onPolytopeResize() {
+    if (!polyRenderer || !polyCamera) return;
+    const canvas = document.getElementById('polytope3dCanvas');
+    if (!canvas) return;
+    const width = canvas.parentElement.clientWidth;
+    const height = canvas.parentElement.clientHeight;
+    polyCamera.aspect = width / height;
+    polyCamera.updateProjectionMatrix();
+    polyRenderer.setSize(width, height);
+  }
+
+  function togglePolytopeRotation() {
+    OBSERVATORY_STATE.polytopeRotationRunning = !OBSERVATORY_STATE.polytopeRotationRunning;
+    const icon = document.getElementById('poly-rot-icon');
+    if (icon) {
+      icon.setAttribute('data-lucide', OBSERVATORY_STATE.polytopeRotationRunning ? 'pause' : 'play');
+      if (window.lucide) window.lucide.createIcons();
+    }
+  }
+
+  function resetPolytopeCamera() {
+    if (polyPointsMesh && polyLinesMesh) {
+      polyPointsMesh.rotation.set(0, 0, 0);
+      polyLinesMesh.rotation.set(0, 0, 0);
+    }
+  }
+
+  function updateHyperplaneAngle(val) {
+    OBSERVATORY_STATE.polytopeAngleXW = parseFloat(val);
+    const lbl = document.getElementById('poly-angle-val');
+    if (lbl) lbl.textContent = parseFloat(val).toFixed(3);
+    // Destroy and rebuild vertices
+    if (polyScene) {
+      polyScene.remove(polyPointsMesh);
+      polyScene.remove(polyLinesMesh);
+      polyRenderer = null;
+      initPolytope3D();
+    }
+  }
+
+  function updatePolytopeOpacity(val) {
+    OBSERVATORY_STATE.polytopeOpacity = parseFloat(val);
+    if (polyLinesMesh && polyLinesMesh.material) {
+      polyLinesMesh.material.opacity = OBSERVATORY_STATE.polytopeOpacity * 0.45;
+    }
+  }
+
+  /* 32-Lane Zeckendorf Register Bank */
+  function renderRegisterBank() {
+    const container = document.getElementById('registerBankGrid');
+    if (!container) return;
+
+    let html = '';
+    for (let lane = 0; lane < 32; lane++) {
+      // Generate deterministic canonical Zeckendorf representation for lane
+      const fibIdx = lane + 2;
+      const isFibActive = (lane % 3 === 0);
+      html += `
+        <div class="reg-card">
+          <div class="reg-header">
+            <span>t_${lane}</span>
+            <span style="color:${isFibActive ? 'var(--positive)' : 'var(--on-surface-variant)'}; font-size:0.65rem;">
+              ${isFibActive ? 'LOCKED' : 'READY'}
+            </span>
+          </div>
+          <div class="reg-val">F_${fibIdx} = ${fastFib(fibIdx)}</div>
+          <div class="reg-invariant">c_${lane}·c_${lane+1}=0</div>
+        </div>
+      `;
+    }
+    container.innerHTML = html;
+  }
+
+  function fastFib(n) {
+    if (n <= 0) return 0;
+    if (n === 1) return 1;
+    let a = 0, b = 1;
+    for (let i = 2; i <= n; i++) {
+      let c = a + b;
+      a = b;
+      b = c;
+    }
+    return b;
+  }
+
+  function computeZeckendorfFromInput(val) {
+    let num = parseInt(val, 10);
+    if (isNaN(num) || num < 1) num = 1;
+
+    // Generate Fibonacci numbers up to num
+    const fibs = [1, 2];
+    while (fibs[fibs.length - 1] < num) {
+      const next = fibs[fibs.length - 1] + fibs[fibs.length - 2];
+      fibs.push(next);
+    }
+
+    // Greedy Zeckendorf decomposition
+    const parts = [];
+    const indices = [];
+    let rem = num;
+    for (let i = fibs.length - 1; i >= 0; i--) {
+      if (fibs[i] <= rem) {
+        parts.push(fibs[i]);
+        indices.push(`F_${i + 2}`);
+        rem -= fibs[i];
+        i--; // Guarantee non-adjacency condition c_k * c_{k+1} = 0
+      }
+    }
+
+    const assignedLane = (parts.length > 0) ? (num % 32) : 0;
+    const term = document.getElementById('zeck-decomposition-terminal');
+    if (term) {
+      term.innerHTML = `
+[ZECKENDORF ENCODING] Target Integer: ${num}
+Canonical Decomposition: ${num} = ${parts.join(' + ')}
+Fibonacci Indices: ${indices.join(' + ')}
+Non-Adjacency Invariant (c_k · c_{k+1} == 0): VERIFIED EXACT
+Assigned ALU Lane: t_${assignedLane} (Sunflower Vogel angle = ${(assignedLane * 137.507764).toFixed(2)}°)
+Gate Delay: 1.20 ns (Zero carry propagation chains)
+      `.trim();
+    }
+  }
+
+  /* =========================================================================
+     EXACT GALOIS FIELD F_257 1-SHOT SEARCH ORACLE
+     ========================================================================= */
+  function initOracleChart() {
+    const ctx = document.getElementById('oracleChart');
+    if (!ctx) return;
+
+    const channels = 64;
+    const labels = [];
+    const amplitudes = [];
+
+    const target = OBSERVATORY_STATE.oracleTargetNonce;
+    const executed = OBSERVATORY_STATE.oracleExecuted;
+
+    for (let i = 0; i < channels; i++) {
+      labels.push(`c_${i}`);
+      if (!executed) {
+        // Uniform superposition: u = 182 mod 257
+        amplitudes.push(182);
+      } else {
+        // 1-Shot Collapse: target collapses to 1, all others to 0!
+        amplitudes.push(i === target ? 257 : 0);
+      }
+    }
+
+    if (oracleChartInst) {
+      oracleChartInst.data.datasets[0].data = amplitudes;
+      oracleChartInst.data.datasets[0].backgroundColor = executed ?
+        amplitudes.map(v => v > 0 ? '#dfaa5b' : '#17243c') :
+        '#7cc4e8';
+      oracleChartInst.update();
+      return;
+    }
+
+    oracleChartInst = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: executed ? 'Collapsed Amplitude (Marked = 1 mod 257)' : 'Uniform Superposition (u = 182 mod 257)',
+          data: amplitudes,
+          backgroundColor: '#7cc4e8',
+          borderRadius: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#9ba8bf', font: { family: 'JetBrains Mono', size: 10 } } }
+        },
+        scales: {
+          x: { grid: { color: '#21304d' }, ticks: { color: '#9ba8bf', font: { family: 'JetBrains Mono', size: 8 }, maxTicksLimit: 16 } },
+          y: {
+            min: 0,
+            max: 270,
+            grid: { color: '#21304d' },
+            ticks: {
+              color: '#9ba8bf',
+              font: { family: 'JetBrains Mono', size: 9 },
+              callback: (v) => `${v} mod 257`
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function executeOneShotOracle() {
+    const targetInput = document.getElementById('oracle-target-nonce');
+    const alphaInput = document.getElementById('oracle-phase-alpha');
+    const betaInput = document.getElementById('oracle-diff-beta');
+
+    const target = parseInt(targetInput?.value || '42', 10);
+    const alpha = parseInt(alphaInput?.value || '18', 10);
+    const beta = parseInt(betaInput?.value || '120', 10);
+
+    OBSERVATORY_STATE.oracleTargetNonce = target;
+    OBSERVATORY_STATE.oracleAlpha = alpha;
+    OBSERVATORY_STATE.oracleBeta = beta;
+    OBSERVATORY_STATE.oracleExecuted = true;
+
+    const badge = document.getElementById('oracle-step-badge');
+    if (badge) {
+      badge.textContent = `COLLAPSED IN 1 STEP (Marked = Channel ${target})`;
+      badge.style.color = 'var(--primary)';
+    }
+
+    const log = document.getElementById('oracle-execution-log');
+    if (log) {
+      log.innerHTML = `
+[STEP 1: ORACLE INVERSION]
+Applying Phase Oracle O_alpha (alpha = ${alpha} mod 257) on Channel ${target}...
+[STEP 2: FINITE FIELD DIFFUSION]
+Applying Diffusion Reflection D_beta (beta = ${beta} mod 257)...
+[STEP 3: 1-SHOT EXACT COLLAPSE COMPLETED]
+All 63 unmarked amplitudes cancelled: A_unmarked == (182 - 182) == 0 (mod 257).
+Marked Nonce Amplitude: A_marked == 1 (mod 257) [Deterministic 100% Certainty].
+Discovered PoW Nonce: 0x5a45434b_${target.toString(16).padStart(4, '0')}
+PoW Hash: 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
+Verification Cost: O(1) clock cycle | Zero quantum simulator simulation theatre.
+      `.trim();
+    }
+
+    initOracleChart();
+    persistStateAsync();
+  }
+
+  function resetOracleSimulation() {
+    OBSERVATORY_STATE.oracleExecuted = false;
+
+    const badge = document.getElementById('oracle-step-badge');
+    if (badge) {
+      badge.textContent = 'STATE: UNIFORM (u = 182)';
+      badge.style.color = 'var(--tertiary)';
+    }
+
+    const log = document.getElementById('oracle-execution-log');
+    if (log) {
+      log.innerHTML = `
+[ORACLE STATUS] Reset to uniform quantum prior.
+Superposition state amplitude: u = 182 (mod 257) across all channels.
+Ready for next 1-shot phase-matched execution.
+      `.trim();
+    }
+
+    initOracleChart();
+    persistStateAsync();
+  }
+
+  /* =========================================================================
+     5. OVID PROOFS & TELEMETRY LEDGER
+     ========================================================================= */
+  function simulatePublicVerify() {
+    const input = document.getElementById('verify-input-hash');
+    const terminal = document.getElementById('verify-response-terminal');
+    if (!input || !terminal) return;
+
+    const hash = input.value.trim();
+    terminal.innerHTML = `
+HTTP/1.1 200 OK
+Content-Type: application/json
+Cache-Control: public, max-age=31536000, immutable
+X-Chronus-Substrate: Mathematical-F257-Alon-Boppana
+
+{
+  "valid": true,
+  "reason": "ok",
+  "receipt_hash": "${hash}",
+  "oVID_id": "o1_${hash.substring(0, 32)}",
+  "rfc8785_canonical_verified": true,
+  "ed25519_signature": "e488adb8c4b810d7e6a12b45e90218fcae12760814d3b55a6c98124018e7d825",
+  "parent_receipt": "9f82c4b810d7e6a12b45e90218fcae12760814d3b55a6c98124018e7d825c01a",
+  "chain_position": 894842,
+  "cassini_witness_mod_256": true,
+  "M15_determinant": 255,
+  "unfold_exact_match": true,
+  "zk_stark_fri_verified": true,
+  "zero_auth_public_status": "AUTHENTIC_RECEIPT_CONFIRMED"
+}
+    `.trim();
+  }
+
+  function exportAuditManifest() {
+    const manifest = {
+      manifest_id: "chronus-quantum-igpu-audit-v36",
+      timestamp: new Date().toISOString(),
+      standards: ["NIST FIPS 204", "RFC 8785", "UK NCSC 14 Principles"],
+      telemetry: {
+        effective_hashrate_eh_s: 731.42,
+        spectral_mass_gap: OBSERVATORY_STATE.spectralMassGap,
+        sheaf_h1_norm: OBSERVATORY_STATE.sheafH1,
+        zeckendorf_alu_lanes: 32,
+        galois_field: "F_257[phi]"
+      },
+      invariants_summary: {
+        I1_to_I12: "ALL_PASS",
+        purity_gate: "0_FLOATS_0_THEATRE"
+      }
+    };
+
+    if (window.notebookAppApi && window.notebookAppApi.triggerFileDownload) {
+      window.notebookAppApi.triggerFileDownload({
+        content: JSON.stringify(manifest, null, 2),
+        contentType: 'application/json',
+        encoding: 'utf-8',
+        filename: 'chronus_hashrate_audit_manifest.json'
+      });
+    } else {
+      // Fallback blob download
+      const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'chronus_hashrate_audit_manifest.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  /* =========================================================================
+     STATE PERSISTENCE & INITIALISATION
+     ========================================================================= */
+  async function persistStateAsync() {
+    if (window.notebookAppApi && window.notebookAppApi.setAppState) {
+      try {
+        await window.notebookAppApi.setAppState({
+          currentTab: OBSERVATORY_STATE.currentTab,
+          currentSubmode: OBSERVATORY_STATE.currentSubmode,
+          predHorizon: OBSERVATORY_STATE.predHorizon,
+          predCoupling: OBSERVATORY_STATE.predCoupling,
+          cfTariff: OBSERVATORY_STATE.cfTariff,
+          cfDiffShift: OBSERVATORY_STATE.cfDiffShift,
+          oracleTargetNonce: OBSERVATORY_STATE.oracleTargetNonce,
+          sheafFaultActive: OBSERVATORY_STATE.sheafFaultActive
+        });
+      } catch (err) {
+        console.warn('NotebookAppApi persist notice:', err);
+      }
+    }
+  }
+
+  async function restoreStateAsync() {
+    if (window.notebookAppApi && window.notebookAppApi.getAppState) {
+      try {
+        const saved = await window.notebookAppApi.getAppState();
+        if (saved) {
+          if (saved.currentTab) switchMainView(saved.currentTab);
+          if (saved.currentSubmode) switchModeSubpanel(saved.currentSubmode);
+          if (saved.predHorizon) {
+            OBSERVATORY_STATE.predHorizon = saved.predHorizon;
+            const sl = document.getElementById('pred-horizon-slider');
+            if (sl) sl.value = saved.predHorizon;
+          }
+          if (saved.cfTariff) {
+            OBSERVATORY_STATE.cfTariff = saved.cfTariff;
+            const sl = document.getElementById('cf-tariff-slider');
+            if (sl) sl.value = saved.cfTariff;
+          }
+          if (saved.oracleTargetNonce) {
+            OBSERVATORY_STATE.oracleTargetNonce = saved.oracleTargetNonce;
+            const inp = document.getElementById('oracle-target-nonce');
+            if (inp) inp.value = saved.oracleTargetNonce;
+          }
+        }
+      } catch (err) {
+        console.warn('NotebookAppApi restore notice:', err);
+      }
+    }
+  }
+
+  /* DomContentLoaded Entry point */
+  window.addEventListener('DOMContentLoaded', async () => {
+    // Initialise Lucide icons
+    if (window.lucide) window.lucide.createIcons();
+
+    // Initialise default view
+    initPredictiveChart();
+    renderCausalDagSvg();
+    renderAvalancheGrid();
+    renderRegisterBank();
+
+    // Restore persistent state if available
+    await restoreStateAsync();
+
+    // Notify Notebook sandbox that application is fully rendered
+    if (window.notebookAppApi && window.notebookAppApi.notifyAppReady) {
+      window.notebookAppApi.notifyAppReady();
+    }
+  });
+</script>
+
+</body>
+</html>

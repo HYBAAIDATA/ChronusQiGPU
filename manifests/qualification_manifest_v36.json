@@ -42,7 +42,7 @@
           "test_id": "ADV_SEC_01",
           "test_family": "SECURITY_CRYPTO",
           "status": "PASS",
-          "timestamp": "2026-11-08T12:57:31.502510+00:00",
+          "timestamp": "2026-11-08T15:40:20.753503+00:00",
           "expected_outcome": "False",
           "actual_outcome": "False",
           "execution_environment": "CPU_SOFTWARE_NATIVE_MATHEMATICAL_SUBSTRATE",
@@ -55,7 +55,7 @@
           "test_id": "ADV_SEC_02",
           "test_family": "TENANT_ISOLATION",
           "status": "PASS",
-          "timestamp": "2026-11-08T12:57:31.502510+00:00",
+          "timestamp": "2026-11-08T15:40:20.754077+00:00",
           "expected_outcome": "True",
           "actual_outcome": "True",
           "execution_environment": "CPU_SOFTWARE_NATIVE_MATHEMATICAL_SUBSTRATE",
@@ -68,7 +68,7 @@
           "test_id": "ADV_SEC_03",
           "test_family": "LEASE_ADMISSION_AUTH",
           "status": "PASS",
-          "timestamp": "2026-11-08T12:57:31.502510+00:00",
+          "timestamp": "2026-11-08T15:40:20.754077+00:00",
           "expected_outcome": "LEASE_ACTIVE",
           "actual_outcome": "LEASE_ACTIVE",
           "execution_environment": "CPU_SOFTWARE_NATIVE_MATHEMATICAL_SUBSTRATE",
@@ -81,7 +81,7 @@
           "test_id": "ADV_SEC_04",
           "test_family": "LEGAL_PROMPT_INJECTION",
           "status": "PASS",
-          "timestamp": "2026-11-08T12:57:31.503090+00:00",
+          "timestamp": "2026-11-08T15:40:20.754077+00:00",
           "expected_outcome": "True",
           "actual_outcome": "True",
           "execution_environment": "CPU_SOFTWARE_NATIVE_MATHEMATICAL_SUBSTRATE",
@@ -94,7 +94,7 @@
           "test_id": "ADV_SEC_05",
           "test_family": "GEODESIC_INDEX_SANITY",
           "status": "PASS",
-          "timestamp": "2026-11-08T12:57:31.503090+00:00",
+          "timestamp": "2026-11-08T15:40:20.754077+00:00",
           "expected_outcome": "INDEXED",
           "actual_outcome": "INDEXED",
           "execution_environment": "CPU_SOFTWARE_NATIVE_MATHEMATICAL_SUBSTRATE",
@@ -147,11 +147,11 @@
       "gate": "G6: Performance & Scalability Benchmarks",
       "status": "PASS",
       "latency_ms": {
-        "p50": 0.0123,
-        "p95": 0.0582,
-        "p99": 0.1896
+        "p50": 0.0124,
+        "p95": 0.0649,
+        "p99": 0.2341
       },
-      "throughput_ops_sec": 81300.81,
+      "throughput_ops_sec": 80645.16,
       "memory_scaling": {
         "N=4_qubits_amplitudes": 16,
         "N=8_qubits_amplitudes": 256,
@@ -181,6 +181,43 @@
     }
   ],
   "invariant_summary": "All 94 Architectural Invariants (I1-I94) Green",
-  "timestamp": "2026-11-08T12:57:31.668368+00:00",
-  "verification_suite_total_latency_ms": 611.094600000115
+  "timestamp": "2026-11-08T15:40:23.237788+00:00",
+  "verification_suite_total_latency_ms": 1287.47470000053,
+  "git_commit_head": "cd8492a02092f49655b8074839b27543709a01fc",
+  "benchmarks": {
+    "galois_search": {
+      "num_qubits": 1000,
+      "total_states": "2^1000 (~1.07e301)",
+      "single_target_M1": {
+        "alpha": 18,
+        "beta": 120,
+        "unmarked": 0,
+        "marked": 1,
+        "status": "EXACT_1_STEP"
+      },
+      "multi_target_M5": {
+        "alpha": 120,
+        "beta": 164,
+        "unmarked": 0,
+        "marked": 1,
+        "status": "EXACT_1_STEP"
+      }
+    },
+    "sheaf_laplacian_73_nodes": {
+      "hw_latency_ns": 38.0,
+      "hw_throughput_evals_sec": 26315789,
+      "h0_consensus": true,
+      "vortex_isolation_norm": 1.4142,
+      "dsw_cobordism_repair_cycles": 1,
+      "status": "PASS"
+    }
+  },
+  "attestation": {
+    "canonical_rfc8785_sha256": "81cc7cf1e0597b736f259f6cd66c32fff213b06cdea741d986a6302df3cb4612",
+    "ovid_pointer": "ptr_ovid_81cc7cf1e0597b736f259f6cd66c32fff213b06cdea741d986a6302df3cb4612",
+    "fips_204_ml_dsa_65_signature": "60602f5e28b3cf9619027126a6c3f73120689e9abad06ba8848e7a309106f8d3df30fe6329e338eb3eb5c3d8199d31114b1f5442eb8438524dda000befd967919ab2bf4fc3302326a423a0ceb8ddee1abffbbaa346c1787a12e15b438a38107c62924ac4dd1b9314b74f9e21d1243bf430685afbbf52ac6927420f2fbf0c56e4154a75c683b31f0b6652f1377199dc96d5f765d1ad5be889ff58ad94d3a96e2ebd6b5d453d34e066ae61758b61a2bd3d0b35dfddc63db64d6e5544b664c4a568",
+    "ed25519_signature": "4f360c3eb261191bbcd3345bda3dfee053913606527b2bf377f4018fd7264290ff78e54d26a8d5d649bc3be551bbd2a89ffa00fb7a6d4e1d80881914994dfe0a",
+    "zk_stark_trace_commitment": "8c37f2e8c1c77319736534efcf2ca465ae3cf9f4165ca4027b174bd655a03d6a",
+    "zk_stark_quotient_commitment": "10cba05ce7c3dd0e2d739bea0cc733687f436183ffee66a0da544375db2e1814"
+  }
 }

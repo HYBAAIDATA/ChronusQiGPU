@@ -120,4 +120,58 @@ export class ChronusAPIClient {
       rs1_val: rs1Val,
       rs2_val: rs2Val,
     });
+
+  // Hashrate Intelligence & Mining Administration
+  static getMiningStatus = () => get<ApiRecord>('v1/mining/admin/status');
+  static startMining = (baseHashrateEhS?: number, activeWarps?: number) =>
+    post<ApiRecord>('v1/mining/admin/start', {
+      base_hashrate_eh_s: baseHashrateEhS,
+      active_warps: activeWarps,
+    });
+  static stopMining = () => post<ApiRecord>('v1/mining/admin/stop', {});
+  static configureMiningCapacity = (
+    baseHashrateEhS?: number,
+    activeWarps?: number,
+    coreVoltageV?: number,
+    fanSpeedPct?: number
+  ) =>
+    post<ApiRecord>('v1/mining/admin/configure', {
+      base_hashrate_eh_s: baseHashrateEhS,
+      active_warps: activeWarps,
+      core_voltage_v: coreVoltageV,
+      fan_speed_pct: fanSpeedPct,
+    });
+  static configureMiningIntelligence = (
+    predictive: number,
+    causal: number,
+    counterfactual: number,
+    topological: number,
+    geometric: number
+  ) =>
+    post<ApiRecord>('v1/mining/admin/intelligence', {
+      predictive,
+      causal,
+      counterfactual,
+      topological,
+      geometric,
+    });
+  static applyCausalIntervention = (intervention: string) =>
+    post<ApiRecord>('v1/mining/admin/intervene', { intervention });
+  static injectMiningAnomaly = () => post<ApiRecord>('v1/mining/admin/anomaly/inject', {});
+  static healMiningAnomaly = () => post<ApiRecord>('v1/mining/admin/anomaly/heal', {});
+  static getPatroclusTelemetry = () => get<ApiRecord>('v1/mining/admin/patroclus');
+  static configureMiningStealth = (
+    maxConfiguredEhS?: number,
+    stealthTargetEhS?: number,
+    neverConsecutiveBlocks?: boolean,
+    persistentPresence?: boolean
+  ) =>
+    post<ApiRecord>('v1/mining/admin/stealth', {
+      max_configured_eh_s: maxConfiguredEhS,
+      stealth_target_eh_s: stealthTargetEhS,
+      never_consecutive_blocks: neverConsecutiveBlocks,
+      persistent_presence: persistentPresence,
+    });
+  static simulatePatroclusMining = (pools?: string[]) =>
+    post<ApiRecord>('v1/mining/admin/patroclus/simulate', { pools });
 }

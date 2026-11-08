@@ -59,6 +59,39 @@ class ClusterOrchestrator:
         self._workloads: Dict[str, WorkloadAssignment] = {}
         self._cluster_state = ClusterState.INITIALIZING
         self._scheduler_algorithm = "round_robin"
+        self._failover_enabled = True
+        self._total_workloads = 0
+        self._completed_workloads = 0
+        self._failed_workloads = 0
+
+    def register_node(
+        self, hostname: str, region: str, capacity: int = 100
+    ) -> str:
+        node_id = f"node-{uuid.uuid4().hex[:8]}"
+        node = NodeInfo(
+            node_id=node_id,
+            hostname=hostname,
+            region=region,
+            capacity=capacity,
+            last_heartbeat=datetime.utcnow(),
+        )
+        self._nodes[node_id] = node
+
+        if len(self._nodes) >= self.cluster_size:
+            self._cluster_state = ClusterState.HEALTHY
+        elif len(self._nodes) > 0:
+            self._cluster_state = ClusterState.DEGRADED
+
+        return node_id
+
+    def heartbeat(self, node_id: str) -> bool:
+        if node_id not in self._nodes:
+            return False
+
+        self._nodes[node_id].last_heartbeat = datetime.utcnow()
+        self._nodes[node_id].status = "ACTIVE"
+        return True
+
     def assign_workload(
         self, workload_id: str, preferred_region: Optional[str] = None
     ) -> Optional[str]:
@@ -209,35 +242,3 @@ class ConsensusProtocol:
         votes = self._votes.get(proposal_id, {})
         approve_count = sum(1 for v in votes.values() if v)
         return approve_count >= self.quorum_size
-        self._failover_enabled = True
-        self._total_workloads = 0
-        self._completed_workloads = 0
-        self._failed_workloads = 0
-
-    def register_node(
-        self, hostname: str, region: str, capacity: int = 100
-    ) -> str:
-        node_id = f"node-{uuid.uuid4().hex[:8]}"
-        node = NodeInfo(
-            node_id=node_id,
-            hostname=hostname,
-            region=region,
-            capacity=capacity,
-            last_heartbeat=datetime.utcnow(),
-        )
-        self._nodes[node_id] = node
-
-        if len(self._nodes) >= self.cluster_size:
-            self._cluster_state = ClusterState.HEALTHY
-        elif len(self._nodes) > 0:
-            self._cluster_state = ClusterState.DEGRADED
-
-        return node_id
-
-    def heartbeat(self, node_id: str) -> bool:
-        if node_id not in self._nodes:
-            return False
-
-        self._nodes[node_id].last_heartbeat = datetime.utcnow()
-        self._nodes[node_id].status = "ACTIVE"
-        return True

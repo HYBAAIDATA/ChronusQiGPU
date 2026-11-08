@@ -23,7 +23,6 @@ from chronus.security.al_haras import (
     VerifiableNeuralComputeEngine,
     FormalTopologicalProofVerifier,
     AgentDAG,
-    DAGEdge,
     AgentState,
     AgenticSheafImmuneSystem,
     OrbitalSatelliteDefenseMesh,
@@ -34,6 +33,14 @@ from chronus.security.al_haras import (
     CoprocessorRegisters,
     MemoryBus,
     execute_t_isa_instruction,
+    TopologicalSheafFault,
+    RicciCurvatureDeCloaker,
+    HodgeCovertChannelFilter,
+    UltrametricMemorySandbox,
+    AnosovColdBootScrambler,
+    PicardLefschetzAntiJammingFilter,
+    GrandMillenniumUnificationNexus,
+    RicciCurvatureNeckFault,
 )
 
 router = APIRouter(prefix="/v1/al-haras", tags=["al-haras-security"])
@@ -493,9 +500,98 @@ async def execute_t_isa_microcode(req: TISAExecuteRequest) -> Dict[str, Any]:
             "rd_status": status_val,
             "memory_egress_blocked": bus.is_egress_blocked(),
         }
-    except TopologicalSheafFault as e:
+    except (TopologicalSheafFault, RicciCurvatureNeckFault) as e:
         return {
             "execution": {"status": "HARDWARE_FAULT", "error": str(e)},
             "rd": req.rd,
             "memory_egress_blocked": bus.is_egress_blocked(),
         }
+
+
+# ------------------------------------------------------------------------------
+# MILLENNIUM MATHEMATICAL SOVEREIGN SECURITY ENDPOINTS
+# ------------------------------------------------------------------------------
+
+
+class RicciSurgeryRequest(BaseModel):
+    edges: List[Dict[str, Any]] = Field(
+        default_factory=lambda: [
+            {"source": "node_A", "target": "node_B", "traffic_weight": 1.0},
+            {"source": "node_B", "target": "node_C", "traffic_weight": 2.0},
+            {"source": "node_A", "target": "node_C", "traffic_weight": 1.5},
+            {"source": "node_C", "target": "stealth_c2_node", "traffic_weight": 95.0},
+        ]
+    )
+    curvature_threshold: float = Field(default=-0.4)
+
+
+class HodgeProjectRequest(BaseModel):
+    bus_trace: List[float] = Field(
+        default_factory=lambda: [1.2, 3.4, 1.1, 8.9, 1.3, 3.5, 1.2, 8.8]
+    )
+
+
+class UltrametricSandboxRequest(BaseModel):
+    enclave_a: str = Field(default="kernel_process_secure")
+    enclave_b: str = Field(default="untrusted_speculative_workload")
+    base_address_a: int = Field(default=0x1000)
+    base_address_b: int = Field(default=0x5000)
+    prime_p: int = Field(default=257)
+
+
+class AnosovPurgeRequest(BaseModel):
+    secret_hex: str = Field(
+        default="414c5f48415241535f534f5645524549474e5f4b4559"
+    )
+
+
+class PicardLefschetzFilterRequest(BaseModel):
+    samples: List[Tuple[float, float]] = Field(
+        default_factory=lambda: [(1.0, 0.5), (0.8, -0.3), (-0.4, 0.9)]
+    )
+    jamming_phase_intensity: float = Field(default=2.5)
+
+
+@router.post("/millennium/ricci-surgery")
+async def execute_ricci_surgery(req: RicciSurgeryRequest) -> Dict[str, Any]:
+    """Execute Ollivier-Ricci curvature de-cloaking and Perelman neck excision surgery."""
+    decloaker = RicciCurvatureDeCloaker(curvature_threshold=req.curvature_threshold)
+    for e in req.edges:
+        decloaker.add_edge(e["source"], e["target"], float(e.get("traffic_weight", 1.0)))
+    return decloaker.execute_perelman_surgery()
+
+
+@router.post("/millennium/hodge-project")
+async def execute_hodge_projection(req: HodgeProjectRequest) -> Dict[str, Any]:
+    """Apply Hodge-Helmholtz P_exact orthogonal projector to eradicate covert side channels."""
+    return HodgeCovertChannelFilter.sanitize_side_channels(req.bus_trace)
+
+
+@router.post("/millennium/ultrametric-sandbox")
+async def verify_ultrametric_sandbox(req: UltrametricSandboxRequest) -> Dict[str, Any]:
+    """Verify non-Archimedean p-adic memory enclave isolation against speculative cross-bleed."""
+    sandbox = UltrametricMemorySandbox(prime_p=req.prime_p)
+    sandbox.register_enclave(req.enclave_a, req.base_address_a)
+    sandbox.register_enclave(req.enclave_b, req.base_address_b)
+    return sandbox.verify_non_overlapping_isolation(req.enclave_a, req.enclave_b)
+
+
+@router.post("/millennium/anosov-purge")
+async def execute_anosov_purge(req: AnosovPurgeRequest) -> Dict[str, Any]:
+    """Execute sub-nanosecond Anosov hyperbolic toral automorphism memory scrambling."""
+    secret_bytes = bytes.fromhex(req.secret_hex)
+    return AnosovColdBootScrambler.emergency_ram_purge(secret_bytes)
+
+
+@router.post("/millennium/picard-lefschetz-filter")
+async def execute_picard_lefschetz_filter(req: PicardLefschetzFilterRequest) -> Dict[str, Any]:
+    """Execute Picard-Lefschetz steepest descent thimble complex integration for anti-jamming."""
+    return PicardLefschetzAntiJammingFilter.filter_jammed_waveform(
+        req.samples, jamming_phase_intensity=req.jamming_phase_intensity
+    )
+
+
+@router.get("/millennium/unification")
+async def get_grand_millennium_unification() -> Dict[str, Any]:
+    """Return Grand Millennium Unification verification: Math is Math is Math."""
+    return GrandMillenniumUnificationNexus.verify_grand_millennium_unification()

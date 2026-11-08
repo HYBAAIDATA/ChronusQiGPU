@@ -102,9 +102,11 @@ data/
 .next/
 frontend/.next/
 .pytest_tmp/
+.pytest_temp/
 .hypothesis/
 master_repo/
 *.tar.gz
 *.zip
 /chronus_gpiu-v36.py
 /qualification_manifest_v36.json
+.venv-test/

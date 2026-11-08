@@ -29,6 +29,7 @@ dependencies = [
     "opentelemetry-sdk>=1.25,<2",
     "SQLAlchemy>=2.0,<3",
     "greenlet>=3.0.0",
+    "numpy>=1.26,<3",
 ]
 
 [project.optional-dependencies]
@@ -36,6 +37,7 @@ dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "hypothesis>=6.100",
+    "numpy>=1.26,<3",
 ]
 postgres = [
     "asyncpg>=0.29",
@@ -59,3 +61,4 @@ include = ["chronus*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+addopts = "--basetemp=.pytest_temp"
