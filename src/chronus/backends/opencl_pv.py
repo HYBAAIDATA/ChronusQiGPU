@@ -20,6 +20,7 @@ from chronus.backends.lattice_workload import (
     serialize_lattice,
 )
 from chronus.config import runtime_bounds
+from chronus.core.scaling import planck_ladder
 
 KERNEL_SHA256 = "c285c78ab1e2bc1d54dce4b92fc4cd7c75539b084fc91bee02ed7b425690c346"
 
@@ -197,7 +198,20 @@ class OpenCLPVBackend:
         max_elements = bounds["max_lattice_elements"]
         if not 1 <= len(values) <= max_elements:
             raise ValueError(f"values must contain 1 to {max_elements} elements")
-        outputs, widths = self._dispatch(values, phi_power(order))
+        ladder = planck_ladder(len(values)) if len(values) > 1 else [len(values)]
+        # Dispatch rung by rung along the Lucas ladder: the accelerator scales
+        # by PV powers, each rung verified independently before merging.
+        factor = phi_power(order)
+        outputs: list[PhiElement] = []
+        widths = {"executed_64_bit": 0, "executed_128_bit": 0, "executed_256_bit": 0}
+        offset = 0
+        for rung in ladder:
+            rung_outputs, rung_widths = self._dispatch(values[offset:offset + rung], factor)
+            verify_fold(values[offset:offset + rung], rung_outputs, order)
+            outputs.extend(rung_outputs)
+            for key in widths:
+                widths[key] += rung_widths.get(key, 0)
+            offset += rung
         verify_fold(values, outputs, order)
         sign = -1 if order % 2 else 1
         if any(output.norm() != value.norm() * sign for value, output in zip(values, outputs)):
@@ -215,6 +229,8 @@ class OpenCLPVBackend:
             "verification": "full_exact_host_parity",
             "norm_invariant_verified": True,
             "execution_tier_counts": widths,
+            "planck_ladder": ladder,
+            "scaling_series": "lucas-pv",
         }
 
     def dispatch_phase_search(

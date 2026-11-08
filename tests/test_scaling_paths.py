@@ -150,6 +150,25 @@ def test_rtl_companion_step_semantics_match_phi_power():
     assert (a1, b1) == (a2, b2)
 
 
+def test_planck_ladder_climbs_lucas_rungs_with_exact_coverage():
+    from chronus.core.scaling import planck_ladder
+
+    assert planck_ladder(1) == [1]
+    assert planck_ladder(2) == [1, 1]       # L_1 = 1, remainder 1
+    assert planck_ladder(10) == [1, 3, 4, 2]  # L_1, L_2, L_3, remainder
+    ladder = planck_ladder(1000)
+    assert sum(ladder) == 1000
+    # Every rung except the last is a Lucas number on the ladder.
+    from chronus.backends.metallic import metallic_sequence
+
+    lucas = {metallic_sequence(1, i) for i in range(1, 20)}
+    assert all(rung in lucas for rung in ladder[:-1])
+    assert ladder[:-1] == sorted(ladder[:-1])  # Lucas rungs ascend
+    assert ladder[-1] <= ladder[-2]  # final rung is the exact remainder
+    with pytest.raises(ValueError):
+        planck_ladder(0)
+
+
 def test_trinity_scale_index_composes_with_lattice_fold():
     """Advancing the scale index and materializing agree with direct fold."""
     from chronus.execution.trinity import scale_fold_store

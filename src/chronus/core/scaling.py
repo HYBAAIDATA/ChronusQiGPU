@@ -54,3 +54,25 @@ class PVScale:
     def metallic_factor(self) -> "object":
         """Materialize sigma_m^index as exact coefficients."""
         return metallic_power(self.m, self.index)
+
+
+def planck_ladder(total: int) -> list[int]:
+    """Split ``total`` work items into Lucas-sized rungs, finest to greatest.
+
+    The ladder is the substrate's discrete scaling series: rung sizes are
+    Lucas numbers L_1, L_2, ... (the traces of ascending PV powers), with the
+    final rung taking the remainder so coverage is exact. Each rung is one
+    discrete scale step of the engine — the Planck unit of this substrate is
+    a single field element; the ladder climbs by Lucas powers from there.
+    """
+    if not isinstance(total, int) or isinstance(total, bool) or total < 1:
+        raise ValueError("total must be a positive integer")
+    rungs = []
+    remaining = total
+    index = 1
+    while remaining > 0:
+        rung = min(metallic_sequence(1, index), remaining)
+        rungs.append(rung)
+        remaining -= rung
+        index += 1
+    return rungs

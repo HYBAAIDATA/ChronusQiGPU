@@ -150,6 +150,17 @@ def test_phase_consensus_kernel_matches_closed_form_on_cpu_runtime(cpu_opencl):
         assert expected.unmarked_amplitude == 0
 
 
+def test_planck_ladder_dispatch_scales_rungs_on_device(cpu_opencl, monkeypatch):
+    monkeypatch.setattr(cpu_opencl, "execution_mode", "SOFTWARE_EXECUTION")
+    values = [PhiElement(i - 17, 29 - i, 3) for i in range(40)]
+    outputs, receipt = cpu_opencl.dispatch_pv_fold(values, 137)
+    verify_fold(values, outputs, 137)
+    ladder = receipt["planck_ladder"]
+    assert sum(ladder) == 40
+    assert receipt["scaling_series"] == "lucas-pv"
+    assert sum(receipt["execution_tier_counts"].values()) == 40
+
+
 def test_dispatch_receipt_and_norm_are_verified_on_cpu_runtime(cpu_opencl, monkeypatch):
     monkeypatch.setattr(cpu_opencl, "execution_mode", "SOFTWARE_EXECUTION")
     values = [PhiElement(-17, 29, 11), PhiElement(8, -9, 7)]
