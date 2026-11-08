@@ -1,6 +1,7 @@
 """Opt-in OpenCL GPU adapter with exact host-side bounds and full parity checks."""
 
 import hashlib
+import json
 from importlib.resources import files
 from typing import Any
 
@@ -19,8 +20,9 @@ from chronus.backends.lattice_workload import (
     serialize_lattice,
 )
 from chronus.config import runtime_bounds
+from chronus.core.scaling import planck_ladder
 
-KERNEL_SHA256 = "51afee69ead0a470a205f140c4b8f9f439ab2d4682810548713004c3d8001605"
+KERNEL_SHA256 = "c285c78ab1e2bc1d54dce4b92fc4cd7c75539b084fc91bee02ed7b425690c346"
 
 
 def validate_fixed_width(values: list[PhiElement], factor: PhiElement) -> None:
@@ -43,7 +45,7 @@ class OpenCLPVBackend:
 
     name = "opencl-pv"
     execution_mode = "PHYSICAL_ACCELERATOR"
-    supported_workloads = frozenset({"PV_LATTICE_FOLD"})
+    supported_workloads = frozenset({"PV_LATTICE_FOLD", "EXACT_PHASE_SEARCH"})
 
     @property
     def backend_id(self) -> str:
@@ -248,7 +250,20 @@ class OpenCLPVBackend:
         max_elements = bounds["max_lattice_elements"]
         if not 1 <= len(values) <= max_elements:
             raise ValueError(f"values must contain 1 to {max_elements} elements")
-        outputs, widths = self._dispatch(values, phi_power(order))
+        ladder = planck_ladder(len(values)) if len(values) > 1 else [len(values)]
+        # Dispatch rung by rung along the Lucas ladder: the accelerator scales
+        # by PV powers, each rung verified independently before merging.
+        factor = phi_power(order)
+        outputs: list[PhiElement] = []
+        widths = {"executed_64_bit": 0, "executed_128_bit": 0, "executed_256_bit": 0}
+        offset = 0
+        for rung in ladder:
+            rung_outputs, rung_widths = self._dispatch(values[offset:offset + rung], factor)
+            verify_fold(values[offset:offset + rung], rung_outputs, order)
+            outputs.extend(rung_outputs)
+            for key in widths:
+                widths[key] += rung_widths.get(key, 0)
+            offset += rung
         verify_fold(values, outputs, order)
         sign = -1 if order % 2 else 1
         if any(
@@ -269,11 +284,98 @@ class OpenCLPVBackend:
             "verification": "full_exact_host_parity",
             "norm_invariant_verified": True,
             "execution_tier_counts": widths,
+            "planck_ladder": ladder,
+            "scaling_series": "lucas-pv",
+        }
+
+    def dispatch_phase_search(
+        self, num_qubits: int, marked_count: int
+    ) -> dict[str, Any]:
+        """Execute one-shot phase search with 32-lane on-device consensus.
+
+        Every lane recomputes the field iterate independently; the host
+        requires unanimous agreement and verifies the result against the
+        exact closed form before accepting.
+        """
+        from chronus.quantum.metallic_search import jform_one_shot_phases
+        from chronus.quantum.subspace import uniform_subspace, jform_subspace_iterate
+
+        if not isinstance(num_qubits, int) or isinstance(num_qubits, bool) or num_qubits < 1:
+            raise ValueError("num_qubits must be a positive integer")
+        n = 1 << num_qubits
+        if not isinstance(marked_count, int) or not 1 <= marked_count < n:
+            raise ValueError("marked_count must be in [1, 2**num_qubits)")
+        alpha, beta = jform_one_shot_phases(num_qubits, marked_count)[0]
+        n_mod = pow(2, num_qubits, 257)
+        n_mod_inv = pow(n_mod, -1, 257)
+        u = pow(30, num_qubits, 257)
+        cl, np = self._cl, self._np
+        lanes = 32
+        try:
+            flags = cl.mem_flags
+            d_marked = cl.Buffer(self.context, flags.WRITE_ONLY, size=lanes * 4)
+            d_unmarked = cl.Buffer(self.context, flags.WRITE_ONLY, size=lanes * 4)
+            kernel = cl.Kernel(self.program, "phase_consensus")
+            kernel.set_args(
+                np.uint32(alpha), np.uint32(beta), np.uint32(u),
+                np.uint32(marked_count), np.uint32(n_mod), np.uint32(n_mod_inv),
+                d_marked, d_unmarked,
+            )
+            cl.enqueue_nd_range_kernel(self.queue, kernel, (lanes,), None)
+            marked_dev = np.empty(lanes, dtype=np.uint32)
+            unmarked_dev = np.empty(lanes, dtype=np.uint32)
+            cl.enqueue_copy(self.queue, marked_dev, d_marked)
+            cl.enqueue_copy(self.queue, unmarked_dev, d_unmarked)
+            self.queue.finish()
+        except cl.Error as exc:
+            raise HardwareUnavailableError("OpenCL phase consensus dispatch failed") from exc
+        if len(set(marked_dev.tolist())) != 1 or len(set(unmarked_dev.tolist())) != 1:
+            raise ParityVerificationError("accelerator lanes disagree on phase search")
+        expected = jform_subspace_iterate(
+            uniform_subspace(num_qubits, marked_count), alpha, beta
+        )
+        if int(marked_dev[0]) != expected.marked_amplitude \
+                or int(unmarked_dev[0]) != expected.unmarked_amplitude:
+            raise ParityVerificationError("accelerator phase search mismatches host reference")
+        device = self.probe_silicon()
+        return {
+            "execution_mode": self.execution_mode,
+            "surface": "client-accelerator",
+            "field": "F_257",
+            "iterations": 1,
+            "state": {
+                "num_qubits": num_qubits,
+                "marked_count": marked_count,
+                "marked_amplitude": expected.marked_amplitude,
+                "unmarked_amplitude": expected.unmarked_amplitude,
+                "representation": "rank-2-symbolic",
+            },
+            "phases": {"alpha": alpha, "beta": beta},
+            "lane_consensus": True,
+            "lanes_verified": lanes,
+            "device": device,
+            "device_signature": {
+                "vendor_id": device["vendor_id"],
+                "device_id": device["pci_device_id"],
+                "pci_address": device["pci_address"],
+                "driver_version": device["driver_version"],
+            },
+            "verification": "32_lane_device_consensus_and_host_closed_form",
         }
 
     def execute(self, payload: bytes, workload_type: str) -> dict[str, Any]:
         if not self.supports(workload_type):
             raise ValueError(f"OpenCL backend does not support {workload_type}")
+        if workload_type == "EXACT_PHASE_SEARCH":
+            try:
+                request = json.loads(payload)
+            except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+                raise ValueError("payload must be a UTF-8 JSON object") from exc
+            if not isinstance(request, dict):
+                raise ValueError("payload must be a JSON object")
+            return self.dispatch_phase_search(
+                request.get("num_qubits"), request.get("marked_count")
+            )
         values, order = parse_lattice_workload(payload)
         outputs, receipt = self.dispatch_pv_fold(values, order)
         return {

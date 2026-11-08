@@ -18,7 +18,7 @@ operational metric documented as such, not a Born probability.
 from dataclasses import dataclass
 from fractions import Fraction
 
-from chronus.quantum.statevector import INV_SQRT2, MAX_QUBITS, P, StateVector
+from chronus.quantum.statevector import INV_SQRT2, P, StateVector
 
 
 class QSqrt2:
@@ -110,6 +110,49 @@ def phase_iterate(state: StateVector, marked: int, alpha: int, beta: int) -> Sta
     return state
 
 
+def jform_one_shot_phases(num_qubits: int, marked_count: int = 1) -> list[tuple[int, int]]:
+    """Closed-form phases for the alternate operator family D = I + beta*J.
+
+    With diffusion a_i -> a_i + beta*mu and oracle phase alpha, one iterate
+    cancels unmarked states and lands marked amplitudes on +/-1 when
+
+        alpha = 1 + v/u,   beta = -N*u / (N*u + r*v),   v = +/-1
+
+    over F_257, requiring N*u + r*v invertible. Both families are the same
+    algebraic system under different parameterizations; this form matches
+    the D = I + beta*J convention used in external telemetry.
+    """
+    if not isinstance(num_qubits, int) or isinstance(num_qubits, bool) or num_qubits < 1:
+        raise ValueError("num_qubits must be a positive integer")
+    n = 1 << num_qubits
+    if not isinstance(marked_count, int) or not 1 <= marked_count < n:
+        raise ValueError("marked_count must be in [1, 2**num_qubits)")
+    u = pow(INV_SQRT2, num_qubits, P)
+    nu = (n * u) % P
+    pairs = []
+    for v in (1, P - 1):
+        denominator = (nu + marked_count * v) % P
+        if denominator == 0:
+            continue
+        alpha = (1 + v * pow(u, -1, P)) % P
+        beta = (-nu) * pow(denominator, -1, P) % P
+        pairs.append((alpha, beta))
+    if not pairs:
+        raise ValueError("field lacks the phases required for this size and count")
+    return pairs
+
+
+def jform_iterate(state: StateVector, marked: int, alpha: int, beta: int) -> StateVector:
+    """One iterate of the D = I + beta*J family on a dense statevector."""
+    if not 0 <= marked < len(state.amplitudes):
+        raise ValueError("marked index out of range")
+    state.amplitudes[marked] = (alpha * state.amplitudes[marked]) % P
+    n = len(state.amplitudes)
+    mean = (sum(state.amplitudes) * pow(n, -1, P)) % P
+    state.amplitudes = [(a + beta * mean) % P for a in state.amplitudes]
+    return state
+
+
 def one_shot_phases(num_qubits: int) -> list[tuple[int, int]]:
     """Closed-form phase pairs for exact one-iteration search over F_257.
 
@@ -125,8 +168,8 @@ def one_shot_phases(num_qubits: int) -> list[tuple[int, int]]:
     optimality bound does not apply, and the field supplies phases that do
     not exist over the reals.
     """
-    if not isinstance(num_qubits, int) or not 1 <= num_qubits <= MAX_QUBITS:
-        raise ValueError(f"num_qubits must be between 1 and {MAX_QUBITS}")
+    if not isinstance(num_qubits, int) or isinstance(num_qubits, bool) or num_qubits < 1:
+        raise ValueError("num_qubits must be a positive integer")
     n = 1 << num_qubits
     u = pow(INV_SQRT2, num_qubits, P)
     k = pow((n * u) % P, -1, P)
@@ -154,6 +197,73 @@ def exact_search(num_qubits: int, marked: int) -> StateVector:
     if not (amps[marked] in (1, P - 1)
             and all(a == 0 for i, a in enumerate(amps) if i != marked)):
         raise ArithmeticError("exact search failed to converge; field phases unsuitable")
+    return state
+
+
+def one_shot_phases_multi(num_qubits: int, marked_count: int) -> list[tuple[int, int]]:
+    """Closed-form phase pairs for one-shot search with r marked states.
+
+    With r marked items the invariant subspace is still two-dimensional
+    (uniform-over-marked, uniform-over-unmarked), and the same elimination
+    that produced the single-marked form generalizes:
+
+        beta/(1+beta) = +/-r*k,   alpha = 1 - N/(r*(1+beta)),   k = (N*u)^-1
+
+    After one iterate every unmarked amplitude is exactly 0 and every marked
+    amplitude is exactly +/-1: the marked set is identified in full. A sign
+    branch is dropped when its denominator vanishes (N*u congruent to +/-r),
+    in which case one pair remains sufficient.
+    """
+    if not isinstance(marked_count, int) or isinstance(marked_count, bool) \
+            or not 1 <= marked_count < (1 << num_qubits):
+        raise ValueError("marked_count must be an integer in [1, 2**num_qubits)")
+    n = 1 << num_qubits
+    u = pow(INV_SQRT2, num_qubits, P)
+    k = pow((n * u) % P, -1, P)
+    pairs = []
+    for sign in (1, -1):
+        rk = (marked_count * k) % P
+        denominator = (1 - sign * rk) % P
+        if denominator == 0:
+            continue
+        beta = (sign * rk) * pow(denominator, -1, P) % P
+        alpha = (1 - n * pow((marked_count * (1 + beta)) % P, -1, P)) % P
+        pairs.append((alpha, beta))
+    if not pairs:
+        raise ValueError("field lacks the phases required for this size and count")
+    return pairs
+
+
+def phase_iterate_multi(
+    state: StateVector, marked: set[int], alpha: int, beta: int
+) -> StateVector:
+    """Phase iterate with an oracle flipping every state in the marked set."""
+    if not marked or not all(0 <= m < len(state.amplitudes) for m in marked):
+        raise ValueError("marked must be a non-empty set of in-range indices")
+    for value in (alpha, beta):
+        if not isinstance(value, int) or isinstance(value, bool) or not 0 <= value < P:
+            raise ValueError("phases must be field elements in [0, 257)")
+    for index in marked:
+        state.amplitudes[index] = (alpha * state.amplitudes[index]) % P
+    n = len(state.amplitudes)
+    mean = (sum(state.amplitudes) * pow(n, -1, P)) % P
+    state.amplitudes = [
+        ((1 + beta) * mean - beta * a) % P for a in state.amplitudes
+    ]
+    return state
+
+
+def exact_search_multi(num_qubits: int, marked: set[int]) -> StateVector:
+    """One exact iteration identifying every marked state simultaneously."""
+    alpha, beta = one_shot_phases_multi(num_qubits, len(marked))[0]
+    state = StateVector(num_qubits)
+    for qubit in range(num_qubits):
+        state.apply("H", qubit)
+    phase_iterate_multi(state, marked, alpha, beta)
+    amps = state.amplitudes
+    if not (all(amps[i] in (1, P - 1) for i in marked)
+            and all(amps[i] == 0 for i in range(len(amps)) if i not in marked)):
+        raise ArithmeticError("multi-marked exact search failed to converge")
     return state
 
 

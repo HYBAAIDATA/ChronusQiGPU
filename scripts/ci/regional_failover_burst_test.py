@@ -17,7 +17,7 @@ import asyncio
 import os
 import sys
 import time
-from typing import Any, Dict, List, Tuple
+from typing import Dict, Tuple
 
 import httpx
 
@@ -25,8 +25,6 @@ import httpx
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src")))
 
 from chronus.service.app import create_app
-from chronus.service.ciaas_store import ciaas_store
-from chronus.service.workload_store import get_workload_store
 
 
 class FailureInjectionState:
@@ -172,11 +170,11 @@ async def run_failure_injection_simulation(total_tenants: int = 1000, concurrenc
     duplicate_external_effects = 0
 
     print("\n[FAULT INJECTION & FAILOVER INCIDENT REPORT]")
-    print(f"  Incident Type             : REGIONAL_CLOUD_POD_PARTITION (ALPHA_POD)")
+    print("  Incident Type             : REGIONAL_CLOUD_POD_PARTITION (ALPHA_POD)")
     print(f"  Trigger Point             : Tenant #{state.interrupted_at_index} (50% Ingress Point)")
-    print(f"  ALPHA_POD Status          : FENCED & ISOLATED")
+    print("  ALPHA_POD Status          : FENCED & ISOLATED")
     print(f"  Failover Routing Latency  : {failover_latency_ms:.2f} ms")
-    print(f"  Failover Targets Engaged  : BETA_POD (US East), GAMMA_POD (DIFC)")
+    print("  Failover Targets Engaged  : BETA_POD (US East), GAMMA_POD (DIFC)")
     print(f"  Requests Rerouted         : {len(failover_requests)} / {total_tenants}")
 
     print("\n[INGRESS & CAPACITY DISTRIBUTION ACROSS PODS]")
@@ -188,7 +186,7 @@ async def run_failure_injection_simulation(total_tenants: int = 1000, concurrenc
     print(f"  Failed / Dropped Requests : {len(failures)} (0.00%)")
     print(f"  Lost Acknowledged Commits : {lost_acknowledged_commits} [INVARIANT I66 SATISFIED]")
     print(f"  Duplicate External Effects: {duplicate_external_effects} [INVARIANT I66 SATISFIED]")
-    print(f"  Database Deadlocks        : 0 (REPEATABLE READ with Exponential Backoff)")
+    print("  Database Deadlocks        : 0 (REPEATABLE READ with Exponential Backoff)")
     print(f"  Total Burst Duration      : {total_elapsed:.3f} s")
     print(f"  Effective Throughput      : {throughput:.1f} activations/sec")
 

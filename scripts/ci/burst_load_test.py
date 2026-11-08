@@ -14,7 +14,7 @@ import asyncio
 import os
 import sys
 import time
-from typing import Dict, List, Tuple
+from typing import Tuple
 
 import httpx
 
@@ -160,7 +160,7 @@ async def run_burst_simulation(total_requests: int = 1000, concurrency: int = 50
     print("\n[DATABASE & CONNECTION POOL STATUS]")
     print(f"  Total Persisted Records  : {total_wl}")
     print(f"  Active Workloads         : {active_wl}")
-    print(f"  Connection Pool Health   : SATISFIED (0 deadlocks unrecovered, 0 leaked leases)")
+    print("  Connection Pool Health   : SATISFIED (0 deadlocks unrecovered, 0 leaked leases)")
     print("=" * 80)
     print("BURST SIMULATION COMPLETE: ALL RECONCILIATION CHECKS PASSED (100% SUCCESS)")
     print("=" * 80)

@@ -158,6 +158,51 @@ def test_real_kernel_rejects_256_bit_overflow(cpu_opencl):
         cpu_opencl._dispatch([PhiElement(2**63 - 1, 2**63 - 1)], phi_power(360))
 
 
+def test_phase_consensus_kernel_matches_closed_form_on_cpu_runtime(cpu_opencl):
+    cl, np = cpu_opencl._cl, cpu_opencl._np
+    for num_qubits, marked_count in ((4, 1), (6, 3), (10, 1), (100, 5)):
+        n_mod = pow(2, num_qubits, 257)
+        n_mod_inv = pow(n_mod, -1, 257)
+        u = pow(30, num_qubits, 257)
+        from chronus.quantum.metallic_search import jform_one_shot_phases
+        from chronus.quantum.subspace import jform_subspace_iterate, uniform_subspace
+
+        alpha, beta = jform_one_shot_phases(num_qubits, marked_count)[0]
+        lanes = 32
+        d_marked = cl.Buffer(cpu_opencl.context, cl.mem_flags.WRITE_ONLY, size=lanes * 4)
+        d_unmarked = cl.Buffer(cpu_opencl.context, cl.mem_flags.WRITE_ONLY, size=lanes * 4)
+        kernel = cl.Kernel(cpu_opencl.program, "phase_consensus")
+        kernel.set_args(
+            np.uint32(alpha), np.uint32(beta), np.uint32(u),
+            np.uint32(marked_count), np.uint32(n_mod), np.uint32(n_mod_inv),
+            d_marked, d_unmarked,
+        )
+        cl.enqueue_nd_range_kernel(cpu_opencl.queue, kernel, (lanes,), None)
+        marked_dev = np.empty(lanes, dtype=np.uint32)
+        unmarked_dev = np.empty(lanes, dtype=np.uint32)
+        cl.enqueue_copy(cpu_opencl.queue, marked_dev, d_marked)
+        cl.enqueue_copy(cpu_opencl.queue, unmarked_dev, d_unmarked)
+        cpu_opencl.queue.finish()
+        expected = jform_subspace_iterate(
+            uniform_subspace(num_qubits, marked_count), alpha, beta
+        )
+        assert set(marked_dev.tolist()) == {expected.marked_amplitude}
+        assert set(unmarked_dev.tolist()) == {expected.unmarked_amplitude}
+        assert expected.marked_amplitude in (1, 256)
+        assert expected.unmarked_amplitude == 0
+
+
+def test_planck_ladder_dispatch_scales_rungs_on_device(cpu_opencl, monkeypatch):
+    monkeypatch.setattr(cpu_opencl, "execution_mode", "SOFTWARE_EXECUTION")
+    values = [PhiElement(i - 17, 29 - i, 3) for i in range(40)]
+    outputs, receipt = cpu_opencl.dispatch_pv_fold(values, 137)
+    verify_fold(values, outputs, 137)
+    ladder = receipt["planck_ladder"]
+    assert sum(ladder) == 40
+    assert receipt["scaling_series"] == "lucas-pv"
+    assert sum(receipt["execution_tier_counts"].values()) == 40
+
+
 def test_dispatch_receipt_and_norm_are_verified_on_cpu_runtime(cpu_opencl, monkeypatch):
     monkeypatch.setattr(cpu_opencl, "execution_mode", "SOFTWARE_EXECUTION")
     values = [PhiElement(-17, 29, 11), PhiElement(8, -9, 7)]
