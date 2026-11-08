@@ -68,6 +68,10 @@ Notes:
 
 ## 3. Ephemeral sovereign runners (manual — infrastructure action)
 
+Deployable systemd unit, eBPF/LSM pre-flight hook, and registration scripts
+ship in `infra/runners/al-haras/` (see its README for install and the
+sovereign job template).
+
 Public hosted runners are multi-tenant. For RTL netlists, PV companion-matrix
 logic, and threshold-MPC key material, register self-hosted runners in
 ephemeral mode:
