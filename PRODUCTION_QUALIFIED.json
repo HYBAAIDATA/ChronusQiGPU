@@ -1,0 +1,23 @@
+{
+  "status": "PRODUCTION_QUALIFIED",
+  "timestamp": "2026-11-08 18:09:19 UTC",
+  "gates": {
+    "unit_integration_tests": "PASS",
+    "pci_purity_ast_scan": "PASS",
+    "determinism_check": "PASS",
+    "endianness_fuzzer": "PASS",
+    "mypy_strict": "PASS"
+  },
+  "measurements": {
+    "gatekeeper_p99_us": 2.85,
+    "submit_rate_achieved_sec": 15,
+    "shares_local_dropped": 0,
+    "blocks_found": 1
+  },
+  "provenance": {
+    "git_sha": "a4f891b72e04c310c897f10b29841203b572e9a2",
+    "python_version": "3.12.10",
+    "lock_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "signature": "90bd5fe7df03ba8b78ec999b71b4a5e284cfd8adb0f85cf9b61bab88e38a1aa8"
+}
