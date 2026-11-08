@@ -8,8 +8,13 @@ Owner: TN theorist & quantum matter specialist.
 from __future__ import annotations
 
 import math
+import os
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
+
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
 
 from chronus.tensor.types import (
     BondId,
@@ -70,13 +75,13 @@ def DMRG(
             vals, vecs = np.linalg.eigh(h4)
             psi_local_gs = vecs[:, 0].reshape(2, 2)  # Local ground state (2, 2)
 
-            # Blend local ground state with incoming virtual environment
+            # Blend local ground state with incoming virtual environment (vectorized)
             chi_L, d0, d1, chi_R = two_site.shape
-            updated_two_site = np.zeros_like(two_site)
-            for a in range(chi_L):
-                for b in range(chi_R):
-                    scale = 1.0 if (a == 0 and b == 0) else 0.001 / (a + b + 1)
-                    updated_two_site[a, :, :, b] = scale * psi_local_gs
+            a_idx = np.arange(chi_L)[:, None]
+            b_idx = np.arange(chi_R)[None, :]
+            scale_matrix = 0.001 / (a_idx + b_idx + 1.0)
+            scale_matrix[0, 0] = 1.0
+            updated_two_site = scale_matrix[:, None, None, :] * psi_local_gs[None, :, :, None]
 
             # Normalize
             norm = np.linalg.norm(updated_two_site)
