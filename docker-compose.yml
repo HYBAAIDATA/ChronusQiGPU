@@ -1,13 +1,55 @@
 services:
-  chronus-api:
-    build: .
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "127.0.0.1:8000:8000"
     environment:
-      CHRONUS_TENANT_TOKENS: "${CHRONUS_TENANT_TOKENS:?Set CHRONUS_TENANT_TOKENS to a tenant-token JSON object}"
+      CHRONUS_WORKLOAD_DB_PATH: /var/lib/chronus/workloads.sqlite3
+      CHRONUS_TENANT_TOKENS: ${CHRONUS_TENANT_TOKENS:-{}}
     volumes:
       - chronus_data:/var/lib/chronus
     restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      CHRONUS_BACKEND_URL: http://api:8000
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
 
 volumes:
   chronus_data:
