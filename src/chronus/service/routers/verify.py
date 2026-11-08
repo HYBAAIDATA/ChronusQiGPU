@@ -1,30 +1,25 @@
 """Public receipt-verification and authenticated receipt-creation routes."""
 
+import time
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from chronus.security import (
-    Ed25519Signer,
-    MLDSASigner,
-    ZKSTARKVerifier,
-    OVIDStorage,
-    VerifyEndpoint,
-)
+from chronus.security import OVIDStorage, VerifyEndpoint
+from chronus.security.receipt_signer import receipt_signer
 from chronus.storage.connectors import zero_copy_connector_manager
 from chronus.service.dependencies import get_current_tenant
 from chronus.service.models import ErrorResponse, VerificationResult
 
 router = APIRouter(prefix="/verify", tags=["verification"])
 
-# The current API process owns ephemeral signing keys and process-local receipts.
-# These provide verifiable evidence across both local and zero-copy connector storage.
-_ed25519_signer = Ed25519Signer()
-_ml_dsa_signer = MLDSASigner(security_level=3)
-_zk_stark_verifier = ZKSTARKVerifier()
+# API receipts use a shared process-local Ed25519 key. They are not durable
+# across restarts and do not carry ML-DSA or STARK claims.
+_ed25519_signer = receipt_signer
 _ovid_storage: OVIDStorage = zero_copy_connector_manager.ovid
 _verify_endpoint = VerifyEndpoint(
-    ml_dsa_signer=_ml_dsa_signer,
+    ml_dsa_signer=None,
     ed25519_signer=_ed25519_signer,
-    zk_stark_verifier=_zk_stark_verifier,
+    zk_stark_verifier=None,
     ovid_storage=_ovid_storage,
 )
 
@@ -33,12 +28,13 @@ _verify_endpoint = VerifyEndpoint(
     "/{hash_value}",
     response_model=VerificationResult,
     summary="Verify a hash with no authentication required",
-    description="Checks cryptographic receipts (Ed25519, FIPS 204 ML-DSA-65, FRI zk-STARK) without exposing underlying customer payload bytes.",
+    description="Checks process-local Ed25519 receipt signatures. This endpoint does not establish release qualification or ML-DSA/STARK verification.",
 )
 async def verify_hash(
     hash_value: str,
 ) -> VerificationResult:
-    """Verify an OVID receipt or zero-copy pointer without authentication."""
+    """Verify an in-process Ed25519 receipt or zero-copy pointer."""
+    started = time.perf_counter()
     stripped_hash = hash_value.strip()
     is_valid_format = (
         (len(stripped_hash) == 64 and all(c in "0123456789abcdef" for c in stripped_hash.lower()))
@@ -61,13 +57,10 @@ async def verify_hash(
         pointer = _ovid_storage.resolve_pointer(stripped_hash)
         if pointer is not None:
             ed_sig = _ed25519_signer.sign(pointer.content_hash.encode("ascii"))
-            ml_sig = _ml_dsa_signer.sign(pointer.content_hash.encode("ascii"))
-            f"ptr_ovid_{pointer.content_hash[:8]}"
             receipt = _ovid_storage.create_pointer_receipt(
                 pointer.pointer_id,
-                ml_dsa_signature=ml_sig,
                 ed25519_signature=ed_sig,
-                latency_ms=0.1245,
+                latency_ms=0.0,
                 receipt_handle=f"o1_apex_{pointer.content_hash[:8]}",
             )
 
@@ -105,22 +98,22 @@ async def verify_hash(
     return VerificationResult(
         qualification_status="VERIFIED" if is_valid else "VERIFICATION_FAILED",
         invariant_summary=(
-            "Cryptographic receipt verified (FIPS 204 ML-DSA-65 & FRI zk-STARK); zero underlying customer payload data exposed."
+            "Process-local Ed25519 receipt signature verified; this is not a release qualification."
             if is_valid
-            else "Receipt signature verification failed."
+            else "Receipt signature verification failed or is not supported by this process."
         ),
         total_release_gates_evaluated=0,
         release_gates_passed=0,
         total_invariants_evaluated=1 if is_valid else 0,
         invariants_passed=1 if is_valid else 0,
-        verification_suite_total_latency_ms=0.1245,
+        verification_suite_total_latency_ms=(time.perf_counter() - started) * 1000,
         receipt_id=receipt.receipt_id,
         receipt_handle=receipt.receipt_handle or receipt.receipt_id,
         hash_value=receipt.hash_value,
         ed25519_verified=detailed.get("ed25519_verified", bool(receipt.ed25519_signature)),
         ml_dsa_verified=detailed.get("ml_dsa_verified", bool(receipt.ml_dsa_signature)),
         stark_quotient_verified=detailed.get("stark_quotient_verified", receipt.stark_proof is not None),
-        polynomial_identity="P(x) = Q(x) * Z_H(x)",
+        polynomial_identity="not evaluated (STARK verification unavailable)",
         raw_payload_exposed=False,
         auth_required=False,
         metadata=receipt.metadata,
@@ -131,7 +124,7 @@ async def verify_hash(
     "/receipt",
     response_model=dict,
     summary="Create and store a verification receipt",
-    description="Create a process-local cryptographic receipt with Ed25519 and FIPS 204 ML-DSA post-quantum lattice signatures.",
+    description="Create a process-local Ed25519 receipt. ML-DSA is unavailable in this implementation.",
 )
 async def create_receipt(
     hash_value: str,
@@ -139,14 +132,23 @@ async def create_receipt(
     use_ed25519: bool = True,
     tenant_id: str = Depends(get_current_tenant),
 ) -> dict:
-    """Create a process-local Ed25519 / ML-DSA receipt for a supplied value."""
-    if not use_ed25519 and not use_ml_dsa:
+    """Create a process-local Ed25519 receipt for a supplied value."""
+    if use_ml_dsa:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=ErrorResponse(
+                error="algorithm_unavailable",
+                error_code="VF005",
+                message="ML-DSA signing is not implemented. No signature was created.",
+            ).model_dump(),
+        )
+    if not use_ed25519:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ErrorResponse(
                 error="signature_required",
                 error_code="VF003",
-                message="At least one implemented signature algorithm is required.",
+                message="Ed25519 signing must be enabled.",
             ).model_dump(),
         )
     if not hash_value:
@@ -161,7 +163,7 @@ async def create_receipt(
 
     receipt_id = _ovid_storage.store(hash_value.encode("utf-8"))
     ed25519_signature = _ed25519_signer.sign(receipt_id.encode("ascii")) if use_ed25519 else None
-    ml_dsa_signature = _ml_dsa_signer.sign(receipt_id.encode("ascii")) if use_ml_dsa else None
+    ml_dsa_signature = None
     prefix = tenant_id[:4] if tenant_id else "apex"
     receipt_handle = f"o1_{prefix}_{receipt_id[:8]}"
     receipt = _ovid_storage.create_receipt(
@@ -171,17 +173,13 @@ async def create_receipt(
         latency_ms=0.0,
         receipt_handle=receipt_handle,
         metadata={
-            "zero_copy": False,
             "tenant_id": tenant_id,
-            "data_stays_at_rest": True,
+            "storage_scope": "process-local",
+            "input_kind": "sha256_digest_text",
         },
     )
 
-    primary_algo = _ed25519_signer.algorithm
-    if use_ml_dsa and not use_ed25519:
-        primary_algo = _ml_dsa_signer.algorithm
-    elif use_ml_dsa and use_ed25519:
-        primary_algo = f"{_ed25519_signer.algorithm}+{_ml_dsa_signer.algorithm}"
+    primary_algo = "Ed25519 (process-local)"
 
     return {
         "receipt_id": receipt_id,

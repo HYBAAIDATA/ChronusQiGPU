@@ -1,6 +1,6 @@
-"""Observability, OpenTelemetry Tracing, Prometheus Metrics, and Structured JSON Logging.
+"""Process-local tracing, Prometheus-style metrics, and structured JSON logging.
 
-Provides enterprise-grade SRE infrastructure for Chronus API:
+Provides basic in-process observability for Chronus API:
 - OpenTelemetry SDK integration for spans across API ingestion, algebraic folding,
   OVID storage, and execution dispatch.
 - Standard Prometheus metrics with p50, p95, p99 latency quantiles, CCU tracking,
@@ -75,12 +75,13 @@ tracer = trace.get_tracer("chronus.execution.fabric", "36.0.0")
 
 @contextmanager
 def trace_span(name: str, attributes: Optional[Dict[str, Any]] = None) -> Generator[trace.Span, None, None]:
-    """Emit an OpenTelemetry span and bind trace context."""
+    """Emit an in-memory span and restore the prior trace context on exit."""
+    trace_token = None
     with tracer.start_as_current_span(name) as span:
         ctx = span.get_span_context()
         if ctx.is_valid:
             trace_hex = format(ctx.trace_id, "032x")
-            current_trace_id.set(trace_hex)
+            trace_token = current_trace_id.set(trace_hex)
             span.set_attribute("chronus.trace_id", trace_hex)
 
         tenant = current_tenant_id.get()
@@ -98,7 +99,11 @@ def trace_span(name: str, attributes: Optional[Dict[str, Any]] = None) -> Genera
                 else:
                     span.set_attribute(k, str(v))
 
-        yield span
+        try:
+            yield span
+        finally:
+            if trace_token is not None:
+                current_trace_id.reset(trace_token)
 
 
 # -----------------------------------------------------------------------------
@@ -106,20 +111,24 @@ def trace_span(name: str, attributes: Optional[Dict[str, Any]] = None) -> Genera
 # -----------------------------------------------------------------------------
 
 class PrometheusMetricsRegistry:
-    """Thread-safe Prometheus metrics registry supporting counters, quantiles, and gauges."""
+    """Process-local Prometheus metrics registry; not thread-safe or distributed."""
 
     def __init__(self) -> None:
         self.request_counts: Dict[str, int] = {}
         self.latencies: List[float] = []
         self.ccu_consumed: Dict[str, float] = {}
-        self.hardware_memory: Dict[str, int] = {
-            "device=cuda:0,backend=cuda": 16 * 1024 * 1024 * 1024,
-            "device=opencl:0,backend=opencl": 8 * 1024 * 1024 * 1024,
-            "device=cpu:0,backend=reference": 64 * 1024 * 1024 * 1024,
-        }
+        # Only emit device metrics explicitly observed by an adapter.
+        self.hardware_memory: Dict[str, int] = {}
         self.start_time = time.time()
 
+    @staticmethod
+    def _escape_label(value: str) -> str:
+        return str(value).replace("\\", "\\\\").replace("\n", "\\n").replace('"', chr(92) + '"')
+
     def record_request(self, tenant_id: str, status: str, workload_type: str) -> None:
+        tenant_id = self._escape_label(tenant_id)
+        status = self._escape_label(status)
+        workload_type = self._escape_label(workload_type)
         key = f'tenant_id="{tenant_id}",status="{status}",workload_type="{workload_type}"'
         self.request_counts[key] = self.request_counts.get(key, 0) + 1
 
@@ -129,9 +138,14 @@ class PrometheusMetricsRegistry:
             self.latencies = self.latencies[-5000:]
 
     def record_ccu(self, tenant_id: str, ccu: float) -> None:
+        tenant_id = self._escape_label(tenant_id)
         self.ccu_consumed[tenant_id] = self.ccu_consumed.get(tenant_id, 0.0) + ccu
 
     def set_hardware_memory(self, device: str, backend: str, bytes_allocated: int) -> None:
+        if not isinstance(bytes_allocated, int) or isinstance(bytes_allocated, bool) or bytes_allocated < 0:
+            raise ValueError("bytes_allocated must be a non-negative integer")
+        device = self._escape_label(device)
+        backend = self._escape_label(backend)
         key = f'device="{device}",backend="{backend}"'
         self.hardware_memory[key] = bytes_allocated
 

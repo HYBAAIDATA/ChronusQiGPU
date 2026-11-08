@@ -339,3 +339,35 @@ class TestServiceAPI:
         assert verified.status_code == 200
         assert verified.json()["qualification_status"] == "VERIFIED"
         assert verified.json()["total_release_gates_evaluated"] == 0
+
+    def test_workload_receipt_uses_shared_ed25519_key_and_no_fake_proof(self):
+        auth_service.register_tenant("receipt-workload", "receipt-workload-token")
+        submitted = self.client.post(
+            "/workloads/submit",
+            headers={"Authorization": "Bearer receipt-workload-token"},
+            json={
+                "payload_bytes": '{"index":10}',
+                "tenant_id": "receipt-workload",
+                "workload_type": "LUCAS_PV_SCALING",
+            },
+        )
+        assert submitted.status_code == 202
+        receipt_handle = submitted.json()["verification_receipt"]
+        verified = self.client.get(f"/verify/{receipt_handle}")
+        assert verified.status_code == 200
+        body = verified.json()
+        assert body["qualification_status"] == "VERIFIED"
+        assert body["ed25519_verified"] is True
+        assert body["ml_dsa_verified"] is False
+        assert body["stark_quotient_verified"] is False
+        assert "not a release qualification" in body["invariant_summary"]
+
+    def test_mldsa_receipt_request_fails_closed(self):
+        auth_service.register_tenant("receipt-test-mldsa", "receipt-test-mldsa-token")
+        response = self.client.post(
+            "/verify/receipt?hash_value=receipt-payload&use_ml_dsa=true",
+            headers={"Authorization": "Bearer receipt-test-mldsa-token"},
+        )
+        assert response.status_code == 501
+        assert response.json()["detail"]["error"] == "algorithm_unavailable"
+
