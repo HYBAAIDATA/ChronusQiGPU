@@ -10,6 +10,11 @@ from chronus.stratum.endian_engine import (
     compute_merkle_root_stratum,
     build_header80,
 )
+from chronus.stratum.bip310 import (
+    get_mining_configure_payload,
+    parse_and_intersect_version_mask,
+    build_mining_submit_params,
+)
 
 
 class TestEndianEngine(unittest.TestCase):
@@ -106,6 +111,37 @@ class TestEndianEngine(unittest.TestCase):
         computed_hash_be = sha256d(header)[::-1].hex()
         self.assertEqual(computed_hash_be, data["block_hash_be"])
         self.assertEqual(computed_hash_be, "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206")
+
+    def test_bip310_configure_payload_matches_directive(self):
+        self.assertEqual(
+            get_mining_configure_payload(),
+            ["version-rolling",
+             {"version-rolling.mask": "1fffe000",
+              "version-rolling.min-bit-count": 16}]
+        )
+
+    def test_bip310_refuses_short_mask(self):
+        self.assertEqual(
+            parse_and_intersect_version_mask("0fffffff", "1fffe000"),
+            "00000000"
+        )
+
+    def test_bip310_accepts_long_mask(self):
+        self.assertEqual(
+            parse_and_intersect_version_mask("1fffffff", "1fffe000"),
+            "1fffe000"
+        )
+
+    def test_bip310_submit_arity_5_vs_6(self):
+        # 5 params when version_bits_hex is None
+        params_5 = build_mining_submit_params("worker1", "job1", "00000001", "60000000", "12345678", None)
+        self.assertEqual(len(params_5), 5)
+        self.assertEqual(params_5, ["worker1", "job1", "00000001", "60000000", "12345678"])
+
+        # 6 params when version_bits_hex is not None
+        params_6 = build_mining_submit_params("worker1", "job1", "00000001", "60000000", "12345678", "00002000")
+        self.assertEqual(len(params_6), 6)
+        self.assertEqual(params_6, ["worker1", "job1", "00000001", "60000000", "12345678", "00002000"])
 
 
 if __name__ == "__main__":

@@ -13,21 +13,44 @@ BIP310 Protocol Standards:
     [worker_name, job_id, extranonce2_hex, ntime_hex, nonce_hex]
 """
 
-from typing import Tuple
+from typing import Optional, Tuple
 
 DEFAULT_CLIENT_MASK_HEX: str = "1fffe000"
 MIN_BIT_COUNT: int = 16
 
 
+def get_mining_configure_payload() -> list:
+    return ["version-rolling",
+            {"version-rolling.mask": DEFAULT_CLIENT_MASK_HEX,
+             "version-rolling.min-bit-count": MIN_BIT_COUNT}]
+
+
 def parse_and_intersect_version_mask(server_mask_hex: str, client_mask_hex: str = DEFAULT_CLIENT_MASK_HEX) -> str:
     """
     Intersects client mask with server mask returned by pool during mining.configure.
+    Returning "00000000" means the client refuses version rolling because the negotiated mask is below the BIP310 minimum.
     Returns 8-character hex mask string.
     """
     server_mask = int(server_mask_hex, 16)
     client_mask = int(client_mask_hex, 16)
     intersected = server_mask & client_mask
+    if intersected.bit_count() < MIN_BIT_COUNT:
+        return "00000000"  # refuse to roll
     return f"{intersected:08x}"
+
+
+def build_mining_submit_params(
+    worker_name: str,
+    job_id: str,
+    extranonce2_hex: str,
+    ntime_hex: str,
+    nonce_hex: str,
+    version_bits_hex: Optional[str] = None
+) -> list:
+    base = [worker_name, job_id, extranonce2_hex, ntime_hex, nonce_hex]
+    if version_bits_hex is not None:
+        return base + [version_bits_hex]
+    return base
 
 
 def apply_version_rolling(base_version_hex_or_int: str | int, pool_mask_hex_or_int: str | int, rolled_bits_int: int) -> Tuple[int, str]:

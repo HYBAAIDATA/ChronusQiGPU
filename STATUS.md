@@ -40,7 +40,7 @@
 
 ## THESEUS
 STATE: DONE
-COMMIT: PENDING
+COMMIT: a2868c1d292419bc3f28663a32c3b97a5c42d024
 TESTS: 11/11 — pytest tests/test_endian_engine.py -v
 BLOCKERS: none
 RISKS: bip310 submit-arity builder is not yet wired into gateway.py or master_e2e_engine.py; Toe/Mining must wire it before live submit. Real mining.notify capture absent from tests/vectors/; replay is synthetic-only.
@@ -48,9 +48,8 @@ RISKS: bip310 submit-arity builder is not yet wired into gateway.py or master_e2
 ---
 
 ## TOE
-
 STATE: DONE_WITH_BLOCKER
-COMMIT: 49b7ec9a54e54b5dad53d40d5a36fbd2227a5189
+COMMIT: 4d6e5a7cba46938a85320af995536b103c030fcd
 TESTS: 13 passed/13 total — pytest tests/test_gateway.py tests/test_sharding.py -v
 BLOCKERS: BLOCKER_TOE_1.patch
 RISKS: compute_version_bits/emit_share_candidate are TEST_ONLY; consumer wiring is Mining/Ovid's responsibility.
