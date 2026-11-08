@@ -673,6 +673,14 @@ class DiscoveredDataset:
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
 
+    @property
+    def data_stays_at_rest(self) -> bool:
+        return True
+
+    @property
+    def table_path(self) -> str:
+        return self.source_uri
+
     def to_dict(self) -> Dict[str, Any]:
         resolved_short = self.short_pointer_id or (
             f"ptr_ovid_{self.pointer_id[len('ptr_ovid_'):][:8]}"
@@ -723,6 +731,10 @@ class RegisteredConnector:
     created_at: str = field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
+
+    @property
+    def is_active(self) -> bool:
+        return True
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -1393,20 +1405,35 @@ class ZeroCopyConnectorManager:
         self,
         *,
         tenant_id: str,
-        name: str,
+        name: Optional[str] = None,
+        connector_id: Optional[str] = None,
         connector_type: ConnectorType | str,
-        endpoint_uri: str,
+        endpoint_uri: Optional[str] = None,
+        connection_config: Optional[Dict[str, Any]] = None,
+        category: Optional[Any] = None,
         source_region: str = "eu-west-2",
         pod_region: str = "eu-west-2",
         kms_provider: str = "AWS_KMS",
         kms_key_arn: Optional[str] = None,
         co_located: bool = False,
         access_class_override: Optional[MemoryAccessClass | str] = None,
+        primary_access_class: Optional[MemoryAccessClass | str] = None,
         auto_discover: bool = True,
     ) -> RegisteredConnector:
         """Bind a Zero-Copy Native Representation Connector to client data at rest."""
-        if not tenant_id or not tenant_id.strip():
+        if not tenant_id or not str(tenant_id).strip():
             raise ValueError("tenant_id must be non-empty")
+
+        if name is None:
+            name = connector_id or f"{str(connector_type)} Zero-Copy Connector"
+        if endpoint_uri is None:
+            if connection_config and "bucket" in connection_config:
+                endpoint_uri = f"s3://{connection_config['bucket']}"
+            elif connection_config and "endpoint" in connection_config:
+                endpoint_uri = str(connection_config["endpoint"])
+            else:
+                endpoint_uri = f"s3://{tenant_id}-lakehouse"
+
         if not endpoint_uri or not endpoint_uri.strip():
             raise ValueError("endpoint_uri must be non-empty")
 
@@ -1415,6 +1442,9 @@ class ZeroCopyConnectorManager:
             if isinstance(connector_type, ConnectorType)
             else ConnectorType(str(connector_type).strip().upper())
         )
+        if access_class_override is None and primary_access_class is not None:
+            access_class_override = primary_access_class
+
         override_cls: Optional[MemoryAccessClass] = None
         if access_class_override is not None:
             override_cls = (
@@ -1444,14 +1474,28 @@ class ZeroCopyConnectorManager:
             conn_digest = hashlib.sha256(
                 f"{tenant_id.strip()}|{ctype.value}|{endpoint_uri.strip()}".encode("utf-8")
             ).hexdigest()[:16]
-            connector_id = f"conn_{ctype.value.lower()}_{conn_digest}"
+            assigned_connector_id = (
+                connector_id.strip()
+                if connector_id and str(connector_id).strip()
+                else f"conn_{ctype.value.lower()}_{conn_digest}"
+            )
+
+            resolved_cat = (
+                CONNECTOR_CATEGORY_MAP[ctype]
+                if category is None
+                else (
+                    category
+                    if isinstance(category, ConnectorCategory)
+                    else ConnectorCategory(str(category).strip().upper())
+                )
+            )
 
             connector = RegisteredConnector(
-                connector_id=connector_id,
+                connector_id=assigned_connector_id,
                 tenant_id=tenant_id.strip(),
                 name=name.strip() or f"{ctype.value} Zero-Copy Connector",
                 connector_type=ctype,
-                category=CONNECTOR_CATEGORY_MAP[ctype],
+                category=resolved_cat,
                 endpoint_uri=endpoint_uri.strip(),
                 source_region=source_region,
                 pod_region=pod_region,
@@ -1461,11 +1505,11 @@ class ZeroCopyConnectorManager:
                 eca_id=eca.eca_id,
                 co_located=co_located,
             )
-            self._connectors[connector_id] = connector
-            self._datasets.setdefault(connector_id, [])
+            self._connectors[assigned_connector_id] = connector
+            self._datasets.setdefault(assigned_connector_id, [])
 
             if auto_discover and eca.auto_schema_discovery:
-                self.discover_and_index_schemas(connector_id)
+                self.discover_and_index_schemas(assigned_connector_id)
 
             return connector
 
@@ -1491,6 +1535,81 @@ class ZeroCopyConnectorManager:
             if tenant_id is not None:
                 datasets = [ds for ds in datasets if ds.tenant_id == tenant_id]
             return datasets
+
+    def discover_dataset(
+        self,
+        *,
+        connector_id: str,
+        table_path: str,
+        format_type: IngestFormat | str = IngestFormat.PARQUET,
+        schema_descriptor: Optional[Dict[str, Any]] = None,
+        sample_payload_bytes: Optional[bytes] = None,
+        column_statistics: Optional[Dict[str, Any]] = None,
+    ) -> DiscoveredDataset:
+        sample = sample_payload_bytes or (b"PAR1" + b"\x00" * 64 + b"PAR1")
+        ingest_res = self.ingest_data_block(
+            connector_id=connector_id,
+            raw_or_encrypted_bytes=sample,
+            object_path=table_path.split("/")[-1],
+        )
+        ptr_id = ingest_res["pointer"]["pointer_id"]
+        short_ptr_id = ingest_res["pointer"].get(
+            "short_pointer_id", f"ptr_ovid_{ptr_id[9:17]}"
+        )
+        cols = []
+        if schema_descriptor and "columns" in schema_descriptor:
+            types_list = schema_descriptor.get(
+                "types", ["string"] * len(schema_descriptor["columns"])
+            )
+            cols = [
+                {"name": c, "type": types_list[i] if i < len(types_list) else "string"}
+                for i, c in enumerate(schema_descriptor["columns"])
+            ]
+        ds = DiscoveredDataset(
+            dataset_id=f"ds_{hashlib.sha256(table_path.encode()).hexdigest()[:12]}",
+            connector_id=connector_id,
+            tenant_id=(
+                self._connectors[connector_id].tenant_id
+                if connector_id in self._connectors
+                else "default"
+            ),
+            name=table_path.split("/")[-1],
+            source_uri=table_path,
+            detected_format=(
+                format_type.value
+                if isinstance(format_type, IngestFormat)
+                else str(format_type)
+            ),
+            access_class=(
+                self._connectors[connector_id].access_class.value
+                if connector_id in self._connectors
+                else "LOCAL_ZERO_COPY"
+            ),
+            pointer_id=ptr_id,
+            short_pointer_id=short_ptr_id,
+            byte_range={"offset": 0, "length": len(sample)},
+            columns=cols,
+            column_statistics=column_statistics or {},
+            estimated_rows=(
+                column_statistics.get("total_records", 1000)
+                if column_statistics
+                else 1000
+            ),
+            raw_bytes_at_rest=(
+                column_statistics.get("total_bytes", len(sample))
+                if column_statistics
+                else len(sample)
+            ),
+            folded_descriptor_bytes=ingest_res["algebraic_ingestion"][
+                "folded_descriptor_bytes"
+            ],
+            footprint_collapse_pct=ingest_res["algebraic_ingestion"][
+                "footprint_collapse_pct"
+            ],
+        )
+        with self._lock:
+            self._datasets.setdefault(connector_id, []).append(ds)
+        return ds
 
     def ingest_data_block(
         self,

@@ -6,7 +6,12 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from chronus.backends.lattice import LatticeOverflowError, PhiElement, phi_power, verify_fold
+from chronus.backends.lattice import (
+    LatticeOverflowError,
+    PhiElement,
+    phi_power,
+    verify_fold,
+)
 from chronus.backends.opencl_pv import OpenCLPVBackend
 from chronus.execution import execution_router
 from chronus.service.app import create_app
@@ -28,12 +33,13 @@ if cl is None or np is None:
     pytestmark = pytest.mark.skip(reason="pyopencl or numpy not available")
 
 
-
 @pytest.fixture(scope="module")
 def cpu_opencl():
     try:
         devices = [
-            d for p in cl.get_platforms() for d in p.get_devices()
+            d
+            for p in cl.get_platforms()
+            for d in p.get_devices()
             if d.type & cl.device_type.CPU
         ]
     except cl.Error:
@@ -64,7 +70,10 @@ def test_real_kernel_matches_python_reference(cpu_opencl, order):
 
 def test_real_kernel_random_inputs_and_boundaries(cpu_opencl):
     rng = random.Random(590)
-    values = [PhiElement(rng.randrange(-(2**63), 2**63), rng.randrange(-(2**63), 2**63)) for _ in range(100)]
+    values = [
+        PhiElement(rng.randrange(-(2**63), 2**63), rng.randrange(-(2**63), 2**63))
+        for _ in range(100)
+    ]
     values += [PhiElement(-(2**63), 0), PhiElement(2**63 - 1, -1)]
     for order in (0, 1, 50, 90, 180):
         outputs, _ = cpu_opencl._dispatch(values, phi_power(order))
@@ -74,18 +83,36 @@ def test_real_kernel_random_inputs_and_boundaries(cpu_opencl):
 @pytest.mark.parametrize(
     ("factor", "values", "expected_tiers"),
     [
-        (PhiElement(1, 0), [PhiElement(-(2**63), 2**63 - 1)],
-         {"executed_64_bit": 1, "executed_128_bit": 0, "executed_256_bit": 0}),
-        (PhiElement(2, 2), [PhiElement(2**63 - 1, -(2**63 - 1))],
-         {"executed_64_bit": 0, "executed_128_bit": 1, "executed_256_bit": 0}),
-        (PhiElement(2**64, 0), [PhiElement(-(2**63), 0)],
-         {"executed_64_bit": 0, "executed_128_bit": 1, "executed_256_bit": 0}),
-        (PhiElement(2**65, 0), [PhiElement(-(2**63), 0)],
-         {"executed_64_bit": 0, "executed_128_bit": 0, "executed_256_bit": 1}),
-        (PhiElement(1, 1), [PhiElement(1, 1), PhiElement(2**63 - 1, 2**63 - 1)],
-         {"executed_64_bit": 1, "executed_128_bit": 1, "executed_256_bit": 0}),
-        (PhiElement(2**127, 0), [PhiElement(0, 0)],
-         {"executed_64_bit": 0, "executed_128_bit": 0, "executed_256_bit": 1}),
+        (
+            PhiElement(1, 0),
+            [PhiElement(-(2**63), 2**63 - 1)],
+            {"executed_64_bit": 1, "executed_128_bit": 0, "executed_256_bit": 0},
+        ),
+        (
+            PhiElement(2, 2),
+            [PhiElement(2**63 - 1, -(2**63 - 1))],
+            {"executed_64_bit": 0, "executed_128_bit": 1, "executed_256_bit": 0},
+        ),
+        (
+            PhiElement(2**64, 0),
+            [PhiElement(-(2**63), 0)],
+            {"executed_64_bit": 0, "executed_128_bit": 1, "executed_256_bit": 0},
+        ),
+        (
+            PhiElement(2**65, 0),
+            [PhiElement(-(2**63), 0)],
+            {"executed_64_bit": 0, "executed_128_bit": 0, "executed_256_bit": 1},
+        ),
+        (
+            PhiElement(1, 1),
+            [PhiElement(1, 1), PhiElement(2**63 - 1, 2**63 - 1)],
+            {"executed_64_bit": 1, "executed_128_bit": 1, "executed_256_bit": 0},
+        ),
+        (
+            PhiElement(2**127, 0),
+            [PhiElement(0, 0)],
+            {"executed_64_bit": 0, "executed_128_bit": 0, "executed_256_bit": 1},
+        ),
     ],
 )
 def test_real_kernel_execution_tiers(cpu_opencl, factor, values, expected_tiers):
@@ -114,9 +141,13 @@ def test_real_kernel_random_factors_and_tier_counts(cpu_opencl):
             ac, bd = value.a * factor.a, value.b * factor.b
             ad, bc = value.a * factor.b, value.b * factor.a
             intermediates = [ac, bd, ad, bc, ac + bd, ad + bc, ad + bc + bd]
+
             def fits(width):
-                return all(-(2 ** (width - 1)) <= x < 2 ** (width - 1)
-                           for x in [factor.a, factor.b, *intermediates])
+                return all(
+                    -(2 ** (width - 1)) <= x < 2 ** (width - 1)
+                    for x in [factor.a, factor.b, *intermediates]
+                )
+
             tier = 64 if fits(64) else 128 if fits(128) else 256
             expected[f"executed_{tier}_bit"] += 1
         assert tiers == expected
@@ -139,7 +170,9 @@ def test_dispatch_receipt_and_norm_are_verified_on_cpu_runtime(cpu_opencl, monke
 
 
 @pytest.mark.parametrize("corrupt", [False, True])
-def test_api_path_rejects_mismatched_opencl_result(cpu_opencl, tmp_path, monkeypatch, corrupt):
+def test_api_path_rejects_mismatched_opencl_result(
+    cpu_opencl, tmp_path, monkeypatch, corrupt
+):
     monkeypatch.setattr(cpu_opencl, "execution_mode", "SOFTWARE_EXECUTION")
     monkeypatch.setattr(service_config, "execution_backend_url", None)
     monkeypatch.setattr(
@@ -148,14 +181,17 @@ def test_api_path_rejects_mismatched_opencl_result(cpu_opencl, tmp_path, monkeyp
     monkeypatch.setitem(execution_router._backends, cpu_opencl.name, cpu_opencl)
     if corrupt:
         monkeypatch.setattr(
-            cpu_opencl, "_dispatch",
+            cpu_opencl,
+            "_dispatch",
             lambda values, factor: ([PhiElement(-1, 0)], {"executed_64_bit": 1}),
         )
     auth_service.register_tenant("opencl-test", "opencl-test-token")
-    payload = json.dumps({
-        "order": 90,
-        "values": [{"a": "1", "b": "0", "denominator": "1"}],
-    })
+    payload = json.dumps(
+        {
+            "order": 90,
+            "values": [{"a": "1", "b": "0", "denominator": "1"}],
+        }
+    )
     with TestClient(create_app()) as client:
         response = client.post(
             "/workloads/submit",

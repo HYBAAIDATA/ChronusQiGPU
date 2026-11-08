@@ -25,15 +25,16 @@ from chronus.security.al_haras.engine import CyclotomicZ5
 
 
 class SatelliteOrbitClass(str, Enum):
-    LEO_TACTICAL = "LEO_TACTICAL"         # 500 - 1200 km (SDA PWSA Tranche 1/2)
-    MEO_NAVIGATION = "MEO_NAVIGATION"     # 20,000 km (GPS III / sovereign PNT)
-    GEO_STRATEGIC = "GEO_STRATEGIC"       # 36,000 km (Early Warning / SBIRS)
-    DEEP_SPACE_LUNAR = "DEEP_SPACE_LUNAR" # Cislunar Gateway
+    LEO_TACTICAL = "LEO_TACTICAL"  # 500 - 1200 km (SDA PWSA Tranche 1/2)
+    MEO_NAVIGATION = "MEO_NAVIGATION"  # 20,000 km (GPS III / sovereign PNT)
+    GEO_STRATEGIC = "GEO_STRATEGIC"  # 36,000 km (Early Warning / SBIRS)
+    DEEP_SPACE_LUNAR = "DEEP_SPACE_LUNAR"  # Cislunar Gateway
 
 
 @dataclass
 class SatelliteNode:
     """An orbital spacecraft node in the sovereign constellation."""
+
     sat_id: str
     orbit: SatelliteOrbitClass
     position_km: Tuple[float, float, float]
@@ -107,7 +108,9 @@ class OrbitalConstellationMesh:
         # Base expander degree k = 258 over F_257, lambda_2 <= 2*sqrt(p-1)
         original_gap = 229.14
         # Even with up to 35% link degradation, expander mass gap remains strictly positive
-        degraded_gap = original_gap * (1.0 - (len(severed_links) / max(len(self.links), 1)) * 0.15)
+        degraded_gap = original_gap * (
+            1.0 - (len(severed_links) / max(len(self.links), 1)) * 0.15
+        )
         zero_stall = degraded_gap > 100.0
 
         t1 = time.perf_counter()
@@ -147,11 +150,15 @@ class OrbitalConstellationMesh:
     ]
 
     @classmethod
-    def create_reference_constellation(cls, num_satellites: int = 16) -> "OrbitalConstellationMesh":
+    def create_reference_constellation(
+        cls, num_satellites: int = 16
+    ) -> "OrbitalConstellationMesh":
         """Factory creating a canonical 16-satellite SDA PWSA mesh."""
         mesh = cls(constellation_name="US_SPACE_FORCE_SDA_PWSA_V36")
         for i in range(num_satellites):
-            pos = cls._CANONICAL_ORBITAL_COORDS_16[i % len(cls._CANONICAL_ORBITAL_COORDS_16)]
+            pos = cls._CANONICAL_ORBITAL_COORDS_16[
+                i % len(cls._CANONICAL_ORBITAL_COORDS_16)
+            ]
             node = SatelliteNode(
                 sat_id=f"SAT_SDA_{i:02d}",
                 orbit=SatelliteOrbitClass.LEO_TACTICAL,

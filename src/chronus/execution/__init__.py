@@ -11,7 +11,9 @@ from chronus.execution.reference import (
     NativeMathReferenceBackend,
     execution_router,
 )
-from chronus.execution.systemverilog_backend import SystemVerilogHardwareSimulatorBackend
+from chronus.execution.systemverilog_backend import (
+    SystemVerilogHardwareSimulatorBackend,
+)
 from chronus.execution.cuda_backend import CUDABackendAdapter
 from chronus.execution.opencl_backend import OpenCLAcceleratorBackend
 

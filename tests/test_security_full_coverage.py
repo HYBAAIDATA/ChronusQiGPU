@@ -12,10 +12,12 @@
 
 import hashlib
 import os
-import pytest
-from hypothesis import HealthCheck, given, settings, strategies as st
-from fastapi.testclient import TestClient
 import sys
+
+import pytest
+from fastapi.testclient import TestClient
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
@@ -26,23 +28,23 @@ FAST_HYPOTHESIS = settings(
 )
 
 from chronus.security import (
-    SecurityContext,
-    MLDSASigner,
-    Ed25519Signer,
-    ZKSTARKVerifier,
-    OVIDReceipt,
-    OVIDStorage,
-    OVIDZeroCopyPointer,
-    VerifyEndpoint,
     ALHarasSecurityFabric,
+    ALHarasSovereignOSProduct,
+    ALHarasTopologicalKernel,
     CellularSheafCohomology,
     CyclotomicZ5,
+    Ed25519Signer,
     ExactQ5,
     GaloisField257Phi,
     HeckeModularChecksum,
-    ALHarasTopologicalKernel,
-    ALHarasSovereignOSProduct,
     HyperscaleDefenseSimulationEngine,
+    MLDSASigner,
+    OVIDReceipt,
+    OVIDStorage,
+    OVIDZeroCopyPointer,
+    SecurityContext,
+    VerifyEndpoint,
+    ZKSTARKVerifier,
 )
 from chronus.security.kms import (
     CloudKMSProvider,
@@ -60,10 +62,10 @@ from chronus.security.norm_proof import (
 )
 from chronus.service.app import create_app
 
-
 # ==============================================================================
 # SECTION 1: PROPERTY-BASED ALGEBRAIC & TOPOLOGICAL INVARIANTS (HYPOTHESIS)
 # ==============================================================================
+
 
 class TestPropertyInvariants:
     """Hypothesis-driven property testing of algebraic and topological invariants."""
@@ -93,7 +95,9 @@ class TestPropertyInvariants:
         st.integers(min_value=-20, max_value=20),
         st.integers(min_value=-20, max_value=20),
     )
-    def test_cyclotomic_z5_multiplication_commutativity(self, a0, a1, a2, a3, b0, b1, b2, b3):
+    def test_cyclotomic_z5_multiplication_commutativity(
+        self, a0, a1, a2, a3, b0, b1, b2, b3
+    ):
         """Invariant: a * b == b * a in Z[ζ_5]."""
         a = CyclotomicZ5(a0, a1, a2, a3)
         b = CyclotomicZ5(b0, b1, b2, b3)
@@ -148,7 +152,15 @@ class TestPropertyInvariants:
         assert "√5" in repr(q)
 
     @FAST_HYPOTHESIS
-    @given(st.lists(st.floats(min_value=-100.0, max_value=100.0, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
+    @given(
+        st.lists(
+            st.floats(
+                min_value=-100.0, max_value=100.0, allow_nan=False, allow_infinity=False
+            ),
+            min_size=3,
+            max_size=3,
+        )
+    )
     def test_sheaf_cohomology_identical_nodes_zero_norm(self, vec):
         """Invariant: Identical state vectors yield strictly zero first cohomology class H^1 = 0."""
         nodes = [list(vec), list(vec), list(vec), list(vec)]
@@ -159,7 +171,16 @@ class TestPropertyInvariants:
     @FAST_HYPOTHESIS
     @given(
         st.lists(
-            st.lists(st.floats(min_value=-50.0, max_value=50.0, allow_nan=False, allow_infinity=False), min_size=3, max_size=3),
+            st.lists(
+                st.floats(
+                    min_value=-50.0,
+                    max_value=50.0,
+                    allow_nan=False,
+                    allow_infinity=False,
+                ),
+                min_size=3,
+                max_size=3,
+            ),
             min_size=2,
             max_size=5,
         )
@@ -173,6 +194,7 @@ class TestPropertyInvariants:
 # ==============================================================================
 # SECTION 2: ADVERSARIAL STRIKES & ZERO-DAY INJECTION HARDENING
 # ==============================================================================
+
 
 class TestAdversarialHardening:
     """Stress testing the topological immunity fabric against adversarial vectors."""
@@ -206,7 +228,10 @@ class TestAdversarialHardening:
         assert res["sheaf_cohomology"]["h0_consensus"] is False
         assert res["sheaf_cohomology"]["h1_vortex_norm"] > 1.0
         assert res["dsw_self_healing"]["healing_cycles"] == 1
-        assert res["dsw_self_healing"]["cobordism_type"] == "INSTANTON_COBORDISM_TRACE_HEALED"
+        assert (
+            res["dsw_self_healing"]["cobordism_type"]
+            == "INSTANTON_COBORDISM_TRACE_HEALED"
+        )
 
     def test_passphrase_spoofing_tamper_resistance(self):
         """Only exact 'SPEAK FRIEND AND ENTER' unlocks clean admission."""
@@ -293,6 +318,7 @@ class TestAdversarialHardening:
 # SECTION 3: UNIT TESTING OF ALL CLASSES & EDGE BRANCHES
 # ==============================================================================
 
+
 class TestSecurityUnitCoverage:
     """Complete unit coverage across all internal classes, methods, and branches."""
 
@@ -350,7 +376,9 @@ class TestSecurityUnitCoverage:
         assert adv_res["dsw_instanton_healing"]["repair_latency_cycles"] == 1
 
         # Manifest
-        manifest = ALHarasSovereignOSProduct.get_sovereign_product_manifest("SOVEREIGN_POD_ALPHA")
+        manifest = ALHarasSovereignOSProduct.get_sovereign_product_manifest(
+            "SOVEREIGN_POD_ALPHA"
+        )
         assert manifest["system_invariants"] == "94/94_GREEN_CERTIFIED"
         assert manifest["release_gate"] == "G1-G8_PRODUCTION_QUALIFIED"
 
@@ -370,7 +398,9 @@ class TestSecurityUnitCoverage:
             storage.store("not_bytes_string")  # type: ignore
 
         # Create receipt
-        receipt = storage.create_receipt(ovid_id, ml_dsa_signature="sig_mldsa", ed25519_signature="sig_ed25519")
+        receipt = storage.create_receipt(
+            ovid_id, ml_dsa_signature="sig_mldsa", ed25519_signature="sig_ed25519"
+        )
         assert receipt.receipt_id == ovid_id
         assert storage.get_receipt(ovid_id) is not None
         assert storage.verify_receipt(receipt) is True
@@ -406,7 +436,9 @@ class TestSecurityUnitCoverage:
         ed_sig = ed_signer.sign(oid.encode("ascii"))
         ml_sig = ml_signer.sign(oid.encode("ascii"))
 
-        receipt = storage.create_receipt(oid, ml_dsa_signature=ml_sig, ed25519_signature=ed_sig)
+        receipt = storage.create_receipt(
+            oid, ml_dsa_signature=ml_sig, ed25519_signature=ed_sig
+        )
         assert endpoint.verify_receipt(receipt) is True
 
         # Zero auth verification
@@ -441,7 +473,9 @@ class TestSecurityUnitCoverage:
         sk_hex = mldsa_signer._private_key.hex() if mldsa_signer._private_key else ""
         local.register_mldsa_key(mldsa_kid, sk_hex, pk_hex or "")
         sig_mldsa = local.sign(mldsa_kid, b"MLDSA_MSG", algorithm="ML-DSA")
-        assert local.verify(mldsa_kid, b"MLDSA_MSG", sig_mldsa, algorithm="ML-DSA") is True
+        assert (
+            local.verify(mldsa_kid, b"MLDSA_MSG", sig_mldsa, algorithm="ML-DSA") is True
+        )
 
         # Unsupported algorithm
         with pytest.raises(ValueError):
@@ -529,6 +563,7 @@ class TestSecurityUnitCoverage:
 # SECTION 4: INTEGRATION & END-TO-END DEFENSE OPERATIONS
 # ==============================================================================
 
+
 class TestEndToEndDefenseOperations:
     """Full lifecycle testing from Ingress to OVID storage, REST APIs, and Defense Frontiers."""
 
@@ -553,7 +588,12 @@ class TestEndToEndDefenseOperations:
         assert data["admitted_to_execution_fabric"] is True
         assert data["sheaf_cohomology"]["h0_harmonic_section"] is True
         assert data["dsw_instanton_self_healing"]["repair_latency_cycles"] == 0
-        assert data["sovereign_governance"]["ncsc_14_principles"]["P1_Data_in_Transit_Protection"] == "COMPLIANT_PASS"
+        assert (
+            data["sovereign_governance"]["ncsc_14_principles"][
+                "P1_Data_in_Transit_Protection"
+            ]
+            == "COMPLIANT_PASS"
+        )
 
     def test_e2e_adversarial_failover_and_monopole_healing(self, client):
         """Hostile injection blocked at Sheaf boundary and healed via DSW cobordism."""
@@ -568,13 +608,18 @@ class TestEndToEndDefenseOperations:
         data = resp.json()
         assert data["admitted_to_execution_fabric"] is False
         assert data["sheaf_cohomology"]["h0_harmonic_section"] is False
-        assert data["dsw_instanton_self_healing"]["cobordism_status"] == "INSTANTON_COBORDISM_TRACE_HEALED"
+        assert (
+            data["dsw_instanton_self_healing"]["cobordism_status"]
+            == "INSTANTON_COBORDISM_TRACE_HEALED"
+        )
         assert data["dsw_instanton_self_healing"]["repair_latency_cycles"] == 1
         assert len(data["dsw_instanton_self_healing"]["healed_trace_hash"]) == 64
 
     def test_e2e_all_four_defense_frontiers(self, client):
         """Simulate all 4 Defense Frontiers in a coordinated wargaming scenario."""
-        resp = client.post("/v1/al-haras/frontiers/simulate", json={"frontier_id": "ALL"})
+        resp = client.post(
+            "/v1/al-haras/frontiers/simulate", json={"frontier_id": "ALL"}
+        )
         assert resp.status_code == 200
         data = resp.json()
 
@@ -599,12 +644,15 @@ class TestEndToEndDefenseOperations:
         f4 = data["frontier_4_nato_cni"]
         assert f4["frontier"] == "FRONTIER_4_NATO_CNI_SELF_HEALING_DEFENSE"
         assert f4["dsw_instanton_monopole"]["healing_cycles"] == 1
-        assert f4["cni_defense_posture"] == "TOPOLOGICALLY_HEALED_UNINTERRUPTED_OPERATION"
+        assert (
+            f4["cni_defense_posture"] == "TOPOLOGICALLY_HEALED_UNINTERRUPTED_OPERATION"
+        )
 
 
 # ==============================================================================
 # SECTION 5: DEEP BRANCH & EDGE CASE COVERAGE (100% INVARIANT VERIFICATION)
 # ==============================================================================
+
 
 class TestEdgeCasesAndDeepCoverage:
     """Targeted coverage for edge branches across the entire security architecture."""
@@ -634,15 +682,24 @@ class TestEdgeCasesAndDeepCoverage:
         assert clean_res["dsw_instanton_healing"]["repair_latency_cycles"] == 0
 
         # Adversarial process
-        adv_res = kernel.execute_sovereign_process("proc_adv", b"MALICIOUS_ATTACK_VECTOR")
+        adv_res = kernel.execute_sovereign_process(
+            "proc_adv", b"MALICIOUS_ATTACK_VECTOR"
+        )
         assert adv_res["process_admitted"] is False
-        assert adv_res["dsw_instanton_healing"]["cobordism_status"] == "INSTANTON_COBORDISM_TRACE_HEALED"
+        assert (
+            adv_res["dsw_instanton_healing"]["cobordism_status"]
+            == "INSTANTON_COBORDISM_TRACE_HEALED"
+        )
         assert adv_res["dsw_instanton_healing"]["repair_latency_cycles"] == 1
 
         # Manifest
-        manifest = ALHarasSovereignOSProduct.get_sovereign_product_manifest("UK_NATIONAL_CYBER_DEFENCE")
+        manifest = ALHarasSovereignOSProduct.get_sovereign_product_manifest(
+            "UK_NATIONAL_CYBER_DEFENCE"
+        )
         assert manifest["product_name"] == "AL_HARAS_TOPOLOGICAL_OS_SOVEREIGN_EDITION"
-        assert manifest["governance_standards"]["fedramp_high"] == "FEDRAMP_HIGH_CERTIFIED"
+        assert (
+            manifest["governance_standards"]["fedramp_high"] == "FEDRAMP_HIGH_CERTIFIED"
+        )
 
     def test_kms_in_memory_stream_encryption_and_errors(self):
         """Covers RAM-only KMS envelope encryption, decryption, and error branches."""
@@ -738,7 +795,9 @@ class TestEdgeCasesAndDeepCoverage:
             )
 
         # 4. Negative offset or length
-        with pytest.raises(ValueError, match="byte_offset must be a non-negative integer"):
+        with pytest.raises(
+            ValueError, match="byte_offset must be a non-negative integer"
+        ):
             OVIDZeroCopyPointer(
                 pointer_id=valid_ptr_id,
                 content_hash=valid_hash,
@@ -748,7 +807,9 @@ class TestEdgeCasesAndDeepCoverage:
                 byte_offset=-1,
                 byte_length=10,
             )
-        with pytest.raises(ValueError, match="byte_length must be a non-negative integer"):
+        with pytest.raises(
+            ValueError, match="byte_length must be a non-negative integer"
+        ):
             OVIDZeroCopyPointer(
                 pointer_id=valid_ptr_id,
                 content_hash=valid_hash,
@@ -825,24 +886,33 @@ class TestEdgeCasesAndDeepCoverage:
     def test_norm_proof_edge_branches(self):
         """Covers _add, NormProof validation, and zero nonce randomizer retry."""
         from chronus.security.norm_proof import _add
+
         assert _add((1, 2), (3, 4)) == (4, 6)
 
         # NormProof validation error on statement type
-        with pytest.raises(ValueError, match="statement and commitment must be integers"):
-            NormProof.from_dict({"statement": "bad", "commitment": 1, "response": [1, 2]})
+        with pytest.raises(
+            ValueError, match="statement and commitment must be integers"
+        ):
+            NormProof.from_dict(
+                {"statement": "bad", "commitment": 1, "response": [1, 2]}
+            )
 
         # NormProof validation error on response length
         with pytest.raises(ValueError, match="response must be a pair"):
-            NormProof.from_dict({"statement": 1, "commitment": 1, "response": [1, 2, 3]})
+            NormProof.from_dict(
+                {"statement": 1, "commitment": 1, "response": [1, 2, 3]}
+            )
 
         # Nonce = 0 triggers retry loop in prove
         p = prove((5, 10), nonce=0)
         from chronus.security.norm_proof import verify as verify_norm
+
         assert verify_norm(p) is True
 
     def test_stark_verifier_air_and_merkle_branches(self):
         """Covers polynomial verification, empty Merkle trees, and odd leaf trees."""
-        from chronus.security.stark import _merkle_root, _merkle_path
+        from chronus.security.stark import _merkle_path, _merkle_root
+
         # Empty leaves
         assert len(_merkle_root([])) == 64
         # Odd leaves
@@ -865,4 +935,3 @@ class TestEdgeCasesAndDeepCoverage:
         trace = [1, 2, 3, 4, 5, 6, 7, 8]
         valid_proof = v.generate_proof(trace, public_input={"start": 1, "end": 8})
         assert v.verify_proof(valid_proof, public_input={"end": 999}) is False
-

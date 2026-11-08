@@ -95,7 +95,11 @@ def create_app() -> FastAPI:
                     message="Request validation failed",
                     details={
                         "errors": [
-                            {key: error[key] for key in ("type", "loc", "msg") if key in error}
+                            {
+                                key: error[key]
+                                for key in ("type", "loc", "msg")
+                                if key in error
+                            }
                             for error in exc.errors()
                         ]
                     },

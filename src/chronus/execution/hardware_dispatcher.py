@@ -23,7 +23,9 @@ from chronus.backends.lattice import HardwareUnavailableError
 from chronus.execution.cuda_backend import CUDABackendAdapter
 from chronus.execution.opencl_backend import OpenCLAcceleratorBackend
 from chronus.execution.reference import NativeMathReferenceBackend
-from chronus.execution.systemverilog_backend import SystemVerilogHardwareSimulatorBackend
+from chronus.execution.systemverilog_backend import (
+    SystemVerilogHardwareSimulatorBackend,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -107,9 +109,13 @@ class HardwareAcceleratorDispatcher:
 
         try:
             # Memory limit check
-            max_bytes = getattr(backend, "max_device_memory_bytes", None) or getattr(backend, "max_payload_bytes", 1024 * 1024)
+            max_bytes = getattr(backend, "max_device_memory_bytes", None) or getattr(
+                backend, "max_payload_bytes", 1024 * 1024
+            )
             if len(payload) > max_bytes:
-                raise ValueError(f"Payload size {len(payload)} exceeds target memory limit {max_bytes}")
+                raise ValueError(
+                    f"Payload size {len(payload)} exceeds target memory limit {max_bytes}"
+                )
 
             # Execution with watchdog timeout
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
@@ -117,14 +123,20 @@ class HardwareAcceleratorDispatcher:
                 try:
                     result = future.result(timeout=timeout)
                 except concurrent.futures.TimeoutError as exc:
-                    raise TimeoutError(f"Execution timed out on {target_name} after {timeout}s") from exc
+                    raise TimeoutError(
+                        f"Execution timed out on {target_name} after {timeout}s"
+                    ) from exc
 
         except (HardwareUnavailableError, TimeoutError, Exception) as fault:
             # 3. Fault handling: automatic fallback to mathematical reference backend
-            if target_name != self._reference_backend.name and self._reference_backend.supports(workload_type):
+            if (
+                target_name != self._reference_backend.name
+                and self._reference_backend.supports(workload_type)
+            ):
                 logger.warning(
                     "Fault on hardware target '%s': %s. Engaging automatic reference fallback.",
-                    target_name, fault
+                    target_name,
+                    fault,
                 )
                 fallback_occurred = True
                 fallback_reason = str(fault)
@@ -160,7 +172,9 @@ class HardwareAcceleratorDispatcher:
 
         if isinstance(result, dict):
             result["runtime_classification"] = classification
-            result["execution_mode"] = getattr(backend, "execution_mode", classification)
+            result["execution_mode"] = getattr(
+                backend, "execution_mode", classification
+            )
             if fallback_occurred:
                 result["hardware_fallback"] = {
                     "faulted_target": target_name,

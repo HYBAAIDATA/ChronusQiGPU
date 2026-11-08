@@ -65,7 +65,9 @@ hist.forEach((count, lane) => {{
     summary="Sovereign control plane dashboard",
     description="Renders live QiGPU surfaces, phyllotaxis lane density and workload telemetry.",
 )
-async def console(tenant_id: Optional[str] = Depends(get_current_tenant)) -> HTMLResponse:
+async def console(
+    tenant_id: Optional[str] = Depends(get_current_tenant),
+) -> HTMLResponse:
     if tenant_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -80,12 +82,14 @@ async def console(tenant_id: Optional[str] = Depends(get_current_tenant)) -> HTM
         "storage": storage,
         "workloads": {"total": total_workloads, "active": active_workloads},
     }
-    return HTMLResponse(_PAGE.format(
-        surface_count=len(inventory["surfaces"]),
-        default_surface=inventory["default_surface"],
-        record_count=storage["records"],
-        lane_count=storage["lane_count"],
-        total_workloads=total_workloads,
-        active_workloads=active_workloads,
-        telemetry=json.dumps(telemetry),
-    ))
+    return HTMLResponse(
+        _PAGE.format(
+            surface_count=len(inventory["surfaces"]),
+            default_surface=inventory["default_surface"],
+            record_count=storage["records"],
+            lane_count=storage["lane_count"],
+            total_workloads=total_workloads,
+            active_workloads=active_workloads,
+            telemetry=json.dumps(telemetry),
+        )
+    )

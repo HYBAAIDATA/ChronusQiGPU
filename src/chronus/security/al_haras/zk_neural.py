@@ -22,6 +22,7 @@ from chronus.security.stark import ZKSTARKVerifier, MODULUS
 @dataclass
 class NeuralLayerTrace:
     """Execution trace of a neural network layer in finite field F_p."""
+
     layer_name: str
     input_vector: List[int]
     weights_fingerprint: str
@@ -35,7 +36,9 @@ class VerifiableNeuralComputeEngine:
     Couples AIR polynomial trace constraints with FRI STARK quotient proofs.
     """
 
-    def __init__(self, sovereign_model_id: str = "SOVEREIGN_TARGET_VISION_NET_v4") -> None:
+    def __init__(
+        self, sovereign_model_id: str = "SOVEREIGN_TARGET_VISION_NET_v4"
+    ) -> None:
         self.sovereign_model_id = sovereign_model_id
         self.verifier = ZKSTARKVerifier(security_level=128)
         self._certified_weight_roots: Dict[str, str] = {}
@@ -57,7 +60,7 @@ class VerifiableNeuralComputeEngine:
         Generates an AIR execution trace and zk-STARK proof for a neural inference pass.
         """
         t0 = time.perf_counter()
-        
+
         # Linear layer execution in finite field
         # Step i -> i+1 obeys transition constraint P(next) = P(curr) + 1 (mod p)
         trace_len = 8
@@ -116,6 +119,8 @@ class VerifiableNeuralComputeEngine:
             "model_id": proof_package.get("model_id"),
             "layer_name": proof_package.get("layer_name"),
             "stark_quotient_valid": stark_valid,
-            "status": "INFERENCE_VERIFIED_AUTHENTIC" if stark_valid else "PROOF_REJECTED",
+            "status": "INFERENCE_VERIFIED_AUTHENTIC"
+            if stark_valid
+            else "PROOF_REJECTED",
             "verification_latency_ms": round((t1 - t0) * 1000, 4),
         }

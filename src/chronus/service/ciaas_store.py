@@ -26,15 +26,27 @@ from pydantic import BaseModel, Field
 
 class ChronusCapacityEntitlement(BaseModel):
     """CCE quotas across 5 dimensional axes."""
-    data_at_rest_gb: int = Field(default=1024, description="Data at Rest limit in gigabytes")
-    data_in_motion_gb: int = Field(default=2048, description="Data in Motion limit in gigabytes")
-    data_processed_gb: int = Field(default=8192, description="Data Processed monthly quota in gigabytes")
-    compute_intensity_ccu: int = Field(default=512, description="Reserved CCU compute intensity")
-    concurrency_limit: int = Field(default=32, description="Maximum concurrent 32-lane execution warps")
+
+    data_at_rest_gb: int = Field(
+        default=1024, description="Data at Rest limit in gigabytes"
+    )
+    data_in_motion_gb: int = Field(
+        default=2048, description="Data in Motion limit in gigabytes"
+    )
+    data_processed_gb: int = Field(
+        default=8192, description="Data Processed monthly quota in gigabytes"
+    )
+    compute_intensity_ccu: int = Field(
+        default=512, description="Reserved CCU compute intensity"
+    )
+    concurrency_limit: int = Field(
+        default=32, description="Maximum concurrent 32-lane execution warps"
+    )
 
 
 class TenantProfile(BaseModel):
     """Enterprise tenant record under AL HARAS governance."""
+
     tenant_id: str
     organization_name: str
     admin_email: str
@@ -58,6 +70,7 @@ class TenantProfile(BaseModel):
 
 class PricingBreakdown(BaseModel):
     """Four-part commercial CIaaS pricing model."""
+
     tenant_id: str
     platform_fee_usd: str  # P_platform
     reserved_capacity_usd: str  # P_reserved
@@ -69,6 +82,7 @@ class PricingBreakdown(BaseModel):
 
 class HermitenSettlement(BaseModel):
     """Hermiten 25% net avoided cost value-share settlement calculation."""
+
     tenant_id: str
     counterfactual_cost_usd: str  # C_counterfactual
     actual_cost_usd: str  # C_actual
@@ -218,7 +232,9 @@ class CIaaSStore:
             self._tenants[tenant_id] = profile
         return profile
 
-    def update_cce(self, tenant_id: str, cce: ChronusCapacityEntitlement) -> Optional[TenantProfile]:
+    def update_cce(
+        self, tenant_id: str, cce: ChronusCapacityEntitlement
+    ) -> Optional[TenantProfile]:
         with self._lock:
             tenant = self._tenants.get(tenant_id)
             if not tenant:
@@ -226,7 +242,9 @@ class CIaaSStore:
             tenant.cce = cce
             return tenant
 
-    def calculate_pricing(self, tenant_id: str, consumed_ccu: int = 128) -> PricingBreakdown:
+    def calculate_pricing(
+        self, tenant_id: str, consumed_ccu: int = 128
+    ) -> PricingBreakdown:
         tenant = self._tenants.get(tenant_id)
         reserved_ccu = tenant.cce.compute_intensity_ccu if tenant else 512
 
@@ -235,7 +253,12 @@ class CIaaSStore:
         p_reserved_cents = reserved_ccu * 25 * 72 // 10  # ~$0.025/CCU * 720 hrs
         p_consumption_cents = consumed_ccu * 45  # $0.045/CCU consumed
         p_assurance_cents = 150000  # $1,500.00 sovereign proof & FIPS 204 warranty
-        p_total_cents = p_platform_cents + p_reserved_cents + p_consumption_cents + p_assurance_cents
+        p_total_cents = (
+            p_platform_cents
+            + p_reserved_cents
+            + p_consumption_cents
+            + p_assurance_cents
+        )
 
         return PricingBreakdown(
             tenant_id=tenant_id,
@@ -427,4 +450,3 @@ class CIaaSStore:
 
 
 ciaas_store = CIaaSStore()
-

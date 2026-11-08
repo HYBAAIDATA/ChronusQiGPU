@@ -50,7 +50,10 @@ class KMSKeyProvider(ABC):
         """Derive a 256-bit ephemeral Data Encryption Key in RAM from HSM/KMS signature."""
         seed_sig = self.sign(
             key_id,
-            b"CHRONUS_ZERO_COPY_DEK_V1|" + key_id.encode("utf-8") + b"|" + associated_data,
+            b"CHRONUS_ZERO_COPY_DEK_V1|"
+            + key_id.encode("utf-8")
+            + b"|"
+            + associated_data,
             algorithm="Ed25519",
         )
         hkdf = HKDF(
@@ -76,27 +79,38 @@ class KMSKeyProvider(ABC):
         self, key_id: str, envelope_bytes: bytes, associated_data: bytes = b""
     ) -> bytes:
         """Decrypt an encrypted stream on demand purely in RAM (zero disk writes)."""
-        if not isinstance(envelope_bytes, bytes) or len(envelope_bytes) < len(ENVELOPE_MAGIC) + 12 + 16:
+        if (
+            not isinstance(envelope_bytes, bytes)
+            or len(envelope_bytes) < len(ENVELOPE_MAGIC) + 12 + 16
+        ):
             raise ValueError("Invalid or truncated KMS encrypted stream envelope")
         if not envelope_bytes.startswith(ENVELOPE_MAGIC):
-            raise ValueError("Envelope header mismatch; expected Customer-Held KMS stream")
+            raise ValueError(
+                "Envelope header mismatch; expected Customer-Held KMS stream"
+            )
         nonce = envelope_bytes[len(ENVELOPE_MAGIC) : len(ENVELOPE_MAGIC) + 12]
         ciphertext = envelope_bytes[len(ENVELOPE_MAGIC) + 12 :]
         dek = self._derive_ephemeral_dek(key_id, associated_data)
         try:
             return AESGCM(dek).decrypt(nonce, ciphertext, associated_data)
         except InvalidTag as exc:
-            raise ValueError("Customer-Held KMS/HSM stream authentication failed") from exc
+            raise ValueError(
+                "Customer-Held KMS/HSM stream authentication failed"
+            ) from exc
 
 
 class LocalMemoryKeyProvider(KMSKeyProvider):
     """In-memory KMS key provider for local development and unit testing."""
 
     def __init__(self) -> None:
-        self._ed25519_keys: Dict[str, Tuple[ed25519.Ed25519PrivateKey, ed25519.Ed25519PublicKey]] = {}
+        self._ed25519_keys: Dict[
+            str, Tuple[ed25519.Ed25519PrivateKey, ed25519.Ed25519PublicKey]
+        ] = {}
         self._mldsa_keys: Dict[str, Tuple[str, str]] = {}  # key_id -> (sk_hex, pk_hex)
 
-    def register_ed25519_key(self, key_id: str, private_key: Optional[ed25519.Ed25519PrivateKey] = None) -> bytes:
+    def register_ed25519_key(
+        self, key_id: str, private_key: Optional[ed25519.Ed25519PrivateKey] = None
+    ) -> bytes:
         """Register or generate an Ed25519 keypair."""
         sk = private_key or ed25519.Ed25519PrivateKey.generate()
         pk = sk.public_key()
@@ -125,6 +139,7 @@ class LocalMemoryKeyProvider(KMSKeyProvider):
             return sk.sign(message)
         elif "ML-DSA" in algorithm.upper() or "DILITHIUM" in algorithm.upper():
             from chronus.security.signers import MLDSASigner
+
             sk_bytes, pk_bytes = None, None
             if key_id in self._mldsa_keys:
                 sk_hex, pk_hex = self._mldsa_keys[key_id]
@@ -148,6 +163,7 @@ class LocalMemoryKeyProvider(KMSKeyProvider):
                 return False
         elif "ML-DSA" in algorithm.upper() or "DILITHIUM" in algorithm.upper():
             from chronus.security.signers import MLDSASigner
+
             sk_bytes, pk_bytes = None, None
             if key_id in self._mldsa_keys:
                 sk_hex, pk_hex = self._mldsa_keys[key_id]
@@ -159,7 +175,7 @@ class LocalMemoryKeyProvider(KMSKeyProvider):
 
 class CloudKMSProvider(KMSKeyProvider):
     """Cloud Hardware Security Module (KMS) provider abstraction.
-    
+
     Supports AWS KMS, Azure Key Vault, and GCP Cloud KMS. Private keys
     remain inside the Cloud HSM boundary; signing is performed remotely.
     """
@@ -172,7 +188,9 @@ class CloudKMSProvider(KMSKeyProvider):
         region: Optional[str] = None,
     ) -> None:
         self.provider_name = provider_type or provider_name
-        self.key_vault_uri = key_vault_uri or os.getenv("CHRONUS_KMS_VAULT_URI", "https://chronus-kms.vault.cloud")
+        self.key_vault_uri = key_vault_uri or os.getenv(
+            "CHRONUS_KMS_VAULT_URI", "https://chronus-kms.vault.cloud"
+        )
         self.region = region or os.getenv("CHRONUS_KMS_REGION", "us-east-1")
         # Internal cache of verified public keys
         self._public_keys: Dict[str, bytes] = {}
@@ -202,7 +220,9 @@ class CloudKMSProvider(KMSKeyProvider):
 class VaultKMSProvider(KMSKeyProvider):
     """HashiCorp Vault Transit secrets engine provider."""
 
-    def __init__(self, vault_addr: Optional[str] = None, token: Optional[str] = None) -> None:
+    def __init__(
+        self, vault_addr: Optional[str] = None, token: Optional[str] = None
+    ) -> None:
         self.vault_addr = vault_addr or os.getenv("VAULT_ADDR", "http://127.0.0.1:8200")
         self.token = token or os.getenv("VAULT_TOKEN", "")
         self._fallback = LocalMemoryKeyProvider()
@@ -321,8 +341,12 @@ class ALHarasKMSCustodyManager:
             attestation_payload = (
                 f"AL_HARAS_PKCS11_BIND|{tenant_id}|{normalized_provider}|{cleaned_arn}|{fingerprint}"
             ).encode("utf-8")
-            attestation_sig = provider.sign(scoped_key_id, attestation_payload, algorithm="Ed25519")
-            slot_digest = hashlib.sha256(f"{tenant_id}:{cleaned_arn}".encode("utf-8")).hexdigest()[:12]
+            attestation_sig = provider.sign(
+                scoped_key_id, attestation_payload, algorithm="Ed25519"
+            )
+            slot_digest = hashlib.sha256(
+                f"{tenant_id}:{cleaned_arn}".encode("utf-8")
+            ).hexdigest()[:12]
             pkcs11_uri = (
                 f"pkcs11:model=AL-HARAS-HSM;manufacturer=Chronus;"
                 f"token={normalized_provider};id={slot_digest};type=private"
@@ -379,7 +403,9 @@ class ALHarasKMSCustodyManager:
             existing = self._bindings.get(tenant_id)
             if existing is not None:
                 return existing
-            resolved_arn = kms_key_arn or f"arn:chronus:kms:{tenant_id}:customer-root-key"
+            resolved_arn = (
+                kms_key_arn or f"arn:chronus:kms:{tenant_id}:customer-root-key"
+            )
             return self.ingest_customer_key(
                 tenant_id=tenant_id,
                 kms_provider=kms_provider,
@@ -399,7 +425,9 @@ class ALHarasKMSCustodyManager:
             binding = self.ensure_binding(tenant_id, kms_provider, kms_key_arn)
             provider = self._providers[tenant_id]
             scoped_key_id = f"{tenant_id}::{binding.kms_key_arn}"
-            return provider.encrypt_stream_in_memory(scoped_key_id, plaintext, associated_data)
+            return provider.encrypt_stream_in_memory(
+                scoped_key_id, plaintext, associated_data
+            )
 
     def decrypt_in_memory_for_tenant(
         self,
@@ -435,7 +463,15 @@ class ALHarasKMSCustodyManager:
 def get_kms_provider(provider_type: Optional[str] = None) -> KMSKeyProvider:
     """Factory creating configured KMS provider."""
     ptype = (provider_type or os.getenv("CHRONUS_KMS_PROVIDER", "local")).lower()
-    if ptype in ("aws", "aws_kms", "azure", "azure_key_vault", "gcp", "gcp_kms", "cloud"):
+    if ptype in (
+        "aws",
+        "aws_kms",
+        "azure",
+        "azure_key_vault",
+        "gcp",
+        "gcp_kms",
+        "cloud",
+    ):
         return CloudKMSProvider(provider_name=ptype)
     elif ptype in ("vault", "hashicorp_vault"):
         return VaultKMSProvider()

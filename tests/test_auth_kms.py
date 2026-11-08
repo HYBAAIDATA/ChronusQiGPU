@@ -125,7 +125,9 @@ class TestJWTValidation(unittest.TestCase):
             "iss": "https://auth.chronus.io",
             "exp": int(time.time()) + 3600,
         }
-        token = jwt.encode(payload, "wrong-secret-key-32bytes-padding!!", algorithm="HS256")
+        token = jwt.encode(
+            payload, "wrong-secret-key-32bytes-padding!!", algorithm="HS256"
+        )
         with self.assertRaises(HTTPException) as ctx:
             self.validator.validate_token(token)
         self.assertEqual(ctx.exception.status_code, 401)
@@ -176,11 +178,14 @@ class TestKMSKeyProviders(unittest.TestCase):
         self.assertTrue(provider.verify(key_id, message, sig, algorithm="Ed25519"))
 
         # Tampered message fails
-        self.assertFalse(provider.verify(key_id, b"Tampered payload", sig, algorithm="Ed25519"))
+        self.assertFalse(
+            provider.verify(key_id, b"Tampered payload", sig, algorithm="Ed25519")
+        )
 
     def test_local_memory_provider_mldsa(self):
         """Test LocalMemoryKeyProvider ML-DSA key registration and verification."""
         from chronus.security.signers import MLDSASigner
+
         signer = MLDSASigner(security_level=3)
         pk_hex, sk_hex = signer.generate_keypair()
 

@@ -42,6 +42,7 @@ class ThreatClassification(str, Enum):
 @dataclass
 class AgentNode:
     """A node in the multi-agent execution sheaf."""
+
     node_id: str
     node_type: AgentNodeType
     stalk_dim: int = 4
@@ -53,6 +54,7 @@ class AgentNode:
 @dataclass
 class SheafRestrictionMorphism:
     """Restriction map rho_{u -> v} between adjacent agent stalks."""
+
     source_id: str
     target_id: str
     matrix: List[List[float]] = field(
@@ -76,14 +78,17 @@ class AgenticSheafTopology:
     def add_node(self, node: AgentNode) -> None:
         self.nodes[node.node_id] = node
 
-    def add_edge(self, source_id: str, target_id: str, matrix: Optional[List[List[float]]] = None) -> None:
+    def add_edge(
+        self, source_id: str, target_id: str, matrix: Optional[List[List[float]]] = None
+    ) -> None:
         if source_id not in self.nodes or target_id not in self.nodes:
-            raise ValueError(f"Nodes {source_id} and {target_id} must exist before creating morphism.")
-        m = matrix or [
-            [1.0 if i == j else 0.0 for j in range(4)]
-            for i in range(4)
-        ]
-        self.edges.append(SheafRestrictionMorphism(source_id=source_id, target_id=target_id, matrix=m))
+            raise ValueError(
+                f"Nodes {source_id} and {target_id} must exist before creating morphism."
+            )
+        m = matrix or [[1.0 if i == j else 0.0 for j in range(4)] for i in range(4)]
+        self.edges.append(
+            SheafRestrictionMorphism(source_id=source_id, target_id=target_id, matrix=m)
+        )
 
     def compute_coboundary_obstruction(self) -> Tuple[float, Dict[str, float]]:
         """
@@ -116,7 +121,7 @@ class AgenticSheafTopology:
             total_sq += edge_norm * edge_norm
             edge_residuals[f"{edge.source_id}->{edge.target_id}"] = round(edge_norm, 6)
 
-        total_norm = total_sq ** 0.5
+        total_norm = total_sq**0.5
         return round(total_norm, 6), edge_residuals
 
 
@@ -144,7 +149,9 @@ class AgenticSheafGuard:
         self.topology = AgenticSheafTopology()
         self._execution_log: List[Dict[str, Any]] = []
 
-    def _embed_payload_to_stalk(self, payload: str, is_adversarial: bool = False) -> List[float]:
+    def _embed_payload_to_stalk(
+        self, payload: str, is_adversarial: bool = False
+    ) -> List[float]:
         """Maps an execution payload into a 4D stalk vector."""
         payload_lower = payload.lower()
         threat_score = 0.0
@@ -162,7 +169,12 @@ class AgenticSheafGuard:
 
         if threat_score > 0.0:
             # Inject orthogonal obstruction vector
-            return [1.0 + base_v0, threat_score * 5.0, -threat_score * 3.0, 1.0 + base_v1]
+            return [
+                1.0 + base_v0,
+                threat_score * 5.0,
+                -threat_score * 3.0,
+                1.0 + base_v1,
+            ]
         return [1.0 + base_v0, 0.0, 0.0, 1.0 + base_v1]
 
     def intercept_user_prompt(
@@ -175,8 +187,14 @@ class AgenticSheafGuard:
         stalk = self._embed_payload_to_stalk(prompt_text)
 
         # Check Sheaf consensus
-        user_node = AgentNode(node_id="usr_input", node_type=AgentNodeType.USER_PROMPT, state_vector=stalk)
-        orch_node = AgentNode(node_id="orchestrator", node_type=AgentNodeType.ORCHESTRATOR, state_vector=[1.0, 0.0, 0.0, 1.0])
+        user_node = AgentNode(
+            node_id="usr_input", node_type=AgentNodeType.USER_PROMPT, state_vector=stalk
+        )
+        orch_node = AgentNode(
+            node_id="orchestrator",
+            node_type=AgentNodeType.ORCHESTRATOR,
+            state_vector=[1.0, 0.0, 0.0, 1.0],
+        )
 
         topo = AgenticSheafTopology()
         topo.add_node(user_node)
@@ -192,8 +210,12 @@ class AgenticSheafGuard:
             "stage": "USER_PROMPT_INTERCEPTION",
             "h1_obstruction_norm": h1_norm,
             "harmonic_consensus": is_clean,
-            "threat_classification": ThreatClassification.CLEAN.value if is_clean else ThreatClassification.PROMPT_INJECTION.value,
-            "action": "ADMITTED_TO_ORCHESTRATOR" if is_clean else "OBSTRUCTED_AT_BOUNDARY",
+            "threat_classification": ThreatClassification.CLEAN.value
+            if is_clean
+            else ThreatClassification.PROMPT_INJECTION.value,
+            "action": "ADMITTED_TO_ORCHESTRATOR"
+            if is_clean
+            else "OBSTRUCTED_AT_BOUNDARY",
             "latency_ms": round((t1 - t0) * 1000, 4),
         }
         self._execution_log.append(audit)
@@ -213,14 +235,20 @@ class AgenticSheafGuard:
         """
         t0 = time.perf_counter()
         arg_str = json.dumps(tool_args, sort_keys=True)
-        is_threat = simulate_poisoning or any(sig in arg_str.lower() for sig in self.KNOWN_ATTACK_SIGNATURES)
+        is_threat = simulate_poisoning or any(
+            sig in arg_str.lower() for sig in self.KNOWN_ATTACK_SIGNATURES
+        )
 
         stalk_agent = [1.0, 0.0, 0.0, 1.0]
         stalk_tool = self._embed_payload_to_stalk(arg_str, is_adversarial=is_threat)
 
         topo = AgenticSheafTopology()
-        a_node = AgentNode(node_id=agent_id, node_type=AgentNodeType.SUBAGENT, state_vector=stalk_agent)
-        t_node = AgentNode(node_id=tool_name, node_type=AgentNodeType.TOOL_MCP, state_vector=stalk_tool)
+        a_node = AgentNode(
+            node_id=agent_id, node_type=AgentNodeType.SUBAGENT, state_vector=stalk_agent
+        )
+        t_node = AgentNode(
+            node_id=tool_name, node_type=AgentNodeType.TOOL_MCP, state_vector=stalk_tool
+        )
         topo.add_node(a_node)
         topo.add_node(t_node)
         topo.add_edge(agent_id, tool_name)
@@ -241,8 +269,12 @@ class AgenticSheafGuard:
             "h1_obstruction_norm": h1_norm,
             "sheaf_residuals": residuals,
             "dsw_instanton_healing": heal_status,
-            "threat_classification": ThreatClassification.CLEAN.value if admitted else ThreatClassification.TOOL_POISONING.value,
-            "verdict": "EXECUTION_PERMITTED" if admitted else "EXECUTION_ABORTED_TOPOLOGICALLY",
+            "threat_classification": ThreatClassification.CLEAN.value
+            if admitted
+            else ThreatClassification.TOOL_POISONING.value,
+            "verdict": "EXECUTION_PERMITTED"
+            if admitted
+            else "EXECUTION_ABORTED_TOPOLOGICALLY",
             "latency_ms": round((t1 - t0) * 1000, 4),
         }
         self._execution_log.append(audit)

@@ -34,7 +34,9 @@ class TestCIaaSRBAC(unittest.TestCase):
 
         # Check detail fidelity
         self.assertEqual(role_tiers["system_admin"]["title"], "System Admin")
-        self.assertEqual(role_tiers["tenant_admin"]["persona"], "Enterprise FinOps / IT Lead")
+        self.assertEqual(
+            role_tiers["tenant_admin"]["persona"], "Enterprise FinOps / IT Lead"
+        )
         self.assertIn("ptr_sdk_", role_tiers["developer"]["scope"])
         self.assertIn("zk-STARK", role_tiers["external_auditor"]["audit"])
 
@@ -164,10 +166,13 @@ class TestCIaaSRBAC(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         data = res.json()
         self.assertEqual(data["compliance"]["principles_passed"], 14)
-        self.assertEqual(data["cellular_sheaf_cohomology"]["cohomology_class"], "H^1(X; F) = 0")
-        self.assertEqual(data["cellular_sheaf_cohomology"]["prompt_injection_vortices"], 0)
+        self.assertEqual(
+            data["cellular_sheaf_cohomology"]["cohomology_class"], "H^1(X; F) = 0"
+        )
+        self.assertEqual(
+            data["cellular_sheaf_cohomology"]["prompt_injection_vortices"], 0
+        )
 
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -47,6 +47,7 @@ class OpenCLAcceleratorBackend:
         self._queue_depth += 1
         try:
             from chronus.backends.opencl_pv import OpenCLPVBackend
+
             backend = OpenCLPVBackend()
             res = backend.execute(payload, workload_type)
             res["runtime_classification"] = self.runtime_classification

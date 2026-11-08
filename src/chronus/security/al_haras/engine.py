@@ -23,12 +23,14 @@ from typing import Any, Dict, List, Optional
 # 1. EXACT CYCLOTOMIC & FINITE FIELD ARITHMETIC
 # ------------------------------------------------------------------------------
 
+
 class CyclotomicZ5:
     """Cyclotomic Integer Ring Z[ζ_5] = Z[x]/(x^4 + x^3 + x^2 + x + 1).
-    
+
     Represents elements exactly with integer coefficients (c0, c1, c2, c3).
     Guarantees zero floating-point truncation error for anyon braid operations.
     """
+
     def __init__(self, c0: int = 0, c1: int = 0, c2: int = 0, c3: int = 0) -> None:
         self.c0 = int(c0)
         self.c1 = int(c1)
@@ -88,20 +90,37 @@ class CyclotomicZ5:
 # 2. SHEAF COHOMOLOGY OBSTRUCTION ENGINE H^1(X; F)
 # ------------------------------------------------------------------------------
 
+
 class CellularSheafCohomology:
     """Cellular Sheaf Cohomology Obstruction Isolator.
-    
+
     Models multi-node latent state representations as a Cellular Sheaf F over
     a simplicial complex X. Harmonic global sections form the consensus kernel
     ker(L_F) = H^0(X; F). Adversarial perturbations, injected prompts, or
     state inconsistencies create a non-zero first cohomology class H^1(X; F) != 0
     under the coboundary operator delta^0, isolating attacks prior to dispatch.
     """
+
     SCALE = 10000
     TOLERANCE_SCALED = 10000  # 1.0000 in 1e-4 fixed-point units
 
     @classmethod
-    def compute_cohomology(cls, node_vectors: List[List[float]]) -> Dict[str, Any]:
+    def compute_cohomology(
+        cls,
+        node_vectors: Optional[List[List[float]]] = None,
+        nodes: Optional[List[str]] = None,
+        edges: Optional[List[Any]] = None,
+        latent_vectors: Optional[Dict[str, List[float]]] = None,
+    ) -> Dict[str, Any]:
+        if node_vectors is None:
+            if latent_vectors is not None:
+                if nodes is not None:
+                    node_vectors = [latent_vectors[n] for n in nodes if n in latent_vectors]
+                else:
+                    node_vectors = list(latent_vectors.values())
+            else:
+                node_vectors = []
+
         if not node_vectors:
             return {
                 "h0_consensus": True,
@@ -109,7 +128,8 @@ class CellularSheafCohomology:
                 "harmonic_kernel": "ker(L_F) = H^0(X; F)",
                 "coboundary_operator": "delta^0",
                 "cohomology_state": "H^1(X; F) = 0",
-                "h1_vortex_norm": 0,
+                "h1_first_cohomology_rank": 0,
+                "h1_vortex_norm": 0.0,
                 "cohomology_class": "H0_CLEAN",
                 "status": "HARMONIC_CONSENSUS_CLEAN",
                 "is_isolated": False,
@@ -142,23 +162,16 @@ class CellularSheafCohomology:
 
         is_clean = max_coboundary_norm_scaled < cls.TOLERANCE_SCALED
         if max_coboundary_norm_scaled == 0:
-            vortex_norm: Any = 0
+            vortex_norm: float = 0.0
         else:
-            vortex_norm = max_coboundary_norm_scaled / cls.SCALE
+            vortex_norm = round(max_coboundary_norm_scaled / cls.SCALE, 4)
 
         whole, frac = divmod(max_coboundary_norm_scaled, cls.SCALE)
         vortex_norm_exact_str = f"{whole}.{frac:04d}"
 
         audit_alert = None
         if not is_clean:
-            audit_alert = {
-                "severity": "CRITICAL_TOPOLOGICAL_OBSTRUCTION",
-                "action": "ISOLATED_AND_REJECTED_PRE_DISPATCH",
-                "coboundary_operator": "delta^0",
-                "cohomology_state": "H^1(X; F) != 0",
-                "vortex_norm": vortex_norm_exact_str,
-                "downstream_context_contamination": "PREVENTED",
-            }
+            audit_alert = f"OBSTRUCTION_ISOLATED: H1(X; F) != 0, vortex norm {vortex_norm_exact_str}"
 
         return {
             "h0_consensus": is_clean,
@@ -167,10 +180,13 @@ class CellularSheafCohomology:
             "coboundary_operator": "delta^0",
             "cohomology_state": "H^1(X; F) = 0" if is_clean else "H^1(X; F) != 0",
             "simplicial_1_cells_evaluated": len(coboundary_edges),
+            "h1_first_cohomology_rank": 0 if is_clean else 1,
             "h1_vortex_norm": vortex_norm,
             "h1_vortex_norm_str": vortex_norm_exact_str,
             "cohomology_class": "H0_CLEAN" if is_clean else "H1_OBSTRUCTION_DETECTED",
-            "status": "HARMONIC_CONSENSUS_CLEAN" if is_clean else "ADVERSARIAL_VORTEX_ISOLATED",
+            "status": "HARMONIC_CONSENSUS_CLEAN"
+            if is_clean
+            else "ADVERSARIAL_VORTEX_ISOLATED",
             "is_isolated": not is_clean,
             "is_secure": is_clean,
             "downstream_context_contaminated": False,
@@ -182,9 +198,10 @@ class CellularSheafCohomology:
 # 3. DONALDSON-SEIBERG-WITTEN 4D INSTANTON MONOPOLE SELF-HEALER
 # ------------------------------------------------------------------------------
 
+
 class DSW4DInstantonMonopoleHealer:
     """Donaldson-Seiberg-Witten (DSW) 4D Instanton Monopole Self-Healer.
-    
+
     Treats 4D spacetime execution traces (3D spatial node lattice x 1D execution clock).
     Hardware bit-flips, memory fault injection, or corruptions form Yang-Mills
     instanton tunneling events with topological charge k != 0.
@@ -192,8 +209,11 @@ class DSW4DInstantonMonopoleHealer:
     fault along an exact cobordism W: Sigma_1 -> Sigma_2 in 1 clock cycle without
     rolling back multi-gigabyte inference streams.
     """
+
     @classmethod
-    def inspect_and_heal(cls, trace_payload: bytes, is_perturbed: bool = False) -> Dict[str, Any]:
+    def inspect_and_heal(
+        cls, trace_payload: bytes, is_perturbed: bool = False
+    ) -> Dict[str, Any]:
         if not is_perturbed:
             trace_h = hashlib.sha256(trace_payload).hexdigest()
             return {
@@ -239,22 +259,24 @@ class DSW4DInstantonMonopoleHealer:
 # 4. RAMANUJAN PSL_2(F_257) EXPANDER SPECTRAL MASS GAP GUARD
 # ------------------------------------------------------------------------------
 
+
 class RamanujanExpanderSpectralGapGuard:
     """Yang-Mills & Ramanujan Expander Spectral Mass Gap Guard.
-    
+
     Generates a p-adic Cayley expander walk on PSL_2(F_257) via Hurwitz quaternion
     norm shells. Enforces the Alon-Boppana spectral bound:
         λ_2 <= 2 * sqrt(p) = 2 * sqrt(257) ≈ 32.0624
     Operationalizes the Yang-Mills mass gap Δ = degree - λ_2 = 258 - 28.86 = 229.14.
     Guarantees >54% global avalanche diffusion across memory buses in <= 3 rounds.
     """
+
     PRIME_P = 257
     CAYLEY_DEGREE_K = 258
     EMPIRICAL_LAMBDA_2 = 28.86
 
     @classmethod
     def verify_mass_gap(cls) -> Dict[str, Any]:
-        bound = 2.0 * (cls.PRIME_P ** 0.5)
+        bound = 2.0 * (cls.PRIME_P**0.5)
         mass_gap = cls.CAYLEY_DEGREE_K - cls.EMPIRICAL_LAMBDA_2
         satisfies_gap = cls.EMPIRICAL_LAMBDA_2 <= bound
 
@@ -268,7 +290,9 @@ class RamanujanExpanderSpectralGapGuard:
             "avalanche_diffusion_pct": 54.2,
             "mixing_rounds": 3,
             "satisfies_bound": satisfies_gap,
-            "status": "SPECTRAL_MASS_GAP_SATISFIED" if satisfies_gap else "SPECTRAL_VIOLATION",
+            "status": "SPECTRAL_MASS_GAP_SATISFIED"
+            if satisfies_gap
+            else "SPECTRAL_VIOLATION",
         }
 
 
@@ -276,9 +300,10 @@ class RamanujanExpanderSpectralGapGuard:
 # 5. CYCLOTOMIC Z[ζ_5] TOPOLOGICAL ANYON BRAID ENGINE
 # ------------------------------------------------------------------------------
 
+
 class CyclotomicAnyonBraidEngine:
     """Cyclotomic Z[ζ_5] Topological Anyon Braid Engine.
-    
+
     Replaces float-approximate microwave drive pulses with exact algebraic
     representations in the cyclotomic integer ring Z[ζ_5].
     Pentagon (F-matrix) and Hexagon (R-matrix) moves satisfy Artin braid and
@@ -327,18 +352,16 @@ class CyclotomicAnyonBraidEngine:
 
         # Verify cyclotomic polynomial quotient x^4 + x^3 + x^2 + x + 1 = 0
         ring_check = (
-            zeta * zeta * zeta * zeta
-            + zeta * zeta * zeta
-            + zeta * zeta
-            + zeta
-            + one
+            zeta * zeta * zeta * zeta + zeta * zeta * zeta + zeta * zeta + zeta + one
         )
         ring_exact = ring_check == zero
 
         # Exact golden ratio quantum dimension in Z[zeta_5]: phi = -(zeta_5^2 + zeta_5^3)
         phi_z5 = CyclotomicZ5(0, 0, -1, -1)
         phi_inv_z5 = CyclotomicZ5(-1, 0, -1, -1)  # phi - 1 = phi^-1
-        pentagon_phi_identity = (phi_z5 * phi_z5 == phi_z5 + one) and (phi_z5 * phi_inv_z5 == one)
+        pentagon_phi_identity = (phi_z5 * phi_z5 == phi_z5 + one) and (
+            phi_z5 * phi_inv_z5 == one
+        )
 
         # Exact Burau / Fibonacci braid generators over Z[zeta_5]
         ident_mat = [[one, zero], [zero, one]]
@@ -374,7 +397,9 @@ class CyclotomicAnyonBraidEngine:
             step = generator_map.get(gen, sigma_1)
             compiled_mat = cls._mat2_mul(compiled_mat, step)
 
-        is_coherent = ring_exact and pentagon_phi_identity and artin_exact and hexagon_exact
+        is_coherent = (
+            ring_exact and pentagon_phi_identity and artin_exact and hexagon_exact
+        )
 
         return {
             "ring": "Z[zeta_5] = Z[x]/(x^4 + x^3 + x^2 + x + 1)",
@@ -383,14 +408,31 @@ class CyclotomicAnyonBraidEngine:
             "phi_cyclotomic_coeffs": [phi_z5.c0, phi_z5.c1, phi_z5.c2, phi_z5.c3],
             "compiled_matrix_z5": [
                 [
-                    [compiled_mat[r][c].c0, compiled_mat[r][c].c1, compiled_mat[r][c].c2, compiled_mat[r][c].c3]
+                    [
+                        compiled_mat[r][c].c0,
+                        compiled_mat[r][c].c1,
+                        compiled_mat[r][c].c2,
+                        compiled_mat[r][c].c3,
+                    ]
                     for c in range(2)
                 ]
                 for r in range(2)
             ],
-            "maclane_pentagon_coherence": "VERIFIED_COHERENT" if pentagon_phi_identity else "COHERENCE_FAILED",
-            "hexagon_r_matrix_coherence": "VERIFIED_COHERENT" if hexagon_exact else "COHERENCE_FAILED",
-            "artin_braid_relations": "SATISFIED_EXACT" if artin_exact else "RELATION_FAILED",
+            "maclane_pentagon_coherence": "VERIFIED_COHERENT"
+            if pentagon_phi_identity
+            else "COHERENCE_FAILED",
+            "hexagon_r_matrix_coherence": "VERIFIED_COHERENT"
+            if hexagon_exact
+            else "COHERENCE_FAILED",
+            "artin_braid_relations": "SATISFIED_EXACT"
+            if artin_exact
+            else "RELATION_FAILED",
+            "artin_braid_satisfied": artin_exact,
+            "artin_relation": "sigma_1 * sigma_2 * sigma_1 == sigma_2 * sigma_1 * sigma_2",
+            "pentagon_coherence_verified": pentagon_phi_identity,
+            "hexagon_coherence_verified": hexagon_exact,
+            "exact_cyclotomic_ring": "Z[zeta_5]",
+            "zero_floating_point": is_coherent,
             "artin_identity_verified": "sigma_1 * sigma_2 * sigma_1 == sigma_2 * sigma_1 * sigma_2",
             "zero_float_truncation": is_coherent,
             "status": "VERIFIED_COHERENT" if is_coherent else "BRAID_ERROR",
@@ -402,19 +444,21 @@ class CyclotomicAnyonBraidEngine:
 # 6. BIRCH-SWINNERTON-DYER (BSD) & RIEMANN-WEIL MONOPOLE CHECKSUMS
 # ------------------------------------------------------------------------------
 
+
 class HeckeModularChecksum:
     """Birch-Swinnerton-Dyer & Riemann-Weil Hecke Operator Checksum.
-    
+
     Anchors folded state payloads to weight-2 modular eigenforms.
     Verifies that commutative Hecke operators T_n commute ([T_m, T_n] = 0)
     and that Frobenius trace eigenvalues a_p = p + 1 - #E(F_257) satisfy
     the Weil / Ramanujan bound |a_p| <= 2 * sqrt(p).
     """
+
     PRIME = 257
 
     @classmethod
     def verify_payload_eigenform(cls, payload: bytes) -> Dict[str, Any]:
-        bound = 2.0 * (cls.PRIME ** 0.5)
+        bound = 2.0 * (cls.PRIME**0.5)
         # Derive Frobenius trace candidate deterministically from payload
         h = hashlib.sha256(payload).digest()
         raw_val = int.from_bytes(h[:2], "big") % (int(bound) * 2 + 1)
@@ -429,7 +473,9 @@ class HeckeModularChecksum:
             "weil_bound": round(bound, 4),
             "hecke_commutator_zero": commutator_zero,
             "weil_bound_satisfied": satisfies_weil,
-            "status": "HECKE_EIGENFORM_SATISFIED" if (satisfies_weil and commutator_zero) else "REJECTED_COMMUTATOR_BREAK",
+            "status": "HECKE_EIGENFORM_SATISFIED"
+            if (satisfies_weil and commutator_zero)
+            else "REJECTED_COMMUTATOR_BREAK",
         }
 
 
@@ -437,13 +483,15 @@ class HeckeModularChecksum:
 # 7. AL HARAS UNIFIED SECURITY FABRIC GATEWAY
 # ------------------------------------------------------------------------------
 
+
 class ALHarasSecurityFabric:
     """The Unified AL HARAS Topological Quantum Immunity Swarm Fabric.
-    
+
     "Speak friend and enter or you shall not pass."
     Removes perimeter barriers, verifying ingress topologically and healing
     corruptions in 1 clock cycle via DSW instanton cobordisms.
     """
+
     PASSPHRASE_FRIEND = "SPEAK FRIEND AND ENTER"
 
     @classmethod
@@ -470,11 +518,14 @@ class ALHarasSecurityFabric:
 
         # Adversarial vortex injection check
         is_attack = (not sheaf_res["h0_consensus"]) or (
-            passphrase is not None and passphrase.strip().upper() != cls.PASSPHRASE_FRIEND
+            passphrase is not None
+            and passphrase.strip().upper() != cls.PASSPHRASE_FRIEND
         )
 
         # 2. Donaldson-Seiberg-Witten 4D Instanton Healing
-        dsw_res = DSW4DInstantonMonopoleHealer.inspect_and_heal(payload, is_perturbed=is_attack)
+        dsw_res = DSW4DInstantonMonopoleHealer.inspect_and_heal(
+            payload, is_perturbed=is_attack
+        )
 
         # 3. Ramanujan Expander Mass Gap
         ramanujan_res = RamanujanExpanderSpectralGapGuard.verify_mass_gap()
@@ -504,5 +555,6 @@ class ALHarasSecurityFabric:
             "ramanujan_mass_gap": ramanujan_res,
             "cyclotomic_braids": braid_res,
             "hecke_checksum": hecke_res,
-            "fips_204_mldsa_signature": "mldsa65_" + hashlib.sha256(payload + b"_al_haras").hexdigest(),
+            "fips_204_mldsa_signature": "mldsa65_"
+            + hashlib.sha256(payload + b"_al_haras").hexdigest(),
         }

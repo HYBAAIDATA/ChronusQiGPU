@@ -35,6 +35,7 @@ sovereign_ovid_chain = OVIDStorage()
 # 1. EXACT ALGEBRAIC FIELD DEFINITIONS
 # ------------------------------------------------------------------------------
 
+
 def _int_gcd(a: int, b: int) -> int:
     while b:
         a, b = b, a % b
@@ -43,6 +44,7 @@ def _int_gcd(a: int, b: int) -> int:
 
 class ExactQ5:
     """Exact rational pair in Q(sqrt(5)): a + b*sqrt(5)."""
+
     def __init__(self, a_num: int, a_den: int = 1, b_num: int = 0, b_den: int = 1):
         g_a = _int_gcd(abs(a_num), abs(a_den))
         self.a_num = (a_num // g_a) * (1 if a_den > 0 else -1)
@@ -52,7 +54,7 @@ class ExactQ5:
         self.b_den = abs(b_den) // g_b
 
     def to_float(self) -> float:
-        return (self.a_num / self.a_den) + (self.b_num / self.b_den) * (5.0 ** 0.5)
+        return (self.a_num / self.a_den) + (self.b_num / self.b_den) * (5.0**0.5)
 
     def __repr__(self) -> str:
         return f"({self.a_num}/{self.a_den}) + ({self.b_num}/{self.b_den})√5"
@@ -60,6 +62,7 @@ class ExactQ5:
 
 class GaloisField257Phi:
     """Galois Field extension F_257[φ] = F_257[x]/(x^2 - x - 1)."""
+
     PRIME = 257
 
     def __init__(self, c0: int, c1: int):
@@ -80,11 +83,13 @@ class GaloisField257Phi:
 # 2. SOVEREIGN GOVERNANCE & COMPLIANCE ENGINE
 # ------------------------------------------------------------------------------
 
+
 class SovereignGovernanceEngine:
     """Sovereign Governance, NCSC 14 Principles & FedRAMP High Assurance Engine.
-    
+
     Manages air-gapped KMS key custody, zero-trust proof receipts, and compliance profiles.
     """
+
     NCSC_PRINCIPLES = [
         "P1_Data_in_Transit_Protection",
         "P2_Asset_Protection",
@@ -122,12 +127,18 @@ class SovereignGovernanceEngine:
 # 3. AL HARAS SOVEREIGN PRODUCT SDK & COMMERCIAL INTERFACE
 # ------------------------------------------------------------------------------
 
+
 class ALHarasSovereignProductSDK:
     """Commercial Product Gateway & SDK for AL HARAS Sovereign Edition.
-    
+
     Serves Sovereign Nations, Defence Organizations, and Critical Infrastructure Providers.
     """
-    def __init__(self, sovereign_state_id: str = "sovereign_state_default", hsm_kms_key_id: str = "kms_hsm_pkcs11_key_001"):
+
+    def __init__(
+        self,
+        sovereign_state_id: str = "sovereign_state_default",
+        hsm_kms_key_id: str = "kms_hsm_pkcs11_key_001",
+    ):
         self.sovereign_state_id = sovereign_state_id
         self.kms_key_id = hsm_kms_key_id
 
@@ -150,16 +161,27 @@ class ALHarasSovereignProductSDK:
         sheaf_res = CellularSheafCohomology.compute_cohomology(vectors)
 
         is_corrupted = not sheaf_res["h0_consensus"] or (
-            passphrase is not None and passphrase.strip().upper() != ALHarasSecurityFabric.PASSPHRASE_FRIEND
+            passphrase is not None
+            and passphrase.strip().upper() != ALHarasSecurityFabric.PASSPHRASE_FRIEND
         )
-        dsw_res = DSW4DInstantonMonopoleHealer.inspect_and_heal(payload, is_perturbed=is_corrupted)
+        dsw_res = DSW4DInstantonMonopoleHealer.inspect_and_heal(
+            payload, is_perturbed=is_corrupted
+        )
 
         ramanujan_res = RamanujanExpanderSpectralGapGuard.verify_mass_gap()
-        braid_res = CyclotomicAnyonBraidEngine.compile_braid(["sigma_1", "sigma_2", "sigma_1"])
+        braid_res = CyclotomicAnyonBraidEngine.compile_braid(
+            ["sigma_1", "sigma_2", "sigma_1"]
+        )
         hecke_res = HeckeModularChecksum.verify_payload_eigenform(payload)
-        gov_res = SovereignGovernanceEngine.audit_sovereign_compliance(self.sovereign_state_id)
+        gov_res = SovereignGovernanceEngine.audit_sovereign_compliance(
+            self.sovereign_state_id
+        )
 
-        admitted = sheaf_res["h0_consensus"] and ramanujan_res["satisfies_bound"] and not is_corrupted
+        admitted = (
+            sheaf_res["h0_consensus"]
+            and ramanujan_res["satisfies_bound"]
+            and not is_corrupted
+        )
 
         report_envelope = json.dumps(
             {
@@ -178,7 +200,10 @@ class ALHarasSovereignProductSDK:
         t1 = time.perf_counter()
         elapsed_ms = round((t1 - t0) * 1000.0, 4)
 
-        slug = "".join(c for c in self.sovereign_state_id.lower() if c.isalnum())[:12] or "sovereign"
+        slug = (
+            "".join(c for c in self.sovereign_state_id.lower() if c.isalnum())[:12]
+            or "sovereign"
+        )
         receipt_handle = f"o1_{slug}_{ovid_id[:8]}"
         ovid_receipt = sovereign_ovid_chain.create_receipt(
             ovid_id,

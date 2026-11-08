@@ -49,13 +49,13 @@ class SystemVerilogHardwareSimulatorBackend:
                     break
 
             if not has_adjacent:
-                canonical_mask |= (1 << i)
+                canonical_mask |= 1 << i
 
             # ALU fold operation: canonicalize non-adjacent form
             folded_val = zeckendorf_decode(fib_indices)
             folded_outputs.append(folded_val)
 
-        all_canonical = (canonical_mask == (1 << 32) - 1)
+        all_canonical = canonical_mask == (1 << 32) - 1
 
         return {
             "all_canonical": all_canonical,
@@ -98,6 +98,7 @@ class SystemVerilogHardwareSimulatorBackend:
         else:
             # PV_LATTICE_FOLD fallback dispatch
             from chronus.execution.reference import NativeMathReferenceBackend
+
             ref = NativeMathReferenceBackend()
             res = ref.execute(payload, workload_type)
             res["runtime_classification"] = self.runtime_classification

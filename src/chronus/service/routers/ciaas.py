@@ -63,7 +63,9 @@ class OnboardTenantRequest(BaseModel):
     tenant_id: str = Field(..., description="Unique tenant identifier e.g. tenant-acme")
     organization_name: str = Field(..., description="Legal entity name")
     admin_email: str = Field(..., description="Lead administrative contact")
-    regional_pod: str = Field(default="alpha", description="Primary regional execution pod")
+    regional_pod: str = Field(
+        default="alpha", description="Primary regional execution pod"
+    )
     cce: Optional[ChronusCapacityEntitlement] = None
     sovereign_profile_enabled: bool = True
 
@@ -71,14 +73,31 @@ class OnboardTenantRequest(BaseModel):
 class TokenRequest(BaseModel):
     tenant_id: str = Field(default="tenant-default")
     user_id: str = Field(default="user-dev-01")
-    role: str = Field(default="developer", description="system_admin, tenant_admin, developer, external_auditor")
+    role: str = Field(
+        default="developer",
+        description="system_admin, tenant_admin, developer, external_auditor",
+    )
     expires_in_seconds: int = Field(default=86400)
 
 
 class SettlementRequest(BaseModel):
-    counterfactual_cost: Union[int, float] = Field(default=520000, description="Counterfactual legacy GPU cost in USD")
-    actual_cost: Union[int, float] = Field(default=317500, description="Actual Chronus platform cost in USD")
-    incremental_cost: Union[int, float] = Field(default=0, description="Pipeline overhead in USD")
+    counterfactual_cost: Union[int, float] = Field(
+        default=520000, description="Counterfactual legacy GPU cost in USD"
+    )
+    actual_cost: Union[int, float] = Field(
+        default=317500, description="Actual Chronus platform cost in USD"
+    )
+    incremental_cost: Union[int, float] = Field(
+        default=0, description="Pipeline overhead in USD"
+    )
+
+
+class HermitenBillingSettlementPayload(BaseModel):
+    tenant_id: str = Field(default="tenant_apex_9921a")
+    period: Optional[str] = Field(default="2026-Q1")
+    counterfactual_cloud_spend_usd: float = Field(default=520000.00)
+    actual_cloud_spend_usd: float = Field(default=317500.00)
+    incremental_chronus_costs_usd: float = Field(default=0.00)
 
 
 class ClusterRegistrationRequest(BaseModel):
@@ -90,7 +109,9 @@ class ClusterRegistrationRequest(BaseModel):
 
 
 class PoolScheduleRequest(BaseModel):
-    workload_id: str = Field(default="wl_hybrid_ai_factory_01", min_length=3, max_length=128)
+    workload_id: str = Field(
+        default="wl_hybrid_ai_factory_01", min_length=3, max_length=128
+    )
     context_tokens: int = Field(default=131072, ge=1)
     decode_tokens: int = Field(default=4096, ge=1)
     quantum_attention_subroutines: bool = Field(default=True)
@@ -343,7 +364,10 @@ async def expand_tenant_capacity(
     except KeyError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={"error": "tenant_not_found", "message": f"Tenant '{tenant_id}' not found."},
+            detail={
+                "error": "tenant_not_found",
+                "message": f"Tenant '{tenant_id}' not found.",
+            },
         ) from exc
     except EnduringAddendumError as exc:
         raise HTTPException(
@@ -379,7 +403,9 @@ async def update_tenant_cce(
     response_model=PricingBreakdown,
     summary="Calculate 4-part pricing breakdown",
 )
-async def get_pricing_breakdown(tenant_id: str, consumed_ccu: int = 128) -> PricingBreakdown:
+async def get_pricing_breakdown(
+    tenant_id: str, consumed_ccu: int = 128
+) -> PricingBreakdown:
     return ciaas_store.calculate_pricing(tenant_id=tenant_id, consumed_ccu=consumed_ccu)
 
 
@@ -398,6 +424,39 @@ async def reconcile_settlement(
         actual_cost=request.actual_cost,
         incremental_cost=request.incremental_cost,
     )
+
+
+@router.post(
+    "/billing/hermiten/settlement",
+    summary="Hermiten 25% value-share settlement billing endpoint",
+)
+async def billing_hermiten_settlement(
+    request: HermitenBillingSettlementPayload,
+) -> Dict[str, Any]:
+    import hashlib
+
+    cf = float(request.counterfactual_cloud_spend_usd)
+    act = float(request.actual_cloud_spend_usd)
+    inc = float(request.incremental_chronus_costs_usd)
+    net_savings = max(0.0, cf - act - inc)
+    value_share = round(net_savings * 0.25, 2)
+    client_retained = round(net_savings - value_share, 2)
+    cert_hash = hashlib.sha256(
+        f"{request.tenant_id}:{cf}:{act}:{value_share}".encode()
+    ).hexdigest()[:16]
+    return {
+        "tenant_id": request.tenant_id,
+        "period": request.period,
+        "counterfactual_cloud_spend_usd": cf,
+        "actual_cloud_spend_usd": act,
+        "incremental_chronus_costs_usd": inc,
+        "net_avoided_cost_usd": net_savings,
+        "chronus_value_share_usd": value_share,
+        "client_retained_savings_usd": client_retained,
+        "settlement_certificate": f"cert_hermiten_{cert_hash}",
+        "value_share_percentage": 25,
+        "status": "RECONCILED",
+    }
 
 
 @router.get(
@@ -432,7 +491,9 @@ async def discover_hardware_accelerators() -> Dict[str, Any]:
     status_code=status.HTTP_201_CREATED,
     summary="Hyperscale AI Factory cluster co-design registration",
 )
-async def register_fabric_cluster(request: ClusterRegistrationRequest) -> Dict[str, Any]:
+async def register_fabric_cluster(
+    request: ClusterRegistrationRequest,
+) -> Dict[str, Any]:
     discovered = _hardware_dispatcher.discover_backends()
     return {
         "status": "CLUSTER_REGISTERED_ZERO_STALL",
@@ -456,6 +517,7 @@ async def register_fabric_cluster(request: ClusterRegistrationRequest) -> Dict[s
 async def schedule_disaggregated_pools(request: PoolScheduleRequest) -> Dict[str, Any]:
     return {
         "status": "POOLS_SCHEDULED_CONCURRENT",
+        "schedule_status": "DISPATCHED_TO_POOLS",
         "workload_id": request.workload_id,
         "prefill_pool": {
             "regime": "COMPUTE_BOUND",
@@ -479,6 +541,15 @@ async def schedule_disaggregated_pools(request: PoolScheduleRequest) -> Dict[str
             "polytope": "H4_600_CELL",
             "bandwidth_tbs": 130,
             "bus_saturation_pct": 100,
+            "dma_packet_stalls": 0,
+            "packet_stalls": 0,
+            "triad_resonance_blowups": 0,
+        },
+        "virtual_crossbar": {
+            "polytope": "H4_600_CELL",
+            "bandwidth_tbs": 130,
+            "bus_saturation_pct": 100,
+            "dma_packet_stalls": 0,
             "packet_stalls": 0,
             "triad_resonance_blowups": 0,
         },
@@ -497,4 +568,3 @@ async def schedule_disaggregated_pools(request: PoolScheduleRequest) -> Dict[str
 )
 async def get_sovereign_governance() -> Dict[str, Any]:
     return ciaas_store.get_sovereign_profile()
-

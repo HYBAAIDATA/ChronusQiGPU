@@ -28,6 +28,7 @@ security = HTTPBearer(auto_error=False)
 
 class Role(str, Enum):
     """System-level RBAC roles (AL HARAS Authority)."""
+
     # Canonical 4 Role Tiers
     SYSTEM_ADMIN = "system_admin"
     TENANT_ADMIN = "tenant_admin"
@@ -48,7 +49,13 @@ AL_HARAS_PRIVILEGES_MATRIX = {
         "scope": "Full cluster topology control, node registration/fencing, KMS/HSM key rotation, global rate-limit policies.",
         "entitlements": "Configures 64-stream gRPC endpoints, assigns regional pods (alpha, beta, gamma, delta), manages physical vs virtual resource discovery.",
         "audit": "Accesses raw SRE metrics, OpenTelemetry traces, global audit logs, and hardware failover telemetry.",
-        "allowed_endpoints": ["/v1/*", "/metrics", "/admin/*", "/v1/tenants/*", "/v1/fabric/pods"],
+        "allowed_endpoints": [
+            "/v1/*",
+            "/metrics",
+            "/admin/*",
+            "/v1/tenants/*",
+            "/v1/fabric/pods",
+        ],
     },
     "tenant_admin": {
         "title": "Tenant Admin",
@@ -56,7 +63,13 @@ AL_HARAS_PRIVILEGES_MATRIX = {
         "scope": "Manages tenant API keys, OAuth2/OIDC SSO integration, tenant onboarding/offboarding, and secret lifecycle.",
         "entitlements": "Allocates Chronus Capacity Entitlements (CCE), configures compute/memory/storage quotas, authorizes burst capacity.",
         "audit": "Reviews tenant usage ledgers, four-part pricing breakdown (P_total), and Hermiten 25% value-share settlement reports.",
-        "allowed_endpoints": ["/v1/tenants/{tenant_id}/*", "/v1/connectors/*", "/v1/workloads", "/v1/capacity", "/billing/*"],
+        "allowed_endpoints": [
+            "/v1/tenants/{tenant_id}/*",
+            "/v1/connectors/*",
+            "/v1/workloads",
+            "/v1/capacity",
+            "/billing/*",
+        ],
     },
     "developer": {
         "title": "Developer / Engineer",
@@ -64,7 +77,12 @@ AL_HARAS_PRIVILEGES_MATRIX = {
         "scope": "Generates tenant-scoped API tokens (ptr_sdk_...), manages workload submission tags and task dependency graphs.",
         "entitlements": "Submits workloads across all 5 execution presets, binds ptr_ovid_ zero-copy connectors, inspects intermediate KV-caches, triggers cancellations or retries.",
         "audit": "Queries THESEUS journals, inspects OVID content-addressed blobs (o1_<hash>) and zero-copy pointers (ptr_ovid_<hash>), and retrieves execution receipts.",
-        "allowed_endpoints": ["/v1/workloads", "/v1/connectors/*", "/v1/storage", "/v1/capabilities"],
+        "allowed_endpoints": [
+            "/v1/workloads",
+            "/v1/connectors/*",
+            "/v1/storage",
+            "/v1/capabilities",
+        ],
     },
     "external_auditor": {
         "title": "External Auditor",
@@ -97,7 +115,10 @@ class JWKSCache:
 
         # Key rotation scenario: kid not found in cache, attempt single immediate refresh
         if kid and self.jwks_url:
-            logger.info("Key ID %s not found in JWKS cache; triggering immediate refresh for rotation", kid)
+            logger.info(
+                "Key ID %s not found in JWKS cache; triggering immediate refresh for rotation",
+                kid,
+            )
             self.refresh()
             return self._keys.get(kid)
 
@@ -120,7 +141,9 @@ class JWKSCache:
                 )
                 return
             try:
-                req = URLRequest(self.jwks_url, headers={"User-Agent": "Chronus-JWKS-Resolver/1.0"})
+                req = URLRequest(
+                    self.jwks_url, headers={"User-Agent": "Chronus-JWKS-Resolver/1.0"}
+                )
                 # Scheme validated as https above.
                 with urlopen(req, timeout=10.0) as resp:  # nosec B310
                     raw_jwks = resp.read().decode("utf-8")
@@ -149,7 +172,9 @@ class JWKSCache:
                         new_keys[kid] = k
             self._keys = new_keys
             self._last_fetch = time.monotonic()
-            logger.info("Successfully loaded %d public key(s) from JWKS", len(self._keys))
+            logger.info(
+                "Successfully loaded %d public key(s) from JWKS", len(self._keys)
+            )
         except Exception as exc:
             logger.error("Failed to parse JWKS payload: %s", exc)
 
@@ -219,7 +244,9 @@ class JWTValidator:
     ) -> None:
         self.audience = audience or os.getenv("CHRONUS_JWT_AUDIENCE", "chronus-api")
         self.issuer = issuer or os.getenv("CHRONUS_JWT_ISSUER")
-        self.secret = secret or os.getenv("CHRONUS_JWT_SECRET", "test-secret-key-for-hmac-32bytes-chronus!!")
+        self.secret = secret or os.getenv(
+            "CHRONUS_JWT_SECRET", "test-secret-key-for-hmac-32bytes-chronus!!"
+        )
 
     def validate_token(self, token: str) -> AuthenticatedIdentity:
         """Decode and validate JWT token claims."""
@@ -231,7 +258,10 @@ class JWTValidator:
         except Exception as exc:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"error": "invalid_token_header", "message": f"Malformed JWT header: {exc}"},
+                detail={
+                    "error": "invalid_token_header",
+                    "message": f"Malformed JWT header: {exc}",
+                },
             )
 
         # Resolve verification key (JWKS or secret)
@@ -252,7 +282,10 @@ class JWTValidator:
                 return self._build_identity(claims)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"error": "signing_key_not_found", "message": f"No public key available for kid={kid}"},
+                detail={
+                    "error": "signing_key_not_found",
+                    "message": f"No public key available for kid={kid}",
+                },
             )
 
         options = {
@@ -276,12 +309,18 @@ class JWTValidator:
         except jwt.ExpiredSignatureError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"error": "token_expired", "message": "The provided access token has expired."},
+                detail={
+                    "error": "token_expired",
+                    "message": "The provided access token has expired.",
+                },
             )
         except jwt.InvalidTokenError as exc:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"error": "invalid_token", "message": f"Token validation failed: {exc}"},
+                detail={
+                    "error": "invalid_token",
+                    "message": f"Token validation failed: {exc}",
+                },
             )
 
     def _build_identity(self, claims: Dict[str, Any]) -> AuthenticatedIdentity:
@@ -295,13 +334,18 @@ class JWTValidator:
         if not tenant_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"error": "missing_tenant_claim", "message": "JWT does not contain a tenant identity claim."},
+                detail={
+                    "error": "missing_tenant_claim",
+                    "message": "JWT does not contain a tenant identity claim.",
+                },
             )
 
         user_id = str(claims.get("sub", tenant_id))
 
         # Parse roles
-        raw_roles = claims.get("roles") or claims.get("role") or claims.get("permissions") or []
+        raw_roles = (
+            claims.get("roles") or claims.get("role") or claims.get("permissions") or []
+        )
         if isinstance(raw_roles, str):
             raw_roles = [r.strip() for r in raw_roles.split(",") if r.strip()]
 
@@ -333,13 +377,16 @@ def get_current_identity(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ) -> AuthenticatedIdentity:
     """Dependency extracting and validating authenticated identity.
-    
+
     Supports both modern OIDC/OAuth2 JWT tokens and legacy static tenant tokens.
     """
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"error": "authentication_required", "message": "Authorization Bearer token required."},
+            detail={
+                "error": "authentication_required",
+                "message": "Authorization Bearer token required.",
+            },
         )
 
     token = credentials.credentials
@@ -356,6 +403,7 @@ def get_current_identity(
 
     # Check static fallback via AuthService
     from chronus.service.dependencies import auth_service
+
     tenant_id = auth_service.authenticate(credentials)
     if tenant_id:
         identity = AuthenticatedIdentity(
@@ -370,7 +418,10 @@ def get_current_identity(
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail={"error": "invalid_credentials", "message": "Invalid token or signature."},
+        detail={
+            "error": "invalid_credentials",
+            "message": "Invalid token or signature.",
+        },
     )
 
 
@@ -378,7 +429,9 @@ def require_roles(*allowed_roles: Role) -> Callable:
     """FastAPI dependency enforcing Role-Based Access Control."""
     allowed_set = set(allowed_roles)
 
-    def dependency(identity: AuthenticatedIdentity = Depends(get_current_identity)) -> AuthenticatedIdentity:
+    def dependency(
+        identity: AuthenticatedIdentity = Depends(get_current_identity),
+    ) -> AuthenticatedIdentity:
         if not identity.has_any_role(allowed_set):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -402,7 +455,9 @@ def create_jwt_token(
     additional_claims: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Mint an authenticated JWT token with role claims for testing or tenant access."""
-    key = secret or os.getenv("CHRONUS_JWT_SECRET", "test-secret-key-for-hmac-32bytes-chronus!!")
+    key = secret or os.getenv(
+        "CHRONUS_JWT_SECRET", "test-secret-key-for-hmac-32bytes-chronus!!"
+    )
     now = int(time.time())
     role_str = role.value if isinstance(role, Role) else str(role)
     payload = {

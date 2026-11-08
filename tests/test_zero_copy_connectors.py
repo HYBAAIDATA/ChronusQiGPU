@@ -67,7 +67,9 @@ class TestZeroCopyPrimitives:
         ovid = OVIDStorage()
         sample = b"PAR1_SOVEREIGN_LAKEHOUSE_COLUMN_CHUNK_PAR1"
         digest = hashlib.sha256(sample).hexdigest()
-        folded = BinetZeckendorfIngressEngine.fold_bytes(sample, source_uri="s3://bucket/part.parquet")
+        folded = BinetZeckendorfIngressEngine.fold_bytes(
+            sample, source_uri="s3://bucket/part.parquet"
+        )
 
         ptr = ovid.register_zero_copy_pointer(
             content_hash=digest,
@@ -133,7 +135,9 @@ class TestZeroCopyPrimitives:
             ),
         ],
     )
-    def test_binet_zeckendorf_format_agnostic_lossless_roundtrip(self, fmt, uri, payload):
+    def test_binet_zeckendorf_format_agnostic_lossless_roundtrip(
+        self, fmt, uri, payload
+    ):
         detected = BinetZeckendorfIngressEngine.detect_format(payload, source_uri=uri)
         assert detected == fmt
 
@@ -183,12 +187,18 @@ class TestZeroCopyPrimitives:
             assert t4_route["ovid_reference_plane"]["bulk_payload_transferred"] is False
 
         # T5: REMOTE_TRANSFER for cross-region or remote on-prem PostgreSQL / HDFS
-        t5_cross = classify_memory_access_class(ConnectorType.AWS_S3, "us-east-1", "eu-west-2")
-        t5_pg = classify_memory_access_class(ConnectorType.POSTGRESQL, "eu-west-2", "eu-west-2")
+        t5_cross = classify_memory_access_class(
+            ConnectorType.AWS_S3, "us-east-1", "eu-west-2"
+        )
+        t5_pg = classify_memory_access_class(
+            ConnectorType.POSTGRESQL, "eu-west-2", "eu-west-2"
+        )
         assert t5_cross == MemoryAccessClass.REMOTE_TRANSFER
         assert t5_pg == MemoryAccessClass.REMOTE_TRANSFER
 
-        t5_route = DataMovementPlaneRouter.route_descriptor(t5_cross, b"CROSS_REGION_BLOCK" * 16)
+        t5_route = DataMovementPlaneRouter.route_descriptor(
+            t5_cross, b"CROSS_REGION_BLOCK" * 16
+        )
         assert t5_route["plane_tier"] == "T5"
         stream = t5_route["dec_lie_poisson_stream"]
         assert stream["helicity_conserved"] is True
@@ -238,7 +248,9 @@ class TestZeroCopyPrimitives:
             )
 
         # Malicious prompt/SQL sheaf injection marker must raise H^1(X; F) != 0 obstruction
-        with pytest.raises(ConnectorSecurityError, match="Sheaf cohomology obstruction"):
+        with pytest.raises(
+            ConnectorSecurityError, match="Sheaf cohomology obstruction"
+        ):
             mgr.ingest_data_block(
                 connector_id=conn.connector_id,
                 raw_or_encrypted_bytes=b"DROP TABLE -- INJECT_VORTEX",
@@ -355,7 +367,9 @@ class TestConnectorsAPIExecutionAndSDK:
         assert blocked.status_code == 403
         assert blocked.json()["detail"]["cohomology_state"] == "H^1(X; F) != 0"
 
-    def test_native_reference_backend_and_workloads_router_execute_zero_copy_workloads(self):
+    def test_native_reference_backend_and_workloads_router_execute_zero_copy_workloads(
+        self,
+    ):
         auth_service.register_tenant("zc-workload-tenant", "zc-workload-token")
 
         # BINET_ZECKENDORF_INGEST via NativeMathReferenceBackend
@@ -386,7 +400,8 @@ class TestConnectorsAPIExecutionAndSDK:
                 "tenant_id": "zc-workload-tenant",
                 "workload_type": "ZERO_COPY_CONNECTOR_EXECUTE",
                 "representation_mode": "BINET_ZECKENDORF",
-                "payload_bytes": "base64:" + base64.b64encode(payload_json).decode("ascii"),
+                "payload_bytes": "base64:"
+                + base64.b64encode(payload_json).decode("ascii"),
                 "metadata": {"zero_copy_pointer_id": target_ptr},
             },
         )
@@ -394,11 +409,14 @@ class TestConnectorsAPIExecutionAndSDK:
         data = resp.json()
         assert data["status"] == "COMPLETED"
         assert data["result"]["result"]["pointer_id"] == target_ptr
-        assert data["result"]["result"]["computation"]["norm_invariant_verified"] is True
+        assert (
+            data["result"]["result"]["computation"]["norm_invariant_verified"] is True
+        )
         assert data["verification_receipt"] is not None
 
     def test_python_sdk_zero_copy_connector_methods(self):
         auth_service.register_tenant("sdk-zc-tenant", "sdk-zc-token")
+
         # Bridge sync ChronusAPISDK httpx.Client to FastAPI TestClient via MockTransport
         def _bridge_to_fastapi(request: httpx.Request) -> httpx.Response:
             resp = self.client.request(
@@ -453,7 +471,9 @@ class TestConnectorsAPIExecutionAndSDK:
             ptr_id = ingested["pointer"]["pointer_id"]
             assert ptr_id.startswith("ptr_ovid_")
 
-            discovered = sdk.discover_connector_schemas(cid, additional_tables=["BQ_POSITIONS_VIEW"])
+            discovered = sdk.discover_connector_schemas(
+                cid, additional_tables=["BQ_POSITIONS_VIEW"]
+            )
             assert discovered["newly_indexed_count"] == 1
 
             executed = sdk.execute_zero_copy_pointer(
@@ -470,9 +490,14 @@ class TestConnectorsAPIExecutionAndSDK:
 
             # S3 Multi-TB Parquet Discovery & Query Benchmarks via SDK
             sdk_s3_bench = sdk.run_s3_parquet_discovery_benchmark()
-            assert sdk_s3_bench["benchmark"] == "S3_MULTI_TERABYTE_PARQUET_SCHEMA_DISCOVERY"
             assert (
-                sdk_s3_bench["zero_copy_storage_reduction"]["assigned_zero_copy_pointer"]
+                sdk_s3_bench["benchmark"]
+                == "S3_MULTI_TERABYTE_PARQUET_SCHEMA_DISCOVERY"
+            )
+            assert (
+                sdk_s3_bench["zero_copy_storage_reduction"][
+                    "assigned_zero_copy_pointer"
+                ]
                 == "ptr_ovid_9350fda91695d3d9b9a31bf6"
             )
 
@@ -482,7 +507,10 @@ class TestConnectorsAPIExecutionAndSDK:
             )
             assert sdk_query_bench["benchmark"] == "ZERO_COPY_IN_PLACE_QUERY_BENCHMARK"
             assert sdk_query_bench["dataset_scope"]["data_at_rest_enforced"] is True
-            assert sdk_query_bench["dataset_scope"]["network_egress_bytes_transferred"] == 0
+            assert (
+                sdk_query_bench["dataset_scope"]["network_egress_bytes_transferred"]
+                == 0
+            )
         finally:
             sdk.close()
 
@@ -500,7 +528,9 @@ class TestConnectorsAPIExecutionAndSDK:
         assert telemetry["record_indexing_throughput_billion_per_sec"] >= 70.0
 
         storage = res["zero_copy_storage_reduction"]
-        assert storage["assigned_zero_copy_pointer"] == "ptr_ovid_9350fda91695d3d9b9a31bf6"
+        assert (
+            storage["assigned_zero_copy_pointer"] == "ptr_ovid_9350fda91695d3d9b9a31bf6"
+        )
         assert storage["compression_ratio_pct"] == 99.90
         assert storage["data_at_rest_enforced"] is True
         assert storage["network_egress_bytes_transferred"] == 0
@@ -508,7 +538,10 @@ class TestConnectorsAPIExecutionAndSDK:
         sec = res["al_haras_security_custody"]
         assert sec["sheaf_cohomology_status"] == "H1_VORTEX_FREE_NORM_0.0"
         assert sec["kms_custody_mode"] == "CUSTOMER_HELD_HSM_PKCS11"
-        assert sec["fips_204_mldsa_signature"] == "mldsa65_9350fda91695d3d9b9a31bf63061a422"
+        assert (
+            sec["fips_204_mldsa_signature"]
+            == "mldsa65_9350fda91695d3d9b9a31bf63061a422"
+        )
 
     def test_s3_sample_zero_copy_query_benchmark_execution(self):
         mgr = ZeroCopyConnectorManager()
@@ -518,7 +551,9 @@ class TestConnectorsAPIExecutionAndSDK:
         assert ptr.data_stays_at_rest is True
         assert ptr.bulk_staging_bytes == 0
 
-        res = mgr.execute_zero_copy_query_benchmark(pointer_id="ptr_ovid_9350fda91695d3d9b9a31bf6")
+        res = mgr.execute_zero_copy_query_benchmark(
+            pointer_id="ptr_ovid_9350fda91695d3d9b9a31bf6"
+        )
         assert res["benchmark"] == "ZERO_COPY_IN_PLACE_QUERY_BENCHMARK"
         assert res["target_pointer_id"] == "ptr_ovid_9350fda91695d3d9b9a31bf6"
         assert res["dataset_scope"]["data_at_rest_enforced"] is True
@@ -535,7 +570,10 @@ class TestConnectorsAPIExecutionAndSDK:
         assert queries["PISOT_LUCAS_L479_INVARIANT_SCAN"]["structural_index_n"] == 479
 
         assert "ZECKENDORF_PREDICATE_PUSHDOWN_AND_PARITY" in queries
-        assert queries["ZECKENDORF_PREDICATE_PUSHDOWN_AND_PARITY"]["parity_verified"] is True
+        assert (
+            queries["ZECKENDORF_PREDICATE_PUSHDOWN_AND_PARITY"]["parity_verified"]
+            is True
+        )
 
         telemetry = res["query_latency_telemetry"]
         assert telemetry["total_query_latency_ms"] < 10.0

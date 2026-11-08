@@ -58,11 +58,15 @@ class FormalTopologicalProofVerifier:
         y_perturbed = [1.0, 100.0, 3.0, 4.0]  # Adversarial injection
         diff_perturbed = [x_perturbed[i] - y_perturbed[i] for i in range(4)]
         norm_perturbed = (sum(d * d for d in diff_perturbed)) ** 0.5
-        steps.append(f"Step 2: Perturbed cochain delta_0(x, y) norm = {norm_perturbed} > 0.0")
+        steps.append(
+            f"Step 2: Perturbed cochain delta_0(x, y) norm = {norm_perturbed} > 0.0"
+        )
 
         # Invariant: Clean norm is exactly 0.0, perturbed norm is strictly positive
         is_valid = (norm_clean == 0.0) and (norm_perturbed > 0.0)
-        steps.append("Step 3: Q.E.D. Obstruction class H^1 != 0 isolates adversarial section.")
+        steps.append(
+            "Step 3: Q.E.D. Obstruction class H^1 != 0 isolates adversarial section."
+        )
 
         return FormalProofVerdict(
             theorem_id="THM_1_SHEAF_OBSTRUCTION",
@@ -79,13 +83,17 @@ class FormalTopologicalProofVerifier:
         """
         steps = []
         steps.append("Step 1: Let X be a 4-manifold with boundary dX.")
-        steps.append("Step 2: Trace perturbation delta has non-trivial second Chern class c_2(E) = k = 1.")
-        steps.append("Step 3: Seiberg-Witten monopole equation D_A psi = 0 yields unique smooth cobordism.")
+        steps.append(
+            "Step 2: Trace perturbation delta has non-trivial second Chern class c_2(E) = k = 1."
+        )
+        steps.append(
+            "Step 3: Seiberg-Witten monopole equation D_A psi = 0 yields unique smooth cobordism."
+        )
         steps.append("Step 4: Microcode cobordism transitions k -> 0 in dt = 1 cycle.")
 
         # Invariant: 1-cycle latency bound
         cycles = 1
-        is_valid = (cycles == 1)
+        is_valid = cycles == 1
 
         return FormalProofVerdict(
             theorem_id="THM_2_DSW_COBORDISM",
@@ -122,13 +130,17 @@ class FormalTopologicalProofVerifier:
             + zeta
             + identity
         )
-        is_nilpotent = (quotient == CyclotomicZ5(0, 0, 0, 0))
-        steps.append(f"Step 3: Ring reduction modulo Phi_5(x) = {quotient} == 0 (Exact)")
+        is_nilpotent = quotient == CyclotomicZ5(0, 0, 0, 0)
+        steps.append(
+            f"Step 3: Ring reduction modulo Phi_5(x) = {quotient} == 0 (Exact)"
+        )
 
         return FormalProofVerdict(
             theorem_id="THM_3_CYCLOTOMIC_PENTAGON",
             theorem_name="Cyclotomic Z[zeta_5] Anyon Pentagon Coherence",
-            formal_status="FORMALLY_VERIFIED_LEAN4_COMPLIANT" if is_nilpotent else "FAILED",
+            formal_status="FORMALLY_VERIFIED_LEAN4_COMPLIANT"
+            if is_nilpotent
+            else "FAILED",
             axioms_satisfied=is_nilpotent,
             proof_steps=steps,
         )

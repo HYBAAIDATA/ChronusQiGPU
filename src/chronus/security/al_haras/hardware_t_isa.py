@@ -58,14 +58,18 @@ def encode_t_isa_instruction(inst: "TISAInstruction") -> int:
     rd = inst.rd & 0x1F
     rs1 = inst.rs1 & 0x1F
     rs2 = inst.rs2 & 0x1F
-    return (funct7 << 25) | (rs2 << 20) | (rs1 << 15) | (funct3 << 12) | (rd << 7) | opcode
+    return (
+        (funct7 << 25) | (rs2 << 20) | (rs1 << 15) | (funct3 << 12) | (rd << 7) | opcode
+    )
 
 
 def decode_t_isa_instruction(word: int) -> "TISAInstruction":
     """Decodes a 32-bit RISC-V RoCC instruction word into a TISAInstruction."""
     opcode = word & 0x7F
     if opcode != CUSTOM_0_OPCODE:
-        raise ValueError(f"Invalid opcode 0x{opcode:02x}; expected RISC-V Custom-0 (0x0b)")
+        raise ValueError(
+            f"Invalid opcode 0x{opcode:02x}; expected RISC-V Custom-0 (0x0b)"
+        )
     rd = (word >> 7) & 0x1F
     rs1 = (word >> 15) & 0x1F
     rs2 = (word >> 20) & 0x1F
@@ -76,17 +80,20 @@ def decode_t_isa_instruction(word: int) -> "TISAInstruction":
 
 class HardwareFault(Exception):
     """Base exception for T-ISA silicon exceptions."""
+
     pass
 
 
 class TopologicalSheafFault(HardwareFault):
     """Raised when T_SHEAF_INSPECT trips due to non-zero H^1 obstruction norm."""
+
     pass
 
 
 @dataclass
 class TISAInstruction:
     """A 32-bit / 64-bit encoded T-ISA instruction."""
+
     opcode: TISAOpcode
     rd: int = 0
     rs1: int = 0
@@ -110,7 +117,9 @@ class TopologicalRegisterFile:
     def read(self, reg_idx: int) -> CyclotomicZ5:
         if 0 <= reg_idx < self.num_registers:
             return self.registers[reg_idx]
-        raise IndexError(f"Register index {reg_idx} out of range [0, {self.num_registers})")
+        raise IndexError(
+            f"Register index {reg_idx} out of range [0, {self.num_registers})"
+        )
 
     def write(self, reg_idx: int, val: CyclotomicZ5) -> None:
         if reg_idx == 0:
@@ -119,7 +128,9 @@ class TopologicalRegisterFile:
         if 0 < reg_idx < self.num_registers:
             self.registers[reg_idx] = val
         else:
-            raise IndexError(f"Register index {reg_idx} out of range [1, {self.num_registers})")
+            raise IndexError(
+                f"Register index {reg_idx} out of range [1, {self.num_registers})"
+            )
 
 
 class RISCVTopologicalCoprocessor:
@@ -180,7 +191,7 @@ class RISCVTopologicalCoprocessor:
             v2 = self.regfile.read(inst.rs2)
             diff = v1 - v2
             # Obstruction norm is non-zero if diff is non-trivial
-            is_coherent = (diff == CyclotomicZ5(0, 0, 0, 0))
+            is_coherent = diff == CyclotomicZ5(0, 0, 0, 0)
             if not is_coherent:
                 self.sheaf_faults_intercepted += 1
                 raise TopologicalSheafFault(
@@ -223,7 +234,9 @@ class RISCVTopologicalCoprocessor:
             except TopologicalSheafFault as e:
                 faults.append({"instruction_index": idx, "fault": str(e)})
                 # Autonomous hardware failover: run 1-cycle DSW heal
-                heal_inst = TISAInstruction(opcode=TISAOpcode.T_DSW_HEAL, rd=inst.rs1, rs2=inst.rs2)
+                heal_inst = TISAInstruction(
+                    opcode=TISAOpcode.T_DSW_HEAL, rd=inst.rs1, rs2=inst.rs2
+                )
                 self.execute_instruction(heal_inst)
 
         t1 = time.perf_counter()

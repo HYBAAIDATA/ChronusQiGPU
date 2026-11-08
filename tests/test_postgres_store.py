@@ -77,7 +77,9 @@ class TestRetryDecorator(unittest.TestCase):
             nonlocal call_count
             call_count += 1
             if call_count < 3:
-                raise OperationalError("deadlock detected", params=None, orig=Exception("deadlock"))
+                raise OperationalError(
+                    "deadlock detected", params=None, orig=Exception("deadlock")
+                )
             return "RECOVERED"
 
         result = asyncio.run(transient_op())
@@ -92,7 +94,11 @@ class TestRetryDecorator(unittest.TestCase):
         async def failing_op():
             nonlocal call_count
             call_count += 1
-            raise DBAPIError("could not serialize access due to concurrent update", params=None, orig=Exception("serialization"))
+            raise DBAPIError(
+                "could not serialize access due to concurrent update",
+                params=None,
+                orig=Exception("serialization"),
+            )
 
         with self.assertRaises(DBAPIError):
             asyncio.run(failing_op())
@@ -196,6 +202,7 @@ class TestSQLiteWorkloadStore(unittest.TestCase):
 
     def test_async_wrapper_methods(self):
         """Test async interface wrappers of SQLiteWorkloadStore."""
+
         async def run_async():
             w_id = uuid4()
             resp = WorkloadResponse(

@@ -87,7 +87,9 @@ class WorkloadRequest(BaseModel):
         description="Exact algebraic representation mode",
     )
     priority: Priority = Field(default=Priority.HIGH, description="Workload priority")
-    tenant_id: str = Field(..., description="Tenant identifier", min_length=1, max_length=128)
+    tenant_id: str = Field(
+        ..., description="Tenant identifier", min_length=1, max_length=128
+    )
     region: str = Field(default="us-east-1", description="Deployment region")
     endpoint: str = Field(default="internal_v1", description="API endpoint version")
     backend_preference: Optional[str] = Field(
@@ -107,7 +109,9 @@ class WorkloadRequest(BaseModel):
             try:
                 return base64.b64decode(value[7:], validate=True)
             except (ValueError, binascii.Error) as exc:
-                raise ValueError("payload_bytes must contain valid base64 data") from exc
+                raise ValueError(
+                    "payload_bytes must contain valid base64 data"
+                ) from exc
         return value
 
     @field_validator("payload_bytes")
@@ -134,7 +138,9 @@ class WorkloadRequest(BaseModel):
 class WorkloadResponse(BaseModel):
     """Response model for workload submission and status."""
 
-    workload_id: UUID = Field(default_factory=uuid4, description="Unique workload identifier")
+    workload_id: UUID = Field(
+        default_factory=uuid4, description="Unique workload identifier"
+    )
     status: WorkloadStatus = Field(default=WorkloadStatus.SUBMITTED)
     workload_type: WorkloadType
     representation_mode: RepresentationMode

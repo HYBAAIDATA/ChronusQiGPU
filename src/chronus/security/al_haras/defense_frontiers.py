@@ -29,6 +29,7 @@ from chronus.security.al_haras.sovereign import (
 # FRONTIER 1: AUTONOMOUS SWARM RESILIENCE & TACTICAL EDGE MESH (PENTAGON / JADC2)
 # ==============================================================================
 
+
 class TacticalSwarmMeshEngine:
     """Pentagon / JADC2 Autonomous Swarm Resilience & Tactical Edge Mesh.
 
@@ -60,13 +61,20 @@ class TacticalSwarmMeshEngine:
             else:
                 # Contested noise perturbation simulated within thermal bound
                 noise_scale = min(0.05, jamming_intensity_db / 1000.0)
-                nodes.append([v + (hash(f"{i}_{d}") % 100) * 0.00001 * noise_scale for d, v in enumerate(base_vector)])
+                nodes.append(
+                    [
+                        v + (hash(f"{i}_{d}") % 100) * 0.00001 * noise_scale
+                        for d, v in enumerate(base_vector)
+                    ]
+                )
 
         # 1. Sheaf Cohomology Consensus Check
         sheaf_res = CellularSheafCohomology.compute_cohomology(nodes)
 
         # 2. Cyclotomic Braid Noise Immunity Check
-        braid_res = CyclotomicAnyonBraidEngine.compile_braid(["sigma_1", "sigma_2^-1", "sigma_1", "sigma_2"])
+        braid_res = CyclotomicAnyonBraidEngine.compile_braid(
+            ["sigma_1", "sigma_2^-1", "sigma_1", "sigma_2"]
+        )
 
         t1 = time.perf_counter()
 
@@ -88,7 +96,9 @@ class TacticalSwarmMeshEngine:
                 "zero_float_truncation": braid_res["zero_float_truncation"],
                 "anyon_dimension": braid_res["anyon_quantum_dimension"],
             },
-            "operational_status": "TACTICAL_HARMONIC_CONSENSUS_LOCKED" if admitted else "ADVERSARIAL_SPOOF_ISOLATED",
+            "operational_status": "TACTICAL_HARMONIC_CONSENSUS_LOCKED"
+            if admitted
+            else "ADVERSARIAL_SPOOF_ISOLATED",
             "latency_ms": round((t1 - t0) * 1000.0, 4),
         }
 
@@ -96,6 +106,7 @@ class TacticalSwarmMeshEngine:
 # ==============================================================================
 # FRONTIER 2: SOVEREIGN POST-QUANTUM CRYPTOGRAPHIC SUBSTRATE (GCHQ / NCSC / NSA)
 # ==============================================================================
+
 
 class PostQuantumSubstrateEngine:
     """GCHQ / NCSC / NSA Sovereign Post-Quantum Cryptographic Substrate.
@@ -115,15 +126,19 @@ class PostQuantumSubstrateEngine:
         t0 = time.perf_counter()
 
         payload_hash = hashlib.sha256(c4isr_stream_packet).hexdigest()
-        
+
         # 1. Poseidon2 Algebraic Transcript Binding
-        transcript = hashlib.sha256(c4isr_stream_packet + b"_POSEIDON2_IVC_FOLD").digest()
+        transcript = hashlib.sha256(
+            c4isr_stream_packet + b"_POSEIDON2_IVC_FOLD"
+        ).digest()
 
         # 2. FRI zk-STARK Polynomial Quotient Commitment
         fri_root = hashlib.sha256(transcript + b"_FRI_COMMITMENT_LAYER").hexdigest()
 
         # 3. NIST FIPS 204 ML-DSA-87 Lattice Signature Anchor
-        mldsa_sig = f"mldsa87_{hashlib.sha256(transcript + payload_hash.encode()).hexdigest()}"
+        mldsa_sig = (
+            f"mldsa87_{hashlib.sha256(transcript + payload_hash.encode()).hexdigest()}"
+        )
 
         t1 = time.perf_counter()
 
@@ -147,6 +162,7 @@ class PostQuantumSubstrateEngine:
 # ==============================================================================
 # FRONTIER 3: STRATEGIC HYPERSCALE SIMULATION (DARPA / DEFENSE LABS)
 # ==============================================================================
+
 
 class HyperscaleDefenseSimulationEngine:
     """DARPA / National Defense Labs Strategic Hyperscale Simulation Engine.
@@ -217,6 +233,7 @@ class HyperscaleDefenseSimulationEngine:
 # FRONTIER 4: SELF-HEALING CRITICAL NATIONAL INFRASTRUCTURE (NATO CNI DEFENSE)
 # ==============================================================================
 
+
 class CNISelfHealingEngine:
     """NATO Critical National Infrastructure (CNI) Self-Healing Substrate.
 
@@ -236,7 +253,7 @@ class CNISelfHealingEngine:
         t0 = time.perf_counter()
 
         trace_payload = f"CNI_TELEMETRY_{asset_name}_STATUS_CONTINUOUS".encode("utf-8")
-        
+
         # 1. DSW 4D Instanton Monopole Self-Healing
         heal_res = DSW4DInstantonMonopoleHealer.inspect_and_heal(
             trace_payload=trace_payload,
@@ -256,11 +273,15 @@ class CNISelfHealingEngine:
             "dsw_instanton_monopole": {
                 "instanton_number_k": heal_res["instanton_number_k"],
                 "cobordism_status": heal_res["cobordism_status"],
-                "seiberg_witten_monopole_dual": heal_res.get("seiberg_witten_monopole_dual", "TRIVIAL_VACUUM"),
+                "seiberg_witten_monopole_dual": heal_res.get(
+                    "seiberg_witten_monopole_dual", "TRIVIAL_VACUUM"
+                ),
                 "healing_cycles": heal_res["healing_cycles"],
                 "context_rollback_bytes": 0,
             },
-            "cni_defense_posture": "TOPOLOGICALLY_HEALED_UNINTERRUPTED_OPERATION" if simulated_cyber_physical_strike else "NOMINAL_STABLE_GRID_OPERATION",
+            "cni_defense_posture": "TOPOLOGICALLY_HEALED_UNINTERRUPTED_OPERATION"
+            if simulated_cyber_physical_strike
+            else "NOMINAL_STABLE_GRID_OPERATION",
             "ncsc_principles_passed": 14,
             "key_custody": "CUSTOMER_HELD_HSM_PKCS11",
             "audit_latency_ms": round((t1 - t0) * 1000.0, 4),
@@ -270,6 +291,7 @@ class CNISelfHealingEngine:
 # ==============================================================================
 # UNIFIED 4-FRONTIER STRATEGIC DEFENSE COORDINATOR
 # ==============================================================================
+
 
 class StrategicDefenseCoordinator:
     """Unified 4-Frontier Strategic Defense Coordinator.
@@ -320,10 +342,18 @@ class StrategicDefenseCoordinator:
     @classmethod
     def run_all_frontier_simulations(cls) -> Dict[str, Any]:
         """Runs an end-to-end mission demonstration across all 4 frontiers."""
-        f1 = TacticalSwarmMeshEngine.evaluate_swarm_mesh(node_count=16, jamming_intensity_db=50.0)
-        f2 = PostQuantumSubstrateEngine.generate_line_rate_ivc_receipt(b"FIVE_EYES_TOP_SECRET_STREAM_PACKET")
-        f3 = HyperscaleDefenseSimulationEngine.execute_hypersonic_cfd_simulation(mach_number=14.0)
-        f4 = CNISelfHealingEngine.audit_and_heal_cni_asset(simulated_cyber_physical_strike=True)
+        f1 = TacticalSwarmMeshEngine.evaluate_swarm_mesh(
+            node_count=16, jamming_intensity_db=50.0
+        )
+        f2 = PostQuantumSubstrateEngine.generate_line_rate_ivc_receipt(
+            b"FIVE_EYES_TOP_SECRET_STREAM_PACKET"
+        )
+        f3 = HyperscaleDefenseSimulationEngine.execute_hypersonic_cfd_simulation(
+            mach_number=14.0
+        )
+        f4 = CNISelfHealingEngine.audit_and_heal_cni_asset(
+            simulated_cyber_physical_strike=True
+        )
 
         return {
             "strategic_summary": "ALL_4_DEFENSE_FRONTIERS_MISSION_QUALIFIED",

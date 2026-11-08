@@ -103,7 +103,9 @@ class SecurityContext:
         self.zk_stark = ZKSTARKVerifier()
         self.ovid = OVIDStorage()
         self.al_haras_fabric = ALHarasSecurityFabric()
-        self.al_haras_sovereign = ALHarasSovereignProductSDK(sovereign_state_id=sovereign_state_id)
+        self.al_haras_sovereign = ALHarasSovereignProductSDK(
+            sovereign_state_id=sovereign_state_id
+        )
         self.defense_coordinator = StrategicDefenseCoordinator()
         self.verify_endpoint = VerifyEndpoint(
             ml_dsa_signer=self.ml_dsa,

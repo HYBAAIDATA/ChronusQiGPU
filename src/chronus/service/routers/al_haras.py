@@ -208,6 +208,7 @@ async def simulate_defense_frontier(req: FrontierSimulationRequest) -> Dict[str,
 # EXPANSION ENDPOINTS: AGENTIC SHEAF, ORBITAL MESH, T-ISA, zk-ML & FORMAL PROOFS
 # ------------------------------------------------------------------------------
 
+
 class AgenticPromptRequest(BaseModel):
     prompt_text: str = Field(
         default="Plan constellation telemetry transfer.",
@@ -299,4 +300,3 @@ async def get_t_isa_diagnostics() -> Dict[str, Any]:
 async def get_formal_theorems() -> Dict[str, Any]:
     """Return Lean 4 formal mathematical verification audit for EAL7."""
     return FormalTopologicalProofVerifier.verify_all_theorems()
-

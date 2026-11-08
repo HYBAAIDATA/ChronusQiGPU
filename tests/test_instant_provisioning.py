@@ -77,7 +77,9 @@ class TestInstantProvisioningEngine(unittest.TestCase):
 
         # Stage 2: Verify Postgres REPEATABLE READ isolation & THESEUS journal continuity
         self.assertEqual(data["postgres_isolation"]["pool_size"], 10)
-        self.assertEqual(data["postgres_isolation"]["isolation_level"], "REPEATABLE READ")
+        self.assertEqual(
+            data["postgres_isolation"]["isolation_level"], "REPEATABLE READ"
+        )
         self.assertTrue(tenant_storage_registry.verify_journal_continuity(tenant_id))
 
         # Stage 3: Verify AL HARAS KMS PKCS#11 custody attestation & JWT claims
@@ -90,7 +92,9 @@ class TestInstantProvisioningEngine(unittest.TestCase):
         # Verify T0 immediate workload execution using issued SDK API key
         sdk_api_key = data["credential_handoff"]["sdk_api_key"]
         self.assertTrue(sdk_api_key.startswith("ptr_sdk_apex_"))
-        wkld_payload = base64.b64encode(json.dumps({"index": 24}).encode("utf-8")).decode("ascii")
+        wkld_payload = base64.b64encode(
+            json.dumps({"index": 24}).encode("utf-8")
+        ).decode("ascii")
         wkld_res = self.client.post(
             "/v1/workloads",
             json={
@@ -167,7 +171,9 @@ class TestInstantProvisioningEngine(unittest.TestCase):
                 },
             }
             raw_bytes = json.dumps(payload).encode("utf-8")
-            sig_hex = hmac.new(secret.encode("utf-8"), raw_bytes, hashlib.sha256).hexdigest()
+            sig_hex = hmac.new(
+                secret.encode("utf-8"), raw_bytes, hashlib.sha256
+            ).hexdigest()
 
             # Valid HMAC signature without Bearer token succeeds
             res = self.client.post(
@@ -179,7 +185,9 @@ class TestInstantProvisioningEngine(unittest.TestCase):
                 },
             )
             self.assertEqual(res.status_code, 201, res.text)
-            self.assertEqual(res.json()["al_haras_kms_status"], "KMS_BOUND_CUSTOMER_CUSTODY")
+            self.assertEqual(
+                res.json()["al_haras_kms_status"], "KMS_BOUND_CUSTOMER_CUSTODY"
+            )
 
             # Tampered signature is rejected with 401
             bad_res = self.client.post(
@@ -208,7 +216,9 @@ class TestInstantProvisioningEngine(unittest.TestCase):
         self.assertEqual(unauth.status_code, 401)
 
         # Developer cannot trigger instant onboarding
-        dev_tok = create_jwt_token(tenant_id=tenant_a, user_id="dev1", role=Role.DEVELOPER)
+        dev_tok = create_jwt_token(
+            tenant_id=tenant_a, user_id="dev1", role=Role.DEVELOPER
+        )
         forbidden_onboard = self.client.post(
             "/v1/tenants/onboard/instant",
             json={
@@ -254,7 +264,9 @@ class TestInstantProvisioningEngine(unittest.TestCase):
             self.assertEqual(r.status_code, 201)
 
         # Tenant A admin cannot expand Tenant B capacity
-        tenant_a_admin = create_jwt_token(tenant_id=tenant_a, user_id="admin_a", role=Role.TENANT_ADMIN)
+        tenant_a_admin = create_jwt_token(
+            tenant_id=tenant_a, user_id="admin_a", role=Role.TENANT_ADMIN
+        )
         cross_res = self.client.patch(
             f"/v1/tenants/{tenant_b}/capacity",
             json={"requested_warp_capacity": 128, "reason": "CROSS_TENANT_ATTEMPT"},

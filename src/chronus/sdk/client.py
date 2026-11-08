@@ -90,9 +90,7 @@ class ChronusAPISDK:
         for attempt in range(attempts):
             started = time.perf_counter()
             try:
-                response = self._client.request(
-                    method, path, json=json, params=params
-                )
+                response = self._client.request(method, path, json=json, params=params)
             except httpx.RequestError as exc:
                 if attempt + 1 == attempts:
                     raise ServiceUnavailableError(
@@ -218,9 +216,13 @@ class ChronusAPISDK:
     def get_health(self) -> Dict[str, Any]:
         return self._request("GET", "/health")
 
-    def instant_onboard_tenant(self, onboarding_payload: Dict[str, Any]) -> Dict[str, Any]:
+    def instant_onboard_tenant(
+        self, onboarding_payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Trigger Zero-Friction instant tenant provisioning (<30s T0 SLA)."""
-        return self._request("POST", "/v1/tenants/onboard/instant", json=onboarding_payload)
+        return self._request(
+            "POST", "/v1/tenants/onboard/instant", json=onboarding_payload
+        )
 
     def expand_capacity(
         self,
@@ -237,7 +239,9 @@ class ChronusAPISDK:
         }
         if expand_storage_gb is not None:
             payload["expand_storage_gb"] = expand_storage_gb
-        return self._request("PATCH", f"/v1/tenants/{target_tenant}/capacity", json=payload)
+        return self._request(
+            "PATCH", f"/v1/tenants/{target_tenant}/capacity", json=payload
+        )
 
     def get_capacity_status(self, tenant_id: Optional[str] = None) -> Dict[str, Any]:
         """Retrieve Enduring Capacity Addendum and real-time Hermiten settlement status."""
@@ -263,7 +267,9 @@ class ChronusAPISDK:
         }
         if kms_key_arn is not None:
             payload["kms_key_arn"] = kms_key_arn
-        return self._request("POST", f"/v1/connectors/eca/{target_tenant}/authorize", json=payload)
+        return self._request(
+            "POST", f"/v1/connectors/eca/{target_tenant}/authorize", json=payload
+        )
 
     def register_connector(
         self,
@@ -300,7 +306,9 @@ class ChronusAPISDK:
 
     def list_connectors(self, tenant_id: Optional[str] = None) -> Dict[str, Any]:
         """List bound Zero-Copy Native Representation Connectors."""
-        params: Optional[Dict[str, Any]] = {"tenant_id": tenant_id} if tenant_id else None
+        params: Optional[Dict[str, Any]] = (
+            {"tenant_id": tenant_id} if tenant_id else None
+        )
         return self._request("GET", "/v1/connectors", params=params)
 
     def ingest_zero_copy(
@@ -337,7 +345,9 @@ class ChronusAPISDK:
         body: Dict[str, Any] = {}
         if additional_tables is not None:
             body["additional_tables"] = additional_tables
-        return self._request("POST", f"/v1/connectors/{connector_id}/discover", json=body)
+        return self._request(
+            "POST", f"/v1/connectors/{connector_id}/discover", json=body
+        )
 
     def execute_zero_copy_pointer(
         self,
@@ -371,7 +381,9 @@ class ChronusAPISDK:
             "total_records_indexed": total_records_indexed,
             "discovered_columns_count": discovered_columns_count,
         }
-        return self._request("POST", "/v1/connectors/benchmarks/s3-parquet-discovery", json=payload)
+        return self._request(
+            "POST", "/v1/connectors/benchmarks/s3-parquet-discovery", json=payload
+        )
 
     def benchmark_zero_copy_query(
         self,
@@ -399,7 +411,9 @@ class ChronusAPISDK:
 
     def list_workloads_v1(self, page: int = 1, page_size: int = 50) -> Dict[str, Any]:
         """List tenant workloads via GET /v1/workloads."""
-        return self._request("GET", "/v1/workloads", params={"page": page, "page_size": page_size})
+        return self._request(
+            "GET", "/v1/workloads", params={"page": page, "page_size": page_size}
+        )
 
     def verify_receipt_v1(self, receipt_hash: str) -> Dict[str, Any]:
         """Public zero-auth cryptographic verification via GET /v1/verify/{receipt_hash}."""
@@ -429,7 +443,8 @@ class ChronusAPISDK:
             "region": region,
             "blade_count": blade_count,
             "interconnect": interconnect,
-            "subsystems": subsystems or [
+            "subsystems": subsystems
+            or [
                 "NVIDIA_BLACKWELL_B200",
                 "NVFP4_TENSOR_CORES",
                 "HBM3E_DISAGGREGATED_POOL",
@@ -487,7 +502,8 @@ class ChronusAPISDK:
             "tenant_id": tenant_id,
             "organization_name": organization_name,
             "requested_warps": requested_warps,
-            "aws_kms_key_arn": aws_kms_key_arn or "arn:aws:kms:us-east-1:112233445566:key/chronus-pkcs11-custody",
+            "aws_kms_key_arn": aws_kms_key_arn
+            or "arn:aws:kms:us-east-1:112233445566:key/chronus-pkcs11-custody",
             "contact_email": contact_email or f"admin@{tenant_id}.internal",
         }
         return self._request("POST", "/v1/tenants/onboard/instant", json=payload)
@@ -503,9 +519,7 @@ class ChronusAPISDK:
 
     def get_stats(self) -> Dict[str, Any]:
         average = (
-            self._total_latency_ms / self._request_count
-            if self._request_count
-            else 0.0
+            self._total_latency_ms / self._request_count if self._request_count else 0.0
         )
         return {
             "sdk_version": self.SDK_VERSION,

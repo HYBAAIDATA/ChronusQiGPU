@@ -56,8 +56,16 @@ workloads_table = Table(
     Column("tenant_id", String(128), nullable=False, index=True),
     Column("status", String(32), nullable=False, index=True),
     Column("response_json", Text, nullable=False),
-    Column("created_at", DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)),
-    Column("updated_at", DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)),
+    Column(
+        "created_at",
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    ),
+    Column(
+        "updated_at",
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    ),
 )
 
 execution_records_table = Table(
@@ -69,7 +77,11 @@ execution_records_table = Table(
     Column("execution_mode", String(64), nullable=False),
     Column("duration_ms", Float, nullable=False),
     Column("result_json", Text, nullable=False),
-    Column("created_at", DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)),
+    Column(
+        "created_at",
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    ),
 )
 
 receipts_table = Table(
@@ -82,7 +94,11 @@ receipts_table = Table(
     Column("algorithm", String(32), nullable=False),
     Column("verified", Integer, default=1),
     Column("receipt_json", Text, nullable=False),
-    Column("created_at", DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)),
+    Column(
+        "created_at",
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    ),
 )
 
 tenant_usage_table = Table(
@@ -113,8 +129,16 @@ ciaas_tenants_table = Table(
     Column("kms_provider", String(64), nullable=False),
     Column("kms_key_arn", Text, nullable=False),
     Column("profile_json", Text, nullable=False),
-    Column("created_at", DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)),
-    Column("updated_at", DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)),
+    Column(
+        "created_at",
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    ),
+    Column(
+        "updated_at",
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    ),
 )
 
 ciaas_capacity_ledger_table = Table(
@@ -127,20 +151,29 @@ ciaas_capacity_ledger_table = Table(
     Column("previous_storage_gb", Integer, nullable=False),
     Column("new_storage_gb", Integer, nullable=False),
     Column("reason", String(256), nullable=False),
-    Column("created_at", DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)),
+    Column(
+        "created_at",
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    ),
 )
 
 # Indexes
-Index("ix_workloads_tenant_status", workloads_table.c.tenant_id, workloads_table.c.status)
+Index(
+    "ix_workloads_tenant_status", workloads_table.c.tenant_id, workloads_table.c.status
+)
 Index("ix_execution_records_workload", execution_records_table.c.workload_id)
-Index("ix_receipts_tenant_workload", receipts_table.c.tenant_id, receipts_table.c.workload_id)
+Index(
+    "ix_receipts_tenant_workload",
+    receipts_table.c.tenant_id,
+    receipts_table.c.workload_id,
+)
 
 
 def sanitize_tenant_schema_name(tenant_id: str) -> str:
     """Derive a strictly validated PostgreSQL identifier for per-tenant schema isolation."""
     cleaned = "".join(
-        ch if (ch.isalnum() or ch == "_") else "_"
-        for ch in tenant_id.strip().lower()
+        ch if (ch.isalnum() or ch == "_") else "_" for ch in tenant_id.strip().lower()
     ).strip("_")
     if not cleaned:
         raise ValueError("tenant_id cannot derive a valid PostgreSQL schema identifier")
@@ -155,6 +188,7 @@ def with_retry(
     backoff_factor: float = 2.0,
 ) -> Callable:
     """Decorator retrying database operations on deadlock or serialization errors."""
+
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -167,12 +201,20 @@ def with_retry(
                     err_msg = str(exc).lower()
                     is_transient = any(
                         token in err_msg
-                        for token in ("deadlock", "serialization", "could not serialize", "lock conflict")
+                        for token in (
+                            "deadlock",
+                            "serialization",
+                            "could not serialize",
+                            "lock conflict",
+                        )
                     )
                     if is_transient and attempt < max_retries - 1:
                         logger.warning(
                             "Transient DB error (attempt %d/%d): %s. Retrying in %.3fs...",
-                            attempt + 1, max_retries, exc, backoff
+                            attempt + 1,
+                            max_retries,
+                            exc,
+                            backoff,
                         )
                         await asyncio.sleep(backoff)
                         backoff *= backoff_factor
@@ -181,7 +223,9 @@ def with_retry(
                         raise
             if last_err:
                 raise last_err
+
         return async_wrapper
+
     return decorator
 
 
@@ -197,7 +241,7 @@ class PostgresWorkloadStore(WorkloadStoreInterface):
     ) -> None:
         raw_dsn = dsn or os.getenv(
             "CHRONUS_DATABASE_URL",
-            "postgresql+asyncpg://postgres:postgres@localhost:5432/chronus"
+            "postgresql+asyncpg://postgres:postgres@localhost:5432/chronus",
         )
         # Ensure asyncpg driver prefix for SQLAlchemy async engine
         if raw_dsn.startswith("postgresql://"):
@@ -275,6 +319,7 @@ class PostgresWorkloadStore(WorkloadStoreInterface):
         if loop and loop.is_running():
             # If already inside an running event loop, schedule via new task or thread
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
                 return pool.submit(asyncio.run, coro).result()
         return asyncio.run(coro)
@@ -336,8 +381,10 @@ class PostgresWorkloadStore(WorkloadStoreInterface):
         await self.init_db()
         async with self.session_factory() as session:
             # Count total
-            count_stmt = select(func.count()).select_from(workloads_table).where(
-                workloads_table.c.tenant_id == tenant_id
+            count_stmt = (
+                select(func.count())
+                .select_from(workloads_table)
+                .where(workloads_table.c.tenant_id == tenant_id)
             )
             count_res = await session.execute(count_stmt)
             total = count_res.scalar() or 0
@@ -362,10 +409,20 @@ class PostgresWorkloadStore(WorkloadStoreInterface):
             total_stmt = select(func.count()).select_from(workloads_table)
             total = (await session.execute(total_stmt)).scalar() or 0
 
-            active_stmt = select(func.count()).select_from(workloads_table).where(
-                workloads_table.c.status.in_([
-                    "SUBMITTED", "QUEUED", "PROVISIONING", "EXECUTING", "RECOVERING"
-                ])
+            active_stmt = (
+                select(func.count())
+                .select_from(workloads_table)
+                .where(
+                    workloads_table.c.status.in_(
+                        [
+                            "SUBMITTED",
+                            "QUEUED",
+                            "PROVISIONING",
+                            "EXECUTING",
+                            "RECOVERING",
+                        ]
+                    )
+                )
             )
             active = (await session.execute(active_stmt)).scalar() or 0
             return total, active

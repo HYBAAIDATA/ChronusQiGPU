@@ -49,7 +49,10 @@ class TestFrontier2PostQuantumSubstrate:
         )
         assert res["standard"] == "NIST FIPS 204 (ML-DSA) & FRI zk-STARK"
         assert res["mldsa_lattice_signature"].startswith("mldsa87_")
-        assert res["fri_stark_quotient"]["vanishing_polynomial_status"] == "P(x)/Z_H(x) QUOTIENT_SATISFIED"
+        assert (
+            res["fri_stark_quotient"]["vanishing_polynomial_status"]
+            == "P(x)/Z_H(x) QUOTIENT_SATISFIED"
+        )
         assert len(res["packet_sha256"]) == 64
 
 
@@ -85,7 +88,9 @@ class TestFrontier4CNISelfHealing:
         assert res["dsw_instanton_monopole"]["instanton_number_k"] == 1
         assert res["dsw_instanton_monopole"]["healing_cycles"] == 1
         assert res["dsw_instanton_monopole"]["context_rollback_bytes"] == 0
-        assert res["cni_defense_posture"] == "TOPOLOGICALLY_HEALED_UNINTERRUPTED_OPERATION"
+        assert (
+            res["cni_defense_posture"] == "TOPOLOGICALLY_HEALED_UNINTERRUPTED_OPERATION"
+        )
 
 
 class TestStrategicDefenseCoordinatorAPI:

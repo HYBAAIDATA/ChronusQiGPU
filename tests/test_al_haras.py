@@ -133,7 +133,9 @@ class TestALHarasSecurityFabric:
 
 class TestSovereignComplianceAndOS:
     def test_ncsc_14_principles(self):
-        audit = SovereignGovernanceEngine.audit_sovereign_compliance("sovereign_defence_hq")
+        audit = SovereignGovernanceEngine.audit_sovereign_compliance(
+            "sovereign_defence_hq"
+        )
         assert len(audit["ncsc_14_principles"]) == 14
         assert all(v == "COMPLIANT_PASS" for v in audit["ncsc_14_principles"].values())
         assert audit["fedramp_high_readiness"] == "FEDRAMP_HIGH_CERTIFIED"
@@ -184,7 +186,10 @@ class TestALHarasAPIRouter:
         data = resp.json()
         assert data["admitted_to_execution_fabric"] is False
         assert data["sheaf_cohomology"]["h0_harmonic_section"] is False
-        assert data["dsw_instanton_self_healing"]["cobordism_status"] == "INSTANTON_COBORDISM_TRACE_HEALED"
+        assert (
+            data["dsw_instanton_self_healing"]["cobordism_status"]
+            == "INSTANTON_COBORDISM_TRACE_HEALED"
+        )
         assert data["dsw_instanton_self_healing"]["repair_latency_cycles"] == 1
 
     def test_heal_trace_endpoint(self, api_client):
