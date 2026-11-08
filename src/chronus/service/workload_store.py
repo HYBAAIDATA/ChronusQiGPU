@@ -4,7 +4,7 @@ import os
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator, Optional, Tuple, List
+from typing import Iterator, Optional
 
 from chronus.service.models import WorkloadResponse
 from chronus.service.store_interface import WorkloadStoreInterface

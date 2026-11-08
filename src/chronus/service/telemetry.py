@@ -11,7 +11,6 @@ Provides enterprise-grade SRE infrastructure for Chronus API:
 import contextvars
 import json
 import logging
-import os
 import sys
 import time
 from contextlib import contextmanager

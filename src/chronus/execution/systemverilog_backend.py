@@ -10,10 +10,8 @@ from typing import Any, Dict, List
 
 from chronus.execution.structural import (
     fold_pair,
-    unfold_pair,
     zeckendorf_decode,
     zeckendorf_encode,
-    zeckendorf_increment,
 )
 
 

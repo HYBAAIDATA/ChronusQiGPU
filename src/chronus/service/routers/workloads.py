@@ -29,7 +29,7 @@ import time
 from chronus.security.signers import Ed25519Signer, MLDSASigner
 from chronus.security.stark import ZKSTARKVerifier
 from chronus.storage.connectors import zero_copy_connector_manager
-from chronus.service.workload_store import SQLiteWorkloadStore, get_workload_store
+from chronus.service.workload_store import get_workload_store
 
 _workload_ed25519_signer = Ed25519Signer()
 _workload_ml_dsa_signer = MLDSASigner(security_level=3)

@@ -12,7 +12,7 @@ import logging
 import os
 import time
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, Optional, Set
 from urllib.parse import urlparse
 from urllib.request import Request as URLRequest, urlopen
 

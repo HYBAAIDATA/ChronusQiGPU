@@ -13,7 +13,7 @@ import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
-from chronus.security.signers import ML_DSA_PARAMS, ML_DSA_Q, MLDSASigner
+from chronus.security.signers import MLDSASigner
 from chronus.security.stark import (
     MODULUS,
     ZKSTARKVerifier,

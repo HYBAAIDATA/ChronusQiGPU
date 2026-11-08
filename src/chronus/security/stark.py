@@ -7,9 +7,8 @@ Zero floating point; strictly exact finite-field modular arithmetic.
 """
 
 import hashlib
-import secrets
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 # Prime field modulus: p = 2013265921 = 15 * 2^27 + 1
 # Generator g = 31, 2^27-th root of unity = 440564289

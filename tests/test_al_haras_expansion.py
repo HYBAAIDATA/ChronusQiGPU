@@ -11,16 +11,12 @@
 ================================================================================
 """
 
-import math
 import pytest
 from fastapi.testclient import TestClient
 from chronus.service.app import create_app
 
 from chronus.security.al_haras import (
     CyclotomicZ5,
-    AgentNode,
-    AgentNodeType,
-    AgenticSheafTopology,
     AgenticSheafGuard,
     ThreatClassification,
     TISAOpcode,
@@ -30,8 +26,6 @@ from chronus.security.al_haras import (
     TopologicalSheafFault,
     encode_t_isa_instruction,
     decode_t_isa_instruction,
-    SatelliteNode,
-    SatelliteOrbitClass,
     OrbitalConstellationMesh,
     VerifiableNeuralComputeEngine,
     FormalTopologicalProofVerifier,

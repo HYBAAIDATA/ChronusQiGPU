@@ -19,7 +19,6 @@ from chronus.backends.lattice import HardwareUnavailableError
 from chronus.execution.hardware_dispatcher import (
     MATHEMATICAL_EXECUTION,
     PHYSICAL_HARDWARE_EXECUTION,
-    SOFTWARE_EXECUTION,
     HardwareAcceleratorDispatcher,
 )
 

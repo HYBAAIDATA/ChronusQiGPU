@@ -7,7 +7,7 @@ import os
 import time
 from dataclasses import dataclass
 from fractions import Fraction
-from typing import Any, Dict, Protocol
+from typing import Any, Dict, List, Protocol
 
 from chronus.backends.lattice import ParityVerificationError, phi_power
 from chronus.backends.metallic import metallic_power
@@ -316,7 +316,6 @@ class NativeMathReferenceBackend:
             except binascii.Error as exc:
                 raise ValueError("b64_payload must contain valid base64") from exc
 
-        from chronus.storage.connectors import BinetZeckendorfIngressEngine
 
         folded = BinetZeckendorfIngressEngine.fold_bytes(
             raw_bytes, source_uri=source_uri, format_hint=format_hint
@@ -350,7 +349,6 @@ class NativeMathReferenceBackend:
                 raw_bytes = payload
 
         # 1. Binet-Zeckendorf Lossless Ingestion & Structural Reduction into Q(sqrt(5)) & Pisot-Lucas L_n
-        from chronus.storage.connectors import BinetZeckendorfIngressEngine
 
         folded = BinetZeckendorfIngressEngine.fold_bytes(raw_bytes, source_uri=source_uri, format_hint=format_hint)
 
@@ -405,7 +403,6 @@ class NativeMathReferenceBackend:
         }
 
     def _execute_zero_copy_pointer(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        from chronus.storage.connectors import zero_copy_connector_manager
 
         pointer_id = request.get("pointer_id")
         if not isinstance(pointer_id, str) or not pointer_id.startswith("ptr_ovid_"):

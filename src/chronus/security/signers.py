@@ -6,7 +6,6 @@ Zero floating point; strictly exact arithmetic compliant with purity gate.
 """
 
 import hashlib
-import os
 import secrets
 from typing import Optional, Tuple
 
@@ -103,7 +102,7 @@ class MLDSASigner:
         if self._private_key is None or self._public_key is None:
             raise ValueError("ML-DSA keys not initialized")
 
-        rho = self._private_key[:32]
+        self._private_key[:32]
         k_seed = self._private_key[32:64]
         tr = self._private_key[64:128]
 

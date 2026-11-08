@@ -11,23 +11,16 @@
 """
 
 import hashlib
-import json
-import secrets
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Tuple
 from datetime import datetime, timezone
 
 from chronus.security.al_haras.engine import (
     CellularSheafCohomology,
     DSW4DInstantonMonopoleHealer,
-    RamanujanExpanderSpectralGapGuard,
     CyclotomicAnyonBraidEngine,
-    HeckeModularChecksum,
-    CyclotomicZ5,
 )
 from chronus.security.al_haras.sovereign import (
-    ExactQ5,
-    GaloisField257Phi,
     SovereignGovernanceEngine,
 )
 
@@ -56,7 +49,6 @@ class TacticalSwarmMeshEngine:
         t0 = time.perf_counter()
 
         # Build simplicial complex 1-skeleton of swarm nodes
-        dim = 8
         base_vector = [1.0, 2.0, 3.0, 5.0, 8.0, 13.0, 21.0, 34.0]
 
         nodes = []
@@ -252,7 +244,7 @@ class CNISelfHealingEngine:
         )
 
         # 2. Sovereign NCSC & FedRAMP Compliance Verification
-        gov_res = SovereignGovernanceEngine.audit_sovereign_compliance(asset_name)
+        SovereignGovernanceEngine.audit_sovereign_compliance(asset_name)
 
         t1 = time.perf_counter()
 

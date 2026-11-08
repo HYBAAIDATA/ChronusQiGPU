@@ -11,10 +11,7 @@
 """
 
 import hashlib
-import json
 import os
-import secrets
-from typing import Any, Dict, List
 import pytest
 from hypothesis import HealthCheck, given, settings, strategies as st
 from fastapi.testclient import TestClient
@@ -37,30 +34,18 @@ from chronus.security import (
     OVIDStorage,
     OVIDZeroCopyPointer,
     VerifyEndpoint,
-    PostQuantumError,
-    VerificationError,
     ALHarasSecurityFabric,
-    ALHarasSovereignProductSDK,
     CellularSheafCohomology,
-    CyclotomicAnyonBraidEngine,
     CyclotomicZ5,
-    DSW4DInstantonMonopoleHealer,
     ExactQ5,
     GaloisField257Phi,
     HeckeModularChecksum,
-    RamanujanExpanderSpectralGapGuard,
-    SovereignGovernanceEngine,
     ALHarasTopologicalKernel,
     ALHarasSovereignOSProduct,
-    TacticalSwarmMeshEngine,
-    PostQuantumSubstrateEngine,
     HyperscaleDefenseSimulationEngine,
-    CNISelfHealingEngine,
-    StrategicDefenseCoordinator,
 )
 from chronus.security.kms import (
     CloudKMSProvider,
-    CustomerKMSBinding,
     LocalMemoryKeyProvider,
     PKCS11HSMKeyProvider,
     VaultKMSProvider,
@@ -464,19 +449,19 @@ class TestSecurityUnitCoverage:
 
         # CloudKMSProvider
         cloud = CloudKMSProvider(provider_name="aws_kms")
-        pk_cloud = cloud.get_public_key("cloud_key_1")
+        cloud.get_public_key("cloud_key_1")
         sig_cloud = cloud.sign("cloud_key_1", b"TEST_CLOUD")
         assert cloud.verify("cloud_key_1", b"TEST_CLOUD", sig_cloud) is True
 
         # VaultKMSProvider
         vault = VaultKMSProvider()
-        pk_vault = vault.get_public_key("vault_key_1")
+        vault.get_public_key("vault_key_1")
         sig_vault = vault.sign("vault_key_1", b"TEST_VAULT")
         assert vault.verify("vault_key_1", b"TEST_VAULT", sig_vault) is True
 
         # PKCS11HSMKeyProvider
         pkcs11 = PKCS11HSMKeyProvider()
-        pk_p11 = pkcs11.get_public_key("p11_key_1")
+        pkcs11.get_public_key("p11_key_1")
         sig_p11 = pkcs11.sign("p11_key_1", b"TEST_P11")
         assert pkcs11.verify("p11_key_1", b"TEST_P11", sig_p11) is True
 

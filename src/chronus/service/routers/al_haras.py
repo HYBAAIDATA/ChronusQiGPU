@@ -1,12 +1,10 @@
 """AL HARAS Sovereign Topological Quantum Immunity & Defense Frontiers Router."""
 
-import base64
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from chronus.security.al_haras import (
-    ALHarasSecurityFabric,
     ALHarasSovereignProductSDK,
     DSW4DInstantonMonopoleHealer,
     RamanujanExpanderSpectralGapGuard,
@@ -87,7 +85,7 @@ async def get_al_haras_status() -> Dict[str, Any]:
     """Return topological quantum immunity status and invariants."""
     ram = RamanujanExpanderSpectralGapGuard.verify_mass_gap()
     braids = CyclotomicAnyonBraidEngine.compile_braid()
-    gov = SovereignGovernanceEngine.audit_sovereign_compliance("sovereign_defence_hq")
+    SovereignGovernanceEngine.audit_sovereign_compliance("sovereign_defence_hq")
 
     return {
         "status": "OPERATIONAL",

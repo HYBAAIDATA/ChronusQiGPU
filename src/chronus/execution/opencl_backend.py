@@ -6,7 +6,7 @@ Zero floating point; compliant with CI purity gate.
 """
 
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from chronus.backends.lattice import HardwareUnavailableError
 

@@ -8,7 +8,6 @@ from chronus.security.al_haras.defense_frontiers import (
     PostQuantumSubstrateEngine,
     HyperscaleDefenseSimulationEngine,
     CNISelfHealingEngine,
-    StrategicDefenseCoordinator,
 )
 from chronus.service.app import create_app
 

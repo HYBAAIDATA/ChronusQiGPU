@@ -16,7 +16,6 @@ Removes Ring 0-3 privilege boundaries at the silicon level:
 ================================================================================
 """
 
-import hashlib
 import time
 from dataclasses import dataclass, field
 from enum import Enum

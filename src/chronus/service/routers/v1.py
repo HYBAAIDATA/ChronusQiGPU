@@ -9,11 +9,10 @@ Exposes:
 - GET /v1/storage: Phyllotaxis storage density and Theseus invariant stats.
 """
 
-import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from fastapi.security import HTTPAuthorizationCredentials
 
 from chronus.execution import execution_router
@@ -21,15 +20,13 @@ from chronus.execution.qigpu import QiGPUOrchestrator
 from chronus.execution.reference import NativeMathReferenceBackend
 from chronus.service.ciaas_store import ciaas_store
 from chronus.storage.connectors import ConnectorType, MemoryAccessClass, zero_copy_connector_manager
-from chronus.service.dependencies import get_current_tenant, get_service_config, security
+from chronus.service.dependencies import get_current_tenant, security
 from chronus.service.models import PaginatedWorkloads, WorkloadRequest, WorkloadResponse, VerificationResult
 from chronus.service.routers.workloads import (
-    cancel_workload,
     get_workload,
     list_workloads,
     submit_workload,
     workload_counts,
-    workload_store,
 )
 from chronus.service.routers.verify import verify_hash
 

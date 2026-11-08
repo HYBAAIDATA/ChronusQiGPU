@@ -23,7 +23,7 @@ Machine-checked verification of core topological theorems:
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 from chronus.security.al_haras.engine import CyclotomicZ5
 

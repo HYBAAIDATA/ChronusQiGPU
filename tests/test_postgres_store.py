@@ -12,7 +12,6 @@ import os
 import sys
 import tempfile
 import unittest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
@@ -20,7 +19,7 @@ from sqlalchemy.exc import DBAPIError, OperationalError
 
 from uuid import uuid4
 
-from chronus.service.models import Priority, WorkloadRequest, WorkloadResponse, WorkloadStatus
+from chronus.service.models import Priority, WorkloadResponse, WorkloadStatus
 from chronus.service.postgres_store import (
     PostgresWorkloadStore,
     execution_records_table,

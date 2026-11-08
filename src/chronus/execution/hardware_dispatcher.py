@@ -17,7 +17,7 @@ Zero floating point; strictly compliant with CI purity gate.
 import concurrent.futures
 import logging
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional
 
 from chronus.backends.lattice import HardwareUnavailableError
 from chronus.execution.cuda_backend import CUDABackendAdapter

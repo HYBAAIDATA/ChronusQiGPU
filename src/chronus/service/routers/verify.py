@@ -1,6 +1,5 @@
 """Public receipt-verification and authenticated receipt-creation routes."""
 
-from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from chronus.security import (
@@ -63,7 +62,7 @@ async def verify_hash(
         if pointer is not None:
             ed_sig = _ed25519_signer.sign(pointer.content_hash.encode("ascii"))
             ml_sig = _ml_dsa_signer.sign(pointer.content_hash.encode("ascii"))
-            short_p = f"ptr_ovid_{pointer.content_hash[:8]}"
+            f"ptr_ovid_{pointer.content_hash[:8]}"
             receipt = _ovid_storage.create_pointer_receipt(
                 pointer.pointer_id,
                 ml_dsa_signature=ml_sig,
