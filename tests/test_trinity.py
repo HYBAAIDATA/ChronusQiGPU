@@ -37,10 +37,12 @@ def test_symbolic_scale_fold_store_composes_without_expanding_coefficients():
 
 
 def test_symbolic_workload_executes_via_router():
-    payload = json.dumps({
-        "values": [{"a": "2", "b": "-3", "denominator": "5"}],
-        "increment": MAX_INDEX,
-    }).encode()
+    payload = json.dumps(
+        {
+            "values": [{"a": "2", "b": "-3", "denominator": "5"}],
+            "increment": MAX_INDEX,
+        }
+    ).encode()
     receipt = ExecutionRouter().execute(payload, "TRINITY_SCALE_FOLD_STORE")
     assert receipt.execution_mode == "NATIVE_CPU_REFERENCE"
     assert receipt.result["state"]["scale_index"] == MAX_INDEX
@@ -62,17 +64,32 @@ def test_symbolic_workload_executes_via_router():
 )
 def test_symbolic_rejects_noncanonical_state(folded):
     with pytest.raises(ValueError):
-        scale_fold_store({
-            "increment": 0,
-            "state": {
-                "scale_index": 0,
-                "values": [{"a": folded, "b": {"sign": 0, "indices": []}, "denominator": "1"}],
-            },
-        })
+        scale_fold_store(
+            {
+                "increment": 0,
+                "state": {
+                    "scale_index": 0,
+                    "values": [
+                        {
+                            "a": folded,
+                            "b": {"sign": 0, "indices": []},
+                            "denominator": "1",
+                        }
+                    ],
+                },
+            }
+        )
 
 
 def test_cassini_does_not_authenticate_changed_symbolic_state():
-    result = scale_fold_store({"increment": 4781, "values": [{"a": 1, "b": 0, "denominator": 1}]})
-    changed = scale_fold_store({"increment": 4781, "values": [{"a": 2, "b": 0, "denominator": 1}]})
-    assert result["cassini_expected_determinant"] == changed["cassini_expected_determinant"]
+    result = scale_fold_store(
+        {"increment": 4781, "values": [{"a": 1, "b": 0, "denominator": 1}]}
+    )
+    changed = scale_fold_store(
+        {"increment": 4781, "values": [{"a": 2, "b": 0, "denominator": 1}]}
+    )
+    assert (
+        result["cassini_expected_determinant"]
+        == changed["cassini_expected_determinant"]
+    )
     assert result["state"] != changed["state"]

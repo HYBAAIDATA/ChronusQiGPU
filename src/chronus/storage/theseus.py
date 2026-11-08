@@ -137,3 +137,139 @@ class TheseusService:
         if payload is None or hashlib.sha256(payload).hexdigest() != object_id:
             raise StorageIntegrityError(f"content for {object_id} failed digest verification")
         return payload
+
+
+@dataclass(frozen=True)
+class TenantStateJournalEntry:
+    """Immutable hash-chained entry in a tenant's append-only THESEUS state journal."""
+
+    sequence: int
+    tenant_id: str
+    ovid_namespace: str
+    event_type: str
+    object_id: str
+    prev_entry_hash: str
+    entry_hash: str
+    timestamp_ns: int
+    coordinate: PhyllotaxisCoordinate
+
+    def to_dict(self) -> dict:
+        return {
+            "sequence": self.sequence,
+            "tenant_id": self.tenant_id,
+            "ovid_namespace": self.ovid_namespace,
+            "event_type": self.event_type,
+            "object_id": self.object_id,
+            "ovid_uri": f"{self.ovid_namespace}/{self.object_id}",
+            "prev_entry_hash": self.prev_entry_hash,
+            "entry_hash": self.entry_hash,
+            "timestamp_ns": self.timestamp_ns,
+            "coordinate": self.coordinate.to_dict(),
+        }
+
+
+class TenantStorageFabricRegistry:
+    """Manages tenant-isolated OVID partitions (o1_<tenant_id>) and append-only THESEUS journals."""
+
+    def __init__(self) -> None:
+        import threading
+
+        self._lock = threading.RLock()
+        self._partitions: dict[str, tuple[OVIDStorage, TheseusService]] = {}
+        self._journals: dict[str, list[TenantStateJournalEntry]] = {}
+
+    @staticmethod
+    def namespace_for(tenant_id: str) -> str:
+        return f"o1_{tenant_id}"
+
+    def initialize_tenant_fabric(
+        self, tenant_id: str, genesis_payload: bytes
+    ) -> TenantStateJournalEntry:
+        """Provision isolated o1_<tenant_id> OVID store and append genesis THESEUS journal entry."""
+        if not tenant_id or not isinstance(tenant_id, str):
+            raise ValueError("tenant_id must be a non-empty string")
+        with self._lock:
+            if tenant_id not in self._partitions:
+                tenant_ovid = OVIDStorage()
+                tenant_theseus = TheseusService(tenant_ovid)
+                self._partitions[tenant_id] = (tenant_ovid, tenant_theseus)
+                self._journals[tenant_id] = []
+            return self.append_journal_event(
+                tenant_id=tenant_id,
+                event_type="GENESIS_MSA_PROVISIONED",
+                payload=genesis_payload,
+            )
+
+    def append_journal_event(
+        self, tenant_id: str, event_type: str, payload: bytes
+    ) -> TenantStateJournalEntry:
+        """Append an immutable state transition record to the tenant's THESEUS journal."""
+        import time
+
+        with self._lock:
+            if tenant_id not in self._partitions:
+                tenant_ovid = OVIDStorage()
+                tenant_theseus = TheseusService(tenant_ovid)
+                self._partitions[tenant_id] = (tenant_ovid, tenant_theseus)
+                self._journals[tenant_id] = []
+
+            _, tenant_theseus = self._partitions[tenant_id]
+            journal = self._journals[tenant_id]
+            record = tenant_theseus.store(tenant_id, payload)
+            seq = len(journal)
+            prev_hash = journal[-1].entry_hash if journal else ("0" * 64)
+            ts_ns = time.time_ns()
+            ovid_ns = self.namespace_for(tenant_id)
+            chain_material = (
+                f"{ovid_ns}|{seq}|{event_type}|{record.object_id}|{prev_hash}|{ts_ns}"
+            ).encode("utf-8")
+            entry_hash = hashlib.sha256(chain_material).hexdigest()
+
+            entry = TenantStateJournalEntry(
+                sequence=seq,
+                tenant_id=tenant_id,
+                ovid_namespace=ovid_ns,
+                event_type=event_type,
+                object_id=record.object_id,
+                prev_entry_hash=prev_hash,
+                entry_hash=entry_hash,
+                timestamp_ns=ts_ns,
+                coordinate=record.coordinate,
+            )
+            journal.append(entry)
+            return entry
+
+    def get_journal(self, tenant_id: str) -> list[TenantStateJournalEntry]:
+        with self._lock:
+            return list(self._journals.get(tenant_id, []))
+
+    def verify_journal_continuity(self, tenant_id: str) -> bool:
+        """Cryptographically verify hash-chain continuity and OVID content digests."""
+        with self._lock:
+            partition = self._partitions.get(tenant_id)
+            journal = self._journals.get(tenant_id)
+            if partition is None or journal is None:
+                return False
+            _, tenant_theseus = partition
+            expected_prev = "0" * 64
+            for idx, entry in enumerate(journal):
+                if entry.sequence != idx or entry.prev_entry_hash != expected_prev:
+                    return False
+                # Reconstruct verifies SHA-256 content-address integrity
+                tenant_theseus.reconstruct(tenant_id, entry.object_id)
+                chain_material = (
+                    f"{entry.ovid_namespace}|{entry.sequence}|{entry.event_type}|"
+                    f"{entry.object_id}|{entry.prev_entry_hash}|{entry.timestamp_ns}"
+                ).encode("utf-8")
+                if hashlib.sha256(chain_material).hexdigest() != entry.entry_hash:
+                    return False
+                expected_prev = entry.entry_hash
+            return True
+
+    def remove_tenant_fabric(self, tenant_id: str) -> None:
+        with self._lock:
+            self._partitions.pop(tenant_id, None)
+            self._journals.pop(tenant_id, None)
+
+
+tenant_storage_registry = TenantStorageFabricRegistry()

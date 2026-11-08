@@ -30,7 +30,7 @@ _SERVICE_START_TIME = time.time()
 )
 async def get_health(
     tenant_id: str = Depends(get_current_tenant),
-    config = Depends(get_service_config),
+    config=Depends(get_service_config),
 ) -> HealthResponse:
     """Report observed API health and execution backend configuration."""
     _uptime = time.time() - _SERVICE_START_TIME

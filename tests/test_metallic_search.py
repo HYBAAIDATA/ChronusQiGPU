@@ -40,6 +40,7 @@ def test_generalized_iterate_c2_reproduces_grover():
         for q in range(n):
             reference.apply("H", q)
         from chronus.quantum import grover_iterate
+
         grover_iterate(reference, 0)
         assert state.equivalent(reference)
 

@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -98,3 +98,13 @@ chronus_complete_system_master_v36 (1)/
 # Runtime data
 data/
 *.sqlite3
+
+.next/
+frontend/.next/
+.pytest_tmp/
+.hypothesis/
+master_repo/
+*.tar.gz
+*.zip
+/chronus_gpiu-v36.py
+/qualification_manifest_v36.json

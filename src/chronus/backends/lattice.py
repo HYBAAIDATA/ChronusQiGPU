@@ -26,7 +26,10 @@ class PhiElement:
     denominator: int = 1
 
     def __post_init__(self):
-        if any(not isinstance(value, int) or isinstance(value, bool) for value in (self.a, self.b, self.denominator)):
+        if any(
+            not isinstance(value, int) or isinstance(value, bool)
+            for value in (self.a, self.b, self.denominator)
+        ):
             raise TypeError("lattice coefficients must be integers")
         if self.denominator <= 0:
             raise ValueError("denominator must be positive")
@@ -84,11 +87,14 @@ def verify_fold(
     factor = phi_power(order)
     for index, (source, output) in enumerate(zip(inputs, outputs)):
         expected = source.multiply(factor)
-        if (
-            Fraction(expected.a, expected.denominator) != Fraction(output.a, output.denominator)
-            or Fraction(expected.b, expected.denominator) != Fraction(output.b, output.denominator)
+        if Fraction(expected.a, expected.denominator) != Fraction(
+            output.a, output.denominator
+        ) or Fraction(expected.b, expected.denominator) != Fraction(
+            output.b, output.denominator
         ):
-            raise ParityVerificationError(f"exact lattice parity failed at index {index}")
+            raise ParityVerificationError(
+                f"exact lattice parity failed at index {index}"
+            )
 
 
 class PhysicalAcceleratorAdapter(Protocol):

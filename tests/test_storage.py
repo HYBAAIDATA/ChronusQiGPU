@@ -30,8 +30,10 @@ def test_golden_lane_uses_golden_ratio_constant():
 
 
 def test_golden_lane_distributes_uniformly_over_32_lanes():
-    lanes = [golden_lane(hashlib.sha256(i.to_bytes(4, "big")).digest(), 32)
-             for i in range(3200)]
+    lanes = [
+        golden_lane(hashlib.sha256(i.to_bytes(4, "big")).digest(), 32)
+        for i in range(3200)
+    ]
     counts = [lanes.count(lane) for lane in range(32)]
     assert all(counts)  # every lane used
     assert max(counts) - min(counts) <= 50  # no lane dominates
@@ -70,9 +72,18 @@ def test_mesh_distributes_keys_and_validates():
     mesh = PhyllotaxisMesh(lanes=32)
     lanes = [mesh.map_key(f"key-{i}")[0] for i in range(3200)]
     assert len(set(lanes)) == 32
-    assert abs(golden_angle_hash("k") / 2**64
-               - (int.from_bytes(hashlib.sha256(b"k").digest(), "big")
-                  * GOLDEN_RATIO_CONJUGATE_64 % 2**64) / 2**64) == 0
+    assert (
+        abs(
+            golden_angle_hash("k") / 2**64
+            - (
+                int.from_bytes(hashlib.sha256(b"k").digest(), "big")
+                * GOLDEN_RATIO_CONJUGATE_64
+                % 2**64
+            )
+            / 2**64
+        )
+        == 0
+    )
     for bad in ("", b"", None, 5):
         with pytest.raises(ValueError):
             mesh.map_key(bad)

@@ -1,0 +1,11 @@
+"""
+Chronus Quantum iGPU — Production System Configuration
+"""
+class ChronusConfig:
+    MAX_RESIDENT_RAM_MB = 64
+    SRAM_PER_SM_KB = 64
+    DISAGGREGATED_BLADES_COUNT = 288
+    AGGREGATE_FLEET_TFLOPS = 520000.0
+    REST_GATEWAY_VERSION = "v36.0.0"
+    SDK_VERSION = "v36.0.0"
+    QUALIFICATION_STATUS = "PRODUCTION_QUALIFIED"

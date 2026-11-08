@@ -27,13 +27,14 @@ class WorkloadType(str, Enum):
     THESEUS_RETRIEVE = "THESEUS_RETRIEVE"
     OVID_NORM_PROOF = "OVID_NORM_PROOF"
     METALLIC_SCALE = "METALLIC_SCALE"
-    EXACT_PHASE_SEARCH = "EXACT_PHASE_SEARCH"
     O1_STRUCTURAL_PV = "O1_STRUCTURAL_PV"
     ENTERPRISE_FINANCIAL_ETL = "ENTERPRISE_FINANCIAL_ETL"
     LEGAL_LITIGATION_ANALYSIS = "LEGAL_LITIGATION_ANALYSIS"
     HEALTHCARE_DIAGNOSTIC = "HEALTHCARE_DIAGNOSTIC"
     DEFENCE_SIMULATION = "DEFENCE_SIMULATION"
     SOVEREIGN_INFRASTRUCTURE = "SOVEREIGN_INFRASTRUCTURE"
+    ZERO_COPY_CONNECTOR_EXECUTE = "ZERO_COPY_CONNECTOR_EXECUTE"
+    BINET_ZECKENDORF_INGEST = "BINET_ZECKENDORF_INGEST"
 
 
 class RepresentationMode(str, Enum):
@@ -86,7 +87,9 @@ class WorkloadRequest(BaseModel):
         description="Exact algebraic representation mode",
     )
     priority: Priority = Field(default=Priority.HIGH, description="Workload priority")
-    tenant_id: str = Field(..., description="Tenant identifier", min_length=1, max_length=128)
+    tenant_id: str = Field(
+        ..., description="Tenant identifier", min_length=1, max_length=128
+    )
     region: str = Field(default="us-east-1", description="Deployment region")
     endpoint: str = Field(default="internal_v1", description="API endpoint version")
     backend_preference: Optional[str] = Field(
@@ -106,7 +109,9 @@ class WorkloadRequest(BaseModel):
             try:
                 return base64.b64decode(value[7:], validate=True)
             except (ValueError, binascii.Error) as exc:
-                raise ValueError("payload_bytes must contain valid base64 data") from exc
+                raise ValueError(
+                    "payload_bytes must contain valid base64 data"
+                ) from exc
         return value
 
     @field_validator("payload_bytes")
@@ -133,7 +138,9 @@ class WorkloadRequest(BaseModel):
 class WorkloadResponse(BaseModel):
     """Response model for workload submission and status."""
 
-    workload_id: UUID = Field(default_factory=uuid4, description="Unique workload identifier")
+    workload_id: UUID = Field(
+        default_factory=uuid4, description="Unique workload identifier"
+    )
     status: WorkloadStatus = Field(default=WorkloadStatus.SUBMITTED)
     workload_type: WorkloadType
     representation_mode: RepresentationMode
@@ -201,6 +208,16 @@ class VerificationResult(BaseModel):
     invariant_summary: str = "Release qualification was not evaluated."
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     verification_suite_total_latency_ms: float = 0.0
+    receipt_id: Optional[str] = None
+    receipt_handle: Optional[str] = None
+    hash_value: Optional[str] = None
+    ed25519_verified: Optional[bool] = None
+    ml_dsa_verified: Optional[bool] = None
+    stark_quotient_verified: Optional[bool] = None
+    polynomial_identity: Optional[str] = None
+    raw_payload_exposed: Optional[bool] = None
+    auth_required: Optional[bool] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class ErrorResponse(BaseModel):

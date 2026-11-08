@@ -7,9 +7,10 @@ from pathlib import Path
 from typing import Iterator, Optional
 
 from chronus.service.models import WorkloadResponse
+from chronus.service.store_interface import WorkloadStoreInterface
 
 
-class SQLiteWorkloadStore:
+class SQLiteWorkloadStore(WorkloadStoreInterface):
     """Persist workload lifecycle records across process restarts."""
 
     def __init__(self, path: Optional[str] = None) -> None:
@@ -97,9 +98,7 @@ class SQLiteWorkloadStore:
 
     def counts(self) -> tuple[int, int]:
         with self._connect() as connection:
-            total = connection.execute(
-                "SELECT COUNT(*) FROM workloads"
-            ).fetchone()[0]
+            total = connection.execute("SELECT COUNT(*) FROM workloads").fetchone()[0]
             active = connection.execute(
                 """
                 SELECT COUNT(*) FROM workloads
@@ -112,3 +111,33 @@ class SQLiteWorkloadStore:
     def clear(self) -> None:
         with self._connect() as connection:
             connection.execute("DELETE FROM workloads")
+
+
+def get_workload_store(
+    backend: Optional[str] = None,
+    dsn: Optional[str] = None,
+) -> WorkloadStoreInterface:
+    """Factory creating the appropriate WorkloadStore backend.
+
+    Defaults to SQLite for local development; switches to PostgresWorkloadStore
+    when CHRONUS_DATABASE_URL or CHRONUS_STORE_BACKEND specifies postgresql.
+    """
+    effective_backend = (
+        backend
+        or os.getenv("CHRONUS_STORE_BACKEND")
+        or (
+            "postgres"
+            if (
+                os.getenv("CHRONUS_DATABASE_URL", "").startswith(
+                    ("postgresql", "postgres")
+                )
+            )
+            else "sqlite"
+        )
+    ).lower()
+
+    if effective_backend in ("postgres", "postgresql"):
+        from chronus.service.postgres_store import PostgresWorkloadStore
+
+        return PostgresWorkloadStore(dsn=dsn)
+    return SQLiteWorkloadStore(path=dsn)

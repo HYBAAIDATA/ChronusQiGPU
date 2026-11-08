@@ -11,7 +11,7 @@ from chronus.security.norm_proof import GROUP_ORDER, P, NormProof, norm, prove, 
 def test_field_arithmetic_norm_identities():
     assert norm((1, 0)) == 1
     assert norm((0, 1)) == 256  # N(phi) = -1
-    assert norm((1, 1)) == 1    # N(1 + phi) = 1
+    assert norm((1, 1)) == 1  # N(1 + phi) = 1
     assert norm((3, 4)) == (9 + 12 - 16) % P
 
 
@@ -25,9 +25,11 @@ def test_proof_round_trip_and_tamper_rejection():
         lambda p, d: NormProof(p.statement, (p.commitment + d) % P, p.response),
         lambda p, d: NormProof((p.statement + d) % P, p.commitment, p.response),
         lambda p, d: NormProof(
-            p.statement, p.commitment, ((p.response[0] + d) % P, p.response[1])),
+            p.statement, p.commitment, ((p.response[0] + d) % P, p.response[1])
+        ),
         lambda p, d: NormProof(
-            p.statement, p.commitment, (p.response[0], (p.response[1] + d) % P)),
+            p.statement, p.commitment, (p.response[0], (p.response[1] + d) % P)
+        ),
     ):
         detected = sum(not verify(tamper(proof, d)) for d in range(1, P))
         assert detected >= 250, f"tamper detection too weak: {detected}/256"
@@ -48,7 +50,9 @@ def test_deterministic_nonce_for_reproducible_vectors():
 def test_wrong_witness_statement_fails_verification():
     proof = prove((5, 5), nonce=24601)  # deterministic nonce
     detected = sum(
-        not verify(NormProof((proof.statement + d) % P, proof.commitment, proof.response))
+        not verify(
+            NormProof((proof.statement + d) % P, proof.commitment, proof.response)
+        )
         for d in range(1, P)
     )
     assert detected >= 250, f"forgery detection too weak: {detected}/256"
