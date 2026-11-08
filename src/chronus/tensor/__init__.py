@@ -52,6 +52,16 @@ from chronus.tensor.network import (
 from chronus.tensor.peps import (
     contract_peps_approximate,
 )
+from chronus.tensor.enhanced_representation import (
+    EnhancedTensorRepresentation,
+    TensorNetworkNDArray,
+)
+from chronus.tensor.adaptive_contraction import (
+    AdaptiveTensorContractionPathway,
+)
+from chronus.tensor.causal_intelligence import (
+    CausalInterferenceEngine,
+)
 from chronus.tensor.types import (
     BondId,
     ChargeTuple,
@@ -98,6 +108,10 @@ __all__ = [
     "HARD_CAP_THEOREM",
     "TensorNetwork",
     "build_network",
+    "EnhancedTensorRepresentation",
+    "TensorNetworkNDArray",
+    "AdaptiveTensorContractionPathway",
+    "CausalInterferenceEngine",
     # Gate & Decomposition
     "apply_gate",
     "factorize_two_site",

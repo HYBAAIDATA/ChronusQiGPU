@@ -2,12 +2,12 @@
   "attestation_title": "SOVEREIGN QUANTUM CAPABILITY & MATHEMATICAL PURITY DOSSIER",
   "standard": "DIFC Sovereign Asset Evaluation & Five Eyes Computational Verification",
   "status": "SOVEREIGN_QUALIFIED",
-  "timestamp_utc": "2026-11-08 23:08:34 UTC",
+  "timestamp_utc": "2026-11-08 23:20:43 UTC",
   "evaluation_authority": "Chronus Sovereign Regulatory Compliance Board",
   "pillars": {
     "al_haras": {
       "status": "QUALIFIED",
-      "latency_us": 1317.2,
+      "latency_us": 11083.9,
       "invariants": {
         "sheaf_h1_exactness": true,
         "dsw_instanton_conservation": true,
@@ -18,7 +18,7 @@
     },
     "theseus_ovid": {
       "status": "QUALIFIED",
-      "latency_us": 148.1,
+      "latency_us": 204.5,
       "invariants": {
         "theseus_lossless_roundtrip": true,
         "ovid_content_addressed_retrieval": true,
@@ -28,7 +28,7 @@
     },
     "chronus_stratum": {
       "status": "QUALIFIED",
-      "latency_us": 649.4,
+      "latency_us": 816.1,
       "invariants": {
         "f257_galois_phases": true,
         "zeckendorf_conservation": true,
@@ -40,7 +40,7 @@
     },
     "millennium_problems": {
       "status": "QUALIFIED",
-      "latency_us": 391.5,
+      "latency_us": 409.3,
       "millennium_problems_verified": {
         "poincare_ricci_flow": true,
         "hodge_decomposition": true,
@@ -51,7 +51,7 @@
     },
     "toe_quantum": {
       "status": "QUALIFIED",
-      "latency_us": 26.3,
+      "latency_us": 32.0,
       "invariants": {
         "f257_bell_state_evolution": true,
         "exact_field_hadamard": true,
@@ -106,7 +106,7 @@
   },
   "cryptographic_attestation": {
     "signature_algorithm": "HMAC-SHA256 (DIFC-SOVEREIGN-SEAL)",
-    "hmac_digest": "eb80752abcdac015a710bdc53d48e99b2451ac8ad118bb8fe83c2876aa6b68ee",
-    "content_sha256": "6f0a28c0961f1d294b29efd324f615d20770ebbb1b9a25c1a678a6f3ec02328d"
+    "hmac_digest": "eec7b8b3e14dbb321d01aa40cc107866ef7db35d4b0d10957ef44ec5d115fdba",
+    "content_sha256": "91ce685d872251604a641aa012a85bae5d084c6ca9460317db00091b43df2f42"
   }
 }
