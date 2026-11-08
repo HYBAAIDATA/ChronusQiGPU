@@ -9,8 +9,12 @@ from __future__ import annotations
 
 import math
 import os
-from typing import Any, Dict, List, Optional, Tuple
-import numpy as np
+from typing import Any, List, Optional
+
+try:
+    import numpy as np
+except ImportError:
+    np = None  # type: ignore
 
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
@@ -27,8 +31,7 @@ from chronus.tensor.types import (
     TruncationRecord,
 )
 from chronus.tensor.network import TensorNetwork
-from chronus.tensor.gate import factorize_two_site, theorem_for, bound_from_method
-from chronus.tensor.hamiltonian import TFIM_terms, build_hamiltonian_mpo
+from chronus.tensor.gate import factorize_two_site, bound_from_method
 
 
 def DMRG(
