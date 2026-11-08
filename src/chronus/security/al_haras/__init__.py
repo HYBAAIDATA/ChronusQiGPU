@@ -65,6 +65,30 @@ from chronus.security.al_haras.formal_invariants import (
     FormalTopologicalProofVerifier,
     FormalProofVerdict,
 )
+from chronus.security.al_haras.threshold_mpc import (
+    AnyonBraidShare,
+    BunkerLocation,
+    TopologicalThresholdMPC,
+)
+from chronus.security.al_haras.sovereign_settlement import (
+    SovereignCentralBank,
+    SovereignTransferSimplex,
+    HomologicalSettlementEngine,
+)
+from chronus.security.al_haras.holographic_qec import (
+    HolographicNode,
+    HappyTensorNetwork,
+    HolographicQECEngine,
+)
+from chronus.security.al_haras.tempest_scrambler import (
+    Matrix2x2,
+    TempestEmissionScrambler,
+)
+from chronus.security.al_haras.autonomous_roe import (
+    ROECriterion,
+    EngagementSimplex,
+    AutonomousROEValidator,
+)
 
 __all__ = [
     "CyclotomicZ5",
@@ -104,4 +128,18 @@ __all__ = [
     "NeuralLayerTrace",
     "FormalTopologicalProofVerifier",
     "FormalProofVerdict",
+    "AnyonBraidShare",
+    "BunkerLocation",
+    "TopologicalThresholdMPC",
+    "SovereignCentralBank",
+    "SovereignTransferSimplex",
+    "HomologicalSettlementEngine",
+    "HolographicNode",
+    "HappyTensorNetwork",
+    "HolographicQECEngine",
+    "Matrix2x2",
+    "TempestEmissionScrambler",
+    "ROECriterion",
+    "EngagementSimplex",
+    "AutonomousROEValidator",
 ]

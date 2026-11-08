@@ -12,8 +12,6 @@
 """
 
 import pytest
-from fastapi.testclient import TestClient
-from chronus.service.app import create_app
 
 from chronus.security.al_haras import (
     CyclotomicZ5,
@@ -29,6 +27,16 @@ from chronus.security.al_haras import (
     OrbitalConstellationMesh,
     VerifiableNeuralComputeEngine,
     FormalTopologicalProofVerifier,
+    TopologicalThresholdMPC,
+    HomologicalSettlementEngine,
+    SovereignCentralBank,
+    SovereignTransferSimplex,
+    HolographicQECEngine,
+    HappyTensorNetwork,
+    TempestEmissionScrambler,
+    AutonomousROEValidator,
+    EngagementSimplex,
+    ROECriterion,
 )
 
 
@@ -307,6 +315,8 @@ class TestExpansionEndpoints:
 
     @pytest.fixture
     def client(self):
+        from fastapi.testclient import TestClient
+        from chronus.service.app import create_app
         app = create_app()
         return TestClient(app)
 
@@ -391,3 +401,278 @@ class TestExpansionEndpoints:
         assert (
             data["certification_tier"] == "COMMON_CRITERIA_EAL7_MATHEMATICAL_CERTAINTY"
         )
+
+
+# ==============================================================================
+# SECTION 7: TOPOLOGICAL ANYON THRESHOLD MPC (BLIND SPOT 3)
+# ==============================================================================
+
+class TestTopologicalThresholdMPC:
+    """Verifies (t, n) distributed anyon key custody across allied command bunkers."""
+
+    def test_distributed_shares_generation(self):
+        mpc = TopologicalThresholdMPC(threshold_t=3, total_bunkers_n=5)
+        shares = mpc.generate_distributed_braid_shares("NATO_ALLIED_DEFENSE_SEED")
+        assert len(shares) == 5
+        assert "BUNKER_01" in shares
+        assert "BUNKER_05" in shares
+
+    def test_quorum_authorization_success(self):
+        mpc = TopologicalThresholdMPC(threshold_t=3, total_bunkers_n=5)
+        mpc.generate_distributed_braid_shares()
+        # 3 bunkers participate
+        res = mpc.authorize_sovereign_action(
+            action_payload=b"LAUNCH_BALLISTIC_INTERCEPTOR_DEFENSE",
+            participating_bunker_ids=["BUNKER_01", "BUNKER_02", "BUNKER_03"],
+        )
+        assert res["authorized"] is True
+        assert res["status"] == "SOVEREIGN_ACTION_AUTHORIZED"
+        assert res["valid_shares_verified"] == 3
+        assert res["joint_authorization_token"].startswith("sovereign_joint_auth_")
+
+    def test_quorum_deficit_rejection(self):
+        mpc = TopologicalThresholdMPC(threshold_t=3, total_bunkers_n=5)
+        mpc.generate_distributed_braid_shares()
+        # Only 2 bunkers participate
+        res = mpc.authorize_sovereign_action(
+            action_payload=b"UNAUTHORIZED_ACTION",
+            participating_bunker_ids=["BUNKER_01", "BUNKER_02"],
+        )
+        assert res["authorized"] is False
+        assert "QUORUM_DEFICIT" in res["reason"]
+
+    def test_compromised_bunker_isolation(self):
+        mpc = TopologicalThresholdMPC(threshold_t=3, total_bunkers_n=5)
+        mpc.generate_distributed_braid_shares()
+        # 4 bunkers participate, 1 is compromised/tampered
+        res = mpc.authorize_sovereign_action(
+            action_payload=b"DEFENSE_COMMAND_CRITICAL",
+            participating_bunker_ids=["BUNKER_01", "BUNKER_02", "BUNKER_03", "BUNKER_04"],
+            injected_compromised_bunker="BUNKER_02",
+        )
+        assert res["authorized"] is True  # 3 valid remain, so threshold is still met!
+        assert "BUNKER_02" in res["isolated_compromised_bunkers"]
+        assert res["valid_shares_verified"] == 3
+
+
+# ==============================================================================
+# SECTION 8: SOVEREIGN HOMOLOGICAL SETTLEMENT (FRONTIER 8)
+# ==============================================================================
+
+class TestHomologicalSettlementEngine:
+    """Verifies simplicial homology H_1(X) = 0 value conservation for CBDCs."""
+
+    def test_closed_cycle_settlement_success(self):
+        engine = HomologicalSettlementEngine("BIS_AGORA_CORRIDOR")
+        # Bank of England -> Fed (10M) -> ECB (10M) -> Bank of England (10M)
+        cycle = [
+            SovereignTransferSimplex("tx1", SovereignCentralBank.BANK_OF_ENGLAND, SovereignCentralBank.FEDERAL_RESERVE, 10_000_000),
+            SovereignTransferSimplex("tx2", SovereignCentralBank.FEDERAL_RESERVE, SovereignCentralBank.EUROPEAN_CENTRAL_BANK, 10_000_000),
+            SovereignTransferSimplex("tx3", SovereignCentralBank.EUROPEAN_CENTRAL_BANK, SovereignCentralBank.BANK_OF_ENGLAND, 10_000_000),
+        ]
+        res = engine.settle_transfer_batch(cycle)
+        assert res["is_homologically_closed"] is True
+        assert res["boundary_norm"] == 0.0
+        assert res["settlement_status"] == "SETTLED_CLOSED_1_CYCLE"
+        assert res["rtgs_receipt_id"].startswith("rtgs_rcpt_")
+
+    def test_unclosed_cycle_inflation_rejection(self):
+        engine = HomologicalSettlementEngine("BIS_AGORA_CORRIDOR")
+        cycle = [
+            SovereignTransferSimplex("tx1", SovereignCentralBank.BANK_OF_ENGLAND, SovereignCentralBank.FEDERAL_RESERVE, 10_000_000),
+            SovereignTransferSimplex("tx2", SovereignCentralBank.FEDERAL_RESERVE, SovereignCentralBank.EUROPEAN_CENTRAL_BANK, 10_000_000),
+        ]
+        # Injected inflation / unclosed boundary
+        res = engine.settle_transfer_batch(cycle, simulate_double_spend=True)
+        assert res["is_homologically_closed"] is False
+        assert res["boundary_norm"] > 0.0
+        assert res["settlement_status"] == "REJECTED_BOUNDARY_MISMATCH"
+        assert res["rtgs_receipt_id"] is None
+
+
+# ==============================================================================
+# SECTION 9: HOLOGRAPHIC QUANTUM ERROR CORRECTION (SOVEREIGN HORIZON 3)
+# ==============================================================================
+
+class TestHolographicQEC:
+    """Verifies HaPPY pentagonal holographic tensor network on {5, 4} geometry."""
+
+    def test_tensor_network_tessellation(self):
+        network = HappyTensorNetwork(depth=1)
+        assert len(network.nodes) == 6
+        engine = HolographicQECEngine(depth=1)
+        assert len(engine.network.nodes) == 6  # 1 bulk center + 5 boundary nodes
+        assert engine.network.nodes["BULK_CENTER"].is_bulk is True
+        assert len(engine.network.boundary_indices) == 5
+
+    def test_encode_and_reconstruct_clean(self):
+        engine = HolographicQECEngine(depth=1)
+        for bit in (0, 1):
+            enc = engine.encode_bulk_logical_state(bit)
+            assert enc["logical_bit"] == bit
+            assert len(enc["boundary_amplitudes"]) == 5
+
+            rec = engine.reconstruct_bulk_state(enc, erased_boundary_indices=[])
+            assert rec["reconstructed"] is True
+            assert rec["reconstructed_logical_bit"] == bit
+            assert rec["surviving_count"] == 5
+
+    def test_reconstruct_under_40_percent_erasure(self):
+        """Erasing 2 of 5 boundary nodes (40%) leaves 60% intact (> 50% threshold)."""
+        engine = HolographicQECEngine(depth=1)
+        enc = engine.encode_bulk_logical_state(1)
+
+        # Erase boundary nodes 1 and 3
+        rec = engine.reconstruct_bulk_state(enc, erased_boundary_indices=[1, 3])
+        assert rec["reconstructed"] is True
+        assert rec["reconstructed_logical_bit"] == 1
+        assert rec["surviving_count"] == 3
+        assert rec["entanglement_wedge_intact"] is True
+
+    def test_collapse_under_60_percent_erasure(self):
+        """Erasing 3 of 5 boundary nodes (60%) drops below entanglement wedge threshold."""
+        engine = HolographicQECEngine(depth=1)
+        enc = engine.encode_bulk_logical_state(0)
+
+        # Erase boundary nodes 0, 2, 4
+        rec = engine.reconstruct_bulk_state(enc, erased_boundary_indices=[0, 2, 4])
+        assert rec["reconstructed"] is False
+        assert rec["reconstructed_logical_bit"] is None
+        assert rec["surviving_count"] == 2
+        assert "ENTANGLEMENT_WEDGE_COLLAPSED" in rec["reconstruction_status"]
+
+
+# ==============================================================================
+# SECTION 10: TEMPEST POWER & RF SCRAMBLER (SOVEREIGN HORIZON 4)
+# ==============================================================================
+
+class TestTempestEmissionScrambler:
+    """Verifies physical-layer constant-power balancing and PSL_2(F_257) walks."""
+
+    def test_constant_power_dual_rail_balance(self):
+        scrambler = TempestEmissionScrambler(bus_width=64)
+        test_patterns = [
+            0x0000000000000000,
+            0xFFFFFFFFFFFFFFFF,
+            0xAAAAAAAAAAAAAAAA,
+            0x5555555555555555,
+            0x0123456789ABCDEF,
+            0xFEDCBA9876543210,
+        ]
+        for pattern in test_patterns:
+            res = scrambler.scramble_bus_word(pattern)
+            assert res["is_power_balanced"] is True
+            assert res["total_switching_activity"] == 64
+            assert res["hw_active"] + res["hw_complement"] == 64
+
+    def test_constant_power_trace_zero_variance(self):
+        scrambler = TempestEmissionScrambler(bus_width=64)
+        trace = [i * 0x0101010101010101 for i in range(16)]
+        res = scrambler.verify_constant_power_trace(trace)
+        assert res["verified"] is True
+        assert res["power_variance_span"] == 0
+        assert res["constant_hamming_weight"] == 64
+        assert res["status"] == "DPA_PROTECTION_CERTIFIED"
+
+    def test_ramanujan_avalanche_diffusion(self):
+        scrambler = TempestEmissionScrambler(bus_width=64)
+        res = scrambler.measure_avalanche_diffusion(
+            word_a=0x0000000000000000,
+            word_b=0x0000000000000001,  # 1-bit input perturbation
+            cycles=3,
+        )
+        assert res["meets_avalanche_threshold"] is True
+        assert res["flipped_bits"] >= 32  # >= 50% diffusion
+
+
+# ==============================================================================
+# SECTION 11: AUTONOMOUS RULES OF ENGAGEMENT (SOVEREIGN HORIZON 5)
+# ==============================================================================
+
+class TestAutonomousROE:
+    """Verifies simplicial boundary closure partial_1 gamma == 0 for autonomous defense."""
+
+    def test_compliant_engagement_authorized(self):
+        validator = AutonomousROEValidator()
+        engagement = EngagementSimplex(
+            mission_id="OPERATION_SENTINEL_SHIELD_01",
+            target_token_hash="a" * 64,
+            satisfied_criteria={
+                ROECriterion.POSITIVE_IDENTIFICATION_PID,
+                ROECriterion.PROPORTIONALITY_ESTIMATED,
+                ROECriterion.SANCTUARY_ZONE_EXCLUDED,
+                ROECriterion.COMMAND_QUORUM_AUTHORIZED,
+            },
+            command_quorum_token="SOVEREIGN_COMMAND_AUTH_QUORUM_VALID_TOKEN_12345",
+            collateral_risk_index_integer=15,  # within ceiling 25
+        )
+        res = validator.authorize_autonomous_engagement(engagement)
+        assert res["authorized"] is True
+        assert res["boundary_defect_norm"] == 0
+        assert res["status"] == "ENGAGEMENT_AUTHORIZED_TOPOLOGICAL_ROE_CLOSED"
+        assert res["zk_receipt"] is not None
+        assert res["zk_receipt"]["simplicial_boundary"] == "CLOSED_CYCLE_PARTIAL_GAMMA_EQUALS_ZERO"
+
+    def test_missing_criterion_obstructed(self):
+        validator = AutonomousROEValidator()
+        # Missing Sanctuary Zone Exclusion
+        engagement = EngagementSimplex(
+            mission_id="OPERATION_SANCTUARY_TEST",
+            target_token_hash="b" * 64,
+            satisfied_criteria={
+                ROECriterion.POSITIVE_IDENTIFICATION_PID,
+                ROECriterion.PROPORTIONALITY_ESTIMATED,
+                ROECriterion.COMMAND_QUORUM_AUTHORIZED,
+            },
+            command_quorum_token="SOVEREIGN_COMMAND_AUTH_QUORUM_VALID_TOKEN_12345",
+            collateral_risk_index_integer=10,
+        )
+        res = validator.authorize_autonomous_engagement(engagement)
+        assert res["authorized"] is False
+        assert res["boundary_defect_norm"] > 0
+        assert res["status"] == "ENGAGEMENT_OBSTRUCTED_ROE_BOUNDARY_DEFECT"
+        assert any("SANCTUARY" in v for v in res["violations"])
+        assert res["zk_receipt"] is None
+
+    def test_excess_collateral_risk_obstructed(self):
+        validator = AutonomousROEValidator()
+        engagement = EngagementSimplex(
+            mission_id="OPERATION_RISK_OVERRUN",
+            target_token_hash="c" * 64,
+            satisfied_criteria={
+                ROECriterion.POSITIVE_IDENTIFICATION_PID,
+                ROECriterion.PROPORTIONALITY_ESTIMATED,
+                ROECriterion.SANCTUARY_ZONE_EXCLUDED,
+                ROECriterion.COMMAND_QUORUM_AUTHORIZED,
+            },
+            command_quorum_token="SOVEREIGN_COMMAND_AUTH_QUORUM_VALID_TOKEN_12345",
+            collateral_risk_index_integer=45,  # Exceeds ceiling of 25
+        )
+        res = validator.authorize_autonomous_engagement(engagement)
+        assert res["authorized"] is False
+        assert any("PROPORTIONALITY_VIOLATION" in v for v in res["violations"])
+
+    def test_zk_receipt_alliance_verification(self):
+        validator = AutonomousROEValidator()
+        engagement = EngagementSimplex(
+            mission_id="OPERATION_ALLIANCE_VERIFY",
+            target_token_hash="d" * 64,
+            satisfied_criteria={
+                ROECriterion.POSITIVE_IDENTIFICATION_PID,
+                ROECriterion.PROPORTIONALITY_ESTIMATED,
+                ROECriterion.SANCTUARY_ZONE_EXCLUDED,
+                ROECriterion.COMMAND_QUORUM_AUTHORIZED,
+            },
+            command_quorum_token="SOVEREIGN_COMMAND_AUTH_QUORUM_VALID_TOKEN_12345",
+            collateral_risk_index_integer=12,
+        )
+        res = validator.authorize_autonomous_engagement(engagement)
+        receipt = res["zk_receipt"]
+        assert validator.verify_zk_roe_receipt(receipt) is True
+
+        # Tampered receipt
+        bad_receipt = dict(receipt)
+        bad_receipt["criteria_satisfied_count"] = 3
+        assert validator.verify_zk_roe_receipt(bad_receipt) is False
+
+
