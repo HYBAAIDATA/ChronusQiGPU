@@ -6,7 +6,8 @@ and execution of the three year-one consortium acceptance experiments (E1, E2, E
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
@@ -46,23 +47,23 @@ class NetworkBuildRequest(BaseModel):
     group: str = Field(default="none", description="Symmetry gauge group: none, Z2, U(1), SU(2)")
 
 
-@router.get("/charter", response_model=Dict[str, Any])
-def get_charter_status() -> Dict[str, Any]:
+@router.get("/charter", response_model=dict[str, Any])
+def get_charter_status() -> dict[str, Any]:
     """Inspect Consortium Charter v1.0, banned tokens, required audit subsystems, and status."""
     passed = program_entry_check()
     return {
         "version": charter.version,
         "metric": charter.metric,
         "veto_holder": charter.veto_holder.name,
-        "required_subsystems": sorted(list(charter.REQUIRED_SUBSYSTEMS)),
+        "required_subsystems": sorted(charter.REQUIRED_SUBSYSTEMS),
         "banned_hype_tokens_count": len(charter.BANNED_HYPE_TOKENS),
-        "banned_hype_tokens": sorted(list(charter.BANNED_HYPE_TOKENS)),
+        "banned_hype_tokens": sorted(charter.BANNED_HYPE_TOKENS),
         "program_entry_check": passed,
     }
 
 
-@router.post("/charter/audit", response_model=Dict[str, Any])
-def audit_claim_text(request: TextAuditRequest) -> Dict[str, Any]:
+@router.post("/charter/audit", response_model=dict[str, Any])
+def audit_claim_text(request: TextAuditRequest) -> dict[str, Any]:
     """Audits text for banned hype language according to the Consortium Charter."""
     is_clean = charter.refuses(request.text)
     if not is_clean:
@@ -78,8 +79,8 @@ def audit_claim_text(request: TextAuditRequest) -> Dict[str, Any]:
     }
 
 
-@router.get("/hardware-caps", response_model=Dict[str, Any])
-def get_hardware_caps() -> Dict[str, Any]:
+@router.get("/hardware-caps", response_model=dict[str, Any])
+def get_hardware_caps() -> dict[str, Any]:
     """Returns theorem-derived physical hardware bond dimension caps."""
     max_chi = HARD_CAP_THEOREM()
     return {
@@ -93,8 +94,8 @@ def get_hardware_caps() -> Dict[str, Any]:
     }
 
 
-@router.post("/network/build", response_model=Dict[str, Any])
-def build_tensor_network(request: NetworkBuildRequest) -> Dict[str, Any]:
+@router.post("/network/build", response_model=dict[str, Any])
+def build_tensor_network(request: NetworkBuildRequest) -> dict[str, Any]:
     """Builds an honest block-sparse tensor network and returns memory telemetry."""
     try:
         net, ledger = build_network(
@@ -106,9 +107,9 @@ def build_tensor_network(request: NetworkBuildRequest) -> Dict[str, Any]:
     except UntrustedResult as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Honest Refusal (Hardware Cap Exceeded): {str(e)}",
+            detail=f"Honest Refusal (Hardware Cap Exceeded): {e!s}",
         )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
@@ -123,7 +124,7 @@ def build_tensor_network(request: NetworkBuildRequest) -> Dict[str, Any]:
         "n_nodes": len(net.nodes),
         "topology": net.topology,
         "chi_max": net.chi_max,
-        "group": net.group,
+        "group": net.gauge_group,
         "memory_bytes": mem_sym,
         "dense_equivalent_bytes": mem_dense,
         "theoretical_saving_factor": round(pred_saving, 3),
@@ -132,8 +133,8 @@ def build_tensor_network(request: NetworkBuildRequest) -> Dict[str, Any]:
     }
 
 
-@router.get("/experiments/{exp_id}", response_model=Dict[str, Any])
-def run_or_inspect_experiment(exp_id: str) -> Dict[str, Any]:
+@router.get("/experiments/{exp_id}", response_model=dict[str, Any])
+def run_or_inspect_experiment(exp_id: str) -> dict[str, Any]:
     """Executes or retrieves one of the three consortium acceptance experiments:
 
     - E1: Exactness Oracle (reproduces reference statevector at n <= 32)
@@ -156,12 +157,12 @@ def run_or_inspect_experiment(exp_id: str) -> Dict[str, Any]:
     except (UntrustedApproximation, UntrustedResult, RefusedMethod, CharterViolation) as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=f"Experiment honest refusal: {str(e)}",
+            detail=f"Experiment honest refusal: {e!s}",
         )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Experiment execution failure: {str(e)}",
+            detail=f"Experiment execution failure: {e!s}",
         )
 
     return {
