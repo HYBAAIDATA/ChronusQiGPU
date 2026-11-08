@@ -33,6 +33,9 @@ class TISAOpcode(str, Enum):
     T_SHEAF_INSPECT = "T_SHEAF_INSPECT"
     T_DSW_HEAL = "T_DSW_HEAL"
     T_STARK_EVAL = "T_STARK_EVAL"
+    T_RICCI_INSPECT = "T_RICCI_INSPECT"
+    T_HODGE_PROJ = "T_HODGE_PROJ"
+    T_ANOSOV_PURGE = "T_ANOSOV_PURGE"
 
 
 CUSTOM_0_OPCODE = 0x0B  # 7'b0001011 (RISC-V standard custom-0)
@@ -43,8 +46,11 @@ FUNCT7_MAP = {
     TISAOpcode.T_SHEAF_INSPECT: 0x03,
     TISAOpcode.T_DSW_HEAL: 0x04,
     TISAOpcode.T_STARK_EVAL: 0x05,
-    TISAOpcode.T_LOAD_CYCLO: 0x06,
-    TISAOpcode.T_STORE_CYCLO: 0x07,
+    TISAOpcode.T_RICCI_INSPECT: 0x06,
+    TISAOpcode.T_HODGE_PROJ: 0x07,
+    TISAOpcode.T_ANOSOV_PURGE: 0x08,
+    TISAOpcode.T_LOAD_CYCLO: 0x09,
+    TISAOpcode.T_STORE_CYCLO: 0x0A,
     TISAOpcode.T_NOP: 0x00,
 }
 REV_FUNCT7_MAP = {v: k for k, v in FUNCT7_MAP.items()}
@@ -86,6 +92,12 @@ class HardwareFault(Exception):
 
 class TopologicalSheafFault(HardwareFault):
     """Raised when T_SHEAF_INSPECT trips due to non-zero H^1 obstruction norm."""
+
+    pass
+
+
+class RicciCurvatureNeckFault(HardwareFault):
+    """Raised when T_RICCI_INSPECT detects a negative Ricci curvature bottleneck."""
 
     pass
 
@@ -218,6 +230,40 @@ class RISCVTopologicalCoprocessor:
             # Invariant check
             is_valid = True
             return {"status": "OK", "cycles": 1, "quotient_valid": is_valid}
+
+        elif inst.opcode == TISAOpcode.T_RICCI_INSPECT:
+            val = self.regfile.read(inst.rs1)
+            # a0 < 0 indicates negative curvature singularity / pinched C2 neck
+            is_anomaly = val.c0 < 0
+            if is_anomaly:
+                self.sheaf_faults_intercepted += 1
+                raise RicciCurvatureNeckFault(
+                    f"Hardware Ricci singularity detected: T{inst.rs1}.c0 = {val.c0} < 0"
+                )
+            if inst.rd != 0:
+                self.regfile.write(inst.rd, CyclotomicZ5(1, 0, 0, 0))
+            return {"status": "OK", "cycles": 1, "curvature_valid": True, "rd": inst.rd}
+
+        elif inst.opcode == TISAOpcode.T_HODGE_PROJ:
+            val = self.regfile.read(inst.rs1)
+            # Exact subspace projection: preserves c0, c1, projects out solenoidal covert curl c2, c3
+            projected = CyclotomicZ5(val.c0, val.c1, 0, 0)
+            if inst.rd != 0:
+                self.regfile.write(inst.rd, projected)
+            return {"status": "OK", "cycles": 1, "rd": inst.rd, "projected": str(projected)}
+
+        elif inst.opcode == TISAOpcode.T_ANOSOV_PURGE:
+            val = self.regfile.read(inst.rs1)
+            # 1-cycle Arnold's cat map over F_257: (2x + y, x + y) mod 257
+            p = 257
+            nx0 = (2 * val.c0 + val.c1) % p
+            nx1 = (val.c0 + val.c1) % p
+            nx2 = (2 * val.c2 + val.c3) % p
+            nx3 = (val.c2 + val.c3) % p
+            scrambled = CyclotomicZ5(nx0, nx1, nx2, nx3)
+            if inst.rd != 0:
+                self.regfile.write(inst.rd, scrambled)
+            return {"status": "PURGED", "cycles": 1, "rd": inst.rd, "scrambled": str(scrambled)}
 
         return {"status": "UNKNOWN_OPCODE", "cycles": 1}
 
@@ -474,6 +520,52 @@ def execute_t_isa_instruction(
             "opcode": "T_CYCLO_ADD",
             "rd": rd,
             "dst": t_dst,
+            "cycles": 1,
+        }
+
+    elif opcode == 0x06:  # T_RICCI_INSPECT: Hardware Ricci Curvature Neck Evaluation
+        t_src1 = registers.read_128bit(rs1)
+        if t_src1[0] < 0:
+            memory_bus.block_egress()
+            raise RicciCurvatureNeckFault("HARDWARE_TRAP_RICCI_CURVATURE_SINGULARITY")
+        registers.write_128bit(rd, (1, 0, 0, 0))
+        registers.write_status(rd, STATUS_HARMONIC_CONSENSUS)
+        return {
+            "status": "OK",
+            "opcode": "T_RICCI_INSPECT",
+            "curvature_valid": True,
+            "rd": rd,
+            "cycles": 1,
+        }
+
+    elif opcode == 0x07:  # T_HODGE_PROJ: Hodge Orthogonal Subspace Projector
+        t_src1 = registers.read_128bit(rs1)
+        # Exact projection: keep irrotational components (c0, c1), nullify solenoidal curl (c2, c3)
+        t_proj = (t_src1[0], t_src1[1], 0, 0)
+        registers.write_128bit(rd, t_proj)
+        return {
+            "status": "OK",
+            "opcode": "T_HODGE_PROJ",
+            "rd": rd,
+            "dst": t_proj,
+            "cycles": 1,
+        }
+
+    elif opcode == 0x08:  # T_ANOSOV_PURGE: 1-cycle Anosov Ergodic Memory Purge
+        t_src1 = registers.read_128bit(rs1)
+        p = 257
+        purged = (
+            (2 * t_src1[0] + t_src1[1]) % p,
+            (t_src1[0] + t_src1[1]) % p,
+            (2 * t_src1[2] + t_src1[3]) % p,
+            (t_src1[2] + t_src1[3]) % p,
+        )
+        registers.write_128bit(rd, purged)
+        return {
+            "status": "PURGED",
+            "opcode": "T_ANOSOV_PURGE",
+            "rd": rd,
+            "dst": purged,
             "cycles": 1,
         }
 

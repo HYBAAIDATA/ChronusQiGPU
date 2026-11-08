@@ -56,6 +56,7 @@ from chronus.security.al_haras.hardware_t_isa import (
     TopologicalRegisterFile,
     RISCVTopologicalCoprocessor,
     TopologicalSheafFault,
+    RicciCurvatureNeckFault,
     encode_t_isa_instruction,
     decode_t_isa_instruction,
     RoCCInstruction,
@@ -127,6 +128,20 @@ from chronus.security.al_haras.autonomous_roe import (
     EngagementSimplex,
     AutonomousROEValidator,
 )
+from chronus.security.al_haras.millennium_security import (
+    NetworkGraphEdge,
+    RicciCurvatureDeCloaker,
+    HodgeCovertChannelFilter,
+    UltrametricMemorySandbox,
+    AnosovColdBootScrambler,
+    PicardLefschetzAntiJammingFilter,
+)
+from chronus.security.al_haras.millennium_unification import (
+    SpectralDualityBridge,
+    HarmonicCohomologyBridge,
+    ParabolicFlowSingularityBridge,
+    GrandMillenniumUnificationNexus,
+)
 
 __all__ = [
     "CyclotomicZ5",
@@ -164,6 +179,7 @@ __all__ = [
     "TopologicalRegisterFile",
     "RISCVTopologicalCoprocessor",
     "TopologicalSheafFault",
+    "RicciCurvatureNeckFault",
     "encode_t_isa_instruction",
     "decode_t_isa_instruction",
     "RoCCInstruction",
@@ -218,4 +234,14 @@ __all__ = [
     "ROECriterion",
     "EngagementSimplex",
     "AutonomousROEValidator",
+    "NetworkGraphEdge",
+    "RicciCurvatureDeCloaker",
+    "HodgeCovertChannelFilter",
+    "UltrametricMemorySandbox",
+    "AnosovColdBootScrambler",
+    "PicardLefschetzAntiJammingFilter",
+    "SpectralDualityBridge",
+    "HarmonicCohomologyBridge",
+    "ParabolicFlowSingularityBridge",
+    "GrandMillenniumUnificationNexus",
 ]
