@@ -58,8 +58,9 @@ class RateLimiter:
         now = time.monotonic()
         bucket = self._buckets[tenant_id]
 
-        # Refill tokens
-        elapsed = now - bucket["last_refill"]
+        # Refill tokens; clamp at zero because a freshly created bucket
+        # samples last_refill after `now`, yielding a tiny negative elapsed.
+        elapsed = max(0.0, now - bucket["last_refill"])
         refill_amount = elapsed * (self.requests_per_minute / 60.0)
         bucket["tokens"] = min(self.burst, bucket["tokens"] + refill_amount)
         bucket["last_refill"] = now

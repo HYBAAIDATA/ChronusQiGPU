@@ -108,3 +108,4 @@ master_repo/
 *.zip
 /chronus_gpiu-v36.py
 /qualification_manifest_v36.json
+.venv-test/

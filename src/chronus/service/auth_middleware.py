@@ -314,7 +314,7 @@ class JWTValidator:
                     "message": "The provided access token has expired.",
                 },
             )
-        except jwt.InvalidTokenError as exc:
+        except jwt.PyJWTError as exc:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail={
