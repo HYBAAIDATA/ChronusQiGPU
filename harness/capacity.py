@@ -13,6 +13,7 @@ import statistics
 import subprocess
 import sys
 import time
+import tempfile
 from contextlib import redirect_stdout
 from datetime import datetime, timezone
 from pathlib import Path
@@ -64,6 +65,67 @@ def percentile(values, q):
     return sorted(values)[math.ceil(q * len(values)) - 1]
 
 
+def probe_corruption(codec, payload, header, source):
+    """Observe a single valid-symbol substitution; never claim correction."""
+    if not payload:
+        return None
+    altered = (b'\x00\x02' if payload[:2] != b'\x00\x02' else b'\x00\x03') + payload[2:]
+    start = time.perf_counter_ns()
+    try:
+        result = codec.decode(altered, header)
+    except codec.PrimeCodecError as error:
+        return {'corruption_class': 'single valid prime-symbol substitution in first word',
+                'attempt': 'decode only; codec exposes no recovery operation',
+                'success': False, 'outcome': 'corruption rejected',
+                'time_to_failure_ns': time.perf_counter_ns() - start,
+                'error_type': type(error).__name__}
+    elapsed = time.perf_counter_ns() - start
+    if result != source:
+        raise RuntimeError('corrupted payload returned incorrect data without an integrity error')
+    return {'corruption_class': 'single valid prime-symbol substitution in first word',
+            'attempt': 'decode only; codec exposes no recovery operation',
+            'success': True, 'outcome': 'original returned', 'time_to_success_ns': elapsed}
+
+
+def block_write_observation(directory, payload, header, logical_bytes):
+    """Observe filesystem block-device counters, not physical media writes."""
+    directory = Path(directory).resolve(strict=True)
+    if not directory.is_dir():
+        raise ValueError('write directory must be a directory')
+    device = directory.stat().st_dev
+    link = Path('/sys/dev/block') / (str(os.major(device)) + ':' + str(os.minor(device)))
+    if not link.exists():
+        return {'available': False, 'reason': 'no Linux block statistics for filesystem device'}
+    stat_file = link / 'stat'
+    def count():
+        fields = stat_file.read_text().split()
+        if len(fields) < 7:
+            raise ValueError('invalid Linux block statistics')
+        return int(fields[6]) * 512  # Linux block-stat sectors are fixed at 512 bytes.
+    before = count()
+    name = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=directory, prefix='chronus-measure-', delete=False) as f:
+            name = f.name
+            f.write(header)
+            f.write(payload)
+            f.flush()
+            os.fsync(f.fileno())
+        after = count()
+    finally:
+        if name:
+            os.unlink(name)
+    if after < before:
+        raise RuntimeError('block counter moved backwards')
+    return {'available': True, 'layer': 'filesystem block device; not physical media',
+            'device_major_minor': f'{os.major(device)}:{os.minor(device)}',
+            'device_sysfs_path': str(link.resolve()), 'logical_bytes': logical_bytes,
+            'block_layer_bytes_observed': after - before,
+            'scope': 'system-wide counter; includes other activity and filesystem writes, and may omit later writes',
+            'physical_write_amplification': None,
+            'reason': 'physical media writes and isolation are not established'}
+
+
 def run(args, command):
     identity = source_identity(args.export_commit, args.export_codec_blob)
     hardware = json.loads(Path(args.hardware).read_text())
@@ -90,7 +152,7 @@ def run(args, command):
             manifest.append({'path': rel, 'class': labels[rel], 'size': len(data), 'sha256': sha(data)})
             payload, header = codec.encode(data)
             c = classes.setdefault(labels[rel], {'input_bytes': 0, 'encoded_bytes_including_header': 0,
-                                                   'decode_ns': [], 'files': 0})
+                                                   'decode_ns': [], 'files': 0, 'corruption_probes': [], 'block_write_observations': []})
             c['input_bytes'] += len(data)
             c['encoded_bytes_including_header'] += len(payload) + len(header)
             c['files'] += 1
@@ -101,7 +163,17 @@ def run(args, command):
                 if decoded != data:
                     raise RuntimeError('round trip mismatch')
                 c['decode_ns'].append(elapsed)
+            probe = probe_corruption(codec, payload, header, data)
+            if probe:
+                probe['path'] = rel
+                c['corruption_probes'].append(probe)
+            if getattr(args, 'write_dir', None):
+                observation = block_write_observation(args.write_dir, payload, header, len(data))
+                observation['path'] = rel
+                c['block_write_observations'].append(observation)
             print('measured', rel, 'class', labels[rel], 'round-trip verified')
+            if probe:
+                print('corruption probe', rel, probe['outcome'])
     for c in classes.values():
         durations = c['decode_ns']
         c['input_to_encoded_ratio'] = c['input_bytes'] / c['encoded_bytes_including_header'] if c['encoded_bytes_including_header'] else None
@@ -112,8 +184,11 @@ def run(args, command):
         c['write_amplification'] = None
         c['write_amplification_reason'] = 'Not measured: codec is in-memory; device writes are not observed.'
         c['recovery_time_ns'] = None
+        probes = c['corruption_probes']
         c['recovery_success_rate'] = None
-        c['recovery_reason'] = 'Not measured: reference codec detects corruption but has no recovery module.'
+        c['recovery_attempted'] = False
+        c['recovery_reason'] = ('Controlled corruption decode probe only; codec has no recovery operation; '
+                                'successful recovery time is not measured.')
     sample_bytes = json.dumps(manifest, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()
     end = datetime.now(timezone.utc).isoformat()
     return {'label': LABEL, 'sample_manifest': manifest, 'sample_hash_sha256': sha(sample_bytes),
@@ -130,6 +205,7 @@ def main():
     p.add_argument('--hardware', required=True, help='JSON object with cpu, ram, disk, gpu')
     p.add_argument('--output-dir', required=True)
     p.add_argument('--repetitions', type=int, default=20)
+    p.add_argument('--write-dir', help='optional existing directory for guest block-layer observation; no physical-write claim')
     p.add_argument('--export-commit', help='full commit ID for an independently verified source export')
     p.add_argument('--export-codec-blob', help='full Git blob ID for exported codec')
     args = p.parse_args()

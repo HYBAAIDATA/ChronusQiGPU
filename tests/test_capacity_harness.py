@@ -37,3 +37,24 @@ class HarnessTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class ProbeTests(unittest.TestCase):
+    def test_controlled_corruption_is_detected_not_recovered(self):
+        codec = h.load_codec()
+        source = b'hello'
+        payload, header = codec.encode(source)
+        probe = h.probe_corruption(codec, payload, header, source)
+        self.assertFalse(probe['success'])
+        self.assertEqual(probe['outcome'], 'corruption rejected')
+        self.assertGreaterEqual(probe['time_to_failure_ns'], 0)
+        self.assertNotIn('time_to_success_ns', probe)
+
+    def test_empty_payload_has_no_probe(self):
+        codec = h.load_codec()
+        payload, header = codec.encode(b'')
+        self.assertIsNone(h.probe_corruption(codec, payload, header, b''))
+
+    def test_block_counter_unavailable_is_not_physical_measurement(self):
+        with tempfile.TemporaryDirectory() as d:
+            result = h.block_write_observation(d, b'abc', b'd', 3)
+            self.assertTrue('physical_write_amplification' not in result or result['physical_write_amplification'] is None)
