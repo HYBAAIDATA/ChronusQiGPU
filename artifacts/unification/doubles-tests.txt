@@ -1,0 +1,8 @@
+test_domain_returns_fixed_encoding (test_doubles.TestDoubles.test_domain_returns_fixed_encoding) ... ok
+test_invariant_registry_returns_fixed_values (test_doubles.TestDoubles.test_invariant_registry_returns_fixed_values) ... ok
+test_network_returns_fixed_result_invariants_and_controlled_ledger (test_doubles.TestDoubles.test_network_returns_fixed_result_invariants_and_controlled_ledger) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK
