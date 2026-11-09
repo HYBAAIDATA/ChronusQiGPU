@@ -7,8 +7,8 @@ Status: planning. Baseline: `8fddfd17eb776a95e0eec1d1514dd48290c905b4` (default 
 | Work order | Status |
 |---|---|
 | H1.1 | in-progress |
-| H1.2 | not-started |
-| H1.3 | not-started |
+| H1.2 | blocked |
+| H1.3 | blocked |
 | H3.1 | not-started |
 | H3.2 | not-started |
 | H2.1 | not-started |
@@ -47,7 +47,7 @@ Status: planning. Baseline: `8fddfd17eb776a95e0eec1d1514dd48290c905b4` (default 
 - Test: Check the property in the selected model; deliberately introduce a known leakage path and confirm the check detects it; inspect assumptions and reachable states for vacuity.
 - Acceptance criterion: Proof or exhaustive finite-state check succeeds for the stated model and mutation fails. This does not establish absence of leakage in unmodeled microarchitecture, physical channels or deployed systems.
 - Dependencies: H1.1 infrastructure if Lean is selected; independently establish implementation/model correspondence.
-- Estimated scope: Large. Status: Not started.
+- Estimated scope: Large. Status: Blocked on RTL correspondence and realistic leakage model; abstract model checked.
 
 ## H1.3 — SkyWater layout evaluation
 
@@ -57,7 +57,7 @@ Status: planning. Baseline: `8fddfd17eb776a95e0eec1d1514dd48290c905b4` (default 
 - Test: Run the complete flow on the named RTL; inspect DRC/LVS outputs and static timing; separately verify cycle-count behavior across modeled inputs.
 - Acceptance criterion: Flow completes and passes the chosen sign-off checks with no undisclosed waivers; cycle-count verification reports its assumptions. Static timing alone cannot prove constant cycles, constant power or tape-out readiness. Actual fabrication requires foundry acceptance and additional sign-off.
 - Dependencies: Suitable RTL, pinned tools and permitted PDK; not dependent on H1.1.
-- Estimated scope: Large. Status: Not started; physical-design environment required.
+- Estimated scope: Large. Status: Blocked: OpenLane and the matching PDK are unavailable; the flow configuration is unvalidated.
 
 ## H3.1 — Holographic code simulator
 
@@ -166,3 +166,14 @@ Work order / status / tested commit / environment / command / exit code / raw ar
 - Baseline: `8fddfd17eb776a95e0eec1d1514dd48290c905b4`. The complete Notion import was not diffed against the Git tree; the import report records 34 failed pages including the root Dockerfile. The source ZIP is not available here. Reconciliation details: `evidence/baseline/import-reconciliation.txt`; SHA-256 `11163ed9f1989418e6c85318da95ebe9700c2908d6cc0faa16a5824ab8056bf8`.
 - The full baseline suite could not be run: a shell clone of the private repository lacked credentials (exit 128); `evidence/baseline/git-clone.log`, SHA-256 `2e554a39e2bb4414b5e2c3f5a90ebc87b405b5b8231d692704ec6df4580e8f60`. GitHub MCP access does not supply credentials to the shell.
 - Partial only: `/data/chronus-venv/bin/python -m pytest -q tests/test_prime_codec.py` in `/data/chronus-baseline`, a synthetic package containing only the two baseline codec and test files with stub package initializers; exit 0, 8 passed. Output: `evidence/baseline/pytest-isolated.log`, SHA-256 `478d38eb52494067e3bcd9a4bb323f7a33c8407927ff7ca238cefb97ac44fcbc`. This is not a full repository test, integration test, CI result or production qualification.
+
+## Continuation records
+
+- Baseline evidence commit: `3cf41687d3e54613dda14547b23346db42517de4`; see Baseline reconciliation above. Full-tree comparison and full-suite run remain blocked.
+- Work-order structure: commit `2fe0bc56d09f80c3209d3b805579872454d66bc7`; command `python3 -m unittest discover -s tests -p test_sovereign_work_orders.py -v`; exit 0; `evidence/baseline/work-order-structure.log` SHA-256 `d5491f5064f24174ce895269912cfe53a108f70c8ec0aeccf8fe4d854b6b8683`. This checks document structure, not capability correctness.
+- H1.1 partial: commit `04b47af0c2e192e74a7ec3600d5dbeaee4cb5e0a`; command `bash lean/check.sh` with Lean 4.15.0; exit 0; `lean/local-check-output.txt` SHA-256 `177d5eeede6971987e7babaf618a1fe4df9c176ce323a52a89c49d85d144ddfa`. Three closed identities have no axiom dependencies; five universal laws depend on Lean's `propext`. Pisot, Binet–Zeckendorf, braid, remaining ring laws, implementation correspondence, test-class coverage and CI remain outstanding; coverage not measured.
+- H1.2 abstract model: commit `64099b6a85fae67ef2e764e78999e0d061866759`; from `formal/models/lane_noninterference`, `java -cp /data/tla2tools-1.8.0.jar tlc2.TLC -deadlock -config good.cfg LaneIsolation.tla` exited 0, output `evidence/h1_2/good.log`, SHA-256 `860e41c457d87825ab6e1183bb231f49901ee71f16dd4f3e5ce55a11bbd5431f`; same command with `mutant.cfg` exited 12 with expected invariant violation, output `evidence/h1_2/mutant.log`, SHA-256 `f03d731b4186448612f152b2d467b80222dc5638d20dfea8b16fc6618f3b8678`. TLC 1.8.0, Java 25. Model is not connected to RTL or transient hardware; H1.2 is blocked.
+- H1.3: commit `695f59bb632bc5daca9a46378bde67992452ae3d`; `bash hw/openlane/run_zeckendorf.sh` exited 2, `evidence/h1_3/preflight.log` SHA-256 `b530026b03e4a84dc57ea5bc0c5c5a56abef526a0b7e1ed15866bd5d582b3831`. OpenLane flow unavailable; no layout, DRC, LVS, timing or cycle proof was produced. Script syntax and JSON parse checked; configuration remains unvalidated.
+- H5.0 status document: commit `fd749b3159bb7e92e2865fb445d699505323216e`. Review itself remains blocked, and H5.1–H5.2 remain blocked and outside permitted implementation scope. The status file check is not a legal review. Additional command `python3 tests/test_h5_legal_status.py -v` exited 0; `evidence/h5_0/unittest.log` SHA-256 `b092990725fd61ce38655fd11edfb35e20e4f5993897d7582f2b66d0814ed904`.
+- H3.1, H3.2, H2.1, H2.2, H4.1, H4.2: not started in this continuation, which scoped them to later runs; dependencies and acceptance criteria above remain.
+- No results were independently signed: the previously audited demonstration signer is not suitable. No test-class coverage, customer reference, external assessment or certification is asserted.
