@@ -2,6 +2,23 @@
 
 Status: planning. Baseline: `8fddfd17eb776a95e0eec1d1514dd48290c905b4` (default branch, 2026-11-09). This document translates requested objectives into work; it does not assert that any capability, assessment, certification, or government affiliation exists. No horizon is complete. The imported copy has not been compared with this baseline.
 
+## Work-order status
+
+| Work order | Status |
+|---|---|
+| H1.1 | in-progress |
+| H1.2 | not-started |
+| H1.3 | not-started |
+| H3.1 | not-started |
+| H3.2 | not-started |
+| H2.1 | not-started |
+| H2.2 | not-started |
+| H5.0 | blocked |
+| H5.1 | blocked |
+| H5.2 | blocked |
+| H4.1 | not-started |
+| H4.2 | not-started |
+
 ## Delivery and evidence rules
 
 - Execute phase order: this document; H1; H3; H2; H5; H4. Track dependencies and blockers rather than marking an untestable or unavailable deliverable complete.
