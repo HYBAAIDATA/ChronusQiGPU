@@ -20,7 +20,7 @@ Status: planning. Baseline: `8fddfd17eb776a95e0eec1d1514dd48290c905b4` (default 
 - Test: `lake build`, theorem-import checks, and checks rejecting `sorry` and unapproved axioms in the scoped library; verify any claimed connection to implementation separately.
 - Acceptance criterion: All stated results compile without proof placeholders under the pinned toolchain; `phi_squared_eq_phi_plus_one` and precise cyclotomic arithmetic laws are among them. Binet/Zeckendorf and braid statements must define their domains and representation precisely. This does not prove implementation or hardware correctness.
 - Dependencies: None. Existing `formal/ChronusUnivalence.lean` includes a `sorry`; it is not a completed proof.
-- Estimated scope: Large. Status: Not started; toolchain and statement inventory needed.
+- Estimated scope: Large. Status: In progress. An initial closed-identity proof slice is available; the remaining theorems and correspondence proof are not complete.
 
 ## H1.2 — Lane non-interference
 
@@ -135,3 +135,11 @@ Status: planning. Baseline: `8fddfd17eb776a95e0eec1d1514dd48290c905b4` (default 
 ## Completion record template
 
 Work order / status / tested commit / environment / command / exit code / raw artifact and SHA-256 / CI run / reviewer / limitations / remaining blockers. Never mark production, certification, or a horizon complete solely because code exists or a test count is high.
+
+## H1.1 partial delivery record
+
+- Tested files commit: `bcdd4c76d3e4822b487e9735d69ac3845ed44a18` (the tests were run on the identical local files immediately before that commit).
+- Environment: Linux x86_64; Lean 4.15.0 and Lake 5.0.0-1165156.
+- Command: from repository root, `bash lean/check.sh`. Exit status: 0. Output: `lean/local-check-output.txt` at the tested commit. Output SHA-256: `a1f9d7a8344620897fcb7ec72497094a54020b09fd5e6fe9955a683167164dc3`. No CI run was checked.
+- Scope: kernel-checked closed identities for phi squared, phi times its represented inverse, and zeta to the fifth power; imported theorem checks and a concrete negative check. The theorem axiom reports contain no axioms.
+- Limitations: not the universal ring axioms, a quotient isomorphism, a Zeckendorf or Pisot proof, a braid proof, code equivalence, independent review, the seven-class evidence pack, or production qualification. The work order and horizon remain incomplete.
