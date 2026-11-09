@@ -1,0 +1,31 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.15, pytest-9.2.0, pluggy-1.7.0 -- /usr/local/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /data/unification-new
+plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
+collecting ... collected 11 items
+
+tests/unification/test_bridge_isolated.py::TestInvariant::test_five_cited_fronts PASSED [  9%]
+tests/unification/test_bridge_isolated.py::TestProperty::test_every_selected_claim_has_its_key PASSED [ 18%]
+tests/unification/test_bridge_isolated.py::TestAdversarial::test_duplicate_invalid_key_and_url PASSED [ 27%]
+tests/unification/test_bridge_isolated.py::TestEdge::test_empty_malformed_missing_text PASSED [ 36%]
+tests/unification/test_bridge_isolated.py::TestUnit::test_primary_reference_fetches[continuous] PASSED [ 45%]
+tests/unification/test_bridge_isolated.py::TestUnit::test_primary_reference_fetches[invariants] PASSED [ 54%]
+tests/unification/test_bridge_isolated.py::TestUnit::test_primary_reference_fetches[fluids] PASSED [ 63%]
+tests/unification/test_bridge_isolated.py::TestUnit::test_primary_reference_fetches[compression] PASSED [ 72%]
+tests/unification/test_bridge_isolated.py::TestUnit::test_primary_reference_fetches[quantum] PASSED [ 81%]
+tests/unification/test_bridge_isolated.py::TestIntegration::test_render_and_validate PASSED [ 90%]
+tests/unification/test_bridge_isolated.py::TestEndToEnd::test_generated_bridge_file PASSED [100%]
+
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.13.15-final-0 _______________
+
+Name                             Stmts   Miss Branch BrPart  Cover   Missing
+----------------------------------------------------------------------------
+src/hyba/unification/bridge.py      35      4     14      0    92%   50-53
+----------------------------------------------------------------------------
+TOTAL                               35      4     14      0    92%
+Coverage JSON written to file artifacts/unification/bridge-coverage-provisional.json
+Required test coverage of 90% reached. Total coverage: 91.84%
+============================== 11 passed in 0.82s ==============================
