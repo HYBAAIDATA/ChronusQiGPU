@@ -143,3 +143,9 @@ Work order / status / tested commit / environment / command / exit code / raw ar
 - Command: from repository root, `bash lean/check.sh`. Exit status: 0. Output: `lean/local-check-output.txt` at the tested commit. Output SHA-256: `a1f9d7a8344620897fcb7ec72497094a54020b09fd5e6fe9955a683167164dc3`. No CI run was checked.
 - Scope: kernel-checked closed identities for phi squared, phi times its represented inverse, and zeta to the fifth power; imported theorem checks and a concrete negative check. The theorem axiom reports contain no axioms.
 - Limitations: not the universal ring axioms, a quotient isomorphism, a Zeckendorf or Pisot proof, a braid proof, code equivalence, independent review, the seven-class evidence pack, or production qualification. The work order and horizon remain incomplete.
+
+## Baseline reconciliation — blocked
+
+- Baseline: `8fddfd17eb776a95e0eec1d1514dd48290c905b4`. The complete Notion import was not diffed against the Git tree; the import report records 34 failed pages including the root Dockerfile. The source ZIP is not available here. Reconciliation details: `evidence/baseline/import-reconciliation.txt`; SHA-256 `11163ed9f1989418e6c85318da95ebe9700c2908d6cc0faa16a5824ab8056bf8`.
+- The full baseline suite could not be run: a shell clone of the private repository lacked credentials (exit 128); `evidence/baseline/git-clone.log`, SHA-256 `2e554a39e2bb4414b5e2c3f5a90ebc87b405b5b8231d692704ec6df4580e8f60`. GitHub MCP access does not supply credentials to the shell.
+- Partial only: `/data/chronus-venv/bin/python -m pytest -q tests/test_prime_codec.py` in `/data/chronus-baseline`, a synthetic package containing only the two baseline codec and test files with stub package initializers; exit 0, 8 passed. Output: `evidence/baseline/pytest-isolated.log`, SHA-256 `478d38eb52494067e3bcd9a4bb323f7a33c8407927ff7ca238cefb97ac44fcbc`. This is not a full repository test, integration test, CI result or production qualification.
