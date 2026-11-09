@@ -1,0 +1,7 @@
+$ find /home /data /tmp /mnt /workspace /app /opt -maxdepth 5 -name .git -print
+
+$ GIT_TERMINAL_PROMPT=0 git ls-remote https://github.com/hybadatadevops1/Chronusv2.git refs/heads/feat/unification-field-prototype
+fatal: could not read Username for 'https://github.com': terminal prompts disabled
+
+$ gh auth status
+You are not logged into any GitHub hosts. To log in, run: gh auth login
