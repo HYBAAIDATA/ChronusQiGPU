@@ -1,0 +1,97 @@
+{
+  "command": "/usr/local/bin/python harness/capacity.py --data-dir artifacts/samples --labels harness/sample-labels.json --hardware harness/probe-hardware.json --output-dir artifacts/capacity --write-dir /data/chronus-work --export-commit eea7c91559547eb4906cd70db12de9f2b1df4adb --export-codec-blob fb514a06f65473526e4ed43a0070e7dafcb1d657",
+  "hardware_spec": {
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.90GHz (virtual machine)",
+    "disk": "/dev/vdb xfs (guest block device; underlying media not exposed)",
+    "gpu": "not used",
+    "ram": "MemTotal:        4387300 kB"
+  },
+  "label": "Reference implementation measurement. Not a product capacity claim. The product capacity claim requires the specification-conformant codec.",
+  "per_class": {
+    "synthetic-text": {
+      "block_write_observations": [
+        {
+          "available": true,
+          "block_layer_bytes_observed": 25088,
+          "device_major_minor": "254:16",
+          "device_sysfs_path": "/sys/devices/platform/LNRO0005:01/virtio1/block/vdb",
+          "layer": "filesystem block device; not physical media",
+          "logical_bytes": 90,
+          "path": "reference.txt",
+          "physical_write_amplification": null,
+          "reason": "physical media writes and isolation are not established",
+          "scope": "system-wide counter; includes other activity and filesystem writes, and may omit later writes"
+        }
+      ],
+      "corruption_probes": [
+        {
+          "attempt": "decode only; codec exposes no recovery operation",
+          "corruption_class": "single valid prime-symbol substitution in first word",
+          "error_type": "PrimeCodecIntegrityError",
+          "outcome": "corruption rejected",
+          "path": "reference.txt",
+          "success": false,
+          "time_to_failure_ns": 22807
+        }
+      ],
+      "decode_latency_ns": {
+        "method": "nearest rank; one sample per decode call",
+        "p50": 20524,
+        "p95": 36120,
+        "p99": 36860,
+        "samples": [
+          29444,
+          24761,
+          21986,
+          20797,
+          36120,
+          35504,
+          36860,
+          20560,
+          20488,
+          20588,
+          20303,
+          20593,
+          20444,
+          20524,
+          20387,
+          20350,
+          20438,
+          20394,
+          20388,
+          20420
+        ],
+        "variance_population": 32457431.9475
+      },
+      "encoded_bytes_including_header": 225,
+      "files": 1,
+      "input_bytes": 90,
+      "input_to_encoded_ratio": 0.4,
+      "recovery_attempted": false,
+      "recovery_reason": "Controlled corruption decode probe only; codec has no recovery operation; successful recovery time is not measured.",
+      "recovery_success_rate": null,
+      "recovery_time_ns": null,
+      "write_amplification": null,
+      "write_amplification_reason": "Not measured: physical media writes and workload isolation are not established."
+    }
+  },
+  "raw_stdout": "measured reference.txt class synthetic-text round-trip verified\ncorruption probe reference.txt corruption rejected\n",
+  "runtime": "3.13.15",
+  "sample_hash_method": "SHA-256 of UTF-8 canonical compact sorted-key JSON sample_manifest",
+  "sample_hash_sha256": "f5da4332fd93255b7e29ef7fdb41ef7b7b5bd97e72608045f71959373391eae9",
+  "sample_manifest": [
+    {
+      "class": "synthetic-text",
+      "path": "reference.txt",
+      "sha256": "c6953b72b718d94a2b29178cb47ad0c094a1237d8a6df8a40213ccae99e418f0",
+      "size": 90
+    }
+  ],
+  "source": {
+    "codec_git_blob": "fb514a06f65473526e4ed43a0070e7dafcb1d657",
+    "commit": "eea7c91559547eb4906cd70db12de9f2b1df4adb",
+    "verification": "export: blob verified locally; commit association requires external verification"
+  },
+  "wall_clock_end": "2026-11-09T21:50:05.346304+00:00",
+  "wall_clock_start": "2026-11-09T21:50:05.344712+00:00"
+}
