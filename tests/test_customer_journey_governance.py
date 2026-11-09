@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "frontend" / "data" / "customer-journeys.json"
 PAGE_PATH = ROOT / "frontend" / "app" / "journeys" / "page.tsx"
 DOC_PATH = ROOT / "docs" / "HYPERSCALER_DATA_CONNECTOR_AND_USER_JOURNEYS.md"
+README_PATH = ROOT / "README.md"
 EXPECTED_JOURNEYS = {"government", "enterprise", "hyperscaler"}
 REQUIRED_GATES = {"procurement", "security", "technical_evaluation"}
 DISALLOWED_CLAIMS = (
@@ -142,12 +143,13 @@ class TestCustomerJourneyGovernance(unittest.TestCase):
             with self.subTest(pattern=pattern.pattern):
                 self.assertIsNone(pattern.search(copy))
 
-    def test_document_and_console_use_same_machine_readable_journeys(self):
+    def test_document_console_and_readme_share_the_journey_source(self):
         page = PAGE_PATH.read_text(encoding="utf-8")
         doc = DOC_PATH.read_text(encoding="utf-8")
+        readme = README_PATH.read_text(encoding="utf-8")
         self.assertIn("customer-journeys.json", page)
         self.assertIn("customer-journeys.json", doc)
-        self.assertIn("HYPERSCALER_DATA_CONNECTOR_AND_USER_JOURNEYS.md", doc)
+        self.assertIn("docs/HYPERSCALER_DATA_CONNECTOR_AND_USER_JOURNEYS.md", readme)
 
 
 if __name__ == "__main__":
