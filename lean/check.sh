@@ -7,7 +7,8 @@ lake build
 output=$(lake env lean Tests/Smoke.lean)
 printf '%s\n' "$output"
 count=$(printf '%s\n' "$output" | grep -Fc 'does not depend on any axioms' || true)
-if [ "$count" -ne 3 ]; then
+standard=$(printf '%s\n' "$output" | grep -Fc 'depends on axioms: [propext]' || true)
+if [ "$count" -ne 3 ] || [ "$standard" -ne 5 ]; then
   echo 'Unexpected theorem axiom report' >&2
   exit 1
 fi
@@ -15,4 +16,4 @@ if grep -REn '\b(sorry|admit|axiom)\b' Chronus.lean Chronus Tests; then
   echo 'Found a proof placeholder or axiom declaration' >&2
   exit 1
 fi
-echo 'Lean smoke checks passed (3 closed identities; no declared axioms).'
+echo 'Lean smoke checks passed (3 closed identities axiom-free; 5 universal laws depend only on propext).'

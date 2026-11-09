@@ -36,6 +36,26 @@ def mul (a b : Cyclotomic5) : Cyclotomic5 :=
   let t6 := a.c3*b.c3
   ⟨t0-t4+t5, t1-t4+t6, t2-t4, t3-t4⟩
 
+theorem add_comm (a b : Cyclotomic5) : add a b = add b a := by
+  cases a; cases b
+  simp [add, Int.add_comm]
+
+theorem add_assoc (a b c : Cyclotomic5) : add (add a b) c = add a (add b c) := by
+  cases a; cases b; cases c
+  simp [add, Int.add_assoc]
+
+theorem one_mul (a : Cyclotomic5) : mul one a = a := by
+  cases a
+  simp [mul, one]
+
+theorem mul_one (a : Cyclotomic5) : mul a one = a := by
+  cases a
+  simp [mul, one]
+
+theorem mul_comm (a b : Cyclotomic5) : mul a b = mul b a := by
+  cases a; cases b
+  simp [mul, Int.mul_comm, Int.add_comm, Int.add_left_comm, Int.add_assoc]
+
 theorem phi_squared_eq_phi_plus_one : mul phi phi = add phi one := by
   decide
 

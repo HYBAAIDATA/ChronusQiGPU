@@ -4,4 +4,9 @@ Build completed successfully.
 'Chronus.Cyclotomic5.phi_squared_eq_phi_plus_one' does not depend on any axioms
 'Chronus.Cyclotomic5.phi_mul_phi_inv_eq_one' does not depend on any axioms
 'Chronus.Cyclotomic5.zeta_fifth_eq_one' does not depend on any axioms
-Lean smoke checks passed (3 closed identities; no declared axioms).
+'Chronus.Cyclotomic5.add_comm' depends on axioms: [propext]
+'Chronus.Cyclotomic5.add_assoc' depends on axioms: [propext]
+'Chronus.Cyclotomic5.one_mul' depends on axioms: [propext]
+'Chronus.Cyclotomic5.mul_one' depends on axioms: [propext]
+'Chronus.Cyclotomic5.mul_comm' depends on axioms: [propext]
+Lean smoke checks passed (3 closed identities axiom-free; 5 universal laws depend only on propext).
