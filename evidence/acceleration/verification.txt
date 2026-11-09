@@ -1,0 +1,36 @@
+evidence/acceleration/ring-SHA256SUMS
+src/chronus/quantum/geometric_polychoron.py: OK
+tests/test_cyclotomic_seven_classes.py: OK
+evidence/acceleration/ring-tests.txt: OK
+evidence/acceleration/ring-coverage.json: OK
+evidence/acceleration/ring-state-SHA256SUMS
+src/chronus/quantum/ring_state.py: OK
+tests/test_ring_state_seven_classes.py: OK
+evidence/acceleration/ring-state-tests.txt: OK
+evidence/acceleration/ring-state-coverage.json: OK
+benchmarks/acceleration/ring_state_benchmark.py: OK
+benchmarks/acceleration/ring_state_raw.json: OK
+evidence/acceleration/ring-mps-SHA256SUMS
+src/chronus/quantum/ring_mps.py: OK
+tests/test_ring_mps_seven_classes.py: OK
+evidence/acceleration/ring-mps-tests.txt: OK
+evidence/acceleration/ring-mps-coverage.json: OK
+benchmarks/acceleration/ring_mps_benchmark.py: OK
+benchmarks/acceleration/ring_mps_raw.json: OK
+artifacts/acceleration/tensor_system_54c1d6ffe148ea655e251515fbbc07304ba9b250a6a47735ddf7310172267ec7.json: OK
+evidence/acceleration/ring-codec-SHA256SUMS
+src/chronus/quantum/ring_codec.py: OK
+tests/test_ring_codec_seven_classes.py: OK
+evidence/acceleration/ring-codec-tests.txt: OK
+evidence/acceleration/ring-codec-coverage.json: OK
+benchmarks/acceleration/ring_codec_benchmark.py: OK
+benchmarks/acceleration/ring_codec_raw.json: OK
+artifacts/acceleration/data_system_e68323c90f115bbc86c8ec676e694fb9075cfea1c9531ae5736e64a8fea548be.json: OK
+evidence/acceleration/blocked-braid-SHA256SUMS
+evidence/acceleration/blocked_braid_test.py: OK
+evidence/acceleration/blocked_braid_output.txt: OK
+evidence/acceleration/accumulation-SHA256SUMS
+evidence/acceleration/blocked_zeckendorf_test.py: OK
+evidence/acceleration/blocked_zeckendorf_output.txt: OK
+benchmarks/acceleration/accumulation_reference.py: OK
+benchmarks/acceleration/accumulation_reference_raw.json: OK
