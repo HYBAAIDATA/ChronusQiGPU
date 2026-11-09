@@ -1,0 +1,7 @@
+engine_sha256: 74cb25f0249f0709378144d38a19f6caf29d18d7662a9495340a74b0a2d38473
+engine_git_blob: c60c15ea37debab1da04be3f6352ca26d3cd9b24
+requested_phi_squared_equals_phi_plus_one: False
+requested_phi_squared_plus_phi_equals_one: True
+repo_phi_squared_equals_phi_plus_one: True
+repo_phi_equals_requested_plus_one: True
+outcome: requested generator is phi-1 under the repository convention
