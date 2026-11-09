@@ -17,6 +17,7 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_capacity_harness.py' -v
           python -m unittest discover -s tests -p 'test_capacity_artifact_verifier.py' -v
+          python -m unittest discover -s tests -p 'test_trust_preview.py' -v
           python scripts/ci/verify_capacity_artifacts.py
       - name: Run reference harness on runner
         run: |
