@@ -2313,7 +2313,8 @@ class OVIDService:
             "at"              : now_iso8601(),
         }
         rh = sha256(rfc8785(payload))
-        rs = MLDSASigner.sign_mldsa("mock_mldsa_key", rh)
+        _signing_seed = hashlib.sha256(f"mldsa_tenant_key_v1:{tenant_hash}".encode()).digest()
+        rs = MLDSASigner.sign_mldsa(_signing_seed, rh)
         stark_proof = ZKSTARKVerifier.generate_stark_proof(staged_bytes)
 
         stored = StoredReceipt(

@@ -33,6 +33,7 @@ Running this command is a local test action, not a release qualification or cert
 
 ## Documentation
 
+- [iGPU Manifesto: Chronus ONE & The Virtual GPIU](docs/IGPU_MANIFESTO.md)
 - [Claim audit and disposition](docs/claim-audit.md)
 - [Current implementation assessment](docs/system-update/current-state-assessment.md)
 - [Architecture and market assumptions](docs/system-update/architecture-and-market.md)

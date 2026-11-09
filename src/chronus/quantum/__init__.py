@@ -53,6 +53,16 @@ from chronus.quantum.statevector import (
     SQRT2,
     StateVector,
 )
+from chronus.quantum.entanglement import (
+    BellStateKind,
+    algebraic_concurrence_determinant,
+    create_bell_state,
+    create_ghz_state,
+    create_superposition_state,
+    entanglement_entropy_proxy,
+    is_entangled_bipartite,
+    superposition_memory_lookup,
+)
 
 __all__ = [
     "ExtensionSubspaceState",
@@ -91,4 +101,12 @@ __all__ = [
     "phi_element_power",
     "subspace_iterate",
     "uniform_subspace",
+    "BellStateKind",
+    "create_superposition_state",
+    "create_bell_state",
+    "create_ghz_state",
+    "algebraic_concurrence_determinant",
+    "is_entangled_bipartite",
+    "entanglement_entropy_proxy",
+    "superposition_memory_lookup",
 ]

@@ -1,0 +1,14 @@
+{
+  "seed": 2026,
+  "hash": "4593db51c3f025bc03312c363c843fa72cbb9b3d7041c908bf30ec6c14662c53",
+  "route": {
+    "requested": "cpu",
+    "executed": "cpu_reference",
+    "fallback_reason": null
+  },
+  "device_run": "NOT_RUN",
+  "hashrate": "NOT_RUN",
+  "t_ms": 0.055,
+  "mode": "native_chronus_gpu",
+  "mathematical_substrate": "exact_integer_z_phi"
+}

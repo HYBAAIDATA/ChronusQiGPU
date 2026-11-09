@@ -6,6 +6,14 @@ from chronus.execution.hardware_dispatcher import (
     SOFTWARE_EXECUTION,
     PHYSICAL_HARDWARE_EXECUTION,
 )
+from chronus.execution.native_simd import (
+    NativeSIMDBackendAdapter,
+    ResidentConfig,
+    ResidentLogicalScheduler,
+    dual_space_in_place_query,
+    fold_pairs_vectorized,
+    unfold_pairs_vectorized,
+)
 from chronus.execution.reference import (
     ExecutionRouter,
     NativeMathReferenceBackend,
@@ -92,4 +100,10 @@ __all__ = [
     "MATHEMATICAL_EXECUTION",
     "SOFTWARE_EXECUTION",
     "PHYSICAL_HARDWARE_EXECUTION",
+    "NativeSIMDBackendAdapter",
+    "ResidentConfig",
+    "ResidentLogicalScheduler",
+    "fold_pairs_vectorized",
+    "unfold_pairs_vectorized",
+    "dual_space_in_place_query",
 ]
