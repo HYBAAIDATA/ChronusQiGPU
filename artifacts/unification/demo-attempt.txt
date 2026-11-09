@@ -1,0 +1,3 @@
+$ PYTHONPATH=src python -m hyba.unification.run_unification_demo
+/usr/local/bin/python: No module named hyba.unification.run_unification_demo
+exit_code=1
