@@ -182,9 +182,8 @@ def run(args, command):
                                   'samples': durations, 'method': 'nearest rank; one sample per decode call'}
         del c['decode_ns']
         c['write_amplification'] = None
-        c['write_amplification_reason'] = 'Not measured: codec is in-memory; device writes are not observed.'
+        c['write_amplification_reason'] = 'Not measured: physical media writes and workload isolation are not established.'
         c['recovery_time_ns'] = None
-        probes = c['corruption_probes']
         c['recovery_success_rate'] = None
         c['recovery_attempted'] = False
         c['recovery_reason'] = ('Controlled corruption decode probe only; codec has no recovery operation; '
