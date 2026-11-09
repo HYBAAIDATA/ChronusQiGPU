@@ -1,0 +1,17 @@
+# Exact field prototype — experimental, not release-qualified
+
+This partial module implements rational pairs a+bφ with φ²=φ+1, with exact arithmetic and power-basis coordinates in Q(ζ₅). It converts only the integer-coefficient subring Z[φ] to Z[ζ₅]; it rejects cyclotomic coordinates outside the real subfield. It does not implement a full cyclotomic field or a new ring engine. The check in `tests/unification/test_existing_ring.py` uses the repository's existing `CyclotomicZ5` source directly for bounded addition and multiplication interoperability; it is not a proof of the whole ring implementation.
+
+Mathematical mapping: for ζ=exp(2πi/5), φ=−ζ²−ζ³, so φ²=φ+1 modulo 1+ζ+ζ²+ζ³+ζ⁴. The embedding maps (a,b) to (a,0,−b,−b). Its image is the real subfield Q(φ), not all Q(ζ₅), and it maps into Z[ζ₅] only for integer a,b. The inverse checks membership. ζ itself has no inverse image and 1/2 is not in Z[ζ₅]. These coordinate identities do not establish a universal tensor-network principle.
+
+## Evidence and reproduction
+
+- [Local test output](field-tests.txt) and [branch coverage](field-coverage.json): six tests passed, 100% coverage of this module in the reported local run. Includes bounded exhaustive checks, generated Hypothesis cases, adversarial validation, edge and unit cases, and a bounded comparison with the existing ring. Generated tests establish only the tested examples.
+- [Benchmark](field-benchmark.json) and [script](../../benchmarks/unification/field_benchmark.py): repeated synthetic arithmetic timings, environment, outputs and source hash; no comparative or customer performance claim.
+- [SHA-256 manifest](SHA256SUMS): `sha256sum -c evidence/unification/SHA256SUMS` from the repository root. A hash is integrity evidence, not a signature.
+- Local tests ran on a partial source export, not a full checkout. The existing ring source matched Git blob `c60c15ea37debab1da04be3f6352ca26d3cd9b24` from main at `8fddfd17eb776a95e0eec1d1514dd48290c905b4`. The new source is identified by the manifest, not by an independently verified checkout during the run.
+- Reproduce in a full checkout after installing pytest, pytest-cov and Hypothesis: `PYTHONPATH=src python -m pytest tests/unification -v --cov=hyba.unification.field --cov-branch --cov-fail-under=90 --cov-report=term-missing`. Run the benchmark with `PYTHONPATH=src python benchmarks/unification/field_benchmark.py`. The workflow is configuration only until a successful run at a named commit is observed.
+
+## Staged gates and refusals
+
+Network/field integration and field/network/domain end-to-end tests are **not complete**. The user approved staging these downstream gates to break the work-order sequencing dependency; the seven-class field acceptance gate remains open. There is no customer journey, production sign-off, signed evidence, independent assessor, verification endpoint, security claim, clinical claim or customer report. The existing storage and acceleration work are separate drafts. Neither a mathematical description nor these tests demonstrate that every tensor network belongs to the proposed principle, that attacks are detected by cohomology, or that any health outcome is valid. No Millennium Problem solution or quantum advantage is claimed. Signed artifacts, capability packaging and full CI are blockers for release, not implied by this prototype.

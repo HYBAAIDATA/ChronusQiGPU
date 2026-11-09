@@ -63,7 +63,7 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["chronus*"]
+include = ["chronus*", "hyba*"]
 
 [tool.setuptools.package-data]
 "chronus.kernels" = ["*.cl"]

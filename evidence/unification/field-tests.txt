@@ -1,0 +1,27 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.15, pytest-9.2.0, pluggy-1.7.0 -- /usr/local/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /data/unification-draft
+configfile: pyproject.toml
+plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
+collecting ... collected 6 items
+
+tests/unification/test_existing_ring.py::test_integer_embedding_is_ring_homomorphism PASSED [ 16%]
+tests/unification/test_field.py::Invariant::test_bounded_exhaustive_roundtrip PASSED [ 33%]
+tests/unification/test_field.py::Adversarial::test_bad_coefficients_and_nonreal_rejected PASSED [ 50%]
+tests/unification/test_field.py::Edge::test_phi_powers_and_zero PASSED   [ 66%]
+tests/unification/test_field.py::Unit::test_arithmetic PASSED            [ 83%]
+tests/unification/test_properties.py::test_field_properties_and_roundtrip PASSED [100%]
+
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.13.15-final-0 _______________
+
+Name                            Stmts   Miss Branch BrPart  Cover   Missing
+---------------------------------------------------------------------------
+src/hyba/unification/field.py      63      0     24      0   100%
+---------------------------------------------------------------------------
+TOTAL                              63      0     24      0   100%
+Coverage JSON written to file evidence/unification/field-coverage.json
+Required test coverage of 90% reached. Total coverage: 100.00%
+============================== 6 passed in 2.67s ===============================
