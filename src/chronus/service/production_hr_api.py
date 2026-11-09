@@ -13,14 +13,13 @@ Deploys hardware-agnostic first-principles quantum mathematics:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel, Field
 
 from chronus.tensor.enhanced_representation import EnhancedTensorRepresentation
 from chronus.tensor.adaptive_contraction import AdaptiveTensorContractionPathway
 from chronus.tensor.causal_intelligence import CausalInterferenceEngine
-from chronus.intelligence.predictive_engine import PredictiveEngine
 
 logger = logging.getLogger("ProductionHRAPI")
 

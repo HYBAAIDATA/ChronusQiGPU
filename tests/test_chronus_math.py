@@ -2,8 +2,8 @@
 
 import pytest
 from fractions import Fraction
-from chronus.math.binet_lucas import QSqrt5, fold, unfold, lucas_binet, lucas_recurrence, PHI, PSI
-from chronus.math.f257_search import f257_phases, f257_phases_multi, mod_inv
+from chronus.math.binet_lucas import QSqrt5, unfold, lucas_binet, lucas_recurrence
+from chronus.math.f257_search import f257_phases, f257_phases_multi
 
 
 def test_qsqrt5_exact_ring_arithmetic():

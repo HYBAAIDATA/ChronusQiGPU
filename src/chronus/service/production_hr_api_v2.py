@@ -18,29 +18,21 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any, Dict, List, Optional
-from fastapi import FastAPI, HTTPException, Request, Response, status
+from typing import Any, Dict, List
+from fastapi import FastAPI, HTTPException, Response, status
 from pydantic import BaseModel, Field
 
 from chronus.tensor.enhanced_representation import (
-    BondStructure,
     Config,
-    ContractionTree,
     ErrorLedger,
     SearchResult,
-    ShardPlan,
     build_search_index,
-    execute_sharded_contraction,
     plan_gpu_shards,
     search,
-    search_contraction_trees,
-    select_best_tree,
     topology_formula,
     _create_bond_structure,
-    _create_entanglement_map,
     _initialize_tensor_network,
     HARD_CAP,
-    EnhancedTensorRepresentation,
 )
 
 logger = logging.getLogger("ProductionHRAPIv2")

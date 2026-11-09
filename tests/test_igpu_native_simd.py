@@ -1,6 +1,7 @@
 """Tests for Chronus ONE iGPU C++ Native SIMD and In-Place Dual Space Execution."""
 
-import pytest
+import pytest  # noqa: F401
+from chronus.execution.structural import fold_pair
 from chronus.execution.native_simd import (
     NativeSIMDBackendAdapter,
     ResidentConfig,
@@ -9,7 +10,6 @@ from chronus.execution.native_simd import (
     fold_pairs_vectorized,
     unfold_pairs_vectorized,
 )
-from chronus.execution.structural import fold_pair, unfold_pair
 
 
 def test_fold_unfold_vectorized_matches_scalar_reference():

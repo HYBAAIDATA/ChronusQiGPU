@@ -1,6 +1,6 @@
 """Tests for Exact Finite-Field Entanglement and Superposition Engine over F_257."""
 
-import pytest
+import pytest  # noqa: F401
 from chronus.quantum.entanglement import (
     BellStateKind,
     algebraic_concurrence_determinant,

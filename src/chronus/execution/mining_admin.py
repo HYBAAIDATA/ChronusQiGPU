@@ -16,10 +16,7 @@ from chronus.execution.geometric_galois_miner import (
     HodgeSheafLaplacianConsensus,
     LiePoissonRamanujanExpander,
 )
-from chronus.execution.geometric_galois_miner import (
-    ExactGaloisOracleF257,
-    GeometricGaloisMiner,
-)
+
 
 
 @dataclass
@@ -237,7 +234,7 @@ class MiningAdminEngine:
             "consensus_status": "HARMONIC_CONSENSUS",
             "intelligence_distribution": norm_weights,
             "active_causal_intervention": self.active_intervention,
-            "counterfactual_avoided_loss_gbp": avoided_loss_gbp,
+            "counterfactual_avoided_loss_gbp": counterfactual_avoided_loss_gbp,
             "oracle_invariants": {
                 "alpha": ExactGaloisOracleF257.ALPHA,
                 "u_amplitude": ExactGaloisOracleF257.U,

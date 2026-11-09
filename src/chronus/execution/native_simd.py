@@ -9,7 +9,6 @@ Zero floating point; compliant with CI purity gate.
 
 import ctypes
 import os
-import sys
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
