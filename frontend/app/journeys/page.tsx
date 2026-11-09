@@ -17,6 +17,7 @@ type CustomerJourney = {
   summary: string;
   roles: string[];
   mandatoryGates: string[];
+  customerRefusals: string[];
   phases: Phase[];
 };
 
@@ -26,6 +27,7 @@ type ProductScope = {
   scope: string;
   evidenceStatus: string;
   requiredEvidence: string;
+  notClaimed: string[];
 };
 
 type TrustArtifact = {
@@ -87,6 +89,12 @@ export default function CustomerJourneysPage() {
               <p className="mt-3 text-sm leading-6 text-neutral-300">{product.scope}</p>
               <p className="mt-3 text-sm leading-6 text-neutral-400"><span className="font-medium text-neutral-200">Current evidence:</span> {product.evidenceStatus}</p>
               <p className="mt-3 border-t border-neutral-800 pt-3 text-sm leading-6 text-neutral-400"><span className="font-medium text-neutral-200">Required before a claim:</span> {product.requiredEvidence}</p>
+              <div className="mt-3 border-t border-neutral-800 pt-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-amber-200">Not currently claimed</h4>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-5 text-neutral-400">
+                  {product.notClaimed.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              </div>
             </article>
           ))}
         </div>
@@ -124,10 +132,16 @@ export default function CustomerJourneysPage() {
                 </ul>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2" aria-label="Required approval gates">
+            <div role="group" aria-label="Required approval gates" className="flex flex-wrap items-center gap-2">
               <span className="mr-1 text-xs font-medium text-neutral-500">Required gates:</span>
               {journey.mandatoryGates.map((gate) => <GateBadge key={gate} gate={gate} />)}
             </div>
+            <aside aria-label={`${journey.audience} explicit limitations`} className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-4">
+              <h3 className="text-sm font-semibold text-amber-100">Explicit limitations and refusals</h3>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-5 text-neutral-300">
+                {journey.customerRefusals.map((item) => <li key={item}>{item}</li>)}
+              </ul>
+            </aside>
             <ol className="grid gap-3 lg:grid-cols-2">
               {journey.phases.map((phase, index) => (
                 <li key={phase.id} className="rounded-xl border border-neutral-800 bg-neutral-950/70 p-4 sm:p-5">
@@ -185,6 +199,7 @@ export default function CustomerJourneysPage() {
         <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-neutral-800 pt-4 text-sm">
           <Link className="text-blue-300 underline decoration-blue-300/40 underline-offset-4 hover:text-blue-200" href="/">Back to operations overview</Link>
           <a className="text-blue-300 underline decoration-blue-300/40 underline-offset-4 hover:text-blue-200" href="https://github.com/hybadatadevops1/Chronusv2/blob/main/docs/claim-audit.md" target="_blank" rel="noreferrer">Current repository claim audit</a>
+          <a className="text-blue-300 underline decoration-blue-300/40 underline-offset-4 hover:text-blue-200" href="https://github.com/hybadatadevops1/Chronusv2/blob/main/docs/HYPERSCALER_DATA_CONNECTOR_AND_USER_JOURNEYS.md" target="_blank" rel="noreferrer">Journey implementation details</a>
         </div>
       </footer>
     </div>

@@ -7,76 +7,81 @@
       "name": "Accelerator / iGPU",
       "scope": "A workload-specific accelerator evaluation against a named CPU baseline.",
       "evidenceStatus": "Selected CPU reference execution code is present. No physical GPU result or workload speedup was verified in the current repository review.",
-      "requiredEvidence": "Customer workload, named hardware and driver, source commit, command, baseline, repetitions, raw output, and results including regressions."
+      "requiredEvidence": "Customer workload, named hardware and driver, source commit, command, baseline, repetitions, raw output, and results including regressions.",
+      "notClaimed": ["No numeric speedup or physical-device performance is stated without a workload-specific, reproducible benchmark artifact.", "No general-purpose acceleration is inferred from a CPU reference route or adapter source."]
     },
     {
       "id": "compression",
       "name": "Compression",
       "scope": "A storage-compression evaluation with an explicit lossless or bounded-loss mode.",
       "evidenceStatus": "A customer-ready compression path, measured ratio, decompression verification, and error-bound test were not established in the current repository review.",
-      "requiredEvidence": "Customer-approved data class, measured ratio, byte-exact verification for lossless mode, or a named error metric and test for bounded-loss mode."
+      "requiredEvidence": "Customer-approved data class, measured ratio, byte-exact verification for lossless mode, or a named error metric and test for bounded-loss mode.",
+      "notClaimed": ["No storage-saving ratio or cost reduction is stated without results on the customer's data class.", "No lossless or bounded-error property is stated without a verification test."]
     },
     {
       "id": "gpu-pool",
       "name": "GPU rental and scaling",
       "scope": "A capacity evaluation for a defined GPU pool and service commitment.",
       "evidenceStatus": "A vendor-backed supply source, live provisioning path, capacity commitment, price, and service-level evidence were not verified.",
-      "requiredEvidence": "Committed ceiling, named supply source, time-to-provision measurements, availability window, price per GPU-hour, failure behavior, and remedies."
+      "requiredEvidence": "Committed ceiling, named supply source, time-to-provision measurements, availability window, price per GPU-hour, failure behavior, and remedies.",
+      "notClaimed": ["No available GPU quantity, supply schedule, price, availability, or service level is promised without a confirmed supplier and measured evidence.", "No capacity beyond a tested and contractually supported ceiling is implied."]
     },
     {
       "id": "memory-tiering",
       "name": "Memory tiering",
       "scope": "A workload test for moving cold data to a slower tier while retaining the required correctness.",
       "evidenceStatus": "A validated memory-tiering path and workload-specific out-of-memory, latency, and throughput results were not established.",
-      "requiredEvidence": "A reproducible baseline failure, successful run with the feature, correctness checks, latency and throughput deltas, and hardware and software details."
+      "requiredEvidence": "A reproducible baseline failure, successful run with the feature, correctness checks, latency and throughput deltas, and hardware and software details.",
+      "notClaimed": ["No out-of-memory elimination or memory-capacity increase is asserted without a before-and-after workload test.", "No latency or throughput neutrality is implied; both deltas must be reported."]
     }
   ],
   "journeys": [
     {
       "id": "government",
       "audience": "Government",
-      "summary": "Procurement, authorization, and mission-fit are separate decisions. Each requires its own traceable evidence.",
+      "summary": "Procurement, authorization, and mission fit are separate decisions. Each requires its own traceable evidence.",
       "roles": ["Program officer", "Contracting officer", "Security assessor", "Technical evaluator"],
       "mandatoryGates": ["procurement", "security", "technical_evaluation"],
+      "customerRefusals": ["Do not claim an authorization, certification, registration, customer deployment, or past performance that cannot be verified.", "Do not submit a benchmark result without its reproducible artifact or a clear statement that the artifact is unavailable.", "Do not label a requirement compliant when implementation evidence is missing or the requirement is unmet."],
       "phases": [
         {
           "id": "gov-market-research",
           "name": "Market research and RFI",
           "gates": ["technical_evaluation"],
-          "decisionQuestion": "Does the evaluated capability plausibly address a defined mission need?",
-          "evidence": ["Mission problem and scope, stated in customer terms.", "Current claim audit and known limitations.", "A reproducible benchmark artifact only where one exists; otherwise state that it is not available.", "Comparable references only when verifiable; otherwise state that none are established."],
-          "exitCriteria": "The mission fit and evidence gaps are explicit; no unsupported capability or performance statement is carried forward."
+          "decisionQuestion": "Does the scoped capability plausibly address a defined mission need?",
+          "evidence": ["One-page capability statement framed around the mission problem and data class.", "Benchmark artifact linked and downloadable when one exists; otherwise state that none is established.", "Specific limitations and a clear what-the-product-does-not-do list.", "Comparable government references only when verifiable; otherwise state their absence and identify any commercial references accurately."],
+          "exitCriteria": "Mission fit and evidence gaps are explicit; no unsupported capability or performance statement is carried forward."
         },
         {
           "id": "gov-sources-rfp",
           "name": "Sources sought and RFP response",
           "gates": ["procurement"],
           "decisionQuestion": "Can the vendor respond to the solicitation accurately and under its required terms?",
-          "evidence": ["Applicable registrations and certifications, with current status and scope.", "Requirement-by-requirement compliance matrix with evidence, exception, or non-compliance disposition.", "Pricing and past-performance information that can be substantiated."],
+          "evidence": ["SAM.gov or applicable state and local registration status, when required.", "Only currently held certifications and business designations, with scope and status.", "Pricing in the requested contract structure and a requirement-by-requirement matrix marked comply, exception, or does not comply.", "Evidence for every compliance statement, explained exceptions, and verifiable past performance or an explicit statement that comparable performance is not established."],
           "exitCriteria": "Every requirement has a truthful disposition; no planned or aspirational item is represented as already satisfied."
         },
         {
           "id": "gov-technical-evaluation",
           "name": "Technical evaluation",
           "gates": ["technical_evaluation"],
-          "decisionQuestion": "Does the evaluated build work on the agency's approved workload and environment?",
-          "evidence": ["Evaluator-controlled test plan and approved representative data.", "Versioned build, hardware and environment details, commands, raw results, and reproducibility instructions.", "Known limitations, negative results, and failure behavior.", "Technical questions answered by an engineer familiar with the implementation."],
-          "exitCriteria": "The evaluator can reproduce the scoped result and review limitations; a demonstration alone is not a pass."
+          "decisionQuestion": "Does the reviewed build work on approved agency data, hardware, and workload?",
+          "evidence": ["Live, evaluator-driven sandbox or an evaluator-runnable harness using approved representative data.", "Benchmark reproducible on the evaluator's hardware, with build, hardware, software, command, data, and raw results identified.", "Limitations and refusal list shared before evaluation, including unsupported workload classes and failure modes.", "Technical Q&A staffed by engineers who know the implementation."],
+          "exitCriteria": "The evaluator reproduces the scoped result and reviews limitations; a prepared video or demonstration alone is not a pass."
         },
         {
           "id": "gov-security-authorization",
           "name": "Security assessment and authorization",
           "gates": ["security"],
-          "decisionQuestion": "Can the system be authorized for this specific boundary and use?",
-          "evidence": ["System boundary and data-flow description.", "Required control mappings, implementation evidence, owners, and test results.", "Dated and scoped assessment evidence, open findings, and remediation plans.", "Authorization status stated exactly; no authorization is implied by a questionnaire or cloud inheritance."],
-          "exitCriteria": "The agency assessor accepts the evidence and authorization path for the named deployment; no certification is inferred from source code."
+          "decisionQuestion": "Can this specific system boundary be authorized for the intended use?",
+          "evidence": ["System Security Plan in the agency-required format.", "Control matrix mapping each applicable control to implementation, test evidence, and responsible owner; use NIST SP 800-53 Rev. 5 or the named state equivalent only when applicable.", "Dated, scoped evidence such as configuration and audit samples and an assessor-identified test report where available.", "Explicit system boundary, including in-scope, out-of-scope, customer-inherited, and provider-inherited controls with inheritance verified.", "POA&M for open controls with an owner, milestone, and remediation date; state authorization status exactly."],
+          "exitCriteria": "The agency assessor accepts evidence and the authorization path for the named deployment; no authorization or certification is inferred from source code."
         },
         {
           "id": "gov-award-onboarding",
           "name": "Award and onboarding",
           "gates": ["procurement", "security"],
-          "decisionQuestion": "Can the contracted, authorized configuration be deployed and supported?",
-          "evidence": ["Signed scope, measurable service commitments, and remedies.", "Customer-followable deployment and rollback runbooks.", "Support ownership and escalation path that the vendor can staff."],
+          "decisionQuestion": "Can the contracted and authorized configuration be deployed and supported?",
+          "evidence": ["Signed scope, measurable support commitments and remedies the vendor can staff.", "Customer-followable deployment runbook and rollback plan for the first 30 days, agreed with the customer.", "Support owner, response window, and escalation path."],
           "exitCriteria": "The deployed configuration matches the reviewed boundary and contract; otherwise production use is paused."
         },
         {
@@ -84,8 +89,8 @@
           "name": "Production review and renewal",
           "gates": ["procurement", "security", "technical_evaluation"],
           "decisionQuestion": "Does measured mission value and operational performance support renewal?",
-          "evidence": ["Periodic value and service reports from the customer's own approved records.", "Complete incident records and post-incident actions.", "Current limitations, changes, and renewal terms."],
-          "exitCriteria": "Renewal uses traceable customer evidence and current authorization and contract status."
+          "evidence": ["Quarterly value report, or the contractually agreed period, using the customer's own source records and a stated measurement window.", "Complete incident log and blameless post-incident actions, subject to customer confidentiality.", "Roadmap that distinguishes committed work from possibilities, plus current authorization and renewal terms."],
+          "exitCriteria": "Renewal uses traceable customer evidence, a complete incident record, and current authorization and contract status."
         }
       ]
     },
@@ -95,53 +100,54 @@
       "summary": "A champion proves workload fit; architecture, security, procurement, and the economic buyer make independent approval decisions.",
       "roles": ["Technical champion", "Economic buyer", "Technical evaluator", "Security reviewer", "Procurement and legal"],
       "mandatoryGates": ["procurement", "security", "technical_evaluation"],
+      "customerRefusals": ["Do not present vendor-only benchmark results as measurements on customer workloads.", "Do not state ROI or savings without customer inputs, explicit assumptions, and operational costs.", "Do not mark a security control as implemented when it is absent; document the gap and risk treatment."],
       "phases": [
         {
           "id": "ent-discovery",
           "name": "Discovery",
           "gates": ["technical_evaluation"],
-          "decisionQuestion": "Is there a specific workload worth evaluating?",
-          "evidence": ["Short technical overview of what is implemented and what remains unverified.", "Known limitations and workload fit boundaries.", "Benchmark artifact only when one is available and reproducible."],
-          "exitCriteria": "The champion can identify a testable workload and understands the current evidence boundary."
+          "decisionQuestion": "Is there a specific workload worth testing?",
+          "evidence": ["Problem-first overview and a short, technically accurate explanation of the implementation.", "Benchmark artifact only when available and reproducible, with the measured workload and hardware named.", "Specific what-it-does and what-it-does-not-do statements."],
+          "exitCriteria": "The champion identifies a testable workload and understands the current evidence boundary before investing in evaluation time."
         },
         {
           "id": "ent-trial",
           "name": "Trial or proof of concept",
           "gates": ["technical_evaluation", "security"],
           "decisionQuestion": "Does the scoped build work on approved customer data and infrastructure?",
-          "evidence": ["Written scope for workload, time window, data volume, and environment.", "Customer-controlled test or an approved sandbox with stated data handling.", "Reproducible result artifact, export path, uninstall steps, and data deletion instructions."],
-          "exitCriteria": "The customer reproduces the result and can retrieve or delete its data; no sales-led demonstration substitutes for the test."
+          "evidence": ["If a trial is offered, self-serve start with fixed workload, time, and data-volume scope; this is a launch requirement, not a claim that a trial is currently available.", "Customer infrastructure or an approved vendor sandbox with stated data handling.", "Customer-workload benchmark report with artifact, plus export, uninstall, and deletion steps."],
+          "exitCriteria": "The customer reproduces the result and can export or delete its data; no sales-led demo substitutes for the test."
         },
         {
           "id": "ent-business-case",
           "name": "Business case",
           "gates": ["procurement"],
           "decisionQuestion": "Is the expected value defensible using the customer's own assumptions?",
-          "evidence": ["Customer measurements from the trial, not vendor-only results.", "Explicit assumptions, operational costs, pricing basis, floor, and ceiling.", "Sensitivity analysis that includes neutral and negative outcomes."],
-          "exitCriteria": "The buyer can reproduce the calculation from stated inputs; no savings or ROI is asserted without customer data."
+          "evidence": ["Business-case template populated with customer trial results; vendor results are labeled with their own hardware and replaced by customer measurements.", "Total cost includes customer operations, integration, and vendor fees, with assumptions and neutral or negative cases.", "Candidate pricing unit such as GPU-hour, compressed terabyte, or measured workload outcome, with explicit floor and ceiling; current prices are not established."],
+          "exitCriteria": "The buyer can reproduce the calculation from stated customer inputs; no savings or ROI is asserted without those inputs."
         },
         {
           "id": "ent-technical-evaluation",
           "name": "Technical evaluation",
           "gates": ["technical_evaluation"],
-          "decisionQuestion": "Does the implementation integrate with the existing stack and meet workload requirements?",
-          "evidence": ["Architecture and data-flow diagrams for the evaluated build.", "API and SDK behavior, including errors, operational limits, and unsupported cases.", "Benchmark harness, versions, test data description, and raw results where performance is claimed."],
-          "exitCriteria": "The architect accepts the scoped design and reproducible workload results, including known limitations."
+          "decisionQuestion": "Does the evaluated build integrate with the existing stack and meet the workload requirement?",
+          "evidence": ["Architecture and integration points, reference deployment, and data flows.", "API documentation covering endpoint inputs, outputs, schemas, and error cases, plus SDK limitations.", "Supported and unsupported workload list, benchmark harness, versions, data description, and raw results where performance is claimed."],
+          "exitCriteria": "The architect accepts the scoped design and reproducible workload results, including known limitations and error behavior."
         },
         {
           "id": "ent-security-review",
           "name": "Security review",
           "gates": ["security"],
-          "decisionQuestion": "Does the specific deployment meet the customer's security and privacy requirements?",
-          "evidence": ["Security questionnaire answered with evidence and explicit gaps.", "Data-flow diagram, retention and deletion behavior, and subprocessors.", "Dated, scoped assessment and vulnerability-handling information where available.", "Software bill of materials and data-processing terms where available."],
-          "exitCriteria": "The security owner accepts the risk posture and agreed mitigations for the named deployment; missing evidence remains a gap."
+          "decisionQuestion": "Does the proposed deployment meet the customer's security and privacy requirements?",
+          "evidence": ["Security questionnaire answered with evidence, compensating controls, or explicit gaps and risk acceptance.", "Dated penetration-test report with named assessor and scope when available; data-flow diagram, retention, deletion, and subprocessor list.", "Data-processing agreement template, vulnerability disclosure policy, and software bill of materials; state when any artifact is unavailable."],
+          "exitCriteria": "The security owner accepts the documented risk posture and mitigations for the named deployment; missing evidence remains a gap."
         },
         {
           "id": "ent-procurement",
           "name": "Procurement and legal",
           "gates": ["procurement"],
           "decisionQuestion": "Can both parties sign terms that match the demonstrated service?",
-          "evidence": ["Contract scope and negotiated terms.", "Measurable service levels, remedies, exclusions, and support path only if the vendor can honor them.", "Data-processing and subprocessor terms, pricing, and insurance evidence where applicable."],
+          "evidence": ["Standard contract with negotiated terms clearly marked.", "Measurable SLA commitments, exclusions, and remedies only where the vendor can honor them.", "DPA, BAA if applicable, complete subprocessor list, pricing, and insurance certificate where applicable."],
           "exitCriteria": "Contract commitments are bounded, staffed, and consistent with the tested and reviewed configuration."
         },
         {
@@ -149,7 +155,7 @@
           "name": "Deployment, expansion, and renewal",
           "gates": ["technical_evaluation", "security", "procurement"],
           "decisionQuestion": "Does ongoing customer evidence justify broader use or renewal?",
-          "evidence": ["Deployment and rollback runbooks with named owners.", "Periodic customer-measured value, usage, incidents, and service performance.", "Expansion pricing using the original documented model."],
+          "evidence": ["Deployment and rollback runbooks, support contact, and escalation path.", "Quarterly or contract-period customer-measured value, usage, incidents, and service performance.", "Expansion pricing using the same documented model as the initial purchase."],
           "exitCriteria": "Expansion follows a successful scoped review; renewal decisions use customer records and current contract terms."
         }
       ]
@@ -157,32 +163,33 @@
     {
       "id": "hyperscaler",
       "audience": "Hyperscaler",
-      "summary": "A technical bake-off precedes capacity negotiation; supply, integration, security, and commercial commitments must each be verified.",
+      "summary": "A reproducible technical bake-off precedes capacity negotiation; supply, integration, security, and commercial commitments must each be verified.",
       "roles": ["Technical evaluator", "Capacity planner", "Engineering leadership", "Security reviewer", "Procurement"],
       "mandatoryGates": ["procurement", "security", "technical_evaluation"],
+      "customerRefusals": ["Do not reserve a benchmark slot on a result without a runnable harness and full artifact.", "Do not promise capacity without a named, confirmed supply source and measured provisioning window.", "Do not omit variance, failure modes, or workload regressions from the bake-off summary."],
       "phases": [
         {
           "id": "hyp-initial-contact",
           "name": "Initial technical review",
           "gates": ["technical_evaluation"],
           "decisionQuestion": "Is the implementation sufficiently scoped to justify a benchmark slot?",
-          "evidence": ["Concise technical brief tied to source code and known limitations.", "Workload classes in scope and out of scope.", "Named technical owner only when a real contact is established."],
-          "exitCriteria": "The evaluator agrees a concrete workload and baseline can be tested; no assumed integration or performance result is carried forward."
+          "evidence": ["Technical brief no longer than two pages, with workload and hardware named where evidence exists.", "Current implementation boundary, supported and unsupported workload classes, and known limitations.", "Named engineer for technical questions only when a real owner is established."],
+          "exitCriteria": "The evaluator agrees a concrete workload and baseline can be tested; no assumed integration or result is carried forward."
         },
         {
           "id": "hyp-bakeoff",
           "name": "Benchmark bake-off",
           "gates": ["technical_evaluation"],
-          "decisionQuestion": "Does the same workload beat or meet the baseline on agreed hardware and test conditions?",
-          "evidence": ["Evaluator-runnable harness, source commit, named hardware, software and driver versions.", "Workload and dataset description, commands, raw output, repetitions, median and tail distribution where relevant.", "Failure modes, contention behavior, variance, and negative results."],
-          "exitCriteria": "The evaluator can reproduce and audit every reported result; unsupported workload classes are excluded from the conclusion."
+          "decisionQuestion": "How does the same workload compare under agreed hardware, scale, and test conditions?",
+          "evidence": ["Evaluator-runnable harness, source commit, hardware, driver and software versions, commands, and dataset description.", "Median, p50, p95, p99, and variance where relevant, with repetitions and raw output.", "Workload classes in and out of scope; failure modes at scale, near the capacity edge, and under contention."],
+          "exitCriteria": "The evaluator reproduces and audits every reported result; failures and regressions remain in the record."
         },
         {
           "id": "hyp-capacity",
           "name": "Capacity commitment",
           "gates": ["procurement"],
           "decisionQuestion": "Can the vendor supply the requested capacity on the stated schedule?",
-          "evidence": ["Committed capacity ceiling and named supply source.", "Measured time-to-provision by tier and test method.", "Availability, price basis, ceiling behavior, failure mode, and contractual remedies."],
+          "evidence": ["Committed capacity ceiling and named supply source.", "Measured time-to-provision at each offered tier and test method.", "Failure behavior at the ceiling and next requested increment (N+1), availability, price per GPU-hour, and contractual remedies."],
           "exitCriteria": "Capacity and service terms are backed by an auditable supply commitment and fit the tested operating envelope."
         },
         {
@@ -190,15 +197,15 @@
           "name": "Integration and security review",
           "gates": ["technical_evaluation", "security"],
           "decisionQuestion": "Can the evaluated build integrate without an unacceptable security or operational change?",
-          "evidence": ["API, SDK, reference architecture, and data-flow description.", "Security evidence and explicit gaps for the proposed deployment boundary.", "Rollback, support ownership, and joint escalation path."],
+          "evidence": ["Integration guide covering API, SDK, and reference architecture.", "Security evidence and explicit gaps for the proposed deployment boundary.", "Engineering support contact, rollback plan, and joint escalation path."],
           "exitCriteria": "Engineering and security owners accept the implementation plan and scoped controls before production use."
         },
         {
           "id": "hyp-procurement",
           "name": "Commercial procurement",
           "gates": ["procurement"],
-          "decisionQuestion": "Are the negotiated commitments consistent with verified performance and supply?",
-          "evidence": ["Contract terms, capacity quantities, pricing, service levels, exclusions, and remedies.", "Support and escalation obligations with named owners.", "Documented assumptions and change-control process."],
+          "decisionQuestion": "Are negotiated commitments consistent with verified performance and supply?",
+          "evidence": ["Contract terms, committed quantities, price, measurable service levels, exclusions, and remedies.", "Support and escalation obligations with named owners.", "Documented assumptions, source-of-supply confirmation, and change-control process."],
           "exitCriteria": "The contract does not exceed demonstrated technical limits or confirmed supply."
         },
         {
@@ -206,7 +213,7 @@
           "name": "Production, expansion, and renewal",
           "gates": ["technical_evaluation", "security", "procurement"],
           "decisionQuestion": "Do production measurements and incidents justify expanding the commitment?",
-          "evidence": ["Customer workload value report with measurement window and source records.", "Complete incident history and post-incident actions.", "Capacity use, service-level results, and revised supply confirmation."],
+          "evidence": ["Quarterly customer-workload value report with measurement window and source records.", "Complete incident history and blameless post-mortems.", "Current service-level results, capacity use, confirmed supply, and roadmap with commitments distinguished from possibilities."],
           "exitCriteria": "Expansion is approved only within the measured operating envelope and confirmed capacity."
         }
       ]
@@ -214,27 +221,27 @@
   ],
   "trustArtifacts": [
     {
-      "name": "Claim register",
+      "name": "Claim audit page",
       "currentStatus": "The repository contains docs/claim-audit.md, a dated static review; it is not a live claim service.",
       "requiredEvidence": "Every current claim linked to source commit, method, artifact, limitations, and reviewer."
     },
     {
-      "name": "Benchmark artifacts",
+      "name": "Benchmark artifact library",
       "currentStatus": "A complete commit-linked physical-hardware benchmark library was not established in the current review.",
-      "requiredEvidence": "Harness, workload, hardware, software versions, commands, raw results, repetitions, and independent reproduction."
+      "requiredEvidence": "Runnable harness, workload and hardware identifiers, software versions, commands, raw results, repetitions, and independent reproduction."
     },
     {
-      "name": "Limitations register",
-      "currentStatus": "This page and the repository claim audit describe known evidence gaps; keep them aligned with implementation changes.",
-      "requiredEvidence": "Specific unsupported workloads, failure modes, dependencies, and scope boundaries."
+      "name": "Limitations and refusal page",
+      "currentStatus": "This console page states evidence gaps and product-specific non-claims; it is not a complete feature or risk register.",
+      "requiredEvidence": "Specific unsupported workloads, failure modes, dependencies, customer-visible refusals, and scope boundaries."
     },
     {
-      "name": "Incident record",
-      "currentStatus": "A complete, customer-facing incident log was not established in the repository review.",
-      "requiredEvidence": "Dated incidents, impact, remediation, and post-incident review, subject to customer confidentiality."
+      "name": "Incident log",
+      "currentStatus": "A complete customer-facing incident log was not established in the repository review.",
+      "requiredEvidence": "Dated incidents, impact, remediation, and post-incident review with confidentiality controls."
     },
     {
-      "name": "Release and assurance record",
+      "name": "Release charter",
       "currentStatus": "Current release posture is not release-qualified; prior unsupported claims are withdrawn in the claim audit.",
       "requiredEvidence": "Current release gates, commit-linked test results, scope, reviewers, and applicable authorizations."
     },
@@ -244,7 +251,7 @@
       "requiredEvidence": "Operationally monitored service status, measurement windows, incident handling, and contractual definitions."
     },
     {
-      "name": "Technical contact",
+      "name": "Named technical contact",
       "currentStatus": "A named customer-facing engineering contact was not established in the reviewed repository content.",
       "requiredEvidence": "A real named owner, role, response path, and staffed escalation commitment."
     }

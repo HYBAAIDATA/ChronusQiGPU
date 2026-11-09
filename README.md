@@ -33,6 +33,7 @@ Running this command is a local test action, not a release qualification or cert
 
 ## Documentation
 
+- [Customer journeys: government, enterprise, hyperscaler](docs/HYPERSCALER_DATA_CONNECTOR_AND_USER_JOURNEYS.md)
 - [iGPU Manifesto: Chronus ONE & The Virtual GPIU](docs/IGPU_MANIFESTO.md)
 - [Claim audit and disposition](docs/claim-audit.md)
 - [Current implementation assessment](docs/system-update/current-state-assessment.md)
