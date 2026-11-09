@@ -455,25 +455,17 @@ async def execute_master_end_to_end():
         alpha, beta = F257GaloisOracle.compute_phases(M=1)
         logger.info(f"[Step 7] F_257 Galois Phase Matching: Alpha={alpha}, Beta(M=1)={beta}")
 
-        # Genesis Block #0 Merkle Root and parameters
+        # Genesis Block #0 Merkle Root — computed from coinbase transaction data
         prevhash_le = swap_endian_words(prevhash_stratum)
-        merkle_root_be = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"
-        merkle_root_bytes = bytes.fromhex(merkle_root_be)[::-1]
         extranonce2_hex = format_extranonce2(1, extranonce2_size)
+        merkle_root_bytes = compute_merkle_root(coinb1, extranonce1, extranonce2_hex, coinb2, list(merkle_branch))
 
         # Apply Version Rolling
         final_ver_int, ver_bits_submit = roll_version(base_version, "1fffe000", 0x00000000)
 
-        # Myrmidon Swarm Slice Search (Genesis Nonce 2083236893 = 0x7c2bac1d)
+        # Candidate nonce search — verify the known valid Bitcoin Genesis nonce 2083236893 (0x7c2bac1d)
         target_nonce = 2083236893
-        winning_searcher = None
-        for s in gateway.searchers:
-            matched = s.search_slice(target_nonce)
-            if matched is not None:
-                winning_searcher = s
-                break
-
-        logger.info(f"[Step 7] Myrmidon Swarm: Nonce {hex(target_nonce)} isolated by Myrmidon Searcher #{winning_searcher.id} (Phalanx #{winning_searcher.phalanx_id})")
+        logger.info(f"[Step 7] Candidate nonce: {hex(target_nonce)} (Bitcoin Genesis Block #0 nonce)")
 
         # Step 8: 80-Byte Block Header Assembly & Gatekeeper Verification
         header_80b = build_block_header(final_ver_int, prevhash_le, merkle_root_bytes, ntime, nbits, target_nonce)
@@ -502,7 +494,8 @@ async def execute_master_end_to_end():
         logger.info(f"=== PASSED END-TO-END PIPELINE FOR {pool_name.upper()} ===")
 
     logger.info("\n========================================================================")
-    logger.info("   ALL DECISION CONTRACT POINTS & STRATUM HANDSHAKES PASSED 100% PERFECTLY!")
+    logger.info(f"   END-TO-END PIPELINE COMPLETE FOR {pool_name.upper()}")
+    logger.info(f"   Share accepted by pool: {bool(submit_res.get('result'))}")
     logger.info("========================================================================")
 
 if __name__ == "__main__":
