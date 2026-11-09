@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   Layers,
   Link2,
+  Route,
   ShieldCheck,
   Users,
   ExternalLink,
@@ -19,6 +20,7 @@ import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { label: 'Overview', href: '/', icon: LayoutDashboard, preview: false },
+  { label: 'Customer journeys', href: '/journeys', icon: Route, preview: true },
   { label: 'Workloads', href: '/workloads', icon: Cpu, preview: true },
   { label: 'Execution fabric', href: '/fabric', icon: Layers, preview: true },
   { label: 'Mining Intelligence', href: '/mining', icon: Activity, preview: true },
