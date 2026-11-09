@@ -1,0 +1,7 @@
+Lean (version 4.15.0, x86_64-unknown-linux-gnu, commit 11651562caae, Release)
+Lake version 5.0.0-1165156 (Lean version 4.15.0)
+Build completed successfully.
+'Chronus.Cyclotomic5.phi_squared_eq_phi_plus_one' does not depend on any axioms
+'Chronus.Cyclotomic5.phi_mul_phi_inv_eq_one' does not depend on any axioms
+'Chronus.Cyclotomic5.zeta_fifth_eq_one' does not depend on any axioms
+Lean smoke checks passed (3 closed identities; no declared axioms).
