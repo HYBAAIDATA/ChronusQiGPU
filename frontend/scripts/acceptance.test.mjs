@@ -41,7 +41,9 @@ after(async () => {
 async function getHtml(path) {
   const response = await fetch(`${baseUrl}${path}`);
   assert.equal(response.status, 200, `${path} should return HTTP 200`);
-  return response.text();
+  // React may insert comment delimiters between adjacent text nodes.
+  // Exclude hydration scripts so assertions only inspect rendered markup.
+  return (await response.text()).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<!--.*?-->/gs, '');
 }
 
 test('welcome screen exposes the three metrics with inline provenance and an account action', async () => {
@@ -54,14 +56,18 @@ test('welcome screen exposes the three metrics with inline provenance and an acc
   assert.match(html, /Source: verified benchmark artifact\. Window: current billing period\. Last verified: not available\./);
   assert.match(html, /Source: tenant settlement engine\. Window: current period to date\. Last verified: not available\./);
   assert.match(html, /href="\/ciaas\/account"[^>]*>.*View account/s);
-  assert.match(html, /Sign-in is not configured in this preview/);
+  assert.match(html, /Sign-in is not available in this deployment\. Contact the platform operator\./);
   assert.doesNotMatch(html, /<dialog[\s>]|aria-modal="true"/i);
+  assert.doesNotMatch(html, /<input\b[^>]*type="(?:password|email)"/i);
 });
 
 test('account overview refuses unsupported values and makes missing actions visible', async () => {
   const html = await getHtml('/ciaas/account');
   assert.match(html, /What is your account doing right now\?/);
   assert.match(html, /Account data unavailable/);
+  assert.match(html, /Settlement and benchmark data are not available in this deployment\. Contact the platform operator\./);
+  assert.match(html, /Live account feeds are not available in this deployment\. Contact the platform operator\./);
+  assert.match(html, /href="\/ciaas\/provision"/);
   for (const label of ['Tier', 'Provisioned capacity and utilization', 'Avoided capex to date', 'Next invoice']) {
     assert.ok(html.includes(label), `missing account field: ${label}`);
   }
@@ -82,4 +88,23 @@ test('welcome response completes within 1.2 seconds after warmup', async () => {
   const elapsedMs = performance.now() - startedAt;
   assert.equal(response.status, 200);
   assert.ok(elapsedMs < 1_200, `warm route took ${elapsedMs.toFixed(0)}ms`);
+});
+
+test('provisioning states unavailable sources and does not promise a working action', async () => {
+  const html = await getHtml('/ciaas/provision');
+  assert.match(html, /What do you need\?/);
+  assert.match(html, /Provisioning is not available in this deployment\. Contact the platform operator\./);
+  assert.match(html, /No capacity will be created/);
+  assert.match(html, /Customer usage and approved default sizes are unavailable/);
+  for (const option of ['Small', 'Medium', 'Large', 'Custom']) {
+    assert.match(html, new RegExp(`>${option}</h3>`));
+  }
+  assert.match(html, /Projected cost — unavailable/);
+  assert.match(html, /Source: tenant settlement projection\. Window: not available\. Last verified: not available\./);
+  assert.match(html, /settlement window and charge date are not connected/);
+  assert.match(html, /Projected avoided capex — unavailable/);
+  assert.match(html, /Source: customer benchmark artifact\. Window: not available\. Last verified: not available\./);
+  assert.match(html, /<button\b[^>]*disabled[^>]*>Provision — unavailable<\/button>/);
+  assert.doesNotMatch(html, /Your capacity is live/);
+  assert.doesNotMatch(html, /<input\b/i);
 });

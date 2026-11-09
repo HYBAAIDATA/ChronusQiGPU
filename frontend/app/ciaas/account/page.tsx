@@ -46,6 +46,11 @@ export default function CustomerAccountPage() {
         <p><span className="font-semibold">Account data unavailable.</span> No authenticated tenant session or verified tenant-scoped source is connected. The values below are intentionally withheld.</p>
       </div>
 
+      <div role="status" className="space-y-1 rounded-xl border border-neutral-700 p-4 text-sm text-neutral-200">
+        <p>Settlement and benchmark data are not available in this deployment. Contact the platform operator.</p>
+        <p>Live account feeds are not available in this deployment. Contact the platform operator.</p>
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
         <Card className="border-neutral-800 bg-neutral-900/55 p-5 sm:p-6">
           <h2 className="text-base font-semibold text-white">Account summary</h2>
@@ -90,6 +95,7 @@ export default function CustomerAccountPage() {
           </Card>
           <Card className="border-neutral-800 bg-neutral-900/55 p-5 sm:p-6">
             <h2 className="text-base font-semibold text-white">Self-service actions</h2>
+            <Link href="/ciaas/provision" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-blue-300 underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300">View provisioning availability</Link>
             <ul className="mt-3 space-y-2">
               <UnavailableAction title="Settlement history" explanation="No tenant settlement history is connected to this preview." />
               <UnavailableAction title="Export data" explanation="A tenant-scoped export source and delivery flow are not configured." />

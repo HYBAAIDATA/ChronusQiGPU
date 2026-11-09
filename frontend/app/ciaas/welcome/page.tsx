@@ -35,7 +35,7 @@ export default function CustomerWelcomePage() {
 
       <div role="status" className="flex gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.07] p-4 text-sm leading-6 text-amber-100/85">
         <CircleAlert aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
-        <p><span className="font-semibold">Sign-in is not configured in this preview.</span> No customer session is active; this page does not authenticate or expose account records.</p>
+        <p><span className="font-semibold">Sign-in is not available in this deployment. Contact the platform operator.</span> No customer session is active; this page does not authenticate or expose account records.</p>
       </div>
 
       <section aria-label="Account value summary" className="grid gap-4 md:grid-cols-3">
