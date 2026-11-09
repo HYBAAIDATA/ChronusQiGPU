@@ -1,0 +1,8 @@
+scope: exact rank of 20-by-15 infinitesimal so(6) orbit matrix
+not a contraction-enumeration algorithm; not a five-invariant discovery result
+sample=0 coefficients=[-2, -3, 0, -1, 1, -2, 0, -1, -2, -3, 3, 0, -3, -2, 0, -2, -1, 3, -2, -1] orbit_rank=15 local_codimension=5
+sample=1 coefficients=[2, 3, -1, 3, -2, -1, 0, 0, -2, 1, 1, 0, 3, 2, 3, -3, -2, -2, 2, -1] orbit_rank=15 local_codimension=5
+sample=2 coefficients=[-2, 1, 3, 0, -2, -1, -1, -1, 2, 0, 3, -2, 0, -2, 1, 3, -2, -1, 2, -3] orbit_rank=15 local_codimension=5
+sample=3 coefficients=[-3, -2, 1, 2, -2, -3, 0, -1, -2, 3, -1, 3, 1, 1, -2, 2, 1, 2, 1, 2] orbit_rank=15 local_codimension=5
+sample=4 coefficients=[0, 2, 0, 3, 2, 0, 3, -3, 0, 1, -2, -3, -2, -3, 3, 3, -3, -2, -3, -3] orbit_rank=15 local_codimension=5
+zero_form_rank: 0

@@ -1,0 +1,13 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.15, pytest-9.2.0, pluggy-1.7.0 -- /usr/local/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /data/unification-new
+plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
+collecting ... collected 3 items
+
+tests/unification/test_orbit_probe.py::test_antisymmetry_and_repeated_indices PASSED [ 33%]
+tests/unification/test_orbit_probe.py::test_exact_rank_and_zero PASSED   [ 66%]
+tests/unification/test_orbit_probe.py::test_sampled_so6_orbit_rank PASSED [100%]
+
+============================== 3 passed in 0.20s ===============================
