@@ -1503,11 +1503,11 @@ class RefusalSurface:
     def formal_non_claims(cls) -> List[str]:
         return [
             "REFUSAL 1: No claim that quantum algorithms solve NP-complete or Millennium Prize problems in polynomial time.",
-            "REFUSAL 2: No universal quantum speedup; acceleration is confined to problems with abelian/topological algebraic symmetry.",
+            "REFUSAL 2: No universal quantum speedup or general acceleration is established.",
             "REFUSAL 3: Transcendental ansätze (cos, sin, exp) and non-cyclotomic roots (sqrt(2) in Z[zeta_5]) are out-of-ring findings.",
             "REFUSAL 4: Heisenberg XXX model is obstructed over Z[zeta_5] because imaginary unit i = zeta_4 is not in Z[zeta_5].",
-            "REFUSAL 5: The PULVINI fold over Z[zeta_5] uses scaled weights w1' = sqrt(5) - 1, w2' = 3 - sqrt(5), which are golden-ratio weights multiplied by 2. The roundtrip recovers input scaled by 20 - 8*sqrt(5). The unscaled fold requires Z[zeta_5, 1/2]. Net compression is 1.0.",
-            "REFUSAL 6: The crossover measured is strictly for the discrete product feature map; the entangled feature map is not implemented.",
+            "REFUSAL 5: PULVINI is a scaled, reversible change of representation, not compression; odd vectors need a padding element.",
+            "REFUSAL 6: Python loop timings compare different workloads and cannot establish quantum advantage; the entangled feature map is not implemented.",
             "REFUSAL 7: HardwareMultiplierTree is a model, not a physical hardware measurement; physical measurement requires ASIC foundry synthesis."
         ]
 
@@ -1849,6 +1849,68 @@ class TestEdge(unittest.TestCase):
 
 
 class TestUnit(unittest.TestCase):
+    def test_ring_gauss_norm_and_inverse_units(self):
+        z=CyclotomicRing.zeta(5);g=CyclotomicRing.gauss_sum(5)
+        self.assertEqual(legendre_symbol(1,5),1);self.assertEqual(legendre_symbol(2,5),-1)
+        self.assertTrue(CyclotomicRing.one(5).is_one());self.assertEqual(g*g,5)
+        self.assertEqual(z.norm(),1);self.assertEqual(z*z.inv(),1)
+        with self.assertRaises(RingError):CyclotomicRing(5,2).inv()
+
+    def test_pulvini_pair_and_vector_units(self):
+        one=CyclotomicRing.one(5);two=CyclotomicRing(5,2)
+        w1,w2,scale=PulviniRingOperator.get_p5_weights();self.assertEqual(scale,w1*w1+w2*w2)
+        folded,kernel=PulviniRingOperator.fold_pair_p5(one,two)
+        a,b,n=PulviniRingOperator.unfold_pair_p5(folded,kernel)
+        self.assertEqual((a,b,n),(scale,2*scale,scale))
+        v=PulviniRingOperator.fold_vector_p5([one,two]);self.assertEqual(PulviniRingOperator.unfold_vector_p5(v['folded'],v['kernels']),[(scale,2*scale)])
+        self.assertIn('scaled',PulviniRingOperator.p5_weights_finding())
+        self.assertIn('different operator',PulviniRingOperator.p7_obstruction_record()['finding'])
+
+    def test_compiler_zx_and_yang_baxter_units(self):
+        self.assertTrue(FunctorialCategoricalCompiler.zx_spider_fusion(5,2,4))
+        z=CyclotomicRing.zeta(5);r=FunctorialCategoricalCompiler.R_matrix(5,z)
+        self.assertEqual((r.rows,r.cols),(4,4));self.assertEqual(r.data[0][0],z)
+        checks=FunctorialCategoricalCompiler.verify_yang_baxter_all_roots(5)
+        self.assertEqual(set(checks),{1,2,3,4});self.assertTrue(all(checks.values()))
+        self.assertIsNotNone(FunctorialCategoricalCompiler.get_lean4_specification_reference())
+
+    def test_qfim_and_exact_real_field_units(self):
+        one=CyclotomicRing.one(5);psi,dpsi=InfoGeoQFIMEngine.polynomial_ansatz(5,one)
+        self.assertEqual(psi,[one,one,one]);self.assertEqual(dpsi,[CyclotomicRing.zero(5),one,2*one])
+        self.assertEqual(InfoGeoQFIMEngine.inner_product(psi,psi),3)
+        q=InfoGeoQFIMEngine.compute_polynomial_qfim();self.assertEqual(q['reduced_numerator'],(8,0,0,0,0));self.assertEqual(q['reduced_denominator'],3)
+        self.assertTrue(CyclotomicField5(1).is_real());self.assertFalse(CyclotomicField5(CyclotomicRing.zeta(5)).is_real())
+
+    def test_fibonacci_coherence_units(self):
+        self.assertTrue(TopologicalAnyonHomologicalEngine.verify_pentagon()['verified'])
+        self.assertTrue(TopologicalAnyonHomologicalEngine.verify_hexagons()['verified'])
+        one=CyclotomicRing.one(5);state=[one,one]
+        self.assertEqual(FibonacciBraidModel.execute(FibonacciBraidModel.execute(state,[1]),[-1]),state)
+
+    def test_mps_contraction_unit(self):
+        cores=TensorMPSRingEngine.get_ghz3_cores(5);state,tail,discarded=TensorMPSRingEngine.contract_mps(5,cores,2)
+        self.assertEqual([v.v[0] for v in state],[1,0,0,0,0,0,0,1]);self.assertTrue(tail.is_zero());self.assertTrue(all(v.is_zero() for v in discarded))
+
+    def test_software_and_abstract_backend_unit(self):
+        one=CyclotomicRing.one(5)
+        with self.assertRaises(NotImplementedError):IBackend().execute_state_evolution([one],MatrixRing.identity(5,1))
+        self.assertEqual(NativeSoftwareBackend().execute_state_evolution([one],MatrixRing(5,1,1,[[2]])),[2*one])
+
+    def test_timing_and_non_claims_are_qualified(self):
+        report=HardwareMultiplierTree.evaluate_timing()
+        self.assertEqual(report['classification'],'model, not measurement')
+        refusals=RefusalSurface.formal_non_claims();self.assertEqual(len(refusals),7);self.assertIn('No universal quantum speedup',refusals[1])
+
+    def test_measured_benchmarks_do_not_claim_speedup(self):
+        tensor=TensorSystemRealisation.run_benchmark();self.assertEqual(tensor['fp_baseline_finding'],'No floating-point MPS contraction was timed.')
+        comp=CrossParadigmComposition.run_composition_test();self.assertTrue(comp['mps_reconstruction_exact']);self.assertIn('not computed',comp['schmidt_rank_finding'])
+        comparison=RefusalSurface.measured_kernel_crossover();self.assertIn('no quantum advantage',comparison['finding'])
+
+    def test_manifest_hash_and_refusals_unit(self):
+        m=run_master_system();digest=m.pop('manifest_sha256')
+        self.assertEqual(digest,hashlib.sha256(json.dumps(m,sort_keys=True,indent=2).encode()).hexdigest())
+        self.assertEqual(len(m['modules']['refusal_surface']['formal_non_claims']),7)
+
     def test_kernel_feature_map_is_exact_and_deterministic(self):
         z=CyclotomicRing.zeta(5);self.assertEqual(QuantumKernelRingEngine.feature_map(5,[1]),[CyclotomicRing.one(5),z])
         self.assertEqual(QuantumKernelRingEngine.compute_gram_matrix(5,[[CyclotomicRing.one(5)]])[0][0],CyclotomicRing.one(5))
