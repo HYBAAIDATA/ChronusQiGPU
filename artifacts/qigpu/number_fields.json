@@ -1,0 +1,11 @@
+{
+  "command": "python -m coverage run --branch docs/qigpu/pasted-text.txt",
+  "finding": "Reject floats, nonmonic and mismatched polynomial quotients; irreducibility is a caller assumption, with a tested reducible zero-divisor example.",
+  "implementation_coverage": {
+    "branch_percent": 91.73,
+    "statement_percent": 98.11
+  },
+  "source_sha256": "be27f634d93d4e7c425bbd56522502fc16dac1af03996fc685e86b01fdffefd6",
+  "step": "Harden exact polynomial quotient arithmetic",
+  "tests_passed": 151
+}
