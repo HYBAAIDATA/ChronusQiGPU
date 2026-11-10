@@ -23,6 +23,7 @@ import math
 import hashlib
 import unittest
 import itertools
+from functools import lru_cache
 from fractions import Fraction
 from typing import Tuple, List, Dict, Any, Optional, Union
 
@@ -785,8 +786,12 @@ class TopologicalAnyonHomologicalEngine:
                 if x!=y:return {'verified':False,'cases_checked':count,'labels':labels,'total':total}
         return {'verified':True,'cases_checked':count}
     @classmethod
-    def verify_hexagons(cls,r=None):
-        f,default=FibonacciBraidModel.matrices();r=default if r is None else r
+    def verify_hexagons(cls,r=None,f=None):
+        if f is None or r is None:
+            default_f,default_r=FibonacciBraidModel.matrices()
+            f=default_f if f is None else f
+            r=default_r if r is None else r
+        if not isinstance(f,MatrixRing) or f.p!=5 or f.rows!=2 or f.cols!=2: raise RingError("Expected 2x2 F over Z[zeta_5]")
         if not isinstance(r,MatrixRing) or r.p!=5 or r.rows!=2 or r.cols!=2: raise RingError("Expected 2x2 R over Z[zeta_5]")
         if not r.data[0][1].is_zero() or not r.data[1][0].is_zero(): raise RingError("R must be diagonal")
         if f*f!=MatrixRing.identity(5,2): raise RingError("F inverse not established")
@@ -1307,17 +1312,56 @@ class RydbergDiagonalModel:
 class FibonacciBraidModel:
     """Three tau anyons with total charge tau, in a non-unitary gauge.
 
-    The R phases are chosen category inputs, not uniquely derived from fusion
-    rules. No physical anyon hardware is claimed.
+    Fusion dimension and R phases are solved in a fixed gauge under explicit
+    tenth-root and coherence constraints. No physical anyon hardware is claimed.
     """
     @staticmethod
+    @lru_cache(maxsize=1)
+    def _derive_coefficients():
+        """Solve the bounded root-of-unity coherence problem, exactly.
+
+        Fusion with tau has Perron dimension phi satisfying d*d=d+1.
+        We fix the usual nonunitary gauge F=[[a,1],[a,-a]], a=1/d,
+        then test all tenth-root diagonal phase pairs against the braid
+        equation and both complete simple-label hexagons. Lexicographic
+        ordering selects one of the two conjugate coherent solutions.
+        This is not a search over arbitrary field-valued category data.
+        """
+        z=CyclotomicRing.zeta(5)
+        one,zero=CyclotomicRing.one(5),CyclotomicRing.zero(5)
+        dimension=-(z**2+z**3)
+        if dimension*dimension != dimension+one: raise RingError("Invalid fusion dimension")
+        a=dimension.inv()
+        f=MatrixRing(5,2,2,[[a,one],[a,-a]])
+        if not TopologicalAnyonHomologicalEngine.verify_pentagon(f)['verified']:
+            raise RingError("Chosen F gauge fails pentagon")
+        phases=[sign*z**k for sign in (1,-1) for k in range(5)]
+        choices=[]
+        for r0,r1 in itertools.product(phases,repeat=2):
+            r=MatrixRing(5,2,2,[[r0,zero],[zero,r1]])
+            x=f*r*f
+            if r*x*r!=x*r*x: continue
+            if TopologicalAnyonHomologicalEngine.verify_hexagons(r,f)['verified']:
+                choices.append((r0.v,r1.v))
+        choices.sort()
+        if len(choices)!=2: raise RingError("Expected two conjugate coherent solutions")
+        return dimension.v,a.v,tuple(choices)
+
+    @staticmethod
+    def derive_fusion_data():
+        dimension,a,choices=FibonacciBraidModel._derive_coefficients()
+        return {"dimension":dimension,"inverse_dimension":a,
+                "phase_candidates":100,"coherent_phase_pairs":choices,
+                "selected_pair":choices[0],
+                "finding":"Exact search over tenth-root phases in a fixed nonunitary gauge; orientation selected lexicographically, not a physical hardware result."}
+
+    @staticmethod
     def matrices():
-        z = CyclotomicRing.zeta(5)
-        one, zero = CyclotomicRing.one(5), CyclotomicRing.zero(5)
-        a = -(z ** 2) - z ** 3 - one  # phi - 1 = 1 / phi
-        f = MatrixRing(5, 2, 2, [[a, one], [a, -a]])
-        r = MatrixRing(5, 2, 2, [[z ** 3, zero], [zero, -(z ** 4)]])
-        return f, r
+        data=FibonacciBraidModel.derive_fusion_data()
+        one,zero=CyclotomicRing.one(5),CyclotomicRing.zero(5)
+        a=CyclotomicRing(5,data["inverse_dimension"])
+        r0,r1=(CyclotomicRing(5,v) for v in data["selected_pair"])
+        return MatrixRing(5,2,2,[[a,one],[a,-a]]),MatrixRing(5,2,2,[[r0,zero],[zero,r1]])
 
     @staticmethod
     def execute(state, word):
@@ -1327,9 +1371,9 @@ class FibonacciBraidModel:
             raise RingError("Fusion amplitudes must be in Z[zeta_5]")
         if not isinstance(word, (list, tuple)) or any(type(g) is not int or g not in (-2, -1, 1, 2) for g in word):
             raise RingError("Braid generators must be -2, -1, 1 or 2")
-        z = CyclotomicRing.zeta(5)
-        a = -(z ** 2) - z ** 3 - CyclotomicRing.one(5)
-        r0, r1 = z ** 3, -(z ** 4)
+        f,r = FibonacciBraidModel.matrices()
+        a=f.data[0][0]
+        r0,r1=r.data[0][0],r.data[1][1]
         x, y = state
         for g in word:
             if abs(g) == 2:
@@ -1426,6 +1470,12 @@ class RefusalSurface:
 # =====================================================================
 
 class TestInvariant(unittest.TestCase):
+    def test_derived_fusion_dimension_and_inverse(self):
+        data=FibonacciBraidModel.derive_fusion_data()
+        d=CyclotomicRing(5,data['dimension']);a=CyclotomicRing(5,data['inverse_dimension']);one=CyclotomicRing.one(5)
+        self.assertEqual(d*d,d+one);self.assertEqual(d*a,one)
+        self.assertEqual(len(data['coherent_phase_pairs']),2)
+
     def test_bitstream_full_alphabet_is_bijective(self):
         payload = bytes(range(256))
         packed = PackedBitstreamProtocol.encode(payload)
@@ -1480,6 +1530,10 @@ class TestInvariant(unittest.TestCase):
 
 
 class TestProperty(unittest.TestCase):
+    def test_derived_solutions_are_conjugates(self):
+        choices=FibonacciBraidModel.derive_fusion_data()['coherent_phase_pairs']
+        self.assertEqual(tuple(CyclotomicRing(5,x).conj().v for x in choices[0]),choices[1])
+
     def test_bitstream_random_payloads_and_padding(self):
         import random
         rng = random.Random(712)
@@ -1542,6 +1596,11 @@ class TestProperty(unittest.TestCase):
 
 
 class TestAdversarial(unittest.TestCase):
+    def test_derived_hexagon_rejects_wrong_phase(self):
+        f,r=FibonacciBraidModel.matrices(); r.data[0][0]=CyclotomicRing.one(5)
+        self.assertFalse(TopologicalAnyonHomologicalEngine.verify_hexagons(r,f)['verified'])
+        with self.assertRaises(RingError): TopologicalAnyonHomologicalEngine.verify_hexagons(r,MatrixRing.identity(7,2))
+
     def test_bitstream_rejects_malformed(self):
         for data, n in ((b"", 1), (b"\x00", 0), (b"\x02\x80", 1), (b"\xff\x80", 1), (b"\x00\x01", 1)):
             with self.subTest(data=data, n=n), self.assertRaises(ValueError):
@@ -1630,6 +1689,10 @@ class TestAdversarial(unittest.TestCase):
 
 
 class TestEdge(unittest.TestCase):
+    def test_derived_zero_braid_is_identity(self):
+        zero=CyclotomicRing.zero(5)
+        self.assertEqual(FibonacciBraidModel.execute([zero,zero],[]),[zero,zero])
+
     def test_bitstream_boundary_bytes(self):
         for value in (0, 1, 4, 5, 254, 255):
             packed = PackedBitstreamProtocol.encode(bytes([value]))
@@ -1689,6 +1752,11 @@ class TestEdge(unittest.TestCase):
 
 
 class TestUnit(unittest.TestCase):
+    def test_fusion_phase_search_selects_documented_solution(self):
+        data=FibonacciBraidModel.derive_fusion_data();z=CyclotomicRing.zeta(5)
+        self.assertEqual(data['phase_candidates'],100)
+        self.assertEqual(data['selected_pair'],((z**3).v,(-(z**4)).v))
+
     def test_packed_known_vector_and_report(self):
         self.assertEqual(PackedBitstreamProtocol.encode(bytes([5])), b"\x04\x00")
         report = DataSystemRealisation.run_benchmark(256)
@@ -1765,6 +1833,12 @@ class TestUnit(unittest.TestCase):
 
 
 class TestIntegration(unittest.TestCase):
+    def test_both_derived_phase_solutions_obey_coherence(self):
+        f,_=FibonacciBraidModel.matrices();zero=CyclotomicRing.zero(5)
+        for p0,p1 in FibonacciBraidModel.derive_fusion_data()['coherent_phase_pairs']:
+            r=MatrixRing(5,2,2,[[CyclotomicRing(5,p0),zero],[zero,CyclotomicRing(5,p1)]])
+            self.assertTrue(TopologicalAnyonHomologicalEngine.verify_hexagons(r,f)['verified'])
+
     def test_packed_ring_backend_roundtrip(self):
         payload = bytes(range(16))
         data = PackedBitstreamProtocol.decode(PackedBitstreamProtocol.encode(payload), len(payload))
@@ -1819,6 +1893,10 @@ class TestIntegration(unittest.TestCase):
 
 
 class TestEndToEnd(unittest.TestCase):
+    def test_manifest_contains_derived_category_search(self):
+        d=run_master_system()['modules']['topological_anyons_and_hqec']['fusion_category_derivation']
+        self.assertEqual(d['phase_candidates'],100);self.assertEqual(len(d['coherent_phase_pairs']),2)
+
     def test_manifest_packing_is_measured_not_saving_claim(self):
         data = run_master_system()["modules"]["data_system_realisation"]
         self.assertTrue(data["bit_for_bit_roundtrip"])
@@ -1915,11 +1993,12 @@ def run_master_system() -> Dict[str, Any]:
     # 6. Coherence for the specified gauge and a bounded closed-braid example.
     hqec=TopologicalAnyonHomologicalEngine.verify_exact_hqec()
     manifest["modules"]["topological_anyons_and_hqec"]={
+        "fusion_category_derivation":FibonacciBraidModel.derive_fusion_data(),
         "pentagon":TopologicalAnyonHomologicalEngine.verify_pentagon(),
         "hexagons":TopologicalAnyonHomologicalEngine.verify_hexagons(),
         "trefoil_alexander":TopologicalAnyonHomologicalEngine.alexander_polynomial(2,[1,1,1]),
         "boundary_squared_zero":hqec['simplicial_boundary_d_squared_zero'],
-        "finding":"Chosen F/R data and non-unitary gauge; no physical device or general error-correction guarantee."
+        "finding":"Fusion dimension and a fixed F gauge with R phases solved over tenth roots; no physical device or general error-correction guarantee."
     }
 
     # 7. Explicit finite tensor-network measurements, not substituted formulas.

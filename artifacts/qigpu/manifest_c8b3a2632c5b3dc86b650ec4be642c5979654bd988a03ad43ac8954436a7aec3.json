@@ -1,0 +1,400 @@
+{
+  "manifest_sha256": "cb70b3a215b7906e23c1b0ba6fa1adf391ed4a362ba52497e3545f1bc16a0b31",
+  "modules": {
+    "arithmetic_substrate": {
+      "p5_gauss_sum_squared": 5,
+      "p7_gauss_sum_squared": -7,
+      "parameterized_primes_verified": [
+        5,
+        7
+      ],
+      "ring_exactness": "Exact integer arithmetic for implemented cyclotomic operations; not a proof of every operation."
+    },
+    "categorical_compiler": {
+      "lean4_spec_reference": "qigpu_dagger_compact_proof.lean",
+      "yang_baxter_all_roots_p5": true,
+      "yang_baxter_all_roots_p7": true,
+      "zx_spider_fusion": true
+    },
+    "cross_paradigm_composition": {
+      "composition_verified": true,
+      "details": {
+        "composition_pipeline": "Categorical Unitary -> MPS Contraction -> Kernel Gram Matrix",
+        "gram_diagonal_matches_norm_squared": true,
+        "mps_reconstruction_exact": true,
+        "schmidt_rank_finding": "Schmidt rank not computed.",
+        "status": "COMPOSITION_VERIFIED",
+        "tail_norm_zero": true
+      }
+    },
+    "data_system_realisation": {
+      "bit_for_bit_roundtrip": true,
+      "decode_time_sec": 0.000286503000012317,
+      "encode_time_sec": 0.010713671000019076,
+      "packed_bit_for_bit": true,
+      "packed_bitstream_ratio": 0.8888888888888888,
+      "packing_finding": "Nine encoded bits per input byte before byte padding; no memory saving or storage baseline measured.",
+      "payload_bytes": 1024
+    },
+    "execution_models": {
+      "braid_relation_example": true,
+      "braid_scope": "three tau anyons, total tau; non-unitary gauge",
+      "cross_backend_identity": "not established; no physical hardware was tested",
+      "photonic": "two-mode discrete-phase MZI simulation only; general decomposition and physical device not implemented",
+      "rydberg": "two-atom diagonal Hamiltonian at discrete phases only; no driven or physical-device evolution",
+      "software": "exact matrix-vector multiplication"
+    },
+    "general_algebraic_fields": {
+      "golden_ratio_field": "Q(sqrt(5))",
+      "phi_squared_equals_phi_plus_one": true,
+      "precision": "100% Exact Rational Fraction"
+    },
+    "hardware_multiplier_timing": {
+      "classification": "model, not measurement",
+      "clock_period_ns": 0.4,
+      "degree_phi_p": 4,
+      "estimated_critical_path_ns": 0.83,
+      "finding": "Hardware timing is a Wallace-tree model; measurement requires physical ASIC synthesis via Yosys + OpenROAD/OpenSTA.",
+      "prime": 5,
+      "single_cycle_timing_met": false,
+      "synthesizable_rtl_target": "qigpu_cyclotomic_mult_tree.v (TSMC N7 FinFET)",
+      "target_frequency_ghz": 2.5,
+      "tree_reduction_depth": 4,
+      "word_multipliers_128bit": 16
+    },
+    "holographic_mera": {
+      "finding": "Finite network contracted; critical CFT scaling, RT and scrambling are not established.",
+      "reports": [
+        {
+          "block_size": 2,
+          "causal_cone": [
+            [
+              0,
+              1,
+              2
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              0
+            ]
+          ],
+          "cft_c1_reference_nats": 0.23104906018664842,
+          "cft_matches": false,
+          "entropy_approx_nats": 0.6931471805599453,
+          "entropy_symbolic": "log(2)",
+          "finding": "Exact finite network contraction; not calibrated for CFT scaling. Logarithms are not ring-valued.",
+          "purity": [
+            "1/2",
+            "0",
+            "0",
+            "0"
+          ],
+          "sites": 4,
+          "trace": [
+            "1",
+            "0",
+            "0",
+            "0"
+          ]
+        },
+        {
+          "block_size": 4,
+          "causal_cone": [
+            [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            [
+              0,
+              1,
+              2
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              0
+            ]
+          ],
+          "cft_c1_reference_nats": 0.46209812037329684,
+          "cft_matches": false,
+          "entropy_approx_nats": 0.6931471805599453,
+          "entropy_symbolic": "log(2)",
+          "finding": "Exact finite network contraction; not calibrated for CFT scaling. Logarithms are not ring-valued.",
+          "purity": [
+            "1/2",
+            "0",
+            "0",
+            "0"
+          ],
+          "sites": 8,
+          "trace": [
+            "1",
+            "0",
+            "0",
+            "0"
+          ]
+        },
+        {
+          "block_size": 8,
+          "causal_cone": [
+            [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            [
+              0,
+              1,
+              2
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              0
+            ]
+          ],
+          "cft_c1_reference_nats": 0.6931471805599453,
+          "cft_matches": true,
+          "entropy_approx_nats": 0.6931471805599453,
+          "entropy_symbolic": "log(2)",
+          "finding": "Exact finite network contraction; not calibrated for CFT scaling. Logarithms are not ring-valued.",
+          "purity": [
+            "1/2",
+            "0",
+            "0",
+            "0"
+          ],
+          "sites": 16,
+          "trace": [
+            "1",
+            "0",
+            "0",
+            "0"
+          ]
+        }
+      ]
+    },
+    "infogeo_qfim": {
+      "discrete_step_coefficients": [
+        [
+          "221/200",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "11/10",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "0",
+          "0",
+          "0",
+          "0"
+        ]
+      ],
+      "finding": "Exact field arithmetic; finite Taylor integration approximates continuous flow.",
+      "reduced_quotient": "(8, 0, 0, 0, 0) / 3"
+    },
+    "pulvini_geometry": {
+      "exact_roundtrip_zero_residual": true,
+      "norm_scaling_factor": [
+        28,
+        0,
+        16,
+        16,
+        0
+      ],
+      "p7_obstruction": {
+        "finding": "The golden ratio is not in Z[zeta_7]; the analog over Z[zeta_7] uses the quadratic subfield Q(sqrt(-7)), which is a different operator.",
+        "golden_ratio_subfield": "Q(sqrt(5))",
+        "obstruction": "sqrt(5) is not in Q(zeta_7). The golden ratio phi is absent in Z[zeta_7].",
+        "prime": 7,
+        "quadratic_subfield": "Q(sqrt(-7))"
+      },
+      "weights_finding": "The PULVINI fold over Z[zeta_5] uses the scaled weights w1' = sqrt(5) - 1, w2' = 3 - sqrt(5), which are the golden-ratio weights multiplied by 2. The roundtrip recovers the input scaled by the norm factor w1'^2 + w2'^2 = 20 - 8*sqrt(5). The unscaled golden-ratio fold requires Z[zeta_5, 1/2]."
+    },
+    "refusal_surface": {
+      "formal_non_claims": [
+        "REFUSAL 1: No claim that quantum algorithms solve NP-complete or Millennium Prize problems in polynomial time.",
+        "REFUSAL 2: No universal quantum speedup; acceleration is confined to problems with abelian/topological algebraic symmetry.",
+        "REFUSAL 3: Transcendental ans\u00e4tze (cos, sin, exp) and non-cyclotomic roots (sqrt(2) in Z[zeta_5]) are out-of-ring findings.",
+        "REFUSAL 4: Heisenberg XXX model is obstructed over Z[zeta_5] because imaginary unit i = zeta_4 is not in Z[zeta_5].",
+        "REFUSAL 5: The PULVINI fold over Z[zeta_5] uses scaled weights w1' = sqrt(5) - 1, w2' = 3 - sqrt(5), which are golden-ratio weights multiplied by 2. The roundtrip recovers input scaled by 20 - 8*sqrt(5). The unscaled fold requires Z[zeta_5, 1/2]. Net compression is 1.0.",
+        "REFUSAL 6: The crossover measured is strictly for the discrete product feature map; the entangled feature map is not implemented.",
+        "REFUSAL 7: HardwareMultiplierTree is a model, not a physical hardware measurement; physical measurement requires ASIC foundry synthesis."
+      ],
+      "measured_crossover_benchmarks": {
+        "datapoints": [
+          {
+            "classical_dim": 64,
+            "classical_wall_sec": 0.00026248070000008285,
+            "hilbert_dim": 4,
+            "num_qubits": 2,
+            "quantum_exact_wall_sec": 0.022540460199999758,
+            "ratio_quantum_to_classical": 85.87473364705536,
+            "verdict": "classical loop faster"
+          },
+          {
+            "classical_dim": 64,
+            "classical_wall_sec": 0.000331819419999988,
+            "hilbert_dim": 8,
+            "num_qubits": 3,
+            "quantum_exact_wall_sec": 0.04006765019999989,
+            "ratio_quantum_to_classical": 120.75137193598054,
+            "verdict": "classical loop faster"
+          },
+          {
+            "classical_dim": 64,
+            "classical_wall_sec": 0.00039828599999964354,
+            "hilbert_dim": 16,
+            "num_qubits": 4,
+            "quantum_exact_wall_sec": 0.07572858585999995,
+            "ratio_quantum_to_classical": 190.13619825971216,
+            "verdict": "classical loop faster"
+          }
+        ],
+        "finding": "These Python timings compare different calculations, not equivalent workloads; no quantum advantage or physical quantum execution is established."
+      }
+    },
+    "restricted_model_comparison": {
+      "equal": true,
+      "operation": "global zeta phase; Rydberg logical single-excitation subspace",
+      "scope": "one operation only; no arbitrary-unitary equivalence or physical-device measurement"
+    },
+    "tensor_system_realisation": {
+      "chi2_tail_norm": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "exact_time_sec": 0.000298423999993247,
+      "float64_tolerance_1e12_exceeded_depth": 8,
+      "fp_baseline_finding": "No floating-point MPS contraction was timed.",
+      "status": "NOMINAL_EXACT",
+      "workload": "GHZ3 Multi-Site MPS Contraction & Fold Drift Sweep"
+    },
+    "topological_anyons_and_hqec": {
+      "boundary_squared_zero": true,
+      "finding": "Fusion dimension and a fixed F gauge with R phases solved over tenth roots; no physical device or general error-correction guarantee.",
+      "fusion_category_derivation": {
+        "coherent_phase_pairs": [
+          [
+            [
+              0,
+              0,
+              0,
+              1,
+              0
+            ],
+            [
+              1,
+              1,
+              1,
+              1,
+              0
+            ]
+          ],
+          [
+            [
+              0,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              -1,
+              0,
+              0,
+              0
+            ]
+          ]
+        ],
+        "dimension": [
+          0,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "finding": "Exact search over tenth-root phases in a fixed nonunitary gauge; orientation selected lexicographically, not a physical hardware result.",
+        "inverse_dimension": [
+          -1,
+          0,
+          -1,
+          -1,
+          0
+        ],
+        "phase_candidates": 100,
+        "selected_pair": [
+          [
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            0
+          ]
+        ]
+      },
+      "hexagons": {
+        "cases_checked": 12,
+        "diagrams_per_case": 2,
+        "verified": true
+      },
+      "pentagon": {
+        "cases_checked": 27,
+        "verified": true
+      },
+      "trefoil_alexander": [
+        1,
+        -1,
+        1
+      ]
+    }
+  },
+  "posture": "Bounded exact mathematical models; no universal execution or physical hardware claim",
+  "system_name": "QiGPU experimental mathematical prototype",
+  "timestamp_utc": "2026-11-10T15:55:54Z"
+}
