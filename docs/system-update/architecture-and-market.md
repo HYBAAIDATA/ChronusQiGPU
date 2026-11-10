@@ -1,6 +1,6 @@
 # Architecture and market assumptions
 
-**Status:** repository-level description, not a deployment record or market validation. Source review snapshot: `a2768d11847de113d26535e33cfe9d4a79a009db`, 2026-11-08.
+**Status:** Repository-level description, not a deployment record or market validation. Source review snapshot: `a2768d11847de113d26535e33cfe9d4a79a009db`, 2026-11-08.
 
 ## Implementation that is present
 
@@ -8,9 +8,15 @@ Chronusv2 contains Python reference workloads for selected exact-math/Lucas-PV o
 
 See the [current implementation assessment](current-state-assessment.md) for boundaries and the [claim audit](../claim-audit.md) for claim-by-claim dispositions.
 
-## Product and market statements
+## Current company and market framing
 
-Previously documented office locations, customer segments, sovereign deployments, partner status, pricing, savings, and market-size estimates are strategic assertions, not independently verified facts. They should not be stated as actual customers, deployments, validated demand, revenue, or market opportunity without primary evidence and appropriate review. No McKinsey/Accenture relationship or joint venture is asserted.
+The owner-directed market-facing structure is limited to **HYBA Data** and **HYBA Security**. Andre Taylor-Morris is HYBA’s Founder and CEO. Do not present additional pillars or capabilities as separate market-facing companies.
+
+Quantum is a capability, not a standalone market, company, or product category. Bitcoin mining is an in-house treasury activity, not a customer product or service. These boundaries do not establish product readiness, demand, or commercial performance.
+
+Stripe, Revolut, NVIDIA, and Google are examples of prospective-client experience benchmarks only; they are not asserted to be customers, partners, or endorsers. The internal “McKinsey–Accenture joint-venture standard” is a design-quality aspiration only. No affiliation, endorsement, partnership, or joint venture with McKinsey or Accenture is asserted. See the [product style guide](../directives/PRODUCT_STYLE_GUIDE.md).
+
+Previously documented office locations, customer segments, sovereign deployments, partner status, pricing, savings, and market-size estimates remain unverified strategic assertions. Do not state them as actual customers, deployments, validated demand, revenue, or market opportunity without primary evidence and appropriate review.
 
 ## Release posture
 

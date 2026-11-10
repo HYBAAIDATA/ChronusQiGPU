@@ -33,6 +33,10 @@ Running this command is a local test action, not a release qualification or cert
 
 ## Documentation
 
+- [HYBA product style guide](docs/directives/PRODUCT_STYLE_GUIDE.md)
+- [Frontend implementation standard](docs/directives/FRONTEND.md)
+- [Product packaging and market framing](docs/directives/PACKAGING.md)
+- [HYBA funding pitch — positioning draft](funding/FUNDING_PITCH.md)
 - [iGPU Manifesto: Chronus ONE & The Virtual GPIU](docs/IGPU_MANIFESTO.md)
 - [Claim audit and disposition](docs/claim-audit.md)
 - [Current implementation assessment](docs/system-update/current-state-assessment.md)
