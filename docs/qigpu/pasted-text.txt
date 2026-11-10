@@ -616,6 +616,56 @@ class FunctorialCategoricalCompiler:
 # 5. INFOGEO QFIM QUOTIENT & RIEMANNIAN GEODESIC STEPPING
 # =====================================================================
 
+class CyclotomicField5:
+    """Elements of Q(zeta_5), represented by exact rational coefficients."""
+    def __init__(self, value):
+        if isinstance(value, CyclotomicField5):
+            values=list(value.coefficients)
+        elif isinstance(value, CyclotomicRing):
+            if value.p != 5: raise RingError("Expected zeta_5 element")
+            values=list(value.v)
+        elif isinstance(value,(int,Fraction)) and not isinstance(value,bool):
+            values=[value,0,0,0,0]
+        elif isinstance(value,(tuple,list)) and len(value) in (4,5):
+            values=list(value)+([0] if len(value)==4 else [])
+        else: raise RingError("Expected exact field coefficients")
+        if any(not isinstance(x,(int,Fraction)) or isinstance(x,bool) for x in values):
+            raise RingError("Inexact field coefficient")
+        values=[Fraction(x) for x in values]
+        self.coefficients=tuple(x-values[4] for x in values)
+    def __eq__(self,other):
+        try: return self.coefficients==CyclotomicField5(other).coefficients
+        except (RingError,TypeError): return False
+    def __add__(self,other):
+        rhs=CyclotomicField5(other)
+        return CyclotomicField5([x+y for x,y in zip(self.coefficients,rhs.coefficients)])
+    __radd__=__add__
+    def __neg__(self): return CyclotomicField5([-x for x in self.coefficients])
+    def __sub__(self,other): return self + -CyclotomicField5(other)
+    def __rsub__(self,other): return CyclotomicField5(other)-self
+    def __mul__(self,other):
+        rhs=CyclotomicField5(other); out=[Fraction(0)]*5
+        for i,x in enumerate(self.coefficients):
+            for j,y in enumerate(rhs.coefficients): out[(i+j)%5]+=x*y
+        return CyclotomicField5(out)
+    __rmul__=__mul__
+    def sigma(self,k):
+        if type(k) is not int or k%5==0: raise RingError("Invalid field automorphism")
+        out=[Fraction(0)]*5
+        for i,x in enumerate(self.coefficients): out[(i*k)%5]+=x
+        return CyclotomicField5(out)
+    def inverse(self):
+        if self==0: raise RingError("Zero cannot be inverted")
+        numerator=CyclotomicField5(1)
+        for k in (2,3,4): numerator*=self.sigma(k)
+        norm=self*numerator
+        if any(norm.coefficients[1:]) or norm.coefficients[0]==0: raise RingError("Invalid norm")
+        return CyclotomicField5([x/norm.coefficients[0] for x in numerator.coefficients])
+    def __truediv__(self,other): return self*CyclotomicField5(other).inverse()
+    def __rtruediv__(self,other): return CyclotomicField5(other)/self
+    def is_real(self): return self==self.sigma(4)
+
+
 class InfoGeoQFIMEngine:
     """Exact QFIM evaluation as canonical lowest-terms pair in Q(zeta_p) & Riemannian geodesic stepper."""
     @staticmethod
@@ -1109,6 +1159,28 @@ class NativeSoftwareBackend(IBackend):
         return result
 
 
+class PhotonicMZIModel:
+    """Two-mode H diag(zeta^a,zeta^b) H/2. Discrete phases, no hardware."""
+    @staticmethod
+    def execute(state, phase_a, phase_b):
+        if not isinstance(state,(list,tuple)) or len(state)!=2: raise RingError("Expected two amplitudes")
+        if type(phase_a) is not int or type(phase_b) is not int: raise RingError("Phases must be integer fifth-root exponents")
+        x,y=(CyclotomicField5(v) for v in state); z=CyclotomicRing.zeta(5)
+        u=CyclotomicField5(z**phase_a)*(x+y); v=CyclotomicField5(z**phase_b)*(x-y)
+        return [(u+v)/2,(u-v)/2]
+
+
+class RydbergDiagonalModel:
+    """Two-atom diagonal Hamiltonian, discrete phase steps; no physical device."""
+    @staticmethod
+    def execute(state, detuning, interaction):
+        if not isinstance(state,(list,tuple)) or len(state)!=4: raise RingError("Expected four amplitudes")
+        if any(not isinstance(v,CyclotomicRing) or v.p!=5 for v in state): raise RingError("Expected Z[zeta_5] amplitudes")
+        if type(detuning) is not int or type(interaction) is not int: raise RingError("Phase steps must be integers")
+        phases=(0,detuning,detuning,2*detuning+interaction); z=CyclotomicRing.zeta(5)
+        return [amplitude*z**(-phase) for amplitude,phase in zip(state,phases)]
+
+
 class FibonacciBraidModel:
     """Three tau anyons with total charge tau, in a non-unitary gauge.
 
@@ -1231,6 +1303,12 @@ class RefusalSurface:
 # =====================================================================
 
 class TestInvariant(unittest.TestCase):
+    def test_mzi_zero_phases_identity(self):
+        self.assertEqual(PhotonicMZIModel.execute([1,2],0,0),[CyclotomicField5(1),CyclotomicField5(2)])
+    def test_atom_forward_then_inverse(self):
+        x=[CyclotomicRing(5,i) for i in range(4)]
+        self.assertEqual(RydbergDiagonalModel.execute(RydbergDiagonalModel.execute(x,1,2),-1,-2),x)
+
     def test_braid_relation(self):
         x = [CyclotomicRing.one(5), CyclotomicRing.zeta(5)]
         self.assertEqual(FibonacciBraidModel.execute(x,[1,2,1]), FibonacciBraidModel.execute(x,[2,1,2]))
@@ -1263,6 +1341,11 @@ class TestInvariant(unittest.TestCase):
 
 
 class TestProperty(unittest.TestCase):
+    def test_optical_linearity(self):
+        for i in range(-3,4):
+            a=PhotonicMZIModel.execute([i,1],1,2); b=PhotonicMZIModel.execute([1,2],1,2); c=PhotonicMZIModel.execute([i+1,3],1,2)
+            self.assertEqual(c,[x+y for x,y in zip(a,b)])
+
     def test_braid_inverse_multiple_states(self):
         for i in range(8):
             x=[CyclotomicRing(5,i),CyclotomicRing(5,-i)]
@@ -1293,6 +1376,12 @@ class TestProperty(unittest.TestCase):
 
 
 class TestAdversarial(unittest.TestCase):
+    def test_model_input_validation(self):
+        with self.assertRaises(RingError): PhotonicMZIModel.execute([0],0,0)
+        with self.assertRaises(RingError): PhotonicMZIModel.execute([0,0],0.5,0)
+        with self.assertRaises(RingError): RydbergDiagonalModel.execute([CyclotomicRing.one(7)]*4,0,0)
+        with self.assertRaises(RingError): RydbergDiagonalModel.execute([CyclotomicRing.one(5)]*4,True,0)
+
     def test_backend_rejects_non_matrix(self):
         with self.assertRaises(RingError): NativeSoftwareBackend().execute_state_evolution([],None)
     def test_backend_rejects_state_size(self):
@@ -1353,6 +1442,10 @@ class TestAdversarial(unittest.TestCase):
 
 
 class TestEdge(unittest.TestCase):
+    def test_model_zero_states(self):
+        self.assertEqual(PhotonicMZIModel.execute([0,0],3,4),[CyclotomicField5(0)]*2)
+        self.assertEqual(RydbergDiagonalModel.execute([CyclotomicRing.zero(5)]*4,4,3),[CyclotomicRing.zero(5)]*4)
+
     def test_empty_matrix(self):
         self.assertEqual(NativeSoftwareBackend().execute_state_evolution([],MatrixRing(5,0,0)),[])
     def test_empty_gram(self):
@@ -1389,6 +1482,14 @@ class TestEdge(unittest.TestCase):
 
 
 class TestUnit(unittest.TestCase):
+    def test_field_inverse_and_exactness(self):
+        z=CyclotomicField5(CyclotomicRing.zeta(5)); self.assertEqual((1+z)*(1+z).inverse(),1)
+        with self.assertRaises(RingError): CyclotomicField5(0).inverse()
+        with self.assertRaises(RingError): CyclotomicField5(0.5)
+    def test_mzi_equal_phase(self):
+        z=CyclotomicField5(CyclotomicRing.zeta(5))
+        self.assertEqual(PhotonicMZIModel.execute([1,0],1,1),[z,CyclotomicField5(0)])
+
     def test_ring_scalar_operations(self):
         a=CyclotomicRing.one(5)
         self.assertEqual(2+a,3);self.assertEqual(2-a,1);self.assertEqual(2*a,2)
@@ -1434,6 +1535,13 @@ class TestUnit(unittest.TestCase):
 
 
 class TestIntegration(unittest.TestCase):
+    def test_four_models_agree_on_bounded_common_action(self):
+        z=CyclotomicRing.zeta(5);o=CyclotomicRing.one(5);n=CyclotomicRing.zero(5);state=[o,CyclotomicRing(5,3)]
+        ref=NativeSoftwareBackend().execute_state_evolution(state,MatrixRing(5,2,2,[[z,n],[n,z]]))
+        self.assertEqual(FibonacciBraidModel.execute(state,[1,2]*3),ref)
+        self.assertEqual(RydbergDiagonalModel.execute([n,*state,n],-1,0)[1:3],ref)
+        self.assertEqual(PhotonicMZIModel.execute(state,1,1),[CyclotomicField5(v) for v in ref])
+
     def test_vector_fold_and_unfold(self):
         x=[CyclotomicRing(5,n) for n in (2,4,6,8)]
         a=PulviniRingOperator.fold_vector_p5(x); out=PulviniRingOperator.unfold_vector_p5(a['folded'],a['kernels'])
@@ -1461,6 +1569,10 @@ class TestIntegration(unittest.TestCase):
 
 
 class TestEndToEnd(unittest.TestCase):
+    def test_manifest_describes_bounded_comparison(self):
+        r=run_master_system()["modules"]["restricted_model_comparison"]
+        self.assertTrue(r["equal"]); self.assertIn("one operation only",r["scope"])
+
     def test_manifest_does_not_claim_universal_hardware_identity(self):
         m=run_master_system()["modules"]
         self.assertNotIn("universal_backend_identity",m)
@@ -1568,9 +1680,22 @@ def run_master_system() -> Dict[str, Any]:
         "software": "exact matrix-vector multiplication",
         "braid_scope": "three tau anyons, total tau; non-unitary gauge",
         "braid_relation_example": r*sigma2*r == sigma2*r*sigma2,
-        "photonic": "not implemented: requires MZI decomposition and execution",
-        "rydberg": "not implemented: requires Hamiltonian evolution",
+        "photonic": "two-mode discrete-phase MZI simulation only; general decomposition and physical device not implemented",
+        "rydberg": "two-atom diagonal Hamiltonian at discrete phases only; no driven or physical-device evolution",
         "cross_backend_identity": "not established; no physical hardware was tested"
+    }
+
+    # One common operation, not a proof of universal cross-model equivalence.
+    one,zero,z=CyclotomicRing.one(5),CyclotomicRing.zero(5),CyclotomicRing.zeta(5)
+    logical=[one,CyclotomicRing(5,2)]
+    software=NativeSoftwareBackend().execute_state_evolution(logical,MatrixRing(5,2,2,[[z,zero],[zero,z]]))
+    braid=FibonacciBraidModel.execute(logical,[1,2]*3)
+    optical=PhotonicMZIModel.execute(logical,1,1)
+    atomic=RydbergDiagonalModel.execute([zero,*logical,zero],-1,0)[1:3]
+    manifest["modules"]["restricted_model_comparison"]={
+        "operation":"global zeta phase; Rydberg logical single-excitation subspace",
+        "equal":braid==software and atomic==software and optical==[CyclotomicField5(x) for x in software],
+        "scope":"one operation only; no arbitrary-unitary equivalence or physical-device measurement"
     }
 
     # 10. Hardware Multiplier & Refusal Surface
