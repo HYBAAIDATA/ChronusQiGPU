@@ -7,7 +7,7 @@
 HYBA has two market-facing companies:
 
 1. **HYBA Data** — Chronus is a HYBA Data product/platform, not a separate company.
-2. **HYBA Security**
+2. **HYBA Security** — AL HARAS is HYBA Security.
 
 Do not present other pillars or capabilities as separate market-facing companies. Andre Taylor-Morris is HYBA’s Founder and CEO.
 

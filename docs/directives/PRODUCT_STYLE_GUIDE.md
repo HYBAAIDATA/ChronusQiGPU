@@ -12,6 +12,7 @@ Emulate **Stripe, Revolut, NVIDIA, and Google** as benchmarks for the quality an
 
 - The only market-facing companies are **HYBA Data** and **HYBA Security**.
 - **Chronus is HYBA Data’s product/platform**, not a separate company.
+- **AL HARAS is HYBA Security.**
 - **Andre Taylor-Morris** is HYBA’s Founder and CEO.
 - **Quantum is a capability**, not a separate market, company, or standalone product category. Describe it only as a capability within an offering when accurate and relevant.
 - **Bitcoin mining is an in-house treasury activity**, not a customer product, service, or market offering.
@@ -46,6 +47,7 @@ Design loading, empty, stale, error, permission-denied, offline, and degraded st
 ## Language and claims
 
 - Chronus is marketed as a HYBA Data product/platform, not as a third company.
+- AL HARAS is HYBA Security.
 - Name products only under HYBA Data or HYBA Security, and only when the product scope is documented and owner-approved.
 - Treat quantum as a capability, not a separate market proposition.
 - Treat Bitcoin mining as internal treasury activity, never as a product or customer use case.
@@ -56,7 +58,7 @@ Design loading, empty, stale, error, permission-denied, offline, and degraded st
 
 Before accepting a product or client-facing artifact, confirm:
 
-- [ ] It clearly belongs to HYBA Data or HYBA Security; Chronus is identified as HYBA Data’s product/platform.
+- [ ] It clearly belongs to HYBA Data or HYBA Security; Chronus is identified as HYBA Data’s product/platform and AL HARAS as HYBA Security.
 - [ ] Quantum is framed only as a capability, where relevant.
 - [ ] Bitcoin mining is not presented as a product or customer offering.
 - [ ] The primary user, task, and outcome are clear.

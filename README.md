@@ -1,6 +1,6 @@
 # Chronusv2
 
-Chronusv2 is a HYBA Data software prototype exploring exact mathematical representations and workload execution. **Chronus is a HYBA Data product/platform, not a separate company.** This repository is **not release-qualified** and does not establish production readiness, enterprise security, regulatory compliance, customer deployments, or performance advantages. See the [claim audit](docs/claim-audit.md) before relying on any older product, benchmark, valuation, or release document.
+Chronusv2 is a HYBA Data software prototype exploring exact mathematical representations and workload execution. **Chronus is a HYBA Data product/platform, not a separate company.** HYBA’s two market-facing companies are HYBA Data and HYBA Security; **AL HARAS is HYBA Security**. This repository is **not release-qualified** and does not establish production readiness, enterprise security, regulatory compliance, customer deployments, or performance advantages. See the [claim audit](docs/claim-audit.md) before relying on any older product, benchmark, valuation, or release document.
 
 ## What the source supports
 

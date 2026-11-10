@@ -4,7 +4,7 @@
 
 ## Product identity
 
-Chronus is HYBA Data’s product/platform, not a separate company. Keep product navigation, copy, and client-facing materials within the two market-facing companies: HYBA Data and HYBA Security.
+Chronus is HYBA Data’s product/platform, not a separate company. AL HARAS is HYBA Security. Keep product navigation, copy, and client-facing materials within the two market-facing companies: HYBA Data and HYBA Security.
 
 ## Frontend principles
 
