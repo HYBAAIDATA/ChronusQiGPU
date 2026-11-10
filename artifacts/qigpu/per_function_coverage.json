@@ -28,7 +28,7 @@
     "CyclotomicRing.embed_rational": {
       "executed_lines": 5,
       "missing_lines": [
-        118
+        121
       ],
       "statement_percent": 83.33
     },
@@ -55,7 +55,7 @@
     "CyclotomicRing.norm": {
       "executed_lines": 6,
       "missing_lines": [
-        228
+        231
       ],
       "statement_percent": 85.71
     },
@@ -75,14 +75,14 @@
       "statement_percent": 100.0
     },
     "CyclotomicRing.zeta": {
-      "executed_lines": 4,
+      "executed_lines": 5,
       "missing_lines": [],
       "statement_percent": 100.0
     },
     "DataSystemRealisation.run_benchmark": {
       "executed_lines": 23,
       "missing_lines": [
-        1207
+        1229
       ],
       "statement_percent": 95.83
     },
@@ -154,7 +154,7 @@
     "HolographicMERAEngine.entropy_report": {
       "executed_lines": 8,
       "missing_lines": [
-        1092
+        1114
       ],
       "statement_percent": 88.89
     },
@@ -176,7 +176,7 @@
     "InfoGeoQFIMEngine.inner_product": {
       "executed_lines": 9,
       "missing_lines": [
-        694
+        697
       ],
       "statement_percent": 90.0
     },
@@ -288,7 +288,7 @@
     "PulviniRingOperator.unfold_vector_p5": {
       "executed_lines": 9,
       "missing_lines": [
-        487
+        490
       ],
       "statement_percent": 90.0
     },
@@ -318,11 +318,11 @@
       "statement_percent": 100.0
     },
     "TensorMPSRingEngine.contract_mps": {
-      "executed_lines": 62,
+      "executed_lines": 81,
       "missing_lines": [
-        910
+        920
       ],
-      "statement_percent": 98.41
+      "statement_percent": 98.78
     },
     "TensorMPSRingEngine.get_ghz3_cores": {
       "executed_lines": 7,
@@ -342,8 +342,8 @@
     "TopologicalAnyonHomologicalEngine.verify_exact_hqec": {
       "executed_lines": 21,
       "missing_lines": [
-        890,
-        891
+        893,
+        894
       ],
       "statement_percent": 91.3
     },
@@ -370,11 +370,9 @@
       "statement_percent": 60.0
     },
     "legendre_symbol": {
-      "executed_lines": 5,
-      "missing_lines": [
-        59
-      ],
-      "statement_percent": 83.33
+      "executed_lines": 8,
+      "missing_lines": [],
+      "statement_percent": 100.0
     },
     "run_master_system": {
       "executed_lines": 41,

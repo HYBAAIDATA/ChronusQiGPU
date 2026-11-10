@@ -13,7 +13,6 @@
   "public_functions_count": 71,
   "public_functions_not_touched_by_class": {
     "TestAdversarial": [
-      "legendre_symbol",
       "CyclotomicRing.gauss_sum",
       "CyclotomicRing.is_one",
       "CyclotomicRing.conj",
@@ -37,7 +36,6 @@
       "InfoGeoQFIMEngine.polynomial_ansatz",
       "InfoGeoQFIMEngine.compute_polynomial_qfim",
       "TopologicalAnyonHomologicalEngine.verify_exact_hqec",
-      "TensorMPSRingEngine.contract_mps",
       "TensorMPSRingEngine.get_ghz3_cores",
       "HolographicMERAEngine.contract",
       "HolographicMERAEngine.entropy_report",
@@ -119,7 +117,6 @@
       "InfoGeoQFIMEngine.compute_polynomial_qfim",
       "TopologicalAnyonHomologicalEngine.alexander_polynomial",
       "TopologicalAnyonHomologicalEngine.verify_exact_hqec",
-      "TensorMPSRingEngine.get_ghz3_cores",
       "HolographicMERAEngine.entropy_report",
       "TensorSystemRealisation.run_benchmark",
       "DataSystemRealisation.run_benchmark",
@@ -148,8 +145,6 @@
       "InfoGeoQFIMEngine.compute_polynomial_qfim",
       "TopologicalAnyonHomologicalEngine.alexander_polynomial",
       "TopologicalAnyonHomologicalEngine.verify_exact_hqec",
-      "TensorMPSRingEngine.contract_mps",
-      "TensorMPSRingEngine.get_ghz3_cores",
       "QuantumKernelRingEngine.feature_map",
       "QuantumKernelRingEngine.compute_gram_matrix",
       "TensorSystemRealisation.run_benchmark",
@@ -201,13 +196,13 @@
     "TestUnit": []
   },
   "public_functions_touched_count_by_class": {
-    "TestAdversarial": 35,
+    "TestAdversarial": 37,
     "TestEdge": 43,
     "TestEndToEnd": 58,
-    "TestIntegration": 39,
-    "TestInvariant": 41,
+    "TestIntegration": 40,
+    "TestInvariant": 43,
     "TestProperty": 36,
     "TestUnit": 71
   },
-  "test_count": 130
+  "test_count": 137
 }
