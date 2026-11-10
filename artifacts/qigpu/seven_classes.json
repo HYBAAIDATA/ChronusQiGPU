@@ -10,7 +10,7 @@
   ],
   "finding": "The requested every-public-function-in-every-class criterion is not established; Passing tests and aggregate coverage do not imply it. Cross-module composition coverage is not exhaustive.",
   "method": "Dynamic executed-line contexts attributed per unittest class after module import; any executable line in a function counts as touched, not proof of full behavioral coverage. Abstract methods and methods not meaningful in a class are included.",
-  "public_functions_count": 71,
+  "public_functions_count": 77,
   "public_functions_not_touched_by_class": {
     "TestAdversarial": [
       "CyclotomicRing.gauss_sum",
@@ -20,6 +20,7 @@
       "MatrixRing.dagger",
       "GeneralAlgebraicNumberField.make_golden_ratio",
       "PulviniRingOperator.get_p5_weights",
+      "PulviniRingOperator.get_unscaled_p5_weights",
       "PulviniRingOperator.fold_pair_p5",
       "PulviniRingOperator.unfold_pair_p5",
       "PulviniRingOperator.p5_weights_finding",
@@ -51,7 +52,6 @@
     "TestEdge": [
       "MatrixRing.transpose",
       "MatrixRing.dagger",
-      "MatrixRing.kron",
       "GeneralAlgebraicNumberField.make_golden_ratio",
       "PulviniRingOperator.unfold_pair_p5",
       "PulviniRingOperator.p5_weights_finding",
@@ -99,7 +99,7 @@
       "CyclotomicRing.inv",
       "MatrixRing.transpose",
       "MatrixRing.dagger",
-      "GeneralAlgebraicNumberField.make_golden_ratio",
+      "PulviniRingOperator.unfold_unscaled_pair_p5",
       "PulviniRingOperator.p5_weights_finding",
       "PulviniRingOperator.p7_obstruction_record",
       "MorphismRing.identity",
@@ -129,6 +129,8 @@
     "TestInvariant": [
       "MatrixRing.transpose",
       "GeneralAlgebraicNumberField.make_golden_ratio",
+      "PulviniRingOperator.fold_unscaled_pair_p5",
+      "PulviniRingOperator.unfold_unscaled_pair_p5",
       "PulviniRingOperator.fold_vector_p5",
       "PulviniRingOperator.unfold_vector_p5",
       "PulviniRingOperator.p5_weights_finding",
@@ -144,7 +146,7 @@
       "InfoGeoQFIMEngine.polynomial_ansatz",
       "InfoGeoQFIMEngine.compute_polynomial_qfim",
       "TopologicalAnyonHomologicalEngine.alexander_polynomial",
-      "TopologicalAnyonHomologicalEngine.verify_exact_hqec",
+      "ExactSpinHamiltonians.evolve_discrete_5",
       "QuantumKernelRingEngine.feature_map",
       "QuantumKernelRingEngine.compute_gram_matrix",
       "TensorSystemRealisation.run_benchmark",
@@ -161,7 +163,6 @@
       "MatrixRing.identity",
       "MatrixRing.transpose",
       "MatrixRing.dagger",
-      "MatrixRing.kron",
       "PulviniRingOperator.p5_weights_finding",
       "PulviniRingOperator.p7_obstruction_record",
       "MorphismRing.identity",
@@ -196,13 +197,13 @@
     "TestUnit": []
   },
   "public_functions_touched_count_by_class": {
-    "TestAdversarial": 37,
-    "TestEdge": 43,
-    "TestEndToEnd": 58,
-    "TestIntegration": 40,
-    "TestInvariant": 43,
-    "TestProperty": 36,
-    "TestUnit": 71
+    "TestAdversarial": 42,
+    "TestEdge": 50,
+    "TestEndToEnd": 64,
+    "TestIntegration": 46,
+    "TestInvariant": 47,
+    "TestProperty": 43,
+    "TestUnit": 77
   },
-  "test_count": 137
+  "test_count": 165
 }

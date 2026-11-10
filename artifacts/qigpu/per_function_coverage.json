@@ -82,9 +82,19 @@
     "DataSystemRealisation.run_benchmark": {
       "executed_lines": 23,
       "missing_lines": [
-        1229
+        1318
       ],
       "statement_percent": 95.83
+    },
+    "ExactSpinHamiltonians.evolve_discrete_5": {
+      "executed_lines": 9,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "ExactSpinHamiltonians.xxx_two_site": {
+      "executed_lines": 5,
+      "missing_lines": [],
+      "statement_percent": 100.0
     },
     "FibonacciBraidModel.derive_fusion_data": {
       "executed_lines": 3,
@@ -154,7 +164,7 @@
     "HolographicMERAEngine.entropy_report": {
       "executed_lines": 8,
       "missing_lines": [
-        1114
+        1203
       ],
       "statement_percent": 88.89
     },
@@ -176,7 +186,7 @@
     "InfoGeoQFIMEngine.inner_product": {
       "executed_lines": 9,
       "missing_lines": [
-        697
+        732
       ],
       "statement_percent": 90.0
     },
@@ -260,6 +270,11 @@
       "missing_lines": [],
       "statement_percent": 100.0
     },
+    "PulviniRingOperator.fold_unscaled_pair_p5": {
+      "executed_lines": 5,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
     "PulviniRingOperator.fold_vector_p5": {
       "executed_lines": 14,
       "missing_lines": [],
@@ -267,6 +282,11 @@
     },
     "PulviniRingOperator.get_p5_weights": {
       "executed_lines": 6,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "PulviniRingOperator.get_unscaled_p5_weights": {
+      "executed_lines": 4,
       "missing_lines": [],
       "statement_percent": 100.0
     },
@@ -285,10 +305,15 @@
       "missing_lines": [],
       "statement_percent": 100.0
     },
+    "PulviniRingOperator.unfold_unscaled_pair_p5": {
+      "executed_lines": 5,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
     "PulviniRingOperator.unfold_vector_p5": {
       "executed_lines": 9,
       "missing_lines": [
-        490
+        525
       ],
       "statement_percent": 90.0
     },
@@ -320,7 +345,7 @@
     "TensorMPSRingEngine.contract_mps": {
       "executed_lines": 81,
       "missing_lines": [
-        920
+        1009
       ],
       "statement_percent": 98.78
     },
@@ -339,13 +364,17 @@
       "missing_lines": [],
       "statement_percent": 100.0
     },
-    "TopologicalAnyonHomologicalEngine.verify_exact_hqec": {
-      "executed_lines": 21,
+    "TopologicalAnyonHomologicalEngine.analyze_simplicial_complex": {
+      "executed_lines": 25,
       "missing_lines": [
-        893,
-        894
+        928
       ],
-      "statement_percent": 91.3
+      "statement_percent": 96.15
+    },
+    "TopologicalAnyonHomologicalEngine.verify_exact_hqec": {
+      "executed_lines": 4,
+      "missing_lines": [],
+      "statement_percent": 100.0
     },
     "TopologicalAnyonHomologicalEngine.verify_hexagons": {
       "executed_lines": 26,
@@ -375,7 +404,7 @@
       "statement_percent": 100.0
     },
     "run_master_system": {
-      "executed_lines": 41,
+      "executed_lines": 43,
       "missing_lines": [],
       "statement_percent": 100.0
     }
