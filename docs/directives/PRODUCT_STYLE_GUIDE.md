@@ -6,7 +6,7 @@
 
 Build products with the strategic clarity, analytical discipline, and executive communication associated with top-tier management consulting, combined with the enterprise technology delivery quality, service design, and implementation discipline of a leading technology consultancy. The internal shorthand is **“a McKinsey–Accenture joint-venture standard.”** It describes an aspiration for quality only: HYBA has no claimed affiliation, partnership, endorsement, or joint venture with McKinsey or Accenture. Do not use either firm’s logos or imply a relationship.
 
-Design for the expectations of demanding enterprise clients—for example, organizations like **Stripe, Revolut, NVIDIA, and Google**. These are reference audiences, not statements that they are HYBA customers, partners, or endorsers. Do not use their names or logos in a way that implies a business relationship.
+Emulate **Stripe, Revolut, NVIDIA, and Google** as benchmarks for the quality and finish of a completed product: clarity, polish, usability, consistency, reliability, and enterprise-grade execution. This is a standard to emulate, not a description of HYBA’s target audience, customer base, partnerships, or endorsements. Do not use their names or logos in a way that implies a business relationship.
 
 ## Company and market boundaries
 

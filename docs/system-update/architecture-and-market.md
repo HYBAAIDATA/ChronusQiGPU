@@ -14,7 +14,7 @@ The owner-directed market-facing structure is limited to **HYBA Data** and **HYB
 
 Quantum is a capability, not a standalone market, company, or product category. Bitcoin mining is an in-house treasury activity, not a customer product or service. These boundaries do not establish product readiness, demand, or commercial performance.
 
-Stripe, Revolut, NVIDIA, and Google are examples of prospective-client experience benchmarks only; they are not asserted to be customers, partners, or endorsers. The internal “McKinsey–Accenture joint-venture standard” is a design-quality aspiration only. No affiliation, endorsement, partnership, or joint venture with McKinsey or Accenture is asserted. See the [product style guide](../directives/PRODUCT_STYLE_GUIDE.md).
+Emulate **Stripe, Revolut, NVIDIA, and Google** as benchmarks for the quality and finish of completed products. This is a product-quality standard, not a target-audience definition or a claim that these companies are customers, partners, or endorsers. The internal “McKinsey–Accenture joint-venture standard” is a design-quality aspiration only. No affiliation, endorsement, partnership, or joint venture with McKinsey or Accenture is asserted. See the [product style guide](../directives/PRODUCT_STYLE_GUIDE.md).
 
 Previously documented office locations, customer segments, sovereign deployments, partner status, pricing, savings, and market-size estimates remain unverified strategic assertions. Do not state them as actual customers, deployments, validated demand, revenue, or market opportunity without primary evidence and appropriate review.
 
