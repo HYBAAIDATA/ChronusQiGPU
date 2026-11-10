@@ -6,6 +6,7 @@
 
 - **Founder and CEO:** Andre Taylor-Morris
 - **Market-facing companies:** HYBA Data and HYBA Security
+- **Chronus:** HYBA Data’s product/platform, not a separate company
 
 These are the only two market-facing companies to present. Do not describe additional pillars as separate companies or market lines.
 

@@ -2,6 +2,10 @@
 
 **Current design authority:** Follow the [HYBA product style guide](PRODUCT_STYLE_GUIDE.md). It supersedes earlier visual and product-structure recommendations in this file or elsewhere when they conflict.
 
+## Product identity
+
+Chronus is HYBA Data’s product/platform, not a separate company. Keep product navigation, copy, and client-facing materials within the two market-facing companies: HYBA Data and HYBA Security.
+
 ## Frontend principles
 
 - Build a coherent product experience for HYBA Data or HYBA Security; do not introduce additional market-facing company or product categories without owner direction.

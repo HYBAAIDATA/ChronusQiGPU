@@ -10,7 +10,7 @@ See the [current implementation assessment](current-state-assessment.md) for bou
 
 ## Current company and market framing
 
-The owner-directed market-facing structure is limited to **HYBA Data** and **HYBA Security**. Andre Taylor-Morris is HYBA’s Founder and CEO. Do not present additional pillars or capabilities as separate market-facing companies.
+The owner-directed market-facing structure is limited to **HYBA Data** and **HYBA Security**. **Chronus is a HYBA Data product/platform, not a separate company.** Andre Taylor-Morris is HYBA’s Founder and CEO. Do not present additional pillars or capabilities as separate market-facing companies.
 
 Quantum is a capability, not a standalone market, company, or product category. Bitcoin mining is an in-house treasury activity, not a customer product or service. These boundaries do not establish product readiness, demand, or commercial performance.
 
