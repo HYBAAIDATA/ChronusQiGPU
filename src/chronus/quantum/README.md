@@ -18,7 +18,7 @@ This is a source-level classification of the reviewed implementation, not a clai
 
 ## Migration and use
 
-- Use [`TURING`](../../../../packages/turing/README.md) for the explicitly scoped complex-Hilbert-space quantum mathematics foundation.
+- Use [`TURING`](../../../packages/turing/README.md) for the explicitly scoped complex-Hilbert-space quantum mathematics foundation.
 - Do not silently rebrand or route these legacy APIs through TURING. Keep compatibility changes explicit and preserve historical behavior where needed.
 - Keep this namespace only for existing research or compatibility until maintainers decide whether to deprecate, rename, or remove it.
 - Any future claim about physical semantics, correctness, performance, security, or release readiness requires a defined check, exact source commit, reproducible raw result, exceptions, and reviewer.
