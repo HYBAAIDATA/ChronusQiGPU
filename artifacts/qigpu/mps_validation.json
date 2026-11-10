@@ -1,0 +1,11 @@
+{
+  "command": "python -m coverage run --branch docs/qigpu/pasted-text.txt",
+  "finding": "Reject nonintegral or boolean ring parameters and malformed MPS bonds, dimensions and element rings; add tests in each class. Bond-index cutoff is not an SVD or a physical tensor-accuracy bound.",
+  "implementation_coverage": {
+    "branch_percent": 91.3,
+    "statement_percent": 97.99
+  },
+  "source_sha256": "fc109adff9840e825562da4412007639401683fe69a0aa6e38933a67677ba647",
+  "step": "Validate exact ring and MPS input dimensions",
+  "tests_passed": 137
+}

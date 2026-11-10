@@ -37,7 +37,7 @@ class RingError(Exception):
 
 def is_prime(n: int) -> bool:
     """Deterministic primality test for small moduli."""
-    if n < 2:
+    if type(n) is not int or n < 2:
         return False
     if n in (2, 3):
         return True
@@ -54,6 +54,8 @@ def is_prime(n: int) -> bool:
 
 def legendre_symbol(a: int, p: int) -> int:
     """Computes the Legendre symbol (a/p) via Euler's criterion."""
+    if type(a) is not int or type(p) is not int or not is_prime(p) or p==2:
+        raise RingError("Legendre symbol requires an integer and an odd prime")
     a = a % p
     if a == 0:
         return 0
@@ -70,19 +72,19 @@ class CyclotomicRing:
     __slots__ = ('p', 'v')
 
     def __init__(self, p: int, coeffs: Union[int, Tuple[int, ...], List[int]]):
-        if not is_prime(p):
+        if type(p) is not int or not is_prime(p):
             raise RingError(f"Modulus p={p} must be a prime integer.")
         self.p = p
 
         if isinstance(coeffs, float):
             raise RingError("Floating-point values strictly forbidden in exact cyclotomic ring arithmetic.")
-        elif isinstance(coeffs, int):
-            raw = [int(coeffs)] + [0] * (p - 1)
+        elif type(coeffs) is int:
+            raw = [coeffs] + [0] * (p - 1)
         elif isinstance(coeffs, (tuple, list)):
             for c in coeffs:
                 if isinstance(c, float):
                     raise RingError("Floating-point values strictly forbidden in exact cyclotomic ring arithmetic.")
-                if not isinstance(c, int):
+                if type(c) is not int:
                     raise RingError(f"Coefficient {c} is not an integer.")
             if len(coeffs) == p - 1:
                 raw = [int(c) for c in coeffs] + [0]
@@ -108,6 +110,7 @@ class CyclotomicRing:
 
     @classmethod
     def zeta(cls, p: int, power: int = 1) -> 'CyclotomicRing':
+        if type(p) is not int or not is_prime(p) or type(power) is not int: raise RingError("Expected prime modulus and integer exponent")
         raw = [0] * p
         raw[power % p] = 1
         return cls(p, raw)
@@ -207,8 +210,8 @@ class CyclotomicRing:
 
     def sigma(self, k: int) -> 'CyclotomicRing':
         """Galois automorphism sigma_k: zeta -> zeta^k for k in (Z/pZ)*."""
-        if k % self.p == 0:
-            raise RingError("Galois automorphism index cannot be multiple of p.")
+        if type(k) is not int or k % self.p == 0:
+            raise RingError("Galois automorphism index must be an integer not divisible by p.")
         p = self.p
         res = [0] * p
         for i in range(p):
@@ -905,9 +908,28 @@ class TensorMPSRingEngine:
     """Generalized exact N-site, d-dimension tensor network MPS contraction and truncation ledger."""
     @staticmethod
     def contract_mps(p: int, cores: List[Any], chi: int = 2) -> Tuple[List[CyclotomicRing], CyclotomicRing, List[CyclotomicRing]]:
+        if type(p) is not int or not is_prime(p): raise RingError("Expected prime modulus")
+        if type(chi) is not int or chi<1: raise RingError("Bond cutoff must be a positive integer")
+        if not isinstance(cores,(list,tuple)): raise RingError("Expected a sequence of cores")
         N = len(cores)
         if N == 0:
             return [], CyclotomicRing.zero(p), []
+        previous=1;d_phys=None
+        for core in cores:
+            if not isinstance(core,(list,tuple)) or len(core)!=previous or not core:
+                raise RingError("MPS bond dimensions do not match")
+            if not all(isinstance(row,(list,tuple)) and len(row)>0 for row in core): raise RingError("Invalid MPS physical axis")
+            if d_phys is None:d_phys=len(core[0])
+            if any(len(row)!=d_phys for row in core): raise RingError("MPS physical dimensions must be equal")
+            first=core[0][0]
+            if not isinstance(first,(list,tuple)) or not first: raise RingError("Invalid MPS output bond")
+            following=len(first)
+            for row in core:
+                for physical in row:
+                    if not isinstance(physical,(list,tuple)) or len(physical)!=following: raise RingError("Ragged MPS core")
+                    if any(not isinstance(v,CyclotomicRing) or v.p!=p for v in physical): raise RingError("MPS core entries must belong to the requested ring")
+            previous=following
+        if previous!=1: raise RingError("MPS final bond dimension must be one")
 
         d_phys = len(cores[0][0])
         total_dim = d_phys ** N
@@ -1517,6 +1539,11 @@ class RefusalSurface:
 # =====================================================================
 
 class TestInvariant(unittest.TestCase):
+    def test_mps_bond_cutoff_conserves_kept_plus_discarded(self):
+        cores=TensorMPSRingEngine.get_ghz3_cores(5);full,_,_=TensorMPSRingEngine.contract_mps(5,cores,2)
+        kept,_,discarded=TensorMPSRingEngine.contract_mps(5,cores,1)
+        self.assertEqual([a+b for a,b in zip(kept,discarded)],full)
+
     def test_inner_product_conjugate_symmetry(self):
         z=CyclotomicRing.zeta(5);o=CyclotomicRing.one(5);u=[z,o];v=[o,z*z]
         self.assertEqual(InfoGeoQFIMEngine.inner_product(u,v),InfoGeoQFIMEngine.inner_product(v,u).conj())
@@ -1585,6 +1612,11 @@ class TestInvariant(unittest.TestCase):
 
 
 class TestProperty(unittest.TestCase):
+    def test_legendre_multiplicativity(self):
+        for p in (5,7,11):
+            for a in range(p):
+                for b in range(p):self.assertEqual(legendre_symbol(a*b,p),legendre_symbol(a,p)*legendre_symbol(b,p))
+
     def test_fold_records_padding_and_storage(self):
         for n in range(8):
             x=[CyclotomicRing(5,i) for i in range(n)];r=PulviniRingOperator.fold_vector_p5(x)
@@ -1665,6 +1697,17 @@ class TestProperty(unittest.TestCase):
 
 
 class TestAdversarial(unittest.TestCase):
+    def test_mps_and_ring_malformed_inputs_are_rejected(self):
+        one=CyclotomicRing.one(5)
+        for p in (5.0,True,4):
+            with self.assertRaises(RingError):CyclotomicRing(p,1)
+        with self.assertRaises(RingError):CyclotomicRing(5,[True,0,0,0])
+        with self.assertRaises(RingError):CyclotomicRing.zeta(5,1.5)
+        with self.assertRaises(RingError):one.sigma(1.5)
+        with self.assertRaises(RingError):legendre_symbol(1,4)
+        for cores in ([[[[one,one]]]], [[[[one]]],[[[one,one]]]], [[[[CyclotomicRing.one(7)]]]]):
+            with self.subTest(cores=cores),self.assertRaises(RingError):TensorMPSRingEngine.contract_mps(5,cores)
+
     def test_reject_mismatched_ring_and_inexact_vectors(self):
         one=CyclotomicRing.one(5)
         with self.assertRaises(RingError):MatrixRing(5,1,1,[[CyclotomicRing.one(7)]])
@@ -1774,6 +1817,11 @@ class TestAdversarial(unittest.TestCase):
 
 
 class TestEdge(unittest.TestCase):
+    def test_mps_empty_and_cutoff_edges(self):
+        self.assertEqual(TensorMPSRingEngine.contract_mps(5,[],1),([],CyclotomicRing.zero(5),[]))
+        for cutoff in (0,-1,True):
+            with self.assertRaises(RingError):TensorMPSRingEngine.contract_mps(5,[],cutoff)
+
     def test_empty_fold_and_empty_gram(self):
         r=PulviniRingOperator.fold_vector_p5([]);self.assertEqual(r['original_elements'],0);self.assertIsNone(r['net_compression_ratio'])
         self.assertEqual(PulviniRingOperator.unfold_vector_p5([],[]),[])
@@ -1849,6 +1897,11 @@ class TestEdge(unittest.TestCase):
 
 
 class TestUnit(unittest.TestCase):
+    def test_single_site_mps_unit(self):
+        one=CyclotomicRing.one(5);zero=CyclotomicRing.zero(5)
+        state,tail,discarded=TensorMPSRingEngine.contract_mps(5,[[[[one],[zero]]]])
+        self.assertEqual(state,[one,zero]);self.assertEqual(tail,zero);self.assertEqual(discarded,[zero,zero])
+
     def test_ring_gauss_norm_and_inverse_units(self):
         z=CyclotomicRing.zeta(5);g=CyclotomicRing.gauss_sum(5)
         self.assertEqual(legendre_symbol(1,5),1);self.assertEqual(legendre_symbol(2,5),-1)
@@ -2002,6 +2055,11 @@ class TestUnit(unittest.TestCase):
 
 
 class TestIntegration(unittest.TestCase):
+    def test_exact_mps_to_kernel_and_backend(self):
+        cores=TensorMPSRingEngine.get_ghz3_cores(5);state,_,_=TensorMPSRingEngine.contract_mps(5,cores,2)
+        state=NativeSoftwareBackend().execute_state_evolution(state,MatrixRing.identity(5,8))
+        self.assertEqual(QuantumKernelRingEngine.compute_gram_matrix(5,[state])[0][0],CyclotomicRing(5,4))
+
     def test_feature_gram_and_pulvini_roundtrip(self):
         state=QuantumKernelRingEngine.feature_map(5,[1,2]);fold=PulviniRingOperator.fold_vector_p5(state)
         recovered=[v for pair in PulviniRingOperator.unfold_vector_p5(fold['folded'],fold['kernels']) for v in pair]
@@ -2073,6 +2131,12 @@ class TestIntegration(unittest.TestCase):
 
 
 class TestEndToEnd(unittest.TestCase):
+    def test_encoded_byte_controls_exact_mps_measurement(self):
+        payload=bytes([1]);decoded=PackedBitstreamProtocol.decode(PackedBitstreamProtocol.encode(payload),1)[0]
+        one=CyclotomicRing.one(5);zero=CyclotomicRing.zero(5);core=[[[zero],[one]]] if decoded else [[[one],[zero]]]
+        state,_,_=TensorMPSRingEngine.contract_mps(5,[core]);state=NativeSoftwareBackend().execute_state_evolution(state,MatrixRing.identity(5,2))
+        self.assertEqual(state,[zero,one]);self.assertEqual(InfoGeoQFIMEngine.inner_product(state,state),one)
+
     def test_bitstream_to_exact_kernel_measurement(self):
         payload=bytes([1,2]);decoded=PackedBitstreamProtocol.decode(PackedBitstreamProtocol.encode(payload),len(payload))
         state=QuantumKernelRingEngine.feature_map(5,list(decoded))
