@@ -900,39 +900,65 @@ class TopologicalAnyonHomologicalEngine:
         lo,hi=min(det),max(det);sign=1 if det[lo]>0 else -1
         return [sign*det.get(i,0) for i in range(lo,hi+1)]
 
+    @staticmethod
+    def _rank_q(matrix):
+        if not matrix:return 0
+        a=[[Fraction(v) for v in row] for row in matrix];rows=len(a);cols=len(a[0]);rank=0
+        for col in range(cols):
+            pivot=next((i for i in range(rank,rows) if a[i][col]),None)
+            if pivot is None:continue
+            a[rank],a[pivot]=a[pivot],a[rank];v=a[rank][col];a[rank]=[x/v for x in a[rank]]
+            for i in range(rows):
+                if i!=rank and a[i][col]:
+                    k=a[i][col];a[i]=[x-k*y for x,y in zip(a[i],a[rank])]
+            rank+=1
+            if rank==rows:break
+        return rank
+
+    @classmethod
+    def analyze_simplicial_complex(cls,vertices,edges,faces,face_coefficients):
+        """Compute integer boundaries/syndrome and rational Betti numbers.
+
+        Simplices have ascending vertex order. Homology is over Q; this does
+        not compute torsion, decoding performance or an operational QEC code.
+        """
+        if not isinstance(vertices,(list,tuple)) or any(type(x) is not int for x in vertices) or len(set(vertices))!=len(vertices) or len(vertices)>32:
+            raise RingError("Expected at most 32 unique integer vertices")
+        if not isinstance(edges,(list,tuple)) or not isinstance(faces,(list,tuple)) or len(edges)>128 or len(faces)>128:
+            raise RingError("Expected bounded edge and face sequences")
+        def canonical(items,size):
+            if any(not isinstance(item,(tuple,list)) or len(item)!=size or any(type(v) is not int or v not in vertices for v in item) or list(item)!=sorted(set(item)) for item in items):
+                raise RingError("Simplices must contain distinct listed vertices in ascending order")
+            result=[tuple(item) for item in items]
+            if len(set(result))!=len(result):raise RingError("Duplicate simplex")
+            return result
+        edges=canonical(edges,2);faces=canonical(faces,3)
+        if not isinstance(face_coefficients,(tuple,list)) or len(face_coefficients)!=len(faces) or any(type(x) is not int for x in face_coefficients):
+            raise RingError("Expected an integer coefficient per face")
+        vertex_index={v:i for i,v in enumerate(vertices)};edge_index={e:i for i,e in enumerate(edges)}
+        d1=[[0]*len(edges) for _ in vertices];d2=[[0]*len(faces) for _ in edges]
+        for j,(u,v) in enumerate(edges):d1[vertex_index[u]][j]=-1;d1[vertex_index[v]][j]=1
+        for j,(u,v,w) in enumerate(faces):
+            for edge,sign in (((v,w),1),((u,w),-1),((u,v),1)):
+                if edge not in edge_index:raise RingError("Face boundary edge is missing")
+                d2[edge_index[edge]][j]=sign
+        chain_zero=all(sum(d1[i][k]*d2[k][j] for k in range(len(edges)))==0 for i in range(len(vertices)) for j in range(len(faces)))
+        rank1=cls._rank_q(d1);rank2=cls._rank_q(d2)
+        error=[sum(row[j]*face_coefficients[j] for j in range(len(faces))) for row in d2]
+        syndrome=[sum(row[j]*error[j] for j in range(len(edges))) for row in d1]
+        return {"d1":d1,"d2":d2,"boundary_squared_zero":chain_zero,"ranks":[rank1,rank2],
+                "betti_over_q":[len(vertices)-rank1,len(edges)-rank1-rank2,len(faces)-rank2],
+                "boundary_error":error,"syndrome":syndrome}
+
     @classmethod
     def verify_exact_hqec(cls) -> Dict[str, Any]:
-        """Simplicial complex of a tetrahedron: 4 vertices (C0), 6 edges (C1), 4 faces (C2)."""
-        edges = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
-        faces = [(0, 1, 2), (0, 1, 3), (0, 2, 3), (1, 2, 3)]
-
-        d1 = [[0] * 6 for _ in range(4)]
-        for e_idx, (u, v) in enumerate(edges):
-            d1[u][e_idx] = -1
-            d1[v][e_idx] = 1
-
-        d2 = [[0] * 4 for _ in range(6)]
-        for f_idx, (u, v, w) in enumerate(faces):
-            e_vw = edges.index((v, w))
-            e_uw = edges.index((u, w))
-            e_uv = edges.index((u, v))
-            d2[e_vw][f_idx] = 1
-            d2[e_uw][f_idx] = -1
-            d2[e_uv][f_idx] = 1
-
-        d_sq_zero = True
-        for i in range(4):
-            for j in range(4):
-                val = sum(d1[i][k] * d2[k][j] for k in range(6))
-                if val != 0:
-                    d_sq_zero = False
-                    break
-
-        return {
-            "simplicial_complex": "Tetrahedral 2-chain complex",
-            "simplicial_boundary_d_squared_zero": d_sq_zero,
-            "finding": "Boundary composition checked; no general error-correction guarantee."
-        }
+        vertices=[0,1,2,3];edges=list(itertools.combinations(vertices,2));faces=list(itertools.combinations(vertices,3))
+        result=cls.analyze_simplicial_complex(vertices,edges,faces,[1,-1,2,0])
+        return {"simplicial_complex":"Tetrahedral 2-chain complex",
+                "simplicial_boundary_d_squared_zero":result['boundary_squared_zero'],
+                "example_boundary_error":result['boundary_error'],"example_syndrome":result['syndrome'],
+                "betti_over_q":result['betti_over_q'],
+                "finding":"Integer boundary and example syndrome checked; Betti numbers over Q, not torsion or a general error-correction guarantee."}
 
 
 class ExactSpinHamiltonians:
@@ -1602,6 +1628,10 @@ class RefusalSurface:
 # =====================================================================
 
 class TestInvariant(unittest.TestCase):
+    def test_simplicial_tetrahedron_betti_and_syndrome(self):
+        r=TopologicalAnyonHomologicalEngine.verify_exact_hqec()
+        self.assertTrue(r['simplicial_boundary_d_squared_zero']);self.assertEqual(r['betti_over_q'],[1,0,1]);self.assertEqual(r['example_syndrome'],[0]*4)
+
     def test_xxx_hamiltonian_has_exact_spectral_polynomial(self):
         h=ExactSpinHamiltonians.xxx_two_site();i=MatrixRing.identity(5,4)
         self.assertEqual((h-i)*(h+3*i),MatrixRing(5,4,4));self.assertEqual(h.dagger(),h)
@@ -1687,6 +1717,13 @@ class TestInvariant(unittest.TestCase):
 
 
 class TestProperty(unittest.TestCase):
+    def test_random_boundary_chains_have_zero_syndrome(self):
+        import random
+        rng=random.Random(188);vertices=list(range(4));edges=list(itertools.combinations(vertices,2));faces=list(itertools.combinations(vertices,3))
+        for _ in range(20):
+            r=TopologicalAnyonHomologicalEngine.analyze_simplicial_complex(vertices,edges,faces,[rng.randrange(-9,10) for _ in faces])
+            self.assertEqual(r['syndrome'],[0]*4);self.assertEqual(r['betti_over_q'],[1,0,1])
+
     def test_xxx_discrete_evolution_group_law_and_norm(self):
         state=[CyclotomicRing(5,n) for n in (1,2,3,4)]
         for a,b in ((1,2),(-1,4),(0,0),(5,-7)):
@@ -1792,6 +1829,11 @@ class TestProperty(unittest.TestCase):
 
 
 class TestAdversarial(unittest.TestCase):
+    def test_simplicial_complex_rejects_malformed_inputs(self):
+        f=TopologicalAnyonHomologicalEngine.analyze_simplicial_complex
+        for v,e,t,c in (([0,0],[],[],[]),([0,1],[(1,0)],[],[]),([0,1,2],[(0,1)],[(0,1,2)],[1]),([0,1],[(0,1),(0,1)],[],[]),([0],[],[],[0]),([0],[],[],[True])):
+            with self.subTest(v=v,e=e,t=t),self.assertRaises(RingError):f(v,e,t,c)
+
     def test_xxx_rejects_invalid_states_and_steps(self):
         for state,step in (([0]*3,1),([0,0,0,0.5],1),([0]*4,1.5),([0]*4,True)):
             with self.assertRaises(RingError):ExactSpinHamiltonians.evolve_discrete_5(state,step)
@@ -1930,6 +1972,11 @@ class TestAdversarial(unittest.TestCase):
 
 
 class TestEdge(unittest.TestCase):
+    def test_empty_complex_and_unfilled_triangle(self):
+        f=TopologicalAnyonHomologicalEngine.analyze_simplicial_complex
+        self.assertEqual(f([],[],[],[])['betti_over_q'],[0,0,0])
+        self.assertEqual(f([0,1,2],[(0,1),(0,2),(1,2)],[],[])['betti_over_q'],[1,1,0])
+
     def test_xxx_zero_time_and_zero_state(self):
         self.assertEqual(ExactSpinHamiltonians.evolve_discrete_5([1,0,0,0],0),list(map(CyclotomicField5,[1,0,0,0])))
         self.assertEqual(ExactSpinHamiltonians.evolve_discrete_5([0]*4,-1),[CyclotomicField5(0)]*4)
@@ -2023,6 +2070,10 @@ class TestEdge(unittest.TestCase):
 
 
 class TestUnit(unittest.TestCase):
+    def test_filled_triangle_boundary_and_betti(self):
+        r=TopologicalAnyonHomologicalEngine.analyze_simplicial_complex([0,1,2],[(0,1),(0,2),(1,2)],[(0,1,2)],[2])
+        self.assertEqual(r['boundary_error'],[2,-2,2]);self.assertEqual(r['syndrome'],[0,0,0]);self.assertEqual(r['betti_over_q'],[1,0,0])
+
     def test_xxx_exact_matrix_entries(self):
         h=ExactSpinHamiltonians.xxx_two_site()
         expected=[[1,0,0,0],[0,-1,2,0],[0,2,-1,0],[0,0,0,1]]
@@ -2037,6 +2088,8 @@ class TestUnit(unittest.TestCase):
     def test_unscaled_fifth_root_coefficients(self):
         a,b,n=PulviniRingOperator.get_unscaled_p5_weights()
         self.assertEqual(a.v,(-1,0,-1,-1,0));self.assertEqual(b.v,(2,0,1,1,0));self.assertEqual(n.v,(7,0,4,4,0))
+        one=CyclotomicRing.one(5);f,k=PulviniRingOperator.fold_unscaled_pair_p5(one,one)
+        self.assertEqual(PulviniRingOperator.unfold_unscaled_pair_p5(f,k),(CyclotomicField5(1),CyclotomicField5(1)))
 
     def test_single_site_mps_unit(self):
         one=CyclotomicRing.one(5);zero=CyclotomicRing.zero(5)
@@ -2196,6 +2249,10 @@ class TestUnit(unittest.TestCase):
 
 
 class TestIntegration(unittest.TestCase):
+    def test_disconnected_faces_preserve_independent_homology(self):
+        r=TopologicalAnyonHomologicalEngine.analyze_simplicial_complex([0,1,2,3,4,5],[(0,1),(0,2),(1,2),(3,4),(3,5),(4,5)],[(0,1,2),(3,4,5)],[1,-1])
+        self.assertEqual(r['betti_over_q'],[2,0,0]);self.assertEqual(r['syndrome'],[0]*6)
+
     def test_xxx_acts_on_exact_mps_state(self):
         one=CyclotomicRing.one(5);zero=CyclotomicRing.zero(5);cores=[[[[one,zero],[zero,one]]],[[[one],[zero]],[[zero],[one]]]]
         state,_,_=TensorMPSRingEngine.contract_mps(5,cores,2);out=ExactSpinHamiltonians.evolve_discrete_5(state,1)
@@ -2285,6 +2342,10 @@ class TestIntegration(unittest.TestCase):
 
 
 class TestEndToEnd(unittest.TestCase):
+    def test_manifest_exposes_computed_homology_and_syndrome(self):
+        r=run_master_system()['modules']['topological_anyons_and_hqec']
+        self.assertEqual(r['betti_over_q'],[1,0,1]);self.assertEqual(r['example_syndrome'],[0]*4)
+
     def test_xxx_from_packed_payload_to_exact_evolution(self):
         payload=PackedBitstreamProtocol.decode(PackedBitstreamProtocol.encode(bytes([1,0,0,0])),4)
         out=ExactSpinHamiltonians.evolve_discrete_5(list(payload),1)
@@ -2424,6 +2485,9 @@ def run_master_system() -> Dict[str, Any]:
         "hexagons":TopologicalAnyonHomologicalEngine.verify_hexagons(),
         "trefoil_alexander":TopologicalAnyonHomologicalEngine.alexander_polynomial(2,[1,1,1]),
         "boundary_squared_zero":hqec['simplicial_boundary_d_squared_zero'],
+        "example_boundary_error":hqec['example_boundary_error'],
+        "example_syndrome":hqec['example_syndrome'],
+        "betti_over_q":hqec['betti_over_q'],
         "finding":"Fusion dimension and a fixed F gauge with R phases solved over tenth roots; no physical device or general error-correction guarantee."
     }
 
