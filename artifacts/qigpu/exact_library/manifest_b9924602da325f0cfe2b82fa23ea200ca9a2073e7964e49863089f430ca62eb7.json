@@ -1,0 +1,123 @@
+{
+  "coverage_file": "coverage.json",
+  "coverage_summary": {
+    "coverage_percentage": 100.0,
+    "executed_lines": 760,
+    "file": "exact_primitive_library.py",
+    "missing_lines": [],
+    "status": "PASS",
+    "total_executable_lines": 760
+  },
+  "description": "Exact Primitive Library over Cyclotomic Integer Rings Z[zeta_p] Elevated to P(H) and Q(zeta_p)",
+  "elevated_primitives": [
+    "projective_unitary_zeta_p",
+    "fourier_gate_projective",
+    "hadamard_projective",
+    "projective_born_probability",
+    "rational_zeta_p",
+    "field_inverse",
+    "transmission_coefficient_exact",
+    "cayley_evolution",
+    "reduced_density_gram",
+    "exact_renyi_purity",
+    "stabilizer_tableau_zeta_p"
+  ],
+  "gauss_sum_verifications": {
+    "p=11": {
+      "coeffs": [
+        1,
+        2,
+        0,
+        2,
+        2,
+        2,
+        0,
+        0,
+        0,
+        2
+      ],
+      "verified": true
+    },
+    "p=13": {
+      "coeffs": [
+        -1,
+        0,
+        -2,
+        0,
+        0,
+        -2,
+        -2,
+        -2,
+        -2,
+        0,
+        0,
+        -2
+      ],
+      "verified": true
+    },
+    "p=3": {
+      "coeffs": [
+        1,
+        2
+      ],
+      "verified": true
+    },
+    "p=5": {
+      "coeffs": [
+        -1,
+        0,
+        -2,
+        -2
+      ],
+      "verified": true
+    },
+    "p=7": {
+      "coeffs": [
+        1,
+        2,
+        2,
+        0,
+        2,
+        0
+      ],
+      "verified": true
+    }
+  },
+  "package": "src/qigpu/exact/",
+  "primitives": [
+    "state",
+    "superposition",
+    "gates",
+    "interference",
+    "measurement",
+    "entanglement",
+    "tunneling",
+    "annealing",
+    "swarm"
+  ],
+  "refusal_surface": [
+    "hadamard",
+    "normalized_schmidt_coefficients",
+    "continuous_tunneling",
+    "continuous_adiabatic",
+    "quantum_inspired_metaheuristic"
+  ],
+  "test_output_file": "test_output.txt",
+  "test_results": {
+    "errors": 0,
+    "failures": 0,
+    "passed": 64,
+    "seven_classes": [
+      "TestInvariant",
+      "TestProperty",
+      "TestAdversarial",
+      "TestEdge",
+      "TestUnit",
+      "TestIntegration",
+      "TestEndToEnd"
+    ],
+    "total_tests": 64,
+    "was_successful": true
+  },
+  "version": "1.1.0"
+}
