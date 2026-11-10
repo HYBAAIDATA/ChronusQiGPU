@@ -935,6 +935,34 @@ class TopologicalAnyonHomologicalEngine:
         }
 
 
+class ExactSpinHamiltonians:
+    """Exact two-site isotropic XXX Hamiltonian and discrete cyclotomic evolution.
+
+    H=X tensor X + Y tensor Y + Z tensor Z. Although Y alone needs i,
+    Y tensor Y = -J tensor J for the integer J=iY. At t=2*pi*k/5
+    with hbar=1, the two eigenphases lie in Q(zeta_5). Arbitrary times,
+    larger systems, and physical-device implementations are not claimed.
+    """
+    @staticmethod
+    def xxx_two_site(p=5):
+        x=MatrixRing(p,2,2,[[0,1],[1,0]])
+        j=MatrixRing(p,2,2,[[0,1],[-1,0]])
+        z=MatrixRing(p,2,2,[[1,0],[0,-1]])
+        return x.kron(x)-j.kron(j)+z.kron(z)
+
+    @staticmethod
+    def evolve_discrete_5(state,steps):
+        if not isinstance(state,(tuple,list)) or len(state)!=4 or type(steps) is not int:
+            raise RingError("Expected four exact amplitudes and an integer step")
+        vector=[CyclotomicField5(v) for v in state]
+        h=ExactSpinHamiltonians.xxx_two_site(5)
+        acted=[sum((CyclotomicField5(h.data[i][j])*vector[j] for j in range(4)),CyclotomicField5(0)) for i in range(4)]
+        # Eigenprojectors P_triplet=(3I+H)/4 and P_singlet=(I-H)/4.
+        phase_triplet=CyclotomicField5(CyclotomicRing.zeta(5,-steps))
+        phase_singlet=CyclotomicField5(CyclotomicRing.zeta(5,3*steps))
+        return [(phase_triplet*(3*v+hv)+phase_singlet*(v-hv))/4 for v,hv in zip(vector,acted)]
+
+
 # =====================================================================
 # 7. GENERALIZED MPS TENSOR ENGINE & QUANTUM GRAM KERNEL
 # =====================================================================
@@ -1574,6 +1602,10 @@ class RefusalSurface:
 # =====================================================================
 
 class TestInvariant(unittest.TestCase):
+    def test_xxx_hamiltonian_has_exact_spectral_polynomial(self):
+        h=ExactSpinHamiltonians.xxx_two_site();i=MatrixRing.identity(5,4)
+        self.assertEqual((h-i)*(h+3*i),MatrixRing(5,4,4));self.assertEqual(h.dagger(),h)
+
     def test_general_quotient_relation(self):
         x=GeneralAlgebraicNumberField([-5,0,1],[0,1]);five=GeneralAlgebraicNumberField([-5,0,1],[5])
         self.assertEqual(x*x,five)
@@ -1655,6 +1687,13 @@ class TestInvariant(unittest.TestCase):
 
 
 class TestProperty(unittest.TestCase):
+    def test_xxx_discrete_evolution_group_law_and_norm(self):
+        state=[CyclotomicRing(5,n) for n in (1,2,3,4)]
+        for a,b in ((1,2),(-1,4),(0,0),(5,-7)):
+            evolved=ExactSpinHamiltonians.evolve_discrete_5(state,a)
+            self.assertEqual(ExactSpinHamiltonians.evolve_discrete_5(evolved,b),ExactSpinHamiltonians.evolve_discrete_5(state,a+b))
+            norm=sum((x.sigma(4)*x for x in evolved),CyclotomicField5(0));self.assertEqual(norm,30)
+
     def test_general_quotient_distributivity(self):
         for i in range(-3,4):
             a=GeneralAlgebraicNumberField([-5,0,1],[i,1]);b=GeneralAlgebraicNumberField([-5,0,1],[2,i]);c=GeneralAlgebraicNumberField([-5,0,1],[1,-1])
@@ -1753,6 +1792,11 @@ class TestProperty(unittest.TestCase):
 
 
 class TestAdversarial(unittest.TestCase):
+    def test_xxx_rejects_invalid_states_and_steps(self):
+        for state,step in (([0]*3,1),([0,0,0,0.5],1),([0]*4,1.5),([0]*4,True)):
+            with self.assertRaises(RingError):ExactSpinHamiltonians.evolve_discrete_5(state,step)
+        with self.assertRaises(RingError):ExactSpinHamiltonians.xxx_two_site(4)
+
     def test_general_quotient_rejects_inexact_and_incompatible(self):
         for poly,coeffs in (([],[]),([1],[]),([1,2],[1]),([-5,0,1],[0.5]),([1.0,1],[1]),([-5,0,1],[True])):
             with self.subTest(poly=poly,coeffs=coeffs),self.assertRaises(RingError):GeneralAlgebraicNumberField(poly,coeffs)
@@ -1886,6 +1930,10 @@ class TestAdversarial(unittest.TestCase):
 
 
 class TestEdge(unittest.TestCase):
+    def test_xxx_zero_time_and_zero_state(self):
+        self.assertEqual(ExactSpinHamiltonians.evolve_discrete_5([1,0,0,0],0),list(map(CyclotomicField5,[1,0,0,0])))
+        self.assertEqual(ExactSpinHamiltonians.evolve_discrete_5([0]*4,-1),[CyclotomicField5(0)]*4)
+
     def test_reducible_quotient_has_zero_divisors(self):
         a=GeneralAlgebraicNumberField([-1,0,1],[-1,1]);b=GeneralAlgebraicNumberField([-1,0,1],[1,1]);z=GeneralAlgebraicNumberField([-1,0,1],[])
         self.assertNotEqual(a,z);self.assertNotEqual(b,z);self.assertEqual(a*b,z)
@@ -1975,6 +2023,13 @@ class TestEdge(unittest.TestCase):
 
 
 class TestUnit(unittest.TestCase):
+    def test_xxx_exact_matrix_entries(self):
+        h=ExactSpinHamiltonians.xxx_two_site()
+        expected=[[1,0,0,0],[0,-1,2,0],[0,2,-1,0],[0,0,0,1]]
+        self.assertEqual(h,MatrixRing(5,4,4,expected))
+        z=CyclotomicField5(CyclotomicRing.zeta(5))
+        self.assertEqual(ExactSpinHamiltonians.evolve_discrete_5([1,0,0,0],1),[z.inverse(),CyclotomicField5(0),CyclotomicField5(0),CyclotomicField5(0)])
+
     def test_quotient_reduces_exact_rationals(self):
         x=GeneralAlgebraicNumberField([-5,0,1],[Fraction(1,2),Fraction(1,2)])
         self.assertEqual(x*x,x+GeneralAlgebraicNumberField([-5,0,1],[1]))
@@ -2141,6 +2196,11 @@ class TestUnit(unittest.TestCase):
 
 
 class TestIntegration(unittest.TestCase):
+    def test_xxx_acts_on_exact_mps_state(self):
+        one=CyclotomicRing.one(5);zero=CyclotomicRing.zero(5);cores=[[[[one,zero],[zero,one]]],[[[one],[zero]],[[zero],[one]]]]
+        state,_,_=TensorMPSRingEngine.contract_mps(5,cores,2);out=ExactSpinHamiltonians.evolve_discrete_5(state,1)
+        phase=CyclotomicField5(CyclotomicRing.zeta(5,-1));self.assertEqual(out,[phase,CyclotomicField5(0),CyclotomicField5(0),phase])
+
     def test_golden_number_field_matches_cyclotomic_norm(self):
         phi,one=GeneralAlgebraicNumberField.make_golden_ratio();self.assertEqual(phi*phi,phi+one)
         a,b,_=PulviniRingOperator.get_unscaled_p5_weights();self.assertEqual(a+b,1)
@@ -2225,6 +2285,12 @@ class TestIntegration(unittest.TestCase):
 
 
 class TestEndToEnd(unittest.TestCase):
+    def test_xxx_from_packed_payload_to_exact_evolution(self):
+        payload=PackedBitstreamProtocol.decode(PackedBitstreamProtocol.encode(bytes([1,0,0,0])),4)
+        out=ExactSpinHamiltonians.evolve_discrete_5(list(payload),1)
+        self.assertEqual(out[0],CyclotomicField5(CyclotomicRing.zeta(5,-1)))
+        self.assertTrue(run_master_system()['modules']['exact_spin_hamiltonian']['minimal_polynomial_verified'])
+
     def test_manifest_discloses_irreducibility_assumption(self):
         self.assertIn('not tested for irreducibility',run_master_system()['modules']['general_algebraic_fields']['quotient_finding'])
 
@@ -2360,6 +2426,13 @@ def run_master_system() -> Dict[str, Any]:
         "boundary_squared_zero":hqec['simplicial_boundary_d_squared_zero'],
         "finding":"Fusion dimension and a fixed F gauge with R phases solved over tenth roots; no physical device or general error-correction guarantee."
     }
+
+    h=ExactSpinHamiltonians.xxx_two_site();identity4=MatrixRing.identity(5,4)
+    manifest["modules"]["exact_spin_hamiltonian"]={
+        "hamiltonian":"two-site XXX: XX+YY+ZZ",
+        "minimal_polynomial_verified":(h-identity4)*(h+3*identity4)==MatrixRing(5,4,4),
+        "evolution":"Q(zeta_5) at t=2*pi*k/5, hbar=1; exact spectral projectors",
+        "finding":"No arbitrary-time evolution, larger-system implementation or physical hardware claim."}
 
     # 7. Explicit finite tensor-network measurements, not substituted formulas.
     manifest["modules"]["holographic_mera"]={
