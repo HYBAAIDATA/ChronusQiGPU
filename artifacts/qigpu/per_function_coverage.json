@@ -1,0 +1,388 @@
+{
+  "functions": {
+    "CrossParadigmComposition.run_composition_test": {
+      "executed_lines": 18,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "CyclotomicField5.inverse": {
+      "executed_lines": 7,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "CyclotomicField5.is_real": {
+      "executed_lines": 1,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "CyclotomicField5.sigma": {
+      "executed_lines": 5,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "CyclotomicRing.conj": {
+      "executed_lines": 2,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "CyclotomicRing.embed_rational": {
+      "executed_lines": 5,
+      "missing_lines": [
+        118
+      ],
+      "statement_percent": 83.33
+    },
+    "CyclotomicRing.gauss_sum": {
+      "executed_lines": 5,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "CyclotomicRing.inv": {
+      "executed_lines": 8,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "CyclotomicRing.is_one": {
+      "executed_lines": 2,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "CyclotomicRing.is_zero": {
+      "executed_lines": 2,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "CyclotomicRing.norm": {
+      "executed_lines": 6,
+      "missing_lines": [
+        228
+      ],
+      "statement_percent": 85.71
+    },
+    "CyclotomicRing.one": {
+      "executed_lines": 4,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "CyclotomicRing.sigma": {
+      "executed_lines": 8,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "CyclotomicRing.zero": {
+      "executed_lines": 2,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "CyclotomicRing.zeta": {
+      "executed_lines": 4,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "DataSystemRealisation.run_benchmark": {
+      "executed_lines": 23,
+      "missing_lines": [
+        1207
+      ],
+      "statement_percent": 95.83
+    },
+    "FibonacciBraidModel.derive_fusion_data": {
+      "executed_lines": 3,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "FibonacciBraidModel.execute": {
+      "executed_lines": 19,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "FibonacciBraidModel.matrices": {
+      "executed_lines": 6,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "FunctorialCategoricalCompiler.R_matrix": {
+      "executed_lines": 6,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "FunctorialCategoricalCompiler.compile_qasm_ir": {
+      "executed_lines": 11,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "FunctorialCategoricalCompiler.get_lean4_specification_reference": {
+      "executed_lines": 2,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "FunctorialCategoricalCompiler.verify_dagger_compact_axioms": {
+      "executed_lines": 5,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "FunctorialCategoricalCompiler.verify_yang_baxter_all_roots": {
+      "executed_lines": 12,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "FunctorialCategoricalCompiler.zx_spider_fusion": {
+      "executed_lines": 5,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "GeneralAlgebraicNumberField.make_golden_ratio": {
+      "executed_lines": 5,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "HardwareMultiplierTree.evaluate_timing": {
+      "executed_lines": 7,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "HolographicMERAEngine.causal_cone": {
+      "executed_lines": 9,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "HolographicMERAEngine.contract": {
+      "executed_lines": 18,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "HolographicMERAEngine.entropy_report": {
+      "executed_lines": 8,
+      "missing_lines": [
+        1092
+      ],
+      "statement_percent": 88.89
+    },
+    "HolographicMERAEngine.reduced_state": {
+      "executed_lines": 11,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "IBackend.execute_state_evolution": {
+      "executed_lines": 1,
+      "missing_lines": [
+        1286
+      ],
+      "statement_percent": 50.0
+    },
+    "InfoGeoQFIMEngine.compute_polynomial_qfim": {
+      "executed_lines": 18,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "InfoGeoQFIMEngine.inner_product": {
+      "executed_lines": 9,
+      "missing_lines": [
+        694
+      ],
+      "statement_percent": 90.0
+    },
+    "InfoGeoQFIMEngine.polynomial_ansatz": {
+      "executed_lines": 4,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "InfoGeoQFIMEngine.step_geodesic_stereographic": {
+      "executed_lines": 9,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "MatrixRing.dagger": {
+      "executed_lines": 6,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "MatrixRing.identity": {
+      "executed_lines": 6,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "MatrixRing.kron": {
+      "executed_lines": 13,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "MatrixRing.transpose": {
+      "executed_lines": 6,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "MorphismRing.compose": {
+      "executed_lines": 4,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "MorphismRing.dagger": {
+      "executed_lines": 2,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "MorphismRing.identity": {
+      "executed_lines": 2,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "MorphismRing.is_identity": {
+      "executed_lines": 4,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "MorphismRing.tensor": {
+      "executed_lines": 4,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "NativeSoftwareBackend.execute_state_evolution": {
+      "executed_lines": 18,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "PackedBitstreamProtocol.decode": {
+      "executed_lines": 23,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "PackedBitstreamProtocol.encode": {
+      "executed_lines": 16,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "PhotonicMZIModel.execute": {
+      "executed_lines": 7,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "PulviniRingOperator.fold_pair_p5": {
+      "executed_lines": 5,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "PulviniRingOperator.fold_vector_p5": {
+      "executed_lines": 14,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "PulviniRingOperator.get_p5_weights": {
+      "executed_lines": 6,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "PulviniRingOperator.p5_weights_finding": {
+      "executed_lines": 2,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "PulviniRingOperator.p7_obstruction_record": {
+      "executed_lines": 2,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "PulviniRingOperator.unfold_pair_p5": {
+      "executed_lines": 5,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "PulviniRingOperator.unfold_vector_p5": {
+      "executed_lines": 9,
+      "missing_lines": [
+        487
+      ],
+      "statement_percent": 90.0
+    },
+    "QuantumKernelRingEngine.compute_gram_matrix": {
+      "executed_lines": 17,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "QuantumKernelRingEngine.feature_map": {
+      "executed_lines": 12,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "RefusalSurface.formal_non_claims": {
+      "executed_lines": 2,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "RefusalSurface.measured_kernel_crossover": {
+      "executed_lines": 21,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "RydbergDiagonalModel.execute": {
+      "executed_lines": 7,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "TensorMPSRingEngine.contract_mps": {
+      "executed_lines": 62,
+      "missing_lines": [
+        910
+      ],
+      "statement_percent": 98.41
+    },
+    "TensorMPSRingEngine.get_ghz3_cores": {
+      "executed_lines": 7,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "TensorSystemRealisation.run_benchmark": {
+      "executed_lines": 26,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "TopologicalAnyonHomologicalEngine.alexander_polynomial": {
+      "executed_lines": 32,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "TopologicalAnyonHomologicalEngine.verify_exact_hqec": {
+      "executed_lines": 21,
+      "missing_lines": [
+        890,
+        891
+      ],
+      "statement_percent": 91.3
+    },
+    "TopologicalAnyonHomologicalEngine.verify_hexagons": {
+      "executed_lines": 26,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "TopologicalAnyonHomologicalEngine.verify_pentagon": {
+      "executed_lines": 12,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    },
+    "is_prime": {
+      "executed_lines": 9,
+      "missing_lines": [
+        41,
+        43,
+        49,
+        50,
+        51,
+        52
+      ],
+      "statement_percent": 60.0
+    },
+    "legendre_symbol": {
+      "executed_lines": 5,
+      "missing_lines": [
+        59
+      ],
+      "statement_percent": 83.33
+    },
+    "run_master_system": {
+      "executed_lines": 41,
+      "missing_lines": [],
+      "statement_percent": 100.0
+    }
+  },
+  "method": "Executed statement lines by function; not proof of semantic coverage or seven-class completeness."
+}
