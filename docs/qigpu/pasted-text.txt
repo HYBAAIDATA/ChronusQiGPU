@@ -6,11 +6,9 @@ Bridging all theoretical paradigms, structural proofs, empirical baselines,
 hardware synthesizable targets, and formal refusal boundaries into one unified,
 Experimental mathematical prototype; not a production system.
 
-WORK IN PROGRESS: The backend identity claim has been removed and replaced
-with a bounded braid model and software execution. The legacy MERA formulas,
-anyon/HQEC assertions, float geodesics, and 14.2x memory claim remain unverified
-or known incorrect. Their outputs are not evidence of those capabilities.
-Do not rely on this file for production or physical hardware claims.
+WORK IN PROGRESS: Exact finite models and checks have bounded scope. Critical
+CFT scaling, general backend equivalence, full HQEC and physical-device
+performance are not established. Do not rely on this file for production.
 
 Substrate: Parameterized Cyclotomic Integer Ring Z[zeta_p] & Fraction Field Q(zeta_p)
 Some exact operations coexist with floating-point and unverified example code. See findings below.
@@ -1080,52 +1078,49 @@ class HolographicMERAEngine:
 # =====================================================================
 
 class PackedBitstreamProtocol:
-    """9-bit radix-5 serializer mitigating 16x memory expansion footprint."""
+    """Canonical nine-bit radix-5 encoding; expands bytes before padding."""
     @staticmethod
     def encode(payload: bytes) -> bytes:
-        tokens = []
-        for b in payload:
-            q = b // 5
-            r = b % 5
-            tok = (q << 3) | (r & 0x07)
-            tokens.append(tok)
-        bit_buf = 0
-        bit_count = 0
+        if not isinstance(payload, bytes):
+            raise ValueError("payload must be bytes")
+        accumulator = count = 0
         out = bytearray()
-        for tok in tokens:
-            bit_buf = (bit_buf << 9) | (tok & 0x1FF)
-            bit_count += 9
-            while bit_count >= 8:
-                bit_count -= 8
-                byte_val = (bit_buf >> bit_count) & 0xFF
-                out.append(byte_val)
-        if bit_count > 0:
-            out.append((bit_buf << (8 - bit_count)) & 0xFF)
+        for value in payload:
+            q, r = divmod(value, 5)
+            accumulator = (accumulator << 9) | (q << 3) | r
+            count += 9
+            while count >= 8:
+                count -= 8
+                out.append((accumulator >> count) & 255)
+                accumulator &= (1 << count) - 1
+        if count:
+            out.append(accumulator << (8 - count))
         return bytes(out)
 
     @staticmethod
     def decode(packed: bytes, original_len: int) -> bytes:
-        bit_buf = 0
-        bit_count = 0
-        byte_idx = 0
-        tokens = []
+        if not isinstance(packed, bytes) or type(original_len) is not int or original_len < 0:
+            raise ValueError("expected bytes and a nonnegative integer length")
+        if len(packed) != (9 * original_len + 7) // 8:
+            raise ValueError("packed length does not match original length")
+        accumulator = count = index = 0
+        out = bytearray()
         for _ in range(original_len):
-            while bit_count < 9 and byte_idx < len(packed):
-                bit_buf = (bit_buf << 8) | packed[byte_idx]
-                bit_count += 8
-                byte_idx += 1
-            if bit_count >= 9:
-                bit_count -= 9
-                tok = (bit_buf >> bit_count) & 0x1FF
-                tokens.append(tok)
-            else:
-                break
-        res = bytearray()
-        for tok in tokens:
-            q = (tok >> 3) & 0x3F
-            r = tok & 0x07
-            res.append(min(255, max(0, q * 5 + r)))
-        return bytes(res)
+            while count < 9:
+                accumulator = (accumulator << 8) | packed[index]
+                count += 8
+                index += 1
+            count -= 9
+            token = (accumulator >> count) & 511
+            accumulator &= (1 << count) - 1
+            q, r = token >> 3, token & 7
+            value = 5 * q + r
+            if r > 4 or value > 255:
+                raise ValueError("noncanonical radix-5 token")
+            out.append(value)
+        if accumulator:
+            raise ValueError("nonzero padding")
+        return bytes(out)
 
 
 # =====================================================================
@@ -1133,7 +1128,7 @@ class PackedBitstreamProtocol:
 # =====================================================================
 
 class TensorSystemRealisation:
-    """C1: Float64 baseline vs exact ring MPS contraction across 32 fold depths."""
+    """Time an exact MPS contraction and measure a separate fold drift sweep."""
     @classmethod
     def run_benchmark(cls) -> Dict[str, Any]:
         p = 5
@@ -1142,10 +1137,6 @@ class TensorSystemRealisation:
         t0 = time.perf_counter()
         rec_exact, tail_norm, _ = TensorMPSRingEngine.contract_mps(p, [A1, A2, A3], chi=2)
         t_exact = time.perf_counter() - t0
-
-        t1 = time.perf_counter()
-        fp_rec = [1.0 + 0.0j, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0 + 0.0j]
-        t_fp = time.perf_counter() - t1
 
         # Drift sweep across recursive fold depths
         tol = 1e-12
@@ -1175,9 +1166,8 @@ class TensorSystemRealisation:
         return {
             "workload": "GHZ3 Multi-Site MPS Contraction & Fold Drift Sweep",
             "exact_time_sec": t_exact,
-            "fp_baseline_time_sec": t_fp,
-            "exact_drift_at_all_depths": 0.0,
-            "float64_tolerance_1e12_exceeded_depth": depth_failure or 8,
+            "fp_baseline_finding": "No floating-point MPS contraction was timed.",
+            "float64_tolerance_1e12_exceeded_depth": depth_failure,
             "chi2_tail_norm": tail_norm.v,
             "status": "NOMINAL_EXACT"
         }
@@ -1187,6 +1177,8 @@ class DataSystemRealisation:
     """C2: Real 1024-byte payload bit-for-bit verified roundtrip & packed bitstream ledger."""
     @classmethod
     def run_benchmark(cls, num_bytes: int = 1024) -> Dict[str, Any]:
+        if type(num_bytes) is not int or num_bytes < 0:
+            raise ValueError("num_bytes must be a nonnegative integer")
         p = 5
         payload = bytes([(i * 37 + 13) % 256 for i in range(num_bytes)])
 
@@ -1195,20 +1187,15 @@ class DataSystemRealisation:
         for b in payload:
             q = b // 5
             r = b % 5
-            elem = CyclotomicRing.zeta(p, r) * CyclotomicRing.embed_rational(p, q)
+            elem = CyclotomicRing(p, [q, r, 0, 0, 0])
             ring_encoded.append(elem)
         t_enc = time.perf_counter() - t0
 
         t1 = time.perf_counter()
         decoded_bytes = bytearray()
         for elem in ring_encoded:
-            r = 0
-            for idx in range(1, 5):
-                if elem.v[idx] != 0:
-                    r = idx
-                    break
-            q = elem.v[0] if r == 0 else elem.v[r]
-            decoded_bytes.append(min(255, max(0, q * 5 + r)))
+            q, r = elem.v[:2]
+            decoded_bytes.append(q * 5 + r)
         t_dec = time.perf_counter() - t1
 
         bit_for_bit = (bytes(decoded_bytes) == payload)
@@ -1220,18 +1207,16 @@ class DataSystemRealisation:
         return {
             "payload_bytes": num_bytes,
             "bit_for_bit_roundtrip": bit_for_bit,
-            "raw_ring_compression_ratio": 0.0625,
-            "packed_bitstream_ratio": float(len(payload)) / float(len(packed)),
+            "packed_bitstream_ratio": len(payload) / len(packed) if packed else None,
+            "packing_finding": "Nine encoded bits per input byte before byte padding; no memory saving or storage baseline measured.",
             "packed_bit_for_bit": packed_bit_for_bit,
             "encode_time_sec": t_enc,
-            "decode_time_sec": t_dec,
-            "write_amplification": 1.0,
-            "memory_saving_factor": 14.2
+            "decode_time_sec": t_dec
         }
 
 
 class CrossParadigmComposition:
-    """C4: Unified cross-paradigm composition theorem proof across all structural layers."""
+    """Check one concrete categorical, MPS and kernel example."""
     @classmethod
     def run_composition_test(cls) -> Dict[str, Any]:
         p = 5
@@ -1261,11 +1246,11 @@ class CrossParadigmComposition:
 
         return {
             "composition_pipeline": "Categorical Unitary -> MPS Contraction -> Kernel Gram Matrix",
-            "schmidt_rank_preserved": True,
+            "schmidt_rank_finding": "Schmidt rank not computed.",
             "mps_reconstruction_exact": (rec_mps[:4] == evolved_state),
             "tail_norm_zero": tail.is_zero(),
             "gram_diagonal_matches_norm_squared": (diag_val == 4),
-            "status": "COMPOSITION_VERIFIED"
+            "status": "COMPOSITION_VERIFIED" if rec_mps[:4] == evolved_state and tail.is_zero() and diag_val == 4 else "COMPOSITION_FAILED"
         }
 
 
@@ -1416,11 +1401,11 @@ class RefusalSurface:
                 "classical_wall_sec": t_class,
                 "quantum_exact_wall_sec": t_quant,
                 "ratio_quantum_to_classical": ratio,
-                "verdict": "NEGATIVE_CROSSOVER (Classical Faster)" if ratio > 1.0 else "Quantum Advantage"
+                "verdict": "classical loop faster" if ratio > 1.0 else "ring loop faster; quantum advantage not established"
             })
         return {
             "datapoints": results,
-            "finding": "The crossover measured is strictly for the discrete product feature map, whose classical equivalent is O(n^2 * 2^n); the quantum advantage is in the entangled feature map, which is NOT implemented."
+            "finding": "These Python timings compare different calculations, not equivalent workloads; no quantum advantage or physical quantum execution is established."
         }
 
     @classmethod
@@ -1441,6 +1426,12 @@ class RefusalSurface:
 # =====================================================================
 
 class TestInvariant(unittest.TestCase):
+    def test_bitstream_full_alphabet_is_bijective(self):
+        payload = bytes(range(256))
+        packed = PackedBitstreamProtocol.encode(payload)
+        self.assertEqual(len(packed), 288)
+        self.assertEqual(PackedBitstreamProtocol.decode(packed, 256), payload)
+
     def test_fibonacci_all_pentagons_and_hexagons(self):
         c=TopologicalAnyonHomologicalEngine;self.assertTrue(c.verify_pentagon()['verified']);self.assertTrue(c.verify_hexagons()['verified'])
 
@@ -1489,6 +1480,15 @@ class TestInvariant(unittest.TestCase):
 
 
 class TestProperty(unittest.TestCase):
+    def test_bitstream_random_payloads_and_padding(self):
+        import random
+        rng = random.Random(712)
+        for size in range(65):
+            payload = bytes(rng.randrange(256) for _ in range(size))
+            packed = PackedBitstreamProtocol.encode(payload)
+            self.assertEqual(len(packed), (9 * size + 7) // 8)
+            self.assertEqual(PackedBitstreamProtocol.decode(packed, size), payload)
+
     def test_braid_polynomial_cancels_inverse_pairs(self):
         fn=TopologicalAnyonHomologicalEngine.alexander_polynomial
         for word in ([1,2],[1,-2,1],[-1,2,1,2]):self.assertEqual(fn(3,word),fn(3,word+[1,-1]))
@@ -1542,6 +1542,14 @@ class TestProperty(unittest.TestCase):
 
 
 class TestAdversarial(unittest.TestCase):
+    def test_bitstream_rejects_malformed(self):
+        for data, n in ((b"", 1), (b"\x00", 0), (b"\x02\x80", 1), (b"\xff\x80", 1), (b"\x00\x01", 1)):
+            with self.subTest(data=data, n=n), self.assertRaises(ValueError):
+                PackedBitstreamProtocol.decode(data, n)
+        for n in (-1, True, 1.5):
+            with self.assertRaises(ValueError): PackedBitstreamProtocol.decode(b"", n)
+        with self.assertRaises(ValueError): PackedBitstreamProtocol.encode("not bytes")
+
     def test_category_wrong_f_and_r_fail(self):
         c=TopologicalAnyonHomologicalEngine;self.assertFalse(c.verify_pentagon(MatrixRing.identity(5,2))['verified']);self.assertFalse(c.verify_hexagons(MatrixRing.identity(5,2))['verified'])
     def test_alexander_rejects_bad_braids(self):
@@ -1622,6 +1630,12 @@ class TestAdversarial(unittest.TestCase):
 
 
 class TestEdge(unittest.TestCase):
+    def test_bitstream_boundary_bytes(self):
+        for value in (0, 1, 4, 5, 254, 255):
+            packed = PackedBitstreamProtocol.encode(bytes([value]))
+            self.assertEqual(PackedBitstreamProtocol.decode(packed, 1), bytes([value]))
+        self.assertIsNone(DataSystemRealisation.run_benchmark(0)["packed_bitstream_ratio"])
+
     def test_empty_braid_is_split_unlink(self):
         self.assertEqual(TopologicalAnyonHomologicalEngine.alexander_polynomial(2,[]),[])
     def test_category_rejects_bad_shapes(self):
@@ -1675,6 +1689,14 @@ class TestEdge(unittest.TestCase):
 
 
 class TestUnit(unittest.TestCase):
+    def test_packed_known_vector_and_report(self):
+        self.assertEqual(PackedBitstreamProtocol.encode(bytes([5])), b"\x04\x00")
+        report = DataSystemRealisation.run_benchmark(256)
+        self.assertTrue(report["bit_for_bit_roundtrip"])
+        self.assertEqual(report["packed_bitstream_ratio"], 8 / 9)
+        self.assertNotIn("memory_saving_factor", report)
+        self.assertIn("no memory saving", report["packing_finding"])
+
     def test_trefoil_and_mirror_alexander(self):
         fn=TopologicalAnyonHomologicalEngine.alexander_polynomial
         self.assertEqual(fn(2,[1,1,1]),[1,-1,1]);self.assertEqual(fn(2,[-1,-1,-1]),[1,-1,1])
@@ -1743,6 +1765,13 @@ class TestUnit(unittest.TestCase):
 
 
 class TestIntegration(unittest.TestCase):
+    def test_packed_ring_backend_roundtrip(self):
+        payload = bytes(range(16))
+        data = PackedBitstreamProtocol.decode(PackedBitstreamProtocol.encode(payload), len(payload))
+        state = [CyclotomicRing(5, [b // 5, b % 5, 0, 0, 0]) for b in data]
+        out = NativeSoftwareBackend().execute_state_evolution(state, MatrixRing.identity(5, len(state)))
+        self.assertEqual(bytes(5 * e.v[0] + e.v[1] for e in out), payload)
+
     def test_category_f_r_coherence_with_braid_relation(self):
         f,r=FibonacciBraidModel.matrices();x=f*r*f
         self.assertTrue(TopologicalAnyonHomologicalEngine.verify_pentagon(f)['verified']);self.assertEqual(r*x*r,x*r*x)
@@ -1779,7 +1808,7 @@ class TestIntegration(unittest.TestCase):
     def test_cross_paradigm_composition(self):
         res = CrossParadigmComposition.run_composition_test()
         self.assertEqual(res["status"], "COMPOSITION_VERIFIED")
-        self.assertTrue(res["schmidt_rank_preserved"])
+        self.assertIn("not computed", res["schmidt_rank_finding"])
         self.assertTrue(res["mps_reconstruction_exact"])
 
     def test_braid_and_software_matrix_agree_on_generator(self):
@@ -1790,6 +1819,13 @@ class TestIntegration(unittest.TestCase):
 
 
 class TestEndToEnd(unittest.TestCase):
+    def test_manifest_packing_is_measured_not_saving_claim(self):
+        data = run_master_system()["modules"]["data_system_realisation"]
+        self.assertTrue(data["bit_for_bit_roundtrip"])
+        self.assertTrue(data["packed_bit_for_bit"])
+        self.assertNotIn("memory_saving_factor", data)
+        self.assertEqual(data["packed_bitstream_ratio"], 8 / 9)
+
     def test_anyon_manifest_coherence_and_polynomial(self):
         r=run_master_system()['modules']['topological_anyons_and_hqec'];self.assertTrue(r['pentagon']['verified']);self.assertTrue(r['hexagons']['verified']);self.assertEqual(r['trefoil_alexander'],[1,-1,1])
 
@@ -1822,8 +1858,8 @@ class TestEndToEnd(unittest.TestCase):
 
 def run_master_system() -> Dict[str, Any]:
     manifest = {
-        "system_name": "QiGPU Master Tour de Force Quantum Acceleration System",
-        "posture": "Universal Pure Mathematical Substrate & Agnostic Execution Engine",
+        "system_name": "QiGPU experimental mathematical prototype",
+        "posture": "Bounded exact mathematical models; no universal execution or physical hardware claim",
         "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "modules": {}
     }
@@ -1835,7 +1871,7 @@ def run_master_system() -> Dict[str, Any]:
         "p5_gauss_sum_squared": (g5 * g5).v[0],
         "p7_gauss_sum_squared": (g7 * g7).v[0],
         "parameterized_primes_verified": [5, 7],
-        "ring_exactness": "100% Exact Algebraic Closure (Zero Float Drift)"
+        "ring_exactness": "Exact integer arithmetic for implemented cyclotomic operations; not a proof of every operation."
     }
 
     # 2. General Algebraic Number Fields
@@ -1957,12 +1993,13 @@ if __name__ == '__main__':
         sys.exit(1)
 
     manifest = run_master_system()
-    sha = manifest["manifest_sha256"]
-
-    # Save artifacts locally
+    # The internal digest covers the object before that digest was added; the
+    # filename hash covers the actual complete file bytes.
+    data = json.dumps(manifest, sort_keys=True, indent=2).encode("utf-8")
+    sha = hashlib.sha256(data).hexdigest()
     os.makedirs("artifacts/qigpu", exist_ok=True)
-    with open(f"artifacts/qigpu/manifest_master_{sha[:16]}.json", "w") as f:
-        json.dump(manifest, f, indent=2)
+    with open(f"artifacts/qigpu/manifest_{sha}.json", "wb") as f:
+        f.write(data)
 
     print("==================================================================")
     print("      QiGPU MASTER TOUR DE FORCE ACCELERATION SYSTEM              ")
@@ -1975,7 +2012,7 @@ if __name__ == '__main__':
     print(f"[*] InfoGeo QFIM Quotient in Q(zeta_5): {manifest['modules']['infogeo_qfim']['reduced_quotient']}")
     print("[*] Fibonacci coherence: exact checks of chosen data; physical hardware unverified")
     print(f"[*] Exact Simplicial HQEC (d1 o d2 == 0): {manifest['modules']['topological_anyons_and_hqec']['boundary_squared_zero']}")
-    print(f"[*] Float64 Drift Tolerance 1e-12 Exceeded at Depth: {manifest['modules']['tensor_system_realisation']['float64_tolerance_1e12_exceeded_depth']} (Exact Ring Drift: 0.0)")
+    print(f"[*] Float64 Drift Tolerance 1e-12 Exceeded at Depth: {manifest['modules']['tensor_system_realisation']['float64_tolerance_1e12_exceeded_depth']}")
     print(f"[*] Packed Bitstream Ratio: {manifest['modules']['data_system_realisation']['packed_bitstream_ratio']:.4f} (Roundtrip: {manifest['modules']['data_system_realisation']['packed_bit_for_bit']})")
     print(f"[*] Cross-Paradigm Composition Verified: {manifest['modules']['cross_paradigm_composition']['composition_verified']}")
     print("[*] Execution: exact software and bounded braid model; hardware identity not established")
