@@ -370,6 +370,7 @@ class GeneralAlgebraicNumberField:
             raw = raw + [Fraction(0)] * (self.deg - len(raw))
         elif len(raw) > self.deg:
             raw = self._poly_reduce(raw, self.poly_min)
+        raw += [Fraction(0)] * max(0,self.deg-len(raw))
         self.coeffs = tuple(raw[:self.deg])
 
     @staticmethod
@@ -667,7 +668,7 @@ class CyclotomicField5:
 
 
 class InfoGeoQFIMEngine:
-    """Exact QFIM evaluation as canonical lowest-terms pair in Q(zeta_p) & Riemannian geodesic stepper."""
+    """QFIM quotient and exact-field discrete geodesic step."""
     @staticmethod
     def polynomial_ansatz(p: int, a: CyclotomicRing) -> Tuple[List[CyclotomicRing], List[CyclotomicRing]]:
         psi = [CyclotomicRing.one(p), a, a * a]
@@ -693,42 +694,35 @@ class InfoGeoQFIMEngine:
         num = CyclotomicRing.embed_rational(p, 4) * (d_d * p_p - d_p * p_d)
         den_sq = p_p * p_p
 
-        # Reduction in Q(zeta_5): (24,0,0,0)/9 -> (8,0,0,0)/3
-        g_gcd = math.gcd(num.v[0], den_sq.v[0])
-        if g_gcd > 1 and all(c % g_gcd == 0 for c in num.v):
-            reduced_num = tuple(c // g_gcd for c in num.v)
-            reduced_den = den_sq.v[0] // g_gcd
-        else:
-            reduced_num = num.v
-            reduced_den = den_sq.v[0]
-
-        return {
-            "prime": p,
-            "qfim_numerator_ring": num.v,
-            "qfim_denominator_ring": den_sq.v,
-            "reduced_numerator": reduced_num,
-            "reduced_denominator": reduced_den,
-            "qfim_quotient_string": f"{reduced_num} / {reduced_den}",
-            "denominator_norm": den_sq.norm(),
-            "finding": f"The normalized QFIM is in Q(zeta_{p}); canonical quotient is ({reduced_num})/({reduced_den}) in lowest terms."
-        }
+        # Remove common integer content without discarding nonconstant denominator terms.
+        if den_sq.is_zero(): raise RingError("Zero QFIM denominator")
+        common=0
+        for x in num.v+den_sq.v: common=math.gcd(common,abs(x))
+        common=max(common,1)
+        reduced_num=tuple(x//common for x in num.v)
+        den=tuple(x//common for x in den_sq.v)
+        reduced_den=den[0] if not any(den[1:]) else den
+        return {"prime":p,"qfim_numerator_ring":num.v,"qfim_denominator_ring":den_sq.v,
+                "reduced_numerator":reduced_num,"reduced_denominator":reduced_den,
+                "qfim_quotient_string":f"{reduced_num} / {reduced_den}",
+                "denominator_norm":den_sq.norm(),
+                "finding":"Common integer content removed; algebraic lowest terms not established."}
 
     @staticmethod
-    def step_riemannian_geodesic(theta: float, phi: float, v_theta: float, v_phi: float, dt: float) -> Tuple[float, float, float, float]:
-        """Integrates geodesic equation d^2 x^i / dt^2 + Gamma^i_{jk} (dx^j/dt)(dx^k/dt) = 0."""
-        sin_t = math.sin(theta)
-        cos_t = math.cos(theta)
-        gamma_theta_phiphi = -sin_t * cos_t
-        gamma_phi_thetaphi = cos_t / max(1e-12, sin_t)
+    def step_geodesic_stereographic(u,v,du,dv,dt):
+        """Exact-field second-order step on the round sphere in stereographic coordinates.
 
-        a_theta = -gamma_theta_phiphi * (v_phi ** 2)
-        a_phi = -2.0 * gamma_phi_thetaphi * v_theta * v_phi
-
-        new_theta = theta + v_theta * dt + 0.5 * a_theta * (dt ** 2)
-        new_phi = phi + v_phi * dt + 0.5 * a_phi * (dt ** 2)
-        new_v_theta = v_theta + a_theta * dt
-        new_v_phi = v_phi + a_phi * dt
-        return new_theta, new_phi, new_v_theta, new_v_phi
+        The arithmetic is exact in the real subfield of Q(zeta_5); this finite
+        Taylor step approximates, rather than solves, the continuous trajectory.
+        """
+        u,v,du,dv,dt=[CyclotomicField5(x) for x in (u,v,du,dv,dt)]
+        if not all(x.is_real() for x in (u,v,du,dv,dt)): raise RingError("Coordinates and time must be real")
+        radius=1+u*u+v*v
+        if radius==0: raise RingError("Invalid stereographic metric")
+        dot=u*du+v*dv; speed=du*du+dv*dv
+        au=2*(2*dot*du-speed*u)/radius; av=2*(2*dot*dv-speed*v)/radius
+        half=CyclotomicField5(Fraction(1,2))
+        return (u+du*dt+half*au*dt*dt,v+dv*dt+half*av*dt*dt,du+au*dt,dv+av*dt)
 
 
 # =====================================================================
@@ -1303,6 +1297,10 @@ class RefusalSurface:
 # =====================================================================
 
 class TestInvariant(unittest.TestCase):
+    def test_geodesic_zero_velocity_is_stationary(self):
+        out=InfoGeoQFIMEngine.step_geodesic_stereographic(1,2,0,0,Fraction(1,3))
+        self.assertEqual(out,tuple(map(CyclotomicField5,(1,2,0,0))))
+
     def test_mzi_zero_phases_identity(self):
         self.assertEqual(PhotonicMZIModel.execute([1,2],0,0),[CyclotomicField5(1),CyclotomicField5(2)])
     def test_atom_forward_then_inverse(self):
@@ -1341,6 +1339,15 @@ class TestInvariant(unittest.TestCase):
 
 
 class TestProperty(unittest.TestCase):
+    def test_geodesic_zero_time_identity(self):
+        for n in range(-3,4):
+            out=InfoGeoQFIMEngine.step_geodesic_stereographic(n,1,2,3,0)
+            self.assertEqual(out,tuple(map(CyclotomicField5,(n,1,2,3))))
+    def test_qfim_denominator_not_discarded(self):
+        q=InfoGeoQFIMEngine.compute_polynomial_qfim(5,CyclotomicRing.one(5)+CyclotomicRing.zeta(5))
+        self.assertIsInstance(q['reduced_denominator'],tuple)
+        self.assertEqual(CyclotomicRing(5,q['qfim_numerator_ring'])*CyclotomicRing(5,q['reduced_denominator']),CyclotomicRing(5,q['reduced_numerator'])*CyclotomicRing(5,q['qfim_denominator_ring']))
+
     def test_optical_linearity(self):
         for i in range(-3,4):
             a=PhotonicMZIModel.execute([i,1],1,2); b=PhotonicMZIModel.execute([1,2],1,2); c=PhotonicMZIModel.execute([i+1,3],1,2)
@@ -1376,6 +1383,10 @@ class TestProperty(unittest.TestCase):
 
 
 class TestAdversarial(unittest.TestCase):
+    def test_geodesic_rejects_inexact_and_complex_values(self):
+        with self.assertRaises(RingError): InfoGeoQFIMEngine.step_geodesic_stereographic(0.5,0,1,0,1)
+        with self.assertRaises(RingError): InfoGeoQFIMEngine.step_geodesic_stereographic(CyclotomicRing.zeta(5),0,1,0,1)
+
     def test_model_input_validation(self):
         with self.assertRaises(RingError): PhotonicMZIModel.execute([0],0,0)
         with self.assertRaises(RingError): PhotonicMZIModel.execute([0,0],0.5,0)
@@ -1442,6 +1453,10 @@ class TestAdversarial(unittest.TestCase):
 
 
 class TestEdge(unittest.TestCase):
+    def test_geodesic_origin(self):
+        x=InfoGeoQFIMEngine.step_geodesic_stereographic(0,0,1,0,Fraction(1,10))
+        self.assertEqual(x[0],Fraction(1,10));self.assertEqual(x[2],1)
+
     def test_model_zero_states(self):
         self.assertEqual(PhotonicMZIModel.execute([0,0],3,4),[CyclotomicField5(0)]*2)
         self.assertEqual(RydbergDiagonalModel.execute([CyclotomicRing.zero(5)]*4,4,3),[CyclotomicRing.zero(5)]*4)
@@ -1482,6 +1497,12 @@ class TestEdge(unittest.TestCase):
 
 
 class TestUnit(unittest.TestCase):
+    def test_geodesic_known_exact_step(self):
+        out=InfoGeoQFIMEngine.step_geodesic_stereographic(1,0,1,0,Fraction(1,10))
+        self.assertEqual(out,tuple(map(CyclotomicField5,(Fraction(221,200),0,Fraction(11,10),0))))
+    def test_field_polynomial_reduction_has_padded_basis(self):
+        self.assertEqual(GeneralAlgebraicNumberField([-5,0,1],[0,0,1]),GeneralAlgebraicNumberField([-5,0,1],[5]))
+
     def test_field_inverse_and_exactness(self):
         z=CyclotomicField5(CyclotomicRing.zeta(5)); self.assertEqual((1+z)*(1+z).inverse(),1)
         with self.assertRaises(RingError): CyclotomicField5(0).inverse()
@@ -1535,6 +1556,10 @@ class TestUnit(unittest.TestCase):
 
 
 class TestIntegration(unittest.TestCase):
+    def test_geodesic_real_cyclotomic_input(self):
+        z=CyclotomicRing.zeta(5);u=z+z.conj()
+        self.assertTrue(all(x.is_real() for x in InfoGeoQFIMEngine.step_geodesic_stereographic(u,0,1,0,Fraction(1,4))))
+
     def test_four_models_agree_on_bounded_common_action(self):
         z=CyclotomicRing.zeta(5);o=CyclotomicRing.one(5);n=CyclotomicRing.zero(5);state=[o,CyclotomicRing(5,3)]
         ref=NativeSoftwareBackend().execute_state_evolution(state,MatrixRing(5,2,2,[[z,n],[n,z]]))
@@ -1569,6 +1594,9 @@ class TestIntegration(unittest.TestCase):
 
 
 class TestEndToEnd(unittest.TestCase):
+    def test_geodesic_manifest_exact_example(self):
+        r=run_master_system()['modules']['infogeo_qfim'];self.assertEqual(r['discrete_step_coefficients'][0][0],'221/200');self.assertIn('approximates',r['finding'])
+
     def test_manifest_describes_bounded_comparison(self):
         r=run_master_system()["modules"]["restricted_model_comparison"]
         self.assertTrue(r["equal"]); self.assertIn("one operation only",r["scope"])
@@ -1639,10 +1667,11 @@ def run_master_system() -> Dict[str, Any]:
 
     # 5. InfoGeo QFIM & Geodesics
     qfim = InfoGeoQFIMEngine.compute_polynomial_qfim(5)
-    t_new, p_new, _, _ = InfoGeoQFIMEngine.step_riemannian_geodesic(0.5, 0.5, 0.1, 0.1, 0.01)
+    step=InfoGeoQFIMEngine.step_geodesic_stereographic(1,0,1,0,Fraction(1,10))
     manifest["modules"]["infogeo_qfim"] = {
         "reduced_quotient": qfim["qfim_quotient_string"],
-        "riemannian_geodesic_active": (t_new != 0.5)
+        "discrete_step_coefficients": [[str(c) for c in x.coefficients[:4]] for x in step],
+        "finding": "Exact field arithmetic; finite Taylor integration approximates continuous flow."
     }
 
     # 6. Topological Anyons & Simplicial HQEC
