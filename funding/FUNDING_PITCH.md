@@ -15,8 +15,8 @@ These are the only two market-facing companies to present. Do not describe addit
 
 - **Quantum** is a capability, not a separate market, company, or standalone product category. Describe it only within a specific HYBA Data or HYBA Security offering when accurate and relevant.
 - **Bitcoin mining** is an in-house treasury activity, not a customer product, service, or market offering.
-- Emulate **Stripe, Revolut, NVIDIA, and Google** as benchmarks for the quality and finish of completed products. These are companies to emulate for product quality, not a description of HYBA’s target audience or claims that they are customers, partners, or endorsers.
-- The internal design shorthand “McKinsey–Accenture joint-venture standard” refers only to a quality aspiration. HYBA does not claim affiliation, endorsement, partnership, or a joint venture with either firm.
+- Use McKinsey-style structured, evidence-led thinking and communication to shape the narrative. The finished product should feel like the end result of a hypothetical McKinsey–Accenture joint venture: strategic rigor combined with Accenture-grade product engineering and delivery. This is a quality aspiration only; HYBA does not claim affiliation, endorsement, partnership, or a joint venture with either firm.
+- Emulate **Stripe, Revolut, NVIDIA, and Google** as benchmarks for finished-product quality and polish. They are companies to emulate, not a description of HYBA’s target audience or claims that they are customers, partners, or endorsers.
 
 ## Evidence required before external use
 

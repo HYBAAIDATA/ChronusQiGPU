@@ -4,9 +4,11 @@
 
 ## Design ambition
 
-Build products with the strategic clarity, analytical discipline, and executive communication associated with top-tier management consulting, combined with the enterprise technology delivery quality, service design, and implementation discipline of a leading technology consultancy. The internal shorthand is **“a McKinsey–Accenture joint-venture standard.”** It describes an aspiration for quality only: HYBA has no claimed affiliation, partnership, endorsement, or joint venture with McKinsey or Accenture. Do not use either firm’s logos or imply a relationship.
+HYBA’s working method and communication style should mirror **McKinsey-style strategic thinking**: start from the core problem, structure the analysis, test hypotheses against evidence, prioritize what matters, and communicate the conclusion and recommended action clearly. Use MECE issue structuring where it helps; do not force frameworks where they do not fit. Make the logic, assumptions, evidence, risks, and decisions easy to inspect. This is an internal quality direction, not a claim to use proprietary McKinsey material or to have a relationship with the firm.
 
-Emulate **Stripe, Revolut, NVIDIA, and Google** as benchmarks for the quality and finish of a completed product: clarity, polish, usability, consistency, reliability, and enterprise-grade execution. This is a standard to emulate, not a description of HYBA’s target audience, customer base, partnerships, or endorsements. Do not use their names or logos in a way that implies a business relationship.
+The **finished product** should feel like the end result of a hypothetical **McKinsey–Accenture joint venture**: McKinsey-style strategic framing and analytical rigor realized through Accenture-grade product engineering, service design, integration, implementation, operational reliability, and polish. The JV comparison is an internal product-quality aspiration only. HYBA has no claimed affiliation, partnership, endorsement, or joint venture with McKinsey or Accenture. Do not use their logos or imply a relationship.
+
+Emulate **Stripe, Revolut, NVIDIA, and Google** as benchmarks for the quality and finish of a completed product: clarity, polish, usability, consistency, reliability, and enterprise-grade execution. These are companies to emulate for product quality—not a description of HYBA’s target audience, customer base, partnerships, or endorsements. Do not use their names or logos in a way that implies a business relationship.
 
 ## Company and market boundaries
 
@@ -20,9 +22,9 @@ Emulate **Stripe, Revolut, NVIDIA, and Google** as benchmarks for the quality an
 
 ## Product experience principles
 
-### 1. Lead with the client’s decision or task
+### 1. Lead with the problem, answer, and decision
 
-State the user, problem, outcome, and next action plainly. Put the main conclusion or action first; move supporting detail into a clear hierarchy. Avoid jargon-led introductions and speculative claims.
+State the user’s problem and the main answer or next action first. Organize supporting logic clearly, distinguish facts from assumptions, and make recommendations actionable. Avoid jargon-led introductions and speculative claims.
 
 ### 2. Make evidence visible
 
@@ -59,11 +61,12 @@ Design loading, empty, stale, error, permission-denied, offline, and degraded st
 Before accepting a product or client-facing artifact, confirm:
 
 - [ ] It clearly belongs to HYBA Data or HYBA Security; Chronus is identified as HYBA Data’s product/platform and AL HARAS as HYBA Security.
+- [ ] The reasoning is problem-led, structured, evidence-based, prioritized, and clear about its recommendation.
+- [ ] The finished experience integrates strategic clarity with robust engineering, service design, and delivery quality.
 - [ ] Quantum is framed only as a capability, where relevant.
 - [ ] Bitcoin mining is not presented as a product or customer offering.
-- [ ] The primary user, task, and outcome are clear.
 - [ ] Metrics, statuses, and examples are sourced and labeled accurately.
 - [ ] Main and failure workflows, permissions, and recovery are represented.
 - [ ] Accessibility, responsive behavior, and consistent components are addressed.
 - [ ] No client, partner, endorsement, or affiliation is implied without evidence and authorization.
-- [ ] The result meets the intended consulting-grade clarity and enterprise technology delivery standard without overstating product maturity.
+- [ ] The result meets the intended quality bar without overstating product maturity.

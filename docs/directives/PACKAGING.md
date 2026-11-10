@@ -19,9 +19,11 @@ Do not present other pillars or capabilities as separate market-facing companies
 - Do not create additional market segments or named product families—such as separate Hyperscale, Sovereign, Enterprise, Quantum, Intelligence, or Finance businesses—without explicit owner direction.
 - A capability, prototype, adapter, or source-code component is not by itself a qualified commercial product. State maturity, limits, dependencies, and evidence accurately.
 
-## Product quality standard
+## Thinking and finished-product standard
 
-Products must meet a high bar for strategic clarity, usability, implementation quality, integration, governance, reliability, and operational finish. The internal shorthand is a “McKinsey–Accenture joint-venture standard”; this is a design aspiration only and must never be represented as an actual relationship, endorsement, or joint venture.
+Use McKinsey-style strategic thinking and communication as the working method: frame the problem, structure the analysis, test hypotheses against evidence, prioritize the important issues, and make the recommendation and decision clear.
+
+The finished product should feel like the end result of a hypothetical McKinsey–Accenture joint venture: strategic rigor and clarity realized through Accenture-grade product engineering, service design, integration, implementation, reliability, and fit and finish. This is an internal quality aspiration only—not an actual affiliation, endorsement, partnership, or joint venture.
 
 Emulate **Stripe, Revolut, NVIDIA, and Google** as quality benchmarks for finished products—their level of clarity, polish, usability, consistency, reliability, and execution. These are companies to emulate for product quality, not target-audience definitions or claims that they are HYBA customers, partners, or endorsers. Do not use their names or marks in a way that suggests a relationship.
 
