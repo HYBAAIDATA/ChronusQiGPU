@@ -1,10 +1,9 @@
 {
-  "audit_sha256": "b80183ea80f6a249118b859a5c7b0c328625ac50deaa3b2dcfbb72b8612bac44",
-  "finding": "Aggregate implementation coverage passes 90%; the requested per-function-per-class and exhaustive cross-module criteria remain open.",
-  "github_actions_result": "not yet verified",
-  "local_ci_command": "bash /data/qigpu-ci.sh (equivalent CI commands in .github/workflows/ci.yml)",
-  "local_result": "passed",
-  "per_function_coverage_sha256": "ddebd875030642568f6474fe86da33af785a2f035954614d0bbd7cac3326ea3a",
-  "step": "CI and seven-class coverage audit",
-  "tests_passed": 120
+  "finding": "All identified public functions were touched in unit tests, but touch is not comprehensive behavioral coverage; other classes and cross-module composition remain incomplete. GitHub Actions status was not accessible.",
+  "per_function_coverage_sha256": "a255220aca984d0694e786b67a5b504bffebb7d5006c946cdb430e37faabf658",
+  "public_functions": 71,
+  "seven_class_audit_sha256": "ae3e8216067ae903449def39b12c6c3b408d78a601a18258dab1450b1f6e3a71",
+  "source_sha256": "6a8082453809862fcf574a148f335e263f6e2637273a0794bd40d560190a366b",
+  "test_count": 130,
+  "unit_public_functions_touched": 71
 }

@@ -164,11 +164,9 @@
       "statement_percent": 100.0
     },
     "IBackend.execute_state_evolution": {
-      "executed_lines": 1,
-      "missing_lines": [
-        1286
-      ],
-      "statement_percent": 50.0
+      "executed_lines": 2,
+      "missing_lines": [],
+      "statement_percent": 100.0
     },
     "InfoGeoQFIMEngine.compute_polynomial_qfim": {
       "executed_lines": 18,
@@ -384,5 +382,5 @@
       "statement_percent": 100.0
     }
   },
-  "method": "Executed statement lines by function; not proof of semantic coverage or seven-class completeness."
+  "method": "Executed statement lines by function; includes function-definition lines and is not proof of semantic coverage or seven-class completeness."
 }
