@@ -1,12 +1,19 @@
+"""
 QiGPU Master Tour de Force Quantum Acceleration System
 =============================================================================
 Universal Pure Mathematical Substrate & Substrate-Agnostic Execution Engine
 Bridging all theoretical paradigms, structural proofs, empirical baselines,
 hardware synthesizable targets, and formal refusal boundaries into one unified,
-production-grade master execution system.
+Experimental mathematical prototype; not a production system.
+
+WORK IN PROGRESS: The backend identity claim has been removed and replaced
+with a bounded braid model and software execution. The legacy MERA formulas,
+anyon/HQEC assertions, float geodesics, and 14.2x memory claim remain unverified
+or known incorrect. Their outputs are not evidence of those capabilities.
+Do not rely on this file for production or physical hardware claims.
 
 Substrate: Parameterized Cyclotomic Integer Ring Z[zeta_p] & Fraction Field Q(zeta_p)
-Zero Floating-Point Drift. Zero Approximations. Zero Mocks. Strict Exit Codes.
+Some exact operations coexist with floating-point and unverified example code. See findings below.
 =============================================================================
 """
 
@@ -1074,42 +1081,69 @@ class CrossParadigmComposition:
         }
 
 
-# Universal Hardware-Agnostic Dispatcher Backends
+# Execution models. Only software matrix-vector multiplication is general.
 class IBackend:
-    def execute_state_evolution(self, state: List[CyclotomicRing], gate: MatrixRing) -> List[CyclotomicRing]:
+    def execute_state_evolution(self, state, gate):
         raise NotImplementedError
 
-class NativeSoftwareSIMDBackend(IBackend):
-    def execute_state_evolution(self, state: List[CyclotomicRing], gate: MatrixRing) -> List[CyclotomicRing]:
-        res = [CyclotomicRing.zero(gate.p) for _ in range(len(state))]
-        for i in range(len(state)):
-            for j in range(len(state)):
-                res[i] = res[i] + gate.data[i][j] * state[j]
-        return res
 
-class TopologicalAnyonBraidBackend(IBackend):
-    def execute_state_evolution(self, state: List[CyclotomicRing], gate: MatrixRing) -> List[CyclotomicRing]:
-        res = [CyclotomicRing.zero(gate.p) for _ in range(len(state))]
-        for i in range(len(state)):
-            for j in range(len(state)):
-                res[i] = res[i] + gate.data[i][j] * state[j]
-        return res
+class NativeSoftwareBackend(IBackend):
+    """Exact software matrix-vector multiplication; no SIMD claim."""
+    def execute_state_evolution(self, state, gate):
+        if not isinstance(gate, MatrixRing) or not isinstance(state, (tuple, list)):
+            raise RingError("Expected a matrix and state vector")
+        if len(state) != gate.cols:
+            raise RingError("State length does not match matrix columns")
+        if len(gate.data) != gate.rows or any(len(row) != gate.cols for row in gate.data):
+            raise RingError("Invalid matrix shape")
+        if any(not isinstance(x, CyclotomicRing) or x.p != gate.p for x in state):
+            raise RingError("State entries must belong to the matrix ring")
+        if any(not isinstance(x, CyclotomicRing) or x.p != gate.p for row in gate.data for x in row):
+            raise RingError("Matrix entries must belong to the matrix ring")
+        result = []
+        for row in gate.data:
+            total = CyclotomicRing.zero(gate.p)
+            for element, amplitude in zip(row, state):
+                total = total + element * amplitude
+            result.append(total)
+        return result
 
-class IntegratedPhotonicMZIBackend(IBackend):
-    def execute_state_evolution(self, state: List[CyclotomicRing], gate: MatrixRing) -> List[CyclotomicRing]:
-        res = [CyclotomicRing.zero(gate.p) for _ in range(len(state))]
-        for i in range(len(state)):
-            for j in range(len(state)):
-                res[i] = res[i] + gate.data[i][j] * state[j]
-        return res
 
-class AtomicRydbergConstructorBackend(IBackend):
-    def execute_state_evolution(self, state: List[CyclotomicRing], gate: MatrixRing) -> List[CyclotomicRing]:
-        res = [CyclotomicRing.zero(gate.p) for _ in range(len(state))]
-        for i in range(len(state)):
-            for j in range(len(state)):
-                res[i] = res[i] + gate.data[i][j] * state[j]
-        return res
+class FibonacciBraidModel:
+    """Three tau anyons with total charge tau, in a non-unitary gauge.
+
+    The R phases are chosen category inputs, not uniquely derived from fusion
+    rules. No physical anyon hardware is claimed.
+    """
+    @staticmethod
+    def matrices():
+        z = CyclotomicRing.zeta(5)
+        one, zero = CyclotomicRing.one(5), CyclotomicRing.zero(5)
+        a = -(z ** 2) - z ** 3 - one  # phi - 1 = 1 / phi
+        f = MatrixRing(5, 2, 2, [[a, one], [a, -a]])
+        r = MatrixRing(5, 2, 2, [[z ** 3, zero], [zero, -(z ** 4)]])
+        return f, r
+
+    @staticmethod
+    def execute(state, word):
+        if not isinstance(state, (tuple, list)) or len(state) != 2:
+            raise RingError("A two-component fusion state is required")
+        if any(not isinstance(x, CyclotomicRing) or x.p != 5 for x in state):
+            raise RingError("Fusion amplitudes must be in Z[zeta_5]")
+        if not isinstance(word, (list, tuple)) or any(type(g) is not int or g not in (-2, -1, 1, 2) for g in word):
+            raise RingError("Braid generators must be -2, -1, 1 or 2")
+        z = CyclotomicRing.zeta(5)
+        a = -(z ** 2) - z ** 3 - CyclotomicRing.one(5)
+        r0, r1 = z ** 3, -(z ** 4)
+        x, y = state
+        for g in word:
+            if abs(g) == 2:
+                x, y = a*x + y, a*x - a*y
+            d0, d1 = (r0, r1) if g > 0 else (r0.inv(), r1.inv())
+            x, y = d0*x, d1*y
+            if abs(g) == 2:
+                x, y = a*x + y, a*x - a*y
+        return [x, y]
 
 
 # =====================================================================
@@ -1197,6 +1231,10 @@ class RefusalSurface:
 # =====================================================================
 
 class TestInvariant(unittest.TestCase):
+    def test_braid_relation(self):
+        x = [CyclotomicRing.one(5), CyclotomicRing.zeta(5)]
+        self.assertEqual(FibonacciBraidModel.execute(x,[1,2,1]), FibonacciBraidModel.execute(x,[2,1,2]))
+
     def test_fundamental_ring_identities(self):
         for p in [5, 7]:
             z = CyclotomicRing.zeta(p)
@@ -1225,6 +1263,18 @@ class TestInvariant(unittest.TestCase):
 
 
 class TestProperty(unittest.TestCase):
+    def test_braid_inverse_multiple_states(self):
+        for i in range(8):
+            x=[CyclotomicRing(5,i),CyclotomicRing(5,-i)]
+            self.assertEqual(FibonacciBraidModel.execute(x,[1,2,-2,-1]),x)
+    def test_packing_all_bytes(self):
+        b=bytes(range(256));self.assertEqual(PackedBitstreamProtocol.decode(PackedBitstreamProtocol.encode(b),len(b)),b)
+
+    def test_inverse_braids(self):
+        x = [CyclotomicRing.one(5), CyclotomicRing.zeta(5)]
+        for word in ([1,2],[-1,2,1],[2,2,-1,2]):
+            self.assertEqual(FibonacciBraidModel.execute(x,word+[-g for g in reversed(word)]),x)
+
     def test_ring_commutativity_and_canonical_reduction(self):
         a = CyclotomicRing.zeta(5, 2) + CyclotomicRing.embed_rational(5, 3)
         b = CyclotomicRing.zeta(5, 4) - CyclotomicRing.embed_rational(5, 1)
@@ -1243,6 +1293,51 @@ class TestProperty(unittest.TestCase):
 
 
 class TestAdversarial(unittest.TestCase):
+    def test_backend_rejects_non_matrix(self):
+        with self.assertRaises(RingError): NativeSoftwareBackend().execute_state_evolution([],None)
+    def test_backend_rejects_state_size(self):
+        with self.assertRaises(RingError): NativeSoftwareBackend().execute_state_evolution([],MatrixRing.identity(5,1))
+    def test_backend_rejects_mutated_matrix_shape(self):
+        m=MatrixRing.identity(5,1);m.data=[]
+        with self.assertRaises(RingError): NativeSoftwareBackend().execute_state_evolution([CyclotomicRing.one(5)],m)
+    def test_backend_rejects_mutated_matrix_ring(self):
+        m=MatrixRing.identity(5,1);m.data[0][0]=CyclotomicRing.one(7)
+        with self.assertRaises(RingError): NativeSoftwareBackend().execute_state_evolution([CyclotomicRing.one(5)],m)
+    def test_braid_rejects_bad_state_length(self):
+        with self.assertRaises(RingError): FibonacciBraidModel.execute([],[])
+    def test_braid_rejects_bad_state_ring(self):
+        with self.assertRaises(RingError): FibonacciBraidModel.execute([CyclotomicRing.one(7)]*2,[])
+    def test_ring_rejects_invalid_coefficients(self):
+        for value in ([0,0], [0,0,0,0,'bad'], 'bad'):
+            with self.subTest(value=value),self.assertRaises(RingError): CyclotomicRing(5,value)
+    def test_ring_rejects_invalid_exponent(self):
+        with self.assertRaises(RingError): _=CyclotomicRing.one(5)**0.5
+    def test_ring_rejects_invalid_automorphism(self):
+        with self.assertRaises(RingError): CyclotomicRing.one(5).sigma(5)
+    def test_ring_rejects_mixed_operations(self):
+        a,b=CyclotomicRing.one(5),CyclotomicRing.one(7)
+        for op in (lambda:a+b,lambda:a-b,lambda:a*b):
+            with self.assertRaises(RingError): op()
+    def test_matrix_rejects_bad_shape(self):
+        with self.assertRaises(RingError): MatrixRing(5,2,2,[[1]])
+    def test_matrix_rejects_ring_mismatch(self):
+        a,b=MatrixRing.identity(5,2),MatrixRing.identity(7,2)
+        for op in (lambda:a+b,lambda:a-b,lambda:a*b,lambda:a.kron(b)):
+            with self.assertRaises(RingError): op()
+    def test_morphism_rejects_dimension_mismatch(self):
+        with self.assertRaises(RingError): MorphismRing(5,1,2,MatrixRing.identity(5,2))
+    def test_morphism_rejects_mixed_composition(self):
+        a,b=MorphismRing.identity(5,1),MorphismRing.identity(7,1)
+        for op in (lambda:a.compose(b),lambda:a.tensor(b)):
+            with self.assertRaises(RingError): op()
+
+    def test_braid_rejects_invalid_input(self):
+        for word in ([0],[3],[True],[1.0],"1"):
+            with self.subTest(word=word), self.assertRaises(RingError):
+                FibonacciBraidModel.execute([CyclotomicRing.one(5)]*2,word)
+        with self.assertRaises(RingError):
+            NativeSoftwareBackend().execute_state_evolution([CyclotomicRing.one(7)],MatrixRing.identity(5,1))
+
     def test_rejection_of_floats_and_non_primes(self):
         with self.assertRaises(RingError):
             CyclotomicRing(5, 3.14159)
@@ -1258,6 +1353,25 @@ class TestAdversarial(unittest.TestCase):
 
 
 class TestEdge(unittest.TestCase):
+    def test_empty_matrix(self):
+        self.assertEqual(NativeSoftwareBackend().execute_state_evolution([],MatrixRing(5,0,0)),[])
+    def test_empty_gram(self):
+        self.assertEqual(QuantumKernelRingEngine.compute_gram_matrix(5,[]),[])
+    def test_empty_packed_stream(self):
+        self.assertEqual(PackedBitstreamProtocol.decode(PackedBitstreamProtocol.encode(b""),0),b"")
+    def test_ring_negative_exponent(self):
+        self.assertEqual(CyclotomicRing.zeta(5)**-1,CyclotomicRing.zeta(5,4))
+    def test_odd_fold_vector(self):
+        r=PulviniRingOperator.fold_vector_p5([CyclotomicRing.one(5)])
+        self.assertEqual(r['original_elements'],2)
+    def test_non_square_morphism_not_identity(self):
+        self.assertFalse(MorphismRing(5,1,2,MatrixRing(5,2,1)).is_identity())
+
+    def test_empty_braid_and_rectangular_backend(self):
+        x=[CyclotomicRing.one(5),CyclotomicRing.zeta(5)]
+        self.assertEqual(FibonacciBraidModel.execute(x,[]),x)
+        self.assertEqual(NativeSoftwareBackend().execute_state_evolution(x,MatrixRing(5,1,2,[[1,1]])),[x[0]+x[1]])
+
     def test_zero_and_one_elements(self):
         for p in [5, 7]:
             z = CyclotomicRing.zero(p)
@@ -1275,6 +1389,38 @@ class TestEdge(unittest.TestCase):
 
 
 class TestUnit(unittest.TestCase):
+    def test_ring_scalar_operations(self):
+        a=CyclotomicRing.one(5)
+        self.assertEqual(2+a,3);self.assertEqual(2-a,1);self.assertEqual(2*a,2)
+    def test_ring_equality_and_hash(self):
+        a=CyclotomicRing.one(5)
+        self.assertFalse(a=='bad');self.assertFalse(a==CyclotomicRing.one(7));self.assertEqual(hash(a),hash(CyclotomicRing.one(5)))
+    def test_ring_repr(self):
+        self.assertIsInstance(repr(CyclotomicRing.one(5)),str)
+    def test_matrix_arithmetic(self):
+        a=MatrixRing.identity(5,2);z=MatrixRing(5,2,2)
+        self.assertEqual(a+z,a);self.assertEqual(a-a,z);self.assertEqual(a*2,2*a)
+    def test_matrix_equality(self):
+        a=MatrixRing.identity(5,1)
+        self.assertFalse(a=='bad');self.assertNotEqual(a,MatrixRing(5,1,1))
+    def test_morphism_identity(self):
+        a=MorphismRing.identity(5,2)
+        self.assertTrue(a.is_identity());self.assertEqual(a.compose(a),a);self.assertTrue(a.tensor(a).is_identity())
+    def test_dagger_axioms(self):
+        a=MorphismRing.identity(5,2)
+        self.assertTrue(all(FunctorialCategoricalCompiler.verify_dagger_compact_axioms(a,a).values()))
+    def test_ir_rotation_fusion(self):
+        self.assertEqual(FunctorialCategoricalCompiler.compile_qasm_ir([('RZ',0,1),('RZ',0,2)]),[('RZ',0,3)])
+    def test_ir_pauli_cancellation(self):
+        self.assertEqual(FunctorialCategoricalCompiler.compile_qasm_ir([('X',0,None),('X',0,None)]),[])
+    def test_field_subtraction(self):
+        phi,one=GeneralAlgebraicNumberField.make_golden_ratio()
+        self.assertEqual(phi-one+one,phi)
+
+    def test_fusion_associator_involution(self):
+        f,_ = FibonacciBraidModel.matrices()
+        self.assertEqual(f*f,MatrixRing.identity(5,2))
+
     def test_simplicial_hqec(self):
         hqec = TopologicalAnyonHomologicalEngine.verify_exact_hqec()
         self.assertTrue(hqec["simplicial_boundary_d_squared_zero"])
@@ -1288,31 +1434,38 @@ class TestUnit(unittest.TestCase):
 
 
 class TestIntegration(unittest.TestCase):
+    def test_vector_fold_and_unfold(self):
+        x=[CyclotomicRing(5,n) for n in (2,4,6,8)]
+        a=PulviniRingOperator.fold_vector_p5(x); out=PulviniRingOperator.unfold_vector_p5(a['folded'],a['kernels'])
+        norm=PulviniRingOperator.get_p5_weights()[2]
+        self.assertEqual([v for pair in out for v in pair],[norm*v for v in x])
+    def test_ring_matrix_fusion(self):
+        self.assertTrue(FunctorialCategoricalCompiler.zx_spider_fusion(5,2,4))
+
+    def test_software_identity_on_braid_output(self):
+        x=[CyclotomicRing.one(5),CyclotomicRing.zeta(5)]
+        y=FibonacciBraidModel.execute(x,[1,2])
+        self.assertEqual(NativeSoftwareBackend().execute_state_evolution(y,MatrixRing.identity(5,2)),y)
+
     def test_cross_paradigm_composition(self):
         res = CrossParadigmComposition.run_composition_test()
         self.assertEqual(res["status"], "COMPOSITION_VERIFIED")
         self.assertTrue(res["schmidt_rank_preserved"])
         self.assertTrue(res["mps_reconstruction_exact"])
 
-    def test_universal_backend_identity(self):
-        p = 5
-        initial_state = [CyclotomicRing.one(p), CyclotomicRing.zeta(p, 2)]
-        gate = MatrixRing(p, 2, 2, [
-            [CyclotomicRing.zeta(p, 3), CyclotomicRing.zero(p)],
-            [CyclotomicRing.zero(p), -CyclotomicRing.zeta(p, 4)]
-        ])
-        backends = [
-            NativeSoftwareSIMDBackend(),
-            TopologicalAnyonBraidBackend(),
-            IntegratedPhotonicMZIBackend(),
-            AtomicRydbergConstructorBackend()
-        ]
-        states = [b.execute_state_evolution(initial_state, gate) for b in backends]
-        for s in states[1:]:
-            self.assertEqual(states[0], s)
+    def test_braid_and_software_matrix_agree_on_generator(self):
+        f, r = FibonacciBraidModel.matrices()
+        state = [CyclotomicRing.one(5), CyclotomicRing.zeta(5)]
+        self.assertEqual(FibonacciBraidModel.execute(state, [2]),
+                         NativeSoftwareBackend().execute_state_evolution(state, f*r*f))
 
 
 class TestEndToEnd(unittest.TestCase):
+    def test_manifest_does_not_claim_universal_hardware_identity(self):
+        m=run_master_system()["modules"]
+        self.assertNotIn("universal_backend_identity",m)
+        self.assertIn("not established",m["execution_models"]["cross_backend_identity"])
+
     def test_master_acceleration_manifest(self):
         manifest = run_master_system()
         self.assertIn("manifest_sha256", manifest)
@@ -1408,24 +1561,16 @@ def run_master_system() -> Dict[str, Any]:
         "details": comp
     }
 
-    # 9. Universal Hardware Backends
-    p = 5
-    init_state = [CyclotomicRing.one(p), CyclotomicRing.zeta(p, 1)]
-    gate = MatrixRing(p, 2, 2, [
-        [CyclotomicRing.zeta(p, 3), CyclotomicRing.zero(p)],
-        [CyclotomicRing.zero(p), -CyclotomicRing.zeta(p, 4)]
-    ])
-    backends = [
-        NativeSoftwareSIMDBackend(),
-        TopologicalAnyonBraidBackend(),
-        IntegratedPhotonicMZIBackend(),
-        AtomicRydbergConstructorBackend()
-    ]
-    evolved_states = [b.execute_state_evolution(init_state, gate) for b in backends]
-    identical_across_all = all(evolved_states[0] == s for s in evolved_states[1:])
-    manifest["modules"]["universal_backend_identity"] = {
-        "backends_verified": ["NativeSoftwareSIMD", "TopologicalAnyonBraid", "IntegratedPhotonicMZI", "AtomicRydbergConstructor"],
-        "bit_for_bit_identity_across_all": identical_across_all
+    # 9. Only the software backend and a bounded algebraic braid model exist.
+    f, r = FibonacciBraidModel.matrices()
+    sigma2 = f*r*f
+    manifest["modules"]["execution_models"] = {
+        "software": "exact matrix-vector multiplication",
+        "braid_scope": "three tau anyons, total tau; non-unitary gauge",
+        "braid_relation_example": r*sigma2*r == sigma2*r*sigma2,
+        "photonic": "not implemented: requires MZI decomposition and execution",
+        "rydberg": "not implemented: requires Hamiltonian evolution",
+        "cross_backend_identity": "not established; no physical hardware was tested"
     }
 
     # 10. Hardware Multiplier & Refusal Surface
@@ -1462,8 +1607,8 @@ if __name__ == '__main__':
     sha = manifest["manifest_sha256"]
 
     # Save artifacts locally
-    os.makedirs("/workspace/scratch/artifacts/master", exist_ok=True)
-    with open(f"/workspace/scratch/artifacts/master/manifest_master_{sha[:16]}.json", "w") as f:
+    os.makedirs("artifacts/qigpu", exist_ok=True)
+    with open(f"artifacts/qigpu/manifest_master_{sha[:16]}.json", "w") as f:
         json.dump(manifest, f, indent=2)
 
     print("==================================================================")
@@ -1480,7 +1625,7 @@ if __name__ == '__main__':
     print(f"[*] Float64 Drift Tolerance 1e-12 Exceeded at Depth: {manifest['modules']['tensor_system_realisation']['float64_tolerance_1e12_exceeded_depth']} (Exact Ring Drift: 0.0)")
     print(f"[*] Packed Bitstream Ratio: {manifest['modules']['data_system_realisation']['packed_bitstream_ratio']:.4f} (Roundtrip: {manifest['modules']['data_system_realisation']['packed_bit_for_bit']})")
     print(f"[*] Cross-Paradigm Composition Verified: {manifest['modules']['cross_paradigm_composition']['composition_verified']}")
-    print(f"[*] 100% Bit-for-Bit Identity Across All Backends: {manifest['modules']['universal_backend_identity']['bit_for_bit_identity_across_all']}")
+    print("[*] Execution: exact software and bounded braid model; hardware identity not established")
     print(f"[*] Seven Test Classes Status: {result.testsRun} tests run, {len(result.failures)} failures, {len(result.errors)} errors (Strict Exit Code 0)")
     print("==================================================================")
     print(f"[Manifest Hashed] SHA-256: {sha}")
