@@ -445,6 +445,32 @@ class PulviniRingOperator:
         return w1, w2, norm_factor
 
     @classmethod
+    def get_unscaled_p5_weights(cls):
+        """Golden weights are algebraic integers, despite their half expressions.
+
+        phi=-(zeta^2+zeta^3), a=phi-1, b=2-phi. Their norm factor
+        a^2+b^2 is a nonunit; general inversion therefore uses Q(zeta_5).
+        """
+        z=CyclotomicRing.zeta(5);phi=-(z**2+z**3)
+        a=phi-CyclotomicRing.one(5);b=CyclotomicRing(5,2)-phi
+        return a,b,a*a+b*b
+
+    @classmethod
+    def fold_unscaled_pair_p5(cls,x1,x2):
+        if any(not isinstance(x,CyclotomicRing) or x.p!=5 for x in (x1,x2)):
+            raise RingError("Expected two Z[zeta_5] elements")
+        a,b,_=cls.get_unscaled_p5_weights()
+        return a*x1+b*x2,b*x1-a*x2
+
+    @classmethod
+    def unfold_unscaled_pair_p5(cls,folded,kernel):
+        if any(not isinstance(x,CyclotomicRing) or x.p!=5 for x in (folded,kernel)):
+            raise RingError("Expected two Z[zeta_5] elements")
+        a,b,n=cls.get_unscaled_p5_weights()
+        return (CyclotomicField5(a*folded+b*kernel)/n,
+                CyclotomicField5(b*folded-a*kernel)/n)
+
+    @classmethod
     def fold_pair_p5(cls, x1: CyclotomicRing, x2: CyclotomicRing) -> Tuple[CyclotomicRing, CyclotomicRing]:
         w1, w2, _ = cls.get_p5_weights()
         folded = (w1 * x1) + (w2 * x2)
@@ -499,7 +525,7 @@ class PulviniRingOperator:
         return (
             "The PULVINI fold over Z[zeta_5] uses the scaled weights w1' = sqrt(5) - 1, w2' = 3 - sqrt(5), "
             "which are the golden-ratio weights multiplied by 2. The roundtrip recovers the input scaled "
-            "by the norm factor w1'^2 + w2'^2 = 20 - 8*sqrt(5). The unscaled golden-ratio fold requires Z[zeta_5, 1/2]."
+            "by the norm factor w1'^2 + w2'^2 = 20 - 8*sqrt(5). The unscaled weights are also in Z[zeta_5]: phi=-(zeta^2+zeta^3), w1=phi-1, w2=2-phi. Their squared norm is a nonunit; arbitrary inversion uses Q(zeta_5)."
         )
 
     @classmethod
@@ -1526,9 +1552,9 @@ class RefusalSurface:
         return [
             "REFUSAL 1: No claim that quantum algorithms solve NP-complete or Millennium Prize problems in polynomial time.",
             "REFUSAL 2: No universal quantum speedup or general acceleration is established.",
-            "REFUSAL 3: Transcendental ansätze (cos, sin, exp) and non-cyclotomic roots (sqrt(2) in Z[zeta_5]) are out-of-ring findings.",
-            "REFUSAL 4: Heisenberg XXX model is obstructed over Z[zeta_5] because imaginary unit i = zeta_4 is not in Z[zeta_5].",
-            "REFUSAL 5: PULVINI is a scaled, reversible change of representation, not compression; odd vectors need a padding element.",
+            "REFUSAL 3: Generic continuous trigonometric and exponential values are not guaranteed cyclotomic; special values may be exact. sqrt(2) is not in Q(zeta_5).",
+            "REFUSAL 4: The individual Pauli Y operator requires i outside Q(zeta_5); that does not obstruct the real integer two-site XXX Hamiltonian. General real-time exponentiation is not implemented in the ring.",
+            "REFUSAL 5: PULVINI weights, scaled or unscaled, are ring-valued; the norm factor is a nonunit, so general inverse requires the fraction field. Keeping the kernel is not compression; odd vectors need padding.",
             "REFUSAL 6: Python loop timings compare different workloads and cannot establish quantum advantage; the entangled feature map is not implemented.",
             "REFUSAL 7: HardwareMultiplierTree is a model, not a physical hardware measurement; physical measurement requires ASIC foundry synthesis."
         ]
@@ -1539,6 +1565,10 @@ class RefusalSurface:
 # =====================================================================
 
 class TestInvariant(unittest.TestCase):
+    def test_unscaled_golden_weight_identities(self):
+        a,b,n=PulviniRingOperator.get_unscaled_p5_weights();g=CyclotomicRing.gauss_sum(5)
+        self.assertEqual(2*a,g-1);self.assertEqual(2*b,3-g);self.assertEqual(n*(5+2*g),5);self.assertEqual(n.norm(),25)
+
     def test_mps_bond_cutoff_conserves_kept_plus_discarded(self):
         cores=TensorMPSRingEngine.get_ghz3_cores(5);full,_,_=TensorMPSRingEngine.contract_mps(5,cores,2)
         kept,_,discarded=TensorMPSRingEngine.contract_mps(5,cores,1)
@@ -1612,6 +1642,14 @@ class TestInvariant(unittest.TestCase):
 
 
 class TestProperty(unittest.TestCase):
+    def test_unscaled_fold_roundtrips_random_exact_inputs(self):
+        import random
+        rng=random.Random(146)
+        for _ in range(20):
+            x=[CyclotomicRing(5,[rng.randrange(-9,10) for _ in range(4)]) for _ in range(2)]
+            f,k=PulviniRingOperator.fold_unscaled_pair_p5(*x)
+            self.assertEqual(PulviniRingOperator.unfold_unscaled_pair_p5(f,k),tuple(CyclotomicField5(v) for v in x))
+
     def test_legendre_multiplicativity(self):
         for p in (5,7,11):
             for a in range(p):
@@ -1697,6 +1735,12 @@ class TestProperty(unittest.TestCase):
 
 
 class TestAdversarial(unittest.TestCase):
+    def test_unscaled_fold_rejects_wrong_rings_and_floats(self):
+        one=CyclotomicRing.one(5)
+        for pair in ((one,CyclotomicRing.one(7)),(one,0.5),(1,one)):
+            with self.assertRaises(RingError):PulviniRingOperator.fold_unscaled_pair_p5(*pair)
+            with self.assertRaises(RingError):PulviniRingOperator.unfold_unscaled_pair_p5(*pair)
+
     def test_mps_and_ring_malformed_inputs_are_rejected(self):
         one=CyclotomicRing.one(5)
         for p in (5.0,True,4):
@@ -1817,6 +1861,11 @@ class TestAdversarial(unittest.TestCase):
 
 
 class TestEdge(unittest.TestCase):
+    def test_unscaled_zero_input_and_nonunit_norm(self):
+        zero=CyclotomicRing.zero(5);f,k=PulviniRingOperator.fold_unscaled_pair_p5(zero,zero)
+        self.assertEqual((f,k),(zero,zero));self.assertEqual(PulviniRingOperator.unfold_unscaled_pair_p5(f,k),(CyclotomicField5(0),CyclotomicField5(0)))
+        with self.assertRaises(RingError):PulviniRingOperator.get_unscaled_p5_weights()[2].inv()
+
     def test_mps_empty_and_cutoff_edges(self):
         self.assertEqual(TensorMPSRingEngine.contract_mps(5,[],1),([],CyclotomicRing.zero(5),[]))
         for cutoff in (0,-1,True):
@@ -1897,6 +1946,10 @@ class TestEdge(unittest.TestCase):
 
 
 class TestUnit(unittest.TestCase):
+    def test_unscaled_fifth_root_coefficients(self):
+        a,b,n=PulviniRingOperator.get_unscaled_p5_weights()
+        self.assertEqual(a.v,(-1,0,-1,-1,0));self.assertEqual(b.v,(2,0,1,1,0));self.assertEqual(n.v,(7,0,4,4,0))
+
     def test_single_site_mps_unit(self):
         one=CyclotomicRing.one(5);zero=CyclotomicRing.zero(5)
         state,tail,discarded=TensorMPSRingEngine.contract_mps(5,[[[[one],[zero]]]])
@@ -2055,6 +2108,10 @@ class TestUnit(unittest.TestCase):
 
 
 class TestIntegration(unittest.TestCase):
+    def test_unscaled_weights_match_legacy_scaled_operator(self):
+        x=CyclotomicRing(5,3);y=CyclotomicRing.zeta(5);f,k=PulviniRingOperator.fold_unscaled_pair_p5(x,y)
+        old_f,old_k=PulviniRingOperator.fold_pair_p5(x,y);self.assertEqual((2*f,2*k),(old_f,old_k))
+
     def test_exact_mps_to_kernel_and_backend(self):
         cores=TensorMPSRingEngine.get_ghz3_cores(5);state,_,_=TensorMPSRingEngine.contract_mps(5,cores,2)
         state=NativeSoftwareBackend().execute_state_evolution(state,MatrixRing.identity(5,8))
@@ -2131,6 +2188,12 @@ class TestIntegration(unittest.TestCase):
 
 
 class TestEndToEnd(unittest.TestCase):
+    def test_unscaled_payload_fold_and_manifest(self):
+        encoded=PackedBitstreamProtocol.encode(b'AB');data=PackedBitstreamProtocol.decode(encoded,2)
+        x,y=(CyclotomicRing(5,b) for b in data);f,k=PulviniRingOperator.fold_unscaled_pair_p5(x,y)
+        self.assertEqual(PulviniRingOperator.unfold_unscaled_pair_p5(f,k),(CyclotomicField5(x),CyclotomicField5(y)))
+        self.assertEqual(run_master_system()['modules']['pulvini_geometry']['unscaled_norm_algebraic_norm'],25)
+
     def test_encoded_byte_controls_exact_mps_measurement(self):
         payload=bytes([1]);decoded=PackedBitstreamProtocol.decode(PackedBitstreamProtocol.encode(payload),1)[0]
         one=CyclotomicRing.one(5);zero=CyclotomicRing.zero(5);core=[[[zero],[one]]] if decoded else [[[one],[zero]]]
@@ -2222,6 +2285,8 @@ def run_master_system() -> Dict[str, Any]:
         "exact_roundtrip_zero_residual": (rx1 == norm_fac * x1 and rx2 == norm_fac * x2),
         "norm_scaling_factor": norm_fac.v,
         "weights_finding": PulviniRingOperator.p5_weights_finding(),
+        "unscaled_weights": [v.v for v in PulviniRingOperator.get_unscaled_p5_weights()],
+        "unscaled_norm_algebraic_norm": PulviniRingOperator.get_unscaled_p5_weights()[2].norm(),
         "p7_obstruction": PulviniRingOperator.p7_obstruction_record()
     }
 

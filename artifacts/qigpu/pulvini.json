@@ -1,0 +1,36 @@
+{
+  "command": "python -m coverage run --branch docs/qigpu/pasted-text.txt",
+  "exact_identities": {
+    "algebraic_norm": 25,
+    "norm_coefficients": [
+      7,
+      0,
+      4,
+      4,
+      0
+    ],
+    "phi": "-(zeta^2+zeta^3)",
+    "weight1_coefficients": [
+      -1,
+      0,
+      -1,
+      -1,
+      0
+    ],
+    "weight2_coefficients": [
+      2,
+      0,
+      1,
+      1,
+      0
+    ]
+  },
+  "finding": "Both golden weights are in Z[zeta_5]; the determinant is not a unit. Arbitrary inversion uses the fraction field; inputs in the image recover exactly.",
+  "implementation_coverage": {
+    "branch_percent": 91.54,
+    "statement_percent": 98.1
+  },
+  "source_sha256": "ba01a0d5565a0ce14938a09939712b1c72964a75f3e16b6f80bff546388935df",
+  "step": "Implement exact unscaled golden-ratio fold",
+  "tests_passed": 144
+}
