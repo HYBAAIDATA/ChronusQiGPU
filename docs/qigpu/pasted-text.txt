@@ -24,6 +24,7 @@ import json
 import math
 import hashlib
 import unittest
+import itertools
 from fractions import Fraction
 from typing import Tuple, List, Dict, Any, Optional, Union
 
@@ -731,18 +732,117 @@ class InfoGeoQFIMEngine:
 
 class TopologicalAnyonHomologicalEngine:
     """Non-Abelian anyon braiding over Q(zeta_5) and exact simplicial homological quantum error correction."""
+    @staticmethod
+    def _fusion(a,b):
+        if a==0: return [b]
+        if b==0: return [a]
+        return [0,1]
     @classmethod
-    def get_fibonacci_anyonic_data(cls) -> Dict[str, Any]:
-        p = 5
-        r_vac = CyclotomicRing.zeta(p, 3)
-        r_tau = -CyclotomicRing.zeta(p, 4)
-        return {
-            "fusion_channel": "tau x tau = 1 + tau",
-            "quantum_dimension": "phi = (1 + sqrt(5))/2 in Q(zeta_5)",
-            "R_eigenvalue_vacuum": r_vac.v,
-            "R_eigenvalue_tau": r_tau.v,
-            "unitarity_verified": True
-        }
+    def _states(cls,tree,labels):
+        if isinstance(tree,int): return [{tree:labels[tree]}]
+        result=[]
+        for left,right in itertools.product(cls._states(tree[0],labels),cls._states(tree[1],labels)):
+            for total in cls._fusion(left[tree[0]],right[tree[1]]): result.append({**left,**right,tree:total})
+        return result
+    @classmethod
+    def _associate(cls,old,new,a,b,c,total,labels,f):
+        left=[x for x in cls._states(old,labels) if x[old]==total]
+        right=[x for x in cls._states(new,labels) if x[new]==total]
+        zero,one=CyclotomicRing.zero(5),CyclotomicRing.one(5); result=[]
+        for out in right:
+            row=[]
+            for inp in left:
+                if any(inp[k]!=out[k] for k in set(inp)&set(out)) or inp[((a,b),c)]!=out[(a,(b,c))]: row.append(zero);continue
+                types=(inp[a],inp[b],inp[c],inp[((a,b),c)])
+                row.append(f.data[out[(b,c)]][inp[(a,b)]] if types==(1,1,1,1) else one)
+            result.append(row)
+        return result
+    @classmethod
+    def _braid(cls,old,new,a,b,total,labels,r):
+        left=[x for x in cls._states(old,labels) if x[old]==total]
+        right=[x for x in cls._states(new,labels) if x[new]==total]
+        zero,one=CyclotomicRing.zero(5),CyclotomicRing.one(5);result=[]
+        for out in right:
+            row=[]
+            for inp in left:
+                if any(inp[k]!=out[k] for k in set(inp)&set(out)) or inp[(a,b)]!=out[(b,a)]: row.append(zero);continue
+                channel=inp[(a,b)];row.append(r.data[channel][channel] if inp[a]==inp[b]==1 else one)
+            result.append(row)
+        return result
+    @staticmethod
+    def _compose(a,b):
+        zero=CyclotomicRing.zero(5)
+        return [[sum((a[i][k]*b[k][j] for k in range(len(b))),zero) for j in range(len(b[0]))] for i in range(len(a))]
+    @classmethod
+    def verify_pentagon(cls,f=None):
+        f=FibonacciBraidModel.matrices()[0] if f is None else f
+        if not isinstance(f,MatrixRing) or f.p!=5 or f.rows!=2 or f.cols!=2: raise RingError("Expected 2x2 F over Z[zeta_5]")
+        t0=(((0,1),2),3);t1=((0,(1,2)),3);t2=(0,((1,2),3));t3=(0,(1,(2,3)));t4=((0,1),(2,3));count=0
+        for labels in itertools.product((0,1),repeat=4):
+            for total in (0,1):
+                if not any(x[t0]==total for x in cls._states(t0,labels)): continue
+                transform=lambda old,new,a,b,c:cls._associate(old,new,a,b,c,total,labels,f)
+                x=cls._compose(transform(t2,t3,1,2,3),cls._compose(transform(t1,t2,0,(1,2),3),transform(t0,t1,0,1,2)))
+                y=cls._compose(transform(t4,t3,0,1,(2,3)),transform(t0,t4,(0,1),2,3));count+=1
+                if x!=y:return {'verified':False,'cases_checked':count,'labels':labels,'total':total}
+        return {'verified':True,'cases_checked':count}
+    @classmethod
+    def verify_hexagons(cls,r=None):
+        f,default=FibonacciBraidModel.matrices();r=default if r is None else r
+        if not isinstance(r,MatrixRing) or r.p!=5 or r.rows!=2 or r.cols!=2: raise RingError("Expected 2x2 R over Z[zeta_5]")
+        if not r.data[0][1].is_zero() or not r.data[1][0].is_zero(): raise RingError("R must be diagonal")
+        if f*f!=MatrixRing.identity(5,2): raise RingError("F inverse not established")
+        def chain(ops):
+            out=ops[0]
+            for m in ops[1:]:out=cls._compose(m,out)
+            return out
+        count=0
+        for labels in itertools.product((0,1),repeat=3):
+            for total in (0,1):
+                a,b,c=0,1,2;t0=(a,(b,c));t1=((a,b),c);t2=((b,a),c);t3=(b,(a,c));t4=(b,(c,a));t5=((b,c),a)
+                if not any(x[t0]==total for x in cls._states(t0,labels)):continue
+                A=lambda old,new,x,y,z:cls._associate(old,new,x,y,z,total,labels,f)
+                B=lambda old,new,x,y:cls._braid(old,new,x,y,total,labels,r)
+                first=chain([A(t1,t0,a,b,c),B(t1,t2,a,b),A(t2,t3,b,a,c),B(t3,t4,a,c),A(t5,t4,b,c,a)])
+                s0=((a,b),c);s1=(a,(b,c));s2=(a,(c,b));s3=((a,c),b);s4=((c,a),b);s5=(c,(a,b))
+                second=chain([A(s0,s1,a,b,c),B(s1,s2,b,c),A(s3,s2,a,c,b),B(s3,s4,a,c),A(s4,s5,c,a,b)])
+                count+=1
+                if first!=B(t0,t5,a,(b,c)) or second!=B(s0,s5,(a,b),c):return {'verified':False,'cases_checked':count,'labels':labels,'total':total}
+        return {'verified':True,'cases_checked':count,'diagrams_per_case':2}
+    @staticmethod
+    def alexander_polynomial(strands,word):
+        """Small closed braids via unreduced Burau; coefficients ascending, up to +/- t^k."""
+        if type(strands) is not int or not 2<=strands<=4:raise RingError("Expected 2 to 4 strands")
+        if not isinstance(word,(list,tuple)) or len(word)>64:raise RingError("Expected word of at most 64 crossings")
+        if any(type(g) is not int or not 1<=abs(g)<strands for g in word):raise RingError("Invalid braid generator")
+        def add(a,b):
+            out=a.copy()
+            for k,v in b.items():out[k]=out.get(k,0)+v
+            return {k:v for k,v in out.items() if v}
+        def neg(a):return {k:-v for k,v in a.items()}
+        def mul(a,b):
+            out={}
+            for i,x in a.items():
+                for j,y in b.items():out[i+j]=out.get(i+j,0)+x*y
+            return {k:v for k,v in out.items() if v}
+        def total(parts):
+            out={}
+            for item in parts:out=add(out,item)
+            return out
+        one={0:1};matrix=[[one.copy() if i==j else {} for j in range(strands)] for i in range(strands)]
+        for g in word:
+            op=[[one.copy() if i==j else {} for j in range(strands)] for i in range(strands)];i=abs(g)-1
+            if g>0:op[i][i],op[i][i+1],op[i+1][i],op[i+1][i+1]={0:1,1:-1},{1:1},{0:1},{}
+            else:op[i][i],op[i][i+1],op[i+1][i],op[i+1][i+1]={},{0:1},{-1:1},{0:1,-1:-1}
+            matrix=[[total(mul(matrix[i][k],op[k][j]) for k in range(strands)) for j in range(strands)] for i in range(strands)]
+        n=strands-1; minor=[[add(one if i==j else {},neg(matrix[i][j])) for j in range(n)] for i in range(n)];det={}
+        for perm in itertools.permutations(range(n)):
+            inv=sum(perm[i]>perm[j] for i in range(n) for j in range(i+1,n));term=one
+            for i,j in enumerate(perm):term=mul(term,minor[i][j])
+            det=add(det,neg(term) if inv%2 else term)
+        if not det:return []
+        lo,hi=min(det),max(det);sign=1 if det[lo]>0 else -1
+        return [sign*det.get(i,0) for i in range(lo,hi+1)]
 
     @classmethod
     def verify_exact_hqec(cls) -> Dict[str, Any]:
@@ -775,7 +875,7 @@ class TopologicalAnyonHomologicalEngine:
         return {
             "simplicial_complex": "Tetrahedral 2-chain complex",
             "simplicial_boundary_d_squared_zero": d_sq_zero,
-            "gauge_immunity_guaranteed": True
+            "finding": "Boundary composition checked; no general error-correction guarantee."
         }
 
 
@@ -1341,6 +1441,9 @@ class RefusalSurface:
 # =====================================================================
 
 class TestInvariant(unittest.TestCase):
+    def test_fibonacci_all_pentagons_and_hexagons(self):
+        c=TopologicalAnyonHomologicalEngine;self.assertTrue(c.verify_pentagon()['verified']);self.assertTrue(c.verify_hexagons()['verified'])
+
     def test_mera_density_trace_one(self):
         for n in (4,8,16): self.assertEqual(HolographicMERAEngine.entropy_report(n,n//2)['trace'],['1','0','0','0'])
 
@@ -1386,6 +1489,10 @@ class TestInvariant(unittest.TestCase):
 
 
 class TestProperty(unittest.TestCase):
+    def test_braid_polynomial_cancels_inverse_pairs(self):
+        fn=TopologicalAnyonHomologicalEngine.alexander_polynomial
+        for word in ([1,2],[1,-2,1],[-1,2,1,2]):self.assertEqual(fn(3,word),fn(3,word+[1,-1]))
+
     def test_network_amplitude_norm_preserved(self):
         for n in (4,8,16):
             v=HolographicMERAEngine.contract(n)
@@ -1435,6 +1542,12 @@ class TestProperty(unittest.TestCase):
 
 
 class TestAdversarial(unittest.TestCase):
+    def test_category_wrong_f_and_r_fail(self):
+        c=TopologicalAnyonHomologicalEngine;self.assertFalse(c.verify_pentagon(MatrixRing.identity(5,2))['verified']);self.assertFalse(c.verify_hexagons(MatrixRing.identity(5,2))['verified'])
+    def test_alexander_rejects_bad_braids(self):
+        for n,w in ((1,[]),(5,[]),(3,[0]),(3,[3]),(2,[1]*65)):
+            with self.subTest(n=n,w=w),self.assertRaises(RingError):TopologicalAnyonHomologicalEngine.alexander_polynomial(n,w)
+
     def test_tensor_network_rejects_invalid_intervals(self):
         for n,b in ((0,1),(4,0),(8,9),(True,1)):
             with self.subTest(n=n,b=b),self.assertRaises(RingError):HolographicMERAEngine.reduced_state(n,b)
@@ -1509,6 +1622,12 @@ class TestAdversarial(unittest.TestCase):
 
 
 class TestEdge(unittest.TestCase):
+    def test_empty_braid_is_split_unlink(self):
+        self.assertEqual(TopologicalAnyonHomologicalEngine.alexander_polynomial(2,[]),[])
+    def test_category_rejects_bad_shapes(self):
+        with self.assertRaises(RingError):TopologicalAnyonHomologicalEngine.verify_pentagon(MatrixRing.identity(7,2))
+        with self.assertRaises(RingError):TopologicalAnyonHomologicalEngine.verify_hexagons(MatrixRing(5,2,2,[[1,1],[0,1]]))
+
     def test_entire_network_state_is_pure(self):
         self.assertEqual(HolographicMERAEngine.entropy_report(4,4)['entropy_symbolic'],'0')
 
@@ -1556,6 +1675,10 @@ class TestEdge(unittest.TestCase):
 
 
 class TestUnit(unittest.TestCase):
+    def test_trefoil_and_mirror_alexander(self):
+        fn=TopologicalAnyonHomologicalEngine.alexander_polynomial
+        self.assertEqual(fn(2,[1,1,1]),[1,-1,1]);self.assertEqual(fn(2,[-1,-1,-1]),[1,-1,1])
+
     def test_network_causal_cone_reaches_top(self):
         self.assertEqual(HolographicMERAEngine.causal_cone(8,2)[-1],[0])
     def test_network_reference_mismatch_is_reported(self):
@@ -1620,6 +1743,10 @@ class TestUnit(unittest.TestCase):
 
 
 class TestIntegration(unittest.TestCase):
+    def test_category_f_r_coherence_with_braid_relation(self):
+        f,r=FibonacciBraidModel.matrices();x=f*r*f
+        self.assertTrue(TopologicalAnyonHomologicalEngine.verify_pentagon(f)['verified']);self.assertEqual(r*x*r,x*r*x)
+
     def test_network_full_density_matches_pure_state(self):
         rho=HolographicMERAEngine.reduced_state(4,4)
         self.assertEqual(len(rho),4)
@@ -1663,6 +1790,9 @@ class TestIntegration(unittest.TestCase):
 
 
 class TestEndToEnd(unittest.TestCase):
+    def test_anyon_manifest_coherence_and_polynomial(self):
+        r=run_master_system()['modules']['topological_anyons_and_hqec'];self.assertTrue(r['pentagon']['verified']);self.assertTrue(r['hexagons']['verified']);self.assertEqual(r['trefoil_alexander'],[1,-1,1])
+
     def test_manifest_uses_network_contraction(self):
         r=run_master_system()['modules']['holographic_mera'];self.assertEqual([x['sites'] for x in r['reports']],[4,8,16]);self.assertTrue(any(not x['cft_matches'] for x in r['reports']))
 
@@ -1746,12 +1876,14 @@ def run_master_system() -> Dict[str, Any]:
         "finding": "Exact field arithmetic; finite Taylor integration approximates continuous flow."
     }
 
-    # 6. Topological Anyons & Simplicial HQEC
-    anyons = TopologicalAnyonHomologicalEngine.get_fibonacci_anyonic_data()
-    hqec = TopologicalAnyonHomologicalEngine.verify_exact_hqec()
-    manifest["modules"]["topological_anyons_and_hqec"] = {
-        "anyonic_unitarity": anyons["unitarity_verified"],
-        "simplicial_hqec": hqec["simplicial_boundary_d_squared_zero"]
+    # 6. Coherence for the specified gauge and a bounded closed-braid example.
+    hqec=TopologicalAnyonHomologicalEngine.verify_exact_hqec()
+    manifest["modules"]["topological_anyons_and_hqec"]={
+        "pentagon":TopologicalAnyonHomologicalEngine.verify_pentagon(),
+        "hexagons":TopologicalAnyonHomologicalEngine.verify_hexagons(),
+        "trefoil_alexander":TopologicalAnyonHomologicalEngine.alexander_polynomial(2,[1,1,1]),
+        "boundary_squared_zero":hqec['simplicial_boundary_d_squared_zero'],
+        "finding":"Chosen F/R data and non-unitary gauge; no physical device or general error-correction guarantee."
     }
 
     # 7. Explicit finite tensor-network measurements, not substituted formulas.
@@ -1841,8 +1973,8 @@ if __name__ == '__main__':
     print(f"[*] PULVINI Exact Zero-Residual Roundtrip: {manifest['modules']['pulvini_geometry']['exact_roundtrip_zero_residual']}")
     print(f"[*] Yang-Baxter Verified (All Roots in Z5 & Z7): {manifest['modules']['categorical_compiler']['yang_baxter_all_roots_p5'] and manifest['modules']['categorical_compiler']['yang_baxter_all_roots_p7']}")
     print(f"[*] InfoGeo QFIM Quotient in Q(zeta_5): {manifest['modules']['infogeo_qfim']['reduced_quotient']}")
-    print(f"[*] Topological Anyon Unitarity: {manifest['modules']['topological_anyons_and_hqec']['anyonic_unitarity']}")
-    print(f"[*] Exact Simplicial HQEC (d1 o d2 == 0): {manifest['modules']['topological_anyons_and_hqec']['simplicial_hqec']}")
+    print("[*] Fibonacci coherence: exact checks of chosen data; physical hardware unverified")
+    print(f"[*] Exact Simplicial HQEC (d1 o d2 == 0): {manifest['modules']['topological_anyons_and_hqec']['boundary_squared_zero']}")
     print(f"[*] Float64 Drift Tolerance 1e-12 Exceeded at Depth: {manifest['modules']['tensor_system_realisation']['float64_tolerance_1e12_exceeded_depth']} (Exact Ring Drift: 0.0)")
     print(f"[*] Packed Bitstream Ratio: {manifest['modules']['data_system_realisation']['packed_bitstream_ratio']:.4f} (Roundtrip: {manifest['modules']['data_system_realisation']['packed_bit_for_bit']})")
     print(f"[*] Cross-Paradigm Composition Verified: {manifest['modules']['cross_paradigm_composition']['composition_verified']}")

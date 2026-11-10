@@ -1,0 +1,9 @@
+{
+  "correction": "P2 Fibonacci category and braid polynomial",
+  "source_sha256": "0a6f8435c8ef84677d719041c30ee277bd4647c156efb3b5bfb98e02347edea1",
+  "tests_passed": 92,
+  "implementation_statement_coverage_percent": 97.84,
+  "implementation_branch_coverage_percent": 92.58,
+  "scope": "Pentagon and both hexagon diagrams enumerated for all simple labels with specified F/R data in a non-unitary gauge. Burau Alexander polynomial limited to 2\u20134 strands and at most 64 crossings.",
+  "finding": "The R phases are chosen category input, not uniquely derived from fusion rules. Physical hardware and general HQEC guarantees are not established."
+}
