@@ -33,6 +33,7 @@ Running this command is a local test action, not a release qualification or cert
 
 ## Documentation
 
+- [Repository agent instructions](AGENTS.md)
 - [HYBA product style guide](docs/directives/PRODUCT_STYLE_GUIDE.md)
 - [Frontend implementation standard](docs/directives/FRONTEND.md)
 - [Product packaging and market framing](docs/directives/PACKAGING.md)

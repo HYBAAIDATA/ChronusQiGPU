@@ -4,7 +4,18 @@
 
 ## Product identity
 
-Chronus is HYBA Data’s product/platform, not a separate company. AL HARAS is HYBA Security. Keep product navigation, copy, and client-facing materials within the two market-facing companies: HYBA Data and HYBA Security.
+Chronus is HYBA Data’s product/platform, not a separate company. AL HARAS is HYBA Security. Keep product navigation, copy, and client-facing materials within these two market-facing companies.
+
+## Shared product pattern
+
+For each screen, make the user’s question or task, the answer/current state, evidence and freshness, next action, and optional technical detail easy to distinguish. Use concise, decision-led content and complete workflows. See the style guide for the McKinsey-style thinking method and the intended McKinsey–Accenture finished-product standard.
+
+## Product-specific design direction
+
+- **Chronus / HYBA Data:** Design for clear data and computational workflows. Where implemented, make input/configuration, actual execution state, result, and supporting evidence inspectable. Do not brand Chronus as a quantum product or Bitcoin-mining product.
+- **AL HARAS / HYBA Security:** Design for clear security questions, evidence, state meaning, responsible actions, and audit trail. Show only real controls and supported security outcomes; no invented assurance or certification cues.
+
+These are design directions, not claims that every workflow or capability is currently implemented.
 
 ## Frontend principles
 
@@ -15,7 +26,7 @@ Chronus is HYBA Data’s product/platform, not a separate company. AL HARAS is H
 - Keep visible status tied to actual backend state. Do not infer qualification or security status from an application loading successfully.
 - Every control must have a defined action, permission check, resulting state, and auditable outcome where appropriate.
 - Design loading, empty, error, degraded, offline, and permission-denied states alongside the success path.
-- Do not imply that quantum is a standalone market or product, or that Bitcoin mining is a customer offering; see the product style guide.
+- Do not imply that quantum is a standalone market or product, or that Bitcoin mining is a customer offering.
 
 ## Implementation and review
 

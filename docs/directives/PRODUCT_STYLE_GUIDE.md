@@ -2,15 +2,15 @@
 
 **Status:** Current internal product and design standard. Apply to product interfaces, prototypes, demos, product documentation, and client-facing materials. This guide supersedes conflicting older design or packaging recommendations in this repository.
 
-## Design ambition
+## What the standard means for HYBA
 
-HYBA’s working method and communication style should mirror **McKinsey-style strategic thinking**: start from the core problem, structure the analysis, test hypotheses against evidence, prioritize what matters, and communicate the conclusion and recommended action clearly. Use MECE issue structuring where it helps; do not force frameworks where they do not fit. Make the logic, assumptions, evidence, risks, and decisions easy to inspect. This is an internal quality direction, not a claim to use proprietary McKinsey material or to have a relationship with the firm.
+HYBA adopts McKinsey-style strategic thinking and communication as the working method: begin with the core problem and decision, structure the analysis, test hypotheses against evidence, prioritize what matters, and communicate a clear conclusion and recommendation. Use issue trees or MECE structuring where useful, not as decoration. Surface assumptions, trade-offs, risks, evidence, and unknowns.
 
-The **finished product** should feel like the end result of a hypothetical **McKinsey–Accenture joint venture**: McKinsey-style strategic framing and analytical rigor realized through Accenture-grade product engineering, service design, integration, implementation, operational reliability, and polish. The JV comparison is an internal product-quality aspiration only. HYBA has no claimed affiliation, partnership, endorsement, or joint venture with McKinsey or Accenture. Do not use their logos or imply a relationship.
+The finished product should feel like the integrated result of that strategic rigor and Accenture-grade product engineering, service design, integration, implementation, reliability, and polish—a hypothetical McKinsey–Accenture joint-venture quality bar. This is an internal aspiration only. HYBA does not claim affiliation, partnership, endorsement, or an actual joint venture with McKinsey or Accenture, and does not copy proprietary materials or marks.
 
-Emulate **Stripe, Revolut, NVIDIA, and Google** as benchmarks for the quality and finish of a completed product: clarity, polish, usability, consistency, reliability, and enterprise-grade execution. These are companies to emulate for product quality—not a description of HYBA’s target audience, customer base, partnerships, or endorsements. Do not use their names or logos in a way that implies a business relationship.
+Emulate **Stripe, Revolut, NVIDIA, and Google** as companies whose finished products set a bar for clarity, polish, usability, consistency, reliability, and execution. These are quality emulation benchmarks, not a description of HYBA’s target audience, customers, partnerships, or endorsements.
 
-## Company and market boundaries
+## HYBA identity and market boundaries
 
 - The only market-facing companies are **HYBA Data** and **HYBA Security**.
 - **Chronus is HYBA Data’s product/platform**, not a separate company.
@@ -19,6 +19,30 @@ Emulate **Stripe, Revolut, NVIDIA, and Google** as benchmarks for the quality an
 - **Quantum is a capability**, not a separate market, company, or standalone product category. Describe it only as a capability within an offering when accurate and relevant.
 - **Bitcoin mining is an in-house treasury activity**, not a customer product, service, or market offering.
 - Do not invent additional company brands, market-facing business lines, product families, customer relationships, or commercial claims without direction from the owner and supporting evidence.
+
+## What the products should look and feel like
+
+### Shared experience
+
+A HYBA product should not look like a generic cloud dashboard, crypto-mining console, or futuristic science-fiction interface. It should feel like a coherent, client-ready enterprise product: calm, precise, purposeful, visually disciplined, easy to navigate, and complete in its workflows.
+
+A typical screen should make this sequence easy to understand:
+
+1. **The question or task** the user is addressing.
+2. **The answer or current state** in plain language.
+3. **The evidence** behind it, including source and freshness.
+4. **The next action or decision** available to the user.
+5. **Technical detail** when needed, progressively disclosed.
+
+### HYBA Data — Chronus
+
+Chronus should look and behave as a polished data/computational product under HYBA Data. Lead with the user’s data or workload task and the outcome—not the mathematical novelty alone. Where the behavior is implemented, make the path from input or configuration through execution to result and supporting evidence understandable. Separate actual execution records from examples, simulations, and unverified capabilities. Do not present Chronus as a quantum or Bitcoin-mining product.
+
+### HYBA Security — AL HARAS
+
+AL HARAS should look and behave as a calm, trustworthy security product under HYBA Security. Make the security question, status meaning, evidence, responsible action, and audit trail clear. Use precise state labels and explain what is and is not covered. Only show controls, protections, certifications, or positive security outcomes when implemented and supported by evidence; never use a green shield or “secure” badge as decoration.
+
+These product descriptions are design directions, not claims that the described workflows or capabilities are already shipped.
 
 ## Product experience principles
 
@@ -63,6 +87,7 @@ Before accepting a product or client-facing artifact, confirm:
 - [ ] It clearly belongs to HYBA Data or HYBA Security; Chronus is identified as HYBA Data’s product/platform and AL HARAS as HYBA Security.
 - [ ] The reasoning is problem-led, structured, evidence-based, prioritized, and clear about its recommendation.
 - [ ] The finished experience integrates strategic clarity with robust engineering, service design, and delivery quality.
+- [ ] The screen makes the task, answer/status, evidence, next action, and supporting detail clear.
 - [ ] Quantum is framed only as a capability, where relevant.
 - [ ] Bitcoin mining is not presented as a product or customer offering.
 - [ ] Metrics, statuses, and examples are sourced and labeled accurately.
