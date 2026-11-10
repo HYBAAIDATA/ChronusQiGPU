@@ -247,14 +247,17 @@ class MatrixRing:
     __slots__ = ('p', 'rows', 'cols', 'data')
 
     def __init__(self, p: int, rows: int, cols: int, data=None):
+        if type(p) is not int or not is_prime(p): raise RingError("Matrix modulus must be prime")
+        if type(rows) is not int or type(cols) is not int or rows < 0 or cols < 0: raise RingError("Matrix dimensions must be nonnegative integers")
         self.p = p
         self.rows = rows
         self.cols = cols
         if data is None:
             self.data = [[CyclotomicRing.zero(p) for _ in range(cols)] for _ in range(rows)]
         else:
-            if len(data) != rows or any(len(r) != cols for r in data):
+            if not isinstance(data,(list,tuple)) or len(data) != rows or any(not isinstance(r,(list,tuple)) or len(r) != cols for r in data):
                 raise RingError("Matrix shape mismatch with input data.")
+            if any(isinstance(x,CyclotomicRing) and x.p!=p for row in data for x in row): raise RingError("Matrix entry ring mismatch")
             self.data = [
                 [x if isinstance(x, CyclotomicRing) else CyclotomicRing(p, x) for x in row]
                 for row in data
@@ -454,7 +457,9 @@ class PulviniRingOperator:
 
     @classmethod
     def fold_vector_p5(cls, vec: List[CyclotomicRing]) -> Dict[str, Any]:
-        n = len(vec)
+        if not isinstance(vec,(list,tuple)) or any(not isinstance(x,CyclotomicRing) or x.p!=5 for x in vec):
+            raise RingError("Expected a sequence of Z[zeta_5] elements")
+        original=len(vec);vec=list(vec);n=original
         if n % 2 != 0:
             vec = vec + [CyclotomicRing.zero(5)]
             n += 1
@@ -467,14 +472,19 @@ class PulviniRingOperator:
         return {
             "folded": folded_list,
             "kernels": kernel_list,
-            "original_elements": n,
+            "original_elements": original,
+            "padded_elements": n,
             "total_stored_elements": len(folded_list) + len(kernel_list),
-            "net_compression_ratio": 1.0,
-            "note": "Net compression is 1.0; fold is an exact orthogonal change of basis."
+            "net_compression_ratio": original / n if n else None,
+            "note": "Both folded and kernel elements are stored; odd inputs add one padded element."
         }
 
     @classmethod
     def unfold_vector_p5(cls, folded: List[CyclotomicRing], kernels: List[CyclotomicRing]) -> List[Tuple[CyclotomicRing, CyclotomicRing]]:
+        if not isinstance(folded,(list,tuple)) or not isinstance(kernels,(list,tuple)) or len(folded)!=len(kernels):
+            raise RingError("Folded and kernel sequences must have equal lengths")
+        if any(not isinstance(x,CyclotomicRing) or x.p!=5 for x in list(folded)+list(kernels)):
+            raise RingError("Expected Z[zeta_5] elements")
         recovered = []
         for f, k in zip(folded, kernels):
             rx1, rx2, _ = cls.unfold_pair_p5(f, k)
@@ -509,8 +519,8 @@ class MorphismRing:
     __slots__ = ('p', 'dim_in', 'dim_out', 'matrix')
 
     def __init__(self, p: int, dim_in: int, dim_out: int, matrix: MatrixRing):
-        if matrix.rows != dim_out or matrix.cols != dim_in:
-            raise RingError("Morphism dimension mismatch.")
+        if not isinstance(matrix,MatrixRing) or matrix.p!=p or matrix.rows != dim_out or matrix.cols != dim_in:
+            raise RingError("Morphism dimension or ring mismatch.")
         self.p = p
         self.dim_in = dim_in
         self.dim_out = dim_out
@@ -677,6 +687,11 @@ class InfoGeoQFIMEngine:
 
     @staticmethod
     def inner_product(v1: List[CyclotomicRing], v2: List[CyclotomicRing]) -> CyclotomicRing:
+        if not isinstance(v1,(list,tuple)) or not isinstance(v2,(list,tuple)) or not v1 or len(v1)!=len(v2):
+            raise RingError("Inner product requires nonempty vectors of equal length")
+        if not isinstance(v1[0],CyclotomicRing): raise RingError("Expected ring elements")
+        if any(not isinstance(x,CyclotomicRing) or x.p!=v1[0].p for x in list(v1)+list(v2)):
+            raise RingError("Inner-product ring mismatch")
         acc = CyclotomicRing.zero(v1[0].p)
         for a, b in zip(v1, v2):
             acc = acc + a.conj() * b
@@ -983,9 +998,11 @@ class QuantumKernelRingEngine:
     """Exact discrete root-of-unity Quantum Kernel over Z[zeta_p]."""
     @staticmethod
     def feature_map(p: int, x: List[int]) -> List[CyclotomicRing]:
+        if not isinstance(x,(list,tuple)) or any(type(val) is not int for val in x):
+            raise RingError("Feature coordinates must be exact integers")
         state = [CyclotomicRing.one(p)]
         for val in x:
-            qubit = [CyclotomicRing.one(p), CyclotomicRing.zeta(p, int(val) % p)]
+            qubit = [CyclotomicRing.one(p), CyclotomicRing.zeta(p, val % p)]
             new_state = []
             for s in state:
                 for q in qubit:
@@ -995,10 +1012,14 @@ class QuantumKernelRingEngine:
 
     @classmethod
     def compute_gram_matrix(cls, p: int, feature_vectors: List[List[CyclotomicRing]]) -> List[List[CyclotomicRing]]:
+        if not isinstance(feature_vectors,(list,tuple)): raise RingError("Expected a sequence of feature vectors")
         if not feature_vectors:
             return []
+        if not isinstance(feature_vectors[0],(list,tuple)) or not feature_vectors[0]: raise RingError("Expected nonempty vectors")
+        dim=len(feature_vectors[0])
+        if any(not isinstance(v,(list,tuple)) or len(v)!=dim or any(not isinstance(x,CyclotomicRing) or x.p!=p for x in v) for v in feature_vectors):
+            raise RingError("Feature vectors must have equal dimensions and belong to the requested ring")
         m = len(feature_vectors)
-        dim = len(feature_vectors[0])
         gram = [[CyclotomicRing.zero(p) for _ in range(m)] for _ in range(m)]
         for i in range(m):
             for j in range(m):
@@ -1288,7 +1309,7 @@ class NativeSoftwareBackend(IBackend):
 
 
 class PhotonicMZIModel:
-    """Two-mode H diag(zeta^a,zeta^b) H/2. Discrete phases, no hardware."""
+    """Two-mode H diag(phase_a,phase_b) H/2 with fifth/tenth roots; no hardware."""
     @staticmethod
     def execute(state, phase_a, phase_b, phase_order=5):
         if not isinstance(state,(list,tuple)) or len(state)!=2: raise RingError("Expected two amplitudes")
@@ -1300,7 +1321,7 @@ class PhotonicMZIModel:
 
 
 class RydbergDiagonalModel:
-    """Two-atom diagonal Hamiltonian, discrete phase steps; no physical device."""
+    """Two-atom diagonal Hamiltonian with fifth/tenth-root phases; no physical device."""
     @staticmethod
     def execute(state, detuning, interaction, phase_order=5, global_phase=0):
         if not isinstance(state,(list,tuple)) or len(state)!=4: raise RingError("Expected four amplitudes")
@@ -1496,6 +1517,10 @@ class RefusalSurface:
 # =====================================================================
 
 class TestInvariant(unittest.TestCase):
+    def test_inner_product_conjugate_symmetry(self):
+        z=CyclotomicRing.zeta(5);o=CyclotomicRing.one(5);u=[z,o];v=[o,z*z]
+        self.assertEqual(InfoGeoQFIMEngine.inner_product(u,v),InfoGeoQFIMEngine.inner_product(v,u).conj())
+
     def test_nontrivial_model_comparison_across_generator_powers(self):
         x=[CyclotomicRing(5,2),CyclotomicRing.zeta(5)]
         for power in range(-5,6): self.assertTrue(_compare_braid_generator_models(x,power)['equal'])
@@ -1560,6 +1585,13 @@ class TestInvariant(unittest.TestCase):
 
 
 class TestProperty(unittest.TestCase):
+    def test_fold_records_padding_and_storage(self):
+        for n in range(8):
+            x=[CyclotomicRing(5,i) for i in range(n)];r=PulviniRingOperator.fold_vector_p5(x)
+            self.assertEqual(r['original_elements'],n);self.assertEqual(r['total_stored_elements'],n+n%2)
+            out=PulviniRingOperator.unfold_vector_p5(r['folded'],r['kernels']);scale=PulviniRingOperator.get_p5_weights()[2]
+            self.assertEqual([v for pair in out for v in pair][:n],[scale*v for v in x])
+
     def test_nontrivial_model_comparison_for_random_inputs(self):
         import random
         r=random.Random(911)
@@ -1633,6 +1665,16 @@ class TestProperty(unittest.TestCase):
 
 
 class TestAdversarial(unittest.TestCase):
+    def test_reject_mismatched_ring_and_inexact_vectors(self):
+        one=CyclotomicRing.one(5)
+        with self.assertRaises(RingError):MatrixRing(5,1,1,[[CyclotomicRing.one(7)]])
+        with self.assertRaises(RingError):MorphismRing(5,1,1,MatrixRing.identity(7,1))
+        with self.assertRaises(RingError):InfoGeoQFIMEngine.inner_product([one],[one,one])
+        with self.assertRaises(RingError):QuantumKernelRingEngine.feature_map(5,[0.5])
+        with self.assertRaises(RingError):QuantumKernelRingEngine.compute_gram_matrix(5,[[one],[one,one]])
+        with self.assertRaises(RingError):PulviniRingOperator.unfold_vector_p5([one],[])
+        with self.assertRaises(RingError):PulviniRingOperator.fold_vector_p5([1])
+
     def test_models_reject_invalid_phase_order(self):
         one=CyclotomicRing.one(5)
         with self.assertRaises(RingError): PhotonicMZIModel.execute([one,one],0,1,phase_order=6)
@@ -1732,6 +1774,13 @@ class TestAdversarial(unittest.TestCase):
 
 
 class TestEdge(unittest.TestCase):
+    def test_empty_fold_and_empty_gram(self):
+        r=PulviniRingOperator.fold_vector_p5([]);self.assertEqual(r['original_elements'],0);self.assertIsNone(r['net_compression_ratio'])
+        self.assertEqual(PulviniRingOperator.unfold_vector_p5([],[]),[])
+        self.assertEqual(QuantumKernelRingEngine.compute_gram_matrix(5,[]),[])
+        with self.assertRaises(RingError):InfoGeoQFIMEngine.inner_product([],[])
+        with self.assertRaises(RingError):MatrixRing(5,-1,2)
+
     def test_nontrivial_comparison_zero_state_and_identity(self):
         z=CyclotomicRing.zero(5);o=CyclotomicRing.one(5)
         self.assertTrue(_compare_braid_generator_models([z,z],1)['equal'])
@@ -1774,7 +1823,7 @@ class TestEdge(unittest.TestCase):
         self.assertEqual(CyclotomicRing.zeta(5)**-1,CyclotomicRing.zeta(5,4))
     def test_odd_fold_vector(self):
         r=PulviniRingOperator.fold_vector_p5([CyclotomicRing.one(5)])
-        self.assertEqual(r['original_elements'],2)
+        self.assertEqual(r['original_elements'],1); self.assertEqual(r['padded_elements'],2)
     def test_non_square_morphism_not_identity(self):
         self.assertFalse(MorphismRing(5,1,2,MatrixRing(5,2,1)).is_identity())
 
@@ -1800,6 +1849,10 @@ class TestEdge(unittest.TestCase):
 
 
 class TestUnit(unittest.TestCase):
+    def test_kernel_feature_map_is_exact_and_deterministic(self):
+        z=CyclotomicRing.zeta(5);self.assertEqual(QuantumKernelRingEngine.feature_map(5,[1]),[CyclotomicRing.one(5),z])
+        self.assertEqual(QuantumKernelRingEngine.compute_gram_matrix(5,[[CyclotomicRing.one(5)]])[0][0],CyclotomicRing.one(5))
+
     def test_tenth_root_phase_options(self):
         z=CyclotomicRing.zeta(5);o=CyclotomicRing.one(5);n=CyclotomicRing.zero(5)
         out=RydbergDiagonalModel.execute([o,o,n,n],-1,0,phase_order=10,global_phase=8)
@@ -1887,6 +1940,13 @@ class TestUnit(unittest.TestCase):
 
 
 class TestIntegration(unittest.TestCase):
+    def test_feature_gram_and_pulvini_roundtrip(self):
+        state=QuantumKernelRingEngine.feature_map(5,[1,2]);fold=PulviniRingOperator.fold_vector_p5(state)
+        recovered=[v for pair in PulviniRingOperator.unfold_vector_p5(fold['folded'],fold['kernels']) for v in pair]
+        scale=PulviniRingOperator.get_p5_weights()[2]
+        self.assertEqual(recovered,[scale*x for x in state])
+        self.assertEqual(QuantumKernelRingEngine.compute_gram_matrix(5,[state])[0][0],CyclotomicRing(5,16))
+
     def test_sigma_one_is_not_a_global_phase(self):
         one=CyclotomicRing.one(5);result=_compare_braid_generator_models([one,one],1)
         self.assertTrue(result['equal']);self.assertNotEqual(result['software'][0],result['software'][1])
@@ -1951,6 +2011,12 @@ class TestIntegration(unittest.TestCase):
 
 
 class TestEndToEnd(unittest.TestCase):
+    def test_bitstream_to_exact_kernel_measurement(self):
+        payload=bytes([1,2]);decoded=PackedBitstreamProtocol.decode(PackedBitstreamProtocol.encode(payload),len(payload))
+        state=QuantumKernelRingEngine.feature_map(5,list(decoded))
+        result=NativeSoftwareBackend().execute_state_evolution(state,MatrixRing.identity(5,len(state)))
+        self.assertEqual(QuantumKernelRingEngine.compute_gram_matrix(5,[result])[0][0],CyclotomicRing(5,16))
+
     def test_manifest_nontrivial_generator_scope(self):
         item=run_master_system()['modules']['nontrivial_generator_comparison']
         self.assertTrue(item['equal']);self.assertIn('not arbitrary gates',item['scope'])
