@@ -1,14 +1,11 @@
 {
-  "correction": "P3 backend algorithms",
-  "source_sha256": "c2559c37e43fc148c20f17a509cc39a6f6a0fe1b2eb54540c4c3e6eecbb2d5c9",
-  "test_count": 66,
-  "test_command": "python -m coverage run --branch docs/qigpu/pasted-text.txt",
-  "implementation_statement_coverage_percent": 97.22,
-  "implementation_branch_coverage_percent": 91.21,
-  "comparison": "One global zeta phase agrees across software, bounded braid, discrete two-mode MZI, and two-atom diagonal Hamiltonian models.",
-  "limitations": [
-    "No arbitrary-operation equivalence shown.",
-    "No general MZI decomposition or driven Rydberg Hamiltonian.",
-    "No physical hardware execution."
-  ]
+  "command": "python -m coverage run --branch docs/qigpu/pasted-text.txt",
+  "finding": "The four distinct bounded simulations agree on sigma_1 powers and tested states under explicit optical and atomic logical encodings. This is not a general arbitrary-unitary decomposition, not hardware execution and not universal backend equivalence.",
+  "implementation_coverage": {
+    "branch_percent": 92.56,
+    "statement_percent": 97.91
+  },
+  "source_sha256": "1f950d23c010e92b8306bfff11890359c2c3767750ff073f50a9172edda1b622",
+  "step": "P3 nontrivial braid-generator model comparison",
+  "tests_passed": 113
 }

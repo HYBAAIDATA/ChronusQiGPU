@@ -1290,23 +1290,25 @@ class NativeSoftwareBackend(IBackend):
 class PhotonicMZIModel:
     """Two-mode H diag(zeta^a,zeta^b) H/2. Discrete phases, no hardware."""
     @staticmethod
-    def execute(state, phase_a, phase_b):
+    def execute(state, phase_a, phase_b, phase_order=5):
         if not isinstance(state,(list,tuple)) or len(state)!=2: raise RingError("Expected two amplitudes")
-        if type(phase_a) is not int or type(phase_b) is not int: raise RingError("Phases must be integer fifth-root exponents")
-        x,y=(CyclotomicField5(v) for v in state); z=CyclotomicRing.zeta(5)
-        u=CyclotomicField5(z**phase_a)*(x+y); v=CyclotomicField5(z**phase_b)*(x-y)
+        if type(phase_a) is not int or type(phase_b) is not int: raise RingError("Phases must be integer exponents")
+        if type(phase_order) is not int or phase_order not in (5,10): raise RingError("Phase order must be 5 or 10")
+        x,y=(CyclotomicField5(v) for v in state); z=CyclotomicRing.zeta(5);root=z if phase_order==5 else -z
+        u=CyclotomicField5(root**phase_a)*(x+y); v=CyclotomicField5(root**phase_b)*(x-y)
         return [(u+v)/2,(u-v)/2]
 
 
 class RydbergDiagonalModel:
     """Two-atom diagonal Hamiltonian, discrete phase steps; no physical device."""
     @staticmethod
-    def execute(state, detuning, interaction):
+    def execute(state, detuning, interaction, phase_order=5, global_phase=0):
         if not isinstance(state,(list,tuple)) or len(state)!=4: raise RingError("Expected four amplitudes")
         if any(not isinstance(v,CyclotomicRing) or v.p!=5 for v in state): raise RingError("Expected Z[zeta_5] amplitudes")
-        if type(detuning) is not int or type(interaction) is not int: raise RingError("Phase steps must be integers")
-        phases=(0,detuning,detuning,2*detuning+interaction); z=CyclotomicRing.zeta(5)
-        return [amplitude*z**(-phase) for amplitude,phase in zip(state,phases)]
+        if any(type(x) is not int for x in (detuning,interaction,global_phase)): raise RingError("Phase steps must be integers")
+        if type(phase_order) is not int or phase_order not in (5,10): raise RingError("Phase order must be 5 or 10")
+        phases=(0,detuning,detuning,2*detuning+interaction); z=CyclotomicRing.zeta(5);root=z if phase_order==5 else -z
+        return [amplitude*root**(global_phase-phase) for amplitude,phase in zip(state,phases)]
 
 
 class FibonacciBraidModel:
@@ -1383,6 +1385,30 @@ class FibonacciBraidModel:
             if abs(g) == 2:
                 x, y = a*x + y, a*x - a*y
         return [x, y]
+
+
+def _compare_braid_generator_models(state, power):
+    """Compare sigma_1^power on a 2D state using four bounded simulations.
+
+    Optical encoding/decoding is the exact H basis change; its two factors
+    combine to the normalized Hadamard transformations without adjoining
+    sqrt(2). Atomic logical states are |00>,|01>. These are algebraic
+    simulations, not hardware measurements or arbitrary-gate decompositions.
+    """
+    if not isinstance(state,(tuple,list)) or len(state)!=2 or any(not isinstance(x,CyclotomicRing) or x.p!=5 for x in state):
+        raise RingError("Expected a two-component Z[zeta_5] state")
+    if type(power) is not int: raise RingError("Expected integer braid power")
+    z=CyclotomicRing.zeta(5);root=-z;zero=CyclotomicRing.zero(5)
+    # Coherence search selects R_1=diag(root^8,root^9).
+    matrix=MatrixRing(5,2,2,[[root**(8*power),zero],[zero,root**(9*power)]])
+    software=NativeSoftwareBackend().execute_state_evolution(state,matrix)
+    braid=FibonacciBraidModel.execute(state,[1 if power>=0 else -1]*abs(power))
+    x,y=state
+    optical_modes=PhotonicMZIModel.execute([x+y,x-y],8*power,9*power,phase_order=10)
+    optical=[(optical_modes[0]+optical_modes[1])/2,(optical_modes[0]-optical_modes[1])/2]
+    atomic=RydbergDiagonalModel.execute([x,y,zero,zero],-power,0,phase_order=10,global_phase=8*power)[:2]
+    return {'software':software,'braid':braid,'optical':optical,'atomic':atomic,
+            'equal':software==braid==atomic and optical==[CyclotomicField5(v) for v in software]}
 
 
 # =====================================================================
@@ -1470,6 +1496,10 @@ class RefusalSurface:
 # =====================================================================
 
 class TestInvariant(unittest.TestCase):
+    def test_nontrivial_model_comparison_across_generator_powers(self):
+        x=[CyclotomicRing(5,2),CyclotomicRing.zeta(5)]
+        for power in range(-5,6): self.assertTrue(_compare_braid_generator_models(x,power)['equal'])
+
     def test_derived_fusion_dimension_and_inverse(self):
         data=FibonacciBraidModel.derive_fusion_data()
         d=CyclotomicRing(5,data['dimension']);a=CyclotomicRing(5,data['inverse_dimension']);one=CyclotomicRing.one(5)
@@ -1530,6 +1560,13 @@ class TestInvariant(unittest.TestCase):
 
 
 class TestProperty(unittest.TestCase):
+    def test_nontrivial_model_comparison_for_random_inputs(self):
+        import random
+        r=random.Random(911)
+        for _ in range(12):
+            state=[CyclotomicRing(5,[r.randrange(-4,5) for _ in range(4)]) for _ in range(2)]
+            self.assertTrue(_compare_braid_generator_models(state,r.randrange(-4,5))['equal'])
+
     def test_derived_solutions_are_conjugates(self):
         choices=FibonacciBraidModel.derive_fusion_data()['coherent_phase_pairs']
         self.assertEqual(tuple(CyclotomicRing(5,x).conj().v for x in choices[0]),choices[1])
@@ -1596,6 +1633,12 @@ class TestProperty(unittest.TestCase):
 
 
 class TestAdversarial(unittest.TestCase):
+    def test_models_reject_invalid_phase_order(self):
+        one=CyclotomicRing.one(5)
+        with self.assertRaises(RingError): PhotonicMZIModel.execute([one,one],0,1,phase_order=6)
+        with self.assertRaises(RingError): RydbergDiagonalModel.execute([one]*4,0,0,phase_order=True)
+        with self.assertRaises(RingError): _compare_braid_generator_models([one,one],1.5)
+
     def test_derived_hexagon_rejects_wrong_phase(self):
         f,r=FibonacciBraidModel.matrices(); r.data[0][0]=CyclotomicRing.one(5)
         self.assertFalse(TopologicalAnyonHomologicalEngine.verify_hexagons(r,f)['verified'])
@@ -1689,6 +1732,11 @@ class TestAdversarial(unittest.TestCase):
 
 
 class TestEdge(unittest.TestCase):
+    def test_nontrivial_comparison_zero_state_and_identity(self):
+        z=CyclotomicRing.zero(5);o=CyclotomicRing.one(5)
+        self.assertTrue(_compare_braid_generator_models([z,z],1)['equal'])
+        self.assertEqual(_compare_braid_generator_models([o,z],0)['software'],[o,z])
+
     def test_derived_zero_braid_is_identity(self):
         zero=CyclotomicRing.zero(5)
         self.assertEqual(FibonacciBraidModel.execute([zero,zero],[]),[zero,zero])
@@ -1752,6 +1800,12 @@ class TestEdge(unittest.TestCase):
 
 
 class TestUnit(unittest.TestCase):
+    def test_tenth_root_phase_options(self):
+        z=CyclotomicRing.zeta(5);o=CyclotomicRing.one(5);n=CyclotomicRing.zero(5)
+        out=RydbergDiagonalModel.execute([o,o,n,n],-1,0,phase_order=10,global_phase=8)
+        self.assertEqual(out[:2],[z**3,-z**4])
+        self.assertEqual(PhotonicMZIModel.execute([o,n],8,8,phase_order=10),[CyclotomicField5(z**3),CyclotomicField5(0)])
+
     def test_fusion_phase_search_selects_documented_solution(self):
         data=FibonacciBraidModel.derive_fusion_data();z=CyclotomicRing.zeta(5)
         self.assertEqual(data['phase_candidates'],100)
@@ -1833,6 +1887,10 @@ class TestUnit(unittest.TestCase):
 
 
 class TestIntegration(unittest.TestCase):
+    def test_sigma_one_is_not_a_global_phase(self):
+        one=CyclotomicRing.one(5);result=_compare_braid_generator_models([one,one],1)
+        self.assertTrue(result['equal']);self.assertNotEqual(result['software'][0],result['software'][1])
+
     def test_both_derived_phase_solutions_obey_coherence(self):
         f,_=FibonacciBraidModel.matrices();zero=CyclotomicRing.zero(5)
         for p0,p1 in FibonacciBraidModel.derive_fusion_data()['coherent_phase_pairs']:
@@ -1893,6 +1951,10 @@ class TestIntegration(unittest.TestCase):
 
 
 class TestEndToEnd(unittest.TestCase):
+    def test_manifest_nontrivial_generator_scope(self):
+        item=run_master_system()['modules']['nontrivial_generator_comparison']
+        self.assertTrue(item['equal']);self.assertIn('not arbitrary gates',item['scope'])
+
     def test_manifest_contains_derived_category_search(self):
         d=run_master_system()['modules']['topological_anyons_and_hqec']['fusion_category_derivation']
         self.assertEqual(d['phase_candidates'],100);self.assertEqual(len(d['coherent_phase_pairs']),2)
@@ -2040,6 +2102,12 @@ def run_master_system() -> Dict[str, Any]:
         "equal":braid==software and atomic==software and optical==[CyclotomicField5(x) for x in software],
         "scope":"one operation only; no arbitrary-unitary equivalence or physical-device measurement"
     }
+
+    nontrivial=_compare_braid_generator_models(logical,1)
+    manifest["modules"]["nontrivial_generator_comparison"]={
+        "operation":"sigma_1, with distinct fusion-channel phases",
+        "equal":nontrivial['equal'],
+        "scope":"two-dimensional logical subspace; algebraic simulations, not arbitrary gates or physical hardware"}
 
     # 10. Hardware Multiplier & Refusal Surface
     manifest["modules"]["hardware_multiplier_timing"] = HardwareMultiplierTree.evaluate_timing(5, 2.5)
