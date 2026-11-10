@@ -911,24 +911,68 @@ class QuantumKernelRingEngine:
 # =====================================================================
 
 class HolographicMERAEngine:
-    """Holographic AdS3/CFT2 MERA, Ryu-Takayanagi area entropy, and black hole fast scrambling bounds."""
-    @staticmethod
-    def compute_entanglement_entropy_cft(L: int, c: float = 1.0) -> float:
-        return (c / 3.0) * math.log(max(1, L))
+    """Finite binary isometry/CNOT network, not a calibrated critical MERA.
 
+    Copy isometries expand a two-term top state and cross-boundary CNOT gates
+    are unitary disentanglers. Amplitudes contract exactly; density matrices
+    use Q(zeta_5). Entropy logarithms are reported symbolically and numerically.
+    """
     @staticmethod
-    def ryu_takayanagi_area(geodesic_length: float, G_N: float = 1.0) -> float:
-        return geodesic_length / (4.0 * G_N)
-
+    def contract(sites):
+        if type(sites) is not int or sites not in (4,8,16): raise RingError("Supported sizes are 4, 8, 16")
+        one,zero=CyclotomicRing.one(5),CyclotomicRing.zero(5)
+        state={(0,):one,(1,):one}; n=1
+        while n<sites:
+            expanded={}
+            for bits,amplitude in state.items():
+                key=tuple(c for bit in bits for c in (bit,bit))
+                expanded[key]=expanded.get(key,zero)+amplitude
+            n*=2
+            for control in range(1,n-1,2):
+                updated={}
+                for bits,amplitude in expanded.items():
+                    out=list(bits);out[control+1]^=out[control];key=tuple(out)
+                    updated[key]=updated.get(key,zero)+amplitude
+                expanded=updated
+            state=expanded
+        return state
     @staticmethod
-    def fast_scrambling_bounds(S_BH: float, beta: float = 1.0) -> Dict[str, Any]:
-        t_star = (beta / (2.0 * math.pi)) * math.log(max(1.0, S_BH))
-        return {
-            "black_hole_entropy": S_BH,
-            "fast_scrambling_time": t_star,
-            "tripartite_information_I3": -0.5,
-            "quantum_chaos_scrambling_verified": True
-        }
+    def causal_cone(sites,block):
+        if type(sites) is not int or sites not in (4,8,16) or type(block) is not int or not 1<=block<=sites:
+            raise RingError("Invalid network size or interval")
+        support=set(range(block));layers=[];n=sites
+        while n>1:
+            for control in reversed(range(1,n-1,2)):
+                if control in support or control+1 in support: support.update((control,control+1))
+            layers.append(sorted(support));support={i//2 for i in support};n//=2
+        layers.append(sorted(support));return layers
+    @classmethod
+    def reduced_state(cls,sites,block):
+        cls.causal_cone(sites,block);state=cls.contract(sites)
+        norm=sum((x*x.conj() for x in state.values()),CyclotomicRing.zero(5))
+        if norm.is_zero(): raise RingError("Cannot normalize zero state")
+        rho={}
+        for bits,a in state.items():
+            for other,b in state.items():
+                if bits[block:]!=other[block:]: continue
+                key=(bits[:block],other[:block])
+                rho[key]=rho.get(key,CyclotomicField5(0))+CyclotomicField5(a*b.conj())/CyclotomicField5(norm)
+        return rho
+    @classmethod
+    def entropy_report(cls,sites,block):
+        rho=cls.reduced_state(sites,block)
+        purity=sum((v*rho.get((j,i),CyclotomicField5(0)) for (i,j),v in rho.items()),CyclotomicField5(0))
+        trace=sum((v for (i,j),v in rho.items() if i==j),CyclotomicField5(0))
+        if purity==1: symbolic,numeric='0',0.0
+        elif purity==Fraction(1,2): symbolic,numeric='log(2)',math.log(2)
+        else: raise RingError("Uncharacterized spectrum")
+        reference=math.log(block)/3
+        return {"sites":sites,"block_size":block,"trace":[str(c) for c in trace.coefficients[:4]],
+                "purity":[str(c) for c in purity.coefficients[:4]],"entropy_symbolic":symbolic,
+                "entropy_approx_nats":numeric,"cft_c1_reference_nats":reference,
+                "cft_matches":math.isclose(numeric,reference,abs_tol=1e-10,rel_tol=1e-10),
+                "causal_cone":cls.causal_cone(sites,block),
+                "finding":"Exact finite network contraction; not calibrated for CFT scaling. Logarithms are not ring-valued."}
 
 
 # =====================================================================
@@ -1297,6 +1341,9 @@ class RefusalSurface:
 # =====================================================================
 
 class TestInvariant(unittest.TestCase):
+    def test_mera_density_trace_one(self):
+        for n in (4,8,16): self.assertEqual(HolographicMERAEngine.entropy_report(n,n//2)['trace'],['1','0','0','0'])
+
     def test_geodesic_zero_velocity_is_stationary(self):
         out=InfoGeoQFIMEngine.step_geodesic_stereographic(1,2,0,0,Fraction(1,3))
         self.assertEqual(out,tuple(map(CyclotomicField5,(1,2,0,0))))
@@ -1339,6 +1386,11 @@ class TestInvariant(unittest.TestCase):
 
 
 class TestProperty(unittest.TestCase):
+    def test_network_amplitude_norm_preserved(self):
+        for n in (4,8,16):
+            v=HolographicMERAEngine.contract(n)
+            self.assertEqual(sum((x*x.conj() for x in v.values()),CyclotomicRing.zero(5)),CyclotomicRing(5,2))
+
     def test_geodesic_zero_time_identity(self):
         for n in range(-3,4):
             out=InfoGeoQFIMEngine.step_geodesic_stereographic(n,1,2,3,0)
@@ -1383,6 +1435,10 @@ class TestProperty(unittest.TestCase):
 
 
 class TestAdversarial(unittest.TestCase):
+    def test_tensor_network_rejects_invalid_intervals(self):
+        for n,b in ((0,1),(4,0),(8,9),(True,1)):
+            with self.subTest(n=n,b=b),self.assertRaises(RingError):HolographicMERAEngine.reduced_state(n,b)
+
     def test_geodesic_rejects_inexact_and_complex_values(self):
         with self.assertRaises(RingError): InfoGeoQFIMEngine.step_geodesic_stereographic(0.5,0,1,0,1)
         with self.assertRaises(RingError): InfoGeoQFIMEngine.step_geodesic_stereographic(CyclotomicRing.zeta(5),0,1,0,1)
@@ -1453,6 +1509,9 @@ class TestAdversarial(unittest.TestCase):
 
 
 class TestEdge(unittest.TestCase):
+    def test_entire_network_state_is_pure(self):
+        self.assertEqual(HolographicMERAEngine.entropy_report(4,4)['entropy_symbolic'],'0')
+
     def test_geodesic_origin(self):
         x=InfoGeoQFIMEngine.step_geodesic_stereographic(0,0,1,0,Fraction(1,10))
         self.assertEqual(x[0],Fraction(1,10));self.assertEqual(x[2],1)
@@ -1497,6 +1556,11 @@ class TestEdge(unittest.TestCase):
 
 
 class TestUnit(unittest.TestCase):
+    def test_network_causal_cone_reaches_top(self):
+        self.assertEqual(HolographicMERAEngine.causal_cone(8,2)[-1],[0])
+    def test_network_reference_mismatch_is_reported(self):
+        self.assertFalse(HolographicMERAEngine.entropy_report(4,2)['cft_matches'])
+
     def test_geodesic_known_exact_step(self):
         out=InfoGeoQFIMEngine.step_geodesic_stereographic(1,0,1,0,Fraction(1,10))
         self.assertEqual(out,tuple(map(CyclotomicField5,(Fraction(221,200),0,Fraction(11,10),0))))
@@ -1556,6 +1620,11 @@ class TestUnit(unittest.TestCase):
 
 
 class TestIntegration(unittest.TestCase):
+    def test_network_full_density_matches_pure_state(self):
+        rho=HolographicMERAEngine.reduced_state(4,4)
+        self.assertEqual(len(rho),4)
+        self.assertEqual(sum((v for (i,j),v in rho.items() if i==j),CyclotomicField5(0)),1)
+
     def test_geodesic_real_cyclotomic_input(self):
         z=CyclotomicRing.zeta(5);u=z+z.conj()
         self.assertTrue(all(x.is_real() for x in InfoGeoQFIMEngine.step_geodesic_stereographic(u,0,1,0,Fraction(1,4))))
@@ -1594,6 +1663,9 @@ class TestIntegration(unittest.TestCase):
 
 
 class TestEndToEnd(unittest.TestCase):
+    def test_manifest_uses_network_contraction(self):
+        r=run_master_system()['modules']['holographic_mera'];self.assertEqual([x['sites'] for x in r['reports']],[4,8,16]);self.assertTrue(any(not x['cft_matches'] for x in r['reports']))
+
     def test_geodesic_manifest_exact_example(self):
         r=run_master_system()['modules']['infogeo_qfim'];self.assertEqual(r['discrete_step_coefficients'][0][0],'221/200');self.assertIn('approximates',r['finding'])
 
@@ -1682,15 +1754,10 @@ def run_master_system() -> Dict[str, Any]:
         "simplicial_hqec": hqec["simplicial_boundary_d_squared_zero"]
     }
 
-    # 7. Holographic MERA & Fast Scrambling
-    cft_s = HolographicMERAEngine.compute_entanglement_entropy_cft(100)
-    rt_area = HolographicMERAEngine.ryu_takayanagi_area(12.0)
-    scramble = HolographicMERAEngine.fast_scrambling_bounds(100.0)
-    manifest["modules"]["holographic_mera_and_scrambling"] = {
-        "cft_entanglement_scaling": cft_s,
-        "ryu_takayanagi_bulk_area_entropy": rt_area,
-        "fast_scrambling_time": scramble["fast_scrambling_time"],
-        "tripartite_information_I3": scramble["tripartite_information_I3"]
+    # 7. Explicit finite tensor-network measurements, not substituted formulas.
+    manifest["modules"]["holographic_mera"]={
+        "reports":[HolographicMERAEngine.entropy_report(n,n//2) for n in (4,8,16)],
+        "finding":"Finite network contracted; critical CFT scaling, RT and scrambling are not established."
     }
 
     # 8. Realisations (C1, C2, C4)
