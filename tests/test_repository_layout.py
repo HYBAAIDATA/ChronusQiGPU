@@ -4,6 +4,8 @@ import importlib
 import re
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 
 ARCHIVED_ROOT_FILES = (
@@ -84,3 +86,25 @@ def test_distribution_is_marked_private():
     assert 'name = "hyba-chronus"' in text
     assert "Private :: Do Not Upload" in text
     assert "Private :: Do Not Upload" in (ROOT / "packages" / "turing" / "pyproject.toml").read_text(encoding="utf-8")
+
+
+def test_every_module_in_the_distributions_compiles():
+    failures = []
+    for base in (ROOT / "src" / "chronus", ROOT / "packages" / "turing" / "src" / "turing"):
+        for path in sorted(base.rglob("*.py")):
+            try:
+                compile(path.read_bytes(), str(path), "exec", dont_inherit=True)
+            except SyntaxError as error:
+                failures.append(f"{path.relative_to(ROOT)}:{error.lineno}: {error.msg}")
+    assert failures == []
+
+
+def test_distributions_ship_disjoint_packages():
+    tomllib = pytest.importorskip("tomllib")
+    root = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    turing = tomllib.loads((ROOT / "packages" / "turing" / "pyproject.toml").read_text(encoding="utf-8"))
+    root_find = root["tool"]["setuptools"]["packages"]["find"]
+    turing_find = turing["tool"]["setuptools"]["packages"]["find"]
+    assert root_find["where"] == ["src"]
+    assert not any(pattern.startswith("turing") for pattern in root_find["include"])
+    assert all(pattern.startswith("turing") for pattern in turing_find["include"])

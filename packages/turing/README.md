@@ -53,3 +53,7 @@ tests/test_turing.py at the repository root.
 TURING is the foundation layer: it never imports `chronus`. Chronus depends on
 TURING, never the reverse. The distribution is internal (classifier
 "Private :: Do Not Upload") and is not delivered to external participants.
+
+## Specification
+
+The build contract for the canonical algorithm suite (Deutsch–Jozsa, Bernstein–Vazirani, Simon, Grover, the quantum Fourier transform, quantum phase estimation and Shor's order finding) is [docs/SPECIFICATION.md](docs/SPECIFICATION.md).

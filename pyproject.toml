@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "hyba-chronus"
 version = "37.0.0.dev0"
-description = "Chronus: the HYBA Data exact-computation platform, bundled with the TURING library (internal distribution)"
+description = "Chronus: the HYBA Data exact-computation platform (internal distribution; TURING ships separately as hyba-turing)"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
@@ -63,8 +63,8 @@ accelerator = [
 package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
-where = ["src", "packages/turing/src"]
-include = ["chronus*", "turing*"]
+where = ["src"]
+include = ["chronus*"]
 
 [tool.setuptools.package-data]
 "chronus.kernels" = ["*.cl"]
