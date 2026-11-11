@@ -554,6 +554,8 @@
   </style>
 </head>
 <body>
+<div role="note" style="padding:10px 16px;background:#3a2a00;color:#ffe9a8;font:14px/1.4 system-ui,sans-serif;">Static illustration. Values on this page are simulated in the browser and are not connected to AL HARAS or any live system. No certification, accreditation or production status is held or claimed. For computed results use the AL HARAS API (see docs/security/AL_HARAS_NOTES_RECONCILIATION.md).</div>
+
 
 <div class="page-grid">
 
@@ -562,9 +564,9 @@
     <div class="panel-header" style="margin-bottom: var(--space-sm);">
       <div>
         <div style="display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; margin-bottom: 4px;">
-          <span class="data-label">AL HARAS SOVEREIGN KERNEL v36.0</span>
-          <span class="status-chip chip-sage">MATHEMATICAL PURITY: 100% GREEN</span>
-          <span class="status-chip chip-cyan">FIPS 204 ML-DSA-65 CERTIFIED</span>
+          <span class="data-label">AL HARAS (HYBA SECURITY): STATIC ILLUSTRATION</span>
+          <span class="status-chip chip-sage">ILLUSTRATION: SIMULATED VALUES</span>
+          <span class="status-chip chip-cyan">NOT CERTIFIED</span>
           <span class="status-chip chip-sage">UK NCSC 14 PRINCIPLES PASS</span>
         </div>
         <h1>Chronus Sovereign Engine Suite</h1>
@@ -672,7 +674,7 @@
       <div id="kpi-tisa-val" class="tabular-val kpi-value" style="color: #b692f6;">Δ HW ≡ 0</div>
       <div class="kpi-sub">
         <i data-lucide="zap" style="width:14px;height:14px;"></i>
-        <span id="kpi-tisa-status">DPA/CPA IMMUNITY CERTIFIED</span>
+        <span id="kpi-tisa-status">DPA/CPA: NOT EVALUATED</span>
       </div>
     </div>
   </div>
@@ -1089,7 +1091,7 @@
         <div class="panel-header">
           <div>
             <span class="data-label">VERIFICATION RIGOUR &amp; ATTESTATION</span>
-            <h2>Certified Model Inference</h2>
+            <h2>Model inference (illustration)</h2>
           </div>
           <span class="data-label">TARGET: LOYAL WINGMAN</span>
         </div>
@@ -1435,7 +1437,7 @@
   <!-- PERSISTENT SOVEREIGN FOOTER -->
   <footer class="panel" style="padding: var(--space-md) var(--space-lg); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
     <div style="display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap;">
-      <span class="data-label" style="color: var(--primary);">CHRONUS GPIU — AL HARAS SOVEREIGN IMMUNITY OS</span>
+      <span class="data-label" style="color: var(--primary);">AL HARAS (HYBA SECURITY): ILLUSTRATION, NOT LIVE DATA</span>
       <span style="color: var(--secondary); font-size: 0.8rem;">Exact Algebraic Ring ℚ(&radic;5) &middot; Zero IEEE-754 Truncation Drift</span>
     </div>
     <div style="display: flex; gap: var(--space-md); align-items: center;">
@@ -1688,7 +1690,7 @@ function clearAuditLog() {
 function exportProofDossier() {
   const dossier = {
     kernel_version: 'AL_HARAS_SOVEREIGN_OS_v36.0',
-    verification_standard: 'NIST_FIPS_204_ML_DSA_65',
+    verification_standard: 'NONE: illustrative export, not signed or certified',
     timestamp: new Date().toISOString(),
     horizons_telemetry: {
       sheaf_cohomology: {
@@ -1935,13 +1937,13 @@ function toggleWeightTampering() {
   if (SimState.stark.isTampered) {
     SimState.stark.quotientResidual = 4829.184;
     SimState.stark.status = 'WEIGHT_CORRUPTION_DETECTED';
-    if (btn) btn.innerHTML = `<i data-lucide="shield-check" style="width:16px;height:16px;"></i><span>Restore Certified Model Weights</span>`;
+    if (btn) btn.innerHTML = `<i data-lucide="shield-check" style="width:16px;height:16px;"></i><span>Restore reference model weights (illustration)</span>`;
     addAuditLog('STARK', 'SECURITY ALERT: 1-bit adversarial weight poisoning detected! Quotient residual P(x) - Q(x)Z_H(x) != 0. Inference rejected.');
   } else {
     SimState.stark.quotientResidual = 0.0000;
     SimState.stark.status = 'FRI_QUOTIENT_VALID';
     if (btn) btn.innerHTML = `<i data-lucide="alert-triangle" style="width:16px;height:16px;"></i><span>Poison 1 Neural Weight (Tamper Test)</span>`;
-    addAuditLog('STARK', 'Certified model weights restored. Polynomial quotient identity P(x) = Q(x)·Z_H(x) satisfied.');
+    addAuditLog('STARK', 'Illustration: reference model weights restored in this page only (simulated, not verified).');
   }
   if (window.lucide) lucide.createIcons();
   updateSTARKUI();

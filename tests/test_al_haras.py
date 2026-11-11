@@ -38,7 +38,8 @@ class TestStatus:
         assert data["governance"]["principles_independently_assessed"] == 0
         expander = data["implemented_checks"]["expander"]
         assert expander["degree"] == 128 and expander["certified_exactly"] is True
-        assert "FIPS 204 ML-DSA (repository module is not conformant)" in data["not_implemented"]
+        assert data["implemented_checks"]["receipts"].startswith("Ed25519 and ML-DSA-87 (FIPS 204)")
+        assert any("FIPS 140-3" in item for item in data["not_implemented"])
         text = resp.text
         for forbidden in ("FEDRAMP_HIGH_CERTIFIED", "COMPLIANT_PASS", "OPERATIONAL", "229.14"):
             assert forbidden not in text

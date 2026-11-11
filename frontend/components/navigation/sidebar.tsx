@@ -68,7 +68,7 @@ export function Sidebar() {
         })}
 
         <div className="mt-4 pt-3 border-t border-neutral-800/60">
-          <p className="hidden px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-600 md:block">Interactive Studios</p>
+          <p className="hidden px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-600 md:block">Static illustrations (simulated data)</p>
           <a
             href="/sovereign-dashboard.html"
             target="_blank"
@@ -76,7 +76,7 @@ export function Sidebar() {
             className="flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm text-neutral-400 hover:bg-neutral-900 hover:text-cyan-300 transition-colors"
           >
             <ShieldCheck className="h-4 w-4 shrink-0 text-cyan-400" />
-            <span className="hidden min-w-0 flex-1 truncate md:block">Sovereign Simulator</span>
+            <span className="hidden min-w-0 flex-1 truncate md:block">AL HARAS illustration (static)</span>
             <ExternalLink className="hidden h-3 w-3 opacity-60 md:block" />
           </a>
           <a
@@ -86,7 +86,7 @@ export function Sidebar() {
             className="flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm text-neutral-400 hover:bg-neutral-900 hover:text-amber-300 transition-colors"
           >
             <Activity className="h-4 w-4 shrink-0 text-amber-400" />
-            <span className="hidden min-w-0 flex-1 truncate md:block">Hashrate Observatory</span>
+            <span className="hidden min-w-0 flex-1 truncate md:block">Observatory illustration (static)</span>
             <ExternalLink className="hidden h-3 w-3 opacity-60 md:block" />
           </a>
         </div>

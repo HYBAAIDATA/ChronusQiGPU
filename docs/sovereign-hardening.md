@@ -86,21 +86,34 @@ Notes:
 
 ## 3. Ephemeral sovereign runners (manual — infrastructure action)
 
-Deployable systemd unit, eBPF/LSM pre-flight hook, and registration scripts
-ship in `infra/runners/al-haras/` (see its README for install and the
-sovereign job template).
+`infra/runners/al-haras/` contains a systemd unit, root bootstrap and
+teardown scripts, an ephemeral registration script and job hooks for a
+self-hosted runner on a dedicated Linux host. Its README covers installation,
+every configuration variable, what the BPF LSM attestation and the unsigned
+pre-flight receipt do and do not establish, retention, deregistration, and
+the job template. CI checks these files with `bash -n` and stub-based tests
+(`tests/test_al_haras_runner_scripts.py`). They have not been validated on a
+real host from this repository, and the LSM objects they load are not part
+of it.
 
 Public hosted runners are multi-tenant. For RTL netlists, PV companion-matrix
-logic, and threshold-MPC key material, register self-hosted runners in
-ephemeral mode:
+logic, and threshold-MPC key material, use self-hosted runners in ephemeral
+mode:
 
-- Deploy Actions Runner Controller (ARC) on your own cluster, or bare-metal
-  machines, with the runner configured `--ephemeral` so each runner executes
-  exactly one job and is destroyed.
+- Register runners with `--ephemeral`, so that each takes exactly one job and
+  GitHub de-registers it afterwards. `infra/runners/al-haras/` does this on a
+  systemd host (bare metal or VM). Actions Runner Controller (ARC) on your
+  own Kubernetes cluster is an alternative that these files do not cover.
 - Prefer confidential-compute hosts (AMD SEV-SNP / Intel TDX) so job memory
-  is hardware-encrypted against the hypervisor.
-- Create a runner group (e.g. `sovereign-compute`) restricted to this
-  repository, and switch sensitive jobs to `runs-on: sovereign-compute`.
+  is hardware-encrypted against the hypervisor. The runner scripts neither
+  collect nor verify any hardware attestation.
+- Routing: runner groups exist only for organizations and enterprises. For
+  this user-owned repository, register the runner at repository level and
+  route jobs by label: `runs-on: [self-hosted, sovereign, al-haras-enforced]`.
+  In an organization, create a runner group (e.g. `sovereign-compute`)
+  restricted to this repository, set `RUNNER_GROUP` and the organization URL
+  in the runner's settings file, and use
+  `runs-on: { group: sovereign-compute, labels: [sovereign, al-haras-enforced] }`.
 - Keep `ubuntu-latest` for lint/coverage of public-facing code if fast
   feedback matters; anything touching `hw/`, `formal/`, or key material
   should run only on the sovereign pool.
