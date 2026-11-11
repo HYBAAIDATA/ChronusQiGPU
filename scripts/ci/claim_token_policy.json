@@ -1,0 +1,242 @@
+{
+  "description": "Reviewed exceptions for scripts/ci/check_forbidden_claims.py. Excluded prefixes hold third-party code and preserved historical material; every allowlist entry records the exact occurrence count and the basis for the wording.",
+  "excluded_prefixes": [
+    "vendor/",
+    "archive/",
+    "chronus_source_backup/",
+    "docs/directives/"
+  ],
+  "allowlist": [
+    {
+      "path": "artifacts/qigpu/exact_library/qudit_qec.py",
+      "token": 1,
+      "count": 2,
+      "basis": "mathematical-term",
+      "note": "Dense p^n Hilbert-space size compared with O(n^2) tableau memory"
+    },
+    {
+      "path": "artifacts/qigpu/manifest_607fe50583004bc5d31ae2e81c5026322d03e27ae38d6f9010b26c1e05b5a230.json",
+      "token": 1,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Recorded output of the qudit stabilizer example; dense-space growth"
+    },
+    {
+      "path": "artifacts/qigpu/manifest_a02ccf33decd178dadfd8d1d250add7598b152d28fc532d816ec2ea78cc3b20c.json",
+      "token": 1,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Recorded output of the qudit stabilizer example; dense-space growth"
+    },
+    {
+      "path": "artifacts/qigpu/manifest_c53bcc8c5e952b9a485d7b2e221ccbd2267ca1d4e0c0f24c1313de90a7f08bab.json",
+      "token": 1,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Recorded output of the qudit stabilizer example; dense-space growth"
+    },
+    {
+      "path": "artifacts/qigpu/manifest_d26d7a53afd14a128d9545d7165fa57ae9945e6d000dff6fc811347c32e978a5.json",
+      "token": 1,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Recorded output of the qudit stabilizer example; dense-space growth"
+    },
+    {
+      "path": "docs/FINOPS_AND_COMMERCIAL_ROI_BRIEF.md",
+      "token": 1,
+      "count": 1,
+      "basis": "claim-under-implementation",
+      "note": "Commercial brief; its claims are tracked for implementation in the claims register"
+    },
+    {
+      "path": "docs/IGPU_MANIFESTO.md",
+      "token": 0,
+      "count": 2,
+      "basis": "claim-under-implementation",
+      "note": "Manifesto; its capability statements are tracked for implementation in the claims register"
+    },
+    {
+      "path": "docs/executive/CHRONUS_GPIU_AL_HARAS_MASTER_DOSSIER.md",
+      "token": 1,
+      "count": 2,
+      "basis": "claim-under-implementation",
+      "note": "Executive dossier; its claims are tracked for implementation in the claims register"
+    },
+    {
+      "path": "docs/qigpu/pasted-text.txt",
+      "token": 1,
+      "count": 1,
+      "basis": "refusal-or-denial",
+      "note": "Model states that generic trigonometric values are not guaranteed cyclotomic"
+    },
+    {
+      "path": "docs/specifications/Chronus_GPIU_v3.0_Specification.html",
+      "token": 0,
+      "count": 1,
+      "basis": "claim-under-implementation",
+      "note": "Version 3.0 specification; its claims are tracked for implementation in the claims register"
+    },
+    {
+      "path": "docs/specifications/Chronus_GPIU_v3.0_Specification.html",
+      "token": 1,
+      "count": 1,
+      "basis": "claim-under-implementation",
+      "note": "Version 3.0 specification; its claims are tracked for implementation in the claims register"
+    },
+    {
+      "path": "docs/system-update/mining-and-accelerators.md",
+      "token": 1,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Index arithmetic avoids materialising fast-growing coefficients"
+    },
+    {
+      "path": "evidence/acceleration/capability-report.md",
+      "token": 1,
+      "count": 1,
+      "basis": "refusal-or-denial",
+      "note": "Evidence report states the result is not an advantage claim"
+    },
+    {
+      "path": "evidence/acceleration/findings_tensor_baseline.md",
+      "token": 1,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Matrix-exponent gate construction in the measured baseline"
+    },
+    {
+      "path": "evidence/cyclotomic/exact-mps-prototype.md",
+      "token": 1,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Output-length growth bound of the exact contraction"
+    },
+    {
+      "path": "exact_primitive_library-v3.py",
+      "token": 1,
+      "count": 2,
+      "basis": "mathematical-term",
+      "note": "Cayley transform versus transcendental functions; dense p^n space versus O(n^2) tableau"
+    },
+    {
+      "path": "frontend/app/mining/page.tsx",
+      "token": 1,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Contraction of the conjugate |psi|^n towards zero (|psi| < 1)"
+    },
+    {
+      "path": "frontend/public/chronus-observatory.html",
+      "token": 0,
+      "count": 1,
+      "basis": "claim-under-implementation",
+      "note": "Observatory page; its statements are tracked for implementation in the claims register"
+    },
+    {
+      "path": "frontend/public/chronus-observatory.html",
+      "token": 1,
+      "count": 1,
+      "basis": "claim-under-implementation",
+      "note": "Observatory page; its statements are tracked for implementation in the claims register"
+    },
+    {
+      "path": "qigpu_acceleration_system.py",
+      "token": 1,
+      "count": 1,
+      "basis": "refusal-or-denial",
+      "note": "Module states there is no universal compression"
+    },
+    {
+      "path": "reviews/acceleration_review.md",
+      "token": 1,
+      "count": 4,
+      "basis": "refusal-or-denial",
+      "note": "Review explains why the speed-up claims are not established"
+    },
+    {
+      "path": "scripts/ci/regional_failover_burst_test.py",
+      "token": 1,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Retry back-off schedule (engineering term)"
+    },
+    {
+      "path": "src/chronus/service/production_hr_api_v2.py",
+      "token": 3,
+      "count": 2,
+      "basis": "refusal-or-denial",
+      "note": "Listed among refused claims returned to callers"
+    },
+    {
+      "path": "src/chronus/tensor/adaptive_contraction.py",
+      "token": 3,
+      "count": 1,
+      "basis": "refusal-or-denial",
+      "note": "Listed among refused claims returned to callers"
+    },
+    {
+      "path": "src/chronus/tensor/charter.py",
+      "token": 0,
+      "count": 1,
+      "basis": "refusal-or-denial",
+      "note": "Charter lists phrases the system refuses to claim"
+    },
+    {
+      "path": "src/chronus/tensor/charter.py",
+      "token": 1,
+      "count": 1,
+      "basis": "refusal-or-denial",
+      "note": "Charter lists phrases the system refuses to claim"
+    },
+    {
+      "path": "src/chronus/tensor/charter.py",
+      "token": 2,
+      "count": 1,
+      "basis": "refusal-or-denial",
+      "note": "Charter lists phrases the system refuses to claim"
+    },
+    {
+      "path": "src/chronus/tensor/enhanced_representation.py",
+      "token": 3,
+      "count": 3,
+      "basis": "refusal-or-denial",
+      "note": "Listed among refused claims returned to callers"
+    },
+    {
+      "path": "src/chronus/tensor/evolution.py",
+      "token": 0,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Generator of a small local unitary step (calculus term)"
+    },
+    {
+      "path": "src/chronus/tensor/exact_mps.py",
+      "token": 1,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Output-length growth bound of the exact contraction"
+    },
+    {
+      "path": "src/turing/physics/cayley.py",
+      "token": 1,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Cayley transform avoids transcendental matrix functions"
+    },
+    {
+      "path": "src/turing/stabilizer/tableau.py",
+      "token": 1,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Dense p^n space compared with O(n^2) symplectic tableau"
+    },
+    {
+      "path": "tests/test_falsifiable_tensor.py",
+      "token": 1,
+      "count": 1,
+      "basis": "refusal-or-denial",
+      "note": "Test asserts the claim audit refuses the phrase"
+    }
+  ]
+}

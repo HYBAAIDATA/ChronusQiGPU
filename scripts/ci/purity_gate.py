@@ -5,7 +5,9 @@ appears. Rules:
 
 1. No floating-point computation in exact math paths (`math.` module usage,
    `float(...)` casts, `numpy` float dtypes). Exact integer helpers such as
-   `math.isqrt` are allowlisted.
+   `math.isqrt`, `math.gcd`, `math.lcm`, `math.comb`, `math.perm` and
+   `math.factorial` are allowlisted: they accept only integers and return
+   exact integers (floats raise TypeError).
 2. No pseudo-random heuristics (`random.` module). Cryptographic randomness
    via `secrets` is permitted where a protocol requires it.
 3. No classical-dressed-as-quantum theatre tokens in source or docstrings.
@@ -34,7 +36,7 @@ EXACT_PACKAGES = [
 ]
 
 BANNED = [
-    (re.compile(r"(?<![\w.])math\.(?!isqrt)"), "floating-point math module usage"),
+    (re.compile(r"(?<![\w.])math\.(?!(?:isqrt|gcd|lcm|comb|perm|factorial)\b)"), "floating-point math module usage"),
     (re.compile(r"(?<![\w.])float\("), "float() cast in exact path"),
     (re.compile(r"np\.float|numpy\.float|dtype\s*=\s*[\"']?f"), "numpy float dtype"),
     (re.compile(r"(?<![\w.])random\."), "pseudo-random heuristic"),

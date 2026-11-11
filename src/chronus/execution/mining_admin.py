@@ -92,20 +92,6 @@ class MiningAdminEngine:
             "consensus_status": "HARMONIC_CONSENSUS",
         }
 
-    def get_patroclus_status(self) -> Dict[str, Any]:
-        """Get Patroclus gateway & myrmidon telemetry."""
-        return {
-            "gateway_active": self.gateway is not None,
-            "total_myrmidons": self.gateway.invariants.total_searchers if self.gateway is not None else 0,
-            "phalanxes_count": self.gateway.invariants.hopf_fibers if self.gateway is not None else 0,
-            "polytope_dimension": self.gateway.invariants.polytope_dimension if self.gateway is not None else 0,
-            "vertices_count": self.gateway.invariants.vertices_count if self.gateway is not None else 0,
-            "edges_count": self.gateway.invariants.edges_count if self.gateway is not None else 0,
-            "hopf_fibers_count": self.gateway.invariants.hopf_fibers if self.gateway is not None else 0,
-            "total_myrmidon_searchers": self.gateway.invariants.total_searchers if self.gateway is not None else 0,
-            "classical_pci_purity_verified": not self.gateway.invariants.is_quantum if self.gateway is not None else True,
-        }
-
     @classmethod
     def get_instance(cls) -> "MiningAdminEngine":
         if cls._instance is None:

@@ -7,7 +7,6 @@ discrete tunneling, Cayley evolution, and symplectic qudit stabilizer tableau.
 import unittest
 from turing import (
     is_prime,
-    gcd,
     legendre_symbol,
     cyclotomic_polynomial_prime,
     convolution,
@@ -20,7 +19,6 @@ from turing import (
     superpose,
     inner_product,
     amplitude,
-    UnitaryZetaP,
     ProjectiveUnitaryZetaP,
     pauli_x,
     pauli_z,
@@ -37,7 +35,6 @@ from turing import (
     matrix_rank_over_field,
     schmidt_rank,
     normalized_schmidt_coefficients,
-    reduced_density_gram,
     exact_renyi_purity,
     DiscreteBarrier,
     ContinuousBarrier,
@@ -50,7 +47,6 @@ from turing import (
     SwarmZetaP,
     quantum_inspired_metaheuristic,
     StabilizerTableauZetaP,
-    TuringError,
     RingError,
     NonUnitError,
     DimensionMismatchError,
@@ -586,7 +582,7 @@ class TestIntegration(unittest.TestCase):
             z_entries[j][j] = ZetaP.zeta_power(j, p)
         X = MatrixZetaP(p, p, x_entries, p)
         Z = MatrixZetaP(p, p, z_entries, p)
-        I = MatrixZetaP.identity(p, p)
+        MatrixZetaP.identity(p, p)
 
         op1 = X.kron(X)
         op2 = Z.kron(Z.dagger())
@@ -614,7 +610,6 @@ class TestEndToEnd(unittest.TestCase):
         self.assertEqual(purity, (1, 2))
 
     def test_discrete_tight_binding_tunneling_unit(self):
-        p = 5
         barrier = DiscreteBarrier(
             num_sites=2,
             potential=[ZetaP.zero(5), ZetaP.zero(5)],
