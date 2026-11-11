@@ -1,0 +1,25 @@
+deleted (PR #29 merged, head 5620ee0bd1a615bea8871430c1396a489740c175): chore/turing-packaging-consolidation-20261111
+deleted (PR #30 merged, head 339aea19e8d072649150acd516fbfedc4b4d3b6b): feat/hendrix-structured-search
+remote: 
+remote: Create a pull request for 'feat/geodesic-11d' on GitHub by visiting:        
+remote:      https://github.com/hybadatadevops1/Chronusv2/pull/new/feat/geodesic-11d        
+remote: 
+created from main: feat/geodesic-11d 8c7679cead24c286f9abe6faa6a92abaa706fa94
+== open pull requests
+#27 cowork/workbench-20261111 -> main 0f596cc draft=true Scratch workbench (never merge)
+#26 al-haras/notes-alignment -> main 787e8c4 draft=false AL HARAS: align implementation with the notes (work in progress)
+== branch heads
+origin/al-haras/notes-alignment 787e8c4
+origin/cowork-systems/workbench-20261111 8c7679c
+origin/cowork/supervisor-results-20261111 396c3d0
+origin/cowork/supervisor-wb-20261111 549071a
+origin/cowork/workbench-20261111 0f596cc
+origin/feat/execution-guard 8c7679c
+origin/feat/folded-accelerator-composition b6f6bc9
+origin/feat/geodesic-11d 8c7679c
+origin/feat/partner-distribution 2995803
+origin/feat/security-stark-fri 8c7679c
+origin/feat/theseus-durable-storage 8c7679c
+origin/feat/turing-exact-algorithms a0ffe1c
+origin/main 8c7679c
+origin/work/prime-codec-bounded-decode 8fddfd1
