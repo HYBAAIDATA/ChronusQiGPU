@@ -11,9 +11,13 @@ name: HYBA Mine deploy
 #
 # Control: edit deploy/hyba-mine/control.env on branch hyba-mine/control and push,
 # or run the workflow manually once it is on main. Azure sign-in is OpenID Connect
-# to the managed identity id-hyba-mine-github (AcrPush on the registry, Virtual
-# Machine Contributor on the mining host), which trusts only this repository's
-# refs/heads/hyba-mine/control and refs/heads/main. There are no stored secrets.
+# to the managed identity id-hyba-mine-github (Reader and AcrPush on the registry,
+# Virtual Machine Contributor on the mining host), which trusts only this
+# repository's refs/heads/hyba-mine/control and refs/heads/main. There are no
+# stored secrets.
+#
+# Every run writes its report (step outcomes, build, self-test and host output; no
+# credentials) to hyba-mine/runs/ on the private results branch.
 
 on:
   push:
@@ -37,7 +41,7 @@ on:
         default: viabtc
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 concurrency:
@@ -51,7 +55,9 @@ env:
   RESOURCE_GROUP: rg-cronusqigpu-demo
   MINING_HOST: vm-qigpu-miner
   REGISTRY: crcronusqigpudemohybadata
+  REGISTRY_SERVER: crcronusqigpudemohybadata.azurecr.io
   KEY_VAULT: kv-cronusqigpu-demo-hyba
+  RESULTS_BRANCH: cowork/supervisor-results-20261111
 
 jobs:
   deploy:
@@ -69,62 +75,131 @@ jobs:
           INPUT_POOL: ${{ inputs.pool }}
         run: |
           set -euo pipefail
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
-            action="$INPUT_ACTION"; pool="$INPUT_POOL"
-          else
-            action="$(sed -n 's/^HYBA_MINE_ACTION=//p' deploy/hyba-mine/control.env | tr -d '[:space:]')"
-            pool="$(sed -n 's/^HYBA_MINE_POOL=//p' deploy/hyba-mine/control.env | tr -d '[:space:]')"
-          fi
-          case "$action" in start|stop|status) ;; *) echo "::error::unknown action '$action'"; exit 1 ;; esac
-          case "$pool" in viabtc|braiins) ;; *) echo "::error::unknown pool '$pool'"; exit 1 ;; esac
-          echo "action=$action" >> "$GITHUB_OUTPUT"
-          echo "pool=$pool" >> "$GITHUB_OUTPUT"
-          echo "Requested: $action on $pool"
+          {
+            echo "== requested action"
+            if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+              action="$INPUT_ACTION"; pool="$INPUT_POOL"
+            else
+              action="$(sed -n 's/^HYBA_MINE_ACTION=//p' deploy/hyba-mine/control.env | tr -d '[:space:]')"
+              pool="$(sed -n 's/^HYBA_MINE_POOL=//p' deploy/hyba-mine/control.env | tr -d '[:space:]')"
+            fi
+            case "$action" in start|stop|status) ;; *) echo "::error::unknown action '$action'"; exit 1 ;; esac
+            case "$pool" in viabtc|braiins) ;; *) echo "::error::unknown pool '$pool'"; exit 1 ;; esac
+            echo "action=$action" >> "$GITHUB_OUTPUT"
+            echo "pool=$pool" >> "$GITHUB_OUTPUT"
+            echo "Requested: $action on $pool"
+          } 2>&1 | tee -a "$RUNNER_TEMP/hyba-mine-report.txt"
 
       - name: Build the image (documented miner image plus runner and self-test)
+        id: build
         if: steps.req.outputs.action == 'start'
+        shell: bash
         run: |
           set -euo pipefail
-          docker build --target miner-runtime -t "hyba-mine-base:${GITHUB_SHA}" .
-          docker build -f deploy/hyba-mine/Dockerfile --build-arg "BASE_IMAGE=hyba-mine-base:${GITHUB_SHA}" -t "hyba-mine:${GITHUB_SHA}" .
+          {
+            echo "== build"
+            docker build --progress=plain --target miner-runtime -t "hyba-mine-base:${GITHUB_SHA}" .
+            docker build --progress=plain -f deploy/hyba-mine/Dockerfile \
+              --build-arg "BASE_IMAGE=hyba-mine-base:${GITHUB_SHA}" -t "hyba-mine:${GITHUB_SHA}" .
+          } 2>&1 | tail -n 400 | tee -a "$RUNNER_TEMP/hyba-mine-report.txt"
+          docker image inspect "hyba-mine:${GITHUB_SHA}" >/dev/null
 
       - name: Built-in self-test with networking disabled (no pool connection)
+        id: bist
         if: steps.req.outputs.action == 'start'
+        shell: bash
         run: |
           set -euo pipefail
-          docker run --rm --network none "hyba-mine:${GITHUB_SHA}" python /opt/hyba-mine/bist.py
-          docker run --rm --network none "hyba-mine:${GITHUB_SHA}" python -c "import sys; sys.path.insert(0, '/opt/hyba-mine'); import runner; print('runner imports')"
+          {
+            echo "== self-test"
+            docker run --rm --network none "hyba-mine:${GITHUB_SHA}" python /opt/hyba-mine/bist.py
+            docker run --rm --network none "hyba-mine:${GITHUB_SHA}" \
+              python -c "import sys; sys.path.insert(0, '/opt/hyba-mine'); import runner; print('runner imports')"
+          } 2>&1 | tee -a "$RUNNER_TEMP/hyba-mine-report.txt"
 
-      - uses: azure/login@8216e11d8cd9b42fe925c852af8e76311ff067ac # v2
+      - name: Azure sign-in (OpenID Connect)
+        id: login
+        uses: azure/login@8216e11d8cd9b42fe925c852af8e76311ff067ac # v2
         with:
           client-id: ${{ env.AZURE_CLIENT_ID }}
           tenant-id: ${{ env.AZURE_TENANT_ID }}
           subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
 
       - name: Push the image to the private registry
+        id: push
         if: steps.req.outputs.action == 'start'
+        shell: bash
         run: |
           set -euo pipefail
-          az acr login --name "$REGISTRY"
-          server="$(az acr show --name "$REGISTRY" --query loginServer --output tsv)"
-          docker tag "hyba-mine:${GITHUB_SHA}" "$server/hyba-mine:${GITHUB_SHA}"
-          docker push --quiet "$server/hyba-mine:${GITHUB_SHA}"
-          echo "IMAGE=$server/hyba-mine:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          {
+            echo "== registry"
+            az account show --query "{subscription:id, tenant:tenantId}" --output tsv
+            for attempt in 1 2 3 4 5 6 7 8; do
+              if az acr login --name "$REGISTRY"; then break; fi
+              if [ "$attempt" = 8 ]; then echo "registry sign-in failed"; exit 1; fi
+              echo "registry sign-in attempt $attempt failed; retrying in 20 s"
+              sleep 20
+            done
+            docker tag "hyba-mine:${GITHUB_SHA}" "$REGISTRY_SERVER/hyba-mine:${GITHUB_SHA}"
+            docker push --quiet "$REGISTRY_SERVER/hyba-mine:${GITHUB_SHA}"
+            echo "pushed $REGISTRY_SERVER/hyba-mine:${GITHUB_SHA}"
+          } 2>&1 | tee -a "$RUNNER_TEMP/hyba-mine-report.txt"
+          echo "IMAGE=$REGISTRY_SERVER/hyba-mine:${GITHUB_SHA}" >> "$GITHUB_ENV"
 
       - name: Act on the mining host
+        id: host
         shell: bash
         env:
           ACTION: ${{ steps.req.outputs.action }}
           POOL: ${{ steps.req.outputs.pool }}
         run: |
           set -euo pipefail
-          server="$(az acr show --name "$REGISTRY" --query loginServer --output tsv)"
-          out="$(az vm run-command invoke --resource-group "$RESOURCE_GROUP" --name "$MINING_HOST" \
-            --command-id RunShellScript --scripts @deploy/hyba-mine/vm-hyba-mine.sh \
-            --parameters "$ACTION" "$POOL" "$KEY_VAULT" "$server" "$REGISTRY" "${IMAGE:-}" \
-            --query 'value[0].message' --output tsv)"
-          echo "$out"
-          if grep -q 'MINER_ERROR' <<<"$out"; then
-            echo "::error::$(grep -m1 'MINER_ERROR' <<<"$out")"
-            exit 1
-          fi
+          {
+            echo "== mining host ($ACTION $POOL)"
+            out="$(az vm run-command invoke --resource-group "$RESOURCE_GROUP" --name "$MINING_HOST" \
+              --command-id RunShellScript --scripts @deploy/hyba-mine/vm-hyba-mine.sh \
+              --parameters "$ACTION" "$POOL" "$KEY_VAULT" "$REGISTRY_SERVER" "$REGISTRY" "${IMAGE:-}" \
+              --query 'value[0].message' --output tsv)"
+            echo "$out"
+            if grep -q 'MINER_ERROR' <<<"$out"; then
+              echo "::error::$(grep -m1 'MINER_ERROR' <<<"$out")"
+              exit 1
+            fi
+          } 2>&1 | tee -a "$RUNNER_TEMP/hyba-mine-report.txt"
+
+      - name: Publish the run report to the private results branch
+        if: always()
+        shell: bash
+        env:
+          OUTCOMES: "requested=${{ steps.req.outcome }} build=${{ steps.build.outcome }} self-test=${{ steps.bist.outcome }} azure-sign-in=${{ steps.login.outcome }} registry=${{ steps.push.outcome }} host=${{ steps.host.outcome }}"
+        run: |
+          set -uo pipefail
+          report="$RUNNER_TEMP/hyba-mine-report.txt"
+          touch "$report"
+          name="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
+          {
+            echo "HYBA Mine deploy run $GITHUB_RUN_ID attempt $GITHUB_RUN_ATTEMPT"
+            echo "commit $GITHUB_SHA ref $GITHUB_REF event $GITHUB_EVENT_NAME at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "outcomes: $OUTCOMES"
+            echo
+            tail -c 150000 "$report"
+          } > "$RUNNER_TEMP/final.txt"
+          git config --global user.name "hyba-mine-deploy"
+          git config --global user.email "hyba-mine-deploy@users.noreply.github.com"
+          for attempt in 1 2 3 4 5; do
+            rm -rf "$RUNNER_TEMP/results"
+            git worktree prune
+            git fetch --quiet --depth 1 origin "+refs/heads/${RESULTS_BRANCH}:refs/remotes/origin/hyba-mine-results" || { echo "results branch not reachable"; exit 0; }
+            git worktree add --quiet --detach "$RUNNER_TEMP/results" refs/remotes/origin/hyba-mine-results
+            mkdir -p "$RUNNER_TEMP/results/hyba-mine/runs"
+            cp "$RUNNER_TEMP/final.txt" "$RUNNER_TEMP/results/hyba-mine/runs/$name"
+            cp "$RUNNER_TEMP/final.txt" "$RUNNER_TEMP/results/hyba-mine/LATEST.txt"
+            git -C "$RUNNER_TEMP/results" add hyba-mine
+            git -C "$RUNNER_TEMP/results" commit --quiet -m "hyba-mine run $GITHUB_RUN_ID: $OUTCOMES"
+            if git -C "$RUNNER_TEMP/results" push --quiet origin "HEAD:refs/heads/${RESULTS_BRANCH}"; then
+              echo "report published: hyba-mine/runs/$name"
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          echo "report not published"
