@@ -1,0 +1,130 @@
+name: HYBA Mine deploy
+
+# Builds HYBA Mine from this repository and starts, stops or reports it on HYBA's
+# Azure mining host (vm-qigpu-miner, UK West), where it mines.
+#
+# This workflow never mines. GitHub's terms prohibit cryptomining in Actions, on
+# GitHub-hosted and self-hosted runners alike. The job builds the image, runs the
+# built-in self-test with networking disabled (known-answer SHA-256d, header,
+# merkle, target and gatekeeper checks on the miner's own code), pushes the image
+# to the private registry and acts on the mining host through Azure run-command.
+#
+# Control: edit deploy/hyba-mine/control.env on branch hyba-mine/control and push,
+# or run the workflow manually once it is on main. Azure sign-in is OpenID Connect
+# to the managed identity id-hyba-mine-github (AcrPush on the registry, Virtual
+# Machine Contributor on the mining host), which trusts only this repository's
+# refs/heads/hyba-mine/control and refs/heads/main. There are no stored secrets.
+
+on:
+  push:
+    branches: [hyba-mine/control]
+    paths:
+      - deploy/hyba-mine/**
+      - .github/workflows/hyba-mine.yml
+  workflow_dispatch:
+    inputs:
+      action:
+        description: start, stop or status
+        required: true
+        type: choice
+        options: [status, start, stop]
+        default: status
+      pool:
+        description: Pool
+        required: true
+        type: choice
+        options: [viabtc, braiins]
+        default: viabtc
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: hyba-mine-deploy
+  cancel-in-progress: false
+
+env:
+  AZURE_CLIENT_ID: 28711228-5d62-4df1-8e2b-d28606300006
+  AZURE_TENANT_ID: 3fb37656-b746-4086-9a92-509c5efafad0
+  AZURE_SUBSCRIPTION_ID: 94c968f4-d214-41a0-97ec-441261e12d61
+  RESOURCE_GROUP: rg-cronusqigpu-demo
+  MINING_HOST: vm-qigpu-miner
+  REGISTRY: crcronusqigpudemohybadata
+  KEY_VAULT: kv-cronusqigpu-demo-hyba
+
+jobs:
+  deploy:
+    name: Build, self-test and act on the mining host
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Requested action
+        id: req
+        shell: bash
+        env:
+          INPUT_ACTION: ${{ inputs.action }}
+          INPUT_POOL: ${{ inputs.pool }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            action="$INPUT_ACTION"; pool="$INPUT_POOL"
+          else
+            action="$(sed -n 's/^HYBA_MINE_ACTION=//p' deploy/hyba-mine/control.env | tr -d '[:space:]')"
+            pool="$(sed -n 's/^HYBA_MINE_POOL=//p' deploy/hyba-mine/control.env | tr -d '[:space:]')"
+          fi
+          case "$action" in start|stop|status) ;; *) echo "::error::unknown action '$action'"; exit 1 ;; esac
+          case "$pool" in viabtc|braiins) ;; *) echo "::error::unknown pool '$pool'"; exit 1 ;; esac
+          echo "action=$action" >> "$GITHUB_OUTPUT"
+          echo "pool=$pool" >> "$GITHUB_OUTPUT"
+          echo "Requested: $action on $pool"
+
+      - name: Build the image (documented miner image plus runner and self-test)
+        if: steps.req.outputs.action == 'start'
+        run: |
+          set -euo pipefail
+          docker build --target miner-runtime -t "hyba-mine-base:${GITHUB_SHA}" .
+          docker build -f deploy/hyba-mine/Dockerfile --build-arg "BASE_IMAGE=hyba-mine-base:${GITHUB_SHA}" -t "hyba-mine:${GITHUB_SHA}" .
+
+      - name: Built-in self-test with networking disabled (no pool connection)
+        if: steps.req.outputs.action == 'start'
+        run: |
+          set -euo pipefail
+          docker run --rm --network none "hyba-mine:${GITHUB_SHA}" python /opt/hyba-mine/bist.py
+          docker run --rm --network none "hyba-mine:${GITHUB_SHA}" python -c "import sys; sys.path.insert(0, '/opt/hyba-mine'); import runner; print('runner imports')"
+
+      - uses: azure/login@8216e11d8cd9b42fe925c852af8e76311ff067ac # v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Push the image to the private registry
+        if: steps.req.outputs.action == 'start'
+        run: |
+          set -euo pipefail
+          az acr login --name "$REGISTRY"
+          server="$(az acr show --name "$REGISTRY" --query loginServer --output tsv)"
+          docker tag "hyba-mine:${GITHUB_SHA}" "$server/hyba-mine:${GITHUB_SHA}"
+          docker push --quiet "$server/hyba-mine:${GITHUB_SHA}"
+          echo "IMAGE=$server/hyba-mine:${GITHUB_SHA}" >> "$GITHUB_ENV"
+
+      - name: Act on the mining host
+        shell: bash
+        env:
+          ACTION: ${{ steps.req.outputs.action }}
+          POOL: ${{ steps.req.outputs.pool }}
+        run: |
+          set -euo pipefail
+          server="$(az acr show --name "$REGISTRY" --query loginServer --output tsv)"
+          out="$(az vm run-command invoke --resource-group "$RESOURCE_GROUP" --name "$MINING_HOST" \
+            --command-id RunShellScript --scripts @deploy/hyba-mine/vm-hyba-mine.sh \
+            --parameters "$ACTION" "$POOL" "$KEY_VAULT" "$server" "$REGISTRY" "${IMAGE:-}" \
+            --query 'value[0].message' --output tsv)"
+          echo "$out"
+          if grep -q 'MINER_ERROR' <<<"$out"; then
+            echo "::error::$(grep -m1 'MINER_ERROR' <<<"$out")"
+            exit 1
+          fi
