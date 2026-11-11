@@ -4,11 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hyba-turing"
-version = "0.1.0"
-description = "First-principles finite-dimensional quantum mathematics for HYBA Data"
+version = "0.2.0.dev0"
+description = "TURING: first-principles finite-dimensional quantum mathematics for HYBA Data, with an exact cyclotomic layer (internal)"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
+  "Private :: Do Not Upload",
+  "License :: Other/Proprietary License",
   "Development Status :: 3 - Alpha",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
@@ -24,3 +26,7 @@ test = ["pytest>=8"]
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["turing*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

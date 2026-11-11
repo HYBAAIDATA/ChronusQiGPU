@@ -1642,21 +1642,71 @@ class ExactFoldCore:
 
 class MLDSASigner:
     """
-    FIPS 204 ML-DSA (Dilithium) Module-Lattice Digital Signature Scheme.
-    Operates over polynomial ring R_q = Z_q[X]/(X^256 + 1) where q = 8380417.
+    FIPS 204 ML-DSA-65 module-lattice signatures through pyca/cryptography (OpenSSL).
+
+    ``sign_mldsa`` accepts an ML-DSA-65 private key or a 32-byte FIPS 204
+    key-generation seed; other key material is hashed with SHA-256 under a
+    domain tag to form that seed. ``verify_mldsa`` accepts an ML-DSA-65 public
+    key or its 1,952-byte raw encoding and returns True only when the signature
+    verifies: there is no fallback acceptance. Receipt keys are generated per
+    tenant inside this process (``tenant_private_key``); only public keys leave
+    the signer. Cross-process custody (KMS or HSM) is a separate concern.
     """
+    PREFIX = "mldsa65_"
+    _tenant_keys: dict = {}
+
+    @staticmethod
+    def _mldsa():
+        from cryptography.hazmat.primitives.asymmetric import mldsa
+        return mldsa
+
+    @classmethod
+    def _private_key(cls, key: Any) -> Any:
+        mldsa = cls._mldsa()
+        if isinstance(key, mldsa.MLDSA65PrivateKey):
+            return key
+        if isinstance(key, (bytes, bytearray)) and len(key) == 32:
+            return mldsa.MLDSA65PrivateKey.from_seed_bytes(bytes(key))
+        material = bytes(key) if isinstance(key, (bytes, bytearray)) else str(key).encode("utf-8")
+        seed = hashlib.sha256(b"chronus/mldsa65/seed/v1|" + material).digest()
+        return mldsa.MLDSA65PrivateKey.from_seed_bytes(seed)
+
+    @classmethod
+    def tenant_private_key(cls, tenant_hash: str) -> Any:
+        key = cls._tenant_keys.get(tenant_hash)
+        if key is None:
+            key = cls._mldsa().MLDSA65PrivateKey.generate()
+            cls._tenant_keys[tenant_hash] = key
+        return key
+
+    @classmethod
+    def public_key_bytes(cls, key: Any) -> bytes:
+        return cls._private_key(key).public_key().public_bytes_raw()
+
+    @classmethod
+    def tenant_public_key(cls, tenant_hash: str) -> bytes:
+        return cls.public_key_bytes(cls.tenant_private_key(tenant_hash))
+
+    @staticmethod
+    def _message_bytes(msg: Any) -> bytes:
+        return msg.encode("utf-8") if isinstance(msg, str) else bytes(msg)
+
     @classmethod
     def sign_mldsa(cls, key: Any, msg: str) -> str:
-        # Standard Ed25519 signature + ML-DSA lattice prefix anchor
-        base_sig = sign_ed25519(key, msg)
-        return "mldsa5_" + base_sig
+        return cls.PREFIX + cls._private_key(key).sign(cls._message_bytes(msg)).hex()
 
     @classmethod
     def verify_mldsa(cls, pub: Any, msg: str, sig: str) -> bool:
-        if sig.startswith("mldsa5_"):
-            raw_sig = sig[7:]
-            return verify_ed25519(pub, msg, raw_sig)
-        return verify_ed25519(pub, msg, sig)
+        from cryptography.exceptions import InvalidSignature
+        if not isinstance(sig, str) or not sig.startswith(cls.PREFIX):
+            return False
+        mldsa = cls._mldsa()
+        try:
+            public = pub if isinstance(pub, mldsa.MLDSA65PublicKey) else mldsa.MLDSA65PublicKey.from_public_bytes(bytes(pub))
+            public.verify(bytes.fromhex(sig[len(cls.PREFIX):]), cls._message_bytes(msg))
+        except (InvalidSignature, TypeError, ValueError):
+            return False
+        return True
 
 
 class Poseidon2FiatShamirIVCFolder:
@@ -2313,8 +2363,7 @@ class OVIDService:
             "at"              : now_iso8601(),
         }
         rh = sha256(rfc8785(payload))
-        _signing_seed = hashlib.sha256(f"mldsa_tenant_key_v1:{tenant_hash}".encode()).digest()
-        rs = MLDSASigner.sign_mldsa(_signing_seed, rh)
+        rs = MLDSASigner.sign_mldsa(MLDSASigner.tenant_private_key(tenant_hash), rh)
         stark_proof = ZKSTARKVerifier.generate_stark_proof(staged_bytes)
 
         stored = StoredReceipt(
@@ -2409,7 +2458,7 @@ class ZKSTARKVerifier:
     """
     Zero-Knowledge Scalable Transparent Argument of Knowledge (zk-STARK) Verifier.
     Verifies FRI (Fast Reed-Solomon IOP) polynomial quotient constraints P(x)/Z_H(x).
-    Uses native Poseidon2 algebraic sponge hash over F_257^k to reduce AIR degree by 100x.
+    Uses native Poseidon2 algebraic sponge hash over F_257^k to reduce AIR degree from 2^16 to 2^6.
     """
     @classmethod
     def generate_stark_proof(cls, trace_bytes: bytes) -> dict:
@@ -2419,7 +2468,7 @@ class ZKSTARKVerifier:
         return {
             "poseidon2_hash":       poseidon2_hash,
             "air_commitment":       air_commitment,
-            "air_degree_reduction": "100x (Degree 2^16 -> 2^6 via Poseidon2)",
+            "air_degree_reduction": f"{(1 << 16) // (1 << 6)}-fold (Degree 2^16 -> 2^6 via Poseidon2)",
             "fri_root":             fri_root,
             "quotient_valid":       True,
             "soundness_err":        "< 2^-128"
@@ -3091,7 +3140,7 @@ class PublicVerifyService:
             return 200, {"valid": False, "reason": "payload_hash_mismatch"}
 
         # I3: ML-DSA signature check
-        if not MLDSASigner.verify_mldsa(b"mock_pub", recomputed, stored.receipt_sig):
+        if not MLDSASigner.verify_mldsa(MLDSASigner.tenant_public_key(stored.tenant_hash), recomputed, stored.receipt_sig):
             return 200, {"valid": False, "reason": "signature_invalid"}
 
         # I5: parent chain check
@@ -3861,8 +3910,8 @@ def run_invariant_tests(prebuilt_pipeline: "UnifiedFullStackPipeline" = None) ->
     print("I2  PASS — sha256(rfc8785(payload)) == receipt_hash")
 
     # I3 — Receipt carries a valid ML-DSA lattice signature
-    assert MLDSASigner.verify_mldsa(b"pub", rh, stored.receipt_sig), "I3 FAIL: sig invalid"
-    print("I3  PASS — ML-DSA Post-Quantum lattice signature structurally valid")
+    assert MLDSASigner.verify_mldsa(MLDSASigner.tenant_public_key(stored.tenant_hash), rh, stored.receipt_sig), "I3 FAIL: sig invalid"
+    print("I3  PASS — FIPS 204 ML-DSA-65 receipt signature verified with the tenant public key")
 
     # I4 — Chain positions are strictly monotone per tenant
     store_res2 = ovid.store(
@@ -6006,8 +6055,8 @@ def run_invariant_tests(prebuilt_pipeline: "UnifiedFullStackPipeline" = None) ->
     print("I2  PASS — sha256(rfc8785(payload)) == receipt_hash")
 
     # I3 — Receipt carries a valid ML-DSA lattice signature
-    assert MLDSASigner.verify_mldsa(b"pub", rh, stored.receipt_sig), "I3 FAIL: sig invalid"
-    print("I3  PASS — ML-DSA Post-Quantum lattice signature structurally valid")
+    assert MLDSASigner.verify_mldsa(MLDSASigner.tenant_public_key(stored.tenant_hash), rh, stored.receipt_sig), "I3 FAIL: sig invalid"
+    print("I3  PASS — FIPS 204 ML-DSA-65 receipt signature verified with the tenant public key")
 
     # I4 — Chain positions are strictly monotone per tenant
     store_res2 = ovid.store(

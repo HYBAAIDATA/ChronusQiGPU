@@ -18,7 +18,7 @@ RUN groupadd --system --gid 10001 chronus \
     && mkdir -p /var/lib/chronus \
     && chown chronus:chronus /var/lib/chronus
 COPY --from=builder /wheels /wheels
-RUN python -m pip install --no-cache-dir --no-index --find-links=/wheels chronus-quantum-igpu \
+RUN python -m pip install --no-cache-dir --no-index --find-links=/wheels hyba-chronus \
     && rm -rf /wheels
 WORKDIR /var/lib/chronus
 USER 10001:10001
