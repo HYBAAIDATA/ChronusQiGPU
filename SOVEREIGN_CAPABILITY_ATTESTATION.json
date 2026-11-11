@@ -1,4 +1,42 @@
-{
+# Review of this agent report
+
+The report is a **self-assessment of its own file**, which is the weakest form of review — but the specific claims it makes are checkable, and two of them don't hold up as stated.
+
+## What the report gets right
+
+The imports are the real finding and they're credible: `fold_pair`/`unfold_pair` from `structural.py`, `OVIDStorage` from `ovid.py`, `PhyllotaxisMesh` from `phyllotaxis.py`, `TheseusService` from `theseus.py`, `StabilizerTableauZetaP` from `turing.stabilizer.tableau`. That confirms your earlier string check — the accelerator **calls** the existing pieces rather than duplicating them. That's the composition you asked for, and it's real.
+
+The `apply_*`/`measure_z` wrapping `self.tableau` (the existing class) rather than a copy is also credible and matches what the imports imply.
+
+## Where the report is wrong or evasive
+
+**1. The 1000-qubit claim is now stated in a way that contradicts itself.**
+
+> `tableau_n_qudits = min(n_logical_qudits,
+64)` — caps at 64 physical qudits
+> `effective_qubit_count()` computes `int(p ** tableau_n_qudits * 2.0)`
+
+So the module **caps the tableau at 64 qudits** and then reports an "effective" count by exponentiating `p ** 64`. Those are two different things:
+
+- The **tableau** holds `64` qudits' worth of stabilizer generators — that's the real, `O(n²)` object.
+- `effective_qubit_count()` returns `p^64 × 2`, which is a **number computed from the cap**, not a count of anything the tableau holds.
+
+A tableau on 64 qudits is `O(64²)` field elements — genuinely tractable. `p^64` is an astronomical number. The "effective 1000" is not a compression result; it's `p^64` arithmetic multiplied by 2, with `64` chosen as the cap. **That's the `qudit_qec.py` pattern again**: a function named `effective_qubit_count()` that returns a large number derived from the configured cap, presented as a capability. The report should not describe this as "the 1000-qubit effective count is based on fold compression + phyllotaxis." It's based on exponentiating the cap.
+
+**2. "Does NOT reimplement the M15 fold"** — true for `fold_pair`/`unfold_pair`. But the report also says the module uses "219, 98, 135, 37 which are the same M15 matrix coefficients." If it's using `fold_pair()` from `structural.py`, it shouldn't need the coefficients inline at all. Either they're used in a **separate** M15 path inside the accelerator (in which case it *is* partially reimplementing), or they're dead constants. The report doesn't say which. Ask.
+
+**3. The scale side — Lucas + PV — is not mentioned once.** The whole report is about fold/store/tableau imports. You have been correcting me for several rounds that **Lucas and PV scale**, and the accelerator's report doesn't say whether the scale layer is in the module, called from it, or absent. If the scale side isn't wired, the loop is incomplete: fold and store are composed, scale is not. That's the single most important open question, and the report is silent on it.
+
+**4. "The `folded_accelerator.py` module passes the review"** — it's reviewing itself. A file cannot pass its own review; that's not a review, it's a status claim. The self-assessment is useful as a claim-list, not as a verdict.
+
+## What this actually tells you
+
+- **Integration is real**: it calls the existing components. Good.
+- **The 1000-qubit number is cap-derived arithmetic**, not a measure of the tableau. The tableau holds 64 qudits; the "effective" figure is `p^64×2`. That distinction should be in the code's docstring and in the report, and it isn't.
+- **Lucas + PV is unaddressed**. The scale layer you've been telling me is central is not mentioned in the accelerator report at all.
+- **The M15 coefficient claim needs one line**: are they used by a second M15 path in the accelerator, or dead? If used, it's a partial reimplementation.
+
+So: accept "it calls the existing pieces," reject "it passes the review" (self-review), and before calling it done, get one sentence each on (a) whether Lucas + PV are wired into the accelerator, and (b) whether the inline M15 coefficients are used or dead. Those two answers decide whether the module is the full loop (fold → store → scale) or only the fold+store half with a `p^64` label on top.{
   "attestation_title": "SOVEREIGN QUANTUM CAPABILITY & MATHEMATICAL PURITY DOSSIER",
   "standard": "DIFC Sovereign Asset Evaluation & Five Eyes Computational Verification",
   "status": "SOVEREIGN_QUALIFIED",
