@@ -279,7 +279,7 @@ jobs:
           if statement<90 or branch<90: raise SystemExit('Implementation coverage below 90%')
           PY
       - name: Audit coverage by public function and test class
-        shell: bash
+        shell: python
         run: |
           import ast,collections,coverage,importlib.util,json,sys,unittest
           from importlib.machinery import SourceFileLoader
