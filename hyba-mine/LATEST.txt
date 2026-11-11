@@ -1,348 +1,16 @@
-HYBA Mine deploy run 43082195757 attempt 1
-commit 228ab942e349cf8f5862c26b100fef571ae912c7 ref refs/heads/hyba-mine/control event push at 2026-11-11T18:55:17Z
-outcomes: requested=success build=success self-test=success azure-sign-in=failure registry=skipped host=skipped
+HYBA Mine deploy run 43103822538 attempt 1
+commit d1da54a9bde7a497993b3ac7183de61891f8d56a ref refs/heads/hyba-mine/control event push at 2026-11-11T21:33:38Z
+outcomes: requested=success build=success self-test=failure azure-sign-in=skipped registry=skipped host=skipped follow=skipped examine=skipped
 
 == requested action
-Requested: start on viabtc
+Requested: campaign, pools viabtc,braiins, at most 14400 s
 == build
-#0 building with "default" instance using docker driver
-
-#1 [internal] load build definition from Dockerfile
-#1 transferring dockerfile: 1.49kB done
-#1 DONE 0.0s
-
-#2 [auth] docker/dockerfile:pull token for registry-1.docker.io
-#2 DONE 0.0s
-
-#3 resolve image config for docker-image://docker.io/docker/dockerfile:1
-#3 DONE 0.6s
-
-#4 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
-#4 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e 0.0s done
-#4 sha256:9d2b4f57f9e20f33279375ce25c6ff14f30f64270ed5c7b613b2b30256754f62 10.49MB / 14.28MB 0.2s
-#4 sha256:9d2b4f57f9e20f33279375ce25c6ff14f30f64270ed5c7b613b2b30256754f62 14.28MB / 14.28MB 0.3s done
-#4 extracting sha256:9d2b4f57f9e20f33279375ce25c6ff14f30f64270ed5c7b613b2b30256754f62
-#4 extracting sha256:9d2b4f57f9e20f33279375ce25c6ff14f30f64270ed5c7b613b2b30256754f62 0.2s done
-#4 DONE 0.5s
-
-#5 [auth] library/python:pull token for registry-1.docker.io
-#5 DONE 0.0s
-
-#6 [internal] load metadata for docker.io/library/python:3.12-slim
-#6 DONE 0.6s
-
-#7 [internal] load .dockerignore
-#7 transferring context: 516B done
-#7 DONE 0.0s
-
-#8 [internal] load build context
-#8 transferring context: 1.78MB 0.0s done
-#8 DONE 0.1s
-
-#9 [builder 1/5] FROM docker.io/library/python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
-#9 resolve docker.io/library/python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b 0.0s done
-#9 sha256:05e0eee5572e9c9f50408a2132590133b830a668a1cf2ff2b150f19c57707e2b 248B / 248B 0.1s done
-#9 sha256:2dc99d2d0a39fce31e37615eb4c932e16dcc4c2b0ce9993714280081b5dbe085 3.15MB / 12.12MB 0.2s
-#9 sha256:68bced9e0afa4479df17c3646e27c7c7e9ce9ba70c0e6c73b6826487b89037d9 0B / 1.29MB 0.2s
-#9 sha256:2dc99d2d0a39fce31e37615eb4c932e16dcc4c2b0ce9993714280081b5dbe085 12.12MB / 12.12MB 0.3s
-#9 sha256:37fb86c2a767b88d500c6872195f88078f64765fe0d2f9cc375cc2efbd4c0a41 0B / 29.86MB 0.2s
-#9 sha256:68bced9e0afa4479df17c3646e27c7c7e9ce9ba70c0e6c73b6826487b89037d9 1.29MB / 1.29MB 0.3s
-#9 sha256:37fb86c2a767b88d500c6872195f88078f64765fe0d2f9cc375cc2efbd4c0a41 29.86MB / 29.86MB 0.3s
-#9 sha256:2dc99d2d0a39fce31e37615eb4c932e16dcc4c2b0ce9993714280081b5dbe085 12.12MB / 12.12MB 0.6s done
-#9 sha256:68bced9e0afa4479df17c3646e27c7c7e9ce9ba70c0e6c73b6826487b89037d9 1.29MB / 1.29MB 0.6s done
-#9 sha256:37fb86c2a767b88d500c6872195f88078f64765fe0d2f9cc375cc2efbd4c0a41 29.86MB / 29.86MB 0.6s done
-#9 extracting sha256:37fb86c2a767b88d500c6872195f88078f64765fe0d2f9cc375cc2efbd4c0a41
-#9 extracting sha256:37fb86c2a767b88d500c6872195f88078f64765fe0d2f9cc375cc2efbd4c0a41 0.6s done
-#9 DONE 1.3s
-
-#9 [builder 1/5] FROM docker.io/library/python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
-#9 extracting sha256:68bced9e0afa4479df17c3646e27c7c7e9ce9ba70c0e6c73b6826487b89037d9 0.1s done
-#9 extracting sha256:2dc99d2d0a39fce31e37615eb4c932e16dcc4c2b0ce9993714280081b5dbe085
-#9 extracting sha256:2dc99d2d0a39fce31e37615eb4c932e16dcc4c2b0ce9993714280081b5dbe085 0.3s done
-#9 DONE 1.6s
-
-#9 [builder 1/5] FROM docker.io/library/python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
-#9 extracting sha256:05e0eee5572e9c9f50408a2132590133b830a668a1cf2ff2b150f19c57707e2b done
-#9 DONE 1.6s
-
-#10 [builder 2/5] WORKDIR /build
-#10 DONE 1.7s
-
-#11 [runtime-base 2/5] RUN groupadd --system --gid 10001 chronus     && useradd --system --uid 10001 --gid chronus --home-dir /var/lib/chronus chronus     && mkdir -p /var/lib/chronus     && chown chronus:chronus /var/lib/chronus
-#11 0.991 useradd warning: chronus's uid 10001 is greater than SYS_UID_MAX 999
-#11 DONE 1.7s
-
-#12 [builder 3/5] COPY pyproject.toml README.md ./
-#12 DONE 0.0s
-
-#13 [builder 4/5] COPY src ./src
-#13 DONE 0.1s
-
-#14 [builder 5/5] RUN python -m pip wheel --wheel-dir=/wheels .
-#14 1.126 Processing /build
-#14 1.128   Installing build dependencies: started
-#14 2.088   Installing build dependencies: finished with status 'done'
-#14 2.089   Getting requirements to build wheel: started
-#14 2.271   Getting requirements to build wheel: finished with status 'done'
-#14 2.272   Preparing metadata (pyproject.toml): started
-#14 2.436   Preparing metadata (pyproject.toml): finished with status 'done'
-#14 2.619 Collecting cryptography>=47.0 (from hyba-chronus==37.0.0.dev0)
-#14 2.669   Downloading cryptography-50.0.2-cp311-abi3-manylinux_2_34_x86_64.whl.metadata (4.4 kB)
-#14 2.724 Collecting fastapi<0.163,>=0.162.2 (from hyba-chronus==37.0.0.dev0)
-#14 2.737   Downloading fastapi-0.162.4-py3-none-any.whl.metadata (27 kB)
-#14 2.774 Collecting starlette<2,>=1.3.1 (from hyba-chronus==37.0.0.dev0)
-#14 2.787   Downloading starlette-1.10.0-py3-none-any.whl.metadata (6.6 kB)
-#14 2.807 Collecting httpx<1,>=0.28 (from hyba-chronus==37.0.0.dev0)
-#14 2.821   Downloading httpx-0.28.1-py3-none-any.whl.metadata (7.1 kB)
-#14 2.899 Collecting pydantic<3,>=2.9 (from hyba-chronus==37.0.0.dev0)
-#14 2.913   Downloading pydantic-2.14.3-py3-none-any.whl.metadata (141 kB)
-#14 2.959 Collecting uvicorn>=0.27 (from uvicorn[standard]>=0.27->hyba-chronus==37.0.0.dev0)
-#14 2.972   Downloading uvicorn-0.54.0-py3-none-any.whl.metadata (6.6 kB)
-#14 2.991 Collecting PyJWT<3,>=2.8 (from PyJWT[crypto]<3,>=2.8->hyba-chronus==37.0.0.dev0)
-#14 3.004   Downloading pyjwt-2.15.1-py3-none-any.whl.metadata (3.5 kB)
-#14 3.025 Collecting opentelemetry-api<2,>=1.25 (from hyba-chronus==37.0.0.dev0)
-#14 3.038   Downloading opentelemetry_api-1.45.2-py3-none-any.whl.metadata (1.4 kB)
-#14 3.059 Collecting opentelemetry-sdk<2,>=1.25 (from hyba-chronus==37.0.0.dev0)
-#14 3.072   Downloading opentelemetry_sdk-1.45.2-py3-none-any.whl.metadata (1.6 kB)
-#14 3.281 Collecting SQLAlchemy<3,>=2.0 (from hyba-chronus==37.0.0.dev0)
-#14 3.294   Downloading sqlalchemy-2.1.8-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (9.7 kB)
-#14 3.410 Collecting greenlet>=3.0.0 (from hyba-chronus==37.0.0.dev0)
-#14 3.423   Downloading greenlet-3.5.6-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (3.8 kB)
-#14 3.550 Collecting numpy<3,>=1.26 (from hyba-chronus==37.0.0.dev0)
-#14 3.563   Downloading numpy-2.5.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (6.6 kB)
-#14 3.631 Collecting cffi>=2.0.0 (from cryptography>=47.0->hyba-chronus==37.0.0.dev0)
-#14 3.644   Downloading cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.5 kB)
-#14 3.671 Collecting anyio>=4.1.0 (from fastapi<0.163,>=0.162.2->hyba-chronus==37.0.0.dev0)
-#14 3.684   Downloading anyio-4.16.0-py3-none-any.whl.metadata (4.7 kB)
-#14 3.702 Collecting typing-extensions>=4.8.0 (from fastapi<0.163,>=0.162.2->hyba-chronus==37.0.0.dev0)
-#14 3.715   Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
-#14 3.728 Collecting typing-inspection>=0.4.2 (from fastapi<0.163,>=0.162.2->hyba-chronus==37.0.0.dev0)
-#14 3.740   Downloading typing_inspection-0.4.5-py3-none-any.whl.metadata (2.6 kB)
-#14 3.753 Collecting annotated-doc>=0.0.2 (from fastapi<0.163,>=0.162.2->hyba-chronus==37.0.0.dev0)
-#14 3.766   Downloading annotated_doc-0.0.6-py3-none-any.whl.metadata (6.5 kB)
-#14 3.791 Collecting certifi (from httpx<1,>=0.28->hyba-chronus==37.0.0.dev0)
-#14 3.804   Downloading certifi-2026.10.23-py3-none-any.whl.metadata (2.5 kB)
-#14 3.822 Collecting httpcore==1.* (from httpx<1,>=0.28->hyba-chronus==37.0.0.dev0)
-#14 3.835   Downloading httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
-#14 3.852 Collecting idna (from httpx<1,>=0.28->hyba-chronus==37.0.0.dev0)
-#14 3.865   Downloading idna-3.20-py3-none-any.whl.metadata (7.2 kB)
-#14 3.880 Collecting h11>=0.16 (from httpcore==1.*->httpx<1,>=0.28->hyba-chronus==37.0.0.dev0)
-#14 3.893   Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
-#14 3.919 Collecting opentelemetry-semantic-conventions==0.66b2 (from opentelemetry-sdk<2,>=1.25->hyba-chronus==37.0.0.dev0)
-#14 3.931   Downloading opentelemetry_semantic_conventions-0.66b2-py3-none-any.whl.metadata (2.4 kB)
-#14 3.946 Collecting annotated-types>=0.6.0 (from pydantic<3,>=2.9->hyba-chronus==37.0.0.dev0)
-#14 3.959   Downloading annotated_types-0.8.0-py3-none-any.whl.metadata (15 kB)
-#14 4.421 Collecting pydantic-core==2.50.4 (from pydantic<3,>=2.9->hyba-chronus==37.0.0.dev0)
-#14 4.435   Downloading pydantic_core-2.50.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (6.6 kB)
-#14 4.481 Collecting click>=7.0 (from uvicorn>=0.27->uvicorn[standard]>=0.27->hyba-chronus==37.0.0.dev0)
-#14 4.494   Downloading click-8.5.1-py3-none-any.whl.metadata (2.6 kB)
-#14 4.525 Collecting httptools>=0.8.0 (from uvicorn[standard]>=0.27->hyba-chronus==37.0.0.dev0)
-#14 4.538   Downloading httptools-0.9.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (3.5 kB)
-#14 4.555 Collecting python-dotenv>=0.13 (from uvicorn[standard]>=0.27->hyba-chronus==37.0.0.dev0)
-#14 4.568   Downloading python_dotenv-1.2.4-py3-none-any.whl.metadata (29 kB)
-#14 4.597 Collecting pyyaml>=5.1 (from uvicorn[standard]>=0.27->hyba-chronus==37.0.0.dev0)
-#14 4.610   Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
-#14 4.641 Collecting uvloop>=0.15.1 (from uvicorn[standard]>=0.27->hyba-chronus==37.0.0.dev0)
-#14 4.654   Downloading uvloop-0.23.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (5.1 kB)
-#14 4.706 Collecting watchfiles>=0.20 (from uvicorn[standard]>=0.27->hyba-chronus==37.0.0.dev0)
-#14 4.720   Downloading watchfiles-1.3.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.9 kB)
-#14 4.830 Collecting websockets>=13.0 (from uvicorn[standard]>=0.27->hyba-chronus==37.0.0.dev0)
-#14 4.843   Downloading websockets-17.4-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (6.3 kB)
-#14 4.863 Collecting pycparser (from cffi>=2.0.0->cryptography>=47.0->hyba-chronus==37.0.0.dev0)
-#14 4.875   Downloading pycparser-3.12-py3-none-any.whl.metadata (9.7 kB)
-#14 4.909 Downloading cryptography-50.0.2-cp311-abi3-manylinux_2_34_x86_64.whl (4.8 MB)
-#14 4.963    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.8/4.8 MB 117.4 MB/s eta 0:00:00
-#14 4.975 Downloading fastapi-0.162.4-py3-none-any.whl (151 kB)
-#14 4.989 Downloading greenlet-3.5.6-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (621 kB)
-#14 4.991    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 621.4/621.4 kB 1.0 GB/s eta 0:00:00
-#14 5.004 Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
-#14 5.017 Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
-#14 5.030 Downloading numpy-2.5.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (16.7 MB)
-#14 5.059    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.7/16.7 MB 615.0 MB/s eta 0:00:00
-#14 5.072 Downloading opentelemetry_api-1.45.2-py3-none-any.whl (60 kB)
-#14 5.085 Downloading opentelemetry_sdk-1.45.2-py3-none-any.whl (141 kB)
-#14 5.098 Downloading opentelemetry_semantic_conventions-0.66b2-py3-none-any.whl (206 kB)
-#14 5.111 Downloading pydantic-2.14.3-py3-none-any.whl (494 kB)
-#14 5.125 Downloading pydantic_core-2.50.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (2.3 MB)
-#14 5.129    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.3/2.3 MB 1.1 GB/s eta 0:00:00
-#14 5.142 Downloading pyjwt-2.15.1-py3-none-any.whl (33 kB)
-#14 5.155 Downloading sqlalchemy-2.1.8-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (4.7 MB)
-#14 5.162    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.7/4.7 MB 914.7 MB/s eta 0:00:00
-#14 5.175 Downloading starlette-1.10.0-py3-none-any.whl (80 kB)
-#14 5.188 Downloading uvicorn-0.54.0-py3-none-any.whl (87 kB)
-#14 5.201 Downloading annotated_doc-0.0.6-py3-none-any.whl (5.3 kB)
-#14 5.214 Downloading annotated_types-0.8.0-py3-none-any.whl (13 kB)
-#14 5.227 Downloading anyio-4.16.0-py3-none-any.whl (134 kB)
-#14 5.240 Downloading cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
-#14 5.253 Downloading click-8.5.1-py3-none-any.whl (126 kB)
-#14 5.266 Downloading h11-0.16.0-py3-none-any.whl (37 kB)
-#14 5.279 Downloading httptools-0.9.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (552 kB)
-#14 5.281    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 552.8/552.8 kB 956.2 MB/s eta 0:00:00
-#14 5.294 Downloading idna-3.20-py3-none-any.whl (69 kB)
-#14 5.307 Downloading python_dotenv-1.2.4-py3-none-any.whl (23 kB)
-#14 5.320 Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (807 kB)
-#14 5.322    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 807.9/807.9 kB 1.1 GB/s eta 0:00:00
-#14 5.336 Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
-#14 5.349 Downloading typing_inspection-0.4.5-py3-none-any.whl (14 kB)
-#14 5.362 Downloading uvloop-0.23.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (4.5 MB)
-#14 5.368    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.5/4.5 MB 914.2 MB/s eta 0:00:00
-#14 5.381 Downloading watchfiles-1.3.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (458 kB)
-#14 5.395 Downloading websockets-17.4-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (226 kB)
-#14 5.408 Downloading certifi-2026.10.23-py3-none-any.whl (135 kB)
-#14 5.421 Downloading pycparser-3.12-py3-none-any.whl (62 kB)
-#14 5.471 Saved /wheels/cryptography-50.0.2-cp311-abi3-manylinux_2_34_x86_64.whl
-#14 5.471 Saved /wheels/fastapi-0.162.4-py3-none-any.whl
-#14 5.472 Saved /wheels/greenlet-3.5.6-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
-#14 5.472 Saved /wheels/httpx-0.28.1-py3-none-any.whl
-#14 5.472 Saved /wheels/httpcore-1.0.9-py3-none-any.whl
-#14 5.477 Saved /wheels/numpy-2.5.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
-#14 5.477 Saved /wheels/opentelemetry_api-1.45.2-py3-none-any.whl
-#14 5.478 Saved /wheels/opentelemetry_sdk-1.45.2-py3-none-any.whl
-#14 5.478 Saved /wheels/opentelemetry_semantic_conventions-0.66b2-py3-none-any.whl
-#14 5.479 Saved /wheels/pydantic-2.14.3-py3-none-any.whl
-#14 5.480 Saved /wheels/pydantic_core-2.50.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-#14 5.480 Saved /wheels/pyjwt-2.15.1-py3-none-any.whl
-#14 5.482 Saved /wheels/sqlalchemy-2.1.8-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
-#14 5.482 Saved /wheels/starlette-1.10.0-py3-none-any.whl
-#14 5.482 Saved /wheels/uvicorn-0.54.0-py3-none-any.whl
-#14 5.483 Saved /wheels/annotated_doc-0.0.6-py3-none-any.whl
-#14 5.483 Saved /wheels/annotated_types-0.8.0-py3-none-any.whl
-#14 5.483 Saved /wheels/anyio-4.16.0-py3-none-any.whl
-#14 5.484 Saved /wheels/cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
-#14 5.484 Saved /wheels/click-8.5.1-py3-none-any.whl
-#14 5.485 Saved /wheels/h11-0.16.0-py3-none-any.whl
-#14 5.485 Saved /wheels/httptools-0.9.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
-#14 5.486 Saved /wheels/idna-3.20-py3-none-any.whl
-#14 5.486 Saved /wheels/python_dotenv-1.2.4-py3-none-any.whl
-#14 5.486 Saved /wheels/pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
-#14 5.487 Saved /wheels/typing_extensions-4.16.0-py3-none-any.whl
-#14 5.487 Saved /wheels/typing_inspection-0.4.5-py3-none-any.whl
-#14 5.489 Saved /wheels/uvloop-0.23.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
-#14 5.489 Saved /wheels/watchfiles-1.3.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-#14 5.490 Saved /wheels/websockets-17.4-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
-#14 5.490 Saved /wheels/certifi-2026.10.23-py3-none-any.whl
-#14 5.490 Saved /wheels/pycparser-3.12-py3-none-any.whl
-#14 5.491 Building wheels for collected packages: hyba-chronus
-#14 5.492   Building wheel for hyba-chronus (pyproject.toml): started
-#14 5.797   Building wheel for hyba-chronus (pyproject.toml): finished with status 'done'
-#14 5.798   Created wheel for hyba-chronus: filename=hyba_chronus-37.0.0.dev0-py3-none-any.whl size=551039 sha256=901f88c45fd8eb03469744f4208ba205b3a228d4357df15a3a2d6561c21a822b
-#14 5.799   Stored in directory: /tmp/pip-ephem-wheel-cache-2d5az97d/wheels/7f/5c/67/61a4ca28ccbc7df61f55a044560f100aa81c66ef20585de495
-#14 5.801 Successfully built hyba-chronus
-#14 DONE 6.5s
-
-#15 [runtime-base 3/5] COPY --from=builder /wheels /wheels
-#15 DONE 0.4s
-
-#16 [runtime-base 4/5] RUN python -m pip install --no-cache-dir --no-index --find-links=/wheels hyba-chronus     && rm -rf /wheels
-#16 1.050 Looking in links: /wheels
-#16 1.056 Processing /wheels/hyba_chronus-37.0.0.dev0-py3-none-any.whl
-#16 1.063 Processing /wheels/cryptography-50.0.2-cp311-abi3-manylinux_2_34_x86_64.whl (from hyba-chronus)
-#16 1.069 Processing /wheels/fastapi-0.162.4-py3-none-any.whl (from hyba-chronus)
-#16 1.075 Processing /wheels/starlette-1.10.0-py3-none-any.whl (from hyba-chronus)
-#16 1.078 Processing /wheels/httpx-0.28.1-py3-none-any.whl (from hyba-chronus)
-#16 1.080 Processing /wheels/pydantic-2.14.3-py3-none-any.whl (from hyba-chronus)
-#16 1.086 Processing /wheels/uvicorn-0.54.0-py3-none-any.whl (from uvicorn[standard]>=0.27->hyba-chronus)
-#16 1.089 Processing /wheels/pyjwt-2.15.1-py3-none-any.whl (from PyJWT[crypto]<3,>=2.8->hyba-chronus)
-#16 1.091 Processing /wheels/opentelemetry_api-1.45.2-py3-none-any.whl (from hyba-chronus)
-#16 1.093 Processing /wheels/opentelemetry_sdk-1.45.2-py3-none-any.whl (from hyba-chronus)
-#16 1.095 Processing /wheels/sqlalchemy-2.1.8-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from hyba-chronus)
-#16 1.106 Processing /wheels/greenlet-3.5.6-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (from hyba-chronus)
-#16 1.109 Processing /wheels/numpy-2.5.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (from hyba-chronus)
-#16 1.128 Processing /wheels/cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (from cryptography>=47.0->hyba-chronus)
-#16 1.131 Processing /wheels/anyio-4.16.0-py3-none-any.whl (from fastapi<0.163,>=0.162.2->hyba-chronus)
-#16 1.133 Processing /wheels/typing_extensions-4.16.0-py3-none-any.whl (from fastapi<0.163,>=0.162.2->hyba-chronus)
-#16 1.135 Processing /wheels/typing_inspection-0.4.5-py3-none-any.whl (from fastapi<0.163,>=0.162.2->hyba-chronus)
-#16 1.136 Processing /wheels/annotated_doc-0.0.6-py3-none-any.whl (from fastapi<0.163,>=0.162.2->hyba-chronus)
-#16 1.139 Processing /wheels/certifi-2026.10.23-py3-none-any.whl (from httpx<1,>=0.28->hyba-chronus)
-#16 1.141 Processing /wheels/httpcore-1.0.9-py3-none-any.whl (from httpx<1,>=0.28->hyba-chronus)
-#16 1.143 Processing /wheels/idna-3.20-py3-none-any.whl (from httpx<1,>=0.28->hyba-chronus)
-#16 1.146 Processing /wheels/h11-0.16.0-py3-none-any.whl (from httpcore==1.*->httpx<1,>=0.28->hyba-chronus)
-#16 1.150 Processing /wheels/opentelemetry_semantic_conventions-0.66b2-py3-none-any.whl (from opentelemetry-sdk<2,>=1.25->hyba-chronus)
-#16 1.153 Processing /wheels/annotated_types-0.8.0-py3-none-any.whl (from pydantic<3,>=2.9->hyba-chronus)
-#16 1.155 Processing /wheels/pydantic_core-2.50.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (from pydantic<3,>=2.9->hyba-chronus)
-#16 1.164 Processing /wheels/click-8.5.1-py3-none-any.whl (from uvicorn>=0.27->uvicorn[standard]>=0.27->hyba-chronus)
-#16 1.167 Processing /wheels/httptools-0.9.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (from uvicorn[standard]>=0.27->hyba-chronus)
-#16 1.170 Processing /wheels/python_dotenv-1.2.4-py3-none-any.whl (from uvicorn[standard]>=0.27->hyba-chronus)
-#16 1.173 Processing /wheels/pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from uvicorn[standard]>=0.27->hyba-chronus)
-#16 1.175 Processing /wheels/uvloop-0.23.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from uvicorn[standard]>=0.27->hyba-chronus)
-#16 1.182 Processing /wheels/watchfiles-1.3.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from uvicorn[standard]>=0.27->hyba-chronus)
-#16 1.184 Processing /wheels/websockets-17.4-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (from uvicorn[standard]>=0.27->hyba-chronus)
-#16 1.189 Processing /wheels/pycparser-3.12-py3-none-any.whl (from cffi>=2.0.0->cryptography>=47.0->hyba-chronus)
-#16 1.246 Installing collected packages: websockets, uvloop, typing-extensions, pyyaml, python-dotenv, PyJWT, pycparser, numpy, idna, httptools, h11, greenlet, click, certifi, annotated-types, annotated-doc, uvicorn, typing-inspection, SQLAlchemy, pydantic-core, opentelemetry-api, httpcore, cffi, anyio, watchfiles, starlette, pydantic, opentelemetry-semantic-conventions, httpx, cryptography, opentelemetry-sdk, fastapi, hyba-chronus
-#16 5.327 Successfully installed PyJWT-2.15.1 SQLAlchemy-2.1.8 annotated-doc-0.0.6 annotated-types-0.8.0 anyio-4.16.0 certifi-2026.10.23 cffi-2.1.1 click-8.5.1 cryptography-50.0.2 fastapi-0.162.4 greenlet-3.5.6 h11-0.16.0 httpcore-1.0.9 httptools-0.9.0 httpx-0.28.1 hyba-chronus-37.0.0.dev0 idna-3.20 numpy-2.5.4 opentelemetry-api-1.45.2 opentelemetry-sdk-1.45.2 opentelemetry-semantic-conventions-0.66b2 pycparser-3.12 pydantic-2.14.3 pydantic-core-2.50.4 python-dotenv-1.2.4 pyyaml-6.0.3 starlette-1.10.0 typing-extensions-4.16.0 typing-inspection-0.4.5 uvicorn-0.54.0 uvloop-0.23.0 watchfiles-1.3.0 websockets-17.4
-#16 5.328 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
-#16 DONE 7.3s
-
-#17 [runtime-base 5/5] WORKDIR /var/lib/chronus
-#17 DONE 0.1s
-
-#18 [miner-runtime 1/1] COPY --chown=chronus:chronus chronus_live_miner.py /opt/chronus/chronus_live_miner.py
-#18 DONE 0.0s
-
-#19 exporting to image
-#19 exporting layers
-#19 exporting layers 5.6s done
-#19 exporting manifest sha256:0ffe3380271fd449f4daf71caca0b26944e098b880a28ccf6f06581a2976d366 done
-#19 exporting config sha256:8667392d81c4eb14ad35df7f306cc5b3a7732e1224a51ff9115a8261349e32d5 done
-#19 exporting attestation manifest sha256:50804a4b7ab52338d06fc8378fc41cd2795b7b8c17b9bb4244f7e9a2b9f1f355 0.0s done
-#19 exporting manifest list sha256:23f6e87b2aa4e70759f935aa626af100044cd65efb585e0cc80dbb01d51ecf5b done
-#19 naming to docker.io/library/hyba-mine-base:228ab942e349cf8f5862c26b100fef571ae912c7 done
-#19 unpacking to docker.io/library/hyba-mine-base:228ab942e349cf8f5862c26b100fef571ae912c7
-#19 unpacking to docker.io/library/hyba-mine-base:228ab942e349cf8f5862c26b100fef571ae912c7 1.3s done
-#19 DONE 6.9s
-#0 building with "default" instance using docker driver
-
-#1 [internal] load build definition from Dockerfile
-#1 transferring dockerfile: 481B done
-#1 DONE 0.0s
-
-#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
-#2 DONE 0.1s
-
-#3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
-#3 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e done
-#3 CACHED
-
-#4 [auth] library/hyba-mine-base:pull token for registry-1.docker.io
-#4 DONE 0.0s
-
-#5 [internal] load metadata for docker.io/library/hyba-mine-base:228ab942e349cf8f5862c26b100fef571ae912c7
-#5 DONE 0.4s
-
-#6 [auth] library/hyba-mine-base:pull token for registry-1.docker.io
-#6 DONE 0.0s
-
-#7 [internal] load .dockerignore
-#7 transferring context: 516B done
-#7 DONE 0.0s
-
-#8 [1/2] FROM docker.io/library/hyba-mine-base:228ab942e349cf8f5862c26b100fef571ae912c7@sha256:23f6e87b2aa4e70759f935aa626af100044cd65efb585e0cc80dbb01d51ecf5b
-#8 resolve docker.io/library/hyba-mine-base:228ab942e349cf8f5862c26b100fef571ae912c7@sha256:23f6e87b2aa4e70759f935aa626af100044cd65efb585e0cc80dbb01d51ecf5b 0.0s done
-#8 DONE 0.0s
-
-#9 [internal] load build context
-#9 transferring context: 8.61kB 0.0s done
-#9 DONE 0.0s
-
-#10 [2/2] COPY --chown=10001:10001 deploy/hyba-mine/bist.py deploy/hyba-mine/runner.py /opt/hyba-mine/
-#10 DONE 0.0s
-
-#11 exporting to image
-#11 exporting layers 0.0s done
-#11 exporting manifest sha256:8681061f96f24a1e2503c996d8da70693fc6fbfc45db9393fae67c117c02032c done
-#11 exporting config sha256:a511e8b92f7ee01d3cc1e0bbd6b156e5efbade29f64678099229d56cf3d731af done
-#11 exporting attestation manifest sha256:0f127b0b5f479dd4751aab3df768fe0e60c6330923dfb7efb86005ce80923bb2 done
-#11 exporting manifest list sha256:8214aced5292629c90f6d73557831d9131b793cd5a00f1cb84c245bfd69f6af4 done
-#11 naming to docker.io/library/hyba-mine:228ab942e349cf8f5862c26b100fef571ae912c7
-#11 naming to docker.io/library/hyba-mine:228ab942e349cf8f5862c26b100fef571ae912c7 done
-#11 unpacking to docker.io/library/hyba-mine:228ab942e349cf8f5862c26b100fef571ae912c7 0.0s done
-#11 DONE 0.1s
-
- [33m1 warning found (use docker --debug to expand):
-[0m - InvalidDefaultArgInFrom: Default value for ARG ${BASE_IMAGE} results in empty or invalid base image name (line 6)
+#10 23.77 OpenCL runtime installed
+build ok
 == self-test
+2026-11-11 21:33:38,634 [INFO] build program: kernel 'sha256d_search' was part of a lengthy uncached source build (assuming cached by ICD) (0.49 s)
 {
- "bist": "PASS",
+ "bist": "FAIL",
  "checks": [
   {
    "check": "merkle_root_from_stratum_coinbase",
@@ -379,17 +47,73 @@ Requested: start on viabtc
   {
    "check": "gatekeeper_refuses_wrong_nonce",
    "passed": true
+  },
+  {
+   "check": "bip34_height_reader",
+   "passed": true
+  },
+  {
+   "check": "process_lanes_qualify",
+   "passed": true
+  },
+  {
+   "check": "opencl_igpu_lanes_qualify",
+   "passed": false
+  }
+ ],
+ "lanes": [
+  {
+   "backend": "process-lanes",
+   "lanes": 2,
+   "passed": true,
+   "checks": [
+    {
+     "check": "reference_block0_hash",
+     "passed": true
+    },
+    {
+     "check": "reference_block1_hash",
+     "passed": true
+    },
+    {
+     "check": "genesis_nonce_window",
+     "passed": true
+    },
+    {
+     "check": "block1_easy_target_window",
+     "passed": true
+    },
+    {
+     "check": "unreachable_target_window",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "backend": "opencl-igpu-lanes",
+   "lanes": 2,
+   "passed": false,
+   "checks": [
+    {
+     "check": "reference_block0_hash",
+     "passed": true
+    },
+    {
+     "check": "reference_block1_hash",
+     "passed": true
+    },
+    {
+     "check": "lane_error:AttributeError",
+     "passed": false
+    }
+   ],
+   "device": {
+    "device_name": "cpu-skylake-avx512-INTEL(R) XEON(R) PLATINUM 8573C",
+    "device_type": "ALL | CPU",
+    "compute_units": 2,
+    "max_work_group_size": 4096,
+    "global_memory_bytes": 6168502272
+   }
   }
  ]
 }
-runner imports
-== azure sign-in
-token iss: https://token.actions.githubusercontent.com
-token aud: api://AzureADTokenExchange
-token sub: repo:hybadatadevops1@351738863/Chronusv2@1448659036:ref:refs/heads/hyba-mine/control
-token repository: hybadatadevops1/Chronusv2
-token ref: refs/heads/hyba-mine/control
-ERROR: AADSTS700213: No matching federated identity record found for presented assertion subject 'repo:hybadatadevops1@351738863/Chronusv2@1448659036:ref:refs/heads/hyba-mine/control'. Check your federated identity credential Subject, Audience and Issuer against the presented assertion. https://learn.microsoft.com/entra/workload-id/workload-identity-federation Trace ID: 8412ddb1-8f63-4c02-bbfb-95386b19bc00 Correlation ID: 530838ac-8dd5-4289-bc4d-555cdb3ee06b Timestamp: 2026-11-11 18:55:16Z
-Run the command below to authenticate interactively; additional arguments may be added as needed:
-az logout
-az login
