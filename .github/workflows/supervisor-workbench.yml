@@ -1,0 +1,71 @@
+name: Supervisor workbench (scratch branch, never merged)
+
+# Exists only on cowork/supervisor-wb-20261111. Each push runs
+# .supervisor/run.sh against fresh refs of the repository and commits the
+# output to the orphan branch cowork/supervisor-results-20261111 under
+# runs/<sha8>/. It is never merged into main and is deleted when the
+# packaging consolidation finishes.
+
+on:
+  push:
+    branches: [cowork/supervisor-wb-20261111]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: supervisor-workbench
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+      - name: Run supervisor script
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COLUMNS: '200'
+        run: |
+          set +e
+          export OUT="$RUNNER_TEMP/out"
+          export SUP="$RUNNER_TEMP/sup"
+          mkdir -p "$OUT"
+          cp -r .supervisor "$SUP"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          start=$(date -u +%s)
+          bash "$SUP/run.sh" > "$OUT/_run_log.txt" 2>&1
+          code=$?
+          echo "run.sh exit=$code seconds=$(( $(date -u +%s) - start ))" >> "$OUT/_run_log.txt"
+      - name: Publish results
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          short="${GITHUB_SHA::8}"
+          res="$RUNNER_TEMP/res"
+          mkdir -p "$res" && cd "$res"
+          git init -q
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git fetch -q --depth 1 origin cowork/supervisor-results-20261111; then
+            git checkout -q -b results FETCH_HEAD
+          else
+            git checkout -q --orphan results
+          fi
+          mkdir -p "runs/$short"
+          cp -r "$RUNNER_TEMP/out/." "runs/$short/"
+          echo "$short $(date -u +%FT%TZ) ${GITHUB_RUN_ID}" >> runs/INDEX.txt
+          git add -A
+          git commit -q -m "supervisor results ${short} (run ${GITHUB_RUN_ID})"
+          git push -q origin results:cowork/supervisor-results-20261111
