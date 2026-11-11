@@ -1,0 +1,8 @@
+........
+----------------------------------------------------------------------
+Ran 8 tests in 0.065s
+
+OK
+claims unittest exit=0
+Claim token scan passed
+claims scan exit=0

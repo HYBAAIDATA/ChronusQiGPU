@@ -1,0 +1,14 @@
+942dd4acbdca6b6d66897453984b2e8c9c67a888
+chore: ship only code that compiles, and TURING in one distribution
+
+ Dockerfile                                              |   1 -
+ archive/fragments/README.md                             |   9 +++++++++
+ {src/chronus/core => archive/fragments}/trust_ledger.py |   0
+ packages/turing/README.md                               |   4 ++++
+ packages/turing/docs/SPECIFICATION.md                   | 135 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ packages/turing/src/turing/operator.py                  |   1 -
+ pyproject.toml                                          |   6 +++---
+ scripts/ci/check_wheels.py                              |  88 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ src/chronus/igpu/tensor.py                              |   4 +++-
+ tests/test_repository_layout.py                         |  24 ++++++++++++++++++++++++
+ 10 files changed, 266 insertions(+), 6 deletions(-)

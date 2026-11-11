@@ -1,0 +1,24 @@
+moved: src/chronus/core/trust_ledger.py -> archive/fragments/trust_ledger.py
+wrote: archive/fragments/README.md
+edited: pyproject.toml
+edited: pyproject.toml
+edited: Dockerfile
+edited: src/chronus/igpu/tensor.py
+edited: packages/turing/src/turing/operator.py
+wrote: packages/turing/docs/SPECIFICATION.md
+appended: packages/turing/README.md
+wrote: scripts/ci/check_wheels.py
+edited: tests/test_repository_layout.py
+appended: tests/test_repository_layout.py
+M  Dockerfile
+A  archive/fragments/README.md
+R  src/chronus/core/trust_ledger.py -> archive/fragments/trust_ledger.py
+M  packages/turing/README.md
+A  packages/turing/docs/SPECIFICATION.md
+M  packages/turing/src/turing/operator.py
+M  pyproject.toml
+A  scripts/ci/check_wheels.py
+M  src/chronus/igpu/tensor.py
+M  tests/test_repository_layout.py
+
+fix exit=0

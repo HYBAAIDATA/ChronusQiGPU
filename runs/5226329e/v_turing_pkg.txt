@@ -1,0 +1,9 @@
+
+[notice] A new release of pip is available: 26.2.2 -> 26.3
+[notice] To update, run: pip install --upgrade pip
+install exit=0
+..........................................................................                                                                                                                       [100%]
+74 passed in 0.06s
+turing pytest exit=0
+/home/runner/work/_temp/vt/lib/python3.13/site-packages/turing/__init__.py 0.2.0.dev0
+chronus imported: False

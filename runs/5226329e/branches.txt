@@ -1,0 +1,10 @@
+remote: 
+remote: Create a pull request for 'feat/turing-exact-algorithms' on GitHub by visiting:        
+remote:      https://github.com/hybadatadevops1/Chronusv2/pull/new/feat/turing-exact-algorithms        
+remote: 
+created from main: feat/turing-exact-algorithms 438e4093654e59b96040cce2f61dc4b649de4cf8
+remote: 
+remote: Create a pull request for 'feat/partner-distribution' on GitHub by visiting:        
+remote:      https://github.com/hybadatadevops1/Chronusv2/pull/new/feat/partner-distribution        
+remote: 
+created from main: feat/partner-distribution 438e4093654e59b96040cce2f61dc4b649de4cf8

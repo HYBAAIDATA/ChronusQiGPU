@@ -1,0 +1,37 @@
+== purity_gate.py
+PURITY GATE PASSED: no simulation, approximation, heuristics or theatre
+purity_gate.py exit=0
+== test_the_tests.py
+------------------------------------------------------------------------
+Mutants Killed: 7/7 (100.0%)
+Mutants Survived: 0/7
+Verification Duration: 0.37s
+========================================================================
+RESULT: 100% MUTATION KILL RATE — ALL BEHAVIORAL INVARIANTS VERIFIED!
+test_the_tests.py exit=0
+== tracked files changed by the gates
+ M evidence/chronus/backend_matrix.csv
+ M evidence/chronus/modeA_1337.json
+ M evidence/chronus/modeA_2026.json
+ M evidence/chronus/modeA_42.json
+ M manifests/qualification_manifest_v36.json
+ M src/chronus/hw/zeckendorf.py
+ M src/chronus/math/binet_lucas.py
+ M src/chronus/stratum/bip310.py
+ M src/chronus/stratum/endian_engine.py
+ M src/chronus/stratum/gatekeeper.py
+ M src/chronus/stratum/rate_limiter.py
+== diff stat
+ evidence/chronus/backend_matrix.csv       |   6 +-
+ evidence/chronus/modeA_1337.json          |  26 ++++-----
+ evidence/chronus/modeA_2026.json          |  26 ++++-----
+ evidence/chronus/modeA_42.json            |  26 ++++-----
+ manifests/qualification_manifest_v36.json | 370 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++----------------------------------------------------------
+ src/chronus/hw/zeckendorf.py              | 148 +++++++++++++++++++++++-----------------------
+ src/chronus/math/binet_lucas.py           | 228 +++++++++++++++++++++++++++++++++++------------------------------------
+ src/chronus/stratum/bip310.py             | 198 +++++++++++++++++++++++++++++++-------------------------------
+ src/chronus/stratum/endian_engine.py      | 226 +++++++++++++++++++++++++++++++++++-----------------------------------
+ src/chronus/stratum/gatekeeper.py         | 482 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---------------------------------------------------------------------------
+ src/chronus/stratum/rate_limiter.py       | 216 +++++++++++++++++++++++++++++++++----------------------------------
+ 11 files changed, 976 insertions(+), 976 deletions(-)
+== whitespace-insensitive diff of src

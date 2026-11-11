@@ -1,0 +1,7 @@
+All checks passed!
+ruff (CI scope) exit=0
+All checks passed!
+ruff (new paths) exit=0
+compileall exit=0
+No temporary workflows present.
+temporary-workflow gate exit=0
