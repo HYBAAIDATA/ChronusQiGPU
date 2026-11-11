@@ -1,0 +1,18 @@
+{
+ "files": {
+  "stark/docs/security/stark-fri.md": "ca510b9627151813835d5cdb6dc9fe10f6f6d2c34e3e34598708229476c6096e",
+  "stark/scripts/evidence/stark_fri_evidence.py": "24a540782f15fd18d8aba2cb15f8866c96fc052c8827bb44cf584153d0380991",
+  "stark/src/chronus/security/stark.py": "36a7c70995bd0d575a9ccd8a55871753bd00ca87a801a04895fc15616b7358d8",
+  "stark/src/chronus/security/stark_fri.py": "7373c0ebfead8c2291b5fe9dd1b1da1f4e968d0ef62b4b171ed748b92b3b1efb",
+  "stark/tests/test_stark_fri.py": "d5ce93f781d81e0b64d2cc1fbe3f1a0729a3b2d77f6c85288a17c68f302e4204",
+  "theseus/docs/storage/theseus-durability.md": "395c16470fdf8db6cb2401011b214cdf926316eeee15e131a05d25270f064ce8",
+  "theseus/scripts/evidence/theseus_durability_evidence.py": "69b6a2aaa15959fe8d08ede69cb745852e9a99ca17d81856f52635399bd291af",
+  "theseus/src/chronus/execution/reference.py": "432e493eb281ee621c1069f655cbaffc934fc6460e15c11c10e11f8c7c0b64d3",
+  "theseus/src/chronus/storage/__init__.py": "0e87af33455b02ce4e045c50887bab92c034c61579bb7af891650fcaa7338f55",
+  "theseus/src/chronus/storage/durable.py": "91e2842c46ecac03ccdec5157c0da79eda4b81f35f5413dda18bb2d93707e3bf",
+  "theseus/src/chronus/storage/theseus.py": "fa4fd95f0faf2422a7051ef2e74743f1effcaff9d6fd8bdbc9ddfc3e092e738c",
+  "theseus/tests/test_theseus_durability.py": "e02c9f03e39cc059a7a0fca49d0a96089b5784542a93bff6669314b82dd4f176"
+ },
+ "parts": 4,
+ "xz_sha256": "e714aee8c480934fc870a05f71496749322595c8d8276e3097c3745654e1d9ef"
+}
