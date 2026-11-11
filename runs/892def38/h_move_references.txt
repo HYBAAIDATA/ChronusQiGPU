@@ -1,0 +1,191 @@
+
+=================== references to paths that move in phase 2 ===================
+-- src/chronus/tensor
+evidence/acceleration/findings_tensor_baseline.md:5:- `src/chronus/tensor/types.py` Git blob `2d08a1ce3bf015c2f54f901e95dc28a34f280dbf`: `SymmetricTensor.product_state` allocates `np.complex128`; `Sym
+evidence/acceleration/findings_tensor_baseline.md:6:- `src/chronus/tensor/network.py` Git blob `1ad877573d585e28282bb00b147a084e9635a594`: `build_network(..., topology="MPS")` creates product-state bl
+evidence/acceleration/findings_tensor_baseline.md:7:- `src/chronus/tensor/evolution.py` Git blob `b5d846e388685042dc82c2ea93190fb9f9586271`: `evolve_tdvp` builds complex matrices and uses SVD; `evolve
+evidence/cyclotomic/exact-mps-prototype.md:7:Local execution: `PYTHONPATH=/data/chronus-deps python -m coverage run --include='/data/chronus-resume/src/chronus/tensor/exact_mps.py' tools/local_injecte
+evidence/cyclotomic/exact-mps-prototype.md:11:- `src/chronus/tensor/exact_mps.py`: `7a676fd0f38eea0413febfe38f756fd1d54c68110259b58dd0a8cd2eebe840a0`
+evidence/cyclotomic/exact-mps-tests.txt:15:src/chronus/tensor/exact_mps.py      39      1    97%   27
+scripts/ci/claim_token_policy.json:172:      "path": "src/chronus/tensor/adaptive_contraction.py",
+scripts/ci/claim_token_policy.json:179:      "path": "src/chronus/tensor/charter.py",
+scripts/ci/claim_token_policy.json:186:      "path": "src/chronus/tensor/charter.py",
+scripts/ci/claim_token_policy.json:193:      "path": "src/chronus/tensor/charter.py",
+scripts/ci/claim_token_policy.json:200:      "path": "src/chronus/tensor/enhanced_representation.py",
+scripts/ci/claim_token_policy.json:207:      "path": "src/chronus/tensor/evolution.py",
+scripts/ci/claim_token_policy.json:214:      "path": "src/chronus/tensor/exact_mps.py",
+-- chronus\.tensor
+artifacts/acceleration/tensor_system_54c1d6ffe148ea655e251515fbbc07304ba9b250a6a47735ddf7310172267ec7.json:4:  "baseline": "chronus.tensor.network.build_network and TensorNetwork.to_statevector",
+benchmarks/acceleration/ring_mps_benchmark.py:6:from chronus.tensor.network import build_network
+benchmarks/acceleration/ring_mps_benchmark.py:31:    print(json.dumps({'system':'MPS product state (zero interaction)','input':'n copies of local [1,0], bond dimension 1','baseline':'chronus.tensor.ne
+benchmarks/acceleration/ring_mps_raw.json:4:  "baseline": "chronus.tensor.network.build_network and TensorNetwork.to_statevector",
+production_hr_api-v2.py:20:from chronus.tensor.enhanced_representation import (
+production_hr_api.py:23:from chronus.tensor.enhanced_representation import (
+production_hr_api.py:27:from chronus.tensor.adaptive_contraction import (
+production_hr_api.py:30:from chronus.tensor.causal_intelligence import (
+src/chronus/service/production_hr_api.py:20:from chronus.tensor.enhanced_representation import EnhancedTensorRepresentation
+src/chronus/service/production_hr_api.py:21:from chronus.tensor.adaptive_contraction import AdaptiveTensorContractionPathway
+src/chronus/service/production_hr_api.py:22:from chronus.tensor.causal_intelligence import CausalInterferenceEngine
+src/chronus/service/production_hr_api_v2.py:25:from chronus.tensor.enhanced_representation import (
+src/chronus/service/routers/tensor.py:14:from chronus.tensor.charter import (
+src/chronus/service/routers/tensor.py:19:from chronus.tensor.experiments import (
+src/chronus/service/routers/tensor.py:25:from chronus.tensor.network import (
+src/chronus/service/routers/tensor.py:29:from chronus.tensor.types import (
+src/chronus/tensor/__init__.py:7:from chronus.tensor.charter import (
+src/chronus/tensor/__init__.py:15:from chronus.tensor.dmrg import (
+src/chronus/tensor/__init__.py:20:from chronus.tensor.evolution import (
+src/chronus/tensor/__init__.py:24:from chronus.tensor.experiments import (
+src/chronus/tensor/__init__.py:32:from chronus.tensor.gate import (
+src/chronus/tensor/__init__.py:38:from chronus.tensor.hamiltonian import (
+src/chronus/tensor/__init__.py:43:from chronus.tensor.measurement import (
+src/chronus/tensor/__init__.py:47:from chronus.tensor.network import (
+src/chronus/tensor/__init__.py:52:from chronus.tensor.peps import (
+src/chronus/tensor/__init__.py:55:from chronus.tensor.enhanced_representation import (
+src/chronus/tensor/__init__.py:59:from chronus.tensor.adaptive_contraction import (
+src/chronus/tensor/__init__.py:62:from chronus.tensor.causal_intelligence import (
+src/chronus/tensor/__init__.py:65:from chronus.tensor.types import (
+src/chronus/tensor/adaptive_contraction.py:18:from chronus.tensor.enhanced_representation import (
+-- src/chronus/acceleration
+evidence/acceleration/SHA256SUMS:1:f03640204c12b02ca21866d852aa040e46df25a20cc26a91096d8ac03d1cc9ba  src/chronus/acceleration/fourier.py
+evidence/acceleration/fourier-coverage.json:1:{"meta": {"format": 3, "version": "7.17.2", "timestamp": "2026-11-09T20:28:56.255291", "branch_coverage": true, "show_contexts": false}, "files": {"src/ch
+evidence/acceleration/fourier-tests.txt:31:src/chronus/acceleration/fourier.py      20      0     10      0   100%
+evidence/acceleration/state-SHA256SUMS:1:53dd1412e02cf31eb49d0bae2dc27f8614e88aacc742049a5df19dfac29443a0  src/chronus/acceleration/state.py
+evidence/acceleration/state-coverage.json:1:{"meta": {"format": 3, "version": "7.17.2", "timestamp": "2026-11-09T21:32:47.828222", "branch_coverage": true, "show_contexts": false}, "files": {"src/chro
+evidence/acceleration/state-tests.txt:33:src/chronus/acceleration/state.py      38      1     14      1    96%   59
+work_orders/acceleration.md:7:Implement under `src/chronus/acceleration/` without changing existing interfaces until reviewed. Deliver modules incrementally; a module enters a commit only after invari
+-- chronus\.acceleration
+.github/workflows/acceleration.yml:20:        run: python -m pytest -v tests/acceleration/test_fourier.py --cov=chronus.acceleration.fourier --cov-branch --cov-fail-under=90 --cov-report=term-missing 
+.github/workflows/acceleration.yml:38:        run: python -m pytest -v tests/acceleration/test_state.py --cov=chronus.acceleration.state --cov-branch --cov-fail-under=90 --cov-report=term-missing --co
+benchmarks/acceleration/fourier_benchmark.py:9:from chronus.acceleration.fourier import qft
+benchmarks/acceleration/state_benchmark.py:9:from chronus.acceleration.state import normalize, apply_unitary
+evidence/acceleration/capability-report.md:7:`chronus.acceleration.fourier.qft` computes a normalized positive-sign discrete Fourier transform of a finite explicit one-dimensional power-of-two vector 
+evidence/acceleration/capability-report.md:24:PYTHONPATH=src python -m pytest -v tests/acceleration/test_fourier.py --cov=chronus.acceleration.fourier --cov-branch --cov-fail-under=90 --cov-report=ter
+evidence/acceleration/state-capability-report.md:20:PYTHONPATH=src python -m pytest -v tests/acceleration/test_state.py --cov=chronus.acceleration.state --cov-branch --cov-fail-under=90 --cov-report=t
+tests/acceleration/test_fourier.py:4:from chronus.acceleration.fourier import MAX_LENGTH, qft
+tests/acceleration/test_state.py:4:from chronus.acceleration.state import MAX_DIMENSION, TOLERANCE, apply_unitary, normalize
+tests/acceleration/test_state.py:5:from chronus.acceleration.fourier import qft
+-- src/turing
+artifacts/qigpu/exact_library/coverage.json:2:  "file": "src/turing/",
+artifacts/qigpu/exact_library/manifest_b9924602da325f0cfe2b82fa23ea200ca9a2073e7964e49863089f430ca62eb7.json:6:    "file": "src/turing/",
+artifacts/qigpu/exact_library/manifest_b9924602da325f0cfe2b82fa23ea200ca9a2073e7964e49863089f430ca62eb7.json:86:  "package": "src/turing/",
+read_cov.py:6:    with open('src/turing/cov_output.txt', 'r') as f:
+scripts/ci/claim_token_policy.json:221:      "path": "src/turing/physics/cayley.py",
+scripts/ci/claim_token_policy.json:228:      "path": "src/turing/stabilizer/tableau.py",
+-- from turing
+packages/turing/README.md:29:from turing import HADAMARD, QuantumState, born_probabilities
+packages/turing/tests/test_axioms.py:4:from turing import (
+src/turing/__init__.py:11:from turing.errors import (
+src/turing/__init__.py:20:from turing.ring.utils import (
+src/turing/__init__.py:28:from turing.ring.zeta import ZetaP
+src/turing/__init__.py:29:from turing.ring.rational import RationalZetaP
+src/turing/__init__.py:30:from turing.ring.matrix import MatrixZetaP
+src/turing/__init__.py:32:from turing.core.obstruction import Obstruction
+src/turing/__init__.py:33:from turing.core.state import (
+src/turing/__init__.py:39:from turing.core.unitary import (
+src/turing/__init__.py:44:from turing.gates.elementary import (
+src/turing/__init__.py:54:from turing.measurement.born import (
+src/turing/__init__.py:62:from turing.entanglement.schmidt import (
+src/turing/__init__.py:70:from turing.physics.tunneling import (
+src/turing/__init__.py:76:from turing.physics.cayley import (
+src/turing/__init__.py:82:from turing.physics.swarm import (
+src/turing/__init__.py:87:from turing.stabilizer.tableau import StabilizerTableauZetaP
+src/turing/core/__init__.py:3:from turing.core.obstruction import Obstruction
+src/turing/core/__init__.py:4:from turing.core.state import StateZetaP, superpose, inner_product, amplitude
+src/turing/core/__init__.py:5:from turing.core.unitary import UnitaryZetaP, ProjectiveUnitaryZetaP
+src/turing/core/state.py:7:from turing.errors import RingError, DimensionMismatchError
+src/turing/core/state.py:8:from turing.ring.zeta import ZetaP
+src/turing/core/unitary.py:7:from turing.errors import RingError, DimensionMismatchError
+src/turing/core/unitary.py:8:from turing.ring.matrix import MatrixZetaP
+src/turing/core/unitary.py:9:from turing.ring.zeta import ZetaP
+src/turing/core/unitary.py:12:    from turing.core.state import StateZetaP
+src/turing/core/unitary.py:44:        from turing.core.state import StateZetaP
+src/turing/core/unitary.py:95:        from turing.core.state import StateZetaP
+src/turing/entanglement/__init__.py:3:from turing.entanglement.schmidt import (
+src/turing/entanglement/schmidt.py:7:from turing.errors import StateNormError, DimensionMismatchError
+-- import turing
+-- chronus\.security\.ovid
+SOVEREIGN_CAPABILITY_ATTESTATION.json:69:        "chronus.security.ovid",
+reviews/attestation-file-review-2026-11-11.md:128:        "chronus.security.ovid",
+scripts/ci/sovereign_attestation.py:89:    from chronus.security.ovid import OVIDStorage
+scripts/ci/sovereign_attestation.py:271:            "chronus.security.ovid",
+scripts/generate_investor_dossier.py:58:    from chronus.security.ovid import OVIDStorage
+src/chronus/execution/reference.py:20:from chronus.security.ovid import OVIDStorage
+src/chronus/security/__init__.py:8:from chronus.security.ovid import (
+src/chronus/security/al_haras/sovereign.py:26:from chronus.security.ovid import OVIDStorage
+src/chronus/storage/connectors.py:41:from chronus.security.ovid import OVIDReceipt, OVIDStorage, OVIDZeroCopyPointer
+src/chronus/storage/theseus.py:12:from chronus.security.ovid import OVIDStorage
+tests/test_adversarial_storage.py:11:from chronus.security.ovid import OVIDStorage
+tests/test_behavioral_sovereign_attestation.py:75:        self.assertIn("chronus.security.ovid", proof["contained_modules"])
+tests/test_property_invariants.py:408:    from chronus.security.ovid import OVIDStorage
+tests/test_property_invariants.py:424:    from chronus.security.ovid import OVIDStorage
+tests/test_property_invariants.py:439:    from chronus.security.ovid import OVIDStorage
+tests/test_scaling_paths.py:114:    from chronus.security.ovid import OVIDStorage
+tests/test_storage.py:7:from chronus.security.ovid import OVIDStorage
+tests/test_zero_copy_connectors.py:24:from chronus.security.ovid import OVIDStorage, POINTER_PREFIX, VerifyEndpoint
+-- chronus\.storage\.theseus
+SOVEREIGN_CAPABILITY_ATTESTATION.json:68:        "chronus.storage.theseus",
+reviews/attestation-file-review-2026-11-11.md:127:        "chronus.storage.theseus",
+scripts/ci/sovereign_attestation.py:88:    from chronus.storage.theseus import TheseusService
+scripts/ci/sovereign_attestation.py:270:            "chronus.storage.theseus",
+scripts/generate_investor_dossier.py:59:    from chronus.storage.theseus import TheseusService
+src/chronus/execution/reference.py:21:from chronus.storage.theseus import TheseusService
+src/chronus/service/instant_provisioning.py:42:from chronus.storage.theseus import (
+src/chronus/storage/__init__.py:38:from chronus.storage.theseus import TheseusRecord, TheseusService
+src/chronus/storage/connectors.py:44:from chronus.storage.theseus import tenant_storage_registry
+tests/test_adversarial_storage.py:12:from chronus.storage.theseus import (
+tests/test_behavioral_sovereign_attestation.py:74:        self.assertIn("chronus.storage.theseus", proof["contained_modules"])
+tests/test_instant_provisioning.py:18:from chronus.storage.theseus import tenant_storage_registry
+tests/test_property_invariants.py:409:    from chronus.storage.theseus import TheseusService
+tests/test_property_invariants.py:425:    from chronus.storage.theseus import TheseusService
+tests/test_property_invariants.py:440:    from chronus.storage.theseus import TheseusService
+tests/test_storage.py:18:from chronus.storage.theseus import StorageIntegrityError
+-- exact_primitive_library
+ARTIFACT_SUMMARY.md:3:1. **Confirmed**: `exact_primitive_library-v3.py` - Full implementation with StabilizerTableauZetaP module
+artifacts/qigpu/exact_library/qudit_qec.py:14:from exact_primitive_library_v3 import (
+artifacts/qigpu/exact_library/qudit_qec.py:84:from exact_primitive_library_v3 import ZetaP
+exact_primitive_library-v3.py:1944:        "file": "exact_primitive_library.py",
+qudit_qec.py:3:from exact_primitive_library_v3 import (
+qudit_qec.py:59:from exact_primitive_library_v3 import ZetaP
+scripts/ci/claim_token_policy.json:116:      "path": "exact_primitive_library-v3.py",
+-- qudit_qec
+ARTIFACT_SUMMARY.md:5:3. **Extended**: Created `qudit_qec.py` demonstrating exact multi-qudit QEC using the library's algebraic structure
+reviews/attestation-file-review-2026-11-11.md:24:A tableau on 64 qudits is `O(64²)` field elements — genuinely tractable. `p^64` is an astronomical number. The "effective 1000" is not a compression re
+scripts/ci/claim_token_policy.json:11:      "path": "artifacts/qigpu/exact_library/qudit_qec.py",
+-- qigpu_
+.github/workflows/ci.yml:160:          iverilog -g2012 -o tb_phi hw/tb_qigpu_phi_alu.sv hw/zeckendorf_norm_alu.sv
+.github/workflows/ci.yml:169:          yosys -Q -T -p 'read_verilog -sv hw/zeckendorf_norm_alu.sv; hierarchy -check -top qigpu_phi_alu; synth -top qigpu_phi_alu; stat' | tee yosys-report.txt
+.github/workflows/ci.yml:170:          yosys -Q -T -p 'read_verilog -sv hw/zeckendorf_alu_32lane.sv; hierarchy -check -top qigpu_zeckendorf_alu_32lane; synth -top qigpu_zeckendorf_alu_32lane; stat' | 
+.github/workflows/ci.yml:171:          yosys -Q -T -p 'read_verilog -sv hw/pv_scale_32lane.sv; hierarchy -check -top qigpu_pv_scale_32lane; synth -top qigpu_pv_scale_32lane; stat' | tee -a yosys-repor
+.github/workflows/ci.yml:287:          source=Path('docs/qigpu/pasted-text.txt'); spec=importlib.util.spec_from_loader('qigpu_audit',SourceFileLoader('qigpu_audit',str(source)));mod=importlib.util.mod
+.github/workflows/investor-evidence-dossier.yml:37:          iverilog -g2012 -o tb_phi hw/tb_qigpu_phi_alu.sv hw/zeckendorf_norm_alu.sv
+artifacts/qigpu/manifest_2dd978514fa91ca43d5cfd789d436d5c812a516d1deaaec9aec0c61f299cecd9.json:14:      "lean4_spec_reference": "qigpu_dagger_compact_proof.lean",
+artifacts/qigpu/manifest_2dd978514fa91ca43d5cfd789d436d5c812a516d1deaaec9aec0c61f299cecd9.json:60:      "synthesizable_rtl_target": "qigpu_cyclotomic_mult_tree.v (TSMC N7 FinFET)",
+artifacts/qigpu/manifest_3f49f66fd8535f6953c7203ff69fa88d326fa35b42b3bc7fa5670e1026ba1a12.json:14:      "lean4_spec_reference": "qigpu_dagger_compact_proof.lean",
+artifacts/qigpu/manifest_3f49f66fd8535f6953c7203ff69fa88d326fa35b42b3bc7fa5670e1026ba1a12.json:60:      "synthesizable_rtl_target": "qigpu_cyclotomic_mult_tree.v (TSMC N7 FinFET)",
+artifacts/qigpu/manifest_40f0f8ed6e226181f59bb7fbfdca37d7ceeea789051437fd1fd03362fc56f6d9.json:14:      "lean4_spec_reference": "qigpu_dagger_compact_proof.lean",
+artifacts/qigpu/manifest_40f0f8ed6e226181f59bb7fbfdca37d7ceeea789051437fd1fd03362fc56f6d9.json:60:      "synthesizable_rtl_target": "qigpu_cyclotomic_mult_tree.v (TSMC N7 FinFET)",
+artifacts/qigpu/manifest_607fe50583004bc5d31ae2e81c5026322d03e27ae38d6f9010b26c1e05b5a230.json:14:      "lean4_spec_reference": "qigpu_dagger_compact_proof.lean",
+artifacts/qigpu/manifest_607fe50583004bc5d31ae2e81c5026322d03e27ae38d6f9010b26c1e05b5a230.json:61:      "synthesizable_rtl_target": "qigpu_cyclotomic_mult_tree.v (TSMC N7 FinFET)",
+artifacts/qigpu/manifest_a02ccf33decd178dadfd8d1d250add7598b152d28fc532d816ec2ea78cc3b20c.json:14:      "lean4_spec_reference": "qigpu_dagger_compact_proof.lean",
+artifacts/qigpu/manifest_a02ccf33decd178dadfd8d1d250add7598b152d28fc532d816ec2ea78cc3b20c.json:67:      "synthesizable_rtl_target": "qigpu_cyclotomic_mult_tree.v (TSMC N7 FinFET)",
+artifacts/qigpu/manifest_af81ec9e33e2e685e22ff661908e462e52f55227c99a1246d546b18618210110.json:14:      "lean4_spec_reference": "qigpu_dagger_compact_proof.lean",
+artifacts/qigpu/manifest_af81ec9e33e2e685e22ff661908e462e52f55227c99a1246d546b18618210110.json:60:      "synthesizable_rtl_target": "qigpu_cyclotomic_mult_tree.v (TSMC N7 FinFET)",
+artifacts/qigpu/manifest_b4ba422a724567c0f6f5f5db43b5e6cd8b17672903d4ea49910c6f33bfe479c0.json:14:      "lean4_spec_reference": "qigpu_dagger_compact_proof.lean",
+artifacts/qigpu/manifest_b4ba422a724567c0f6f5f5db43b5e6cd8b17672903d4ea49910c6f33bfe479c0.json:60:      "synthesizable_rtl_target": "qigpu_cyclotomic_mult_tree.v (TSMC N7 FinFET)",
+artifacts/qigpu/manifest_c53bcc8c5e952b9a485d7b2e221ccbd2267ca1d4e0c0f24c1313de90a7f08bab.json:14:      "lean4_spec_reference": "qigpu_dagger_compact_proof.lean",
+artifacts/qigpu/manifest_c53bcc8c5e952b9a485d7b2e221ccbd2267ca1d4e0c0f24c1313de90a7f08bab.json:67:      "synthesizable_rtl_target": "qigpu_cyclotomic_mult_tree.v (TSMC N7 FinFET)",
+artifacts/qigpu/manifest_c8b3a2632c5b3dc86b650ec4be642c5979654bd988a03ad43ac8954436a7aec3.json:14:      "lean4_spec_reference": "qigpu_dagger_compact_proof.lean",
+artifacts/qigpu/manifest_c8b3a2632c5b3dc86b650ec4be642c5979654bd988a03ad43ac8954436a7aec3.json:60:      "synthesizable_rtl_target": "qigpu_cyclotomic_mult_tree.v (TSMC N7 FinFET)",
+artifacts/qigpu/manifest_d26d7a53afd14a128d9545d7165fa57ae9945e6d000dff6fc811347c32e978a5.json:14:      "lean4_spec_reference": "qigpu_dagger_compact_proof.lean",
+artifacts/qigpu/manifest_d26d7a53afd14a128d9545d7165fa57ae9945e6d000dff6fc811347c32e978a5.json:60:      "synthesizable_rtl_target": "qigpu_cyclotomic_mult_tree.v (TSMC N7 FinFET)",
+docs/qigpu/pasted-text.txt:661:        return "qigpu_dagger_compact_proof.lean"
+docs/qigpu/pasted-text.txt:1569:            "synthesizable_rtl_target": "qigpu_cyclotomic_mult_tree.v (TSMC N7 FinFET)",
+docs/system-update/elevations.md:11:- `qigpu_phi_alu` — top level binding one fold sweep and one norm unit.
+docs/system-update/elevations.md:13:`hw/zeckendorf_alu_32lane.sv` scales the fold sweep to the full **32-lane carry-free ALU array** (`qigpu_zeckendorf_alu_32lane`): 32 independent 64-bit Zeckendorf r
+-- BLOCKER_
+STATUS.md:16:BLOCKERS: none (BLOCKER_MILLENIEIEUM_1.patch and BLOCKER_MILLENIEIEUM_2.patch resolved)
+STATUS.md:53:BLOCKERS: none (BLOCKER_TOE_1.patch applied)
+-- chronus-k8s-deployment
+-- ARTIFACT_SUMMARY
+-- apply_ovid_patch
+-- read_cov

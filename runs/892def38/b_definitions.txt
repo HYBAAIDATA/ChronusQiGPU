@@ -1,0 +1,179 @@
+
+=================== definitions in current code (excluding archive/backup/vendor/tests) ===================
+al_haras_sovereign_edition.py:59:class GaloisField257Phi:
+benchmarks/benchmark_al_haras_security.py:209:def benchmark_zero_copy_ovid_isolation(iterations: int = 200) -> dict[str, Any]:
+chronus_master_end_to_end_engine.py:48:def swap_endian_words(hex_str: str) -> bytes:
+chronus_master_end_to_end_engine.py:133:class F257GaloisOracle:
+chronus_master_end_to_end_engine.py:186:class MyrmidonSearcher:
+chronus_master_end_to_end_engine.py:194:    def search_slice(self, target_nonce: int) -> Optional[int]:
+chronus_master_end_to_end_engine.py:199:class PatroclusGateway:
+chronus_master_end_to_end_engine.py:218:    def pre_submit_gatekeeper(self, header_80b: bytes, target_int: int) -> bool:
+exact_primitive_library-v3.py:217:    def galois_conjugate(self, k: int) -> "ZetaP":
+exact_primitive_library-v3.py:762:def fourier_gate_projective(p: int) -> ProjectiveUnitaryZetaP:
+exact_primitive_library-v3.py:1208:    def apply_fourier(self, q: int) -> None:
+exact_primitive_library-v3.py:1378:    def test_projective_scaling_cancellation(self):
+exact_primitive_library-v3.py:1675:    def test_projective_fourier_and_hadamard(self):
+packages/turing/src/turing/tensor.py:9:def tensor_states(*states: QuantumState) -> QuantumState:
+packages/turing/src/turing/tensor.py:21:def tensor_operators(*operators: LinearOperator) -> LinearOperator:
+packages/turing/tests/test_axioms.py:55:    def test_tensor_product_and_bell_state_probabilities(self):
+qigpu_acceleration_system.py:389:    def fold_pair_p5(cls, x1: CyclotomicRing, x2: CyclotomicRing) -> Tuple[CyclotomicRing, CyclotomicRing]:
+qigpu_acceleration_system.py:396:    def unfold_pair_p5(cls, folded: CyclotomicRing, kernel: CyclotomicRing) -> Tuple[CyclotomicRing, CyclotomicRing, CyclotomicRing]:
+qigpu_acceleration_system.py:403:    def fold_vector_p5(cls, vec: List[CyclotomicRing]) -> Dict[str, Any]:
+qigpu_acceleration_system.py:424:    def unfold_vector_p5(cls, folded: List[CyclotomicRing], kernels: List[CyclotomicRing]) -> List[Tuple[CyclotomicRing, CyclotomicRing]]:
+qigpu_acceleration_system.py:479:    def tensor(self, other: 'MorphismRing') -> 'MorphismRing':
+qigpu_acceleration_system.py:619:class TensorMPSRingEngine:
+qigpu_acceleration_system.py:760:class TensorSystemRealisation:
+qigpu_master_tour_de_force.py:435:    def fold_pair_p5(cls, x1: CyclotomicRing, x2: CyclotomicRing) -> Tuple[CyclotomicRing, CyclotomicRing]:
+qigpu_master_tour_de_force.py:442:    def unfold_pair_p5(cls, folded: CyclotomicRing, kernel: CyclotomicRing) -> Tuple[CyclotomicRing, CyclotomicRing, CyclotomicRing]:
+qigpu_master_tour_de_force.py:449:    def fold_vector_p5(cls, vec: List[CyclotomicRing]) -> Dict[str, Any]:
+qigpu_master_tour_de_force.py:470:    def unfold_vector_p5(cls, folded: List[CyclotomicRing], kernels: List[CyclotomicRing]) -> List[Tuple[CyclotomicRing, CyclotomicRing]]:
+qigpu_master_tour_de_force.py:524:    def tensor(self, other: 'MorphismRing') -> 'MorphismRing':
+qigpu_master_tour_de_force.py:661:    def step_riemannian_geodesic(theta: float, phi: float, v_theta: float, v_phi: float, dt: float) -> Tuple[float, float, float, float]:
+qigpu_master_tour_de_force.py:736:class TensorMPSRingEngine:
+qigpu_master_tour_de_force.py:941:class TensorSystemRealisation:
+qigpu_unified__acceleration_system.py:368:    def fold_pair_p5(cls, x1: CyclotomicRing, x2: CyclotomicRing) -> Tuple[CyclotomicRing, CyclotomicRing]:
+qigpu_unified__acceleration_system.py:375:    def unfold_pair_p5(cls, folded: CyclotomicRing, kernel: CyclotomicRing) -> Tuple[CyclotomicRing, CyclotomicRing, CyclotomicRing]:
+qigpu_unified__acceleration_system.py:382:    def fold_vector_p5(cls, vec: List[CyclotomicRing]) -> Dict[str, Any]:
+qigpu_unified__acceleration_system.py:403:    def unfold_vector_p5(cls, folded: List[CyclotomicRing], kernels: List[CyclotomicRing]) -> List[Tuple[CyclotomicRing, CyclotomicRing]]:
+qigpu_unified__acceleration_system.py:456:    def tensor(self, other: 'MorphismRing') -> 'MorphismRing':
+qigpu_unified__acceleration_system.py:577:    def step_riemannian_geodesic(theta: float, phi: float, v_theta: float, v_phi: float, dt: float) -> Tuple[float, float, float, float]:
+scripts/ci/run_irrefutable_audit.py:132:    def verify_subspace_search(M: int, expected_alpha: int, expected_beta: int) -> Tuple[int, int, float]:
+scripts/ci/sovereign_attestation.py:86:def verify_theseus_ovid_pillar() -> Dict[str, Any]:
+scripts/generate_investor_dossier.py:56:def bench_memory_folding() -> dict:
+scripts/generate_investor_dossier.py:68:    def _fold_2048_rungs():
+scripts/generate_investor_dossier.py:237:def bench_subspace_search() -> dict:
+src/chronus/backends/lattice.py:81:def verify_fold(
+src/chronus/backends/lattice.py:108:    def dispatch_pv_fold(
+src/chronus/backends/opencl_pv.py:239:    def dispatch_pv_fold(
+src/chronus/backends/opencl_pv.py:291:    def dispatch_phase_search(
+src/chronus/chronus_gpiu-v36.py:125:def derive_ovid_id(blob: bytes) -> str:
+src/chronus/chronus_gpiu-v36.py:234:class TensorMemoryAccelerator:
+src/chronus/chronus_gpiu-v36.py:279:class TensorCoreEngine:
+src/chronus/chronus_gpiu-v36.py:435:class cuDNNTensorDescriptor:
+src/chronus/chronus_gpiu-v36.py:747:class QuantumGeometricTensor:
+src/chronus/chronus_gpiu-v36.py:896:    def compress_kv_geodesic(kv_matrix: List[float], target_dim: int = 4) -> bytearray:
+src/chronus/chronus_gpiu-v36.py:1041:class GaloisFieldElement:
+src/chronus/chronus_gpiu-v36.py:1185:class FederatedOVIDStorageManager:
+src/chronus/chronus_gpiu-v36.py:1514:class CellularSheafConsensusEngine:
+src/chronus/chronus_gpiu-v36.py:1537:class RecursiveTraceFolderIVC:
+src/chronus/chronus_gpiu-v36.py:1547:    def fold_execution_steps(cls, step_traces: List[bytes]) -> Dict[str, Any]:
+src/chronus/chronus_gpiu-v36.py:1571:class ExactFoldCore:
+src/chronus/chronus_gpiu-v36.py:1579:    def fold(self, payload: bytes) -> Tuple[bytearray, Receipt]:
+src/chronus/chronus_gpiu-v36.py:1611:    def unfold(self, folded: bytes, orig_len: int) -> bytes:
+src/chronus/chronus_gpiu-v36.py:1712:class Poseidon2FiatShamirIVCFolder:
+src/chronus/chronus_gpiu-v36.py:1720:    def fold_with_transcript_binding(cls, u1: dict, u2: dict, T_vec: list) -> dict:
+src/chronus/chronus_gpiu-v36.py:1747:class GeodesicDiscoveryService:
+src/chronus/chronus_gpiu-v36.py:1793:    def rebuild_indexes_from_ovid(self, ovid_db: dict, theseus_journal: dict) -> int:
+src/chronus/chronus_gpiu-v36.py:2331:class OVIDService:
+src/chronus/chronus_gpiu-v36.py:2401:class TheseusService:
+src/chronus/chronus_gpiu-v36.py:2690:class BinetZeckendorfFolder:
+src/chronus/chronus_gpiu-v36.py:2756:    def fold_payload(cls, payload: bytes) -> Tuple[List[List[int]], dict]:
+src/chronus/chronus_gpiu-v36.py:2766:    def unfold_payload(cls, zeckendorf_tuples: List[List[int]], orig_len: int) -> bytes:
+src/chronus/chronus_gpiu-v36.py:2801:class PhyllotaxisSunflowerPrimeStorage:
+src/chronus/chronus_gpiu-v36.py:7562:    def search_index(self, query: dict) -> list:
+src/chronus/execution/geometric_galois_miner.py:59:class ExactGaloisOracleF257:
+src/chronus/execution/geometric_galois_miner.py:318:class GeometricGaloisMiner:
+src/chronus/execution/geometric_galois_miner.py:435:class GeometricGaloisMinerBackend:
+src/chronus/execution/master_e2e_engine.py:46:def swap_endian_words(hex_str: str) -> bytes:
+src/chronus/execution/master_e2e_engine.py:131:class F257GaloisOracle:
+src/chronus/execution/master_e2e_engine.py:184:class MyrmidonSearcher:
+src/chronus/execution/master_e2e_engine.py:192:    def search_slice(self, target_nonce: int) -> Optional[int]:
+src/chronus/execution/master_e2e_engine.py:197:class PatroclusGateway:
+src/chronus/execution/master_e2e_engine.py:216:    def pre_submit_gatekeeper(self, header_80b: bytes, target_int: int) -> bool:
+src/chronus/execution/mining.py:85:def _search_lane(args: tuple[bytes, int, int, int, str, int, str]) -> dict[str, Any]:
+src/chronus/execution/mining.py:136:def search_nonce_range(
+src/chronus/execution/mining_admin.py:198:    def get_patroclus_status(self) -> Dict[str, Any]:
+src/chronus/execution/mining_entrypoint.py:198:    def _search_nonce_batch(
+src/chronus/execution/myrmidon_orchestrator.py:28:class PatroclusCharter:
+src/chronus/execution/myrmidon_orchestrator.py:54:class F257GaloisOracle:
+src/chronus/execution/myrmidon_orchestrator.py:80:def swap_endian_words(hex_str: str) -> bytes:
+src/chronus/execution/myrmidon_orchestrator.py:113:class MyrmidonSearcher:
+src/chronus/execution/myrmidon_orchestrator.py:122:    def execute_galois_search(
+src/chronus/execution/myrmidon_orchestrator.py:149:class PatroclusGateway:
+src/chronus/execution/native_simd.py:109:def fold_pairs_vectorized(data: bytes) -> bytes:
+src/chronus/execution/native_simd.py:137:def unfold_pairs_vectorized(data: bytes) -> bytes:
+src/chronus/execution/opencl_sha256d.py:111:    def search(
+src/chronus/execution/qigpu.py:36:class QiGPUOrchestrator:
+src/chronus/execution/reference.py:209:    def _execute_nonce_search(self, request: Dict[str, Any]) -> Dict[str, Any]:
+src/chronus/execution/reference.py:302:    def _execute_theseus_retrieve(self, request: Dict[str, Any]) -> Dict[str, Any]:
+src/chronus/execution/reference.py:532:    def _execute_phase_search(self, request: Dict[str, Any]) -> Dict[str, Any]:
+src/chronus/execution/stealth_orchestrator.py:49:class PatroclusStealthGateway:
+src/chronus/execution/structural.py:72:def fold_pair(first: int, second: int) -> tuple[int, int]:
+src/chronus/execution/structural.py:82:def unfold_pair(first: int, second: int) -> tuple[int, int]:
+src/chronus/execution/trinity.py:26:def _fold(value: int) -> dict[str, Any]:
+src/chronus/execution/trinity.py:33:def _unfold(value: Any) -> int:
+src/chronus/execution/trinity.py:52:def scale_fold_store(request: dict[str, Any]) -> dict[str, Any]:
+src/chronus/hw/zeckendorf.py:21:def fold_to_zeckendorf(n: int) -> List[int]:
+src/chronus/hw/zeckendorf.py:52:def unfold(rep: List[int]) -> int:
+src/chronus/math/binet_lucas.py:73:def fold(x: int) -> QSqrt5:
+src/chronus/math/binet_lucas.py:78:def unfold(y: QSqrt5) -> int:
+src/chronus/math/f257_search.py:38:def f257_phases_multi(u: int, N: int, M: int) -> tuple[int, int, int]:
+src/chronus/math/f257_search.py:71:def f257_phases(u: int, N: int, M: int) -> tuple[int, int, int]:
+src/chronus/ns_dec.py:55:def build_h4_600_cell_polytope() -> Dict[str, Any]:
+src/chronus/ns_dec.py:154:class H4PolytopeCrossbarRouter:
+src/chronus/quantum/extension_search.py:110:def exact_extension_search(
+src/chronus/quantum/geometric_polychoron.py:113:    def to_f257_phi(self) -> "F257Phi":
+src/chronus/quantum/geometric_polychoron.py:132:class F257Phi:
+src/chronus/quantum/geometric_polychoron.py:196:class Polychoron600Cell:
+src/chronus/quantum/geometric_polychoron.py:257:    def generate_f257_vertices(cls) -> List[Tuple[F257Phi, F257Phi, F257Phi, F257Phi]]:
+src/chronus/quantum/geometric_polychoron.py:319:class QuantumGeometricTensor:
+src/chronus/quantum/grover.py:14:def oracle_flip(state: StateVector, marked: int) -> StateVector:
+src/chronus/quantum/grover.py:31:def grover_iterate(state: StateVector, marked: int) -> StateVector:
+src/chronus/quantum/grover.py:36:def grover_trajectory(
+src/chronus/quantum/metallic_search.py:189:def exact_search(num_qubits: int, marked: int) -> StateVector:
+src/chronus/quantum/metallic_search.py:256:def exact_search_multi(num_qubits: int, marked: set[int]) -> StateVector:
+src/chronus/quantum/metallic_search.py:303:def algebraic_search(
+src/chronus/quantum/metallic_search.py:364:class SearchResult:
+src/chronus/quantum/metallic_search.py:373:def run_search(
+src/chronus/quantum/subspace.py:84:def exact_jform_subspace_search(num_qubits: int, marked_count: int) -> SubspaceState:
+src/chronus/quantum/subspace.py:96:def exact_subspace_search(num_qubits: int, marked_count: int) -> SubspaceState:
+src/chronus/sdk/client.py:707:    def get_patroclus_telemetry(self) -> Dict[str, Any]:
+src/chronus/sdk/client.py:730:    def simulate_patroclus_mining(self, pools: Optional[list] = None) -> Dict[str, Any]:
+src/chronus/security/al_haras/engine.py:94:class CellularSheafCohomology:
+src/chronus/security/al_haras/holographic_qec.py:43:class HappyTensorNetwork:
+src/chronus/security/al_haras/sovereign.py:63:class GaloisField257Phi:
+src/chronus/security/kms.py:29:class KMSKeyProvider(ABC):
+src/chronus/security/kms.py:102:class LocalMemoryKeyProvider(KMSKeyProvider):
+src/chronus/security/kms.py:176:class CloudKMSProvider(KMSKeyProvider):
+src/chronus/security/kms.py:220:class VaultKMSProvider(KMSKeyProvider):
+src/chronus/security/kms.py:242:class PKCS11HSMKeyProvider(KMSKeyProvider):
+src/chronus/security/kms.py:463:def get_kms_provider(provider_type: Optional[str] = None) -> KMSKeyProvider:
+src/chronus/security/ovid.py:17:class OVIDZeroCopyPointer:
+src/chronus/security/ovid.py:126:class OVIDReceipt:
+src/chronus/security/ovid.py:187:class OVIDStorage:
+src/chronus/service/production_hr_api.py:43:class TensorInitRequest(BaseModel):
+src/chronus/service/production_hr_api.py:103:def initialize_tensor_network(req: TensorInitRequest) -> Dict[str, Any]:
+src/chronus/service/production_hr_api.py:124:def optimize_tensor_query(req: ContractionRequest) -> Dict[str, Any]:
+src/chronus/service/production_hr_api_v2.py:71:class TensorRepresentationRequest(BaseModel):
+src/chronus/service/production_hr_api_v2.py:81:class SearchRequest(BaseModel):
+src/chronus/service/production_hr_api_v2.py:107:def handle_post_tensor_representation(req: TensorRepresentationRequest) -> Dict[str, Any]:
+src/chronus/service/production_hr_api_v2.py:162:def handle_get_tensor_representation() -> Response:
+src/chronus/service/production_hr_api_v2.py:171:def handle_post_search(req: SearchRequest) -> Dict[str, Any]:
+src/chronus/service/routers/mining_admin.py:45:class SimulatePatroclusRequest(BaseModel):
+src/chronus/service/routers/tensor.py:98:def build_tensor_network(request: NetworkBuildRequest) -> dict[str, Any]:
+src/chronus/storage/connectors.py:295:    def fold_bytes(
+src/chronus/storage/connectors.py:410:    def unfold_bytes(cls, folded_descriptor: Dict[str, Any]) -> bytes:
+src/chronus/storage/phyllotaxis.py:35:class PhyllotaxisCoordinate:
+src/chronus/storage/phyllotaxis.py:52:def phyllotaxis_coordinate(
+src/chronus/storage/phyllotaxis.py:115:class PhyllotaxisMesh:
+src/chronus/storage/theseus.py:21:class TheseusRecord:
+src/chronus/storage/theseus.py:38:class TheseusService:
+src/chronus/stratum/gatekeeper.py:77:class LocalPreSubmitGatekeeper:
+src/chronus/tensor/adaptive_contraction.py:27:class AdaptiveTensorContractionPathway:
+src/chronus/tensor/adaptive_contraction.py:45:    def parallel_pathway_search(
+src/chronus/tensor/enhanced_representation.py:82:class TensorNetworkNDArray(np.ndarray):
+src/chronus/tensor/enhanced_representation.py:185:class SearchResult:
+src/chronus/tensor/enhanced_representation.py:222:def _initialize_tensor_network(cfg: Config) -> TensorNetwork:
+src/chronus/tensor/enhanced_representation.py:292:def search_contraction_trees(network: TensorNetwork, budget: int) -> List[ContractionTree]:
+src/chronus/tensor/enhanced_representation.py:369:class SearchIndex:
+src/chronus/tensor/enhanced_representation.py:379:def build_search_index(documents: List[Dict[str, Any]], cfg: Config) -> SearchIndex:
+src/chronus/tensor/enhanced_representation.py:394:def search(query: Dict[str, Any], index: SearchIndex, top_k: int = 5) -> SearchResult:
+src/chronus/tensor/enhanced_representation.py:488:class EnhancedTensorRepresentation:
+src/chronus/tensor/enhanced_representation.py:535:    def _initialize_tensor_network(self) -> TensorNetwork:
+src/chronus/tensor/enhanced_representation.py:562:    def parallel_pathway_search(self, budget_bytes: Optional[int] = None) -> List[ContractionTree]:
+src/chronus/tensor/experiments.py:103:def E1_exactness_oracle(n_sizes: Tuple[int, ...] = (4, 8, 12, 16)) -> ExperimentResult:
+src/chronus/tensor/network.py:49:class TensorNetwork:
+src/chronus/tensor/types.py:87:class SymmetricTensor:
+src/turing/gates/elementary.py:62:def fourier_gate_projective(p: int) -> ProjectiveUnitaryZetaP:
+src/turing/ring/zeta.py:122:    def galois_conjugate(self, k: int) -> 'ZetaP':
+src/turing/stabilizer/tableau.py:55:    def apply_fourier(self, q: int) -> None:

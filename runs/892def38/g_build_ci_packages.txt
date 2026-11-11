@@ -1,0 +1,792 @@
+
+=================== Dockerfile ===================
+# syntax=docker/dockerfile:1
+
+FROM python:3.12-slim AS builder
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+WORKDIR /build
+COPY pyproject.toml README.md ./
+COPY src ./src
+RUN python -m pip wheel --wheel-dir=/wheels .
+
+FROM python:3.12-slim AS runtime-base
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    CHRONUS_WORKLOAD_DB_PATH=/var/lib/chronus/workloads.sqlite3
+RUN groupadd --system --gid 10001 chronus \
+    && useradd --system --uid 10001 --gid chronus --home-dir /var/lib/chronus chronus \
+    && mkdir -p /var/lib/chronus \
+    && chown chronus:chronus /var/lib/chronus
+COPY --from=builder /wheels /wheels
+RUN python -m pip install --no-cache-dir --no-index --find-links=/wheels chronus-quantum-igpu \
+    && rm -rf /wheels
+WORKDIR /var/lib/chronus
+USER 10001:10001
+
+FROM runtime-base AS miner-runtime
+COPY --chown=chronus:chronus chronus_live_miner.py /opt/chronus/chronus_live_miner.py
+HEALTHCHECK NONE
+CMD ["python", "/opt/chronus/chronus_live_miner.py"]
+
+FROM runtime-base AS api-runtime
+COPY --chown=chronus:chronus chronus_live_miner.py /opt/chronus/chronus_live_miner.py
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)" || exit 1
+CMD ["uvicorn", "chronus.service.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+
+=================== docker-compose.yml ===================
+services:
+  api:
+    image: chronus-api:local
+    pull_policy: never
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api-runtime
+    ports:
+      - "127.0.0.1:18000:8000"
+    environment:
+      CHRONUS_WORKLOAD_DB_PATH: /var/lib/chronus/workloads.sqlite3
+      CHRONUS_TENANT_TOKENS: ${CHRONUS_TENANT_TOKENS:-{}}
+    volumes:
+      - chronus_data:/var/lib/chronus
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+
+  web:
+    image: chronus-web:local
+    pull_policy: never
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:13000:3000"
+    environment:
+      CHRONUS_BACKEND_URL: http://api:8000
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+
+  miner:
+    image: chronus-miner:local
+    pull_policy: never
+    profiles: [miner]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: miner-runtime
+    env_file:
+      - .env
+    environment:
+      MINING_MAX_SECONDS: ${MINING_MAX_SECONDS:-}
+    restart: "no"
+
+volumes:
+  chronus_data:
+
+=================== Makefile ===================
+# Makefile for Chronus Quantum iGPU
+
+.PHONY: test test-cover lint format build clean install-devmode help
+
+# Default target
+help:
+	@echo "Chronus Quantum iGPU v36.0 Development Tasks"
+	@echo "=========================================="
+	@echo "make test            Run the test suite"
+	@echo "make test-cover      Run tests with coverage report"
+	@echo "make lint            Run code linting (ruff)"
+	@echo "make format          Auto-format code (black)"
+	@echo "make build           Build the package"
+	@echo "make clean           Clean build artifacts"
+	@echo "make install-devmode Install development dependencies"
+
+# Install development dependencies (pyproject.toml is the single source of truth)
+install-devmode:
+	pip install -e '.[dev]'
+
+# Run tests
+test:
+	pytest tests/ -v
+
+# Run tests with coverage
+test-cover:
+	pytest tests/ --cov=src/chronus --cov-report=html --cov-report=term-missing -v
+
+# Lint code
+lint:
+	ruff check src/ tests/
+	ruff format --check src/ tests/
+
+# Format code
+format:
+	ruff format src/ tests/
+	ruff check --fix src/ tests/
+
+# Build package
+build:
+	rm -rf dist build *.egg-info
+	python -m pip install --upgrade build
+	python -m build
+
+# Clean build artifacts
+clean:
+	rm -rf dist build *.egg-info
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name '*.pyc' -delete 2>/dev/null || true
+	find . -type d -name *.pyc -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name .pytest_cache -delete 2>/dev/null || true
+	find . -type d -name .mypy_cache -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name .mypy_cache -delete 2>/dev/null || true
+	find . -type d -name htmlcov -exec rm -rf {} + 2>/dev/null || true
+
+# Install in development mode
+install-dev:
+	pip install -e .
+
+=================== .dockerignore ===================
+# Python caches and local environments
+.git
+.gitignore
+.venv
+venv
+__pycache__
+*.py[cod]
+.pytest_cache
+.pytest_temp
+pytest_temp
+.ruff_cache
+.hypothesis
+.coverage
+htmlcov
+build
+dist
+*.egg-info
+
+# Local state, credentials, and generated artifacts
+data
+.env
+.env.*
+!.env.example
+*.sqlite3
+
+# Unrelated repository content
+.github
+archive
+benchmarks
+chronus_source_backup
+docs
+frontend
+hw
+hyperscaler
+infra
+manifests
+monitoring
+reports
+tests
+console
+scripts
+*.log
+tree_output.txt
+
+=================== .gitignore ===================
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Web
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Coverage
+coverage.xml
+*.cover
+*.py,cover
+
+# Documentation build
+docs/_build/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Common secrets / environment files
+.env
+.env.local
+*.pem
+*.key
+*.pfx
+credentials.json
+serviceAccountKey.json
+config/local_cred.json
+
+# Heroku
+heroku-debug.log
+
+# Chronus Quantum iGPU specific
+/out/
+/scratch/
+logs/**/*.log
+data/**/*.bin
+data/**/*.h5
+data/*.sqlite3
+temp/
+chronus_complete_system_master_v36 (1)/
+
+# Runtime data
+data/
+*.sqlite3
+
+.next/
+frontend/.next/
+.pytest_tmp/
+.pytest_temp/
+.hypothesis/
+master_repo/
+*.tar.gz
+*.zip
+/chronus_gpiu-v36.py
+/qualification_manifest_v36.json
+.venv-test/
+
+=================== workflow path references ===================
+.github/workflows/acceleration.yml:19:          PYTHONPATH: src
+.github/workflows/acceleration.yml:20:        run: python -m pytest -v tests/acceleration/test_fourier.py --cov=chronus.acceleration.fourier --cov-branch --cov-fail-under=90 --cov-report=term-missing --cov-report=xml:acc
+.github/workflows/acceleration.yml:24:          name: acceleration-coverage
+.github/workflows/acceleration.yml:25:          path: acceleration-coverage.xml
+.github/workflows/acceleration.yml:37:          PYTHONPATH: src
+.github/workflows/acceleration.yml:38:        run: python -m pytest -v tests/acceleration/test_state.py --cov=chronus.acceleration.state --cov-branch --cov-fail-under=90 --cov-report=term-missing --cov-report=xml:state-c
+.github/workflows/acceleration.yml:42:          name: acceleration-state-coverage
+.github/workflows/ci.yml:32:        run: python -m pytest -q --cov=chronus.execution --cov=chronus.backends --cov=chronus.service --cov=chronus.sdk --cov=chronus.security --cov=chronus.stratum --cov=chronus.math --cov=ch
+.github/workflows/ci.yml:50:        run: ruff check --select F src/chronus/execution src/chronus/backends src/chronus/service src/chronus/sdk src/chronus/security src/chronus/stratum src/chronus/math src/chronus/hw tests
+.github/workflows/ci.yml:52:        run: python -m compileall -q src/chronus/config.py src/chronus/execution src/chronus/backends src/chronus/service src/chronus/sdk src/chronus/security src/chronus/stratum src/chronus/m
+.github/workflows/ci.yml:105:      - run: bandit -q -r src/chronus/execution src/chronus/backends src/chronus/service src/chronus/sdk src/chronus/security -ll -ii
+.github/workflows/ci.yml:126:      - run: python -m pytest -q tests/test_opencl_kernel.py
+.github/workflows/ci.yml:138:        run: python scripts/ci/purity_gate.py
+.github/workflows/ci.yml:140:        run: python scripts/ci/test_the_tests.py
+.github/workflows/ci.yml:142:        run: python scripts/ci/sovereign_attestation.py
+.github/workflows/ci.yml:144:        run: python scripts/ci/manifest.py
+.github/workflows/ci.yml:201:          workload_id=$(python tests/container_smoke.py submit)
+.github/workflows/ci.yml:209:          python tests/container_smoke.py verify "$workload_id"
+.github/workflows/ci.yml:247:          python -m coverage run --branch docs/qigpu/pasted-text.txt 2>&1 | tee qigpu-test-output.txt
+.github/workflows/ci.yml:252:          source='docs/qigpu/pasted-text.txt'
+.github/workflows/ci.yml:287:          source=Path('docs/qigpu/pasted-text.txt'); spec=importlib.util.spec_from_loader('qigpu_audit',SourceFileLoader('qigpu_audit',str(source)));mod=importlib.util.module_from_spec(spec);
+.github/workflows/ci.yml:298:          data=cov.get_data(); name=next(x for x in data.measured_files() if x.endswith('pasted-text.txt'));line_context=data.contexts_by_lineno(name); statements=set(cov.analysis2(name)[1]);
+.github/workflows/storage-reference.yml:16:      - name: Test harness and validate committed artifacts
+.github/workflows/storage-reference.yml:18:          python -m unittest discover -s tests -p 'test_capacity_harness.py' -v
+.github/workflows/storage-reference.yml:21:          python scripts/ci/verify_capacity_artifacts.py
+.github/workflows/storage-reference.yml:22:      - name: Run reference harness on runner
+.github/workflows/storage-reference.yml:25:          python harness/capacity.py --data-dir artifacts/samples --labels harness/sample-labels.json --hardware "$RUNNER_TEMP/storage-hardware.json" --output-dir "$RUNNER_TEMP/
+.github/workflows/storage-reference.yml:39:      - run: python scripts/ci/check_forbidden_claims.py
+
+=================== purity gate scope ===================
+"""CI purity gate: no simulation, approximation, heuristics or quantum theatre.
+
+Scans the maintained mathematical packages and fails if any banned pattern
+appears. Rules:
+
+1. No floating-point computation in exact math paths (`math.` module usage,
+   `float(...)` casts, `numpy` float dtypes). Exact integer helpers such as
+   `math.isqrt`, `math.gcd`, `math.lcm`, `math.comb`, `math.perm` and
+   `math.factorial` are allowlisted: they accept only integers and return
+   exact integers (floats raise TypeError).
+2. No pseudo-random heuristics (`random.` module). Cryptographic randomness
+   via `secrets` is permitted where a protocol requires it.
+3. No classical-dressed-as-quantum theatre tokens in source or docstrings.
+4. Wall-clock timing telemetry (duration/latency fields) is exempt: measuring
+   time is not approximating mathematics.
+
+Run: python scripts/ci/purity_gate.py  (exit 1 with a report on violation)
+"""
+
+import ast
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+
+EXACT_PACKAGES = [
+    "src/chronus/execution",
+    "src/chronus/backends",
+    "src/chronus/storage",
+    "src/chronus/security",
+    "src/chronus/quantum",
+    "src/chronus/stratum",
+    "src/chronus/math",
+    "src/chronus/hw",
+]
+
+BANNED = [
+    (re.compile(r"(?<![\w.])math\.(?!(?:isqrt|gcd|lcm|comb|perm|factorial)\b)"), "floating-point math module usage"),
+    (re.compile(r"(?<![\w.])float\("), "float() cast in exact path"),
+    (re.compile(r"np\.float|numpy\.float|dtype\s*=\s*[\"']?f"), "numpy float dtype"),
+    (re.compile(r"(?<![\w.])random\."), "pseudo-random heuristic"),
+    (re.compile(r"(?<![\w.])(uniform|gauss|normal)\("), "statistical sampling heuristic"),
+]
+
+THEATRE_TOKENS = [
+    "Production-ready quantum",
+    "production-ready quantum",
+    "Holonomic",
+    "NVQLink",
+    "CUDA-Q",
+    "jitter_immune",
+    "gate_fidelity_target",
+    "fabricated fidelity",
+    "Navier-Stokes",
+    "SYMPLECTIC_DEC_FLOW",
+]
+
+
+def scan_file(path: Path) -> list[str]:
+    text = path.read_text(encoding="utf-8", errors="replace")
+    violations = []
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        for pattern, description in BANNED:
+            if pattern.search(line):
+                violations.append(f"{path}:{line_number}: {description}: {line.strip()}")
+        for token in THEATRE_TOKENS:
+            if token in line:
+                violations.append(f"{path}:{line_number}: theatre token '{token}': {line.strip()}")
+
+    # AST analysis for struct packing endianness and banned timing calls
+    try:
+        tree = ast.parse(text, filename=str(path))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Attribute) and node.func.attr == "pack":
+                    if node.args and isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
+                        fmt = node.args[0].value
+                        if not fmt.startswith(("<", ">", "!")):
+                            violations.append(
+
+=================== manifest/attestation path refs ===================
+Dockerfile:21:RUN python -m pip install --no-cache-dir --no-index --find-links=/wheels chronus-quantum-igpu \
+STATUS.md:3:**Repository Root**: `c:\Users\leonn\OneDrive\Desktop\chronus-quantum-igpu`  
+STATUS.md:72:  - `dist/chronus_quantum_igpu-36.0.1.tar.gz`
+STATUS.md:73:  - `dist/chronus_quantum_igpu-36.0.1-py3-none-any.whl`
+artifacts/qigpu/exact_library/qudit_qec.py:12:sys.path.insert(0, r"c:\Users\leonn\OneDrive\Desktop\chronus-quantum-igpu")
+audit/synthetic_audit_report.md:34:| `chronus_source_backup/chronus-quantum-igpu/src/chronus/security/al_haras/*.py` | — | Various `sign_mldsa("mock_mldsa_key", ...)`, `verify_ed25519(b"mock_pub", ...)`, `Poseidon2FiatShamirIVCFolder.fold_with_transcript_binding(u1_mock, u2_mock, T_vec)` | Documentation/spec files. Do not ship for production. |
+audit/synthetic_audit_report.md:35:| `chronus_source_backup/chronus-quantum-igpu/docs/directives/*.md` | — | Engineering directives and close-out criteria | Governing docs; follow directive that production code must not contain mock cryptography |
+chronus-k8s-deployment.yaml:7:    app.kubernetes.io/part-of: chronus-quantum-igpu
+docs/AUDIT_AND_PROOF_DOSSIER.md:35:The automated audit script [`scripts/ci/run_irrefutable_audit.py`](file:///c:/Users/leonn/OneDrive/Desktop/chronus-quantum-igpu/scripts/ci/run_irrefutable_audit.py) executed the full end-to-end verification sequence:
+docs/AUDIT_AND_PROOF_DOSSIER.md:138:* Manifest written to: [`manifests/qualification_manifest_v36.json`](file:///c:/Users/leonn/OneDrive/Desktop/chronus-quantum-igpu/manifests/qualification_manifest_v36.json)
+"docs/directives/Absolutely._I_ll_use_HYBAAIENTERPRISE_Chronusv2_a\342\200\246.md":8:Please attach chronus_quantum_igpu_v35_final.zip here.
+docs/directives/availability.md:13:Please attach `chronus_quantum_igpu_v35_final.zip` here.
+docs/directives/missing.md:54:- chronus_quantum_igpu_v34_final.zip generated.
+docs/directives/missing.md:108:- chronus_quantum_igpu_v34_final.zip — to inspect the complete repository and its actual contents.
+docs/executive/CHRONUS_GPIU_AL_HARAS_MASTER_DOSSIER.md:170:The platform has been audited and certified across all 8 mandatory qualification gates and 94 architectural invariants in [manifests/qualification_manifest_v36.json](file:///c:/Users/leonn/OneDrive/Desktop/chronus-quantum-igpu/manifests/qualification_manifest_v36.json):
+docs/executive/CHRONUS_GPIU_AL_HARAS_MASTER_DOSSIER.md:188:* **Invariant $I_{19}$ (Sheaf Obstruction Isolation)**: Clean states strictly satisfy $\ker(L_{\mathcal{F}}) = 0$; adversarial injection produces non-zero cohomology class $\|H^1\| = 1.41421356$ ([tests/test_al_haras_expansion.py](file:///c:/Users/leonn/OneDrive/Desktop/chronus-quantum-igpu/tests/test_al_haras_expansion.py)).
+docs/specifications/Chronus_GPIU_v3.0_Specification.html:3059:      manifest_id: "chronus-quantum-igpu-audit-v36",
+docs/specifications/TIER12_M15_MATRIX_FOLD_UNFOLD_SPECIFICATION.md:145:The canonical Python implementation is maintained in [`src/chronus/execution/structural.py`](file:///c:/Users/leonn/OneDrive/Desktop/chronus-quantum-igpu/src/chronus/execution/structural.py):
+docs/specifications/TIER12_M15_MATRIX_FOLD_UNFOLD_SPECIFICATION.md:161:Verified with 100% pass rate in [`tests/test_mining.py`](file:///c:/Users/leonn/OneDrive/Desktop/chronus-quantum-igpu/tests/test_mining.py) (`test_m15_byte_map_is_bijective`).
+frontend/public/chronus-observatory.html:3059:      manifest_id: "chronus-quantum-igpu-audit-v36",
+infra/k8s/chronus-k8s-deployment.yaml:7:    app.kubernetes.io/part-of: chronus-quantum-igpu
+pyproject.toml:6:name = "chronus-quantum-igpu"
+reviews/attestation-file-review-2026-11-11.md:105:          "filename": "chronus_quantum_igpu-36.0.0-py3-none-any.whl",
+reviews/attestation-file-review-2026-11-11.md:110:          "filename": "chronus_quantum_igpu-36.0.0.tar.gz",
+reviews/attestation-file-review-2026-11-11.md:115:          "filename": "chronus_quantum_igpu-36.0.1-py3-none-any.whl",
+reviews/attestation-file-review-2026-11-11.md:120:          "filename": "chronus_quantum_igpu-36.0.1.tar.gz",
+scripts/dev/check_braces.py:1:path = "c:/Users/leonn/OneDrive/Desktop/chronus-quantum-igpu/frontend/app/mining/page.tsx"
+scripts/dev/fix_api_client.py:2:path = "c:/Users/leonn/OneDrive/Desktop/chronus-quantum-igpu/frontend/lib/api-client.ts"
+scripts/dev/fix_master_e2e.py:2:path = "c:/Users/leonn/OneDrive/Desktop/chronus-quantum-igpu/src/chronus/execution/master_e2e_engine.py"
+scripts/dev/fix_mining.py:3:path = r"c:/Users/leonn/OneDrive/Desktop/chronus-quantum-igpu/src/chronus/execution/mining_admin.py"
+
+=================== packages/turing ===================
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hyba-turing"
+version = "0.1.0"
+description = "First-principles finite-dimensional quantum mathematics for HYBA Data"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Mathematics",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["turing*"]
+"""TURING: first-principles finite-dimensional quantum mathematics for HYBA Data.
+
+This is a mathematical library over complex Hilbert spaces, not a hardware SDK
+or physical-device simulator. See the package README for scope and limits.
+"""
+
+from .gates import (
+    CNOT,
+    HADAMARD,
+    IDENTITY_2,
+    PAULI_X,
+    PAULI_Y,
+    PAULI_Z,
+    PHASE_S,
+    PHASE_T,
+)
+from .measurement import (
+    ProjectiveMeasurement,
+    born_probabilities,
+    computational_basis_measurement,
+)
+from .operator import LinearOperator
+from .state import QuantumState
+from .tensor import tensor_operators, tensor_states
+
+__all__ = [
+    "CNOT",
+    "HADAMARD",
+    "IDENTITY_2",
+    "LinearOperator",
+    "PAULI_X",
+    "PAULI_Y",
+    "PAULI_Z",
+    "PHASE_S",
+    "PHASE_T",
+    "ProjectiveMeasurement",
+    "QuantumState",
+    "born_probabilities",
+    "computational_basis_measurement",
+    "tensor_operators",
+    "tensor_states",
+]
+
+__version__ = "0.1.0"
+"""Normalized finite-dimensional state vectors over the complex numbers."""
+
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass
+from typing import Iterable
+
+DEFAULT_TOLERANCE = 1e-10
+
+
+def _as_finite_complex(value: complex | float | int) -> complex:
+    result = complex(value)
+    if not math.isfinite(result.real) or not math.isfinite(result.imag):
+        raise ValueError("amplitudes must be finite complex numbers")
+    return result
+
+
+@dataclass(frozen=True, slots=True)
+class QuantumState:
+    """A normalized ket in a finite-dimensional complex Hilbert space.
+
+    The constructor rejects zero or non-normalized vectors. Use
+    :meth:`normalized` when explicit normalization is intended.
+    """
+
+    amplitudes: tuple[complex, ...]
+
+    def __post_init__(self) -> None:
+        values = tuple(_as_finite_complex(value) for value in self.amplitudes)
+        if not values:
+            raise ValueError("a state must have at least one amplitude")
+        norm_squared = sum(abs(value) ** 2 for value in values)
+        if not math.isclose(norm_squared, 1.0, rel_tol=0.0, abs_tol=DEFAULT_TOLERANCE):
+            raise ValueError(f"state must be normalized; squared norm is {norm_squared!r}")
+        object.__setattr__(self, "amplitudes", values)
+
+    @classmethod
+    def basis(cls, dimension: int, index: int) -> "QuantumState":
+        """Return the computational basis ket ``|index>`` in ``C^dimension``."""
+        if not isinstance(dimension, int) or isinstance(dimension, bool) or dimension < 1:
+            raise ValueError("dimension must be a positive integer")
+        if not isinstance(index, int) or isinstance(index, bool) or not 0 <= index < dimension:
+            raise ValueError("basis index must be in range")
+        return cls(tuple(1.0 + 0.0j if i == index else 0.0j for i in range(dimension)))
+
+    @classmethod
+    def normalized(cls, amplitudes: Iterable[complex | float | int]) -> "QuantumState":
+        """Explicitly normalize a nonzero amplitude sequence into a state."""
+        values = tuple(_as_finite_complex(value) for value in amplitudes)
+"""Standard finite-dimensional gate operators, defined as complex matrices."""
+
+from math import sqrt
+
+from .operator import LinearOperator
+
+IDENTITY_2 = LinearOperator.from_rows(((1, 0), (0, 1)))
+PAULI_X = LinearOperator.from_rows(((0, 1), (1, 0)))
+PAULI_Y = LinearOperator.from_rows(((0, -1j), (1j, 0)))
+PAULI_Z = LinearOperator.from_rows(((1, 0), (0, -1)))
+HADAMARD = LinearOperator.from_rows(((1 / sqrt(2), 1 / sqrt(2)),
+                                     (1 / sqrt(2), -1 / sqrt(2))))
+PHASE_S = LinearOperator.from_rows(((1, 0), (0, 1j)))
+PHASE_T = LinearOperator.from_rows(((1, 0), (0, (1 + 1j) / sqrt(2))))
+
+# Basis order: |00>, |01>, |10>, |11>; first qubit is the control.
+CNOT = LinearOperator.from_rows((
+    (1, 0, 0, 0),
+    (0, 1, 0, 0),
+    (0, 0, 0, 1),
+    (0, 0, 1, 0),
+))
+
+=================== src/turing exports ===================
+"""
+Turing — Exact Algebraic Quantum Substrate
+==========================================
+Discrete quantum mechanics over cyclotomic integer rings Z[zeta_p]
+and fraction fields Q(zeta_p). Zero floating point drift, exact Galois norms,
+projective Hilbert space P(H), and symplectic qudit stabilizer tableaus.
+"""
+
+__version__ = "0.1.0"
+
+from turing.errors import (
+    TuringError,
+    RingError,
+    NonUnitError,
+    DimensionMismatchError,
+    StateNormError,
+    AlgebraicObstructionError,
+)
+
+from turing.ring.utils import (
+    is_prime,
+    gcd,
+    legendre_symbol,
+    cyclotomic_polynomial_prime,
+    convolution,
+    bareiss_det,
+)
+from turing.ring.zeta import ZetaP
+from turing.ring.rational import RationalZetaP
+from turing.ring.matrix import MatrixZetaP
+
+from turing.core.obstruction import Obstruction
+from turing.core.state import (
+    StateZetaP,
+    superpose,
+    inner_product,
+    amplitude,
+)
+from turing.core.unitary import (
+    UnitaryZetaP,
+    ProjectiveUnitaryZetaP,
+)
+
+from turing.gates.elementary import (
+    pauli_x,
+    pauli_z,
+    cnot,
+    phase,
+    hadamard,
+    fourier_gate_projective,
+    hadamard_projective,
+)
+
+from turing.measurement.born import (
+    born_probability,
+    project,
+    sum_born_probabilities,
+    projective_born_probability,
+    visibility,
+)
+
+from turing.entanglement.schmidt import (
+    matrix_rank_over_field,
+    schmidt_rank,
+    normalized_schmidt_coefficients,
+    reduced_density_gram,
+    exact_renyi_purity,
+)
+
+from turing.physics.tunneling import (
+    DiscreteBarrier,
+    ContinuousBarrier,
+    transmission_coefficient,
+    transmission_coefficient_exact,
+)
+from turing.physics.cayley import (
+    ContinuousSchedule,
+    discrete_evolution,
+    continuous_adiabatic,
+    cayley_evolution,
+)
+from turing.physics.swarm import (
+    SwarmZetaP,
+    quantum_inspired_metaheuristic,
+)
+
+from turing.stabilizer.tableau import StabilizerTableauZetaP
+
+__all__ = [
+    "__version__",
+    "TuringError",
+    "RingError",
+    "NonUnitError",
+    "DimensionMismatchError",
+    "StateNormError",
+    "AlgebraicObstructionError",
+    "is_prime",
+    "gcd",
+    "legendre_symbol",
+    "cyclotomic_polynomial_prime",
+    "convolution",
+    "bareiss_det",
+    "ZetaP",
+    "RationalZetaP",
+    "MatrixZetaP",
+    "Obstruction",
+    "StateZetaP",
+    "superpose",
+    "inner_product",
+    "amplitude",
+    "UnitaryZetaP",
+    "ProjectiveUnitaryZetaP",
+    "pauli_x",
+    "pauli_z",
+    "cnot",
+    "phase",
+    "hadamard",
+    "fourier_gate_projective",
+    "hadamard_projective",
+    "born_probability",
+    "project",
+    "sum_born_probabilities",
+    "projective_born_probability",
+    "visibility",
+    "matrix_rank_over_field",
+    "schmidt_rank",
+    "normalized_schmidt_coefficients",
+    "reduced_density_gram",
+    "exact_renyi_purity",
+    "DiscreteBarrier",
+    "ContinuousBarrier",
+    "transmission_coefficient",
+    "transmission_coefficient_exact",
+    "ContinuousSchedule",
+    "discrete_evolution",
+    "continuous_adiabatic",
+    "cayley_evolution",
+    "SwarmZetaP",
+    "quantum_inspired_metaheuristic",
+    "StabilizerTableauZetaP",
+]
+
+=================== src/chronus top level ===================
+     28 service
+     24 security
+     22 execution
+     15 tensor
+     12 quantum
+      7 stratum
+      6 backends
+      5 storage
+      5 database
+      4 sdk
+      4 distributed
+      4 core
+      3 math
+      3 kernels
+      3 acceleration
+      2 observability
+      2 intelligence
+      2 hw
+      1 orchestration
+      1 (file) ns_dec.py
+      1 (file) config.py
+      1 (file) chronus_gpiu-v36.py
+      1 (file) al_haras_sovereign.py
+      1 (file) access_control.py
+      1 (file) __init__.py

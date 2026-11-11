@@ -1,0 +1,506 @@
+
+=================== root qigpu scripts: docstrings and classes ===================
+-- qigpu_acceleration_system.py (1230 lines)
+"""
+QiGPU Unified Complete Quantum Acceleration System
+Substrate: Parameterized Cyclotomic Integer Ring Z[zeta_p]
+Following the ORDER and ULTIMA Feedback Specifications in their Entirety.
+Strictly zero floating-point arithmetic in exact paths. Zero mocks. Zero heuristics.
+"""
+
+import os
+import sys
+import time
+import json
+import math
+import hashlib
+import unittest
+from typing import Tuple, List, Dict, Any, Union
+
+# =====================================================================
+# 1. PARAMETERIZED ARITHMETIC SUBSTRATE: Z[zeta_p]
+# =====================================================================
+class RingError(Exception):
+    """Raised when an operation violates exact ring arithmetic or leaves the ring."""
+    pass
+
+def is_prime(n: int) -> bool:
+    """Primality check for cyclotomic parameterization."""
+20:class RingError(Exception):
+24:def is_prime(n: int) -> bool:
+39:def legendre_symbol(a: int, p: int) -> int:
+47:class CyclotomicRing:
+240:class MatrixRing:
+355:def Z5(coeffs) -> CyclotomicRing:
+358:def Z7(coeffs) -> CyclotomicRing:
+365:class PulviniRingOperator:
+455:class MorphismRing:
+495:class CategoricalRingCompiler:
+546:class InfoGeoRingEngine:
+588:class TopologicalRingEngine:
+619:class TensorMPSRingEngine:
+727:class QuantumKernelRingEngine:
+760:class TensorSystemRealisation:
+793:class DataSystemRealisation:
+828:class HardwareMultiplierTree:
+856:class RefusalSurface:
+912:class TestInvariant(unittest.TestCase):
+940:class TestProperty(unittest.TestCase):
+962:class TestAdversarial(unittest.TestCase):
+983:class TestEdge(unittest.TestCase):
+1006:class TestUnit(unittest.TestCase):
+1027:class TestIntegration(unittest.TestCase):
+1052:class TestEndToEnd(unittest.TestCase):
+1065:def run_acceleration_system() -> Dict[str, Any]:
+1165:if __name__ == '__main__':
+-- qigpu_unified__acceleration_system.py (1057 lines)
+"""
+QiGPU Unified Single-Phase Mathematical Substrate & Agnostic Execution Engine
+=============================================================================
+Unified implementation following the 'one prompt' master task specification:
+  1. Primary Thesis: Quantum computation is an invariant mathematical property
+     arising directly from exact cyclotomic algebraic ring structures (Z[zeta_p], Q(zeta_p)).
+     It is 100% substrate-agnostic and hardware-agnostic.
+  2. Substrate & Exact Field Mechanics (Z[zeta_p], Q(zeta_p), Gauss sums, QFIM quotients, Geodesics).
+  3. Functorial Categorical Compiler (Dagger-compact, ZX-calculus spider fusion, Yang-Baxter for all roots).
+  4. Topological Anyon Braiding (SU(2)_5 Fibonacci, R-matrices, Homological Knot Compiler, HQEC).
+  5. Holographic MERA & CFT Dualities (Ryu-Takayanagi minimal surfaces, Fast Scrambling, Scrambling I_3).
+  6. Universal Backend Routing Adapter (IBackendDispatcher) with 100% bit-for-bit identity across:
+     - Native Software SIMD / CUDA
+     - Topological Anyon Braiding
+     - Integrated Photonic MZI Array
+     - Neutral-Atom Rydberg Constructor
+  7. Packed Bitstream Protocol (0.8889 ratio, 1.125x expansion factor, bit-for-bit recovery).
+  8. Full Seven-Class Test Suite (Invariant, Property, Adversarial, Edge, Unit, Integration, EndToEnd).
+"""
+
+import os
+import sys
+import time
+import json
+import math
+35:class RingError(Exception):
+40:def is_prime(n: int) -> bool:
+49:def legendre_symbol(a: int, p: int) -> int:
+58:class CyclotomicRing:
+241:class MatrixRing:
+353:class PulviniRingOperator:
+432:class MorphismRing:
+472:class FunctorialCategoricalCompiler:
+526:class InfoGeoQFIMEngine:
+598:class TopologicalAnyonHomologicalEngine:
+667:class HolographicMERAEngine:
+697:class PackedBitstreamProtocol:
+759:class IBackendDispatcher:
+765:class NativeSoftwareSIMDBackend(IBackendDispatcher):
+775:class TopologicalAnyonBraidBackend(IBackendDispatcher):
+785:class IntegratedPhotonicMZIBackend(IBackendDispatcher):
+795:class AtomicRydbergConstructorBackend(IBackendDispatcher):
+809:class TestInvariant(unittest.TestCase):
+831:class TestProperty(unittest.TestCase):
+845:class TestAdversarial(unittest.TestCase):
+859:class TestEdge(unittest.TestCase):
+874:class TestUnit(unittest.TestCase):
+886:class TestIntegration(unittest.TestCase):
+896:class TestEndToEnd(unittest.TestCase):
+921:def run_one_prompt_system() -> Dict[str, Any]:
+1022:if __name__ == '__main__':
+-- qigpu_master_tour_de_force.py (1488 lines)
+"""
+QiGPU Master Tour de Force Quantum Acceleration System
+=============================================================================
+Universal Pure Mathematical Substrate & Substrate-Agnostic Execution Engine
+Bridging all theoretical paradigms, structural proofs, empirical baselines,
+hardware synthesizable targets, and formal refusal boundaries into one unified,
+production-grade master execution system.
+
+Substrate: Parameterized Cyclotomic Integer Ring Z[zeta_p] & Fraction Field Q(zeta_p)
+Zero Floating-Point Drift. Zero Approximations. Zero Mocks. Strict Exit Codes.
+=============================================================================
+"""
+
+import os
+import sys
+import time
+import json
+import math
+import hashlib
+import unittest
+from fractions import Fraction
+from typing import Tuple, List, Dict, Any, Optional, Union
+
+# =====================================================================
+# 1. PARAMETERIZED CYCLOTOMIC ARITHMETIC SUBSTRATE: Z[zeta_p]
+28:class RingError(Exception):
+32:def is_prime(n: int) -> bool:
+49:def legendre_symbol(a: int, p: int) -> int:
+57:class CyclotomicRing:
+239:class MatrixRing:
+352:class GeneralAlgebraicNumberField:
+420:class PulviniRingOperator:
+500:class MorphismRing:
+540:class FunctorialCategoricalCompiler:
+613:class InfoGeoQFIMEngine:
+682:class TopologicalAnyonHomologicalEngine:
+736:class TensorMPSRingEngine:
+829:class QuantumKernelRingEngine:
+863:class HolographicMERAEngine:
+888:class PackedBitstreamProtocol:
+941:class TensorSystemRealisation:
+992:class DataSystemRealisation:
+1039:class CrossParadigmComposition:
+1079:class IBackend:
+1083:class NativeSoftwareSIMDBackend(IBackend):
+1091:class TopologicalAnyonBraidBackend(IBackend):
+1099:class IntegratedPhotonicMZIBackend(IBackend):
+1107:class AtomicRydbergConstructorBackend(IBackend):
+1120:class HardwareMultiplierTree:
+1144:class RefusalSurface:
+1200:class TestInvariant(unittest.TestCase):
+1228:class TestProperty(unittest.TestCase):
+1246:class TestAdversarial(unittest.TestCase):
+1261:class TestEdge(unittest.TestCase):
+1278:class TestUnit(unittest.TestCase):
+1291:class TestIntegration(unittest.TestCase):
+1316:class TestEndToEnd(unittest.TestCase):
+1329:def run_master_system() -> Dict[str, Any]:
+1445:if __name__ == '__main__':
+-- qudit_qec.py (63 lines)
+#!/usr/bin/env python3
+"""Multi-Qudit Quantum Error Correction using Exact StabilizerTableauZetaP"""
+from exact_primitive_library_v3 import (
+    ZetaP, is_prime, StabilizerTableauZetaP,
+    StateZetaP, born_probability
+)
+from itertools import product
+
+p = 5
+n = 5  # 5 physical qudits
+
+print("=== 5-Qudit QEC: Exact Stabilizer Tableau ===")
+print(f"Working over F_{p} (Z[zeta_{p}] arithmetic)\n")
+
+# Create stabilizer tableau for code space
+print("Step 1: Initialize 5-qudit stabilizer tableau...")
+tableau = StabilizerTableauZetaP.zero_state(p, n)
+print(f"  Tableau created: p={tableau.p}, n_qudits={tableau.n_qudits}")
+print(f"  Initial x_mat[0]: {tableau.x_mat[0]}")
+print(f"  Initial z_mat[0]: {tableau.z_mat[0]}")
+print(f"  Initial phases: {tableau.phases}")
+
+# Apply transversal X to create encoded state
+print("\nStep 2: Apply logical X (transversal X on all 5 qudits)...")
+for q in range(n):
+-- chronus_live_miner.py (27 lines)
+#!/usr/bin/env python3
+"""
+Chronus Master Bitcoin Stratum Mining Production Entrypoint (Root Wrapper).
+Forwards execution to canonical packaged implementation: chronus.execution.mining_entrypoint.
+"""
+
+from __future__ import annotations
+
+import os
+import sys
+
+# Ensure repository root and src directory are on sys.path
+REPO_ROOT = os.path.abspath(os.path.dirname(__file__))
+SRC_DIR = os.path.join(REPO_ROOT, "src")
+for p in (SRC_DIR, REPO_ROOT):
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
+from chronus.execution.mining_entrypoint import (
+    load_env_config,
+    ChronusRealMiningEngine,
+    async_main,
+    cli_main,
+)
+
+26:if __name__ == "__main__":
+-- read_cov.py (24 lines)
+#!/usr/bin/env python3
+"""Read and extract coverage Missing lines from cov_output.txt"""
+import sys
+
+try:
+    with open('src/turing/cov_output.txt', 'r') as f:
+        content = f.read()
+except FileNotFoundError:
+    print("cov_output.txt not found in cwd")
+    sys.exit(1)
+
+# Find the coverage analysis section
+idx = content.find('TOTAL')
+if idx > 0:
+    # Print the last section which has the TOTAL summary
+    print(content[idx:idx+500])
+else:
+    # Try finding the missing lines section
+    idx2 = content.find('Missing')
+    if idx2 > 0:
+        print(content[idx2:idx2+3000])
+    else:
+        print("No coverage summary or Missing section found")
+        # Print last 500 chars as fallback
+        print(content[-500:])
+=================== acceleration package ===================
+benchmarks/acceleration/accumulation_reference.py
+benchmarks/acceleration/accumulation_reference_raw.json
+benchmarks/acceleration/fourier_benchmark.py
+benchmarks/acceleration/fourier_raw.json
+benchmarks/acceleration/ring_codec_benchmark.py
+benchmarks/acceleration/ring_codec_raw.json
+benchmarks/acceleration/ring_mps_benchmark.py
+benchmarks/acceleration/ring_mps_raw.json
+benchmarks/acceleration/ring_state_benchmark.py
+benchmarks/acceleration/ring_state_raw.json
+benchmarks/acceleration/state_benchmark.py
+benchmarks/acceleration/state_raw.json
+benchmarks/benchmark_al_haras_security.py
+benchmarks/benchmark_mining.py
+capabilities/acceleration_report.md
+capabilities/substrate_report.md
+evidence/acceleration/SHA256SUMS
+evidence/acceleration/accumulation-SHA256SUMS
+evidence/acceleration/accumulation-reference.md
+evidence/acceleration/blocked-braid-SHA256SUMS
+evidence/acceleration/blocked-braid.md
+evidence/acceleration/blocked_braid_output.txt
+evidence/acceleration/blocked_braid_test.py
+evidence/acceleration/blocked_zeckendorf_output.txt
+evidence/acceleration/blocked_zeckendorf_test.py
+evidence/acceleration/capability-report.md
+evidence/acceleration/combined-local-tests.txt
+evidence/acceleration/findings_multiplier_truncation.md
+evidence/acceleration/findings_prime_codec.md
+evidence/acceleration/findings_tensor_baseline.md
+evidence/acceleration/fourier-coverage.json
+evidence/acceleration/fourier-tests.txt
+evidence/acceleration/ring-SHA256SUMS
+evidence/acceleration/ring-codec-SHA256SUMS
+evidence/acceleration/ring-codec-coverage.json
+evidence/acceleration/ring-codec-report.md
+evidence/acceleration/ring-codec-tests.txt
+evidence/acceleration/ring-coverage.json
+evidence/acceleration/ring-mps-SHA256SUMS
+evidence/acceleration/ring-mps-coverage.json
+evidence/acceleration/ring-mps-report.md
+evidence/acceleration/ring-mps-tests.txt
+evidence/acceleration/ring-state-SHA256SUMS
+evidence/acceleration/ring-state-coverage.json
+evidence/acceleration/ring-state-report.md
+evidence/acceleration/ring-state-tests.txt
+evidence/acceleration/ring-test-report.md
+evidence/acceleration/ring-tests.txt
+evidence/acceleration/state-SHA256SUMS
+evidence/acceleration/state-capability-report.md
+evidence/acceleration/state-combined-tests.txt
+evidence/acceleration/state-coverage.json
+evidence/acceleration/state-tests.txt
+evidence/acceleration/verification.txt
+reviews/acceleration_review.md
+reviews/attestation-file-review-2026-11-11.md
+reviews/onboarding_phase0_gap_analysis.md
+src/chronus/acceleration/__init__.py
+src/chronus/acceleration/fourier.py
+src/chronus/acceleration/state.py
+tests/acceleration/test_fourier.py
+tests/acceleration/test_state.py
+work_orders/H5.0_legal_review_status.md
+work_orders/acceleration.md
+work_orders/sovereign_horizons.md
+
+=================== capabilities ===================
+-- capabilities/acceleration_report.md
+# Acceleration capability report — work in progress
+
+**Not complete, not release-qualified.** This is an inventory of the recorded evidence, not an assertion of general speedup, approval, customer value or security certification. CI status: unverified — 403 on check runs was observed for a previous head; CI was not inspected for this order. Tests and measurements below were run against a partial source export, not a complete checkout. A digest verifies bytes against a known manifest; it is not a signature or independent validation.
+
+## Evidence and status
+
+| Area | Result and evidence | SHA-256 of linked artifact |
+| --- | --- | --- |
+| Ring arithmetic | Seven test classes passed; full source-file branch coverage 100% in this bounded run. The test scope and non-proof limitations are in the [report](../evidence/acceleration/ring-test-report.md); [raw log](../evidence/acceleration/ring-tests.txt) and [coverage](../evidence/acceleration/ring-coverage.json). | Log `243d04abb7713a483201e198d4bcebbe2551d2dd1bf39484e8d0f557196d6603`; coverage `08f3461aecc65177c747465486199314118835a36876d223880d52b7aab342af` |
+| Element and vector | Exact scalar/coordinate operations, seven classes, 100% module branch coverage; [report](../evidence/acceleration/ring-state-report.md), [log](../evidence/acceleration/ring-state-tests.txt) and [coverage](../evidence/acceleration/ring-state-coverage.json). These coordinates are not a measurement or normalization model. | Log `1960efb1c7861ce7b12eb58ca1447ee408aaf18540a2dc2d410399db2139689e`; coverage `f64d9cf6e66b4e56c56632bba1dcc75e7bfffdfd895632491e395f8860768ad9` |
+| F/R and pentagon | Not implemented or qualified; [failed API check and blocker](../evidence/acceleration/blocked-braid.md). Existing Artin check alone is insufficient. | Blocker `c854dfb68eb61c77bfc672a4892c4cd84a0be43c1a349d4442a2f3d60d59166b` |
+| Multiplier | [Failing counterexample and timing blocker](../evidence/cyclotomic/rtl-overflow-finding.md); [raw output](../evidence/cyclotomic/rtl-overflow-output.txt). No timing closure is established. | Raw output `264fb1581529bac535ba768476808e4756ab0a066ec09f025c4148a594aea68e` |
+| Exact MPS contraction | Seven classes and 100% module branch coverage in isolated run; [report](../evidence/acceleration/ring-mps-report.md), [log](../evidence/acceleration/ring-mps-tests.txt), [coverage](../evidence/acceleration/ring-mps-coverage.json). | Log `5471398cab78eb139f8cb511de35792607e02b1dc297796c6ec44bc8ead4ab86`; coverage `463cc2ffae278d63af34d451a4e79068f64a754ad8959ba92223ebbf85e628a0` |
+| Tensor experiment | [Same-input MPS artifact](../artifacts/acceleration/tensor_system_54c1d6ffe148ea655e251515fbbc07304ba9b250a6a47735ddf7310172267ec7.json): product state, depths 1–10 as sampled, zero observed difference. Neither path exceeded 1e-12, so no deeper-fold or drift-elimination benefit is shown. No interacting many-body experiment has been established. | `54c1d6ffe148ea655e251515fbbc07304ba9b250a6a47735ddf7310172267ec7` |
+| Ring codec | Seven classes and 100% module branch coverage in isolated run; [report](../evidence/acceleration/ring-codec-report.md), [log](../evidence/acceleration/ring-codec-tests.txt), [coverage](../evidence/acceleration/ring-codec-coverage.json). It is a bounded reversible codec, not a durable page store. | Log `71dc1ba6185da0efde751dcecea4291c05607256ab9ba33135ba4dd4493db728`; coverage `898e337489aa788ba535d0f9cef567e81312878c87f529318e164ce15b76e70d` |
+| Data experiment | [Synthetic page artifact](../artifacts/acceleration/data_system_e68323c90f115bbc86c8ec676e694fb9075cfea1c9531ae5736e64a8fea548be.json): ratio 0.1248323784, round trip true; contains decode percentiles, logical write amplification and clean reopen time. Crash recovery and physical write amplification were not measured. The pre-existing prime-codec [measurement](../evidence/cyclotomic/prime-codec-synthetic-log.json) independently records ratio 0.4994512864 for synthetic logs. | Page `e68323c90f115bbc86c8ec676e694fb9075cfea1c9531ae5736e64a8fea548be`; logs `66217744c41e3f76ad356d6ba11940a086e4a0703589398586fbff1353ba22c4` |
+| Accumulation | [Reference comparison](../benchmarks/acceleration/accumulation_reference_raw.json) shows exact integer and ring results for 2^53 + 100 increments while binary64 loses the increments. This is a deliberately selected example, not an ALU throughput measurement; [blocker](../evidence/acceleration/accumulation-reference.md). | Raw `78bf83cf20e40129ef99b079d12d5f11187d97b4f1d5449544e662d62aad8c4a`; blocker `2a55e200ad1cfde9570f4bdec3074924cc9a6f986d52a8b4f37b959247fbe407` |
+
+[Combined tests](../evidence/acceleration/combined-local-tests.txt) passed 34 cases in the partial export (SHA-256 `e4b794c3071f7d3a2c6a75045c58b465a9f133bc4c0b421f3658c85acbd32bc3`). [Hash verification](../evidence/acceleration/verification.txt) covers the six new manifests (SHA-256 `9385da59cd84f0bfc537c164f9e0c0fcd194ea46be42ff09c78f0952fc937f1f`). Each linked report gives exact reproduction commands and scope. Digests can be verified with `sha256sum -c` on each named manifest.
+
+## Refusal surface
+
+No acceleration over a competitive equivalent-task baseline has been demonstrated in these records. Exact arithmetic avoids rounding on operations representable in the ring; it does not automatically improve running time, compression, fault tolerance or predictive accuracy. The bounded product-state tensor experiment does not establish drift on the comparison path, deeper contraction, or advantage for arbitrary entangled states. The codec expands the measured page sample and the existing prime codec expands its measured log sample. No generic search, Fourier, optimization, learning, security or government-compliance advantage is asserted. Directly enumerated outputs have input/output and coefficient-growth costs; comparisons must account for them.
+
+## Completion blockers
+
+Provide defined F/R data and verify the pentagon; fix or explicitly bound the multiplier and measure timing against a named target and constraints; obtain seven-class ALU evidence and actual throughput; establish an interacting same-input many-body workload and report the outcome even if it does not show an advantage; implement and measure an actual page store and failure recovery; validate full repository integration and sign/approve evidence. Customer and operational acceptance remain open. No result above removes these requirements.
+-- capabilities/substrate_report.md
+# Capability report — experimental and incomplete
+
+**NOT COMPLETE OR RELEASE QUALIFIED.** This report records bounded observations, not a general proof, customer result, security assurance or performance claim. CI is unverified; check-runs access returned 403. All tests below ran locally on partial source exports, not a full checkout.
+
+| Observation | Artifact | SHA-256 |
+| --- | --- | --- |
+| Substrate: seven focused tests, 49% full-file coverage in this run | [artifact](../evidence/cyclotomic/substrate-coverage.txt) | `46a895c6d3c351c30333fb7dd1a520ceb49a000810cf401f7ab22a0aff4a96f4` |
+| RTL: exactness counterexample, simulation fails | [artifact](../evidence/cyclotomic/rtl-overflow-output.txt) | `264fb1581529bac535ba768476808e4756ab0a066ec09f025c4148a594aea68e` |
+| Exact MPS: isolated tests, 38/39 statements | [artifact](../evidence/cyclotomic/exact-mps-tests.txt) | `7470ceb546f69e61f37f6a577d7dbc21a591a3fe1e6f1d6882a503915147d7f8` |
+| MPS: synthetic product-state comparison depths 1–13 | [artifact](../evidence/cyclotomic/product-mps-comparison.json) | `24878c156f6428f61dd6d699cb43dd5babcd8cf74abe74435cfdd9dc03ad33ed` |
+| Prime codec: synthetic access-log measurement | [artifact](../evidence/cyclotomic/prime-codec-synthetic-log.json) | `66217744c41e3f76ad356d6ba11940a086e4a0703589398586fbff1353ba22c4` |
+| Zeckendorf reference: accumulation measurement | [artifact](../evidence/cyclotomic/zeckendorf-accumulation.json) | `4f078e73ae868318a2f6a5f5ce30510c02641aa88dc715ee4430bde1e12752f8` |
+
+The listed artifacts were checked by comparing local Git blob IDs with GitHub directory listings at `cb14321021f1f31aadd9a2d9ff73d080b7dcce1b`, and computing the SHA-256 values over those same local bytes. Verify after checkout with `sha256sum` on the listed paths. The report itself cannot contain the hash or SHA of the commit introducing itself; use `git log --diff-filter=A -- capabilities/substrate_report.md`.
+
+## Scope and boundaries
+
+- Substrate: [coverage gate and scope](../evidence/cyclotomic/substrate-blocked.md); [original isolated ring tests](../evidence/cyclotomic/isolation-review.md). Separately, another commit reports [100% branch-inclusive source-file coverage](../evidence/acceleration/ring-test-report.md) in a different isolated suite; neither run establishes a full customer journey, F/R matrices or pentagon identity.
+- Hardware: [counterexample and target requirements](../evidence/cyclotomic/rtl-overflow-finding.md). No target-specific timing has been measured. The test intentionally fails on the current RTL.
+- Tensor: [prototype test scope](../evidence/cyclotomic/exact-mps-prototype.md), [comparison methodology and commands](../evidence/cyclotomic/product-mps-comparison.md). The ring expansion is unnormalised; the existing floating-point path normalises. The comparison is not a like-for-like timing or equal-task fold-depth advantage. A bounded synthetic product state is not a solved many-body problem or a customer deployment.
+- Data: [reference codec measurement](../evidence/cyclotomic/prime-codec-synthetic-log.md) measures a synthetic log class, bit-for-bit round-trip and logical application bytes. The codec expands this class and is not ring-backed. Physical write amplification and failure recovery were not measured; clean reopen is not crash recovery.
+- Compute: [reference accumulation measurement](../evidence/cyclotomic/zeckendorf-accumulation.md) is a software Fibonacci-representation comparison at one precision-boundary workload, not a ring-backed or physical ALU demonstration.
+
+## Remaining gates
+
+Full-tree testing and compatibility; seven substantive release test classes and >=90% coverage per requested module; explicit qubit semantics, R/F/pentagon verification; a closed or overflow-aware hardware interface and target-specific timing; equal-task tensor drift/depth/timing; ring-backed storage and ALU integration; representative data, device write amplification and fault recovery; evidence signatures and independent verification; customer-facing materials and review. Unknown or unmeasured results are not assumed successful. For commands and input specifications, follow each linked evidence report.
+
+=================== work orders: owners/assignees ===================
+-- work_orders/H5.0_legal_review_status.md
+1:# H5.0 — legal and ethical review status
+7:- Next step: an authorized decision-maker may appoint qualified legal and ethics reviewers and record their scope, date, body, outcome and decision. A status document is not a legal review.
+-- work_orders/acceleration.md
+1:# Acceleration layer work order
+3:Status: **in progress; not release-qualified**. Input: [acceleration review](../reviews/acceleration_review.md), REVIEW FIRST and the mathematical exposition supplied with the request. The page establishes evidence expectations rather than a complete implementation specification. Do not treat planned APIs as implemented capabilities.
+5:## Operating rules
+9:## Capability map and planned public APIs
+27:## Tests and benchmark for each module
+39:## Release blockers and external decisions
+41:Unspecified: customer workload and reference, target deployments, pricing, authorized production service, control owners, independent penetration assessment, compliance/authorization, support SLA, and conformant evidence signing. The existing claim audit withdraws release and cryptographic claims. Until these are resolved, outputs are engineering evidence only; no production, enterprise, government, analyst endorsement or customer-reference claim is permitted. Customer-facing and executive packs must explicitly distinguish missing evidence from achieved results.
+-- work_orders/sovereign_horizons.md
+1:# Sovereign horizons: implementation work orders
+3:Status: planning. Baseline: `8fddfd17eb776a95e0eec1d1514dd48290c905b4` (default branch, 2026-11-09). This document translates requested objectives into work; it does not assert that any capability, assessment, certification, or government affiliation exists. No horizon is complete. The imported copy has not been compared with this baseline.
+5:## Work-order status
+7:| Work order | Status |
+22:## Delivery and evidence rules
+25:- Each work-order completion record must identify source commit, environment and dependency versions, exact commands, raw outputs, exit status, limitations, artifact hashes, reviewer, and CI run URL. A later record or CI artifact may point to the tested commit; do not try to embed a commit's own hash in its contents.
+27:- Prepare capability report, evidence pack, honest security questionnaire, SBOM and vulnerability snapshot, control matrix, independent assessment status, runbook and rollback, approved support commitments, refusal list, executive evidence pack and analyst evidence pack. External accreditation, penetration testing, customers, contracts and analyst ratings require actual external parties; mark unavailable items blocked.
+32:## H1.1 — Lean formal library
+40:- Estimated scope: Large. Status: In progress. An initial closed-identity proof slice is available; the remaining theorems and correspondence proof are not complete.
+42:## H1.2 — Lane non-interference
+50:- Estimated scope: Large. Status: Blocked on RTL correspondence and realistic leakage model; abstract model checked.
+52:## H1.3 — SkyWater layout evaluation
+60:- Estimated scope: Large. Status: Blocked: OpenLane and the matching PDK are unavailable; the flow configuration is unvalidated.
+62:## H3.1 — Holographic code simulator
+70:- Estimated scope: Large. Status: Not started.
+72:## H3.2 — Erasure recovery evaluation
+80:- Estimated scope: Large. Status: Not started.
+82:## H2.1 — Two-party private-computation research
+90:- Estimated scope: Large. Status: Not started.
+92:## H2.2 — Verifiable computation receipt
+100:- Estimated scope: Large. Status: Not started.
+102:## H5.0 — Legal and ethical review
+106:- Deliverable: Review status, scope, reviewing body, governing standards, outcome and authorized decision, or an explicit blocker.
+108:- Acceptance criterion: A genuine completed review is recorded. Current status: **BLOCKED — no review has been provided**.
+110:- Estimated scope: Small for status documentation; external review scope and duration unknown.
+112:## H5.1 — Autonomous-use proposal
+120:- Estimated scope: Undetermined. Status: Blocked.
+122:## H5.2 — Engagement receipt proposal
+130:- Estimated scope: Undetermined. Status: Blocked.
+132:## H4.1 — Physical leakage evaluation
+140:- Estimated scope: Large. Status: Not started.
+142:## H4.2 — Scheduling experiment
+150:- Estimated scope: Large. Status: Not started.
+152:## Completion record template
+154:Work order / status / tested commit / environment / command / exit code / raw artifact and SHA-256 / CI run / reviewer / limitations / remaining blockers. Never mark production, certification, or a horizon complete solely because code exists or a test count is high.
+156:## H1.1 partial delivery record
+160:- Command: from repository root, `bash lean/check.sh`. Exit status: 0. Output: `lean/local-check-output.txt` at the tested commit. Output SHA-256: `a1f9d7a8344620897fcb7ec72497094a54020b09fd5e6fe9955a683167164dc3`. No CI run was checked.
+164:## Baseline reconciliation — blocked
+170:## Continuation records
+177:- H5.0 status document: commit `fd749b3159bb7e92e2865fb445d699505323216e`. Review itself remains blocked, and H5.1–H5.2 remain blocked and outside permitted implementation scope. The status file check is not a legal review. Status-check test files commit `35f6298fab4c80bb6bf8ab80d03ab206ab4716bd`: command `python3 tests/test_h5_legal_status.py -v` exited 0; `evidence/h5_0/unittest.log` SHA-256 `b092990725fd61ce38655fd11edfb35e20e4f5993897d7582f2b66d0814ed904`.
+
+=================== diff root master e2e vs src ===================
+149
+5d4
+< import math
+7d5
+< import time
+240,242c238,285
+< # 6. MOCK MULTI-POOL STRATUM SERVER (ViaBTC, Braiins, NiceHash, CKPool)
+< # =====================================================================
+< class StratumMultiPoolServer:
+---
+> # 6. LOCAL STRATUM TEST SERVER (Deterministic Protocol Verification Fixture)
+> #
+> # This is a fully-executable in-process TCP server used for deterministic
+> # end-to-end protocol verification.  It is NOT a mock — it speaks real
+> # Stratum V1 JSON-RPC over a real asyncio TCP socket and enforces the
+> # complete 8-step handshake sequence (configure / subscribe /
+> # extranonce.subscribe / authorize / set_difficulty / notify / submit).
+> #
+> # The Bitcoin Genesis Block #0 template is used as the work fixture so
+> # that the sha256d gatekeeper check produces a provably valid result with
+> # a known nonce (0x7c2bac1d = 2083236893) without requiring a live pool
+> # connection.  Production mining uses chronus.execution.mining_entrypoint
+> # with live pool credentials from environment variables.
+> # =====================================================================
+> # Bitcoin block 0 coinbase transaction (public chain data). Its sha256d is the
+> # genesis merkle root 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b.
+> GENESIS_COINBASE_HEX = (
+>     "01000000" "01" + "00" * 32 + "ffffffff" "4d"
+>     "04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72"
+>     "206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73"
+>     "ffffffff" "01" "00f2052a01000000" "43"
+>     "4104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f"
+>     "4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac"
+>     "00000000"
+> )
+> 
+> 
+> class LocalStratumTestServer:
+>     """
+>     In-process Stratum V1 TCP server for deterministic protocol verification.
+> 
+>     Speaks real JSON-RPC over a real asyncio socket.  Implements the full
+>     Stratum V1 wire protocol sequence used in production:
+>       mining.configure  → negotiate ASICBoost version-rolling mask
+>       mining.subscribe  → allocate ExtraNonce1 / ExtraNonce2_size
+>       mining.extranonce.subscribe → enable ExtraNonce1 push updates
+>       mining.authorize  → authenticate worker credentials
+>       mining.set_difficulty PUSH → server pushes VARDIFF target
+>       mining.notify PUSH → server pushes block work template
+>       mining.submit → rebuild the header from the job and accept only shares
+>                       whose sha256d meets the pushed difficulty
+> 
+>     Uses Bitcoin Genesis Block #0 field values as a fixed verification
+>     fixture so that sha256d(header) with nonce 0x7c2bac1d is guaranteed
+>     to satisfy diff=1.  For live mining connect to a real pool via
+>     chronus.execution.mining_entrypoint.
+>     """
+> 
+246c289,291
+<         self.extranonce1 = "a45b7889"
+---
+>         # Block 0 has no pool extranonce1: coinb1 + extranonce2 + coinb2 must
+>         # reproduce the genesis coinbase byte for byte.
+>         self.extranonce1 = ""
+250,251c295,297
+<         
+<         # Canonical Genesis Block #0 template parameters for deterministic verification
+---
+> 
+>         # Bitcoin Genesis Block #0 field values — fixed deterministic verification fixture.
+>         # Using these produces a known-valid sha256d result with nonce 2083236893 (0x7c2bac1d).
+253,254c299,300
+<         self.coinb1 = "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d010b4d696e6564206279204368726f6e75730000000000000000"
+<         self.coinb2 = "000000000100f2052a010000001976a9144d183f3608107572714a601f057c79e602410a8c88ac00000000"
+---
+>         self.coinb1 = GENESIS_COINBASE_HEX[:2]
+>         self.coinb2 = GENESIS_COINBASE_HEX[2 + 2 * self.extranonce2_size:]
+258a305
+>         self.share_difficulty = 1
+260a308,331
+>     def validate_share(self, params: List[Any]) -> bool:

@@ -1,0 +1,351 @@
+
+=================== tensor package imports ===================
+-- src/chronus/tensor/__init__.py 143 lines
+7:from chronus.tensor.charter import (
+15:from chronus.tensor.dmrg import (
+20:from chronus.tensor.evolution import (
+24:from chronus.tensor.experiments import (
+32:from chronus.tensor.gate import (
+38:from chronus.tensor.hamiltonian import (
+43:from chronus.tensor.measurement import (
+47:from chronus.tensor.network import (
+52:from chronus.tensor.peps import (
+55:from chronus.tensor.enhanced_representation import (
+59:from chronus.tensor.adaptive_contraction import (
+62:from chronus.tensor.causal_intelligence import (
+65:from chronus.tensor.types import (
+-- src/chronus/tensor/adaptive_contraction.py 96 lines
+11:from __future__ import annotations
+13:import math
+14:import time
+15:from typing import Any, Dict, List, Optional, Tuple
+16:import numpy as np
+18:from chronus.tensor.enhanced_representation import (
+-- src/chronus/tensor/causal_intelligence.py 125 lines
+11:from __future__ import annotations
+13:import math
+14:from typing import Any, Dict, List, Optional, Tuple
+15:import numpy as np
+17:from chronus.tensor.enhanced_representation import EnhancedTensorRepresentation
+-- src/chronus/tensor/charter.py 106 lines
+8:from __future__ import annotations
+10:import re
+11:from typing import Set
+-- src/chronus/tensor/dmrg.py 162 lines
+8:from __future__ import annotations
+10:import math
+11:import os
+12:from typing import Any, List, Optional
+15:    import numpy as np
+23:from chronus.tensor.types import (
+33:from chronus.tensor.network import TensorNetwork
+34:from chronus.tensor.gate import factorize_two_site, bound_from_method
+-- src/chronus/tensor/enhanced_representation.py 593 lines
+20:from __future__ import annotations
+22:from dataclasses import dataclass, field
+23:import math
+24:import time
+25:from typing import Any, Dict, List, Optional, Sequence, Tuple
+26:import warnings
+27:import numpy as np
+29:from chronus.tensor.types import (
+38:from chronus.tensor.network import (
+-- src/chronus/tensor/evolution.py 94 lines
+8:from __future__ import annotations
+10:import math
+11:from typing import Any, Dict, List, Optional, Tuple
+12:import numpy as np
+14:from chronus.tensor.types import (
+20:from chronus.tensor.network import TensorNetwork
+21:from chronus.tensor.gate import apply_gate, theorem_for
+-- src/chronus/tensor/exact_mps.py 56 lines
+7:from chronus.quantum.geometric_polychoron import Cyclotomic5
+-- src/chronus/tensor/experiments.py 337 lines
+11:from __future__ import annotations
+13:import math
+14:from dataclasses import dataclass
+15:from typing import Any, Dict, List, Optional, Tuple
+16:import numpy as np
+18:from chronus.tensor.charter import charter, program_entry_check
+19:from chronus.tensor.types import (
+25:from chronus.tensor.network import TensorNetwork, build_network
+26:from chronus.tensor.gate import apply_gate
+27:from chronus.tensor.hamiltonian import TFIM_terms, build_hamiltonian_mpo
+28:from chronus.tensor.dmrg import DMRG, truncate_to_first_32, qsim_ground_energy_32
+-- src/chronus/tensor/gate.py 313 lines
+8:from __future__ import annotations
+10:import math
+11:from dataclasses import dataclass
+12:from typing import Any, Dict, List, Optional, Tuple, Union
+13:import numpy as np
+15:from chronus.tensor.types import (
+26:from chronus.tensor.network import TensorNetwork
+-- src/chronus/tensor/hamiltonian.py 135 lines
+7:from __future__ import annotations
+9:import math
+10:from dataclasses import dataclass
+11:from typing import Any, Dict, List, Optional, Tuple
+12:import numpy as np
+14:from chronus.tensor.types import (
+21:from chronus.tensor.network import TensorNetwork
+-- src/chronus/tensor/measurement.py 125 lines
+7:from __future__ import annotations
+9:import copy
+10:import math
+11:from typing import Any, Dict, List, Optional, Tuple
+12:import numpy as np
+14:from chronus.tensor.types import (
+19:from chronus.tensor.network import TensorNetwork
+-- src/chronus/tensor/network.py 204 lines
+8:from __future__ import annotations
+10:import math
+11:import os
+12:from typing import Dict, List, Optional, Tuple
+13:import numpy as np
+19:from chronus.tensor.types import (
+-- src/chronus/tensor/peps.py 91 lines
+8:from __future__ import annotations
+10:import math
+11:from dataclasses import dataclass
+12:from typing import Any, Dict, List, Optional, Tuple
+13:import numpy as np
+15:from chronus.tensor.types import (
+20:from chronus.tensor.network import TensorNetwork
+21:from chronus.tensor.gate import theorem_for
+-- src/chronus/tensor/types.py 224 lines
+7:from __future__ import annotations
+9:import math
+10:from dataclasses import dataclass, field
+11:from enum import Enum
+12:from typing import Any, Dict, List, Optional, Tuple, Union
+13:import numpy as np
+
+=================== who imports chronus.tensor ===================
+artifacts/acceleration/tensor_system_54c1d6ffe148ea655e251515fbbc07304ba9b250a6a47735ddf7310172267ec7.json:4:  "baseline": "chronus.tensor.network.build_network and TensorNetwork.to_statevector",
+benchmarks/acceleration/ring_mps_benchmark.py:6:from chronus.tensor.network import build_network
+benchmarks/acceleration/ring_mps_benchmark.py:31:    print(json.dumps({'system':'MPS product state (zero interaction)','input':'n copies of local [1,0], bond dimension 1','baseline':'chronus.tensor.network.build_network and TensorNetwork.to_statevector', 'tolerance':1e-12,'maximum_depth_tested':10,'first_tolerance_exceedance':None,'interpretation':'Neither path exceeded tolerance in the tested range; no depth advantage shown. This is not a many-body application with interactions.','timing_scope':'contraction calls including normalisation in baseline; construction excluded','warmups':1,'repetitions':5,'timer':'perf_counter_ns','python':sys.version,'numpy':np.__version__,'platform':platform.platform(),'source_blob_network':'1ad877573d585e28282bb00b147a084e9635a594','source_blob_types':'2d08a1ce3bf015c2f54f901e95dc28a34f280dbf','results':results},indent=2))
+benchmarks/acceleration/ring_mps_raw.json:4:  "baseline": "chronus.tensor.network.build_network and TensorNetwork.to_statevector",
+packages/turing/src/turing/__init__.py:24:from .tensor import tensor_operators, tensor_states
+production_hr_api-v2.py:20:from chronus.tensor.enhanced_representation import (
+production_hr_api.py:23:from chronus.tensor.enhanced_representation import (
+production_hr_api.py:27:from chronus.tensor.adaptive_contraction import (
+production_hr_api.py:30:from chronus.tensor.causal_intelligence import (
+src/chronus/service/production_hr_api.py:20:from chronus.tensor.enhanced_representation import EnhancedTensorRepresentation
+src/chronus/service/production_hr_api.py:21:from chronus.tensor.adaptive_contraction import AdaptiveTensorContractionPathway
+src/chronus/service/production_hr_api.py:22:from chronus.tensor.causal_intelligence import CausalInterferenceEngine
+src/chronus/service/production_hr_api_v2.py:25:from chronus.tensor.enhanced_representation import (
+src/chronus/service/routers/tensor.py:14:from chronus.tensor.charter import (
+src/chronus/service/routers/tensor.py:19:from chronus.tensor.experiments import (
+src/chronus/service/routers/tensor.py:25:from chronus.tensor.network import (
+src/chronus/service/routers/tensor.py:29:from chronus.tensor.types import (
+src/chronus/tensor/__init__.py:7:from chronus.tensor.charter import (
+src/chronus/tensor/__init__.py:15:from chronus.tensor.dmrg import (
+src/chronus/tensor/__init__.py:20:from chronus.tensor.evolution import (
+src/chronus/tensor/__init__.py:24:from chronus.tensor.experiments import (
+src/chronus/tensor/__init__.py:32:from chronus.tensor.gate import (
+src/chronus/tensor/__init__.py:38:from chronus.tensor.hamiltonian import (
+src/chronus/tensor/__init__.py:43:from chronus.tensor.measurement import (
+src/chronus/tensor/__init__.py:47:from chronus.tensor.network import (
+src/chronus/tensor/__init__.py:52:from chronus.tensor.peps import (
+src/chronus/tensor/__init__.py:55:from chronus.tensor.enhanced_representation import (
+src/chronus/tensor/__init__.py:59:from chronus.tensor.adaptive_contraction import (
+src/chronus/tensor/__init__.py:62:from chronus.tensor.causal_intelligence import (
+src/chronus/tensor/__init__.py:65:from chronus.tensor.types import (
+src/chronus/tensor/adaptive_contraction.py:18:from chronus.tensor.enhanced_representation import (
+src/chronus/tensor/causal_intelligence.py:17:from chronus.tensor.enhanced_representation import EnhancedTensorRepresentation
+src/chronus/tensor/dmrg.py:23:from chronus.tensor.types import (
+src/chronus/tensor/dmrg.py:33:from chronus.tensor.network import TensorNetwork
+src/chronus/tensor/dmrg.py:34:from chronus.tensor.gate import factorize_two_site, bound_from_method
+src/chronus/tensor/enhanced_representation.py:29:from chronus.tensor.types import (
+src/chronus/tensor/enhanced_representation.py:38:from chronus.tensor.network import (
+src/chronus/tensor/evolution.py:14:from chronus.tensor.types import (
+src/chronus/tensor/evolution.py:20:from chronus.tensor.network import TensorNetwork
+src/chronus/tensor/evolution.py:21:from chronus.tensor.gate import apply_gate, theorem_for
+
+=================== cpp tree and tensor/igpu mentions ===================
+  964 cpp/CMakeLists.txt
+  762 cpp/Makefile
+ 2458 cpp/include/chronus/c_api.h
+ 2000 cpp/include/chronus/exact_lattice.hpp
+ 2190 cpp/include/chronus/igpu_simd.hpp
+ 3094 cpp/include/chronus/quantum_superposition.hpp
+ 5297 cpp/src/c_api.cpp
+  954 cpp/src/exact_lattice.cpp
+ 4647 cpp/src/igpu_simd.cpp
+ 7875 cpp/src/quantum_superposition.cpp
+30241 total
+cpp/CMakeLists.txt:2:project(chronus_igpu_native VERSION 36.0.1 LANGUAGES C CXX)
+cpp/CMakeLists.txt:18:    src/igpu_simd.cpp
+cpp/CMakeLists.txt:25:add_library(chronus_igpu SHARED ${SOURCES})
+cpp/CMakeLists.txt:27:target_include_directories(chronus_igpu PUBLIC
+cpp/CMakeLists.txt:32:target_compile_definitions(chronus_igpu PRIVATE CHRONUS_BUILD_DLL)
+cpp/CMakeLists.txt:35:set_target_properties(chronus_igpu PROPERTIES
+cpp/CMakeLists.txt:37:    OUTPUT_NAME "chronus_igpu"
+cpp/Makefile:3:LIBNAME = libchronus_igpu
+cpp/Makefile:19:SRCS = src/igpu_simd.cpp src/quantum_superposition.cpp src/exact_lattice.cpp src/c_api.cpp
+cpp/include/chronus/igpu_simd.hpp:1:#ifndef CHRONUS_IGPU_SIMD_HPP
+cpp/include/chronus/igpu_simd.hpp:2:#define CHRONUS_IGPU_SIMD_HPP
+cpp/include/chronus/igpu_simd.hpp:9:namespace igpu {
+cpp/include/chronus/igpu_simd.hpp:61:} // namespace igpu
+cpp/include/chronus/igpu_simd.hpp:64:#endif // CHRONUS_IGPU_SIMD_HPP
+cpp/src/c_api.cpp:3:#include "chronus/igpu_simd.hpp"
+cpp/src/c_api.cpp:11:    return "36.0.1-cpp-igpu";
+cpp/src/c_api.cpp:24:    chronus::igpu::fold_pairs_simd(in, out, num_pairs);
+cpp/src/c_api.cpp:29:    chronus::igpu::unfold_pairs_simd(in, out, num_pairs);
+cpp/src/c_api.cpp:34:    return chronus::igpu::dual_space_dot_product(q, folded_y, num_pairs);
+cpp/src/c_api.cpp:45:    chronus::igpu::dual_space_batch_query(queries, num_queries, folded_y, num_pairs, results);
+cpp/src/igpu_simd.cpp:1:#include "chronus/igpu_simd.hpp"
+cpp/src/igpu_simd.cpp:9:namespace igpu {
+cpp/src/igpu_simd.cpp:127:} // namespace igpu
+
+=================== OpenCL / iGPU runtime modules ===================
+src/chronus/backends/opencl_pv.py
+src/chronus/execution/__init__.py
+src/chronus/execution/elevation.py
+src/chronus/execution/hardware_dispatcher.py
+src/chronus/execution/opencl_backend.py
+src/chronus/execution/opencl_sha256d.py
+src/chronus/execution/reference.py
+src/chronus/backends/__init__.py
+src/chronus/backends/lattice.py
+src/chronus/backends/lattice_workload.py
+src/chronus/backends/limbs.py
+src/chronus/backends/metallic.py
+src/chronus/backends/opencl_pv.py
+src/chronus/hw/__init__.py
+src/chronus/hw/zeckendorf.py
+src/chronus/kernels/__init__.py
+src/chronus/kernels/pv_lattice.cl
+src/chronus/kernels/sha256d_search.cl
+
+=================== production_hr_api*: root vs src ===================
+-- production_hr_api.py
+"""Root Entrypoint & Integration for Chronus HYBA Production HR API.
+
+Implements and exposes the exact first-principles modules outlined in HYBA:
+- EnhancedTensorRepresentation
+- AdaptiveTensorContractionPathway
+- CausalInterferenceEngine
+- FastAPI Production Application (app)
+"""
+
+from __future__ import annotations
+
+import sys
+import os
+
+# Ensure package roots are on sys.path
+_REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+_SRC_DIR = os.path.join(_REPO_ROOT, "src")
+if _SRC_DIR not in sys.path:
+    sys.path.insert(0, _SRC_DIR)
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
+from chronus.tensor.enhanced_representation import (
+    EnhancedTensorRepresentation,
+    TensorNetworkNDArray,
+)
+from chronus.tensor.adaptive_contraction import (
+    AdaptiveTensorContractionPathway,
+)
+from chronus.tensor.causal_intelligence import (
+    CausalInterferenceEngine,
+)
+from chronus.service.production_hr_api import app
+
+__all__ = [
+    "EnhancedTensorRepresentation",
+    "TensorNetworkNDArray",
+    "AdaptiveTensorContractionPathway",
+    "CausalInterferenceEngine",
+    "app",
+]
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("production_hr_api:app", host="0.0.0.0", port=8000, reload=False)
+-- production_hr_api-v2.py
+"""Target: production_hr_api-v2.py backend + search workload on multi-GPU.
+
+Every claim from the spec is either implemented honestly under its real name
+or refused in code. No silent 'quantum' relabeling.
+"""
+
+from __future__ import annotations
+
+import os
+import sys
+
+# Ensure package roots are in sys.path
+_REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+_SRC_DIR = os.path.join(_REPO_ROOT, "src")
+if _SRC_DIR not in sys.path:
+    sys.path.insert(0, _SRC_DIR)
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
+from chronus.tensor.enhanced_representation import (
+    Bond,
+    BondStructure,
+    Config,
+    ContractionCertificate,
+    ContractionTree,
+    EnhancedTensorRepresentation,
+    ErrorLedger,
+    SearchResult,
+    ShardPlan,
+    TruncationRecord,
+    build_search_index,
+    execute_sharded_contraction,
+    plan_gpu_shards,
+    search,
+    search_contraction_trees,
+    select_best_tree,
+    topology_formula,
+    _create_bond_structure,
+    _create_entanglement_map,
+    _initialize_tensor_network,
+    claim_superposition_speedup,
+    parallel_evaluate,
+)
+from chronus.service.production_hr_api_v2 import app
+
+__all__ = [
+    "Config",
+    "Bond",
+    "BondStructure",
+    "ContractionCertificate",
+    "ContractionTree",
+    "ErrorLedger",
+    "SearchResult",
+    "ShardPlan",
+    "TruncationRecord",
+    "EnhancedTensorRepresentation",
+    "_initialize_tensor_network",
+    "_create_entanglement_map",
+    "_create_bond_structure",
+    "topology_formula",
+    "search_contraction_trees",
+    "select_best_tree",
+    "parallel_evaluate",
+    "claim_superposition_speedup",
+    "build_search_index",
+    "search",
+    "plan_gpu_shards",
+    "execute_sharded_contraction",
+    "app",
+]
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("production_hr_api-v2:app", host="0.0.0.0", port=8000, reload=False)
+
+=================== test refs to root modules ===================
+tests/test_enhanced_tensor_representation_v2.py:1:"""Test Suite for EnhancedTensorRepresentation v2 & production_hr_api-v2.py.
+tests/test_enhanced_tensor_representation_v2.py:36:production_hr_api_v2_module = importlib.import_module("production_hr_api-v2")
+tests/test_enhanced_tensor_representation_v2.py:37:app = production_hr_api_v2_module.app
+tests/test_enhanced_tensor_representation_v2.py:176:    """Verifies PART 6 — FastAPI Endpoints in production_hr_api-v2.py."""
+tests/test_security_full_coverage.py:22:sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
+tests/test_security_full_coverage.py:670:    def test_al_haras_topological_os_kernel_lifecycle(self):
+src/chronus/execution/master_e2e_engine.py:432:# For live production mining use chronus_live_miner.py or

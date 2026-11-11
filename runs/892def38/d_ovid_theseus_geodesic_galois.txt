@@ -1,0 +1,323 @@
+
+=================== apply_ovid_patch.py history ===================
+e04dbd0 2026-11-09 Chronus Systems Chronus Quantum IGPU: comprehensive updates including UI, API, execution engine, and development scripts
+
+ apply_ovid_patch.py | 0
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+
+=================== any *ovid* path ever ===================
+apply_ovid_patch.py
+src/chronus/security/ovid.py
+
+=================== chronus.security.ovid public surface ===================
+17:class OVIDZeroCopyPointer:
+41:    def __post_init__(self) -> None:
+83:    def short_pointer_id(self) -> str:
+86:    def to_dict(self) -> Dict[str, Any]:
+106:    def from_dict(cls, data: Dict[str, Any]) -> "OVIDZeroCopyPointer":
+126:class OVIDReceipt:
+129:    def __init__(
+153:    def to_dict(self) -> Dict[str, Any]:
+172:    def from_dict(cls, data: Dict[str, Any]) -> "OVIDReceipt":
+187:class OVIDStorage:
+190:    def __init__(self) -> None:
+198:    def store(self, payload: bytes) -> str:
+206:    def retrieve(self, ovid_id: str) -> Optional[bytes]:
+210:    def register_zero_copy_pointer(
+253:    def resolve_pointer(self, pointer_id: str) -> Optional[OVIDZeroCopyPointer]:
+271:    def list_pointers(
+289:    def register_receipt_alias(self, alias_id: str, receipt: OVIDReceipt) -> None:
+294:    def create_pointer_receipt(
+333:    def create_receipt(
+368:    def get_receipt(self, ovid_id: str) -> Optional[OVIDReceipt]:
+390:    def verify_receipt(self, receipt: OVIDReceipt) -> bool:
+417:    def get_stats(self) -> Dict[str, Any]:
+431:class VerifyEndpoint:
+434:    def __init__(
+448:    def verify_receipt(self, receipt: OVIDReceipt) -> bool:
+472:    def verify_receipt_detailed(self, identifier: str) -> Dict[str, Any]:
+555:    def verify_hash_zero_auth(self, hash_value: str) -> Dict[str, Any]:
+567:    def get_stats(self) -> Dict[str, Any]:
+"""In-process content-addressed object and receipt primitives.
+
+The implementation is process-local; it is not a durable or distributed
+storage service.
+"""
+
+import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+
+POINTER_PREFIX = "ptr_ovid_"
+
+
+@dataclass(frozen=True)
+class OVIDZeroCopyPointer:
+    """Lightweight content-addressed zero-copy reference pointer (ptr_ovid_<hash>).
+
+    Maps directly to an external data block at rest inside the client's storage
+    tier and encryption boundary without staging bulk file copies.
+    """
+
+    pointer_id: str
+    content_hash: str
+    source_uri: str
+    connector_id: str
+    tenant_id: str
+    byte_offset: int = 0
+    byte_length: int = 0
+
+=================== storage.theseus public surface ===================
+16:class StorageIntegrityError(RuntimeError):
+21:class TheseusRecord:
+28:    def to_dict(self) -> dict:
+38:class TheseusService:
+41:    def __init__(self, ovid: OVIDStorage, lane_count: int | None = None) -> None:
+51:    def store(
+80:    def query(self, tenant_id: str) -> list[str]:
+88:    def scale_record(
+115:    def stats(self) -> dict:
+127:    def get_record(self, tenant_id: str, object_id: str) -> TheseusRecord:
+133:    def reconstruct(self, tenant_id: str, object_id: str) -> bytes:
+143:class TenantStateJournalEntry:
+156:    def to_dict(self) -> dict:
+171:class TenantStorageFabricRegistry:
+174:    def __init__(self) -> None:
+182:    def namespace_for(tenant_id: str) -> str:
+185:    def initialize_tenant_fabric(
+203:    def append_journal_event(
+242:    def get_journal(self, tenant_id: str) -> list[TenantStateJournalEntry]:
+246:    def verify_journal_continuity(self, tenant_id: str) -> bool:
+269:    def remove_tenant_fabric(self, tenant_id: str) -> None:
+"""Theseus reconstruction service over OVID content-addressed storage.
+
+Stores caller payloads as content-addressed OVID objects, assigns each one a
+phyllotaxis coordinate, and reconstructs them with digest verification. State
+is process-local; it is not durable across restart.
+"""
+
+import hashlib
+from dataclasses import dataclass
+
+from chronus.config import runtime_bounds
+from chronus.security.ovid import OVIDStorage
+from chronus.storage.phyllotaxis import PhyllotaxisCoordinate, phyllotaxis_coordinate
+
+
+class StorageIntegrityError(RuntimeError):
+    """Retrieved content does not match its content address."""
+
+
+@dataclass(frozen=True)
+class TheseusRecord:
+    object_id: str
+    tenant_id: str
+    size_bytes: int
+    coordinate: PhyllotaxisCoordinate
+
+=================== v36 geodesic/theseus/ovid definitions ===================
+1185:class FederatedOVIDStorageManager:
+1537:class RecursiveTraceFolderIVC:
+1571:class ExactFoldCore:
+1712:class Poseidon2FiatShamirIVCFolder:
+1747:class GeodesicDiscoveryService:
+2331:class OVIDService:
+2401:class TheseusService:
+2690:class BinetZeckendorfFolder:
+2801:class PhyllotaxisSunflowerPrimeStorage:
+896:    def compress_kv_geodesic(kv_matrix: List[float], target_dim: int = 4) -> bytearray:
+
+=================== 600-cell / polytope implementations ===================
+src/chronus/access_control.py:428:        time.sleep(24 * 3600)  # 24 hours
+src/chronus/access_control.py:491:    MAX_DURATION = 7 * 24 * 3600  # 7 days
+src/chronus/access_control.py:536:        _schedule_expiry_reminder(dep_id, duration_seconds - 3600)  # 1h before
+src/chronus/database/config.py:32:    pool_recycle: int = Field(default=3600, description="Recycle connections (seconds)")
+src/chronus/database/config.py:59:            pool_recycle=int(os.getenv("THESISUS_POOL_RECYCLE", "3600")),
+src/chronus/execution/geometric_galois_miner.py:1:"""11D Dodecahedron-Icosahedron (600-Cell) Polytope & Exact Galois Oracle over F_257.
+src/chronus/execution/geometric_galois_miner.py:6:   120 canonical 4D vertices of the 600-cell (8 axial, 16 hypercubic, 96 icosahedral).
+src/chronus/execution/geometric_galois_miner.py:45:    Polychoron600Cell,
+src/chronus/execution/geometric_galois_miner.py:322:    1. 600-cell polytope vertex lattice decomposition.
+src/chronus/execution/geometric_galois_miner.py:328:        self.vertices_f257 = Polychoron600Cell.generate_f257_vertices()
+src/chronus/execution/geometric_galois_miner.py:349:        # 2. Seed 600-cell polychoron vertex coordinate from header prefix
+src/chronus/execution/geometric_galois_miner.py:436:    """Backend adapter for the 11D 600-Cell Geometric Galois Miner."""
+src/chronus/execution/geometric_galois_miner.py:456:            "engine": "11D 600-Cell Polychoron F_257[phi] Oracle",
+src/chronus/execution/master_e2e_engine.py:18:    Enforces PCI Purity, 4D 600-Cell Coxeter Geometry Invariants,
+src/chronus/execution/master_e2e_engine.py:22:        self.polytope_dimension = 4       # Strictly 4D in S^3 (Coxeter 1948)
+src/chronus/execution/master_e2e_engine.py:23:        self.vertices_count = 120         # 120 Vertices
+src/chronus/execution/master_e2e_engine.py:25:        self.hopf_fibers = 10             # 10 Hopf Fibers (Phalanxes)
+src/chronus/execution/master_e2e_engine.py:27:        self.total_searchers = 600        # 600 Myrmidon Searchers (60 per fiber)
+src/chronus/execution/master_e2e_engine.py:31:        assert self.polytope_dimension == 4, "I17: Polytope must be 4D (S^3)"
+src/chronus/execution/master_e2e_engine.py:32:        assert self.vertices_count == 120, "I18: Must have exactly 120 vertices"
+src/chronus/execution/master_e2e_engine.py:34:        assert self.hopf_fibers * self.vertices_per_fiber == 120, "I20: 10 Hopf fibers x 12 = 120"
+src/chronus/execution/master_e2e_engine.py:35:        assert self.total_searchers == 600, "I21: 600 Myrmidon searchers"
+src/chronus/execution/master_e2e_engine.py:182:# 5. PATROCLUS GATEWAY & MYRMIDON SWARM (600 SEARCHERS)
+src/chronus/execution/master_e2e_engine.py:185:    """One of 600 internal Myrmidon searchers operating across 10 Hopf Phalanxes."""
+src/chronus/execution/master_e2e_engine.py:200:    Coordinates 600 internal Myrmidon searchers, enforces 3µs gatekeeper SHA-256d check,
+src/chronus/execution/master_e2e_engine.py:208:        # Initialize 600 Myrmidon Searchers across 10 Hopf Phalanxes
+src/chronus/execution/master_e2e_engine.py:210:        range_size = 0xFFFFFFFF // 600
+src/chronus/execution/master_e2e_engine.py:211:        for i in range(600):
+src/chronus/execution/mining_admin.py:64:                "total_searchers": 600,
+src/chronus/execution/mining_admin.py:65:                "hopf_fibers": 10,
+src/chronus/execution/mining_admin.py:66:                "polytope_dimension": 4,
+src/chronus/execution/mining_admin.py:67:                "vertices_count": 120,
+src/chronus/execution/mining_admin.py:199:        """Returns Patroclus Gateway & 600 Myrmidon Swarm status and stealth shaping."""
+src/chronus/execution/mining_admin.py:202:            "polytope_dimension": self.gateway.invariants.polytope_dimension,
+src/chronus/execution/mining_admin.py:203:            "vertices_count": self.gateway.invariants.vertices_count,
+src/chronus/execution/mining_admin.py:205:            "hopf_fibers_count": self.gateway.invariants.hopf_fibers,
+src/chronus/execution/mining_admin.py:278:                "phalanxes_count": self.gateway.invariants.hopf_fibers if self.gateway is not None else 0,
+src/chronus/execution/mining_entrypoint.py:40:from chronus.quantum.geometric_polychoron import Polychoron600Cell
+src/chronus/execution/mining_entrypoint.py:113:        # 11D 600-Cell Polytope & Galois Field F_257 O(1) Solution Engine
+src/chronus/execution/mining_entrypoint.py:114:        self.vertices_f257 = Polychoron600Cell.generate_f257_vertices()
+src/chronus/execution/mining_entrypoint.py:344:                # 11D 600-Cell Polytope Galois Collapse & Hodge Sheaf Harmonic Consensus
+src/chronus/execution/myrmidon_orchestrator.py:35:    600 parallel searchers distributed across 10 Hopf Phalanx units of 60 searchers each.
+src/chronus/execution/myrmidon_orchestrator.py:39:        self.swarm_name = "Myrmidon Swarm (600 Searchers)"
+src/chronus/execution/myrmidon_orchestrator.py:40:        self.phalanx_count = 10  # 10 icosahedral Hopf fibers
+src/chronus/execution/myrmidon_orchestrator.py:42:        self.total_searchers = 600
+src/chronus/execution/myrmidon_orchestrator.py:43:        self.polytope_dimension = 4  # 600-cell in S^3 (Coxeter 1948)
+src/chronus/execution/myrmidon_orchestrator.py:47:        assert self.phalanx_count * self.searchers_per_phalanx == 600, "10 Phalanxes x 60 = 600 Myrmidons"
+src/chronus/execution/myrmidon_orchestrator.py:48:        assert self.total_searchers == 600, "Must be exactly 600 internal searchers"
+src/chronus/execution/myrmidon_orchestrator.py:49:        logger.info("Patroclus Charter Verified: 1 External Gateway <---> 600 Myrmidon Searchers (10 Hopf Phalanxes x 60).")
+src/chronus/execution/myrmidon_orchestrator.py:111:# PART 3 — MYRMIDON SWARM SEARCHERS (600 INTERNAL TENTACLES)
+src/chronus/execution/myrmidon_orchestrator.py:114:    """Represents 1 of the 600 Myrmidon internal searchers in the 600-cell S^3 mesh."""
+src/chronus/execution/myrmidon_orchestrator.py:118:        # Nonce range partitioning across 600 searchers: 2^32 / 600 ~ 7.15M nonces per searcher
+src/chronus/execution/myrmidon_orchestrator.py:119:        self.nonce_start = searcher_id * (0xFFFFFFFF // 600)
+src/chronus/execution/myrmidon_orchestrator.py:120:        self.nonce_end = (searcher_id + 1) * (0xFFFFFFFF // 600)
+src/chronus/execution/myrmidon_orchestrator.py:151:    Patroclus Gateway orchestrates 600 Myrmidon searchers internally,
+src/chronus/execution/myrmidon_orchestrator.py:173:        # Initialize the 600 Myrmidon Swarm
+src/chronus/execution/myrmidon_orchestrator.py:175:            MyrmidonSearcher(i, i // 60) for i in range(600)
+src/chronus/execution/myrmidon_orchestrator.py:244:        logger.info(f"[{pool_name}] Patroclus Gateway received Job {sample_job['job_id']}. Dispatching to 600 Myrmidon Searchers...")
+src/chronus/execution/myrmidon_orchestrator.py:250:        myrmidon_winner_id = (found_nonce_int % 600)
+src/chronus/ns_dec.py:1:"""Exact F_257 packet invariants and H_4 600-cell DEC Lie-Poisson crossbar routing.
+
+=================== F_257 search and oracle modules ===================
+   113 src/chronus/math/f257_search.py
+   114 src/chronus/quantum/__init__.py
+   142 src/chronus/quantum/entanglement.py
+   145 src/chronus/quantum/extension_search.py
+   494 src/chronus/quantum/geometric_polychoron.py
+    49 src/chronus/quantum/grover.py
+   403 src/chronus/quantum/metallic_search.py
+    50 src/chronus/quantum/ring_codec.py
+    56 src/chronus/quantum/ring_mps.py
+    28 src/chronus/quantum/ring_state.py
+   101 src/chronus/quantum/statevector.py
+   108 src/chronus/quantum/subspace.py
+   501 src/chronus/execution/geometric_galois_miner.py
+   224 src/chronus/ns_dec.py
+   160 src/chronus/orchestration/euclid.py
+  2688 total
+"""
+Chronus F_257 One-Shot Phase Engine Module.
+
+Mathematical Proof Sketch:
+---------------------------
+Let p = 257 be the Fermat prime F_1 = 2^(2^1) + 1.
+For any element u in F_p* (where u !== 0 mod 257):
+1. Multiplicative Inverse:
+   By Fermat's Little Theorem, a^(p-1) === 1 (mod p).
+   Therefore, u^(-1) === u^(p-2) === u^255 (mod 257).
+
+2. Phase Shift Identity (Single-Mark M = 1):
+   alpha = u^(-1) + 1 (mod 257)
+   This satisfies alpha * u === 1 + u (mod 257).
+
+3. Mean Shift Identity:
+   mu = N^(-1) * (N * u + M) (mod 257)
+   For single-mark M = 1, mu = u + N^(-1) (mod 257).
+
+4. Diffusion Phase Shift:
+   beta = -u * mu^(-1) (mod 257).
+
+5. Multi-Mark Extension (M >= 1):
+   Closed-form rank-2 invariant subspace phase matching via f257_phases_multi.
+"""
+
+P_PRIME: int = 257
+
+
+def mod_inv(x: int, p: int = P_PRIME) -> int:
+    """Computes multiplicative inverse modulo p using Fermat's Little Theorem."""
+    x_mod = x % p
+    if x_mod == 0:
+        raise ValueError(f"Zero element {x} has no multiplicative inverse mod {p}.")
+    return pow(x_mod, p - 2, p)
+
+
+def f257_phases_multi(u: int, N: int, M: int) -> tuple[int, int, int]:
+    """Calculates multi-mark (alpha, mu, beta) phases in F_257 for 1 <= M <= N."""
+    if u % P_PRIME == 0:
+        raise ValueError(f"Seed u={u} must be non-zero in F_{P_PRIME}*.")
+    if N % P_PRIME == 0:
+        raise ValueError(f"Dimension N={N} cannot be 0 mod {P_PRIME}.")
+    if M < 1 or M >= P_PRIME:
+        raise ValueError(f"Marked count M={M} must be in [1, {P_PRIME - 1}].")
+    if M > N:
+        raise ValueError(f"Marked count M={M} cannot exceed total dimension N={N}.")
+
+    u_mod = u % P_PRIME
+    N_mod = N % P_PRIME
+    M_mod = M % P_PRIME
+
+    u_inv = mod_inv(u_mod, P_PRIME)
+    N_inv = mod_inv(N_mod, P_PRIME)
+
+    alpha = (1 + u_inv) % P_PRIME
+    denom = (N_mod * u_mod + M_mod) % P_PRIME
+    if denom == 0:
+        alpha = (1 - u_inv) % P_PRIME
+        denom = (N_mod * u_mod - M_mod) % P_PRIME
+        if denom == 0:
+            raise ValueError(f"Degenerate phase parameters for N={N}, M={M}, u={u}")
+
+    beta = (-N_mod * u_mod * mod_inv(denom, P_PRIME)) % P_PRIME
+    marked_amp = (alpha * u_mod) % P_PRIME
+    total = (M_mod * marked_amp + (N_mod - M_mod) * u_mod) % P_PRIME
+    mu = (total * N_inv) % P_PRIME
+    return (alpha, mu, beta)
+
+
+def f257_phases(u: int, N: int, M: int) -> tuple[int, int, int]:
+    """
+    Calculates single-mark (alpha, mu, beta) phases in F_257.
+
+    Args:
+        u: Seed element in F_257* (1 <= u <= 256).
+        N: Total items space dimension (1 <= N <= 256 mod 257).
+        M: Marked items count (1 <= M <= N).
+
+    Returns:
+        (alpha, mu, beta) tuple of integers in F_257.
+    """
+    if u % P_PRIME == 0:
+        raise ValueError(f"Seed u={u} must be non-zero in F_{P_PRIME}*.")
+    if N % P_PRIME == 0:
+        raise ValueError(f"Dimension N={N} cannot be 0 mod {P_PRIME}.")
+    if M < 1 or M >= P_PRIME:
+        raise ValueError(f"Marked count M={M} must be in [1, {P_PRIME - 1}].")
+    if M > N:
+        raise ValueError(f"Marked count M={M} cannot exceed total dimension N={N}.")
+
+    if M >= 2:
+        raise NotImplementedError(
+            f"Multi-mark closed form (M={M} >= 2) requires f257_phases_multi. "
+            "Single-mark phase engine requires M=1 to guarantee zero phase-space collision."
+        )
+
+    u_mod = u % P_PRIME
+    N_mod = N % P_PRIME
+
+    u_inv = mod_inv(u_mod, P_PRIME)
+    N_inv = mod_inv(N_mod, P_PRIME)
+
+    alpha = (u_inv + 1) % P_PRIME
+    mu = (N_inv * (N_mod * u_mod + M)) % P_PRIME
+    if mu == 0:
+        raise ValueError(
+            f"Degenerate phase condition: N*u + M = 0 mod {P_PRIME} has no invertible mean shift mu."
+        )
+    mu_inv = mod_inv(mu, P_PRIME)
+    beta = (-u_mod * mu_inv) % P_PRIME
+
+    return (alpha, mu, beta)

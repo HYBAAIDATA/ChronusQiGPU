@@ -1,0 +1,45 @@
+
+=================== main ===================
+438e4093654e59b96040cce2f61dc4b649de4cf8 2026-11-11T06:25:26Z Merge PR #28: restore green CI from root causes (workbench run 4, e7cee03)
+728fd2efd0db22c9dacbb40936c4bfc9ef5b9c4a 2026-11-11T06:14:27Z ci: run the QiGPU seven-class audit step with the Python shell
+03407f68334944875a8328b1e3218215bf472ca0 2026-11-11T06:11:06Z fix: restore green CI without weakening any gate
+
+=================== branches (ahead/behind main, merged?) ===================
+-- origin/al-haras/notes-alignment 08dd385 ahead=1 behind=3 last=2026-11-11 ci: temporary PR diagnostics workflow (to be removed before merge)
+   08dd385 ci: temporary PR diagnostics workflow (to be removed before merge)
+-- origin/cowork/ci-diagnostics-20261111 3f2c93e ahead=1 behind=3 last=2026-11-11 ci: temporary diagnostics workflow (draft PR only, not for merge)
+   3f2c93e ci: temporary diagnostics workflow (draft PR only, not for merge)
+-- origin/cowork/supervisor-results-20261111 bb93583 ahead=1 behind=166 last=2026-11-11 supervisor results fe66c7bc (run 42971941999)
+   bb93583 supervisor results fe66c7bc (run 42971941999)
+-- origin/cowork/supervisor-wb-20261111 892def3 ahead=5 behind=3 last=2026-11-11 supervisor workbench: run 2 (focused audit for the migration map)
+   892def3 supervisor workbench: run 2 (focused audit for the migration map)
+   fe66c7b supervisor workbench: run 1 (inventory, branch audit, symbol map, test baseline)
+   e612021 workbench: investigation run 3
+   1bdd628 workbench: investigation run 2
+   27666c9 workbench: scratch runner (never merged); investigation run 1
+-- origin/cowork/workbench-20261111 e7cee03 ahead=4 behind=3 last=2026-11-11 workbench: run 4 (apply and verify CI fixes)
+   e7cee03 workbench: run 4 (apply and verify CI fixes)
+   e612021 workbench: investigation run 3
+   1bdd628 workbench: investigation run 2
+   27666c9 workbench: scratch runner (never merged); investigation run 1
+-- origin/feat/folded-accelerator-composition b6f6bc9 ahead=0 behind=12 last=2026-11-11 systems alignment
+-- origin/fix/ci-green-foundation 728fd2e ahead=0 behind=1 last=2026-11-11 ci: run the QiGPU seven-class audit step with the Python shell
+-- origin/main 438e409 ahead=0 behind=0 last=2026-11-11 Merge PR #28: restore green CI from root causes (workbench run 4, e7cee03)
+-- origin/work/prime-codec-bounded-decode 8fddfd1 ahead=0 behind=38 last=2026-11-09 feat(storage): add lossless prime-symbol codec
+-- pr/25 3f2c93e ahead=1 behind=3 last=2026-11-11 ci: temporary diagnostics workflow (draft PR only, not for merge)
+   3f2c93e ci: temporary diagnostics workflow (draft PR only, not for merge)
+-- pr/26 08dd385 ahead=1 behind=3 last=2026-11-11 ci: temporary PR diagnostics workflow (to be removed before merge)
+   08dd385 ci: temporary PR diagnostics workflow (to be removed before merge)
+-- pr/27 e7cee03 ahead=4 behind=3 last=2026-11-11 workbench: run 4 (apply and verify CI fixes)
+   e7cee03 workbench: run 4 (apply and verify CI fixes)
+   e612021 workbench: investigation run 3
+   1bdd628 workbench: investigation run 2
+   27666c9 workbench: scratch runner (never merged); investigation run 1
+-- pr/28 728fd2e ahead=0 behind=1 last=2026-11-11 ci: run the QiGPU seven-class audit step with the Python shell
+
+=================== merged into main ===================
+  origin/feat/folded-accelerator-composition
+  origin/fix/ci-green-foundation
+  origin/main
+  origin/work/prime-codec-bounded-decode
+  pr/28
