@@ -5,7 +5,7 @@ discrete tunneling, Cayley evolution, and symplectic qudit stabilizer tableau.
 """
 
 import unittest
-from turing import (
+from turing.exact import (
     is_prime,
     legendre_symbol,
     cyclotomic_polynomial_prime,
