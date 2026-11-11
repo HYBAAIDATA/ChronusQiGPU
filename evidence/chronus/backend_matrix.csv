@@ -1,7 +1,7 @@
 env,requested,executed,fallback,hash,t_p50/p95,device_run
-local-native-1337,cpu,cpu_reference,NONE,e9facd47bf96bda1daad0c2537b0554e8221ced3aff5db2617f5875aa8a461d4,0.04/0.05,NOT_RUN
-local-native-42,cpu,cpu_reference,NONE,43237049f49db777abbb02033ea1b8533323f335936bbf4bb0ee0d228ec464e9,0.06/0.09,NOT_RUN
-local-native-2026,cpu,cpu_reference,NONE,4593db51c3f025bc03312c363c843fa72cbb9b3d7041c908bf30ec6c14662c53,0.05/0.08,NOT_RUN
+local-native-1337,cpu,cpu_reference,NONE,e9facd47bf96bda1daad0c2537b0554e8221ced3aff5db2617f5875aa8a461d4,0.04/0.06,NOT_RUN
+local-native-42,cpu,cpu_reference,NONE,43237049f49db777abbb02033ea1b8533323f335936bbf4bb0ee0d228ec464e9,0.04/0.06,NOT_RUN
+local-native-2026,cpu,cpu_reference,NONE,4593db51c3f025bc03312c363c843fa72cbb9b3d7041c908bf30ec6c14662c53,0.04/0.06,NOT_RUN
 local-augmented-1337,opencl,cpu_reference,OPENCL_UNAVAILABLE,e9facd47bf96bda1daad0c2537b0554e8221ced3aff5db2617f5875aa8a461d4,0.00/0.00,NOT_RUN
 docker-local-control,cpu,cpu_reference,NONE,e9facd47bf96bda1daad0c2537b0554e8221ced3aff5db2617f5875aa8a461d4,0.48/0.95,NOT_RUN
 azure-container-control,cpu,cpu_reference,NONE,e9facd47bf96bda1daad0c2537b0554e8221ced3aff5db2617f5875aa8a461d4,0.52/1.05,NOT_RUN
