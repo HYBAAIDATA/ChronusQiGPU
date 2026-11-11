@@ -40,3 +40,16 @@ For vectors `a` and `b`, the inner product is `<a|b> = sum(conjugate(a_i) * b_i)
 ## Release gates
 
 Before a public release, confirm the package name, license, API stability, supported Python versions, test/build results, documentation, provenance, and maintainer/release ownership. Do not market mathematical definitions as hardware capability or quantum advantage.
+
+## Exact cyclotomic layer: `turing.exact`
+
+Since 11 November 2026 this distribution also carries the exact cyclotomic
+library that previously lived at `src/turing` as a second top-level package
+named `turing` (the two collided on import). It is now `turing.exact`
+(rings Z[zeta_p] and Q(zeta_p), exact states, unitaries, measurement,
+entanglement measures and the qudit stabilizer tableau). Its tests are
+tests/test_turing.py at the repository root.
+
+TURING is the foundation layer: it never imports `chronus`. Chronus depends on
+TURING, never the reverse. The distribution is internal (classifier
+"Private :: Do Not Upload") and is not delivered to external participants.

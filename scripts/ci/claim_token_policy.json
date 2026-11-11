@@ -113,13 +113,6 @@
       "note": "Output-length growth bound of the exact contraction"
     },
     {
-      "path": "exact_primitive_library-v3.py",
-      "token": 1,
-      "count": 2,
-      "basis": "mathematical-term",
-      "note": "Cayley transform versus transcendental functions; dense p^n space versus O(n^2) tableau"
-    },
-    {
       "path": "frontend/app/mining/page.tsx",
       "token": 1,
       "count": 1,
@@ -218,14 +211,14 @@
       "note": "Output-length growth bound of the exact contraction"
     },
     {
-      "path": "src/turing/physics/cayley.py",
+      "path": "packages/turing/src/turing/exact/physics/cayley.py",
       "token": 1,
       "count": 1,
       "basis": "mathematical-term",
       "note": "Cayley transform avoids transcendental matrix functions"
     },
     {
-      "path": "src/turing/stabilizer/tableau.py",
+      "path": "packages/turing/src/turing/exact/stabilizer/tableau.py",
       "token": 1,
       "count": 1,
       "basis": "mathematical-term",
