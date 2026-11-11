@@ -1,0 +1,675 @@
+[
+ {
+  "path": "src/turing/__init__.py",
+  "loc": 142,
+  "size": 3117,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "turing.core.obstruction",
+   "turing.core.state",
+   "turing.core.unitary",
+   "turing.entanglement.schmidt",
+   "turing.errors",
+   "turing.gates.elementary",
+   "turing.measurement.born",
+   "turing.physics.cayley",
+   "turing.physics.swarm",
+   "turing.physics.tunneling",
+   "turing.ring.matrix",
+   "turing.ring.rational",
+   "turing.ring.utils",
+   "turing.ring.zeta",
+   "turing.stabilizer.tableau"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/core/__init__.py",
+  "loc": 16,
+  "size": 379,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "turing.core.obstruction",
+   "turing.core.state",
+   "turing.core.unitary"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/core/obstruction.py",
+  "loc": 21,
+  "size": 511,
+  "classes": [
+   [
+    "Obstruction",
+    9,
+    [
+     "__repr__"
+    ]
+   ]
+  ],
+  "functions": [],
+  "imports": [
+   "dataclasses"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/core/state.py",
+  "loc": 84,
+  "size": 3305,
+  "classes": [
+   [
+    "StateZetaP",
+    11,
+    [
+     "__init__",
+     "zero",
+     "basis",
+     "norm_squared",
+     "is_unit_norm",
+     "__repr__"
+    ]
+   ]
+  ],
+  "functions": [
+   [
+    "superpose",
+    57
+   ],
+   [
+    "inner_product",
+    67
+   ],
+   [
+    "amplitude",
+    79
+   ]
+  ],
+  "imports": [
+   "__future__",
+   "turing.errors",
+   "turing.ring.zeta",
+   "typing"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/core/unitary.py",
+  "loc": 104,
+  "size": 4526,
+  "classes": [
+   [
+    "UnitaryZetaP",
+    15,
+    [
+     "__init__",
+     "identity",
+     "compose",
+     "dagger",
+     "apply",
+     "__repr__"
+    ]
+   ],
+   [
+    "ProjectiveUnitaryZetaP",
+    55,
+    [
+     "__init__",
+     "compose",
+     "dagger",
+     "apply",
+     "__repr__"
+    ]
+   ]
+  ],
+  "functions": [],
+  "imports": [
+   "__future__",
+   "turing.core.state",
+   "turing.errors",
+   "turing.ring.matrix",
+   "turing.ring.zeta",
+   "typing"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/entanglement/__init__.py",
+  "loc": 18,
+  "size": 370,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "turing.entanglement.schmidt"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/entanglement/schmidt.py",
+  "loc": 117,
+  "size": 4209,
+  "classes": [],
+  "functions": [
+   [
+    "matrix_rank_over_field",
+    15
+   ],
+   [
+    "schmidt_rank",
+    58
+   ],
+   [
+    "normalized_schmidt_coefficients",
+    70
+   ],
+   [
+    "reduced_density_gram",
+    81
+   ],
+   [
+    "exact_renyi_purity",
+    93
+   ]
+  ],
+  "imports": [
+   "__future__",
+   "turing.core.obstruction",
+   "turing.core.state",
+   "turing.errors",
+   "turing.ring.matrix",
+   "turing.ring.utils",
+   "turing.ring.zeta",
+   "typing"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/errors.py",
+  "loc": 33,
+  "size": 875,
+  "classes": [
+   [
+    "TuringError",
+    5,
+    []
+   ],
+   [
+    "RingError",
+    10,
+    []
+   ],
+   [
+    "NonUnitError",
+    15,
+    []
+   ],
+   [
+    "DimensionMismatchError",
+    20,
+    []
+   ],
+   [
+    "StateNormError",
+    25,
+    []
+   ],
+   [
+    "AlgebraicObstructionError",
+    30,
+    []
+   ]
+  ],
+  "functions": [],
+  "imports": [],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/gates/__init__.py",
+  "loc": 22,
+  "size": 327,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "turing.gates.elementary"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/gates/elementary.py",
+  "loc": 79,
+  "size": 2453,
+  "classes": [],
+  "functions": [
+   [
+    "pauli_x",
+    12
+   ],
+   [
+    "pauli_z",
+    20
+   ],
+   [
+    "cnot",
+    28
+   ],
+   [
+    "phase",
+    40
+   ],
+   [
+    "hadamard",
+    48
+   ],
+   [
+    "fourier_gate_projective",
+    62
+   ],
+   [
+    "hadamard_projective",
+    73
+   ]
+  ],
+  "imports": [
+   "__future__",
+   "turing.core.obstruction",
+   "turing.core.unitary",
+   "turing.ring.matrix",
+   "turing.ring.zeta"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/measurement/__init__.py",
+  "loc": 18,
+  "size": 323,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "turing.measurement.born"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/measurement/born.py",
+  "loc": 81,
+  "size": 3245,
+  "classes": [],
+  "functions": [
+   [
+    "born_probability",
+    14
+   ],
+   [
+    "project",
+    22
+   ],
+   [
+    "sum_born_probabilities",
+    29
+   ],
+   [
+    "projective_born_probability",
+    37
+   ],
+   [
+    "visibility",
+    63
+   ]
+  ],
+  "imports": [
+   "__future__",
+   "turing.core.obstruction",
+   "turing.core.state",
+   "turing.errors",
+   "turing.ring.utils",
+   "turing.ring.zeta",
+   "typing"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/physics/__init__.py",
+  "loc": 32,
+  "size": 697,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "turing.physics.cayley",
+   "turing.physics.swarm",
+   "turing.physics.tunneling"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/physics/cayley.py",
+  "loc": 73,
+  "size": 2787,
+  "classes": [
+   [
+    "ContinuousSchedule",
+    16,
+    []
+   ]
+  ],
+  "functions": [
+   [
+    "discrete_evolution",
+    21
+   ],
+   [
+    "continuous_adiabatic",
+    31
+   ],
+   [
+    "cayley_evolution",
+    41
+   ]
+  ],
+  "imports": [
+   "__future__",
+   "dataclasses",
+   "turing.core.obstruction",
+   "turing.core.unitary",
+   "turing.errors",
+   "turing.ring.matrix",
+   "turing.ring.zeta",
+   "typing"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/physics/swarm.py",
+  "loc": 43,
+  "size": 1694,
+  "classes": [
+   [
+    "SwarmZetaP",
+    13,
+    [
+     "__init__",
+     "step",
+     "collapse_to"
+    ]
+   ]
+  ],
+  "functions": [
+   [
+    "quantum_inspired_metaheuristic",
+    35
+   ]
+  ],
+  "imports": [
+   "__future__",
+   "turing.core.obstruction",
+   "turing.core.state",
+   "turing.core.unitary",
+   "turing.errors",
+   "typing"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/physics/tunneling.py",
+  "loc": 106,
+  "size": 3838,
+  "classes": [
+   [
+    "DiscreteBarrier",
+    16,
+    []
+   ],
+   [
+    "ContinuousBarrier",
+    24,
+    []
+   ]
+  ],
+  "functions": [
+   [
+    "transmission_coefficient",
+    30
+   ],
+   [
+    "transmission_coefficient_exact",
+    69
+   ]
+  ],
+  "imports": [
+   "__future__",
+   "dataclasses",
+   "turing.core.obstruction",
+   "turing.errors",
+   "turing.ring.matrix",
+   "turing.ring.rational",
+   "turing.ring.zeta",
+   "typing"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/read_cov.py",
+  "loc": 8,
+  "size": 174,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "sys"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/ring/__init__.py",
+  "loc": 19,
+  "size": 459,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "turing.ring.matrix",
+   "turing.ring.rational",
+   "turing.ring.utils",
+   "turing.ring.zeta"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/ring/matrix.py",
+  "loc": 166,
+  "size": 7259,
+  "classes": [
+   [
+    "MatrixZetaP",
+    12,
+    [
+     "__init__",
+     "identity",
+     "zero",
+     "__eq__",
+     "__add__",
+     "__mul__",
+     "apply_to_vector",
+     "kron",
+     "transpose",
+     "dagger",
+     "det",
+     "is_unitary",
+     "trace",
+     "pow",
+     "adjugate",
+     "__repr__"
+    ]
+   ]
+  ],
+  "functions": [],
+  "imports": [
+   "__future__",
+   "turing.errors",
+   "turing.ring.utils",
+   "turing.ring.zeta",
+   "typing"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/ring/rational.py",
+  "loc": 97,
+  "size": 3730,
+  "classes": [
+   [
+    "RationalZetaP",
+    14,
+    [
+     "__init__",
+     "p",
+     "__eq__",
+     "__add__",
+     "__sub__",
+     "__neg__",
+     "__mul__",
+     "__rmul__",
+     "inverse",
+     "to_tuple",
+     "__repr__"
+    ]
+   ]
+  ],
+  "functions": [],
+  "imports": [
+   "__future__",
+   "dataclasses",
+   "turing.errors",
+   "turing.ring.utils",
+   "turing.ring.zeta",
+   "typing"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/ring/utils.py",
+  "loc": 110,
+  "size": 3192,
+  "classes": [],
+  "functions": [
+   [
+    "is_prime",
+    13
+   ],
+   [
+    "gcd",
+    29
+   ],
+   [
+    "legendre_symbol",
+    36
+   ],
+   [
+    "cyclotomic_polynomial_prime",
+    45
+   ],
+   [
+    "convolution",
+    52
+   ],
+   [
+    "bareiss_det",
+    63
+   ]
+  ],
+  "imports": [
+   "__future__",
+   "turing.errors",
+   "turing.ring.zeta",
+   "typing"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/ring/zeta.py",
+  "loc": 199,
+  "size": 7198,
+  "classes": [
+   [
+    "ZetaP",
+    14,
+    [
+     "__init__",
+     "reduce",
+     "zero",
+     "one",
+     "zeta",
+     "from_int",
+     "__eq__",
+     "__add__",
+     "__sub__",
+     "__neg__",
+     "__mul__",
+     "__rmul__",
+     "pow",
+     "__pow__",
+     "zeta_power",
+     "galois_conjugate",
+     "conjugate",
+     "norm",
+     "is_unit",
+     "inverse",
+     "exact_div",
+     "field_inverse",
+     "gauss_sum",
+     "verify_gauss_sum",
+     "__repr__"
+    ]
+   ]
+  ],
+  "functions": [],
+  "imports": [
+   "__future__",
+   "turing.errors",
+   "turing.ring.rational",
+   "turing.ring.utils",
+   "typing"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/stabilizer/__init__.py",
+  "loc": 8,
+  "size": 139,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "turing.stabilizer.tableau"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "src/turing/stabilizer/tableau.py",
+  "loc": 171,
+  "size": 7949,
+  "classes": [
+   [
+    "StabilizerTableauZetaP",
+    11,
+    [
+     "__init__",
+     "zero_state",
+     "apply_x",
+     "apply_z",
+     "apply_fourier",
+     "apply_cnot",
+     "measure_z",
+     "__repr__"
+    ]
+   ]
+  ],
+  "functions": [],
+  "imports": [
+   "__future__",
+   "turing.errors",
+   "turing.ring.utils",
+   "typing"
+  ],
+  "has_main": false
+ }
+]

@@ -1,0 +1,6 @@
+FAILED tests/test_behavioral_sovereign_attestation.py::TestBehavioralSovereignAttestation::test_attestation_file_tamper_evidence - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+FAILED tests/test_chronus_suite.py::TestChronusMasterSuite::test_full_verification_suite - AssertionError: I3 FAIL: sig invalid
+FAILED tests/test_master_e2e_orchestrators.py::test_master_end_to_end_execution - AssertionError: Pre-submit local gatekeeper failed!
+FAILED tests/test_patroclus_myrmidon_master.py::TestIntegrationAndE2E::test_integration_execute_master_end_to_end[asyncio] - AssertionError: Pre-submit local gatekeeper failed!
+FAILED tests/test_patroclus_myrmidon_master.py::TestIntegrationAndE2E::test_api_patroclus_simulate_endpoint - assert 500 == 200
+pytest exit=1 seconds=26

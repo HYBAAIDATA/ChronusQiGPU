@@ -1,0 +1,20 @@
+
+[notice] A new release of pip is available: 26.2.2 -> 26.3
+[notice] To update, run: pip install --upgrade pip
+
+================================================================================================ ERRORS ================================================================================================
+________________________________________________________________________ ERROR collecting packages/turing/tests/test_axioms.py _________________________________________________________________________
+ImportError while importing test module '/home/runner/work/Chronusv2/Chronusv2/packages/turing/tests/test_axioms.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.13.18/x64/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_axioms.py:4: in <module>
+    from turing import (
+E   ImportError: cannot import name 'CNOT' from 'turing' (/home/runner/work/Chronusv2/Chronusv2/src/turing/__init__.py)
+======================================================================================= short test summary info ========================================================================================
+ERROR tests/test_axioms.py
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 error in 0.12s
+pytest exit=2

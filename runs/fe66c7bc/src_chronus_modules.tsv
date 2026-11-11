@@ -1,0 +1,156 @@
+loc	path	classes	syntax_error
+4	src/chronus/__init__.py		
+2	src/chronus/acceleration/__init__.py		
+31	src/chronus/acceleration/fourier.py		
+61	src/chronus/acceleration/state.py		
+701	src/chronus/access_control.py	Privilege,Role,AccessContext,AccessResult,EmergencyAction,Delegation,MiningExposureSnapshot,MiningExposureSnapshot	
+72	src/chronus/al_haras_sovereign.py		
+2	src/chronus/backends/__init__.py		
+111	src/chronus/backends/lattice.py	HardwareUnavailableError,LatticeOverflowError,ParityVerificationError,PhiElement,PhysicalAcceleratorAdapter	
+84	src/chronus/backends/lattice_workload.py		
+30	src/chronus/backends/limbs.py		
+82	src/chronus/backends/metallic.py	MetallicElement	
+385	src/chronus/backends/opencl_pv.py	OpenCLPVBackend	
+8018	src/chronus/chronus_gpiu-v36.py	ExecutionState,Receipt,StoredReceipt,StrategicDiscipline,MemoryClientPriority,MemoryBusArbiter,UnifiedPhysicalMemory,TensorMemoryAccelerator,PrecisionFormat,MicroScaleBlock,TransformerMicroEngine,TensorCoreEngine,SIMDInstruction,ExecutionWarp,PadicHenselAccumulator,StreamingMultiprocessor,CUDARuntim	
+138	src/chronus/config.py		
+57	src/chronus/core/__init__.py		
+61	src/chronus/core/facade.py	ChronusVerificationOrchestrator	
+79	src/chronus/core/scaling.py	PVScale	
+60	src/chronus/core/trust_ledger.py		unexpected character after line continuation character line 1
+18	src/chronus/database/__init__.py		
+73	src/chronus/database/config.py	DatabaseConfig,MigrationConfig	
+151	src/chronus/database/connection.py	ThesusDatabase	
+112	src/chronus/database/migrate.py		
+149	src/chronus/database/models.py	WorkloadRecord,NodeRecord,ConfigRecord,ReceiptRecord	
+42	src/chronus/distributed/__init__.py		
+158	src/chronus/distributed/failure_injection.py	FailureType,FailureInjectionEngine,DistributedError,FailureInjected,NodeUnhealthy	
+140	src/chronus/distributed/health_check.py	NodeStatus,HealthCheckResult,HealthCheckService	
+244	src/chronus/distributed/orchestrator.py	ClusterState,NodeInfo,WorkloadAssignment,ClusterOrchestrator,ConsensusProtocol	
+110	src/chronus/execution/__init__.py		
+147	src/chronus/execution/asic_sha256.py		
+95	src/chronus/execution/cuda_backend.py	CUDABackendAdapter	
+321	src/chronus/execution/elevation.py	Route	
+502	src/chronus/execution/geometric_galois_miner.py	ExactGaloisOracleF257,LiePoissonRamanujanExpander,HodgeSheafLaplacianConsensus,DSW1CycleInstantonCobordism,ZeckendorfBasePhiIndexer,GeometricMiningResult,GeometricGaloisMiner,GeometricGaloisMinerBackend	
+226	src/chronus/execution/hardware_dispatcher.py	HardwareAcceleratorDispatcher	
+6	src/chronus/execution/main.py		
+503	src/chronus/execution/master_e2e_engine.py	SystemInvariantContracts,F257GaloisOracle,StealthEngine,MyrmidonSearcher,PatroclusGateway,LocalStratumTestServer	
+198	src/chronus/execution/mining.py		
+304	src/chronus/execution/mining_admin.py	MiningAdminConfig,MiningAdminEngine	
+457	src/chronus/execution/mining_entrypoint.py	ChronusRealMiningEngine	
+299	src/chronus/execution/myrmidon_orchestrator.py	PatroclusCharter,F257GaloisOracle,MyrmidonSearcher,PatroclusGateway	
+311	src/chronus/execution/native_simd.py	NativeLibraryBridge,ResidentConfig,ResidentLogicalScheduler,NativeSIMDBackendAdapter	
+75	src/chronus/execution/opencl_backend.py	OpenCLAcceleratorBackend	
+177	src/chronus/execution/opencl_sha256d.py	OpenCLSha256dMinerBackend	
+108	src/chronus/execution/qigpu.py	ExecutionSurface,QiGPUOrchestrator	
+696	src/chronus/execution/reference.py	ExecutionBackend,ExecutionReceipt,NativeMathReferenceBackend,ExecutionRouter	
+131	src/chronus/execution/stealth_orchestrator.py	StealthConfig,PatroclusStealthGateway	
+337	src/chronus/execution/stratum.py	StratumError,StratumJob,StratumSession,_Event,StratumV1Client	
+90	src/chronus/execution/structural.py		
+106	src/chronus/execution/systemverilog_backend.py	SystemVerilogHardwareSimulatorBackend	
+104	src/chronus/execution/trinity.py		
+1	src/chronus/hw/__init__.py		
+75	src/chronus/hw/zeckendorf.py		
+14	src/chronus/intelligence/__init__.py		
+1099	src/chronus/intelligence/predictive_engine.py	PredictiveEngine,TestPredictiveEngine	
+2	src/chronus/kernels/__init__.py		
+1	src/chronus/math/__init__.py		
+115	src/chronus/math/binet_lucas.py	QSqrt5	
+114	src/chronus/math/f257_search.py		
+225	src/chronus/ns_dec.py	PacketInvariant,H4PolytopeCrossbarRouter	
+32	src/chronus/observability/__init__.py		
+123	src/chronus/observability/metrics.py	Metric,Counter,Gauge,LabeledCounter,StaleShareRateGauge,MetricsRegistry	
+161	src/chronus/orchestration/euclid.py	IntelligenceMode,EuclidRoutingDecision,DECFluidRouter,EuclidMetaIntelligenceRouter	
+115	src/chronus/quantum/__init__.py		
+143	src/chronus/quantum/entanglement.py	BellStateKind	
+146	src/chronus/quantum/extension_search.py	ExtensionSubspaceState	
+495	src/chronus/quantum/geometric_polychoron.py	Cyclotomic5,F257Phi,Polychoron600Cell,QuantumGeometricTensor,CyclotomicBraidCompiler,PisotLucasStateCompression	
+50	src/chronus/quantum/grover.py		
+404	src/chronus/quantum/metallic_search.py	QSqrt2,SearchResult	
+51	src/chronus/quantum/ring_codec.py		
+57	src/chronus/quantum/ring_mps.py		
+29	src/chronus/quantum/ring_state.py		
+102	src/chronus/quantum/statevector.py	StateVector	
+109	src/chronus/quantum/subspace.py	SubspaceState	
+30	src/chronus/sdk/__init__.py		
+764	src/chronus/sdk/client.py	ChronusAPISDK	
+146	src/chronus/sdk/models.py	ChronusSDKConfig,WorkloadResult,VerificationReceipt,ChronusSDKError,AuthenticationError,AuthorizationError,RateLimitError,ServiceUnavailableError	
+174	src/chronus/sdk/standalone.py	ChronusSDKError,ALHarasSecurityError,ChronusClient	
+116	src/chronus/security/__init__.py	SecurityContext	
+248	src/chronus/security/al_haras/__init__.py		
+520	src/chronus/security/al_haras/agentic_immune.py	AgentNodeType,ThreatClassification,AgentNode,SheafRestrictionMorphism,AgenticSheafTopology,AgenticSheafGuard,DAGEdge,AgentDAG,AgentState,ExecutionResult,StiefelRestrictionMap,AgenticSheafImmuneSystem	
+188	src/chronus/security/al_haras/autonomous_roe.py	ROECriterion,EngagementSimplex,AutonomousROEValidator	
+366	src/chronus/security/al_haras/defense_frontiers.py	TacticalSwarmMeshEngine,PostQuantumSubstrateEngine,HyperscaleDefenseSimulationEngine,CNISelfHealingEngine,StrategicDefenseCoordinator	
+563	src/chronus/security/al_haras/engine.py	CyclotomicZ5,CellularSheafCohomology,DSW4DInstantonMonopoleHealer,RamanujanExpanderSpectralGapGuard,CyclotomicAnyonBraidEngine,HeckeModularChecksum,ALHarasSecurityFabric	
+171	src/chronus/security/al_haras/formal_invariants.py	FormalProofVerdict,FormalTopologicalProofVerifier	
+573	src/chronus/security/al_haras/hardware_t_isa.py	TISAOpcode,HardwareFault,TopologicalSheafFault,RicciCurvatureNeckFault,TISAInstruction,TopologicalRegisterFile,RISCVTopologicalCoprocessor,RoCCInstruction,CoprocessorRegisters,MemoryBus	
+254	src/chronus/security/al_haras/holographic_qec.py	HolographicNode,HappyTensorNetwork,HolographicQECEngine	
+374	src/chronus/security/al_haras/millennium_security.py	NetworkGraphEdge,RicciCurvatureDeCloaker,HodgeCovertChannelFilter,UltrametricMemorySandbox,AnosovColdBootScrambler,PicardLefschetzAntiJammingFilter	
+262	src/chronus/security/al_haras/millennium_unification.py	SpectralDualityBridge,HarmonicCohomologyBridge,ParabolicFlowSingularityBridge,GrandMillenniumUnificationNexus	
+458	src/chronus/security/al_haras/orbital_mesh.py	SatelliteOrbitClass,SatelliteNode,OrbitalConstellationMesh,Status,CyclotomicBraidKnot,LPSCayleyHop,LPSCayleyGraph,OrbitalSatelliteDefenseMesh	
+258	src/chronus/security/al_haras/sovereign.py	ExactQ5,GaloisField257Phi,SovereignGovernanceEngine,ALHarasSovereignProductSDK	
+311	src/chronus/security/al_haras/sovereign_settlement.py	SovereignCentralBank,SovereignTransferSimplex,HomologicalSettlementEngine,SovereignSettlementRejection,SettlementReceipt,Ledger1Chain,SovereignCBDCSettlementEngine	
+199	src/chronus/security/al_haras/tempest_scrambler.py	Matrix2x2,TempestEmissionScrambler	
+180	src/chronus/security/al_haras/threshold_mpc.py	BunkerLocation,AnyonBraidShare,TopologicalThresholdMPC	
+330	src/chronus/security/al_haras/topological_os.py	ALHarasTopologicalKernel,ALHarasSovereignOSProduct	
+384	src/chronus/security/al_haras/zk_neural.py	NeuralLayerTrace,VerifiableNeuralComputeEngine,LineRateVerifiableNeuralCompute	
+484	src/chronus/security/kms.py	KMSKeyProvider,LocalMemoryKeyProvider,CloudKMSProvider,VaultKMSProvider,PKCS11HSMKeyProvider,CustomerKMSBinding,ALHarasKMSCustodyManager	
+140	src/chronus/security/norm_proof.py	NormProof	
+572	src/chronus/security/ovid.py	OVIDZeroCopyPointer,OVIDReceipt,OVIDStorage,VerifyEndpoint	
+7	src/chronus/security/receipt_signer.py		
+284	src/chronus/security/signers.py	MLDSASigner,Ed25519Signer,PostQuantumError,VerificationError	
+361	src/chronus/security/stark.py	ZKSTARKVerifier	
+12	src/chronus/service/__init__.py		
+180	src/chronus/service/app.py		
+29	src/chronus/service/auth.py		
+476	src/chronus/service/auth_middleware.py	Role,JWKSCache,AuthenticatedIdentity,JWTValidator	
+453	src/chronus/service/ciaas_store.py	ChronusCapacityEntitlement,TenantProfile,PricingBreakdown,HermitenSettlement,CIaaSStore	
+195	src/chronus/service/dependencies.py	ServiceConfig,RateLimiter,AuthService	
+905	src/chronus/service/instant_provisioning.py	ProvisioningConflictError,EnduringAddendumError,InstantCCEAllocations,InstantOnboardRequest,ProvisioningStageTelemetry,CredentialHandoffEnvelope,InstantOnboardResponse,CapacityExpansionRequest,CapacityExpansionResponse,TenantCapacityStatusResponse,LoadSimulationRequest,LoadSimulationResponse,Instant	
+246	src/chronus/service/models.py	WorkloadType,RepresentationMode,Priority,WorkloadStatus,WorkloadRequest,WorkloadResponse,HealthStatus,ComponentHealth,HealthResponse,VerificationResult,ErrorResponse,PaginatedWorkloads	
+523	src/chronus/service/postgres_store.py	PostgresWorkloadStore	
+223	src/chronus/service/production_hr_api.py	TensorInitRequest,ContractionRequest,CausalAnalysisRequest,CounterfactualRequest,AttritionPredictionRequest	
+200	src/chronus/service/production_hr_api_v2.py	TensorRepresentationRequest,SearchRequest,DocumentBatchRequest	
+32	src/chronus/service/routers/__init__.py		
+598	src/chronus/service/routers/al_haras.py	InspectWorkloadRequest,HealTraceRequest,FrontierSimulationRequest,AgenticPromptRequest,AgenticToolRequest,OrbitalMeshRequest,ZKMLInferenceRequest,SheafTurnRequest,OrbitalTransmitRequest,ZKMLProveAndVerifyRequest,CBDCCrossBorderRequest,TISAExecuteRequest,RicciSurgeryRequest,HodgeProjectRequest,Ultram	
+60	src/chronus/service/routers/billing.py		
+571	src/chronus/service/routers/ciaas.py	OnboardTenantRequest,TokenRequest,SettlementRequest,HermitenBillingSettlementPayload,ClusterRegistrationRequest,PoolScheduleRequest	
+565	src/chronus/service/routers/connectors.py	RegisterConnectorRequest,IngestConnectorBlockRequest,DiscoverSchemasRequest,ExecutePointerRequest,S3ParquetDiscoveryBenchmarkRequest,ZeroCopyQueryBenchmarkRequest,AuthorizeECARequest	
+96	src/chronus/service/routers/console.py		
+81	src/chronus/service/routers/euclid.py	EuclidRouteRequest,EuclidRouteResponse	
+129	src/chronus/service/routers/health.py		
+31	src/chronus/service/routers/metrics.py		
+174	src/chronus/service/routers/mining_admin.py	StartMiningRequest,ConfigureCapacityRequest,ConfigureIntelligenceRequest,CausalInterventionRequest,ConfigureStealthRequest,SimulatePatroclusRequest	
+182	src/chronus/service/routers/tensor.py	TextAuditRequest,NetworkBuildRequest	
+181	src/chronus/service/routers/v1.py		
+208	src/chronus/service/routers/verify.py		
+362	src/chronus/service/routers/workloads.py		
+64	src/chronus/service/store_interface.py	WorkloadStoreInterface	
+222	src/chronus/service/telemetry.py	StructuredJSONFormatter,PrometheusMetricsRegistry	
+144	src/chronus/service/workload_store.py	SQLiteWorkloadStore	
+73	src/chronus/storage/__init__.py		
+2206	src/chronus/storage/connectors.py	ConnectorSecurityError,ConnectorCategory,ConnectorType,MemoryAccessClass,IngestFormat,BinetZeckendorfIngressEngine,DataMovementPlaneRouter,ALHarasConnectorGuard,EnduringCapacityAddendumRecord,DiscoveredDataset,RegisteredConnector,SchemaDiscoveryMiddleware,ZeroCopyConnectorManager	
+158	src/chronus/storage/phyllotaxis.py	PhyllotaxisCoordinate,PhyllotaxisMesh	
+122	src/chronus/storage/prime_codec.py	PrimeCodecError,PrimeCodecIntegrityError	
+276	src/chronus/storage/theseus.py	StorageIntegrityError,TheseusRecord,TheseusService,TenantStateJournalEntry,TenantStorageFabricRegistry	
+1	src/chronus/stratum/__init__.py		
+100	src/chronus/stratum/bip310.py		
+114	src/chronus/stratum/endian_engine.py		
+242	src/chronus/stratum/gatekeeper.py	DropReason,LocalPreSubmitGatekeeper	
+295	src/chronus/stratum/gateway.py	StratumGateway	
+109	src/chronus/stratum/rate_limiter.py	IntegerNanosecondTokenBucket,PriorityShareQueue	
+143	src/chronus/stratum/sharding.py	NonceRange,ShareCandidate,DedupLedger,WorkPartitioner	
+144	src/chronus/tensor/__init__.py		
+97	src/chronus/tensor/adaptive_contraction.py	AdaptiveTensorContractionPathway	
+126	src/chronus/tensor/causal_intelligence.py	CausalInterferenceEngine	
+107	src/chronus/tensor/charter.py	CharterViolation,ScientificIntegrityLead,ConsortiumCharter	
+163	src/chronus/tensor/dmrg.py		
+594	src/chronus/tensor/enhanced_representation.py	CharterViolation,RefusedError,TensorNetworkNDArray,Config,Bond,BondStructure,TruncationRecord,ContractionCertificate,ErrorLedger,SearchResult,ContractionTree,SearchIndex,ShardPlan,EnhancedTensorRepresentation	
+95	src/chronus/tensor/evolution.py		
+57	src/chronus/tensor/exact_mps.py		
+338	src/chronus/tensor/experiments.py	ExperimentResult	
+314	src/chronus/tensor/gate.py	FactorizationResult	
+136	src/chronus/tensor/hamiltonian.py	HamiltonianTerm	
+126	src/chronus/tensor/measurement.py		
+205	src/chronus/tensor/network.py	TensorNetwork	
+92	src/chronus/tensor/peps.py	PEPSContractionResult	
+225	src/chronus/tensor/types.py	UntrustedApproximation,UntrustedResult,UnsupportedHamiltonian,RefusedMethod,LegDirection,Leg,SymmetricTensor,Node,TruncationRecord,ContractionCertificate,ErrorLedger	

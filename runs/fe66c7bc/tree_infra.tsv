@@ -1,0 +1,10 @@
+3282	infra/azure/main.bicep
+3986	infra/k8s/chronus-k8s-deployment.yaml
+5685	infra/k8s/deployment.yaml
+2864	infra/runners/al-haras/README.md
+873	infra/runners/al-haras/al-haras-bootstrap.sh
+618	infra/runners/al-haras/al-haras-teardown.sh
+1401	infra/runners/al-haras/chronus-sovereign-runner.service
+704	infra/runners/al-haras/hooks/post-job-scrub.sh
+1489	infra/runners/al-haras/hooks/pre-job-attest.sh
+756	infra/runners/al-haras/register-ephemeral.sh

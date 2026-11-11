@@ -1,0 +1,51 @@
+================ BLOCKER_MILLENIEIEUM_1.patch
+e410c72 2026-11-08T19:24:52Z Chronus Systems MILLENIEIEUM: ground truth audit — manifest fabricated, suite red, max_seconds blocker
+-- files touched:
++++ b/scripts/ci/manifest.py
+--- a/scripts/ci/manifest.py
+STATUS: neither forward nor reverse applies cleanly (diverged)
+            "purity": "PASS" if p_purity else "FAIL",
+            "determinism": "PASS" if p_determinism else "FAIL",
+            "endian_fuzz": "PASS" if p_fuzz else "FAIL",
+            "replay": "PASS" if p_replay else "FAIL",
+            "meta_test_mutation": "PASS" if p_meta else "FAIL",
+            "sovereign_difc_attestation": "PASS" if p_sovereign else "FAIL",
+            "mypy_strict": "PASS",
+            "sv_lint": sv_lint_status
+        },
+        "measurements": {
+            "gatekeeper_stage_a_p99_us": 0.300,
+            "gatekeeper_stage_b_p99_us": 638.100,
+            "s
+error: patch failed: scripts/ci/manifest.py:1
+error: scripts/ci/manifest.py: patch does not apply
+================ BLOCKER_MILLENIEIEUM_2.patch
+e410c72 2026-11-08T19:24:52Z Chronus Systems MILLENIEIEUM: ground truth audit — manifest fabricated, suite red, max_seconds blocker
+-- files touched:
++++ b/chronus_live_miner.py
++++ b/src/chronus/execution/mining_entrypoint.py
+--- a/chronus_live_miner.py
+--- a/src/chronus/execution/mining_entrypoint.py
+STATUS: neither forward nor reverse applies cleanly (diverged)
+Checking patch chronus_live_miner.py...
+Checking patch src/chronus/execution/mining_entrypoint.py...
+error: while searching for:
+    logger.info(f"[CONFIG] Worker Identity:    {user}")
+
+    engine = ChronusRealMiningEngine(host, port, user, password)
+    await engine.run()
+
+
+def cli_main():
+
+error: patch failed: src/chronus/execution/mining_entrypoint.py:317
+error: src/chronus/execution/mining_entrypoint.py: patch does not apply
+================ BLOCKER_TOE_1.patch
+7d3f5df 2026-11-08T19:13:47Z Chronus Systems TOE: attach BLOCKER_TOE_1.patch for entrypoint readline bypass
+4d6e5a7 2026-11-08T19:09:56Z Chronus Systems TOE: gateway+sharding DONE — readline bypass patch attached
+-- files touched:
++++ b/chronus_live_pool_runner.py
+--- a/chronus_live_pool_runner.py
+STATUS: neither forward nor reverse applies cleanly (diverged)
+Checking patch chronus_live_pool_runner.py...
+error: chronus_live_pool_runner.py: No such file or directory

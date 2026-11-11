@@ -1,0 +1,14 @@
+1433	benchmarks/acceleration/accumulation_reference.py
+1416	benchmarks/acceleration/accumulation_reference_raw.json
+2255	benchmarks/acceleration/fourier_benchmark.py
+81004	benchmarks/acceleration/fourier_raw.json
+2705	benchmarks/acceleration/ring_codec_benchmark.py
+3099	benchmarks/acceleration/ring_codec_raw.json
+2406	benchmarks/acceleration/ring_mps_benchmark.py
+198104	benchmarks/acceleration/ring_mps_raw.json
+1777	benchmarks/acceleration/ring_state_benchmark.py
+25043	benchmarks/acceleration/ring_state_raw.json
+2418	benchmarks/acceleration/state_benchmark.py
+13938	benchmarks/acceleration/state_raw.json
+13620	benchmarks/benchmark_al_haras_security.py
+1874	benchmarks/benchmark_mining.py

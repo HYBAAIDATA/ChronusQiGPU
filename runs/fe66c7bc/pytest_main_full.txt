@@ -1,0 +1,81 @@
+..................................................................................................................................................F......................................F...... [ 19%]
+...................................................................................................................................................................................... [ 37%]
+......................................................................................................................F................................................................... [ 55%]
+....................sssssssssssssssssssssssss.........................F..F...................................................................................................................... [ 74%]
+............................................................................................................ [ 85%]
+...............................................................................................................................................                                           [100%]
+=============================================================================================== FAILURES ===============================================================================================
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+/opt/hostedtoolcache/Python/3.13.18/x64/lib/python3.13/json/decoder.py:363: json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+E   AssertionError: I3 FAIL: sig invalid
+----------------------------------------------------------------------------------------- Captured stdout call -----------------------------------------------------------------------------------------
+
+================================================================================
+CHRONUS COMPREHENSIVE VERIFICATION & QUALIFICATION SUITE
+Executing 7 Mandatory Test Families + Hyperscale Soak Suite
+================================================================================
+[TEST FAMILY 1] Unit & Component Tests               : PASS
+[TEST FAMILY 2] Property-Based & Mathematical Tests     : PASS
+
+================================================================================
+INVARIANT TEST CONTRACT  (I1 – I41)
+================================================================================
+I1  PASS — Receipt written to COS receipts bucket
+I2  PASS — sha256(rfc8785(payload)) == receipt_hash
+/home/runner/work/Chronusv2/Chronusv2/src/chronus/chronus_gpiu-v36.py:6009: AssertionError: I3 FAIL: sig invalid
+E   AssertionError: Pre-submit local gatekeeper failed!
+/home/runner/work/Chronusv2/Chronusv2/src/chronus/execution/master_e2e_engine.py:475: AssertionError: Pre-submit local gatekeeper failed!
+E   AssertionError: Pre-submit local gatekeeper failed!
+/home/runner/work/Chronusv2/Chronusv2/src/chronus/execution/master_e2e_engine.py:475: AssertionError: Pre-submit local gatekeeper failed!
+E   assert 500 == 200
+     +  where 500 = <Response [500 Internal Server Error]>.status_code
+/home/runner/work/Chronusv2/Chronusv2/tests/test_patroclus_myrmidon_master.py:342: assert 500 == 200
+=========================================================================================== warnings summary ===========================================================================================
+../../../../../opt/hostedtoolcache/Python/3.13.18/x64/lib/python3.13/site-packages/fastapi/testclient.py:1
+  /opt/hostedtoolcache/Python/3.13.18/x64/lib/python3.13/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_auth_adversarial.py::test_hs512_header_with_hs256_secret_still_verifies_signature
+  /opt/hostedtoolcache/Python/3.13.18/x64/lib/python3.13/site-packages/jwt/api_jwt.py:149: InsecureKeyLengthWarning: The HMAC key is 16 bytes long, which is below the minimum recommended length of 64 bytes for SHA512. See RFC 7518 Section 3.2.
+    return self._jws.encode(
+
+tests/test_auth_adversarial.py::test_hs512_header_with_hs256_secret_still_verifies_signature
+  /opt/hostedtoolcache/Python/3.13.18/x64/lib/python3.13/site-packages/jwt/api_jwt.py:370: InsecureKeyLengthWarning: The HMAC key is 42 bytes long, which is below the minimum recommended length of 64 bytes for SHA512. See RFC 7518 Section 3.2.
+    decoded = self.decode_complete(
+
+tests/test_distributed.py: 19 warnings
+  /home/runner/work/Chronusv2/Chronusv2/src/chronus/distributed/orchestrator.py:76: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    last_heartbeat=datetime.utcnow(),
+
+tests/test_distributed.py: 15 warnings
+  <string>:5: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+tests/test_distributed.py::test_heartbeat_updates_node_status
+  /home/runner/work/Chronusv2/Chronusv2/src/chronus/distributed/orchestrator.py:91: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    self._nodes[node_id].last_heartbeat = datetime.utcnow()
+
+tests/test_distributed.py: 13 warnings
+  <string>:6: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+tests/test_quantum_state_engine.py::TestQuantumStateEngine::test_alias
+tests/test_quantum_state_engine.py::TestQuantumStateEngine::test_compute_quantum_fidelity
+tests/test_quantum_state_engine.py::TestQuantumStateEngine::test_density_matrix_properties
+tests/test_quantum_state_engine.py::TestQuantumStateEngine::test_predict_proba_and_evaluate
+tests/test_quantum_state_engine.py::TestQuantumStateEngine::test_quantum_born_measurement
+tests/test_quantum_state_engine.py::TestQuantumStateEngine::test_to_quantum_state_normalization
+tests/test_quantum_state_engine.py::TestQuantumStateEngine::test_to_quantum_state_zero_vector
+tests/test_quantum_state_engine.py::TestQuantumStateEngine::test_unitary_hamiltonian_evolution
+tests/test_quantum_state_engine.py::TestQuantumStateEngine::test_von_neumann_entropy
+  /home/runner/work/Chronusv2/Chronusv2/src/chronus/intelligence/predictive_engine.py:84: UserWarning: No saved models found for current feature_dim; fitting baseline models on synthetic data. Call engine.fit(X_train, y_train) with real data for production.
+    self._load_or_train_models(X_train=X_train, y_train=y_train)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================================================================================= short test summary info ========================================================================================
+FAILED tests/test_behavioral_sovereign_attestation.py::TestBehavioralSovereignAttestation::test_attestation_file_tamper_evidence - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+FAILED tests/test_chronus_suite.py::TestChronusMasterSuite::test_full_verification_suite - AssertionError: I3 FAIL: sig invalid
+FAILED tests/test_master_e2e_orchestrators.py::test_master_end_to_end_execution - AssertionError: Pre-submit local gatekeeper failed!
+FAILED tests/test_patroclus_myrmidon_master.py::TestIntegrationAndE2E::test_integration_execute_master_end_to_end[asyncio] - AssertionError: Pre-submit local gatekeeper failed!
+FAILED tests/test_patroclus_myrmidon_master.py::TestIntegrationAndE2E::test_api_patroclus_simulate_endpoint - assert 500 == 200
+ +  where 500 = <Response [500 Internal Server Error]>.status_code
+5 failed, 973 passed, 25 skipped, 60 warnings, 107 subtests passed in 23.57s
+pytest exit=1 seconds=26

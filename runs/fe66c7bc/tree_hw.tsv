@@ -1,0 +1,12 @@
+3596	hw/cyclotomic_mul_128bit.sv
+1331	hw/openlane/README.md
+577	hw/openlane/run_zeckendorf.sh
+168	hw/openlane/zeckendorf/config.json
+1993	hw/pv_scale_32lane.sv
+4985	hw/tb_cyclotomic_mul_128bit.sv
+984	hw/tb_cyclotomic_overflow_finding.sv
+2823	hw/tb_pv_scale_32lane.sv
+2100	hw/tb_qigpu_phi_alu.sv
+2723	hw/tb_zeckendorf_alu_32lane.sv
+4591	hw/zeckendorf_alu_32lane.sv
+2319	hw/zeckendorf_norm_alu.sv

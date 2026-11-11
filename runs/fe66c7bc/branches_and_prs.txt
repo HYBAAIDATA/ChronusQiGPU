@@ -1,0 +1,559 @@
+================ origin/al-haras/notes-alignment 08dd385
+-- ahead of main: 1  behind main: 0
+08dd385 2026-11-11T05:04:28Z hybadatadevops1 ci: temporary PR diagnostics workflow (to be removed before merge)
+-- diff --stat (merge-base...ref)
+ .github/workflows/zz-pr-diagnostics.yml | 78 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 78 insertions(+)
+================ origin/cowork/ci-diagnostics-20261111 3f2c93e
+-- ahead of main: 1  behind main: 0
+3f2c93e 2026-11-11T04:50:12Z hybadatadevops1 ci: temporary diagnostics workflow (draft PR only, not for merge)
+-- diff --stat (merge-base...ref)
+ .github/workflows/ci-diagnostics.yml | 248 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 248 insertions(+)
+================ origin/cowork/supervisor-wb-20261111 fe66c7b
+-- ahead of main: 4  behind main: 0
+fe66c7b 2026-11-11T06:22:13Z hybadatadevops1 supervisor workbench: run 1 (inventory, branch audit, symbol map, test baseline)
+e612021 2026-11-11T05:56:38Z hybadatadevops1 workbench: investigation run 3
+1bdd628 2026-11-11T05:49:03Z hybadatadevops1 workbench: investigation run 2
+27666c9 2026-11-11T05:33:01Z hybadatadevops1 workbench: scratch runner (never merged); investigation run 1
+-- diff --stat (merge-base...ref)
+ .github/workflows/acceleration.yml              |  45 ++------------------
+ .github/workflows/cd.yml                        |  51 ++---------------------
+ .github/workflows/ci.yml                        | 331 ++----------------------------------------------------------------------------------------------------------------------------------------------
+ .github/workflows/ciaas-acceptance.yml          |  41 ++----------------
+ .github/workflows/investor-evidence-dossier.yml |  92 ++--------------------------------------
+ .github/workflows/nextjs.yml                    |  96 ++----------------------------------------
+ .github/workflows/release.yml                   |  89 ++-------------------------------------
+ .github/workflows/storage-reference.yml         |  40 ++----------------
+ .github/workflows/supervisor-workbench.yml      |  71 +++++++++++++++++++++++++++++++
+ .github/workflows/workbench.yml                 |  58 ++++++++++++++++++++++++++
+ .supervisor/inventory.py                        | 227 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ .supervisor/run.sh                              |  64 ++++++++++++++++++++++++++++
+ .workbench/run.sh                               |  43 +++++++++++++++++++
+ 13 files changed, 495 insertions(+), 753 deletions(-)
+================ origin/cowork/workbench-20261111 e7cee03
+-- ahead of main: 4  behind main: 0
+e7cee03 2026-11-11T06:07:21Z hybadatadevops1 workbench: run 4 (apply and verify CI fixes)
+e612021 2026-11-11T05:56:38Z hybadatadevops1 workbench: investigation run 3
+1bdd628 2026-11-11T05:49:03Z hybadatadevops1 workbench: investigation run 2
+27666c9 2026-11-11T05:33:01Z hybadatadevops1 workbench: scratch runner (never merged); investigation run 1
+-- diff --stat (merge-base...ref)
+ .github/workflows/acceleration.yml              |  45 ++------------------
+ .github/workflows/cd.yml                        |  51 ++---------------------
+ .github/workflows/ci.yml                        | 331 ++----------------------------------------------------------------------------------------------------------------------------------------------
+ .github/workflows/ciaas-acceptance.yml          |  41 ++----------------
+ .github/workflows/investor-evidence-dossier.yml |  92 ++--------------------------------------
+ .github/workflows/nextjs.yml                    |  96 ++----------------------------------------
+ .github/workflows/release.yml                   |  89 ++-------------------------------------
+ .github/workflows/storage-reference.yml         |  40 ++----------------
+ .github/workflows/workbench.yml                 |  58 ++++++++++++++++++++++++++
+ .workbench/check_forbidden_claims.py            | 112 +++++++++++++++++++++++++++++++++++++++++++++++++
+ .workbench/fix_ci.py                            | 198 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ .workbench/gen_claim_policy.py                  |  86 ++++++++++++++++++++++++++++++++++++++
+ .workbench/mldsa_v36_block.py                   |  67 +++++++++++++++++++++++++++++
+ .workbench/run.sh                               |  70 +++++++++++++++++++++++++++++++
+ .workbench/test_forbidden_claims.py             |  89 +++++++++++++++++++++++++++++++++++++++
+ .workbench/test_purity_gate_rules.py            |  32 ++++++++++++++
+ 16 files changed, 744 insertions(+), 753 deletions(-)
+================ origin/feat/folded-accelerator-composition b6f6bc9
+-- ahead of main: 0  behind main: 9
+-- diff --stat (merge-base...ref)
+================ origin/fix/ci-green-foundation 728fd2e
+-- ahead of main: 2  behind main: 0
+728fd2e 2026-11-11T06:14:27Z hybadatadevops1 ci: run the QiGPU seven-class audit step with the Python shell
+03407f6 2026-11-11T06:11:06Z github-actions[bot] fix: restore green CI without weakening any gate
+-- diff --stat (merge-base...ref)
+ .github/workflows/ci.yml                      |   2 +-
+ SOVEREIGN_CAPABILITY_ATTESTATION.json         | 239 ++++++++++++++++++++++++++++++++++++++++++++++++++++++------------------------------------------------------------------------------------------
+ frontend/app/mining/page.tsx                  |   2 +-
+ frontend/lib/api-client.ts                    |  60 ++++++++++++++++++++++++++++++++++++
+ reviews/attestation-file-review-2026-11-11.md | 150 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ scripts/ci/check_forbidden_claims.py          |  82 +++++++++++++++++++++++++++++++++++++++++++++-----
+ scripts/ci/claim_token_policy.json            | 242 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ scripts/ci/purity_gate.py                     |   6 ++--
+ src/chronus/chronus_gpiu-v36.py               |  85 ++++++++++++++++++++++++++++++++++++++++-----------
+ src/chronus/execution/master_e2e_engine.py    |  58 +++++++++++++++++++++++++++++++----
+ src/chronus/execution/mining_admin.py         |  14 ---------
+ src/chronus/service/production_hr_api.py      |  10 +++++-
+ tests/test_forbidden_claims.py                |  55 +++++++++++++++++++++++++++++++++
+ tests/test_purity_gate_rules.py               |  32 ++++++++++++++++++++
+ tests/test_trust_preview.py                   |   1 -
+ tests/test_turing.py                          |   7 +----
+ 16 files changed, 839 insertions(+), 206 deletions(-)
+================ origin/main 64398ce
+-- ahead of main: 0  behind main: 0
+-- diff --stat (merge-base...ref)
+================ origin/work/prime-codec-bounded-decode 8fddfd1
+-- ahead of main: 0  behind main: 35
+-- diff --stat (merge-base...ref)
+================ pr/1 30c3bf7
+-- ahead of main: 0  behind main: 160
+-- diff --stat (merge-base...ref)
+================ pr/10 6f3728d
+-- ahead of main: 0  behind main: 56
+-- diff --stat (merge-base...ref)
+================ pr/11 0f4b678
+-- ahead of main: 0  behind main: 89
+-- diff --stat (merge-base...ref)
+================ pr/12 c7c7621
+-- ahead of main: 0  behind main: 55
+-- diff --stat (merge-base...ref)
+================ pr/13 5b1dcc1
+-- ahead of main: 0  behind main: 41
+-- diff --stat (merge-base...ref)
+================ pr/14 47456df
+-- ahead of main: 4  behind main: 36
+47456df 2026-11-09T21:45:49Z hybadatadevops1 Fix invalid pnpm action pin
+a14addc 2026-11-09T21:44:39Z hybadatadevops1 State CIAAS dependency gaps and add provisioning preview
+cc8b9fa 2026-11-09T18:42:56Z hybadatadevops1 test(frontend): wire CIAAS acceptance checks into CI
+a2dffbc 2026-11-09T18:42:31Z hybadatadevops1 feat(frontend): add CIAAS welcome and account preview
+-- diff --stat (merge-base...ref)
+ .github/workflows/ciaas-acceptance.yml |  40 ++++++++++++++++++++++++++++++++++++++++
+ frontend/app/ciaas/account/page.tsx    | 119 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ frontend/app/ciaas/page.tsx            |   5 +++++
+ frontend/app/ciaas/provision/page.tsx  |  55 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ frontend/app/ciaas/welcome/page.tsx    |  73 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ frontend/package.json                  |   3 ++-
+ frontend/scripts/acceptance.test.mjs   | 110 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 7 files changed, 404 insertions(+), 1 deletion(-)
+================ pr/15 fe85221
+-- ahead of main: 3  behind main: 35
+fe85221 2026-11-09T18:54:39Z hybadatadevops1 Fix journey documentation linkage check
+8282701 2026-11-09T18:53:58Z hybadatadevops1 Complete journey gates and acceptance coverage
+88e6ee2 2026-11-09T18:47:17Z hybadatadevops1 Add evidence-gated customer journeys
+-- diff --stat (merge-base...ref)
+ README.md                                            |   1 +
+ docs/HYPERSCALER_DATA_CONNECTOR_AND_USER_JOURNEYS.md | 322 +++++++++++++++++++++++++++++++++----------------------------------------------------------------------------------------------------------
+ frontend/app/journeys/page.tsx                       | 207 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ frontend/components/navigation/sidebar.tsx           |   2 +
+ frontend/data/customer-journeys.json                 | 259 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/test_customer_journey_governance.py            | 156 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 700 insertions(+), 247 deletions(-)
+================ pr/17 9139728
+-- ahead of main: 4  behind main: 35
+9139728 2026-11-09T21:33:43Z hybadatadevops1 Add bounded state operations with tests and evidence
+3f6a742 2026-11-09T20:30:02Z hybadatadevops1 Add bounded Fourier operation with tests and measured evidence
+00f3b27 2026-11-09T20:28:30Z hybadatadevops1 Define bounded acceleration work order and release gates
+d86bf02 2026-11-09T20:27:15Z hybadatadevops1 Review acceleration claims and evidence requirements
+-- diff --stat (merge-base...ref)
+ .github/workflows/acceleration.yml               |   44 ++
+ benchmarks/acceleration/fourier_benchmark.py     |   53 ++
+ benchmarks/acceleration/fourier_raw.json         | 3967 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ benchmarks/acceleration/state_benchmark.py       |   55 ++
+ benchmarks/acceleration/state_raw.json           |  663 ++++++++++++++++++++++++
+ evidence/acceleration/SHA256SUMS                 |    6 +
+ evidence/acceleration/capability-report.md       |   26 +
+ evidence/acceleration/fourier-coverage.json      |    1 +
+ evidence/acceleration/fourier-tests.txt          |   35 ++
+ evidence/acceleration/state-SHA256SUMS           |    7 +
+ evidence/acceleration/state-capability-report.md |   22 +
+ evidence/acceleration/state-combined-tests.txt   |    2 +
+ evidence/acceleration/state-coverage.json        |    1 +
+ evidence/acceleration/state-tests.txt            |   37 ++
+ reviews/acceleration_review.md                   |   38 ++
+ src/chronus/acceleration/__init__.py             |    1 +
+ src/chronus/acceleration/fourier.py              |   30 ++
+ src/chronus/acceleration/state.py                |   60 +++
+ tests/acceleration/test_fourier.py               |   76 +++
+ tests/acceleration/test_state.py                 |   72 +++
+ work_orders/acceleration.md                      |   41 ++
+ 21 files changed, 5237 insertions(+)
+================ pr/18 4f8e84e
+-- ahead of main: 8  behind main: 35
+4f8e84e 2026-11-09T21:51:46Z hybadatadevops1 Add local trust preview routes and HTTP acceptance tests
+666e328 2026-11-09T21:50:25Z hybadatadevops1 Record reference corruption and block-layer observations
+eea7c91 2026-11-09T21:49:52Z hybadatadevops1 Clarify physical-write measurement limitations
+85f49c0 2026-11-09T21:49:11Z hybadatadevops1 Add reference corruption and block-layer observation probes
+1a4899d 2026-11-09T20:41:31Z hybadatadevops1 Add tracked-file claim token gate and adversarial tests
+ccb4125 2026-11-09T20:40:44Z hybadatadevops1 Add reference artifact integrity verification in CI
+2f6e483 2026-11-09T20:39:15Z hybadatadevops1 Record reference measurement artifact and provenance
+18f3b82 2026-11-09T20:38:30Z hybadatadevops1 Add reference codec measurement harness and synthetic sample
+-- diff --stat (merge-base...ref)
+ .github/workflows/storage-reference.yml                                                  |  39 ++++++++++++++++++
+ artifacts/capacity/2571bd0e1f1e8d1b93056808bbd098196873b70b6c3d493340131bfdc80a356b.json |  71 ++++++++++++++++++++++++++++++++
+ artifacts/capacity/INDEX.md                                                              |  13 ++++++
+ artifacts/capacity/a03e59aec7731151b49becb6a9ba85949137ec3dc043595c6dad9939b70301cb.json |  97 ++++++++++++++++++++++++++++++++++++++++++++
+ artifacts/samples/reference.txt                                                          |   2 +
+ docs/storage/postmortem-template.md                                                      |  14 +++++++
+ harness/README.md                                                                        |  17 ++++++++
+ harness/capacity.py                                                                      | 228 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ harness/probe-hardware.json                                                              |   6 +++
+ harness/reference-hardware.json                                                          |   1 +
+ harness/sample-labels.json                                                               |   1 +
+ scripts/ci/check_forbidden_claims.py                                                     |  44 ++++++++++++++++++++
+ scripts/ci/claim_token_bytes.json                                                        |  42 +++++++++++++++++++
+ scripts/ci/verify_capacity_artifacts.py                                                  |  39 ++++++++++++++++++
+ tests/test_capacity_artifact_verifier.py                                                 |  36 +++++++++++++++++
+ tests/test_capacity_harness.py                                                           |  60 +++++++++++++++++++++++++++
+ tests/test_forbidden_claims.py                                                           |  34 ++++++++++++++++
+ tests/test_trust_preview.py                                                              |  81 +++++++++++++++++++++++++++++++++++++
+ trust/README.md                                                                          |   7 ++++
+ trust/server.py                                                                          | 165 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 20 files changed, 997 insertions(+)
+================ pr/19 d21e626
+-- ahead of main: 1  behind main: 35
+d21e626 2026-11-09T20:39:26Z hybadatadevops1 docs: commit accepted onboarding phase 0 gap analysis
+-- diff --stat (merge-base...ref)
+ reviews/onboarding_phase0_gap_analysis.md | 92 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 92 insertions(+)
+================ pr/2 c7bb61a
+-- ahead of main: 0  behind main: 148
+-- diff --stat (merge-base...ref)
+================ pr/20 1df3857
+-- ahead of main: 11  behind main: 35
+1df3857 2026-11-09T22:31:57Z hybadatadevops1 docs: finalize continuation evidence manifest
+35f6298 2026-11-09T22:31:23Z hybadatadevops1 docs: record horizon attempts and blockers
+fd749b3 2026-11-09T22:30:29Z hybadatadevops1 docs: record blocked legal review status
+695f59b 2026-11-09T22:30:04Z hybadatadevops1 build(hw): add blocked sky130 flow preflight
+64099b6 2026-11-09T22:29:09Z hybadatadevops1 test(formal): model abstract lane isolation
+04b47af 2026-11-09T22:28:28Z hybadatadevops1 feat(formal): prove basic cyclotomic algebra laws
+2fe0bc5 2026-11-09T22:27:22Z hybadatadevops1 docs: add work-order status table
+3cf4168 2026-11-09T22:27:01Z hybadatadevops1 docs: record baseline reconciliation blockers
+be7379f 2026-11-09T21:29:13Z hybadatadevops1 docs: record partial formal proof results
+bcdd4c7 2026-11-09T21:28:42Z hybadatadevops1 feat(formal): add checked cyclotomic identity slice
+2ff78be 2026-11-09T20:30:16Z hybadatadevops1 docs: define sovereign horizon work orders
+-- diff --stat (merge-base...ref)
+ evidence/SHA256SUMS                                  |  29 +++++++++++++++++++++++
+ evidence/baseline/git-clone.log                      |   1 +
+ evidence/baseline/import-reconciliation.txt          |   4 ++++
+ evidence/baseline/pytest-isolated.log                |   2 ++
+ evidence/baseline/work-order-final-check.log         |   8 +++++++
+ evidence/baseline/work-order-structure.log           |   8 +++++++
+ evidence/h1_2/good.log                               |  35 +++++++++++++++++++++++++++
+ evidence/h1_2/mutant.log                             |  45 +++++++++++++++++++++++++++++++++++
+ evidence/h1_3/preflight.log                          |   1 +
+ evidence/h5_0/status-check.log                       |   1 +
+ evidence/h5_0/unittest.log                           |   6 +++++
+ formal/models/lane_noninterference/LaneIsolation.tla |  16 +++++++++++++
+ formal/models/lane_noninterference/README.md         |  10 ++++++++
+ formal/models/lane_noninterference/good.cfg          |   3 +++
+ formal/models/lane_noninterference/mutant.cfg        |   3 +++
+ hw/openlane/README.md                                |   7 ++++++
+ hw/openlane/run_zeckendorf.sh                        |  18 ++++++++++++++
+ hw/openlane/zeckendorf/config.json                   |   7 ++++++
+ lean/Chronus.lean                                    |   1 +
+ lean/Chronus/Cyclotomic.lean                         |  69 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ lean/README.md                                       |   9 +++++++
+ lean/Tests/Smoke.lean                                |  26 ++++++++++++++++++++
+ lean/check.sh                                        |  19 +++++++++++++++
+ lean/lakefile.lean                                   |   7 ++++++
+ lean/lean-toolchain                                  |   1 +
+ lean/local-check-output.txt                          |  12 ++++++++++
+ tests/test_h5_legal_status.py                        |  14 +++++++++++
+ tests/test_sovereign_work_orders.py                  |  30 +++++++++++++++++++++++
+ work_orders/H5.0_legal_review_status.md              |   7 ++++++
+ work_orders/sovereign_horizons.md                    | 181 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 30 files changed, 580 insertions(+)
+================ pr/21 7edcff8
+-- ahead of main: 9  behind main: 35
+7edcff8 2026-11-09T22:36:57Z hybadatadevops1 Document unification status and evidence hashes
+97fa1c6 2026-11-09T22:36:25Z hybadatadevops1 Record blocked cross-domain demo attempt
+ed6b468 2026-11-09T22:35:59Z hybadatadevops1 Add cited experimental literature bridge
+708c8d2 2026-11-09T22:34:47Z hybadatadevops1 Record blocked modules and exact three-form orbit probe
+917085b 2026-11-09T22:32:55Z hybadatadevops1 Record full-tree and field acceptance blockers
+4854c84 2026-11-09T22:31:04Z hybadatadevops1 Add deterministic unification test doubles
+21813f1 2026-11-09T22:30:36Z hybadatadevops1 Record unification amendment and generator check
+132fd3b 2026-11-09T21:29:02Z hybadatadevops1 Delegate cyclotomic ring operations to existing implementation
+5e32993 2026-11-09T21:27:22Z hybadatadevops1 Add staged exact-field prototype and local evidence
+-- diff --stat (merge-base...ref)
+ .github/workflows/unification-field.yml                       |  26 +++++++++++++++++++++++
+ artifacts/unification/amendment-generator-check.txt           |   7 ++++++
+ artifacts/unification/bridge-SHA256SUMS                       |   5 +++++
+ artifacts/unification/bridge-coverage-provisional.json        |   1 +
+ artifacts/unification/bridge-tests-provisional.txt            |  31 +++++++++++++++++++++++++++
+ artifacts/unification/demo-attempt.txt                        |   3 +++
+ artifacts/unification/doubles-tests.txt                       |   8 +++++++
+ artifacts/unification/literature-bridge.md                    |  27 +++++++++++++++++++++++
+ artifacts/unification/network-tests-provisional.txt           |  25 ++++++++++++++++++++++
+ artifacts/unification/threeform-orbit-probe.txt               |   8 +++++++
+ artifacts/unification/threeform-orbit-tests.txt               |  13 ++++++++++++
+ artifacts/unification/tree-access-output.txt                  |   7 ++++++
+ benchmarks/unification/field_benchmark.py                     |  28 ++++++++++++++++++++++++
+ capabilities/unification_report.md                            |  35 ++++++++++++++++++++++++++++++
+ evidence/unification/SHA256SUMS                               |   8 +++++++
+ evidence/unification/field-benchmark.json                     | 113 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ evidence/unification/field-coverage.json                      |   1 +
+ evidence/unification/field-report.md                          |  17 +++++++++++++++
+ evidence/unification/field-tests.txt                          |  29 +++++++++++++++++++++++++
+ pyproject.toml                                                |   2 +-
+ scripts/unification/check_amendment.py                        |  22 +++++++++++++++++++
+ scripts/unification/threeform_orbit_probe.py                  |  43 +++++++++++++++++++++++++++++++++++++
+ src/hyba/__init__.py                                          |   1 +
+ src/hyba/unification/__init__.py                              |   1 +
+ src/hyba/unification/bridge.py                                |  55 +++++++++++++++++++++++++++++++++++++++++++++++
+ src/hyba/unification/field.py                                 | 152 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ src/hyba/unification/testing/__init__.py                      |   1 +
+ src/hyba/unification/testing/doubles.py                       |  36 +++++++++++++++++++++++++++++++
+ tests/unification/test_bridge_isolated.py                     |  48 +++++++++++++++++++++++++++++++++++++++++
+ tests/unification/test_doubles.py                             |  23 ++++++++++++++++++++
+ tests/unification/test_existing_ring.py                       |  63 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/unification/test_field.py                               |  52 +++++++++++++++++++++++++++++++++++++++++++++
+ tests/unification/test_orbit_probe.py                         |  17 +++++++++++++++
+ tests/unification/test_properties.py                          |  18 ++++++++++++++++
+ work_orders/unification_bridge_report.md                      |   7 ++++++
+ work_orders/unification_demo_blocked.md                       |   7 ++++++
+ work_orders/unification_network_invariants_domains_blocked.md |  15 +++++++++++++
+ work_orders/unification_spec_amendment.md                     |  21 ++++++++++++++++++
+ work_orders/unification_tree_and_field_blocked.md             |  20 +++++++++++++++++
+ 39 files changed, 995 insertions(+), 1 deletion(-)
+================ pr/22 d2d4297
+-- ahead of main: 16  behind main: 35
+d2d4297 2026-11-09T22:47:26Z hybadatadevops1 Summarize acceleration evidence and remaining blockers
+d3b57bd 2026-11-09T22:46:07Z hybadatadevops1 Measure accumulation reference and record ALU qualification gap
+2dbc3d5 2026-11-09T22:44:54Z hybadatadevops1 Add bounded exact ring codec and synthetic page evidence
+0f6c698 2026-11-09T22:43:30Z hybadatadevops1 Add bounded exact MPS contraction and comparison evidence
+569dca9 2026-11-09T22:42:42Z hybadatadevops1 Add incomplete evidence-linked substrate capability report
+d58c263 2026-11-09T22:41:42Z hybadatadevops1 Record missing F R and pentagon qualification
+8bcdcc7 2026-11-09T22:41:05Z hybadatadevops1 Add exact coordinate scaling with seven-class evidence
+cb14321 2026-11-09T22:40:55Z hybadatadevops1 Measure Zeckendorf reference accumulation against binary64
+d7d2f18 2026-11-09T22:39:58Z hybadatadevops1 Test exact ring and record full-file coverage
+7d31a98 2026-11-09T22:39:53Z hybadatadevops1 Measure bounded product MPS against existing float path
+71f3ffa 2026-11-09T22:38:37Z hybadatadevops1 Add bounded exact MPS contraction prototype
+ddc8eb0 2026-11-09T22:38:01Z hybadatadevops1 Record tensor, prime codec and multiplier baseline findings
+7be3e20 2026-11-09T22:36:57Z hybadatadevops1 Record substrate coverage gate failure
+7bf07cd 2026-11-09T22:36:18Z hybadatadevops1 Measure reference codec on synthetic log corpus
+16d4e44 2026-11-09T22:35:23Z hybadatadevops1 Record failing RTL exactness counterexample and timing blocker
+de83875 2026-11-09T21:29:05Z hybadatadevops1 WIP: harden cyclotomic coefficients and restricted projection
+-- diff --stat (merge-base...ref)
+ artifacts/acceleration/data_system_e68323c90f115bbc86c8ec676e694fb9075cfea1c9531ae5736e64a8fea548be.json   |   136 +
+ artifacts/acceleration/tensor_system_54c1d6ffe148ea655e251515fbbc07304ba9b250a6a47735ddf7310172267ec7.json | 13860 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ benchmarks/acceleration/accumulation_reference.py                                                          |    35 +
+ benchmarks/acceleration/accumulation_reference_raw.json                                                    |    58 +
+ benchmarks/acceleration/ring_codec_benchmark.py                                                            |    35 +
+ benchmarks/acceleration/ring_codec_raw.json                                                                |   136 +
+ benchmarks/acceleration/ring_mps_benchmark.py                                                              |    34 +
+ benchmarks/acceleration/ring_mps_raw.json                                                                  | 13860 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ benchmarks/acceleration/ring_state_benchmark.py                                                            |    33 +
+ benchmarks/acceleration/ring_state_raw.json                                                                |  1808 +++++++++++
+ capabilities/acceleration_report.md                                                                        |    27 +
+ capabilities/substrate_report.md                                                                           |    26 +
+ evidence/acceleration/accumulation-SHA256SUMS                                                              |     4 +
+ evidence/acceleration/accumulation-reference.md                                                            |    13 +
+ evidence/acceleration/blocked-braid-SHA256SUMS                                                             |     2 +
+ evidence/acceleration/blocked-braid.md                                                                     |    12 +
+ evidence/acceleration/blocked_braid_output.txt                                                             |     6 +
+ evidence/acceleration/blocked_braid_test.py                                                                |     7 +
+ evidence/acceleration/blocked_zeckendorf_output.txt                                                        |     9 +
+ evidence/acceleration/blocked_zeckendorf_test.py                                                           |     7 +
+ evidence/acceleration/combined-local-tests.txt                                                             |     2 +
+ evidence/acceleration/findings_multiplier_truncation.md                                                    |    12 +
+ evidence/acceleration/findings_prime_codec.md                                                              |    13 +
+ evidence/acceleration/findings_tensor_baseline.md                                                          |     9 +
+ evidence/acceleration/ring-SHA256SUMS                                                                      |     4 +
+ evidence/acceleration/ring-codec-SHA256SUMS                                                                |     7 +
+ evidence/acceleration/ring-codec-coverage.json                                                             |     1 +
+ evidence/acceleration/ring-codec-report.md                                                                 |    21 +
+ evidence/acceleration/ring-codec-tests.txt                                                                 |    24 +
+ evidence/acceleration/ring-coverage.json                                                                   |     1 +
+ evidence/acceleration/ring-mps-SHA256SUMS                                                                  |     7 +
+ evidence/acceleration/ring-mps-coverage.json                                                               |     1 +
+ evidence/acceleration/ring-mps-report.md                                                                   |    23 +
+ evidence/acceleration/ring-mps-tests.txt                                                                   |    24 +
+ evidence/acceleration/ring-state-SHA256SUMS                                                                |     6 +
+ evidence/acceleration/ring-state-coverage.json                                                             |     1 +
+ evidence/acceleration/ring-state-report.md                                                                 |    15 +
+ evidence/acceleration/ring-state-tests.txt                                                                 |    24 +
+ evidence/acceleration/ring-test-report.md                                                                  |    16 +
+ evidence/acceleration/ring-tests.txt                                                                       |    26 +
+ evidence/acceleration/verification.txt                                                                     |    36 +
+ evidence/cyclotomic/exact-mps-prototype.md                                                                 |    15 +
+ evidence/cyclotomic/exact-mps-tests.txt                                                                    |    17 +
+ evidence/cyclotomic/isolation-review.md                                                                    |    29 +
+ evidence/cyclotomic/prime-codec-synthetic-log.json                                                         |   233 ++
+ evidence/cyclotomic/prime-codec-synthetic-log.md                                                           |    17 +
+ evidence/cyclotomic/product-mps-comparison.json                                                            |   673 ++++
+ evidence/cyclotomic/product-mps-comparison.md                                                              |    23 +
+ evidence/cyclotomic/product-mps-output.txt                                                                 |    13 +
+ evidence/cyclotomic/rtl-overflow-finding.md                                                                |    16 +
+ evidence/cyclotomic/rtl-overflow-output.txt                                                                |     4 +
+ evidence/cyclotomic/substrate-blocked.md                                                                   |    12 +
+ evidence/cyclotomic/substrate-coverage.txt                                                                 |    18 +
+ evidence/cyclotomic/zeckendorf-accumulation-output.txt                                                     |     1 +
+ evidence/cyclotomic/zeckendorf-accumulation.json                                                           |    27 +
+ evidence/cyclotomic/zeckendorf-accumulation.md                                                             |    21 +
+ hw/tb_cyclotomic_overflow_finding.sv                                                                       |    22 +
+ src/chronus/quantum/geometric_polychoron.py                                                                |    21 +-
+ src/chronus/quantum/ring_codec.py                                                                          |    50 +
+ src/chronus/quantum/ring_mps.py                                                                            |    56 +
+ src/chronus/quantum/ring_state.py                                                                          |    28 +
+ src/chronus/tensor/exact_mps.py                                                                            |    56 +
+ tests/test_cyclotomic_projection_review.py                                                                 |    55 +
+ tests/test_cyclotomic_seven_classes.py                                                                     |   129 +
+ tests/test_exact_mps_reference.py                                                                          |    38 +
+ tests/test_ring_codec_seven_classes.py                                                                     |    73 +
+ tests/test_ring_mps_seven_classes.py                                                                       |    75 +
+ tests/test_ring_state_seven_classes.py                                                                     |    66 +
+ tools/compare_product_mps.py                                                                               |    60 +
+ tools/measure_prime_codec_reference.py                                                                     |   103 +
+ tools/measure_zeckendorf_accumulation.py                                                                   |    35 +
+ 71 files changed, 32361 insertions(+), 6 deletions(-)
+================ pr/23 61cb564
+-- ahead of main: 7  behind main: 12
+61cb564 2026-11-11T01:38:57Z hybadatadevops1 Add TURING quantum mathematics package (#24)
+f335ca1 2026-11-10T23:22:29Z hybadatadevops1 docs: translate HYBA product standard for agents
+f7d98fa 2026-11-10T23:20:18Z hybadatadevops1 docs: define McKinsey thinking and JV product standard
+f803012 2026-11-10T23:19:25Z hybadatadevops1 docs: clarify HYBA Security and AL HARAS identity
+7598144 2026-11-10T23:18:26Z hybadatadevops1 docs: clarify product quality emulation benchmarks
+84e1232 2026-11-10T23:15:20Z hybadatadevops1 docs: clarify Chronus ownership under HYBA Data
+f193719 2026-11-10T23:14:34Z hybadatadevops1 docs: codify HYBA product style and market position
+-- diff --stat (merge-base...ref)
+ AGENTS.md                                      |  82 ++++++++++++++++++++++++++
+ README.md                                      |   7 ++-
+ docs/directives/FRONTEND.md                    | 467 +++++++------------------------------------------------------------------------------------------------------------------------------------------
+ docs/directives/PACKAGING.md                   | 323 +++++++++-------------------------------------------------------------------------------------------
+ docs/directives/PRODUCT_STYLE_GUIDE.md         |  97 ++++++++++++++++++++++++++++++
+ docs/system-update/architecture-and-market.md  |  14 +++--
+ docs/system-update/quantum-package-taxonomy.md |  34 +++++++++++
+ funding/FUNDING_PITCH.md                       |  89 +++++++++++-----------------
+ packages/turing/README.md                      |  42 +++++++++++++
+ packages/turing/pyproject.toml                 |  26 +++++++++
+ packages/turing/src/turing/__init__.py         |  44 ++++++++++++++
+ packages/turing/src/turing/gates.py            |  22 +++++++
+ packages/turing/src/turing/measurement.py      |  92 +++++++++++++++++++++++++++++
+ packages/turing/src/turing/operator.py         |  99 +++++++++++++++++++++++++++++++
+ packages/turing/src/turing/py.typed            |   0
+ packages/turing/src/turing/state.py            |  72 +++++++++++++++++++++++
+ packages/turing/src/turing/tensor.py           |  36 ++++++++++++
+ packages/turing/tests/test_axioms.py           |  87 +++++++++++++++++++++++++++
+ src/chronus/quantum/README.md                  |  24 ++++++++
+ src/chronus/quantum/__init__.py                |  10 ++--
+ 20 files changed, 860 insertions(+), 807 deletions(-)
+================ pr/24 31b311b
+-- ahead of main: 8  behind main: 12
+31b311b 2026-11-10T23:34:35Z hybadatadevops1 Correct legacy package documentation link
+d0b8348 2026-11-10T23:33:51Z hybadatadevops1 Add TURING quantum mathematics package and taxonomy
+f335ca1 2026-11-10T23:22:29Z hybadatadevops1 docs: translate HYBA product standard for agents
+f7d98fa 2026-11-10T23:20:18Z hybadatadevops1 docs: define McKinsey thinking and JV product standard
+f803012 2026-11-10T23:19:25Z hybadatadevops1 docs: clarify HYBA Security and AL HARAS identity
+7598144 2026-11-10T23:18:26Z hybadatadevops1 docs: clarify product quality emulation benchmarks
+84e1232 2026-11-10T23:15:20Z hybadatadevops1 docs: clarify Chronus ownership under HYBA Data
+f193719 2026-11-10T23:14:34Z hybadatadevops1 docs: codify HYBA product style and market position
+-- diff --stat (merge-base...ref)
+ AGENTS.md                                      |  82 ++++++++++++++++++++++++++
+ README.md                                      |   7 ++-
+ docs/directives/FRONTEND.md                    | 467 +++++++------------------------------------------------------------------------------------------------------------------------------------------
+ docs/directives/PACKAGING.md                   | 323 +++++++++-------------------------------------------------------------------------------------------
+ docs/directives/PRODUCT_STYLE_GUIDE.md         |  97 ++++++++++++++++++++++++++++++
+ docs/system-update/architecture-and-market.md  |  14 +++--
+ docs/system-update/quantum-package-taxonomy.md |  34 +++++++++++
+ funding/FUNDING_PITCH.md                       |  89 +++++++++++-----------------
+ packages/turing/README.md                      |  42 +++++++++++++
+ packages/turing/pyproject.toml                 |  26 +++++++++
+ packages/turing/src/turing/__init__.py         |  44 ++++++++++++++
+ packages/turing/src/turing/gates.py            |  22 +++++++
+ packages/turing/src/turing/measurement.py      |  92 +++++++++++++++++++++++++++++
+ packages/turing/src/turing/operator.py         |  99 +++++++++++++++++++++++++++++++
+ packages/turing/src/turing/py.typed            |   0
+ packages/turing/src/turing/state.py            |  72 +++++++++++++++++++++++
+ packages/turing/src/turing/tensor.py           |  36 ++++++++++++
+ packages/turing/tests/test_axioms.py           |  87 +++++++++++++++++++++++++++
+ src/chronus/quantum/README.md                  |  24 ++++++++
+ src/chronus/quantum/__init__.py                |  10 ++--
+ 20 files changed, 860 insertions(+), 807 deletions(-)
+================ pr/25 3f2c93e
+-- ahead of main: 1  behind main: 0
+3f2c93e 2026-11-11T04:50:12Z hybadatadevops1 ci: temporary diagnostics workflow (draft PR only, not for merge)
+-- diff --stat (merge-base...ref)
+ .github/workflows/ci-diagnostics.yml | 248 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 248 insertions(+)
+================ pr/26 08dd385
+-- ahead of main: 1  behind main: 0
+08dd385 2026-11-11T05:04:28Z hybadatadevops1 ci: temporary PR diagnostics workflow (to be removed before merge)
+-- diff --stat (merge-base...ref)
+ .github/workflows/zz-pr-diagnostics.yml | 78 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 78 insertions(+)
+================ pr/27 e7cee03
+-- ahead of main: 4  behind main: 0
+e7cee03 2026-11-11T06:07:21Z hybadatadevops1 workbench: run 4 (apply and verify CI fixes)
+e612021 2026-11-11T05:56:38Z hybadatadevops1 workbench: investigation run 3
+1bdd628 2026-11-11T05:49:03Z hybadatadevops1 workbench: investigation run 2
+27666c9 2026-11-11T05:33:01Z hybadatadevops1 workbench: scratch runner (never merged); investigation run 1
+-- diff --stat (merge-base...ref)
+ .github/workflows/acceleration.yml              |  45 ++------------------
+ .github/workflows/cd.yml                        |  51 ++---------------------
+ .github/workflows/ci.yml                        | 331 ++----------------------------------------------------------------------------------------------------------------------------------------------
+ .github/workflows/ciaas-acceptance.yml          |  41 ++----------------
+ .github/workflows/investor-evidence-dossier.yml |  92 ++--------------------------------------
+ .github/workflows/nextjs.yml                    |  96 ++----------------------------------------
+ .github/workflows/release.yml                   |  89 ++-------------------------------------
+ .github/workflows/storage-reference.yml         |  40 ++----------------
+ .github/workflows/workbench.yml                 |  58 ++++++++++++++++++++++++++
+ .workbench/check_forbidden_claims.py            | 112 +++++++++++++++++++++++++++++++++++++++++++++++++
+ .workbench/fix_ci.py                            | 198 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ .workbench/gen_claim_policy.py                  |  86 ++++++++++++++++++++++++++++++++++++++
+ .workbench/mldsa_v36_block.py                   |  67 +++++++++++++++++++++++++++++
+ .workbench/run.sh                               |  70 +++++++++++++++++++++++++++++++
+ .workbench/test_forbidden_claims.py             |  89 +++++++++++++++++++++++++++++++++++++++
+ .workbench/test_purity_gate_rules.py            |  32 ++++++++++++++
+ 16 files changed, 744 insertions(+), 753 deletions(-)
+================ pr/28 728fd2e
+-- ahead of main: 2  behind main: 0
+728fd2e 2026-11-11T06:14:27Z hybadatadevops1 ci: run the QiGPU seven-class audit step with the Python shell
+03407f6 2026-11-11T06:11:06Z github-actions[bot] fix: restore green CI without weakening any gate
+-- diff --stat (merge-base...ref)
+ .github/workflows/ci.yml                      |   2 +-
+ SOVEREIGN_CAPABILITY_ATTESTATION.json         | 239 ++++++++++++++++++++++++++++++++++++++++++++++++++++++------------------------------------------------------------------------------------------
+ frontend/app/mining/page.tsx                  |   2 +-
+ frontend/lib/api-client.ts                    |  60 ++++++++++++++++++++++++++++++++++++
+ reviews/attestation-file-review-2026-11-11.md | 150 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ scripts/ci/check_forbidden_claims.py          |  82 +++++++++++++++++++++++++++++++++++++++++++++-----
+ scripts/ci/claim_token_policy.json            | 242 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ scripts/ci/purity_gate.py                     |   6 ++--
+ src/chronus/chronus_gpiu-v36.py               |  85 ++++++++++++++++++++++++++++++++++++++++-----------
+ src/chronus/execution/master_e2e_engine.py    |  58 +++++++++++++++++++++++++++++++----
+ src/chronus/execution/mining_admin.py         |  14 ---------
+ src/chronus/service/production_hr_api.py      |  10 +++++-
+ tests/test_forbidden_claims.py                |  55 +++++++++++++++++++++++++++++++++
+ tests/test_purity_gate_rules.py               |  32 ++++++++++++++++++++
+ tests/test_trust_preview.py                   |   1 -
+ tests/test_turing.py                          |   7 +----
+ 16 files changed, 839 insertions(+), 206 deletions(-)
+================ pr/3 018c6df
+-- ahead of main: 0  behind main: 138
+-- diff --stat (merge-base...ref)
+================ pr/4 dbc77ea
+-- ahead of main: 0  behind main: 98
+-- diff --stat (merge-base...ref)
+================ pr/5 93273f1
+-- ahead of main: 0  behind main: 97
+-- diff --stat (merge-base...ref)
+================ pr/6 e6152f6
+-- ahead of main: 2  behind main: 94
+e6152f6 2026-11-08T11:43:23Z hybadatadevops1 ci: pin attest-build-provenance to commit SHA 96b4a1e (v2)
+c0903e2 2026-11-08T11:40:16Z hybadatadevops1 ci: add SLSA build provenance attestations, SBOM, and sovereign hardening runbook
+-- diff --stat (merge-base...ref)
+ .github/workflows/ci.yml      |  20 ++++++++++++++++++++
+ .github/workflows/release.yml |  69 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ docs/sovereign-hardening.md   | 110 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 199 insertions(+)
+================ pr/7 84408e5
+-- ahead of main: 1  behind main: 94
+84408e5 2026-11-08T11:49:57Z hybadatadevops1 ci: add investor evidence dossier workflow and benchmark certificate generator
+-- diff --stat (merge-base...ref)
+ .github/CODEOWNERS                              |   5 ++
+ .github/workflows/investor-evidence-dossier.yml |  66 ++++++++++++++++++++
+ scripts/generate_investor_dossier.py            | 476 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 547 insertions(+)
+================ pr/8 79cf44e
+-- ahead of main: 1  behind main: 93
+79cf44e 2026-11-08T11:52:39Z hybadatadevops1 infra: add AL HARAS ephemeral sovereign runner assets
+-- diff --stat (merge-base...ref)
+ docs/sovereign-hardening.md                             |  4 ++++
+ infra/runners/al-haras/README.md                        | 64 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ infra/runners/al-haras/al-haras-bootstrap.sh            | 24 ++++++++++++++++++++++++
+ infra/runners/al-haras/al-haras-teardown.sh             | 14 ++++++++++++++
+ infra/runners/al-haras/chronus-sovereign-runner.service | 42 ++++++++++++++++++++++++++++++++++++++++++
+ infra/runners/al-haras/hooks/post-job-scrub.sh          | 20 ++++++++++++++++++++
+ infra/runners/al-haras/hooks/pre-job-attest.sh          | 46 ++++++++++++++++++++++++++++++++++++++++++++++
+ infra/runners/al-haras/register-ephemeral.sh            | 20 ++++++++++++++++++++
+ 8 files changed, 234 insertions(+)
+================ pr/9 197d744
+-- ahead of main: 1  behind main: 92
+197d744 2026-11-08T11:54:22Z hybadatadevops1 ci: add Sigstore keyless signing fallback for private-repo receipts
+-- diff --stat (merge-base...ref)
+ .github/workflows/ci.yml                        |  5 +++++
+ .github/workflows/investor-evidence-dossier.yml | 25 +++++++++++++++++++++++++
+ .github/workflows/release.yml                   | 21 ++++++++++++++++++++-
+ docs/sovereign-hardening.md                     | 32 +++++++++++++++++++++++++-------
+ scripts/generate_investor_dossier.py            | 25 +++++++++++++++++++++----
+ 5 files changed, 96 insertions(+), 12 deletions(-)

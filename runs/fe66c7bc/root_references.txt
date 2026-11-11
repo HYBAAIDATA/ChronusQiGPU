@@ -1,0 +1,179 @@
+================ .coveragemp  referenced_by=0
+================ .dockerignore  referenced_by=0
+================ .env.example  referenced_by=2
+1x .dockerignore
+1x frontend/.dockerignore
+================ .gitignore  referenced_by=2
+1x .dockerignore
+1x frontend/.dockerignore
+================ AGENTS.md  referenced_by=1
+1x README.md
+================ ARTIFACT_SUMMARY.md  referenced_by=0
+================ BLOCKER_MILLENIEIEUM_1.patch  referenced_by=1
+1x STATUS.md
+================ BLOCKER_MILLENIEIEUM_2.patch  referenced_by=1
+1x STATUS.md
+================ BLOCKER_TOE_1.patch  referenced_by=1
+1x STATUS.md
+================ Dockerfile  referenced_by=4
+1x .github/workflows/nextjs.yml
+3x docker-compose.yml
+2x evidence/baseline/import-reconciliation.txt
+1x work_orders/sovereign_horizons.md
+================ LICENSE  referenced_by=68
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-final.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v1.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v10.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v11.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v12.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v13.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v14.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v15.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v16.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v17.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v18.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v19.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v2.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v20.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v21.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v22.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v23.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v24.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v25.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v26.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v27.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v28.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v29.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v3.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v30.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v31.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v32.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v33.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v34.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v35.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v36.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v4.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v5.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v6.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v7.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v8.py
+1x archive/legacy/master_repo/src/chronus/chronus_gpiu-v9.py
+1x archive/legacy/master_repo/src/chronus/core.py
+1x chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-final.py
+1x chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-v31.py
+1x chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-v32.py
+1x chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-v33.py
+1x chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-v34.py
+1x chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-v35.py
+1x chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-v36.py
+1x chronus_source_backup/chronus-quantum-igpu/src/chronus/core.py
+1x src/chronus/chronus_gpiu-v36.py
+1x vendor/cgminer-3.7.2/COPYING
+1x vendor/cgminer-3.7.2/ccan/compiler/LICENSE
+3x vendor/cgminer-3.7.2/ccan/opt/LICENSE
+3x vendor/cgminer-3.7.2/ccan/typesafe_cb/LICENSE
+1x vendor/cgminer-3.7.2/compat/jansson-2.5/Makefile.am
+1x vendor/cgminer-3.7.2/compat/jansson-2.5/README.rst
+1x vendor/cgminer-3.7.2/compat/jansson-2.5/src/dump.c
+1x vendor/cgminer-3.7.2/compat/jansson-2.5/src/hashtable.c
+1x vendor/cgminer-3.7.2/compat/jansson-2.5/src/hashtable.h
+1x vendor/cgminer-3.7.2/compat/jansson-2.5/src/jansson.h
+1x vendor/cgminer-3.7.2/compat/jansson-2.5/src/jansson_config.h.in
+1x vendor/cgminer-3.7.2/compat/jansson-2.5/src/jansson_private.h
+1x vendor/cgminer-3.7.2/compat/jansson-2.5/src/load.c
+================ Makefile  referenced_by=7
+2x vendor/cgminer-3.7.2/.gitignore
+7x vendor/cgminer-3.7.2/NEWS
+2x vendor/cgminer-3.7.2/compat/jansson-2.5/configure.ac
+1x vendor/cgminer-3.7.2/compat/libusb-1.0/PORTING
+2x vendor/cgminer-3.7.2/compat/libusb-1.0/configure.ac
+5x vendor/cgminer-3.7.2/configure.ac
+1x vendor/cgminer-3.7.2/m4/gnulib-cache.m4
+================ PRODUCTION_QUALIFIED.json  referenced_by=4
+1x .github/workflows/ci.yml
+4x BLOCKER_MILLENIEIEUM_1.patch
+2x scripts/ci/manifest.py
+4x scripts/ci/verify_chronus.py
+================ README.md  referenced_by=11
+1x Dockerfile
+1x archive/legacy/master_repo/docs/directives/missing.md
+1x chronus_source_backup/chronus-quantum-igpu/docs/directives/missing.md
+1x docs/directives/missing.md
+1x docs/system-update/README.md
+2x docs/system-update/quantum-package-taxonomy.md
+1x docs/system-update/test-evidence.md
+3x evidence/SHA256SUMS
+1x packages/turing/pyproject.toml
+1x pyproject.toml
+1x src/chronus/quantum/README.md
+================ RELEASE_DECISION_MCKINSEY_TECH.md  referenced_by=10
+2x AGENTS.md
+1x README.md
+1x docs/directives/FRONTEND.md
+1x docs/directives/PACKAGING.md
+1x docs/directives/PRODUCT_STYLE_GUIDE.md
+1x docs/directives/README.md
+1x docs/executive/executive-architecture-and-project-summary.md
+1x docs/reports/chronus_release_decision.md
+1x docs/system-update/current-state-assessment.md
+1x funding/FUNDING_PITCH.md
+================ SOVEREIGN_CAPABILITY_ATTESTATION.json  referenced_by=4
+1x .github/workflows/ci.yml
+1x STATUS.md
+2x scripts/ci/sovereign_attestation.py
+1x tests/test_behavioral_sovereign_attestation.py
+================ STATUS.md  referenced_by=0
+================ al_haras_security_module.py  referenced_by=0
+================ al_haras_sovereign_edition.py  referenced_by=0
+================ al_haras_topological_os.py  referenced_by=1
+1x tests/test_security_full_coverage.py
+================ alembic.ini  referenced_by=0
+================ apply_ovid_patch.py  referenced_by=0
+================ build_ci_failed.log  referenced_by=0
+================ chronus-k8s-deployment.yaml  referenced_by=0
+================ chronus_live_miner.py  referenced_by=4
+4x BLOCKER_MILLENIEIEUM_2.patch
+5x Dockerfile
+1x STATUS.md
+1x src/chronus/execution/master_e2e_engine.py
+================ chronus_master_end_to_end_engine.py  referenced_by=1
+1x docs/specifications/PATROCLUS_MYRMIDON_STRATUM_SPECIFICATION.md
+================ cov_output.txt  referenced_by=2
+3x read_cov.py
+1x src/turing/read_cov.py
+================ docker-compose.yml  referenced_by=0
+================ edge_output.txt  referenced_by=0
+================ exact_primitive_library-v3.py  referenced_by=1
+1x ARTIFACT_SUMMARY.md
+================ filelist.txt  referenced_by=0
+================ full_documentation.txt  referenced_by=0
+================ paradigm_shift.txt  referenced_by=0
+================ production_hr_api-v2.py  referenced_by=3
+1x STATUS.md
+1x src/chronus/service/production_hr_api_v2.py
+3x tests/test_enhanced_tensor_representation_v2.py
+================ production_hr_api.py  referenced_by=4
+2x STATUS.md
+3x production_hr_api-v2.py
+1x src/chronus/service/production_hr_api_v2.py
+5x tests/test_enhanced_tensor_representation_v2.py
+================ pulvini_output.txt  referenced_by=0
+================ pyproject.toml  referenced_by=4
+2x BLOCKER_MILLENIEIEUM_1.patch
+1x Dockerfile
+1x Makefile
+1x scripts/ci/manifest.py
+================ qigpu_acceleration_system.py  referenced_by=0
+================ qigpu_master_tour_de_force.py  referenced_by=0
+================ qigpu_unified__acceleration_system.py  referenced_by=0
+================ qudit_qec.py  referenced_by=2
+1x ARTIFACT_SUMMARY.md
+1x SOVEREIGN_CAPABILITY_ATTESTATION.json
+================ read_cov.py  referenced_by=0
+================ test_output.txt  referenced_by=3
+1x artifacts/qigpu/exact_library/manifest_b9924602da325f0cfe2b82fa23ea200ca9a2073e7964e49863089f430ca62eb7.json
+2x exact_primitive_library-v3.py
+1x qigpu_acceleration_system.py
+================ test_result.txt  referenced_by=0
+================ tree_output.txt  referenced_by=1
+1x .dockerignore

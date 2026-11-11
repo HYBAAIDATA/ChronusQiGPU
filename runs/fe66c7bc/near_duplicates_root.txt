@@ -1,0 +1,35 @@
+================ al_haras_security_module.py (67 distinct lines)
+================ al_haras_sovereign_edition.py (178 distinct lines)
+0.30 shared=53 src/chronus/security/al_haras/sovereign.py
+0.13 shared=24 src/chronus/al_haras_sovereign.py
+================ al_haras_topological_os.py (183 distinct lines)
+0.80 shared=147 src/chronus/security/al_haras/topological_os.py
+================ chronus_live_miner.py (14 distinct lines)
+================ chronus_master_end_to_end_engine.py (307 distinct lines)
+0.93 shared=287 src/chronus/execution/master_e2e_engine.py
+0.16 shared=49 src/chronus/execution/myrmidon_orchestrator.py
+================ exact_primitive_library-v3.py (1178 distinct lines)
+0.30 shared=348 tests/test_turing.py
+0.07 shared=83 src/turing/ring/zeta.py
+0.05 shared=55 src/turing/ring/matrix.py
+0.04 shared=50 src/turing/entanglement/schmidt.py
+0.04 shared=44 src/turing/ring/utils.py
+0.04 shared=42 src/turing/ring/rational.py
+0.03 shared=36 src/turing/measurement/born.py
+0.03 shared=35 qigpu_acceleration_system.py
+================ production_hr_api-v2.py (51 distinct lines)
+================ production_hr_api.py (29 distinct lines)
+================ qigpu_acceleration_system.py (802 distinct lines)
+0.63 shared=503 qigpu_master_tour_de_force.py
+0.44 shared=349 qigpu_unified__acceleration_system.py
+0.04 shared=35 exact_primitive_library-v3.py
+================ qigpu_master_tour_de_force.py (937 distinct lines)
+0.54 shared=503 qigpu_acceleration_system.py
+0.49 shared=458 qigpu_unified__acceleration_system.py
+0.03 shared=32 exact_primitive_library-v3.py
+================ qigpu_unified__acceleration_system.py (657 distinct lines)
+0.70 shared=458 qigpu_master_tour_de_force.py
+0.53 shared=349 qigpu_acceleration_system.py
+0.05 shared=30 exact_primitive_library-v3.py
+================ qudit_qec.py (49 distinct lines)
+================ read_cov.py (16 distinct lines)

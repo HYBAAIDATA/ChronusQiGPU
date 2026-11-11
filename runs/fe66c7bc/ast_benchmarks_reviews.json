@@ -1,0 +1,1256 @@
+[
+ {
+  "path": "benchmarks/acceleration/accumulation_reference.py",
+  "loc": 36,
+  "size": 1433,
+  "classes": [],
+  "functions": [
+   [
+    "zsum",
+    7
+   ],
+   [
+    "rsum",
+    13
+   ],
+   [
+    "fsum",
+    19
+   ],
+   [
+    "main",
+    25
+   ]
+  ],
+  "imports": [
+   "chronus.hw.zeckendorf",
+   "chronus.quantum.geometric_polychoron",
+   "json",
+   "platform",
+   "sys",
+   "time"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "benchmarks/acceleration/fourier_benchmark.py",
+  "loc": 54,
+  "size": 2255,
+  "classes": [],
+  "functions": [
+   [
+    "direct",
+    12
+   ],
+   [
+    "fft",
+    19
+   ],
+   [
+    "run",
+    23
+   ]
+  ],
+  "imports": [
+   "chronus.acceleration.fourier",
+   "json",
+   "numpy",
+   "os",
+   "platform",
+   "statistics",
+   "sys",
+   "time"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "benchmarks/acceleration/ring_codec_benchmark.py",
+  "loc": 36,
+  "size": 2705,
+  "classes": [],
+  "functions": [
+   [
+    "percentile",
+    7
+   ],
+   [
+    "sample_page",
+    10
+   ],
+   [
+    "main",
+    15
+   ]
+  ],
+  "imports": [
+   "chronus.quantum.ring_codec",
+   "hashlib",
+   "json",
+   "math",
+   "os",
+   "pathlib",
+   "platform",
+   "sys",
+   "tempfile",
+   "time",
+   "zlib"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "benchmarks/acceleration/ring_mps_benchmark.py",
+  "loc": 35,
+  "size": 2406,
+  "classes": [],
+  "functions": [
+   [
+    "main",
+    9
+   ]
+  ],
+  "imports": [
+   "chronus.quantum.geometric_polychoron",
+   "chronus.quantum.ring_mps",
+   "chronus.tensor.network",
+   "hashlib",
+   "json",
+   "numpy",
+   "platform",
+   "statistics",
+   "sys",
+   "time"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "benchmarks/acceleration/ring_state_benchmark.py",
+  "loc": 34,
+  "size": 1777,
+  "classes": [],
+  "functions": [
+   [
+    "direct_product",
+    7
+   ],
+   [
+    "record",
+    16
+   ],
+   [
+    "main",
+    19
+   ]
+  ],
+  "imports": [
+   "chronus.quantum.geometric_polychoron",
+   "chronus.quantum.ring_state",
+   "json",
+   "platform",
+   "random",
+   "statistics",
+   "sys",
+   "time"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "benchmarks/acceleration/state_benchmark.py",
+  "loc": 56,
+  "size": 2418,
+  "classes": [],
+  "functions": [
+   [
+    "layer",
+    12
+   ],
+   [
+    "baseline",
+    16
+   ],
+   [
+    "run",
+    26
+   ]
+  ],
+  "imports": [
+   "chronus.acceleration.state",
+   "json",
+   "numpy",
+   "os",
+   "platform",
+   "statistics",
+   "sys",
+   "time"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "benchmarks/benchmark_al_haras_security.py",
+  "loc": 320,
+  "size": 13620,
+  "classes": [],
+  "functions": [
+   [
+    "benchmark_sheaf_cohomology",
+    36
+   ],
+   [
+    "benchmark_dsw_self_healing",
+    99
+   ],
+   [
+    "benchmark_post_quantum_signatures",
+    143
+   ],
+   [
+    "benchmark_ramanujan_spectral_guard",
+    186
+   ],
+   [
+    "benchmark_zero_copy_ovid_isolation",
+    209
+   ],
+   [
+    "main",
+    262
+   ]
+  ],
+  "imports": [
+   "argparse",
+   "chronus.security.al_haras.engine",
+   "chronus.security.signers",
+   "chronus.storage.connectors",
+   "hashlib",
+   "json",
+   "os",
+   "platform",
+   "re",
+   "sys",
+   "time",
+   "typing"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "benchmarks/benchmark_mining.py",
+  "loc": 56,
+  "size": 1874,
+  "classes": [],
+  "functions": [
+   [
+    "main",
+    13
+   ]
+  ],
+  "imports": [
+   "argparse",
+   "chronus.execution.mining",
+   "chronus.execution.structural",
+   "json",
+   "os",
+   "platform",
+   "time"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "harness/capacity.py",
+  "loc": 229,
+  "size": 11376,
+  "classes": [],
+  "functions": [
+   [
+    "sha",
+    27
+   ],
+   [
+    "git_blob",
+    31
+   ],
+   [
+    "load_codec",
+    35
+   ],
+   [
+    "source_identity",
+    42
+   ],
+   [
+    "percentile",
+    63
+   ],
+   [
+    "probe_corruption",
+    68
+   ],
+   [
+    "block_write_observation",
+    90
+   ],
+   [
+    "run",
+    129
+   ],
+   [
+    "main",
+    200
+   ]
+  ],
+  "imports": [
+   "argparse",
+   "contextlib",
+   "datetime",
+   "hashlib",
+   "importlib.util",
+   "io",
+   "json",
+   "math",
+   "os",
+   "pathlib",
+   "platform",
+   "shlex",
+   "statistics",
+   "subprocess",
+   "sys",
+   "tempfile",
+   "time"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "scripts/benchmarks/bench_gatekeeper.py",
+  "loc": 40,
+  "size": 1135,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "chronus.stratum.endian_engine",
+   "numpy",
+   "os",
+   "random",
+   "time"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "scripts/benchmarks/benchmark_gatekeeper.py",
+  "loc": 99,
+  "size": 3755,
+  "classes": [],
+  "functions": [
+   [
+    "run_benchmark",
+    23
+   ]
+  ],
+  "imports": [
+   "chronus.stratum.gatekeeper",
+   "fractions",
+   "os",
+   "sys",
+   "time"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "scripts/benchmarks/verify_observability.py",
+  "loc": 26,
+  "size": 749,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "chronus.observability.metrics",
+   "sys"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "scripts/ci/burst_load_test.py",
+  "loc": 173,
+  "size": 7416,
+  "classes": [],
+  "functions": [
+   [
+    "execute_tenant_workflow",
+    28
+   ],
+   [
+    "run_burst_simulation",
+    106
+   ]
+  ],
+  "imports": [
+   "asyncio",
+   "chronus.service.app",
+   "chronus.service.workload_store",
+   "httpx",
+   "os",
+   "sys",
+   "time",
+   "typing"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "scripts/ci/check_forbidden_claims.py",
+  "loc": 45,
+  "size": 1566,
+  "classes": [],
+  "functions": [
+   [
+    "scan",
+    11
+   ]
+  ],
+  "imports": [
+   "json",
+   "pathlib",
+   "subprocess",
+   "sys"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "scripts/ci/determinism_check.py",
+  "loc": 80,
+  "size": 2758,
+  "classes": [],
+  "functions": [
+   [
+    "run_pipeline_deterministic",
+    28
+   ],
+   [
+    "main",
+    60
+   ]
+  ],
+  "imports": [
+   "chronus.hw.zeckendorf",
+   "chronus.math.binet_lucas",
+   "chronus.math.f257_search",
+   "chronus.stratum.bip310",
+   "chronus.stratum.endian_engine",
+   "hashlib",
+   "json",
+   "os",
+   "sys"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "scripts/ci/endian_fuzz.py",
+  "loc": 74,
+  "size": 2485,
+  "classes": [],
+  "functions": [
+   [
+    "reference_swap_prevhash_words",
+    24
+   ],
+   [
+    "main",
+    32
+   ]
+  ],
+  "imports": [
+   "argparse",
+   "chronus.stratum.endian_engine",
+   "hashlib",
+   "os",
+   "sys"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "scripts/ci/expansion_load_test.py",
+  "loc": 173,
+  "size": 8117,
+  "classes": [],
+  "functions": [
+   [
+    "onboard_baseline_tenant",
+    27
+   ],
+   [
+    "execute_10x_expansion_workflow",
+    48
+   ],
+   [
+    "run_expansion_simulation",
+    91
+   ]
+  ],
+  "imports": [
+   "asyncio",
+   "chronus.service.app",
+   "chronus.service.ciaas_store",
+   "httpx",
+   "os",
+   "sys",
+   "time",
+   "typing"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "scripts/ci/manifest.py",
+  "loc": 169,
+  "size": 6964,
+  "classes": [],
+  "functions": [
+   [
+    "run_cmd",
+    26
+   ],
+   [
+    "main",
+    33
+   ]
+  ],
+  "imports": [
+   "hashlib",
+   "hmac",
+   "json",
+   "os",
+   "shutil",
+   "subprocess",
+   "sys",
+   "time"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "scripts/ci/purity_gate.py",
+  "loc": 110,
+  "size": 4141,
+  "classes": [],
+  "functions": [
+   [
+    "scan_file",
+    58
+   ],
+   [
+    "main",
+    92
+   ]
+  ],
+  "imports": [
+   "ast",
+   "pathlib",
+   "re",
+   "sys"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "scripts/ci/regional_failover_burst_test.py",
+  "loc": 208,
+  "size": 9190,
+  "classes": [
+   [
+    "FailureInjectionState",
+    30,
+    [
+     "__init__"
+    ]
+   ]
+  ],
+  "functions": [
+   [
+    "execute_onboarding_with_failover",
+    43
+   ],
+   [
+    "run_failure_injection_simulation",
+    124
+   ]
+  ],
+  "imports": [
+   "asyncio",
+   "chronus.service.app",
+   "httpx",
+   "os",
+   "sys",
+   "time",
+   "typing"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "scripts/ci/run_irrefutable_audit.py",
+  "loc": 408,
+  "size": 18916,
+  "classes": [],
+  "functions": [
+   [
+    "get_git_head",
+    37
+   ],
+   [
+    "rfc8785_canonical_json",
+    52
+   ],
+   [
+    "run_step_1_purity_gate",
+    62
+   ],
+   [
+    "run_step_2_system_invariants",
+    89
+   ],
+   [
+    "run_step_3_benchmarks",
+    120
+   ],
+   [
+    "run_step_4_cryptographic_attestation",
+    227
+   ],
+   [
+    "run_step_5_verify_endpoint",
+    290
+   ],
+   [
+    "run_step_6_compile_manifest",
+    319
+   ],
+   [
+    "main",
+    355
+   ]
+  ],
+  "imports": [
+   "__future__",
+   "chronus.core",
+   "chronus.quantum.metallic_search",
+   "chronus.security.al_haras.engine",
+   "chronus.service.app",
+   "chronus.service.routers.verify",
+   "chronus.storage.connectors",
+   "datetime",
+   "fastapi.testclient",
+   "hashlib",
+   "json",
+   "os",
+   "pathlib",
+   "scripts.ci.purity_gate",
+   "subprocess",
+   "sys",
+   "time",
+   "typing"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "scripts/ci/run_tests.py",
+  "loc": 71,
+  "size": 2320,
+  "classes": [],
+  "functions": [
+   [
+    "main",
+    37
+   ]
+  ],
+  "imports": [
+   "os",
+   "sys",
+   "unittest"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "scripts/ci/sovereign_attestation.py",
+  "loc": 369,
+  "size": 15135,
+  "classes": [],
+  "functions": [
+   [
+    "verify_al_haras_pillar",
+    37
+   ],
+   [
+    "verify_theseus_ovid_pillar",
+    86
+   ],
+   [
+    "verify_chronus_stratum_pillar",
+    118
+   ],
+   [
+    "verify_millennium_pillar",
+    164
+   ],
+   [
+    "verify_toe_quantum_pillar",
+    219
+   ],
+   [
+    "verify_distribution_packages",
+    247
+   ],
+   [
+    "main",
+    282
+   ]
+  ],
+  "imports": [
+   "chronus.hw.zeckendorf",
+   "chronus.math.binet_lucas",
+   "chronus.math.f257_search",
+   "chronus.quantum.statevector",
+   "chronus.security.al_haras.engine",
+   "chronus.security.al_haras.millennium_security",
+   "chronus.security.ovid",
+   "chronus.storage.theseus",
+   "chronus.stratum.endian_engine",
+   "chronus.stratum.gatekeeper",
+   "fractions",
+   "hashlib",
+   "hmac",
+   "json",
+   "os",
+   "sys",
+   "time",
+   "typing"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "scripts/ci/test_the_tests.py",
+  "loc": 197,
+  "size": 7825,
+  "classes": [
+   [
+    "Mutation",
+    27,
+    []
+   ]
+  ],
+  "functions": [
+   [
+    "execute_mutation",
+    96
+   ],
+   [
+    "main",
+    159
+   ]
+  ],
+  "imports": [
+   "dataclasses",
+   "os",
+   "subprocess",
+   "sys",
+   "time",
+   "typing"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "scripts/ci/verify_capacity_artifacts.py",
+  "loc": 40,
+  "size": 1783,
+  "classes": [],
+  "functions": [
+   [
+    "verify",
+    10
+   ]
+  ],
+  "imports": [
+   "hashlib",
+   "json",
+   "pathlib",
+   "re",
+   "sys"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "scripts/ci/verify_chronus.py",
+  "loc": 73,
+  "size": 2925,
+  "classes": [],
+  "functions": [
+   [
+    "run",
+    17
+   ],
+   [
+    "main",
+    21
+   ]
+  ],
+  "imports": [
+   "os",
+   "subprocess",
+   "sys",
+   "time"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "scripts/dev/analyze.py",
+  "loc": 47,
+  "size": 1329,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "chronus.core",
+   "collections",
+   "sys"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/analyze_test.py",
+  "loc": 40,
+  "size": 1047,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "os",
+   "re",
+   "sys"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/check_braces.py",
+  "loc": 18,
+  "size": 720,
+  "syntax_error": "f-string: single '}' is not allowed line 9"
+ },
+ {
+  "path": "scripts/dev/check_import.py",
+  "loc": 36,
+  "size": 1029,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "chronus.core",
+   "importlib",
+   "subprocess",
+   "sys"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/check_import2.py",
+  "loc": 25,
+  "size": 615,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "chronus",
+   "pkg_resources",
+   "sys"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/check_import3.py",
+  "loc": 59,
+  "size": 1674,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "chronus.core",
+   "importlib",
+   "re",
+   "sys",
+   "traceback"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/clear_cache.py",
+  "loc": 19,
+  "size": 522,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "os",
+   "shutil"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/compare.py",
+  "loc": 1,
+  "size": 0,
+  "classes": [],
+  "functions": [],
+  "imports": [],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/diag.py",
+  "loc": 53,
+  "size": 1433,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "chronus.core",
+   "os",
+   "sys",
+   "tokenize",
+   "traceback"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/diag2.py",
+  "loc": 56,
+  "size": 1669,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "chronus.core",
+   "os",
+   "subprocess",
+   "sys",
+   "tokenize"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/fix2.py",
+  "loc": 66,
+  "size": 1933,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "chronus.core",
+   "chronus.core_fixed",
+   "os",
+   "sys"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/fix3.py",
+  "loc": 78,
+  "size": 2665,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "chronus.core_fixed2",
+   "chronus.core_fixed3",
+   "os",
+   "sys"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/fix_api_client.py",
+  "loc": 106,
+  "size": 3404,
+  "classes": [],
+  "functions": [
+   [
+    "rep",
+    7
+   ]
+  ],
+  "imports": [],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/fix_import.py",
+  "loc": 61,
+  "size": 1715,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "os",
+   "shutil"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/fix_master_e2e.py",
+  "loc": 53,
+  "size": 2808,
+  "classes": [],
+  "functions": [
+   [
+    "rep",
+    7
+   ]
+  ],
+  "imports": [],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/fix_mining.py",
+  "loc": 20,
+  "size": 557,
+  "syntax_error": "invalid syntax line 8"
+ },
+ {
+  "path": "scripts/dev/fix_mining_admin2.py",
+  "loc": 68,
+  "size": 4520,
+  "classes": [],
+  "functions": [
+   [
+    "rep",
+    7
+   ]
+  ],
+  "imports": [],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/fix_mining_page.py",
+  "loc": 108,
+  "size": 4433,
+  "classes": [],
+  "functions": [
+   [
+    "rep",
+    7
+   ]
+  ],
+  "imports": [],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/fix_mining_page2.py",
+  "loc": 72,
+  "size": 3391,
+  "classes": [],
+  "functions": [
+   [
+    "rep",
+    7
+   ]
+  ],
+  "imports": [],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/minimal_core.py",
+  "loc": 14,
+  "size": 631,
+  "classes": [],
+  "functions": [],
+  "imports": [],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/run_test.py",
+  "loc": 73,
+  "size": 2698,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "chronus.core",
+   "os",
+   "shutil",
+   "subprocess",
+   "sys"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "scripts/dev/test_import.py",
+  "loc": 25,
+  "size": 754,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "chronus.core",
+   "os",
+   "sys"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "scripts/generate_investor_dossier.py",
+  "loc": 637,
+  "size": 25877,
+  "classes": [],
+  "functions": [
+   [
+    "_timed",
+    49
+   ],
+   [
+    "bench_memory_folding",
+    56
+   ],
+   [
+    "bench_companion_matrix",
+    98
+   ],
+   [
+    "bench_threshold_mpc",
+    139
+   ],
+   [
+    "bench_formal_invariants",
+    207
+   ],
+   [
+    "bench_subspace_search",
+    237
+   ],
+   [
+    "bench_planck_ladder",
+    272
+   ],
+   [
+    "bench_homological_settlement",
+    308
+   ],
+   [
+    "check_qualification_manifest",
+    369
+   ],
+   [
+    "check_rtl",
+    402
+   ],
+   [
+    "_esc",
+    418
+   ],
+   [
+    "render_markdown",
+    422
+   ],
+   [
+    "render_html",
+    465
+   ],
+   [
+    "_breakable",
+    517
+   ],
+   [
+    "render_pdf",
+    526
+   ],
+   [
+    "main",
+    569
+   ]
+  ],
+  "imports": [
+   "__future__",
+   "argparse",
+   "chronus.core.scaling",
+   "chronus.quantum.metallic_search",
+   "chronus.quantum.subspace",
+   "chronus.security.al_haras.formal_invariants",
+   "chronus.security.al_haras.sovereign_settlement",
+   "chronus.security.al_haras.threshold_mpc",
+   "chronus.security.ovid",
+   "chronus.storage.theseus",
+   "datetime",
+   "fpdf",
+   "hashlib",
+   "html",
+   "json",
+   "os",
+   "pathlib",
+   "platform",
+   "sys",
+   "time"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "tools/compare_product_mps.py",
+  "loc": 61,
+  "size": 3796,
+  "classes": [],
+  "functions": [
+   [
+    "main",
+    17
+   ]
+  ],
+  "imports": [
+   "argparse",
+   "chronus.quantum.geometric_polychoron",
+   "chronus.tensor.exact_mps",
+   "chronus.tensor.network",
+   "chronus.tensor.types",
+   "decimal",
+   "hashlib",
+   "json",
+   "numpy",
+   "pathlib",
+   "platform",
+   "time"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "tools/measure_prime_codec_reference.py",
+  "loc": 104,
+  "size": 5085,
+  "classes": [],
+  "functions": [
+   [
+    "git_blob",
+    24
+   ],
+   [
+    "load_codec",
+    28
+   ],
+   [
+    "pct",
+    42
+   ],
+   [
+    "main",
+    46
+   ]
+  ],
+  "imports": [
+   "argparse",
+   "hashlib",
+   "importlib.util",
+   "json",
+   "math",
+   "os",
+   "pathlib",
+   "platform",
+   "sys",
+   "tempfile",
+   "time",
+   "types"
+  ],
+  "has_main": true
+ },
+ {
+  "path": "tools/measure_zeckendorf_accumulation.py",
+  "loc": 36,
+  "size": 2630,
+  "classes": [],
+  "functions": [
+   [
+    "main",
+    7
+   ]
+  ],
+  "imports": [
+   "argparse",
+   "hashlib",
+   "json",
+   "math",
+   "pathlib",
+   "platform",
+   "time",
+   "types"
+  ],
+  "has_main": true
+ }
+]

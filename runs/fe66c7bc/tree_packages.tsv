@@ -1,0 +1,10 @@
+2283	packages/turing/README.md
+718	packages/turing/pyproject.toml
+948	packages/turing/src/turing/__init__.py
+793	packages/turing/src/turing/gates.py
+4623	packages/turing/src/turing/measurement.py
+4323	packages/turing/src/turing/operator.py
+0	packages/turing/src/turing/py.typed
+3076	packages/turing/src/turing/state.py
+1464	packages/turing/src/turing/tensor.py
+3574	packages/turing/tests/test_axioms.py

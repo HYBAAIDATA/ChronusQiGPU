@@ -1,0 +1,21 @@
+[
+ {
+  "path": "vendor/cgminer-3.7.2/api-example.py",
+  "loc": 53,
+  "size": 1334,
+  "syntax_error": "Missing parentheses in call to 'print'. Did you mean print(...)? line 51"
+ },
+ {
+  "path": "vendor/cgminer-3.7.2/usbtest.py",
+  "loc": 87,
+  "size": 3046,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   "binascii",
+   "serial",
+   "sys"
+  ],
+  "has_main": false
+ }
+]

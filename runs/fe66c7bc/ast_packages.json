@@ -1,0 +1,178 @@
+[
+ {
+  "path": "packages/turing/src/turing/__init__.py",
+  "loc": 45,
+  "size": 948,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   ".gates",
+   ".measurement",
+   ".operator",
+   ".state",
+   ".tensor"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "packages/turing/src/turing/gates.py",
+  "loc": 23,
+  "size": 793,
+  "classes": [],
+  "functions": [],
+  "imports": [
+   ".operator",
+   "math"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "packages/turing/src/turing/measurement.py",
+  "loc": 93,
+  "size": 4623,
+  "classes": [
+   [
+    "ProjectiveMeasurement",
+    20,
+    [
+     "__post_init__",
+     "probabilities",
+     "collapse"
+    ]
+   ]
+  ],
+  "functions": [
+   [
+    "born_probabilities",
+    12
+   ],
+   [
+    "computational_basis_measurement",
+    83
+   ]
+  ],
+  "imports": [
+   ".operator",
+   ".state",
+   "__future__",
+   "dataclasses",
+   "math"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "packages/turing/src/turing/operator.py",
+  "loc": 100,
+  "size": 4323,
+  "classes": [
+   [
+    "LinearOperator",
+    13,
+    [
+     "__post_init__",
+     "from_rows",
+     "identity",
+     "dimension",
+     "apply_amplitudes",
+     "apply",
+     "adjoint",
+     "compose",
+     "is_hermitian",
+     "is_unitary",
+     "almost_equal",
+     "expectation_value"
+    ]
+   ]
+  ],
+  "functions": [],
+  "imports": [
+   ".state",
+   "__future__",
+   "dataclasses",
+   "math",
+   "typing"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "packages/turing/src/turing/state.py",
+  "loc": 73,
+  "size": 3076,
+  "classes": [
+   [
+    "QuantumState",
+    20,
+    [
+     "__post_init__",
+     "basis",
+     "normalized",
+     "dimension",
+     "norm_squared",
+     "inner_product"
+    ]
+   ]
+  ],
+  "functions": [
+   [
+    "_as_finite_complex",
+    12
+   ]
+  ],
+  "imports": [
+   "__future__",
+   "dataclasses",
+   "math",
+   "typing"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "packages/turing/src/turing/tensor.py",
+  "loc": 37,
+  "size": 1464,
+  "classes": [],
+  "functions": [
+   [
+    "tensor_states",
+    9
+   ],
+   [
+    "tensor_operators",
+    21
+   ]
+  ],
+  "imports": [
+   ".operator",
+   ".state",
+   "__future__"
+  ],
+  "has_main": false
+ },
+ {
+  "path": "packages/turing/tests/test_axioms.py",
+  "loc": 88,
+  "size": 3574,
+  "classes": [
+   [
+    "QuantumMathAxiomsTests",
+    23,
+    [
+     "test_state_is_normalized_and_inner_product_is_conjugate_linear_first",
+     "test_standard_gates_are_unitary",
+     "test_hadamard_and_born_rule",
+     "test_observable_expectation",
+     "test_tensor_product_and_bell_state_probabilities",
+     "test_projective_measurement_and_collapse",
+     "test_invalid_measurement_and_dimensions_fail_clearly"
+    ]
+   ]
+  ],
+  "functions": [],
+  "imports": [
+   "math",
+   "turing",
+   "unittest"
+  ],
+  "has_main": true
+ }
+]

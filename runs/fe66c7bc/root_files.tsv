@@ -1,0 +1,45 @@
+264342	.coveragemp	63e40bf|2026-11-09|Chronus Systems|Fix CI lint errors: remove unused imports and fix noqa comments
+474	.dockerignore	1b18e62|2026-11-08|Chronus Systems|chore(docker): harden multi-stage container builds and compose healthchecks
+419	.env.example	05c924c|2026-11-06|Chronus Systems|Initial commit: Comprehensive README, dev environment setup, and project configuration
+1230	.gitignore	355bb38|2026-11-08|Chronus Systems|feat(mining): implement 11D 600-cell polytope & F_257 exact Galois oracle with Lean 4 univalence and 100% test coverage
+6894	AGENTS.md	beaa2b8|2026-11-11|hybadatadevops1|docs: align HYBA product style and market positioning (#23)
+826	ARTIFACT_SUMMARY.md	ecfba34|2026-11-10|Chronus Systems|Merge evidence backpressure patches (modeA_1337/2026/42, backend_matrix), exact_library framework, turing suite, coverage artifacts, and close-out fixes (qudit_qec withdrawal, row-1 demo fix, term-missing output)
+12759	BLOCKER_MILLENIEIEUM_1.patch	e410c72|2026-11-08|Chronus Systems|MILLENIEIEUM: ground truth audit — manifest fabricated, suite red, max_seconds blocker
+964	BLOCKER_MILLENIEIEUM_2.patch	e410c72|2026-11-08|Chronus Systems|MILLENIEIEUM: ground truth audit — manifest fabricated, suite red, max_seconds blocker
+489	BLOCKER_TOE_1.patch	7d3f5df|2026-11-08|Chronus Systems|TOE: attach BLOCKER_TOE_1.patch for entrypoint readline bypass
+1462	Dockerfile	d095b3a|2026-11-08|Chronus Systems|fix(ci): fix ruff import warnings and set api-runtime as default target in Dockerfile
+48	LICENSE	05c924c|2026-11-06|Chronus Systems|Initial commit: Comprehensive README, dev environment setup, and project configuration
+1882	Makefile	7db5e6f|2026-11-07|hybadatadevops1|Sort project root and add executive architecture summary
+1046	PRODUCTION_QUALIFIED.json	5b1dcc1|2026-11-08|Chronus Systems|feat(tensor): implement EnhancedTensorRepresentation v2 pseudocode charter, multi-GPU search, and production_hr_api-v2
+3636	README.md	beaa2b8|2026-11-11|hybadatadevops1|docs: align HYBA product style and market positioning (#23)
+2363	RELEASE_DECISION_MCKINSEY_TECH.md	52cddf4|2026-11-08|hybadatadevops1|docs: withdraw unverified claims and correct release posture
+8218	SOVEREIGN_CAPABILITY_ATTESTATION.json	b6f6bc9|2026-11-11|Chronus Systems|systems alignment
+4511	STATUS.md	83eab33|2026-11-11|hybadatadevops1|Refine tensor claims and update execution evidence
+3573	al_haras_security_module.py	ba01bd7|2026-11-07|Chronus Systems|feat(ciaas): implement AL HARAS enterprise RBAC, multi-tenant CIaaS fabric, and Hermiten 25% settlement
+12406	al_haras_sovereign_edition.py	ba01bd7|2026-11-07|Chronus Systems|feat(ciaas): implement AL HARAS enterprise RBAC, multi-tenant CIaaS fabric, and Hermiten 25% settlement
+11802	al_haras_topological_os.py	ba01bd7|2026-11-07|Chronus Systems|feat(ciaas): implement AL HARAS enterprise RBAC, multi-tenant CIaaS fabric, and Hermiten 25% settlement
+2343	alembic.ini	2461885|2026-11-07|Chronus Systems|feat(enterprise): unblock G3-G6 gates and elevate Chronus to production fabric
+0	apply_ovid_patch.py	e04dbd0|2026-11-09|Chronus Systems|Chronus Quantum IGPU: comprehensive updates including UI, API, execution engine, and development scripts
+468675	build_ci_failed.log	cd37f1f|2026-11-08|Chronus Systems|e;levation
+3986	chronus-k8s-deployment.yaml	ce2e6e7|2026-11-08|Chronus Systems|docs(stratum): add k8s deployment manifest and patroclus stratum specification
+678	chronus_live_miner.py	3f13b49|2026-11-08|Chronus Systems|feat(qualification): complete Chronus qualification, Python 3.13 CI, mutation meta-harness, and DIFC sovereign attestation
+21443	chronus_master_end_to_end_engine.py	0e97cf0|2026-11-08|Chronus Systems|fix(stealth): add never_consecutive_blocks configuration to StealthEngine and validate url schemes
+506754	cov_output.txt	ecfba34|2026-11-10|Chronus Systems|Merge evidence backpressure patches (modeA_1337/2026/42, backend_matrix), exact_library framework, turing suite, coverage artifacts, and close-out fixes (qudit_qec withdrawal, row-1 demo fix, term-missing output)
+1706	docker-compose.yml	0b5aa07|2026-11-08|Chronus Systems|refactor(miner): purge all legacy duplicate versions, standardize on canonical O(1) miner entrypoint, and seal sovereign qualification
+1934	edge_output.txt	e04dbd0|2026-11-09|Chronus Systems|Chronus Quantum IGPU: comprehensive updates including UI, API, execution engine, and development scripts
+70842	exact_primitive_library-v3.py	2efcfd7|2026-11-11|Chronus Systems|Reconcile coverage and manifest artifacts: exact 64-char SHA-256 hashes for all three files, coverage corrected from inflated 100%/760 single-file sys.settrace to verified 93%/987 pytest-cov full-package measurement, manifest updated to reflect current tracked state with 67 passing tests across 8 test classes including TestTuringElevations, removal of flake8 violations (unused Optional import, line lengths, blank lines, ambiguous variable names)
+4531354	filelist.txt	e04dbd0|2026-11-09|Chronus Systems|Chronus Quantum IGPU: comprehensive updates including UI, API, execution engine, and development scripts
+738	full_documentation.txt	e04dbd0|2026-11-09|Chronus Systems|Chronus Quantum IGPU: comprehensive updates including UI, API, execution engine, and development scripts
+392	paradigm_shift.txt	e04dbd0|2026-11-09|Chronus Systems|Chronus Quantum IGPU: comprehensive updates including UI, API, execution engine, and development scripts
+1857	production_hr_api-v2.py	5b1dcc1|2026-11-08|Chronus Systems|feat(tensor): implement EnhancedTensorRepresentation v2 pseudocode charter, multi-GPU search, and production_hr_api-v2
+1235	production_hr_api.py	5b1dcc1|2026-11-08|Chronus Systems|feat(tensor): implement EnhancedTensorRepresentation v2 pseudocode charter, multi-GPU search, and production_hr_api-v2
+1922	pulvini_output.txt	e04dbd0|2026-11-09|Chronus Systems|Chronus Quantum IGPU: comprehensive updates including UI, API, execution engine, and development scripts
+1723	pyproject.toml	ecfba34|2026-11-10|Chronus Systems|Merge evidence backpressure patches (modeA_1337/2026/42, backend_matrix), exact_library framework, turing suite, coverage artifacts, and close-out fixes (qudit_qec withdrawal, row-1 demo fix, term-missing output)
+51953	qigpu_acceleration_system.py	ecfba34|2026-11-10|Chronus Systems|Merge evidence backpressure patches (modeA_1337/2026/42, backend_matrix), exact_library framework, turing suite, coverage artifacts, and close-out fixes (qudit_qec withdrawal, row-1 demo fix, term-missing output)
+62691	qigpu_master_tour_de_force.py	ecfba34|2026-11-10|Chronus Systems|Merge evidence backpressure patches (modeA_1337/2026/42, backend_matrix), exact_library framework, turing suite, coverage artifacts, and close-out fixes (qudit_qec withdrawal, row-1 demo fix, term-missing output)
+44752	qigpu_unified__acceleration_system.py	ecfba34|2026-11-10|Chronus Systems|Merge evidence backpressure patches (modeA_1337/2026/42, backend_matrix), exact_library framework, turing suite, coverage artifacts, and close-out fixes (qudit_qec withdrawal, row-1 demo fix, term-missing output)
+2644	qudit_qec.py	ecfba34|2026-11-10|Chronus Systems|Merge evidence backpressure patches (modeA_1337/2026/42, backend_matrix), exact_library framework, turing suite, coverage artifacts, and close-out fixes (qudit_qec withdrawal, row-1 demo fix, term-missing output)
+750	read_cov.py	ecfba34|2026-11-10|Chronus Systems|Merge evidence backpressure patches (modeA_1337/2026/42, backend_matrix), exact_library framework, turing suite, coverage artifacts, and close-out fixes (qudit_qec withdrawal, row-1 demo fix, term-missing output)
+204	test_output.txt	b6f6bc9|2026-11-11|Chronus Systems|systems alignment
+204	test_result.txt	b6f6bc9|2026-11-11|Chronus Systems|systems alignment
+41482	tree_output.txt	c47f936|2026-11-07|Chronus Systems|systems elevation and completion
