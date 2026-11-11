@@ -1,0 +1,16 @@
+test_allowlisted_occurrence_passes_only_at_the_recorded_count (test_forbidden_claims.ClaimPolicyTests.test_allowlisted_occurrence_passes_only_at_the_recorded_count) ... ok
+test_entry_without_recognised_basis_fails_closed (test_forbidden_claims.ClaimPolicyTests.test_entry_without_recognised_basis_fails_closed) ... ok
+test_excluded_prefix_is_not_scanned (test_forbidden_claims.ClaimPolicyTests.test_excluded_prefix_is_not_scanned) ... ok
+test_excluded_prefix_must_be_relative_directory (test_forbidden_claims.ClaimPolicyTests.test_excluded_prefix_must_be_relative_directory) ... ok
+test_stale_entry_fails (test_forbidden_claims.ClaimPolicyTests.test_stale_entry_fails) ... ok
+test_unlisted_file_still_fails (test_forbidden_claims.ClaimPolicyTests.test_unlisted_file_still_fails) ... ok
+test_empty_policy_fails_closed (test_forbidden_claims.ClaimScanTests.test_empty_policy_fails_closed) ... ok
+test_scans_all_tracked_files_case_insensitively (test_forbidden_claims.ClaimScanTests.test_scans_all_tracked_files_case_insensitively) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.215s
+
+OK
+claims unittest exit=0
+Claim token scan passed
+claims scan exit=0

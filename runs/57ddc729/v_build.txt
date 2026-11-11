@@ -1,0 +1,21 @@
+build hyba-chronus exit=0
+adding 'hyba_chronus-37.0.0.dev0.dist-info/top_level.txt'
+adding 'hyba_chronus-37.0.0.dev0.dist-info/RECORD'
+removing build/bdist.linux-x86_64/wheel
+Successfully built hyba_chronus-37.0.0.dev0.tar.gz and hyba_chronus-37.0.0.dev0-py3-none-any.whl
+build hyba-turing exit=0
+adding 'hyba_turing-0.2.0.dev0.dist-info/top_level.txt'
+adding 'hyba_turing-0.2.0.dev0.dist-info/RECORD'
+removing build/bdist.linux-x86_64/wheel
+Successfully built hyba_turing-0.2.0.dev0.tar.gz and hyba_turing-0.2.0.dev0-py3-none-any.whl
+Checking dist/hyba_chronus-37.0.0.dev0-py3-none-any.whl: [32mPASSED[0m
+Checking dist/turing/hyba_turing-0.2.0.dev0-py3-none-any.whl: [32mPASSED[0m
+Checking dist/hyba_chronus-37.0.0.dev0.tar.gz: [32mPASSED[0m
+Checking dist/turing/hyba_turing-0.2.0.dev0.tar.gz: [32mPASSED[0m
+twine exit=0
+dist/hyba_chronus-37.0.0.dev0-py3-none-any.whl files: 199 top-level: ['chronus', 'turing']
+   turing/exact: 24 files; chronus/: 163
+    ['Name: hyba-chronus', 'Version: 37.0.0.dev0', 'Classifier: Private :: Do Not Upload']
+dist/turing/hyba_turing-0.2.0.dev0-py3-none-any.whl files: 35 top-level: ['turing']
+   turing/exact: 24 files; chronus/: 0
+    ['Name: hyba-turing', 'Version: 0.2.0.dev0', 'Classifier: Private :: Do Not Upload']

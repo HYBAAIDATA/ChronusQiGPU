@@ -1,0 +1,13 @@
+ M PRODUCTION_QUALIFIED.json
+ M SOVEREIGN_CAPABILITY_ATTESTATION.json
+ M evidence/chronus/backend_matrix.csv
+ M evidence/chronus/modeA_1337.json
+ M evidence/chronus/modeA_2026.json
+ M evidence/chronus/modeA_42.json
+ M manifests/qualification_manifest_v36.json
+ M src/chronus/hw/zeckendorf.py
+ M src/chronus/math/binet_lucas.py
+ M src/chronus/stratum/bip310.py
+ M src/chronus/stratum/endian_engine.py
+ M src/chronus/stratum/gatekeeper.py
+ M src/chronus/stratum/rate_limiter.py

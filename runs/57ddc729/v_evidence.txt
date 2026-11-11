@@ -1,0 +1,8 @@
+commit: a62fd6b14131a2c45cda24e084e8678e6759fed9
+date_utc: 2026-11-11T07:27:37Z
+runner: Linux 7.0.0-1019-azure x86_64 / Ubuntu 26.04.1 LTS
+python: Python 3.13.18
+command: python -m pytest -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+995 passed, 25 skipped, 60 warnings, 107 subtests passed in 19.62s
+pytest exit=0

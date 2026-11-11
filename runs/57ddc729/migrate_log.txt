@@ -1,0 +1,132 @@
+moved: cov_output.txt -> archive/diagnostics/2026-11-11/cov_output.txt
+moved: test_output.txt -> archive/diagnostics/2026-11-11/test_output.txt
+moved: test_result.txt -> archive/diagnostics/2026-11-11/test_result.txt
+moved: tree_output.txt -> archive/diagnostics/2026-11-11/tree_output.txt
+moved: filelist.txt -> archive/diagnostics/2026-11-11/filelist.txt
+moved: pulvini_output.txt -> archive/diagnostics/2026-11-11/pulvini_output.txt
+moved: edge_output.txt -> archive/diagnostics/2026-11-11/edge_output.txt
+moved: build_ci_failed.log -> archive/diagnostics/2026-11-11/build_ci_failed.log
+moved: .coveragemp -> archive/diagnostics/2026-11-11/.coveragemp
+moved: full_documentation.txt -> archive/diagnostics/2026-11-11/full_documentation.txt
+moved: paradigm_shift.txt -> archive/diagnostics/2026-11-11/paradigm_shift.txt
+moved: ARTIFACT_SUMMARY.md -> archive/diagnostics/2026-11-11/ARTIFACT_SUMMARY.md
+moved: read_cov.py -> archive/diagnostics/2026-11-11/read_cov.py
+moved: src/turing/read_cov.py -> archive/diagnostics/2026-11-11/src_turing_read_cov.py
+moved: src/turing/_rest.txt -> archive/diagnostics/2026-11-11/src_turing__rest.txt
+wrote: archive/diagnostics/2026-11-11/README.md
+moved: exact_primitive_library-v3.py -> archive/turing-sources/exact_primitive_library-v3.py
+moved: qudit_qec.py -> archive/turing-sources/qudit_qec.py
+wrote: archive/turing-sources/README.md
+moved: production_hr_api.py -> archive/root-entrypoints/production_hr_api.py
+moved: production_hr_api-v2.py -> archive/root-entrypoints/production_hr_api-v2.py
+wrote: archive/root-entrypoints/README.md
+edited: tests/test_enhanced_tensor_representation_v2.py
+moved: src/turing -> packages/turing/src/turing/exact
+turing imports -> turing.exact (15): packages/turing/src/turing/exact/__init__.py
+turing imports -> turing.exact (3): packages/turing/src/turing/exact/core/__init__.py
+turing imports -> turing.exact (2): packages/turing/src/turing/exact/core/state.py
+turing imports -> turing.exact (6): packages/turing/src/turing/exact/core/unitary.py
+turing imports -> turing.exact (1): packages/turing/src/turing/exact/entanglement/__init__.py
+turing imports -> turing.exact (6): packages/turing/src/turing/exact/entanglement/schmidt.py
+turing imports -> turing.exact (1): packages/turing/src/turing/exact/gates/__init__.py
+turing imports -> turing.exact (4): packages/turing/src/turing/exact/gates/elementary.py
+turing imports -> turing.exact (1): packages/turing/src/turing/exact/measurement/__init__.py
+turing imports -> turing.exact (5): packages/turing/src/turing/exact/measurement/born.py
+turing imports -> turing.exact (3): packages/turing/src/turing/exact/physics/__init__.py
+turing imports -> turing.exact (5): packages/turing/src/turing/exact/physics/cayley.py
+turing imports -> turing.exact (4): packages/turing/src/turing/exact/physics/swarm.py
+turing imports -> turing.exact (5): packages/turing/src/turing/exact/physics/tunneling.py
+turing imports -> turing.exact (4): packages/turing/src/turing/exact/ring/__init__.py
+turing imports -> turing.exact (3): packages/turing/src/turing/exact/ring/matrix.py
+turing imports -> turing.exact (3): packages/turing/src/turing/exact/ring/rational.py
+turing imports -> turing.exact (3): packages/turing/src/turing/exact/ring/utils.py
+turing imports -> turing.exact (5): packages/turing/src/turing/exact/ring/zeta.py
+turing imports -> turing.exact (1): packages/turing/src/turing/exact/stabilizer/__init__.py
+turing imports -> turing.exact (2): packages/turing/src/turing/exact/stabilizer/tableau.py
+turing imports -> turing.exact (1): tests/test_turing.py
+turing.exact internal imports rewritten: 82; consumer imports rewritten: 1
+edited: packages/turing/src/turing/__init__.py
+wrote: packages/turing/pyproject.toml
+appended: packages/turing/README.md
+appended: docs/system-update/quantum-package-taxonomy.md
+wrote: src/chronus/hermes/__init__.py
+wrote: src/chronus/ovid/__init__.py
+wrote: src/chronus/theseus/__init__.py
+wrote: src/chronus/geodesic/__init__.py
+wrote: src/chronus/igpu/__init__.py
+wrote: src/chronus/igpu/tensor.py
+wrote: pyproject.toml
+edited: Dockerfile
+edited: Dockerfile
+claim allowlist: removed exact_primitive_library-v3.py (now under archive/, which the gate excludes)
+claim allowlist: src/turing/physics/cayley.py -> packages/turing/src/turing/exact/physics/cayley.py
+claim allowlist: src/turing/stabilizer/tableau.py -> packages/turing/src/turing/exact/stabilizer/tableau.py
+wrote: tests/test_repository_layout.py
+wrote: scripts/ci/check_no_temporary_workflows.py
+M  Dockerfile
+R  .coveragemp -> archive/diagnostics/2026-11-11/.coveragemp
+R  ARTIFACT_SUMMARY.md -> archive/diagnostics/2026-11-11/ARTIFACT_SUMMARY.md
+A  archive/diagnostics/2026-11-11/README.md
+R  build_ci_failed.log -> archive/diagnostics/2026-11-11/build_ci_failed.log
+R  cov_output.txt -> archive/diagnostics/2026-11-11/cov_output.txt
+R  edge_output.txt -> archive/diagnostics/2026-11-11/edge_output.txt
+R  filelist.txt -> archive/diagnostics/2026-11-11/filelist.txt
+R  full_documentation.txt -> archive/diagnostics/2026-11-11/full_documentation.txt
+R  paradigm_shift.txt -> archive/diagnostics/2026-11-11/paradigm_shift.txt
+R  pulvini_output.txt -> archive/diagnostics/2026-11-11/pulvini_output.txt
+R  read_cov.py -> archive/diagnostics/2026-11-11/read_cov.py
+R  src/turing/_rest.txt -> archive/diagnostics/2026-11-11/src_turing__rest.txt
+R  src/turing/read_cov.py -> archive/diagnostics/2026-11-11/src_turing_read_cov.py
+R  test_output.txt -> archive/diagnostics/2026-11-11/test_output.txt
+R  test_result.txt -> archive/diagnostics/2026-11-11/test_result.txt
+R  tree_output.txt -> archive/diagnostics/2026-11-11/tree_output.txt
+A  archive/root-entrypoints/README.md
+R  production_hr_api-v2.py -> archive/root-entrypoints/production_hr_api-v2.py
+R  production_hr_api.py -> archive/root-entrypoints/production_hr_api.py
+A  archive/turing-sources/README.md
+R  exact_primitive_library-v3.py -> archive/turing-sources/exact_primitive_library-v3.py
+R  qudit_qec.py -> archive/turing-sources/qudit_qec.py
+M  docs/system-update/quantum-package-taxonomy.md
+M  packages/turing/README.md
+M  packages/turing/pyproject.toml
+M  packages/turing/src/turing/__init__.py
+R  src/turing/__init__.py -> packages/turing/src/turing/exact/__init__.py
+A  packages/turing/src/turing/exact/core/__init__.py
+R  src/turing/core/obstruction.py -> packages/turing/src/turing/exact/core/obstruction.py
+R  src/turing/core/state.py -> packages/turing/src/turing/exact/core/state.py
+R  src/turing/core/unitary.py -> packages/turing/src/turing/exact/core/unitary.py
+R  src/turing/entanglement/__init__.py -> packages/turing/src/turing/exact/entanglement/__init__.py
+R  src/turing/entanglement/schmidt.py -> packages/turing/src/turing/exact/entanglement/schmidt.py
+R  src/turing/errors.py -> packages/turing/src/turing/exact/errors.py
+R  src/turing/gates/__init__.py -> packages/turing/src/turing/exact/gates/__init__.py
+R  src/turing/gates/elementary.py -> packages/turing/src/turing/exact/gates/elementary.py
+R  src/turing/measurement/__init__.py -> packages/turing/src/turing/exact/measurement/__init__.py
+R  src/turing/measurement/born.py -> packages/turing/src/turing/exact/measurement/born.py
+R  src/turing/physics/__init__.py -> packages/turing/src/turing/exact/physics/__init__.py
+R  src/turing/physics/cayley.py -> packages/turing/src/turing/exact/physics/cayley.py
+R  src/turing/physics/swarm.py -> packages/turing/src/turing/exact/physics/swarm.py
+R  src/turing/physics/tunneling.py -> packages/turing/src/turing/exact/physics/tunneling.py
+R  src/turing/py.typed -> packages/turing/src/turing/exact/py.typed
+A  packages/turing/src/turing/exact/ring/__init__.py
+R  src/turing/ring/matrix.py -> packages/turing/src/turing/exact/ring/matrix.py
+R  src/turing/ring/rational.py -> packages/turing/src/turing/exact/ring/rational.py
+R  src/turing/ring/utils.py -> packages/turing/src/turing/exact/ring/utils.py
+R  src/turing/ring/zeta.py -> packages/turing/src/turing/exact/ring/zeta.py
+R  src/turing/stabilizer/__init__.py -> packages/turing/src/turing/exact/stabilizer/__init__.py
+R  src/turing/stabilizer/tableau.py -> packages/turing/src/turing/exact/stabilizer/tableau.py
+M  pyproject.toml
+A  scripts/ci/check_no_temporary_workflows.py
+M  scripts/ci/claim_token_policy.json
+A  src/chronus/geodesic/__init__.py
+A  src/chronus/hermes/__init__.py
+A  src/chronus/igpu/__init__.py
+A  src/chronus/igpu/tensor.py
+A  src/chronus/ovid/__init__.py
+A  src/chronus/theseus/__init__.py
+D  src/turing/core/__init__.py
+D  src/turing/ring/__init__.py
+M  tests/test_enhanced_tensor_representation_v2.py
+A  tests/test_repository_layout.py
+M  tests/test_turing.py
+
+migrate exit=0

@@ -1,0 +1,47 @@
+All checks passed!
+ruff (CI scope) exit=0
+F401 [*] `math` imported but unused
+ --> packages/turing/src/turing/operator.py:5:8
+  |
+3 | from __future__ import annotations
+4 |
+5 | import math
+  |        ^^^^
+6 | from dataclasses import dataclass
+7 | from typing import Iterable
+  |
+help: Remove unused import: `math`
+  |
+4 |
+  - import math
+5 | from dataclasses import dataclass
+  |
+
+F401 [*] `chronus.tensor.enhanced_representation.EnhancedTensorRepresentation` imported but unused
+  --> src/chronus/igpu/tensor.py:11:52
+   |
+10 | from chronus import tensor as _tensor
+11 | from chronus.tensor.enhanced_representation import EnhancedTensorRepresentation
+   |                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+12 |
+13 | _PUBLIC = list(getattr(_tensor, "__all__", None) or [n for n in vars(_tensor) if not n.startswith("_")])
+   |
+help: Remove unused import: `chronus.tensor.enhanced_representation.EnhancedTensorRepresentation`
+   |
+10 | from chronus import tensor as _tensor
+   - from chronus.tensor.enhanced_representation import EnhancedTensorRepresentation
+11 |
+   |
+
+Found 2 errors.
+[*] 2 fixable with `--fix`.
+ruff (new paths) exit=1
+*** Error compiling 'src/chronus/core/trust_ledger.py'...
+  File "src/chronus/core/trust_ledger.py", line 1
+    \"\"\"Trust Ledger System - McKinsey/Gartner Charter Compliance.
+     ^
+SyntaxError: unexpected character after line continuation character
+
+compileall exit=1
+No temporary workflows present.
+temporary-workflow gate exit=0

@@ -1,0 +1,69 @@
+a62fd6b14131a2c45cda24e084e8678e6759fed9
+chore: one TURING package and internal distribution metadata
+
+ Dockerfile                                                                            |   3 ++-
+ .coveragemp => archive/diagnostics/2026-11-11/.coveragemp                             | Bin
+ ARTIFACT_SUMMARY.md => archive/diagnostics/2026-11-11/ARTIFACT_SUMMARY.md             |   0
+ archive/diagnostics/2026-11-11/README.md                                              |  21 +++++++++++++++++++++
+ build_ci_failed.log => archive/diagnostics/2026-11-11/build_ci_failed.log             |   0
+ cov_output.txt => archive/diagnostics/2026-11-11/cov_output.txt                       | Bin
+ edge_output.txt => archive/diagnostics/2026-11-11/edge_output.txt                     | Bin
+ filelist.txt => archive/diagnostics/2026-11-11/filelist.txt                           | Bin
+ full_documentation.txt => archive/diagnostics/2026-11-11/full_documentation.txt       | Bin
+ paradigm_shift.txt => archive/diagnostics/2026-11-11/paradigm_shift.txt               | Bin
+ pulvini_output.txt => archive/diagnostics/2026-11-11/pulvini_output.txt               | Bin
+ read_cov.py => archive/diagnostics/2026-11-11/read_cov.py                             |   0
+ src/turing/_rest.txt => archive/diagnostics/2026-11-11/src_turing__rest.txt           |   0
+ src/turing/read_cov.py => archive/diagnostics/2026-11-11/src_turing_read_cov.py       |   0
+ test_output.txt => archive/diagnostics/2026-11-11/test_output.txt                     | Bin
+ test_result.txt => archive/diagnostics/2026-11-11/test_result.txt                     | Bin
+ tree_output.txt => archive/diagnostics/2026-11-11/tree_output.txt                     | Bin
+ archive/root-entrypoints/README.md                                                    |   8 ++++++++
+ production_hr_api-v2.py => archive/root-entrypoints/production_hr_api-v2.py           |   0
+ production_hr_api.py => archive/root-entrypoints/production_hr_api.py                 |   0
+ archive/turing-sources/README.md                                                      |  12 ++++++++++++
+ exact_primitive_library-v3.py => archive/turing-sources/exact_primitive_library-v3.py |   0
+ qudit_qec.py => archive/turing-sources/qudit_qec.py                                   |   0
+ docs/system-update/quantum-package-taxonomy.md                                        |   9 +++++++++
+ packages/turing/README.md                                                             |  13 +++++++++++++
+ packages/turing/pyproject.toml                                                        |   9 +++++++--
+ packages/turing/src/turing/__init__.py                                                |   2 +-
+ {src/turing => packages/turing/src/turing/exact}/__init__.py                          |  30 +++++++++++++++---------------
+ packages/turing/src/turing/exact/core/__init__.py                                     |  15 +++++++++++++++
+ {src/turing => packages/turing/src/turing/exact}/core/obstruction.py                  |   0
+ {src/turing => packages/turing/src/turing/exact}/core/state.py                        |   4 ++--
+ {src/turing => packages/turing/src/turing/exact}/core/unitary.py                      |  12 ++++++------
+ {src/turing => packages/turing/src/turing/exact}/entanglement/__init__.py             |   2 +-
+ {src/turing => packages/turing/src/turing/exact}/entanglement/schmidt.py              |  12 ++++++------
+ {src/turing => packages/turing/src/turing/exact}/errors.py                            |   0
+ {src/turing => packages/turing/src/turing/exact}/gates/__init__.py                    |   2 +-
+ {src/turing => packages/turing/src/turing/exact}/gates/elementary.py                  |   8 ++++----
+ {src/turing => packages/turing/src/turing/exact}/measurement/__init__.py              |   2 +-
+ {src/turing => packages/turing/src/turing/exact}/measurement/born.py                  |  10 +++++-----
+ {src/turing => packages/turing/src/turing/exact}/physics/__init__.py                  |   6 +++---
+ {src/turing => packages/turing/src/turing/exact}/physics/cayley.py                    |  10 +++++-----
+ {src/turing => packages/turing/src/turing/exact}/physics/swarm.py                     |   8 ++++----
+ {src/turing => packages/turing/src/turing/exact}/physics/tunneling.py                 |  10 +++++-----
+ {src/turing => packages/turing/src/turing/exact}/py.typed                             |   0
+ packages/turing/src/turing/exact/ring/__init__.py                                     |  18 ++++++++++++++++++
+ {src/turing => packages/turing/src/turing/exact}/ring/matrix.py                       |   6 +++---
+ {src/turing => packages/turing/src/turing/exact}/ring/rational.py                     |   6 +++---
+ {src/turing => packages/turing/src/turing/exact}/ring/utils.py                        |   6 +++---
+ {src/turing => packages/turing/src/turing/exact}/ring/zeta.py                         |  10 +++++-----
+ {src/turing => packages/turing/src/turing/exact}/stabilizer/__init__.py               |   2 +-
+ {src/turing => packages/turing/src/turing/exact}/stabilizer/tableau.py                |   4 ++--
+ pyproject.toml                                                                        |  15 ++++++++-------
+ scripts/ci/check_no_temporary_workflows.py                                            |  31 +++++++++++++++++++++++++++++++
+ scripts/ci/claim_token_policy.json                                                    |  11 ++---------
+ src/chronus/geodesic/__init__.py                                                      |  20 ++++++++++++++++++++
+ src/chronus/hermes/__init__.py                                                        |  23 +++++++++++++++++++++++
+ src/chronus/igpu/__init__.py                                                          |  28 ++++++++++++++++++++++++++++
+ src/chronus/igpu/tensor.py                                                            |  15 +++++++++++++++
+ src/chronus/ovid/__init__.py                                                          |  22 ++++++++++++++++++++++
+ src/chronus/theseus/__init__.py                                                       |  27 +++++++++++++++++++++++++++
+ src/turing/core/__init__.py                                                           |  15 ---------------
+ src/turing/ring/__init__.py                                                           |  18 ------------------
+ tests/test_enhanced_tensor_representation_v2.py                                       |   5 +----
+ tests/test_repository_layout.py                                                       |  86 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/test_turing.py                                                                  |   2 +-
+ 65 files changed, 445 insertions(+), 133 deletions(-)

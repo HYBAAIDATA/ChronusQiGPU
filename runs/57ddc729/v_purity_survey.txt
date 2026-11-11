@@ -1,0 +1,35 @@
+src/chronus/acceleration/fourier.py:3:import numpy as np
+src/chronus/acceleration/fourier.py:12:    most MAX_LENGTH. Both input and output are explicit complex128 arrays.
+src/chronus/acceleration/fourier.py:17:        vector = np.asarray(values, dtype=np.complex128)
+src/chronus/acceleration/state.py:1:"""Bounded complex state normalization and unitary application.
+src/chronus/acceleration/state.py:7:import numpy as np
+src/chronus/acceleration/state.py:10:TOLERANCE = 1e-10
+src/chronus/acceleration/state.py:15:        out = np.asarray(value, dtype=np.complex128)
+src/chronus/acceleration/state.py:34:    scale = float(np.max(np.abs(state)))
+src/chronus/acceleration/state.py:45:    TOLERANCE. Validation is dense and accounts for the explicit matrix.
+src/chronus/acceleration/state.py:49:    if not np.isclose(np.linalg.norm(state), 1, rtol=0, atol=TOLERANCE):
+src/chronus/acceleration/state.py:55:    if not np.allclose(gram, np.eye(n), rtol=0, atol=TOLERANCE):
+packages/turing/src/turing/exact purity findings: 0
+
+packages/turing/src/turing purity findings: 6
+packages/turing/src/turing/measurement.py:28: floating-point math module usage: if not math.isfinite(self.tolerance) or self.tolerance <= 0:
+packages/turing/src/turing/measurement.py:65: floating-point math module usage: if not math.isclose(sum(probabilities), 1.0, rel_tol=0.0,
+packages/turing/src/turing/measurement.py:79: floating-point math module usage: scale = math.sqrt(probability)
+packages/turing/src/turing/state.py:14: floating-point math module usage: if not math.isfinite(result.real) or not math.isfinite(result.imag):
+packages/turing/src/turing/state.py:34: floating-point math module usage: if not math.isclose(norm_squared, 1.0, rel_tol=0.0, abs_tol=DEFAULT_TOLERANCE):
+packages/turing/src/turing/state.py:53: floating-point math module usage: norm = math.sqrt(sum(abs(value) ** 2 for value in values))
+src/chronus/acceleration purity findings: 1
+src/chronus/acceleration/state.py:34: float() cast in exact path: scale = float(np.max(np.abs(state)))
+src/chronus/tensor purity findings: 35
+src/chronus/tensor/causal_intelligence.py:57: floating-point math module usage: delta_phi = math.pi * latent_confounding_score
+src/chronus/tensor/causal_intelligence.py:60: floating-point math module usage: interference_cos = math.cos(delta_phi)
+src/chronus/tensor/charter.py:55: theatre token 'production-ready quantum': "production-ready quantum",
+src/chronus/tensor/dmrg.py:134: floating-point math module usage: energy = -float(sum(2.0 * math.sin((2 * k - 1) * math.pi / (2 * n_sites + 1) / 2.0) for k in range(1, n_sites + 1)))
+src/chronus/tensor/dmrg.py:134: float() cast in exact path: energy = -float(sum(2.0 * math.sin((2 * k - 1) * math.pi / (2 * n_sites + 1) / 2.0) for k in range(1, n_sites + 1)))
+src/chronus/tensor/dmrg.py:161: floating-point math module usage: e0 = -float(sum(2.0 * math.sin((2 * k - 1) * math.pi / (4 * n_sites + 2)) for k in range(1, n_sites + 1)))
+src/chronus/tensor/dmrg.py:161: float() cast in exact path: e0 = -float(sum(2.0 * math.sin((2 * k - 1) * math.pi / (4 * n_sites + 2)) for k in range(1, n_sites + 1)))
+src/chronus/tensor/enhanced_representation.py:175: floating-point math module usage: return math.sqrt(sum(t.discarded_weight for t in self.truncations))
+src/chronus/tensor/enhanced_representation.py:217: floating-point math module usage: log_n = max(1, math.ceil(math.log2(max(2, n))))
+src/chronus/tensor/enhanced_representation.py:389: numpy float dtype: index.doc_embeddings[doc_id] = np.asarray(features, dtype=np.float64)
+src/chronus/tensor/enhanced_representation.py:397: numpy float dtype: q_vec = np.asarray(query.get("features", np.zeros(index.cfg.target_dim)), dtype=np.float64)
+src/chronus/tensor/enhanced_representation.py:402: numpy float dtype: scores = np.zeros(len(index.documents), dtype=np.float64)
