@@ -1,74 +1,61 @@
-"""HYBA Mine runner for the unattended mining host.
+"""HYBA Mine runner: the two-block campaign at the mining host's full capacity.
 
-Runs the canonical Stratum V1 miner, chronus.execution.mining_entrypoint
-(ChronusRealMiningEngine), unchanged, with two operational guards:
-
-* when the pool ends the session, the runner stops the engine, so the process
-  exits and the host's container restart policy reconnects with a fresh
-  handshake, instead of hashing jobs that can no longer be submitted;
-* every 60 seconds it logs one [STATS] line with the engine's own counters.
-  Hashing counts are local measurements; a share counts only when the pool
-  accepts it ([POOL SUCCESS] lines from the engine).
-
-Configuration is the engine's own (MINING_ACTIVE_POOL and MINING_<POOL>_*).
-The worker name is not logged here.
+Before any pool connection, every lane set on the host (the OpenCL iGPU lanes
+and one process lane per available CPU) is qualified against the host reference
+and calibrated, and the fastest qualified set takes the whole host. Then the
+campaign runs (hyba_mine.campaign): one block on the first pool, a cool-down,
+a non-consecutive block on the second pool, then offline. Capacity is reported
+once a minute ([CAPACITY]) with discovered, available and allocated lanes, the
+calibrated rate and the measured rate kept apart. A share counts only when the
+pool accepts it ([POOL SUCCESS] lines).
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import sys
-import time
 
-from chronus.execution import mining_entrypoint as engine_module
-
-logger = logging.getLogger("HybaMineRunner")
-STATS_INTERVAL_SECONDS = 60
-
-
-class HostMiner(engine_module.ChronusRealMiningEngine):
-    """The canonical engine with session-end and statistics guards."""
-
-    async def run(self, max_seconds=None):
-        stats_task = asyncio.create_task(self._report_stats())
-        try:
-            await super().run(max_seconds=max_seconds)
-        finally:
-            stats_task.cancel()
-
-    async def _listen_pool_events(self):
-        try:
-            await super()._listen_pool_events()
-        finally:
-            if self.running:
-                logger.warning("Pool session ended; stopping so the host restarts the miner with a fresh handshake.")
-                self.running = False
-
-    async def _report_stats(self):
-        started = time.monotonic()
-        while True:
-            await asyncio.sleep(STATS_INTERVAL_SECONDS)
-            logger.info(
-                "[STATS] uptime_s=%d sha256d_evaluations=%d shares_found=%d submitted=%d accepted=%d rejected=%d",
-                int(time.monotonic() - started),
-                self.hashes_computed,
-                self.shares_found,
-                self.shares_submitted,
-                self.shares_accepted,
-                self.shares_rejected,
-            )
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger("HybaMine.runner")
 
 
 async def main() -> int:
-    pool, host, port, user, password = engine_module.load_env_config()
-    logger.info("HYBA Mine: pool %s at %s:%d", pool, host, port)
-    miner = HostMiner(host, port, user, password)
-    max_seconds_text = os.getenv("MINING_MAX_SECONDS", "").strip()
-    await miner.run(max_seconds=int(max_seconds_text) if max_seconds_text else None)
-    logger.info("Session closed: sha256d_evaluations=%d accepted=%d rejected=%d",
-                miner.hashes_computed, miner.shares_accepted, miner.shares_rejected)
+    from chronus.fleet.capacity import CapacityLedger, discover_host
+    from hyba_mine.campaign import parse_pools, run_campaign
+    from hyba_mine.lanes import open_lanes
+
+    pools = parse_pools(os.getenv("HYBA_MINE_POOLS", "viabtc,braiins"))
+    max_run_seconds = int(os.getenv("HYBA_MINE_MAX_RUN_SECONDS", "14400"))
+    campaign_id = os.getenv("HYBA_MINE_CAMPAIGN_ID", "local")
+    state_path = os.getenv("HYBA_MINE_STATE", "/var/lib/hyba-mine/campaign.json")
+
+    host = discover_host()
+    logger.info("[CAPACITY] discovered %s", json.dumps(host.as_dict(), sort_keys=True))
+    process_lanes = int(os.getenv("HYBA_MINE_PROCESS_LANES", "0")) or None
+    lanes, reports = await asyncio.to_thread(open_lanes, os.getenv("HYBA_MINE_LANES", "auto"), process_lanes)
+    for report in reports:
+        logger.info("[LANES] qualification %s", json.dumps(report, sort_keys=True))
+    selected = next(report for report in reports if report.get("selected"))
+    available = host.available_cpus if lanes.name == "process-lanes" else lanes.lanes
+    ledger = CapacityLedger(
+        "SHA256D_NONCE_SEARCH", host, lanes.name, available_lanes=available,
+        allocated_lanes=lanes.lanes, device=lanes.describe().get("device"),
+    )
+    ledger.record_calibration(selected["calibration"]["work"], selected["calibration"]["elapsed_ns"])
+    logger.info("[CAPACITY] %s", json.dumps(ledger.report(), sort_keys=True))
+    logger.info("[CAMPAIGN] %s: pools %s, at most %d s", campaign_id, ",".join(pools), max_run_seconds)
+
+    from chronus.execution import mining_entrypoint as engine_module
+
+    try:
+        await run_campaign(engine_module, pools, lanes, ledger, max_run_seconds=max_run_seconds,
+                           state_path=state_path, campaign_id=campaign_id)
+    finally:
+        lanes.close()
+        logger.info("[CAPACITY] final %s", json.dumps(ledger.report(), sort_keys=True))
     return 0
 
 

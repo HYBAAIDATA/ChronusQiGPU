@@ -7,6 +7,11 @@ coinbase and merkle root), chronus.stratum.gatekeeper (share and network
 targets, the pre-submission verification) and chronus.stratum.bip310 (version
 rolling). It prints one JSON report and exits 0 only if every check passes.
 It makes no network connection.
+
+It then qualifies the mining lanes (hyba_mine.lanes): one process lane per CPU
+always, and the OpenCL iGPU lanes when the host has an OpenCL runtime. A lane
+set that is present but disagrees with the host reference fails the BIST. It
+also checks the block-height reader the two-block campaign relies on.
 """
 
 import json
@@ -129,8 +134,48 @@ def run() -> dict:
     return {"bist": "PASS" if passed else "FAIL", "checks": checks}
 
 
+def coinbase(push_hex: str) -> str:
+    return "01000000" + "01" + "00" * 32 + "ffffffff" + "20" + push_hex + "00000000"
+
+
+def run_lanes() -> dict:
+    from chronus.fleet.capacity import discover_host
+    from hyba_mine.campaign import coinbase_height
+    from hyba_mine.lanes import LaneUnavailable, OpenCLLanes, ProcessLanes, qualify
+
+    checks = []
+    checks.append({
+        "check": "bip34_height_reader",
+        "passed": coinbase_height(coinbase("036f460d")) == 869999
+        and coinbase_height(coinbase("60")) == 16
+        and coinbase_height("01000000" + "01" + "11" * 32 + "ffffffff" + "0403a00d00") is None,
+    })
+    lanes_reports = []
+    processes = ProcessLanes(min(2, discover_host().available_cpus))
+    try:
+        report = qualify(processes)
+    finally:
+        processes.close()
+    lanes_reports.append(report)
+    checks.append({"check": "process_lanes_qualify", "passed": report["passed"]})
+    try:
+        opencl = OpenCLLanes()
+    except LaneUnavailable as exc:
+        lanes_reports.append({"backend": OpenCLLanes.name, "available": False, "reason": str(exc)})
+    else:
+        report = qualify(opencl)
+        report["device"] = opencl.device
+        lanes_reports.append(report)
+        checks.append({"check": "opencl_igpu_lanes_qualify", "passed": report["passed"]})
+    return {"checks": checks, "lanes": lanes_reports}
+
+
 def main() -> int:
     report = run()
+    lanes = run_lanes()
+    report["checks"].extend(lanes["checks"])
+    report["lanes"] = lanes["lanes"]
+    report["bist"] = "PASS" if all(item["passed"] for item in report["checks"]) else "FAIL"
     print(json.dumps(report, indent=1))
     return 0 if report["bist"] == "PASS" else 1
 
