@@ -1,12 +1,12 @@
 {
   "coverage_file": "coverage.json",
   "coverage_summary": {
-    "coverage_percentage": 100.0,
-    "executed_lines": 760,
-    "file": "exact_primitive_library.py",
-    "missing_lines": [],
+    "coverage_percentage": 93.0,
+    "executed_lines": 918,
+    "file": "src/turing/",
+    "missing_lines": 69,
     "status": "PASS",
-    "total_executable_lines": 760
+    "total_executable_lines": 987
   },
   "description": "Exact Primitive Library over Cyclotomic Integer Rings Z[zeta_p] Elevated to P(H) and Q(zeta_p)",
   "elevated_primitives": [
@@ -83,7 +83,7 @@
       "verified": true
     }
   },
-  "package": "src/qigpu/exact/",
+  "package": "src/turing/",
   "primitives": [
     "state",
     "superposition",
@@ -106,7 +106,7 @@
   "test_results": {
     "errors": 0,
     "failures": 0,
-    "passed": 64,
+    "passed": 67,
     "seven_classes": [
       "TestInvariant",
       "TestProperty",
@@ -114,10 +114,11 @@
       "TestEdge",
       "TestUnit",
       "TestIntegration",
-      "TestEndToEnd"
+      "TestEndToEnd",
+      "TestTuringElevations"
     ],
-    "total_tests": 64,
+    "total_tests": 67,
     "was_successful": true
   },
-  "version": "1.1.0"
+  "version": "1.2.0"
 }

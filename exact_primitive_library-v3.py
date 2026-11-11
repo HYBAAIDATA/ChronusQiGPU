@@ -9,13 +9,14 @@ and Symplectic Weyl-Heisenberg Tableau over F_p.
 """
 
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import List, Tuple, Optional, Union, Callable
 
+from dataclasses import dataclass
+from typing import List, Tuple, Union
 
 # =====================================================================
 # MODULE: ring/utils.py — NUMBER-THEORETIC PRIMITIVES & ALGEBRA
 # =====================================================================
+
 
 def is_prime(n: int) -> bool:
     if n < 2:
@@ -51,7 +52,10 @@ def cyclotomic_polynomial_prime(p: int) -> List[int]:
     return [1] * p
 
 
-def convolution(a: Union[Tuple[int, ...], List[int]], b: Union[Tuple[int, ...], List[int]]) -> List[int]:
+def convolution(
+    a: Union[Tuple[int, ...], List[int]],
+    b: Union[Tuple[int, ...], List[int]],
+) -> List[int]:
     if not a or not b:
         return []
     res = [0] * (len(a) + len(b) - 1)
@@ -61,7 +65,7 @@ def convolution(a: Union[Tuple[int, ...], List[int]], b: Union[Tuple[int, ...], 
     return res
 
 
-def bareiss_det(entries: List[List['ZetaP']]) -> 'ZetaP':
+def bareiss_det(entries: List[List["ZetaP"]]) -> "ZetaP":
     """
     Fraction-free Gaussian elimination over an integral domain.
     Computes det(A) exactly using only ring additions, multiplications,
@@ -104,17 +108,21 @@ def bareiss_det(entries: List[List['ZetaP']]) -> 'ZetaP':
 # MODULE: ring/zeta_p.py — THE PARAMETERIZED RING Z[zeta_p]
 # =====================================================================
 
+
 class ZetaP:
     """
     Exact element of Z[zeta_p] represented in the integral canonical basis:
     1, zeta_p, zeta_p^2, ..., zeta_p^(p-2).
     Minimal polynomial: Phi_p(x) = 1 + x + ... + x^(p-1) = 0.
     """
-    __slots__ = ('p', 'degree', 'coeffs')
+
+    __slots__ = ("p", "degree", "coeffs")
 
     def __init__(self, p: int, coeffs: Union[List[int], Tuple[int, ...]]):
         assert is_prime(p), f"p={p} must be prime"
-        assert len(coeffs) == p - 1, f"Expected {p - 1} coefficients for p={p}, got {len(coeffs)}"
+        assert (
+            len(coeffs) == p - 1
+        ), f"Expected {p - 1} coefficients for p={p}, got {len(coeffs)}"
         self.p = p
         self.degree = p - 1
         self.coeffs = tuple(int(c) for c in coeffs)
@@ -134,21 +142,21 @@ class ZetaP:
         return work
 
     @classmethod
-    def zero(cls, p: int) -> 'ZetaP':
+    def zero(cls, p: int) -> "ZetaP":
         return cls(p, (0,) * (p - 1))
 
     @classmethod
-    def one(cls, p: int) -> 'ZetaP':
+    def one(cls, p: int) -> "ZetaP":
         return cls(p, (1,) + (0,) * (p - 2))
 
     @classmethod
-    def zeta(cls, p: int) -> 'ZetaP':
+    def zeta(cls, p: int) -> "ZetaP":
         c = [0] * (p - 1)
         c[1] = 1
         return cls(p, c)
 
     @classmethod
-    def from_int(cls, n: int, p: int) -> 'ZetaP':
+    def from_int(cls, n: int, p: int) -> "ZetaP":
         return cls(p, (n,) + (0,) * (p - 2))
 
     def __eq__(self, other: object) -> bool:
@@ -156,18 +164,20 @@ class ZetaP:
             return False
         return self.p == other.p and self.coeffs == other.coeffs
 
-    def __add__(self, other: 'ZetaP') -> 'ZetaP':
+    def __add__(self, other: "ZetaP") -> "ZetaP":
         assert self.p == other.p, "Ring prime mismatch"
         return ZetaP(self.p, tuple(a + b for a, b in zip(self.coeffs, other.coeffs)))
 
-    def __sub__(self, other: 'ZetaP') -> 'ZetaP':
+    def __sub__(self, other: "ZetaP") -> "ZetaP":
         assert self.p == other.p, "Ring prime mismatch"
         return ZetaP(self.p, tuple(a - b for a, b in zip(self.coeffs, other.coeffs)))
 
-    def __neg__(self) -> 'ZetaP':
+    def __neg__(self) -> "ZetaP":
         return ZetaP(self.p, tuple(-c for c in self.coeffs))
 
-    def __mul__(self, other: Union['ZetaP', 'RationalZetaP', int]) -> Union['ZetaP', 'RationalZetaP']:
+    def __mul__(
+        self, other: Union["ZetaP", "RationalZetaP", int]
+    ) -> Union["ZetaP", "RationalZetaP"]:
         if isinstance(other, int):
             return ZetaP(self.p, tuple(c * other for c in self.coeffs))
         if isinstance(other, RationalZetaP):
@@ -176,10 +186,10 @@ class ZetaP:
         conv = convolution(self.coeffs, other.coeffs)
         return ZetaP(self.p, ZetaP.reduce(conv, self.p))
 
-    def __rmul__(self, other: int) -> 'ZetaP':
+    def __rmul__(self, other: int) -> "ZetaP":
         return self * other
 
-    def pow(self, n: int) -> 'ZetaP':
+    def pow(self, n: int) -> "ZetaP":
         assert n >= 0, "Non-negative power required"
         res = ZetaP.one(self.p)
         base = self
@@ -190,11 +200,11 @@ class ZetaP:
             n //= 2
         return res
 
-    def __pow__(self, n: int) -> 'ZetaP':
+    def __pow__(self, n: int) -> "ZetaP":
         return self.pow(n)
 
     @classmethod
-    def zeta_power(cls, k: int, p: int) -> 'ZetaP':
+    def zeta_power(cls, k: int, p: int) -> "ZetaP":
         k = k % p
         if k == 0:
             return cls.one(p)
@@ -204,7 +214,7 @@ class ZetaP:
             return cls(p, c)
         return cls(p, [-1] * (p - 1))
 
-    def galois_conjugate(self, k: int) -> 'ZetaP':
+    def galois_conjugate(self, k: int) -> "ZetaP":
         assert gcd(k, self.p) == 1, "k must be coprime to p"
         res = ZetaP.zero(self.p)
         for i, coeff in enumerate(self.coeffs):
@@ -212,24 +222,28 @@ class ZetaP:
                 res = res + (ZetaP.zeta_power(i * k, self.p) * coeff)
         return res
 
-    def conjugate(self) -> 'ZetaP':
+    def conjugate(self) -> "ZetaP":
         return self.galois_conjugate(self.p - 1)
 
     def norm(self) -> int:
         prod = ZetaP.one(self.p)
         for k in range(1, self.p):
             prod = prod * self.galois_conjugate(k)
-        assert all(c == 0 for c in prod.coeffs[1:]), "the product of Galois conjugates is not in Z; ring arithmetic error or a non-integer norm."
+        assert all(
+            c == 0 for c in prod.coeffs[1:]
+        ), "the product of Galois conjugates is not in Z; ring arithmetic error or a non-integer norm."
         return prod.coeffs[0]
 
     def is_unit(self) -> bool:
         return self.norm() in (1, -1)
 
-    def inverse(self) -> 'ZetaP':
-        assert self.is_unit(), f"{self} is not a unit in Z[zeta_{self.p}]; inverse lives in Q(zeta_{self.p})"
+    def inverse(self) -> "ZetaP":
+        assert (
+            self.is_unit()
+        ), f"{self} is not a unit in Z[zeta_{self.p}]; inverse lives in Q(zeta_{self.p})"
         return ZetaP.one(self.p).exact_div(self)
 
-    def exact_div(self, other: 'ZetaP') -> 'ZetaP':
+    def exact_div(self, other: "ZetaP") -> "ZetaP":
         """
         Exact quotient a / b over an integral domain:
         a / b = a * (prod_{k!=1} sigma_k(b)) / N(b).
@@ -241,10 +255,12 @@ class ZetaP:
         for k in range(2, self.p):
             cofactor = cofactor * other.galois_conjugate(k)
         num = self * cofactor
-        assert all(c % N == 0 for c in num.coeffs), "Exact algebraic division failed: remainder nonzero"
+        assert all(
+            c % N == 0 for c in num.coeffs
+        ), "Exact algebraic division failed: remainder nonzero"
         return ZetaP(self.p, tuple(c // N for c in num.coeffs))
 
-    def field_inverse(self) -> 'RationalZetaP':
+    def field_inverse(self) -> "RationalZetaP":
         """
         Exact inversion in the cyclotomic field Q(zeta_p).
         Lifts the ring unit obstruction to the quotient field.
@@ -258,7 +274,7 @@ class ZetaP:
         return RationalZetaP(cofactor, N)
 
     @classmethod
-    def gauss_sum(cls, p: int) -> 'ZetaP':
+    def gauss_sum(cls, p: int) -> "ZetaP":
         res = cls.zero(p)
         for k in range(1, p):
             sym = legendre_symbol(k, p)
@@ -280,6 +296,7 @@ class ZetaP:
 # MODULE: ring/rational_zeta_p.py — EXACT CYCLOTOMIC FIELD Q(zeta_p)
 # =====================================================================
 
+
 @dataclass(frozen=True)
 class RationalZetaP:
     """
@@ -287,6 +304,7 @@ class RationalZetaP:
     Represented as num / den where num in Z[zeta_p] and den in Z with den > 0.
     Canonicalized via gcd(den, gcd(num.coeffs)).
     """
+
     num: ZetaP
     den: int
 
@@ -301,8 +319,8 @@ class RationalZetaP:
         if common > 1:
             den //= common
             num = ZetaP(num.p, tuple(c // common for c in num.coeffs))
-        object.__setattr__(self, 'num', num)
-        object.__setattr__(self, 'den', den)
+        object.__setattr__(self, "num", num)
+        object.__setattr__(self, "den", den)
 
     @property
     def p(self) -> int:
@@ -313,7 +331,7 @@ class RationalZetaP:
             return False
         return self.num == other.num and self.den == other.den
 
-    def __add__(self, other: Union['RationalZetaP', ZetaP, int]) -> 'RationalZetaP':
+    def __add__(self, other: Union["RationalZetaP", ZetaP, int]) -> "RationalZetaP":
         if isinstance(other, int):
             other = RationalZetaP(ZetaP.from_int(other, self.p), 1)
         elif isinstance(other, ZetaP):
@@ -323,7 +341,7 @@ class RationalZetaP:
         new_den = self.den * other.den
         return RationalZetaP(new_num, new_den)
 
-    def __sub__(self, other: Union['RationalZetaP', ZetaP, int]) -> 'RationalZetaP':
+    def __sub__(self, other: Union["RationalZetaP", ZetaP, int]) -> "RationalZetaP":
         if isinstance(other, int):
             other = RationalZetaP(ZetaP.from_int(other, self.p), 1)
         elif isinstance(other, ZetaP):
@@ -333,10 +351,10 @@ class RationalZetaP:
         new_den = self.den * other.den
         return RationalZetaP(new_num, new_den)
 
-    def __neg__(self) -> 'RationalZetaP':
+    def __neg__(self) -> "RationalZetaP":
         return RationalZetaP(-self.num, self.den)
 
-    def __mul__(self, other: Union['RationalZetaP', ZetaP, int]) -> 'RationalZetaP':
+    def __mul__(self, other: Union["RationalZetaP", ZetaP, int]) -> "RationalZetaP":
         if isinstance(other, int):
             return RationalZetaP(self.num * other, self.den)
         if isinstance(other, ZetaP):
@@ -344,12 +362,12 @@ class RationalZetaP:
         assert self.p == other.p, "Field prime mismatch on multiplication"
         return RationalZetaP(self.num * other.num, self.den * other.den)
 
-    def __rmul__(self, other: Union[int, ZetaP]) -> 'RationalZetaP':
+    def __rmul__(self, other: Union[int, ZetaP]) -> "RationalZetaP":
         if isinstance(other, (int, ZetaP)):
             return self * other
         return NotImplemented
 
-    def inverse(self) -> 'RationalZetaP':
+    def inverse(self) -> "RationalZetaP":
         if self.num == ZetaP.zero(self.p):
             raise ZeroDivisionError("Cannot invert zero in Q(zeta_p)")
         field_inv = self.num.field_inverse()
@@ -366,43 +384,64 @@ class RationalZetaP:
 # MODULE: ring/matrix_zeta_p.py — MATRICES OVER Z[zeta_p]
 # =====================================================================
 
+
 class MatrixZetaP:
-    __slots__ = ('rows', 'cols', 'p', 'entries')
+    __slots__ = ("rows", "cols", "p", "entries")
 
     def __init__(self, rows: int, cols: int, entries: List[List[ZetaP]], p: int):
-        assert len(entries) == rows and all(len(r) == cols for r in entries), "Matrix dimension shape mismatch"
-        assert all(e.p == p for row in entries for e in row), "All matrix entries must belong to ring Z[zeta_p]"
+        assert len(entries) == rows and all(
+            len(r) == cols for r in entries
+        ), "Matrix dimension shape mismatch"
+        assert all(
+            e.p == p for row in entries for e in row
+        ), "All matrix entries must belong to ring Z[zeta_p]"
         self.rows = rows
         self.cols = cols
         self.p = p
         self.entries = [[e for e in row] for row in entries]
 
     @classmethod
-    def identity(cls, n: int, p: int) -> 'MatrixZetaP':
+    def identity(cls, n: int, p: int) -> "MatrixZetaP":
         entries = [[ZetaP.zero(p) for _ in range(n)] for _ in range(n)]
         for i in range(n):
             entries[i][i] = ZetaP.one(p)
         return cls(n, n, entries, p)
 
     @classmethod
-    def zero(cls, rows: int, cols: int, p: int) -> 'MatrixZetaP':
-        return cls(rows, cols, [[ZetaP.zero(p) for _ in range(cols)] for _ in range(rows)], p)
+    def zero(cls, rows: int, cols: int, p: int) -> "MatrixZetaP":
+        return cls(
+            rows, cols, [[ZetaP.zero(p) for _ in range(cols)] for _ in range(rows)], p
+        )
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, MatrixZetaP):
             return False
-        return (self.rows == other.rows and self.cols == other.cols and
-                self.p == other.p and self.entries == other.entries)
+        return (
+            self.rows == other.rows
+            and self.cols == other.cols
+            and self.p == other.p
+            and self.entries == other.entries
+        )
 
-    def __add__(self, other: 'MatrixZetaP') -> 'MatrixZetaP':
+    def __add__(self, other: "MatrixZetaP") -> "MatrixZetaP":
         assert self.rows == other.rows and self.cols == other.cols and self.p == other.p
-        return MatrixZetaP(self.rows, self.cols,
-                           [[self.entries[i][j] + other.entries[i][j] for j in range(self.cols)]
-                            for i in range(self.rows)], self.p)
+        return MatrixZetaP(
+            self.rows,
+            self.cols,
+            [
+                [self.entries[i][j] + other.entries[i][j] for j in range(self.cols)]
+                for i in range(self.rows)
+            ],
+            self.p,
+        )
 
-    def __mul__(self, other: 'MatrixZetaP') -> 'MatrixZetaP':
-        assert self.cols == other.rows and self.p == other.p, "Incompatible dimensions or ring primes for matrix mul"
-        res = [[ZetaP.zero(self.p) for _ in range(other.cols)] for _ in range(self.rows)]
+    def __mul__(self, other: "MatrixZetaP") -> "MatrixZetaP":
+        assert (
+            self.cols == other.rows and self.p == other.p
+        ), "Incompatible dimensions or ring primes for matrix mul"
+        res = [
+            [ZetaP.zero(self.p) for _ in range(other.cols)] for _ in range(self.rows)
+        ]
         for i in range(self.rows):
             for k in range(self.cols):
                 aik = self.entries[i][k]
@@ -412,7 +451,9 @@ class MatrixZetaP:
         return MatrixZetaP(self.rows, other.cols, res, self.p)
 
     def apply_to_vector(self, v: List[ZetaP]) -> List[ZetaP]:
-        assert self.cols == len(v), f"Matrix cols ({self.cols}) does not match vector dim ({len(v)})"
+        assert self.cols == len(
+            v
+        ), f"Matrix cols ({self.cols}) does not match vector dim ({len(v)})"
         assert all(e.p == self.p for e in v), "Vector elements must share matrix ring"
         out = []
         for i in range(self.rows):
@@ -422,7 +463,7 @@ class MatrixZetaP:
             out.append(s)
         return out
 
-    def kron(self, other: 'MatrixZetaP') -> 'MatrixZetaP':
+    def kron(self, other: "MatrixZetaP") -> "MatrixZetaP":
         assert self.p == other.p, "Ring prime mismatch on Kronecker product"
         r = self.rows * other.rows
         c = self.cols * other.cols
@@ -431,16 +472,29 @@ class MatrixZetaP:
             for j in range(self.cols):
                 for k in range(other.rows):
                     for l in range(other.cols):
-                        entries[i * other.rows + k][j * other.cols + l] = self.entries[i][j] * other.entries[k][l]
+                        entries[i * other.rows + k][j * other.cols + l] = (
+                            self.entries[i][j] * other.entries[k][l]
+                        )
         return MatrixZetaP(r, c, entries, self.p)
 
-    def transpose(self) -> 'MatrixZetaP':
-        return MatrixZetaP(self.cols, self.rows,
-                           [[self.entries[j][i] for j in range(self.rows)] for i in range(self.cols)], self.p)
+    def transpose(self) -> "MatrixZetaP":
+        return MatrixZetaP(
+            self.cols,
+            self.rows,
+            [[self.entries[j][i] for j in range(self.rows)] for i in range(self.cols)],
+            self.p,
+        )
 
-    def dagger(self) -> 'MatrixZetaP':
-        return MatrixZetaP(self.cols, self.rows,
-                           [[self.entries[j][i].conjugate() for j in range(self.rows)] for i in range(self.cols)], self.p)
+    def dagger(self) -> "MatrixZetaP":
+        return MatrixZetaP(
+            self.cols,
+            self.rows,
+            [
+                [self.entries[j][i].conjugate() for j in range(self.rows)]
+                for i in range(self.cols)
+            ],
+            self.p,
+        )
 
     def det(self) -> ZetaP:
         assert self.rows == self.cols, "Determinant requires a square matrix"
@@ -459,7 +513,7 @@ class MatrixZetaP:
             s = s + self.entries[i][i]
         return s
 
-    def pow(self, k: int) -> 'MatrixZetaP':
+    def pow(self, k: int) -> "MatrixZetaP":
         assert self.rows == self.cols, "Matrix power requires a square matrix"
         assert k >= 0, "Non-negative power required"
         res = MatrixZetaP.identity(self.rows, self.p)
@@ -471,7 +525,7 @@ class MatrixZetaP:
             k //= 2
         return res
 
-    def adjugate(self) -> 'MatrixZetaP':
+    def adjugate(self) -> "MatrixZetaP":
         """
         Exact cofactor matrix adj(A) satisfying A * adj(A) = det(A) * I.
         Computed using Bareiss minor determinants over Z[zeta_p].
@@ -483,7 +537,11 @@ class MatrixZetaP:
         adj_entries = [[ZetaP.zero(self.p) for _ in range(n)] for _ in range(n)]
         for i in range(n):
             for j in range(n):
-                sub = [[self.entries[r][c] for c in range(n) if c != j] for r in range(n) if r != i]
+                sub = [
+                    [self.entries[r][c] for c in range(n) if c != j]
+                    for r in range(n)
+                    if r != i
+                ]
                 sub_det = bareiss_det(sub)
                 sign = 1 if (i + j) % 2 == 0 else -1
                 entry = sub_det if sign == 1 else -sub_det
@@ -495,8 +553,9 @@ class MatrixZetaP:
 # MODULE: ring/unitary_zeta_p.py — EXACT UNITARIES OVER Z[zeta_p]
 # =====================================================================
 
+
 class UnitaryZetaP:
-    __slots__ = ('matrix', 'dimension', 'p')
+    __slots__ = ("matrix", "dimension", "p")
 
     def __init__(self, matrix: MatrixZetaP):
         assert matrix.is_unitary(), "Matrix must be algebraically unitary (U†U = I)"
@@ -505,17 +564,17 @@ class UnitaryZetaP:
         self.p = matrix.p
 
     @classmethod
-    def identity(cls, n: int, p: int) -> 'UnitaryZetaP':
+    def identity(cls, n: int, p: int) -> "UnitaryZetaP":
         return cls(MatrixZetaP.identity(n, p))
 
-    def compose(self, other: 'UnitaryZetaP') -> 'UnitaryZetaP':
+    def compose(self, other: "UnitaryZetaP") -> "UnitaryZetaP":
         assert self.dimension == other.dimension and self.p == other.p
         return UnitaryZetaP(self.matrix * other.matrix)
 
-    def dagger(self) -> 'UnitaryZetaP':
+    def dagger(self) -> "UnitaryZetaP":
         return UnitaryZetaP(self.matrix.dagger())
 
-    def apply(self, state: 'StateZetaP') -> 'StateZetaP':
+    def apply(self, state: "StateZetaP") -> "StateZetaP":
         assert self.dimension == state.dimension and self.p == state.p
         return StateZetaP(self.matrix.apply_to_vector(state.vector), self.p)
 
@@ -524,13 +583,15 @@ class UnitaryZetaP:
 # MODULE: ring/projective_unitary_zeta_p.py — PROJECTIVE UNITARIES P(H)
 # =====================================================================
 
+
 class ProjectiveUnitaryZetaP:
     """
     Projective unitary operator over P(H).
     Satisfies matrix.dagger() * matrix == scale_norm * I with scale_norm in Z \\ {0}.
     Global scalar factors cancel identically in projective Born measurements.
     """
-    __slots__ = ('matrix', 'scale_norm', 'dimension', 'p')
+
+    __slots__ = ("matrix", "scale_norm", "dimension", "p")
 
     def __init__(self, matrix: MatrixZetaP, scale_norm: int):
         assert scale_norm != 0, "Projective unitary scale norm must be non-zero"
@@ -544,18 +605,24 @@ class ProjectiveUnitaryZetaP:
         for i in range(self.dimension):
             for j in range(self.dimension):
                 if i == j:
-                    assert prod.entries[i][j] == expected_diag, "Diagonal must equal scale_norm * I"
+                    assert (
+                        prod.entries[i][j] == expected_diag
+                    ), "Diagonal must equal scale_norm * I"
                 else:
-                    assert prod.entries[i][j] == ZetaP.zero(self.p), "Off-diagonal elements must be zero"
+                    assert prod.entries[i][j] == ZetaP.zero(
+                        self.p
+                    ), "Off-diagonal elements must be zero"
 
-    def compose(self, other: 'ProjectiveUnitaryZetaP') -> 'ProjectiveUnitaryZetaP':
+    def compose(self, other: "ProjectiveUnitaryZetaP") -> "ProjectiveUnitaryZetaP":
         assert self.dimension == other.dimension and self.p == other.p
-        return ProjectiveUnitaryZetaP(self.matrix * other.matrix, self.scale_norm * other.scale_norm)
+        return ProjectiveUnitaryZetaP(
+            self.matrix * other.matrix, self.scale_norm * other.scale_norm
+        )
 
-    def dagger(self) -> 'ProjectiveUnitaryZetaP':
+    def dagger(self) -> "ProjectiveUnitaryZetaP":
         return ProjectiveUnitaryZetaP(self.matrix.dagger(), self.scale_norm)
 
-    def apply(self, state: 'StateZetaP') -> 'StateZetaP':
+    def apply(self, state: "StateZetaP") -> "StateZetaP":
         assert self.dimension == state.dimension and self.p == state.p
         return StateZetaP(self.matrix.apply_to_vector(state.vector), self.p)
 
@@ -566,6 +633,7 @@ class ProjectiveUnitaryZetaP:
 # =====================================================================
 # MODULE: primitives/obstruction.py — FORMAL OBSTRUCTION TYPE
 # =====================================================================
+
 
 @dataclass(frozen=True)
 class Obstruction:
@@ -582,22 +650,25 @@ class Obstruction:
 # MODULE: primitives/state.py — QUANTUM STATE VECTOR OVER Z[zeta_p]
 # =====================================================================
 
+
 class StateZetaP:
-    __slots__ = ('vector', 'dimension', 'p')
+    __slots__ = ("vector", "dimension", "p")
 
     def __init__(self, vector: List[ZetaP], p: int):
         assert len(vector) > 0, "State vector cannot be empty"
-        assert all(e.p == p for e in vector), "All amplitudes must share the same prime ring"
+        assert all(
+            e.p == p for e in vector
+        ), "All amplitudes must share the same prime ring"
         self.vector = list(vector)
         self.dimension = len(vector)
         self.p = p
 
     @classmethod
-    def zero(cls, dimension: int, p: int) -> 'StateZetaP':
+    def zero(cls, dimension: int, p: int) -> "StateZetaP":
         return cls([ZetaP.zero(p) for _ in range(dimension)], p)
 
     @classmethod
-    def basis(cls, index: int, dimension: int, p: int) -> 'StateZetaP':
+    def basis(cls, index: int, dimension: int, p: int) -> "StateZetaP":
         assert 0 <= index < dimension
         v = [ZetaP.zero(p) for _ in range(dimension)]
         v[index] = ZetaP.one(p)
@@ -617,8 +688,11 @@ class StateZetaP:
 # MODULE: primitives/superposition.py — EXACT SUPERPOSITION & INNER PRODUCT
 # =====================================================================
 
+
 def superpose(a: StateZetaP, b: StateZetaP, alpha: ZetaP, beta: ZetaP) -> StateZetaP:
-    assert a.dimension == b.dimension and a.p == b.p and alpha.p == a.p and beta.p == a.p
+    assert (
+        a.dimension == b.dimension and a.p == b.p and alpha.p == a.p and beta.p == a.p
+    )
     vec = [(alpha * ai) + (beta * bi) for ai, bi in zip(a.vector, b.vector)]
     return StateZetaP(vec, a.p)
 
@@ -639,36 +713,40 @@ def amplitude(state: StateZetaP, index: int) -> ZetaP:
 # MODULE: primitives/gates.py — EXACT DISCRETE QUANTUM GATES
 # =====================================================================
 
+
 def pauli_x(p: int) -> UnitaryZetaP:
-    return UnitaryZetaP(MatrixZetaP(2, 2, [
-        [ZetaP.zero(p), ZetaP.one(p)],
-        [ZetaP.one(p), ZetaP.zero(p)]
-    ], p))
+    return UnitaryZetaP(
+        MatrixZetaP(
+            2, 2, [[ZetaP.zero(p), ZetaP.one(p)], [ZetaP.one(p), ZetaP.zero(p)]], p
+        )
+    )
 
 
 def pauli_z(p: int) -> UnitaryZetaP:
-    return UnitaryZetaP(MatrixZetaP(2, 2, [
-        [ZetaP.one(p), ZetaP.zero(p)],
-        [ZetaP.zero(p), -ZetaP.one(p)]
-    ], p))
+    return UnitaryZetaP(
+        MatrixZetaP(
+            2, 2, [[ZetaP.one(p), ZetaP.zero(p)], [ZetaP.zero(p), -ZetaP.one(p)]], p
+        )
+    )
 
 
 def cnot(p: int) -> UnitaryZetaP:
     z = ZetaP.zero(p)
     o = ZetaP.one(p)
-    return UnitaryZetaP(MatrixZetaP(4, 4, [
-        [o, z, z, z],
-        [z, o, z, z],
-        [z, z, z, o],
-        [z, z, o, z]
-    ], p))
+    return UnitaryZetaP(
+        MatrixZetaP(4, 4, [[o, z, z, z], [z, o, z, z], [z, z, z, o], [z, z, o, z]], p)
+    )
 
 
 def phase(k: int, p: int) -> UnitaryZetaP:
-    return UnitaryZetaP(MatrixZetaP(2, 2, [
-        [ZetaP.one(p), ZetaP.zero(p)],
-        [ZetaP.zero(p), ZetaP.zeta_power(k, p)]
-    ], p))
+    return UnitaryZetaP(
+        MatrixZetaP(
+            2,
+            2,
+            [[ZetaP.one(p), ZetaP.zero(p)], [ZetaP.zero(p), ZetaP.zeta_power(k, p)]],
+            p,
+        )
+    )
 
 
 def hadamard(p: int) -> Obstruction:
@@ -677,7 +755,7 @@ def hadamard(p: int) -> Obstruction:
         value="1/sqrt(2)",
         ring="Z[zeta_8] (not in the prime-indexed family)",
         message=f"Hadamard is not in Z[zeta_{p}] for any prime p; "
-                "the exact Hadamard requires Z[zeta_8]. This is a global obstruction."
+        "the exact Hadamard requires Z[zeta_8]. This is a global obstruction.",
     )
 
 
@@ -704,6 +782,7 @@ def hadamard_projective(p: int) -> ProjectiveUnitaryZetaP:
 # MODULE: primitives/interference.py — EXACT INTERFERENCE & VISIBILITY
 # =====================================================================
 
+
 def visibility(psi: StateZetaP, phi: StateZetaP) -> Union[ZetaP, Obstruction]:
     norm_sq_psi = psi.norm_squared()
     norm_sq_phi = phi.norm_squared()
@@ -712,7 +791,7 @@ def visibility(psi: StateZetaP, phi: StateZetaP) -> Union[ZetaP, Obstruction]:
             primitive="visibility",
             value="denominator is not a unit",
             ring="the ring where the norms are units",
-            message="visibility is defined on states whose norm squared values are units"
+            message="visibility is defined on states whose norm squared values are units",
         )
     inner = inner_product(psi, phi)
     numerator = inner * inner.conjugate()
@@ -723,6 +802,7 @@ def visibility(psi: StateZetaP, phi: StateZetaP) -> Union[ZetaP, Obstruction]:
 # =====================================================================
 # MODULE: primitives/measurement.py — EXACT MEASUREMENT POSTULATES
 # =====================================================================
+
 
 def born_probability(state: StateZetaP, basis_index: int) -> ZetaP:
     a = state.vector[basis_index]
@@ -765,6 +845,7 @@ def projective_born_probability(state: StateZetaP, outcome: int) -> Tuple[int, i
 # =====================================================================
 # MODULE: primitives/entanglement.py — EXACT SCHMIDT RANK & SPECTRUM
 # =====================================================================
+
 
 def matrix_rank_over_field(M: List[List[ZetaP]], p: int) -> int:
     """
@@ -811,18 +892,22 @@ def matrix_rank_over_field(M: List[List[ZetaP]], p: int) -> int:
 
 def schmidt_rank(state: StateZetaP, bipartition: Tuple[int, int]) -> int:
     dim_a, dim_b = bipartition
-    assert dim_a * dim_b == state.dimension, "Bipartition dimensions must match total dimension"
+    assert (
+        dim_a * dim_b == state.dimension
+    ), "Bipartition dimensions must match total dimension"
     grid = [[state.vector[i * dim_b + j] for j in range(dim_b)] for i in range(dim_a)]
     return matrix_rank_over_field(grid, state.p)
 
 
-def normalized_schmidt_coefficients(state: StateZetaP, bipartition: Tuple[int, int]) -> Obstruction:
+def normalized_schmidt_coefficients(
+    state: StateZetaP, bipartition: Tuple[int, int]
+) -> Obstruction:
     r = schmidt_rank(state, bipartition)
     return Obstruction(
         primitive="schmidt_coefficients",
         value=f"1/sqrt({r})",
         ring=f"the ring containing sqrt({r})",
-        message="normalized Schmidt coefficients require non-integral roots; rank is the exact primitive"
+        message="normalized Schmidt coefficients require non-integral roots; rank is the exact primitive",
     )
 
 
@@ -831,13 +916,17 @@ def reduced_density_gram(state: StateZetaP, d_a: int, d_b: int) -> MatrixZetaP:
     Computes the unnormalized Hermitian Gram matrix rho_A = Psi * Psi† over Z[zeta_p].
     Bypasses square roots by representing the entanglement state in the ring.
     """
-    assert d_a * d_b == state.dimension, "Bipartition dimensions must match total state dimension"
+    assert (
+        d_a * d_b == state.dimension
+    ), "Bipartition dimensions must match total state dimension"
     grid = [[state.vector[i * d_b + j] for j in range(d_b)] for i in range(d_a)]
     Psi = MatrixZetaP(d_a, d_b, grid, state.p)
     return Psi * Psi.dagger()
 
 
-def exact_renyi_purity(state: StateZetaP, d_a: int, d_b: int, k: int = 2) -> Tuple[int, int]:
+def exact_renyi_purity(
+    state: StateZetaP, d_a: int, d_b: int, k: int = 2
+) -> Tuple[int, int]:
     """
     Computes exact rational k-th Renyi purity Tr(rho_A^k) / (Tr(rho_A))^k in Q.
     Provides an exact algebraic entanglement monotone without square roots.
@@ -850,7 +939,9 @@ def exact_renyi_purity(state: StateZetaP, d_a: int, d_b: int, k: int = 2) -> Tup
     tr_rho_k = rho_k.trace()
     den_zeta = tr_rho.pow(k)
 
-    if all(c == 0 for c in tr_rho_k.coeffs[1:]) and all(c == 0 for c in den_zeta.coeffs[1:]):
+    if all(c == 0 for c in tr_rho_k.coeffs[1:]) and all(
+        c == 0 for c in den_zeta.coeffs[1:]
+    ):
         n_val = tr_rho_k.coeffs[0]
         d_val = den_zeta.coeffs[0]
         g = gcd(n_val, d_val)
@@ -867,6 +958,7 @@ def exact_renyi_purity(state: StateZetaP, d_a: int, d_b: int, k: int = 2) -> Tup
 # MODULE: primitives/tunneling.py — EXACT TIGHT-BINDING TRANSFER MATRIX
 # =====================================================================
 
+
 @dataclass(frozen=True)
 class DiscreteBarrier:
     num_sites: int
@@ -880,17 +972,21 @@ class ContinuousBarrier:
     height: float
 
 
-def transmission_coefficient(barrier: Union[DiscreteBarrier, ContinuousBarrier], energy: ZetaP) -> Union[ZetaP, Obstruction]:
+def transmission_coefficient(
+    barrier: Union[DiscreteBarrier, ContinuousBarrier], energy: ZetaP
+) -> Union[ZetaP, Obstruction]:
     if isinstance(barrier, ContinuousBarrier):
         return Obstruction(
             primitive="transmission_coefficient",
             value="exp(-kappa * L)",
             ring="none (transcendental continuum)",
-            message="continuous barrier potential is an analytical obstruction; exact tunneling requires DiscreteBarrier"
+            message="continuous barrier potential is an analytical obstruction; exact tunneling requires DiscreteBarrier",
         )
 
     p = energy.p
-    assert barrier.hopping.is_unit(), "Hopping parameter t must be a unit in Z[zeta_p] for exact transfer matrix"
+    assert (
+        barrier.hopping.is_unit()
+    ), "Hopping parameter t must be a unit in Z[zeta_p] for exact transfer matrix"
     hopping_inv = barrier.hopping.inverse()
 
     T = MatrixZetaP.identity(2, p)
@@ -909,12 +1005,14 @@ def transmission_coefficient(barrier: Union[DiscreteBarrier, ContinuousBarrier],
             primitive="transmission_coefficient",
             value=f"|T_11|^2={denom} is not a unit",
             ring="the ring where |T_11|^2 is a unit",
-            message="discrete transmission coefficient is exact over the ring only when |T_11|^2 is a unit"
+            message="discrete transmission coefficient is exact over the ring only when |T_11|^2 is a unit",
         )
     return denom.inverse()
 
 
-def transmission_coefficient_exact(barrier: Union[DiscreteBarrier, ContinuousBarrier], energy: ZetaP) -> Union[RationalZetaP, Obstruction]:
+def transmission_coefficient_exact(
+    barrier: Union[DiscreteBarrier, ContinuousBarrier], energy: ZetaP
+) -> Union[RationalZetaP, Obstruction]:
     """
     Exact transmission coefficient in the cyclotomic field of fractions Q(zeta_p).
     Lifts the ring unit obstruction to exact field inversion.
@@ -924,11 +1022,13 @@ def transmission_coefficient_exact(barrier: Union[DiscreteBarrier, ContinuousBar
             primitive="transmission_coefficient",
             value="exp(-kappa * L)",
             ring="none (transcendental continuum)",
-            message="continuous barrier potential is an analytical obstruction; exact tunneling requires DiscreteBarrier"
+            message="continuous barrier potential is an analytical obstruction; exact tunneling requires DiscreteBarrier",
         )
 
     p = energy.p
-    assert barrier.hopping.is_unit(), "Hopping parameter t must be a unit in Z[zeta_p] for exact transfer matrix"
+    assert (
+        barrier.hopping.is_unit()
+    ), "Hopping parameter t must be a unit in Z[zeta_p] for exact transfer matrix"
     hopping_inv = barrier.hopping.inverse()
 
     T = MatrixZetaP.identity(2, p)
@@ -947,7 +1047,7 @@ def transmission_coefficient_exact(barrier: Union[DiscreteBarrier, ContinuousBar
             primitive="transmission_coefficient",
             value="0",
             ring="none",
-            message="Total reflection: transmission coefficient denominator is zero"
+            message="Total reflection: transmission coefficient denominator is zero",
         )
     return denom.field_inverse()
 
@@ -955,6 +1055,7 @@ def transmission_coefficient_exact(barrier: Union[DiscreteBarrier, ContinuousBar
 # =====================================================================
 # MODULE: primitives/annealing.py — EXACT EVOLUTION & CAYLEY DYNAMICS
 # =====================================================================
+
 
 @dataclass(frozen=True)
 class ContinuousSchedule:
@@ -974,7 +1075,7 @@ def continuous_adiabatic(H: MatrixZetaP, schedule: ContinuousSchedule) -> Obstru
         primitive="adiabatic_evolution",
         value="exp(-i * H * s)",
         ring="none (transcendental continuous schedule)",
-        message="continuous adiabatic evolution is transcendental; exact evolution is the discrete product of unitaries"
+        message="continuous adiabatic evolution is transcendental; exact evolution is the discrete product of unitaries",
     )
 
 
@@ -992,7 +1093,7 @@ def cayley_evolution(H: MatrixZetaP) -> Union[Tuple[MatrixZetaP, int], Obstructi
             primitive="cayley_evolution",
             value="singular_cayley_resolvent",
             ring="none",
-            message="det(I + H) is zero; Cayley resolvent singular"
+            message="det(I + H) is zero; Cayley resolvent singular",
         )
 
     neg_H = MatrixZetaP(H.rows, H.cols, [[-e for e in row] for row in H.entries], H.p)
@@ -1001,14 +1102,18 @@ def cayley_evolution(H: MatrixZetaP) -> Union[Tuple[MatrixZetaP, int], Obstructi
             primitive="cayley_evolution",
             value="non_anti_hermitian",
             ring="Z[zeta_p]",
-            message="Generator H must be anti-Hermitian (H† = -H)"
+            message="Generator H must be anti-Hermitian (H† = -H)",
         )
 
     I_minus_H = I + neg_H
     adj_plus = I_plus_H.adjugate()
     U_num = I_minus_H * adj_plus
     det_norm_sq = det_plus * det_plus.conjugate()
-    scale_norm = det_norm_sq.coeffs[0] if all(c == 0 for c in det_norm_sq.coeffs[1:]) else det_norm_sq.norm()
+    scale_norm = (
+        det_norm_sq.coeffs[0]
+        if all(c == 0 for c in det_norm_sq.coeffs[1:])
+        else det_norm_sq.norm()
+    )
     return (U_num, scale_norm)
 
 
@@ -1016,8 +1121,14 @@ def cayley_evolution(H: MatrixZetaP) -> Union[Tuple[MatrixZetaP, int], Obstructi
 # MODULE: primitives/swarm.py — EXACT AMPLITUDE DYNAMICS
 # =====================================================================
 
+
 class SwarmZetaP:
-    def __init__(self, state: StateZetaP, update: UnitaryZetaP, collapse_fn: Callable[[StateZetaP, int], StateZetaP]):
+    def __init__(
+        self,
+        state: StateZetaP,
+        update: UnitaryZetaP,
+        collapse_fn: Callable[[StateZetaP, int], StateZetaP],
+    ):
         assert state.dimension == update.dimension and state.p == update.p
         self.state = state
         self.update = update
@@ -1037,7 +1148,7 @@ def quantum_inspired_metaheuristic() -> Obstruction:
         primitive="swarm",
         value="heuristic_random_walk",
         ring="exact amplitude ring Z[zeta_p]",
-        message="classical metaheuristics are approximate; the exact swarm is unitary amplitude dynamics"
+        message="classical metaheuristics are approximate; the exact swarm is unitary amplitude dynamics",
     )
 
 
@@ -1045,27 +1156,40 @@ def quantum_inspired_metaheuristic() -> Obstruction:
 # MODULE: primitives/stabilizer.py — SYMPLECTIC WEYL TABLEAU OVER F_p
 # =====================================================================
 
+
 class StabilizerTableauZetaP:
     """
     Exact qudit stabilizer tableau over the finite field F_p.
     Folds the exponential p^n x p^n Hilbert space into O(n^2) symplectic generators.
     Weyl-Heisenberg algebra: Z * X = zeta_p * X * Z.
     """
-    __slots__ = ('p', 'n_qudits', 'num_rows', 'x_mat', 'z_mat', 'phases')
 
-    def __init__(self, p: int, n_qudits: int, x_mat: List[List[int]], z_mat: List[List[int]], phases: List[int]):
+    __slots__ = ("p", "n_qudits", "num_rows", "x_mat", "z_mat", "phases")
+
+    def __init__(
+        self,
+        p: int,
+        n_qudits: int,
+        x_mat: List[List[int]],
+        z_mat: List[List[int]],
+        phases: List[int],
+    ):
         assert is_prime(p), "p must be prime"
         self.p = p
         self.n_qudits = n_qudits
         self.num_rows = len(x_mat)
-        assert len(z_mat) == self.num_rows and len(phases) == self.num_rows, "Tableau dimension mismatch"
-        assert all(len(r) == n_qudits for r in x_mat) and all(len(r) == n_qudits for r in z_mat), "Qudit width mismatch"
+        assert (
+            len(z_mat) == self.num_rows and len(phases) == self.num_rows
+        ), "Tableau dimension mismatch"
+        assert all(len(r) == n_qudits for r in x_mat) and all(
+            len(r) == n_qudits for r in z_mat
+        ), "Qudit width mismatch"
         self.x_mat = [[c % p for c in row] for row in x_mat]
         self.z_mat = [[c % p for c in row] for row in z_mat]
         self.phases = [ph % p for ph in phases]
 
     @classmethod
-    def zero_state(cls, p: int, n_qudits: int) -> 'StabilizerTableauZetaP':
+    def zero_state(cls, p: int, n_qudits: int) -> "StabilizerTableauZetaP":
         x_mat = [[0] * n_qudits for _ in range(n_qudits)]
         z_mat = [[1 if i == j else 0 for j in range(n_qudits)] for i in range(n_qudits)]
         phases = [0] * n_qudits
@@ -1153,7 +1277,15 @@ class TestInvariant(unittest.TestCase):
             f_proj = fourier_gate_projective(p)
             self.assertEqual(f_proj.scale_norm, p)
             dag_prod = f_proj.matrix.dagger() * f_proj.matrix
-            expected = MatrixZetaP(p, p, [[ZetaP.from_int(p if i == j else 0, p) for j in range(p)] for i in range(p)], p)
+            expected = MatrixZetaP(
+                p,
+                p,
+                [
+                    [ZetaP.from_int(p if i == j else 0, p) for j in range(p)]
+                    for i in range(p)
+                ],
+                p,
+            )
             self.assertEqual(dag_prod, expected)
 
     def test_weyl_heisenberg_commutation(self):
@@ -1167,7 +1299,9 @@ class TestInvariant(unittest.TestCase):
         Z = MatrixZetaP(p, p, z_entries, p)
         ZX = Z * X
         XZ = X * Z
-        zeta_XZ = MatrixZetaP(p, p, [[ZetaP.zeta(p) * e for e in row] for row in XZ.entries], p)
+        zeta_XZ = MatrixZetaP(
+            p, p, [[ZetaP.zeta(p) * e for e in row] for row in XZ.entries], p
+        )
         self.assertEqual(ZX, zeta_XZ)
 
 
@@ -1259,7 +1393,15 @@ class TestProperty(unittest.TestCase):
         self.assertIsInstance(res, tuple)
         U_num, scale_norm = res
         U_dag_U = U_num.dagger() * U_num
-        expected = MatrixZetaP(2, 2, [[ZetaP.from_int(scale_norm if i == j else 0, p) for j in range(2)] for i in range(2)], p)
+        expected = MatrixZetaP(
+            2,
+            2,
+            [
+                [ZetaP.from_int(scale_norm if i == j else 0, p) for j in range(2)]
+                for i in range(2)
+            ],
+            p,
+        )
         self.assertEqual(U_dag_U, expected)
 
 
@@ -1334,7 +1476,9 @@ class TestAdversarial(unittest.TestCase):
 
     def test_singular_cayley_resolvent_obstruction(self):
         p = 5
-        H_sing = MatrixZetaP(2, 2, [[-ZetaP.one(p), ZetaP.zero(p)], [ZetaP.zero(p), -ZetaP.one(p)]], p)
+        H_sing = MatrixZetaP(
+            2, 2, [[-ZetaP.one(p), ZetaP.zero(p)], [ZetaP.zero(p), -ZetaP.one(p)]], p
+        )
         obs = cayley_evolution(H_sing)
         self.assertIsInstance(obs, Obstruction)
         self.assertEqual(obs.value, "singular_cayley_resolvent")
@@ -1392,7 +1536,7 @@ class TestEdge(unittest.TestCase):
         self.assertEqual(a.pow(0), ZetaP.one(p))
         self.assertEqual(a.pow(1), a)
         self.assertEqual(a.pow(2), a * a)
-        self.assertEqual(a ** 2, a * a)
+        self.assertEqual(a**2, a * a)
         self.assertEqual(3 * a, a * 3)
 
     def test_gauss_sum_identities(self):
@@ -1424,10 +1568,7 @@ class TestEdge(unittest.TestCase):
         self.assertEqual(matrix_rank_over_field([], p), 0)
         self.assertEqual(matrix_rank_over_field([[]], p), 0)
 
-        grid = [
-            [o, z, ZetaP.from_int(2, p)],
-            [z, z, ZetaP.from_int(3, p)]
-        ]
+        grid = [[o, z, ZetaP.from_int(2, p)], [z, z, ZetaP.from_int(3, p)]]
         rank = matrix_rank_over_field(grid, p)
         self.assertEqual(rank, 2)
 
@@ -1542,7 +1683,9 @@ class TestUnit(unittest.TestCase):
 
     def test_renyi_purity_product_state(self):
         p = 5
-        prod_state = StateZetaP([ZetaP.one(p), ZetaP.zero(p), ZetaP.zero(p), ZetaP.zero(p)], p)
+        prod_state = StateZetaP(
+            [ZetaP.one(p), ZetaP.zero(p), ZetaP.zero(p), ZetaP.zero(p)], p
+        )
         purity = exact_renyi_purity(prod_state, 2, 2, k=2)
         self.assertEqual(purity, (1, 1))
 
@@ -1653,9 +1796,7 @@ class TestEndToEnd(unittest.TestCase):
     def test_discrete_tight_binding_tunneling_unit(self):
         p = 5
         barrier = DiscreteBarrier(
-            num_sites=2,
-            potential=[ZetaP.zero(5), ZetaP.zero(5)],
-            hopping=ZetaP.one(5)
+            num_sites=2, potential=[ZetaP.zero(5), ZetaP.zero(5)], hopping=ZetaP.one(5)
         )
         trans = transmission_coefficient(barrier, ZetaP.zero(5))
         self.assertIsInstance(trans, ZetaP)
@@ -1668,9 +1809,7 @@ class TestEndToEnd(unittest.TestCase):
         p = 5
         zeta = ZetaP.zeta(p)
         barrier = DiscreteBarrier(
-            num_sites=2,
-            potential=[ZetaP.zero(p), ZetaP.zero(p)],
-            hopping=ZetaP.one(p)
+            num_sites=2, potential=[ZetaP.zero(p), ZetaP.zero(p)], hopping=ZetaP.one(p)
         )
         t_obs = transmission_coefficient(barrier, zeta)
         self.assertIsInstance(t_obs, Obstruction)
@@ -1713,10 +1852,10 @@ class TestEndToEnd(unittest.TestCase):
 
 if __name__ == "__main__":
     import hashlib
+    import io
     import json
     import os
     import sys
-    import io
 
     lib_file = os.path.abspath(__file__)
     with open(lib_file, "r") as f:
@@ -1732,6 +1871,7 @@ if __name__ == "__main__":
         tree = compile(f.read(), lib_file, "exec")
 
     executable_lines = set()
+
     def get_lines(co):
         for line in co.co_lines():
             if line[2] is not None:
@@ -1741,9 +1881,11 @@ if __name__ == "__main__":
         for c in co.co_consts:
             if hasattr(c, "co_lines"):
                 get_lines(c)
+
     get_lines(tree)
 
     executed_lines = set()
+
     def trace_fn(frame, event, arg):
         if event == "line":
             if os.path.abspath(frame.f_code.co_filename) == lib_file:
@@ -1763,11 +1905,17 @@ if __name__ == "__main__":
     # Class definitions and type annotations executed during module compile/load
     for l_num in executable_lines:
         line_str = src_lines[l_num - 1].strip()
-        if (line_str.startswith("def ") or line_str.startswith("class ") or
-            line_str.startswith("@") or line_str.startswith("__") or
-            line_str.startswith("from ") or line_str.startswith("import ") or
-            line_str.startswith('"""') or line_str.endswith('"""') or
-            (":" in line_str and line_str.split(":")[0].isidentifier())):
+        if (
+            line_str.startswith("def ")
+            or line_str.startswith("class ")
+            or line_str.startswith("@")
+            or line_str.startswith("__")
+            or line_str.startswith("from ")
+            or line_str.startswith("import ")
+            or line_str.startswith('"""')
+            or line_str.endswith('"""')
+            or (":" in line_str and line_str.split(":")[0].isidentifier())
+        ):
             executed_lines.add(l_num)
 
     test_output_text = stream.getvalue()
@@ -1798,7 +1946,7 @@ if __name__ == "__main__":
         "executed_lines": total_covered,
         "missing_lines": missing,
         "coverage_percentage": cov_pct,
-        "status": "PASS" if cov_pct >= 90.0 else "FAIL"
+        "status": "PASS" if cov_pct >= 90.0 else "FAIL",
     }
     cov_path = os.path.join(artifact_dir, "coverage.json")
     with open(cov_path, "w") as f:
@@ -1809,7 +1957,7 @@ if __name__ == "__main__":
         g = ZetaP.gauss_sum(p_val)
         gauss_dict[f"p={p_val}"] = {
             "coeffs": list(g.coeffs),
-            "verified": g.verify_gauss_sum()
+            "verified": g.verify_gauss_sum(),
         }
 
     manifest_data = {
@@ -1829,8 +1977,8 @@ if __name__ == "__main__":
                 "TestEdge",
                 "TestUnit",
                 "TestIntegration",
-                "TestEndToEnd"
-            ]
+                "TestEndToEnd",
+            ],
         },
         "coverage_summary": coverage_dict,
         "gauss_sum_verifications": gauss_dict,
@@ -1843,7 +1991,7 @@ if __name__ == "__main__":
             "entanglement",
             "tunneling",
             "annealing",
-            "swarm"
+            "swarm",
         ],
         "elevated_primitives": [
             "projective_unitary_zeta_p",
@@ -1856,20 +2004,22 @@ if __name__ == "__main__":
             "cayley_evolution",
             "reduced_density_gram",
             "exact_renyi_purity",
-            "stabilizer_tableau_zeta_p"
+            "stabilizer_tableau_zeta_p",
         ],
         "refusal_surface": [
             "hadamard",
             "normalized_schmidt_coefficients",
             "continuous_tunneling",
             "continuous_adiabatic",
-            "quantum_inspired_metaheuristic"
+            "quantum_inspired_metaheuristic",
         ],
         "test_output_file": "test_output.txt",
-        "coverage_file": "coverage.json"
+        "coverage_file": "coverage.json",
     }
 
-    canonical_manifest_bytes = json.dumps(manifest_data, sort_keys=True, indent=2).encode("utf-8")
+    canonical_manifest_bytes = json.dumps(
+        manifest_data, sort_keys=True, indent=2
+    ).encode("utf-8")
     manifest_hash = hashlib.sha256(canonical_manifest_bytes).hexdigest()
     manifest_filename = f"manifest_{manifest_hash}.json"
     manifest_path = os.path.join(artifact_dir, manifest_filename)
