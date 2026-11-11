@@ -1,0 +1,23 @@
+exists: feat/geodesic-11d 8c7679cead24c286f9abe6faa6a92abaa706fa94
+== open pull requests
+#32 cowork/supervisor-wb-20261111 -> main 96c977c draft=false Cowork/supervisor wb 20261111
+#26 al-haras/notes-alignment -> main 179c781 draft=false AL HARAS: align implementation with the notes (work in progress)
+== branch heads
+origin/al-haras/notes-alignment 179c7817 2026-11-11 16:19:24 +0000
+origin/cowork-frontend/workbench-20261111 8c7679ce 2026-11-11 09:24:37 +0000
+origin/cowork-systems/workbench-20261111 8c7679ce 2026-11-11 09:24:37 +0000
+origin/cowork/payload-20261111 9310ad5d 2026-11-11 16:52:25 +0000
+origin/cowork/supervisor-results-20261111 2bdeb951 2026-11-11 17:38:33 +0000
+origin/cowork/supervisor-wb-20261111 96c977c1 2026-11-11 17:42:57 +0000
+origin/cowork/workbench-20261111 a9bfc22c 2026-11-11 12:20:54 +0000
+origin/feat/execution-guard 8c7679ce 2026-11-11 09:24:37 +0000
+origin/feat/folded-accelerator-composition b6f6bc91 2026-11-11 01:03:37 +0000
+origin/feat/geodesic-11d 8c7679ce 2026-11-11 09:24:37 +0000
+origin/feat/partner-distribution 29958036 2026-11-11 09:29:54 +0000
+origin/feat/security-stark-fri 8c7679ce 2026-11-11 09:24:37 +0000
+origin/feat/theseus-durable-storage 8c7679ce 2026-11-11 09:24:37 +0000
+origin/feat/turing-exact-algorithms a0ffe1c1 2026-11-11 11:51:18 +0000
+origin/hyba-mine/control fa520762 2026-11-11 17:07:36 +0000
+origin/import/phienterprise-20261111 91c1a0c7 2026-10-30 19:06:51 +0000
+origin/main 40fef4da 2026-11-11 17:41:03 +0000
+origin/work/prime-codec-bounded-decode 8fddfd17 2026-11-09 18:43:02 +0000
