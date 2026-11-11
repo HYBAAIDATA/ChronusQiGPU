@@ -52,21 +52,7 @@ rep('''  static executeZkNeuralProveAndVerify = (
 
 ''', '')
 
-# 4. Remove processCBDCCrossBorderSettlement (demo method unrelated to mining)
-rep('''  static processCBDCCrossBorderSettlement = (
-    senderBank = 'FEDERAL_RESERVE',
-    receiverBank = 'BANK_OF_ENGLAND',
-    amountTokens = 10000000,
-    simulateDoubleSpend = false
-  ) =>
-    post<ApiRecord>('v1/al-haras/applications/cbdc-settlement/process', {
-      sender_bank: senderBank,
-      receiver_bank: receiverBank,
-      amount_tokens: amountTokens,
-      simulate_double_spend: simulateDoubleSpend,
-    });
-
-''', '')
+# 4. (removed) processCBDCCrossBorderSettlement is used by the AL HARAS governance page; keep it.
 
 # 5. Remove executeTISAMicrocode (demo method unrelated to mining)
 rep('''  static executeTISAMicrocode = (

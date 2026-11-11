@@ -162,49 +162,37 @@ def run_step_3_benchmarks() -> Dict[str, Any]:
     print(f"    - Marked Amplitude  : {m5_marked} mod 257 (exact target resolution in 1 iterate)")
     print(f"    - Subspace Latency  : {m5_lat_us:.2f} us")
 
-    # 2. Tier 10 Cellular Sheaf Laplacian & DSW Instanton Healing across 73-node complex
-    # 73-node stalk complex
+    # 2. AL HARAS state consistency and trace repair on a 73-node ring.
+    # Only software timings measured here are reported; no hardware latency is claimed.
     clean_stalks = [[1.0, 0.0, 0.5, -0.2] for _ in range(73)]
 
-    # Cycle-accurate hardware latency assertion:
-    # In the RISC-V T-ISA coprocessor pipeline, evaluating coboundary across 73 nodes executes in 38 clock cycles @ 1.0 GHz = 38.0 ns.
-    hardware_cycles = 38
-    clock_freq_ghz = 1.0
-    hw_latency_ns = (hardware_cycles / clock_freq_ghz)  # 38.0 ns
-    hw_throughput_evals_sec = int((1.0 / (hw_latency_ns * 1e-9)))  # 26,315,789 evals/sec (>26M)
-
-    # Benchmark software execution over 10,000 iterations to measure mean software latency
-    sw_iterations = 5000
+    sw_iterations = 200
     t_start = time.perf_counter_ns()
     for _ in range(sw_iterations):
         CellularSheafCohomology.compute_cohomology(clean_stalks)
-    total_sw_ns = time.perf_counter_ns() - t_start
-    sw_latency_ns_per_eval = total_sw_ns / sw_iterations
+    sw_latency_us_per_eval = (time.perf_counter_ns() - t_start) / sw_iterations / 1000.0
 
     clean_res = CellularSheafCohomology.compute_cohomology(clean_stalks)
     assert clean_res["h0_consensus"] is True
-    assert clean_res["h1_vortex_norm"] == 0.0
+    assert clean_res["coboundary_max_edge_norm_sq"] == "0"
 
-    print(f"[+] 73-Node Complex Cellular Sheaf Laplacian L_F = (delta^0)^T delta^0 + delta_1 delta_1^T:")
-    print(f"    - Hardware T-ISA Coprocessor Latency: {hw_latency_ns:.1f} ns baseline (<= 40 ns target: PASS)")
-    print(f"    - Hardware Throughput               : {hw_throughput_evals_sec:,} evals/sec (> 26M/sec: PASS)")
-    print(f"    - Clean State Consensus ker(L_F)    : H^0(X; F) = CLEAN (vortex norm = 0.0000)")
-    print(f"    - Software Evaluator Latency        : {sw_latency_ns_per_eval / 1000.0:.2f} us/eval across {sw_iterations} runs")
+    print("[+] 73-node ring, exact cellular-sheaf coboundary:")
+    print("    - Consistent states                 : delta0(s) = 0 (global section)")
+    print(f"    - Measured software time            : {sw_latency_us_per_eval:.2f} us/eval across {sw_iterations} runs")
 
-    # Injected adversarial vortex at node 17
+    # One disagreeing node: residual (1, 1, 0, 0) on both incident edges -> norm sqrt(2)
     vortex_stalks = [list(v) for v in clean_stalks]
-    vortex_stalks[17] = [2.0, 1.0, 0.5, -0.2]  # Perturbation: diff = (1.0, 1.0, 0, 0) -> norm sqrt(2) = 1.4142
+    vortex_stalks[17] = [2.0, 1.0, 0.5, -0.2]
     vortex_res = CellularSheafCohomology.compute_cohomology(vortex_stalks)
     assert vortex_res["h0_consensus"] is False
-    assert vortex_res["h1_vortex_norm"] == 1.4142
-    assert "OBSTRUCTION_ISOLATED" in vortex_res["audit_alert"]
-    print(f"[+] Adversarial Vortex Isolation        : H^1(X; F) != 0, vortex norm = {vortex_res['h1_vortex_norm']} (ISOLATED)")
+    assert vortex_res["coboundary_max_edge_norm_sq"] == "2"
+    assert vortex_res["isolating_nodes"] == ["n17"]
+    print(f"[+] Disagreeing node located            : {vortex_res['isolating_nodes']} (edge residual norm {vortex_res['coboundary_max_edge_norm']})")
 
-    # DSW 1-cycle instanton cobordism healing
-    heal_res = DSW4DInstantonMonopoleHealer.inspect_and_heal(b"adversarial_prompt_vortex_attack", is_perturbed=True)
-    assert heal_res["cobordism_type"] == "INSTANTON_COBORDISM_TRACE_HEALED"
-    assert heal_res["repair_latency_cycles"] == 1
-    print(f"[+] DSW 1-Cycle Instanton Cobordism     : {heal_res['cobordism_type']} in {heal_res['repair_latency_cycles']} cycle")
+    # Reed-Solomon trace repair drill
+    heal_res = DSW4DInstantonMonopoleHealer.inspect_and_heal(b"adversarial_prompt_vortex_attack", is_perturbed=True, fault_count=3)
+    assert heal_res["healed"] is True and heal_res["integrity_verified"] is True
+    print(f"[+] Reed-Solomon trace repair           : {heal_res['symbol_errors_corrected']} corrupted bytes repaired, SHA-256 verified")
 
     return {
         "galois_search": {
@@ -213,13 +201,13 @@ def run_step_3_benchmarks() -> Dict[str, Any]:
             "single_target_M1": {"alpha": 18, "beta": 120, "unmarked": 0, "marked": 1, "status": "EXACT_1_STEP"},
             "multi_target_M5": {"alpha": 120, "beta": 164, "unmarked": 0, "marked": 1, "status": "EXACT_1_STEP"},
         },
-        "sheaf_laplacian_73_nodes": {
-            "hw_latency_ns": hw_latency_ns,
-            "hw_throughput_evals_sec": hw_throughput_evals_sec,
-            "h0_consensus": True,
-            "vortex_isolation_norm": vortex_res["h1_vortex_norm"],
-            "dsw_cobordism_repair_cycles": heal_res["repair_latency_cycles"],
-            "status": "PASS",
+        "sheaf_consistency_73_nodes": {
+            "software_us_per_eval_measured": round(sw_latency_us_per_eval, 2),
+            "clean_states_consistent": clean_res["h0_consensus"],
+            "disagreement_edge_norm": vortex_res["coboundary_max_edge_norm"],
+            "located_nodes": vortex_res["isolating_nodes"],
+            "trace_bytes_repaired": heal_res["symbol_errors_corrected"],
+            "trace_repair_verified": heal_res["integrity_verified"],
         },
     }
 
@@ -394,7 +382,8 @@ def main() -> int:
     print(f"System Invariants      : {inv_results['invariants_passed']} / {inv_results['total_invariants']} GREEN")
     print(f"Sovereign Expansion    : {inv_results['sovereign_expansion_tests_passed']} / 37 PASS")
     print(f"Galois 1,000-Qubit     : M=1 (18, 120) & M=5 (120, 164) EXACT 1-STEP CONVERGENCE")
-    print(f"Sheaf Laplacian 73-Node: {bench_results['sheaf_laplacian_73_nodes']['hw_latency_ns']:.1f} ns (<= 40 ns), >26M evals/sec, DSW 1-cycle repair")
+    sheaf_summary = bench_results["sheaf_consistency_73_nodes"]
+    print(f"AL HARAS 73-node consistency check: {sheaf_summary['software_us_per_eval_measured']} us/eval (software, measured); located {sheaf_summary['located_nodes']}; trace repair verified: {sheaf_summary['trace_repair_verified']}")
     print(f"RFC 8785 SHA-256 Digest: {attest_results['canonical_sha256']}")
     print(f"OVID Zero-Copy Handle  : {attest_results['pointer_id']}")
     print(f"Verification Endpoint  : HTTP 200 OK -> valid=true, zk_stark=VERIFIED, mldsa_sig=VALID")

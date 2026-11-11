@@ -9,6 +9,7 @@ import json
 import os
 import sys
 import unittest
+from decimal import Decimal
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SRC_DIR = os.path.join(REPO_ROOT, "src")
@@ -33,11 +34,16 @@ class TestBehavioralSovereignAttestation(unittest.TestCase):
     def test_pillar_1_al_haras_qualification(self):
         proof = verify_al_haras_pillar()
         self.assertEqual(proof["status"], "QUALIFIED")
-        self.assertTrue(proof["invariants"]["sheaf_h1_exactness"])
-        self.assertTrue(proof["invariants"]["dsw_instanton_conservation"])
+        self.assertTrue(proof["invariants"]["sheaf_global_section_exact"])
+        self.assertTrue(proof["invariants"]["sheaf_disagreement_detected_exact"])
+        self.assertTrue(proof["invariants"]["reed_solomon_repair_verified"])
         self.assertTrue(proof["invariants"]["ramanujan_spectral_gap"])
         self.assertTrue(proof["invariants"]["anyon_cyclotomic_braid"])
-        self.assertTrue(proof["invariants"]["hecke_modular_checksum"])
+        self.assertTrue(proof["invariants"]["hasse_bound_fingerprint"])
+        # The figures are computed on this run, not stored.
+        self.assertEqual(proof["measured"]["conflict_coboundary_norm_sq"], "2")
+        self.assertGreaterEqual(proof["measured"]["symbol_errors_corrected"], 1)
+        self.assertLess(Decimal(proof["measured"]["paley_lambda_2"]), Decimal(proof["measured"]["ramanujan_bound"]))
 
     def test_pillar_2_theseus_ovid_qualification(self):
         proof = verify_theseus_ovid_pillar()
@@ -56,8 +62,18 @@ class TestBehavioralSovereignAttestation(unittest.TestCase):
     def test_pillar_4_millennium_qualification(self):
         proof = verify_millennium_pillar()
         self.assertEqual(proof["status"], "QUALIFIED")
-        for prob, status in proof["millennium_problems_verified"].items():
-            self.assertTrue(status, f"Millennium proof for {prob} failed!")
+        self.assertEqual(
+            set(proof["exact_checks_passed"]),
+            {
+                "ollivier_ricci_curvature_certified",
+                "hodge_decomposition_identities",
+                "p_adic_address_sets_disjoint",
+                "buffer_zeroised_and_read_back",
+            },
+        )
+        for check, status in proof["exact_checks_passed"].items():
+            self.assertTrue(status, f"Exact check {check} failed")
+        self.assertEqual(proof["not_implemented"], {"picard_lefschetz_anti_jamming": "NOT_IMPLEMENTED"})
 
     def test_pillar_5_toe_quantum_qualification(self):
         proof = verify_toe_quantum_pillar()

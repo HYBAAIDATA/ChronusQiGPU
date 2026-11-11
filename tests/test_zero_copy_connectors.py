@@ -20,6 +20,7 @@ from fastapi.testclient import TestClient
 from chronus.execution.reference import NativeMathReferenceBackend
 from chronus.sdk.client import ChronusAPISDK
 from chronus.sdk.models import AuthorizationError
+from chronus.security.al_haras.receipts import ReceiptSigner
 from chronus.security.kms import al_haras_kms_custody
 from chronus.security.ovid import OVIDStorage, POINTER_PREFIX, VerifyEndpoint
 from chronus.security.signers import Ed25519Signer, MLDSASigner
@@ -233,7 +234,8 @@ class TestZeroCopyPrimitives:
             object_path="SECRET_LEDGER.json",
         )
         assert res["al_haras_security"]["admitted"] is True
-        assert res["al_haras_security"]["cohomology_state"] == "H^1(X; F) = 0"
+        assert res["al_haras_security"]["rejection_reasons"] == []
+        assert res["al_haras_security"]["state_check"] == "NO_STATE_SUPPLIED"
         custody = res["al_haras_security"]["key_custody"]
         assert custody["decrypted_in_memory"] is True
         assert custody["persistent_disk_bytes_written"] == 0
@@ -247,9 +249,9 @@ class TestZeroCopyPrimitives:
                 object_path="TAMPERED.json",
             )
 
-        # Malicious prompt/SQL sheaf injection marker must raise H^1(X; F) != 0 obstruction
+        # A configured test injection marker is rejected, and the reason says so
         with pytest.raises(
-            ConnectorSecurityError, match="Sheaf cohomology obstruction"
+            ConnectorSecurityError, match="configured AL HARAS test injection marker"
         ):
             mgr.ingest_data_block(
                 connector_id=conn.connector_id,
@@ -365,7 +367,7 @@ class TestConnectorsAPIExecutionAndSDK:
             },
         )
         assert blocked.status_code == 403
-        assert blocked.json()["detail"]["cohomology_state"] == "H^1(X; F) != 0"
+        assert "adversarial drill requested" in blocked.json()["detail"]["message"]
 
     def test_native_reference_backend_and_workloads_router_execute_zero_copy_workloads(
         self,
@@ -535,13 +537,19 @@ class TestConnectorsAPIExecutionAndSDK:
         assert storage["data_at_rest_enforced"] is True
         assert storage["network_egress_bytes_transferred"] == 0
 
+        # AL HARAS fields are computed: no node states were supplied, the key
+        # lives in process memory, and the receipt carries verified Ed25519 and
+        # ML-DSA-87 (FIPS 204) signatures over the benchmark subject.
         sec = res["al_haras_security_custody"]
-        assert sec["sheaf_cohomology_status"] == "H1_VORTEX_FREE_NORM_0.0"
-        assert sec["kms_custody_mode"] == "CUSTOMER_HELD_HSM_PKCS11"
-        assert (
-            sec["fips_204_mldsa_signature"]
-            == "mldsa65_9350fda91695d3d9b9a31bf63061a422"
-        )
+        assert sec["sheaf_cohomology_status"] == "NOT_EVALUATED_NO_NODE_STATES"
+        assert sec["kms_custody_status"] == "LOCAL_KEY_NOT_CUSTOMER_HELD"
+        assert sec["customer_held_key"] is False
+        assert sec["receipt_verified"] is True
+        receipt = sec["receipt"]
+        assert ReceiptSigner.verify_ml_dsa(receipt["body"], receipt["signature"]) is True
+        assert sec["fips_204_mldsa_signature"] == receipt["signature"]["post_quantum"]["signature_hex"]
+        assert len(bytes.fromhex(sec["fips_204_mldsa_signature"])) == 4627  # ML-DSA-87, FIPS 204 Table 2
+        assert receipt["body"]["assigned_zero_copy_pointer"] == "ptr_ovid_9350fda91695d3d9b9a31bf6"
 
     def test_s3_sample_zero_copy_query_benchmark_execution(self):
         mgr = ZeroCopyConnectorManager()

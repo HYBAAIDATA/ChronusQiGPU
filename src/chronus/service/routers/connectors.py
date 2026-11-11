@@ -527,7 +527,6 @@ async def ingest_connector_block(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={
                 "error": "al_haras_connector_security_blocked",
-                "cohomology_state": "H^1(X; F) != 0",
                 "message": str(exc),
             },
         ) from exc
