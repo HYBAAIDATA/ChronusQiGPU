@@ -31,4 +31,59 @@ class ClaimScanTests(unittest.TestCase):
             with self.assertRaises(ValueError): check.scan(root)
 
 
+def _repo(files, policy=None):
+    d = tempfile.TemporaryDirectory()
+    root = Path(d.name)
+    subprocess.run(['git', 'init', '-q', str(root)], check=True)
+    (root/'scripts/ci').mkdir(parents=True)
+    (root/'scripts/ci/claim_token_bytes.json').write_text(json.dumps([[66, 65, 68]]))
+    if policy is not None:
+        (root/'scripts/ci/claim_token_policy.json').write_text(json.dumps(policy))
+    for name, data in files.items():
+        target = root/name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+    subprocess.run(['git', 'add', '.'], cwd=root, check=True)
+    return d, root
+
+
+def _entry(path, count, basis='mathematical-term', note='reviewed wording'):
+    return {'path': path, 'token': 0, 'count': count, 'basis': basis, 'note': note}
+
+
+class ClaimPolicyTests(unittest.TestCase):
+    def test_allowlisted_occurrence_passes_only_at_the_recorded_count(self):
+        d, root = _repo({'doc.md': b'one bad term'}, {'excluded_prefixes': [], 'allowlist': [_entry('doc.md', 1)]})
+        with d:
+            self.assertEqual(check.scan(root), [])
+            (root/'doc.md').write_bytes(b'bad and BAD again')
+            self.assertEqual(check.scan(root), [('doc.md', 'bad (found 2, allowlisted 1)')])
+
+    def test_unlisted_file_still_fails(self):
+        d, root = _repo({'doc.md': b'bad', 'other.md': b'bad'}, {'excluded_prefixes': [], 'allowlist': [_entry('doc.md', 1)]})
+        with d:
+            self.assertEqual(check.scan(root), [('other.md', 'bad')])
+
+    def test_stale_entry_fails(self):
+        d, root = _repo({'doc.md': b'clean'}, {'excluded_prefixes': [], 'allowlist': [_entry('doc.md', 1)]})
+        with d:
+            self.assertEqual(check.scan(root), [('doc.md', 'stale allowlist entry for token 0')])
+
+    def test_excluded_prefix_is_not_scanned(self):
+        d, root = _repo({'vendor/lib.c': b'bad', 'src/x.py': b'fine'}, {'excluded_prefixes': ['vendor/'], 'allowlist': []})
+        with d:
+            self.assertEqual(check.scan(root), [])
+
+    def test_entry_without_recognised_basis_fails_closed(self):
+        for bad in (_entry('doc.md', 1, basis='marketing'), _entry('doc.md', 1, note=' '), _entry('doc.md', 0)):
+            d, root = _repo({'doc.md': b'bad'}, {'excluded_prefixes': [], 'allowlist': [bad]})
+            with d, self.assertRaises(ValueError):
+                check.scan(root)
+
+    def test_excluded_prefix_must_be_relative_directory(self):
+        d, root = _repo({'doc.md': b'fine'}, {'excluded_prefixes': ['/vendor/'], 'allowlist': []})
+        with d, self.assertRaises(ValueError):
+            check.scan(root)
+
+
 if __name__ == '__main__': unittest.main()

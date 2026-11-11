@@ -1,14 +1,16 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "chronus-quantum-igpu"
-version = "36.0.1"
-description = "Chronus Quantum iGPU — Representation-Aware Computational Substrate & CIaaS Platform"
+name = "hyba-chronus"
+version = "37.0.0.dev0"
+description = "Chronus: the HYBA Data exact-computation platform (internal distribution; TURING ships separately as hyba-turing)"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
+    "Private :: Do Not Upload",
+    "License :: Other/Proprietary License",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -18,7 +20,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Mathematics",
 ]
 dependencies = [
-    "cryptography>=41.0",
+    "cryptography>=47.0",
     "fastapi>=0.162.2,<0.163",
     "starlette>=1.3.1,<2",
     "httpx>=0.28,<1",
@@ -63,12 +65,13 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["chronus*", "turing*"]
+include = ["chronus*"]
 
 [tool.setuptools.package-data]
 "chronus.kernels" = ["*.cl"]
+"chronus.licensing" = ["trust_store.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "packages/turing/src"]
 addopts = "--basetemp=.pytest_temp"
