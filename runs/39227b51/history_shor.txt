@@ -1,0 +1,341 @@
+== paths matching shor / period / order finding / qpe / phase estimation, in any commit on any branch
+commit 87ba4d7 2026-11-11 09:36:44 +0000 hybadatadevops1: turing.algorithms: exact DJ, BV, Simon, Grover, QFT, QPE, Shor and stabilizer tableau | A	packages/turing/src/turing/algorithms/qpe.py
+commit 87ba4d7 2026-11-11 09:36:44 +0000 hybadatadevops1: turing.algorithms: exact DJ, BV, Simon, Grover, QFT, QPE, Shor and stabilizer tableau | A	packages/turing/src/turing/algorithms/shor.py
+commit a0ffe1c 2026-11-11 11:51:18 +0000 hybadatadevops1: turing: exact-algorithm tests (test_turing_*) and docs/algorithms.md | A	packages/turing/tests/test_turing_qpe.py
+commit a0ffe1c 2026-11-11 11:51:18 +0000 hybadatadevops1: turing: exact-algorithm tests (test_turing_*) and docs/algorithms.md | A	packages/turing/tests/test_turing_shor.py
+
+== branch tips: Python files whose content matches (case-insensitive)
+-- origin/al-haras/notes-alignment
+archive/legacy/master_repo/tests/test_chronus_suite.py
+archive/legacy/master_repo/tests/test_chronus_suite_new.py
+scripts/ci/run_irrefutable_audit.py
+src/chronus/access_control.py
+src/chronus/intelligence/predictive_engine.py
+src/chronus/security/al_haras/agentic_immune.py
+src/chronus/security/al_haras/exact.py
+src/chronus/security/al_haras/expander.py
+src/chronus/security/al_haras/millennium_security.py
+src/chronus/security/al_haras/millennium_unification.py
+src/chronus/security/al_haras/orbital_mesh.py
+src/chronus/security/al_haras/sovereign_settlement.py
+src/chronus/security/ovid.py
+src/chronus/service/instant_provisioning.py
+src/chronus/storage/connectors.py
+tests/test_al_haras_agentic_orbital_exact.py
+tests/test_al_haras_expansion.py
+tests/test_al_haras_mpc_settlement_exact.py
+tests/test_endian_engine.py
+tests/test_gateway.py
+tests/test_mining.py
+tests/test_opencl_miner.py
+tests/test_property_invariants.py
+tests/test_security_full_coverage.py
+vendor/cgminer-3.7.2/api-example.py
+-- origin/cowork-systems/workbench-20261111
+archive/legacy/master_repo/tests/test_chronus_suite.py
+archive/legacy/master_repo/tests/test_chronus_suite_new.py
+benchmarks/benchmark_al_haras_security.py
+scripts/ci/run_irrefutable_audit.py
+src/chronus/access_control.py
+src/chronus/hendrix/__init__.py
+src/chronus/hendrix/oracles.py
+src/chronus/hermes/__init__.py
+src/chronus/intelligence/predictive_engine.py
+src/chronus/security/al_haras/defense_frontiers.py
+src/chronus/security/al_haras/orbital_mesh.py
+src/chronus/security/ovid.py
+src/chronus/service/instant_provisioning.py
+src/chronus/storage/connectors.py
+tests/test_endian_engine.py
+tests/test_gateway.py
+tests/test_mining.py
+tests/test_opencl_miner.py
+tests/test_property_invariants.py
+tests/test_security_full_coverage.py
+vendor/cgminer-3.7.2/api-example.py
+-- origin/cowork/payload-20261111
+archive/legacy/master_repo/tests/test_chronus_suite.py
+archive/legacy/master_repo/tests/test_chronus_suite_new.py
+benchmarks/benchmark_al_haras_security.py
+scripts/ci/run_irrefutable_audit.py
+src/chronus/access_control.py
+src/chronus/intelligence/predictive_engine.py
+src/chronus/security/al_haras/defense_frontiers.py
+src/chronus/security/al_haras/orbital_mesh.py
+src/chronus/security/ovid.py
+src/chronus/service/instant_provisioning.py
+src/chronus/storage/connectors.py
+tests/test_endian_engine.py
+tests/test_gateway.py
+tests/test_mining.py
+tests/test_opencl_miner.py
+tests/test_property_invariants.py
+tests/test_security_full_coverage.py
+vendor/cgminer-3.7.2/api-example.py
+-- origin/cowork/supervisor-wb-20261111
+.supervisor/fix4.py
+.supervisor/inventory.py
+.supervisor/migrate.py
+archive/legacy/master_repo/tests/test_chronus_suite.py
+archive/legacy/master_repo/tests/test_chronus_suite_new.py
+benchmarks/benchmark_al_haras_security.py
+scripts/ci/run_irrefutable_audit.py
+src/chronus/access_control.py
+src/chronus/intelligence/predictive_engine.py
+src/chronus/security/al_haras/defense_frontiers.py
+src/chronus/security/al_haras/orbital_mesh.py
+src/chronus/security/ovid.py
+src/chronus/service/instant_provisioning.py
+src/chronus/storage/connectors.py
+tests/test_endian_engine.py
+tests/test_gateway.py
+tests/test_mining.py
+tests/test_opencl_miner.py
+tests/test_property_invariants.py
+tests/test_security_full_coverage.py
+vendor/cgminer-3.7.2/api-example.py
+-- origin/cowork/workbench-20261111
+archive/legacy/master_repo/tests/test_chronus_suite.py
+archive/legacy/master_repo/tests/test_chronus_suite_new.py
+benchmarks/benchmark_al_haras_security.py
+scripts/ci/run_irrefutable_audit.py
+src/chronus/access_control.py
+src/chronus/intelligence/predictive_engine.py
+src/chronus/security/al_haras/defense_frontiers.py
+src/chronus/security/al_haras/orbital_mesh.py
+src/chronus/security/ovid.py
+src/chronus/service/instant_provisioning.py
+src/chronus/storage/connectors.py
+tests/test_endian_engine.py
+tests/test_gateway.py
+tests/test_mining.py
+tests/test_opencl_miner.py
+tests/test_property_invariants.py
+tests/test_security_full_coverage.py
+vendor/cgminer-3.7.2/api-example.py
+-- origin/feat/execution-guard
+archive/legacy/master_repo/tests/test_chronus_suite.py
+archive/legacy/master_repo/tests/test_chronus_suite_new.py
+benchmarks/benchmark_al_haras_security.py
+scripts/ci/run_irrefutable_audit.py
+src/chronus/access_control.py
+src/chronus/hendrix/__init__.py
+src/chronus/hendrix/oracles.py
+src/chronus/hermes/__init__.py
+src/chronus/intelligence/predictive_engine.py
+src/chronus/security/al_haras/defense_frontiers.py
+src/chronus/security/al_haras/orbital_mesh.py
+src/chronus/security/ovid.py
+src/chronus/service/instant_provisioning.py
+src/chronus/storage/connectors.py
+tests/test_endian_engine.py
+tests/test_gateway.py
+tests/test_mining.py
+tests/test_opencl_miner.py
+tests/test_property_invariants.py
+tests/test_security_full_coverage.py
+vendor/cgminer-3.7.2/api-example.py
+-- origin/feat/folded-accelerator-composition
+archive/legacy/master_repo/tests/test_chronus_suite.py
+archive/legacy/master_repo/tests/test_chronus_suite_new.py
+benchmarks/benchmark_al_haras_security.py
+scripts/ci/run_irrefutable_audit.py
+src/chronus/access_control.py
+src/chronus/intelligence/predictive_engine.py
+src/chronus/security/al_haras/defense_frontiers.py
+src/chronus/security/al_haras/orbital_mesh.py
+src/chronus/security/ovid.py
+src/chronus/service/instant_provisioning.py
+src/chronus/storage/connectors.py
+tests/test_endian_engine.py
+tests/test_gateway.py
+tests/test_mining.py
+tests/test_opencl_miner.py
+tests/test_property_invariants.py
+tests/test_security_full_coverage.py
+vendor/cgminer-3.7.2/api-example.py
+-- origin/feat/geodesic-11d
+archive/legacy/master_repo/tests/test_chronus_suite.py
+archive/legacy/master_repo/tests/test_chronus_suite_new.py
+benchmarks/benchmark_al_haras_security.py
+scripts/ci/run_irrefutable_audit.py
+src/chronus/access_control.py
+src/chronus/hendrix/__init__.py
+src/chronus/hendrix/oracles.py
+src/chronus/hermes/__init__.py
+src/chronus/intelligence/predictive_engine.py
+src/chronus/security/al_haras/defense_frontiers.py
+src/chronus/security/al_haras/orbital_mesh.py
+src/chronus/security/ovid.py
+src/chronus/service/instant_provisioning.py
+src/chronus/storage/connectors.py
+tests/test_endian_engine.py
+tests/test_gateway.py
+tests/test_mining.py
+tests/test_opencl_miner.py
+tests/test_property_invariants.py
+tests/test_security_full_coverage.py
+vendor/cgminer-3.7.2/api-example.py
+-- origin/feat/partner-distribution
+archive/legacy/master_repo/tests/test_chronus_suite.py
+archive/legacy/master_repo/tests/test_chronus_suite_new.py
+benchmarks/benchmark_al_haras_security.py
+scripts/ci/run_irrefutable_audit.py
+src/chronus/access_control.py
+src/chronus/intelligence/predictive_engine.py
+src/chronus/licensing/fingerprint.py
+src/chronus/security/al_haras/defense_frontiers.py
+src/chronus/security/al_haras/orbital_mesh.py
+src/chronus/security/ovid.py
+src/chronus/service/instant_provisioning.py
+src/chronus/storage/connectors.py
+tests/test_endian_engine.py
+tests/test_gateway.py
+tests/test_licensing_lease.py
+tests/test_mining.py
+tests/test_native_build_config.py
+tests/test_opencl_miner.py
+tests/test_property_invariants.py
+tests/test_security_full_coverage.py
+vendor/cgminer-3.7.2/api-example.py
+-- origin/feat/security-stark-fri
+archive/legacy/master_repo/tests/test_chronus_suite.py
+archive/legacy/master_repo/tests/test_chronus_suite_new.py
+benchmarks/benchmark_al_haras_security.py
+scripts/ci/run_irrefutable_audit.py
+src/chronus/access_control.py
+src/chronus/hendrix/__init__.py
+src/chronus/hendrix/oracles.py
+src/chronus/hermes/__init__.py
+src/chronus/intelligence/predictive_engine.py
+src/chronus/security/al_haras/defense_frontiers.py
+src/chronus/security/al_haras/orbital_mesh.py
+src/chronus/security/ovid.py
+src/chronus/service/instant_provisioning.py
+src/chronus/storage/connectors.py
+tests/test_endian_engine.py
+tests/test_gateway.py
+tests/test_mining.py
+tests/test_opencl_miner.py
+tests/test_property_invariants.py
+tests/test_security_full_coverage.py
+vendor/cgminer-3.7.2/api-example.py
+-- origin/feat/theseus-durable-storage
+archive/legacy/master_repo/tests/test_chronus_suite.py
+archive/legacy/master_repo/tests/test_chronus_suite_new.py
+benchmarks/benchmark_al_haras_security.py
+scripts/ci/run_irrefutable_audit.py
+src/chronus/access_control.py
+src/chronus/hendrix/__init__.py
+src/chronus/hendrix/oracles.py
+src/chronus/hermes/__init__.py
+src/chronus/intelligence/predictive_engine.py
+src/chronus/security/al_haras/defense_frontiers.py
+src/chronus/security/al_haras/orbital_mesh.py
+src/chronus/security/ovid.py
+src/chronus/service/instant_provisioning.py
+src/chronus/storage/connectors.py
+tests/test_endian_engine.py
+tests/test_gateway.py
+tests/test_mining.py
+tests/test_opencl_miner.py
+tests/test_property_invariants.py
+tests/test_security_full_coverage.py
+vendor/cgminer-3.7.2/api-example.py
+-- origin/feat/turing-exact-algorithms
+archive/legacy/master_repo/tests/test_chronus_suite.py
+archive/legacy/master_repo/tests/test_chronus_suite_new.py
+benchmarks/benchmark_al_haras_security.py
+packages/turing/src/turing/algorithms/__init__.py
+packages/turing/src/turing/algorithms/qpe.py
+packages/turing/src/turing/algorithms/shor.py
+packages/turing/src/turing/algorithms/structured.py
+packages/turing/tests/test_turing_exactness_policy.py
+packages/turing/tests/test_turing_qpe.py
+packages/turing/tests/test_turing_reduction.py
+packages/turing/tests/test_turing_shor.py
+packages/turing/tests/test_turing_structured.py
+scripts/ci/run_irrefutable_audit.py
+src/chronus/access_control.py
+src/chronus/intelligence/predictive_engine.py
+src/chronus/security/al_haras/defense_frontiers.py
+src/chronus/security/al_haras/orbital_mesh.py
+src/chronus/security/ovid.py
+src/chronus/service/instant_provisioning.py
+src/chronus/storage/connectors.py
+tests/test_endian_engine.py
+tests/test_gateway.py
+tests/test_mining.py
+tests/test_opencl_miner.py
+tests/test_property_invariants.py
+tests/test_security_full_coverage.py
+vendor/cgminer-3.7.2/api-example.py
+-- origin/main
+archive/legacy/master_repo/tests/test_chronus_suite.py
+archive/legacy/master_repo/tests/test_chronus_suite_new.py
+benchmarks/benchmark_al_haras_security.py
+scripts/ci/run_irrefutable_audit.py
+src/chronus/access_control.py
+src/chronus/hendrix/__init__.py
+src/chronus/hendrix/oracles.py
+src/chronus/hermes/__init__.py
+src/chronus/intelligence/predictive_engine.py
+src/chronus/security/al_haras/defense_frontiers.py
+src/chronus/security/al_haras/orbital_mesh.py
+src/chronus/security/ovid.py
+src/chronus/service/instant_provisioning.py
+src/chronus/storage/connectors.py
+tests/test_endian_engine.py
+tests/test_gateway.py
+tests/test_mining.py
+tests/test_opencl_miner.py
+tests/test_property_invariants.py
+tests/test_security_full_coverage.py
+vendor/cgminer-3.7.2/api-example.py
+-- origin/work/prime-codec-bounded-decode
+archive/legacy/master_repo/tests/test_chronus_suite.py
+archive/legacy/master_repo/tests/test_chronus_suite_new.py
+benchmarks/benchmark_al_haras_security.py
+scripts/ci/run_irrefutable_audit.py
+src/chronus/intelligence/predictive_engine.py
+src/chronus/security/al_haras/defense_frontiers.py
+src/chronus/security/al_haras/orbital_mesh.py
+src/chronus/security/ovid.py
+src/chronus/service/instant_provisioning.py
+src/chronus/storage/connectors.py
+tests/test_endian_engine.py
+tests/test_gateway.py
+tests/test_mining.py
+tests/test_opencl_miner.py
+tests/test_property_invariants.py
+tests/test_security_full_coverage.py
+vendor/cgminer-3.7.2/api-example.py
+
+== commits on any branch whose Python diff adds or removes matching lines
+a0ffe1c 2026-11-11 11:51:18 +0000 hybadatadevops1: turing: exact-algorithm tests (test_turing_*) and docs/algorithms.md
+87ba4d7 2026-11-11 09:36:44 +0000 hybadatadevops1: turing.algorithms: exact DJ, BV, Simon, Grover, QFT, QPE, Shor and stabilizer tableau
+2995803 2026-11-11 09:29:54 +0000 hybadatadevops1: build(partner): native-module build profile and partner build workflow
+8c7679c 2026-11-11 09:24:37 +0000 hybadatadevops1: Hendrix: exact F_p lookup tables, deterministic oracles and a structured-search facade (#30)
+daa1a36 2026-11-11 09:16:37 +0000 hybadatadevops1: One TURING package, private disjoint distributions and packaging gates (#29)
+d96ec19 2026-11-11 09:16:34 +0000 hybadatadevops1: feat(licensing): offline Ed25519 lease verifier and vendor signing tools
+9a6b17f 2026-11-11 08:20:46 +0000 hybadatadevops1: AL HARAS: computed engines, post-quantum receipts, authenticated API (code and tests)
+5226329 2026-11-11 08:04:36 +0000 hybadatadevops1: workbench run 4: fixes from run 3, TURING specification, wheel check
+57ddc72 2026-11-11 07:25:56 +0000 hybadatadevops1: supervisor workbench: run 3 (TURING/packaging consolidation branch + verification)
+fe66c7b 2026-11-11 06:22:13 +0000 hybadatadevops1: supervisor workbench: run 1 (inventory, branch audit, symbol map, test baseline)
+e04dbd0 2026-11-09 18:48:03 +0000 Chronus Systems: Chronus Quantum IGPU: comprehensive updates including UI, API, execution engine, and development scripts
+f58399c 2026-11-08 19:12:44 +0000 Chronus Systems: THESEUS: bip310 payload, min-bit-count enforcement, submit arity
+c30e129 2026-11-08 18:12:13 +0000 Chronus Systems: feat(stratum): integrate live pool runner, F_257 search, BIP310 version-rolling, and zero-ban gatekeeper suite
+a2773ce 2026-11-08 14:29:33 +0000 Chronus Systems: feat(mining): integrate Chronus 3.0 specification, full mining admin controls, and interactive dashboard
+355bb38 2026-11-08 13:59:18 +0000 Chronus Systems: feat(mining): implement 11D 600-cell polytope & F_257 exact Galois oracle with Lean 4 univalence and 100% test coverage
+8720100 2026-11-08 13:32:29 +0000 Chronus Systems: feat(security): implement and integrate Five Future Strategic Application Engines with 100% test coverage
+1f358f6 2026-11-08 12:00:27 +0000 hybadatadevops1: Add iGPU pool mining: Stratum V1 client + OpenCL SHA-256d kernel
+8c3c988 2026-11-08 12:00:19 +0000 hybadatadevops1: Expand test suite: property invariants, adversarial, integration, E2E (+168 tests)
+af96043 2026-11-08 03:17:24 +0000 Chronus Systems: feat(security): deliver AL HARAS benchmark suite and resolve CI user journeys
+a2768d1 2026-11-08 01:28:45 +0000 Chronus Systems: fix(ci): resolve ruff F401/F821/F841 lint failures across src and tests
+5c4cf2d 2026-11-08 00:25:52 +0000 Chronus Systems: system elevation
+4d145d4 2026-11-07 23:55:35 +0000 Chronus Systems: docs(ncsc): publish UK NCSC 14 principles compliance evidence dossier, web console matrix, and zero-copy connector fabric
+bdb35ce 2026-11-07 23:29:38 +0000 Chronus Systems: feat(fleet): integrate instant provisioning engine, regional pod failover test harness, and zero-copy connectors
+7bdb769 2026-11-07 23:23:04 +0000 Chronus Systems: feat(expansion): verify 10X dynamic capacity expansion across 500 tenants
+322db11 2026-11-07 21:02:34 +0000 hybadatadevops1: Add purity gate, exact Grover iteration, carry-free mining traversal
+200b446 2026-11-07 19:15:12 +0000 Chronus Systems: Finalize v36.0 release with test suite, docs, CI, and artefacts
+search exit=0
